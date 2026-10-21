@@ -7,9 +7,7 @@
         "src/DoorAlarm.st": "PROGRAM DoorAlarm\nVAR_INPUT Armed AT %I0.0 : BOOL; DoorOpen AT %I0.1 : BOOL; Silence AT %I0.2 : BOOL; END_VAR\nVAR_OUTPUT Siren AT %Q0.0 : BOOL; END_VAR\nSiren := ((Armed AND DoorOpen) OR Siren) AND NOT Silence;\nEND_PROGRAM\n",
         "zplc.json": "{\"schemaVersion\":2,\"name\":\"door_alarm_il_starter\",\"version\":\"1.0.0\",\"target\":{\"board\":\"posix\"},\"tasks\":[{\"name\":\"MainTask\",\"trigger\":\"cyclic\",\"interval_ms\":10,\"priority\":1,\"programs\":[\"DoorAlarm.st\"]}]}"
       },
-      "remove": [
-        "src/DoorAlarm.il"
-      ]
+      "remove": ["src/DoorAlarm.il"]
     }
   ],
   "wrong": [

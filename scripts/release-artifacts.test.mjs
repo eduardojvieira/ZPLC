@@ -50,7 +50,10 @@ test('creates a deterministic flat bundle with checksums, identity evidence, and
     ],
   });
   for (const [path, bytes] of assets) assert.deepEqual(await readFile(join(output, path.split('/').at(-1))), bytes);
-  assert.equal(await readFile(join(output, 'SHA256SUMS'), 'utf8'), result.artifacts.map(({ name, sha256 }) => `${sha256}  ${name}`).join('\n') + '\n');
+  assert.equal(
+    await readFile(join(output, 'SHA256SUMS'), 'utf8'),
+    result.artifacts.map(({ name, sha256 }) => `${sha256}  ${name}`).join('\n') + '\n',
+  );
   assert.equal(await readFile(join(output, 'release-evidence.json'), 'utf8'), `${JSON.stringify(result, null, 2)}\n`);
 });
 
@@ -77,9 +80,18 @@ test('fails closed without a partial bundle for invalid inputs and output state'
     async (input) => {},
     async (input) => writeAsset(input, 'unexpected.txt', 'no'),
     async (input) => writeAsset(input, 'release-evidence.json', '{}'),
-    async (input) => { await writeAsset(input, 'a/ZPLC.zip', 'one'); await writeAsset(input, 'b/ZPLC.zip', 'two'); },
-    async (input) => { await writeAsset(input, 'a/ZPLC.zip', 'one'); await writeAsset(input, 'b/zplc.zip', 'two'); },
-    async (input) => { await writeAsset(input, 'ZPLC.zip', 'one'); await symlink(join(input, 'ZPLC.zip'), join(input, 'linked.zip')); },
+    async (input) => {
+      await writeAsset(input, 'a/ZPLC.zip', 'one');
+      await writeAsset(input, 'b/ZPLC.zip', 'two');
+    },
+    async (input) => {
+      await writeAsset(input, 'a/ZPLC.zip', 'one');
+      await writeAsset(input, 'b/zplc.zip', 'two');
+    },
+    async (input) => {
+      await writeAsset(input, 'ZPLC.zip', 'one');
+      await symlink(join(input, 'ZPLC.zip'), join(input, 'linked.zip'));
+    },
   ];
   for (const setup of cases) {
     const { input, output } = await fixture();
@@ -107,7 +119,23 @@ test('rejects invalid release identity before creating output', async () => {
 test('CLI writes the same fail-closed bundle from explicit arguments', async () => {
   const { input, output } = await fixture();
   await writeAsset(input, 'ZPLC.zip', 'fixture');
-  const run = spawnSync(process.execPath, ['scripts/release-artifacts.mjs', '--input-dir', input, '--output-dir', output, '--version', identity.version, '--tag', identity.tag, '--commit-sha', identity.commitSha], { cwd: process.cwd(), encoding: 'utf8' });
+  const run = spawnSync(
+    process.execPath,
+    [
+      'scripts/release-artifacts.mjs',
+      '--input-dir',
+      input,
+      '--output-dir',
+      output,
+      '--version',
+      identity.version,
+      '--tag',
+      identity.tag,
+      '--commit-sha',
+      identity.commitSha,
+    ],
+    { cwd: process.cwd(), encoding: 'utf8' },
+  );
   assert.equal(run.status, 0, run.stderr);
   assert.deepEqual(JSON.parse(await readFile(join(output, 'release-evidence.json'), 'utf8')), {
     schemaVersion: 1,
@@ -139,7 +167,11 @@ test('refuses an executable name that does not follow the scheme, so nothing unn
   for (const name of ['zplc-cli', 'zplc-cli-latest-linux-x64', 'zplc-tool-2.0.0-linux-x64', 'zplc-cli-2.0.0-rc.4-linux-ppc64']) {
     const { input, output } = await fixture();
     await writeAsset(input, name, 'x');
-    await assert.rejects(() => createReleaseIntegrityBundle({ inputDir: input, outputDir: output, ...identity }), /unexpected asset extension/, name);
+    await assert.rejects(
+      () => createReleaseIntegrityBundle({ inputDir: input, outputDir: output, ...identity }),
+      /unexpected asset extension/,
+      name,
+    );
   }
 });
 
@@ -163,7 +195,10 @@ test('the command line merges checksum files into one output file (REL-017)', as
   const output = join(root, 'SHA256SUMS');
   await writeFile(first, `${line('a', 'linux.deb')}\n`);
   await writeFile(second, `${line('b', 'mac.dmg')}\n`);
-  const run = spawnSync(process.execPath, ['scripts/release-artifacts.mjs', '--merge', output, first, second], { cwd: process.cwd(), encoding: 'utf8' });
+  const run = spawnSync(process.execPath, ['scripts/release-artifacts.mjs', '--merge', output, first, second], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+  });
   assert.equal(run.status, 0, run.stderr);
   assert.equal(await readFile(output, 'utf8'), `${line('a', 'linux.deb')}\n${line('b', 'mac.dmg')}\n`);
 });

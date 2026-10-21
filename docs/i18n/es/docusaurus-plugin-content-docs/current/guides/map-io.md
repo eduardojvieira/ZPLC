@@ -3,7 +3,7 @@ slug: /guides/map-io
 id: map-io
 title: Vincular variables a pines
 sidebar_label: Vincular E/S a pines
-description: "Conecte las variables de un programa a las entradas y salidas de una placa, con la descripción de E/S de la placa y el editor de mapeo de E/S de ZPLC."
+description: 'Conecte las variables de un programa a las entradas y salidas de una placa, con la descripción de E/S de la placa y el editor de mapeo de E/S de ZPLC.'
 tags: [how-to, io, boards, mapping]
 ---
 
@@ -62,15 +62,11 @@ placa, de modo que una fila no puede ponerse donde la placa no tiene nada.
 ```json zplc-fragment board=rpi_pico
 {
   "io": {
-    "inputs": [
-      { "name": "Start", "address": "%IX0.0", "type": "BOOL", "pin": 15, "description": "Push button between GP15 and ground" }
-    ],
+    "inputs": [{ "name": "Start", "address": "%IX0.0", "type": "BOOL", "pin": 15, "description": "Push button between GP15 and ground" }],
     "outputs": [
       { "name": "LED_Output", "address": "%QX0.0", "type": "BOOL", "pin": 0, "description": "LED with a series resistor on GP0" }
     ],
-    "virtual": [
-      { "name": "SpareFlag", "address": "%QX0.6", "type": "BOOL", "description": "A bit of the output image that no pin drives" }
-    ]
+    "virtual": [{ "name": "SpareFlag", "address": "%QX0.6", "type": "BOOL", "description": "A bit of the output image that no pin drives" }]
   }
 }
 ```
@@ -104,12 +100,12 @@ compilación falla cuando la descripción y el devicetree no coinciden.
 
 ## Qué está verificado y qué no
 
-| Parte | Verificado | Nivel |
-| --- | --- | --- |
-| Las descripciones son coherentes con el devicetree de cada placa | La compilación del firmware falla en caso contrario | Compilación |
-| Una dirección sin mapear es un error en el editor, la compilación y el despliegue | Pruebas unitarias, y el recorrido 40 en la aplicación real | Host |
-| El escalado analógico de un canal y la tabla de E/S del firmware | Pruebas en `native_sim` | Destino emulado |
-| Que un pin maneje la señal que dice la descripción, y el nivel de una salida | No probado | Ninguno |
+| Parte                                                                             | Verificado                                                 | Nivel           |
+| --------------------------------------------------------------------------------- | ---------------------------------------------------------- | --------------- |
+| Las descripciones son coherentes con el devicetree de cada placa                  | La compilación del firmware falla en caso contrario        | Compilación     |
+| Una dirección sin mapear es un error en el editor, la compilación y el despliegue | Pruebas unitarias, y el recorrido 40 en la aplicación real | Host            |
+| El escalado analógico de un canal y la tabla de E/S del firmware                  | Pruebas en `native_sim`                                    | Destino emulado |
+| Que un pin maneje la señal que dice la descripción, y el nivel de una salida      | No probado                                                 | Ninguno         |
 
 ## Vea también
 

@@ -44,17 +44,41 @@ const SOURCE_FOLDERS = [`${IDE_ROOT}/src/`, `${IDE_ROOT}/electron/`, `${IDE_ROOT
 const OFFENDERS_PATH = new URL('./module-size-offenders.json', import.meta.url);
 const EXCEPTIONS_PATH = new URL('./layering-exceptions.json', import.meta.url);
 
-export interface SourceModule { path: string; text: string }
-export interface Offender { file: string; requirement: string; added: string; lines: number; reason: string }
-export interface LayeringException { file: string; imports: string; requirement: string; added: string; reason: string }
-export interface StructureOptions { limit: number; offenders: Offender[]; exceptions?: LayeringException[] }
+export interface SourceModule {
+  path: string;
+  text: string;
+}
+export interface Offender {
+  file: string;
+  requirement: string;
+  added: string;
+  lines: number;
+  reason: string;
+}
+export interface LayeringException {
+  file: string;
+  imports: string;
+  requirement: string;
+  added: string;
+  reason: string;
+}
+export interface StructureOptions {
+  limit: number;
+  offenders: Offender[];
+  exceptions?: LayeringException[];
+}
 type ImportKind = 'value' | 'type' | 'dynamic';
-interface Import { specifier: string; kind: ImportKind }
+interface Import {
+  specifier: string;
+  kind: ImportKind;
+}
 
 /** A module of the product: a TypeScript source that is not a test and not a declaration file. */
 export const isProductModule = (path: string): boolean =>
-  /\.tsx?$/.test(path) && !/\.test\.tsx?$/.test(path) && !path.endsWith('.d.ts')
-  && SOURCE_FOLDERS.some((folder) => path.startsWith(folder));
+  /\.tsx?$/.test(path) &&
+  !/\.test\.tsx?$/.test(path) &&
+  !path.endsWith('.d.ts') &&
+  SOURCE_FOLDERS.some((folder) => path.startsWith(folder));
 
 /** The static imports and re-exports of a module, and its `import()` calls, with how each one is written. */
 export function importsOf(path: string, text: string): Import[] {
@@ -64,12 +88,23 @@ export function importsOf(path: string, text: string): Import[] {
     if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
       const clause = node.importClause;
       const named = clause?.namedBindings;
-      const typeOnly = clause !== undefined && (clause.isTypeOnly
-        || (clause.name === undefined && named !== undefined && ts.isNamedImports(named) && named.elements.length > 0 && named.elements.every((element) => element.isTypeOnly)));
+      const typeOnly =
+        clause !== undefined &&
+        (clause.isTypeOnly ||
+          (clause.name === undefined &&
+            named !== undefined &&
+            ts.isNamedImports(named) &&
+            named.elements.length > 0 &&
+            named.elements.every((element) => element.isTypeOnly)));
       found.push({ specifier: node.moduleSpecifier.text, kind: typeOnly ? 'type' : 'value' });
     } else if (ts.isExportDeclaration(node) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
       found.push({ specifier: node.moduleSpecifier.text, kind: node.isTypeOnly ? 'type' : 'value' });
-    } else if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword && node.arguments[0] !== undefined && ts.isStringLiteralLike(node.arguments[0])) {
+    } else if (
+      ts.isCallExpression(node) &&
+      node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+      node.arguments[0] !== undefined &&
+      ts.isStringLiteralLike(node.arguments[0])
+    ) {
       found.push({ specifier: node.arguments[0].text, kind: 'dynamic' });
     }
     ts.forEachChild(node, visit);
@@ -95,16 +130,25 @@ function findCycles(graph: ReadonlyMap<string, string[]>): string[][] {
   const components: string[][] = [];
   let counter = 0;
   const connect = (node: string): void => {
-    index.set(node, counter); low.set(node, counter); counter += 1;
-    stack.push(node); onStack.add(node);
+    index.set(node, counter);
+    low.set(node, counter);
+    counter += 1;
+    stack.push(node);
+    onStack.add(node);
     for (const next of graph.get(node) ?? []) {
-      if (!index.has(next)) { connect(next); low.set(node, Math.min(low.get(node)!, low.get(next)!)); }
-      else if (onStack.has(next)) low.set(node, Math.min(low.get(node)!, index.get(next)!));
+      if (!index.has(next)) {
+        connect(next);
+        low.set(node, Math.min(low.get(node)!, low.get(next)!));
+      } else if (onStack.has(next)) low.set(node, Math.min(low.get(node)!, index.get(next)!));
     }
     if (low.get(node) === index.get(node)) {
       const component: string[] = [];
       let member: string;
-      do { member = stack.pop()!; onStack.delete(member); component.push(member); } while (member !== node);
+      do {
+        member = stack.pop()!;
+        onStack.delete(member);
+        component.push(member);
+      } while (member !== node);
       if (component.length > 1 || (graph.get(node) ?? []).includes(node)) components.push(component);
     }
   };
@@ -121,18 +165,27 @@ function findCycles(graph: ReadonlyMap<string, string[]>): string[][] {
         if (!members.has(next)) continue;
         if (next === start) {
           const path = [start];
-          for (let step: string | undefined = node; step !== undefined && step !== start; step = previous.get(step)) path.splice(1, 0, step);
+          for (let step: string | undefined = node; step !== undefined && step !== start; step = previous.get(step))
+            path.splice(1, 0, step);
           return [...path, start];
         }
-        if (!previous.has(next)) { previous.set(next, node); queue.push(next); }
+        if (!previous.has(next)) {
+          previous.set(next, node);
+          queue.push(next);
+        }
       }
     }
     return [start, start];
   });
 }
 
-const withoutComments = (text: string): string => text.replace(/\/\*[\s\S]*?\*\//g, (comment) => comment.replace(/[^\n]/g, ' ')).replace(/\/\/[^\n]*/g, (comment) => ' '.repeat(comment.length));
-/** `useIDEStore()`, `useIDEStore((state) => state)` and `useIDEStore((state) => state.debug)`: a subscription to everything that changes. */
+const withoutComments = (text: string): string =>
+  text
+    .replace(/\/\*[\s\S]*?\*\//g, (comment) => comment.replace(/[^\n]/g, ' '))
+    .replace(/\/\/[^\n]*/g, (comment) => ' '.repeat(comment.length));
+/**
+ * `useIDEStore()`, `useIDEStore((state) => state)` and `useIDEStore((state) => state.debug)`: a subscription to everything that changes.
+ */
 const WHOLE_STORE = /\buseIDEStore\s*(?:<[^>()]*>)?\s*\(\s*(?:\)|\(\s*([A-Za-z_$][\w$]*)\s*\)\s*=>\s*\1(?:\.debug)?\s*\))/g;
 
 /** The lines of a module that subscribe to the whole store (IDE-013). */
@@ -149,7 +202,10 @@ export function checkIdeStructure(modules: readonly SourceModule[], options: Str
   for (const module of product) {
     if (module.path.startsWith(`${IDE_ROOT}/src/store/`) || !module.path.startsWith(`${IDE_ROOT}/src/`)) continue;
     for (const line of wholeStoreSubscriptions(module.text)) {
-      problems.push(`IDE-013: ${module.path}:${line} subscribes to the whole store, which renders it again on every change, ten times a second while a value is watched; select the fields it shows (src/store/regionSubscriptions.ts)`);
+      problems.push(
+        `IDE-013: ${module.path}:${line} subscribes to the whole store, which renders it again on every change, ten times a second while ` +
+          `a value is watched; select the fields it shows (src/store/regionSubscriptions.ts)`,
+      );
     }
   }
   const known = new Set(product.map((module) => module.path));
@@ -168,10 +224,21 @@ export function checkIdeStructure(modules: readonly SourceModule[], options: Str
       const target = resolveImport(module.path, specifier, known);
       if (target === undefined) continue;
       if (module.path.startsWith(`${IDE_ROOT}/src/store/`) && target.startsWith(`${IDE_ROOT}/src/components/`)) {
-        layering(module, target, 'the store must not depend on components, move what both need to a module of the store, a util or a model');
+        layering(
+          module,
+          target,
+          'the store must not depend on components, move what both need to a module of the store, a util or a model',
+        );
       }
-      if ((module.path.startsWith(`${IDE_ROOT}/src/cli/`) || module.path.startsWith(`${IDE_ROOT}/src/mcp/`)) && target.startsWith(`${IDE_ROOT}/electron/`)) {
-        layering(module, target, 'the command line and the MCP server must not depend on the Electron host, move what both need out of electron/');
+      if (
+        (module.path.startsWith(`${IDE_ROOT}/src/cli/`) || module.path.startsWith(`${IDE_ROOT}/src/mcp/`)) &&
+        target.startsWith(`${IDE_ROOT}/electron/`)
+      ) {
+        layering(
+          module,
+          target,
+          'the command line and the MCP server must not depend on the Electron host, move what both need out of electron/',
+        );
       }
       if (kind === 'value') edges.push(target);
     }
@@ -179,27 +246,41 @@ export function checkIdeStructure(modules: readonly SourceModule[], options: Str
   }
 
   for (const entry of exceptions) {
-    if (!usedExceptions.has(entry)) problems.push(`IDE-033: the exception for ${entry.file} -> ${entry.imports} matches no import; remove the entry`);
+    if (!usedExceptions.has(entry))
+      problems.push(`IDE-033: the exception for ${entry.file} -> ${entry.imports} matches no import; remove the entry`);
   }
   for (const cycle of findCycles(values)) problems.push(`IDE-033: import cycle ${cycle.join(' -> ')}`);
 
   const listed = new Map<string, Offender>();
   for (const offender of options.offenders) {
-    if (!/^[A-Z]+-\d{3}$/.test(offender.requirement)) problems.push(`IDE-014: the entry for ${offender.file} must name its requirement (IDE-014)`);
+    if (!/^[A-Z]+-\d{3}$/.test(offender.requirement))
+      problems.push(`IDE-014: the entry for ${offender.file} must name its requirement (IDE-014)`);
     listed.set(offender.file, offender);
   }
   const sizes = new Map(product.map((module) => [module.path, lineCount(module.text)] as const));
   for (const [path, lines] of [...sizes].sort(([left], [right]) => left.localeCompare(right))) {
     const entry = listed.get(path);
     if (lines <= options.limit) continue;
-    if (!entry) problems.push(`IDE-014: ${path} has ${lines} lines, above the limit of ${options.limit}; split it by responsibility (one panel or one concern per module)`);
-    else if (lines > entry.lines) problems.push(`IDE-014: ${path} grew from ${entry.lines} to ${lines} lines; a module on tools/ci/module-size-offenders.json can only shrink`);
-    else if (lines < entry.lines) problems.push(`IDE-014: ${path} now has ${lines} lines, recorded ${entry.lines}; lower the entry (bun tools/ci/ide-structure.ts --write)`);
+    if (!entry)
+      problems.push(
+        `IDE-014: ${path} has ${lines} lines, above the limit of ${options.limit}; split it by responsibility (one panel or one concern ` +
+          `per module)`,
+      );
+    else if (lines > entry.lines)
+      problems.push(
+        `IDE-014: ${path} grew from ${entry.lines} to ${lines} lines; a module on tools/ci/module-size-offenders.json can only shrink`,
+      );
+    else if (lines < entry.lines)
+      problems.push(
+        `IDE-014: ${path} now has ${lines} lines, recorded ${entry.lines}; lower the entry (bun tools/ci/ide-structure.ts --write)`,
+      );
   }
   for (const offender of options.offenders) {
     const lines = sizes.get(offender.file);
-    if (lines === undefined) problems.push(`IDE-014: ${offender.file} is on the list of offenders but is not a module of the product any more; remove the entry`);
-    else if (lines <= options.limit) problems.push(`IDE-014: ${offender.file} has ${lines} lines, within the limit of ${options.limit}; remove the entry`);
+    if (lines === undefined)
+      problems.push(`IDE-014: ${offender.file} is on the list of offenders but is not a module of the product any more; remove the entry`);
+    else if (lines <= options.limit)
+      problems.push(`IDE-014: ${offender.file} has ${lines} lines, within the limit of ${options.limit}; remove the entry`);
   }
   return problems;
 }
@@ -279,5 +360,10 @@ if (import.meta.main) {
     console.error(problems.map((problem) => `ide-structure: ${problem}`).join('\n'));
     process.exit(1);
   }
-  console.log(`ide-structure: ok (${readOffenders().length} modules above ${MODULE_LINE_LIMIT} lines are listed, ${relative(root, OFFENDERS_PATH.pathname)})`);
+  console.log(
+    `ide-structure: ok (${readOffenders().length} modules above ${MODULE_LINE_LIMIT} lines are listed, ${relative(
+      root,
+      OFFENDERS_PATH.pathname,
+    )})`,
+  );
 }

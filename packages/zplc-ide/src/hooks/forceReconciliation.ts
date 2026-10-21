@@ -8,9 +8,6 @@ export function usesConnectionManager(adapter: IDebugAdapter | null): boolean {
   return adapter?.type === 'serial';
 }
 
-export function shouldMarkForceCommandFailureUnconfirmed(
-  active: IDebugAdapter | null,
-  candidate: IDebugAdapter,
-): boolean {
+export function shouldMarkForceCommandFailureUnconfirmed(active: IDebugAdapter | null, candidate: IDebugAdapter): boolean {
   return isCurrentSerialAdapter(active, candidate);
 }

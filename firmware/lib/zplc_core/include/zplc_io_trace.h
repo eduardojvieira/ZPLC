@@ -47,8 +47,8 @@ extern "C" {
 
 /** @brief One sample, as a reader gets it. */
 typedef struct {
-  uint32_t t_us;  /**< when the scan latched its inputs, in microseconds since the trace was armed */
-  uint32_t batch; /**< the scan's number in its run: 1 is the first scan after a start (RUN) */
+  uint32_t t_us;                           /**< when the scan latched its inputs, in microseconds since the trace was armed */
+  uint32_t batch;                          /**< the scan's number in its run: 1 is the first scan after a start (RUN) */
   uint8_t in[ZPLC_IO_TRACE_MAX_IO_BYTES];  /**< the first in_bytes bytes of the input image */
   uint8_t out[ZPLC_IO_TRACE_MAX_IO_BYTES]; /**< the first out_bytes bytes of the output image */
 } zplc_io_trace_sample_t;
@@ -62,12 +62,12 @@ typedef struct {
   void *clock_ctx;
   /** Reads PLC memory: the snapshot of the last commit on a target, the image itself on the host. 0 on success. */
   int (*read)(uint16_t addr, uint8_t *out, uint16_t size);
-  uint8_t fed;              /**< a scheduler calls the hook of this trace */
-  volatile uint8_t armed;   /**< samples are kept */
-  uint8_t latched;          /**< the scan in progress latched its inputs while armed */
+  uint8_t fed;            /**< a scheduler calls the hook of this trace */
+  volatile uint8_t armed; /**< samples are kept */
+  uint8_t latched;        /**< the scan in progress latched its inputs while armed */
   uint16_t in_bytes;
   uint16_t out_bytes;
-  uint32_t capacity;        /**< samples the ring holds */
+  uint32_t capacity;         /**< samples the ring holds */
   volatile uint32_t written; /**< samples kept since the arm; the next one has this sequence number */
   uint64_t armed_us;
   uint64_t latch_us;
@@ -76,7 +76,7 @@ typedef struct {
 
 /** @brief What a reader is told about a trace. */
 typedef struct {
-  uint8_t fed;           /**< a scheduler feeds the trace: arming it records */
+  uint8_t fed; /**< a scheduler feeds the trace: arming it records */
   uint8_t armed;
   uint16_t in_bytes;
   uint16_t out_bytes;
@@ -87,8 +87,7 @@ typedef struct {
 } zplc_io_trace_status_t;
 
 /** @brief Prepare a trace over a buffer. It is not fed and not armed. */
-void zplc_io_trace_init(zplc_io_trace_t *trace, uint8_t *storage, uint32_t storage_size,
-                        uint64_t (*now_us)(void *ctx), void *clock_ctx,
+void zplc_io_trace_init(zplc_io_trace_t *trace, uint8_t *storage, uint32_t storage_size, uint64_t (*now_us)(void *ctx), void *clock_ctx,
                         int (*read)(uint16_t addr, uint8_t *out, uint16_t size));
 
 /** @brief Say that a scheduler calls the hook with this trace. Returns the trace, for zplc_sched_core_set_trace(). */

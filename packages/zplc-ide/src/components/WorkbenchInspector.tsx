@@ -49,7 +49,14 @@ export function WorkbenchInspector() {
             <Row label={t('workbench.inspector.language')} value={summary.file.language} />
             <Row label={t('workbench.inspector.path')} value={summary.file.path} mono />
           </dl>
-        ) : <PanelEmptyState title={t('panel.inspector.empty.title')} description={t('panel.inspector.empty.description')} actionLabel={t('panel.inspector.empty.action')} onAction={() => useIDEStore.getState().setActiveConsoleTab('explorer')} />}
+        ) : (
+          <PanelEmptyState
+            title={t('panel.inspector.empty.title')}
+            description={t('panel.inspector.empty.description')}
+            actionLabel={t('panel.inspector.empty.action')}
+            onAction={() => useIDEStore.getState().setActiveConsoleTab('explorer')}
+          />
+        )}
       </section>
       <section aria-labelledby="inspector-project">
         <h2 id="inspector-project">{t('workbench.inspector.project')}</h2>
@@ -68,7 +75,11 @@ export function WorkbenchInspector() {
         </dl>
         <p className="ledger-inspector-note">{t('workbench.inspector.hostTrace')}</p>
       </section>
-      {connectionStatus === 'connected' && controllerBoard && <section aria-label={t('workbench.inspector.controller')}><ControllerView /></section>}
+      {connectionStatus === 'connected' && controllerBoard && (
+        <section aria-label={t('workbench.inspector.controller')}>
+          <ControllerView />
+        </section>
+      )}
     </aside>
   );
 }

@@ -22,7 +22,8 @@ const run = (command: string, args: string[], cwd = ROOT) => spawnSync(command, 
 /** The pristine tree of the pinned commit in a temporary directory, or null when it cannot be had offline or online. */
 function pinnedTree(): string | null {
   const dir = mkdtempSync(join(tmpdir(), 'zplc-rp2040js-'));
-  let source = existsSync(join(clone, '.git')) && run('git', ['-C', clone, 'cat-file', '-e', `${COMMIT}^{commit}`]).status === 0 ? clone : null;
+  let source =
+    existsSync(join(clone, '.git')) && run('git', ['-C', clone, 'cat-file', '-e', `${COMMIT}^{commit}`]).status === 0 ? clone : null;
   if (!source) {
     const fetched = join(dir, 'clone');
     if (run('git', ['clone', '--quiet', '--filter=blob:none', '--no-checkout', URL, fetched]).status !== 0) {

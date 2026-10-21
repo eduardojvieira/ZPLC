@@ -22,7 +22,10 @@ export async function listRecovery(bridge: RecoveryBridge, rootId: string): Prom
   try {
     const answer = await bridge.list({ rootId });
     if (!Array.isArray(answer)) return [];
-    return answer.flatMap((value) => { const entry = parseRecoveryEntry(value); return entry ? [entry] : []; });
+    return answer.flatMap((value) => {
+      const entry = parseRecoveryEntry(value);
+      return entry ? [entry] : [];
+    });
   } catch (error) {
     debugLog('[Recovery] list failed', error);
     return [];

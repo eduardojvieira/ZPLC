@@ -62,9 +62,18 @@ export async function gatherDeployFacts({
   taskCount: number;
   transfer?: 'framed' | 'text-shell';
 }): Promise<DeployFacts> {
-  const attempt = <T>(read: () => T, otherwise: T): T => { try { return read(); } catch { return otherwise; } };
+  const attempt = <T>(read: () => T, otherwise: T): T => {
+    try {
+      return read();
+    } catch {
+      return otherwise;
+    }
+  };
   const info = attempt(() => parseDeviceSystemInfo(systemInfo), null);
-  const artifactAbi = attempt(() => { const abi = readArtifactAbi(bytecode); return { major: abi.major, minor: abi.minor, draft: abi.draftCounter }; }, null);
+  const artifactAbi = attempt(() => {
+    const abi = readArtifactAbi(bytecode);
+    return { major: abi.major, minor: abi.minor, draft: abi.draftCounter };
+  }, null);
   return {
     project: {
       name: projectName,
@@ -75,11 +84,19 @@ export async function gatherDeployFacts({
       byteLength: bytecode.byteLength,
       taskCount,
     },
-    device: info === null ? null : {
-      board: info.board, boardProfile: info.board_profile, zplcVersion: info.zplc_version, zephyrVersion: info.zephyr_version,
-      abi: { major: info.bytecode_abi_major, minor: info.bytecode_abi_minor }, draft: info.draft_counter ?? null,
-      maxArtifactBytes: info.memory.max_artifact_size ?? null, maxTasks: info.capabilities.max_tasks,
-    },
+    device:
+      info === null
+        ? null
+        : {
+            board: info.board,
+            boardProfile: info.board_profile,
+            zplcVersion: info.zplc_version,
+            zephyrVersion: info.zephyr_version,
+            abi: { major: info.bytecode_abi_major, minor: info.bytecode_abi_minor },
+            draft: info.draft_counter ?? null,
+            maxArtifactBytes: info.memory.max_artifact_size ?? null,
+            maxTasks: info.capabilities.max_tasks,
+          },
     declaredSafe: attempt(() => declaredSafeOf(bytecode), []),
     transfer,
   };
@@ -110,7 +127,15 @@ export async function createHardwareDeployConfirmation({
   }
   const facts = await gatherDeployFacts({ bytecode, projectBoard, projectName, systemInfo, taskCount, transfer });
   return {
-    projectBoard: option.label, deviceBoard: handshake.board, boardProfile: handshake.boardProfile, sha256: facts.project.sha256,
-    byteLength: bytecode.byteLength, taskCount, deviceCapacityBytes: handshake.maxArtifactBytes, transfer, declaredSafe: facts.declaredSafe, facts,
+    projectBoard: option.label,
+    deviceBoard: handshake.board,
+    boardProfile: handshake.boardProfile,
+    sha256: facts.project.sha256,
+    byteLength: bytecode.byteLength,
+    taskCount,
+    deviceCapacityBytes: handshake.maxArtifactBytes,
+    transfer,
+    declaredSafe: facts.declaredSafe,
+    facts,
   };
 }

@@ -20,26 +20,46 @@ describe('port interface page: every function of the HAL and every callback of t
 
   it('puts every declared function in a group, and refuses one that no group claims', () => {
     const functions = halFunctions(header('firmware/lib/zplc_core/include/zplc_hal.h'));
-    expect(groupedFunctions(functions).flatMap((entry) => entry.functions).map((entry) => entry.name).sort()).toEqual(functions.map((entry) => entry.name).sort());
+    expect(
+      groupedFunctions(functions)
+        .flatMap((entry) => entry.functions)
+        .map((entry) => entry.name)
+        .sort(),
+    ).toEqual(functions.map((entry) => entry.name).sort());
     expect(() => groupedFunctions([...functions, { name: 'zplc_hal_teleport', brief: 'Moves the board.' }])).toThrow('zplc_hal_teleport');
   });
 
   it('reads every callback of zplc_sched_port_t, the second half of a pair included', () => {
     const names = schedulerPort(header('firmware/lib/zplc_core/include/zplc_sched_core.h')).map((entry) => entry.name);
     expect(names).toContain('now_us');
-    expect(names).toEqual(expect.arrayContaining(['enter', 'leave', 'lock_image', 'unlock_image', 'lock_io', 'unlock_io', 'drive_safe_pins', 'watchdog_state', 'fault_latched']));
+    expect(names).toEqual(
+      expect.arrayContaining([
+        'enter',
+        'leave',
+        'lock_image',
+        'unlock_image',
+        'lock_io',
+        'unlock_io',
+        'drive_safe_pins',
+        'watchdog_state',
+        'fault_latched',
+      ]),
+    );
   });
 
   it('names every category of the suite and every port in both languages', () => {
     for (const lang of ['en', 'es'] as const) {
       const body = portInterfaceBody(lang);
-      for (const name of ['test_port_timing', 'zplc.port_timing', 'test_sched_core', 'zplc.core.loader_verify', 'wasmParity.test.ts']) expect(body).toContain(name);
+      for (const name of ['test_port_timing', 'zplc.port_timing', 'test_sched_core', 'zplc.core.loader_verify', 'wasmParity.test.ts'])
+        expect(body).toContain(name);
     }
   });
 
   it('gives the WebAssembly port a row of checks in every category, in both languages', () => {
     for (const lang of ['en', 'es'] as const) {
-      const rows = portInterfaceBody(lang).split('\n').filter((line) => line.startsWith('| WebAssembly |'));
+      const rows = portInterfaceBody(lang)
+        .split('\n')
+        .filter((line) => line.startsWith('| WebAssembly |'));
       expect(rows).toHaveLength(6);
       expect(rows.filter((row) => /Open:|Abierta:/.test(row))).toEqual([]);
       expect(rows.join('\n')).toContain('test_sched_core');
@@ -49,7 +69,9 @@ describe('port interface page: every function of the HAL and every callback of t
 
   it('gives the FreeRTOS port a row of checks in every category, in both languages (IO-016)', () => {
     for (const lang of ['en', 'es'] as const) {
-      const rows = portInterfaceBody(lang).split('\n').filter((line) => line.startsWith('| FreeRTOS'));
+      const rows = portInterfaceBody(lang)
+        .split('\n')
+        .filter((line) => line.startsWith('| FreeRTOS'));
       expect(rows).toHaveLength(6);
       expect(rows.filter((row) => /Open:|Abierta:/.test(row))).toEqual([]);
       expect(rows.join('\n')).toContain('test_freertos_scheduler');
@@ -61,7 +83,9 @@ describe('port interface page: every function of the HAL and every callback of t
     for (const lang of ['en', 'es'] as const) {
       const body = portInterfaceBody(lang);
       expect(body).toContain('FreeRTOS');
-      expect(body).not.toMatch(/decision D-06 of the remediation spec; this page|decisión D-06 de la especificación de remediación; esta página/);
+      expect(body).not.toMatch(
+        /decision D-06 of the remediation spec; this page|decisión D-06 de la especificación de remediación; esta página/,
+      );
       expect(body).toMatch(/not a real-time|no es de tiempo real/);
     }
   });

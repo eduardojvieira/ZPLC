@@ -53,11 +53,16 @@ function newUsage(): Usage {
 /** The variable at the base of `x`, `x.m`, `x[i]` and `x.3`, when there is one. */
 function baseName(expr: Expression): string | undefined {
     switch (expr.kind) {
-        case 'Identifier': return expr.name;
-        case 'MemberAccess': return baseName(expr.object);
-        case 'ArrayAccess': return baseName(expr.array);
-        case 'BitAccess': return baseName(expr.operand);
-        default: return undefined;
+        case 'Identifier':
+            return expr.name;
+        case 'MemberAccess':
+            return baseName(expr.object);
+        case 'ArrayAccess':
+            return baseName(expr.array);
+        case 'BitAccess':
+            return baseName(expr.operand);
+        default:
+            return undefined;
     }
 }
 
@@ -229,14 +234,18 @@ function leaves(statement: Statement): boolean {
         case 'ContinueStatement':
             return true;
         case 'IfStatement':
-            return statement.elseBranch !== null
-                && listLeaves(statement.thenBranch)
-                && statement.elsifBranches.every((branch) => listLeaves(branch.statements))
-                && listLeaves(statement.elseBranch);
+            return (
+                statement.elseBranch !== null &&
+                listLeaves(statement.thenBranch) &&
+                statement.elsifBranches.every((branch) => listLeaves(branch.statements)) &&
+                listLeaves(statement.elseBranch)
+            );
         case 'CaseStatement':
-            return statement.elseBranch !== null
-                && statement.branches.every((branch) => listLeaves(branch.statements))
-                && listLeaves(statement.elseBranch);
+            return (
+                statement.elseBranch !== null &&
+                statement.branches.every((branch) => listLeaves(branch.statements)) &&
+                listLeaves(statement.elseBranch)
+            );
         default:
             return false;
     }
@@ -324,9 +333,17 @@ export function analyzeUnit(unit: CompilationUnit): CodegenWarning[] {
             ...(ref === undefined ? {} : { sourceRef: ref }),
         };
         if (!read && !written) {
-            warnings.push({ code: 'UNUSED_VARIABLE', message: `The variable '${variable.name}' of ${owner} is declared and never used`, ...at });
+            warnings.push({
+                code: 'UNUSED_VARIABLE',
+                message: `The variable '${variable.name}' of ${owner} is declared and never used`,
+                ...at,
+            });
         } else if (!read) {
-            warnings.push({ code: 'WRITE_ONLY_VARIABLE', message: `The variable '${variable.name}' of ${owner} is written and never read`, ...at });
+            warnings.push({
+                code: 'WRITE_ONLY_VARIABLE',
+                message: `The variable '${variable.name}' of ${owner} is written and never read`,
+                ...at,
+            });
         }
     };
 
@@ -354,7 +371,8 @@ export function analyzeUnit(unit: CompilationUnit): CodegenWarning[] {
         for (const method of declaration.methods) {
             const methodUse = bodyUsage(method.body, [], accessed);
             for (const variable of method.locals) {
-                if (isChecked(variable)) report(variable, methodUse, `METHOD ${declaration.name}.${method.name}`, declaration.sourceRef, false);
+                if (isChecked(variable))
+                    report(variable, methodUse, `METHOD ${declaration.name}.${method.name}`, declaration.sourceRef, false);
             }
         }
     }
@@ -364,7 +382,9 @@ export function analyzeUnit(unit: CompilationUnit): CodegenWarning[] {
         unreachable(statements, (statement) => {
             warnings.push({
                 code: 'UNREACHABLE_STATEMENT',
-                message: 'This statement can never run: the statement before it leaves the list (RETURN, EXIT or CONTINUE, or an IF or CASE that always leaves)',
+                message:
+                    'This statement can never run: the statement before it leaves the list (RETURN, EXIT or CONTINUE, or an IF or CASE ' +
+                    'that always leaves)',
                 line: statement.line,
                 column: statement.column,
                 ...(statement.endLine === undefined ? {} : { endLine: statement.endLine, endColumn: statement.endColumn }),

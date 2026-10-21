@@ -10,12 +10,20 @@ import { displayEditorFileName } from '../components/editorFilePresentation';
 import type { FileTreeNode, ZPLCProjectConfig } from '../types';
 import type { ConfigEditorKind } from './configEditors';
 
-export const NAVIGATOR_GROUP_IDS = ['programs', 'functionBlocks', 'functions', 'dataTypes', 'globals', 'tasks', 'io', 'communication', 'device'] as const;
+export const NAVIGATOR_GROUP_IDS = [
+  'programs',
+  'functionBlocks',
+  'functions',
+  'dataTypes',
+  'globals',
+  'tasks',
+  'io',
+  'communication',
+  'device',
+] as const;
 export type NavigatorGroupId = (typeof NAVIGATOR_GROUP_IDS)[number];
 
-export type NavigatorTarget =
-  | { kind: 'source'; path: string; line: number; column: number }
-  | { kind: 'config'; editor: ConfigEditorKind };
+export type NavigatorTarget = { kind: 'source'; path: string; line: number; column: number } | { kind: 'config'; editor: ConfigEditorKind };
 
 export interface NavigatorItem {
   key: string;
@@ -82,28 +90,47 @@ export interface NavigatorInput {
 export function buildNavigatorGroups({ declarations, globals, fileTree, config }: NavigatorInput, words: NavigatorWords): NavigatorGroup[] {
   const declared = declarations.flatMap((group) => group.declarations);
   const source = (name: string, kind: string, file: string, line: number, column: number, detail?: string): NavigatorItem => ({
-    key: `${kind}:${file}:${name}`, label: name, detail: detail ?? file, target: { kind: 'source', path: file, line, column },
+    key: `${kind}:${file}:${name}`,
+    label: name,
+    detail: detail ?? file,
+    target: { kind: 'source', path: file, line, column },
   });
-  const ofKind = (...kinds: DeclarationKind[]): NavigatorItem[] => declared
-    .filter((declaration) => kinds.includes(declaration.kind))
-    .map((declaration) => source(declaration.name, declaration.kind, declaration.file, declaration.line, declaration.column));
+  const ofKind = (...kinds: DeclarationKind[]): NavigatorItem[] =>
+    declared
+      .filter((declaration) => kinds.includes(declaration.kind))
+      .map((declaration) => source(declaration.name, declaration.kind, declaration.file, declaration.line, declaration.column));
 
   // A diagram or an instruction list is one program in one file; it is named after its file.
   const filePrograms: NavigatorItem[] = fileNodes(fileTree)
     .filter((node) => node.language !== undefined && VISUAL_OR_LIST_PROGRAM.has(node.language))
-    .map((node) => source(displayEditorFileName(node.name, node.language!).replace(/\.[^.]+$/, ''), node.language!, node.path, 1, 1, `${node.language} · ${node.path}`));
+    .map((node) =>
+      source(
+        displayEditorFileName(node.name, node.language!).replace(/\.[^.]+$/, ''),
+        node.language!,
+        node.path,
+        1,
+        1,
+        `${node.language} · ${node.path}`,
+      ),
+    );
 
   const tasks = config?.tasks ?? [];
-  const taskItems: NavigatorItem[] = tasks.length === 0
-    ? [{ key: 'task:none', label: words.noTasks, target: { kind: 'config', editor: 'tasks' } }]
-    : tasks.map((task, index) => ({
-      key: `task:${index}:${task.name}`,
-      label: task.name,
-      detail: words.task({ trigger: task.trigger, intervalMs: task.interval_ms, priority: task.priority }),
-      target: { kind: 'config', editor: 'tasks' },
-    }));
+  const taskItems: NavigatorItem[] =
+    tasks.length === 0
+      ? [{ key: 'task:none', label: words.noTasks, target: { kind: 'config', editor: 'tasks' } }]
+      : tasks.map((task, index) => ({
+          key: `task:${index}:${task.name}`,
+          label: task.name,
+          detail: words.task({ trigger: task.trigger, intervalMs: task.interval_ms, priority: task.priority }),
+          target: { kind: 'config', editor: 'tasks' },
+        }));
   const tagCount = (config?.communication?.bindings?.length ?? 0) || (config?.communication?.tags?.length ?? 0);
-  const configItem = (key: string, label: string, editor: ConfigEditorKind, detail?: string): NavigatorItem => ({ key, label, detail, target: { kind: 'config', editor } });
+  const configItem = (key: string, label: string, editor: ConfigEditorKind, detail?: string): NavigatorItem => ({
+    key,
+    label,
+    detail,
+    target: { kind: 'config', editor },
+  });
 
   const groups: Record<NavigatorGroupId, NavigatorItem[]> = {
     programs: [...ofKind('PROGRAM'), ...filePrograms].sort((left, right) => left.label.localeCompare(right.label)),
@@ -111,22 +138,46 @@ export function buildNavigatorGroups({ declarations, globals, fileTree, config }
     functions: ofKind('FUNCTION'),
     dataTypes: declared
       .filter((declaration) => DATA_TYPE_KINDS.has(declaration.kind))
-      .map((declaration) => source(declaration.name, declaration.kind, declaration.file, declaration.line, declaration.column, `${words.kind[declaration.kind as keyof NavigatorWords['kind']]} · ${declaration.file}`)),
-    globals: globals.map((variable) => source(variable.name, 'VAR_GLOBAL', variable.file, variable.line, variable.column, variable.constant ? `${words.constant} · ${variable.file}` : variable.file)),
+      .map((declaration) =>
+        source(
+          declaration.name,
+          declaration.kind,
+          declaration.file,
+          declaration.line,
+          declaration.column,
+          `${words.kind[declaration.kind as keyof NavigatorWords['kind']]} · ${declaration.file}`,
+        ),
+      ),
+    globals: globals.map((variable) =>
+      source(
+        variable.name,
+        'VAR_GLOBAL',
+        variable.file,
+        variable.line,
+        variable.column,
+        variable.constant ? `${words.constant} · ${variable.file}` : variable.file,
+      ),
+    ),
     tasks: taskItems,
-    io: config ? [
-      configItem('io:inputs', words.inputs(config.io?.inputs?.length ?? 0), 'io'),
-      configItem('io:outputs', words.outputs(config.io?.outputs?.length ?? 0), 'io'),
-    ] : [],
-    communication: config ? [
-      configItem('communication:modbus', 'Modbus', 'communication', config.communication?.modbus?.enabled ? words.on : words.off),
-      configItem('communication:mqtt', 'MQTT', 'communication', config.communication?.mqtt?.enabled ? words.on : words.off),
-      configItem('communication:tags', words.tags(tagCount), 'communication'),
-    ] : [],
-    device: config ? [
-      configItem('device:target', words.target, 'target', config.target?.board),
-      configItem('device:network', words.network, 'network', config.network?.hostname),
-    ] : [],
+    io: config
+      ? [
+          configItem('io:inputs', words.inputs(config.io?.inputs?.length ?? 0), 'io'),
+          configItem('io:outputs', words.outputs(config.io?.outputs?.length ?? 0), 'io'),
+        ]
+      : [],
+    communication: config
+      ? [
+          configItem('communication:modbus', 'Modbus', 'communication', config.communication?.modbus?.enabled ? words.on : words.off),
+          configItem('communication:mqtt', 'MQTT', 'communication', config.communication?.mqtt?.enabled ? words.on : words.off),
+          configItem('communication:tags', words.tags(tagCount), 'communication'),
+        ]
+      : [],
+    device: config
+      ? [
+          configItem('device:target', words.target, 'target', config.target?.board),
+          configItem('device:network', words.network, 'network', config.network?.hostname),
+        ]
+      : [],
   };
   return NAVIGATOR_GROUP_IDS.map((id) => ({ id, titleKey: GROUP_TITLE_KEYS[id], items: groups[id] }));
 }

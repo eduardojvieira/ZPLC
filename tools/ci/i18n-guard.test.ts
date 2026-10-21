@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'bun:test';
 
-import { checkCatalogs, checkRepository, checkSources, isGuarded, isGuardedModule, midSentenceCapitals, ratchetOffenders, violationsOf, type Offender, type Rule } from './i18n-guard';
+import {
+  checkCatalogs,
+  checkRepository,
+  checkSources,
+  isGuarded,
+  isGuardedModule,
+  midSentenceCapitals,
+  ratchetOffenders,
+  violationsOf,
+  type Offender,
+  type Rule,
+} from './i18n-guard';
 
 // The sources below are fixtures held as strings, not product sources (VF-006).
 const at = (name: string): string => `packages/zplc-ide/src/components/${name}.tsx`;
@@ -53,7 +64,14 @@ describe('UX-029 i18n guard: a hard-coded string in a component', () => {
 });
 
 describe('UX-029 i18n guard: the list of offenders only shrinks', () => {
-  const entry = (count: number): Offender => ({ file: at('Old'), rule: 'hard-coded-text', count, requirement: 'UX-029', added: '2026-10-17', reason: 'fixture' });
+  const entry = (count: number): Offender => ({
+    file: at('Old'),
+    rule: 'hard-coded-text',
+    count,
+    requirement: 'UX-029',
+    added: '2026-10-17',
+    reason: 'fixture',
+  });
   const old = (strings: number) => ({ path: at('Old'), text: `const A = () => <div>${'<p>Text</p>'.repeat(strings)}</div>` });
 
   it('UX-029 fails for a file that is not listed, a count that grew, a count that shrank and an entry that reached zero', () => {
@@ -77,7 +95,10 @@ describe('UX-029 i18n guard: the list of offenders only shrinks', () => {
 
 describe('UX-029 i18n guard: the catalogs as data', () => {
   it('UX-029 fails on a key in English and not in Spanish, a key only in Spanish, and different placeholders', () => {
-    const problems = checkCatalogs({ 'a.one': 'One {count}', 'a.two': 'Two', 'a.three': 'Three {name}' }, { 'a.one': 'Uno {count}', 'a.three': 'Tres {nombre}', 'a.four': 'Cuatro' });
+    const problems = checkCatalogs(
+      { 'a.one': 'One {count}', 'a.two': 'Two', 'a.three': 'Three {name}' },
+      { 'a.one': 'Uno {count}', 'a.three': 'Tres {nombre}', 'a.four': 'Cuatro' },
+    );
     expect(problems.join('\n')).toContain('"a.two" is in the English catalog and not in the Spanish one (missing-key)');
     expect(problems.join('\n')).toContain('"a.four" is in the Spanish catalog and not in the English one (extra-key)');
     expect(problems.join('\n')).toContain('"a.three" has other {placeholders} in Spanish than in English (placeholder-mismatch)');
@@ -87,38 +108,81 @@ describe('UX-029 i18n guard: the catalogs as data', () => {
   it('UX-031 fails on text that is not in sentence case, and passes acronyms, names, quoted labels and code tokens', () => {
     const rejected = checkCatalogs({ 'a.title': 'Open Project Folder' }, { 'a.title': 'Abrir carpeta' });
     expect(rejected.join('\n')).toContain('not in sentence case: "Project", "Folder" (sentence-case)');
-    expect(checkCatalogs({ 'a.name': 'Open the project' }, { 'a.name': 'Abrir Proyecto' }).join('\n')).toContain('Spanish "a.name" is not in sentence case');
-    const accepted = { 'a.quoted': 'Choose "Refresh" and press "Enter"', 'a.one': 'Use the ZPLC Studio USB driver for I/O. Then restart', 'a.two': 'Edit zplc.json in the Learn tab: Open it', 'a.three': '{count} spaces' };
+    expect(checkCatalogs({ 'a.name': 'Open the project' }, { 'a.name': 'Abrir Proyecto' }).join('\n')).toContain(
+      'Spanish "a.name" is not in sentence case',
+    );
+    const accepted = {
+      'a.quoted': 'Choose "Refresh" and press "Enter"',
+      'a.one': 'Use the ZPLC Studio USB driver for I/O. Then restart',
+      'a.two': 'Edit zplc.json in the Learn tab: Open it',
+      'a.three': '{count} spaces',
+    };
     expect(checkCatalogs(accepted, accepted)).toEqual([]);
     expect(midSentenceCapitals('Open Project')).toEqual(['Project']);
   });
 
   it('UX-031 fails on an exclamation mark and on an internal term, in either language', () => {
-    expect(checkCatalogs({ 'a.hey': 'Saved!', 'a.cand': 'This candidate was built', 'a.link': 'Use Link zplc.json', 'a.stop': 'A stopgap' }, { 'a.hey': 'Guardado', 'a.cand': 'Listo', 'a.link': 'Listo', 'a.stop': 'Listo' }).join('\n'))
-      .toMatch(new RegExp(String.raw`English "a.hey" has an exclamation mark[\s\S]*English "a.cand" uses the internal term "can` + String.raw`didate"[\s\S]*English "a.link" uses the internal term "link zplc.json"[\s\S]*English "a.st` + String.raw`op" uses the internal term "stopgap"`));
+    expect(
+      checkCatalogs(
+        { 'a.hey': 'Saved!', 'a.cand': 'This candidate was built', 'a.link': 'Use Link zplc.json', 'a.stop': 'A stopgap' },
+        { 'a.hey': 'Guardado', 'a.cand': 'Listo', 'a.link': 'Listo', 'a.stop': 'Listo' },
+      ).join('\n'),
+    ).toMatch(
+      new RegExp(
+        String.raw`English "a.hey" has an exclamation mark[\s\S]*English "a.cand" uses the internal term "can` +
+          String.raw`didate"[\s\S]*English "a.link" uses the internal term "link zplc.json"[\s\S]*English "a.st` +
+          String.raw`op" uses the internal term "stopgap"`,
+      ),
+    );
     expect(checkCatalogs({ 'a.hey': 'Saved' }, { 'a.hey': '¡Guardado!' }).join('\n')).toContain('Spanish "a.hey" has an exclamation mark');
   });
 
   it('UX-030 fails on voseo in the Spanish text (decision D-10: neutral, impersonal or "usted"), and passes the neutral forms', () => {
-    const voseo = checkCatalogs({ 'a.open': 'Open the folder', 'a.you': 'You can choose', 'a.save': 'Save before checking' }, { 'a.open': 'Abrí la carpeta', 'a.you': 'Vos podés elegir', 'a.save': 'Guardá antes de verificar' });
+    const voseo = checkCatalogs(
+      { 'a.open': 'Open the folder', 'a.you': 'You can choose', 'a.save': 'Save before checking' },
+      { 'a.open': 'Abrí la carpeta', 'a.you': 'Vos podés elegir', 'a.save': 'Guardá antes de verificar' },
+    );
     expect(voseo.filter((problem) => problem.includes('(voseo)'))).toHaveLength(3);
-    const neutral = { 'a.open': 'Abra la carpeta', 'a.you': 'Puede elegir', 'a.save': 'Guarde antes de comprobar', 'a.status': 'La carpeta está lista, así que puede continuar' };
-    expect(checkCatalogs({ 'a.open': 'Open the folder', 'a.you': 'You can choose', 'a.save': 'Save before checking', 'a.status': 'The folder is ready, so you can continue' }, neutral)).toEqual([]);
+    const neutral = {
+      'a.open': 'Abra la carpeta',
+      'a.you': 'Puede elegir',
+      'a.save': 'Guarde antes de comprobar',
+      'a.status': 'La carpeta está lista, así que puede continuar',
+    };
+    expect(
+      checkCatalogs(
+        {
+          'a.open': 'Open the folder',
+          'a.you': 'You can choose',
+          'a.save': 'Save before checking',
+          'a.status': 'The folder is ready, so you can continue',
+        },
+        neutral,
+      ),
+    ).toEqual([]);
   });
 
   it('UX-031 fails on an exclamation mark in English text, and on a question that opens with an inverted mark in Spanish', () => {
     expect(checkCatalogs({ 'a.done': 'Compile first!' }, { 'a.done': 'Compile primero' }).join('\n')).toContain('(exclamation)');
-    expect(checkCatalogs({ 'a.ask': 'Delete it?' }, { 'a.ask': '¡Eliminar!' }).join('\n')).toContain('Spanish "a.ask" has an exclamation mark');
+    expect(checkCatalogs({ 'a.ask': 'Delete it?' }, { 'a.ask': '¡Eliminar!' }).join('\n')).toContain(
+      'Spanish "a.ask" has an exclamation mark',
+    );
   });
 
   it('UX-029 stays quiet on a correct pair of catalogs', () => {
-    expect(checkCatalogs({ 'a.b.one': '{count} file', 'a.b.other': '{count} files' }, { 'a.b.one': '{count} archivo', 'a.b.other': '{count} archivos' })).toEqual([]);
+    expect(
+      checkCatalogs(
+        { 'a.b.one': '{count} file', 'a.b.other': '{count} files' },
+        { 'a.b.one': '{count} archivo', 'a.b.other': '{count} archivos' },
+      ),
+    ).toEqual([]);
   });
 });
 
 describe('UX-029 i18n guard: a hard-coded message in a plain module', () => {
   const module = (name: string): string => `packages/zplc-ide/src/editors/${name}.ts`;
-  const found = (text: string, path = module('keyboard')): string[] => violationsOf({ path, text }).map((violation) => `${violation.rule}:${violation.snippet}`);
+  const found = (text: string, path = module('keyboard')): string[] =>
+    violationsOf({ path, text }).map((violation) => `${violation.rule}:${violation.snippet}`);
 
   it('UX-029 counts a message that a formatter cut in two as one message (VF-017)', () => {
     expect(found("const a = { message: 'Program deployed ' + 'and stopped.' };")).toHaveLength(1);
@@ -127,7 +191,9 @@ describe('UX-029 i18n guard: a hard-coded message in a plain module', () => {
   });
 
   it('UX-029 finds a sentence in say, title, label, detail and message, and the first argument of announce()', () => {
-    expect(found("export const a = (n: number) => ({ say: `Deleted ${n} elements.` });")).toEqual(['hard-coded-message:`Deleted ${n} elements.`']);
+    expect(found('export const a = (n: number) => ({ say: `Deleted ${n} elements.` });')).toEqual([
+      'hard-coded-message:`Deleted ${n} elements.`',
+    ]);
     expect(found("const a = { title: 'Variable the coil writes' };")).toEqual(["hard-coded-message:'Variable the coil writes'"]);
     expect(found("const a = { label: ok ? 'Wires' : 'No wires', detail: 'Output of the block' };")).toHaveLength(3);
     expect(found("log({ type: 'info', message: 'Program deployed and stopped.', source: 'runtime' });")).toHaveLength(1);
@@ -141,17 +207,33 @@ describe('UX-029 i18n guard: a hard-coded message in a plain module', () => {
   });
 
   it('UX-029 finds the text a Label, Problem or Message function returns and the values of a LABELS table', () => {
-    expect(found("export const kindLabel = (kind: string): string => LABEL[kind]; const KIND_LABEL = { PROGRAM: 'Program', STRUCT: 'Structure' };")).toHaveLength(2);
-    expect(found("export function libraryProblem(p: string): string | null { if (p === '') return 'The project root cannot be a library.'; return p ? null : 'No project is open.'; }")).toHaveLength(2);
+    expect(
+      found(
+        "export const kindLabel = (kind: string): string => LABEL[kind]; const KIND_LABEL = { PROGRAM: 'Program', STRUCT: 'Structure' };",
+      ),
+    ).toHaveLength(2);
+    expect(
+      found(
+        "export function libraryProblem(p: string): string | null { if (p === '') return 'The project root cannot be a library.'; return " +
+          "p ? null : 'No project is open.'; }",
+      ),
+    ).toHaveLength(2);
     expect(found("export const stateText = (on: boolean) => (on ? 'Connected now' : 'Not connected');")).toHaveLength(2);
     expect(found("const context = 'Some text here'; function render() { return 'Plain words here'; }")).toEqual([]);
-    expect(found("export const kindLabel = (kind: string): string => t(`kind.${kind}`);")).toEqual([]);
+    expect(found('export const kindLabel = (kind: string): string => t(`kind.${kind}`);')).toEqual([]);
   });
 
   it('UX-029 reads the modules that show text and leaves tests, the i18n module and the tools of programs alone', () => {
     expect(isGuardedModule(module('keyboard'))).toBe(true);
     expect(isGuardedModule('packages/zplc-ide/src/components/deployFlow.ts')).toBe(true);
-    for (const path of ['packages/zplc-ide/src/editors/keyboard.test.ts', 'packages/zplc-ide/src/i18n/catalog/ld.ts', 'packages/zplc-ide/src/mcp/server.ts', 'packages/zplc-ide/src/cli/toolApi.ts', 'packages/zplc-ide/src/compiler/index.ts', 'packages/zplc-ide/src/components/A.tsx']) {
+    for (const path of [
+      'packages/zplc-ide/src/editors/keyboard.test.ts',
+      'packages/zplc-ide/src/i18n/catalog/ld.ts',
+      'packages/zplc-ide/src/mcp/server.ts',
+      'packages/zplc-ide/src/cli/toolApi.ts',
+      'packages/zplc-ide/src/compiler/index.ts',
+      'packages/zplc-ide/src/components/A.tsx',
+    ]) {
       expect(isGuardedModule(path)).toBe(false);
     }
   });
@@ -159,6 +241,12 @@ describe('UX-029 i18n guard: a hard-coded message in a plain module', () => {
   it('UX-029 counts a message of a plain module against the list of offenders', () => {
     const file = { path: module('keyboard'), text: "const a = { say: 'Removed the wire.' };" };
     expect(checkSources([file], { offenders: [] })[0]).toContain('hard-coded-message');
-    expect(checkSources([file], { offenders: [{ file: file.path, rule: 'hard-coded-message', count: 1, requirement: 'UX-029', added: '2026-10-19', reason: 'fixture' }] })).toEqual([]);
+    expect(
+      checkSources([file], {
+        offenders: [
+          { file: file.path, rule: 'hard-coded-message', count: 1, requirement: 'UX-029', added: '2026-10-19', reason: 'fixture' },
+        ],
+      }),
+    ).toEqual([]);
   });
 });

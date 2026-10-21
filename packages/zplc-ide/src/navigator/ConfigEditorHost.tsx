@@ -11,7 +11,9 @@ import { Badge, Button } from '../ui';
 import { CONFIG_EDITOR_ICONS, CONFIG_EDITOR_SECTIONS } from './configEditorSections';
 import { CONFIG_EDITOR_TITLE_KEYS, type ConfigEditorKind } from './configEditors';
 
-interface ConfigEditorBodyProps extends SectionProps { kind: ConfigEditorKind }
+interface ConfigEditorBodyProps extends SectionProps {
+  kind: ConfigEditorKind;
+}
 
 /** The form alone, for the editor and for the test that compares it with the section. */
 export function ConfigEditorBody({ kind, config, updateConfig }: ConfigEditorBodyProps) {
@@ -36,7 +38,16 @@ export function ConfigEditorHost({ kind }: { kind: ConfigEditorKind }) {
           </h1>
           <div className="flex items-center gap-2">
             <Badge>{dirty ? t('configEditor.unsaved') : t('configEditor.saved')}</Badge>
-            <Button variant="primary" size="sm" disabled={!dirty} onClick={() => { void saveProjectConfig(); }}>{t('configEditor.save')}</Button>
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={!dirty}
+              onClick={() => {
+                void saveProjectConfig();
+              }}
+            >
+              {t('configEditor.save')}
+            </Button>
           </div>
         </div>
         <div className="rounded-lg border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] p-4">

@@ -3,7 +3,7 @@ slug: /guides/build-firmware
 id: build-firmware
 title: Build the firmware from source
 sidebar_label: Build the firmware
-description: "How to build the ZPLC runtime image for a board from the source with the repository script, and what a finished build proves."
+description: 'How to build the ZPLC runtime image for a board from the source with the repository script, and what a finished build proves.'
 tags: [how-to, hardware, firmware]
 ---
 
@@ -56,8 +56,8 @@ west build -p always -b rpi_pico/rp2040 firmware/app
 
 ## What is verified, and what is not
 
-| Part | Verified | Level |
-| --- | --- | --- |
+| Part                                              | Verified                                        | Level |
+| ------------------------------------------------- | ----------------------------------------------- | ----- |
 | Every board's firmware builds and fits its budget | Continuous integration, with the commands above | Build |
-| This page's steps on a clean machine | Not executed here | None |
-| That the image runs on the board | Not tested | None |
+| This page's steps on a clean machine              | Not executed here                               | None  |
+| That the image runs on the board                  | Not tested                                      | None  |

@@ -4,13 +4,7 @@
  * the shell's store, where it has always been.
  */
 import { create } from 'zustand';
-import {
-  loadSettings,
-  parseSettings,
-  saveSettings,
-  type AppSettings,
-  type SettingsStorage,
-} from '../utils/appSettings';
+import { loadSettings, parseSettings, saveSettings, type AppSettings, type SettingsStorage } from '../utils/appSettings';
 import { resolveLanguage, systemLanguage } from '../i18n/locale';
 
 export interface AppSettingsState {
@@ -22,16 +16,21 @@ export interface AppSettingsState {
 export function createAppSettingsStore(storage: SettingsStorage | undefined) {
   return create<AppSettingsState>()((set) => ({
     settings: loadSettings(storage),
-    update: (changes) => set((state) => {
-      const settings = parseSettings({ ...state.settings, ...changes }, state.settings);
-      saveSettings(storage, settings);
-      return { settings };
-    }),
+    update: (changes) =>
+      set((state) => {
+        const settings = parseSettings({ ...state.settings, ...changes }, state.settings);
+        saveSettings(storage, settings);
+        return { settings };
+      }),
   }));
 }
 
 function browserStorage(): SettingsStorage | undefined {
-  try { return typeof window === 'undefined' ? undefined : window.localStorage; } catch { return undefined; }
+  try {
+    return typeof window === 'undefined' ? undefined : window.localStorage;
+  } catch {
+    return undefined;
+  }
 }
 
 export const useAppSettings = createAppSettingsStore(browserStorage());
@@ -48,7 +47,7 @@ export function initializeSettings(): void {
   const apply = (settings: AppSettings) => applyDisplaySettings(settings, document.documentElement);
   apply(useAppSettings.getState().settings);
   useAppSettings.subscribe((state, previous) => {
-    if (state.settings.density !== previous.settings.density || state.settings.language !== previous.settings.language) apply(state.settings);
+    if (state.settings.density !== previous.settings.density || state.settings.language !== previous.settings.language)
+      apply(state.settings);
   });
 }
-

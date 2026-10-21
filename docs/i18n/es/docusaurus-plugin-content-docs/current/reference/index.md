@@ -3,7 +3,7 @@ slug: /reference
 id: index
 title: Referencia
 sidebar_label: Referencia
-description: "Consulte un dato: los lenguajes, las funciones y los bloques de función, los archivos de proyecto y de escenario, la línea de comandos, el runtime y las placas."
+description: 'Consulte un dato: los lenguajes, las funciones y los bloques de función, los archivos de proyecto y de escenario, la línea de comandos, el runtime y las placas.'
 tags: [reference]
 ---
 

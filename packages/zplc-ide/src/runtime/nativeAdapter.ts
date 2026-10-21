@@ -36,10 +36,7 @@ import {
   type NativeSimulationInputResult,
   type NativeRuntimeSnapshot,
 } from './nativeProtocol';
-import {
-  isNativeCapabilityProfile,
-  normalizeNativeRuntimeSnapshot,
-} from './runtimeSnapshot';
+import { isNativeCapabilityProfile, normalizeNativeRuntimeSnapshot } from './runtimeSnapshot';
 
 interface NativeMemoryReadResult {
   bytes_hex: string;
@@ -82,30 +79,33 @@ function toVmState(state: string): VMState {
 }
 
 function validProgramGeneration(value: unknown): value is number {
-  return typeof value === 'number' && Number.isSafeInteger(value)
-    && value >= 1 && value <= 0xffff_ffff;
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 1 && value <= 0xffff_ffff;
 }
 
 function validSnapshotProgramGeneration(value: unknown): value is number {
-  return typeof value === 'number' && Number.isSafeInteger(value)
-    && value >= 0 && value <= 0xffff_ffff;
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 && value <= 0xffff_ffff;
 }
 
 function hasExactKeys(value: unknown, keys: readonly string[]): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-    && Object.keys(value).length === keys.length
-    && keys.every((key) => Object.prototype.hasOwnProperty.call(value, key));
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.keys(value).length === keys.length &&
+    keys.every((key) => Object.prototype.hasOwnProperty.call(value, key))
+  );
 }
 
 function isProgramActivationResult(value: unknown, programSize: number): value is NativeProgramActivationResult {
-  return hasExactKeys(value, ['program_size', 'program_generation'])
-    && value.program_size === programSize
-    && validProgramGeneration(value.program_generation);
+  return (
+    hasExactKeys(value, ['program_size', 'program_generation']) &&
+    value.program_size === programSize &&
+    validProgramGeneration(value.program_generation)
+  );
 }
 
 function isProgramResetResult(value: unknown): value is NativeProgramResetResult {
-  return hasExactKeys(value, ['program_generation'])
-    && validSnapshotProgramGeneration(value.program_generation);
+  return hasExactKeys(value, ['program_generation']) && validSnapshotProgramGeneration(value.program_generation);
 }
 
 function isSimulationInputResult(
@@ -116,13 +116,17 @@ function isSimulationInputResult(
 ): value is NativeSimulationInputResult {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
   const result = value as Record<string, unknown>;
-  return Object.keys(result).length === 5
-    && result.input_id === inputId
-    && result.active === active
-    && result.program_generation === programGeneration
-    && typeof result.cycle_count_at_apply === 'number' && Number.isSafeInteger(result.cycle_count_at_apply)
-    && result.cycle_count_at_apply >= 0 && result.cycle_count_at_apply <= 0xffff_ffff
-    && result.state === 'staged';
+  return (
+    Object.keys(result).length === 5 &&
+    result.input_id === inputId &&
+    result.active === active &&
+    result.program_generation === programGeneration &&
+    typeof result.cycle_count_at_apply === 'number' &&
+    Number.isSafeInteger(result.cycle_count_at_apply) &&
+    result.cycle_count_at_apply >= 0 &&
+    result.cycle_count_at_apply <= 0xffff_ffff &&
+    result.state === 'staged'
+  );
 }
 
 function isNativeRuntimeSnapshot(value: unknown): value is NativeRuntimeSnapshot {
@@ -133,76 +137,102 @@ function isNativeRuntimeSnapshot(value: unknown): value is NativeRuntimeSnapshot
   const candidate = value as Partial<NativeRuntimeSnapshot>;
   const isNonNegativeInteger = (field: unknown): field is number =>
     typeof field === 'number' && Number.isSafeInteger(field) && field >= 0 && field <= 0xffff_ffff;
-  const isState = (state: unknown): state is VMState =>
-    state === 'running' || state === 'paused' || state === 'idle' || state === 'error';
+  const isState = (state: unknown): state is VMState => state === 'running' || state === 'paused' || state === 'idle' || state === 'error';
   const validTask = (task: unknown): boolean => {
     if (typeof task !== 'object' || task === null) return false;
     const item = task as NativeRuntimeSnapshot['tasks'][number];
-    return isNonNegativeInteger(item.task_id) && item.task_id <= 0xffff
-      && isState(item.state)
-      && isNonNegativeInteger(item.cycles)
-      && isNonNegativeInteger(item.overruns)
-      && isNonNegativeInteger(item.interval_us)
-      && isNonNegativeInteger(item.priority) && item.priority <= 0xff
-      && isNonNegativeInteger(item.pc) && item.pc <= 0xffff
-      && isNonNegativeInteger(item.sp) && item.sp <= 0xffff
-      && typeof item.halted === 'boolean'
-      && isNonNegativeInteger(item.error) && item.error <= 0xff;
+    return (
+      isNonNegativeInteger(item.task_id) &&
+      item.task_id <= 0xffff &&
+      isState(item.state) &&
+      isNonNegativeInteger(item.cycles) &&
+      isNonNegativeInteger(item.overruns) &&
+      isNonNegativeInteger(item.interval_us) &&
+      isNonNegativeInteger(item.priority) &&
+      item.priority <= 0xff &&
+      isNonNegativeInteger(item.pc) &&
+      item.pc <= 0xffff &&
+      isNonNegativeInteger(item.sp) &&
+      item.sp <= 0xffff &&
+      typeof item.halted === 'boolean' &&
+      isNonNegativeInteger(item.error) &&
+      item.error <= 0xff
+    );
   };
   const validForceEntry = (entry: unknown): boolean => {
     if (typeof entry !== 'object' || entry === null) return false;
     const item = entry as NativeRuntimeSnapshot['force_entries'][number];
-    return isNonNegativeInteger(item.address)
-      && item.address <= 0xffff
-      && isNonNegativeInteger(item.size)
-      && item.size > 0
-      && item.size <= 260
-      && typeof item.bytes_hex === 'string'
-      && /^[0-9a-f]*$/i.test(item.bytes_hex)
-      && item.bytes_hex.length === item.size * 2
-      && item.state === 'forced';
+    return (
+      isNonNegativeInteger(item.address) &&
+      item.address <= 0xffff &&
+      isNonNegativeInteger(item.size) &&
+      item.size > 0 &&
+      item.size <= 260 &&
+      typeof item.bytes_hex === 'string' &&
+      /^[0-9a-f]*$/i.test(item.bytes_hex) &&
+      item.bytes_hex.length === item.size * 2 &&
+      item.state === 'forced'
+    );
   };
   const cadence = candidate.host_cadence;
-  const validCadence = cadence === undefined || (
-    typeof cadence === 'object' && cadence !== null &&
-    cadence.kind === 'observed_poll_cadence' &&
-    isNonNegativeInteger(cadence.missed_intervals) &&
-    isNonNegativeInteger(cadence.last_dispatch_lateness_ms)
-  );
+  const validCadence =
+    cadence === undefined ||
+    (typeof cadence === 'object' &&
+      cadence !== null &&
+      cadence.kind === 'observed_poll_cadence' &&
+      isNonNegativeInteger(cadence.missed_intervals) &&
+      isNonNegativeInteger(cadence.last_dispatch_lateness_ms));
   const tasks = candidate.tasks;
-  const validTaskSet = Array.isArray(tasks)
-    && tasks.length >= 1
-    && tasks.length <= 16
-    && tasks.every(validTask)
-    && candidate.stats?.active_tasks === tasks.length
-    && new Set(tasks.map((task) => task.task_id)).size === tasks.length
+  const validTaskSet =
+    Array.isArray(tasks) &&
+    tasks.length >= 1 &&
+    tasks.length <= 16 &&
+    tasks.every(validTask) &&
+    candidate.stats?.active_tasks === tasks.length &&
+    new Set(tasks.map((task) => task.task_id)).size === tasks.length &&
     // RT-015: each task has its own interval; the runtime lists them by priority, then task id
-    && tasks.every((task) => task.interval_us >= 1_000 && task.interval_us <= 3_600_000_000 && task.interval_us % 1_000 === 0)
-    && tasks.every((task, index) => index === 0
-      || tasks[index - 1]!.priority < task.priority
-      || (tasks[index - 1]!.priority === task.priority && tasks[index - 1]!.task_id < task.task_id));
+    tasks.every((task) => task.interval_us >= 1_000 && task.interval_us <= 3_600_000_000 && task.interval_us % 1_000 === 0) &&
+    tasks.every(
+      (task, index) =>
+        index === 0 ||
+        tasks[index - 1]!.priority < task.priority ||
+        (tasks[index - 1]!.priority === task.priority && tasks[index - 1]!.task_id < task.task_id),
+    );
   return (
     isState(candidate.state) &&
     isNonNegativeInteger(candidate.uptime_ms) &&
     validSnapshotProgramGeneration(candidate.program_generation) &&
-    isNonNegativeInteger(candidate.focused_vm?.pc) && candidate.focused_vm.pc <= 0xffff &&
-    isNonNegativeInteger(candidate.focused_vm?.sp) && candidate.focused_vm.sp <= 0xffff &&
+    isNonNegativeInteger(candidate.focused_vm?.pc) &&
+    candidate.focused_vm.pc <= 0xffff &&
+    isNonNegativeInteger(candidate.focused_vm?.sp) &&
+    candidate.focused_vm.sp <= 0xffff &&
     typeof candidate.focused_vm?.halted === 'boolean' &&
-    isNonNegativeInteger(candidate.focused_vm?.error) && candidate.focused_vm.error <= 0xff &&
+    isNonNegativeInteger(candidate.focused_vm?.error) &&
+    candidate.focused_vm.error <= 0xff &&
     isNonNegativeInteger(candidate.stats?.cycles) &&
     isNonNegativeInteger(candidate.stats?.active_tasks) &&
     isNonNegativeInteger(candidate.stats?.overruns) &&
     isNonNegativeInteger(candidate.stats?.program_size) &&
     validTaskSet &&
-    ((candidate.program_generation === 0 && candidate.stats.program_size === 0)
-      || (validProgramGeneration(candidate.program_generation) && candidate.stats.program_size > 0)) &&
-    Array.isArray(candidate.opi) && candidate.opi.length === 8 && candidate.opi.every((entry) => isNonNegativeInteger(entry) && entry <= 0xff) &&
-    Array.isArray(candidate.ipi) && candidate.ipi.length === 8 && candidate.ipi.every((entry) => isNonNegativeInteger(entry) && entry <= 0xff) &&
-    Array.isArray(candidate.force_entries) && candidate.force_entries.length <= 8 && candidate.force_entries.every(validForceEntry) &&
+    ((candidate.program_generation === 0 && candidate.stats.program_size === 0) ||
+      (validProgramGeneration(candidate.program_generation) && candidate.stats.program_size > 0)) &&
+    Array.isArray(candidate.opi) &&
+    candidate.opi.length === 8 &&
+    candidate.opi.every((entry) => isNonNegativeInteger(entry) && entry <= 0xff) &&
+    Array.isArray(candidate.ipi) &&
+    candidate.ipi.length === 8 &&
+    candidate.ipi.every((entry) => isNonNegativeInteger(entry) && entry <= 0xff) &&
+    Array.isArray(candidate.force_entries) &&
+    candidate.force_entries.length <= 8 &&
+    candidate.force_entries.every(validForceEntry) &&
     candidate.force_entries.every((entry, index, entries) => {
       const end = entry.address + entry.size;
       const regionEnd = getForceRegionBounds(entry.address).end;
-      return end <= MEMORY_MAP.code.baseAddress && end <= regionEnd && !entries.slice(0, index).some((other) => entry.address < other.address + other.size && other.address < end);
+      return (
+        end <= MEMORY_MAP.code.baseAddress &&
+        end <= regionEnd &&
+        !entries.slice(0, index).some((other) => entry.address < other.address + other.size && other.address < end)
+      );
     }) &&
     validCadence
   );
@@ -292,8 +322,9 @@ export class NativeAdapter implements IDebugAdapter {
 
   private supportsSimulationInputs(): boolean {
     const profile = this.capabilityProfile;
-    const known = (this.runtimeKind === 'native-posix' && profile?.profile_id === 'native-posix-mvp')
-      || (this.runtimeKind === WASM_RUNTIME_KIND && profile?.profile_id === WASM_PROFILE_ID);
+    const known =
+      (this.runtimeKind === 'native-posix' && profile?.profile_id === 'native-posix-mvp') ||
+      (this.runtimeKind === WASM_RUNTIME_KIND && profile?.profile_id === WASM_PROFILE_ID);
     if (!known || profile === null) {
       return false;
     }
@@ -387,9 +418,8 @@ export class NativeAdapter implements IDebugAdapter {
       }
       throw new Error('Native simulator session is no longer active');
     }
-    const capabilityProfile = typeof hello === 'object' && hello !== null
-      ? (hello as Partial<NativeHelloResult>).capability_profile
-      : undefined;
+    const capabilityProfile =
+      typeof hello === 'object' && hello !== null ? (hello as Partial<NativeHelloResult>).capability_profile : undefined;
     if (!isNativeCapabilityProfile(capabilityProfile)) {
       this.sessionGeneration += 1;
       this.capabilityProfile = null;
@@ -420,9 +450,10 @@ export class NativeAdapter implements IDebugAdapter {
   private reportCommunicationEndpoints(profile: NativeCapabilityProfile): void {
     const endpoints = profile.features.find((feature) => feature.name === 'communication-endpoints');
     if (endpoints === undefined) return;
-    const text = endpoints.status === 'unavailable'
-      ? `Simulation endpoints are unavailable: ${endpoints.reason ?? 'they did not start'}`
-      : `Simulation ${endpoints.reason ?? 'endpoints are running'}`;
+    const text =
+      endpoints.status === 'unavailable'
+        ? `Simulation endpoints are unavailable: ${endpoints.reason ?? 'they did not start'}`
+        : `Simulation ${endpoints.reason ?? 'endpoints are running'}`;
     this.events.onSerialData?.(text);
   }
 
@@ -453,9 +484,7 @@ export class NativeAdapter implements IDebugAdapter {
     }
     // The runtime refuses it too, but the main process only answers 'Request denied' to a request this size.
     if (bytecode.length > NATIVE_PROGRAM_MAX_BYTES) {
-      throw new Error(
-        `the program is ${bytecode.length} bytes, but the native simulation loads at most ${NATIVE_PROGRAM_MAX_BYTES} bytes`,
-      );
+      throw new Error(`the program is ${bytecode.length} bytes, but the native simulation loads at most ${NATIVE_PROGRAM_MAX_BYTES} bytes`);
     }
 
     // CMP-052: say which draft the program was built for before anything is sent. The runtime refuses it too.
@@ -560,10 +589,12 @@ export class NativeAdapter implements IDebugAdapter {
       active,
       program_generation: programGeneration,
     });
-    if (!this.supportsSimulationInputs()
-      || (this._state !== 'running' && this._state !== 'paused')
-      || this.programGeneration !== programGeneration
-      || !isSimulationInputResult(result, inputId, active, programGeneration)) {
+    if (
+      !this.supportsSimulationInputs() ||
+      (this._state !== 'running' && this._state !== 'paused') ||
+      this.programGeneration !== programGeneration ||
+      !isSimulationInputResult(result, inputId, active, programGeneration)
+    ) {
       throw new Error('Invalid native simulation input acknowledgement');
     }
     return result;

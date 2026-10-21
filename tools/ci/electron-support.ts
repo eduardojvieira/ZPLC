@@ -28,20 +28,31 @@ export function problems(dependency: string, installed: string | undefined, supp
   if (!parsed) return [`the electron dependency is "${dependency}": pin one exact version, so that a build is the one that was tested`];
   const major = Number(parsed[1]);
   const lines = support.supportedMajors;
-  if (lines.length !== 3 || new Set(lines).size !== 3) found.push(`electron-support.json lists ${lines.length} supported majors: Electron supports its latest three`);
+  if (lines.length !== 3 || new Set(lines).size !== 3)
+    found.push(`electron-support.json lists ${lines.length} supported majors: Electron supports its latest three`);
   for (const line of lines) {
     if (!VERSION.test(support.latestPatch[String(line)] ?? '')) found.push(`electron-support.json has no latest patch for ${line}`);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(support.endOfLife[String(line)] ?? '')) found.push(`electron-support.json has no end of support date for ${line}`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(support.endOfLife[String(line)] ?? ''))
+      found.push(`electron-support.json has no end of support date for ${line}`);
   }
-  if (!lines.includes(major)) found.push(`electron ${dependency} is on major ${major}, which is not supported: the supported majors are ${lines.join(', ')} (recorded ${support.recordedOn})`);
-  if (installed !== undefined && installed !== dependency) found.push(`the installed electron is ${installed} and the dependency is ${dependency}: run bun install`);
+  if (!lines.includes(major))
+    found.push(
+      `electron ${dependency} is on major ${major}, which is not supported: the supported majors ` +
+        `are ${lines.join(', ')} (recorded ${support.recordedOn})`,
+    );
+  if (installed !== undefined && installed !== dependency)
+    found.push(`the installed electron is ${installed} and the dependency is ${dependency}: run bun install`);
   const latest = support.latestPatch[String(major)];
-  if (release && latest !== undefined && latest !== dependency) found.push(`electron is ${dependency}; the latest patch of ${major} recorded on ${support.recordedOn} is ${latest}`);
+  if (release && latest !== undefined && latest !== dependency)
+    found.push(`electron is ${dependency}; the latest patch of ${major} recorded on ${support.recordedOn} is ${latest}`);
   return found;
 }
 
 export function load(): { dependency: string; installed: string | undefined; support: Support } {
-  const manifest = JSON.parse(readFileSync(new URL('packages/zplc-ide/package.json', ROOT), 'utf8')) as { devDependencies?: Record<string, string>; dependencies?: Record<string, string> };
+  const manifest = JSON.parse(readFileSync(new URL('packages/zplc-ide/package.json', ROOT), 'utf8')) as {
+    devDependencies?: Record<string, string>;
+    dependencies?: Record<string, string>;
+  };
   const dependency = manifest.devDependencies?.electron ?? manifest.dependencies?.electron ?? '';
   const installedFile = new URL('packages/zplc-ide/node_modules/electron/package.json', ROOT);
   return {
@@ -59,5 +70,9 @@ if (import.meta.main) {
     console.error(found.map((message) => `electron-support: ${message}`).join('\n'));
     process.exit(1);
   }
-  console.log(`electron-support: electron ${dependency} is on a supported major line (${support.supportedMajors.join(', ')} as of ${support.recordedOn})${values.release ? ' and at its latest patch' : ''}`);
+  console.log(
+    `electron-support: electron ${dependency} is on a supported major line (${support.supportedMajors.join(
+      ', ',
+    )} as of ${support.recordedOn})${values.release ? ' and at its latest patch' : ''}`,
+  );
 }

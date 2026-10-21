@@ -22,7 +22,15 @@ export interface ResolvedVariable {
 
 function inside(pou: DebugPOUInfo, path: string): ResolvedVariable | undefined {
   const direct = pou.vars[path];
-  if (direct) return { path, address: direct.addr, type: direct.type, region: direct.region, size: direct.size, ...(direct.bitOffset === undefined ? {} : { bitOffset: direct.bitOffset }) };
+  if (direct)
+    return {
+      path,
+      address: direct.addr,
+      type: direct.type,
+      region: direct.region,
+      size: direct.size,
+      ...(direct.bitOffset === undefined ? {} : { bitOffset: direct.bitOffset }),
+    };
   const [root, ...rest] = path.split('.');
   const variable: DebugVarInfo | undefined = root === undefined ? undefined : pou.vars[root];
   if (!variable || rest.length === 0) return undefined;
@@ -33,7 +41,14 @@ function inside(pou: DebugPOUInfo, path: string): ResolvedVariable | undefined {
     if (!member) return undefined;
     address += member.offset;
     if (index === rest.length - 1) {
-      return { path, address, type: member.type, region: variable.region, size: member.size, ...(variable.bitOffset === undefined ? {} : { bitOffset: variable.bitOffset }) };
+      return {
+        path,
+        address,
+        type: member.type,
+        region: variable.region,
+        size: member.size,
+        ...(variable.bitOffset === undefined ? {} : { bitOffset: variable.bitOffset }),
+      };
     }
     children = undefined;
   }

@@ -63,8 +63,7 @@ LOG_MODULE_REGISTER(zplc_mqtt, LOG_LEVEL_INF);
 #define MQTT_SUB_MAX_TOPICS 32U
 
 #if defined(CONFIG_MQTT_VERSION_5_0)
-BUILD_ASSERT(CONFIG_MQTT_USER_PROPERTIES_MAX >= 6,
-             "Azure Event Grid publishes six MQTT v5 user properties");
+BUILD_ASSERT(CONFIG_MQTT_USER_PROPERTIES_MAX >= 6, "Azure Event Grid publishes six MQTT v5 user properties");
 #endif
 
 #define MQTT_TLS_CA_TAG 130U
@@ -185,11 +184,7 @@ static uint32_t s_alpn_count;
 /** A request that this thread has not finished in this time is reported TIMEOUT and dropped (COM-018). */
 #define MQTT_FB_REQUEST_TIMEOUT_MS 5000U
 
-typedef enum {
-  MQTT_FB_PUBLISH = 0,
-  MQTT_FB_EVENT_GRID,
-  MQTT_FB_REBIRTH
-} mqtt_fb_kind_t;
+typedef enum { MQTT_FB_PUBLISH = 0, MQTT_FB_EVENT_GRID, MQTT_FB_REBIRTH } mqtt_fb_kind_t;
 
 struct mqtt_fb_req {
   zplc_comm_req_t head; /* first: the pool of zplc_comm_req.h */
@@ -240,8 +235,7 @@ static const zplc_comm_req_pool_t s_fb_pool = {
     .context = NULL,
 };
 
-static void fb_deliver(const char *topic, const uint8_t *payload, size_t length,
-                       bool c2d);
+static void fb_deliver(const char *topic, const uint8_t *payload, size_t length, bool c2d);
 static void fb_subscriptions_unsent(void);
 static void fb_subscription_acknowledged(uint16_t message_id, int result);
 
@@ -321,21 +315,13 @@ static int publish_ddata(struct mqtt_client *client);
  *
  * @return Number of characters written (excluding NUL), or negative on error.
  */
-static bool mqtt_profile_is_sparkplug(void) {
-  return zplc_config_get_mqtt_profile() == ZPLC_MQTT_PROFILE_SPARKPLUG_B;
-}
+static bool mqtt_profile_is_sparkplug(void) { return zplc_config_get_mqtt_profile() == ZPLC_MQTT_PROFILE_SPARKPLUG_B; }
 
-static bool mqtt_profile_is_azure_iot_hub(void) {
-  return zplc_config_get_mqtt_profile() == ZPLC_MQTT_PROFILE_AZURE_IOT_HUB;
-}
+static bool mqtt_profile_is_azure_iot_hub(void) { return zplc_config_get_mqtt_profile() == ZPLC_MQTT_PROFILE_AZURE_IOT_HUB; }
 
-static bool mqtt_profile_is_aws_iot_core(void) {
-  return zplc_config_get_mqtt_profile() == ZPLC_MQTT_PROFILE_AWS_IOT_CORE;
-}
+static bool mqtt_profile_is_aws_iot_core(void) { return zplc_config_get_mqtt_profile() == ZPLC_MQTT_PROFILE_AWS_IOT_CORE; }
 
-static bool mqtt_profile_is_azure_event_grid(void) {
-  return zplc_config_get_mqtt_profile() == ZPLC_MQTT_PROFILE_AZURE_EVENT_GRID;
-}
+static bool mqtt_profile_is_azure_event_grid(void) { return zplc_config_get_mqtt_profile() == ZPLC_MQTT_PROFILE_AZURE_EVENT_GRID; }
 
 static const char *mqtt_profile_status_label(void) {
   switch (zplc_config_get_mqtt_profile()) {
@@ -380,8 +366,7 @@ static void get_device_identity(char *buf, size_t buf_len) {
 static int build_topic(char *buf, size_t buf_len, const char *msg_type) {
   char hostname[128];
   get_device_identity(hostname, sizeof(hostname));
-  zplc_config_get_mqtt_topic_namespace(s_mqtt_topic_namespace,
-                                       sizeof(s_mqtt_topic_namespace));
+  zplc_config_get_mqtt_topic_namespace(s_mqtt_topic_namespace, sizeof(s_mqtt_topic_namespace));
 
   if (mqtt_profile_is_azure_iot_hub()) {
     if (strcmp(msg_type, "DDATA") == 0 || strcmp(msg_type, "NBIRTH") == 0) {
@@ -389,8 +374,7 @@ static int build_topic(char *buf, size_t buf_len, const char *msg_type) {
     }
 
     if (strcmp(msg_type, "DCMD") == 0) {
-      return snprintf(buf, buf_len, "devices/%s/messages/devicebound/#",
-                      hostname);
+      return snprintf(buf, buf_len, "devices/%s/messages/devicebound/#", hostname);
     }
 
     return snprintf(buf, buf_len, "devices/%s/messages/events/", hostname);
@@ -403,23 +387,19 @@ static int build_topic(char *buf, size_t buf_len, const char *msg_type) {
       return snprintf(buf, buf_len, "%s", topic);
     }
 
-    return snprintf(buf, buf_len, "%s/telemetry/%s", s_mqtt_topic_namespace,
-                    hostname);
+    return snprintf(buf, buf_len, "%s/telemetry/%s", s_mqtt_topic_namespace, hostname);
   }
 
   if (!mqtt_profile_is_sparkplug()) {
     if (strcmp(msg_type, "DDATA") == 0 || strcmp(msg_type, "NBIRTH") == 0) {
-      return snprintf(buf, buf_len, "%s/telemetry/%s", s_mqtt_topic_namespace,
-                      hostname);
+      return snprintf(buf, buf_len, "%s/telemetry/%s", s_mqtt_topic_namespace, hostname);
     }
 
     if (strcmp(msg_type, "NDEATH") == 0) {
-      return snprintf(buf, buf_len, "%s/status/%s", s_mqtt_topic_namespace,
-                      hostname);
+      return snprintf(buf, buf_len, "%s/status/%s", s_mqtt_topic_namespace, hostname);
     }
 
-    return snprintf(buf, buf_len, "%s/%s/%s", s_mqtt_topic_namespace, msg_type,
-                    hostname);
+    return snprintf(buf, buf_len, "%s/%s/%s", s_mqtt_topic_namespace, msg_type, hostname);
   }
 
   /*
@@ -433,45 +413,36 @@ static int build_topic(char *buf, size_t buf_len, const char *msg_type) {
   zplc_config_get_mqtt_group_id(s_mqtt_group_id, sizeof(s_mqtt_group_id));
   if (s_mqtt_group_id[0] == '\0') {
     /* fallback: use topic_namespace as group_id */
-    return snprintf(buf, buf_len, SPB_NAMESPACE "/%s/%s/%s",
-                    s_mqtt_topic_namespace, msg_type, hostname);
+    return snprintf(buf, buf_len, SPB_NAMESPACE "/%s/%s/%s", s_mqtt_topic_namespace, msg_type, hostname);
   }
 
-  return snprintf(buf, buf_len, SPB_NAMESPACE "/%s/%s/%s", s_mqtt_group_id,
-                  msg_type, hostname);
+  return snprintf(buf, buf_len, SPB_NAMESPACE "/%s/%s/%s", s_mqtt_group_id, msg_type, hostname);
 }
 
-static int build_tag_topic(char *buf, size_t buf_len, const char *msg_type,
-                           uint16_t var_addr) {
+static int build_tag_topic(char *buf, size_t buf_len, const char *msg_type, uint16_t var_addr) {
   char hostname[128];
   get_device_identity(hostname, sizeof(hostname));
-  zplc_config_get_mqtt_topic_namespace(s_mqtt_topic_namespace,
-                                       sizeof(s_mqtt_topic_namespace));
+  zplc_config_get_mqtt_topic_namespace(s_mqtt_topic_namespace, sizeof(s_mqtt_topic_namespace));
 
   if (mqtt_profile_is_azure_iot_hub()) {
-    return snprintf(buf, buf_len, "devices/%s/messages/devicebound/#",
-                    hostname);
+    return snprintf(buf, buf_len, "devices/%s/messages/devicebound/#", hostname);
   }
 
   if (!mqtt_profile_is_sparkplug()) {
-    return snprintf(buf, buf_len, "%s/cmd/%s/tag_%04x", s_mqtt_topic_namespace,
-                    hostname, var_addr);
+    return snprintf(buf, buf_len, "%s/cmd/%s/tag_%04x", s_mqtt_topic_namespace, hostname, var_addr);
   }
 
   /* Sparkplug B: spBv1.0/{groupId}/DCMD/{edgeNodeId}/tag_{addr} */
   zplc_config_get_mqtt_group_id(s_mqtt_group_id, sizeof(s_mqtt_group_id));
   if (s_mqtt_group_id[0] == '\0') {
-    return snprintf(buf, buf_len, SPB_NAMESPACE "/%s/%s/%s/tag_%04x",
-                    s_mqtt_topic_namespace, msg_type, hostname, var_addr);
+    return snprintf(buf, buf_len, SPB_NAMESPACE "/%s/%s/%s/tag_%04x", s_mqtt_topic_namespace, msg_type, hostname, var_addr);
   }
 
-  return snprintf(buf, buf_len, SPB_NAMESPACE "/%s/%s/%s/tag_%04x",
-                  s_mqtt_group_id, msg_type, hostname, var_addr);
+  return snprintf(buf, buf_len, SPB_NAMESPACE "/%s/%s/%s/tag_%04x", s_mqtt_group_id, msg_type, hostname, var_addr);
 }
 
 static int build_default_lwt_topic(char *buf, size_t buf_len) {
-  return build_topic(buf, buf_len,
-                     mqtt_profile_is_sparkplug() ? "NDEATH" : "STATUS");
+  return build_topic(buf, buf_len, mqtt_profile_is_sparkplug() ? "NDEATH" : "STATUS");
 }
 
 static int configure_lwt(struct mqtt_client *client) {
@@ -484,8 +455,7 @@ static int configure_lwt(struct mqtt_client *client) {
   }
 
   zplc_config_get_mqtt_lwt_topic(s_lwt_topic, sizeof(s_lwt_topic));
-  if (s_lwt_topic[0] == '\0' &&
-      build_default_lwt_topic(s_lwt_topic, sizeof(s_lwt_topic)) < 0) {
+  if (s_lwt_topic[0] == '\0' && build_default_lwt_topic(s_lwt_topic, sizeof(s_lwt_topic)) < 0) {
     return -EINVAL;
   }
 
@@ -498,8 +468,7 @@ static int configure_lwt(struct mqtt_client *client) {
     s_bd_seq = (s_bd_seq + 1U) % SPB_SEQ_MAX;
 
     org_eclipse_tahu_protobuf_Payload *ndeath = &s_spb_payload;
-    *ndeath = (org_eclipse_tahu_protobuf_Payload)
-        org_eclipse_tahu_protobuf_Payload_init_zero;
+    *ndeath = (org_eclipse_tahu_protobuf_Payload)org_eclipse_tahu_protobuf_Payload_init_zero;
     ndeath->timestamp = get_timestamp_ms();
     ndeath->metrics_count = 1U;
     ndeath->seq = 0U; /* NDEATH seq is always 0 per spec */
@@ -512,8 +481,7 @@ static int configure_lwt(struct mqtt_client *client) {
     bd->which_value = org_eclipse_tahu_protobuf_Metric_long_value_tag;
     bd->value.long_value = (uint64_t)s_bd_seq;
 
-    pb_ostream_t stream =
-        pb_ostream_from_buffer(s_ndeath_payload, sizeof(s_ndeath_payload));
+    pb_ostream_t stream = pb_ostream_from_buffer(s_ndeath_payload, sizeof(s_ndeath_payload));
     if (!pb_encode(&stream, org_eclipse_tahu_protobuf_Payload_fields, ndeath)) {
       LOG_ERR("NDEATH LWT pb_encode failed: %s", PB_GET_ERROR(&stream));
       return -EIO;
@@ -556,9 +524,7 @@ static void setup_auth(struct mqtt_client *client) {
       get_device_identity(s_mqtt_client_id, sizeof(s_mqtt_client_id));
     }
     if (s_mqtt_username[0] == '\0') {
-      snprintf(s_mqtt_username, sizeof(s_mqtt_username),
-               "%s/%s/?api-version=2021-04-12", s_mqtt_hostname,
-               s_mqtt_client_id);
+      snprintf(s_mqtt_username, sizeof(s_mqtt_username), "%s/%s/?api-version=2021-04-12", s_mqtt_hostname, s_mqtt_client_id);
     }
     /* On-device SAS token generation — only when a key is stored in config.
      * If the user pre-filled the password field manually, leave it untouched.
@@ -568,9 +534,8 @@ static void setup_auth(struct mqtt_client *client) {
       zplc_config_get_azure_sas_key(sas_key, sizeof(sas_key));
       if (sas_key[0] != '\0') {
         uint32_t expiry_s = zplc_config_get_azure_sas_expiry_s();
-        int sas_rc = zplc_azure_sas_generate(s_mqtt_hostname, s_mqtt_client_id,
-                                             sas_key, expiry_s, s_mqtt_password,
-                                             sizeof(s_mqtt_password));
+        int sas_rc =
+            zplc_azure_sas_generate(s_mqtt_hostname, s_mqtt_client_id, sas_key, expiry_s, s_mqtt_password, sizeof(s_mqtt_password));
         if (sas_rc != 0) {
           LOG_ERR("Azure SAS token generation failed: %d", sas_rc);
           /* Clear so we don't send garbage as password */
@@ -580,8 +545,7 @@ static void setup_auth(struct mqtt_client *client) {
     }
   }
 
-  if (zplc_config_get_mqtt_profile() == ZPLC_MQTT_PROFILE_AWS_IOT_CORE &&
-      zplc_config_get_mqtt_port() == 443U) {
+  if (zplc_config_get_mqtt_profile() == ZPLC_MQTT_PROFILE_AWS_IOT_CORE && zplc_config_get_mqtt_port() == 443U) {
 #if defined(CONFIG_MQTT_LIB_TLS_USE_ALPN)
     zplc_config_get_mqtt_alpn(s_mqtt_alpn, sizeof(s_mqtt_alpn));
     if (s_mqtt_alpn[0] == '\0') {
@@ -610,8 +574,7 @@ static void setup_auth(struct mqtt_client *client) {
 
 static void setup_websocket(struct mqtt_client *client) {
 #if defined(CONFIG_MQTT_LIB_WEBSOCKET)
-  zplc_config_get_mqtt_websocket_path(s_mqtt_websocket_path,
-                                      sizeof(s_mqtt_websocket_path));
+  zplc_config_get_mqtt_websocket_path(s_mqtt_websocket_path, sizeof(s_mqtt_websocket_path));
   if (s_mqtt_websocket_path[0] == '\0') {
     strncpy(s_mqtt_websocket_path, "/mqtt", sizeof(s_mqtt_websocket_path) - 1U);
     s_mqtt_websocket_path[sizeof(s_mqtt_websocket_path) - 1U] = '\0';
@@ -636,13 +599,10 @@ static int setup_tls(struct mqtt_client *client) {
   s_alpn_count = 0U;
 #endif
 
-  if (transport == ZPLC_MQTT_TRANSPORT_TCP ||
-      transport == ZPLC_MQTT_TRANSPORT_WS) {
+  if (transport == ZPLC_MQTT_TRANSPORT_TCP || transport == ZPLC_MQTT_TRANSPORT_WS) {
     client->transport.type =
 #if defined(CONFIG_MQTT_LIB_WEBSOCKET)
-        (transport == ZPLC_MQTT_TRANSPORT_WS)
-            ? MQTT_TRANSPORT_NON_SECURE_WEBSOCKET
-            : MQTT_TRANSPORT_NON_SECURE;
+        (transport == ZPLC_MQTT_TRANSPORT_WS) ? MQTT_TRANSPORT_NON_SECURE_WEBSOCKET : MQTT_TRANSPORT_NON_SECURE;
 #else
         MQTT_TRANSPORT_NON_SECURE;
 #endif
@@ -663,8 +623,7 @@ static int setup_tls(struct mqtt_client *client) {
 
   client->transport.type =
 #if defined(CONFIG_MQTT_LIB_WEBSOCKET)
-      (transport == ZPLC_MQTT_TRANSPORT_WSS) ? MQTT_TRANSPORT_SECURE_WEBSOCKET
-                                             : MQTT_TRANSPORT_SECURE;
+      (transport == ZPLC_MQTT_TRANSPORT_WSS) ? MQTT_TRANSPORT_SECURE_WEBSOCKET : MQTT_TRANSPORT_SECURE;
 #else
       MQTT_TRANSPORT_SECURE;
 #endif
@@ -686,23 +645,17 @@ static int setup_tls(struct mqtt_client *client) {
 #endif
   }
 
-  zplc_config_get_mqtt_ca_cert_path(s_mqtt_ca_cert_path,
-                                    sizeof(s_mqtt_ca_cert_path));
-  zplc_config_get_mqtt_client_cert_path(s_mqtt_client_cert_path,
-                                        sizeof(s_mqtt_client_cert_path));
-  zplc_config_get_mqtt_client_key_path(s_mqtt_client_key_path,
-                                       sizeof(s_mqtt_client_key_path));
+  zplc_config_get_mqtt_ca_cert_path(s_mqtt_ca_cert_path, sizeof(s_mqtt_ca_cert_path));
+  zplc_config_get_mqtt_client_cert_path(s_mqtt_client_cert_path, sizeof(s_mqtt_client_cert_path));
+  zplc_config_get_mqtt_client_key_path(s_mqtt_client_key_path, sizeof(s_mqtt_client_key_path));
 
-  int ca_len = zplc_tls_credential_read_pem(s_mqtt_ca_cert_path, s_tls_ca_buf,
-                                             sizeof(s_tls_ca_buf));
+  int ca_len = zplc_tls_credential_read_pem(s_mqtt_ca_cert_path, s_tls_ca_buf, sizeof(s_tls_ca_buf));
   if (ca_len <= 0) {
     LOG_ERR("TLS CA file missing: %s (err %d)", s_mqtt_ca_cert_path, ca_len);
     return ca_len;
   }
 
-  int rc = zplc_tls_credential_replace(MQTT_TLS_CA_TAG,
-                                       TLS_CREDENTIAL_CA_CERTIFICATE,
-                                       s_tls_ca_buf, (size_t)ca_len + 1U);
+  int rc = zplc_tls_credential_replace(MQTT_TLS_CA_TAG, TLS_CREDENTIAL_CA_CERTIFICATE, s_tls_ca_buf, (size_t)ca_len + 1U);
   if (rc != 0) {
     LOG_ERR("TLS CA credential replace failed: %d", rc);
     return rc;
@@ -711,27 +664,20 @@ static int setup_tls(struct mqtt_client *client) {
   s_mqtt_sec_tags[s_mqtt_sec_tag_count++] = MQTT_TLS_CA_TAG;
 
   if (security == ZPLC_MQTT_SECURITY_TLS_MUTUAL) {
-    int cert_len = zplc_tls_credential_read_pem(s_mqtt_client_cert_path,
-                                                s_tls_cert_buf, sizeof(s_tls_cert_buf));
-    int key_len = zplc_tls_credential_read_pem(s_mqtt_client_key_path,
-                                               s_tls_key_buf, sizeof(s_tls_key_buf));
+    int cert_len = zplc_tls_credential_read_pem(s_mqtt_client_cert_path, s_tls_cert_buf, sizeof(s_tls_cert_buf));
+    int key_len = zplc_tls_credential_read_pem(s_mqtt_client_key_path, s_tls_key_buf, sizeof(s_tls_key_buf));
     if (cert_len <= 0 || key_len <= 0) {
-      LOG_ERR("Mutual TLS requires cert+key in %s and %s",
-              s_mqtt_client_cert_path, s_mqtt_client_key_path);
+      LOG_ERR("Mutual TLS requires cert+key in %s and %s", s_mqtt_client_cert_path, s_mqtt_client_key_path);
       return cert_len <= 0 ? cert_len : key_len;
     }
 
-    rc = zplc_tls_credential_replace(MQTT_TLS_CLIENT_CERT_TAG,
-                                     TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
-                                     s_tls_cert_buf, (size_t)cert_len + 1U);
+    rc = zplc_tls_credential_replace(MQTT_TLS_CLIENT_CERT_TAG, TLS_CREDENTIAL_PUBLIC_CERTIFICATE, s_tls_cert_buf, (size_t)cert_len + 1U);
     if (rc != 0) {
       LOG_ERR("TLS client certificate replace failed: %d", rc);
       return rc;
     }
 
-    rc = zplc_tls_credential_replace(MQTT_TLS_CLIENT_KEY_TAG,
-                                     TLS_CREDENTIAL_PRIVATE_KEY,
-                                     s_tls_key_buf, (size_t)key_len + 1U);
+    rc = zplc_tls_credential_replace(MQTT_TLS_CLIENT_KEY_TAG, TLS_CREDENTIAL_PRIVATE_KEY, s_tls_key_buf, (size_t)key_len + 1U);
     if (rc != 0) {
       LOG_ERR("TLS client key replace failed: %d", rc);
       return rc;
@@ -777,8 +723,7 @@ static int setup_tls(struct mqtt_client *client) {
  *
  * @return Number of bytes written on success, -1 on failure.
  */
-static int encode_sparkplug_payload(const zplc_tag_entry_t *tag,
-                                    uint8_t *out_buf, size_t max_len) {
+static int encode_sparkplug_payload(const zplc_tag_entry_t *tag, uint8_t *out_buf, size_t max_len) {
   if (!tag || !out_buf || max_len == 0U) {
     return -1;
   }
@@ -815,8 +760,7 @@ static int encode_sparkplug_payload(const zplc_tag_entry_t *tag,
   /* Use the shared file-scope payload workspace (single MQTT thread, no
    * re-entrancy). */
   org_eclipse_tahu_protobuf_Payload *payload = &s_spb_payload;
-  *payload = (org_eclipse_tahu_protobuf_Payload)
-      org_eclipse_tahu_protobuf_Payload_init_zero;
+  *payload = (org_eclipse_tahu_protobuf_Payload)org_eclipse_tahu_protobuf_Payload_init_zero;
   payload->timestamp = get_timestamp_ms();
   payload->seq = (uint64_t)s_spb_seq;
   s_spb_seq = (s_spb_seq + 1U) % SPB_SEQ_MAX;
@@ -863,8 +807,7 @@ static int encode_sparkplug_payload(const zplc_tag_entry_t *tag,
         break;
       }
       {
-        uint32_t bits = (uint32_t)raw[0] | ((uint32_t)raw[1] << 8U) |
-                        ((uint32_t)raw[2] << 16U) | ((uint32_t)raw[3] << 24U);
+        uint32_t bits = (uint32_t)raw[0] | ((uint32_t)raw[1] << 8U) | ((uint32_t)raw[2] << 16U) | ((uint32_t)raw[3] << 24U);
         float fval;
         /* Type-punning via memcpy — the only safe way in C99 */
         memcpy(&fval, &bits, sizeof(float));
@@ -945,16 +888,13 @@ static int poll_for_data(int timeout_ms) {
  *
  * @return 0 on success, negative errno on failure.
  */
-static int spb_publish(struct mqtt_client *client, const char *topic_str,
-                       const uint8_t *data, size_t data_len) {
+static int spb_publish(struct mqtt_client *client, const char *topic_str, const uint8_t *data, size_t data_len) {
   struct mqtt_publish_param param;
 
-  param.message.topic.qos =
-      mqtt_qos_from_config(zplc_config_get_mqtt_publish_qos());
+  param.message.topic.qos = mqtt_qos_from_config(zplc_config_get_mqtt_publish_qos());
   param.message.topic.topic.utf8 = (const uint8_t *)topic_str;
   param.message.topic.topic.size = strlen(topic_str);
-  param.message.payload.data =
-      (uint8_t *)data; /* MQTT API takes non-const; data is read-only */
+  param.message.payload.data = (uint8_t *)data; /* MQTT API takes non-const; data is read-only */
   param.message.payload.len = data_len;
   param.message_id = k_uptime_get_32();
   param.dup_flag = 0U;
@@ -967,22 +907,18 @@ static int spb_publish(struct mqtt_client *client, const char *topic_str,
   return mqtt_publish(client, &param);
 }
 
-static int event_grid_publish(struct mqtt_client *client, const char *topic_str,
-                              const char *event_type, const char *source,
-                              const char *content_type, const uint8_t *data,
-                              size_t data_len) {
+static int event_grid_publish(struct mqtt_client *client, const char *topic_str, const char *event_type, const char *source,
+                              const char *content_type, const uint8_t *data, size_t data_len) {
   struct mqtt_publish_param param;
 #if defined(CONFIG_MQTT_VERSION_5_0)
   char event_id[16];
   char event_time[24];
   static const char ce_specversion[] = "1.0";
-  static const char content_type_default[] =
-      "application/cloudevents+json; charset=utf-8";
+  static const char content_type_default[] = "application/cloudevents+json; charset=utf-8";
 #endif
 
   memset(&param, 0, sizeof(param));
-  param.message.topic.qos =
-      mqtt_qos_from_config(zplc_config_get_mqtt_publish_qos());
+  param.message.topic.qos = mqtt_qos_from_config(zplc_config_get_mqtt_publish_qos());
   param.message.topic.topic.utf8 = (const uint8_t *)topic_str;
   param.message.topic.topic.size = strlen(topic_str);
   param.message.payload.data = (uint8_t *)data;
@@ -993,15 +929,11 @@ static int event_grid_publish(struct mqtt_client *client, const char *topic_str,
 
 #if defined(CONFIG_MQTT_VERSION_5_0)
   snprintf(event_id, sizeof(event_id), "%u", (unsigned)param.message_id);
-  snprintf(event_time, sizeof(event_time), "%llu",
-           (unsigned long long)get_timestamp_ms());
+  snprintf(event_time, sizeof(event_time), "%llu", (unsigned long long)get_timestamp_ms());
   param.prop.payload_format_indicator = 1U;
   param.prop.rx.has_payload_format_indicator = true;
-  param.prop.content_type.utf8 =
-      (const uint8_t *)(content_type != NULL ? content_type
-                                             : content_type_default);
-  param.prop.content_type.size =
-      strlen((const char *)param.prop.content_type.utf8);
+  param.prop.content_type.utf8 = (const uint8_t *)(content_type != NULL ? content_type : content_type_default);
+  param.prop.content_type.size = strlen((const char *)param.prop.content_type.utf8);
   param.prop.rx.has_content_type = true;
 
   param.prop.user_prop[0].name = MQTT_UTF8_LITERAL("ce-specversion");
@@ -1020,19 +952,15 @@ static int event_grid_publish(struct mqtt_client *client, const char *topic_str,
   param.prop.user_prop[4].value.utf8 = (const uint8_t *)event_time;
   param.prop.user_prop[4].value.size = strlen(event_time);
   param.prop.user_prop[5].name = MQTT_UTF8_LITERAL("ce-datacontenttype");
-  param.prop.user_prop[5].value.utf8 =
-      (const uint8_t *)(content_type != NULL ? content_type
-                                             : content_type_default);
-  param.prop.user_prop[5].value.size =
-      strlen((const char *)param.prop.user_prop[5].value.utf8);
+  param.prop.user_prop[5].value.utf8 = (const uint8_t *)(content_type != NULL ? content_type : content_type_default);
+  param.prop.user_prop[5].value.size = strlen((const char *)param.prop.user_prop[5].value.utf8);
   param.prop.rx.has_user_prop = true;
 #endif
 
   return mqtt_publish(client, &param);
 }
 
-static int publish_json_payload(struct mqtt_client *client,
-                                const char *topic_str, const char *payload) {
+static int publish_json_payload(struct mqtt_client *client, const char *topic_str, const char *payload) {
   if (mqtt_profile_is_azure_event_grid()) {
     char source[128];
     char event_type[96];
@@ -1047,15 +975,13 @@ static int publish_json_payload(struct mqtt_client *client,
       event_type[sizeof(event_type) - 1U] = '\0';
     }
 
-    return event_grid_publish(client, topic_str, event_type, source,
-                              "application/cloudevents+json; charset=utf-8",
+    return event_grid_publish(client, topic_str, event_type, source, "application/cloudevents+json; charset=utf-8",
                               (const uint8_t *)payload, strlen(payload));
   }
 
   struct mqtt_publish_param param;
 
-  param.message.topic.qos =
-      mqtt_qos_from_config(zplc_config_get_mqtt_publish_qos());
+  param.message.topic.qos = mqtt_qos_from_config(zplc_config_get_mqtt_publish_qos());
   param.message.topic.topic.utf8 = (const uint8_t *)topic_str;
   param.message.topic.topic.size = strlen(topic_str);
   param.message.payload.data = (uint8_t *)payload;
@@ -1091,8 +1017,7 @@ static int publish_nbirth(struct mqtt_client *client) {
   /* Use the shared file-scope payload workspace (single MQTT thread, no
    * re-entrancy). */
   org_eclipse_tahu_protobuf_Payload *payload = &s_spb_payload;
-  *payload = (org_eclipse_tahu_protobuf_Payload)
-      org_eclipse_tahu_protobuf_Payload_init_zero;
+  *payload = (org_eclipse_tahu_protobuf_Payload)org_eclipse_tahu_protobuf_Payload_init_zero;
   payload->timestamp = get_timestamp_ms();
 
   /*
@@ -1156,15 +1081,13 @@ static int publish_nbirth(struct mqtt_client *client) {
 
   payload->metrics_count = n_added;
 
-  pb_ostream_t stream =
-      pb_ostream_from_buffer(s_payload_buf, sizeof(s_payload_buf));
+  pb_ostream_t stream = pb_ostream_from_buffer(s_payload_buf, sizeof(s_payload_buf));
   if (!pb_encode(&stream, org_eclipse_tahu_protobuf_Payload_fields, payload)) {
     LOG_ERR("NBIRTH pb_encode failed: %s", PB_GET_ERROR(&stream));
     return -1;
   }
 
-  LOG_INF("Publishing NBIRTH to %s (%zu bytes, %u metrics, bdSeq=%u)", topic,
-          stream.bytes_written, n_added, s_bd_seq);
+  LOG_INF("Publishing NBIRTH to %s (%zu bytes, %u metrics, bdSeq=%u)", topic, stream.bytes_written, n_added, s_bd_seq);
 
   return spb_publish(client, topic, s_payload_buf, stream.bytes_written);
 }
@@ -1185,8 +1108,7 @@ static int publish_ddata(struct mqtt_client *client) {
   /* Use the shared file-scope payload workspace (single MQTT thread, no
    * re-entrancy). */
   org_eclipse_tahu_protobuf_Payload *payload = &s_spb_payload;
-  *payload = (org_eclipse_tahu_protobuf_Payload)
-      org_eclipse_tahu_protobuf_Payload_init_zero;
+  *payload = (org_eclipse_tahu_protobuf_Payload)org_eclipse_tahu_protobuf_Payload_init_zero;
   payload->timestamp = get_timestamp_ms();
   payload->seq = (uint64_t)s_spb_seq;
   s_spb_seq = (s_spb_seq + 1U) % SPB_SEQ_MAX;
@@ -1213,11 +1135,9 @@ static int publish_ddata(struct mqtt_client *client) {
     }
 
     /* Decode into the file-scope single workspace to avoid a 16 KB local. */
-    s_spb_single = (org_eclipse_tahu_protobuf_Payload)
-        org_eclipse_tahu_protobuf_Payload_init_zero;
+    s_spb_single = (org_eclipse_tahu_protobuf_Payload)org_eclipse_tahu_protobuf_Payload_init_zero;
     istream = pb_istream_from_buffer(s_metric_buf, (size_t)len);
-    if (!pb_decode(&istream, org_eclipse_tahu_protobuf_Payload_fields,
-                   &s_spb_single)) {
+    if (!pb_decode(&istream, org_eclipse_tahu_protobuf_Payload_fields, &s_spb_single)) {
       decode_err = PB_GET_ERROR(&istream);
       LOG_ERR("DDATA pb_decode failed: %s", decode_err);
       continue;
@@ -1239,19 +1159,16 @@ static int publish_ddata(struct mqtt_client *client) {
   payload->metrics_count = metric_count;
 
   {
-    pb_ostream_t ostream =
-        pb_ostream_from_buffer(s_payload_buf, sizeof(s_payload_buf));
+    pb_ostream_t ostream = pb_ostream_from_buffer(s_payload_buf, sizeof(s_payload_buf));
     const char *encode_err;
 
-    if (!pb_encode(&ostream, org_eclipse_tahu_protobuf_Payload_fields,
-                   payload)) {
+    if (!pb_encode(&ostream, org_eclipse_tahu_protobuf_Payload_fields, payload)) {
       encode_err = PB_GET_ERROR(&ostream);
       LOG_ERR("DDATA pb_encode failed: %s", encode_err);
       return -EIO;
     }
 
-    LOG_INF("Publishing DDATA to %s (%zu bytes, %u metrics)", topic,
-            ostream.bytes_written, metric_count);
+    LOG_INF("Publishing DDATA to %s (%zu bytes, %u metrics)", topic, ostream.bytes_written, metric_count);
     return spb_publish(client, topic, s_payload_buf, ostream.bytes_written);
   }
 }
@@ -1279,16 +1196,14 @@ static int read_tag_value(const zplc_tag_entry_t *tag, uint8_t raw[4]) {
   return zplc_exchange_read_locked(tag->var_addr, raw, size) == 0 ? 0 : -EINVAL;
 }
 
-static int append_json_tag(char *buf, size_t buf_len, size_t *used,
-                           const zplc_tag_entry_t *tag, bool *first) {
+static int append_json_tag(char *buf, size_t buf_len, size_t *used, const zplc_tag_entry_t *tag, bool *first) {
   uint8_t raw[4] = {0U, 0U, 0U, 0U};
 
   if (read_tag_value(tag, raw) != 0) {
     return -EINVAL;
   }
 
-  int written = snprintf(buf + *used, buf_len - *used,
-                         "%s\"tag_%04x\":", *first ? "" : ",", tag->var_addr);
+  int written = snprintf(buf + *used, buf_len - *used, "%s\"tag_%04x\":", *first ? "" : ",", tag->var_addr);
   if (written < 0 || (size_t)written >= buf_len - *used) {
     return -ENOSPC;
   }
@@ -1297,22 +1212,17 @@ static int append_json_tag(char *buf, size_t buf_len, size_t *used,
 
   switch (tag->var_type) {
   case ZPLC_TYPE_BOOL:
-    written = snprintf(buf + *used, buf_len - *used, "%s",
-                       raw[0] != 0U ? "true" : "false");
+    written = snprintf(buf + *used, buf_len - *used, "%s", raw[0] != 0U ? "true" : "false");
     break;
   case ZPLC_TYPE_INT:
-    written = snprintf(buf + *used, buf_len - *used, "%d",
-                       (int)((int16_t)((uint16_t)raw[0] |
-                                       ((uint16_t)raw[1] << 8U))));
+    written = snprintf(buf + *used, buf_len - *used, "%d", (int)((int16_t)((uint16_t)raw[0] | ((uint16_t)raw[1] << 8U))));
     break;
   case ZPLC_TYPE_UINT:
   case ZPLC_TYPE_WORD:
-    written = snprintf(buf + *used, buf_len - *used, "%u",
-                       (unsigned)((uint16_t)raw[0] | ((uint16_t)raw[1] << 8U)));
+    written = snprintf(buf + *used, buf_len - *used, "%u", (unsigned)((uint16_t)raw[0] | ((uint16_t)raw[1] << 8U)));
     break;
   case ZPLC_TYPE_REAL: {
-    uint32_t bits = (uint32_t)raw[0] | ((uint32_t)raw[1] << 8U) |
-                    ((uint32_t)raw[2] << 16U) | ((uint32_t)raw[3] << 24U);
+    uint32_t bits = (uint32_t)raw[0] | ((uint32_t)raw[1] << 8U) | ((uint32_t)raw[2] << 16U) | ((uint32_t)raw[3] << 24U);
     float f = 0.0f;
     memcpy(&f, &bits, sizeof(f));
     written = snprintf(buf + *used, buf_len - *used, "%g", (double)f);
@@ -1339,10 +1249,8 @@ static int publish_generic_telemetry(struct mqtt_client *client) {
 
   size_t used = 0U;
   bool first = true;
-  int written =
-      snprintf((char *)s_payload_buf, sizeof(s_payload_buf),
-               "{\"profile\":\"%s\",\"ts\":%u,\"metrics\":{",
-               mqtt_profile_status_label(), (unsigned)k_uptime_get_32());
+  int written = snprintf((char *)s_payload_buf, sizeof(s_payload_buf), "{\"profile\":\"%s\",\"ts\":%u,\"metrics\":{",
+                         mqtt_profile_status_label(), (unsigned)k_uptime_get_32());
   if (written < 0 || (size_t)written >= sizeof(s_payload_buf)) {
     return -ENOSPC;
   }
@@ -1358,16 +1266,14 @@ static int publish_generic_telemetry(struct mqtt_client *client) {
       continue;
     }
 
-    if (append_json_tag((char *)s_payload_buf, sizeof(s_payload_buf), &used,
-                        tag, &first) < 0) {
+    if (append_json_tag((char *)s_payload_buf, sizeof(s_payload_buf), &used, tag, &first) < 0) {
       zplc_exchange_read_unlock();
       return -ENOSPC;
     }
   }
   zplc_exchange_read_unlock();
 
-  written = snprintf((char *)s_payload_buf + used, sizeof(s_payload_buf) - used,
-                     "}}");
+  written = snprintf((char *)s_payload_buf + used, sizeof(s_payload_buf) - used, "}}");
   if (written < 0 || (size_t)written >= sizeof(s_payload_buf) - used) {
     return -ENOSPC;
   }
@@ -1425,8 +1331,7 @@ static int publish_connect_birth(struct mqtt_client *client) {
     char shadow_topic[TOPIC_BUFFER_SIZE];
     char client_id[64];
     zplc_config_get_mqtt_client_id(client_id, sizeof(client_id));
-    int n = snprintf(shadow_topic, sizeof(shadow_topic),
-                     "$aws/things/%s/shadow/update", client_id);
+    int n = snprintf(shadow_topic, sizeof(shadow_topic), "$aws/things/%s/shadow/update", client_id);
     if (n > 0 && (size_t)n < sizeof(shadow_topic)) {
       static const char shadow_sync_payload[] = "{\"state\":{\"reported\":{}}}";
       struct mqtt_publish_param shadow_sync = {
@@ -1469,8 +1374,7 @@ static int publish_periodic_data(struct mqtt_client *client) {
   return publish_generic_telemetry(client);
 }
 
-static int parse_payload_to_tag(const zplc_tag_entry_t *tag,
-                                const uint8_t *payload, size_t payload_len) {
+static int parse_payload_to_tag(const zplc_tag_entry_t *tag, const uint8_t *payload, size_t payload_len) {
   uint8_t bytes[4U];
   size_t size = 0U;
   int rc;
@@ -1478,18 +1382,14 @@ static int parse_payload_to_tag(const zplc_tag_entry_t *tag,
   if (!tag || tag->tag_id != ZPLC_TAG_SUBSCRIBE) {
     return -EINVAL;
   }
-  rc = zplc_mqtt_command_decode(tag->var_type, payload, payload_len, bytes,
-                                &size);
+  rc = zplc_mqtt_command_decode(tag->var_type, payload, payload_len, bytes, &size);
   if (rc != 0) {
     return rc;
   }
 
-  if (!((tag->var_addr >= ZPLC_MEM_WORK_BASE &&
-         (uint32_t)tag->var_addr + size <=
-             (uint32_t)ZPLC_MEM_WORK_BASE + ZPLC_MEM_WORK_SIZE) ||
+  if (!((tag->var_addr >= ZPLC_MEM_WORK_BASE && (uint32_t)tag->var_addr + size <= (uint32_t)ZPLC_MEM_WORK_BASE + ZPLC_MEM_WORK_SIZE) ||
         (tag->var_addr >= ZPLC_MEM_RETAIN_BASE &&
-         (uint32_t)tag->var_addr + size <=
-             (uint32_t)ZPLC_MEM_RETAIN_BASE + ZPLC_MEM_RETAIN_SIZE))) {
+         (uint32_t)tag->var_addr + size <= (uint32_t)ZPLC_MEM_RETAIN_BASE + ZPLC_MEM_RETAIN_SIZE))) {
     return -EINVAL;
   }
 
@@ -1505,12 +1405,10 @@ static int abort_incoming_publish(struct mqtt_client *client, int error) {
   return error;
 }
 
-static int dispatch_incoming_message(struct mqtt_client *client,
-                                     const struct mqtt_publish_param *pub,
-                                     const char *topic, size_t payload_len);
+static int dispatch_incoming_message(struct mqtt_client *client, const struct mqtt_publish_param *pub, const char *topic,
+                                     size_t payload_len);
 
-static int handle_incoming_publish(struct mqtt_client *client,
-                                   const struct mqtt_publish_param *pub) {
+static int handle_incoming_publish(struct mqtt_client *client, const struct mqtt_publish_param *pub) {
   size_t payload_len;
   int rc;
 
@@ -1529,10 +1427,8 @@ static int handle_incoming_publish(struct mqtt_client *client,
 
   char topic[TOPIC_WILDCARD_BUFFER_SIZE];
   size_t topic_len = pub->message.topic.topic.size;
-  if (topic_len >= sizeof(topic) ||
-      (topic_len != 0U && pub->message.topic.topic.utf8 == NULL) ||
-      (topic_len != 0U &&
-       memchr(pub->message.topic.topic.utf8, '\0', topic_len) != NULL)) {
+  if (topic_len >= sizeof(topic) || (topic_len != 0U && pub->message.topic.topic.utf8 == NULL) ||
+      (topic_len != 0U && memchr(pub->message.topic.topic.utf8, '\0', topic_len) != NULL)) {
     return -EINVAL;
   }
   if (topic_len != 0U) {
@@ -1552,9 +1448,8 @@ static int handle_incoming_publish(struct mqtt_client *client,
  * drives this function with hostile topics and payloads of every profile.
  * `pub` carries the MQTT v5 properties and may be NULL.
  */
-static int dispatch_incoming_message(struct mqtt_client *client,
-                                     const struct mqtt_publish_param *pub,
-                                     const char *topic, size_t payload_len) {
+static int dispatch_incoming_message(struct mqtt_client *client, const struct mqtt_publish_param *pub, const char *topic,
+                                     size_t payload_len) {
   uint16_t count = zplc_core_get_tag_count();
 
   ARG_UNUSED(pub);
@@ -1569,10 +1464,8 @@ static int dispatch_incoming_message(struct mqtt_client *client,
      * We only log it here — full desired-property processing would require
      * a JSON parser, which is out of scope for Phase 1.5.1.
      */
-    if (zplc_config_get_azure_twin_enabled() &&
-        strncmp(topic, "$iothub/twin/", 13) == 0) {
-      LOG_INF("Azure Twin msg on '%s' (%u bytes)", topic,
-              (unsigned)payload_len);
+    if (zplc_config_get_azure_twin_enabled() && strncmp(topic, "$iothub/twin/", 13) == 0) {
+      LOG_INF("Azure Twin msg on '%s' (%u bytes)", topic, (unsigned)payload_len);
       return 0;
     }
 
@@ -1583,24 +1476,21 @@ static int dispatch_incoming_message(struct mqtt_client *client,
      * implemented) so the service does not read a success for a method
      * that did nothing (COM-027, COM-017).
      */
-    if (zplc_config_get_azure_direct_methods_enabled() &&
-        strncmp(topic, "$iothub/methods/POST/", 21) == 0) {
+    if (zplc_config_get_azure_direct_methods_enabled() && strncmp(topic, "$iothub/methods/POST/", 21) == 0) {
       /* Extract $rid from the topic query string */
       const char *rid_ptr = strstr(topic, "$rid=");
       char rid_val[16] = "0";
       if (rid_ptr != NULL) {
         rid_ptr += 5U; /* skip "$rid=" */
         size_t i = 0U;
-        while (*rid_ptr != '\0' && *rid_ptr != '&' &&
-               i < sizeof(rid_val) - 1U) {
+        while (*rid_ptr != '\0' && *rid_ptr != '&' && i < sizeof(rid_val) - 1U) {
           rid_val[i++] = *rid_ptr++;
         }
         rid_val[i] = '\0';
       }
 
       char resp_topic[TOPIC_WILDCARD_BUFFER_SIZE];
-      int n = snprintf(resp_topic, sizeof(resp_topic),
-                       "$iothub/methods/res/501/?$rid=%s", rid_val);
+      int n = snprintf(resp_topic, sizeof(resp_topic), "$iothub/methods/res/501/?$rid=%s", rid_val);
       if (n > 0 && (size_t)n < sizeof(resp_topic)) {
         static const char empty_body[] = "{}";
         struct mqtt_publish_param resp = {
@@ -1631,14 +1521,11 @@ static int dispatch_incoming_message(struct mqtt_client *client,
         }
       }
 
-      LOG_INF("Azure Direct Method on '%s': responded 501/$rid=%s", topic,
-              rid_val);
+      LOG_INF("Azure Direct Method on '%s': responded 501/$rid=%s", topic, rid_val);
       return 0;
     }
 
-    if (zplc_config_get_azure_c2d_enabled() &&
-        strncmp(topic, "devices/", 8) == 0 &&
-        strstr(topic, "/messages/devicebound/") != NULL) {
+    if (zplc_config_get_azure_c2d_enabled() && strncmp(topic, "devices/", 8) == 0 && strstr(topic, "/messages/devicebound/") != NULL) {
       LOG_INF("Azure C2D message received (%u bytes)", (unsigned)payload_len);
       fb_deliver(topic, s_publish_buf, payload_len, true);
       if (s_c2d_callback != NULL) {
@@ -1660,10 +1547,8 @@ static int dispatch_incoming_message(struct mqtt_client *client,
         }
 
         char expected_name[16];
-        snprintf(expected_name, sizeof(expected_name), "tag_%04x",
-                 tag->var_addr);
-        if (name_len == strlen(expected_name) &&
-            memcmp(s_publish_buf, expected_name, name_len) == 0) {
+        snprintf(expected_name, sizeof(expected_name), "tag_%04x", tag->var_addr);
+        if (name_len == strlen(expected_name) && memcmp(s_publish_buf, expected_name, name_len) == 0) {
           return parse_payload_to_tag(tag, value, value_len);
         }
       }
@@ -1683,10 +1568,8 @@ static int dispatch_incoming_message(struct mqtt_client *client,
      */
     if (zplc_config_get_aws_shadow_enabled()) {
       char delta_topic[TOPIC_BUFFER_SIZE];
-      int n = snprintf(delta_topic, sizeof(delta_topic),
-                       "$aws/things/%s/shadow/update/delta", client_id);
-      if (n > 0 && (size_t)n < sizeof(delta_topic) &&
-          strcmp(topic, delta_topic) == 0) {
+      int n = snprintf(delta_topic, sizeof(delta_topic), "$aws/things/%s/shadow/update/delta", client_id);
+      if (n > 0 && (size_t)n < sizeof(delta_topic) && strcmp(topic, delta_topic) == 0) {
         LOG_INF("AWS Shadow delta (%u bytes)", (unsigned)payload_len);
         return 0;
       }
@@ -1698,20 +1581,15 @@ static int dispatch_incoming_message(struct mqtt_client *client,
           return 0;
         }
         if (publish->prop.rx.has_content_type) {
-          LOG_INF("Event Grid content-type: %.*s",
-                  (int)publish->prop.content_type.size,
-                  publish->prop.content_type.utf8);
+          LOG_INF("Event Grid content-type: %.*s", (int)publish->prop.content_type.size, publish->prop.content_type.utf8);
         }
         if (publish->prop.rx.has_user_prop) {
           for (size_t i = 0; i < ARRAY_SIZE(publish->prop.user_prop); i++) {
             if (publish->prop.user_prop[i].name.size == 0U) {
               continue;
             }
-            LOG_DBG("Event Grid user-prop %.*s=%.*s",
-                    (int)publish->prop.user_prop[i].name.size,
-                    publish->prop.user_prop[i].name.utf8,
-                    (int)publish->prop.user_prop[i].value.size,
-                    publish->prop.user_prop[i].value.utf8);
+            LOG_DBG("Event Grid user-prop %.*s=%.*s", (int)publish->prop.user_prop[i].name.size, publish->prop.user_prop[i].name.utf8,
+                    (int)publish->prop.user_prop[i].value.size, publish->prop.user_prop[i].value.utf8);
           }
         }
 #endif
@@ -1726,10 +1604,8 @@ static int dispatch_incoming_message(struct mqtt_client *client,
      */
     if (zplc_config_get_aws_jobs_enabled()) {
       char jobs_topic[TOPIC_BUFFER_SIZE];
-      int n = snprintf(jobs_topic, sizeof(jobs_topic),
-                       "$aws/things/%s/jobs/notify", client_id);
-      if (n > 0 && (size_t)n < sizeof(jobs_topic) &&
-          strcmp(topic, jobs_topic) == 0) {
+      int n = snprintf(jobs_topic, sizeof(jobs_topic), "$aws/things/%s/jobs/notify", client_id);
+      if (n > 0 && (size_t)n < sizeof(jobs_topic) && strcmp(topic, jobs_topic) == 0) {
         LOG_INF("AWS Jobs notify (%u bytes)", (unsigned)payload_len);
         return 0;
       }
@@ -1749,28 +1625,22 @@ static int dispatch_incoming_message(struct mqtt_client *client,
      * On rebirth: re-publish NBIRTH immediately to re-announce the node.
      */
     char ncmd_expected[TOPIC_BUFFER_SIZE];
-    if (build_topic(ncmd_expected, sizeof(ncmd_expected), "NCMD") >= 0 &&
-        strcmp(topic, ncmd_expected) == 0) {
+    if (build_topic(ncmd_expected, sizeof(ncmd_expected), "NCMD") >= 0 && strcmp(topic, ncmd_expected) == 0) {
 
       /* Decode the protobuf payload to check for rebirth request */
       org_eclipse_tahu_protobuf_Payload *ncmd_payload = &s_spb_single;
-      *ncmd_payload = (org_eclipse_tahu_protobuf_Payload)
-          org_eclipse_tahu_protobuf_Payload_init_zero;
+      *ncmd_payload = (org_eclipse_tahu_protobuf_Payload)org_eclipse_tahu_protobuf_Payload_init_zero;
 
       pb_istream_t istream = pb_istream_from_buffer(s_publish_buf, payload_len);
-      if (pb_decode(&istream, org_eclipse_tahu_protobuf_Payload_fields,
-                    ncmd_payload)) {
+      if (pb_decode(&istream, org_eclipse_tahu_protobuf_Payload_fields, ncmd_payload)) {
         for (pb_size_t i = 0U; i < ncmd_payload->metrics_count; i++) {
           const org_eclipse_tahu_protobuf_Metric *m = &ncmd_payload->metrics[i];
 
           /* §6.4.15: rebirth metric name is "Node Control/Rebirth" */
-          if (strcmp(m->name, "Node Control/Rebirth") == 0 &&
-              m->which_value ==
-                  org_eclipse_tahu_protobuf_Metric_boolean_value_tag &&
+          if (strcmp(m->name, "Node Control/Rebirth") == 0 && m->which_value == org_eclipse_tahu_protobuf_Metric_boolean_value_tag &&
               m->value.boolean_value) {
 
-            LOG_INF(
-                "NCMD: Node Control/Rebirth received — re-publishing NBIRTH");
+            LOG_INF("NCMD: Node Control/Rebirth received — re-publishing NBIRTH");
             (void)publish_nbirth(client);
             return 0;
           }
@@ -1784,18 +1654,14 @@ static int dispatch_incoming_message(struct mqtt_client *client,
 
     if (strstr(topic, "/DCMD/") != NULL) {
       org_eclipse_tahu_protobuf_Payload *dcmd_payload = &s_spb_single;
-      *dcmd_payload = (org_eclipse_tahu_protobuf_Payload)
-          org_eclipse_tahu_protobuf_Payload_init_zero;
+      *dcmd_payload = (org_eclipse_tahu_protobuf_Payload)org_eclipse_tahu_protobuf_Payload_init_zero;
 
       pb_istream_t istream = pb_istream_from_buffer(s_publish_buf, payload_len);
-      if (pb_decode(&istream, org_eclipse_tahu_protobuf_Payload_fields,
-                    dcmd_payload)) {
+      if (pb_decode(&istream, org_eclipse_tahu_protobuf_Payload_fields, dcmd_payload)) {
         for (pb_size_t i = 0U; i < dcmd_payload->metrics_count; i++) {
           const org_eclipse_tahu_protobuf_Metric *m = &dcmd_payload->metrics[i];
 
-          if (strcmp(m->name, "Device Control/Rebirth") == 0 &&
-              m->which_value ==
-                  org_eclipse_tahu_protobuf_Metric_boolean_value_tag &&
+          if (strcmp(m->name, "Device Control/Rebirth") == 0 && m->which_value == org_eclipse_tahu_protobuf_Metric_boolean_value_tag &&
               m->value.boolean_value) {
             LOG_INF("DCMD: Device Control/Rebirth received — re-publishing "
                     "NBIRTH/DDATA");
@@ -1817,8 +1683,7 @@ static int dispatch_incoming_message(struct mqtt_client *client,
     }
 
     char expected[TOPIC_WILDCARD_BUFFER_SIZE];
-    if (build_tag_topic(expected, sizeof(expected), "DCMD", tag->var_addr) <
-        0) {
+    if (build_tag_topic(expected, sizeof(expected), "DCMD", tag->var_addr) < 0) {
       continue;
     }
 
@@ -1846,8 +1711,7 @@ static int subscribe_runtime_tags(struct mqtt_client *client) {
     if (build_topic(ncmd_topic, sizeof(ncmd_topic), "NCMD") >= 0) {
       s_sub_topics[0].topic.utf8 = (const uint8_t *)ncmd_topic;
       s_sub_topics[0].topic.size = strlen(ncmd_topic);
-      s_sub_topics[0].qos =
-          mqtt_qos_from_config(zplc_config_get_mqtt_subscribe_qos());
+      s_sub_topics[0].qos = mqtt_qos_from_config(zplc_config_get_mqtt_subscribe_qos());
       n = 1U;
     }
   } else if (mqtt_profile_is_azure_iot_hub()) {
@@ -1858,8 +1722,7 @@ static int subscribe_runtime_tags(struct mqtt_client *client) {
 
     s_sub_topics[0].topic.utf8 = (const uint8_t *)azure_topic;
     s_sub_topics[0].topic.size = strlen(azure_topic);
-    s_sub_topics[0].qos =
-        mqtt_qos_from_config(zplc_config_get_mqtt_subscribe_qos());
+    s_sub_topics[0].qos = mqtt_qos_from_config(zplc_config_get_mqtt_subscribe_qos());
     n = 1U;
 
     /* Azure Device Twin — subscribe to all responses: $iothub/twin/res/# */
@@ -1872,8 +1735,7 @@ static int subscribe_runtime_tags(struct mqtt_client *client) {
 
       /* Also subscribe to desired property patches:
        * $iothub/twin/PATCH/properties/desired/# */
-      static const char twin_desired_topic[] =
-          "$iothub/twin/PATCH/properties/desired/#";
+      static const char twin_desired_topic[] = "$iothub/twin/PATCH/properties/desired/#";
       if (n < MQTT_SUB_MAX_TOPICS) {
         s_sub_topics[n].topic.utf8 = (const uint8_t *)twin_desired_topic;
         s_sub_topics[n].topic.size = sizeof(twin_desired_topic) - 1U;
@@ -1884,8 +1746,7 @@ static int subscribe_runtime_tags(struct mqtt_client *client) {
 
     /* Azure Direct Methods — subscribe to all incoming method calls:
      * $iothub/methods/POST/# */
-    if (zplc_config_get_azure_direct_methods_enabled() &&
-        n < MQTT_SUB_MAX_TOPICS) {
+    if (zplc_config_get_azure_direct_methods_enabled() && n < MQTT_SUB_MAX_TOPICS) {
       static const char methods_topic[] = "$iothub/methods/POST/#";
       s_sub_topics[n].topic.utf8 = (const uint8_t *)methods_topic;
       s_sub_topics[n].topic.size = sizeof(methods_topic) - 1U;
@@ -1894,8 +1755,7 @@ static int subscribe_runtime_tags(struct mqtt_client *client) {
     }
   } else if (mqtt_profile_is_azure_event_grid()) {
     static char event_grid_sub_topic[TOPIC_WILDCARD_BUFFER_SIZE];
-    zplc_config_get_mqtt_topic_namespace(event_grid_sub_topic,
-                                         sizeof(event_grid_sub_topic));
+    zplc_config_get_mqtt_topic_namespace(event_grid_sub_topic, sizeof(event_grid_sub_topic));
     if (event_grid_sub_topic[0] == '\0') {
       strncpy(event_grid_sub_topic, "zplc", sizeof(event_grid_sub_topic) - 1U);
       event_grid_sub_topic[sizeof(event_grid_sub_topic) - 1U] = '\0';
@@ -1909,8 +1769,7 @@ static int subscribe_runtime_tags(struct mqtt_client *client) {
     strcpy(&event_grid_sub_topic[used], "/commands/#");
     s_sub_topics[0].topic.utf8 = (const uint8_t *)event_grid_sub_topic;
     s_sub_topics[0].topic.size = strlen(event_grid_sub_topic);
-    s_sub_topics[0].qos =
-        mqtt_qos_from_config(zplc_config_get_mqtt_subscribe_qos());
+    s_sub_topics[0].qos = mqtt_qos_from_config(zplc_config_get_mqtt_subscribe_qos());
     n = 1U;
   } else if (mqtt_profile_is_aws_iot_core()) {
     char client_id[64];
@@ -1919,8 +1778,7 @@ static int subscribe_runtime_tags(struct mqtt_client *client) {
     /* AWS Device Shadow delta — $aws/things/{clientId}/shadow/update/delta */
     if (zplc_config_get_aws_shadow_enabled() && n < MQTT_SUB_MAX_TOPICS) {
       static char aws_shadow_topic[TOPIC_BUFFER_SIZE];
-      int ret = snprintf(aws_shadow_topic, sizeof(aws_shadow_topic),
-                         "$aws/things/%s/shadow/update/delta", client_id);
+      int ret = snprintf(aws_shadow_topic, sizeof(aws_shadow_topic), "$aws/things/%s/shadow/update/delta", client_id);
       if (ret > 0 && (size_t)ret < sizeof(aws_shadow_topic)) {
         s_sub_topics[n].topic.utf8 = (const uint8_t *)aws_shadow_topic;
         s_sub_topics[n].topic.size = (uint16_t)ret;
@@ -1932,8 +1790,7 @@ static int subscribe_runtime_tags(struct mqtt_client *client) {
     /* AWS Jobs notification — $aws/things/{clientId}/jobs/notify */
     if (zplc_config_get_aws_jobs_enabled() && n < MQTT_SUB_MAX_TOPICS) {
       static char aws_jobs_topic[TOPIC_BUFFER_SIZE];
-      int ret = snprintf(aws_jobs_topic, sizeof(aws_jobs_topic),
-                         "$aws/things/%s/jobs/notify", client_id);
+      int ret = snprintf(aws_jobs_topic, sizeof(aws_jobs_topic), "$aws/things/%s/jobs/notify", client_id);
       if (ret > 0 && (size_t)ret < sizeof(aws_jobs_topic)) {
         s_sub_topics[n].topic.utf8 = (const uint8_t *)aws_jobs_topic;
         s_sub_topics[n].topic.size = (uint16_t)ret;
@@ -1950,17 +1807,14 @@ static int subscribe_runtime_tags(struct mqtt_client *client) {
         continue;
       }
 
-      static char topic_storage[MQTT_SUB_MAX_TOPICS]
-                               [TOPIC_WILDCARD_BUFFER_SIZE];
-      if (build_tag_topic(topic_storage[n], sizeof(topic_storage[n]), "DCMD",
-                          tag->var_addr) < 0) {
+      static char topic_storage[MQTT_SUB_MAX_TOPICS][TOPIC_WILDCARD_BUFFER_SIZE];
+      if (build_tag_topic(topic_storage[n], sizeof(topic_storage[n]), "DCMD", tag->var_addr) < 0) {
         continue;
       }
 
       s_sub_topics[n].topic.utf8 = (const uint8_t *)topic_storage[n];
       s_sub_topics[n].topic.size = strlen(topic_storage[n]);
-      s_sub_topics[n].qos =
-          mqtt_qos_from_config(zplc_config_get_mqtt_subscribe_qos());
+      s_sub_topics[n].qos = mqtt_qos_from_config(zplc_config_get_mqtt_subscribe_qos());
       n++;
     }
   }
@@ -1978,8 +1832,7 @@ static int subscribe_runtime_tags(struct mqtt_client *client) {
   int rc = mqtt_subscribe(client, &list);
   if (rc == 0) {
     s_subscribed = true;
-    LOG_INF("Subscribed to %u topics (incl. NCMD: %s)", n,
-            mqtt_profile_is_sparkplug() ? "yes" : "no");
+    LOG_INF("Subscribed to %u topics (incl. NCMD: %s)", n, mqtt_profile_is_sparkplug() ? "yes" : "no");
   }
   return rc;
 }
@@ -1989,8 +1842,7 @@ static int subscribe_runtime_tags(struct mqtt_client *client) {
  * ============================================================================
  */
 
-static void mqtt_evt_handler(struct mqtt_client *const client,
-                             const struct mqtt_evt *evt) {
+static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt_evt *evt) {
   switch (evt->type) {
 
   case MQTT_EVT_CONNACK:
@@ -2033,8 +1885,7 @@ static void mqtt_evt_handler(struct mqtt_client *const client,
       s_last_error = rc;
       LOG_WRN("MQTT publish rejected (rc %d)", rc);
     }
-    if (s_connected &&
-        evt->param.publish.message.topic.qos == MQTT_QOS_1_AT_LEAST_ONCE) {
+    if (s_connected && evt->param.publish.message.topic.qos == MQTT_QOS_1_AT_LEAST_ONCE) {
       struct mqtt_puback_param ack = {
           .message_id = evt->param.publish.message_id,
       };
@@ -2051,8 +1902,7 @@ static void mqtt_evt_handler(struct mqtt_client *const client,
     break;
 
   case MQTT_EVT_SUBACK:
-    LOG_INF("MQTT SUBACK id=%u result=%d", evt->param.suback.message_id,
-            evt->result);
+    LOG_INF("MQTT SUBACK id=%u result=%d", evt->param.suback.message_id, evt->result);
     fb_subscription_acknowledged(evt->param.suback.message_id, evt->result);
     break;
 
@@ -2071,8 +1921,7 @@ static void mqtt_evt_handler(struct mqtt_client *const client,
 
   case MQTT_EVT_PUBREL: {
     /* QoS 2 subscribe — step 4: confirm release with PUBCOMP */
-    struct mqtt_pubcomp_param comp = {.message_id =
-                                          evt->param.pubrel.message_id};
+    struct mqtt_pubcomp_param comp = {.message_id = evt->param.pubrel.message_id};
     int rc = mqtt_publish_qos2_complete(client, &comp);
     if (rc != 0) {
       LOG_ERR("PUBCOMP send failed (id=%u): %d", comp.message_id, rc);
@@ -2083,8 +1932,7 @@ static void mqtt_evt_handler(struct mqtt_client *const client,
   }
 
   case MQTT_EVT_PUBCOMP:
-    LOG_DBG("MQTT PUBCOMP id=%u — QoS 2 delivery confirmed",
-            evt->param.pubcomp.message_id);
+    LOG_DBG("MQTT PUBCOMP id=%u — QoS 2 delivery confirmed", evt->param.pubcomp.message_id);
     break;
 
   case MQTT_EVT_PINGRESP:
@@ -2132,13 +1980,11 @@ static void resolve_broker(struct sockaddr_in *out) {
      * IPv4 address. If it is already a dotted-decimal string (common
      * in embedded deployments) zsock_inet_pton will succeed.
      */
-    LOG_WRN("DNS resolution for '%s' failed. Trying as literal IP...",
-            s_mqtt_hostname);
+    LOG_WRN("DNS resolution for '%s' failed. Trying as literal IP...", s_mqtt_hostname);
     out->sin_family = AF_INET;
     out->sin_port = htons(zplc_config_get_mqtt_port());
     if (zsock_inet_pton(AF_INET, s_mqtt_hostname, &out->sin_addr) != 1) {
-      LOG_ERR("'%s' is not a valid IPv4 address. Connection will fail.",
-              s_mqtt_hostname);
+      LOG_ERR("'%s' is not a valid IPv4 address. Connection will fail.", s_mqtt_hostname);
     }
   }
 }
@@ -2170,12 +2016,10 @@ static int client_init(struct mqtt_client *client) {
   client->evt_cb = mqtt_evt_handler;
   client->client_id.utf8 = (const uint8_t *)s_mqtt_client_id;
   client->client_id.size = strlen(s_mqtt_client_id);
-  client->protocol_version =
-      ((mqtt_profile_is_azure_iot_hub()) ||
-       (!mqtt_profile_is_azure_event_grid() &&
-        zplc_config_get_mqtt_protocol() == ZPLC_MQTT_PROTOCOL_3_1_1))
-          ? MQTT_VERSION_3_1_1
-          : MQTT_VERSION_5_0;
+  client->protocol_version = ((mqtt_profile_is_azure_iot_hub()) ||
+                              (!mqtt_profile_is_azure_event_grid() && zplc_config_get_mqtt_protocol() == ZPLC_MQTT_PROTOCOL_3_1_1))
+                                 ? MQTT_VERSION_3_1_1
+                                 : MQTT_VERSION_5_0;
   client->clean_session = zplc_config_get_mqtt_clean_session() ? 1U : 0U;
   client->keepalive = zplc_config_get_mqtt_keepalive_sec();
 
@@ -2186,8 +2030,7 @@ static int client_init(struct mqtt_client *client) {
 
 #if defined(CONFIG_MQTT_VERSION_5_0)
   memset(&client->prop, 0, sizeof(client->prop));
-  client->prop.session_expiry_interval =
-      zplc_config_get_mqtt_session_expiry_sec();
+  client->prop.session_expiry_interval = zplc_config_get_mqtt_session_expiry_sec();
 #endif
 
   if (configure_lwt(client) < 0) {
@@ -2233,8 +2076,7 @@ static bool fb_topic_matches(const char *filter, const char *topic) {
 }
 
 /* A message arrived on `topic`: keep it for the block that subscribed to it. */
-static void fb_deliver(const char *topic, const uint8_t *payload, size_t length,
-                       bool c2d) {
+static void fb_deliver(const char *topic, const uint8_t *payload, size_t length, bool c2d) {
   size_t i;
   size_t kept = MIN(length, (size_t)ZPLC_MQTT_REQ_MAX_PAYLOAD);
 
@@ -2310,8 +2152,7 @@ static void fb_subscriptions_unsent(void) {
 
 /* The broker acknowledged (or refused) a subscription made for a block. */
 static void fb_subscription_acknowledged(uint16_t message_id, int result) {
-  if (message_id >= MQTT_FB_SUBSCRIBE_ID &&
-      message_id < MQTT_FB_SUBSCRIBE_ID + MQTT_FB_SUB_MAX) {
+  if (message_id >= MQTT_FB_SUBSCRIBE_ID && message_id < MQTT_FB_SUBSCRIBE_ID + MQTT_FB_SUB_MAX) {
     struct mqtt_fb_sub *sub = &s_fb_subs[message_id - MQTT_FB_SUBSCRIBE_ID];
 
     fb_lock(NULL);
@@ -2322,8 +2163,7 @@ static void fb_subscription_acknowledged(uint16_t message_id, int result) {
   }
 }
 
-static int fb_publish_event_grid(const char *event_type, const char *topic,
-                                 const char *data);
+static int fb_publish_event_grid(const char *event_type, const char *topic, const char *data);
 
 /* Run one request on the client (client thread); returns 0 or a negative errno. */
 static int fb_run_request(struct mqtt_fb_req *req) {
@@ -2343,8 +2183,7 @@ static int fb_run_request(struct mqtt_fb_req *req) {
     return mqtt_publish(&s_client, &param);
   }
   case MQTT_FB_EVENT_GRID:
-    return fb_publish_event_grid(req->event_type, req->topic,
-                                 (const char *)req->payload);
+    return fb_publish_event_grid(req->event_type, req->topic, (const char *)req->payload);
   case MQTT_FB_REBIRTH:
     return publish_nbirth(&s_client);
   default:
@@ -2367,8 +2206,7 @@ static void fb_drain_requests(bool connected) {
     if (rc != 0) {
       LOG_WRN("FB request failed: %d", rc);
     }
-    zplc_comm_req_finish(&s_fb_pool, &req->head,
-                         rc == 0 ? ZPLC_COMM_HANDLER_DONE : zplc_comm_fail_from_errno(rc));
+    zplc_comm_req_finish(&s_fb_pool, &req->head, rc == 0 ? ZPLC_COMM_HANDLER_DONE : zplc_comm_fail_from_errno(rc));
   }
 }
 
@@ -2388,8 +2226,7 @@ zplc_mqtt_fb_session_t zplc_mqtt_fb_session(int *last_error) {
   if (last_error != NULL) {
     *last_error = s_last_error;
   }
-  return s_session_phase == MQTT_PHASE_CONNECTING ? ZPLC_MQTT_FB_CONNECTING
-                                                  : ZPLC_MQTT_FB_DOWN;
+  return s_session_phase == MQTT_PHASE_CONNECTING ? ZPLC_MQTT_FB_CONNECTING : ZPLC_MQTT_FB_DOWN;
 }
 
 static int fb_queue(struct mqtt_fb_req *req) {
@@ -2425,13 +2262,11 @@ static int fb_start(const void *owner, uint8_t kind, struct mqtt_fb_req **out) {
   return ZPLC_COMM_HANDLER_PENDING;
 }
 
-int zplc_mqtt_fb_publish(const void *owner, const char *topic, const uint8_t *payload,
-                         size_t length, uint8_t qos, bool retain) {
+int zplc_mqtt_fb_publish(const void *owner, const char *topic, const uint8_t *payload, size_t length, uint8_t qos, bool retain) {
   struct mqtt_fb_req *req = NULL;
   int rc;
 
-  if (topic == NULL || length > ZPLC_MQTT_REQ_MAX_PAYLOAD ||
-      strlen(topic) >= ZPLC_MQTT_REQ_MAX_TOPIC) {
+  if (topic == NULL || length > ZPLC_MQTT_REQ_MAX_PAYLOAD || strlen(topic) >= ZPLC_MQTT_REQ_MAX_TOPIC) {
     return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_STRING_OVERFLOW);
   }
   rc = fb_start(owner, MQTT_FB_PUBLISH, &req);
@@ -2449,18 +2284,15 @@ int zplc_mqtt_fb_publish(const void *owner, const char *topic, const uint8_t *pa
   return fb_queue(req);
 }
 
-int zplc_mqtt_fb_event_grid(const void *owner, const char *event_type, const char *topic,
-                            const char *data) {
+int zplc_mqtt_fb_event_grid(const void *owner, const char *event_type, const char *topic, const char *data) {
   struct mqtt_fb_req *req = NULL;
   int rc;
 
   if (!mqtt_profile_is_azure_event_grid()) {
     return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_UNAVAILABLE);
   }
-  if (event_type == NULL || topic == NULL || data == NULL ||
-      strlen(event_type) >= MQTT_FB_EVENT_TYPE_MAX ||
-      strlen(topic) >= ZPLC_MQTT_REQ_MAX_TOPIC ||
-      strlen(data) >= ZPLC_MQTT_REQ_MAX_PAYLOAD) {
+  if (event_type == NULL || topic == NULL || data == NULL || strlen(event_type) >= MQTT_FB_EVENT_TYPE_MAX ||
+      strlen(topic) >= ZPLC_MQTT_REQ_MAX_TOPIC || strlen(data) >= ZPLC_MQTT_REQ_MAX_PAYLOAD) {
     return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_STRING_OVERFLOW);
   }
   rc = fb_start(owner, MQTT_FB_EVENT_GRID, &req);
@@ -2491,8 +2323,7 @@ int zplc_mqtt_fb_rebirth(const void *owner) {
 
 int zplc_mqtt_fb_poll(const void *owner) {
   zplc_comm_req_t *slot = NULL;
-  const int result =
-      zplc_comm_req_peek(&s_fb_pool, owner, k_uptime_get_32(), MQTT_FB_REQUEST_TIMEOUT_MS, &slot);
+  const int result = zplc_comm_req_peek(&s_fb_pool, owner, k_uptime_get_32(), MQTT_FB_REQUEST_TIMEOUT_MS, &slot);
 
   if (result == ZPLC_COMM_HANDLER_DONE && slot != NULL) {
     zplc_comm_req_release(&s_fb_pool, slot);
@@ -2502,9 +2333,7 @@ int zplc_mqtt_fb_poll(const void *owner) {
 
 void zplc_mqtt_fb_abort(const void *owner) { zplc_comm_req_abort(&s_fb_pool, owner); }
 
-bool zplc_mqtt_fb_c2d_available(void) {
-  return mqtt_profile_is_azure_iot_hub() && zplc_config_get_azure_c2d_enabled();
-}
+bool zplc_mqtt_fb_c2d_available(void) { return mqtt_profile_is_azure_iot_hub() && zplc_config_get_azure_c2d_enabled(); }
 
 bool zplc_mqtt_fb_sparkplug(void) { return mqtt_profile_is_sparkplug(); }
 
@@ -2564,8 +2393,7 @@ int zplc_mqtt_fb_subscribe(const void *owner, const char *topic, uint8_t qos) {
     if (s_session_phase != MQTT_PHASE_CONNECTING) {
       const int status = zplc_comm_status_from_errno(s_last_error);
 
-      result = ZPLC_COMM_HANDLER_FAIL(
-          status == ZPLC_COMM_UNKNOWN || status == ZPLC_COMM_OK ? ZPLC_COMM_NOT_CONNECTED : status);
+      result = ZPLC_COMM_HANDLER_FAIL(status == ZPLC_COMM_UNKNOWN || status == ZPLC_COMM_OK ? ZPLC_COMM_NOT_CONNECTED : status);
     }
   } else if (sub->state == 2U) {
     result = ZPLC_COMM_HANDLER_DONE;
@@ -2710,8 +2538,7 @@ static void mqtt_client_thread(void *arg1, void *arg2, void *arg3) {
       }
 
       uint32_t now_ms = k_uptime_get_32();
-      if (now_ms - last_publish_ms >=
-          zplc_config_get_mqtt_publish_interval_ms()) {
+      if (now_ms - last_publish_ms >= zplc_config_get_mqtt_publish_interval_ms()) {
         (void)publish_periodic_data(&s_client);
         last_publish_ms = now_ms;
         s_last_publish_ms = now_ms;
@@ -2732,8 +2559,7 @@ static void mqtt_client_thread(void *arg1, void *arg2, void *arg3) {
     if (s_client.protocol_version == MQTT_VERSION_3_1_1) {
       mqtt_disconnect(&s_client, NULL);
     } else {
-      struct mqtt_disconnect_param dis = {.reason_code =
-                                              MQTT_DISCONNECT_NORMAL};
+      struct mqtt_disconnect_param dis = {.reason_code = MQTT_DISCONNECT_NORMAL};
       mqtt_disconnect(&s_client, &dis);
     }
 
@@ -2751,13 +2577,10 @@ static void mqtt_client_thread(void *arg1, void *arg2, void *arg3) {
  */
 
 int zplc_mqtt_init(void) {
-  k_msgq_init(&s_mqtt_pub_q, (char *)s_mqtt_pub_q_buf,
-              sizeof(struct mqtt_fb_req *), MQTT_FB_REQ_MAX);
+  k_msgq_init(&s_mqtt_pub_q, (char *)s_mqtt_pub_q_buf, sizeof(struct mqtt_fb_req *), MQTT_FB_REQ_MAX);
 
-  k_tid_t tid = k_thread_create(
-      &s_mqtt_thread, s_mqtt_stack, K_THREAD_STACK_SIZEOF(s_mqtt_stack),
-      mqtt_client_thread, NULL, NULL, NULL,
-      K_PRIO_PREEMPT(ZPLC_COMM_THREAD_PRIORITY), 0, K_NO_WAIT);
+  k_tid_t tid = k_thread_create(&s_mqtt_thread, s_mqtt_stack, K_THREAD_STACK_SIZEOF(s_mqtt_stack), mqtt_client_thread, NULL, NULL, NULL,
+                                K_PRIO_PREEMPT(ZPLC_COMM_THREAD_PRIORITY), 0, K_NO_WAIT);
 
   if (!tid) {
     LOG_ERR("Failed to create MQTT thread");
@@ -2777,13 +2600,10 @@ void zplc_mqtt_request_backoff_reset(void) {
   LOG_INF("Backoff reset requested — thread woken immediately");
 }
 
-void zplc_mqtt_set_azure_c2d_callback(zplc_azure_c2d_cb_t cb) {
-  s_c2d_callback = cb;
-}
+void zplc_mqtt_set_azure_c2d_callback(zplc_azure_c2d_cb_t cb) { s_c2d_callback = cb; }
 
 /* Build the CloudEvent of the block and publish it on the client (client thread). */
-static int fb_publish_event_grid(const char *event_type, const char *topic,
-                                 const char *data) {
+static int fb_publish_event_grid(const char *event_type, const char *topic, const char *data) {
   char resolved_topic[192];
   char resolved_source[128];
   char resolved_type[96];
@@ -2802,23 +2622,19 @@ static int fb_publish_event_grid(const char *event_type, const char *topic,
     strncpy(resolved_topic, topic, sizeof(resolved_topic) - 1U);
     resolved_topic[sizeof(resolved_topic) - 1U] = '\0';
   } else {
-    zplc_config_get_azure_event_grid_topic(resolved_topic,
-                                           sizeof(resolved_topic));
+    zplc_config_get_azure_event_grid_topic(resolved_topic, sizeof(resolved_topic));
   }
 
-  zplc_config_get_azure_event_grid_source(resolved_source,
-                                          sizeof(resolved_source));
+  zplc_config_get_azure_event_grid_source(resolved_source, sizeof(resolved_source));
 
   if (event_type != NULL && event_type[0] != '\0') {
     strncpy(resolved_type, event_type, sizeof(resolved_type) - 1U);
     resolved_type[sizeof(resolved_type) - 1U] = '\0';
   } else {
-    zplc_config_get_azure_event_grid_event_type(resolved_type,
-                                                sizeof(resolved_type));
+    zplc_config_get_azure_event_grid_event_type(resolved_type, sizeof(resolved_type));
   }
 
-  if (resolved_topic[0] == '\0' || resolved_source[0] == '\0' ||
-      resolved_type[0] == '\0' || data == NULL) {
+  if (resolved_topic[0] == '\0' || resolved_source[0] == '\0' || resolved_type[0] == '\0' || data == NULL) {
     return -EINVAL;
   }
 
@@ -2826,8 +2642,7 @@ static int fb_publish_event_grid(const char *event_type, const char *topic,
                  "{\"specversion\":\"1.0\",\"type\":\"%s\",\"source\":\"%s\","
                  "\"id\":\"%u\",\"time\":\"%llu\",\"datacontenttype\":"
                  "\"application/json\",\"data\":%s}",
-                 resolved_type, resolved_source, (unsigned)k_uptime_get_32(),
-                 (unsigned long long)get_timestamp_ms(), data);
+                 resolved_type, resolved_source, (unsigned)k_uptime_get_32(), (unsigned long long)get_timestamp_ms(), data);
   if (len <= 0 || (size_t)len >= sizeof(cloud_event)) {
     return -ENOMEM;
   }
@@ -2863,8 +2678,7 @@ void zplc_mqtt_get_status(zplc_mqtt_status_t *status) {
 /* Test seam (COM-017): delivers a message as the client would, without a
  * broker. The payload goes through the same buffer and the same dispatch
  * as a PUBLISH that arrived from the network. */
-int zplc_mqtt_test_inject(const char *topic, const uint8_t *payload,
-                          size_t payload_len) {
+int zplc_mqtt_test_inject(const char *topic, const uint8_t *payload, size_t payload_len) {
   if (payload_len > ZPLC_MQTT_COMMAND_MAX_PAYLOAD) {
     return -EMSGSIZE;
   }

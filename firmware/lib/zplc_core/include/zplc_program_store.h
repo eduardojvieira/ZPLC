@@ -81,9 +81,8 @@ extern "C" {
 #endif
 
 /** @brief Keys a payload of the largest artifact is stored under, per slot. */
-#define ZPLC_PROGRAM_STORE_MAX_CHUNKS                                          \
-  ((ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE +    \
-    ZPLC_PROGRAM_STORE_CHUNK_SIZE - 1U) /                                      \
+#define ZPLC_PROGRAM_STORE_MAX_CHUNKS                                                                             \
+  ((ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE + ZPLC_PROGRAM_STORE_CHUNK_SIZE - 1U) / \
    ZPLC_PROGRAM_STORE_CHUNK_SIZE)
 
 /**
@@ -95,19 +94,18 @@ extern "C" {
 /**
  * @brief Storage, in bytes, the two slots of the largest artifact and their records take, worst case.
  */
-#define ZPLC_PROGRAM_STORE_WORST_CASE_BYTES                                    \
-  (2U * ((size_t)ZPLC_PROGRAM_STORE_MAX_CHUNKS *                               \
-         (ZPLC_PROGRAM_STORE_CHUNK_SIZE + ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD)) +\
+#define ZPLC_PROGRAM_STORE_WORST_CASE_BYTES                                                                             \
+  (2U * ((size_t)ZPLC_PROGRAM_STORE_MAX_CHUNKS * (ZPLC_PROGRAM_STORE_CHUNK_SIZE + ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD)) + \
    3U * (32U + ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD))
 
 /** @brief The longest key the store uses, with its terminator. */
 #define ZPLC_PROGRAM_STORE_KEY_MAX 40U
 
 typedef enum {
-  ZPLC_PROGRAM_STORE_OK = 0,      /**< a program was restored */
-  ZPLC_PROGRAM_STORE_EMPTY = 1,   /**< the store never held a program, or a first deploy was interrupted */
-  ZPLC_PROGRAM_STORE_LEGACY = 2,  /**< the single-key program of the first firmware was restored; commit it */
-  ZPLC_PROGRAM_STORE_ERROR = -1,  /**< the persistence backend failed; nothing can be said about the store */
+  ZPLC_PROGRAM_STORE_OK = 0,     /**< a program was restored */
+  ZPLC_PROGRAM_STORE_EMPTY = 1,  /**< the store never held a program, or a first deploy was interrupted */
+  ZPLC_PROGRAM_STORE_LEGACY = 2, /**< the single-key program of the first firmware was restored; commit it */
+  ZPLC_PROGRAM_STORE_ERROR = -1, /**< the persistence backend failed; nothing can be said about the store */
   /** Records exist and none of them verifies: never treated as an empty store. */
   ZPLC_PROGRAM_STORE_UNVERIFIABLE = -3,
 } zplc_program_store_restore_t;
@@ -124,8 +122,7 @@ typedef enum {
  * @brief Decides whether an artifact may be run: the loader's verification and the policy of the runtime.
  * @return 0 admits.
  */
-typedef int (*zplc_pstore_admit_fn)(const uint8_t *artifact, size_t size,
-                                           void *context);
+typedef int (*zplc_pstore_admit_fn)(const uint8_t *artifact, size_t size, void *context);
 
 /** @brief What the store needs from the runtime that uses it. */
 typedef struct {
@@ -150,9 +147,7 @@ typedef struct {
  * @param workspace_capacity bytes the buffer holds
  * @return ZPLC_PROGRAM_STORE_COMMIT_OK, _ERROR (nothing was published), or _UNKNOWN
  */
-int zplc_pstore_commit(const zplc_pstore_config_t *config,
-                              uint8_t *workspace, size_t program_size,
-                              size_t workspace_capacity);
+int zplc_pstore_commit(const zplc_pstore_config_t *config, uint8_t *workspace, size_t program_size, size_t workspace_capacity);
 
 /** @brief What the rollback of a commit is: a value of zplc_pstore_rollback_t.kind. 0 is "nothing found". */
 #define ZPLC_PSTORE_ROLLBACK_NONE 0U
@@ -193,15 +188,14 @@ typedef struct {
  * @return 0 and the rollback, or ZPLC_PROGRAM_STORE_COMMIT_ERROR with @p rollback left as "nothing found": the
  *         backend failed, or records exist and none verifies (a commit then refuses to write over them)
  */
-int zplc_pstore_probe(const zplc_pstore_config_t *config, uint8_t *buffer, size_t capacity,
-                      zplc_pstore_rollback_t *rollback);
+int zplc_pstore_probe(const zplc_pstore_config_t *config, uint8_t *buffer, size_t capacity, zplc_pstore_rollback_t *rollback);
 
 /**
  * @brief zplc_pstore_commit() with the rollback of zplc_pstore_probe(), which has to be the answer for the store as
  *        it is now: when a record changed in between, nothing is written.
  */
-int zplc_pstore_commit_probed(const zplc_pstore_config_t *config, const zplc_pstore_rollback_t *rollback,
-                              uint8_t *workspace, size_t program_size, size_t workspace_capacity);
+int zplc_pstore_commit_probed(const zplc_pstore_config_t *config, const zplc_pstore_rollback_t *rollback, uint8_t *workspace,
+                              size_t program_size, size_t workspace_capacity);
 
 /**
  * @brief Find the program to run after a reset.
@@ -211,9 +205,8 @@ int zplc_pstore_commit_probed(const zplc_pstore_config_t *config, const zplc_pst
  *                           ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE + ZPLC_PROGRAM_STORE_FOOTER_SIZE)
  * @param program_size       receives the artifact length when the result is OK or LEGACY, otherwise 0
  */
-zplc_program_store_restore_t zplc_pstore_restore(
-    const zplc_pstore_config_t *config, uint8_t *workspace,
-    size_t workspace_capacity, size_t *program_size);
+zplc_program_store_restore_t zplc_pstore_restore(const zplc_pstore_config_t *config, uint8_t *workspace, size_t workspace_capacity,
+                                                 size_t *program_size);
 
 /**
  * @brief zplc_pstore_restore() that also leaves the rollback of the commit that follows a LEGACY result.
@@ -222,9 +215,8 @@ zplc_program_store_restore_t zplc_pstore_restore(
  * the commit that migrates it. For any other result @p rollback is "nothing found": the commit of an upload finds
  * its rollback with zplc_pstore_probe() when the upload starts.
  */
-zplc_program_store_restore_t zplc_pstore_restore_probed(const zplc_pstore_config_t *config, uint8_t *workspace,
-                                                        size_t workspace_capacity, size_t *program_size,
-                                                        zplc_pstore_rollback_t *rollback);
+zplc_program_store_restore_t zplc_pstore_restore_probed(const zplc_pstore_config_t *config, uint8_t *workspace, size_t workspace_capacity,
+                                                        size_t *program_size, zplc_pstore_rollback_t *rollback);
 
 #ifdef __cplusplus
 }

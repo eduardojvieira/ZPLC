@@ -1,7 +1,18 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'bun:test';
 
-import { allowlistErrors, buildIndex, checkClaim, checkClaims, collectClaims, extractClaims, repoPath, type AllowEntry, type Claim, type Index } from './check_doc_claims';
+import {
+  allowlistErrors,
+  buildIndex,
+  checkClaim,
+  checkClaims,
+  collectClaims,
+  extractClaims,
+  repoPath,
+  type AllowEntry,
+  type Claim,
+  type Index,
+} from './check_doc_claims';
 
 const FENCE = '`'.repeat(3);
 const index: Index = buildIndex();
@@ -10,20 +21,42 @@ const claim = (kind: Claim['kind'], token: string): Claim => ({ kind, token, pag
 describe('doc claims: what a page says is read from its code spans and shell blocks (DOC-014)', () => {
   it('reads code spans, the lines of a shell block, and nothing from the front matter or other blocks', () => {
     const text = [
-      '---', 'description: "`zplc_front_matter`"', '---', '',
-      'Call `zplc_sched_init()` and set `CONFIG_ZPLC_SCHEDULER=y`, then run `zplc dbg bp add <pc>`.', '',
-      `${FENCE}bash`, '$ zplc status', 'cd firmware/app', FENCE, '',
-      `${FENCE}c`, 'zplc_inside_c_block();', FENCE,
+      '---',
+      'description: "`zplc_front_matter`"',
+      '---',
+      '',
+      'Call `zplc_sched_init()` and set `CONFIG_ZPLC_SCHEDULER=y`, then run `zplc dbg bp add <pc>`.',
+      '',
+      `${FENCE}bash`,
+      '$ zplc status',
+      'cd firmware/app',
+      FENCE,
+      '',
+      `${FENCE}c`,
+      'zplc_inside_c_block();',
+      FENCE,
     ].join('\n');
     expect(extractClaims('p.md', text).map((found) => `${found.kind}:${found.token}@${found.line}`)).toEqual([
-      'c-api:zplc_sched_init@5', 'kconfig:ZPLC_SCHEDULER@5', 'shell:zplc dbg bp add#1@5', 'shell:zplc status@8', 'path:firmware/app@9',
+      'c-api:zplc_sched_init@5',
+      'kconfig:ZPLC_SCHEDULER@5',
+      'shell:zplc dbg bp add#1@5',
+      'shell:zplc status@8',
+      'path:firmware/app@9',
     ]);
   });
 
   it('takes a word as a path only when it starts at a folder of the repository and is not a placeholder, URL or absolute path', () => {
     expect(repoPath('firmware/app/Kconfig')).toBe('firmware/app/Kconfig');
     expect(repoPath('packages/zplc-ide/src/cli/index.ts:140-150')).toBe('packages/zplc-ide/src/cli/index.ts');
-    for (const word of ['src/main.st', '/dev/ttyACM0', 'https://zplc.dev/docs', 'packages/*/README.md', 'docs/<lang>/x.md', 'build/zplc.zplc']) expect([word, repoPath(word)]).toEqual([word, undefined]);
+    for (const word of [
+      'src/main.st',
+      '/dev/ttyACM0',
+      'https://zplc.dev/docs',
+      'packages/*/README.md',
+      'docs/<lang>/x.md',
+      'build/zplc.zplc',
+    ])
+      expect([word, repoPath(word)]).toEqual([word, undefined]);
   });
 });
 
@@ -65,7 +98,11 @@ describe('doc claims: a claim holds only when the source has the thing (DOC-014)
 });
 
 describe('doc claims: the allow-list can only shrink (DOC-014)', () => {
-  const entry: AllowEntry = { kind: 'path', token: 'docs/build', reason: 'The site output of the docs build; a build output is not tracked.' };
+  const entry: AllowEntry = {
+    kind: 'path',
+    token: 'docs/build',
+    reason: 'The site output of the docs build; a build output is not tracked.',
+  };
 
   it('lets a deliberately absent claim through and reports an entry that no page uses', () => {
     const claims = [claim('path', 'docs/build')];
@@ -76,7 +113,12 @@ describe('doc claims: the allow-list can only shrink (DOC-014)', () => {
 
   it('asks for a reason of some length and a known kind', () => {
     expect(allowlistErrors([entry])).toEqual([]);
-    expect(allowlistErrors([{ ...entry, reason: 'n/a' }, { ...entry, kind: 'other' as never }])).toHaveLength(2);
+    expect(
+      allowlistErrors([
+        { ...entry, reason: 'n/a' },
+        { ...entry, kind: 'other' as never },
+      ]),
+    ).toHaveLength(2);
   });
 });
 

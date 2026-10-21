@@ -121,12 +121,12 @@ typedef enum {
 
 /** @brief Result of zplc_retain_save(). */
 typedef enum {
-  ZPLC_RETAIN_SAVE_WRITTEN = 0,   /**< a new record is stored */
-  ZPLC_RETAIN_SAVE_UNCHANGED = 1, /**< the region equals the last record: nothing written */
-  ZPLC_RETAIN_SAVE_TOO_SOON = 2,  /**< periodic, inside the minimum interval */
-  ZPLC_RETAIN_SAVE_DISABLED = 3,  /**< periodic, and the minimum interval is 0 */
-  ZPLC_RETAIN_SAVE_NOT_READY = -1,/**< init or restore has not run, or restore ended in io_error */
-  ZPLC_RETAIN_SAVE_IO_ERROR = -2  /**< the backend failed; the previous record is intact */
+  ZPLC_RETAIN_SAVE_WRITTEN = 0,    /**< a new record is stored */
+  ZPLC_RETAIN_SAVE_UNCHANGED = 1,  /**< the region equals the last record: nothing written */
+  ZPLC_RETAIN_SAVE_TOO_SOON = 2,   /**< periodic, inside the minimum interval */
+  ZPLC_RETAIN_SAVE_DISABLED = 3,   /**< periodic, and the minimum interval is 0 */
+  ZPLC_RETAIN_SAVE_NOT_READY = -1, /**< init or restore has not run, or restore ended in io_error */
+  ZPLC_RETAIN_SAVE_IO_ERROR = -2   /**< the backend failed; the previous record is intact */
 } zplc_retain_save_result_t;
 
 /** @brief Identity of the program that owns the retained values. */
@@ -137,10 +137,10 @@ typedef struct {
 
 /** @brief Module configuration; the module keeps its own copy. */
 typedef struct {
-  uint8_t *region;        /**< the RETAIN bytes, valid for the life of the module */
-  uint32_t region_size;   /**< 1 .. ZPLC_RETAIN_CAPACITY */
-  int (*lock)(void);      /**< optional: makes the region coherent with the scan; 0 when taken (RT-030) */
-  void (*unlock)(void);   /**< optional, with lock; called only after a lock that returned 0 */
+  uint8_t *region;          /**< the RETAIN bytes, valid for the life of the module */
+  uint32_t region_size;     /**< 1 .. ZPLC_RETAIN_CAPACITY */
+  int (*lock)(void);        /**< optional: makes the region coherent with the scan; 0 when taken (RT-030) */
+  void (*unlock)(void);     /**< optional, with lock; called only after a lock that returned 0 */
   uint32_t min_interval_ms; /**< periodic saves closer than this are skipped; 0 disables them */
 } zplc_retain_config_t;
 
@@ -166,8 +166,7 @@ int zplc_retain_init(const zplc_retain_config_t *config);
  * Reads the magic, the CRC word and the code size word; the loader verified the
  * rest. @return 0 on success, -1 when the buffer is too short or has no magic.
  */
-int zplc_retain_identity_from_artifact(const uint8_t *artifact, size_t size,
-                                       zplc_retain_identity_t *out);
+int zplc_retain_identity_from_artifact(const uint8_t *artifact, size_t size, zplc_retain_identity_t *out);
 
 /**
  * @brief Restore the region from the stored records, or initialise it.
@@ -177,24 +176,20 @@ int zplc_retain_identity_from_artifact(const uint8_t *artifact, size_t size,
  *
  * @param now_ms the caller's monotonic millisecond clock
  */
-zplc_retain_reason_t zplc_retain_restore(const zplc_retain_identity_t *identity,
-                                         uint32_t now_ms);
+zplc_retain_reason_t zplc_retain_restore(const zplc_retain_identity_t *identity, uint32_t now_ms);
 
 /**
  * @brief Store the region as the next record when it changed.
  *
  * Reads the region under the lock hook, then writes with no lock held.
  */
-zplc_retain_save_result_t zplc_retain_save(const zplc_retain_identity_t *identity,
-                                           uint32_t now_ms,
-                                           zplc_retain_save_mode_t mode);
+zplc_retain_save_result_t zplc_retain_save(const zplc_retain_identity_t *identity, uint32_t now_ms, zplc_retain_save_mode_t mode);
 
 /**
  * @brief Cold reset: zero the region and store it, so a restart does not bring
  *        the old values back. The reason becomes ZPLC_RETAIN_RESET.
  */
-zplc_retain_save_result_t zplc_retain_cold_reset(const zplc_retain_identity_t *identity,
-                                                 uint32_t now_ms);
+zplc_retain_save_result_t zplc_retain_cold_reset(const zplc_retain_identity_t *identity, uint32_t now_ms);
 
 /** @brief Copy the status. */
 void zplc_retain_last_status(zplc_retain_status_t *out);

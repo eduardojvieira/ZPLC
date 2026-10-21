@@ -16,7 +16,9 @@ const SUMS = [
   [hex('c'), installerName(VERSION, 'deb', 'x64')],
   [hex('d'), installerName(VERSION, 'deb', 'arm64')],
   [hex('e'), installerName(VERSION, 'dmg', 'arm64')],
-].map(([sum, name]) => `${sum}  ${name}`).join('\n');
+]
+  .map(([sum, name]) => `${sum}  ${name}`)
+  .join('\n');
 
 describe('the Homebrew cask', () => {
   const text = renderCask(cask, VERSION, parseSums(SUMS));
@@ -48,7 +50,9 @@ describe('the Homebrew cask', () => {
   });
 
   it('is not rendered for a release that lacks the ZIP of an architecture', () => {
-    expect(() => renderCask(cask, VERSION, parseSums(SUMS.split('\n').slice(0, 1).join('\n')))).toThrow(`SHA256SUMS has no line for ${installerName(VERSION, 'zip', 'x64')}`);
+    expect(() => renderCask(cask, VERSION, parseSums(SUMS.split('\n').slice(0, 1).join('\n')))).toThrow(
+      `SHA256SUMS has no line for ${installerName(VERSION, 'zip', 'x64')}`,
+    );
   });
 });
 
@@ -59,14 +63,19 @@ describe('the AUR package', () => {
     expect(text).toContain(`_tag=${VERSION}`);
     expect(text).toContain(`sha256sums_x86_64=('${hex('c')}')`);
     expect(text).toContain(`sha256sums_aarch64=('${hex('d')}')`);
-    expect(text).toContain(`${installerName(VERSION, 'deb', 'x64').replace(VERSION, '${_tag}')}::https://github.com/eduardojvieira/ZPLC/releases/download/v${VERSION}/`);
+    expect(text).toContain(
+      `${installerName(VERSION, 'deb', 'x64').replace(
+        VERSION,
+        '${_tag}',
+      )}::https://github.com/eduardojvieira/ZPLC/releases/download/v${VERSION}/`,
+    );
     expect(text).not.toMatch(/@[A-Z0-9_]+@/);
   });
 
   it('is the package zplc-bin, which links the executable of the .deb as zplc', () => {
     expect(text).toMatch(/^pkgname=zplc-bin$/m);
-    expect(text).toContain("chmod 4755 \"${pkgdir}/opt/ZPLC/chrome-sandbox\"");
-    expect(text).toContain("ln -s '/opt/ZPLC/zplc' \"${pkgdir}/usr/bin/zplc\"");
+    expect(text).toContain('chmod 4755 "${pkgdir}/opt/ZPLC/chrome-sandbox"');
+    expect(text).toContain('ln -s \'/opt/ZPLC/zplc\' "${pkgdir}/usr/bin/zplc"');
   });
 
   it('writes a version that pacman accepts, with no hyphen', () => {

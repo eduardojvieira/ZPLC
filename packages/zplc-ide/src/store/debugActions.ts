@@ -1,5 +1,6 @@
 /**
- * The debug actions of the IDE store: debug mode, breakpoints, watch variables, live values, forces and the native trace (IDE-014: split out of useIDEStore.ts).
+ * The debug actions of the IDE store: debug mode, breakpoints, watch variables, live values, forces and the native trace (IDE-014: split
+ * out of useIDEStore.ts).
  */
 
 import { type StateCreator } from 'zustand';
@@ -9,7 +10,38 @@ import { withLiveValues } from './liveValues';
 import { NATIVE_TRACE_LIMIT } from '../runtime/nativeTrace';
 import type { IDEState } from './ideStoreTypes';
 
-export const createDebugActions: StateCreator<IDEState, [], [], Pick<IDEState, 'setDebugMode' | 'setDebugMap' | 'toggleBreakpoint' | 'setBreakpoints' | 'setBreakpointsInactiveReason' | 'clearBreakpoints' | 'setCurrentExecution' | 'addWatchVariable' | 'removeWatchVariable' | 'clearWatchVariables' | 'updateLiveValue' | 'updateLiveValues' | 'clearLiveValues' | 'setForcedValue' | 'clearForcedValue' | 'markForcedValuesUnconfirmed' | 'clearForcedValues' | 'appendNativeTrace' | 'clearNativeTrace' | 'setPolling' | 'setPollingInterval' | 'toggleMpeek' | 'getBreakpointsForFile' | 'getAllBreakpointPCs'>> = (set, get) => ({
+export const createDebugActions: StateCreator<
+  IDEState,
+  [],
+  [],
+  Pick<
+    IDEState,
+    | 'setDebugMode'
+    | 'setDebugMap'
+    | 'toggleBreakpoint'
+    | 'setBreakpoints'
+    | 'setBreakpointsInactiveReason'
+    | 'clearBreakpoints'
+    | 'setCurrentExecution'
+    | 'addWatchVariable'
+    | 'removeWatchVariable'
+    | 'clearWatchVariables'
+    | 'updateLiveValue'
+    | 'updateLiveValues'
+    | 'clearLiveValues'
+    | 'setForcedValue'
+    | 'clearForcedValue'
+    | 'markForcedValuesUnconfirmed'
+    | 'clearForcedValues'
+    | 'appendNativeTrace'
+    | 'clearNativeTrace'
+    | 'setPolling'
+    | 'setPollingInterval'
+    | 'toggleMpeek'
+    | 'getBreakpointsForFile'
+    | 'getAllBreakpointPCs'
+  >
+> = (set, get) => ({
   // ==========================================================================
   // Debug Actions
   // ==========================================================================
@@ -28,19 +60,19 @@ export const createDebugActions: StateCreator<IDEState, [], [], Pick<IDEState, '
     set((state) => {
       const newBreakpoints = new Map(state.debug.breakpoints);
       const fileBreakpoints = new Set(newBreakpoints.get(fileId) || []);
-      
+
       if (fileBreakpoints.has(line)) {
         fileBreakpoints.delete(line);
       } else {
         fileBreakpoints.add(line);
       }
-      
+
       if (fileBreakpoints.size === 0) {
         newBreakpoints.delete(fileId);
       } else {
         newBreakpoints.set(fileId, fileBreakpoints);
       }
-      
+
       return {
         debug: { ...state.debug, breakpoints: newBreakpoints },
       };
@@ -60,11 +92,9 @@ export const createDebugActions: StateCreator<IDEState, [], [], Pick<IDEState, '
     }),
 
   setBreakpointsInactiveReason: (reason) =>
-    set((state) => (
-      state.debug.breakpointsInactiveReason === reason
-        ? state
-        : { debug: { ...state.debug, breakpointsInactiveReason: reason } }
-    )),
+    set((state) =>
+      state.debug.breakpointsInactiveReason === reason ? state : { debug: { ...state.debug, breakpointsInactiveReason: reason } },
+    ),
 
   clearBreakpoints: (fileId) =>
     set((state) => {
@@ -111,7 +141,7 @@ export const createDebugActions: StateCreator<IDEState, [], [], Pick<IDEState, '
       return {
         debug: {
           ...state.debug,
-          watchVariables: state.debug.watchVariables.filter(v => v !== varPath),
+          watchVariables: state.debug.watchVariables.filter((v) => v !== varPath),
           liveValues: newLiveValues,
         },
       };
@@ -119,12 +149,12 @@ export const createDebugActions: StateCreator<IDEState, [], [], Pick<IDEState, '
 
   clearWatchVariables: () =>
     set((state) => ({
-        debug: {
-          ...state.debug,
-          watchVariables: [],
-          liveValues: new Map(),
-        },
-      })),
+      debug: {
+        ...state.debug,
+        watchVariables: [],
+        liveValues: new Map(),
+      },
+    })),
 
   updateLiveValue: (varPath, value) => set((state) => withLiveValues(state, [[varPath, value]])),
 
@@ -156,10 +186,7 @@ export const createDebugActions: StateCreator<IDEState, [], [], Pick<IDEState, '
   markForcedValuesUnconfirmed: () =>
     set((state) => {
       const forcedValues = new Map(
-        Array.from(state.debug.forcedValues, ([path, entry]) => [
-          path,
-          { ...entry, state: WATCH_FORCE_STATE.UNCONFIRMED },
-        ]),
+        Array.from(state.debug.forcedValues, ([path, entry]) => [path, { ...entry, state: WATCH_FORCE_STATE.UNCONFIRMED }]),
       );
       return {
         debug: { ...state.debug, forcedValues, forcesUnconfirmed: true },

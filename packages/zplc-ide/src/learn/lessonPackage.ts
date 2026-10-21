@@ -39,12 +39,15 @@ export const LESSON_LOCALES = ['en', 'es'] as const;
 /** The two hint levels every lesson offers (LRN-010). */
 export const LESSON_HINT_LEVELS = [1, 2] as const;
 
-export type LessonStageKey = typeof LESSON_STAGE_KEYS[number];
-export type LessonLevel = typeof LESSON_LEVELS[number];
-export type LessonLocale = typeof LESSON_LOCALES[number];
+export type LessonStageKey = (typeof LESSON_STAGE_KEYS)[number];
+export type LessonLevel = (typeof LESSON_LEVELS)[number];
+export type LessonLocale = (typeof LESSON_LOCALES)[number];
 
 export type LessonLocalizedText = Record<LessonLocale, string>;
-export interface LessonUnsupportedTrack { reason: LessonLocalizedText; instead: LessonLocalizedText }
+export interface LessonUnsupportedTrack {
+  reason: LessonLocalizedText;
+  instead: LessonLocalizedText;
+}
 
 /**
  * The hardware block of a lesson on the hardware track (LRN-013, LRN-024). `timeMs` is how far, in either direction, a
@@ -89,7 +92,12 @@ export const DEVICE_TRACE_JITTER_MS = 10;
  */
 export function hardwareToleranceProblems(timeMs: number, scanMs: number): string[] {
   const least = scanMs + DEVICE_TRACE_JITTER_MS;
-  return timeMs >= least ? [] : [`manifest.hardware.tolerances.timeMs: ${timeMs} ms is less than one scan of the program (${scanMs} ms) plus the jitter margin of a device trace (${DEVICE_TRACE_JITTER_MS} ms); it must be at least ${least} ms`];
+  return timeMs >= least
+    ? []
+    : [
+        `manifest.hardware.tolerances.timeMs: ${timeMs} ms is less than one scan of the program (${scanMs} ms) plus the jitter margin of ` +
+          `a device trace (${DEVICE_TRACE_JITTER_MS} ms); it must be at least ${least} ms`,
+      ];
 }
 
 /** The time tolerance of a check recorded by polling, for a lesson that declares `timeMs` (see hardwareToleranceProblems). */
@@ -122,8 +130,16 @@ export interface LessonManifest {
   hardware?: LessonHardware;
 }
 
-export interface LessonStageText { key: string; title: string; body: string; checkpoint: string }
-export interface LessonHintText { level: number; text: string }
+export interface LessonStageText {
+  key: string;
+  title: string;
+  body: string;
+  checkpoint: string;
+}
+export interface LessonHintText {
+  level: number;
+  text: string;
+}
 export interface LessonText {
   schemaVersion: typeof LESSON_SCHEMA_VERSION;
   title: string;
@@ -136,8 +152,16 @@ export interface LessonText {
 }
 
 /** A program the lesson CI replaces files with: `files` maps a project-relative path to its full content. */
-export interface LessonProgramCheck { intent: string; files: Record<string, string>; remove?: string[] }
-export interface LessonChecks { schemaVersion: typeof LESSON_SCHEMA_VERSION; alsoGreen: LessonProgramCheck[]; wrong: LessonProgramCheck[] }
+export interface LessonProgramCheck {
+  intent: string;
+  files: Record<string, string>;
+  remove?: string[];
+}
+export interface LessonChecks {
+  schemaVersion: typeof LESSON_SCHEMA_VERSION;
+  alsoGreen: LessonProgramCheck[];
+  wrong: LessonProgramCheck[];
+}
 
 export interface ScenarioExpectation {
   kind: string;
@@ -161,7 +185,8 @@ export interface ScenarioFile {
 type Json = Record<string, unknown>;
 const isObject = (value: unknown): value is Json => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isString = (value: unknown): value is string => typeof value === 'string' && value.length > 0;
-const isStringArray = (value: unknown): value is string[] => Array.isArray(value) && value.every((item) => typeof item === 'string' && item.length > 0);
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every((item) => typeof item === 'string' && item.length > 0);
 const isNonNegativeInt = (value: unknown): value is number => typeof value === 'number' && Number.isInteger(value) && value >= 0;
 const isPositiveInt = (value: unknown): value is number => isNonNegativeInt(value) && value > 0;
 const ID = /^[a-z0-9][a-z0-9-]{1,62}[a-z0-9]$/;
@@ -174,25 +199,42 @@ function exactKeys(value: Json, keys: readonly string[], path: string, problems:
   for (const key of keys) if (!(key in value)) problems.push(`${path}: missing key "${key}"`);
 }
 
-const oneOf = <T extends string>(values: readonly T[], value: unknown): value is T => typeof value === 'string' && (values as readonly string[]).includes(value);
+const oneOf = <T extends string>(values: readonly T[], value: unknown): value is T =>
+  typeof value === 'string' && (values as readonly string[]).includes(value);
 
-const isLocalized = (value: unknown): boolean => isObject(value) && LESSON_LOCALES.every((locale) => isString(value[locale])) && Object.keys(value).length === LESSON_LOCALES.length;
+const isLocalized = (value: unknown): boolean =>
+  isObject(value) && LESSON_LOCALES.every((locale) => isString(value[locale])) && Object.keys(value).length === LESSON_LOCALES.length;
 
 /** LRN-011: a lesson says why, and what to do instead, for exactly the tracks it does not list. */
 function validateUnsupported(manifest: Json, problems: string[]): void {
   if (!('unsupported' in manifest)) return;
   const unsupported = manifest.unsupported;
-  if (!isObject(unsupported)) { problems.push('manifest.unsupported: must be an object'); return; }
+  if (!isObject(unsupported)) {
+    problems.push('manifest.unsupported: must be an object');
+    return;
+  }
   const listed = isStringArray(manifest.tracks) ? manifest.tracks : [];
   for (const track of LESSON_TRACKS) {
     const entry = unsupported[track];
-    if (listed.includes(track)) { if (entry !== undefined) problems.push(`manifest.unsupported: track "${track}" is supported, so it must not have a reason`); continue; }
-    if (entry === undefined) { problems.push(`manifest.unsupported: track "${track}" is not supported, so it needs a reason and an instead`); continue; }
-    if (!isObject(entry)) { problems.push(`manifest.unsupported.${track}: must be an object`); continue; }
+    if (listed.includes(track)) {
+      if (entry !== undefined) problems.push(`manifest.unsupported: track "${track}" is supported, so it must not have a reason`);
+      continue;
+    }
+    if (entry === undefined) {
+      problems.push(`manifest.unsupported: track "${track}" is not supported, so it needs a reason and an instead`);
+      continue;
+    }
+    if (!isObject(entry)) {
+      problems.push(`manifest.unsupported.${track}: must be an object`);
+      continue;
+    }
     exactKeys(entry, ['reason', 'instead'], `manifest.unsupported.${track}`, problems);
-    for (const key of ['reason', 'instead'] as const) if (key in entry && !isLocalized(entry[key])) problems.push(`manifest.unsupported.${track}.${key}: must be a non-empty string in ${LESSON_LOCALES.join(' and ')}`);
+    for (const key of ['reason', 'instead'] as const)
+      if (key in entry && !isLocalized(entry[key]))
+        problems.push(`manifest.unsupported.${track}.${key}: must be a non-empty string in ${LESSON_LOCALES.join(' and ')}`);
   }
-  for (const key of Object.keys(unsupported)) if (!(LESSON_TRACKS as readonly string[]).includes(key)) problems.push(`manifest.unsupported: unknown track "${key}"`);
+  for (const key of Object.keys(unsupported))
+    if (!(LESSON_TRACKS as readonly string[]).includes(key)) problems.push(`manifest.unsupported: unknown track "${key}"`);
 }
 
 /** LRN-013: a lesson on the hardware track names its wiring and the tolerances of its board check; no other lesson does. */
@@ -203,20 +245,48 @@ function validateHardware(manifest: Json, problems: string[]): void {
     if (listed) problems.push('manifest.hardware: a lesson on the hardware track needs the hardware block (wiring and tolerances)');
     return;
   }
-  if (!listed) { problems.push('manifest.hardware: only a lesson on the hardware track has a hardware block'); return; }
-  if (!isObject(hardware)) { problems.push('manifest.hardware: must be an object'); return; }
+  if (!listed) {
+    problems.push('manifest.hardware: only a lesson on the hardware track has a hardware block');
+    return;
+  }
+  if (!isObject(hardware)) {
+    problems.push('manifest.hardware: must be an object');
+    return;
+  }
   exactKeys(hardware, ['wiring', 'tolerances'], 'manifest.hardware', problems);
   if ('wiring' in hardware && hardware.wiring !== WIRING_FILE) problems.push(`manifest.hardware.wiring: must be "${WIRING_FILE}"`);
   const tolerances = hardware.tolerances;
   if (!('tolerances' in hardware)) return;
-  if (!isObject(tolerances)) { problems.push('manifest.hardware.tolerances: must be an object'); return; }
+  if (!isObject(tolerances)) {
+    problems.push('manifest.hardware.tolerances: must be an object');
+    return;
+  }
   exactKeys(tolerances, ['timeMs', 'analogPercent'], 'manifest.hardware.tolerances', problems);
-  if ('timeMs' in tolerances && (!isPositiveInt(tolerances.timeMs) || (tolerances.timeMs as number) > MAX_HARDWARE_TIME_TOLERANCE_MS)) problems.push(`manifest.hardware.tolerances.timeMs: must be an integer from 1 to ${MAX_HARDWARE_TIME_TOLERANCE_MS}`);
+  if ('timeMs' in tolerances && (!isPositiveInt(tolerances.timeMs) || (tolerances.timeMs as number) > MAX_HARDWARE_TIME_TOLERANCE_MS))
+    problems.push(`manifest.hardware.tolerances.timeMs: must be an integer from 1 to ${MAX_HARDWARE_TIME_TOLERANCE_MS}`);
   const percent = tolerances.analogPercent;
-  if ('analogPercent' in tolerances && (typeof percent !== 'number' || !Number.isFinite(percent) || percent <= 0 || percent > 100)) problems.push('manifest.hardware.tolerances.analogPercent: must be a number above 0 and at most 100');
+  if ('analogPercent' in tolerances && (typeof percent !== 'number' || !Number.isFinite(percent) || percent <= 0 || percent > 100))
+    problems.push('manifest.hardware.tolerances.analogPercent: must be a number above 0 and at most 100');
 }
 
-const MANIFEST_KEYS = ['schemaVersion', 'id', 'version', 'order', 'module', 'level', 'prerequisites', 'languages', 'tracks', 'unsupported', 'plant', 'estimatedMinutes', 'starter', 'solution', 'scenario', 'regressionScenarios'];
+const MANIFEST_KEYS = [
+  'schemaVersion',
+  'id',
+  'version',
+  'order',
+  'module',
+  'level',
+  'prerequisites',
+  'languages',
+  'tracks',
+  'unsupported',
+  'plant',
+  'estimatedMinutes',
+  'starter',
+  'solution',
+  'scenario',
+  'regressionScenarios',
+];
 
 /** Every problem of a lesson manifest; an empty list means the manifest is valid. */
 export function validateManifest(value: unknown): string[] {
@@ -229,29 +299,51 @@ export function validateManifest(value: unknown): string[] {
   if (!isPositiveInt(value.order)) problems.push('manifest.order: must be a positive integer');
   if (!isNonNegativeInt(value.module) || (value.module as number) > 11) problems.push('manifest.module: must be an integer from 0 to 11');
   if (!oneOf(LESSON_LEVELS, value.level)) problems.push(`manifest.level: must be one of ${LESSON_LEVELS.join(', ')}`);
-  if (!isStringArray(value.prerequisites) || value.prerequisites.some((id) => !ID.test(id)) || new Set(value.prerequisites).size !== value.prerequisites.length) problems.push('manifest.prerequisites: must be a list of distinct lesson ids');
-  if (!isStringArray(value.languages) || value.languages.length === 0 || value.languages.some((language) => !oneOf(LESSON_LANGUAGES, language))) problems.push(`manifest.languages: must list at least one of ${LESSON_LANGUAGES.join(', ')}`);
-  if (!isStringArray(value.tracks) || value.tracks.length === 0 || value.tracks.some((track) => !oneOf(LESSON_TRACKS, track))) problems.push(`manifest.tracks: must list at least one of ${LESSON_TRACKS.join(', ')}`);
+  if (
+    !isStringArray(value.prerequisites) ||
+    value.prerequisites.some((id) => !ID.test(id)) ||
+    new Set(value.prerequisites).size !== value.prerequisites.length
+  )
+    problems.push('manifest.prerequisites: must be a list of distinct lesson ids');
+  if (
+    !isStringArray(value.languages) ||
+    value.languages.length === 0 ||
+    value.languages.some((language) => !oneOf(LESSON_LANGUAGES, language))
+  )
+    problems.push(`manifest.languages: must list at least one of ${LESSON_LANGUAGES.join(', ')}`);
+  if (!isStringArray(value.tracks) || value.tracks.length === 0 || value.tracks.some((track) => !oneOf(LESSON_TRACKS, track)))
+    problems.push(`manifest.tracks: must list at least one of ${LESSON_TRACKS.join(', ')}`);
   validateUnsupported(value, problems);
   validateHardware(value, problems);
-  if (value.plant !== null && !oneOf(LESSON_PLANTS, value.plant)) problems.push(`manifest.plant: must be null or one of ${LESSON_PLANTS.join(', ')}`);
-  if (!isPositiveInt(value.estimatedMinutes) || (value.estimatedMinutes as number) > 480) problems.push('manifest.estimatedMinutes: must be an integer from 1 to 480');
+  if (value.plant !== null && !oneOf(LESSON_PLANTS, value.plant))
+    problems.push(`manifest.plant: must be null or one of ${LESSON_PLANTS.join(', ')}`);
+  if (!isPositiveInt(value.estimatedMinutes) || (value.estimatedMinutes as number) > 480)
+    problems.push('manifest.estimatedMinutes: must be an integer from 1 to 480');
   for (const part of ['starter', 'solution'] as const) {
     if (!(part in value)) continue;
     const entry = value[part];
-    if (!isObject(entry)) { problems.push(`manifest.${part}: must be an object`); continue; }
+    if (!isObject(entry)) {
+      problems.push(`manifest.${part}: must be an object`);
+      continue;
+    }
     exactKeys(entry, ['project', 'program'], `manifest.${part}`, problems);
-    if (typeof entry.project !== 'string' || !PROJECT.test(entry.project)) problems.push(`manifest.${part}.project: must be an example project folder name`);
-    if (typeof entry.program !== 'string' || !PROJECT_PATH.test(entry.program) || !entry.program.startsWith('src/')) problems.push(`manifest.${part}.program: must be a path under src/`);
+    if (typeof entry.project !== 'string' || !PROJECT.test(entry.project))
+      problems.push(`manifest.${part}.project: must be an example project folder name`);
+    if (typeof entry.program !== 'string' || !PROJECT_PATH.test(entry.program) || !entry.program.startsWith('src/'))
+      problems.push(`manifest.${part}.program: must be a path under src/`);
   }
   const scenario = value.scenario;
-  if (!('scenario' in value)) { /* reported above as a missing key */ } else if (!isObject(scenario)) problems.push('manifest.scenario: must be an object');
+  if (!('scenario' in value)) {
+    /* reported above as a missing key */
+  } else if (!isObject(scenario)) problems.push('manifest.scenario: must be an object');
   else {
     exactKeys(scenario, ['file', 'id', 'path', 'sha256'], 'manifest.scenario', problems);
     if (scenario.file !== 'scenario.json') problems.push('manifest.scenario.file: must be "scenario.json"');
     if (!isString(scenario.id) || (scenario.id as string).length > 128) problems.push('manifest.scenario.id: must be the scenario id');
-    if (typeof scenario.path !== 'string' || !PROJECT_PATH.test(scenario.path) || !scenario.path.startsWith('tests/')) problems.push('manifest.scenario.path: must be a path under tests/');
-    if (typeof scenario.sha256 !== 'string' || !SHA256.test(scenario.sha256)) problems.push('manifest.scenario.sha256: must be a lowercase SHA-256');
+    if (typeof scenario.path !== 'string' || !PROJECT_PATH.test(scenario.path) || !scenario.path.startsWith('tests/'))
+      problems.push('manifest.scenario.path: must be a path under tests/');
+    if (typeof scenario.sha256 !== 'string' || !SHA256.test(scenario.sha256))
+      problems.push('manifest.scenario.sha256: must be a lowercase SHA-256');
   }
   if (!isStringArray(value.regressionScenarios)) problems.push('manifest.regressionScenarios: must be a list of scenario ids');
   return problems;
@@ -263,7 +355,8 @@ export function validateText(value: unknown): string[] {
   if (!isObject(value)) return ['text: must be an object'];
   exactKeys(value, ['schemaVersion', 'title', 'summary', 'scope', 'objectives', 'stages', 'hints', 'faultCases'], 'text', problems);
   if (value.schemaVersion !== LESSON_SCHEMA_VERSION) problems.push('text.schemaVersion: must be 1');
-  for (const key of ['title', 'summary', 'scope'] as const) if (!isString(value[key])) problems.push(`text.${key}: must be a non-empty string`);
+  for (const key of ['title', 'summary', 'scope'] as const)
+    if (!isString(value[key])) problems.push(`text.${key}: must be a non-empty string`);
   if (!isStringArray(value.objectives) || value.objectives.length === 0) problems.push('text.objectives: must list at least one objective');
   if (!isStringArray(value.faultCases) || value.faultCases.length === 0) problems.push('text.faultCases: must list at least one fault');
   const stages = value.stages;
@@ -271,23 +364,31 @@ export function validateText(value: unknown): string[] {
   else {
     const keys: string[] = [];
     stages.forEach((stage, index) => {
-      if (!isObject(stage)) { problems.push(`text.stages[${index}]: must be an object`); return; }
+      if (!isObject(stage)) {
+        problems.push(`text.stages[${index}]: must be an object`);
+        return;
+      }
       exactKeys(stage, ['key', 'title', 'body', 'checkpoint'], `text.stages[${index}]`, problems);
-      for (const field of ['key', 'title', 'body', 'checkpoint'] as const) if (!isString(stage[field])) problems.push(`text.stages[${index}].${field}: must be a non-empty string`);
+      for (const field of ['key', 'title', 'body', 'checkpoint'] as const)
+        if (!isString(stage[field])) problems.push(`text.stages[${index}].${field}: must be a non-empty string`);
       if (typeof stage.key === 'string') keys.push(stage.key);
     });
     if (new Set(keys).size !== keys.length) problems.push('text.stages: keys must be distinct');
     // LRN-010: the six stages, once each and in this order; further stages may sit between them.
     const canonical = keys.filter((key) => (LESSON_STAGE_KEYS as readonly string[]).includes(key));
-    if (canonical.join(',') !== LESSON_STAGE_KEYS.join(',')) problems.push(`text.stages: must contain ${LESSON_STAGE_KEYS.join(', ')} once each, in that order`);
+    if (canonical.join(',') !== LESSON_STAGE_KEYS.join(','))
+      problems.push(`text.stages: must contain ${LESSON_STAGE_KEYS.join(', ')} once each, in that order`);
   }
   const hints = value.hints;
   if (!Array.isArray(hints)) problems.push('text.hints: must be a list');
   else {
-    const levels = hints.map((hint) => isObject(hint) ? hint.level : undefined);
+    const levels = hints.map((hint) => (isObject(hint) ? hint.level : undefined));
     if (levels.join(',') !== LESSON_HINT_LEVELS.join(',')) problems.push('text.hints: must offer level 1 and level 2, in that order');
     hints.forEach((hint, index) => {
-      if (!isObject(hint)) { problems.push(`text.hints[${index}]: must be an object`); return; }
+      if (!isObject(hint)) {
+        problems.push(`text.hints[${index}]: must be an object`);
+        return;
+      }
       exactKeys(hint, ['level', 'text'], `text.hints[${index}]`, problems);
       if (!isString(hint.text)) problems.push(`text.hints[${index}].text: must be a non-empty string`);
     });
@@ -296,18 +397,28 @@ export function validateText(value: unknown): string[] {
 }
 
 function validateCheckList(value: unknown, path: string, problems: string[]): void {
-  if (!Array.isArray(value)) { problems.push(`${path}: must be a list`); return; }
+  if (!Array.isArray(value)) {
+    problems.push(`${path}: must be a list`);
+    return;
+  }
   value.forEach((item, index) => {
     const here = `${path}[${index}]`;
-    if (!isObject(item)) { problems.push(`${here}: must be an object`); return; }
+    if (!isObject(item)) {
+      problems.push(`${here}: must be an object`);
+      return;
+    }
     const keys = Object.keys(item).filter((key) => key !== 'remove');
     if (keys.sort().join(',') !== 'files,intent') problems.push(`${here}: must have intent, files and optionally remove`);
     if (!isString(item.intent)) problems.push(`${here}.intent: must be a non-empty string`);
-    if (!isObject(item.files) || Object.keys(item.files).length === 0) problems.push(`${here}.files: must map at least one project path to its content`);
-    else for (const [file, content] of Object.entries(item.files)) {
-      if (!(file === 'zplc.json' || PROJECT_PATH.test(file)) || typeof content !== 'string') problems.push(`${here}.files: "${file}" must be a project path with text content`);
-    }
-    if ('remove' in item && (!isStringArray(item.remove) || item.remove.some((file) => !PROJECT_PATH.test(file)))) problems.push(`${here}.remove: must be a list of project paths`);
+    if (!isObject(item.files) || Object.keys(item.files).length === 0)
+      problems.push(`${here}.files: must map at least one project path to its content`);
+    else
+      for (const [file, content] of Object.entries(item.files)) {
+        if (!(file === 'zplc.json' || PROJECT_PATH.test(file)) || typeof content !== 'string')
+          problems.push(`${here}.files: "${file}" must be a project path with text content`);
+      }
+    if ('remove' in item && (!isStringArray(item.remove) || item.remove.some((file) => !PROJECT_PATH.test(file))))
+      problems.push(`${here}.remove: must be a list of project paths`);
   });
 }
 
@@ -318,7 +429,8 @@ export function validateChecks(value: unknown): string[] {
   if (value.schemaVersion !== LESSON_SCHEMA_VERSION) problems.push('checks.schemaVersion: must be 1');
   validateCheckList(value.alsoGreen, 'checks.alsoGreen', problems);
   validateCheckList(value.wrong, 'checks.wrong', problems);
-  if (Array.isArray(value.wrong) && value.wrong.length < 2) problems.push('checks.wrong: at least two wrong programs prove the scenario tells right from wrong');
+  if (Array.isArray(value.wrong) && value.wrong.length < 2)
+    problems.push('checks.wrong: at least two wrong programs prove the scenario tells right from wrong');
   return problems;
 }
 
@@ -332,10 +444,13 @@ export function parseScenarioFile(value: unknown): { scenario?: ScenarioFile; pr
   if (!isPositiveInt(value.durationMs)) problems.push('scenario.durationMs: must be a positive integer');
   if (value.plant !== undefined && !oneOf(LESSON_PLANTS, value.plant)) problems.push('scenario.plant: unknown plant');
   if (!Array.isArray(value.events)) problems.push('scenario.events: must be a list');
-  if (!Array.isArray(value.expectations) || value.expectations.length === 0) problems.push('scenario.expectations: must be a non-empty list');
-  else value.expectations.forEach((expectation, index) => {
-    if (!isObject(expectation) || typeof expectation.kind !== 'string' || !isObject(expectation.condition)) problems.push(`scenario.expectations[${index}]: must have a kind and a condition`);
-  });
+  if (!Array.isArray(value.expectations) || value.expectations.length === 0)
+    problems.push('scenario.expectations: must be a non-empty list');
+  else
+    value.expectations.forEach((expectation, index) => {
+      if (!isObject(expectation) || typeof expectation.kind !== 'string' || !isObject(expectation.condition))
+        problems.push(`scenario.expectations[${index}]: must have a kind and a condition`);
+    });
   return problems.length > 0 ? { problems } : { scenario: value as unknown as ScenarioFile, problems };
 }
 
@@ -343,7 +458,12 @@ export function parseScenarioFile(value: unknown): { scenario?: ScenarioFile; pr
 export function canonicalJson(value: unknown): string {
   const sorted = (item: unknown): unknown => {
     if (Array.isArray(item)) return item.map(sorted);
-    if (isObject(item)) return Object.fromEntries(Object.keys(item).sort().map((key) => [key, sorted(item[key])]));
+    if (isObject(item))
+      return Object.fromEntries(
+        Object.keys(item)
+          .sort()
+          .map((key) => [key, sorted(item[key])]),
+      );
     return item;
   };
   return JSON.stringify(sorted(value));
@@ -355,9 +475,15 @@ const FILE_CITATION = /\b(?:src|tests)\/[\w.-]*\w/g;
 /** Whether the scenario asserts all `pairs` at `at` ms: an AT there, or a FOR or ALWAYS that covers it. */
 export function scenarioAssertsAt(scenario: ScenarioFile, pairs: ReadonlyArray<readonly [string, boolean]>, at: number): boolean {
   return scenario.expectations.some((expectation) => {
-    const covers = expectation.kind === 'AT' ? expectation.atMs === at
-      : expectation.kind === 'FOR' ? expectation.fromMs !== undefined && expectation.forMs !== undefined && at >= expectation.fromMs && at <= expectation.fromMs + expectation.forMs
-        : expectation.kind === 'ALWAYS';
+    const covers =
+      expectation.kind === 'AT'
+        ? expectation.atMs === at
+        : expectation.kind === 'FOR'
+          ? expectation.fromMs !== undefined &&
+            expectation.forMs !== undefined &&
+            at >= expectation.fromMs &&
+            at <= expectation.fromMs + expectation.forMs
+          : expectation.kind === 'ALWAYS';
     return covers && pairs.every(([signal, value]) => expectation.condition[signal] === value);
   });
 }
@@ -374,7 +500,12 @@ export function expandQuotes(source: string, scenario: ScenarioFile): { text: st
     if (body === 'assertions') return String(scenario.expectations.length);
     if (body.startsWith('t:')) {
       const time = Number(body.slice(2));
-      if (!onTimeline(scenario, time)) problems.push(`time ${time} ms is not on the timeline of scenario ${scenario.id} (tick ${scenario.tickMs} ms, duration ${scenario.durationMs} ms)`);
+      if (!onTimeline(scenario, time))
+        problems.push(
+          `time ${time} ms is not on the timeline of scenario ${scenario.id} (tick ${scenario.tickMs} ms, duration ${
+            scenario.durationMs
+          } ms)`,
+        );
       return String(time);
     }
     const bar = body.indexOf('|');
@@ -385,11 +516,17 @@ export function expandQuotes(source: string, scenario: ScenarioFile): { text: st
     const pairs: Array<readonly [string, boolean]> = [];
     for (const part of (at < 0 ? '' : spec.slice(0, at)).split(',')) {
       const [signal, value] = part.split('=');
-      if (!signal || (value !== 'true' && value !== 'false')) { problems.push(`value claim "${spec}" is malformed`); return shown; }
+      if (!signal || (value !== 'true' && value !== 'false')) {
+        problems.push(`value claim "${spec}" is malformed`);
+        return shown;
+      }
       pairs.push([signal, value === 'true']);
     }
     if (at < 0 || !Number.isInteger(time) || pairs.length === 0) problems.push(`value claim "${spec}" is malformed`);
-    else if (!scenarioAssertsAt(scenario, pairs, time)) problems.push(`scenario ${scenario.id} does not assert ${pairs.map(([signal, value]) => `${signal}=${value}`).join(', ')} at ${time} ms`);
+    else if (!scenarioAssertsAt(scenario, pairs, time))
+      problems.push(
+        `scenario ${scenario.id} does not assert ${pairs.map(([signal, value]) => `${signal}=${value}`).join(', ')} at ${time} ms`,
+      );
     return shown;
   });
   if (text.includes('{{') || text.includes('}}')) problems.push(`unresolved markup in "${source}"`);
@@ -442,11 +579,20 @@ export function expandText(text: LessonText, scenario: ScenarioFile): { text: Le
     summary: expand(text.summary),
     scope: expand(text.scope),
     objectives: text.objectives.map(expand),
-    stages: text.stages.map((stage) => ({ key: stage.key, title: expand(stage.title), body: expand(stage.body), checkpoint: expand(stage.checkpoint) })),
+    stages: text.stages.map((stage) => ({
+      key: stage.key,
+      title: expand(stage.title),
+      body: expand(stage.body),
+      checkpoint: expand(stage.checkpoint),
+    })),
     hints: text.hints.map((hint) => ({ level: hint.level, text: expand(hint.text) })),
     faultCases: text.faultCases.map(expand),
   };
-  for (const source of [...text.objectives, ...text.stages.flatMap((stage) => [stage.body, stage.checkpoint]), ...text.hints.map((hint) => hint.text)]) {
+  for (const source of [
+    ...text.objectives,
+    ...text.stages.flatMap((stage) => [stage.body, stage.checkpoint]),
+    ...text.hints.map((hint) => hint.text),
+  ]) {
     for (const time of unmarkedTimes(source)) problems.push(`quoted time "${time}" is not marked with {{t:N}}`);
   }
   return { text: expanded, problems };
@@ -486,4 +632,8 @@ export interface LessonIndexEntry {
 }
 
 /** The generated index: every lesson, and the course (tracks and modules in order) the lessons are placed in (LRN-005). */
-export interface LessonIndex { schemaVersion: typeof LESSON_SCHEMA_VERSION; lessons: readonly LessonIndexEntry[]; course: CourseDefinition }
+export interface LessonIndex {
+  schemaVersion: typeof LESSON_SCHEMA_VERSION;
+  lessons: readonly LessonIndexEntry[];
+  course: CourseDefinition;
+}

@@ -17,15 +17,15 @@
 static int test_count = 0;
 static int fail_count = 0;
 
-#define CHECK(cond, msg)                                                      \
-  do {                                                                        \
-    test_count++;                                                             \
-    if (!(cond)) {                                                            \
-      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__);                 \
-      fail_count++;                                                           \
-    } else {                                                                  \
-      printf("PASS: %s\n", msg);                                              \
-    }                                                                         \
+#define CHECK(cond, msg)                                      \
+  do {                                                        \
+    test_count++;                                             \
+    if (!(cond)) {                                            \
+      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__); \
+      fail_count++;                                           \
+    } else {                                                  \
+      printf("PASS: %s\n", msg);                              \
+    }                                                         \
   } while (0)
 
 static char captured[256];
@@ -52,20 +52,17 @@ int main(void) {
   hil_set_sink(sink, &token);
   hil_trace_opcode(OP_NOP, 4U, 1U, 5);
   CHECK(lines == 1, "a verbose opcode trace produces one line");
-  CHECK(strcmp(captured, "{\"t\":\"opcode\",\"op\":\"NOP\",\"pc\":4,\"sp\":1,\"tos\":5}") == 0,
-        "the line is the documented JSON object");
+  CHECK(strcmp(captured, "{\"t\":\"opcode\",\"op\":\"NOP\",\"pc\":4,\"sp\":1,\"tos\":5}") == 0, "the line is the documented JSON object");
   CHECK(seen_context == &token, "the sink receives the registered context");
 
   hil_set_mode(HIL_MODE_SUMMARY);
   hil_trace_opcode(OP_NOP, 4U, 1U, 5);
   CHECK(lines == 1, "summary mode does not trace opcodes");
   hil_trace_cycle(3U, 250U, 2U);
-  CHECK(lines == 2 && strcmp(captured, "{\"t\":\"cycle\",\"n\":3,\"us\":250,\"tasks\":2}") == 0,
-        "a cycle summary is one JSON line");
+  CHECK(lines == 2 && strcmp(captured, "{\"t\":\"cycle\",\"n\":3,\"us\":250,\"tasks\":2}") == 0, "a cycle summary is one JSON line");
 
   hil_trace_error(0x03U, NULL, 9U);
-  CHECK(lines == 3 && strstr(captured, "\"msg\":\"DIV_BY_ZERO\"") != NULL,
-        "an error names its code when no message is given");
+  CHECK(lines == 3 && strstr(captured, "\"msg\":\"DIV_BY_ZERO\"") != NULL, "an error names its code when no message is given");
 
   hil_set_sink(NULL, NULL);
   hil_trace_cycle(4U, 1U, 1U);

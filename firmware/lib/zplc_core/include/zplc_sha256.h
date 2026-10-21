@@ -48,8 +48,7 @@ void zplc_hmac_sha256_init(zplc_hmac_sha256_t *context, const uint8_t *key, size
 void zplc_hmac_sha256_update(zplc_hmac_sha256_t *context, const uint8_t *data, size_t length);
 /** @brief Write the code and clear the context (the key pads included). */
 void zplc_hmac_sha256_final(zplc_hmac_sha256_t *context, uint8_t mac[ZPLC_SHA256_DIGEST_BYTES]);
-void zplc_hmac_sha256(const uint8_t *key, size_t key_length, const uint8_t *data, size_t length,
-                      uint8_t mac[ZPLC_SHA256_DIGEST_BYTES]);
+void zplc_hmac_sha256(const uint8_t *key, size_t key_length, const uint8_t *data, size_t length, uint8_t mac[ZPLC_SHA256_DIGEST_BYTES]);
 
 /** @brief 1 when the two buffers are equal; the time taken depends on @p length only. */
 int zplc_ct_equal(const uint8_t *a, const uint8_t *b, size_t length);

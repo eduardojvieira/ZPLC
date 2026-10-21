@@ -37,7 +37,7 @@ extern const uint16_t zplc_io_gpio_binding_count;
 struct zplc_io_adc_binding {
   const struct device *dev; /**< NULL: the converter node is absent (optional channel) */
   struct adc_channel_cfg cfg;
-  uint8_t resolution;       /**< Resolution in bits passed to adc_read */
+  uint8_t resolution; /**< Resolution in bits passed to adc_read */
   uint8_t required;
 };
 

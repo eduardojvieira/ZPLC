@@ -59,12 +59,23 @@ describe('repository hygiene: the non-functional items of the requirement are no
     expect(present).toEqual([]);
   });
 
-  it('keeps the post and the author that are the project\'s own, which the template posts used to bury', () => {
-    expect(tracked.filter((file) => file.startsWith('docs/blog/'))).toEqual(['docs/blog/2026-01-07-zplc-v1.4.3-release.md', 'docs/blog/authors.yml']);
+  it("keeps the post and the author that are the project's own, which the template posts used to bury", () => {
+    expect(tracked.filter((file) => file.startsWith('docs/blog/'))).toEqual([
+      'docs/blog/2026-01-07-zplc-v1.4.3-release.md',
+      'docs/blog/authors.yml',
+    ]);
   });
 
   it('ignores the build directories a contributor creates, at any depth', () => {
-    const builds = ['build/', 'firmware/lib/zplc_core/build/', 'firmware/app/build_tests/', 'firmware/app/build_posix/', 'docs/build/', 'packages/zplc-ide/dist/', 'twister-out/'];
+    const builds = [
+      'build/',
+      'firmware/lib/zplc_core/build/',
+      'firmware/app/build_tests/',
+      'firmware/app/build_posix/',
+      'docs/build/',
+      'packages/zplc-ide/dist/',
+      'twister-out/',
+    ];
     expect(builds.filter((path) => !isIgnored(path))).toEqual([]);
   });
 });
@@ -92,7 +103,9 @@ describe('docs site: an image file is the format its name says (DOC-018)', () =>
   });
 
   it('serves a favicon and a social card that exist, and a favicon that is a small file, not the picture of the identity', async () => {
-    const { default: config } = await import(join(ROOT, 'docs/docusaurus.config.js')) as { default: { favicon: string; themeConfig: { image: string } } };
+    const { default: config } = (await import(join(ROOT, 'docs/docusaurus.config.js'))) as {
+      default: { favicon: string; themeConfig: { image: string } };
+    };
     const favicon = readFileSync(join(ROOT, 'docs/static', config.favicon));
     expect(favicon.length).toBeLessThan(100 * 1024);
     expect(readFileSync(join(ROOT, 'docs/static', config.themeConfig.image)).length).toBeGreaterThan(0);

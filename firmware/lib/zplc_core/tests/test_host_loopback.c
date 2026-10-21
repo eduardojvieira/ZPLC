@@ -67,8 +67,7 @@ static void scan(zplc_comm_fb_kind_t kind, uint8_t *memory) {
 }
 
 static uint32_t status_of(const uint8_t *memory) {
-  return (uint32_t)memory[4] | ((uint32_t)memory[5] << 8) | ((uint32_t)memory[6] << 16) |
-         ((uint32_t)memory[7] << 24);
+  return (uint32_t)memory[4] | ((uint32_t)memory[5] << 8) | ((uint32_t)memory[6] << 16) | ((uint32_t)memory[7] << 24);
 }
 
 #define BUSY(m) ((m)[1])
@@ -80,13 +79,11 @@ static void set_u16(uint8_t *memory, unsigned offset, uint16_t value) {
   memory[offset + 1U] = (uint8_t)(value >> 8);
 }
 
-static uint16_t get_u16(const uint8_t *memory, unsigned offset) {
-  return (uint16_t)(memory[offset] | (memory[offset + 1U] << 8));
-}
+static uint16_t get_u16(const uint8_t *memory, unsigned offset) { return (uint16_t)(memory[offset] | (memory[offset + 1U] << 8)); }
 
 static void set_text(uint8_t *memory, zplc_comm_fb_kind_t kind, unsigned offset, const char *text) {
-  assert(zplc_fb_string_set(memory, zplc_comm_fb_size((uint32_t)kind), (uint16_t)offset, STRING_ROOM,
-                            (const uint8_t *)text, strlen(text)) == strlen(text));
+  assert(zplc_fb_string_set(memory, zplc_comm_fb_size((uint32_t)kind), (uint16_t)offset, STRING_ROOM, (const uint8_t *)text,
+                            strlen(text)) == strlen(text));
 }
 
 /* Scan until the block is no longer BUSY, a scan every 2 ms, for at most `limit_ms`. */
@@ -124,14 +121,13 @@ static bool until(zplc_comm_fb_kind_t kind, uint8_t *memory, state_fn done, int6
 /* --- Modbus helpers ---*/
 /* A TCP request of the blocks of kind `kind`, to `port`: EN is not set. */
 static void modbus_request(uint8_t *memory, zplc_comm_fb_kind_t kind, uint16_t port, uint16_t address) {
-  memory[8] = 1U; /* PROTO: TCP */
+  memory[8] = 1U;          /* PROTO: TCP */
   set_u16(memory, 9U, 1U); /* SLAVE_ID */
   set_u16(memory, 11U, address);
   set_u16(memory, 13U, 1U); /* COUNT */
   set_text(memory, kind, ZPLC_COMM_MB_READ_HREG_HOST_OFFSET, "127.0.0.1");
   set_u16(memory, ZPLC_COMM_MB_READ_HREG_PORT_OFFSET, port);
 }
-
 
 static void modbus_to_somewhere_else(uint8_t *memory, zplc_comm_fb_kind_t kind, uint16_t address) {
   modbus_request(memory, kind, 502U, address);
@@ -177,8 +173,8 @@ static void test_the_endpoints_run_and_a_program_reaches_them(void) {
   pub[0] = 1U;
   assert(settle(ZPLC_COMM_FB_MQTT_PUBLISH, pub, 6000));
   assert(DONE(pub) == 1U && status_of(pub) == ZPLC_COMM_OK);
-  assert(zplc_loopback_mqtt_last_publish(zplc_host_comm_loopback_mqtt(), topic, sizeof(topic), payload,
-                                         sizeof(payload), &length, &qos, &retain));
+  assert(zplc_loopback_mqtt_last_publish(zplc_host_comm_loopback_mqtt(), topic, sizeof(topic), payload, sizeof(payload), &length, &qos,
+                                         &retain));
   assert(strcmp(topic, "sim/out") == 0 && length == 4U && memcmp(payload, "ping", 4U) == 0);
 
   /* a cloud service is not simulated: a status of its own, never success */
@@ -194,10 +190,9 @@ static void test_the_endpoints_run_and_a_program_reaches_them(void) {
 
 static void test_an_endpoint_that_cannot_start_leaves_every_block_unavailable(void) {
   static const zplc_comm_fb_kind_t all[] = {
-      ZPLC_COMM_FB_MB_READ_HREG,    ZPLC_COMM_FB_MB_WRITE_HREG,   ZPLC_COMM_FB_MB_READ_COIL,
-      ZPLC_COMM_FB_MB_WRITE_COIL,   ZPLC_COMM_FB_MQTT_CONNECT,    ZPLC_COMM_FB_MQTT_PUBLISH,
-      ZPLC_COMM_FB_MQTT_SUBSCRIBE,  ZPLC_COMM_FB_AZURE_C2D_RECV,  ZPLC_COMM_FB_AZURE_DPS_PROV,
-      ZPLC_COMM_FB_AZURE_EG_PUB,    ZPLC_COMM_FB_AWS_FLEET_PROV,  ZPLC_COMM_FB_SPB_REBIRTH,
+      ZPLC_COMM_FB_MB_READ_HREG,   ZPLC_COMM_FB_MB_WRITE_HREG, ZPLC_COMM_FB_MB_READ_COIL,   ZPLC_COMM_FB_MB_WRITE_COIL,
+      ZPLC_COMM_FB_MQTT_CONNECT,   ZPLC_COMM_FB_MQTT_PUBLISH,  ZPLC_COMM_FB_MQTT_SUBSCRIBE, ZPLC_COMM_FB_AZURE_C2D_RECV,
+      ZPLC_COMM_FB_AZURE_DPS_PROV, ZPLC_COMM_FB_AZURE_EG_PUB,  ZPLC_COMM_FB_AWS_FLEET_PROV, ZPLC_COMM_FB_SPB_REBIRTH,
   };
   zplc_host_endpoints_t endpoints;
   uint16_t taken = 0U;
@@ -212,8 +207,8 @@ static void test_an_endpoint_that_cannot_start_leaves_every_block_unavailable(vo
   for (i = 0U; i < sizeof(all) / sizeof(all[0]); i++) {
     uint8_t *b = block(all[i]);
 
-    if (all[i] == ZPLC_COMM_FB_MB_READ_HREG || all[i] == ZPLC_COMM_FB_MB_WRITE_HREG ||
-        all[i] == ZPLC_COMM_FB_MB_READ_COIL || all[i] == ZPLC_COMM_FB_MB_WRITE_COIL) {
+    if (all[i] == ZPLC_COMM_FB_MB_READ_HREG || all[i] == ZPLC_COMM_FB_MB_WRITE_HREG || all[i] == ZPLC_COMM_FB_MB_READ_COIL ||
+        all[i] == ZPLC_COMM_FB_MB_WRITE_COIL) {
       modbus_request(b, all[i], taken, 1U);
     }
     b[0] = 1U;

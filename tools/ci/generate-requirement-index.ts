@@ -65,7 +65,14 @@ export function parsePlan(plan: string): Map<string, { workPackage: string; phas
   const rows = new Map<string, { workPackage: string; phase: number; alsoAdvancedBy: string[] }>();
   for (const match of plan.matchAll(/^\| ([A-Z]{2,4}-[0-9]{3}) \| (WP-[0-9]+) \| ([0-9]+) \|([^|]*)\|\s*$/gm)) {
     const [, id = '', workPackage = '', phase = '', also = ''] = match;
-    rows.set(id, { workPackage, phase: Number(phase), alsoAdvancedBy: also.split(',').map((item) => item.trim()).filter(Boolean) });
+    rows.set(id, {
+      workPackage,
+      phase: Number(phase),
+      alsoAdvancedBy: also
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean),
+    });
   }
   return rows;
 }
@@ -91,12 +98,15 @@ export function validateIndex(index: unknown): string[] {
     }
     if (seen.has(id)) errors.push(`${id}: duplicate`);
     seen.add(id);
-    if (entry.workstream !== id.slice(0, id.indexOf('-'))) errors.push(`${id}: workstream ${String(entry.workstream)} does not match the identifier`);
+    if (entry.workstream !== id.slice(0, id.indexOf('-')))
+      errors.push(`${id}: workstream ${String(entry.workstream)} does not match the identifier`);
     if (typeof entry.title !== 'string' || entry.title.trim() === '') errors.push(`${id}: title must not be empty`);
-    if (entry.workPackage !== undefined && !/^WP-[0-9]+$/.test(String(entry.workPackage))) errors.push(`${id}: workPackage must look like WP-12`);
+    if (entry.workPackage !== undefined && !/^WP-[0-9]+$/.test(String(entry.workPackage)))
+      errors.push(`${id}: workPackage must look like WP-12`);
     if (entry.phase !== undefined && !Number.isInteger(entry.phase)) errors.push(`${id}: phase must be a whole number`);
     const also = entry.alsoAdvancedBy;
-    if (also !== undefined && !(Array.isArray(also) && also.every((item) => /^WP-[0-9]+$/.test(String(item))))) errors.push(`${id}: alsoAdvancedBy must list packages like WP-12`);
+    if (also !== undefined && !(Array.isArray(also) && also.every((item) => /^WP-[0-9]+$/.test(String(item)))))
+      errors.push(`${id}: alsoAdvancedBy must list packages like WP-12`);
   }
   return errors;
 }
@@ -117,7 +127,8 @@ export function checkAgainstSpec(committed: string, spec: string, plan?: string)
   }
   const before = new Map(current.map((entry) => [String(entry.id), JSON.stringify(entry)]));
   const after = new Map(expected.map((entry) => [entry.id, JSON.stringify(entry)]));
-  const names = (ids: string[]) => (ids.length === 0 ? 'none' : ids.slice(0, 8).join(', ') + (ids.length > 8 ? ` and ${ids.length - 8} more` : ''));
+  const names = (ids: string[]) =>
+    ids.length === 0 ? 'none' : ids.slice(0, 8).join(', ') + (ids.length > 8 ? ` and ${ids.length - 8} more` : '');
   const added = [...after.keys()].filter((id) => !before.has(id));
   const removed = [...before.keys()].filter((id) => !after.has(id));
   const changed = [...after].filter(([id, text]) => before.has(id) && before.get(id) !== text).map(([id]) => id);
@@ -131,7 +142,10 @@ if (import.meta.main) {
   });
   const specFile = values.spec ?? new URL(`${SPEC_DIR}spec.md`, ROOT).pathname;
   const planFile = values.plan ?? new URL(`${SPEC_DIR}plan.md`, ROOT).pathname;
-  const sources = existsSync(specFile) && existsSync(planFile) ? { spec: readFileSync(specFile, 'utf8'), plan: readFileSync(planFile, 'utf8') } : undefined;
+  const sources =
+    existsSync(specFile) && existsSync(planFile)
+      ? { spec: readFileSync(specFile, 'utf8'), plan: readFileSync(planFile, 'utf8') }
+      : undefined;
   let errors: string[] = [];
   if (values.check) {
     const committed = readFileSync(INDEX_FILE, 'utf8');
@@ -141,7 +155,12 @@ if (import.meta.main) {
       errors = ['requirements-index.json is not valid JSON'];
     }
     if (errors.length === 0 && sources) errors = checkAgainstSpec(committed, sources.spec, sources.plan);
-    if (errors.length === 0) console.log(`requirement-index: ${(JSON.parse(committed) as unknown[]).length} requirements${sources ? ', in step with the spec' : ' (spec or plan not present: only checked that the index is well formed)'}`);
+    if (errors.length === 0)
+      console.log(
+        `requirement-index: ${(JSON.parse(committed) as unknown[]).length} requirements${
+          sources ? ', in step with the spec' : ' (spec or plan not present: only checked that the index is well formed)'
+        }`,
+      );
   } else if (!sources) {
     errors = [`the spec and the plan are needed to regenerate the index: ${specFile}, ${planFile}`];
   } else {

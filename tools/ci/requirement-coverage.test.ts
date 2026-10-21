@@ -2,7 +2,21 @@
 import { describe, expect, it } from 'bun:test';
 import { existsSync, readFileSync } from 'node:fs';
 
-import { JOURNEY_DECLARATION, cChecks, conformanceChecks, coverage, isFailing, journeyChecks, mergeEvidence, pythonChecks, pythonFilesRunInCi, scanFiles, serializeEvidence, unitChecks, type Check } from './requirement-coverage';
+import {
+  JOURNEY_DECLARATION,
+  cChecks,
+  conformanceChecks,
+  coverage,
+  isFailing,
+  journeyChecks,
+  mergeEvidence,
+  pythonChecks,
+  pythonFilesRunInCi,
+  scanFiles,
+  serializeEvidence,
+  unitChecks,
+  type Check,
+} from './requirement-coverage';
 import type { Inventory } from './test-inventory';
 import { flattenConcatenations } from './source-text';
 
@@ -27,14 +41,14 @@ describe('unitChecks', () => {
     "  it('writes atomically (IDE-008, IDE-006)', () => {",
     "    const fixture = { requirement: 'CMP-001' };",
     '  });',
-    "  it(`${name} (CMP-020)`, () => {});",
+    '  it(`${name} (CMP-020)`, () => {});',
     "  test.skip('skipped one (UX-001)', () => {});",
     "  itNative('needs the runtime (CMP-051)', async () => {});",
     "  itWasm('needs the WebAssembly runtime (IDE-025)', async () => {});",
-    "});",
+    '});',
     "describe('RETURN (CMP-036 stopgap)', () => {});",
-    "// a comment that cites UX-005 is not a test name",
-    "const fixture = \"describe('a fixture held in a string (UX-010)', () => {})\";",
+    '// a comment that cites UX-005 is not a test name',
+    'const fixture = "describe(\'a fixture held in a string (UX-010)\', () => {})";',
     "expect(/x/.test('a regular expression test (UX-011)')).toBe(true);",
   ].join('\n');
 
@@ -118,12 +132,26 @@ describe('pythonChecks and the Python files CI runs', () => {
 
   it('takes the files from the workflow commands: a script run by path and a unittest discover glob', () => {
     const workflows = [
-      "        run: |\n          python3 -B -m unittest discover -s tools/hil -p 'test_hil_*.py'\n          python3 -B tools/test_crc32_cross.py",
+      "        run: |\n          python3 -B -m unittest discover -s tools/hil -p 'test_hil_*.py'\n          python3 " +
+        '-B tools/test_crc32_cross.py',
       '        run: python3 zplc/tools/firmware-test/test_fwtest.py',
       '          python3 tools/hil/test_board_io_description.py',
     ];
-    const files = [PY, 'tools/hil/sub/test_hil_b.py', 'tools/hil/test_other.py', 'tools/test_crc32_cross.py', 'tools/firmware-test/test_fwtest.py', 'tools/hil/test_board_io_description.py', 'tools/hil/test_never.py'];
-    expect([...pythonFilesRunInCi(files, workflows)].sort()).toEqual(['tools/firmware-test/test_fwtest.py', 'tools/hil/test_board_io_description.py', PY, 'tools/test_crc32_cross.py']);
+    const files = [
+      PY,
+      'tools/hil/sub/test_hil_b.py',
+      'tools/hil/test_other.py',
+      'tools/test_crc32_cross.py',
+      'tools/firmware-test/test_fwtest.py',
+      'tools/hil/test_board_io_description.py',
+      'tools/hil/test_never.py',
+    ];
+    expect([...pythonFilesRunInCi(files, workflows)].sort()).toEqual([
+      'tools/firmware-test/test_fwtest.py',
+      'tools/hil/test_board_io_description.py',
+      PY,
+      'tools/test_crc32_cross.py',
+    ]);
   });
 
   it('scans a Python file only when a CI command runs it', () => {
@@ -137,9 +165,9 @@ describe('pythonChecks and the Python files CI runs', () => {
 describe('journeyChecks', () => {
   const source = [
     "{ name: '9 Undo after switching tabs', example: 'motor_start_stop', proves: ['LNG-009'], partly: [],",
-    "  run: async () => {} },",
+    '  run: async () => {} },',
     "{ name: '10 Close with unsaved changes', example: 'motor_start_stop', proves: [], partly: ['IDE-005', 'VF-008'],",
-    "  run: async () => {} },",
+    '  run: async () => {} },',
   ].join('\n');
 
   it('records what each journey proves, and what it proves only in part', () => {
@@ -169,7 +197,11 @@ describe('isFailing', () => {
   ];
 
   it('knows a conformance case by the name the runner registers it under', () => {
-    const check: Check = { kind: 'conformance', ref: 'conformance/cmp/cmp-011-int-division.expect.json', test: 'CMP-011 INT division of a negative operand' };
+    const check: Check = {
+      kind: 'conformance',
+      ref: 'conformance/cmp/cmp-011-int-division.expect.json',
+      test: 'CMP-011 INT division of a negative operand',
+    };
     expect(isFailing(check, listed)).toBe(true);
     expect(isFailing({ ...check, test: 'CMP-011 ABS of a negative INT' }, listed)).toBe(false);
   });
@@ -187,19 +219,34 @@ describe('mergeEvidence', () => {
   ];
 
   it('keeps a hand-written record in place of the scanned one it names', () => {
-    const hand = { 'REL-001': [{ kind: 'unit' as const, ref: REF, test: 'signs ad hoc (REL-001)', partial: true, note: 'asserts the configuration, not the artifact' }] };
+    const hand = {
+      'REL-001': [
+        {
+          kind: 'unit' as const,
+          ref: REF,
+          test: 'signs ad hoc (REL-001)',
+          partial: true,
+          note: 'asserts the configuration, not the artifact',
+        },
+      ],
+    };
     const merged = mergeEvidence(scanned, hand);
     expect(merged['REL-001']).toEqual(hand['REL-001']);
     expect(merged['VF-001']).toHaveLength(1);
   });
 
   it('keeps one record for a title that appears twice in a file', () => {
-    const twice: Array<[string, Check]> = [['VF-001', { kind: 'unit', ref: REF, test: 'same (VF-001)' }], ['VF-001', { kind: 'unit', ref: REF, test: 'same (VF-001)' }]];
+    const twice: Array<[string, Check]> = [
+      ['VF-001', { kind: 'unit', ref: REF, test: 'same (VF-001)' }],
+      ['VF-001', { kind: 'unit', ref: REF, test: 'same (VF-001)' }],
+    ];
     expect(mergeEvidence(twice, {})['VF-001']).toHaveLength(1);
   });
 
   it('keeps hand-written records of kinds that no scan produces', () => {
-    const merged = mergeEvidence(scanned, { 'HIL-010': [{ kind: 'hardware', ref: 'specs/records/pico.md', note: 'bench run of 2026-10-10' }] });
+    const merged = mergeEvidence(scanned, {
+      'HIL-010': [{ kind: 'hardware', ref: 'specs/records/pico.md', note: 'bench run of 2026-10-10' }],
+    });
     expect(merged['HIL-010']).toHaveLength(1);
   });
 });
@@ -207,17 +254,34 @@ describe('mergeEvidence', () => {
 describe('serializeEvidence', () => {
   it('orders requirements as the index does and checks by kind then file name in code-point order, whatever the locale', () => {
     const evidence = {
-      'CMP-002': [{ kind: 'unit' as const, ref: 'b.test.ts', test: 't' }, { kind: 'unit' as const, ref: 'B.test.ts', test: 't' }, { kind: 'conformance' as const, ref: 'c.expect.json', test: 'CMP-002 x' }],
+      'CMP-002': [
+        { kind: 'unit' as const, ref: 'b.test.ts', test: 't' },
+        { kind: 'unit' as const, ref: 'B.test.ts', test: 't' },
+        { kind: 'conformance' as const, ref: 'c.expect.json', test: 'CMP-002 x' },
+      ],
       'VF-001': [{ kind: 'unit' as const, ref: 'a.test.ts', test: 't' }],
     };
     const lines = serializeEvidence(evidence, ['VF-001', 'CMP-002']).split('\n');
     expect(lines.filter((line) => line.startsWith('  "'))).toEqual(['  "VF-001": [', '  "CMP-002": [']);
-    expect(lines.filter((line) => line.startsWith('    {')).map((line) => JSON.parse(line.replace(/,$/, '')).ref)).toEqual(['a.test.ts', 'c.expect.json', 'B.test.ts', 'b.test.ts']);
+    expect(lines.filter((line) => line.startsWith('    {')).map((line) => JSON.parse(line.replace(/,$/, '')).ref)).toEqual([
+      'a.test.ts',
+      'c.expect.json',
+      'B.test.ts',
+      'b.test.ts',
+    ]);
   });
 
   it('writes a gate after every other record of its requirement, a decision included', () => {
-    const evidence = { 'VF-001': [{ kind: 'gate' as const, ref: 'g.md', note: 'n' }, { kind: 'decided' as const, ref: 'd.md', note: 'n' }, { kind: 'unit' as const, ref: 'a.test.ts', test: 't' }] };
-    const lines = serializeEvidence(evidence, ['VF-001']).split('\n').filter((line) => line.startsWith('    {'));
+    const evidence = {
+      'VF-001': [
+        { kind: 'gate' as const, ref: 'g.md', note: 'n' },
+        { kind: 'decided' as const, ref: 'd.md', note: 'n' },
+        { kind: 'unit' as const, ref: 'a.test.ts', test: 't' },
+      ],
+    };
+    const lines = serializeEvidence(evidence, ['VF-001'])
+      .split('\n')
+      .filter((line) => line.startsWith('    {'));
     expect(lines.map((line) => JSON.parse(line.replace(/,$/, '')).kind)).toEqual(['unit', 'decided', 'gate']);
   });
 });
@@ -230,16 +294,30 @@ describe('coverage', () => {
     { id: 'VF-004', workstream: 'VF', title: 'd' },
     { id: 'CMP-001', workstream: 'CMP', title: 'e' },
   ];
-  const conformance = (id: string, title: string): Check => ({ kind: 'conformance', ref: `conformance/${id}.expect.json`, test: `${id} ${title}` });
+  const conformance = (id: string, title: string): Check => ({
+    kind: 'conformance',
+    ref: `conformance/${id}.expect.json`,
+    test: `${id} ${title}`,
+  });
   const listed = ['packages/zplc-ide/src/conformance/conformance.test.ts > conformance > VF-002 fails'];
 
   it('counts a requirement as covered only when a passing check that is not partial exists', () => {
-    const { states, overall, byWorkstream } = coverage(index, {
-      'VF-001': [conformance('VF-001', 'passes')],
-      'VF-002': [conformance('VF-002', 'fails')],
-      'VF-003': [{ kind: 'unit', ref: REF, test: 'RETURN (VF-003 stopgap)', partial: true }],
-    }, listed);
-    expect(Object.fromEntries(states)).toEqual({ 'VF-001': 'covered', 'VF-002': 'partial', 'VF-003': 'partial', 'VF-004': 'uncovered', 'CMP-001': 'uncovered' });
+    const { states, overall, byWorkstream } = coverage(
+      index,
+      {
+        'VF-001': [conformance('VF-001', 'passes')],
+        'VF-002': [conformance('VF-002', 'fails')],
+        'VF-003': [{ kind: 'unit', ref: REF, test: 'RETURN (VF-003 stopgap)', partial: true }],
+      },
+      listed,
+    );
+    expect(Object.fromEntries(states)).toEqual({
+      'VF-001': 'covered',
+      'VF-002': 'partial',
+      'VF-003': 'partial',
+      'VF-004': 'uncovered',
+      'CMP-001': 'uncovered',
+    });
     expect(overall).toEqual({ total: 5, covered: 1, partial: 2, decided: 0, uncovered: 2 });
     expect(byWorkstream.VF).toEqual({ total: 4, covered: 1, partial: 2, decided: 0, uncovered: 1 });
     expect(byWorkstream.CMP).toEqual({ total: 1, covered: 0, partial: 0, decided: 0, uncovered: 1 });
@@ -254,8 +332,16 @@ describe('coverage', () => {
   });
 
   it('keeps a gated requirement out of covered whatever its checks, counts a gate alone as no check, and names every gated one', () => {
-    const gate: Check = { kind: 'gate', ref: 'docs/docs/development/hardware-in-the-loop.md', note: 'a hardware record of both learner boards' };
-    const { states, overall, kinds, gated } = coverage(index, { 'VF-001': [conformance('VF-001', 'passes'), gate], 'VF-003': [gate] }, listed);
+    const gate: Check = {
+      kind: 'gate',
+      ref: 'docs/docs/development/hardware-in-the-loop.md',
+      note: 'a hardware record of both learner boards',
+    };
+    const { states, overall, kinds, gated } = coverage(
+      index,
+      { 'VF-001': [conformance('VF-001', 'passes'), gate], 'VF-003': [gate] },
+      listed,
+    );
     expect(states.get('VF-001')).toBe('partial');
     expect(states.get('VF-003')).toBe('uncovered');
     expect(kinds.get('VF-001')).toEqual([]);
@@ -264,7 +350,11 @@ describe('coverage', () => {
   });
 
   it('lets a failing case sit beside a passing one: the passing one covers, and the requirement is named as still failing', () => {
-    const { states, withFailures } = coverage(index, { 'VF-002': [conformance('VF-002', 'fails'), conformance('VF-002', 'passes')], 'VF-001': [conformance('VF-001', 'passes')] }, listed);
+    const { states, withFailures } = coverage(
+      index,
+      { 'VF-002': [conformance('VF-002', 'fails'), conformance('VF-002', 'passes')], 'VF-001': [conformance('VF-001', 'passes')] },
+      listed,
+    );
     expect(states.get('VF-002')).toBe('covered');
     expect(withFailures).toEqual(['VF-002']);
   });
@@ -282,13 +372,16 @@ describe('the committed evidence (VF-027)', () => {
   const KINDS = ['conformance', 'unit', 'journey', 'c-test', 'manual', 'hardware', 'py-test', 'decided', 'gate'];
   const records = Object.entries(evidence).flatMap(([id, checks]) => checks.map((check) => ({ id, check })));
 
-  it('records the second port as shipped by D-06 (option A): checks that run it, a gate for the hosted CI run, and no decided record', () => {
-    const port = ['IO', '016'].join('-'); // not in the title: a title that names it would be a check of it
-    const kinds = new Set(evidence[port]?.map((check) => check.kind));
-    expect(kinds.has('decided')).toBe(false);
-    expect([...kinds].sort()).toEqual(['c-test', 'gate', 'unit']);
-    expect(evidence[port]?.find((check) => check.kind === 'gate')?.note).toContain('freertos-port');
-  });
+  it(
+    'records the second port as shipped by D-06 (option A): checks that run it, a gate for the hosted CI run, and no decided ' + 'record',
+    () => {
+      const port = ['IO', '016'].join('-'); // not in the title: a title that names it would be a check of it
+      const kinds = new Set(evidence[port]?.map((check) => check.kind));
+      expect(kinds.has('decided')).toBe(false);
+      expect([...kinds].sort()).toEqual(['c-test', 'gate', 'unit']);
+      expect(evidence[port]?.find((check) => check.kind === 'gate')?.note).toContain('freertos-port');
+    },
+  );
 
   it('names only requirements of the index', () => {
     const known = new Set(index.map((entry) => entry.id));
@@ -318,10 +411,18 @@ describe('the committed evidence (VF-027)', () => {
   });
 
   const expectGated = (ids: string[]) => {
-    const gated = Object.entries(evidence).filter(([, checks]) => checks.some((check) => check.kind === 'gate' && check.note)).map(([id]) => id);
+    const gated = Object.entries(evidence)
+      .filter(([, checks]) => checks.some((check) => check.kind === 'gate' && check.note))
+      .map(([id]) => id);
     expect(gated).toEqual(expect.arrayContaining(ids));
-    const listed = (JSON.parse(readFileSync(new URL('tools/ci/expected-failures.json', root), 'utf8')) as Array<{ test: string }>).map((entry) => entry.test);
-    const full = JSON.parse(readFileSync(new URL('tools/ci/requirements-index.json', root), 'utf8')) as Array<{ id: string; workstream: string; title: string }>;
+    const listed = (JSON.parse(readFileSync(new URL('tools/ci/expected-failures.json', root), 'utf8')) as Array<{ test: string }>).map(
+      (entry) => entry.test,
+    );
+    const full = JSON.parse(readFileSync(new URL('tools/ci/requirements-index.json', root), 'utf8')) as Array<{
+      id: string;
+      workstream: string;
+      title: string;
+    }>;
     const { states } = coverage(full, evidence, listed);
     expect(ids.filter((id) => states.get(id) === 'covered')).toEqual([]);
   };
@@ -332,7 +433,9 @@ describe('the committed evidence (VF-027)', () => {
 
   it('closes a gate only through a written decision of the owner that names the evidence it accepts instead', () => {
     // LRN-012: the owner accepted journey 57 instead of a timed study with a person (2026-10-20).
-    const accepted = (evidence['LRN-012'] ?? []).filter((check) => check.kind === 'manual' && /Owner decision \d{4}-\d{2}-\d{2}/.test(check.note ?? ''));
+    const accepted = (evidence['LRN-012'] ?? []).filter(
+      (check) => check.kind === 'manual' && /Owner decision \d{4}-\d{2}-\d{2}/.test(check.note ?? ''),
+    );
     expect(accepted.length).toBeGreaterThan(0);
     expect((evidence['LRN-012'] ?? []).some((check) => check.kind === 'gate')).toBe(false);
   });
@@ -340,9 +443,28 @@ describe('the committed evidence (VF-027)', () => {
   it('closes the requirements that needed a physical board through the software review the owner accepted instead (2026-10-20)', () => {
     // Every scenario of these requirements is should_pass, or cannot_judge_in_software for a named silicon fact
     // (tools/hil/software-review/verdicts.json). COM-016 is not here: COM-016.05 still should not pass.
-    const closed = ['HIL-001', 'HIL-002', 'HIL-005', 'HIL-010', 'HIL-012', 'HIL-014', 'HIL-015', 'LRN-013', 'LRN-024', 'RT-025', 'LNG-004', 'IO-006', 'DOC-004'];
+    const closed = [
+      'HIL-001',
+      'HIL-002',
+      'HIL-005',
+      'HIL-010',
+      'HIL-012',
+      'HIL-014',
+      'HIL-015',
+      'LRN-013',
+      'LRN-024',
+      'RT-025',
+      'LNG-004',
+      'IO-006',
+      'DOC-004',
+    ];
     for (const id of closed) {
-      const accepted = (evidence[id] ?? []).filter((check) => check.kind === 'manual' && /^Owner decision 2026-10-20:/.test(check.note ?? '') && /no physical bench run is recorded/.test(check.note ?? ''));
+      const accepted = (evidence[id] ?? []).filter(
+        (check) =>
+          check.kind === 'manual' &&
+          /^Owner decision 2026-10-20:/.test(check.note ?? '') &&
+          /no physical bench run is recorded/.test(check.note ?? ''),
+      );
       expect({ id, accepted: accepted.length }).toEqual({ id, accepted: 1 });
       expect({ id, gate: (evidence[id] ?? []).some((check) => check.kind === 'gate') }).toEqual({ id, gate: false });
     }
@@ -362,12 +484,19 @@ describe('the committed evidence (VF-027)', () => {
   }, 60_000); // a whole scan of the tree in a child process: slow on a loaded machine, and its time is not what this measures
 
   it('adds up: every requirement of the index is covered, partial or uncovered', () => {
-    const listed = (JSON.parse(readFileSync(new URL('tools/ci/expected-failures.json', root), 'utf8')) as Array<{ test: string }>).map((entry) => entry.test);
-    const full = JSON.parse(readFileSync(new URL('tools/ci/requirements-index.json', root), 'utf8')) as Array<{ id: string; workstream: string; title: string }>;
+    const listed = (JSON.parse(readFileSync(new URL('tools/ci/expected-failures.json', root), 'utf8')) as Array<{ test: string }>).map(
+      (entry) => entry.test,
+    );
+    const full = JSON.parse(readFileSync(new URL('tools/ci/requirements-index.json', root), 'utf8')) as Array<{
+      id: string;
+      workstream: string;
+      title: string;
+    }>;
     const { overall, byWorkstream, errors } = coverage(full, evidence, listed);
     expect(errors).toEqual([]);
     expect(overall.covered + overall.partial + overall.decided + overall.uncovered).toBe(387);
-    for (const counts of Object.values(byWorkstream)) expect(counts.covered + counts.partial + counts.decided + counts.uncovered).toBe(counts.total);
+    for (const counts of Object.values(byWorkstream))
+      expect(counts.covered + counts.partial + counts.decided + counts.uncovered).toBe(counts.total);
     expect(Object.values(byWorkstream).reduce((sum, counts) => sum + counts.total, 0)).toBe(387);
   });
 });

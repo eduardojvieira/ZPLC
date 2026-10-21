@@ -4,25 +4,15 @@ import { formatChunkTrace, sanitizeUploadTraceCommand, sanitizeUploadTraceText }
 
 describe('sanitizeUploadTraceCommand', () => {
   it('masks sensitive quoted config values', () => {
-    expect(sanitizeUploadTraceCommand('zplc config set wifi_pass "super-secret"')).toBe(
-      'zplc config set wifi_pass "***"',
-    );
+    expect(sanitizeUploadTraceCommand('zplc config set wifi_pass "super-secret"')).toBe('zplc config set wifi_pass "***"');
   });
 
   it('masks sensitive unquoted config values', () => {
-    expect(sanitizeUploadTraceCommand('zplc config set azure_sas_key token123')).toBe(
-      'zplc config set azure_sas_key ***',
-    );
+    expect(sanitizeUploadTraceCommand('zplc config set azure_sas_key token123')).toBe('zplc config set azure_sas_key ***');
   });
 
-  it.each([
-    'mqtt_password',
-    'mqtt_client_key_path',
-    'aws_claim_key_path',
-  ])('masks provisioning credential %s', (key) => {
-    expect(sanitizeUploadTraceCommand(`zplc config set ${key} "test-secret"`)).toBe(
-      `zplc config set ${key} "***"`,
-    );
+  it.each(['mqtt_password', 'mqtt_client_key_path', 'aws_claim_key_path'])('masks provisioning credential %s', (key) => {
+    expect(sanitizeUploadTraceCommand(`zplc config set ${key} "test-secret"`)).toBe(`zplc config set ${key} "***"`);
   });
 
   it('leaves non-sensitive commands untouched', () => {
@@ -44,9 +34,7 @@ describe('sanitizeUploadTraceCommand', () => {
   });
 
   it('redacts certificate chunk payloads in echoed text', () => {
-    expect(sanitizeUploadTraceText('zplc:~$ zplc cert chunk 544553542d4b4559\n')).toBe(
-      'zplc:~$ zplc cert chunk <payload redacted>\n',
-    );
+    expect(sanitizeUploadTraceText('zplc:~$ zplc cert chunk 544553542d4b4559\n')).toBe('zplc:~$ zplc cert chunk <payload redacted>\n');
   });
 });
 

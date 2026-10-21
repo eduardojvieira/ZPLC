@@ -19,11 +19,11 @@ evidencia registrada. Una persona debe ejecutar explícitamente `zplc start`.
 
 El núcleo del runtime ZPLC depende de una Capa de Abstracción de Hardware (HAL) abstracta para las operaciones de persistencia. Esto permite que el sistema se adapte sin problemas a las capacidades de almacenamiento de distintos entornos:
 
-| Plataforma | Backend de Almacenamiento |
-|---|---|
-| **Perfil Zephyr** | Backend de almacén de programas cuando está habilitado y operativo: NVS, o ZMS en una placa cuyos sectores de flash superan los 64 KB que NVS acepta (la Nucleo-H743ZI). Los registros `RETAIN`, las claves de configuración y las credenciales usan las mismas llamadas HAL. |
-| **Simulación Nativa (PC)** | Archivos en el directorio de persistencia (`ZPLC_PERSIST_ROOT`, por defecto `~/.zplc`): el almacén de programas y los registros `RETAIN`. |
-| **Simulador WASM** | Los registros del módulo de retención (`retain_a0` a `retain_b7`) pasan por las llamadas HAL del módulo a la página anfitriona, que los guarda en la carpeta `build/retain` del proyecto abierto y, sin proyecto abierto, en la memoria de la página. El almacén de programas de la sesión está en memoria. Ver [Runtime del navegador](./browser-runtime.md). |
+| Plataforma                 | Backend de Almacenamiento                                                                                                                                                                                                                                                                                                                                      |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Perfil Zephyr**          | Backend de almacén de programas cuando está habilitado y operativo: NVS, o ZMS en una placa cuyos sectores de flash superan los 64 KB que NVS acepta (la Nucleo-H743ZI). Los registros `RETAIN`, las claves de configuración y las credenciales usan las mismas llamadas HAL.                                                                                  |
+| **Simulación Nativa (PC)** | Archivos en el directorio de persistencia (`ZPLC_PERSIST_ROOT`, por defecto `~/.zplc`): el almacén de programas y los registros `RETAIN`.                                                                                                                                                                                                                      |
+| **Simulador WASM**         | Los registros del módulo de retención (`retain_a0` a `retain_b7`) pasan por las llamadas HAL del módulo a la página anfitriona, que los guarda en la carpeta `build/retain` del proyecto abierto y, sin proyecto abierto, en la memoria de la página. El almacén de programas de la sesión está en memoria. Ver [Runtime del navegador](./browser-runtime.md). |
 
 ## Persistencia del programa en hardware
 
@@ -59,12 +59,12 @@ Una carga escribe la ranura que no está activa, la relee y la verifica, escribe
 relee, y solo entonces escribe el registro activo: esa escritura es el único punto en que el programa nuevo pasa a
 ser el que se restaura. Después los metadatos se reescriben como confirmados.
 
-| Un corte de energía ... | Qué encuentra la siguiente restauración |
-|---|---|
-| antes de escribir el registro activo | El programa anterior. Un almacén que nunca tuvo uno está vacío. |
-| a mitad del contenido nuevo | El programa anterior: una ranura a medias vieja y a medias nueva no pasa el CRC-32 de su artefacto y nunca se acepta. |
-| después del registro activo y antes de reescribir los metadatos | El programa nuevo: la ranura se releyó antes de mover el puntero. |
-| que daña el registro activo | La última ranura confirmada y completa. |
+| Un corte de energía ...                                         | Qué encuentra la siguiente restauración                                                                               |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| antes de escribir el registro activo                            | El programa anterior. Un almacén que nunca tuvo uno está vacío.                                                       |
+| a mitad del contenido nuevo                                     | El programa anterior: una ranura a medias vieja y a medias nueva no pasa el CRC-32 de su artefacto y nunca se acepta. |
+| después del registro activo y antes de reescribir los metadatos | El programa nuevo: la ranura se releyó antes de mover el puntero.                                                     |
+| que daña el registro activo                                     | La última ranura confirmada y completa.                                                                               |
 
 Los registros que existen y no verifican nunca se toman por un almacén vacío: la restauración los informa como no
 verificables y una carga se niega a escribir encima. Un almacén escrito por el primer firmware (una clave, `code_len`
@@ -111,13 +111,13 @@ pasado por un corte de energía bajo prueba.
 
 ### Qué se guarda y cuándo
 
-| Momento | Qué ocurre |
-|---|---|
+| Momento                                 | Qué ocurre                                                                                                                                                |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Carga de programa y restore al arrancar | La región se restaura desde los registros guardados antes del primer ciclo, o se inicializa en cero cuando ningún registro coincide. El estado dice cuál. |
-| `STOP` (comandado) | La región se guarda con los valores del último ciclo completo. Un stop de un runtime en falla no guarda nada. |
-| Mientras corre | La región se guarda como máximo una vez por intervalo, en un límite de ciclo, y solo si cambió desde el último registro guardado. |
-| Apagado limpio del runtime host | Se guarda como un `STOP`. |
-| Reset (`execution.reset`) | Un reinicio en frío: la región se inicializa y esa región inicializada se guarda, de modo que los valores anteriores no vuelven. |
+| `STOP` (comandado)                      | La región se guarda con los valores del último ciclo completo. Un stop de un runtime en falla no guarda nada.                                             |
+| Mientras corre                          | La región se guarda como máximo una vez por intervalo, en un límite de ciclo, y solo si cambió desde el último registro guardado.                         |
+| Apagado limpio del runtime host         | Se guarda como un `STOP`.                                                                                                                                 |
+| Reset (`execution.reset`)               | Un reinicio en frío: la región se inicializa y esa región inicializada se guarda, de modo que los valores anteriores no vuelven.                          |
 
 En el firmware un guardado periódico corre en su propia cola de trabajo, fuera
 del ciclo, y mantiene el bloqueo de memoria solo durante la copia de la región,
@@ -136,18 +136,18 @@ defecto), guardados bajo las claves `retain_a0`, `retain_a1`, ... y
 `retain_b0`, ..., porque una entrada del almacenamiento puede ser menor que la
 región (NVS en un sector de 4 KB).
 
-| Desplazamiento | Tamaño | Campo |
-|---|---|---|
-| 0 | 4 | número mágico `ZRTN` |
-| 4 | 2 | versión de formato, 1 |
-| 6 | 2 | reservado, cero |
-| 8 | 4 | número de secuencia, nunca 0 |
-| 12 | 4 | identidad del programa: la palabra CRC32 de la cabecera del artefacto |
-| 16 | 4 | identidad del programa: la palabra de tamaño de código de la cabecera del artefacto |
-| 20 | 4 | hash de disposición |
-| 24 | 4 | longitud del contenido, el tamaño de la región `RETAIN` |
-| 28 | n | contenido, los bytes de la región |
-| 28+n | 4 | CRC-32 de todos los bytes anteriores |
+| Desplazamiento | Tamaño | Campo                                                                               |
+| -------------- | ------ | ----------------------------------------------------------------------------------- |
+| 0              | 4      | número mágico `ZRTN`                                                                |
+| 4              | 2      | versión de formato, 1                                                               |
+| 6              | 2      | reservado, cero                                                                     |
+| 8              | 4      | número de secuencia, nunca 0                                                        |
+| 12             | 4      | identidad del programa: la palabra CRC32 de la cabecera del artefacto               |
+| 16             | 4      | identidad del programa: la palabra de tamaño de código de la cabecera del artefacto |
+| 20             | 4      | hash de disposición                                                                 |
+| 24             | 4      | longitud del contenido, el tamaño de la región `RETAIN`                             |
+| 28             | n      | contenido, los bytes de la región                                                   |
+| 28+n           | 4      | CRC-32 de todos los bytes anteriores                                                |
 
 El hash de disposición es un CRC-32 sobre el tamaño de la región, la dirección de la
 región, la versión de la ISA, el contador de draft del contrato y la identidad
@@ -161,16 +161,16 @@ La restauración toma el registro válido con la secuencia más alta cuya identi
 disposición coinciden. Si un registro falla su suma de verificación, se prueba el otro. Si
 ninguno coincide, la región se pone en cero y el estado dice por qué:
 
-| `reason` | Significado |
-|---|---|
-| `restored` | Se restauró un registro válido de este programa y disposición. |
-| `none` | Ningún registro en ninguno de las dos ranuras: primer arranque, almacenamiento borrado, o sin backend de almacenamiento. |
-| `identity_mismatch` | Existen registros válidos, escritos por otro programa. |
-| `layout_mismatch` | El mismo programa, pero otro tamaño de región, dirección o disposición del runtime. |
-| `corrupt` | Existen registros y ninguno pasa las comprobaciones de formato y checksum. |
-| `io_error` | El backend de almacenamiento falló en ambas ranuras. Los guardados se rechazan hasta que una restauración lea de nuevo el backend. |
-| `reset` | Un comando de reset inicializó la región. |
-| `not_restored` | No hay programa cargado. |
+| `reason`            | Significado                                                                                                                        |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `restored`          | Se restauró un registro válido de este programa y disposición.                                                                     |
+| `none`              | Ningún registro en ninguno de las dos ranuras: primer arranque, almacenamiento borrado, o sin backend de almacenamiento.           |
+| `identity_mismatch` | Existen registros válidos, escritos por otro programa.                                                                             |
+| `layout_mismatch`   | El mismo programa, pero otro tamaño de región, dirección o disposición del runtime.                                                |
+| `corrupt`           | Existen registros y ninguno pasa las comprobaciones de formato y checksum.                                                         |
+| `io_error`          | El backend de almacenamiento falló en ambas ranuras. Los guardados se rechazan hasta que una restauración lea de nuevo el backend. |
+| `reset`             | Un comando de reset inicializó la región.                                                                                          |
+| `not_restored`      | No hay programa cargado.                                                                                                           |
 
 El estado del runtime nativo lleva esto junto a los campos existentes:
 
@@ -246,15 +246,15 @@ Todos los números de abajo son estimaciones de ingeniería a partir de la clase
 de datasheet de la pieza y de la disposición de las particiones del archivo de la placa.
 Ninguna placa se midió.
 
-| Placa | Partición de almacenamiento | RETAIN | Ciclos nominales | Bytes de desgaste | Intervalo | Vida estimada en el peor caso |
-|---|---|---|---|---|---|---|
-| Raspberry Pi Pico (RP2040) | 128 KB de la NOR QSPI de la placa, 32 sectores de 4 KB | 4 KB | 100.000 | 67.000 | 300 s | 14,3 años |
-| Arduino GIGA R1 (STM32H747 M7) | `zplc_nvs_partition`: 7 MB de la NOR QSPI externa, sectores de 4 KB supuestos | 4 KB | 100.000 | 7.300.000 | 60 s | más de 100 años |
-| Arduino Opta WiFi (STM32H747 M7) | `zplc_nvs_partition`: 7 MB de la NOR QSPI externa, sectores de 4 KB supuestos | 4 KB | 100.000 | 7.300.000 | 60 s | más de 100 años |
-| STM32F746G Discovery | `zplc_nvs_partition`: 15 MB de la NOR QSPI externa, subsectores de 4 KB supuestos | 4 KB | 100.000 | 15.700.000 | 60 s | más de 100 años |
-| ESP32-S3-DevKitC-1 (N8R8) | `zplc_nvs_partition`: 192 KB de la NOR SPI del módulo a partir de 4 MB, 48 sectores de 4 KB | 1 KB | 100.000 | 184.000 | 60 s | 29,5 años |
-| STM32 Nucleo-H743ZI | `zplc_nvs_partition`: 384 KB de la flash interna, 3 sectores de 128 KB, en ZMS | 4 KB | 10.000 | 253.000 | 600 s | 10,8 años |
-| Una placa sin números | cualquiera | cualquiera | 10.000 | 40.000 | 3600 s | 10,3 años para 4 KB |
+| Placa                            | Partición de almacenamiento                                                                 | RETAIN     | Ciclos nominales | Bytes de desgaste | Intervalo | Vida estimada en el peor caso |
+| -------------------------------- | ------------------------------------------------------------------------------------------- | ---------- | ---------------- | ----------------- | --------- | ----------------------------- |
+| Raspberry Pi Pico (RP2040)       | 128 KB de la NOR QSPI de la placa, 32 sectores de 4 KB                                      | 4 KB       | 100.000          | 67.000            | 300 s     | 14,3 años                     |
+| Arduino GIGA R1 (STM32H747 M7)   | `zplc_nvs_partition`: 7 MB de la NOR QSPI externa, sectores de 4 KB supuestos               | 4 KB       | 100.000          | 7.300.000         | 60 s      | más de 100 años               |
+| Arduino Opta WiFi (STM32H747 M7) | `zplc_nvs_partition`: 7 MB de la NOR QSPI externa, sectores de 4 KB supuestos               | 4 KB       | 100.000          | 7.300.000         | 60 s      | más de 100 años               |
+| STM32F746G Discovery             | `zplc_nvs_partition`: 15 MB de la NOR QSPI externa, subsectores de 4 KB supuestos           | 4 KB       | 100.000          | 15.700.000        | 60 s      | más de 100 años               |
+| ESP32-S3-DevKitC-1 (N8R8)        | `zplc_nvs_partition`: 192 KB de la NOR SPI del módulo a partir de 4 MB, 48 sectores de 4 KB | 1 KB       | 100.000          | 184.000           | 60 s      | 29,5 años                     |
+| STM32 Nucleo-H743ZI              | `zplc_nvs_partition`: 384 KB de la flash interna, 3 sectores de 128 KB, en ZMS              | 4 KB       | 10.000           | 253.000           | 600 s     | 10,8 años                     |
+| Una placa sin números            | cualquiera                                                                                  | cualquiera | 10.000           | 40.000            | 3600 s    | 10,3 años para 4 KB           |
 
 La fila de la Pico es la que hay que leer dos veces: a 30 segundos, el valor por
 defecto del host, la misma placa agotaría su almacenamiento en unos 1,4 años. El
@@ -283,15 +283,15 @@ nombra un archivo del sistema de archivos o uno de los dos registros de credenci
 guardado lo contiene y nunca se lee: ninguna configuración puede entregar el programa ni una clave del enlace del
 dispositivo a la pila TLS.
 
-| Placa | Registros de la HAL | Sistema de archivos de configuración | Ranura de la imagen |
-|---|---|---|---|
-| Raspberry Pi Pico (RP2040) | NVS, `storage_partition`, 128 KB en 0x1e0000 de la NOR QSPI de la placa | no incluido | `code_partition`, de 0x100 a 0x1e0000 |
-| Waveshare RP2040-Zero | NVS, `storage_partition`, 128 KB en 0x1e0000 de la NOR QSPI de la placa | no incluido | `code_partition`, de 0x100 a 0x1e0000 |
-| ESP32-S3-DevKitC-1 (N8R8) | NVS, `zplc_nvs_partition`, 192 KB en 0x400000 de la NOR SPI del módulo | `storage_partition`, 192 KB en 0x3b0000 | de 0 a 0x101c00, el presupuesto de flash de la placa |
-| Arduino GIGA R1 (STM32H747 M7) | NVS, `zplc_nvs_partition`, 7 MB en 0x700000 de la NOR QSPI externa | `storage_partition`, 1 MB en 0x600000 de la NOR QSPI | `slot0_partition`, de 0x40000 a 0x100000 de la flash interna |
-| Arduino Opta WiFi (STM32H747 M7) | NVS, `zplc_nvs_partition`, 7 MB en 0x700000 de la NOR QSPI externa | `storage_partition`, 1 MB en 0x600000 de la NOR QSPI | `slot0_partition`, de 0x40000 a 0x100000 de la flash interna |
-| STM32F746G Discovery | NVS, `zplc_nvs_partition`, 15 MB en 0xa0000 de la NOR QSPI externa | `storage_partition`, 640 KB en 0 de la NOR QSPI | de 0 a 1 MB, la flash interna |
-| STM32 Nucleo-H743ZI | ZMS, `zplc_nvs_partition`, 384 KB en 0x1a0000 de la flash interna (3 sectores de 128 KB) | `storage_partition`, 1152 KB en 0x80000 de la flash interna | `slot0_partition`, de 0 a 512 KB |
+| Placa                            | Registros de la HAL                                                                      | Sistema de archivos de configuración                        | Ranura de la imagen                                          |
+| -------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------ |
+| Raspberry Pi Pico (RP2040)       | NVS, `storage_partition`, 128 KB en 0x1e0000 de la NOR QSPI de la placa                  | no incluido                                                 | `code_partition`, de 0x100 a 0x1e0000                        |
+| Waveshare RP2040-Zero            | NVS, `storage_partition`, 128 KB en 0x1e0000 de la NOR QSPI de la placa                  | no incluido                                                 | `code_partition`, de 0x100 a 0x1e0000                        |
+| ESP32-S3-DevKitC-1 (N8R8)        | NVS, `zplc_nvs_partition`, 192 KB en 0x400000 de la NOR SPI del módulo                   | `storage_partition`, 192 KB en 0x3b0000                     | de 0 a 0x101c00, el presupuesto de flash de la placa         |
+| Arduino GIGA R1 (STM32H747 M7)   | NVS, `zplc_nvs_partition`, 7 MB en 0x700000 de la NOR QSPI externa                       | `storage_partition`, 1 MB en 0x600000 de la NOR QSPI        | `slot0_partition`, de 0x40000 a 0x100000 de la flash interna |
+| Arduino Opta WiFi (STM32H747 M7) | NVS, `zplc_nvs_partition`, 7 MB en 0x700000 de la NOR QSPI externa                       | `storage_partition`, 1 MB en 0x600000 de la NOR QSPI        | `slot0_partition`, de 0x40000 a 0x100000 de la flash interna |
+| STM32F746G Discovery             | NVS, `zplc_nvs_partition`, 15 MB en 0xa0000 de la NOR QSPI externa                       | `storage_partition`, 640 KB en 0 de la NOR QSPI             | de 0 a 1 MB, la flash interna                                |
+| STM32 Nucleo-H743ZI              | ZMS, `zplc_nvs_partition`, 384 KB en 0x1a0000 de la flash interna (3 sectores de 128 KB) | `storage_partition`, 1152 KB en 0x80000 de la flash interna | `slot0_partition`, de 0 a 512 KB                             |
 
 Las direcciones son las del devicetree de cada compilación. `tools/hil/check_storage_partitions.py` las lee del
 `zephyr.dts` y del `.config` que `run.sh size` conserva para cada placa, y falla cuando dos almacenes comparten o

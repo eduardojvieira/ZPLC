@@ -22,17 +22,36 @@ const LIST = new URL('./dom-render-surfaces.json', import.meta.url);
 const EVIDENCE = new URL('./requirement-evidence.json', import.meta.url);
 
 export type SurfaceState = 'tested' | 'remaining' | 'out-of-scope';
-export interface SurfaceEntry { surface: string; where: string; state: SurfaceState; tests: string[]; reason: string }
-export interface DomRenderList { kitInternal: Array<{ file: string; reason: string }>; surfaces: SurfaceEntry[] }
-export interface Tree { files: string[]; read: (path: string) => string; exists: (path: string) => boolean }
+export interface SurfaceEntry {
+  surface: string;
+  where: string;
+  state: SurfaceState;
+  tests: string[];
+  reason: string;
+}
+export interface DomRenderList {
+  kitInternal: Array<{ file: string; reason: string }>;
+  surfaces: SurfaceEntry[];
+}
+export interface Tree {
+  files: string[];
+  read: (path: string) => string;
+  exists: (path: string) => boolean;
+}
 
 /** The surface names of the table "7.4 Studio surfaces": the first cell of every body row. */
 export function specSurfaces(spec: string): string[] {
   const start = spec.indexOf('### 7.4 Studio surfaces');
   if (start < 0) return [];
   const end = spec.indexOf('\n### ', start + 5);
-  const rows = spec.slice(start, end < 0 ? undefined : end).split('\n').filter((line) => line.startsWith('|'));
-  return rows.slice(2).map((row) => row.split('|')[1]!.trim()).filter(Boolean);
+  const rows = spec
+    .slice(start, end < 0 ? undefined : end)
+    .split('\n')
+    .filter((line) => line.startsWith('|'));
+  return rows
+    .slice(2)
+    .map((row) => row.split('|')[1]!.trim())
+    .filter(Boolean);
 }
 
 const isKitComponent = (file: string): boolean => /^packages\/zplc-ide\/src\/ui\/[A-Z]\w*\.tsx$/.test(file);
@@ -62,18 +81,21 @@ export function checkDomRender(list: DomRenderList, spec: string, tree: Tree, ev
       else if (!tree.exists(test)) errors.push(`${entry.surface}: ${test} does not exist`);
     }
     if (entry.state === 'tested' && entry.tests.length === 0) errors.push(`${entry.surface} is tested but names no test`);
-    if (entry.state === 'remaining' && existing.length > 0) errors.push(`${entry.surface} is remaining but ${existing[0]} exists: set it to tested, the list only shrinks`);
+    if (entry.state === 'remaining' && existing.length > 0)
+      errors.push(`${entry.surface} is remaining but ${existing[0]} exists: set it to tested, the list only shrinks`);
     if (entry.state !== 'tested' && !entry.reason.trim()) errors.push(`${entry.surface} is ${entry.state} without a reason`);
   }
   for (const name of names) if (!seen.has(name)) errors.push(`spec surface missing from dom-render-surfaces.json: ${name}`);
 
   for (const file of tree.files.filter((path) => /\.test\.tsx?$/.test(path) && !path.endsWith('.dom.test.tsx'))) {
-    if (/@happy-dom\/|happy-dom['"]|@testing-library\//.test(tree.read(file))) errors.push(`${file} imports a DOM library but is not a *.dom.test.tsx: the DOM would not stay isolated`);
+    if (/@happy-dom\/|happy-dom['"]|@testing-library\//.test(tree.read(file)))
+      errors.push(`${file} imports a DOM library but is not a *.dom.test.tsx: the DOM would not stay isolated`);
   }
 
   const remaining = list.surfaces.filter((entry) => entry.state === 'remaining').length;
   if (evidenceNote === undefined) errors.push('requirement-evidence.json has no VF-007 gate note');
-  else if (!evidenceNote.includes(`${remaining} surfaces remain`)) errors.push(`the VF-007 gate note must say "${remaining} surfaces remain"`);
+  else if (!evidenceNote.includes(`${remaining} surfaces remain`))
+    errors.push(`the VF-007 gate note must say "${remaining} surfaces remain"`);
   return errors;
 }
 

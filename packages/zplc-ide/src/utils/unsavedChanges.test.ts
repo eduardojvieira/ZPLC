@@ -22,7 +22,10 @@ describe('unsaved items', () => {
   const file = (name: string, isModified: boolean) => ({ name, isModified });
 
   it('lists only modified files, in order', () => {
-    expect(unsavedItems([file('Motor.st', true), file('Pump.st', false), file('main.ld.json', true)], false)).toEqual(['Motor.st', 'main.ld.json']);
+    expect(unsavedItems([file('Motor.st', true), file('Pump.st', false), file('main.ld.json', true)], false)).toEqual([
+      'Motor.st',
+      'main.ld.json',
+    ]);
   });
 
   it('adds the project configuration when it is modified', () => {

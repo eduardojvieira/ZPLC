@@ -3,7 +3,7 @@ slug: /guides/ai-and-mcp
 id: ai-and-mcp
 title: Usar un asistente de IA y MCP con seguridad
 sidebar_label: IA y MCP
-description: "Dar a un asistente de IA acceso de lectura a un proyecto con el servidor MCP local, qué puede pedir, qué no puede hacer nunca y cómo revisar lo que propone."
+description: 'Dar a un asistente de IA acceso de lectura a un proyecto con el servidor MCP local, qué puede pedir, qué no puede hacer nunca y cómo revisar lo que propone.'
 tags: [how-to, ai, mcp, safety]
 ---
 
@@ -75,19 +75,32 @@ promesa. Un cliente no tiene paso `initialize`: nombra la revisión y sus capaci
 `_meta` de cada solicitud.
 
 ```json
-{ "jsonrpc": "2.0", "id": 1, "method": "tools/list",
-  "params": { "_meta": {
-    "io.modelcontextprotocol/protocolVersion": "2026-07-28",
-    "io.modelcontextprotocol/clientCapabilities": {} } } }
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/list",
+  "params": {
+    "_meta": {
+      "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+      "io.modelcontextprotocol/clientCapabilities": {}
+    }
+  }
+}
 ```
 
 Un cliente que abre con `initialize` de una revisión anterior recibe esta respuesta, y la
 conexión sigue abierta para una solicitud de la revisión admitida:
 
 ```json
-{ "jsonrpc": "2.0", "id": 1, "error": { "code": -32022,
-  "message": "Unsupported protocol version: 2025-06-18",
-  "data": { "supported": ["2026-07-28"], "requested": "2025-06-18" } } }
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": {
+    "code": -32022,
+    "message": "Unsupported protocol version: 2025-06-18",
+    "data": { "supported": ["2026-07-28"], "requested": "2025-06-18" }
+  }
+}
 ```
 
 Una solicitud que no nombra ninguna revisión recibe el mismo código y el mensaje
@@ -102,13 +115,13 @@ actualizarse es el cliente; el servidor no cambia.
 Pida lo que devuelve una herramienta, de modo que cada afirmación del asistente tenga un
 resultado detrás:
 
-| Pida | Herramienta | Qué devuelve |
-| --- | --- | --- |
-| «¿Es válido este archivo de proyecto?» | `project_validate` | `ok` y los diagnósticos |
-| «¿Compila y qué necesita?» | `compiler_check`, `symbols_list` | El tamaño del programa, los diagnósticos y los símbolos públicos |
-| «¿Pasan sus escenarios?» | `tests_run`, `scenario_run` | Un resultado por escenario, con el resumen de su traza |
-| «¿Qué pasó en el ciclo 40?» | `trace_get`, `runtime_snapshot` | Una traza acotada y saneada de una ejecución registrada |
-| «¿Qué placas están descritas?» | `boards_list` | Las placas del manifiesto y su nivel, sin sondear hardware |
+| Pida                                   | Herramienta                      | Qué devuelve                                                     |
+| -------------------------------------- | -------------------------------- | ---------------------------------------------------------------- |
+| «¿Es válido este archivo de proyecto?» | `project_validate`               | `ok` y los diagnósticos                                          |
+| «¿Compila y qué necesita?»             | `compiler_check`, `symbols_list` | El tamaño del programa, los diagnósticos y los símbolos públicos |
+| «¿Pasan sus escenarios?»               | `tests_run`, `scenario_run`      | Un resultado por escenario, con el resumen de su traza           |
+| «¿Qué pasó en el ciclo 40?»            | `trace_get`, `runtime_snapshot`  | Una traza acotada y saneada de una ejecución registrada          |
+| «¿Qué placas están descritas?»         | `boards_list`                    | Las placas del manifiesto y su nivel, sin sondear hardware       |
 
 [La referencia de MCP](../reference/mcp.md) lista las 15 herramientas y los 13 recursos.
 Un escenario se ejecuta en el simulador de su computadora, así que su resultado es
@@ -131,13 +144,13 @@ La IA dentro de ZPLC sigue el mismo límite y tiene sus propias reglas de datos:
 
 ## Qué está verificado y qué no
 
-| Parte | Verificado | Nivel |
-| --- | --- | --- |
-| El servidor lista 15 herramientas cuando se le pide; `project_validate`, `compiler_check` y `tests_run` pasan en un proyecto incluido; `boards_list` responde con `--repository`; un `initialize` de la revisión 2025-06-18 y una solicitud sin revisión se rechazan con `-32022`, y una sin `clientCapabilities` con `-32602` | Ejecutado a mano con un script que envía las solicitudes por la entrada y la salida estándar, con `bun run --cwd=packages/zplc-ide mcp`, sobre el proyecto incluido `pico_blinky_ton`; CI no lo repite | Host |
-| El ejecutable construido arranca y lista sus herramientas como lo pide un cliente 2026-07-28 | La compilación de la versión arranca el ejecutable y cuenta las herramientas | Host |
-| Ninguna herramienta llega a un dispositivo, un socket o un puerto serie | Una prueba lista las herramientas y los recursos registrados del servidor activo y atrapa cada punto de entrada de sockets y de puerto serie | Host |
-| Un producto de asistente concreto funciona con la entrada de arriba | No verificado: no se ejecutó ningún producto cliente para esta página | Ninguno |
-| El cambio de un asistente es correcto | Nunca se da por supuesto: solo lo dicen la compilación y los escenarios | Ninguno |
+| Parte                                                                                                                                                                                                                                                                                                                          | Verificado                                                                                                                                                                                             | Nivel   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- |
+| El servidor lista 15 herramientas cuando se le pide; `project_validate`, `compiler_check` y `tests_run` pasan en un proyecto incluido; `boards_list` responde con `--repository`; un `initialize` de la revisión 2025-06-18 y una solicitud sin revisión se rechazan con `-32022`, y una sin `clientCapabilities` con `-32602` | Ejecutado a mano con un script que envía las solicitudes por la entrada y la salida estándar, con `bun run --cwd=packages/zplc-ide mcp`, sobre el proyecto incluido `pico_blinky_ton`; CI no lo repite | Host    |
+| El ejecutable construido arranca y lista sus herramientas como lo pide un cliente 2026-07-28                                                                                                                                                                                                                                   | La compilación de la versión arranca el ejecutable y cuenta las herramientas                                                                                                                           | Host    |
+| Ninguna herramienta llega a un dispositivo, un socket o un puerto serie                                                                                                                                                                                                                                                        | Una prueba lista las herramientas y los recursos registrados del servidor activo y atrapa cada punto de entrada de sockets y de puerto serie                                                           | Host    |
+| Un producto de asistente concreto funciona con la entrada de arriba                                                                                                                                                                                                                                                            | No verificado: no se ejecutó ningún producto cliente para esta página                                                                                                                                  | Ninguno |
+| El cambio de un asistente es correcto                                                                                                                                                                                                                                                                                          | Nunca se da por supuesto: solo lo dicen la compilación y los escenarios                                                                                                                                | Ninguno |
 
 ## Vea también
 

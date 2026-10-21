@@ -35,14 +35,21 @@ export function boardSessionOf(source: BoardSessionSource = connectionManager): 
   const adapter = source.serialAdapter;
   if (!source.connected || !adapter) return null;
   const session: ReadOnlyBoardSession = {
-    get connected() { return adapter.connected; },
-    get state() { return adapter.state; },
+    get connected() {
+      return adapter.connected;
+    },
+    get state() {
+      return adapter.state;
+    },
     readWatchVariables: (variables, options) => adapter.readWatchVariables(variables, options),
   };
   const info = source.systemInfo;
   return {
     session,
-    trace: 'deviceTraceCommand' in adapter && adapter.deviceTraceCommand ? shellDeviceTrace((command) => adapter.deviceTraceCommand!(command)) : null,
+    trace:
+      'deviceTraceCommand' in adapter && adapter.deviceTraceCommand
+        ? shellDeviceTrace((command) => adapter.deviceTraceCommand!(command))
+        : null,
     boardId: typeof info?.io?.board_id === 'string' ? info.io.board_id : null,
     runtimeVersion: typeof info?.zplc_version === 'string' ? info.zplc_version : null,
   };

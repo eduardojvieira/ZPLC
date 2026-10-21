@@ -26,15 +26,15 @@
 static int test_count = 0;
 static int fail_count = 0;
 
-#define CHECK(cond, msg)                                                       \
-  do {                                                                         \
-    test_count++;                                                              \
-    if (!(cond)) {                                                             \
-      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__);                  \
-      fail_count++;                                                            \
-    } else {                                                                   \
-      printf("PASS: %s\n", msg);                                               \
-    }                                                                          \
+#define CHECK(cond, msg)                                      \
+  do {                                                        \
+    test_count++;                                             \
+    if (!(cond)) {                                            \
+      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__); \
+      fail_count++;                                           \
+    } else {                                                  \
+      printf("PASS: %s\n", msg);                              \
+    }                                                         \
   } while (0)
 
 static size_t emit_u16(uint8_t *code, size_t n, uint8_t opcode, uint16_t operand) {
@@ -84,8 +84,7 @@ static void test_time_is_latched_once_per_scan(void) {
   CHECK(work32(0U) == 100U, "the first reading is the time the scan started at");
 
   zplc_hal_posix_set_tick_override(200U); /* time passes while the scan is stopped */
-  CHECK(zplc_vm_resume(vm) == 0 && zplc_core_run_cycle() >= 0 && zplc_vm_is_halted(vm) != 0,
-        "the scan is resumed and ends");
+  CHECK(zplc_vm_resume(vm) == 0 && zplc_core_run_cycle() >= 0 && zplc_vm_is_halted(vm) != 0, "the scan is resumed and ends");
   CHECK(work32(4U) == 100U, "the second reading of the same scan is the same time, not the clock");
 
   zplc_hal_posix_set_tick_override(300U);
@@ -104,8 +103,7 @@ static void test_a_scheduler_can_give_the_time_of_the_scan(void) {
   zplc_hal_posix_set_tick_override(400U);
   zplc_vm_set_scan_time(vm, 777U);
   CHECK(zplc_core_run_cycle() >= 0 && work32(0U) == 777U, "the scan sees the time it was given, not the clock");
-  CHECK(zplc_vm_resume(vm) == 0 && zplc_core_run_cycle() >= 0 && work32(4U) == 777U,
-        "and its rest sees it too");
+  CHECK(zplc_vm_resume(vm) == 0 && zplc_core_run_cycle() >= 0 && work32(4U) == 777U, "and its rest sees it too");
   zplc_hal_posix_set_tick_override(500U);
   CHECK(zplc_core_run_cycle() >= 0 && work32(0U) == 500U, "the next scan latches the clock again");
   zplc_hal_posix_clear_tick_override();
@@ -134,7 +132,7 @@ static void test_outside_a_scan_the_clock_is_read(void) {
  * ----------------------------------------------------------------------------
  */
 
-#define SRC 0x0100U     /* WORK offsets of two STRING[255]s and a counter */
+#define SRC 0x0100U /* WORK offsets of two STRING[255]s and a counter */
 #define DST 0x0300U
 #define COUNTER 0x0000U
 

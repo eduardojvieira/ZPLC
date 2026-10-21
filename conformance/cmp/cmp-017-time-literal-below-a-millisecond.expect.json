@@ -2,13 +2,7 @@
   "requirement": "CMP-017",
   "title": "a TIME literal that is not a whole number of milliseconds is rejected",
   "build": "fails",
-  "lines": [
-    5
-  ],
-  "codes": [
-    "INVALID_TIME_LITERAL"
-  ],
-  "messageIncludes": [
-    "millisecond"
-  ]
+  "lines": [5],
+  "codes": ["INVALID_TIME_LITERAL"],
+  "messageIncludes": ["millisecond"]
 }

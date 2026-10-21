@@ -22,7 +22,11 @@ function hasFolder(tree: FileTreeNode, path: string): boolean {
 export function libraryRows(libraries: readonly string[], tree: FileTreeNode | null): LibraryRow[] {
   return libraries.map((path) => {
     const missing = tree === null || !hasFolder(tree, path);
-    return { path, missing, files: missing ? 0 : projectSourceFiles(tree, [path]).filter((node) => node.path.startsWith(`${path}/`)).length };
+    return {
+      path,
+      missing,
+      files: missing ? 0 : projectSourceFiles(tree, [path]).filter((node) => node.path.startsWith(`${path}/`)).length,
+    };
   });
 }
 

@@ -139,14 +139,13 @@ ZTEST(stack_margin, test_the_scan_leaves_a_quarter_of_its_stacks_free) {
   normal = measure(CONFIG_ZPLC_SCHED_WORKQ_PRIORITY, CONFIG_ZPLC_SCHED_WORKQ_STACK_SIZE);
   zassert_true(fast.found, "the coordinator thread is found");
   zassert_true(normal.found, "the work queue thread is found");
-  printk("STACK coordinator: %u of %u bytes used, %u free\n", (unsigned)(fast.size - fast.unused),
-         (unsigned)fast.size, (unsigned)fast.unused);
-  printk("STACK normal work queue: %u of %u bytes used, %u free\n", (unsigned)(normal.size - normal.unused),
-         (unsigned)normal.size, (unsigned)normal.unused);
-  zassert_true(fast.unused >= fast.size / 4U, "the coordinator stack has %u of %u bytes free", (unsigned)fast.unused,
-               (unsigned)fast.size);
-  zassert_true(normal.unused >= normal.size / 4U, "the work queue stack has %u of %u bytes free",
-               (unsigned)normal.unused, (unsigned)normal.size);
+  printk("STACK coordinator: %u of %u bytes used, %u free\n", (unsigned)(fast.size - fast.unused), (unsigned)fast.size,
+         (unsigned)fast.unused);
+  printk("STACK normal work queue: %u of %u bytes used, %u free\n", (unsigned)(normal.size - normal.unused), (unsigned)normal.size,
+         (unsigned)normal.unused);
+  zassert_true(fast.unused >= fast.size / 4U, "the coordinator stack has %u of %u bytes free", (unsigned)fast.unused, (unsigned)fast.size);
+  zassert_true(normal.unused >= normal.size / 4U, "the work queue stack has %u of %u bytes free", (unsigned)normal.unused,
+               (unsigned)normal.size);
 }
 
 ZTEST_SUITE(stack_margin, NULL, NULL, NULL, NULL, NULL);

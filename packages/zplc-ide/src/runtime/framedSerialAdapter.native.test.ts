@@ -17,9 +17,17 @@ import { MemoryAccessError } from './memoryAccess';
 import { bytesToLowerHex, hexToBytes } from './link/shellTransport';
 
 const SYS_INFO = {
-  board: 'native_sim', board_profile: 'native_sim/native', zplc_version: '2.0.0-rc.3', zephyr_version: '4.0.0', uptime_ms: 1,
-  cpu_freq_mhz: 1, device_protocol_version: 1, bytecode_abi_major: ZPLC_CONSTANTS.VERSION_MAJOR, bytecode_abi_minor: ZPLC_CONSTANTS.VERSION_MINOR,
-  draft_counter: ZPLC_CONSTANTS.DRAFT_COUNTER, capabilities: { fpu: true, mpu: true, scheduler: true, max_tasks: 4 },
+  board: 'native_sim',
+  board_profile: 'native_sim/native',
+  zplc_version: '2.0.0-rc.3',
+  zephyr_version: '4.0.0',
+  uptime_ms: 1,
+  cpu_freq_mhz: 1,
+  device_protocol_version: 1,
+  bytecode_abi_major: ZPLC_CONSTANTS.VERSION_MAJOR,
+  bytecode_abi_minor: ZPLC_CONSTANTS.VERSION_MINOR,
+  draft_counter: ZPLC_CONSTANTS.DRAFT_COUNTER,
+  capabilities: { fpu: true, mpu: true, scheduler: true, max_tasks: 4 },
   memory: { work_size: 8192, retain_size: 4096, ipi_size: 4096, opi_size: 4096, code_size: 45056, max_artifact_size: 45056 },
 };
 
@@ -39,8 +47,12 @@ async function bridge(withLink: boolean): Promise<Bridge> {
   const listeners = new Set<(chunk: string) => void>();
   let child: ChildProcessWithoutNullStreams | null = null;
   const connection = {
-    _rxBuffer: '', isConnected: true, port: { close: async () => undefined } as unknown as SerialPort,
-    _dataListeners: listeners, _reader: null, _readerTask: null,
+    _rxBuffer: '',
+    isConnected: true,
+    port: { close: async () => undefined } as unknown as SerialPort,
+    _dataListeners: listeners,
+    _reader: null,
+    _readerTask: null,
     writer: {
       releaseLock: () => undefined,
       write: async (data: Uint8Array) => {
@@ -48,7 +60,10 @@ async function bridge(withLink: boolean): Promise<Bridge> {
           const line = raw.trim();
           if (line === '') continue;
           transcript.push(line);
-          const deliver = (text: string) => { connection._rxBuffer += text; listeners.forEach((listener) => listener(text)); };
+          const deliver = (text: string) => {
+            connection._rxBuffer += text;
+            listeners.forEach((listener) => listener(text));
+          };
           if (line.startsWith('zplc link ') && withLink && child) {
             child.stdin.write(hexToBytes(line.slice('zplc link '.length)));
           } else if (line.startsWith('zplc sys info')) {
@@ -65,7 +80,10 @@ async function bridge(withLink: boolean): Promise<Bridge> {
   if (withLink) {
     const root = await mkdtemp(join(tmpdir(), 'zplc-framed-adapter-'));
     roots.push(root);
-    child = spawn(nativeRuntimeBinary, ['--device-link'], { env: { ...process.env, ZPLC_PERSIST_ROOT: root }, stdio: ['pipe', 'pipe', 'pipe'] });
+    child = spawn(nativeRuntimeBinary, ['--device-link'], {
+      env: { ...process.env, ZPLC_PERSIST_ROOT: root },
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
     child.stderr.on('data', () => undefined);
     child.stdout.on('data', (chunk: Buffer) => {
       // a frame that the device writes is a line of the shell, after a newline
@@ -75,8 +93,18 @@ async function bridge(withLink: boolean): Promise<Bridge> {
     });
   }
   const made: Bridge = {
-    connection, transcript, child,
-    stop: async () => { if (child) { child.stdin.end(); await new Promise((resolve) => { child!.once('close', resolve); setTimeout(() => child!.kill('SIGTERM'), 500).unref(); }); } },
+    connection,
+    transcript,
+    child,
+    stop: async () => {
+      if (child) {
+        child.stdin.end();
+        await new Promise((resolve) => {
+          child!.once('close', resolve);
+          setTimeout(() => child!.kill('SIGTERM'), 500).unref();
+        });
+      }
+    },
   };
   bridges.push(made);
   return made;
@@ -107,7 +135,10 @@ describe('the serial adapter on firmware that speaks the link (COM-019, COM-023,
     const made = await bridge(true);
     const adapter = await connected(made, 15_000);
     expect(adapter.framed).toBe(true);
-    expect(adapter.firmware).toMatchObject({ action: 'use-link', features: { sessions: true, atomicWrite: true, events: true, checkedDownload: true } });
+    expect(adapter.firmware).toMatchObject({
+      action: 'use-link',
+      features: { sessions: true, atomicWrite: true, events: true, checkedDownload: true },
+    });
     expect(adapter.linkStatus()).toMatchObject({ source: 'events', label: 'state pushed by the device' });
 
     await adapter.pokeN(0x2010, new Uint8Array([0x78, 0x56, 0x34, 0x12]));
@@ -116,7 +147,9 @@ describe('the serial adapter on firmware that speaks the link (COM-019, COM-023,
     expect(made.transcript.some((line) => /zplc dbg poke/.test(line))).toBe(false);
 
     await adapter.forceValue(0x2020, new Uint8Array([0xaa, 0xbb]));
-    expect(await adapter.listForcedValues()).toEqual([{ path: '0x2020', address: 0x2020, size: 2, type: 'WORD', bytesHex: 'AABB', state: 'forced' }]);
+    expect(await adapter.listForcedValues()).toEqual([
+      { path: '0x2020', address: 0x2020, size: 2, type: 'WORD', bytesHex: 'AABB', state: 'forced' },
+    ]);
     await adapter.clearForcedValue(0x2020);
     expect(await adapter.listForcedValues()).toEqual([]);
 

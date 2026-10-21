@@ -32,9 +32,7 @@
       "trigger": "cyclic",
       "interval_ms": 10,
       "priority": 1,
-      "programs": [
-        "main.st"
-      ]
+      "programs": ["main.st"]
     }
   ],
   "build": {

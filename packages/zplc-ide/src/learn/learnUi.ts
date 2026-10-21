@@ -24,7 +24,10 @@ export interface LearnUiState {
   select(id: string | null): void;
   /** A lesson is being started: the workspace is being made or reopened. */
   starting: boolean;
-  /** Starts a lesson: its workspace opens, the lesson is noted as started, the home closes and the sidebar shows it. False when it did not open. */
+  /**
+   * Starts a lesson: its workspace opens, the lesson is noted as started, the home closes and the sidebar shows it. False when it did not
+   * open.
+   */
   startLesson(id: string): Promise<boolean>;
   /** The lesson whose workspace the window has open, and the project session it was opened in; a new session means it is no longer open. */
   workspace: { lessonId: string; session: number } | null;
@@ -32,20 +35,37 @@ export interface LearnUiState {
   restoreLesson(id: string): Promise<boolean>;
 }
 
-const memory = createWorkspaceMemory(typeof window === 'undefined' ? undefined : (() => { try { return window.localStorage; } catch { return undefined; } })());
+const memory = createWorkspaceMemory(
+  typeof window === 'undefined'
+    ? undefined
+    : (() => {
+        try {
+          return window.localStorage;
+        } catch {
+          return undefined;
+        }
+      })(),
+);
 
 /** True where the main process owns the lesson workspaces: the desktop app, whose preload offers the one typed operation. */
-const managedWorkspaces = (): boolean => typeof window !== 'undefined' && window.electronAPI?.learnWorkspace !== undefined && window.electronAPI?.projectFiles !== undefined;
+const managedWorkspaces = (): boolean =>
+  typeof window !== 'undefined' && window.electronAPI?.learnWorkspace !== undefined && window.electronAPI?.projectFiles !== undefined;
 
 /** The steps of opening a lesson workspace, over the store of the window and its recent folders. */
 const workspaceDeps = (): WorkspaceDeps => ({
   memory,
-  recents: async () => { await useIDEStore.getState().refreshRecentProjects(); return useIDEStore.getState().recentProjects; },
+  recents: async () => {
+    await useIDEStore.getState().refreshRecentProjects();
+    return useIDEStore.getState().recentProjects;
+  },
   openRecent: (recentId) => useIDEStore.getState().openRecentProject(recentId),
   createWorkspace: (project) => useIDEStore.getState().copyExampleProjectToFolder(project),
   ...(managedWorkspaces() ? { openManaged: (lessonId: string, project: string) => openLessonWorkspaceFolder(lessonId, project) } : {}),
   now: () => Date.now(),
-  wait: (ms) => new Promise((resolve) => { window.setTimeout(resolve, ms); }),
+  wait: (ms) =>
+    new Promise((resolve) => {
+      window.setTimeout(resolve, ms);
+    }),
 });
 
 export const useLearnUi = create<LearnUiState>()((set, get) => ({
@@ -83,14 +103,28 @@ export const useLearnUi = create<LearnUiState>()((set, get) => ({
     const portable: Record<string, unknown> | null = loaded ? { ...loaded.zplcConfig } : null;
     if (portable) delete portable.$schema;
     const parsed = portable ? parseAndMigrateProject(portable) : null;
-    if (!entry || !workspace || workspace.lessonId !== id || workspace.session !== store.projectSession || (!managed && !recentId) || !store.directoryHandle || !assets || !parsed?.ok) return false;
+    if (
+      !entry ||
+      !workspace ||
+      workspace.lessonId !== id ||
+      workspace.session !== store.projectSession ||
+      (!managed && !recentId) ||
+      !store.directoryHandle ||
+      !assets ||
+      !parsed?.ok
+    )
+      return false;
     try {
       await restoreStarterFiles(store.directoryHandle, assets);
       await writeProjectConfig(store.directoryHandle, parsed.project);
-    } catch { return false; }
+    } catch {
+      return false;
+    }
     // The editor reads the folder again: closing discards the buffers of the files that were just rewritten, which is what was confirmed.
     if (!store.closeProject({ discardUnsaved: true })) return false;
-    const reopened = managed ? (await openLessonWorkspaceFolder(id, entry.starter.project)) !== false : await useIDEStore.getState().openRecentProject(recentId!);
+    const reopened = managed
+      ? (await openLessonWorkspaceFolder(id, entry.starter.project)) !== false
+      : await useIDEStore.getState().openRecentProject(recentId!);
     if (reopened) set({ workspace: { lessonId: id, session: useIDEStore.getState().projectSession } });
     return reopened;
   },

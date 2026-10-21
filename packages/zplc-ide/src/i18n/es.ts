@@ -58,7 +58,8 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'preferences.minimap': 'Mostrar el minimapa en el editor de código',
   'preferences.updates.now': 'Buscar ahora',
   'preferences.updates.checking': 'Buscando…',
-  'preferences.updates.note': 'La búsqueda consulta las versiones publicadas de este proyecto en GitHub. No envía datos suyos, no descarga nada y permanece desactivada hasta que usted la active.',
+  'preferences.updates.note':
+    'La búsqueda consulta las versiones publicadas de este proyecto en GitHub. No envía datos suyos, no descarga nada y permanece desactivada hasta que usted la active.',
   // Theme
   'theme.label': 'Tema',
   'theme.light': 'Claro',
@@ -76,13 +77,18 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'updateNotice.dismissLabel': `Descartar el aviso sobre ${PRODUCT_NAME} {version}`,
   'updateNotice.howTo': 'Cómo actualizar',
   'updateNotice.untouched': `${PRODUCT_NAME} no descarga ni instala nada. Sus proyectos son carpetas que usted eligió, por lo que una actualización no las modifica.`,
-  'updateNotice.step.win32Setup': 'Instalador: descargue el nuevo archivo `setup-unsigned.exe`, verifique su suma de comprobación y ejecútelo sobre la versión instalada.',
+  'updateNotice.step.win32Setup':
+    'Instalador: descargue el nuevo archivo `setup-unsigned.exe`, verifique su suma de comprobación y ejecútelo sobre la versión instalada.',
   'updateNotice.step.win32Portable': 'Portátil: descargue el nuevo archivo `portable-unsigned.exe` y reemplace el anterior.',
-  'updateNotice.step.darwin': 'Descargue el nuevo archivo `.dmg` (o `.zip`), verifique su suma de comprobación y arrastre la nueva aplicación a "Aplicaciones", reemplazando la anterior.',
-  'updateNotice.step.deb': '`.deb`: descargue el nuevo paquete, verifique su suma de comprobación e instálelo con `sudo apt install ./<file>.deb`.',
-  'updateNotice.step.rpm': '`.rpm`: descargue el nuevo paquete, verifique su suma de comprobación e instálelo con `sudo dnf install ./<file>.rpm`.',
+  'updateNotice.step.darwin':
+    'Descargue el nuevo archivo `.dmg` (o `.zip`), verifique su suma de comprobación y arrastre la nueva aplicación a "Aplicaciones", reemplazando la anterior.',
+  'updateNotice.step.deb':
+    '`.deb`: descargue el nuevo paquete, verifique su suma de comprobación e instálelo con `sudo apt install ./<file>.deb`.',
+  'updateNotice.step.rpm':
+    '`.rpm`: descargue el nuevo paquete, verifique su suma de comprobación e instálelo con `sudo dnf install ./<file>.rpm`.',
   'updateNotice.step.appImage': 'AppImage: descargue el nuevo archivo, verifique su suma de comprobación y reemplace el anterior.',
-  'updateNotice.step.other': 'Descargue desde la versión publicada el nuevo instalador de su sistema, verifique su suma de comprobación e instálelo sobre el anterior.',
+  'updateNotice.step.other':
+    'Descargue desde la versión publicada el nuevo instalador de su sistema, verifique su suma de comprobación e instálelo sobre el anterior.',
   // Serial port dialog
   'serialPort.title': 'Elegir un puerto serie',
   'serialPort.intro': `${PRODUCT_NAME} usa solamente el puerto que usted elija, para esta conexión. Elegir un puerto no envía ningún programa ni inicia nada.`,
@@ -172,7 +178,8 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'toolbar.live.disable': 'Desactivar la vista previa en vivo en línea',
   'toolbar.live.enable': 'Activar la vista previa en vivo en línea',
   'toolbar.live.enabledTitle': 'Vista previa en vivo en línea activada. Haga clic para desactivar la vista previa en vivo del editor.',
-  'toolbar.live.disabledTitle': 'Vista previa en vivo en línea desactivada. La tabla de observación sigue actualizándose. Haga clic para activar la vista previa en vivo del editor.',
+  'toolbar.live.disabledTitle':
+    'Vista previa en vivo en línea desactivada. La tabla de observación sigue actualizándose. Haga clic para activar la vista previa en vivo del editor.',
   'toolbar.live.text': 'En vivo',
   'toolbar.pause.label': 'Pausar',
   'toolbar.pause.text': 'Pausar',
@@ -235,7 +242,8 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'confirm.reset.description': 'El PLC vuelve a su estado inicial. Ejecutar lo inicia de nuevo.',
   'confirm.reset.action': 'Restablecer PLC',
   'confirm.force.title': '¿Forzar {name}?',
-  'confirm.force.description': 'El dispositivo mantiene {name} en {value} hasta que se libere el forzado, sin importar lo que haga el programa.',
+  'confirm.force.description':
+    'El dispositivo mantiene {name} en {value} hasta que se libere el forzado, sin importar lo que haga el programa.',
   'confirm.force.action': 'Forzar variable',
   'confirm.forceChange.title': '¿Cambiar el valor forzado de {name}?',
   'confirm.forceChange.description': 'El dispositivo mantiene {name} en {value} hasta que se libere el forzado.',
@@ -279,7 +287,8 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'connection.link.framed': 'enlace con tramas',
   'connection.link.shell': 'enlace de shell de texto',
   'deploy.title': '¿Cargar en el dispositivo?',
-  'deploy.description.running': 'El PLC está en ejecución. La carga lo detiene, escribe el programa y deja el PLC detenido. Ejecutar es una acción aparte.',
+  'deploy.description.running':
+    'El PLC está en ejecución. La carga lo detiene, escribe el programa y deja el PLC detenido. Ejecutar es una acción aparte.',
   'deploy.description.stopped': 'La carga escribe el programa y deja el PLC detenido. Ejecutar es una acción aparte.',
   'deploy.action.stopAndDeploy': 'Detener PLC y cargar',
   'deploy.action.deploy': 'Cargar',
@@ -313,18 +322,24 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'deploy.status.mismatch': 'No coincide',
   'deploy.status.unreported': 'Sin informar',
   'deploy.status.info': 'No se compara',
-  'deploy.mismatch.profile': 'El proyecto compila para {project} y el dispositivo informa {device}. Elija el destino correcto en los ajustes del proyecto o conecte el dispositivo correcto.',
-  'deploy.mismatch.abi': 'El programa usa la ABI {project} y el dispositivo ejecuta la ABI {device}. Recompile el programa o instale el firmware correspondiente.',
+  'deploy.mismatch.profile':
+    'El proyecto compila para {project} y el dispositivo informa {device}. Elija el destino correcto en los ajustes del proyecto o conecte el dispositivo correcto.',
+  'deploy.mismatch.abi':
+    'El programa usa la ABI {project} y el dispositivo ejecuta la ABI {device}. Recompile el programa o instale el firmware correspondiente.',
   'deploy.mismatch.size': 'El programa pesa {size} bytes y el dispositivo acepta como máximo {max}.',
   'deploy.mismatch.tasks': 'El programa tiene {count} tareas y el dispositivo admite {max}.',
   'deploy.mismatch.noDevice': 'El dispositivo no informó datos válidos del sistema.',
-  'deploy.safe.none': 'Todas las salidas permanecen apagadas mientras el programa anterior se detiene, se escribe el nuevo y el PLC permanece detenido.',
-  'deploy.safe.declared': 'Todas las salidas permanecen en su valor seguro mientras el programa anterior se detiene, se escribe el nuevo y el PLC permanece detenido. Declarado por el proyecto: {values}. Las demás salidas están apagadas.',
+  'deploy.safe.none':
+    'Todas las salidas permanecen apagadas mientras el programa anterior se detiene, se escribe el nuevo y el PLC permanece detenido.',
+  'deploy.safe.declared':
+    'Todas las salidas permanecen en su valor seguro mientras el programa anterior se detiene, se escribe el nuevo y el PLC permanece detenido. Declarado por el proyecto: {values}. Las demás salidas están apagadas.',
   'deploy.safe.scope': `Esto se comprueba con pruebas en el equipo y en el simulador. La aplicación ${PRODUCT_NAME} no mide los pines de esta placa.`,
   'deploy.safe.on': 'encendida',
   'deploy.safe.off': 'apagada',
-  'deploy.transfer.framed': 'Los fragmentos se envían en orden. El dispositivo informa el tamaño y el CRC-32 de lo que guarda, y deben coincidir con lo anunciado.',
-  'deploy.transfer.shell': 'Este firmware usa la shell de texto anterior. El dispositivo responde cada línea y el programa no se lee de vuelta.',
+  'deploy.transfer.framed':
+    'Los fragmentos se envían en orden. El dispositivo informa el tamaño y el CRC-32 de lo que guarda, y deben coincidir con lo anunciado.',
+  'deploy.transfer.shell':
+    'Este firmware usa la shell de texto anterior. El dispositivo responde cada línea y el programa no se lee de vuelta.',
   'status.label': 'Estado operativo',
   'status.mode': 'Modo',
   'status.debug': 'Depuración',
@@ -505,7 +520,8 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'welcome.group.process.title': 'Procesos y secuencias',
   'welcome.group.process.blurb': 'Control de nivel, manejo de fallas y secuencias.',
   'welcome.group.languages.title': 'Recorrido por los lenguajes',
-  'welcome.group.languages.blurb': 'El mismo parpadeador de LED al 50 % en otros cuatro lenguajes; el de diagrama de escalera es «Blinky», arriba.',
+  'welcome.group.languages.blurb':
+    'El mismo parpadeador de LED al 50 % en otros cuatro lenguajes; el de diagrama de escalera es «Blinky», arriba.',
   'welcome.group.boards.title': 'Placas y hardware',
   'welcome.group.boards.blurb': 'Cada uno apunta a una placa concreta.',
   'welcome.group.fixtures.title': 'Casos de prueba',
@@ -585,7 +601,8 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'search.query': 'Texto a buscar',
   'search.placeholder': 'Buscar en los archivos del proyecto',
   'search.matchCase': 'Distinguir mayúsculas',
-  'search.scope': 'Busca en los archivos de texto estructurado y de lista de instrucciones, con los cambios sin guardar. No se busca en los diagramas.',
+  'search.scope':
+    'Busca en los archivos de texto estructurado y de lista de instrucciones, con los cambios sin guardar. No se busca en los diagramas.',
   'search.searching': 'Buscando…',
   'search.summary': 'Coincidencias: {count} en {files} archivos',
   'search.truncated': 'Solo se muestran las primeras {count} coincidencias',

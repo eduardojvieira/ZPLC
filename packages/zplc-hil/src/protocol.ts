@@ -72,16 +72,8 @@ export interface StatusPayload extends BasePayload {
   uptime: number;
 }
 
-export type DebugPayload = 
-  | OpcodePayload 
-  | FBPayload 
-  | TaskPayload 
-  | CyclePayload 
-  | ErrorPayload 
-  | AckPayload
-  | WatchPayload
-  | ReadyPayload
-  | StatusPayload;
+export type DebugPayload =
+  OpcodePayload | FBPayload | TaskPayload | CyclePayload | ErrorPayload | AckPayload | WatchPayload | ReadyPayload | StatusPayload;
 
 export interface DebugFrame {
   type: DebugFrameType;
@@ -104,7 +96,7 @@ export function parseFrame(line: string): DebugFrame | null {
       type: payload.t,
       timestamp: Date.now(),
       raw: cleanLine,
-      payload
+      payload,
     };
   } catch {
     return null;

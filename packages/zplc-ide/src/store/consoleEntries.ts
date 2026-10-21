@@ -12,10 +12,7 @@ function materializeEntry(entry: NewConsoleEntry): ConsoleEntry {
   };
 }
 
-export function appendConsoleEntries(
-  existingEntries: ConsoleEntry[],
-  entries: NewConsoleEntry[],
-): ConsoleEntry[] {
+export function appendConsoleEntries(existingEntries: ConsoleEntry[], entries: NewConsoleEntry[]): ConsoleEntry[] {
   if (entries.length === 0) {
     return existingEntries;
   }

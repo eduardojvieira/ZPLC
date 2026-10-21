@@ -61,7 +61,10 @@ describe('plant engine (LRN-018, LRN-019)', () => {
   it('the conveyor moves a part to the classifier and diverter sensors, counts it, and a jam stops it', () => {
     const run = createPlantRun('conveyor-v1');
     const seen = new Set<string>();
-    for (let i = 0; i < 30; i += 1) { run.tick({ belt: true, diverter: false }); for (const [k, v] of Object.entries(run.sense())) if (v) seen.add(k); }
+    for (let i = 0; i < 30; i += 1) {
+      run.tick({ belt: true, diverter: false });
+      for (const [k, v] of Object.entries(run.sense())) if (v) seen.add(k);
+    }
     expect([...seen].sort()).toEqual(['partAtClassifier', 'partAtDiverter']);
     expect(run.state.classified).toBe(1);
     run.act('jam');
@@ -87,9 +90,13 @@ describe('plant engine (LRN-018, LRN-019)', () => {
   });
 
   it('gives the same trace on every run and matches the pinned golden hashes (LRN-019)', () => {
-    const scripts = Object.fromEntries(PLANT_KINDS.map((kind) => [kind, tracePlant(kind, 120, motorProgramFor(kind), { 40: [createPlantRun(kind).model.actions[0]!] })]));
+    const scripts = Object.fromEntries(
+      PLANT_KINDS.map((kind) => [kind, tracePlant(kind, 120, motorProgramFor(kind), { 40: [createPlantRun(kind).model.actions[0]!] })]),
+    );
     for (const kind of PLANT_KINDS) {
-      expect(traceHash(scripts[kind]!)).toBe(traceHash(tracePlant(kind, 120, motorProgramFor(kind), { 40: [createPlantRun(kind).model.actions[0]!] })));
+      expect(traceHash(scripts[kind]!)).toBe(
+        traceHash(tracePlant(kind, 120, motorProgramFor(kind), { 40: [createPlantRun(kind).model.actions[0]!] })),
+      );
     }
     expect(Object.fromEntries(PLANT_KINDS.map((kind) => [kind, traceHash(scripts[kind]!)]))).toEqual(GOLDEN);
   });
@@ -99,6 +106,17 @@ function motorProgramFor(kind: string) {
   if (kind === 'motor-v1') return (tick: number) => ({ command: tick % 50 < 30 });
   if (kind === 'conveyor-v1') return (tick: number) => ({ belt: tick % 60 < 45, diverter: tick % 17 < 4 });
   if (kind === 'tank-v1') return (tick: number, sensed: Record<string, boolean>) => ({ pump: sensed.levelLow ? true : tick % 7 < 3 });
-  return (tick: number) => ({ vehicleRed: tick % 40 > 20, vehicleYellow: false, vehicleGreen: tick % 40 <= 20, pedWalk: tick % 40 > 24, pedStop: tick % 40 <= 24 });
+  return (tick: number) => ({
+    vehicleRed: tick % 40 > 20,
+    vehicleYellow: false,
+    vehicleGreen: tick % 40 <= 20,
+    pedWalk: tick % 40 > 24,
+    pedStop: tick % 40 <= 24,
+  });
 }
-const GOLDEN: Record<string, string> = { 'conveyor-v1': '3e7ad046', 'motor-v1': '16e1f1ed', 'pedestrian-v1': '5faddcd8', 'tank-v1': 'd059d702' };
+const GOLDEN: Record<string, string> = {
+  'conveyor-v1': '3e7ad046',
+  'motor-v1': '16e1f1ed',
+  'pedestrian-v1': '5faddcd8',
+  'tank-v1': 'd059d702',
+};

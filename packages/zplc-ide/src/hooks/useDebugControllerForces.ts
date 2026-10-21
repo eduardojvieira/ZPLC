@@ -1,5 +1,6 @@
 /**
- * Value writes and forces of the debug controller, and the refresh of the forces a device reports (IDE-014: split out of useDebugController.ts).
+ * Value writes and forces of the debug controller, and the refresh of the forces a device reports (IDE-014: split out of
+ * useDebugController.ts).
  */
 
 import { useEffect, useCallback, type RefObject } from 'react';
@@ -10,7 +11,13 @@ import type { DebugMap } from '../compiler';
 import { findVariable } from '../compiler';
 import { isCurrentSerialAdapter, shouldMarkForceCommandFailureUnconfirmed } from './forceReconciliation';
 
-export function useDebugControllerForces({ adapter, adapterRef, forcesUnconfirmed, watchVariables, debugMap }: {
+export function useDebugControllerForces({
+  adapter,
+  adapterRef,
+  forcesUnconfirmed,
+  watchVariables,
+  debugMap,
+}: {
   adapter: IDebugAdapter | null;
   adapterRef: RefObject<IDebugAdapter | null>;
   forcesUnconfirmed: boolean;
@@ -23,12 +30,7 @@ export function useDebugControllerForces({ adapter, adapterRef, forcesUnconfirme
   const markForcedValuesUnconfirmed = useIDEStore((state) => state.markForcedValuesUnconfirmed);
 
   const setValue = useCallback(
-    async (
-      address: number,
-      value: number | boolean | string,
-      type: WatchVariable['type'],
-      maxLength?: number
-    ) => {
+    async (address: number, value: number | boolean | string, type: WatchVariable['type'], maxLength?: number) => {
       const currentAdapter = adapterRef.current;
       if (!currentAdapter) return;
       if (currentAdapter.type === 'serial') {
@@ -40,25 +42,28 @@ export function useDebugControllerForces({ adapter, adapterRef, forcesUnconfirme
       const bytes = valueToBytes(value, type, maxLength);
       await currentAdapter.setValue(address, bytes);
     },
-    [adapterRef, forcesUnconfirmed]
+    [adapterRef, forcesUnconfirmed],
   );
 
-  const buildForceEntry = useCallback((
-    path: string,
-    address: number,
-    type: WatchVariable['type'],
-    bytes: Uint8Array,
-    maxLength: number | undefined,
-    state: WatchForceState,
-  ): WatchForceEntry => ({
-    path,
-    address,
-    size: bytes.length,
-    type,
-    bytesHex: bytesToHex(bytes),
-    maxLength,
-    state,
-  }), []);
+  const buildForceEntry = useCallback(
+    (
+      path: string,
+      address: number,
+      type: WatchVariable['type'],
+      bytes: Uint8Array,
+      maxLength: number | undefined,
+      state: WatchForceState,
+    ): WatchForceEntry => ({
+      path,
+      address,
+      size: bytes.length,
+      type,
+      bytesHex: bytesToHex(bytes),
+      maxLength,
+      state,
+    }),
+    [],
+  );
 
   const toggleForceValue = useCallback(
     async (
@@ -124,7 +129,8 @@ export function useDebugControllerForces({ adapter, adapterRef, forcesUnconfirme
     }
     let cancelled = false;
 
-    void currentAdapter.listForcedValues()
+    void currentAdapter
+      .listForcedValues()
       .then((entries) => {
         if (cancelled || !isCurrentSerialAdapter(adapterRef.current, currentAdapter) || !currentAdapter.connected) {
           return;
@@ -132,8 +138,9 @@ export function useDebugControllerForces({ adapter, adapterRef, forcesUnconfirme
         clearForcedValues();
 
         for (const entry of entries) {
-          const matchedPath = watchVariables.find((watchPath) => watchPath === entry.path)
-            ?? watchVariables.find((watchPath) => {
+          const matchedPath =
+            watchVariables.find((watchPath) => watchPath === entry.path) ??
+            watchVariables.find((watchPath) => {
               if (!debugMap) {
                 return false;
               }

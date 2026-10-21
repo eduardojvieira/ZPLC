@@ -26,7 +26,14 @@ export function Toolbar({ label, orientation = 'horizontal', className, children
     controls[target]?.focus();
   };
   return (
-    <div ref={bar} role="toolbar" aria-label={label} aria-orientation={orientation} className={cx('ui-toolbar', className)} onKeyDown={onKeyDown}>
+    <div
+      ref={bar}
+      role="toolbar"
+      aria-label={label}
+      aria-orientation={orientation}
+      className={cx('ui-toolbar', className)}
+      onKeyDown={onKeyDown}
+    >
       {children}
     </div>
   );

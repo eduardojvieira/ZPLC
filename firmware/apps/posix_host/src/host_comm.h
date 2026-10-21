@@ -30,13 +30,13 @@ extern "C" {
 #define ZPLC_HOST_MQTT_RECONNECT_MAX_MS_DEFAULT 60000U
 
 typedef struct {
-  const char *host;     /**< broker address; NULL leaves MQTT off */
-  uint16_t port;        /**< 0 is 1883 */
-  const char *client_id; /**< NULL is "zplc-sim-<pid>" */
-  uint16_t keepalive_s; /**< 0 is the default */
-  uint32_t connect_timeout_ms;    /**< 0 is the default */
-  uint32_t reconnect_initial_ms;  /**< 0 is the default */
-  uint32_t reconnect_max_ms;      /**< 0 is the default */
+  const char *host;              /**< broker address; NULL leaves MQTT off */
+  uint16_t port;                 /**< 0 is 1883 */
+  const char *client_id;         /**< NULL is "zplc-sim-<pid>" */
+  uint16_t keepalive_s;          /**< 0 is the default */
+  uint32_t connect_timeout_ms;   /**< 0 is the default */
+  uint32_t reconnect_initial_ms; /**< 0 is the default */
+  uint32_t reconnect_max_ms;     /**< 0 is the default */
 } zplc_host_mqtt_config_t;
 
 /** The time a Modbus TCP request waits to connect and again for the answer. */

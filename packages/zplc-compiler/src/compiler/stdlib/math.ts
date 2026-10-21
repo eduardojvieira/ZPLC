@@ -23,7 +23,15 @@ import { f32hex, isFloatType, isUnsigned32, isWideInteger, numericInfo } from '.
 import { POWF_LABEL } from '../power.ts';
 import { ROUNDAD_LABEL, ROUNDAF_LABEL, TRUNCD_LABEL, TRUNCF_LABEL } from './routines.ts';
 import {
-    ACOSF_LABEL, ASINF_LABEL, ATAN2F_LABEL, ATANF_LABEL, EXPF_LABEL, LOG2G_LABEL, SINCOSF_LABEL, SQRTF_LABEL, TANF_LABEL,
+    ACOSF_LABEL,
+    ASINF_LABEL,
+    ATAN2F_LABEL,
+    ATANF_LABEL,
+    EXPF_LABEL,
+    LOG2G_LABEL,
+    SINCOSF_LABEL,
+    SQRTF_LABEL,
+    TANF_LABEL,
 } from './mathlib.ts';
 
 // ============================================================================

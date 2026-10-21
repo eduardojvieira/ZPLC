@@ -1,19 +1,10 @@
 {
   "requirement": "CMP-005",
   "title": "a WSTRING value is not assigned to a REAL",
-  "matrix": [
-    "data-types.wstring"
-  ],
+  "matrix": ["data-types.wstring"],
   "note": "CMP-005: a text and a number are different kinds of value; IEC 61131-3 converts neither to the other implicitly, so the build is refused at the value and names both types",
   "build": "fails",
-  "lines": [
-    6
-  ],
-  "codes": [
-    "TYPE_MISMATCH"
-  ],
-  "messageIncludes": [
-    "WSTRING",
-    "REAL"
-  ]
+  "lines": [6],
+  "codes": ["TYPE_MISMATCH"],
+  "messageIncludes": ["WSTRING", "REAL"]
 }

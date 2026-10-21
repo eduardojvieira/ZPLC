@@ -6,7 +6,10 @@ import { DeployDialogBody } from './DeployDialog';
 import type { HardwareDeployConfirmation } from './hardwareDeployConfirmation';
 
 /** What `confirmAction` asks for a deploy; with a refusal, or a mismatch, the dialog only informs and offers Close. */
-export function deployRequest(facts: DeployFacts, { running, refusal = null }: { running: boolean; refusal?: string | null }): ActionConfirmRequest {
+export function deployRequest(
+  facts: DeployFacts,
+  { running, refusal = null }: { running: boolean; refusal?: string | null },
+): ActionConfirmRequest {
   const comparison = compareDeployFacts(facts, t);
   const blocked = comparison.blocked || refusal !== null;
   return {

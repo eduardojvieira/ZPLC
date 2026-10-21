@@ -1,1 +1,7 @@
-{"schemaVersion":2,"name":"interlock_guard_starter","version":"1.0.0","target":{"board":"posix"},"tasks":[{"name":"MainTask","trigger":"cyclic","interval_ms":10,"priority":1,"programs":["MotorPlant.st"]}]}
+{
+  "schemaVersion": 2,
+  "name": "interlock_guard_starter",
+  "version": "1.0.0",
+  "target": { "board": "posix" },
+  "tasks": [{ "name": "MainTask", "trigger": "cyclic", "interval_ms": 10, "priority": 1, "programs": ["MotorPlant.st"] }]
+}

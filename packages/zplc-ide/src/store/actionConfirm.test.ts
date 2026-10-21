@@ -1,10 +1,19 @@
 import { afterEach, describe, expect, it } from 'bun:test';
 import { answerConfirmation, confirmAction, currentConfirmation, mountConfirmHost, type ActionConfirmRequest } from './actionConfirm';
 
-const request: ActionConfirmRequest = { title: 'Stop the PLC?', description: 'The outputs go to their safe values.', actionLabel: 'Stop PLC', cancelLabel: 'Cancel', destructive: true };
+const request: ActionConfirmRequest = {
+  title: 'Stop the PLC?',
+  description: 'The outputs go to their safe values.',
+  actionLabel: 'Stop PLC',
+  cancelLabel: 'Cancel',
+  destructive: true,
+};
 
 let unmount: (() => void) | null = null;
-afterEach(() => { unmount?.(); unmount = null; });
+afterEach(() => {
+  unmount?.();
+  unmount = null;
+});
 
 describe('UX-020 action confirmation service', () => {
   it('UX-020 never says yes when no dialog host is mounted, so an action cannot run unasked', async () => {

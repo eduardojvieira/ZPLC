@@ -1,16 +1,38 @@
 import { describe, expect, it } from 'bun:test';
 
 import type { FileTreeNode } from '../types';
-import { collectFolders, copyName, entryNameProblem, expandPath, joinPath, nameClash, parentPath, preserveExpansion, remapOpenFiles, remapPath, removeOpenFiles, renameTaskPrograms, taskProgramName, type OpenFilesState } from './treeOperations';
+import {
+  collectFolders,
+  copyName,
+  entryNameProblem,
+  expandPath,
+  joinPath,
+  nameClash,
+  parentPath,
+  preserveExpansion,
+  remapOpenFiles,
+  remapPath,
+  removeOpenFiles,
+  renameTaskPrograms,
+  taskProgramName,
+  type OpenFilesState,
+} from './treeOperations';
 
 const file = (path: string): FileTreeNode => ({ id: `file:${path}`, name: path.split('/').at(-1)!, type: 'file', path });
-const folder = (path: string, children: FileTreeNode[]): FileTreeNode => ({ id: `dir:${path || '/'}`, name: path.split('/').at(-1) || 'project', type: 'directory', path, children });
+const folder = (path: string, children: FileTreeNode[]): FileTreeNode => ({
+  id: `dir:${path || '/'}`,
+  name: path.split('/').at(-1) || 'project',
+  type: 'directory',
+  path,
+  children,
+});
 
 describe('names in the project tree (IDE-004)', () => {
   it('accepts one plain name and says why it refuses anything else', () => {
     expect(entryNameProblem('Motor.st')).toBeNull();
     expect(entryNameProblem('  Motor.st  ')).toBeNull();
-    for (const bad of ['', '   ', '.', '..', 'a/b.st', 'a\\b.st', 'a:b.st', 'name.', 'x'.repeat(256)]) expect(entryNameProblem(bad)).toEqual(expect.any(String));
+    for (const bad of ['', '   ', '.', '..', 'a/b.st', 'a\\b.st', 'a:b.st', 'name.', 'x'.repeat(256)])
+      expect(entryNameProblem(bad)).toEqual(expect.any(String));
   });
 
   it('joins and splits project paths', () => {
@@ -47,7 +69,10 @@ describe('a copy of a file (IDE-004)', () => {
 });
 
 describe('names that the build reads as one (IDE-004)', () => {
-  const tree = folder('', [folder('src', [file('src/Motor.st'), file('src/Boiler.ld.json'), folder('src/lib', [file('src/lib/Pump.st')])]), file('zplc.json')]);
+  const tree = folder('', [
+    folder('src', [file('src/Motor.st'), file('src/Boiler.ld.json'), folder('src/lib', [file('src/lib/Pump.st')])]),
+    file('zplc.json'),
+  ]);
 
   it('finds a program of another folder or another case under the same name', () => {
     expect(nameClash(tree, 'motor.ST', null)?.path).toBe('src/Motor.st');
@@ -69,7 +94,11 @@ describe('the programs a task names (IDE-004)', () => {
   });
 
   it('follows a renamed file in every task that runs it, whatever the case, and says how many changed', () => {
-    const tasks = [{ name: 'A', programs: ['motor.st', 'Pump.st'] }, { name: 'B', programs: ['Boiler.ld'] }, { name: 'C', programs: ['Pump.st'] }];
+    const tasks = [
+      { name: 'A', programs: ['motor.st', 'Pump.st'] },
+      { name: 'B', programs: ['Boiler.ld'] },
+      { name: 'C', programs: ['Pump.st'] },
+    ];
     const result = renameTaskPrograms(tasks, 'Motor.st', 'Drive.st');
     expect(result.tasks.map((task) => task.programs)).toEqual([['Drive.st', 'Pump.st'], ['Boiler.ld'], ['Pump.st']]);
     expect(result.changed).toBe(1);
@@ -81,21 +110,46 @@ describe('the programs a task names (IDE-004)', () => {
 
 describe('open files when their path changes (IDE-004)', () => {
   const entry = (path: string, content: string, isModified: boolean) => ({
-    id: `file:${path}`, name: path.split('/').at(-1)!, language: 'ST' as const, content, isModified, path, parentPath: parentPath(path),
+    id: `file:${path}`,
+    name: path.split('/').at(-1)!,
+    language: 'ST' as const,
+    content,
+    isModified,
+    path,
+    parentPath: parentPath(path),
   });
   const state = (): OpenFilesState => ({
-    loadedFiles: new Map([['file:src/Motor.st', entry('src/Motor.st', 'motor', true)], ['file:src/lib/Pump.st', entry('src/lib/Pump.st', 'pump', false)], ['file:src/Other.st', entry('src/Other.st', 'other', false)]]),
+    loadedFiles: new Map([
+      ['file:src/Motor.st', entry('src/Motor.st', 'motor', true)],
+      ['file:src/lib/Pump.st', entry('src/lib/Pump.st', 'pump', false)],
+      ['file:src/Other.st', entry('src/Other.st', 'other', false)],
+    ]),
     openTabs: ['file:src/Motor.st', 'file:src/lib/Pump.st', 'file:src/Other.st'],
     activeFileId: 'file:src/lib/Pump.st',
-    breakpoints: new Map([['file:src/Motor.st', new Set([3])], ['file:src/Other.st', new Set([9])]]),
+    breakpoints: new Map([
+      ['file:src/Motor.st', new Set([3])],
+      ['file:src/Other.st', new Set([9])],
+    ]),
   });
   const handleOf = (path: string) => ({ name: path.split('/').at(-1)! }) as unknown as FileSystemFileHandle;
 
   it('keeps the content, the modified flag, the tab position and the active tab of a renamed file under its new identity', () => {
-    const next = remapOpenFiles(state(), 'src/Motor.st', 'src/Drive.st', (path) => ({ id: `file:${path}`, name: path.split('/').at(-1)!, type: 'file', path, handle: handleOf(path) }));
+    const next = remapOpenFiles(state(), 'src/Motor.st', 'src/Drive.st', (path) => ({
+      id: `file:${path}`,
+      name: path.split('/').at(-1)!,
+      type: 'file',
+      path,
+      handle: handleOf(path),
+    }));
     const moved = next.loadedFiles.get('file:src/Drive.st')!;
     expect(next.loadedFiles.has('file:src/Motor.st')).toBe(false);
-    expect([moved.name, moved.path, moved.content, moved.isModified, moved.id]).toEqual(['Drive.st', 'src/Drive.st', 'motor', true, 'file:src/Drive.st']);
+    expect([moved.name, moved.path, moved.content, moved.isModified, moved.id]).toEqual([
+      'Drive.st',
+      'src/Drive.st',
+      'motor',
+      true,
+      'file:src/Drive.st',
+    ]);
     expect((moved.handle as unknown as { name: string }).name).toBe('Drive.st');
     expect(next.openTabs).toEqual(['file:src/Drive.st', 'file:src/lib/Pump.st', 'file:src/Other.st']);
     expect(next.activeFileId).toBe('file:src/lib/Pump.st');
@@ -104,7 +158,13 @@ describe('open files when their path changes (IDE-004)', () => {
   });
 
   it('moves every open file under a renamed folder, and follows the active tab', () => {
-    const next = remapOpenFiles(state(), 'src/lib', 'src/shared', (path) => ({ id: `file:${path}`, name: path.split('/').at(-1)!, type: 'file', path, handle: handleOf(path) }));
+    const next = remapOpenFiles(state(), 'src/lib', 'src/shared', (path) => ({
+      id: `file:${path}`,
+      name: path.split('/').at(-1)!,
+      type: 'file',
+      path,
+      handle: handleOf(path),
+    }));
     expect(next.loadedFiles.get('file:src/shared/Pump.st')?.parentPath).toBe('src/shared');
     expect(next.openTabs).toContain('file:src/shared/Pump.st');
     expect(next.activeFileId).toBe('file:src/shared/Pump.st');
@@ -128,12 +188,28 @@ describe('open files when their path changes (IDE-004)', () => {
 
 describe('which folders are open in the Explorer (IDE-004)', () => {
   const tree = (open: string[]): FileTreeNode => ({
-    id: 'dir:/', name: 'plant', type: 'directory', path: '/', isExpanded: true,
+    id: 'dir:/',
+    name: 'plant',
+    type: 'directory',
+    path: '/',
+    isExpanded: true,
     children: [
-      { id: 'dir:src', name: 'src', type: 'directory', path: 'src', isExpanded: open.includes('src'), children: [{ id: 'dir:src/lib', name: 'lib', type: 'directory', path: 'src/lib', isExpanded: open.includes('src/lib'), children: [] }] },
+      {
+        id: 'dir:src',
+        name: 'src',
+        type: 'directory',
+        path: 'src',
+        isExpanded: open.includes('src'),
+        children: [
+          { id: 'dir:src/lib', name: 'lib', type: 'directory', path: 'src/lib', isExpanded: open.includes('src/lib'), children: [] },
+        ],
+      },
     ],
   });
-  const flags = (node: FileTreeNode): string[] => [`${node.path}:${node.isExpanded ? 'open' : 'closed'}`, ...(node.children ?? []).flatMap(flags)];
+  const flags = (node: FileTreeNode): string[] => [
+    `${node.path}:${node.isExpanded ? 'open' : 'closed'}`,
+    ...(node.children ?? []).flatMap(flags),
+  ];
 
   it('keeps the folders that were open when the tree is read again', () => {
     expect(flags(preserveExpansion(tree([]), tree(['src', 'src/lib'])))).toEqual(['/:open', 'src:open', 'src/lib:open']);
@@ -149,16 +225,31 @@ describe('which folders are open in the Explorer (IDE-004)', () => {
 
 describe('folders to choose from (IDE-004)', () => {
   const root: FileTreeNode = {
-    id: 'dir:/', name: 'plant', type: 'directory', path: '/',
+    id: 'dir:/',
+    name: 'plant',
+    type: 'directory',
+    path: '/',
     children: [
-      { id: 'dir:src', name: 'src', type: 'directory', path: 'src', children: [{ id: 'dir:src/lib', name: 'lib', type: 'directory', path: 'src/lib', children: [] }, { id: 'file:src/A.st', name: 'A.st', type: 'file', path: 'src/A.st' }] },
+      {
+        id: 'dir:src',
+        name: 'src',
+        type: 'directory',
+        path: 'src',
+        children: [
+          { id: 'dir:src/lib', name: 'lib', type: 'directory', path: 'src/lib', children: [] },
+          { id: 'file:src/A.st', name: 'A.st', type: 'file', path: 'src/A.st' },
+        ],
+      },
       { id: 'dir:archive', name: 'archive', type: 'directory', path: 'archive', children: [] },
     ],
   };
 
   it('lists the project folder and every folder under it, in tree order, with the project folder first', () => {
     expect(collectFolders(root)).toEqual([
-      { path: '', label: 'Project folder' }, { path: 'src', label: 'src' }, { path: 'src/lib', label: 'src/lib' }, { path: 'archive', label: 'archive' },
+      { path: '', label: 'Project folder' },
+      { path: 'src', label: 'src' },
+      { path: 'src/lib', label: 'src/lib' },
+      { path: 'archive', label: 'archive' },
     ]);
   });
 

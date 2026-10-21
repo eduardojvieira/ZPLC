@@ -9,7 +9,10 @@ import { tokenize, tokenizeWithErrors, TokenType } from './lexer.ts';
 import { parse, parseWithDiagnostics } from './parser.ts';
 import { CompilerError, compileMultiTaskProject } from './index.ts';
 
-const kinds = (source: string) => tokenize(source).filter((token) => token.type !== TokenType.EOF).map((token) => [token.type, token.value]);
+const kinds = (source: string) =>
+    tokenize(source)
+        .filter((token) => token.type !== TokenType.EOF)
+        .map((token) => [token.type, token.value]);
 
 /** Every error of a source as `line:column message`. */
 const errorsOf = (source: string) => parseWithDiagnostics(source).errors.map((error) => `${error.line}:${error.column} ${error.detail}`);
@@ -20,13 +23,19 @@ const program = (declarations: string, body: string) => `PROGRAM P\nVAR\n${decla
 describe('lexer: numbers (CMP-031)', () => {
     it('reads a based literal as binary, octal or hexadecimal digits', () => {
         expect(kinds('2#1010 8#17 16#FF 16#ff')).toEqual([
-            ['INTEGER', '0b1010'], ['INTEGER', '0o17'], ['INTEGER', '0xFF'], ['INTEGER', '0xff'],
+            ['INTEGER', '0b1010'],
+            ['INTEGER', '0o17'],
+            ['INTEGER', '0xFF'],
+            ['INTEGER', '0xff'],
         ]);
     });
 
     it('allows one underscore between two digits', () => {
         expect(kinds('1_000 16#FF_FF 2#1111_0000 1_000.5')).toEqual([
-            ['INTEGER', '1000'], ['INTEGER', '0xFFFF'], ['INTEGER', '0b11110000'], ['REAL_LITERAL', '1000.5'],
+            ['INTEGER', '1000'],
+            ['INTEGER', '0xFFFF'],
+            ['INTEGER', '0b11110000'],
+            ['REAL_LITERAL', '1000.5'],
         ]);
     });
 
@@ -60,9 +69,14 @@ describe('lexer: numbers (CMP-031)', () => {
 
     it('reads a typed literal as one token', () => {
         expect(kinds('INT#5 SINT#-3 WORD#16#FF bool#TRUE BOOL#0 REAL#1.5 lreal#2e3 UDINT#4_000')).toEqual([
-            ['TYPED_LITERAL', 'INT#5'], ['TYPED_LITERAL', 'SINT#-3'], ['TYPED_LITERAL', 'WORD#0xFF'],
-            ['TYPED_LITERAL', 'BOOL#1'], ['TYPED_LITERAL', 'BOOL#0'], ['TYPED_LITERAL', 'REAL#1.5'],
-            ['TYPED_LITERAL', 'LREAL#2e3'], ['TYPED_LITERAL', 'UDINT#4000'],
+            ['TYPED_LITERAL', 'INT#5'],
+            ['TYPED_LITERAL', 'SINT#-3'],
+            ['TYPED_LITERAL', 'WORD#0xFF'],
+            ['TYPED_LITERAL', 'BOOL#1'],
+            ['TYPED_LITERAL', 'BOOL#0'],
+            ['TYPED_LITERAL', 'REAL#1.5'],
+            ['TYPED_LITERAL', 'LREAL#2e3'],
+            ['TYPED_LITERAL', 'UDINT#4000'],
         ]);
     });
 
@@ -75,7 +89,12 @@ describe('lexer: numbers (CMP-031)', () => {
 
     it('still reads 1..5 as a range and 1.5 as a real', () => {
         expect(kinds('1..5 1.5 1e3 2E-3')).toEqual([
-            ['INTEGER', '1'], ['DOTDOT', '..'], ['INTEGER', '5'], ['REAL_LITERAL', '1.5'], ['REAL_LITERAL', '1e3'], ['REAL_LITERAL', '2E-3'],
+            ['INTEGER', '1'],
+            ['DOTDOT', '..'],
+            ['INTEGER', '5'],
+            ['REAL_LITERAL', '1.5'],
+            ['REAL_LITERAL', '1e3'],
+            ['REAL_LITERAL', '2E-3'],
         ]);
     });
 });
@@ -83,19 +102,31 @@ describe('lexer: numbers (CMP-031)', () => {
 describe('lexer: operators, comments and positions (CMP-032)', () => {
     it('reads ** and &', () => {
         expect(kinds('a ** b & c * d')).toEqual([
-            ['IDENTIFIER', 'a'], ['POWER', '**'], ['IDENTIFIER', 'b'], ['AND', '&'], ['IDENTIFIER', 'c'], ['STAR', '*'], ['IDENTIFIER', 'd'],
+            ['IDENTIFIER', 'a'],
+            ['POWER', '**'],
+            ['IDENTIFIER', 'b'],
+            ['AND', '&'],
+            ['IDENTIFIER', 'c'],
+            ['STAR', '*'],
+            ['IDENTIFIER', 'd'],
         ]);
     });
 
     it('skips (* *), /* */ and // comments, none of which nests', () => {
         expect(kinds('a (* x *) b /* y */ c // z\nd')).toEqual([
-            ['IDENTIFIER', 'a'], ['IDENTIFIER', 'b'], ['IDENTIFIER', 'c'], ['IDENTIFIER', 'd'],
+            ['IDENTIFIER', 'a'],
+            ['IDENTIFIER', 'b'],
+            ['IDENTIFIER', 'c'],
+            ['IDENTIFIER', 'd'],
         ]);
         // the first closing delimiter ends the comment, whatever opened inside it
         expect(kinds('(* a (* b *) c')).toEqual([['IDENTIFIER', 'c']]);
         expect(kinds('/* a /* b */ c')).toEqual([['IDENTIFIER', 'c']]);
         // a delimiter of the other kind, and a line comment mark, are text inside a comment
-        expect(kinds('(* /* // *) a /* (* // */ b')).toEqual([['IDENTIFIER', 'a'], ['IDENTIFIER', 'b']]);
+        expect(kinds('(* /* // *) a /* (* // */ b')).toEqual([
+            ['IDENTIFIER', 'a'],
+            ['IDENTIFIER', 'b'],
+        ]);
         expect(kinds('// (* not a comment\na')).toEqual([['IDENTIFIER', 'a']]);
     });
 
@@ -115,7 +146,12 @@ describe('lexer: operators, comments and positions (CMP-032)', () => {
 
     it('counts CR LF as one line break and a lone CR as one too', () => {
         const crlf = tokenize('a\r\nb\r\n  c');
-        expect(crlf.map((token) => [token.line, token.column])).toEqual([[1, 1], [2, 1], [3, 3], [3, 4]]);
+        expect(crlf.map((token) => [token.line, token.column])).toEqual([
+            [1, 1],
+            [2, 1],
+            [3, 3],
+            [3, 4],
+        ]);
         const cr = tokenize('a\rb');
         expect([cr[1]!.line, cr[1]!.column]).toEqual([2, 1]);
     });
@@ -133,8 +169,30 @@ describe('lexer: operators, comments and positions (CMP-032)', () => {
 
 describe('lexer: library blocks are names (CMP-033)', () => {
     it('reads every library function block name as an identifier', () => {
-        const names = ['TON', 'TOF', 'TP', 'R_TRIG', 'F_TRIG', 'RS', 'SR', 'CTU', 'CTD', 'CTUD', 'BLINK', 'PWM', 'PULSE',
-            'HYSTERESIS', 'DEADBAND', 'LAG_FILTER', 'RAMP_REAL', 'INTEGRAL', 'DERIVATIVE', 'PID_Compact', 'FIFO', 'LIFO'];
+        const names = [
+            'TON',
+            'TOF',
+            'TP',
+            'R_TRIG',
+            'F_TRIG',
+            'RS',
+            'SR',
+            'CTU',
+            'CTD',
+            'CTUD',
+            'BLINK',
+            'PWM',
+            'PULSE',
+            'HYSTERESIS',
+            'DEADBAND',
+            'LAG_FILTER',
+            'RAMP_REAL',
+            'INTEGRAL',
+            'DERIVATIVE',
+            'PID_Compact',
+            'FIFO',
+            'LIFO',
+        ];
         for (const name of names) {
             expect(kinds(name)).toEqual([['IDENTIFIER', name]]);
             expect(kinds(name.toLowerCase())).toEqual([['IDENTIFIER', name.toLowerCase()]]);
@@ -142,7 +200,15 @@ describe('lexer: library blocks are names (CMP-033)', () => {
     });
 
     it('keeps the elementary types and the statements reserved', () => {
-        expect(kinds('INT BOOL TIME STRING ARRAY IF AND').map(([type]) => type)).toEqual(['INT', 'BOOL', 'TIME', 'STRING', 'ARRAY', 'IF', 'AND']);
+        expect(kinds('INT BOOL TIME STRING ARRAY IF AND').map(([type]) => type)).toEqual([
+            'INT',
+            'BOOL',
+            'TIME',
+            'STRING',
+            'ARRAY',
+            'IF',
+            'AND',
+        ]);
     });
 });
 
@@ -186,34 +252,33 @@ describe('parser: error recovery reports every independent error (CMP-007)', () 
     });
 
     it('skips a broken compound statement whole, so its END_IF is not an error', () => {
-        const source = program('  x : INT;', [
-            '  IF x = THEN',
-            '    x := 1;',
-            '    IF x > 1 THEN x := 2; END_IF;',
-            '  END_IF;',
-            '  x := 5;',
-            '  x := ;',
-        ].join('\n'));
+        const source = program(
+            '  x : INT;',
+            ['  IF x = THEN', '    x := 1;', '    IF x > 1 THEN x := 2; END_IF;', '  END_IF;', '  x := 5;', '  x := ;'].join('\n'),
+        );
         expect(linesOf(source)).toEqual([5, 10]);
     });
 
     it('recovers inside a branch and leaves the construct around it intact', () => {
-        const source = program('  x : INT;', [
-            '  IF x = 1 THEN',
-            '    x := ;',
-            '    x := 2;',
-            '  ELSIF x = 2 THEN',
-            '    x := 3 +;',
-            '  ELSE',
-            '    x := 4;',
-            '  END_IF;',
-            '  CASE x OF',
-            '    1: x := ;',
-            '    2: x := 5;',
-            '  END_CASE;',
-            '  WHILE x < 3 DO x := ; END_WHILE;',
-            '  FOR x := 1 TO 3 DO x := ; END_FOR;',
-        ].join('\n'));
+        const source = program(
+            '  x : INT;',
+            [
+                '  IF x = 1 THEN',
+                '    x := ;',
+                '    x := 2;',
+                '  ELSIF x = 2 THEN',
+                '    x := 3 +;',
+                '  ELSE',
+                '    x := 4;',
+                '  END_IF;',
+                '  CASE x OF',
+                '    1: x := ;',
+                '    2: x := 5;',
+                '  END_CASE;',
+                '  WHILE x < 3 DO x := ; END_WHILE;',
+                '  FOR x := 1 TO 3 DO x := ; END_FOR;',
+            ].join('\n'),
+        );
         expect(linesOf(source)).toEqual([6, 9, 14, 17, 18]);
     });
 
@@ -242,9 +307,15 @@ describe('parser: error recovery reports every independent error (CMP-007)', () 
 
     it('reports errors of several program organisation units', () => {
         const source = [
-            'FUNCTION F : INT', 'F := ;', 'END_FUNCTION',
-            'FUNCTION_BLOCK B', 'VAR x : INT; END_VAR', 'x := 1 2;', 'END_FUNCTION_BLOCK',
-            'PROGRAM P', 'END_PROGRAM',
+            'FUNCTION F : INT',
+            'F := ;',
+            'END_FUNCTION',
+            'FUNCTION_BLOCK B',
+            'VAR x : INT; END_VAR',
+            'x := 1 2;',
+            'END_FUNCTION_BLOCK',
+            'PROGRAM P',
+            'END_PROGRAM',
         ].join('\n');
         const outcome = parseWithDiagnostics(source);
         expect(outcome.errors.map((error) => error.line)).toEqual([2, 6]);
@@ -284,7 +355,14 @@ describe('parser: error recovery reports every independent error (CMP-007)', () 
     });
 
     it('reads on after a stray word without losing the unit that holds it', () => {
-        for (const [stray, count] of [['END_IF;', 1], ['ELSE', 1], ['UNTIL;', 1], ['END_WHILE;', 1], [')', 1], [';;;', 0]] as const) {
+        for (const [stray, count] of [
+            ['END_IF;', 1],
+            ['ELSE', 1],
+            ['UNTIL;', 1],
+            ['END_WHILE;', 1],
+            [')', 1],
+            [';;;', 0],
+        ] as const) {
             const outcome = parseWithDiagnostics(program('  x : INT;', `  ${stray}\n  x := 1;\n  x := 2;`));
             expect(outcome.errors.length).toBe(count);
             expect(outcome.unit.programs.map((entry) => entry.name)).toEqual(['P']);
@@ -324,14 +402,16 @@ describe('parser: declarations (CMP-029, CMP-030)', () => {
     const declarations = (source: string) => parse(source).programs[0]!.varBlocks.flatMap((block) => block.variables);
 
     it('accepts RETAIN and NON_RETAIN', () => {
-        const unit = parse([
-            'VAR_GLOBAL RETAIN g : INT; END_VAR',
-            'PROGRAM P',
-            'VAR RETAIN a : INT; END_VAR',
-            'VAR NON_RETAIN b : INT; END_VAR',
-            'VAR c : INT; END_VAR',
-            'END_PROGRAM',
-        ].join('\n'));
+        const unit = parse(
+            [
+                'VAR_GLOBAL RETAIN g : INT; END_VAR',
+                'PROGRAM P',
+                'VAR RETAIN a : INT; END_VAR',
+                'VAR NON_RETAIN b : INT; END_VAR',
+                'VAR c : INT; END_VAR',
+                'END_PROGRAM',
+            ].join('\n'),
+        );
         expect(unit.globalVars[0]!.variables[0]!.retain).toBe(true);
         expect(unit.programs[0]!.varBlocks.map((block) => block.variables[0]!.retain)).toEqual([true, false, undefined]);
     });
@@ -340,13 +420,19 @@ describe('parser: declarations (CMP-029, CMP-030)', () => {
         const [variable] = declarations('PROGRAM P\nVAR\n  retain : BOOL;\nEND_VAR\nEND_PROGRAM');
         expect(variable!.name).toBe('retain');
         expect(variable!.retain).toBeUndefined();
-        expect(declarations('PROGRAM P\nVAR RETAIN\n  non_retain : BOOL;\nEND_VAR\nEND_PROGRAM')[0]).toMatchObject({ name: 'non_retain', retain: true });
+        expect(declarations('PROGRAM P\nVAR RETAIN\n  non_retain : BOOL;\nEND_VAR\nEND_PROGRAM')[0]).toMatchObject({
+            name: 'non_retain',
+            retain: true,
+        });
     });
 
     it('declares several names with one type and one initial value', () => {
         const variables = declarations('PROGRAM P\nVAR\n  a, b, c : INT := 7;\n  d : BOOL;\nEND_VAR\nEND_PROGRAM');
         expect(variables.map((variable) => [variable.name, variable.dataType, variable.line, variable.column])).toEqual([
-            ['a', 'INT', 3, 3], ['b', 'INT', 3, 6], ['c', 'INT', 3, 9], ['d', 'BOOL', 4, 3],
+            ['a', 'INT', 3, 3],
+            ['b', 'INT', 3, 6],
+            ['c', 'INT', 3, 9],
+            ['d', 'BOOL', 4, 3],
         ]);
         expect(variables.slice(0, 3).map((variable) => (variable.initialValue as { value: number }).value)).toEqual([7, 7, 7]);
     });
@@ -356,19 +442,21 @@ describe('parser: declarations (CMP-029, CMP-030)', () => {
     });
 
     it('accepts VAR_EXTERNAL, VAR_TEMP and a function with outputs', () => {
-        const unit = parse([
-            'FUNCTION F : INT',
-            'VAR_INPUT a : INT; END_VAR',
-            'VAR_OUTPUT o : INT; END_VAR',
-            'VAR_IN_OUT io : INT; END_VAR',
-            'VAR_TEMP t : INT; END_VAR',
-            'VAR_EXTERNAL g : INT; END_VAR',
-            'END_FUNCTION',
-            'PROGRAM P',
-            'VAR_EXTERNAL g : INT; END_VAR',
-            'VAR_TEMP t : INT; END_VAR',
-            'END_PROGRAM',
-        ].join('\n'));
+        const unit = parse(
+            [
+                'FUNCTION F : INT',
+                'VAR_INPUT a : INT; END_VAR',
+                'VAR_OUTPUT o : INT; END_VAR',
+                'VAR_IN_OUT io : INT; END_VAR',
+                'VAR_TEMP t : INT; END_VAR',
+                'VAR_EXTERNAL g : INT; END_VAR',
+                'END_FUNCTION',
+                'PROGRAM P',
+                'VAR_EXTERNAL g : INT; END_VAR',
+                'VAR_TEMP t : INT; END_VAR',
+                'END_PROGRAM',
+            ].join('\n'),
+        );
         const fn = unit.functions[0]!;
         expect(fn.inputs.map((variable) => variable.name)).toEqual(['a']);
         expect(fn.locals.map((variable) => variable.name)).toEqual(['o', 'io', 't', 'g']);
@@ -379,7 +467,10 @@ describe('parser: declarations (CMP-029, CMP-030)', () => {
 
     it('accepts several types in one TYPE block, in any order of kind', () => {
         const unit = parse('TYPE\n  A : STRUCT v : INT; END_STRUCT;\n  B : (R, G);\n  C : INT;\n  D : ARRAY[0..1] OF A;\nEND_TYPE');
-        expect(unit.typeDefinitions.map((type) => [type.kind, type.name])).toEqual([['StructDecl', 'A'], ['EnumDecl', 'B']]);
+        expect(unit.typeDefinitions.map((type) => [type.kind, type.name])).toEqual([
+            ['StructDecl', 'A'],
+            ['EnumDecl', 'B'],
+        ]);
         expect(unit.typeAliases!.map((alias) => alias.name)).toEqual(['C', 'D']);
         // a block of one keeps the position of the TYPE word
         expect([unit.typeDefinitions[0]!.line, unit.typeDefinitions[0]!.column]).toEqual([1, 1]);
@@ -388,16 +479,20 @@ describe('parser: declarations (CMP-029, CMP-030)', () => {
 
 describe('parser: type aliases (CMP-030)', () => {
     it('replaces every use of an alias by its base type', () => {
-        const unit = parse([
-            'TYPE Speed : INT; Table : ARRAY[0..2] OF Speed; Chain : Speed; END_TYPE',
-            'TYPE Pt : STRUCT s : Speed; END_STRUCT END_TYPE',
-            'FUNCTION F : Speed',
-            'VAR_INPUT a : Speed; END_VAR',
-            'END_FUNCTION',
-            'PROGRAM P',
-            'VAR s : Speed; t : Table; c : Chain; REF_TO Speed; END_VAR',
-            'END_PROGRAM',
-        ].join('\n').replace('REF_TO Speed;', 'r : REF_TO Speed;'));
+        const unit = parse(
+            [
+                'TYPE Speed : INT; Table : ARRAY[0..2] OF Speed; Chain : Speed; END_TYPE',
+                'TYPE Pt : STRUCT s : Speed; END_STRUCT END_TYPE',
+                'FUNCTION F : Speed',
+                'VAR_INPUT a : Speed; END_VAR',
+                'END_FUNCTION',
+                'PROGRAM P',
+                'VAR s : Speed; t : Table; c : Chain; REF_TO Speed; END_VAR',
+                'END_PROGRAM',
+            ]
+                .join('\n')
+                .replace('REF_TO Speed;', 'r : REF_TO Speed;'),
+        );
         const variables = unit.programs[0]!.varBlocks[0]!.variables;
         expect(variables.map((variable) => variable.dataType)).toEqual([
             'INT',
@@ -419,15 +514,21 @@ describe('parser: type aliases (CMP-030)', () => {
     });
 
     it('keeps a structure or function block named by an alias', () => {
-        const unit = parse('TYPE Pt : STRUCT x : INT; END_STRUCT END_TYPE\nTYPE Point : Pt; END_TYPE\nPROGRAM P\nVAR p : Point; END_VAR\nEND_PROGRAM');
+        const unit = parse(
+            'TYPE Pt : STRUCT x : INT; END_STRUCT END_TYPE\nTYPE Point : Pt; END_TYPE\nPROGRAM P\nVAR p : Point; END_VAR\nEND_PROGRAM',
+        );
         expect(unit.programs[0]!.varBlocks[0]!.variables[0]!.dataType).toBe('Pt');
     });
 
     it('reports an alias that refers to itself and a name declared twice', () => {
         // a cycle is one error, at the first alias of it
         expect(errorsOf('TYPE A : B; B : A; END_TYPE\nPROGRAM P END_PROGRAM')).toEqual(["1:1 The type alias 'A' refers to itself"]);
-        expect(errorsOf('TYPE A : INT; END_TYPE\nTYPE a : DINT; END_TYPE\nPROGRAM P END_PROGRAM')).toEqual(["2:1 The type name 'a' is already declared"]);
-        expect(errorsOf('TYPE A : INT; END_TYPE\nFUNCTION_BLOCK A END_FUNCTION_BLOCK')).toEqual(["1:1 The type name 'A' is already declared"]);
+        expect(errorsOf('TYPE A : INT; END_TYPE\nTYPE a : DINT; END_TYPE\nPROGRAM P END_PROGRAM')).toEqual([
+            "2:1 The type name 'a' is already declared",
+        ]);
+        expect(errorsOf('TYPE A : INT; END_TYPE\nFUNCTION_BLOCK A END_FUNCTION_BLOCK')).toEqual([
+            "1:1 The type name 'A' is already declared",
+        ]);
     });
 
     it('refuses an array of an array type', () => {
@@ -440,30 +541,39 @@ describe('parser: library function block names (CMP-033)', () => {
     const type = (source: string) => parse(source).programs[0]!.varBlocks[0]!.variables.map((variable) => variable.dataType);
 
     it('uses a library name as the name of a variable, of a member and of a parameter', () => {
-        expect(() => parse([
-            'TYPE S : STRUCT Pulse : BOOL; Ton : INT; END_STRUCT END_TYPE',
-            'FUNCTION_BLOCK B',
-            'VAR_INPUT Counter : INT; RS : BOOL; END_VAR',
-            'VAR_OUTPUT Blink : BOOL; END_VAR',
-            'Blink := RS;',
-            'END_FUNCTION_BLOCK',
-            'FUNCTION F : INT',
-            'VAR_INPUT Pwm : INT; END_VAR',
-            'F := Pwm;',
-            'END_FUNCTION',
-            'PROGRAM P',
-            'VAR Pulse : BOOL; Ton : S; Sr : INT; END_VAR',
-            'Pulse := TRUE;',
-            'Sr := Ton.Ton + F(Pwm := 1);',
-            'END_PROGRAM',
-        ].join('\n'))).not.toThrow();
+        expect(() =>
+            parse(
+                [
+                    'TYPE S : STRUCT Pulse : BOOL; Ton : INT; END_STRUCT END_TYPE',
+                    'FUNCTION_BLOCK B',
+                    'VAR_INPUT Counter : INT; RS : BOOL; END_VAR',
+                    'VAR_OUTPUT Blink : BOOL; END_VAR',
+                    'Blink := RS;',
+                    'END_FUNCTION_BLOCK',
+                    'FUNCTION F : INT',
+                    'VAR_INPUT Pwm : INT; END_VAR',
+                    'F := Pwm;',
+                    'END_FUNCTION',
+                    'PROGRAM P',
+                    'VAR Pulse : BOOL; Ton : S; Sr : INT; END_VAR',
+                    'Pulse := TRUE;',
+                    'Sr := Ton.Ton + F(Pwm := 1);',
+                    'END_PROGRAM',
+                ].join('\n'),
+            ),
+        ).not.toThrow();
     });
 
     it('still takes a library name in a type position as the library block, in any case', () => {
-        expect(type('PROGRAM P\nVAR a : TON; b : ton; c : Pid_Compact; d : r_trig; END_VAR\nEND_PROGRAM'))
-            .toEqual(['TON', 'TON', 'PID_Compact', 'R_TRIG']);
-        expect(type('PROGRAM P\nVAR a : ARRAY[0..1] OF Ctu; END_VAR\nEND_PROGRAM'))
-            .toEqual([{ kind: 'ArrayType', dimensions: [{ lowerBound: 0, upperBound: 1 }], elementType: 'CTU' }]);
+        expect(type('PROGRAM P\nVAR a : TON; b : ton; c : Pid_Compact; d : r_trig; END_VAR\nEND_PROGRAM')).toEqual([
+            'TON',
+            'TON',
+            'PID_Compact',
+            'R_TRIG',
+        ]);
+        expect(type('PROGRAM P\nVAR a : ARRAY[0..1] OF Ctu; END_VAR\nEND_PROGRAM')).toEqual([
+            { kind: 'ArrayType', dimensions: [{ lowerBound: 0, upperBound: 1 }], elementType: 'CTU' },
+        ]);
     });
 
     it('prefers a type the program declares itself to the library block of that name', () => {
@@ -507,10 +617,15 @@ describe('parser: expressions (CMP-031, CMP-032)', () => {
 
     it('gives ** a higher precedence than the unary minus and makes it left associative', () => {
         expect(expression('-2 ** 2')).toMatchObject({
-            kind: 'UnaryExpr', operator: 'NEG', operand: { kind: 'BinaryExpr', operator: 'POW' },
+            kind: 'UnaryExpr',
+            operator: 'NEG',
+            operand: { kind: 'BinaryExpr', operator: 'POW' },
         });
         expect(expression('2 ** 3 ** 2')).toMatchObject({
-            kind: 'BinaryExpr', operator: 'POW', left: { kind: 'BinaryExpr', operator: 'POW' }, right: { value: 2 },
+            kind: 'BinaryExpr',
+            operator: 'POW',
+            left: { kind: 'BinaryExpr', operator: 'POW' },
+            right: { value: 2 },
         });
         expect(expression('2 ** -1')).toMatchObject({ operator: 'POW', right: { kind: 'UnaryExpr', operator: 'NEG' } });
         expect(expression('2 * 3 ** 2')).toMatchObject({ operator: 'MUL', right: { operator: 'POW' } });
@@ -522,8 +637,13 @@ describe('parser: expressions (CMP-031, CMP-032)', () => {
     });
 
     it('parses a bit access on a variable, a member and an element', () => {
-        const unit = parse('TYPE S : STRUCT f : WORD; END_STRUCT END_TYPE\nPROGRAM P\nVAR w : WORD; s : S; a : ARRAY[0..1] OF WORD; b : BOOL; END_VAR\nb := w.3 AND s.f.15 AND a[1].0;\nEND_PROGRAM');
-        const { value } = unit.programs[0]!.statements[0] as unknown as { value: { left: { left: unknown; right: unknown }; right: unknown } };
+        const unit = parse(
+            'TYPE S : STRUCT f : WORD; END_STRUCT END_TYPE\nPROGRAM P\nVAR w : WORD; s : S; a : ARRAY[0..1] OF WORD; b : BOOL; ' +
+                'END_VAR\nb := w.3 AND s.f.15 AND a[1].0;\nEND_PROGRAM',
+        );
+        const { value } = unit.programs[0]!.statements[0] as unknown as {
+            value: { left: { left: unknown; right: unknown }; right: unknown };
+        };
         expect(value.left.left).toMatchObject({ kind: 'BitAccess', bit: 3, operand: { kind: 'Identifier', name: 'w' } });
         expect(value.left.right).toMatchObject({ kind: 'BitAccess', bit: 15, operand: { kind: 'MemberAccess', member: 'f' } });
         expect(value.right).toMatchObject({ kind: 'BitAccess', bit: 0, operand: { kind: 'ArrayAccess' } });
@@ -565,9 +685,14 @@ describe('compile: every independent error, each positioned (CMP-006, CMP-007)',
     const compile = (...sources: string[]) => {
         const names = sources.map((_, index) => `P${index}`);
         try {
-            compileMultiTaskProject(config(names), sources.map((content, index) => ({ name: names[index]!, sourceRef: `src/${names[index]}.st`, content })));
+            compileMultiTaskProject(
+                config(names),
+                sources.map((content, index) => ({ name: names[index]!, sourceRef: `src/${names[index]}.st`, content })),
+            );
         } catch (error) {
-            return (error as CompilerError).errors.map((each) => `${each.sourceRef} ${each.phase} ${each.line}:${each.column} ${each.detail}`);
+            return (error as CompilerError).errors.map(
+                (each) => `${each.sourceRef} ${each.phase} ${each.line}:${each.column} ${each.detail}`,
+            );
         }
         throw new Error('expected the build to fail');
     };
@@ -575,7 +700,9 @@ describe('compile: every independent error, each positioned (CMP-006, CMP-007)',
     it('reports the three errors of one file', () => {
         const errors = compile(program('  x : INT;', '  x := ;\n  x := 1 +;\n  x := * 2;'));
         expect(errors.map((error) => error.split(' ').slice(0, 3).join(' '))).toEqual([
-            'src/P0.st parser 5:8', 'src/P0.st parser 6:11', 'src/P0.st parser 7:8',
+            'src/P0.st parser 5:8',
+            'src/P0.st parser 6:11',
+            'src/P0.st parser 7:8',
         ]);
         expect(errors[0]).toContain("Compilation of 'P0' failed: Expected expression, got SEMICOLON");
     });
@@ -587,12 +714,16 @@ describe('compile: every independent error, each positioned (CMP-006, CMP-007)',
             program('  z : INT;', '  z := nope;\n  nope2 := 1;').replace('PROGRAM P', 'PROGRAM R'),
         );
         expect(errors.map((error) => error.split(' ').slice(0, 3).join(' '))).toEqual([
-            'src/P0.st parser 5:8', 'src/P2.st codegen 5:8', 'src/P2.st codegen 6:3',
+            'src/P0.st parser 5:8',
+            'src/P2.st codegen 5:8',
+            'src/P2.st codegen 6:3',
         ]);
     });
 
     it('reports an undeclared name in each statement, at the name', () => {
-        const errors = compile(program('  x : INT;', '  x := a;\n  IF x = 1 THEN c := 1; END_IF;\n  x := 1;\n  WHILE b DO x := 2; END_WHILE;'));
+        const errors = compile(
+            program('  x : INT;', '  x := a;\n  IF x = 1 THEN c := 1; END_IF;\n  x := 1;\n  WHILE b DO x := 2; END_WHILE;'),
+        );
         expect(errors).toEqual([
             "src/P0.st codegen 5:8 Unknown identifier 'a'",
             "src/P0.st codegen 6:17 Unknown identifier 'c'",
@@ -605,24 +736,35 @@ describe('compile: every independent error, each positioned (CMP-006, CMP-007)',
             "src/P0.st codegen 4:3 Symbol 'x' already defined",
         ]);
         const [error] = (() => {
-            try { compileMultiTaskProject(config(['P0']), [{ name: 'P0', content: 'PROGRAM P\nVAR\n  x : INT;\n  xyz : INT;\n  xyz : INT;\nEND_VAR\nEND_PROGRAM' }]); } catch (caught) { return (caught as CompilerError).errors; }
+            try {
+                compileMultiTaskProject(config(['P0']), [
+                    { name: 'P0', content: 'PROGRAM P\nVAR\n  x : INT;\n  xyz : INT;\n  xyz : INT;\nEND_VAR\nEND_PROGRAM' },
+                ]);
+            } catch (caught) {
+                return (caught as CompilerError).errors;
+            }
             return [];
         })();
         expect([error!.line, error!.column, error!.endLine, error!.endColumn]).toEqual([5, 3, 5, 6]);
     });
 
     it('reports an unknown member of a block at its call, not at line 0', () => {
-        const source = 'FUNCTION_BLOCK C\nVAR_INPUT inc : INT; END_VAR\nEND_FUNCTION_BLOCK\nPROGRAM P\nVAR c : C; END_VAR\n  c(nope := 2);\nEND_PROGRAM';
+        const source =
+            'FUNCTION_BLOCK C\nVAR_INPUT inc : INT; END_VAR\nEND_FUNCTION_BLOCK\nPROGRAM P\nVAR c : C; END_VAR\n  c(nope := ' +
+            '2);\nEND_PROGRAM';
         expect(compile(source)).toEqual(["src/P0.st codegen 6:5 'nope' is not a parameter of 'C' (instance 'c')"]);
     });
 
     it('reports an unknown member of a structure in an expression at that expression', () => {
-        const source = 'TYPE S : STRUCT a : INT; END_STRUCT END_TYPE\nPROGRAM P\nVAR s : S; x : INT; END_VAR\n  x := 1;\n  x := x + s.b;\nEND_PROGRAM';
+        const source =
+            'TYPE S : STRUCT a : INT; END_STRUCT END_TYPE\nPROGRAM P\nVAR s : S; x : INT; END_VAR\n  x := 1;\n  x := x + s.b;\nEND_PROGRAM';
         expect(compile(source)).toEqual(["src/P0.st codegen 5:12 Unknown member 'b' on struct 'S'"]);
     });
 
     it('produces the same errors once for a block body that is inlined twice', () => {
-        const source = 'FUNCTION_BLOCK C\nVAR_OUTPUT o : INT; END_VAR\n  o := missing;\nEND_FUNCTION_BLOCK\nPROGRAM P\nVAR a : C; b : C; END_VAR\n  a(); b();\nEND_PROGRAM';
+        const source =
+            'FUNCTION_BLOCK C\nVAR_OUTPUT o : INT; END_VAR\n  o := missing;\nEND_FUNCTION_BLOCK\nPROGRAM P\nVAR a : C; b : C; END_VAR\n ' +
+            ' a(); b();\nEND_PROGRAM';
         expect(compile(source)).toEqual(["src/P0.st codegen 3:8 Unknown identifier 'missing'"]);
     });
 
@@ -640,8 +782,10 @@ describe('compile: every independent error, each positioned (CMP-006, CMP-007)',
     });
 
     it('reports what Build reports for a lexical error: the message, the line and the column', () => {
-        expect(compile('PROGRAM P\nVAR x : INT; END_VAR\n  x := 1 @ 2;\nEND_PROGRAM')).toEqual([
-            "src/P0.st lexer 3:10 Compilation of 'P0' failed: Unexpected character: '@'",
-        ].map((line) => line.replace("Compilation of 'P0' failed: ", "Compilation of 'P0' failed: ")));
+        expect(compile('PROGRAM P\nVAR x : INT; END_VAR\n  x := 1 @ 2;\nEND_PROGRAM')).toEqual(
+            ["src/P0.st lexer 3:10 Compilation of 'P0' failed: Unexpected character: '@'"].map((line) =>
+                line.replace("Compilation of 'P0' failed: ", "Compilation of 'P0' failed: "),
+            ),
+        );
     });
 });

@@ -54,8 +54,11 @@ describe('generated TypeScript contract equals the frozen snapshot', () => {
     expect<unknown>(contract.CONTAINER.tagEntrySize).toBe(macros.ZPLC_TAG_ENTRY_SIZE);
     expect<unknown>(contract.CONTAINER.maxTasks).toBe(macros.ZPLC_LOADER_MAX_TASKS);
     const byTypedef: Record<string, keyof typeof contract.CONTAINER_LAYOUT> = {
-      zplc_file_header_t: 'header', zplc_segment_entry_t: 'segment', zplc_task_def_t: 'task',
-      zplc_iomap_entry_t: 'iomap', zplc_tag_entry_t: 'tag',
+      zplc_file_header_t: 'header',
+      zplc_segment_entry_t: 'segment',
+      zplc_task_def_t: 'task',
+      zplc_iomap_entry_t: 'iomap',
+      zplc_tag_entry_t: 'tag',
     };
     for (const [typedef, key] of Object.entries(byTypedef)) {
       const offsets = Object.fromEntries(Object.entries(contract.CONTAINER_LAYOUT[key]).map(([field, info]) => [field, info.offset]));
@@ -77,8 +80,10 @@ describe('generated TypeScript contract equals the frozen snapshot', () => {
       expect<unknown>(region.size).toBe(macros[`ZPLC_MEM_${name}_SIZE`]);
     }
     expect<unknown>(contract.MEMORY_LIMIT).toEqual({
-      maxTags: macros.ZPLC_MAX_TAGS, stackMaxDepth: macros.ZPLC_STACK_MAX_DEPTH,
-      callStackMax: macros.ZPLC_CALL_STACK_MAX, maxBreakpoints: macros.ZPLC_MAX_BREAKPOINTS,
+      maxTags: macros.ZPLC_MAX_TAGS,
+      stackMaxDepth: macros.ZPLC_STACK_MAX_DEPTH,
+      callStackMax: macros.ZPLC_CALL_STACK_MAX,
+      maxBreakpoints: macros.ZPLC_MAX_BREAKPOINTS,
     });
     expect<unknown>(contract.SYSTEM_REGISTER.CYCLE_TIME.address).toBe(macros.ZPLC_SYS_CYCLE_TIME);
     expect<unknown>(contract.SYSTEM_REGISTER.UPTIME.address).toBe(macros.ZPLC_SYS_UPTIME);
@@ -100,7 +105,9 @@ describe('generated TypeScript contract equals the frozen snapshot', () => {
 
   test('error codes of the VM and of the loader', () => {
     expect<unknown>(Object.fromEntries(contract.VM_ERRORS.map((entry) => [entry.name, entry.code]))).toEqual(cEnum('zplc_vm_error_t'));
-    const loader = Object.fromEntries(Object.entries(macros).filter(([name]) => name.startsWith('ZPLC_LOADER_ERR_') || name === 'ZPLC_LOADER_OK'));
+    const loader = Object.fromEntries(
+      Object.entries(macros).filter(([name]) => name.startsWith('ZPLC_LOADER_ERR_') || name === 'ZPLC_LOADER_OK'),
+    );
     expect<unknown>(Object.fromEntries(contract.LOADER_ERRORS.map((entry) => [entry.name, entry.code]))).toEqual(loader);
   });
 
@@ -114,8 +121,9 @@ describe('generated TypeScript contract equals the frozen snapshot', () => {
     for (const block of contract.COMM_BLOCKS) {
       const expected = golden.compiler.commBlocks[block.name];
       expect(block.size).toBe(expected.size);
-      expect(block.members.map(({ name, type, offset, size, direction }) => ({ name, type, offset, size, direction })))
-        .toEqual(expected.members);
+      expect(block.members.map(({ name, type, offset, size, direction }) => ({ name, type, offset, size, direction }))).toEqual(
+        expected.members,
+      );
     }
   });
 
@@ -126,7 +134,6 @@ describe('generated TypeScript contract equals the frozen snapshot', () => {
     }
     expect(getDataTypeSize('STRING')).toBe(contract.STRING_LAYOUT.defaultTotalSize);
   });
-
 });
 
 describe('IDE runtime tables follow the generated contract', () => {
@@ -138,7 +145,7 @@ describe('IDE runtime tables follow the generated contract', () => {
   });
 
   test('region lookup and force bounds give what the adapters computed with literals', () => {
-    for (let address = 0; address < 0x10000; address += 0x1D) {
+    for (let address = 0; address < 0x10000; address += 0x1d) {
       // The rule the native and serial adapters wrote out by hand before it came from the contract.
       const regionStart = address < 0x1000 ? 0 : address < 0x2000 ? 0x1000 : address < 0x4000 ? 0x2000 : 0x4000;
       const regionEnd = regionStart === 0 ? 0x1000 : regionStart === 0x1000 ? 0x2000 : regionStart === 0x2000 ? 0x4000 : 0x5000;

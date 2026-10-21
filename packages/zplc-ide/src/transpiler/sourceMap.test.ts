@@ -17,12 +17,24 @@ const textOf = (source: string, map: SourceMapRange[] | undefined, element: stri
 };
 
 describe('LNG-004 the Ladder source map', () => {
-  const cell = (id: string, type: string, variable: string, col: number) => ({ element: { id, type, variable, row: 0, col }, hasWire: true });
+  const cell = (id: string, type: string, variable: string, col: number) => ({
+    element: { id, type, variable, row: 0, col },
+    hasWire: true,
+  });
   const model = (comment: string) => ({
     name: 'Mapped',
-    variables: { local: [], inputs: [{ name: 'Sw', type: 'BOOL', address: '%IX0.0' }], outputs: [{ name: 'Lamp', type: 'BOOL', address: '%QX0.0' }, { name: 'Fan', type: 'BOOL', address: '%QX0.1' }] },
+    variables: {
+      local: [],
+      inputs: [{ name: 'Sw', type: 'BOOL', address: '%IX0.0' }],
+      outputs: [
+        { name: 'Lamp', type: 'BOOL', address: '%QX0.0' },
+        { name: 'Fan', type: 'BOOL', address: '%QX0.1' },
+      ],
+    },
     rungs: ['r1', 'r2'].map((id, index) => ({
-      id, number: index + 1, comment: index === 0 ? comment : undefined,
+      id,
+      number: index + 1,
+      comment: index === 0 ? comment : undefined,
       gridConfig: { rows: 1, cols: 2, cellWidth: 80, cellHeight: 60 },
       grid: [[cell(`c${index}`, 'contact_no', 'Sw', 0), cell(`k${index}`, 'coil', index === 0 ? 'Lamp' : 'Fan', 1)]],
       branches: [],
@@ -53,7 +65,11 @@ describe('LNG-004 the Ladder source map', () => {
   });
 
   it('names the element of a rung that is a list of elements', () => {
-    const legacy = { name: 'Legacy', variables: { local: [], outputs: [{ name: 'Lamp', type: 'BOOL', address: '%QX0.0' }] }, rungs: [{ id: 'old', number: 1, elements: [{ id: 'k', type: 'coil', variable: 'Missing', position: { x: 0, y: 0 } }] }] };
+    const legacy = {
+      name: 'Legacy',
+      variables: { local: [], outputs: [{ name: 'Lamp', type: 'BOOL', address: '%QX0.0' }] },
+      rungs: [{ id: 'old', number: 1, elements: [{ id: 'k', type: 'coil', variable: 'Missing', position: { x: 0, y: 0 } }] }],
+    };
     const result = transpileLDToST(legacy);
     expect(result.success).toBe(false);
     expect(result.diagnostics).toEqual([expect.objectContaining({ element: 'rung:old/element:k' })]);
@@ -63,12 +79,51 @@ describe('LNG-004 the Ladder source map', () => {
 describe('LNG-004 the FBD source map', () => {
   const fbd: FBDModel = {
     name: 'Mapped',
-    variables: { local: [{ name: 'Mid', type: 'BOOL' }], inputs: [{ name: 'Sw', type: 'BOOL', address: '%IX0.0' }], outputs: [{ name: 'Lamp', type: 'BOOL', address: '%QX0.0' }] },
+    variables: {
+      local: [{ name: 'Mid', type: 'BOOL' }],
+      inputs: [{ name: 'Sw', type: 'BOOL', address: '%IX0.0' }],
+      outputs: [{ name: 'Lamp', type: 'BOOL', address: '%QX0.0' }],
+    },
     blocks: [
-      { id: 'sw', type: 'input', variableName: 'Sw', position: { x: 0, y: 0 }, inputs: [{ name: 'IN', type: 'ANY' }], outputs: [{ name: 'OUT', type: 'ANY' }] },
-      { id: 'inv', type: 'NOT', position: { x: 100, y: 0 }, comment: 'invert', inputs: [{ name: 'IN', type: 'BOOL' }], outputs: [{ name: 'OUT', type: 'BOOL' }] },
-      { id: 'tmr', type: 'TON', instanceName: 'Delay', position: { x: 200, y: 0 }, inputs: [{ name: 'IN', type: 'BOOL' }, { name: 'PT', type: 'TIME' }], outputs: [{ name: 'Q', type: 'BOOL' }, { name: 'ET', type: 'TIME' }] },
-      { id: 'pt', type: 'constant', dataType: 'TIME', value: 'T#1s', position: { x: 100, y: 100 }, inputs: [], outputs: [{ name: 'OUT', type: 'ANY' }] },
+      {
+        id: 'sw',
+        type: 'input',
+        variableName: 'Sw',
+        position: { x: 0, y: 0 },
+        inputs: [{ name: 'IN', type: 'ANY' }],
+        outputs: [{ name: 'OUT', type: 'ANY' }],
+      },
+      {
+        id: 'inv',
+        type: 'NOT',
+        position: { x: 100, y: 0 },
+        comment: 'invert',
+        inputs: [{ name: 'IN', type: 'BOOL' }],
+        outputs: [{ name: 'OUT', type: 'BOOL' }],
+      },
+      {
+        id: 'tmr',
+        type: 'TON',
+        instanceName: 'Delay',
+        position: { x: 200, y: 0 },
+        inputs: [
+          { name: 'IN', type: 'BOOL' },
+          { name: 'PT', type: 'TIME' },
+        ],
+        outputs: [
+          { name: 'Q', type: 'BOOL' },
+          { name: 'ET', type: 'TIME' },
+        ],
+      },
+      {
+        id: 'pt',
+        type: 'constant',
+        dataType: 'TIME',
+        value: 'T#1s',
+        position: { x: 100, y: 100 },
+        inputs: [],
+        outputs: [{ name: 'OUT', type: 'ANY' }],
+      },
       { id: 'lamp', type: 'output', variableName: 'Lamp', position: { x: 300, y: 0 }, inputs: [{ name: 'IN', type: 'ANY' }], outputs: [] },
     ],
     connections: [
@@ -84,7 +139,9 @@ describe('LNG-004 the FBD source map', () => {
     expect(result.success).toBe(true);
     const map = result.sourceMap!;
     expect(textOf(result.source, map, 'block:inv')).toEqual(expect.arrayContaining(['(* invert *)', '_inv_OUT := NOT Sw;']));
-    expect(textOf(result.source, map, 'block:tmr')).toEqual(expect.arrayContaining(['    Delay : TON;', 'Delay(IN := _inv_OUT, PT := T#1s);', '_tmr_Q := Delay.Q;']));
+    expect(textOf(result.source, map, 'block:tmr')).toEqual(
+      expect.arrayContaining(['    Delay : TON;', 'Delay(IN := _inv_OUT, PT := T#1s);', '_tmr_Q := Delay.Q;']),
+    );
     expect(textOf(result.source, map, 'block:lamp')).toEqual(['Lamp := _tmr_Q;']);
     // a constant and a read have no statement of their own
     expect(linesOfElement(map, 'block:pt')).toEqual([]);
@@ -95,7 +152,12 @@ describe('LNG-004 the FBD source map', () => {
     const unwired = transpileFBDToST({ ...fbd, connections: fbd.connections.filter((wire) => wire.id !== 'w1') });
     expect(unwired.success).toBe(false);
     expect(unwired.diagnostics).toEqual([{ message: "FBD block 'inv' (NOT): input 'IN' is not wired", element: 'block:inv' }]);
-    const loop = transpileFBDToST({ ...fbd, connections: [...fbd.connections, { id: 'w5', from: { block: 'tmr', port: 'Q' }, to: { block: 'inv', port: 'IN' } }].filter((wire) => wire.id !== 'w1') });
+    const loop = transpileFBDToST({
+      ...fbd,
+      connections: [...fbd.connections, { id: 'w5', from: { block: 'tmr', port: 'Q' }, to: { block: 'inv', port: 'IN' } }].filter(
+        (wire) => wire.id !== 'w1',
+      ),
+    });
     expect(loop.success).toBe(false);
     expect(loop.diagnostics?.[0]?.element).toMatch(/^block:(inv|tmr)$/);
   });
@@ -104,7 +166,13 @@ describe('LNG-004 the FBD source map', () => {
 describe('LNG-004 and LNG-026 the SFC source map', () => {
   const chart: SFCModel = {
     name: 'Chart',
-    variables: { local: [], outputs: [{ name: 'Lamp', type: 'BOOL', address: '%QX0.0' }, { name: 'Fan', type: 'BOOL', address: '%QX0.1' }] },
+    variables: {
+      local: [],
+      outputs: [
+        { name: 'Lamp', type: 'BOOL', address: '%QX0.0' },
+        { name: 'Fan', type: 'BOOL', address: '%QX0.1' },
+      ],
+    },
     steps: [
       { id: 's_a', name: 'A', isInitial: true, position: { x: 0, y: 0 }, actions: [{ qualifier: 'N', actionName: 'Mark' }] },
       { id: 's_b', name: 'B', isInitial: false, position: { x: 0, y: 100 } },
@@ -117,7 +185,9 @@ describe('LNG-004 and LNG-026 the SFC source map', () => {
     const result = transpileSFCToST(chart);
     expect(result.success).toBe(true);
     const map = result.sourceMap!;
-    expect(textOf(result.source, map, 'action:mark')).toEqual(expect.arrayContaining(['    Lamp := TRUE;', '    Fan := FALSE;', '    Lamp := Lamp;']));
+    expect(textOf(result.source, map, 'action:mark')).toEqual(
+      expect.arrayContaining(['    Lamp := TRUE;', '    Fan := FALSE;', '    Lamp := Lamp;']),
+    );
     const condition = result.source.split('\n').findIndex((line) => line.startsWith('_F_t_ab :=')) + 1;
     expect(elementAtLine(map, condition)).toBe('transition:t_ab');
     expect(textOf(result.source, map, 'step:s_a')).toEqual(expect.arrayContaining([expect.stringContaining('X_s_a : BOOL')]));

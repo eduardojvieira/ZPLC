@@ -42,14 +42,17 @@ async function runCase(found: ConformanceCase): Promise<string[]> {
   const root = await workspace({ ...found, tasks: expectation.tasks }, expectation.scanMs);
   try {
     const built = await compilerCompile(root);
-    if (!built.ok || !built.zplcFile) return [`the build failed: ${built.evidence.diagnostics.map((diagnostic) => diagnostic.message).join('; ')}`];
+    if (!built.ok || !built.zplcFile)
+      return [`the build failed: ${built.evidence.diagnostics.map((diagnostic) => diagnostic.message).join('; ')}`];
     const map = built.debugMap;
     const adapter = new WASMAdapter({ loadModule: async () => builtWasmModule().bytes, scenarioClock: true });
     await adapter.connect();
     try {
       const outcome = await runScenario(adapter, expectation, built.zplcFile, (cell) => {
         if (cell.at !== undefined) return cellLocation(cell.at, cell.type);
-        const entry = Object.values(map?.pou ?? {}).map((pou) => pou.vars[cell.var!]).find(Boolean);
+        const entry = Object.values(map?.pou ?? {})
+          .map((pou) => pou.vars[cell.var!])
+          .find(Boolean);
         return entry ? { address: entry.addr, bit: entry.bitOffset } : `the debug map has no variable "${cell.var}"`;
       });
       return outcome.failures;
@@ -76,8 +79,12 @@ describe('the conformance cases on the WebAssembly runtime, through the adapter 
   });
 
   for (const found of cases) {
-    itWasm(found.name, async () => {
-      expect(await runCase(found)).toEqual([]);
-    }, 30_000);
+    itWasm(
+      found.name,
+      async () => {
+        expect(await runCase(found)).toEqual([]);
+      },
+      30_000,
+    );
   }
 });

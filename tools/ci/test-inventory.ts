@@ -14,7 +14,9 @@ export interface Inventory {
   runs: Array<{ pattern: string; job: string; command: string }>;
   notRunInCi: Array<{ pattern: string; requirement: string; reason: string }>;
 }
-export interface Workflow { jobs: Record<string, { steps: Array<{ name?: string; uses?: string; run?: string }> }> }
+export interface Workflow {
+  jobs: Record<string, { steps: Array<{ name?: string; uses?: string; run?: string }> }>;
+}
 
 export const TEST_FILE = /\.test\.(ts|tsx|mjs)$|(^|\/)test_[^/]*\.py$|_test\.py$|^firmware\/(.*\/)?tests\/.*\.c$/;
 const ROOT = new URL('../../', import.meta.url);
@@ -24,7 +26,8 @@ export function checkInventory(files: string[], inventory: Inventory, workflow: 
   for (const { pattern, job, command } of inventory.runs) {
     const steps = workflow.jobs[job]?.steps;
     if (!steps) errors.push(`rule "${pattern}": ci.yml has no job "${job}"`);
-    else if (!steps.some((step) => step.run?.includes(command))) errors.push(`rule "${pattern}": no step of job "${job}" runs "${command}"`);
+    else if (!steps.some((step) => step.run?.includes(command)))
+      errors.push(`rule "${pattern}": no step of job "${job}" runs "${command}"`);
   }
   for (const { pattern, requirement, reason } of inventory.notRunInCi) {
     if (!/^[A-Z]+-[0-9]{3}$/.test(requirement ?? '')) errors.push(`rule "${pattern}": requirement must look like HIL-004`);
@@ -45,7 +48,10 @@ export function loadRepository() {
   const listed = Bun.spawnSync(['git', 'ls-files'], { cwd: ROOT.pathname });
   if (listed.exitCode !== 0) throw new Error(`git ls-files failed: ${listed.stderr.toString()}`);
   return {
-    files: listed.stdout.toString().split('\n').filter((file) => TEST_FILE.test(file)),
+    files: listed.stdout
+      .toString()
+      .split('\n')
+      .filter((file) => TEST_FILE.test(file)),
     inventory: JSON.parse(readFileSync(new URL('tools/ci/test-inventory.json', ROOT), 'utf8')) as Inventory,
     workflow: Bun.YAML.parse(readFileSync(new URL('.github/workflows/ci.yml', ROOT), 'utf8')) as Workflow,
   };

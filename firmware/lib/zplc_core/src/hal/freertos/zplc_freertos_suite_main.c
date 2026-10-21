@@ -22,28 +22,26 @@ extern int zplc_suite_main(int argc, char **argv);
 /* The simulator gives a task the stack of a pthread (8 MiB by default): this only sizes the kernel's bookkeeping. */
 #define ZPLC_SUITE_STACK_WORDS ((configSTACK_DEPTH_TYPE)8192)
 
-static void suite_task(void *arg)
-{
-    char name[] = "zplc-suite";
-    char *argv[] = {name, NULL};
-    int code;
+static void suite_task(void *arg) {
+  char name[] = "zplc-suite";
+  char *argv[] = {name, NULL};
+  int code;
 
-    (void)arg;
-    (void)printf("ZPLC FreeRTOS port: FreeRTOS-Kernel %s, tick %u Hz, running in task \"%s\"\n", tskKERNEL_VERSION_NUMBER,
-                 (unsigned)configTICK_RATE_HZ, pcTaskGetName(NULL));
-    code = zplc_suite_main(1, argv);
-    (void)fflush(stdout);
-    (void)fflush(stderr);
-    exit(code);
+  (void)arg;
+  (void)printf("ZPLC FreeRTOS port: FreeRTOS-Kernel %s, tick %u Hz, running in task \"%s\"\n", tskKERNEL_VERSION_NUMBER,
+               (unsigned)configTICK_RATE_HZ, pcTaskGetName(NULL));
+  code = zplc_suite_main(1, argv);
+  (void)fflush(stdout);
+  (void)fflush(stderr);
+  exit(code);
 }
 
-int main(void)
-{
-    if (xTaskCreate(suite_task, "suite", ZPLC_SUITE_STACK_WORDS, NULL, tskIDLE_PRIORITY + 2U, NULL) != pdPASS) {
-        (void)fprintf(stderr, "FreeRTOS: the suite task could not be created\n");
-        return 2;
-    }
-    vTaskStartScheduler();
-    (void)fprintf(stderr, "FreeRTOS: the scheduler returned\n");
+int main(void) {
+  if (xTaskCreate(suite_task, "suite", ZPLC_SUITE_STACK_WORDS, NULL, tskIDLE_PRIORITY + 2U, NULL) != pdPASS) {
+    (void)fprintf(stderr, "FreeRTOS: the suite task could not be created\n");
     return 2;
+  }
+  vTaskStartScheduler();
+  (void)fprintf(stderr, "FreeRTOS: the scheduler returned\n");
+  return 2;
 }

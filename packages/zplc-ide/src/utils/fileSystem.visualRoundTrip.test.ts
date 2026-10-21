@@ -32,7 +32,10 @@ beforeEach(() => {
   sandbox = realpathSync(mkdtempSync(path.join(tmpdir(), 'zplc-visual-roundtrip-')));
   project = path.join(sandbox, 'plant');
   mkdirSync(path.join(project, 'src'), { recursive: true });
-  Object.defineProperty(globalThis, 'window', { configurable: true, value: { electronAPI: { isElectron: true, projectFiles: loopbackBridge() } } });
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: { electronAPI: { isElectron: true, projectFiles: loopbackBridge() } },
+  });
   writeFileSync(path.join(project, 'zplc.json'), JSON.stringify({ ...DEFAULT_ZPLC_CONFIG, name: 'plant' }));
 });
 
@@ -49,7 +52,11 @@ const FILES: Array<[string, string, string]> = [
   ['an FBD file as committed', 'main.fbd.json', committed('blinky_fbd/src/main.fbd.json')],
   ['an SFC file as committed', 'main.sfc.json', committed('blinky_sfc/src/main.sfc.json')],
   ['an LD file in the layout of another tool', 'tool.ld.json', JSON.stringify(JSON.parse(committed('motor_control/src/main.ld.json')))],
-  ['a file with CRLF line ends, a tab and no newline at the end', 'crlf.sfc.json', committed('blinky_sfc/src/main.sfc.json').replace(/\n/g, '\r\n').replace(/\n$/, '').replace('  ', '\t')],
+  [
+    'a file with CRLF line ends, a tab and no newline at the end',
+    'crlf.sfc.json',
+    committed('blinky_sfc/src/main.sfc.json').replace(/\n/g, '\r\n').replace(/\n$/, '').replace('  ', '\t'),
+  ],
 ];
 
 describe('LNG-014 open and save without an edit', () => {
@@ -58,7 +65,15 @@ describe('LNG-014 open and save without an edit', () => {
     const directoryHandle = (await openDirectoryPicker())!;
     const fileTree = await readDirectoryRecursive(directoryHandle);
     session += 1;
-    useIDEStore.setState({ isProjectOpen: true, projectSession: session, directoryHandle, fileTree, loadedFiles: new Map(), openTabs: [], activeFileId: null });
+    useIDEStore.setState({
+      isProjectOpen: true,
+      projectSession: session,
+      directoryHandle,
+      fileTree,
+      loadedFiles: new Map(),
+      openTabs: [],
+      activeFileId: null,
+    });
 
     await useIDEStore.getState().openFile(`file:src/${name}`);
     const opened = useIDEStore.getState().loadedFiles.get(`file:src/${name}`);

@@ -17,7 +17,10 @@ export class CompileFailure extends Error {
   }
 }
 
-export interface Compiled { zplc: Uint8Array; sha256: string }
+export interface Compiled {
+  zplc: Uint8Array;
+  sha256: string;
+}
 
 /**
  * Compile a program with the repository compiler: the same `zplc-cli compile` that Studio, the CLI and MCP share.

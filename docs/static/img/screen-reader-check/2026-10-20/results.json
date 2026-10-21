@@ -76,9 +76,7 @@
                 "name": "Theme",
                 "description": "",
                 "value": "Light",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [],
                 "spoken": "Theme, combobox, collapsed, value Light",
                 "element": "select#_r_0_[data-theme-control]"
@@ -1088,9 +1086,7 @@
                 "name": "Preferences: editor, density, language, autosave and updates",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [],
                 "spoken": "Preferences: editor, density, language, autosave and updates, DisclosureTriangle, collapsed",
                 "element": "summary"
@@ -1104,9 +1100,7 @@
                 "name": "Theme",
                 "description": "",
                 "value": "Light",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [],
                 "spoken": "Theme, combobox, collapsed, value Light",
                 "element": "select#_r_0_[data-theme-control]"
@@ -1293,9 +1287,7 @@
                 "name": "Objects",
                 "description": "",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -1318,9 +1310,7 @@
                 "name": "Programs 1",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -1389,9 +1379,7 @@
                 "name": "Code editor for src/main.st. Press Ctrl+M so that the tab key moves the focus out of the editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -1414,9 +1402,7 @@
                 "name": "Code editor for src/main.st. Press Ctrl+M so that the tab key moves the focus out of the editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -1439,9 +1425,7 @@
                 "name": "Code editor for src/main.st. Press Ctrl+M so that the tab key moves the focus out of the editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -1464,9 +1448,7 @@
                 "name": "Code editor for src/main.st. Press Ctrl+M so that the tab key moves the focus out of the editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -1495,9 +1477,7 @@
                 "name": "Code editor for src/main.st. Press Ctrl+M so that the tab key moves the focus out of the editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -1520,9 +1500,7 @@
                 "name": "Code editor for src/main.st. Press Ctrl+M so that the tab key moves the focus out of the editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -1739,9 +1717,7 @@
                 "name": "Search commands",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -1760,9 +1736,7 @@
                 "name": "Search commands",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -1781,9 +1755,7 @@
                 "name": "Output",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -1802,9 +1774,7 @@
                 "name": "Output",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -1874,9 +1844,7 @@
                 "name": "Code editor for src/main.st. Press Ctrl+M so that the tab key moves the focus out of the editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -1899,9 +1867,7 @@
                 "name": "Code editor for src/main.st. Press Ctrl+M so that the tab key moves the focus out of the editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -1924,9 +1890,7 @@
                 "name": "Code editor for src/main.st. Press Ctrl+M so that the tab key moves the focus out of the editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -1955,9 +1919,7 @@
                 "name": "Code editor for src/main.st. Press Ctrl+M so that the tab key moves the focus out of the editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -1986,9 +1948,7 @@
                 "name": "Search commands",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -2007,9 +1967,7 @@
                 "name": "Search commands",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -2028,9 +1986,7 @@
                 "name": "Problems, 6 errors · 0 warnings",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -2049,9 +2005,7 @@
                 "name": "Problems, 6 errors · 0 warnings",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -2204,9 +2158,7 @@
                 "name": "Problems, 6 errors · 0 warnings",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -2304,9 +2256,7 @@
                 "name": "Problems, 6 errors · 0 warnings",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -2441,9 +2391,7 @@
                 "name": "Build options",
                 "description": "Build options",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -2462,9 +2410,7 @@
                 "name": "Simulation mode",
                 "description": "Simulation mode (local native runtime)",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -2487,9 +2433,7 @@
                 "name": "Hardware mode",
                 "description": "Hardware mode (serial)",
                 "value": "",
-                "states": [
-                  "not pressed"
-                ],
+                "states": ["not pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -2531,9 +2475,7 @@
                 "name": "Inspector (Ctrl+Alt+I)",
                 "description": "",
                 "value": "",
-                "states": [
-                  "not pressed"
-                ],
+                "states": ["not pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -2571,9 +2513,7 @@
                 "name": "Theme options",
                 "description": "Theme: System",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -2763,9 +2703,7 @@
                 "name": "Objects",
                 "description": "",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -2788,9 +2726,7 @@
                 "name": "Programs 0",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -2813,9 +2749,7 @@
                 "name": "Function blocks 0",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -2838,9 +2772,7 @@
                 "name": "Functions 0",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -2863,9 +2795,7 @@
                 "name": "Data types 0",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -2888,9 +2818,7 @@
                 "name": "Global variables 0",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -2913,9 +2841,7 @@
                 "name": "Tasks 1",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -2961,9 +2887,7 @@
                 "name": "I/O mapping 2",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -3032,9 +2956,7 @@
                 "name": "Communication 3",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -3126,9 +3048,7 @@
                 "name": "Device 2",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -3211,9 +3131,7 @@
                 "name": "main.st",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "main",
@@ -3259,9 +3177,7 @@
                 "name": "Code editor for src/main.st. Press Ctrl+M so that the tab key moves the focus out of the editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -3284,9 +3200,7 @@
                 "name": "Code editor for src/main.st. Press Ctrl+M so that the tab key moves the focus out of the editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -3309,9 +3223,7 @@
                 "name": "Code editor for src/main.st. Press Ctrl+M so that the tab key moves the focus out of the editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -3334,9 +3246,7 @@
                 "name": "Code editor for src/main.st. Press Ctrl+M so that the tab key moves the focus out of the editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -3429,23 +3339,7 @@
           "id": "4",
           "title": "Simulate",
           "criterion": "Connect and Run are reachable by name, the toolbar messages are announced, and the status bar says running.",
-          "actions": [
-            "Ctrl+B",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Enter",
-            "F5"
-          ],
+          "actions": ["Ctrl+B", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Enter", "F5"],
           "stops": [
             {
               "how": "build",
@@ -3454,9 +3348,7 @@
                 "name": "Code editor for src/main.st. Press Ctrl+M so that the tab key moves the focus out of the editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -3536,9 +3428,7 @@
                 "name": "Problems, 0 errors · 0 warnings",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -3623,9 +3513,7 @@
                 "name": "Build options",
                 "description": "Build options",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -3644,9 +3532,7 @@
                 "name": "Simulation mode",
                 "description": "Simulation mode (local native runtime)",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -3669,9 +3555,7 @@
                 "name": "Hardware mode",
                 "description": "Hardware mode (serial)",
                 "value": "",
-                "states": [
-                  "not pressed"
-                ],
+                "states": ["not pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -3851,16 +3735,7 @@
           "id": "5",
           "title": "Watch",
           "criterion": "The Watch tab takes the focus, a variable is added with the keyboard, its row is read with name and value, and the value changes.",
-          "actions": [
-            "Ctrl+Shift+P",
-            "type \"Show watched variables\"",
-            "Enter",
-            "Tab",
-            "Tab",
-            "Enter",
-            "type \"LED_Output\"",
-            "Enter"
-          ],
+          "actions": ["Ctrl+Shift+P", "type \"Show watched variables\"", "Enter", "Tab", "Tab", "Enter", "type \"LED_Output\"", "Enter"],
           "stops": [
             {
               "how": "open the command palette",
@@ -3869,9 +3744,7 @@
                 "name": "Search commands",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -3890,9 +3763,7 @@
                 "name": "Search commands",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -3911,9 +3782,7 @@
                 "name": "Watch",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -3932,9 +3801,7 @@
                 "name": "Watch",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -3953,9 +3820,7 @@
                 "name": "Display format",
                 "description": "",
                 "value": "By type",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -4234,9 +4099,7 @@
                 "name": "Force LED_Output",
                 "description": "Force current value",
                 "value": "",
-                "states": [
-                  "not checked"
-                ],
+                "states": ["not checked"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -4255,9 +4118,7 @@
                 "name": "Force LED_Output",
                 "description": "Forced until cleared",
                 "value": "",
-                "states": [
-                  "checked"
-                ],
+                "states": ["checked"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -4282,9 +4143,7 @@
                 "name": "Force LED_Output",
                 "description": "Force current value",
                 "value": "",
-                "states": [
-                  "not checked"
-                ],
+                "states": ["not checked"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -4309,9 +4168,7 @@
                 "name": "Force LED_Output",
                 "description": "Forced until cleared",
                 "value": "",
-                "states": [
-                  "checked"
-                ],
+                "states": ["checked"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -4336,9 +4193,7 @@
                 "name": "Force LED_Output",
                 "description": "Force current value",
                 "value": "",
-                "states": [
-                  "not checked"
-                ],
+                "states": ["not checked"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -4363,9 +4218,7 @@
                 "name": "Force LED_Output",
                 "description": "Forced until cleared",
                 "value": "",
-                "states": [
-                  "checked"
-                ],
+                "states": ["checked"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -4390,9 +4243,7 @@
                 "name": "Search commands",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -4411,9 +4262,7 @@
                 "name": "Search commands",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -4590,14 +4439,7 @@
           "id": "7",
           "title": "Deploy dialog",
           "criterion": "The dialog moves focus in, keeps it in, names itself and its table, and returns focus to the control that opened it. Opened with the product's own dialog and fixed device facts: no board was connected.",
-          "actions": [
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Escape"
-          ],
+          "actions": ["Tab", "Tab", "Tab", "Tab", "Tab", "Escape"],
           "stops": [
             {
               "how": "the control that has the focus before the dialog opens",
@@ -4939,9 +4781,7 @@
                 "name": "Theme",
                 "description": "",
                 "value": "Light",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [],
                 "spoken": "Theme, combobox, collapsed, value Light",
                 "element": "select#_r_0_[data-theme-control]"
@@ -5104,9 +4944,7 @@
                 "name": "Unlock all lessons Lets you start any lesson without passing the ones before it.",
                 "description": "Lets you start any lesson without passing the ones before it.",
                 "value": "",
-                "states": [
-                  "not checked"
-                ],
+                "states": ["not checked"],
                 "within": [
                   {
                     "role": "main",
@@ -5133,9 +4971,7 @@
                 "name": "Classroom: hide reference solutions Learn offers no reference solution while this is on. The setting stays on this computer.",
                 "description": "Learn offers no reference solution while this is on. The setting stays on this computer.",
                 "value": "",
-                "states": [
-                  "not checked"
-                ],
+                "states": ["not checked"],
                 "within": [
                   {
                     "role": "main",
@@ -5216,9 +5052,7 @@
                 "name": "What you will learn",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "main",
@@ -5276,9 +5110,7 @@
                 "name": "What you will learn",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "main",
@@ -5359,9 +5191,7 @@
                 "name": "Classroom: hide reference solutions Learn offers no reference solution while this is on. The setting stays on this computer.",
                 "description": "Learn offers no reference solution while this is on. The setting stays on this computer.",
                 "value": "",
-                "states": [
-                  "not checked"
-                ],
+                "states": ["not checked"],
                 "within": [
                   {
                     "role": "main",
@@ -5388,9 +5218,7 @@
                 "name": "Unlock all lessons Lets you start any lesson without passing the ones before it.",
                 "description": "Lets you start any lesson without passing the ones before it.",
                 "value": "",
-                "states": [
-                  "not checked"
-                ],
+                "states": ["not checked"],
                 "within": [
                   {
                     "role": "main",
@@ -5417,9 +5245,7 @@
                 "name": "Unlock all lessons Lets you start any lesson without passing the ones before it.",
                 "description": "Lets you start any lesson without passing the ones before it.",
                 "value": "",
-                "states": [
-                  "checked"
-                ],
+                "states": ["checked"],
                 "within": [
                   {
                     "role": "main",
@@ -5617,9 +5443,7 @@
                 "name": "Hint 2",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -5646,9 +5470,7 @@
                 "name": "Hint 2",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -5675,9 +5497,7 @@
                 "name": "Hint 2",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -5723,9 +5543,7 @@
                 "name": "Build options",
                 "description": "Build options",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -5744,9 +5562,7 @@
                 "name": "Simulation mode",
                 "description": "Simulation mode (local native runtime)",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -5769,9 +5585,7 @@
                 "name": "Hardware mode",
                 "description": "Hardware mode (serial)",
                 "value": "",
-                "states": [
-                  "not pressed"
-                ],
+                "states": ["not pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -5813,9 +5627,7 @@
                 "name": "Inspector (Ctrl+Alt+I)",
                 "description": "",
                 "value": "",
-                "states": [
-                  "not pressed"
-                ],
+                "states": ["not pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -5853,9 +5665,7 @@
                 "name": "Theme options",
                 "description": "Theme: System",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -5969,9 +5779,7 @@
                 "name": "English",
                 "description": "",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -5998,9 +5806,7 @@
                 "name": "Your first blink in simulation (In progress)",
                 "description": "",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -6027,9 +5833,7 @@
                 "name": "Show expected checkpoint: Objective",
                 "description": "Show expected checkpoint",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -6056,9 +5860,7 @@
                 "name": "Show expected checkpoint: Predict",
                 "description": "Show expected checkpoint",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -6085,9 +5887,7 @@
                 "name": "Show expected checkpoint: Edit",
                 "description": "Show expected checkpoint",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -6114,9 +5914,7 @@
                 "name": "Show expected checkpoint: Run",
                 "description": "Show expected checkpoint",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -6143,9 +5941,7 @@
                 "name": "Show expected checkpoint: Observe",
                 "description": "Show expected checkpoint",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -6172,9 +5968,7 @@
                 "name": "Show expected checkpoint: Reflect",
                 "description": "Show expected checkpoint",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -6201,9 +5995,7 @@
                 "name": "Hint 1",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -6230,9 +6022,7 @@
                 "name": "Hint 2",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -6381,9 +6171,7 @@
                 "name": "FirstBlink.st",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "main",
@@ -6429,9 +6217,7 @@
                 "name": "Code editor for src/FirstBlink.st. Press Ctrl+M so that the tab key moves the focus out of the editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -6454,9 +6240,7 @@
                 "name": "Code editor for src/FirstBlink.st. Press Ctrl+M so that the tab key moves the focus out of the editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -6479,9 +6263,7 @@
                 "name": "Code editor for src/FirstBlink.st. Press Ctrl+M so that the tab key moves the focus out of the editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -6510,9 +6292,7 @@
                 "name": "Code editor for src/FirstBlink.st. Press Ctrl+M so that the tab key moves the focus out of the editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -6541,9 +6321,7 @@
                 "name": "Code editor for src/FirstBlink.st. Press Ctrl+M so that the tab key moves the focus out of the editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -6595,9 +6373,7 @@
                 "name": "FirstBlink.st",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "main",
@@ -6688,9 +6464,7 @@
                 "name": "Checking…",
                 "description": "",
                 "value": "",
-                "states": [
-                  "disabled"
-                ],
+                "states": ["disabled"],
                 "within": [
                   {
                     "role": "complementary",
@@ -6758,9 +6532,7 @@
                 "name": "FirstBlink.st",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "main",
@@ -6806,9 +6578,7 @@
                 "name": "Code editor for src/FirstBlink.st. Press Ctrl+M so that the tab key moves the focus out of the editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -6859,9 +6629,7 @@
                 "name": "Output",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -6927,9 +6695,7 @@
                 "name": "Build options",
                 "description": "Build options",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -6948,9 +6714,7 @@
                 "name": "Simulation mode",
                 "description": "Simulation mode (local native runtime)",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -6973,9 +6737,7 @@
                 "name": "Hardware mode",
                 "description": "Hardware mode (serial)",
                 "value": "",
-                "states": [
-                  "not pressed"
-                ],
+                "states": ["not pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -7017,9 +6779,7 @@
                 "name": "Inspector (Ctrl+Alt+I)",
                 "description": "",
                 "value": "",
-                "states": [
-                  "not pressed"
-                ],
+                "states": ["not pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -7057,9 +6817,7 @@
                 "name": "Theme options",
                 "description": "Theme: System",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -7211,9 +6969,7 @@
                 "name": "English",
                 "description": "",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -7240,9 +6996,7 @@
                 "name": "Your first blink in simulation (Passed)",
                 "description": "",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -7269,9 +7023,7 @@
                 "name": "Show expected checkpoint: Objective",
                 "description": "Show expected checkpoint",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -7298,9 +7050,7 @@
                 "name": "Show expected checkpoint: Predict",
                 "description": "Show expected checkpoint",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -7327,9 +7077,7 @@
                 "name": "Show expected checkpoint: Edit",
                 "description": "Show expected checkpoint",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -7356,9 +7104,7 @@
                 "name": "Show expected checkpoint: Run",
                 "description": "Show expected checkpoint",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -7385,9 +7131,7 @@
                 "name": "Show expected checkpoint: Observe",
                 "description": "Show expected checkpoint",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -7414,9 +7158,7 @@
                 "name": "Show expected checkpoint: Reflect",
                 "description": "Show expected checkpoint",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -7443,9 +7185,7 @@
                 "name": "Hint 1",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -7472,9 +7212,7 @@
                 "name": "Hint 2",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -7821,9 +7559,7 @@
                 "name": "Theme",
                 "description": "",
                 "value": "Light",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [],
                 "spoken": "Theme, combobox, collapsed, value Light",
                 "element": "select#_r_0_[data-theme-control]"
@@ -7963,9 +7699,7 @@
                 "name": "Unlock all lessons Lets you start any lesson without passing the ones before it.",
                 "description": "Lets you start any lesson without passing the ones before it.",
                 "value": "",
-                "states": [
-                  "checked"
-                ],
+                "states": ["checked"],
                 "within": [
                   {
                     "role": "main",
@@ -7992,9 +7726,7 @@
                 "name": "Classroom: hide reference solutions Learn offers no reference solution while this is on. The setting stays on this computer.",
                 "description": "Learn offers no reference solution while this is on. The setting stays on this computer.",
                 "value": "",
-                "states": [
-                  "not checked"
-                ],
+                "states": ["not checked"],
                 "within": [
                   {
                     "role": "main",
@@ -8075,9 +7807,7 @@
                 "name": "What you will learn",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "main",
@@ -8166,9 +7896,7 @@
                 "name": "What you will learn",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "main",
@@ -8288,9 +8016,7 @@
                 "name": "What you will learn",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "main",
@@ -8441,9 +8167,7 @@
                 "name": "What you will learn",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "main",
@@ -8563,9 +8287,7 @@
                 "name": "What you will learn",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "main",
@@ -8685,9 +8407,7 @@
                 "name": "What you will learn",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "main",
@@ -8776,9 +8496,7 @@
                 "name": "What you will learn",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "main",
@@ -8876,9 +8594,7 @@
                 "name": "Search commands",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -8897,9 +8613,7 @@
                 "name": "Search commands",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -9002,9 +8716,7 @@
                 "name": "Search commands",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -9023,9 +8735,7 @@
                 "name": "Search commands",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -9044,9 +8754,7 @@
                 "name": "Watch",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -9065,9 +8773,7 @@
                 "name": "Watch",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -9086,9 +8792,7 @@
                 "name": "Terminal",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -9107,9 +8811,7 @@
                 "name": "Output",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -9128,9 +8830,7 @@
                 "name": "Problems, 0 errors · 0 warnings",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -9149,9 +8849,7 @@
                 "name": "Tests, host POSIX scenarios",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -9170,9 +8868,7 @@
                 "name": "Interlocks, declared output interlock coverage",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -9191,9 +8887,7 @@
                 "name": "Lab, live plants and replay of recorded runs",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -9212,9 +8906,7 @@
                 "name": "Lab, live plants and replay of recorded runs",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -9233,9 +8925,7 @@
                 "name": "Mapping",
                 "description": "",
                 "value": "motor-v1 · Command, feedback, and speed",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -9304,9 +8994,7 @@
                 "name": "Stall the motor",
                 "description": "",
                 "value": "",
-                "states": [
-                  "not pressed"
-                ],
+                "states": ["not pressed"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -9333,9 +9021,7 @@
                 "name": "Start: FALSE",
                 "description": "",
                 "value": "",
-                "states": [
-                  "not checked"
-                ],
+                "states": ["not checked"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -9366,9 +9052,7 @@
                 "name": "Start: TRUE",
                 "description": "",
                 "value": "",
-                "states": [
-                  "checked"
-                ],
+                "states": ["checked"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -9410,9 +9094,7 @@
                 "name": "Stall the motor",
                 "description": "",
                 "value": "",
-                "states": [
-                  "not pressed"
-                ],
+                "states": ["not pressed"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -9589,9 +9271,7 @@
                 "name": "Stall the motor",
                 "description": "",
                 "value": "",
-                "states": [
-                  "not pressed"
-                ],
+                "states": ["not pressed"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -9618,9 +9298,7 @@
                 "name": "Stall the motor",
                 "description": "",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -9653,9 +9331,7 @@
                 "name": "Stall the motor",
                 "description": "",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -9877,9 +9553,7 @@
                 "name": "Tema",
                 "description": "",
                 "value": "Claro",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [],
                 "spoken": "Tema, combobox, collapsed, value Claro",
                 "element": "select#_r_0_[data-theme-control]"
@@ -10889,9 +10563,7 @@
                 "name": "Preferencias: editor, densidad, idioma, autoguardado y actualizaciones",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [],
                 "spoken": "Preferencias: editor, densidad, idioma, autoguardado y actualizaciones, DisclosureTriangle, collapsed",
                 "element": "summary"
@@ -10905,9 +10577,7 @@
                 "name": "Tema",
                 "description": "",
                 "value": "Claro",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [],
                 "spoken": "Tema, combobox, collapsed, value Claro",
                 "element": "select#_r_0_[data-theme-control]"
@@ -11094,9 +10764,7 @@
                 "name": "Objetos",
                 "description": "",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -11119,9 +10787,7 @@
                 "name": "Programas 1",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -11190,9 +10856,7 @@
                 "name": "Editor de código de src/main.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -11215,9 +10879,7 @@
                 "name": "Editor de código de src/main.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -11240,9 +10902,7 @@
                 "name": "Editor de código de src/main.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -11265,9 +10925,7 @@
                 "name": "Editor de código de src/main.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -11296,9 +10954,7 @@
                 "name": "Editor de código de src/main.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -11321,9 +10977,7 @@
                 "name": "Editor de código de src/main.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -11540,9 +11194,7 @@
                 "name": "Buscar comandos",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -11561,9 +11213,7 @@
                 "name": "Buscar comandos",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -11582,9 +11232,7 @@
                 "name": "Salida",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -11603,9 +11251,7 @@
                 "name": "Salida",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -11675,9 +11321,7 @@
                 "name": "Editor de código de src/main.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -11700,9 +11344,7 @@
                 "name": "Editor de código de src/main.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -11725,9 +11367,7 @@
                 "name": "Editor de código de src/main.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -11756,9 +11396,7 @@
                 "name": "Editor de código de src/main.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -11787,9 +11425,7 @@
                 "name": "Buscar comandos",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -11808,9 +11444,7 @@
                 "name": "Buscar comandos",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -11829,9 +11463,7 @@
                 "name": "Problemas, 6 errors · 0 warnings",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -11850,9 +11482,7 @@
                 "name": "Problemas, 6 errors · 0 warnings",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -12005,9 +11635,7 @@
                 "name": "Problemas, 6 errors · 0 warnings",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -12105,9 +11733,7 @@
                 "name": "Problemas, 6 errors · 0 warnings",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -12242,9 +11868,7 @@
                 "name": "Opciones de compilación",
                 "description": "Opciones de compilación",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -12263,9 +11887,7 @@
                 "name": "Modo de simulación",
                 "description": "Modo de simulación (runtime nativo local)",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -12288,9 +11910,7 @@
                 "name": "Modo de hardware",
                 "description": "Modo de hardware (serie)",
                 "value": "",
-                "states": [
-                  "not pressed"
-                ],
+                "states": ["not pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -12332,9 +11952,7 @@
                 "name": "Inspector (Ctrl+Alt+I)",
                 "description": "",
                 "value": "",
-                "states": [
-                  "not pressed"
-                ],
+                "states": ["not pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -12372,9 +11990,7 @@
                 "name": "Opciones de tema",
                 "description": "Tema: Sistema",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -12564,9 +12180,7 @@
                 "name": "Objetos",
                 "description": "",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -12589,9 +12203,7 @@
                 "name": "Programas 0",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -12614,9 +12226,7 @@
                 "name": "Bloques de función 0",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -12639,9 +12249,7 @@
                 "name": "Funciones 0",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -12664,9 +12272,7 @@
                 "name": "Tipos de datos 0",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -12689,9 +12295,7 @@
                 "name": "Variables globales 0",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -12714,9 +12318,7 @@
                 "name": "Tareas 1",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -12762,9 +12364,7 @@
                 "name": "Mapeo de E/S 2",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -12833,9 +12433,7 @@
                 "name": "Comunicación 3",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -12927,9 +12525,7 @@
                 "name": "Dispositivo 2",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -13012,9 +12608,7 @@
                 "name": "main.st",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "main",
@@ -13060,9 +12654,7 @@
                 "name": "Editor de código de src/main.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -13085,9 +12677,7 @@
                 "name": "Editor de código de src/main.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -13110,9 +12700,7 @@
                 "name": "Editor de código de src/main.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -13135,9 +12723,7 @@
                 "name": "Editor de código de src/main.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -13230,23 +12816,7 @@
           "id": "4",
           "title": "Simulate",
           "criterion": "Connect and Run are reachable by name, the toolbar messages are announced, and the status bar says running.",
-          "actions": [
-            "Ctrl+B",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Enter",
-            "F5"
-          ],
+          "actions": ["Ctrl+B", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Tab", "Enter", "F5"],
           "stops": [
             {
               "how": "build",
@@ -13255,9 +12825,7 @@
                 "name": "Editor de código de src/main.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -13337,9 +12905,7 @@
                 "name": "Problemas, 0 errors · 0 warnings",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -13424,9 +12990,7 @@
                 "name": "Opciones de compilación",
                 "description": "Opciones de compilación",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -13445,9 +13009,7 @@
                 "name": "Modo de simulación",
                 "description": "Modo de simulación (runtime nativo local)",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -13470,9 +13032,7 @@
                 "name": "Modo de hardware",
                 "description": "Modo de hardware (serie)",
                 "value": "",
-                "states": [
-                  "not pressed"
-                ],
+                "states": ["not pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -13670,9 +13230,7 @@
                 "name": "Buscar comandos",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -13691,9 +13249,7 @@
                 "name": "Buscar comandos",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -13712,9 +13268,7 @@
                 "name": "Observación",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -13733,9 +13287,7 @@
                 "name": "Observación",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -13754,9 +13306,7 @@
                 "name": "Formato de visualización",
                 "description": "",
                 "value": "Según el tipo",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -14035,9 +13585,7 @@
                 "name": "Forzar LED_Output",
                 "description": "Force current value",
                 "value": "",
-                "states": [
-                  "not checked"
-                ],
+                "states": ["not checked"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -14056,9 +13604,7 @@
                 "name": "Forzar LED_Output",
                 "description": "Forced until cleared",
                 "value": "",
-                "states": [
-                  "checked"
-                ],
+                "states": ["checked"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -14083,9 +13629,7 @@
                 "name": "Forzar LED_Output",
                 "description": "Force current value",
                 "value": "",
-                "states": [
-                  "not checked"
-                ],
+                "states": ["not checked"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -14110,9 +13654,7 @@
                 "name": "Forzar LED_Output",
                 "description": "Forced until cleared",
                 "value": "",
-                "states": [
-                  "checked"
-                ],
+                "states": ["checked"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -14137,9 +13679,7 @@
                 "name": "Forzar LED_Output",
                 "description": "Force current value",
                 "value": "",
-                "states": [
-                  "not checked"
-                ],
+                "states": ["not checked"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -14164,9 +13704,7 @@
                 "name": "Forzar LED_Output",
                 "description": "Forced until cleared",
                 "value": "",
-                "states": [
-                  "checked"
-                ],
+                "states": ["checked"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -14191,9 +13729,7 @@
                 "name": "Buscar comandos",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -14212,9 +13748,7 @@
                 "name": "Buscar comandos",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -14391,14 +13925,7 @@
           "id": "7",
           "title": "Deploy dialog",
           "criterion": "The dialog moves focus in, keeps it in, names itself and its table, and returns focus to the control that opened it. Opened with the product's own dialog and fixed device facts: no board was connected.",
-          "actions": [
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Tab",
-            "Escape"
-          ],
+          "actions": ["Tab", "Tab", "Tab", "Tab", "Tab", "Escape"],
           "stops": [
             {
               "how": "the control that has the focus before the dialog opens",
@@ -14740,9 +14267,7 @@
                 "name": "Tema",
                 "description": "",
                 "value": "Claro",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [],
                 "spoken": "Tema, combobox, collapsed, value Claro",
                 "element": "select#_r_0_[data-theme-control]"
@@ -14905,9 +14430,7 @@
                 "name": "Desbloquear todas las lecciones Permite iniciar cualquier lección sin aprobar las anteriores.",
                 "description": "Permite iniciar cualquier lección sin aprobar las anteriores.",
                 "value": "",
-                "states": [
-                  "not checked"
-                ],
+                "states": ["not checked"],
                 "within": [
                   {
                     "role": "main",
@@ -14934,9 +14457,7 @@
                 "name": "Aula: ocultar las soluciones de referencia Aprender no ofrece ninguna solución de referencia mientras este ajuste esté activado. El ajuste queda en este equipo.",
                 "description": "Aprender no ofrece ninguna solución de referencia mientras este ajuste esté activado. El ajuste queda en este equipo.",
                 "value": "",
-                "states": [
-                  "not checked"
-                ],
+                "states": ["not checked"],
                 "within": [
                   {
                     "role": "main",
@@ -15017,9 +14538,7 @@
                 "name": "Qué aprenderá",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "main",
@@ -15077,9 +14596,7 @@
                 "name": "Qué aprenderá",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "main",
@@ -15160,9 +14677,7 @@
                 "name": "Aula: ocultar las soluciones de referencia Aprender no ofrece ninguna solución de referencia mientras este ajuste esté activado. El ajuste queda en este equipo.",
                 "description": "Aprender no ofrece ninguna solución de referencia mientras este ajuste esté activado. El ajuste queda en este equipo.",
                 "value": "",
-                "states": [
-                  "not checked"
-                ],
+                "states": ["not checked"],
                 "within": [
                   {
                     "role": "main",
@@ -15189,9 +14704,7 @@
                 "name": "Desbloquear todas las lecciones Permite iniciar cualquier lección sin aprobar las anteriores.",
                 "description": "Permite iniciar cualquier lección sin aprobar las anteriores.",
                 "value": "",
-                "states": [
-                  "not checked"
-                ],
+                "states": ["not checked"],
                 "within": [
                   {
                     "role": "main",
@@ -15218,9 +14731,7 @@
                 "name": "Desbloquear todas las lecciones Permite iniciar cualquier lección sin aprobar las anteriores.",
                 "description": "Permite iniciar cualquier lección sin aprobar las anteriores.",
                 "value": "",
-                "states": [
-                  "checked"
-                ],
+                "states": ["checked"],
                 "within": [
                   {
                     "role": "main",
@@ -15418,9 +14929,7 @@
                 "name": "Pista 2",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -15447,9 +14956,7 @@
                 "name": "Pista 2",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -15476,9 +14983,7 @@
                 "name": "Pista 2",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -15524,9 +15029,7 @@
                 "name": "Opciones de compilación",
                 "description": "Opciones de compilación",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -15545,9 +15048,7 @@
                 "name": "Modo de simulación",
                 "description": "Modo de simulación (runtime nativo local)",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -15570,9 +15071,7 @@
                 "name": "Modo de hardware",
                 "description": "Modo de hardware (serie)",
                 "value": "",
-                "states": [
-                  "not pressed"
-                ],
+                "states": ["not pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -15614,9 +15113,7 @@
                 "name": "Inspector (Ctrl+Alt+I)",
                 "description": "",
                 "value": "",
-                "states": [
-                  "not pressed"
-                ],
+                "states": ["not pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -15654,9 +15151,7 @@
                 "name": "Opciones de tema",
                 "description": "Tema: Sistema",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -15770,9 +15265,7 @@
                 "name": "Español",
                 "description": "",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -15799,9 +15292,7 @@
                 "name": "Su primer parpadeo en simulación (En curso)",
                 "description": "",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -15828,9 +15319,7 @@
                 "name": "Ver el punto de control esperado: Objetivo",
                 "description": "Ver el punto de control esperado",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -15857,9 +15346,7 @@
                 "name": "Ver el punto de control esperado: Prediga",
                 "description": "Ver el punto de control esperado",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -15886,9 +15373,7 @@
                 "name": "Ver el punto de control esperado: Edite",
                 "description": "Ver el punto de control esperado",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -15915,9 +15400,7 @@
                 "name": "Ver el punto de control esperado: Ejecute",
                 "description": "Ver el punto de control esperado",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -15944,9 +15427,7 @@
                 "name": "Ver el punto de control esperado: Observe",
                 "description": "Ver el punto de control esperado",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -15973,9 +15454,7 @@
                 "name": "Ver el punto de control esperado: Reflexione",
                 "description": "Ver el punto de control esperado",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -16002,9 +15481,7 @@
                 "name": "Pista 1",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -16031,9 +15508,7 @@
                 "name": "Pista 2",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -16182,9 +15657,7 @@
                 "name": "FirstBlink.st",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "main",
@@ -16230,9 +15703,7 @@
                 "name": "Editor de código de src/FirstBlink.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -16255,9 +15726,7 @@
                 "name": "Editor de código de src/FirstBlink.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -16280,9 +15749,7 @@
                 "name": "Editor de código de src/FirstBlink.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -16311,9 +15778,7 @@
                 "name": "Editor de código de src/FirstBlink.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -16342,9 +15807,7 @@
                 "name": "Editor de código de src/FirstBlink.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -16396,9 +15859,7 @@
                 "name": "FirstBlink.st",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "main",
@@ -16489,9 +15950,7 @@
                 "name": "Comprobando…",
                 "description": "",
                 "value": "",
-                "states": [
-                  "disabled"
-                ],
+                "states": ["disabled"],
                 "within": [
                   {
                     "role": "complementary",
@@ -16559,9 +16018,7 @@
                 "name": "FirstBlink.st",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "main",
@@ -16607,9 +16064,7 @@
                 "name": "Editor de código de src/FirstBlink.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.",
                 "description": "",
                 "value": "",
-                "states": [
-                  "multiline"
-                ],
+                "states": ["multiline"],
                 "within": [
                   {
                     "role": "main",
@@ -16660,9 +16115,7 @@
                 "name": "Salida",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -16728,9 +16181,7 @@
                 "name": "Opciones de compilación",
                 "description": "Opciones de compilación",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -16749,9 +16200,7 @@
                 "name": "Modo de simulación",
                 "description": "Modo de simulación (runtime nativo local)",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -16774,9 +16223,7 @@
                 "name": "Modo de hardware",
                 "description": "Modo de hardware (serie)",
                 "value": "",
-                "states": [
-                  "not pressed"
-                ],
+                "states": ["not pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -16818,9 +16265,7 @@
                 "name": "Inspector (Ctrl+Alt+I)",
                 "description": "",
                 "value": "",
-                "states": [
-                  "not pressed"
-                ],
+                "states": ["not pressed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -16858,9 +16303,7 @@
                 "name": "Opciones de tema",
                 "description": "Tema: Sistema",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "toolbar",
@@ -17012,9 +16455,7 @@
                 "name": "Español",
                 "description": "",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -17041,9 +16482,7 @@
                 "name": "Su primer parpadeo en simulación (Aprobada)",
                 "description": "",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -17070,9 +16509,7 @@
                 "name": "Ver el punto de control esperado: Objetivo",
                 "description": "Ver el punto de control esperado",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -17099,9 +16536,7 @@
                 "name": "Ver el punto de control esperado: Prediga",
                 "description": "Ver el punto de control esperado",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -17128,9 +16563,7 @@
                 "name": "Ver el punto de control esperado: Edite",
                 "description": "Ver el punto de control esperado",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -17157,9 +16590,7 @@
                 "name": "Ver el punto de control esperado: Ejecute",
                 "description": "Ver el punto de control esperado",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -17186,9 +16617,7 @@
                 "name": "Ver el punto de control esperado: Observe",
                 "description": "Ver el punto de control esperado",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -17215,9 +16644,7 @@
                 "name": "Ver el punto de control esperado: Reflexione",
                 "description": "Ver el punto de control esperado",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -17244,9 +16671,7 @@
                 "name": "Pista 1",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "complementary",
@@ -17273,9 +16698,7 @@
                 "name": "Pista 2",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "complementary",
@@ -17622,9 +17045,7 @@
                 "name": "Tema",
                 "description": "",
                 "value": "Claro",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [],
                 "spoken": "Tema, combobox, collapsed, value Claro",
                 "element": "select#_r_0_[data-theme-control]"
@@ -17764,9 +17185,7 @@
                 "name": "Desbloquear todas las lecciones Permite iniciar cualquier lección sin aprobar las anteriores.",
                 "description": "Permite iniciar cualquier lección sin aprobar las anteriores.",
                 "value": "",
-                "states": [
-                  "checked"
-                ],
+                "states": ["checked"],
                 "within": [
                   {
                     "role": "main",
@@ -17793,9 +17212,7 @@
                 "name": "Aula: ocultar las soluciones de referencia Aprender no ofrece ninguna solución de referencia mientras este ajuste esté activado. El ajuste queda en este equipo.",
                 "description": "Aprender no ofrece ninguna solución de referencia mientras este ajuste esté activado. El ajuste queda en este equipo.",
                 "value": "",
-                "states": [
-                  "not checked"
-                ],
+                "states": ["not checked"],
                 "within": [
                   {
                     "role": "main",
@@ -17876,9 +17293,7 @@
                 "name": "Qué aprenderá",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "main",
@@ -17967,9 +17382,7 @@
                 "name": "Qué aprenderá",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "main",
@@ -18089,9 +17502,7 @@
                 "name": "Qué aprenderá",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "main",
@@ -18242,9 +17653,7 @@
                 "name": "Qué aprenderá",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "main",
@@ -18364,9 +17773,7 @@
                 "name": "Qué aprenderá",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "main",
@@ -18486,9 +17893,7 @@
                 "name": "Qué aprenderá",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "main",
@@ -18577,9 +17982,7 @@
                 "name": "Qué aprenderá",
                 "description": "",
                 "value": "",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "main",
@@ -18677,9 +18080,7 @@
                 "name": "Buscar comandos",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -18698,9 +18099,7 @@
                 "name": "Buscar comandos",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -18803,9 +18202,7 @@
                 "name": "Buscar comandos",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -18824,9 +18221,7 @@
                 "name": "Buscar comandos",
                 "description": "",
                 "value": "",
-                "states": [
-                  "expanded"
-                ],
+                "states": ["expanded"],
                 "within": [
                   {
                     "role": "dialog",
@@ -18845,9 +18240,7 @@
                 "name": "Observación",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -18866,9 +18259,7 @@
                 "name": "Observación",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -18887,9 +18278,7 @@
                 "name": "Terminal",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -18908,9 +18297,7 @@
                 "name": "Salida",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -18929,9 +18316,7 @@
                 "name": "Problemas, 0 errors · 0 warnings",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -18950,9 +18335,7 @@
                 "name": "Pruebas, escenarios POSIX en el host",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -18971,9 +18354,7 @@
                 "name": "Enclavamientos, cobertura de los enclavamientos de salida declarados",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -18992,9 +18373,7 @@
                 "name": "Laboratorio, plantas en vivo y repetición de ejecuciones registradas",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -19013,9 +18392,7 @@
                 "name": "Laboratorio, plantas en vivo y repetición de ejecuciones registradas",
                 "description": "",
                 "value": "",
-                "states": [
-                  "selected"
-                ],
+                "states": ["selected"],
                 "within": [
                   {
                     "role": "tablist",
@@ -19034,9 +18411,7 @@
                 "name": "Asignación",
                 "description": "",
                 "value": "motor-v1 · Orden, realimentación y velocidad",
-                "states": [
-                  "collapsed"
-                ],
+                "states": ["collapsed"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -19105,9 +18480,7 @@
                 "name": "Atascar el motor",
                 "description": "",
                 "value": "",
-                "states": [
-                  "not pressed"
-                ],
+                "states": ["not pressed"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -19134,9 +18507,7 @@
                 "name": "Start: FALSE",
                 "description": "",
                 "value": "",
-                "states": [
-                  "not checked"
-                ],
+                "states": ["not checked"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -19167,9 +18538,7 @@
                 "name": "Start: TRUE",
                 "description": "",
                 "value": "",
-                "states": [
-                  "checked"
-                ],
+                "states": ["checked"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -19211,9 +18580,7 @@
                 "name": "Atascar el motor",
                 "description": "",
                 "value": "",
-                "states": [
-                  "not pressed"
-                ],
+                "states": ["not pressed"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -19390,9 +18757,7 @@
                 "name": "Atascar el motor",
                 "description": "",
                 "value": "",
-                "states": [
-                  "not pressed"
-                ],
+                "states": ["not pressed"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -19419,9 +18784,7 @@
                 "name": "Atascar el motor",
                 "description": "",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "tabpanel",
@@ -19454,9 +18817,7 @@
                 "name": "Atascar el motor",
                 "description": "",
                 "value": "",
-                "states": [
-                  "pressed"
-                ],
+                "states": ["pressed"],
                 "within": [
                   {
                     "role": "tabpanel",

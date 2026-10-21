@@ -9,8 +9,14 @@ import { createLearnWorkspaceHandlers } from './learnWorkspaceIpc';
 import { prepareLearnWorkspace } from './learnWorkspace';
 
 const temporary: string[] = [];
-const scratch = async () => { const directory = await realpath(await mkdtemp(join(tmpdir(), 'zplc-learn-ws-'))); temporary.push(directory); return directory; };
-afterEach(async () => { await Promise.all(temporary.splice(0).map((directory) => rm(directory, { recursive: true, force: true }))); });
+const scratch = async () => {
+  const directory = await realpath(await mkdtemp(join(tmpdir(), 'zplc-learn-ws-')));
+  temporary.push(directory);
+  return directory;
+};
+afterEach(async () => {
+  await Promise.all(temporary.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
+});
 
 describe('the app-owned workspace of a lesson (LRN-003)', () => {
   it('creates the folder of a lesson under the learner workspaces, empty the first time and untouched on every reopen', async () => {
@@ -29,7 +35,8 @@ describe('the app-owned workspace of a lesson (LRN-003)', () => {
   it('builds the path only from a lesson id, and refuses an id that could leave the folder or a link in its place', async () => {
     const parent = await scratch();
     const root = join(parent, 'learn-workspaces');
-    for (const bad of ['', '..', '../escape', 'a/b', 'A-Upper', '.hidden', 'x'.repeat(80), 'with space', 'a\\b']) await expect(prepareLearnWorkspace(root, bad)).rejects.toThrow('Invalid lesson id');
+    for (const bad of ['', '..', '../escape', 'a/b', 'A-Upper', '.hidden', 'x'.repeat(80), 'with space', 'a\\b'])
+      await expect(prepareLearnWorkspace(root, bad)).rejects.toThrow('Invalid lesson id');
     await mkdir(root, { recursive: true });
     await symlink(parent, join(root, 'linked-lesson'));
     await expect(prepareLearnWorkspace(root, 'linked-lesson')).rejects.toThrow('not a folder');
@@ -42,18 +49,29 @@ describe('the app-owned workspace of a lesson (LRN-003)', () => {
     const adopted: Array<[number, string]> = [];
     const handlers = createLearnWorkspaceHandlers<{ ownerId: number }>({
       root: () => join(parent, 'learn-workspaces'),
-      adopt: async (ownerId, directory) => { adopted.push([ownerId, directory]); return { rootId: 'root-1', name: 'motor-start-stop-safe' }; },
+      adopt: async (ownerId, directory) => {
+        adopted.push([ownerId, directory]);
+        return { rootId: 'root-1', name: 'motor-start-stop-safe' };
+      },
     });
     const handler = handlers[LEARN_WORKSPACE_CHANNEL.OPEN]!;
     expect(Object.keys(handlers)).toEqual([LEARN_WORKSPACE_CHANNEL.OPEN]);
     expect(handler.accepts(['motor-start-stop-safe'])).toBe(true);
-    for (const bad of [[], ['motor-start-stop-safe', 'extra'], ['../x'], [42], [{ lessonId: 'motor-start-stop-safe' }], [null]]) expect(handler.accepts(bad)).toBe(false);
-    expect(await handler.run({ ownerId: 7 }, ['motor-start-stop-safe'])).toEqual({ rootId: 'root-1', name: 'motor-start-stop-safe', fresh: true });
+    for (const bad of [[], ['motor-start-stop-safe', 'extra'], ['../x'], [42], [{ lessonId: 'motor-start-stop-safe' }], [null]])
+      expect(handler.accepts(bad)).toBe(false);
+    expect(await handler.run({ ownerId: 7 }, ['motor-start-stop-safe'])).toEqual({
+      rootId: 'root-1',
+      name: 'motor-start-stop-safe',
+      fresh: true,
+    });
     expect(adopted).toEqual([[7, join(parent, 'learn-workspaces', 'motor-start-stop-safe')]]);
   });
 
   it('fails closed when there is no user-data folder to build the path in', async () => {
-    const handler = createLearnWorkspaceHandlers<{ ownerId: number }>({ root: () => null, adopt: async () => ({ rootId: 'x', name: 'x' }) })[LEARN_WORKSPACE_CHANNEL.OPEN]!;
+    const handler = createLearnWorkspaceHandlers<{ ownerId: number }>({
+      root: () => null,
+      adopt: async () => ({ rootId: 'x', name: 'x' }),
+    })[LEARN_WORKSPACE_CHANNEL.OPEN]!;
     await expect(handler.run({ ownerId: 1 }, ['motor-start-stop-safe'])).rejects.toThrow();
   });
 

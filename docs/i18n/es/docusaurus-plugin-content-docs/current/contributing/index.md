@@ -33,24 +33,24 @@ Ejecute cada comando desde la raíz del repositorio. Los tiempos se midieron el
 2026-10-10 en un equipo de escritorio Linux x86-64 con cachés calientes mientras
 corrían otros trabajos, así que léalos como un orden de magnitud.
 
-| Capa | Comando | Tiempo típico | Qué demuestra un resultado correcto |
-|---|---|---|---|
-| Preparación | `bun run setup` | unos 10 s | Dependencias instaladas, compilador construido, runtime nativo construido |
-| Núcleo C y runtime de host | `bun run test:core` | cerca de 1 min, la primera ejecución incluida | Las suites de C pasan con los sanitizadores de direcciones y de comportamiento indefinido |
-| Compilador | `bun run test:compiler:ci` | unos 6 s | Pasan las pruebas del compilador y del ensamblador, y toda falla es una de los listados |
-| Aplicación, CLI, conformidad | `bun run test:ide:ci` | cerca de 1 min | Las suites de la aplicación y los casos de conformidad se comportan como está listado |
-| Lint y tipos | `bun run lint`, `bun run typecheck` y `bun run build:ide` | unos 35 s, de 20 a 40 s y 15 s | ESLint no marca nada, incluidas las reglas que rechazan una promesa sin manejar; todo programa TypeScript, con sus pruebas y scripts, pasa el comprobador de tipos; y la aplicación compila |
-| Estructura de la aplicación | `bun run lint:ide` (las reglas corren después de ESLint), o `bun tools/ci/ide-structure.ts` | menos de 1 s | Ningún módulo del almacén importa un componente, ningún módulo de la línea de comandos importa de `electron/`, no hay ciclos de importación estáticos, y ningún módulo escrito a mano tiene más de 1600 líneas, salvo los de `tools/ci/module-size-offenders.json`; esa lista y la única importación que admite (`tools/ci/layering-exceptions.json`) solo pueden reducirse |
-| Análisis estático de C | `bun run lint:c` | unos 15 s | `clang-tidy` con `.clang-tidy`, cada hallazgo es un error, no marca nada en el núcleo, el HAL POSIX y la aplicación de host; también se analizan el HAL de Zephyr y `firmware/app` cuando existe una compilación de placa |
-| Fuentes de las pruebas | `bun run check:test-sources` | menos de 1 s | Ninguna prueba lee el texto del código del producto ni compara el ensamblador que emitió el compilador, salvo los archivos listados para reemplazo en `tools/ci/pinned-source-offenders.json` |
-| Contrato binario | `bun run contract:check` | unos 1 s | Los archivos generados coinciden con `contract.json` |
-| Simulación | `bun run simulate packages/zplc-ide/projects/motor_plant` | menos de 1 s | Las pruebas de escenario del proyecto pasan en el runtime nativo |
-| Recorridos de la aplicación | `bun run test:journeys` | de 70 a 90 s | La aplicación real pasa sus recorridos de extremo a extremo (requiere pantalla) |
-| Firmware en Linux | `bun run setup:firmware` y luego `bun run test:firmware` | unos 6 min una vez, luego unos 4 min | Las suites de Zephyr pasan en `native_sim`, QEMU y los presupuestos de tamaño |
-| Documentación | `bun run check:docs` | unos 15 s en caliente, 1 min en frío | Las referencias están al día, todo nombre que una página menciona existe, ninguna oración afirma una capacidad que nada ejecutado respalde, las páginas están completas, las páginas en inglés y español coinciden en estructura, todo ejemplo y fragmento de configuración marcado como tal compila y da el resultado que su cerco indica, toda imagen es una capturada, y el sitio compila |
-| Ensayo de publicación | `bun run release:rehearsal` | unos 5 s | Las verificaciones que el flujo de trabajo de publicación ejecuta antes de construir nada |
-| Recursos de marca | `bun tools/ci/brand/generate-icons.ts --check` | menos de 1 s | Cada icono y la tarjeta social se generaron desde la única marca, `tools/brand/mark.svg`; regenérelos sin `--check` (necesita `rsvg-convert` y Python con Pillow) |
-| Verificaciones de salida de publicación | `bun test ./tools/ci` | unos 5 s | Los nombres y contenedores de los instaladores, los registros de lanzamiento, el resultado de la ejecución y los generadores del cask y del paquete de AUR se comportan como dicen sus datos de prueba; el flujo de trabajo que los ejecuta sobre archivos producidos todavía no se ha ejecutado en CI |
+| Capa                                    | Comando                                                                                     | Tiempo típico                                 | Qué demuestra un resultado correcto                                                                                                                                                                                                                                                                                                                                                          |
+| --------------------------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Preparación                             | `bun run setup`                                                                             | unos 10 s                                     | Dependencias instaladas, compilador construido, runtime nativo construido                                                                                                                                                                                                                                                                                                                    |
+| Núcleo C y runtime de host              | `bun run test:core`                                                                         | cerca de 1 min, la primera ejecución incluida | Las suites de C pasan con los sanitizadores de direcciones y de comportamiento indefinido                                                                                                                                                                                                                                                                                                    |
+| Compilador                              | `bun run test:compiler:ci`                                                                  | unos 6 s                                      | Pasan las pruebas del compilador y del ensamblador, y toda falla es una de los listados                                                                                                                                                                                                                                                                                                      |
+| Aplicación, CLI, conformidad            | `bun run test:ide:ci`                                                                       | cerca de 1 min                                | Las suites de la aplicación y los casos de conformidad se comportan como está listado                                                                                                                                                                                                                                                                                                        |
+| Lint y tipos                            | `bun run lint`, `bun run typecheck` y `bun run build:ide`                                   | unos 35 s, de 20 a 40 s y 15 s                | ESLint no marca nada, incluidas las reglas que rechazan una promesa sin manejar; todo programa TypeScript, con sus pruebas y scripts, pasa el comprobador de tipos; y la aplicación compila                                                                                                                                                                                                  |
+| Estructura de la aplicación             | `bun run lint:ide` (las reglas corren después de ESLint), o `bun tools/ci/ide-structure.ts` | menos de 1 s                                  | Ningún módulo del almacén importa un componente, ningún módulo de la línea de comandos importa de `electron/`, no hay ciclos de importación estáticos, y ningún módulo escrito a mano tiene más de 1600 líneas, salvo los de `tools/ci/module-size-offenders.json`; esa lista y la única importación que admite (`tools/ci/layering-exceptions.json`) solo pueden reducirse                  |
+| Análisis estático de C                  | `bun run lint:c`                                                                            | unos 15 s                                     | `clang-tidy` con `.clang-tidy`, cada hallazgo es un error, no marca nada en el núcleo, el HAL POSIX y la aplicación de host; también se analizan el HAL de Zephyr y `firmware/app` cuando existe una compilación de placa                                                                                                                                                                    |
+| Fuentes de las pruebas                  | `bun run check:test-sources`                                                                | menos de 1 s                                  | Ninguna prueba lee el texto del código del producto ni compara el ensamblador que emitió el compilador, salvo los archivos listados para reemplazo en `tools/ci/pinned-source-offenders.json`                                                                                                                                                                                                |
+| Contrato binario                        | `bun run contract:check`                                                                    | unos 1 s                                      | Los archivos generados coinciden con `contract.json`                                                                                                                                                                                                                                                                                                                                         |
+| Simulación                              | `bun run simulate packages/zplc-ide/projects/motor_plant`                                   | menos de 1 s                                  | Las pruebas de escenario del proyecto pasan en el runtime nativo                                                                                                                                                                                                                                                                                                                             |
+| Recorridos de la aplicación             | `bun run test:journeys`                                                                     | de 70 a 90 s                                  | La aplicación real pasa sus recorridos de extremo a extremo (requiere pantalla)                                                                                                                                                                                                                                                                                                              |
+| Firmware en Linux                       | `bun run setup:firmware` y luego `bun run test:firmware`                                    | unos 6 min una vez, luego unos 4 min          | Las suites de Zephyr pasan en `native_sim`, QEMU y los presupuestos de tamaño                                                                                                                                                                                                                                                                                                                |
+| Documentación                           | `bun run check:docs`                                                                        | unos 15 s en caliente, 1 min en frío          | Las referencias están al día, todo nombre que una página menciona existe, ninguna oración afirma una capacidad que nada ejecutado respalde, las páginas están completas, las páginas en inglés y español coinciden en estructura, todo ejemplo y fragmento de configuración marcado como tal compila y da el resultado que su cerco indica, toda imagen es una capturada, y el sitio compila |
+| Ensayo de publicación                   | `bun run release:rehearsal`                                                                 | unos 5 s                                      | Las verificaciones que el flujo de trabajo de publicación ejecuta antes de construir nada                                                                                                                                                                                                                                                                                                    |
+| Recursos de marca                       | `bun tools/ci/brand/generate-icons.ts --check`                                              | menos de 1 s                                  | Cada icono y la tarjeta social se generaron desde la única marca, `tools/brand/mark.svg`; regenérelos sin `--check` (necesita `rsvg-convert` y Python con Pillow)                                                                                                                                                                                                                            |
+| Verificaciones de salida de publicación | `bun test ./tools/ci`                                                                       | unos 5 s                                      | Los nombres y contenedores de los instaladores, los registros de lanzamiento, el resultado de la ejecución y los generadores del cask y del paquete de AUR se comportan como dicen sus datos de prueba; el flujo de trabajo que los ejecuta sobre archivos producidos todavía no se ha ejecutado en CI                                                                                       |
 
 Un resultado correcto en un nivel nunca prueba uno superior: una prueba de host no
 dice nada sobre una placa. [Pruebas del firmware en Linux](../development/firmware-testing.md)
@@ -58,15 +58,15 @@ explica qué muestra cada modo del firmware y qué no.
 
 ## Reglas de contribución
 
-| Área | Práctica requerida |
-|---|---|
-| Runtime y hardware | Conserve los límites C99/HAL, las fallas hacia el estado seguro (apagado) y la recuperación. |
-| Fronteras de confianza | Valide bytecode, IPC, rutas y entrada externa antes de modificar estado. |
-| Electron | Mantenga el renderer sin privilegios y el IPC estrecho y validado. |
-| Evidencia | Etiquete correctamente los resultados de host, QEMU, compilación para destino, HIL y manuales. |
-| Dependencias | Agregue una sola con una necesidad concreta y una justificación arquitectónica. |
-| Operaciones físicas | Separe compilar, grabar, cargar y ejecutar o depurar; no automatice el control físico mediante IA o MCP. |
-| Pruebas de hardware | Una persona inicia todo comando que maneje una placa, en un terminal interactivo, y un registro dice qué imagen probó. Véase [Hardware en el lazo](../development/hardware-in-the-loop.md). |
+| Área                   | Práctica requerida                                                                                                                                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Runtime y hardware     | Conserve los límites C99/HAL, las fallas hacia el estado seguro (apagado) y la recuperación.                                                                                                |
+| Fronteras de confianza | Valide bytecode, IPC, rutas y entrada externa antes de modificar estado.                                                                                                                    |
+| Electron               | Mantenga el renderer sin privilegios y el IPC estrecho y validado.                                                                                                                          |
+| Evidencia              | Etiquete correctamente los resultados de host, QEMU, compilación para destino, HIL y manuales.                                                                                              |
+| Dependencias           | Agregue una sola con una necesidad concreta y una justificación arquitectónica.                                                                                                             |
+| Operaciones físicas    | Separe compilar, grabar, cargar y ejecutar o depurar; no automatice el control físico mediante IA o MCP.                                                                                    |
+| Pruebas de hardware    | Una persona inicia todo comando que maneje una placa, en un terminal interactivo, y un registro dice qué imagen probó. Véase [Hardware en el lazo](../development/hardware-in-the-loop.md). |
 
 No publique, no grabe hardware, no cargue un programa PLC ni accione equipos
 sin autorización explícita.
@@ -83,22 +83,22 @@ falla ante una lista de identificadores escrita a mano (LRN-028).
 2. Cree `packages/zplc-ide/lessons/<id>/` con los archivos de abajo.
 3. Ejecute el generador y luego el CI de lecciones.
 
-| Archivo | Qué contiene |
-|---|---|
-| `lesson.json` | El manifiesto: identificador, versión, módulo, nivel, prerrequisitos, lenguajes, vías, planta, minutos estimados, los proyectos inicial y solución, y el escenario de referencia con su hash de contenido. |
-| `scenario.json` | El escenario de referencia con el que se califica la lección. Mantenga una copia en la carpeta `tests/` del proyecto inicial para que el alumno lo ejecute desde Pruebas; CI falla cuando la copia difiere. |
+| Archivo                        | Qué contiene                                                                                                                                                                                                              |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lesson.json`                  | El manifiesto: identificador, versión, módulo, nivel, prerrequisitos, lenguajes, vías, planta, minutos estimados, los proyectos inicial y solución, y el escenario de referencia con su hash de contenido.                |
+| `scenario.json`                | El escenario de referencia con el que se califica la lección. Mantenga una copia en la carpeta `tests/` del proyecto inicial para que el alumno lo ejecute desde Pruebas; CI falla cuando la copia difiere.               |
 | `text.en.json`, `text.es.json` | El texto: título, resumen, alcance, objetivos, las seis etapas (`objective`, `predict`, `edit`, `run`, `observe`, `reflect`), dos niveles de pista y la falla a corregir. Ambos archivos deben tener la misma estructura. |
-| `checks.json` | Opcional: programas incorrectos que deben seguir en rojo, y otros programas correctos que deben pasar. |
+| `checks.json`                  | Opcional: programas incorrectos que deben seguir en rojo, y otros programas correctos que deben pasar.                                                                                                                    |
 
 El texto marca cada tiempo y valor que cita, para que CI lo compare con el escenario. El generador
 expande la marca una sola vez; ninguna cadena de la lección se reemplaza cuando la aplicación corre
 (LRN-038).
 
-| Marca | Muestra | CI verifica |
-|---|---|---|
-| `{{t:250}}` | `250` | El tiempo está en la línea de tiempo del escenario: múltiplo de su tick y no mayor que su duración. |
-| `{{assertions}}` | La cantidad de aserciones | Nada que verificar: la cantidad sale del escenario. |
-| `{{v:Sig=true@30\|texto}}` | `texto` | El escenario afirma esos valores a 30 ms: un `AT` ahí, o un `FOR` o `ALWAYS` que lo cubra. |
+| Marca                      | Muestra                   | CI verifica                                                                                         |
+| -------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------- |
+| `{{t:250}}`                | `250`                     | El tiempo está en la línea de tiempo del escenario: múltiplo de su tick y no mayor que su duración. |
+| `{{assertions}}`           | La cantidad de aserciones | Nada que verificar: la cantidad sale del escenario.                                                 |
+| `{{v:Sig=true@30\|texto}}` | `texto`                   | El escenario afirma esos valores a 30 ms: un `AT` ahí, o un `FOR` o `ALWAYS` que lo cubra.          |
 
 ```bash
 bun tools/ci/generate-lesson-index.ts                  # escribe packages/zplc-ide/src/generated/lessonIndex.ts
@@ -137,13 +137,13 @@ END_PROGRAM
 ```
 ````
 
-| Palabra | Significado |
-|---|---|
-| `runnable` | El ejemplo se compila con el compilador del repositorio. Un ejemplo que no compila hace fallar `bun run check:docs`: corrija el ejemplo o quite la palabra. |
+| Palabra                     | Significado                                                                                                                                                                                                                                                                                                                                               |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `runnable`                  | El ejemplo se compila con el compilador del repositorio. Un ejemplo que no compila hace fallar `bun run check:docs`: corrija el ejemplo o quite la palabra.                                                                                                                                                                                               |
 | `expect="Nombre=Valor ..."` | El ejemplo además se ejecuta en el runtime nativo y cada valor nombrado se compara después del último ciclo. `Nombre` es una variable del programa o una dirección directa como `%QX0.0` o `%QW0` (`Nombre:TIPO` fija el tipo de una dirección); `Valor` es `TRUE`, `FALSE` o un número. La página debe decir el resultado con palabras junto al ejemplo. |
-| `scans=N`, `scan_ms=N` | Cuántos ciclos ejecutar (por defecto 1) y el período de cada uno en milisegundos (por defecto 10). Solo con `expect`. |
-| `fragment` | El bloque es un cuerpo sin encabezado (variables y sentencias): se envuelve en `PROGRAM DocSample ... END_PROGRAM` antes de compilarlo. |
-| `language=il` | El ejemplo es lista de instrucciones (IL), escrita en un cerco `iecst`. |
+| `scans=N`, `scan_ms=N`      | Cuántos ciclos ejecutar (por defecto 1) y el período de cada uno en milisegundos (por defecto 10). Solo con `expect`.                                                                                                                                                                                                                                     |
+| `fragment`                  | El bloque es un cuerpo sin encabezado (variables y sentencias): se envuelve en `PROGRAM DocSample ... END_PROGRAM` antes de compilarlo.                                                                                                                                                                                                                   |
+| `language=il`               | El ejemplo es lista de instrucciones (IL), escrita en un cerco `iecst`.                                                                                                                                                                                                                                                                                   |
 
 La página en inglés y su gemela en español marcan los mismos ejemplos de la misma manera, con el
 mismo resultado. El ejemplo está escrito en código y por eso es igual en ambos idiomas. La
@@ -155,12 +155,12 @@ con `expect`, `bun run build:runtime`, y falla en vez de omitirse cuando falta e
 Una página que muestra un fragmento de `zplc.json`, un escenario o una captura de la
 aplicación se comprueba de la misma manera, según lo que dice el cerco:
 
-| Cerco | Qué hace la comprobación |
-|---|---|
+| Cerco                | Qué hace la comprobación                                                                                                                                                                                                                                                                                                                                                                          |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `json zplc-fragment` | Las claves se combinan con un proyecto mínimo para el simulador del host, se contrastan con `packages/zplc-ide/zplc.schema.json` (una clave que el esquema no nombra es un error) y se compilan. Un fragmento con `board=<id del IDE>` se combina con un proyecto para esa placa, y toda dirección de `io.inputs` y `io.outputs` debe ser un canal de la placa, salvo que figure en `io.virtual`. |
-| `json zplc-scenario` | El escenario se escribe en la carpeta `tests` de un proyecto cuyo programa es el primer ejemplo `runnable` de texto estructurado de la misma página, y toda expectativa debe pasar en el runtime nativo. |
-| `json zplc-board` | La entrada la comprueba el validador del manifiesto de placas (`firmware/zephyr/scripts/zplc_boards.py`) junto con el manifiesto de este repositorio: una clave que falta, una dirección errónea, un canal que las reglas rechazan o un nombre que ya tiene otra placa es un error. |
-| `![alt](/img/...)` | La imagen debe figurar en `docs/static/img/manifest.json`, que escribe `bun run docs:screenshots` con el commit del que se construyó la aplicación: una página no muestra ninguna imagen que la automatización no haya capturado. |
+| `json zplc-scenario` | El escenario se escribe en la carpeta `tests` de un proyecto cuyo programa es el primer ejemplo `runnable` de texto estructurado de la misma página, y toda expectativa debe pasar en el runtime nativo.                                                                                                                                                                                          |
+| `json zplc-board`    | La entrada la comprueba el validador del manifiesto de placas (`firmware/zephyr/scripts/zplc_boards.py`) junto con el manifiesto de este repositorio: una clave que falta, una dirección errónea, un canal que las reglas rechazan o un nombre que ya tiene otra placa es un error.                                                                                                               |
+| `![alt](/img/...)`   | La imagen debe figurar en `docs/static/img/manifest.json`, que escribe `bun run docs:screenshots` con el commit del que se construyó la aplicación: una página no muestra ninguna imagen que la automatización no haya capturado.                                                                                                                                                                 |
 
 La página en inglés y su gemela en español muestran los mismos fragmentos y escenarios.
 Las comprobaciones son `bun run check:docs-config` y `bun tools/docs/capture-screenshots.ts --check`.
@@ -194,13 +194,13 @@ Un número distinto se rechaza y el rechazo muestra los dos:
 
 > Program was built for contract draft 2, this runtime is draft 3
 
-| Dónde | Qué pasa ante una diferencia |
-|---|---|
-| Cargador (`zplc_loader_verify`) | Devuelve `ZPLC_LOADER_ERR_DRAFT` (`-17`). El contador se lee antes que la versión, los indicadores y el CRC, porque otro borrador puede ordenar el resto distinto. `zplc_loader_artifact_draft_counter` lo lee sin confiar en nada más. |
-| Simulación nativa | `program.load` falla con la frase de arriba y el programa cargado sigue corriendo. La aplicación ZPLC la dice antes de enviar nada. El runtime informa su contador en `session.hello` (`draft_counter`). |
-| Carga al firmware | `zplc load` y `zplc sched load` responden `ERROR: Program was built for contract draft N, this runtime is draft M (-17)`. `zplc sys info --json` informa `draft_counter`. |
-| Carga a hardware desde la aplicación ZPLC | La verificación previa compara el artefacto con el `draft_counter` de la placa conectada y rechaza antes de enviar nada. |
-| CLI | `zplc-cli compile` indica el contador de lo que construyó. |
+| Dónde                                     | Qué pasa ante una diferencia                                                                                                                                                                                                            |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cargador (`zplc_loader_verify`)           | Devuelve `ZPLC_LOADER_ERR_DRAFT` (`-17`). El contador se lee antes que la versión, los indicadores y el CRC, porque otro borrador puede ordenar el resto distinto. `zplc_loader_artifact_draft_counter` lo lee sin confiar en nada más. |
+| Simulación nativa                         | `program.load` falla con la frase de arriba y el programa cargado sigue corriendo. La aplicación ZPLC la dice antes de enviar nada. El runtime informa su contador en `session.hello` (`draft_counter`).                                |
+| Carga al firmware                         | `zplc load` y `zplc sched load` responden `ERROR: Program was built for contract draft N, this runtime is draft M (-17)`. `zplc sys info --json` informa `draft_counter`.                                                               |
+| Carga a hardware desde la aplicación ZPLC | La verificación previa compara el artefacto con el `draft_counter` de la placa conectada y rechaza antes de enviar nada.                                                                                                                |
+| CLI                                       | `zplc-cli compile` indica el contador de lo que construyó.                                                                                                                                                                              |
 
 Un artefacto construido antes del contador lleva 0, y una imagen de firmware
 que no lo informa no tiene ninguno: ambos se rechazan y la frase dice `none`.
@@ -218,7 +218,7 @@ entero de versión final se asigna y congela al cerrar la matriz de conformidad.
    contrato y el motivo al registro `tools/contract/golden/draft-ledger.json`.
 3. Actualice los números que cambiaron en
    `tools/contract/golden/contract.golden.json` (`python3
-   tools/contract/test_contract.py` nombra cada uno), reconstruya los artefactos
+tools/contract/test_contract.py` nombra cada uno), reconstruya los artefactos
    versionados en el repositorio (`examples/*.zplc`, los fixtures `.hex`) y
    corrija cualquier prueba que arme un encabezado a mano.
 4. Ejecute `bun run contract:check` y deje el motivo en el mensaje de la confirmación.

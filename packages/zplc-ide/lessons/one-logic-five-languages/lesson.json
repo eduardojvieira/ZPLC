@@ -5,20 +5,9 @@
   "order": 25,
   "module": 9,
   "level": "advanced",
-  "prerequisites": [
-    "instruction-list-door-alarm"
-  ],
-  "languages": [
-    "ST",
-    "LD",
-    "FBD",
-    "SFC",
-    "IL"
-  ],
-  "tracks": [
-    "simulation",
-    "hardware"
-  ],
+  "prerequisites": ["instruction-list-door-alarm"],
+  "languages": ["ST", "LD", "FBD", "SFC", "IL"],
+  "tracks": ["simulation", "hardware"],
   "unsupported": {},
   "plant": null,
   "estimatedMinutes": 30,

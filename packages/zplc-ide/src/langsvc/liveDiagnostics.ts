@@ -16,7 +16,9 @@ export const LIVE_CHECK_FILE_LIMIT = 200_000;
 export const LIVE_CHECK_PROJECT_LIMIT = 2_000_000;
 
 const sourceLimit = (path: string): STLiveDiagnostic => ({
-  code: 'ST_SOURCE_LIMIT', type: 'warning', file: path,
+  code: 'ST_SOURCE_LIMIT',
+  type: 'warning',
+  file: path,
   message: `Live ST analysis skipped for files over ${LIVE_CHECK_FILE_LIMIT.toLocaleString()} characters.`,
 });
 
@@ -32,9 +34,19 @@ export function liveDiagnostics(files: readonly ProjectFile[], active: string | 
 
   const found: STLiveDiagnostic[] = [];
   try {
-    for (const diagnostic of checkProject(readable.map((file) => ({ ref: file.path, content: file.content })), options)) {
+    for (const diagnostic of checkProject(
+      readable.map((file) => ({ ref: file.path, content: file.content })),
+      options,
+    )) {
       found.push({
-        code: diagnostic.severity === 'warning' ? 'ST_WARNING' : diagnostic.phase === 'lexer' ? 'ST_LEXER' : diagnostic.phase === 'parser' ? 'ST_PARSER' : 'ST_SEMANTIC',
+        code:
+          diagnostic.severity === 'warning'
+            ? 'ST_WARNING'
+            : diagnostic.phase === 'lexer'
+              ? 'ST_LEXER'
+              : diagnostic.phase === 'parser'
+                ? 'ST_PARSER'
+                : 'ST_SEMANTIC',
         type: diagnostic.severity,
         errorCode: diagnostic.code,
         message: diagnostic.message,

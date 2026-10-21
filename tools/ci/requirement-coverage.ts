@@ -49,7 +49,13 @@ export interface Check {
 }
 export type Evidence = Record<string, Check[]>;
 export type State = 'covered' | 'partial' | 'decided' | 'uncovered';
-export interface Counts { total: number; covered: number; partial: number; decided: number; uncovered: number }
+export interface Counts {
+  total: number;
+  covered: number;
+  partial: number;
+  decided: number;
+  uncovered: number;
+}
 
 export const KINDS: Kind[] = ['conformance', 'unit', 'journey', 'c-test', 'manual', 'hardware', 'py-test', 'decided', 'gate'];
 const CONFORMANCE_RUNNER = 'packages/zplc-ide/src/conformance/conformance.test.ts';
@@ -66,7 +72,8 @@ const idsOf = (text: string) => [...new Set(text.match(IDS) ?? [])];
 
 export function conformanceChecks(path: string, text: string): Array<[string, Check]> {
   const { requirement, title } = JSON.parse(text) as { requirement?: unknown; title?: unknown };
-  if (typeof requirement !== 'string' || !ID_PATTERN.test(requirement) || typeof title !== 'string') throw new Error(`${path}: an expectation needs a requirement like CMP-011 and a title`);
+  if (typeof requirement !== 'string' || !ID_PATTERN.test(requirement) || typeof title !== 'string')
+    throw new Error(`${path}: an expectation needs a requirement like CMP-011 and a title`);
   return [[requirement, { kind: 'conformance', ref: path, test: `${requirement} ${title}` }]];
 }
 
@@ -77,12 +84,12 @@ export function conformanceChecks(path: string, text: string): Array<[string, Ch
 // (a fixture) is not mistaken for a test; a name built at run time (a template with ${}) and it.each names are not found.
 const TITLE = /^[ \t]*(?:describe|describeCases|it|itNative|itWasm|test)(?:\.(?:only|concurrent))?\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1/gm;
 
-
 export function unitChecks(ref: string, source: string): Array<[string, Check]> {
   const found: Array<[string, Check]> = [];
   for (const [, , title = ''] of flattenConcatenations(source).matchAll(TITLE)) {
     if (title.includes('${')) continue;
-    for (const id of idsOf(title)) found.push([id, { kind: 'unit', ref, test: title, ...(/\bstopgap\b/i.test(title) && { partial: true }) }]);
+    for (const id of idsOf(title))
+      found.push([id, { kind: 'unit', ref, test: title, ...(/\bstopgap\b/i.test(title) && { partial: true }) }]);
   }
   return found;
 }
@@ -91,7 +98,12 @@ export function cChecks(ref: string, text: string): Array<[string, Check]> {
   const found: Array<[string, Check]> = [];
   for (const line of text.split('\n')) {
     if (!/^\s*(\/\*|\*|\/\/)/.test(line)) continue;
-    const comment = line.replace(/^\s*(\/\*+|\*+|\/\/)\s*/, '').replace(/\s*\*\/\s*$/, '').replace(/^-+\s*|\s*-+$/g, '').replace(/^@\w+\s+/, '').trim();
+    const comment = line
+      .replace(/^\s*(\/\*+|\*+|\/\/)\s*/, '')
+      .replace(/\s*\*\/\s*$/, '')
+      .replace(/^-+\s*|\s*-+$/g, '')
+      .replace(/^@\w+\s+/, '')
+      .trim();
     for (const id of idsOf(comment)) found.push([id, { kind: 'c-test', ref, test: comment }]);
   }
   return found;
@@ -101,7 +113,8 @@ export function cChecks(ref: string, text: string): Array<[string, Check]> {
 export function pythonChecks(ref: string, text: string): Array<[string, Check]> {
   const found: Array<[string, Check]> = [];
   for (const [, comment = ''] of text.matchAll(/^[ \t]*#[ \t]*-{4}[ \t]*(.*?)[ \t]*-{4}[ \t]*$/gm)) {
-    for (const id of idsOf(comment)) found.push([id, { kind: 'py-test', ref, test: comment, ...(/\bstopgap\b/i.test(comment) && { partial: true }) }]);
+    for (const id of idsOf(comment))
+      found.push([id, { kind: 'py-test', ref, test: comment, ...(/\bstopgap\b/i.test(comment) && { partial: true }) }]);
   }
   return found;
 }
@@ -113,7 +126,8 @@ export function pythonChecks(ref: string, text: string): Array<[string, Check]> 
 export function pythonFilesRunInCi(files: string[], workflows: string[]): Set<string> {
   const runs = new Set<string>();
   const text = workflows.join('\n');
-  for (const [, file = ''] of text.matchAll(/python3?(?:\s+-[A-Za-z])*\s+((?:[\w.-]+\/)*[\w.-]+\.py)\b/g)) runs.add(file.replace(/^zplc\//, ''));
+  for (const [, file = ''] of text.matchAll(/python3?(?:\s+-[A-Za-z])*\s+((?:[\w.-]+\/)*[\w.-]+\.py)\b/g))
+    runs.add(file.replace(/^zplc\//, ''));
   for (const [, dir = '', , glob = ''] of text.matchAll(/-m unittest discover\s+-s\s+(\S+)\s+-p\s+(['"]?)([^'"\s]+)\2/g)) {
     const pattern = new Bun.Glob(`${dir.replace(/\/$/, '')}/${glob}`);
     for (const file of files) if (pattern.match(file) && !file.slice(dir.length + 1).includes('/')) runs.add(file);
@@ -134,7 +148,13 @@ export function journeyChecks(ref: string, text: string): Array<[string, Check]>
 }
 
 /** The scanned checks of every tracked file that counts. */
-export function scanFiles(files: string[], read: (file: string) => string, inventory: Inventory, prefixes?: Set<string>, pythonRuns: Set<string> = new Set()): Array<[string, Check]> {
+export function scanFiles(
+  files: string[],
+  read: (file: string) => string,
+  inventory: Inventory,
+  prefixes?: Set<string>,
+  pythonRuns: Set<string> = new Set(),
+): Array<[string, Check]> {
   const rules = [...inventory.runs, ...inventory.notRunInCi].map((rule) => ({ glob: new Bun.Glob(rule.pattern), runs: 'job' in rule }));
   const runsInCi = (file: string) => rules.find(({ glob }) => glob.match(file))?.runs === true;
   const found: Array<[string, Check]> = [];
@@ -188,8 +208,15 @@ const compare = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 export function serializeEvidence(evidence: Evidence, order: string[]): string {
   const rank = new Map(order.map((id, position) => [id, position]));
   const ids = Object.keys(evidence).sort((a, b) => (rank.get(a) ?? Infinity) - (rank.get(b) ?? Infinity) || compare(a, b));
-  const byKind = (a: Check, b: Check) => KINDS.indexOf(a.kind) - KINDS.indexOf(b.kind) || compare(a.ref, b.ref) || compare(a.test ?? '', b.test ?? '');
-  const entries = ids.map((id) => `  ${JSON.stringify(id)}: [\n${[...evidence[id]!].sort(byKind).map((check) => `    ${JSON.stringify(check)}`).join(',\n')}\n  ]`);
+  const byKind = (a: Check, b: Check) =>
+    KINDS.indexOf(a.kind) - KINDS.indexOf(b.kind) || compare(a.ref, b.ref) || compare(a.test ?? '', b.test ?? '');
+  const entries = ids.map(
+    (id) =>
+      `  ${JSON.stringify(id)}: [\n${[...evidence[id]!]
+        .sort(byKind)
+        .map((check) => `    ${JSON.stringify(check)}`)
+        .join(',\n')}\n  ]`,
+  );
   return `{\n${entries.join(',\n')}\n}\n`;
 }
 
@@ -208,7 +235,9 @@ export function isFailing(check: Check, listed: string[]): boolean {
 
 export function coverage(index: Array<Pick<Requirement, 'id' | 'workstream' | 'title'>>, evidence: Evidence, listed: string[]) {
   const known = new Set(index.map((entry) => entry.id));
-  const errors = Object.keys(evidence).filter((id) => !known.has(id)).map((id) => `evidence names ${id}, which is not in tools/ci/requirements-index.json`);
+  const errors = Object.keys(evidence)
+    .filter((id) => !known.has(id))
+    .map((id) => `evidence names ${id}, which is not in tools/ci/requirements-index.json`);
   const states = new Map<string, State>();
   const kinds = new Map<string, Kind[]>();
   /** Covered requirements that still have a check on the expected-failure list: covered, but not yet green. */
@@ -222,7 +251,8 @@ export function coverage(index: Array<Pick<Requirement, 'id' | 'workstream' | 't
     const all = evidence[id] ?? [];
     const checks = all.filter((check) => check.kind !== 'gate');
     if (checks.length < all.length) gated.push(id);
-    const passing = checks.length < all.length ? [] : checks.filter((check) => check.kind !== 'decided' && !check.partial && !isFailing(check, listed));
+    const passing =
+      checks.length < all.length ? [] : checks.filter((check) => check.kind !== 'decided' && !check.partial && !isFailing(check, listed));
     const decided = checks.some((check) => check.kind === 'decided');
     const state: State = passing.length > 0 ? 'covered' : decided ? 'decided' : checks.length > 0 ? 'partial' : 'uncovered';
     states.set(id, state);
@@ -238,7 +268,10 @@ export function coverage(index: Array<Pick<Requirement, 'id' | 'workstream' | 't
 
 /** Owning packages ranked by how many of their requirements have no passing complete check. */
 export function groups(index: Requirement[], states: Map<string, State>) {
-  const byPackage = new Map<string, { workPackage: string; phase: number | undefined; uncovered: string[]; partial: string[]; total: number }>();
+  const byPackage = new Map<
+    string,
+    { workPackage: string; phase: number | undefined; uncovered: string[]; partial: string[]; total: number }
+  >();
   for (const { id, workPackage = 'none', phase } of index) {
     const group = byPackage.get(workPackage) ?? { workPackage, phase, uncovered: [], partial: [], total: 0 };
     group.total++;
@@ -247,8 +280,13 @@ export function groups(index: Requirement[], states: Map<string, State>) {
     if (state === 'partial') group.partial.push(id);
     byPackage.set(workPackage, group);
   }
-  return [...byPackage.values()].filter((group) => group.uncovered.length + group.partial.length > 0)
-    .sort((a, b) => b.uncovered.length + b.partial.length - (a.uncovered.length + a.partial.length) || a.workPackage.localeCompare(b.workPackage, 'en', { numeric: true }));
+  return [...byPackage.values()]
+    .filter((group) => group.uncovered.length + group.partial.length > 0)
+    .sort(
+      (a, b) =>
+        b.uncovered.length + b.partial.length - (a.uncovered.length + a.partial.length) ||
+        a.workPackage.localeCompare(b.workPackage, 'en', { numeric: true }),
+    );
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -278,7 +316,15 @@ function load() {
 export function progress() {
   const { index, evidence, listed } = load();
   const { overall, gated, errors } = coverage(index, evidence, listed);
-  return { overall, errors, line: `requirements: ${overall.covered} of ${overall.total} covered by an executed check, ${overall.partial} partial, ${overall.decided} decided, ${overall.uncovered} uncovered, ${gated.length} gated on evidence no test gives` };
+  return {
+    overall,
+    errors,
+    line: `requirements: ${
+      overall.covered
+    } of ${overall.total} covered by an executed check, ${overall.partial} partial, ${overall.decided} decided, ${
+      overall.uncovered
+    } uncovered, ${gated.length} gated on evidence no test gives`,
+  };
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -291,8 +337,12 @@ if (import.meta.main) {
   const { values } = parseArgs({
     args: Bun.argv.slice(2),
     options: {
-      list: { type: 'boolean', default: false }, groups: { type: 'boolean', default: false }, top: { type: 'string', default: '20' },
-      json: { type: 'boolean', default: false }, write: { type: 'boolean', default: false }, check: { type: 'boolean', default: false },
+      list: { type: 'boolean', default: false },
+      groups: { type: 'boolean', default: false },
+      top: { type: 'string', default: '20' },
+      json: { type: 'boolean', default: false },
+      write: { type: 'boolean', default: false },
+      check: { type: 'boolean', default: false },
     },
   });
   const { index, evidence, listed, recorded } = load();
@@ -303,19 +353,46 @@ if (import.meta.main) {
 
   if (values.write) {
     writeFileSync(EVIDENCE_FILE, wanted);
-    console.log(`requirement-coverage: wrote ${Object.values(evidence).reduce((sum, checks) => sum + checks.length, 0)} checks for ${Object.keys(evidence).length} requirements to tools/ci/requirement-evidence.json`);
+    console.log(
+      `requirement-coverage: wrote ${Object.values(evidence).reduce(
+        (sum, checks) => sum + checks.length,
+        0,
+      )} checks for ${Object.keys(evidence).length} requirements ` + `to tools/ci/requirement-evidence.json`,
+    );
   } else if (values.check) {
-    if (behind) errors.push('tools/ci/requirement-evidence.json is not what the tree generates; regenerate it with: bun tools/ci/requirement-coverage.ts --write');
-    if (errors.length === 0) console.log(`requirement-coverage: ${overall.covered} of ${overall.total} requirements covered, ${overall.partial} partial, ${overall.decided} decided, ${overall.uncovered} uncovered, ${gated.length} gated`);
+    if (behind)
+      errors.push(
+        'tools/ci/requirement-evidence.json is not what the tree generates; regenerate it with: bun tools/ci/requirement-coverage.ts ' +
+          '--write',
+      );
+    if (errors.length === 0)
+      console.log(
+        `requirement-coverage: ${
+          overall.covered
+        } of ${overall.total} requirements covered, ${overall.partial} partial, ${overall.decided} decided, ${
+          overall.uncovered
+        } uncovered, ${gated.length} gated`,
+      );
   } else if (values.json) {
-    const requirements = index.map((entry) => ({ ...entry, state: states.get(entry.id), coveredBy: kinds.get(entry.id), checks: evidence[entry.id] ?? [] }));
+    const requirements = index.map((entry) => ({
+      ...entry,
+      state: states.get(entry.id),
+      coveredBy: kinds.get(entry.id),
+      checks: evidence[entry.id] ?? [],
+    }));
     console.log(JSON.stringify({ overall, byWorkstream, withFailures, gated, requirements, errors }, null, 2));
   } else {
-    const row = (name: string, counts: Counts) => `${name.padEnd(8)}${pad(counts.covered, 5)} /${pad(counts.total, 4)}${pad(counts.partial, 9)}${pad(counts.decided, 9)}${pad(counts.uncovered, 11)}`;
+    const row = (name: string, counts: Counts) =>
+      `${name.padEnd(8)}${pad(counts.covered, 5)} /${pad(counts.total, 4)}${pad(counts.partial, 9)}${pad(counts.decided, 9)}${pad(
+        counts.uncovered,
+        11,
+      )}`;
     console.log(`${''.padEnd(8)}${'covered'.padStart(10)}${'partial'.padStart(9)}${'decided'.padStart(9)}${'uncovered'.padStart(11)}`);
     for (const workstream of new Set(index.map((entry) => entry.workstream))) console.log(row(workstream, byWorkstream[workstream]!));
     console.log(row('overall', overall));
-    const byKind = KINDS.filter((kind) => kind !== 'decided' && kind !== 'gate').map((kind) => `${kind} ${[...kinds.values()].filter((list) => list.includes(kind)).length}`).join(', ');
+    const byKind = KINDS.filter((kind) => kind !== 'decided' && kind !== 'gate')
+      .map((kind) => `${kind} ${[...kinds.values()].filter((list) => list.includes(kind)).length}`)
+      .join(', ');
     console.log(`\ncovered by (a requirement with several kinds counts under each): ${byKind}`);
     console.log(`covered, but with a check still on the expected-failure list: ${withFailures.length}`);
     console.log(`gated on evidence no test gives (counted as partial or uncovered; --list names what each still needs): ${gated.length}`);
@@ -324,7 +401,8 @@ if (import.meta.main) {
         const open = index.filter((entry) => entry.workstream === workstream && states.get(entry.id) !== 'covered');
         if (open.length === 0) continue;
         console.log(`\n${workstream}`);
-        const mark = (id: string) => (gated.includes(id) ? '!' : states.get(id) === 'partial' ? '*' : states.get(id) === 'decided' ? '=' : ' ');
+        const mark = (id: string) =>
+          gated.includes(id) ? '!' : states.get(id) === 'partial' ? '*' : states.get(id) === 'decided' ? '=' : ' ';
         for (const entry of open) {
           console.log(`  ${entry.id}${mark(entry.id)} ${entry.title}`);
           for (const gate of (evidence[entry.id] ?? []).filter((check) => check.kind === 'gate')) console.log(`        gate: ${gate.note}`);
@@ -332,12 +410,19 @@ if (import.meta.main) {
       }
       console.log('\n* has checks, none of them a passing complete one (a stopgap, or listed as an expected failure)');
       console.log('= decided: a decision of the spec makes it conditional and its default asks for no work; not covered by a check');
-      console.log('! gated: it needs evidence that no test can give, named under it; never covered while the gate stands, whatever its checks');
+      console.log(
+        '! gated: it needs evidence that no test can give, named under it; never covered while the gate stands, whatever its checks',
+      );
     }
     if (values.groups) {
       console.log('\nowning package  phase  uncovered  partial  total');
       for (const group of groups(index, states).slice(0, Number(values.top))) {
-        console.log(`${group.workPackage.padEnd(14)}${pad(group.phase ?? '-', 6)}${pad(group.uncovered.length, 11)}${pad(group.partial.length, 9)}${pad(group.total, 7)}`);
+        console.log(
+          `${group.workPackage.padEnd(14)}${pad(group.phase ?? '-', 6)}${pad(
+            group.uncovered.length,
+            11,
+          )}${pad(group.partial.length, 9)}${pad(group.total, 7)}`,
+        );
       }
     }
     if (behind) console.log('\nnote: tools/ci/requirement-evidence.json is behind the tree; regenerate it with --write');

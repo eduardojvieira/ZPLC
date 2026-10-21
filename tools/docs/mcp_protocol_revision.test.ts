@@ -18,7 +18,12 @@ function jsonFences(path: string): Array<Record<string, any>> {
 async function ask(messages: object[]): Promise<Array<Record<string, any>>> {
   // the server serves one project folder and refuses to start on a folder that is not a project
   const workspace = join(ROOT, 'packages/zplc-ide/projects/blinky_st');
-  const child = Bun.spawn(['bun', 'run', '--cwd=packages/zplc-ide', 'mcp', '--workspace', workspace], { cwd: ROOT, stdin: 'pipe', stdout: 'pipe', stderr: 'ignore' });
+  const child = Bun.spawn(['bun', 'run', '--cwd=packages/zplc-ide', 'mcp', '--workspace', workspace], {
+    cwd: ROOT,
+    stdin: 'pipe',
+    stdout: 'pipe',
+    stderr: 'ignore',
+  });
   const answers: Array<Record<string, any>> = [];
   try {
     const reader = child.stdout.getReader();
@@ -37,7 +42,9 @@ async function ask(messages: object[]): Promise<Array<Record<string, any>>> {
       answers.push(JSON.parse(buffer.slice(0, newline)) as Record<string, any>);
       buffer = buffer.slice(newline + 1);
     }
-  } finally { child.kill(); }
+  } finally {
+    child.kill();
+  }
   return answers;
 }
 
@@ -47,7 +54,12 @@ describe('MCP guide: the protocol revision of the server is the one the page sho
       const [request, error] = jsonFences(guide).filter((fence) => fence.method === 'tools/list' || fence.error !== undefined);
       expect(request?.params?._meta?.['io.modelcontextprotocol/protocolVersion']).toBe('2026-07-28');
       expect(error?.error?.code).toBe(-32022);
-      const older = { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: error!.error.data.requested, capabilities: {}, clientInfo: { name: 'docs-check', version: '0' } } };
+      const older = {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: { protocolVersion: error!.error.data.requested, capabilities: {}, clientInfo: { name: 'docs-check', version: '0' } },
+      };
       const [refused, listed] = await ask([older, request!]);
       expect({ guide, refused }).toEqual({ guide, refused: { jsonrpc: '2.0', id: 1, error: error!.error } });
       expect({ guide, tools: Array.isArray(listed?.result?.tools) && listed!.result.tools.length > 0 }).toEqual({ guide, tools: true });
@@ -62,7 +74,9 @@ describe('MCP guide: the protocol revision of the server is the one the page sho
     expect(withoutRevision?.error?.code).toBe(-32022);
     expect(withoutRevision?.error?.message).toBe('Unsupported protocol version: the request did not name a protocol version');
     expect(withoutCapabilities?.error?.code).toBe(-32602);
-    expect(withoutCapabilities?.error?.message).toBe('Invalid _meta envelope for protocol revision 2026-07-28: io.modelcontextprotocol/clientCapabilities: missing');
+    expect(withoutCapabilities?.error?.message).toBe(
+      'Invalid _meta envelope for protocol revision 2026-07-28: io.modelcontextprotocol/clientCapabilities: missing',
+    );
     const text = readFileSync(join(ROOT, GUIDES[0]!), 'utf8').replace(/\s+/g, ' ');
     expect(text).toContain(withoutRevision!.error.message);
     expect(text).toContain(withoutCapabilities!.error.message);

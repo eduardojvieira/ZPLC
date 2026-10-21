@@ -13,7 +13,10 @@ export interface ModalHandle {
 export function registerModal(): ModalHandle {
   const token = Symbol('modal');
   if (typeof document === 'undefined') return { isTop: () => true, release: () => undefined };
-  if (stack.length === 0) { original = document.body.style.overflow; document.body.style.overflow = 'hidden'; }
+  if (stack.length === 0) {
+    original = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+  }
   stack.push(token);
   return {
     isTop: () => stack[stack.length - 1] === token,

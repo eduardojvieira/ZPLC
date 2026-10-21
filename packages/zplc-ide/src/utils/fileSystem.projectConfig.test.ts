@@ -27,13 +27,15 @@ function fakeDirectory(content?: string, error?: Error) {
   };
 }
 
-function newProjectDirectory(options: {
-  files?: string[];
-  src?: 'missing' | 'directory' | 'file';
-  srcFiles?: string[];
-  errorAt?: string;
-  failWriteAt?: string;
-} = {}) {
+function newProjectDirectory(
+  options: {
+    files?: string[];
+    src?: 'missing' | 'directory' | 'file';
+    srcFiles?: string[];
+    errorAt?: string;
+    failWriteAt?: string;
+  } = {},
+) {
   const operations: string[] = [];
   const writes = new Map<string, string>();
   const rootFiles = new Set(options.files);
@@ -108,35 +110,46 @@ describe('project config file boundary', () => {
     const files = new Map<string, string>();
     const operations: string[] = [];
     const missing = () => Object.assign(new Error('missing'), { name: 'NotFoundError' });
-    const directory = (prefix: string): FileSystemDirectoryHandle => ({
-      name: prefix || 'folder',
-      getFileHandle: async (name: string, options?: FileSystemGetFileOptions) => {
-        const path = `${prefix}${name}`;
-        operations.push(`file:${path}:${options?.create ? 'create' : 'read'}`);
-        if (!files.has(path)) {
-          if (!options?.create) throw missing();
-          files.set(path, '');
-        }
-        return {
-          getFile: async () => ({ size: files.get(path)?.length ?? 0, text: async () => files.get(path) ?? '' }),
-          createWritable: async () => ({ write: async (content: string) => { operations.push(`write:${path}`); files.set(path, content); }, close: async () => {} }),
-        } as unknown as FileSystemFileHandle;
-      },
-      getDirectoryHandle: async (name: string, options?: FileSystemGetDirectoryOptions) => {
-        const path = `${prefix}${name}/`;
-        operations.push(`dir:${path}:${options?.create ? 'create' : 'read'}`);
-        if (files.has(path.slice(0, -1))) throw Object.assign(new Error('not a directory'), { name: 'TypeMismatchError' });
-        if (!options?.create && ![...files.keys()].some((file) => file.startsWith(path))) throw missing();
-        return directory(path);
-      },
-    } as unknown as FileSystemDirectoryHandle);
+    const directory = (prefix: string): FileSystemDirectoryHandle =>
+      ({
+        name: prefix || 'folder',
+        getFileHandle: async (name: string, options?: FileSystemGetFileOptions) => {
+          const path = `${prefix}${name}`;
+          operations.push(`file:${path}:${options?.create ? 'create' : 'read'}`);
+          if (!files.has(path)) {
+            if (!options?.create) throw missing();
+            files.set(path, '');
+          }
+          return {
+            getFile: async () => ({ size: files.get(path)?.length ?? 0, text: async () => files.get(path) ?? '' }),
+            createWritable: async () => ({
+              write: async (content: string) => {
+                operations.push(`write:${path}`);
+                files.set(path, content);
+              },
+              close: async () => {},
+            }),
+          } as unknown as FileSystemFileHandle;
+        },
+        getDirectoryHandle: async (name: string, options?: FileSystemGetDirectoryOptions) => {
+          const path = `${prefix}${name}/`;
+          operations.push(`dir:${path}:${options?.create ? 'create' : 'read'}`);
+          if (files.has(path.slice(0, -1))) throw Object.assign(new Error('not a directory'), { name: 'TypeMismatchError' });
+          if (!options?.create && ![...files.keys()].some((file) => file.startsWith(path))) throw missing();
+          return directory(path);
+        },
+      }) as unknown as FileSystemDirectoryHandle;
 
-    const config = { ...DEFAULT_ZPLC_CONFIG, name: 'copied', $schema: '../../schema.json' } as typeof DEFAULT_ZPLC_CONFIG & { $schema: string };
-    await expect(copyProjectToFolder(directory(''), config, [
-      { path: 'src/main.st', content: 'PROGRAM Main END_PROGRAM' },
-      { path: 'tests/main.scenario.json', content: '{"schemaVersion":1}' },
-      { path: 'src/firmware.hex', content: '0000' },
-    ])).resolves.toMatchObject({ name: 'copied', schemaVersion: 2 });
+    const config = { ...DEFAULT_ZPLC_CONFIG, name: 'copied', $schema: '../../schema.json' } as typeof DEFAULT_ZPLC_CONFIG & {
+      $schema: string;
+    };
+    await expect(
+      copyProjectToFolder(directory(''), config, [
+        { path: 'src/main.st', content: 'PROGRAM Main END_PROGRAM' },
+        { path: 'tests/main.scenario.json', content: '{"schemaVersion":1}' },
+        { path: 'src/firmware.hex', content: '0000' },
+      ]),
+    ).resolves.toMatchObject({ name: 'copied', schemaVersion: 2 });
 
     expect(files.get('src/main.st')).toBe('PROGRAM Main END_PROGRAM');
     expect(files.get('tests/main.scenario.json')).toBe('{"schemaVersion":1}');
@@ -146,7 +159,9 @@ describe('project config file boundary', () => {
     expect(operations.filter((operation) => operation.startsWith('write:')).at(-1)).toBe('write:zplc.json');
 
     const writesBeforeConflict = operations.filter((operation) => operation.startsWith('write:')).length;
-    await expect(copyProjectToFolder(directory(''), config, [{ path: 'src/main.st', content: 'changed' }])).rejects.toThrow('src/main.st already exists');
+    await expect(copyProjectToFolder(directory(''), config, [{ path: 'src/main.st', content: 'changed' }])).rejects.toThrow(
+      'src/main.st already exists',
+    );
     expect(operations.filter((operation) => operation.startsWith('write:'))).toHaveLength(writesBeforeConflict);
   });
 
@@ -154,28 +169,59 @@ describe('project config file boundary', () => {
     const files = new Map<string, string>([['tests/later.scenario.json', 'existing']]);
     const writes: string[] = [];
     const missing = () => Object.assign(new Error('missing'), { name: 'NotFoundError' });
-    const directory = (prefix = ''): FileSystemDirectoryHandle => ({
-      name: 'folder',
-      getFileHandle: async (name: string, options?: FileSystemGetFileOptions) => {
-        const path = `${prefix}${name}`;
-        if (!files.has(path)) { if (!options?.create) throw missing(); files.set(path, ''); }
-        return { createWritable: async () => ({ write: async (content: string) => { writes.push(path); files.set(path, content); }, close: async () => {} }) } as unknown as FileSystemFileHandle;
-      },
-      getDirectoryHandle: async (name: string, options?: FileSystemGetDirectoryOptions) => {
-        const path = `${prefix}${name}`;
-        if (files.has(path)) throw Object.assign(new Error('not a directory'), { name: 'TypeMismatchError' });
-        if (!options?.create && ![...files.keys()].some((file) => file.startsWith(`${path}/`))) throw missing();
-        return directory(`${path}/`);
-      },
-    } as unknown as FileSystemDirectoryHandle);
+    const directory = (prefix = ''): FileSystemDirectoryHandle =>
+      ({
+        name: 'folder',
+        getFileHandle: async (name: string, options?: FileSystemGetFileOptions) => {
+          const path = `${prefix}${name}`;
+          if (!files.has(path)) {
+            if (!options?.create) throw missing();
+            files.set(path, '');
+          }
+          return {
+            createWritable: async () => ({
+              write: async (content: string) => {
+                writes.push(path);
+                files.set(path, content);
+              },
+              close: async () => {},
+            }),
+          } as unknown as FileSystemFileHandle;
+        },
+        getDirectoryHandle: async (name: string, options?: FileSystemGetDirectoryOptions) => {
+          const path = `${prefix}${name}`;
+          if (files.has(path)) throw Object.assign(new Error('not a directory'), { name: 'TypeMismatchError' });
+          if (!options?.create && ![...files.keys()].some((file) => file.startsWith(`${path}/`))) throw missing();
+          return directory(`${path}/`);
+        },
+      }) as unknown as FileSystemDirectoryHandle;
     const config = { ...DEFAULT_ZPLC_CONFIG, name: 'copy' };
-    await expect(copyProjectToFolder(directory(), config, [{ path: 'src/first.st', content: 'first' }, { path: 'tests/later.scenario.json', content: 'later' }])).rejects.toThrow('tests/later.scenario.json already exists');
+    await expect(
+      copyProjectToFolder(directory(), config, [
+        { path: 'src/first.st', content: 'first' },
+        { path: 'tests/later.scenario.json', content: 'later' },
+      ]),
+    ).rejects.toThrow('tests/later.scenario.json already exists');
     expect(writes).toEqual([]);
 
-    for (const path of ['', '/absolute.st', 'C:/drive.st', 'src\\windows.st', './src/main.st', 'src/../main.st', 'src/./main.st', 'src/\0main.st']) {
+    for (const path of [
+      '',
+      '/absolute.st',
+      'C:/drive.st',
+      'src\\windows.st',
+      './src/main.st',
+      'src/../main.st',
+      'src/./main.st',
+      'src/\0main.st',
+    ]) {
       await expect(copyProjectToFolder(directory(), config, [{ path, content: '' }])).rejects.toThrow(/unsafe path/i);
     }
-    await expect(copyProjectToFolder(directory(), config, [{ path: 'src/A.st', content: '' }, { path: 'src/a.st', content: '' }])).rejects.toThrow(/duplicate/i);
+    await expect(
+      copyProjectToFolder(directory(), config, [
+        { path: 'src/A.st', content: '' },
+        { path: 'src/a.st', content: '' },
+      ]),
+    ).rejects.toThrow(/duplicate/i);
     await expect(copyProjectToFolder(directory(), config, [{ path: 'ZPLC.JSON', content: '' }])).rejects.toThrow(/zplc\.json/i);
     files.set('src', 'file');
     await expect(copyProjectToFolder(directory(), config, [{ path: 'src/main.st', content: '' }])).rejects.toThrow(/unable to inspect/i);
@@ -201,12 +247,14 @@ describe('project config file boundary', () => {
   });
 
   it('reports no migration changes for canonical v2 configuration', async () => {
-    const directory = fakeDirectory(JSON.stringify({
-      schemaVersion: 2,
-      name: 'folder',
-      version: '1.0.0',
-      tasks: [{ name: 'main', interval_ms: 10, trigger: 'cyclic', priority: 1, programs: ['Main.st'] }],
-    }));
+    const directory = fakeDirectory(
+      JSON.stringify({
+        schemaVersion: 2,
+        name: 'folder',
+        version: '1.0.0',
+        tasks: [{ name: 'main', interval_ms: 10, trigger: 'cyclic', priority: 1, programs: ['Main.st'] }],
+      }),
+    );
     await expect(readProjectConfig(directory.handle)).resolves.toMatchObject({ kind: 'valid', changed: false, changes: [] });
     expect(directory.writes).toEqual([]);
   });
@@ -218,7 +266,13 @@ describe('project config file boundary', () => {
       handle: {
         name: 'folder',
         getFileHandle: async () => ({
-          getFile: async () => ({ size: 128 * 1024 + 1, text: async () => { textCalled = true; return valid; } }),
+          getFile: async () => ({
+            size: 128 * 1024 + 1,
+            text: async () => {
+              textCalled = true;
+              return valid;
+            },
+          }),
         }),
       } as unknown as FileSystemDirectoryHandle,
     };
@@ -243,7 +297,9 @@ describe('project config file boundary', () => {
     await expect(readProjectConfig(denied.handle)).resolves.toMatchObject({ kind: 'invalid' });
 
     const secret = 'do-not-log';
-    const sensitive = fakeDirectory(JSON.stringify({ name: 'folder', version: '1.0.0', tasks: [{ name: 'main', file: 'Main.st' }], vendor: { api_key: secret } }));
+    const sensitive = fakeDirectory(
+      JSON.stringify({ name: 'folder', version: '1.0.0', tasks: [{ name: 'main', file: 'Main.st' }], vendor: { api_key: secret } }),
+    );
     const result = await readProjectConfig(sensitive.handle);
     expect(result).toMatchObject({ kind: 'invalid' });
     expect(JSON.stringify(result)).not.toContain(secret);
@@ -252,7 +308,14 @@ describe('project config file boundary', () => {
 
   it('validates before creating or truncating zplc.json', async () => {
     const directory = fakeDirectory();
-    await expect(writeProjectConfig(directory.handle, { name: 'x', version: '1.0.0', tasks: [], network: { wifi: { password: 'never-write' } } } as never)).rejects.toThrow('Project configuration is invalid');
+    await expect(
+      writeProjectConfig(directory.handle, {
+        name: 'x',
+        version: '1.0.0',
+        tasks: [],
+        network: { wifi: { password: 'never-write' } },
+      } as never),
+    ).rejects.toThrow('Project configuration is invalid');
     expect(directory.calls).toEqual([]);
 
     const canonical = await writeProjectConfig(directory.handle, { ...DEFAULT_ZPLC_CONFIG, name: 'x' });
@@ -261,7 +324,9 @@ describe('project config file boundary', () => {
     expect(directory.writes.join('')).toContain('"schemaVersion": 2');
 
     const nonJson = fakeDirectory();
-    await expect(writeProjectConfig(nonJson.handle, { ...DEFAULT_ZPLC_CONFIG, vendor: { revision: BigInt(1) } } as never)).rejects.toThrow();
+    await expect(
+      writeProjectConfig(nonJson.handle, { ...DEFAULT_ZPLC_CONFIG, vendor: { revision: BigInt(1) } } as never),
+    ).rejects.toThrow();
     expect(nonJson.calls).toEqual([]);
     expect(nonJson.writes).toEqual([]);
   });
@@ -275,18 +340,30 @@ describe('project config file boundary', () => {
       );
 
       await expect(createNewProject(directory.handle, 'folder')).rejects.toThrow(conflictingPath);
-      expect(directory.operations.some((operation) => operation.endsWith(':create') || operation.startsWith('writable:') || operation.startsWith('write:'))).toBe(false);
+      expect(
+        directory.operations.some(
+          (operation) => operation.endsWith(':create') || operation.startsWith('writable:') || operation.startsWith('write:'),
+        ),
+      ).toBe(false);
     }
   });
 
   it('fails closed when a scaffold target cannot be inspected', async () => {
     const denied = newProjectDirectory({ errorAt: '.gitignore' });
     await expect(createNewProject(denied.handle, 'folder')).rejects.toThrow('.gitignore');
-    expect(denied.operations.some((operation) => operation.endsWith(':create') || operation.startsWith('writable:') || operation.startsWith('write:'))).toBe(false);
+    expect(
+      denied.operations.some(
+        (operation) => operation.endsWith(':create') || operation.startsWith('writable:') || operation.startsWith('write:'),
+      ),
+    ).toBe(false);
 
     const wrongType = newProjectDirectory({ src: 'file' });
     await expect(createNewProject(wrongType.handle, 'folder')).rejects.toThrow('src');
-    expect(wrongType.operations.some((operation) => operation.endsWith(':create') || operation.startsWith('writable:') || operation.startsWith('write:'))).toBe(false);
+    expect(
+      wrongType.operations.some(
+        (operation) => operation.endsWith(':create') || operation.startsWith('writable:') || operation.startsWith('write:'),
+      ),
+    ).toBe(false);
   });
 
   it('creates exactly the four scaffold files after all destinations are absent', async () => {

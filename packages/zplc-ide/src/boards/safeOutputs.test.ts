@@ -12,9 +12,15 @@ describe('the safe values a project declares for its outputs (RT-023)', () => {
   });
 
   test('an output of the board with a safe value is an entry of its place in the output image', () => {
-    const result = declaredSafeOutputs({ outputs: [row('Relay', '%Q0.1', { safe: true }), row('Valve', '%QX0.4', { safe: false })] }, 'rpi_pico');
+    const result = declaredSafeOutputs(
+      { outputs: [row('Relay', '%Q0.1', { safe: true }), row('Valve', '%QX0.4', { safe: false })] },
+      'rpi_pico',
+    );
     expect(result.problems).toEqual([]);
-    expect(result.entries).toEqual([{ offset: 0, bit: 1, value: 1 }, { offset: 0, bit: 4, value: 0 }]);
+    expect(result.entries).toEqual([
+      { offset: 0, bit: 1, value: 1 },
+      { offset: 0, bit: 4, value: 0 },
+    ]);
     expect(result.declared).toEqual([
       { name: 'Relay', address: '%QX0.1', value: true },
       { name: 'Valve', address: '%QX0.4', value: false },
@@ -48,17 +54,23 @@ describe('the safe values a project declares for its outputs (RT-023)', () => {
   });
 
   test('an input or an image word no pin drives has no safe state to declare', () => {
-    const { problems } = declaredSafeOutputs({
-      inputs: [row('Button', '%IX0.0', { safe: true })],
-      virtual: [row('Flag', '%QX0.7', { safe: false })],
-    }, 'rpi_pico');
+    const { problems } = declaredSafeOutputs(
+      {
+        inputs: [row('Button', '%IX0.0', { safe: true })],
+        virtual: [row('Flag', '%QX0.7', { safe: false })],
+      },
+      'rpi_pico',
+    );
     expect(problems).toHaveLength(2);
     expect(problems[0]).toContain("'Button'");
     expect(problems[1]).toContain("'Flag'");
   });
 
   test('two outputs that name the same bit are one declaration too many', () => {
-    const { problems } = declaredSafeOutputs({ outputs: [row('A', '%QX0.2', { safe: true }), row('B', '%Q0.2', { safe: false })] }, 'rpi_pico');
+    const { problems } = declaredSafeOutputs(
+      { outputs: [row('A', '%QX0.2', { safe: true }), row('B', '%Q0.2', { safe: false })] },
+      'rpi_pico',
+    );
     expect(problems).toHaveLength(1);
     expect(problems[0]).toContain("'A'");
     expect(problems[0]).toContain("'B'");

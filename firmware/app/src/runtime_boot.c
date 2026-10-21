@@ -10,8 +10,7 @@
 
 #include <zplc_hal.h>
 
-int zplc_boot_run(const zplc_boot_step_t *steps, size_t count,
-                  zplc_boot_report_t *report) {
+int zplc_boot_run(const zplc_boot_step_t *steps, size_t count, zplc_boot_report_t *report) {
   zplc_boot_report_t local;
   zplc_boot_report_t *out = report != NULL ? report : &local;
   size_t index;
@@ -29,8 +28,7 @@ int zplc_boot_run(const zplc_boot_step_t *steps, size_t count,
     if (steps[index].boot_class == ZPLC_BOOT_SERVICE) {
       seen_service = 1;
     } else if (seen_service != 0) {
-      zplc_hal_log("[BOOT] plan error: runtime step '%s' follows a service\n",
-                   steps[index].name);
+      zplc_hal_log("[BOOT] plan error: runtime step '%s' follows a service\n", steps[index].name);
       return -EINVAL;
     }
   }
@@ -45,13 +43,11 @@ int zplc_boot_run(const zplc_boot_step_t *steps, size_t count,
       continue;
     }
     if (step->boot_class == ZPLC_BOOT_RUNTIME) {
-      zplc_hal_log("[BOOT] %zu/%zu %s: FAILED (%d); the runtime cannot start\n",
-                   index + 1U, count, step->name, result);
+      zplc_hal_log("[BOOT] %zu/%zu %s: FAILED (%d); the runtime cannot start\n", index + 1U, count, step->name, result);
       out->failed_step = index;
       return result;
     }
-    zplc_hal_log("[BOOT] %zu/%zu %s: failed (%d); the runtime goes on without it\n",
-                 index + 1U, count, step->name, result);
+    zplc_hal_log("[BOOT] %zu/%zu %s: failed (%d); the runtime goes on without it\n", index + 1U, count, step->name, result);
     if (out->service_failures == 0U) {
       out->first_service_error = result;
     }

@@ -17,7 +17,12 @@ export interface AutosaverOptions {
 
 export function createAutosaver({ seconds, hasModified, save, schedule = setTimeout, cancel = clearTimeout }: AutosaverOptions) {
   let timer: Timer | null = null;
-  const stop = () => { if (timer !== null) { cancel(timer); timer = null; } };
+  const stop = () => {
+    if (timer !== null) {
+      cancel(timer);
+      timer = null;
+    }
+  };
   const arm = () => {
     stop();
     const wait = seconds();
@@ -56,11 +61,22 @@ export interface AutosaveWiring {
 export function startAutosave<S extends AutosaveStoreState>(store: AutosaveStoreLike<S>, wiring: AutosaveWiring) {
   const saver = createAutosaver({
     seconds: wiring.seconds,
-    hasModified: () => { for (const file of store.getState().loadedFiles.values()) if (file.isModified) return true; return false; },
+    hasModified: () => {
+      for (const file of store.getState().loadedFiles.values()) if (file.isModified) return true;
+      return false;
+    },
     save: wiring.save,
     schedule: wiring.schedule,
     cancel: wiring.cancel,
   });
-  const unsubscribe = store.subscribe((state, previous) => { if (state.loadedFiles !== previous.loadedFiles) saver.changed(); });
-  return { settingsChanged: saver.settingsChanged, stop: () => { unsubscribe(); saver.dispose(); } };
+  const unsubscribe = store.subscribe((state, previous) => {
+    if (state.loadedFiles !== previous.loadedFiles) saver.changed();
+  });
+  return {
+    settingsChanged: saver.settingsChanged,
+    stop: () => {
+      unsubscribe();
+      saver.dispose();
+    },
+  };
 }

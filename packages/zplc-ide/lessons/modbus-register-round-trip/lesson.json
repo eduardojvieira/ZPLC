@@ -5,15 +5,9 @@
   "order": 27,
   "module": 10,
   "level": "advanced",
-  "prerequisites": [
-    "structures-arrays-call-panel"
-  ],
-  "languages": [
-    "ST"
-  ],
-  "tracks": [
-    "simulation"
-  ],
+  "prerequisites": ["structures-arrays-call-panel"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
   "unsupported": {
     "hardware": {
       "reason": {

@@ -2,10 +2,6 @@
   "requirement": "CMP-023",
   "title": "a negative constant index outside the bounds is rejected",
   "build": "fails",
-  "lines": [
-    5
-  ],
-  "codes": [
-    "INDEX_OUT_OF_BOUNDS"
-  ]
+  "lines": [5],
+  "codes": ["INDEX_OUT_OF_BOUNDS"]
 }

@@ -7,16 +7,16 @@
   "scans": 1,
   "scanMs": 10,
   "expect": [
-    {"at": "%QX0.0", "type": "BOOL", "value": false},
-    {"at": "%QX0.1", "type": "BOOL", "value": true},
-    {"at": "%QX0.2", "type": "BOOL", "value": true},
-    {"at": "%QX0.3", "type": "BOOL", "value": false},
-    {"at": "%QX0.4", "type": "BOOL", "value": true},
-    {"at": "%QX0.5", "type": "BOOL", "value": true},
-    {"at": "%QX0.6", "type": "BOOL", "value": false},
-    {"at": "%QX0.7", "type": "BOOL", "value": true},
-    {"at": "%QB1", "type": "USINT", "value": 1},
-    {"at": "%QW1", "type": "INT", "value": 1},
-    {"at": "%QD1", "type": "DINT", "value": 1}
+    { "at": "%QX0.0", "type": "BOOL", "value": false },
+    { "at": "%QX0.1", "type": "BOOL", "value": true },
+    { "at": "%QX0.2", "type": "BOOL", "value": true },
+    { "at": "%QX0.3", "type": "BOOL", "value": false },
+    { "at": "%QX0.4", "type": "BOOL", "value": true },
+    { "at": "%QX0.5", "type": "BOOL", "value": true },
+    { "at": "%QX0.6", "type": "BOOL", "value": false },
+    { "at": "%QX0.7", "type": "BOOL", "value": true },
+    { "at": "%QB1", "type": "USINT", "value": 1 },
+    { "at": "%QW1", "type": "INT", "value": 1 },
+    { "at": "%QD1", "type": "DINT", "value": 1 }
   ]
 }

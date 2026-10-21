@@ -57,13 +57,11 @@ LOG_MODULE_REGISTER(zplc_main, LOG_LEVEL_INF);
  * application and the shell and log overrides are checked by zplc_config_check.h; these are the two Zephyr
  * subsystems whose default priority is cooperative and so outranks every preemptible thread. */
 #ifdef CONFIG_ZPLC_SCHEDULER
-BUILD_ASSERT(!IS_ENABLED(CONFIG_NETWORKING) ||
-                 IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE),
+BUILD_ASSERT(!IS_ENABLED(CONFIG_NETWORKING) || IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE),
              "the network RX/TX threads must be preemptible: a cooperative "
              "thread outranks the scan coordinator (CONFIG_NET_TC_THREAD_PREEMPTIVE=y)");
-BUILD_ASSERT(CONFIG_SYSTEM_WORKQUEUE_PRIORITY > ZPLC_SCAN_COORDINATOR_PRIORITY,
-             "the system work queue must run below the scan coordinator "
-             "(CONFIG_SYSTEM_WORKQUEUE_PRIORITY)");
+BUILD_ASSERT(CONFIG_SYSTEM_WORKQUEUE_PRIORITY > ZPLC_SCAN_COORDINATOR_PRIORITY, "the system work queue must run below the scan coordinator "
+                                                                                "(CONFIG_SYSTEM_WORKQUEUE_PRIORITY)");
 #endif
 
 /* ============================================================================
@@ -149,8 +147,7 @@ static int legacy_latch_boot_restore_failure(void) {
   }
   runtime_state = ZPLC_STATE_ERROR;
   memset(program_buffer, 0, program_buffer_size);
-  memset(program_staging_buffer, 0,
-         program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
+  memset(program_staging_buffer, 0, program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
   program_expected_size = 0U;
   program_received_size = 0U;
   program_staging_received_size = 0U;
@@ -173,9 +170,8 @@ static int try_restore_legacy_program(void) {
 
   zplc_hal_log("[RESTORE] Checking for saved program...\n");
 
-  result = zplc_boot_restore_legacy_prepare(
-      program_staging_buffer, sizeof(s_program_staging_buf), s_program_workspace,
-      sizeof(s_program_workspace), &saved_len, &restored_scan_interval_ms);
+  result = zplc_boot_restore_legacy_prepare(program_staging_buffer, sizeof(s_program_staging_buf), s_program_workspace,
+                                            sizeof(s_program_workspace), &saved_len, &restored_scan_interval_ms);
   if (result == ZPLC_BOOT_RESTORE_EMPTY) {
     if (zplc_lock_take(&legacy_runtime_lock, "runtime lock") != 0) {
       return -EIO;
@@ -200,8 +196,7 @@ static int try_restore_legacy_program(void) {
     (void)legacy_latch_boot_restore_failure();
     return -EIO;
   }
-  ret = zplc_core_load(program_staging_buffer, saved_len, s_program_workspace,
-                       sizeof(s_program_workspace));
+  ret = zplc_core_load(program_staging_buffer, saved_len, s_program_workspace, sizeof(s_program_workspace));
   if (ret != 0) {
     k_mutex_unlock(&legacy_runtime_lock);
     (void)legacy_latch_boot_restore_failure();
@@ -229,8 +224,7 @@ static int try_restore_legacy_program(void) {
     zplc_hal_log("[RESTORE] Failed to apply safe outputs: %d\n", ret);
     return ret;
   }
-  zplc_hal_log("[RESTORE] Restored verified program (%zu bytes); waiting for zplc start\n",
-               saved_len);
+  zplc_hal_log("[RESTORE] Restored verified program (%zu bytes); waiting for zplc start\n", saved_len);
   return 0;
 }
 
@@ -257,7 +251,7 @@ static int run_legacy_mode(void) {
 
   zplc_single_task_init(&single_task, legacy_scan_interval_ms, ZPLC_SCHED_DEFAULT_MISS_LIMIT);
 
-/* Main execution loop */
+  /* Main execution loop */
   while (1) {
     bool executed_cycle = false;
     bool wait_for_next_cycle = false;
@@ -272,8 +266,7 @@ static int run_legacy_mode(void) {
     if (runtime_state == ZPLC_STATE_RUNNING) {
       step_requested = 0;
     }
-    if (runtime_state == ZPLC_STATE_RUNNING ||
-        (runtime_state == ZPLC_STATE_PAUSED && step_requested != 0)) {
+    if (runtime_state == ZPLC_STATE_RUNNING || (runtime_state == ZPLC_STATE_PAUSED && step_requested != 0)) {
       const bool stepping = runtime_state == ZPLC_STATE_PAUSED;
       zplc_sched_scan_report_t report;
       int scan_result;
@@ -292,8 +285,7 @@ static int run_legacy_mode(void) {
 
       if (scan_result < 0) {
         /* The image was reset and the pins driven safe by the core before it returned. */
-        zplc_hal_log("[ERR] Cycle %u: scan failed %d (VM error %d)\n", cycle_count, scan_result,
-                     zplc_core_get_error());
+        zplc_hal_log("[ERR] Cycle %u: scan failed %d (VM error %d)\n", cycle_count, scan_result, zplc_core_get_error());
         runtime_state = ZPLC_STATE_ERROR;
       } else if (report.paused != 0U) {
         /* A breakpoint or a step: the pins are safe, the image and the forces stay (RT-017). */
@@ -305,8 +297,7 @@ static int run_legacy_mode(void) {
       }
 
       if (cycle_count % 50 == 0) {
-        zplc_hal_log("[RUN] Cycle %u: OPI[0]=%u\n", cycle_count,
-                     (uint8_t)zplc_core_get_opi(0));
+        zplc_hal_log("[RUN] Cycle %u: OPI[0]=%u\n", cycle_count, (uint8_t)zplc_core_get_opi(0));
       }
 
       cycle_count++;
@@ -323,10 +314,7 @@ static int run_legacy_mode(void) {
     if (wait_for_next_cycle) {
       tick_end = zplc_hal_tick();
       elapsed = tick_end - tick_start;
-      (void)k_sem_take(&legacy_runtime_wake,
-                       elapsed < scan_interval_ms
-                           ? K_MSEC(scan_interval_ms - elapsed)
-                           : K_NO_WAIT);
+      (void)k_sem_take(&legacy_runtime_wake, elapsed < scan_interval_ms ? K_MSEC(scan_interval_ms - elapsed) : K_NO_WAIT);
     }
   }
 
@@ -367,8 +355,7 @@ static int boot_runtime_scheduler(void) {
   }
 
   /* Try to restore a previously saved program from NVS */
-  restored_tasks = zplc_boot_restore_scheduler(
-      program_staging_buffer, sizeof(s_program_staging_buf), &restored_size);
+  restored_tasks = zplc_boot_restore_scheduler(program_staging_buffer, sizeof(s_program_staging_buf), &restored_size);
   program_received_size = restored_size;
 
   if (restored_tasks > 0) {
@@ -437,8 +424,8 @@ static int boot_reset_cause(void) {
                report->reported != 0U ? "" : " (this part does not report one)");
   if (report->has_fault != 0U) {
     zplc_fault_record_reason_text(&report->fault, reason, sizeof(reason));
-    zplc_hal_log("[RESET] The previous run stopped on a fault: %s (task %u, pc 0x%08x)\n", reason,
-                 (unsigned int)report->fault.task_id, (unsigned int)report->fault.pc);
+    zplc_hal_log("[RESET] The previous run stopped on a fault: %s (task %u, pc 0x%08x)\n", reason, (unsigned int)report->fault.task_id,
+                 (unsigned int)report->fault.pc);
   }
   zplc_hal_log("[RESET] The runtime %s: RUN waits for a person's command\n",
                zplc_reset_may_run(report->cause) != 0 ? "may run" : "stays in STOP");
@@ -549,11 +536,8 @@ static const zplc_boot_step_t boot_runtime_steps[] = {
 };
 
 static const zplc_boot_step_t boot_service_steps[] = {
-    {"configuration", ZPLC_BOOT_SERVICE, boot_config},
-    {"network", ZPLC_BOOT_SERVICE, boot_network},
-    {"time", ZPLC_BOOT_SERVICE, boot_time},
-    {"fieldbus", ZPLC_BOOT_SERVICE, boot_fieldbus},
-    {"cloud", ZPLC_BOOT_SERVICE, boot_cloud},
+    {"configuration", ZPLC_BOOT_SERVICE, boot_config}, {"network", ZPLC_BOOT_SERVICE, boot_network}, {"time", ZPLC_BOOT_SERVICE, boot_time},
+    {"fieldbus", ZPLC_BOOT_SERVICE, boot_fieldbus},    {"cloud", ZPLC_BOOT_SERVICE, boot_cloud},
 };
 
 static void start_services(void) {
@@ -561,8 +545,7 @@ static void start_services(void) {
 
   (void)zplc_boot_run(boot_service_steps, ARRAY_SIZE(boot_service_steps), &report);
   zplc_hal_log("[INIT] Services started (%u of %u failed). Shell ready. Use 'zplc help' for commands.\n\n",
-               (unsigned)report.service_failures,
-               (unsigned)ARRAY_SIZE(boot_service_steps));
+               (unsigned)report.service_failures, (unsigned)ARRAY_SIZE(boot_service_steps));
 #ifdef CONFIG_ZPLC_HIL_DEBUG
 #ifdef CONFIG_ZPLC_SCHEDULER
   hil_send_ready(zplc_core_version(), "sched,hil");
@@ -595,8 +578,7 @@ int main(void) {
   zplc_hal_log("================================================\n");
   zplc_hal_log("  ZPLC Runtime - Zephyr Target\n");
   zplc_hal_log("  Core Version: %s\n", zplc_core_version());
-  zplc_hal_log("  Commit:       %s%s\n", ZPLC_FW_COMMIT,
-               ZPLC_FW_DIRTY != 0 ? " (dirty)" : "");
+  zplc_hal_log("  Commit:       %s%s\n", ZPLC_FW_COMMIT, ZPLC_FW_DIRTY != 0 ? " (dirty)" : "");
 #ifdef CONFIG_ZPLC_SCHEDULER
   zplc_hal_log("  Mode: Multitask Scheduler\n");
 #else
@@ -620,10 +602,8 @@ int main(void) {
   start_services();
   return run_scheduler_mode();
 #else
-  (void)k_thread_create(&services_thread, services_thread_stack,
-                        K_THREAD_STACK_SIZEOF(services_thread_stack),
-                        services_thread_entry, NULL, NULL, NULL,
-                        K_PRIO_PREEMPT(ZPLC_COMM_THREAD_PRIORITY), 0, K_NO_WAIT);
+  (void)k_thread_create(&services_thread, services_thread_stack, K_THREAD_STACK_SIZEOF(services_thread_stack), services_thread_entry, NULL,
+                        NULL, NULL, K_PRIO_PREEMPT(ZPLC_COMM_THREAD_PRIORITY), 0, K_NO_WAIT);
   return run_legacy_mode();
 #endif
 }

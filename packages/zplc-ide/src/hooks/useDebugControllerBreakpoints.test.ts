@@ -69,10 +69,7 @@ describe('createBreakpointSyncer', () => {
     const second = syncer.sync(target, () => [56, 104], always);
     await Promise.all([first, second]);
 
-    expect(trace).toEqual([
-      '+clear', '-clear', '+add 56', '-add 56',
-      '+clear', '-clear', '+add 56', '-add 56', '+add 104', '-add 104',
-    ]);
+    expect(trace).toEqual(['+clear', '-clear', '+add 56', '-add 56', '+clear', '-clear', '+add 56', '-add 56', '+add 104', '-add 104']);
     expect([...held]).toEqual([56, 104]);
   });
 
@@ -182,7 +179,11 @@ describe('createBreakpointSyncer', () => {
     const syncer = createBreakpointSyncer();
     let current = true;
 
-    const round = syncer.sync(target, () => [56, 104], () => current);
+    const round = syncer.sync(
+      target,
+      () => [56, 104],
+      () => current,
+    );
     await new Promise((resolve) => setTimeout(resolve, 0));
     current = false;
 
@@ -196,7 +197,15 @@ describe('createBreakpointSyncer', () => {
     const { target, calls } = fakeTarget();
     const syncer = createBreakpointSyncer();
 
-    await expect(syncer.sync(target, () => { throw new Error('store unavailable'); }, always)).rejects.toThrow('store unavailable');
+    await expect(
+      syncer.sync(
+        target,
+        () => {
+          throw new Error('store unavailable');
+        },
+        always,
+      ),
+    ).rejects.toThrow('store unavailable');
     const outcome = await syncer.sync(target, () => [56], always);
 
     expect(outcome?.sent).toBe(true);
@@ -242,7 +251,9 @@ describe('reportBreakpointSync', () => {
       entries,
       reasons,
       sinks: {
-        addConsoleEntry: (entry: NewConsoleEntry) => { entries.push(entry); },
+        addConsoleEntry: (entry: NewConsoleEntry) => {
+          entries.push(entry);
+        },
         setBreakpointsInactiveReason: (reason: string | null) => reasons.push(reason),
       },
     };
@@ -259,12 +270,15 @@ describe('reportBreakpointSync', () => {
 
     reportBreakpointSync(refused, out.sinks);
 
-    expect(out.entries).toEqual([{
-      type: 'warning',
-      message: 'Breakpoints are not active: the runtime accepts breakpoints only in a program with one task, and this program has several. '
-        + 'The dots stay in the editor, but the program will not stop at them.',
-      source: 'debugger',
-    }]);
+    expect(out.entries).toEqual([
+      {
+        type: 'warning',
+        message:
+          'Breakpoints are not active: the runtime accepts breakpoints only in a program with one task, and this program has several. ' +
+          'The dots stay in the editor, but the program will not stop at them.',
+        source: 'debugger',
+      },
+    ]);
     expect(out.reasons).toEqual(['the runtime accepts breakpoints only in a program with one task, and this program has several']);
   });
 

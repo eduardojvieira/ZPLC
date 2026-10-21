@@ -3,10 +3,7 @@
   "title": "Edges and pulse counter",
   "summary": "Use a CTU counter to count three discrete pulses and reset the count.",
   "scope": "Tests provide native POSIX host evidence only; they are not physical-sensor, bounce, hardware, HIL, or certification evidence.",
-  "objectives": [
-    "Count three rising edges of PulseInput with a CTU counter.",
-    "Reset the count and CountReached with Reset."
-  ],
+  "objectives": ["Count three rising edges of PulseInput with a CTU counter.", "Reset the count and CountReached with Reset."],
   "stages": [
     {
       "key": "objective",
@@ -55,7 +52,5 @@
       "text": "Declare Count : CTU, call it every scan as Count(CU := PulseInput, R := Reset, PV := 3) and copy Count.Q to CountReached."
     }
   ],
-  "faultCases": [
-    "The starter never counts; add a CTU with PV=3 so CountReached turns ON on the third rising edge and Reset turns it OFF."
-  ]
+  "faultCases": ["The starter never counts; add a CTU with PV=3 so CountReached turns ON on the third rising edge and Reset turns it OFF."]
 }

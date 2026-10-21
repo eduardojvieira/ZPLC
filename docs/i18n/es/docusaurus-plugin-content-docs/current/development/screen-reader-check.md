@@ -41,17 +41,17 @@ están en `docs/static/img/screen-reader-check/2026-10-20/results.json`, con una
 Chromium, registrado el 2026-10-20; la decisión del propietario del 2026-10-20 lo acepta en lugar de
 NVDA/JAWS en Windows y VoiceOver en macOS.
 
-| Paso | Inglés | Español | Lo que recibió una persona que no ve la pantalla |
-| --- | --- | --- | --- |
-| 1 Abrir | Aprobado | Aprobado | Título de la ventana «ZPLC». Tab recorre 46 paradas en la bienvenida sin trampa: Tema (cuadro combinado), **Abrir proyecto**, **Nuevo proyecto**, **Aprender**, **Importar**, y luego los ejemplos, cada uno con su nombre, su rol y una descripción breve. Después de **Abrir proyecto** el foco queda en la región del editor («Editor», punto de referencia principal). |
-| 2 Editar | Aprobado | Aprobado | La fila del archivo dice «Blinky src/main.st, botón»; Intro lo abre y lleva el foco al editor, que se llama «Editor de código de src/main.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.», un cuadro de texto de varias líneas; la pestaña dice «main.st, pestaña, seleccionada». Guardar dice «Se guardó main.st». Ctrl+M dice «Pressing Tab will now move focus to the next focusable element» (mensaje propio de Monaco, en inglés) y Tab sale del editor. |
-| 3 Compilar | Aprobado | Aprobado | «Compilación correcta. Blinky (Structured Text): 302 bytes, 1 tarea» en la región cortés. Con un programa roto, «La compilación falló. src/main.st: Compilation of 'main.st' failed: …» en la región asertiva, y **Problemas** dice «Problemas, 6 errores · 0 advertencias, pestaña, seleccionada» con cada diagnóstico como «Error: … src/main.st:61:9». |
-| 4 Simular | Aprobado | Aprobado | Tab llega a «Conectar, botón» en la barra de herramientas. Al conectar dice «Iniciando el simulador», «Simulación · runtime nativo», «Listo», «Simulador listo». F5 lleva el foco a «Pausar (F6), botón» y la región de la barra de estado dice «En ejecución». |
-| 5 Observar | Aprobado | Aprobado | «Observación, pestaña, seleccionada»; «Agregar variable, botón»; el campo es un cuadro combinado llamado «Ruta de la variable…». Intro dice «LED_Output agregada a la tabla de observación.» y el foco vuelve a **Agregar variable**. La fila lee TRUE y FALSE alternadamente. Un valor que cambia no se anuncia, a propósito: se lee yendo a su fila. |
-| 6 Forzar | Aprobado | Aprobado | «Forzar LED_Output, casilla»; Espacio dice «Forzado LED_Output» y la casilla queda marcada; al desmarcarla dice «Se liberó el forzado de LED_Output». Terminar la conexión con un forzado activo dice «Se liberó el forzado de LED_Output». |
-| 7 Diálogo de carga | Aprobado, con un límite | Aprobado, con un límite | El diálogo es «¿Cargar en el dispositivo?», un diálogo de alerta. El foco empieza en **Cancelar**, Tab circula dentro, la tabla tiene el título «El proyecto comparado con el dispositivo» y Escape lo cierra y devuelve el foco a **Conectar**. Se abrió con el diálogo del propio producto y datos fijos de un dispositivo, no con una placa. |
-| 8 Una lección de Aprender | Aprobado | Aprobado | Inicio de Aprender: «Aprender, encabezado», luego Cerrar, **Comenzar el curso**, los dos interruptores (activar uno dice «Todas las lecciones están desbloqueadas.»), Exportar, Importar. La lección tiene un encabezado y uno por etapa (Objetivo, Prediga, Edite, Ejecute, Observe, Reflexione) en una lista llamada «Pasos de la lección». Una pista dice «Pista 2, expandida». **Comprobar** dice «Escenario verificado. FirstBlink pasó 10 aserciones registradas.»; **Restaurar el proyecto inicial** abre un diálogo de alerta y luego dice «Se restauró el proyecto inicial.» |
-| 9 Una lección con planta (LRN-037) | Aprobado | Aprobado | La planta es una imagen con el equivalente en texto de su estado, por ejemplo «Dibujo de la planta: Motor detenido. ○ ORDEN OFF, ○ A VELOCIDAD OFF, ○ ATASCO OFF». El interruptor del panel frontal se opera con Espacio y el cambio se anuncia: «Motor a velocidad, 1000 milésimas.» Pausar dice «Planta en pausa»; la acción de atasco dice «Atascar el motor, botón, presionado» y anuncia «Motor atascado a 0 milésimas: no gira, sea cual sea la orden.», y el dibujo dice «▲ ATASCO FAULT». |
+| Paso                               | Inglés                  | Español                 | Lo que recibió una persona que no ve la pantalla                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ---------------------------------- | ----------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 Abrir                            | Aprobado                | Aprobado                | Título de la ventana «ZPLC». Tab recorre 46 paradas en la bienvenida sin trampa: Tema (cuadro combinado), **Abrir proyecto**, **Nuevo proyecto**, **Aprender**, **Importar**, y luego los ejemplos, cada uno con su nombre, su rol y una descripción breve. Después de **Abrir proyecto** el foco queda en la región del editor («Editor», punto de referencia principal).                                                                                                                                                                                                            |
+| 2 Editar                           | Aprobado                | Aprobado                | La fila del archivo dice «Blinky src/main.st, botón»; Intro lo abre y lleva el foco al editor, que se llama «Editor de código de src/main.st. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.», un cuadro de texto de varias líneas; la pestaña dice «main.st, pestaña, seleccionada». Guardar dice «Se guardó main.st». Ctrl+M dice «Pressing Tab will now move focus to the next focusable element» (mensaje propio de Monaco, en inglés) y Tab sale del editor.                                                                                             |
+| 3 Compilar                         | Aprobado                | Aprobado                | «Compilación correcta. Blinky (Structured Text): 302 bytes, 1 tarea» en la región cortés. Con un programa roto, «La compilación falló. src/main.st: Compilation of 'main.st' failed: …» en la región asertiva, y **Problemas** dice «Problemas, 6 errores · 0 advertencias, pestaña, seleccionada» con cada diagnóstico como «Error: … src/main.st:61:9».                                                                                                                                                                                                                             |
+| 4 Simular                          | Aprobado                | Aprobado                | Tab llega a «Conectar, botón» en la barra de herramientas. Al conectar dice «Iniciando el simulador», «Simulación · runtime nativo», «Listo», «Simulador listo». F5 lleva el foco a «Pausar (F6), botón» y la región de la barra de estado dice «En ejecución».                                                                                                                                                                                                                                                                                                                       |
+| 5 Observar                         | Aprobado                | Aprobado                | «Observación, pestaña, seleccionada»; «Agregar variable, botón»; el campo es un cuadro combinado llamado «Ruta de la variable…». Intro dice «LED_Output agregada a la tabla de observación.» y el foco vuelve a **Agregar variable**. La fila lee TRUE y FALSE alternadamente. Un valor que cambia no se anuncia, a propósito: se lee yendo a su fila.                                                                                                                                                                                                                                |
+| 6 Forzar                           | Aprobado                | Aprobado                | «Forzar LED_Output, casilla»; Espacio dice «Forzado LED_Output» y la casilla queda marcada; al desmarcarla dice «Se liberó el forzado de LED_Output». Terminar la conexión con un forzado activo dice «Se liberó el forzado de LED_Output».                                                                                                                                                                                                                                                                                                                                           |
+| 7 Diálogo de carga                 | Aprobado, con un límite | Aprobado, con un límite | El diálogo es «¿Cargar en el dispositivo?», un diálogo de alerta. El foco empieza en **Cancelar**, Tab circula dentro, la tabla tiene el título «El proyecto comparado con el dispositivo» y Escape lo cierra y devuelve el foco a **Conectar**. Se abrió con el diálogo del propio producto y datos fijos de un dispositivo, no con una placa.                                                                                                                                                                                                                                       |
+| 8 Una lección de Aprender          | Aprobado                | Aprobado                | Inicio de Aprender: «Aprender, encabezado», luego Cerrar, **Comenzar el curso**, los dos interruptores (activar uno dice «Todas las lecciones están desbloqueadas.»), Exportar, Importar. La lección tiene un encabezado y uno por etapa (Objetivo, Prediga, Edite, Ejecute, Observe, Reflexione) en una lista llamada «Pasos de la lección». Una pista dice «Pista 2, expandida». **Comprobar** dice «Escenario verificado. FirstBlink pasó 10 aserciones registradas.»; **Restaurar el proyecto inicial** abre un diálogo de alerta y luego dice «Se restauró el proyecto inicial.» |
+| 9 Una lección con planta (LRN-037) | Aprobado                | Aprobado                | La planta es una imagen con el equivalente en texto de su estado, por ejemplo «Dibujo de la planta: Motor detenido. ○ ORDEN OFF, ○ A VELOCIDAD OFF, ○ ATASCO OFF». El interruptor del panel frontal se opera con Espacio y el cambio se anuncia: «Motor a velocidad, 1000 milésimas.» Pausar dice «Planta en pausa»; la acción de atasco dice «Atascar el motor, botón, presionado» y anuncia «Motor atascado a 0 milésimas: no gira, sea cual sea la orden.», y el dibujo dice «▲ ATASCO FAULT».                                                                                     |
 
 **Qué no se ejecutó, y por qué.**
 
@@ -64,14 +64,14 @@ NVDA/JAWS en Windows y VoiceOver en macOS.
 
 **Defectos que encontró esta verificación, corregidos en el mismo cambio.**
 
-| Defecto | Corrección |
-| --- | --- |
-| Después de **Abrir proyecto** el foco caía en el cuerpo de la página, y quien usa el teclado empezaba de nuevo desde arriba. | La región del editor recibe el foco al abrirse el entorno de trabajo. |
-| El editor de código se llamaba «Editor content» y toma Tab como un carácter: nada decía cómo salir de él. | Su nombre ahora dice que Ctrl+M hace que Tab saque el foco. |
-| Agregar una variable a la tabla de observación llevaba el foco al cuerpo de la página y no decía nada. | El foco vuelve a **Agregar variable** y la fila se anuncia. |
-| Mientras **Comprobar** trabajaba, el botón se deshabilitaba y el foco caía en el cuerpo de la página. | El botón conserva el foco (se marca como no disponible, no como deshabilitado). |
-| Después de **Restaurar el proyecto inicial** el foco caía en el cuerpo de la página. | El botón recupera el foco cuando termina la restauración. |
-| Cada etapa de una lección tenía un desplegable llamado solo «Ver el punto de control esperado», seis veces. | Cada uno lleva su etapa: «Ver el punto de control esperado: Prediga». |
+| Defecto                                                                                                                                    | Corrección                                                                           |
+| ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| Después de **Abrir proyecto** el foco caía en el cuerpo de la página, y quien usa el teclado empezaba de nuevo desde arriba.               | La región del editor recibe el foco al abrirse el entorno de trabajo.                |
+| El editor de código se llamaba «Editor content» y toma Tab como un carácter: nada decía cómo salir de él.                                  | Su nombre ahora dice que Ctrl+M hace que Tab saque el foco.                          |
+| Agregar una variable a la tabla de observación llevaba el foco al cuerpo de la página y no decía nada.                                     | El foco vuelve a **Agregar variable** y la fila se anuncia.                          |
+| Mientras **Comprobar** trabajaba, el botón se deshabilitaba y el foco caía en el cuerpo de la página.                                      | El botón conserva el foco (se marca como no disponible, no como deshabilitado).      |
+| Después de **Restaurar el proyecto inicial** el foco caía en el cuerpo de la página.                                                       | El botón recupera el foco cuando termina la restauración.                            |
+| Cada etapa de una lección tenía un desplegable llamado solo «Ver el punto de control esperado», seis veces.                                | Cada uno lleva su etapa: «Ver el punto de control esperado: Prediga».                |
 | En español el estado de ejecución decía «Running», «Ready» y «Paused» en inglés, y la barra de estado rechazaba cualquier texto con tilde. | Los estados están traducidos y la barra de estado acepta letras de cualquier idioma. |
 
 **Se dejó como está, encontrado por la verificación.** El mensaje propio de Monaco sobre Tab
@@ -111,13 +111,13 @@ registro es lo que la aplicación hizo el 2026-10-20.
 
 ## Qué necesita
 
-| | Windows | macOS |
-| --- | --- | --- |
-| Lector de pantalla | NVDA (versión actual) y Narrator | VoiceOver |
-| Iniciar y detener | NVDA: Ctrl+Alt+N. Narrator: Win+Ctrl+Intro | Cmd+F5 |
-| ZPLC | La compilación del instalador que se evalúa, no el servidor de desarrollo | La compilación del instalador que se evalúa |
-| Proyecto | El ejemplo **Blinky** copiado a una carpeta vacía | El mismo |
-| Dispositivo | Ninguno: use **Simular**. Esta verificación no necesita una placa | Ninguno |
+|                    | Windows                                                                   | macOS                                       |
+| ------------------ | ------------------------------------------------------------------------- | ------------------------------------------- |
+| Lector de pantalla | NVDA (versión actual) y Narrator                                          | VoiceOver                                   |
+| Iniciar y detener  | NVDA: Ctrl+Alt+N. Narrator: Win+Ctrl+Intro                                | Cmd+F5                                      |
+| ZPLC               | La compilación del instalador que se evalúa, no el servidor de desarrollo | La compilación del instalador que se evalúa |
+| Proyecto           | El ejemplo **Blinky** copiado a una carpeta vacía                         | El mismo                                    |
+| Dispositivo        | Ninguno: use **Simular**. Esta verificación no necesita una placa         | Ninguno                                     |
 
 Use el mismo ejemplo y los mismos pasos en ambos sistemas. Hágalo una vez por cada
 lector de pantalla: NVDA y Narrator en Windows, VoiceOver en macOS. Cierre las demás
@@ -246,16 +246,16 @@ Copie esta tabla en la lista de control de la versión, una fila por lector de
 pantalla y por paso. Escriba con sus propias palabras lo que oyó. Marque un paso como
 **Aprobado**, **Fallido** o **No ejecutado**, y explique por qué en los dos últimos.
 
-| Fecha | Persona | Lector de pantalla y versión | Sistema | Versión de ZPLC | Paso | Lo que oyó | Foco correcto | Resultado | Notas |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| | | | | | 1 Abrir | | | | |
-| | | | | | 2 Editar | | | | |
-| | | | | | 3 Compilar | | | | |
-| | | | | | 4 Simular | | | | |
-| | | | | | 5 Observar | | | | |
-| | | | | | 6 Forzar | | | | |
-| | | | | | 7 Diálogo de carga | | | | |
-| | | | | | 8 Lección de Aprender | | | | |
+| Fecha | Persona | Lector de pantalla y versión | Sistema | Versión de ZPLC | Paso                  | Lo que oyó | Foco correcto | Resultado | Notas |
+| ----- | ------- | ---------------------------- | ------- | --------------- | --------------------- | ---------- | ------------- | --------- | ----- |
+|       |         |                              |         |                 | 1 Abrir               |            |               |           |       |
+|       |         |                              |         |                 | 2 Editar              |            |               |           |       |
+|       |         |                              |         |                 | 3 Compilar            |            |               |           |       |
+|       |         |                              |         |                 | 4 Simular             |            |               |           |       |
+|       |         |                              |         |                 | 5 Observar            |            |               |           |       |
+|       |         |                              |         |                 | 6 Forzar              |            |               |           |       |
+|       |         |                              |         |                 | 7 Diálogo de carga    |            |               |           |       |
+|       |         |                              |         |                 | 8 Lección de Aprender |            |               |           |       |
 
 Un paso fallido es un defecto: regístrelo con el número del paso, lo que oyó y lo que
 esperaba. La versión no declara compatibilidad con lectores de pantalla hasta que

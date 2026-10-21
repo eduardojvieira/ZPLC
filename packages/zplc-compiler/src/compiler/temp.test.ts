@@ -32,7 +32,7 @@ END_PROGRAM`;
         expect(code).toContain('PUSH8 10');
         expect(code).toContain('STORE16');
     });
-    
+
     it('should default initialize VAR_TEMP to 0', () => {
         const source = `
 FUNCTION_BLOCK FB_TempZero

@@ -23,14 +23,18 @@ describe('the Electron line (IDE-028)', () => {
   });
 
   it('fails at a release when the dependency is not the latest patch of its line', () => {
-    expect(problems('43.4.1', '43.4.1', support, true)).toEqual(['electron is 43.4.1; the latest patch of 43 recorded on 2026-10-10 is 43.7.9']);
+    expect(problems('43.4.1', '43.4.1', support, true)).toEqual([
+      'electron is 43.4.1; the latest patch of 43 recorded on 2026-10-10 is 43.7.9',
+    ]);
   });
 
   it('refuses a range, an installed version that differs, and a record that is not three lines with their patch and end', () => {
     expect(problems('^43.4.1', undefined, support, false)[0]).toContain('pin one exact version');
     expect(problems('43.4.1', '43.3.0', support, false)[0]).toContain('the installed electron is 43.3.0');
     expect(problems('43.4.1', undefined, { ...support, supportedMajors: [43, 44] }, false)[0]).toContain('lists 2 supported majors');
-    expect(problems('43.4.1', undefined, { ...support, latestPatch: { 42: '42.11.12', 44: '44.7.0' } }, false)[0]).toContain('no latest patch for 43');
+    expect(problems('43.4.1', undefined, { ...support, latestPatch: { 42: '42.11.12', 44: '44.7.0' } }, false)[0]).toContain(
+      'no latest patch for 43',
+    );
   });
 
   it('holds for the dependency of this repository: it is on a supported major line, exactly pinned', () => {

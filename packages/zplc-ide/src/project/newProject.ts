@@ -12,9 +12,15 @@ export const NEW_PROJECT_LANGUAGES: readonly PLCLanguage[] = ['ST', 'IL', 'LD', 
 export const SIMULATION_TARGET = 'simulation';
 export const PROJECT_NAME_MAX = 64;
 
-export interface NewProjectChoices { target: string; language: PLCLanguage }
+export interface NewProjectChoices {
+  target: string;
+  language: PLCLanguage;
+}
 /** What the New project dialog hands to the store: the choices, the name and the folder the person picked. */
-export interface NewProjectRequest extends NewProjectChoices { name: string; handle: FileSystemDirectoryHandle }
+export interface NewProjectRequest extends NewProjectChoices {
+  name: string;
+  handle: FileSystemDirectoryHandle;
+}
 
 /** The simulation, then every board of the manifest. */
 export function newProjectTargets(): { value: string; label: string }[] {
@@ -38,7 +44,9 @@ export function validateProjectName(name: string): ProjectNameProblem | null {
 export function newProjectProgram(projectName: string, language: PLCLanguage): { fileName: string; content: string } {
   const fileName = `main${getExtensionForLanguage(language)}`;
   if (language !== 'ST') return { fileName, content: createEmptyFileContent(language) };
-  return { fileName, content: `(* =============================================================================
+  return {
+    fileName,
+    content: `(* =============================================================================
  * ${projectName} - Main Program
  * ============================================================================= *)
 
@@ -56,7 +64,8 @@ IF Counter > 1000 THEN
 END_IF;
 
 END_PROGRAM
-` };
+`,
+  };
 }
 
 export function newProjectConfig(name: string, choices: NewProjectChoices): ZPLCProjectV2 {

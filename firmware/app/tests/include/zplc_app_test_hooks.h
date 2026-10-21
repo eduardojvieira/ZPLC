@@ -30,15 +30,12 @@ size_t zplc_config_test_row_count(void);
 /** @brief The name and current value of persisted setting `index`; NULL past the end. */
 const char *zplc_config_test_row(size_t index, uint8_t *value, size_t *length);
 
-typedef zplc_program_store_restore_t (*zplc_boot_restore_test_restore_fn)(
-    uint8_t *workspace, size_t workspace_capacity, size_t *program_size);
-typedef int (*zplc_boot_restore_test_commit_fn)(uint8_t *workspace,
-                                                size_t program_size,
-                                                size_t workspace_capacity);
+typedef zplc_program_store_restore_t (*zplc_boot_restore_test_restore_fn)(uint8_t *workspace, size_t workspace_capacity,
+                                                                          size_t *program_size);
+typedef int (*zplc_boot_restore_test_commit_fn)(uint8_t *workspace, size_t program_size, size_t workspace_capacity);
 
 /** @brief Replace the program store behind the boot restore (NULL, NULL restores the real one). */
-void zplc_boot_restore_test_set_store(zplc_boot_restore_test_restore_fn restore,
-                                      zplc_boot_restore_test_commit_fn commit);
+void zplc_boot_restore_test_set_store(zplc_boot_restore_test_restore_fn restore, zplc_boot_restore_test_commit_fn commit);
 
 #endif /* CONFIG_ZTEST */
 

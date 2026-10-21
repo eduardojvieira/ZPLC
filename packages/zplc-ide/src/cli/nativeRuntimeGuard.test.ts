@@ -34,7 +34,9 @@ async function runGuardedFiles(env: { CI?: string; ZPLC_NATIVE_SIM_BIN: string }
       if (!found) return 'missing';
       return found[1]?.includes('<failure') ? 'fail' : found[1]?.includes('<skipped') ? 'skip' : 'pass';
     };
-    const skipped = [...report.matchAll(/<testcase name="([^"]*)"[^>]*?(?:\/>|>([\s\S]*?)<\/testcase>)/g)].filter(([, , body]) => body?.includes('<skipped')).map(([, name]) => name);
+    const skipped = [...report.matchAll(/<testcase name="([^"]*)"[^>]*?(?:\/>|>([\s\S]*?)<\/testcase>)/g)]
+      .filter(([, , body]) => body?.includes('<skipped'))
+      .map(([, name]) => name);
     return { exitCode, outcome, stderr, skipped, report };
   } finally {
     await rm(dir, { recursive: true, force: true });
@@ -49,7 +51,9 @@ function filesThatReachTheRuntime(): string[] {
   const packageRoot = join(import.meta.dir, '../..');
   const listed = Bun.spawnSync(['git', 'ls-files', '--', 'src', 'electron', 'scripts'], { cwd: packageRoot });
   expect(listed.exitCode).toBe(0);
-  return listed.stdout.toString().split('\n')
+  return listed.stdout
+    .toString()
+    .split('\n')
     .filter((file) => /\.test\.tsx?$/.test(file) && !file.endsWith('nativeRuntimeGuard.test.ts'))
     .filter((file) => /ZPLC_NATIVE_SIM_BIN|nativeRuntimeGuard/.test(readFileSync(join(packageRoot, file), 'utf8')))
     .map((file) => join(packageRoot, file));
@@ -79,8 +83,12 @@ describe('tests that need the native runtime binary', () => {
   }, 120_000);
 
   // Needs the binary itself, so it is also the proof that a CI run with the binary built executes them.
-  itNative('run and pass in CI when the binary is present', async () => {
-    const { outcome } = await runGuardedFiles({ CI: 'true', ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary });
-    expect(nativeTests.map(outcome)).toEqual(['pass', 'pass', 'pass']);
-  }, 120_000);
+  itNative(
+    'run and pass in CI when the binary is present',
+    async () => {
+      const { outcome } = await runGuardedFiles({ CI: 'true', ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary });
+      expect(nativeTests.map(outcome)).toEqual(['pass', 'pass', 'pass']);
+    },
+    120_000,
+  );
 });

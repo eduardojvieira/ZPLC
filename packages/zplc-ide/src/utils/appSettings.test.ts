@@ -12,19 +12,68 @@ import {
 
 const memory = (initial: Record<string, string> = {}): SettingsStorage & { data: Record<string, string> } => {
   const data = { ...initial };
-  return { data, getItem: (key) => data[key] ?? null, setItem: (key, value) => { data[key] = value; } };
+  return {
+    data,
+    getItem: (key) => data[key] ?? null,
+    setItem: (key, value) => {
+      data[key] = value;
+    },
+  };
 };
 
 describe('application settings (IDE-007, IDE-010)', () => {
-  it('UX-029 start with autosave off, the update check off, the language following the operating system and a 14 px editor with 4-space tabs', () => {
-    expect(DEFAULT_SETTINGS).toEqual({ editorFontSize: 14, editorTabSize: 4, density: 'comfortable', language: 'auto', autosaveSeconds: 0, checkForUpdates: false, unlockAllLessons: false, hideSolutions: false });
-    expect(AUTOSAVE_CHOICES[0]).toBe(0);
-  });
+  it(
+    'UX-029 start with autosave off, the update check off, the language following the operating system and a 14 px editor with 4-space ' +
+      'tabs',
+    () => {
+      expect(DEFAULT_SETTINGS).toEqual({
+        editorFontSize: 14,
+        editorTabSize: 4,
+        density: 'comfortable',
+        language: 'auto',
+        autosaveSeconds: 0,
+        checkForUpdates: false,
+        unlockAllLessons: false,
+        hideSolutions: false,
+      });
+      expect(AUTOSAVE_CHOICES[0]).toBe(0);
+    },
+  );
 
   it('keep what is valid, field by field, and fall back to the default for anything else', () => {
-    expect(parseSettings({ editorFontSize: 18, editorTabSize: 2, density: 'compact', language: 'es', autosaveSeconds: 30, checkForUpdates: true, unlockAllLessons: true, hideSolutions: true }))
-      .toEqual({ editorFontSize: 18, editorTabSize: 2, density: 'compact', language: 'es', autosaveSeconds: 30, checkForUpdates: true, unlockAllLessons: true, hideSolutions: true });
-    expect(parseSettings({ editorFontSize: 400, editorTabSize: 5, density: 'huge', language: 'fr', autosaveSeconds: 7, checkForUpdates: 'yes', unlockAllLessons: 1, hideSolutions: 'yes' })).toEqual(DEFAULT_SETTINGS);
+    expect(
+      parseSettings({
+        editorFontSize: 18,
+        editorTabSize: 2,
+        density: 'compact',
+        language: 'es',
+        autosaveSeconds: 30,
+        checkForUpdates: true,
+        unlockAllLessons: true,
+        hideSolutions: true,
+      }),
+    ).toEqual({
+      editorFontSize: 18,
+      editorTabSize: 2,
+      density: 'compact',
+      language: 'es',
+      autosaveSeconds: 30,
+      checkForUpdates: true,
+      unlockAllLessons: true,
+      hideSolutions: true,
+    });
+    expect(
+      parseSettings({
+        editorFontSize: 400,
+        editorTabSize: 5,
+        density: 'huge',
+        language: 'fr',
+        autosaveSeconds: 7,
+        checkForUpdates: 'yes',
+        unlockAllLessons: 1,
+        hideSolutions: 'yes',
+      }),
+    ).toEqual(DEFAULT_SETTINGS);
     expect(parseSettings({ editorFontSize: 16.5, density: 'compact' })).toEqual({ ...DEFAULT_SETTINGS, density: 'compact' });
     for (const bad of [null, undefined, 'x', 7, []]) expect(parseSettings(bad)).toEqual(DEFAULT_SETTINGS);
   });
@@ -40,9 +89,15 @@ describe('application settings (IDE-007, IDE-010)', () => {
 
   it('read as the defaults when the stored text is corrupt, and a storage that throws is not an error', () => {
     expect(loadSettings(memory({ [SETTINGS_STORAGE_KEY]: '{ not json' }))).toEqual(DEFAULT_SETTINGS);
-    const broken: SettingsStorage = { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } };
+    const broken: SettingsStorage = {
+      getItem: () => {
+        throw new Error('blocked');
+      },
+      setItem: () => {
+        throw new Error('blocked');
+      },
+    };
     expect(loadSettings(broken)).toEqual(DEFAULT_SETTINGS);
     expect(() => saveSettings(broken, DEFAULT_SETTINGS)).not.toThrow();
   });
-
 });

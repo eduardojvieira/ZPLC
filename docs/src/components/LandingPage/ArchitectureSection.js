@@ -21,11 +21,7 @@ export default function ArchitectureSection() {
               <h4>{step.title}</h4>
               <p>{step.description}</p>
             </div>
-            {index < architectureSection.steps.length - 1 ? (
-              <div className={styles.archFlowArrow}>
-                →
-              </div>
-            ) : null}
+            {index < architectureSection.steps.length - 1 ? <div className={styles.archFlowArrow}>→</div> : null}
           </Fragment>
         ))}
       </div>

@@ -20,13 +20,15 @@ const SOURCE_LIMIT = 200_000;
 export function globalVariablesOf(file: string, content: string): GlobalVariable[] {
   if (content.length === 0 || content.length > SOURCE_LIMIT) return [];
   try {
-    return parse(content).globalVars.flatMap((block) => block.variables.map((variable) => ({
-      name: variable.name,
-      file,
-      line: variable.line,
-      column: variable.column,
-      constant: block.isConstant,
-    })));
+    return parse(content).globalVars.flatMap((block) =>
+      block.variables.map((variable) => ({
+        name: variable.name,
+        file,
+        line: variable.line,
+        column: variable.column,
+        constant: block.isConstant,
+      })),
+    );
   } catch {
     return [];
   }

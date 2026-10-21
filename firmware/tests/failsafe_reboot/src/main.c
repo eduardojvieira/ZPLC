@@ -27,7 +27,7 @@ int main(void) {
 
   if (report->has_fault == 0U) {
     printk("FAILSAFE-REBOOT phase 1: a processor fault now\n");
-    k_msleep(50); /* the console drains before the fault */
+    k_msleep(50);                      /* the console drains before the fault */
     __asm__ volatile(".short 0xde00"); /* UDF #0: undefined on every Thumb part */
     printk("FAILSAFE-REBOOT FAIL: the instruction did not fault\n");
     return 1;
@@ -35,11 +35,10 @@ int main(void) {
 
   printk("FAILSAFE-REBOOT phase 2: cause=%s\n", zplc_reset_cause_name(report->cause));
   if (report->fault.kind == (uint8_t)ZPLC_FAULT_PROCESSOR) {
-    printk("FAILSAFE-REBOOT phase 2: the record names a processor fault (reason %u, pc 0x%08x)\n",
-           (unsigned int)report->fault.reason, (unsigned int)report->fault.pc);
+    printk("FAILSAFE-REBOOT phase 2: the record names a processor fault (reason %u, pc 0x%08x)\n", (unsigned int)report->fault.reason,
+           (unsigned int)report->fault.pc);
   }
-  if (report->cause == ZPLC_RESET_FAULT && report->fault.kind == (uint8_t)ZPLC_FAULT_PROCESSOR &&
-      zplc_reset_may_run(report->cause) == 0) {
+  if (report->cause == ZPLC_RESET_FAULT && report->fault.kind == (uint8_t)ZPLC_FAULT_PROCESSOR && zplc_reset_may_run(report->cause) == 0) {
     printk("FAILSAFE-REBOOT PASS\n");
   } else {
     printk("FAILSAFE-REBOOT FAIL\n");

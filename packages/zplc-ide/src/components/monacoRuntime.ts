@@ -33,7 +33,12 @@ setEditorModelHost(monaco.editor);
 // for another. Monaco measures its characters when an editor is created, so it measures again once the file has loaded.
 (monaco.editor.EditorOptions.fontFamily as { defaultValue: string }).defaultValue = resolveTokens('light')['--font-mono'];
 if (typeof document !== 'undefined' && 'fonts' in document) {
-  void document.fonts.load("13px 'JetBrains Mono'").then(() => { monaco.editor.remeasureFonts(); }).catch(() => undefined);
+  void document.fonts
+    .load("13px 'JetBrains Mono'")
+    .then(() => {
+      monaco.editor.remeasureFonts();
+    })
+    .catch(() => undefined);
 }
 
 /** The editor namespace of the bundled Monaco, for the code that acts on every model rather than on one editor. */

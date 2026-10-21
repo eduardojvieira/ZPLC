@@ -16,22 +16,50 @@ describe('Lab playback', () => {
   });
 
   test('projects exact recorded motor samples rather than index-derived animation', () => {
-    const scene: LabScene = { id: 'motor', label: 'Motor', kind: 'motor', passed: true, assertions: [], samples: [
-      { atMs: 100, command: false, running: false, atSpeed: false, speedPermilleAfterTick: 0 },
-      { atMs: 900, command: true, running: true, atSpeed: true, speedPermilleAfterTick: 1000 },
-    ] };
+    const scene: LabScene = {
+      id: 'motor',
+      label: 'Motor',
+      kind: 'motor',
+      passed: true,
+      assertions: [],
+      samples: [
+        { atMs: 100, command: false, running: false, atSpeed: false, speedPermilleAfterTick: 0 },
+        { atMs: 900, command: true, running: true, atSpeed: true, speedPermilleAfterTick: 1000 },
+      ],
+    };
     expect(labSceneFrame(scene, 0)).toEqual({ kind: 'motor', atMs: 100, command: false, running: false, atSpeed: false, speedPermille: 0 });
     expect(labSceneFrame(scene, 1)).toEqual({ kind: 'motor', atMs: 900, command: true, running: true, atSpeed: true, speedPermille: 1000 });
     expect(labSceneFrame(scene, 101)).toEqual(labSceneFrame(scene, 1));
   });
 
   test('projects exact recorded tank values for distinct samples', () => {
-    const scene: LabScene = { id: 'tank', label: 'Tank', kind: 'tank', passed: false, assertions: [], samples: [
-      { atMs: 0, pump: 'STOPPED', alarm: 'NORMAL', levelLowInput: true, levelHighInput: false, levelPermilleAfterTick: 120 },
-      { atMs: 500, pump: 'RUNNING', alarm: 'ALARM', levelLowInput: false, levelHighInput: true, levelPermilleAfterTick: 870 },
-    ] };
-    expect(labSceneFrame(scene, 0)).toMatchObject({ atMs: 0, pump: 'STOPPED', alarm: 'NORMAL', low: true, high: false, levelPermille: 120 });
-    expect(labSceneFrame(scene, 1)).toMatchObject({ atMs: 500, pump: 'RUNNING', alarm: 'ALARM', low: false, high: true, levelPermille: 870 });
+    const scene: LabScene = {
+      id: 'tank',
+      label: 'Tank',
+      kind: 'tank',
+      passed: false,
+      assertions: [],
+      samples: [
+        { atMs: 0, pump: 'STOPPED', alarm: 'NORMAL', levelLowInput: true, levelHighInput: false, levelPermilleAfterTick: 120 },
+        { atMs: 500, pump: 'RUNNING', alarm: 'ALARM', levelLowInput: false, levelHighInput: true, levelPermilleAfterTick: 870 },
+      ],
+    };
+    expect(labSceneFrame(scene, 0)).toMatchObject({
+      atMs: 0,
+      pump: 'STOPPED',
+      alarm: 'NORMAL',
+      low: true,
+      high: false,
+      levelPermille: 120,
+    });
+    expect(labSceneFrame(scene, 1)).toMatchObject({
+      atMs: 500,
+      pump: 'RUNNING',
+      alarm: 'ALARM',
+      low: false,
+      high: true,
+      levelPermille: 870,
+    });
   });
 
   test('stops playback on the final recorded sample', () => {
@@ -49,7 +77,7 @@ describe('Lab playback', () => {
     expect(source).toContain('Pause');
     expect(source).toContain('Step');
     expect(source).toContain('Reset');
-    expect(source).toContain("prefers-reduced-motion: reduce");
+    expect(source).toContain('prefers-reduced-motion: reduce');
     expect(source).toContain('Playback is disabled while reduced motion is enabled.');
     expect(source).not.toContain('index %');
     expect(source).toContain("d={frame.diverter ? 'M350 100l28 22' : 'M350 100l0 30'}");

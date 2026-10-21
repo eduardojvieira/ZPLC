@@ -10,10 +10,18 @@ import { DISMISSED_STORAGE_KEY, readDismissed, updateNotice, updateSteps, writeD
 import { runUpdateCheck } from './updateCheckBridge';
 
 const URL = 'https://github.com/eduardojvieira/ZPLC/releases/tag/v2.0.0';
-const release = (tag = 'v2.0.0', url = URL): UpdateFetch => async () => ({ ok: true, status: 200, text: async () => JSON.stringify({ tag_name: tag, html_url: url }) });
+const release =
+  (tag = 'v2.0.0', url = URL): UpdateFetch =>
+  async () => ({ ok: true, status: 200, text: async () => JSON.stringify({ tag_name: tag, html_url: url }) });
 const memory = () => {
   const values = new Map<string, string>();
-  return { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { values.set(key, value); }, values };
+  return {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      values.set(key, value);
+    },
+    values,
+  };
 };
 
 describe('the check is optional, and says nothing when it cannot tell (REL-021)', () => {
@@ -23,7 +31,10 @@ describe('the check is optional, and says nothing when it cannot tell (REL-021)'
 
   it('asks the releases of this project once, with a fake network, and sends nothing about the user', async () => {
     const seen: Array<{ url: string; headers: Record<string, string> }> = [];
-    const fake: UpdateFetch = async (url, init) => { seen.push({ url, headers: init.headers }); return release()(url, init); };
+    const fake: UpdateFetch = async (url, init) => {
+      seen.push({ url, headers: init.headers });
+      return release()(url, init);
+    };
     const answer = await checkForUpdate({ currentVersion: '2.0.0-rc.4', fetch: fake });
     expect(answer).toEqual({ status: 'available', current: '2.0.0-rc.4', latest: '2.0.0', url: URL });
     expect(seen).toHaveLength(1);
@@ -32,7 +43,9 @@ describe('the check is optional, and says nothing when it cannot tell (REL-021)'
   });
 
   it('shows no notice when the network is down, the server refuses or the answer is not a release of this project', async () => {
-    const down: UpdateFetch = async () => { throw new Error('ENOTFOUND'); };
+    const down: UpdateFetch = async () => {
+      throw new Error('ENOTFOUND');
+    };
     const refused: UpdateFetch = async () => ({ ok: false, status: 403, text: async () => '{}' });
     for (const fetch of [down, refused, release('v2.0.0', 'https://evil.example/releases/tag/v2.0.0')]) {
       const answer = await runUpdateCheck({ run: () => checkForUpdate({ currentVersion: '2.0.0-rc.4', fetch }) }, '2.0.0-rc.4');
@@ -53,7 +66,11 @@ describe('the notice (REL-021)', () => {
   const available = { status: 'available', current: '2.0.0-rc.4', latest: '2.0.0', url: URL } as const;
 
   it('names the release, links to it and gives the update step of each system', () => {
-    for (const [platform, mentions] of [['win32', ['setup-unsigned.exe', 'portable-unsigned.exe']], ['darwin', ['.dmg', 'Applications']], ['linux', ['sudo apt install', 'sudo dnf install', 'AppImage']]] as const) {
+    for (const [platform, mentions] of [
+      ['win32', ['setup-unsigned.exe', 'portable-unsigned.exe']],
+      ['darwin', ['.dmg', 'Applications']],
+      ['linux', ['sudo apt install', 'sudo dnf install', 'AppImage']],
+    ] as const) {
       const notice = updateNotice(available, platform, null)!;
       expect(notice).toMatchObject({ current: '2.0.0-rc.4', latest: '2.0.0', releaseUrl: URL });
       for (const mention of mentions) expect(notice.steps.join('\n')).toContain(mention);
@@ -67,20 +84,40 @@ describe('the notice (REL-021)', () => {
     expect(updateNotice({ ...available, latest: '2.0.1' }, 'linux', '2.0.0')).not.toBeNull();
   });
 
-  it('remembers a dismissal in the storage of the user, and reads a storage that is missing, broken or holds junk as nothing dismissed', () => {
-    const storage = memory();
-    const store = createUpdateNoticeStore(storage);
-    store.getState().report(available);
-    expect(store.getState().dismissed).toBeNull();
-    store.getState().dismiss();
-    expect(store.getState().dismissed).toBe('2.0.0');
-    expect(storage.values.get(DISMISSED_STORAGE_KEY)).toBe('2.0.0');
-    expect(createUpdateNoticeStore(storage).getState().dismissed).toBe('2.0.0');
-    expect(readDismissed(undefined)).toBeNull();
-    expect(readDismissed({ getItem: () => { throw new Error('blocked'); }, setItem: () => undefined })).toBeNull();
-    expect(readDismissed({ getItem: () => '<script>', setItem: () => undefined })).toBeNull();
-    expect(() => writeDismissed({ getItem: () => null, setItem: () => { throw new Error('full'); } }, '2.0.0')).not.toThrow();
-  });
+  it(
+    'remembers a dismissal in the storage of the user, and reads a storage that is missing, broken or holds junk as nothing ' + 'dismissed',
+    () => {
+      const storage = memory();
+      const store = createUpdateNoticeStore(storage);
+      store.getState().report(available);
+      expect(store.getState().dismissed).toBeNull();
+      store.getState().dismiss();
+      expect(store.getState().dismissed).toBe('2.0.0');
+      expect(storage.values.get(DISMISSED_STORAGE_KEY)).toBe('2.0.0');
+      expect(createUpdateNoticeStore(storage).getState().dismissed).toBe('2.0.0');
+      expect(readDismissed(undefined)).toBeNull();
+      expect(
+        readDismissed({
+          getItem: () => {
+            throw new Error('blocked');
+          },
+          setItem: () => undefined,
+        }),
+      ).toBeNull();
+      expect(readDismissed({ getItem: () => '<script>', setItem: () => undefined })).toBeNull();
+      expect(() =>
+        writeDismissed(
+          {
+            getItem: () => null,
+            setItem: () => {
+              throw new Error('full');
+            },
+          },
+          '2.0.0',
+        ),
+      ).not.toThrow();
+    },
+  );
 
   it('keeps a dismissal when the same release is reported again, and ignores a dismissal when nothing newer was reported', () => {
     const store = createUpdateNoticeStore(memory());

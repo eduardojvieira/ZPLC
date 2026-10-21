@@ -28,12 +28,7 @@
 #include <stdint.h>
 
 /** Region indices returned by zplc_mem_extent_locate(). */
-enum {
-  ZPLC_MEM_REGION_IPI = 0,
-  ZPLC_MEM_REGION_OPI = 1,
-  ZPLC_MEM_REGION_WORK = 2,
-  ZPLC_MEM_REGION_RETAIN = 3
-};
+enum { ZPLC_MEM_REGION_IPI = 0, ZPLC_MEM_REGION_OPI = 1, ZPLC_MEM_REGION_WORK = 2, ZPLC_MEM_REGION_RETAIN = 3 };
 
 /**
  * @brief Find the region that wholly contains [addr, addr + len).
@@ -44,14 +39,10 @@ enum {
  * @return ZPLC_MEM_REGION_* index, or -1 when the extent is not inside one
  *         region (partly or wholly outside PLC memory, or crossing two)
  */
-static inline int zplc_mem_extent_locate(uint32_t addr, uint32_t len,
-                                         uint32_t *offset) {
-  static const uint32_t bases[4] = {ZPLC_MEM_IPI_BASE, ZPLC_MEM_OPI_BASE,
-                                    ZPLC_MEM_WORK_BASE, ZPLC_MEM_RETAIN_BASE};
-  static const uint32_t sizes[4] = {ZPLC_MEM_IPI_SIZE, ZPLC_MEM_OPI_SIZE,
-                                    ZPLC_MEM_WORK_SIZE, ZPLC_MEM_RETAIN_SIZE};
-  static const uint32_t ends[4] = {ZPLC_MEM_OPI_BASE, ZPLC_MEM_WORK_BASE,
-                                   ZPLC_MEM_RETAIN_BASE, ZPLC_MEM_CODE_BASE};
+static inline int zplc_mem_extent_locate(uint32_t addr, uint32_t len, uint32_t *offset) {
+  static const uint32_t bases[4] = {ZPLC_MEM_IPI_BASE, ZPLC_MEM_OPI_BASE, ZPLC_MEM_WORK_BASE, ZPLC_MEM_RETAIN_BASE};
+  static const uint32_t sizes[4] = {ZPLC_MEM_IPI_SIZE, ZPLC_MEM_OPI_SIZE, ZPLC_MEM_WORK_SIZE, ZPLC_MEM_RETAIN_SIZE};
+  static const uint32_t ends[4] = {ZPLC_MEM_OPI_BASE, ZPLC_MEM_WORK_BASE, ZPLC_MEM_RETAIN_BASE, ZPLC_MEM_CODE_BASE};
   uint32_t region;
 
   if (len == 0U) {
@@ -63,8 +54,7 @@ static inline int zplc_mem_extent_locate(uint32_t addr, uint32_t len,
     if (size > ends[region] - bases[region]) {
       size = ends[region] - bases[region];
     }
-    if (addr >= bases[region] && addr - bases[region] < size &&
-        len <= size - (addr - bases[region])) {
+    if (addr >= bases[region] && addr - bases[region] < size && len <= size - (addr - bases[region])) {
       if (offset != NULL) {
         *offset = addr - bases[region];
       }

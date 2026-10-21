@@ -25,13 +25,15 @@ export function UnsavedChangesDialog({ title, items, busy = false, saveLabel, di
       description={t('unsaved.items')}
       cancelLabel={t('common.cancel')}
       secondary={{ label: discardLabel ?? t('common.discard'), destructive: true, onSelect: () => onChoice('discard') }}
-      actionLabel={busy ? t('common.saving') : saveLabel ?? t('common.save')}
+      actionLabel={busy ? t('common.saving') : (saveLabel ?? t('common.save'))}
       busy={busy}
       onAction={() => onChoice('save')}
       onCancel={() => onChoice('cancel')}
     >
       <ul className="list-disc pl-5 text-sm text-[var(--color-surface-100)]" data-unsaved-changes-dialog>
-        {items.map((item) => <li key={item}>{item}</li>)}
+        {items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
       </ul>
     </AlertDialog>
   );

@@ -1,6 +1,6 @@
 /**
  * FBD (Function Block Diagram) Model Types
- * 
+ *
  * TypeScript types matching the FBD JSON schema used for visual editing.
  * Based on IEC 61131-3 FBD language specification.
  */
@@ -18,7 +18,7 @@ export interface FBDVariable {
   name: string;
   type: string;
   initialValue?: unknown;
-  address?: string;        // e.g., "%Q0.0" for physical outputs
+  address?: string; // e.g., "%Q0.0" for physical outputs
   comment?: string;
 }
 
@@ -41,7 +41,7 @@ export interface FBDPort {
 // Block Types
 // =============================================================================
 
-export type FBDBlockType = 
+export type FBDBlockType =
   // Special blocks
   | 'constant'
   | 'variable'
@@ -109,20 +109,20 @@ export interface FBDPosition {
 
 export interface FBDBlock {
   id: string;
-  type: FBDBlockType | string;  // Allow custom types
-  instanceName?: string;        // For FBs that need instances (timers, etc.)
+  type: FBDBlockType | string; // Allow custom types
+  instanceName?: string; // For FBs that need instances (timers, etc.)
   position: FBDPosition;
   inputs?: FBDPort[];
   outputs?: FBDPort[];
-  
+
   // For constant blocks
   dataType?: string;
   value?: unknown;
-  
+
   // For variable/output/input blocks
   variableName?: string;
   address?: string;
-  
+
   comment?: string;
 }
 
@@ -131,8 +131,8 @@ export interface FBDBlock {
 // =============================================================================
 
 export interface FBDConnectionEndpoint {
-  block: string;   // Block ID
-  port: string;    // Port name
+  block: string; // Block ID
+  port: string; // Port name
 }
 
 export interface FBDConnection {
@@ -162,11 +162,11 @@ export interface FBDModel {
   name: string;
   description?: string;
   version?: string;
-  
+
   variables: FBDVariables;
   blocks: FBDBlock[];
   connections: FBDConnection[];
-  
+
   metadata?: FBDMetadata;
 }
 
@@ -279,7 +279,8 @@ export function validateFBDModel(value: unknown, projectBlocks?: readonly Projec
       throw new ElementError(`Invalid FBD connection '${id}': unknown destination input port '${toBlock}.${toPort}'`, at);
     }
     const destination = endpointKey(toBlock, toPort);
-    if (writtenInputs.has(destination)) throw new ElementError(`Invalid FBD connection '${id}': multiple writers for '${toBlock}.${toPort}'`, at);
+    if (writtenInputs.has(destination))
+      throw new ElementError(`Invalid FBD connection '${id}': multiple writers for '${toBlock}.${toPort}'`, at);
     writtenInputs.add(destination);
     return { ...connection, id, from: { block: fromBlock, port: fromPort }, to: { block: toBlock, port: toPort } } as FBDConnection;
   });
@@ -287,7 +288,12 @@ export function validateFBDModel(value: unknown, projectBlocks?: readonly Projec
   return {
     ...source,
     name: nonEmptyString(source.name, 'name'),
-    variables: { ...variables, local: variables.local as FBDVariable[], outputs: variables.outputs as FBDVariable[], inputs: variables.inputs as FBDVariable[] | undefined },
+    variables: {
+      ...variables,
+      local: variables.local as FBDVariable[],
+      outputs: variables.outputs as FBDVariable[],
+      inputs: variables.inputs as FBDVariable[] | undefined,
+    },
     blocks,
     connections,
   } as FBDModel;
@@ -305,11 +311,20 @@ export function serializeFBDModel(model: FBDModel): string {
  */
 export function isFunctionBlock(type: string): boolean {
   const fbTypes = [
-    'TON', 'TOF', 'TP',
-    'CTU', 'CTD', 'CTUD',
-    'R_TRIG', 'F_TRIG',
-    'SR', 'RS',
-    'COMM_PUBLISH', 'COMM_SUBSCRIBE', 'COMM_MODBUS', 'COMM_CONNECT'
+    'TON',
+    'TOF',
+    'TP',
+    'CTU',
+    'CTD',
+    'CTUD',
+    'R_TRIG',
+    'F_TRIG',
+    'SR',
+    'RS',
+    'COMM_PUBLISH',
+    'COMM_SUBSCRIBE',
+    'COMM_MODBUS',
+    'COMM_CONNECT',
   ];
   return fbTypes.includes(type);
 }
@@ -339,7 +354,7 @@ export function isMathOperator(type: string): boolean {
  * Get the default ports for a block type: the ones of the declaration when the project declares a block of that
  * name (it wins over a standard block, as it does in the compiler), else those of the standard block.
  */
-export function getDefaultPorts(type: string, blocks?: readonly ProjectBlock[]): { inputs: FBDPort[], outputs: FBDPort[] } {
+export function getDefaultPorts(type: string, blocks?: readonly ProjectBlock[]): { inputs: FBDPort[]; outputs: FBDPort[] } {
   const declared = findProjectBlock(blocks, type);
   if (declared) {
     return {
@@ -351,23 +366,23 @@ export function getDefaultPorts(type: string, blocks?: readonly ProjectBlock[]):
     case 'constant':
       return {
         inputs: [],
-        outputs: [{ name: 'OUT', type: 'ANY' }]
+        outputs: [{ name: 'OUT', type: 'ANY' }],
       };
     case 'variable':
     case 'input':
       return {
         inputs: [{ name: 'IN', type: 'ANY' }],
-        outputs: [{ name: 'OUT', type: 'ANY' }]
+        outputs: [{ name: 'OUT', type: 'ANY' }],
       };
     case 'output':
       return {
         inputs: [{ name: 'IN', type: 'ANY' }],
-        outputs: []
+        outputs: [],
       };
     case 'NOT':
       return {
         inputs: [{ name: 'IN', type: 'BOOL' }],
-        outputs: [{ name: 'OUT', type: 'BOOL' }]
+        outputs: [{ name: 'OUT', type: 'BOOL' }],
       };
     case 'AND':
     case 'OR':
@@ -377,9 +392,9 @@ export function getDefaultPorts(type: string, blocks?: readonly ProjectBlock[]):
       return {
         inputs: [
           { name: 'IN1', type: 'BOOL' },
-          { name: 'IN2', type: 'BOOL' }
+          { name: 'IN2', type: 'BOOL' },
         ],
-        outputs: [{ name: 'OUT', type: 'BOOL' }]
+        outputs: [{ name: 'OUT', type: 'BOOL' }],
       };
     case 'TON':
     case 'TOF':
@@ -387,58 +402,58 @@ export function getDefaultPorts(type: string, blocks?: readonly ProjectBlock[]):
       return {
         inputs: [
           { name: 'IN', type: 'BOOL' },
-          { name: 'PT', type: 'TIME' }
+          { name: 'PT', type: 'TIME' },
         ],
         outputs: [
           { name: 'Q', type: 'BOOL' },
-          { name: 'ET', type: 'TIME' }
-        ]
+          { name: 'ET', type: 'TIME' },
+        ],
       };
     case 'R_TRIG':
     case 'F_TRIG':
       return {
         inputs: [{ name: 'CLK', type: 'BOOL' }],
-        outputs: [{ name: 'Q', type: 'BOOL' }]
+        outputs: [{ name: 'Q', type: 'BOOL' }],
       };
     case 'SR':
       return {
         inputs: [
           { name: 'S1', type: 'BOOL' },
-          { name: 'R', type: 'BOOL' }
+          { name: 'R', type: 'BOOL' },
         ],
-        outputs: [{ name: 'Q1', type: 'BOOL' }]
+        outputs: [{ name: 'Q1', type: 'BOOL' }],
       };
     case 'RS':
       return {
         inputs: [
           { name: 'S', type: 'BOOL' },
-          { name: 'R1', type: 'BOOL' }
+          { name: 'R1', type: 'BOOL' },
         ],
-        outputs: [{ name: 'Q1', type: 'BOOL' }]
+        outputs: [{ name: 'Q1', type: 'BOOL' }],
       };
     case 'CTU':
       return {
         inputs: [
           { name: 'CU', type: 'BOOL' },
           { name: 'R', type: 'BOOL' },
-          { name: 'PV', type: 'INT' }
+          { name: 'PV', type: 'INT' },
         ],
         outputs: [
           { name: 'Q', type: 'BOOL' },
-          { name: 'CV', type: 'INT' }
-        ]
+          { name: 'CV', type: 'INT' },
+        ],
       };
     case 'CTD':
       return {
         inputs: [
           { name: 'CD', type: 'BOOL' },
           { name: 'LD', type: 'BOOL' },
-          { name: 'PV', type: 'INT' }
+          { name: 'PV', type: 'INT' },
         ],
         outputs: [
           { name: 'Q', type: 'BOOL' },
-          { name: 'CV', type: 'INT' }
-        ]
+          { name: 'CV', type: 'INT' },
+        ],
       };
     case 'CTUD':
       return {
@@ -447,13 +462,13 @@ export function getDefaultPorts(type: string, blocks?: readonly ProjectBlock[]):
           { name: 'CD', type: 'BOOL' },
           { name: 'R', type: 'BOOL' },
           { name: 'LD', type: 'BOOL' },
-          { name: 'PV', type: 'INT' }
+          { name: 'PV', type: 'INT' },
         ],
         outputs: [
           { name: 'QU', type: 'BOOL' },
           { name: 'QD', type: 'BOOL' },
-          { name: 'CV', type: 'INT' }
-        ]
+          { name: 'CV', type: 'INT' },
+        ],
       };
     case 'EQ':
     case 'NE':
@@ -464,9 +479,9 @@ export function getDefaultPorts(type: string, blocks?: readonly ProjectBlock[]):
       return {
         inputs: [
           { name: 'IN1', type: 'ANY' },
-          { name: 'IN2', type: 'ANY' }
+          { name: 'IN2', type: 'ANY' },
         ],
-        outputs: [{ name: 'OUT', type: 'BOOL' }]
+        outputs: [{ name: 'OUT', type: 'BOOL' }],
       };
     case 'ADD':
     case 'SUB':
@@ -476,83 +491,79 @@ export function getDefaultPorts(type: string, blocks?: readonly ProjectBlock[]):
       return {
         inputs: [
           { name: 'IN1', type: 'ANY_NUM' },
-          { name: 'IN2', type: 'ANY_NUM' }
+          { name: 'IN2', type: 'ANY_NUM' },
         ],
-        outputs: [{ name: 'OUT', type: 'ANY_NUM' }]
+        outputs: [{ name: 'OUT', type: 'ANY_NUM' }],
       };
     case 'ABS':
       return {
         inputs: [{ name: 'IN', type: 'ANY_NUM' }],
-        outputs: [{ name: 'OUT', type: 'ANY_NUM' }]
+        outputs: [{ name: 'OUT', type: 'ANY_NUM' }],
       };
     case 'MAX':
     case 'MIN':
       return {
         inputs: [
           { name: 'IN1', type: 'ANY_NUM' },
-          { name: 'IN2', type: 'ANY_NUM' }
+          { name: 'IN2', type: 'ANY_NUM' },
         ],
-        outputs: [{ name: 'OUT', type: 'ANY_NUM' }]
+        outputs: [{ name: 'OUT', type: 'ANY_NUM' }],
       };
     case 'LIMIT':
       return {
         inputs: [
           { name: 'MN', type: 'ANY_NUM' },
           { name: 'IN', type: 'ANY_NUM' },
-          { name: 'MX', type: 'ANY_NUM' }
+          { name: 'MX', type: 'ANY_NUM' },
         ],
-        outputs: [{ name: 'OUT', type: 'ANY_NUM' }]
+        outputs: [{ name: 'OUT', type: 'ANY_NUM' }],
       };
     case 'SEL':
       return {
         inputs: [
           { name: 'G', type: 'BOOL' },
           { name: 'IN0', type: 'ANY' },
-          { name: 'IN1', type: 'ANY' }
+          { name: 'IN1', type: 'ANY' },
         ],
-        outputs: [{ name: 'OUT', type: 'ANY' }]
+        outputs: [{ name: 'OUT', type: 'ANY' }],
       };
     case 'COMM_PUBLISH':
       return {
         inputs: [
           { name: 'EN', type: 'BOOL' },
-          { name: 'IN', type: 'ANY' }
+          { name: 'IN', type: 'ANY' },
         ],
         outputs: [
           { name: 'OUT', type: 'ANY' },
-          { name: 'DONE', type: 'BOOL' }
-        ]
+          { name: 'DONE', type: 'BOOL' },
+        ],
       };
     case 'COMM_SUBSCRIBE':
       return {
-        inputs: [
-          { name: 'EN', type: 'BOOL' }
-        ],
+        inputs: [{ name: 'EN', type: 'BOOL' }],
         outputs: [
           { name: 'OUT', type: 'ANY' },
-          { name: 'VALID', type: 'BOOL' }
-        ]
+          { name: 'VALID', type: 'BOOL' },
+        ],
       };
     case 'COMM_MODBUS':
       return {
         inputs: [
           { name: 'EN', type: 'BOOL' },
-          { name: 'IN', type: 'ANY' }
+          { name: 'IN', type: 'ANY' },
         ],
         outputs: [
           { name: 'OUT', type: 'ANY' },
-          { name: 'STATUS', type: 'BOOL' }
-        ]
+          { name: 'STATUS', type: 'BOOL' },
+        ],
       };
     case 'COMM_CONNECT':
       return {
-        inputs: [
-          { name: 'EN', type: 'BOOL' }
-        ],
+        inputs: [{ name: 'EN', type: 'BOOL' }],
         outputs: [
           { name: 'CONNECTED', type: 'BOOL' },
-          { name: 'ERROR', type: 'BOOL' }
-        ]
+          { name: 'ERROR', type: 'BOOL' },
+        ],
       };
     case 'MB_COIL':
     case 'MB_DISCRETE_INPUT':
@@ -562,12 +573,12 @@ export function getDefaultPorts(type: string, blocks?: readonly ProjectBlock[]):
         inputs: [
           { name: 'EN', type: 'BOOL' },
           { name: 'IN', type: 'ANY' },
-          { name: 'ADDR', type: 'UINT' }
+          { name: 'ADDR', type: 'UINT' },
         ],
         outputs: [
           { name: 'OUT', type: 'ANY' },
-          { name: 'STATUS', type: 'BOOL' }
-        ]
+          { name: 'STATUS', type: 'BOOL' },
+        ],
       };
     default: {
       // a block of the compiler's library has the inputs and outputs it declares (LNG-007): wiring `IN` to a BLINK would
@@ -578,7 +589,14 @@ export function getDefaultPorts(type: string, blocks?: readonly ProjectBlock[]):
         // anything wider is not checked by the compiler, so it is not claimed here
         const port = (member: (typeof library.members)[number]): FBDPort => ({
           name: member.name,
-          type: typeof member.dataType === 'string' ? member.dataType.toUpperCase() : member.size === 1 ? 'BOOL' : member.size === 2 ? 'INT' : 'ANY',
+          type:
+            typeof member.dataType === 'string'
+              ? member.dataType.toUpperCase()
+              : member.size === 1
+                ? 'BOOL'
+                : member.size === 2
+                  ? 'INT'
+                  : 'ANY',
         });
         return {
           inputs: library.members.filter((member) => member.isInput && !member.isInternal).map(port),
@@ -587,7 +605,7 @@ export function getDefaultPorts(type: string, blocks?: readonly ProjectBlock[]):
       }
       return {
         inputs: [{ name: 'IN', type: 'ANY' }],
-        outputs: [{ name: 'OUT', type: 'ANY' }]
+        outputs: [{ name: 'OUT', type: 'ANY' }],
       };
     }
   }

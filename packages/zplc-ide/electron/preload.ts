@@ -9,11 +9,7 @@
 
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
 
-import type {
-  NativeSimulationEvent,
-  NativeSimulationHelloResult,
-  NativeSimulationRequest,
-} from '../shared/nativeSimulationIpc.js';
+import type { NativeSimulationEvent, NativeSimulationHelloResult, NativeSimulationRequest } from '../shared/nativeSimulationIpc.js';
 
 import {
   AI_PROVIDER_CHANNEL,
@@ -38,7 +34,6 @@ import {
   WORKSPACE_TESTS_CHANNEL,
 } from './ipcContract.js';
 
-
 type GuardedAction = 'close' | 'reload';
 
 // Expose protected APIs to the renderer process
@@ -52,8 +47,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
    * Native simulation bridge
    */
   nativeSimulation: {
-    startSession: () =>
-      ipcRenderer.invoke(NATIVE_SIMULATION_CHANNEL.START_SESSION) as Promise<NativeSimulationHelloResult>,
+    startSession: () => ipcRenderer.invoke(NATIVE_SIMULATION_CHANNEL.START_SESSION) as Promise<NativeSimulationHelloResult>,
     stopSession: () => ipcRenderer.invoke(NATIVE_SIMULATION_CHANNEL.STOP_SESSION) as Promise<void>,
     request: <TResult = unknown>(request: NativeSimulationRequest) =>
       ipcRenderer.invoke(NATIVE_SIMULATION_CHANNEL.REQUEST, request) as Promise<TResult>,
@@ -96,14 +90,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // registry, behind the same gates as the button of the toolbar; the preload carries an id and nothing else.
   menu: {
     onCommand: (callback: (commandId: unknown) => void) => {
-      const listener = (_event: Electron.IpcRendererEvent, commandId: unknown) => { callback(commandId); };
+      const listener = (_event: Electron.IpcRendererEvent, commandId: unknown) => {
+        callback(commandId);
+      };
       ipcRenderer.on(MENU_CHANNEL.COMMAND, listener);
-      return () => { ipcRenderer.removeListener(MENU_CHANNEL.COMMAND, listener); };
+      return () => {
+        ipcRenderer.removeListener(MENU_CHANNEL.COMMAND, listener);
+      };
     },
   },
   // The language and theme of the window, for the language of the menu and the colour of the next window (UX-014, UX-016).
   windowPreferences: {
-    report: (preferences: { language: string; theme: string }) => ipcRenderer.invoke(WINDOW_PREFERENCES_CHANNEL.REPORT, preferences) as Promise<null>,
+    report: (preferences: { language: string; theme: string }) =>
+      ipcRenderer.invoke(WINDOW_PREFERENCES_CHANNEL.REPORT, preferences) as Promise<null>,
   },
   closeGuard: {
     setDirty: (dirty: boolean) => ipcRenderer.invoke(CLOSE_GUARD_CHANNEL.SET_DIRTY, dirty) as Promise<void>,
@@ -142,9 +141,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     inspectArchive: () => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.inspectArchive) as Promise<unknown>,
     extractArchive: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.extractArchive, request) as Promise<unknown>,
     onChanged: (callback: (change: unknown) => void) => {
-      const listener = (_event: Electron.IpcRendererEvent, change: unknown) => { callback(change); };
+      const listener = (_event: Electron.IpcRendererEvent, change: unknown) => {
+        callback(change);
+      };
       ipcRenderer.on(PROJECT_FILES_EVENT.changed, listener);
-      return () => { ipcRenderer.removeListener(PROJECT_FILES_EVENT.changed, listener); };
+      return () => {
+        ipcRenderer.removeListener(PROJECT_FILES_EVENT.changed, listener);
+      };
     },
   },
   // Per-project session (IDE-008): the folder is named by the opaque id that projectFiles gave out; the document holds
@@ -156,12 +159,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // The serial port (IDE-018): the main process offers the ports the system lists, the window answers with one of them or
   // a cancel. What crosses is an opaque port id and numbers and text to show, never a path.
   portChoice: {
-    choose: (choice: { requestId: string; portId: string | null }) => ipcRenderer.invoke(PORT_CHOICE_CHANNEL.CHOOSE, choice) as Promise<unknown>,
+    choose: (choice: { requestId: string; portId: string | null }) =>
+      ipcRenderer.invoke(PORT_CHOICE_CHANNEL.CHOOSE, choice) as Promise<unknown>,
     list: (request: { requestId: string }) => ipcRenderer.invoke(PORT_CHOICE_CHANNEL.LIST, request) as Promise<unknown>,
     onRequested: (callback: (offer: unknown) => void) => {
-      const listener = (_event: Electron.IpcRendererEvent, offer: unknown) => { callback(offer); };
+      const listener = (_event: Electron.IpcRendererEvent, offer: unknown) => {
+        callback(offer);
+      };
       ipcRenderer.on(PORT_CHOICE_CHANNEL.REQUESTED, listener);
-      return () => { ipcRenderer.removeListener(PORT_CHOICE_CHANNEL.REQUESTED, listener); };
+      return () => {
+        ipcRenderer.removeListener(PORT_CHOICE_CHANNEL.REQUESTED, listener);
+      };
     },
   },
   // Recovery of modified files (IDE-006): the folder is named by the opaque id that projectFiles gave out; what crosses
@@ -217,10 +225,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
   aiProvider: {
     getStatus: () => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.GET_STATUS) as Promise<unknown>,
     getConfig: () => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.GET_CONFIG) as Promise<unknown>,
-    saveConfig: (config: { enabled: boolean; endpoint: string; model: string }) => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.SAVE_CONFIG, config) as Promise<unknown>,
+    saveConfig: (config: { enabled: boolean; endpoint: string; model: string }) =>
+      ipcRenderer.invoke(AI_PROVIDER_CHANNEL.SAVE_CONFIG, config) as Promise<unknown>,
     storeKey: (key: string) => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.STORE_KEY, key) as Promise<unknown>,
     clearKey: () => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.CLEAR_KEY) as Promise<unknown>,
-    request: (request: { workspaceId: string; mode: 'ask' | 'plan' | 'edit' | 'debug'; prompt: string; activeFile?: { fileId: string; path: string }; diagnostics?: Array<{ code: string; path?: string; line?: number; column?: number }>; trace?: Array<{ atMs: number; signal: string; value: boolean | number }> }) => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.REQUEST, request) as Promise<unknown>,
+    request: (request: {
+      workspaceId: string;
+      mode: 'ask' | 'plan' | 'edit' | 'debug';
+      prompt: string;
+      activeFile?: { fileId: string; path: string };
+      diagnostics?: Array<{ code: string; path?: string; line?: number; column?: number }>;
+      trace?: Array<{ atMs: number; signal: string; value: boolean | number }>;
+    }) => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.REQUEST, request) as Promise<unknown>,
     cancel: () => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.CANCEL) as Promise<{ requested: boolean }>,
   },
 
@@ -301,7 +317,14 @@ declare global {
         saveConfig: (config: { enabled: boolean; endpoint: string; model: string }) => Promise<unknown>;
         storeKey: (key: string) => Promise<unknown>;
         clearKey: () => Promise<unknown>;
-        request: (request: { workspaceId: string; mode: 'ask' | 'plan' | 'edit' | 'debug'; prompt: string; activeFile?: { fileId: string; path: string }; diagnostics?: Array<{ code: string; path?: string; line?: number; column?: number }>; trace?: Array<{ atMs: number; signal: string; value: boolean | number }> }) => Promise<unknown>;
+        request: (request: {
+          workspaceId: string;
+          mode: 'ask' | 'plan' | 'edit' | 'debug';
+          prompt: string;
+          activeFile?: { fileId: string; path: string };
+          diagnostics?: Array<{ code: string; path?: string; line?: number; column?: number }>;
+          trace?: Array<{ atMs: number; signal: string; value: boolean | number }>;
+        }) => Promise<unknown>;
         cancel: () => Promise<{ requested: boolean }>;
       };
       isElectron: boolean;

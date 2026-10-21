@@ -13,7 +13,9 @@ const RENDER_FAULT_EVENT = 'zplc:inject-render-fault';
 function Probe({ region }: { region: string }) {
   const [failing, setFailing] = useState(false);
   useEffect(() => {
-    const listener = (event: Event) => { if (event instanceof CustomEvent && event.detail === region) setFailing(true); };
+    const listener = (event: Event) => {
+      if (event instanceof CustomEvent && event.detail === region) setFailing(true);
+    };
     window.addEventListener(RENDER_FAULT_EVENT, listener);
     return () => window.removeEventListener(RENDER_FAULT_EVENT, listener);
   }, [region]);

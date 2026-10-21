@@ -22,7 +22,7 @@ function shown(root: string) {
   return {
     register: gateway.register,
     registerProjectManifest: (owner: number, manifest: string) => gateway.registerProjectManifest(owner, manifest, dirname(manifest)),
-    run: <T,>(owner: number, request: unknown, runner: Parameters<typeof gateway.run<T>>[2]) => gateway.run(owner, request, runner, root),
+    run: <T>(owner: number, request: unknown, runner: Parameters<typeof gateway.run<T>>[2]) => gateway.run(owner, request, runner, root),
     cancel: gateway.cancel,
     revokeOwner: gateway.revokeOwner,
   };
@@ -97,10 +97,12 @@ describe('Workspace test gateway', () => {
     await rejected(() => gateway.run(7, { workspaceId: `${token.workspaceId}-extra` }, async () => undefined));
     await rejected(() => gateway.run(7, { workspaceId: token.workspaceId, extra: true }, async () => undefined));
     await rejected(() => gateway.run(7, Object.create(null), async () => undefined));
-    await gateway.run(8, token, async () => undefined).catch((error: unknown) => {
-      expect(error).toBeInstanceOf(Error);
-      expect((error as Error).message).not.toContain(root);
-    });
+    await gateway
+      .run(8, token, async () => undefined)
+      .catch((error: unknown) => {
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).message).not.toContain(root);
+      });
   });
 
   it('rejects symbolic-link roots when the operating system permits creating them', async () => {
@@ -125,7 +127,11 @@ describe('Workspace test gateway', () => {
     const token = await gateway.register(7, root);
     let called = false;
     await rm(root, { recursive: true, force: true });
-    await expect(gateway.run(7, token, async () => { called = true; })).rejects.toThrow('Workspace is unavailable');
+    await expect(
+      gateway.run(7, token, async () => {
+        called = true;
+      }),
+    ).rejects.toThrow('Workspace is unavailable');
     expect(called).toBe(false);
 
     const replaced = await workspace();
@@ -134,7 +140,11 @@ describe('Workspace test gateway', () => {
     await rm(replaced, { recursive: true, force: true });
     await mkdir(replaced);
     called = false;
-    await expect(secondGateway.run(7, secondToken, async () => { called = true; })).rejects.toThrow('Workspace is unavailable');
+    await expect(
+      secondGateway.run(7, secondToken, async () => {
+        called = true;
+      }),
+    ).rejects.toThrow('Workspace is unavailable');
     expect(called).toBe(false);
   });
 
@@ -146,11 +156,18 @@ describe('Workspace test gateway', () => {
     const token = await registering;
     let release: (() => void) | undefined;
     let markStarted: (() => void) | undefined;
-    const started = new Promise<void>((resolve) => { markStarted = resolve; });
-    const running = gateway.run(7, token, () => new Promise<void>((resolve) => {
-      release = resolve;
-      markStarted?.();
-    }));
+    const started = new Promise<void>((resolve) => {
+      markStarted = resolve;
+    });
+    const running = gateway.run(
+      7,
+      token,
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+          markStarted?.();
+        }),
+    );
     await started;
 
     await expect(gateway.run(7, token, async () => undefined)).rejects.toThrow('Workspace is unavailable');
@@ -158,7 +175,11 @@ describe('Workspace test gateway', () => {
     release?.();
     await running;
 
-    await expect(gateway.run(7, token, async () => { throw new Error(root); })).rejects.toThrow('Workspace is unavailable');
+    await expect(
+      gateway.run(7, token, async () => {
+        throw new Error(root);
+      }),
+    ).rejects.toThrow('Workspace is unavailable');
     await expect(gateway.run(7, token, async () => 'recovered')).resolves.toBe('recovered');
   });
 
@@ -169,11 +190,15 @@ describe('Workspace test gateway', () => {
     let release: (() => void) | undefined;
     let signal: AbortSignal | undefined;
     let markStarted: (() => void) | undefined;
-    const started = new Promise<void>((resolve) => { markStarted = resolve; });
+    const started = new Promise<void>((resolve) => {
+      markStarted = resolve;
+    });
     const running = gateway.run(7, token, async (_root, options) => {
       signal = options.signal;
       markStarted?.();
-      await new Promise<void>((resolve) => { release = resolve; });
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
       return 'done';
     });
     await started;
@@ -193,11 +218,15 @@ describe('Workspace test gateway', () => {
     let release: (() => void) | undefined;
     let signal: AbortSignal | undefined;
     let markStarted: (() => void) | undefined;
-    const started = new Promise<void>((resolve) => { markStarted = resolve; });
+    const started = new Promise<void>((resolve) => {
+      markStarted = resolve;
+    });
     const running = gateway.run(7, token, async (_root, options) => {
       signal = options.signal;
       markStarted?.();
-      await new Promise<void>((resolve) => { release = resolve; });
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
     });
     await started;
     expect(gateway.revokeOwner(7)).toBe(true);
@@ -265,8 +294,26 @@ describe('Workspace test gateway', () => {
     const token = await gateway.registerProjectManifest(7, join(shownRoot, 'zplc.json'), shownRoot);
     let called = 0;
     // The window now shows another folder, or none: the registered workspace is not the project of the editor.
-    await expect(gateway.run(7, token, async () => { called += 1; }, otherRoot)).rejects.toThrow('Workspace is unavailable');
-    await expect(gateway.run(7, token, async () => { called += 1; }, null)).rejects.toThrow('Workspace is unavailable');
+    await expect(
+      gateway.run(
+        7,
+        token,
+        async () => {
+          called += 1;
+        },
+        otherRoot,
+      ),
+    ).rejects.toThrow('Workspace is unavailable');
+    await expect(
+      gateway.run(
+        7,
+        token,
+        async () => {
+          called += 1;
+        },
+        null,
+      ),
+    ).rejects.toThrow('Workspace is unavailable');
     expect(called).toBe(0);
     await expect(gateway.run(7, token, async (root) => root, shownRoot)).resolves.toBe(shownRoot);
   });

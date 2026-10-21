@@ -14,10 +14,16 @@ const inCi = !['', '0', 'false'].includes(process.env.CI ?? '');
 const missing = 'missing' in tools ? tools.missing.join(' and ') : '';
 
 if (!wasmToolchainAvailable && !inCi) {
-  console.warn(`the WebAssembly runtime is not built: ${missing} not found. The tests that need it are skipped here and fail in CI; install clang and lld.`);
+  console.warn(
+    `the WebAssembly runtime is not built: ${missing} not found. The tests that need it are skipped here and fail in CI; install clang ` +
+      `and lld.`,
+  );
 }
 
-export interface BuiltWasmModule { bytes: Uint8Array; manifest: ModuleManifest }
+export interface BuiltWasmModule {
+  bytes: Uint8Array;
+  manifest: ModuleManifest;
+}
 
 let built: BuiltWasmModule | undefined;
 
@@ -36,8 +42,11 @@ export function builtWasmModule(): BuiltWasmModule {
   return built;
 }
 
-export const itWasm = (wasmToolchainAvailable || !inCi
-  ? it.skipIf(!wasmToolchainAvailable)
-  : (name: string) => it(name, () => {
-    throw new Error(`cannot build the WebAssembly runtime: ${missing} not found on the PATH (CI is set); install clang and lld`);
-  })) as ReturnType<typeof it.skipIf>;
+export const itWasm = (
+  wasmToolchainAvailable || !inCi
+    ? it.skipIf(!wasmToolchainAvailable)
+    : (name: string) =>
+        it(name, () => {
+          throw new Error(`cannot build the WebAssembly runtime: ${missing} not found on the PATH (CI is set); install clang and lld`);
+        })
+) as ReturnType<typeof it.skipIf>;

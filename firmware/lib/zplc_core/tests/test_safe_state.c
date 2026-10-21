@@ -25,15 +25,15 @@
 static int test_count = 0;
 static int fail_count = 0;
 
-#define CHECK(cond, msg)                                                       \
-  do {                                                                         \
-    test_count++;                                                              \
-    if (!(cond)) {                                                             \
-      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__);                  \
-      fail_count++;                                                            \
-    } else {                                                                   \
-      printf("PASS: %s\n", msg);                                               \
-    }                                                                          \
+#define CHECK(cond, msg)                                      \
+  do {                                                        \
+    test_count++;                                             \
+    if (!(cond)) {                                            \
+      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__); \
+      fail_count++;                                           \
+    } else {                                                  \
+      printf("PASS: %s\n", msg);                              \
+    }                                                         \
   } while (0)
 
 /* ---- the board under test ----
@@ -114,9 +114,7 @@ static size_t program_declaring(uint8_t *file, size_t capacity, const uint8_t *e
   return entries == NULL ? length : zplc_test_append_safe(file, length, capacity, entries, entries_size);
 }
 
-static int load(const uint8_t *file, size_t length) {
-  return zplc_core_load(file, length, workspace, sizeof(workspace));
-}
+static int load(const uint8_t *file, size_t length) { return zplc_core_load(file, length, workspace, sizeof(workspace)); }
 
 /* The levels the safe state puts on the pins, read from the pins themselves. */
 static void drive_safe_and_read(uint8_t *do0, uint8_t *do1, uint8_t *do9) {
@@ -206,12 +204,9 @@ static void test_the_declaration_is_checked_against_the_board(void) {
   CHECK(zplc_io_declared_safe_fits_board(NULL, 0U) == ZPLC_LOADER_OK, "no declaration fits every board");
   CHECK(zplc_io_declared_safe_fits_board(on_do0, 1U) == ZPLC_LOADER_OK, "a digital output of the board fits");
   CHECK(zplc_io_declared_safe_fits_board(on_do1_and_do9, 2U) == ZPLC_LOADER_OK, "two of them fit");
-  CHECK(zplc_io_declared_safe_fits_board(no_bit_there, 1U) == ZPLC_LOADER_ERR_SAFE,
-        "a bit of the image that is no output is refused");
-  CHECK(zplc_io_declared_safe_fits_board(no_byte_there, 1U) == ZPLC_LOADER_ERR_SAFE,
-        "a byte of the image that is no output is refused");
-  CHECK(zplc_io_declared_safe_fits_board(analog_word, 1U) == ZPLC_LOADER_ERR_SAFE,
-        "an analog output has no on or off to declare");
+  CHECK(zplc_io_declared_safe_fits_board(no_bit_there, 1U) == ZPLC_LOADER_ERR_SAFE, "a bit of the image that is no output is refused");
+  CHECK(zplc_io_declared_safe_fits_board(no_byte_there, 1U) == ZPLC_LOADER_ERR_SAFE, "a byte of the image that is no output is refused");
+  CHECK(zplc_io_declared_safe_fits_board(analog_word, 1U) == ZPLC_LOADER_ERR_SAFE, "an analog output has no on or off to declare");
   CHECK(zplc_io_declared_safe_fits_board(one_good_one_bad, 2U) == ZPLC_LOADER_ERR_SAFE,
         "one entry the board does not have refuses the whole declaration");
 }

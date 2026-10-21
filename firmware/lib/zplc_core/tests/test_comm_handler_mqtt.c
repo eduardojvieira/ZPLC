@@ -59,8 +59,7 @@ zplc_mqtt_fb_session_t zplc_mqtt_fb_session(int *last_error) {
   }
   return mqtt.session;
 }
-int zplc_mqtt_fb_publish(const void *owner, const char *topic, const uint8_t *payload,
-                         size_t length, uint8_t qos, bool retain) {
+int zplc_mqtt_fb_publish(const void *owner, const char *topic, const uint8_t *payload, size_t length, uint8_t qos, bool retain) {
   mqtt.publish_calls++;
   mqtt.owner = owner;
   snprintf(mqtt.topic, sizeof(mqtt.topic), "%s", topic);
@@ -119,14 +118,11 @@ static void set_string(uint8_t *memory, unsigned offset, const char *text) {
 }
 
 static uint32_t status_of(const uint8_t *memory) {
-  return (uint32_t)memory[4] | ((uint32_t)memory[5] << 8) |
-         ((uint32_t)memory[6] << 16) | ((uint32_t)memory[7] << 24);
+  return (uint32_t)memory[4] | ((uint32_t)memory[5] << 8) | ((uint32_t)memory[6] << 16) | ((uint32_t)memory[7] << 24);
 }
 
 /* BUSY, DONE, ERROR as one number: 100 busy, 10 done, 1 error. */
-static int state_of(const uint8_t *memory) {
-  return memory[1] * 100 + memory[2] * 10 + memory[3];
-}
+static int state_of(const uint8_t *memory) { return memory[1] * 100 + memory[2] * 10 + memory[3]; }
 
 static void scan(zplc_comm_fb_kind_t kind, uint8_t *memory) {
   assert(zplc_comm_fb_exec(kind, memory, zplc_comm_fb_size((uint32_t)kind)) == 0);
@@ -269,8 +265,7 @@ static void test_publish_reset_aborts_the_request(void) {
   set_string(memory, ZPLC_COMM_MQTT_PUBLISH_TOPIC_OFFSET, "a");
   scan(ZPLC_COMM_FB_MQTT_PUBLISH, memory);
   assert(state_of(memory) == 100);
-  assert(zplc_comm_fb_reset(ZPLC_COMM_FB_MQTT_PUBLISH, memory,
-                            ZPLC_COMM_MQTT_PUBLISH_SIZE) == 0);
+  assert(zplc_comm_fb_reset(ZPLC_COMM_FB_MQTT_PUBLISH, memory, ZPLC_COMM_MQTT_PUBLISH_SIZE) == 0);
   assert(mqtt.abort_calls == 1);
   assert(state_of(memory) == 0 && memory[0] == 0);
   free(memory);
@@ -357,8 +352,7 @@ static void test_short_block_is_refused(void) {
   world();
   memory[0] = 1;
   assert(zplc_comm_mqtt_handler_init() == 0);
-  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_MQTT_PUBLISH, memory,
-                           ZPLC_COMM_MQTT_PUBLISH_SIZE - 1U) == -1);
+  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_MQTT_PUBLISH, memory, ZPLC_COMM_MQTT_PUBLISH_SIZE - 1U) == -1);
   assert(mqtt.publish_calls == 0 && memory[1] == 0);
   free(memory);
 }

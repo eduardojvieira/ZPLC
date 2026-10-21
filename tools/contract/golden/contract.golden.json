@@ -2000,15 +2000,7 @@
     }
   },
   "compiler": {
-    "addressOperands": [
-      80,
-      81,
-      82,
-      144,
-      145,
-      146,
-      147
-    ],
+    "addressOperands": [80, 81, 82, 144, 145, 146, 147],
     "commBlocks": {
       "AWS_FLEET_PROV": {
         "members": [
@@ -3369,11 +3361,7 @@
       "98": 1,
       "99": 1
     },
-    "relativeJumps": [
-      80,
-      81,
-      82
-    ],
+    "relativeJumps": [80, 81, 82],
     "tagIds": {
       "modbus": 2,
       "publish": 1,

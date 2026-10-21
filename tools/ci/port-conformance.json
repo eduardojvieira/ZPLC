@@ -59,27 +59,13 @@
       },
       "legs": {
         "posix": {
-          "ctest": [
-            "test_isa",
-            "test_vm_core",
-            "test_vm_arith_edges",
-            "test_opcode_coverage"
-          ]
+          "ctest": ["test_isa", "test_vm_core", "test_vm_arith_edges", "test_opcode_coverage"]
         },
         "zephyr": {
-          "twister": [
-            "zplc.core.isa",
-            "zplc.core.vm_core",
-            "zplc.core.vm_arith_edges"
-          ]
+          "twister": ["zplc.core.isa", "zplc.core.vm_core", "zplc.core.vm_arith_edges"]
         },
         "wasm": {
-          "wasm": [
-            "test_isa",
-            "test_vm_core",
-            "test_vm_arith_edges",
-            "test_opcode_coverage"
-          ],
+          "wasm": ["test_isa", "test_vm_core", "test_vm_arith_edges", "test_opcode_coverage"],
           "bun": [
             {
               "file": "packages/zplc-ide/src/runtime/wasmParity.test.ts",
@@ -88,12 +74,7 @@
           ]
         },
         "freertos": {
-          "freertos": [
-            "test_isa",
-            "test_vm_core",
-            "test_vm_arith_edges",
-            "test_opcode_coverage"
-          ]
+          "freertos": ["test_isa", "test_vm_core", "test_vm_arith_edges", "test_opcode_coverage"]
         }
       }
     },
@@ -109,24 +90,13 @@
       },
       "legs": {
         "posix": {
-          "ctest": [
-            "test_loader_verify",
-            "test_sandbox",
-            "test_sandbox_regions"
-          ]
+          "ctest": ["test_loader_verify", "test_sandbox", "test_sandbox_regions"]
         },
         "zephyr": {
-          "twister": [
-            "zplc.core.loader_verify",
-            "zplc.legacy_program_admission"
-          ]
+          "twister": ["zplc.core.loader_verify", "zplc.legacy_program_admission"]
         },
         "wasm": {
-          "wasm": [
-            "test_loader_verify",
-            "test_sandbox",
-            "test_sandbox_regions"
-          ],
+          "wasm": ["test_loader_verify", "test_sandbox", "test_sandbox_regions"],
           "bun": [
             {
               "file": "packages/zplc-ide/src/runtime/wasmParity.test.ts",
@@ -135,11 +105,7 @@
           ]
         },
         "freertos": {
-          "freertos": [
-            "test_loader_verify",
-            "test_sandbox",
-            "test_sandbox_regions"
-          ]
+          "freertos": ["test_loader_verify", "test_sandbox", "test_sandbox_regions"]
         }
       }
     },
@@ -155,13 +121,7 @@
       },
       "legs": {
         "posix": {
-          "ctest": [
-            "test_sched_core",
-            "test_sched_equivalence",
-            "test_single_task",
-            "test_failsafe",
-            "test_native_runtime_session"
-          ]
+          "ctest": ["test_sched_core", "test_sched_equivalence", "test_single_task", "test_failsafe", "test_native_runtime_session"]
         },
         "zephyr": {
           "twister": [
@@ -174,12 +134,7 @@
           ]
         },
         "wasm": {
-          "wasm": [
-            "test_sched_core",
-            "test_sched_equivalence",
-            "test_single_task",
-            "test_failsafe"
-          ],
+          "wasm": ["test_sched_core", "test_sched_equivalence", "test_single_task", "test_failsafe"],
           "bun": [
             {
               "file": "packages/zplc-ide/src/runtime/wasmRuntime.test.ts",
@@ -211,25 +166,16 @@
       },
       "legs": {
         "posix": {
-          "ctest": [
-            "test_port_timing"
-          ]
+          "ctest": ["test_port_timing"]
         },
         "zephyr": {
-          "twister": [
-            "zplc.port_timing"
-          ]
+          "twister": ["zplc.port_timing"]
         },
         "wasm": {
-          "wasm": [
-            "test_port_timing"
-          ]
+          "wasm": ["test_port_timing"]
         },
         "freertos": {
-          "freertos": [
-            "test_port_timing",
-            "test_hal_freertos"
-          ]
+          "freertos": ["test_port_timing", "test_hal_freertos"]
         }
       }
     },
@@ -245,30 +191,16 @@
       },
       "legs": {
         "posix": {
-          "ctest": [
-            "test_io_table",
-            "test_hal_posix_io_table"
-          ]
+          "ctest": ["test_io_table", "test_hal_posix_io_table"]
         },
         "zephyr": {
-          "twister": [
-            "zplc.io_table.base",
-            "zplc.io_table.extended",
-            "zplc.io_analog.ok",
-            "zplc.io_analog.missing"
-          ]
+          "twister": ["zplc.io_table.base", "zplc.io_table.extended", "zplc.io_analog.ok", "zplc.io_analog.missing"]
         },
         "wasm": {
-          "wasm": [
-            "test_io_table",
-            "test_hal_posix_io_table"
-          ]
+          "wasm": ["test_io_table", "test_hal_posix_io_table"]
         },
         "freertos": {
-          "freertos": [
-            "test_io_table",
-            "test_hal_freertos_io_table"
-          ]
+          "freertos": ["test_io_table", "test_hal_freertos_io_table"]
         }
       }
     },
@@ -284,19 +216,10 @@
       },
       "legs": {
         "posix": {
-          "ctest": [
-            "test_hal_posix_persist",
-            "test_program_store",
-            "test_retain"
-          ]
+          "ctest": ["test_hal_posix_persist", "test_program_store", "test_retain"]
         },
         "zephyr": {
-          "twister": [
-            "zplc.hal_persist_keys",
-            "zplc.program_store",
-            "zplc.program_store_nvs",
-            "zplc.retain_persist"
-          ]
+          "twister": ["zplc.hal_persist_keys", "zplc.program_store", "zplc.program_store_nvs", "zplc.retain_persist"]
         },
         "wasm": {
           "bun": [
@@ -315,11 +238,7 @@
           ]
         },
         "freertos": {
-          "freertos": [
-            "test_program_store",
-            "test_retain",
-            "test_hal_freertos"
-          ]
+          "freertos": ["test_program_store", "test_retain", "test_hal_freertos"]
         }
       }
     }

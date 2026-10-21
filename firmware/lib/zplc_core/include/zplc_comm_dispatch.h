@@ -106,8 +106,7 @@ typedef enum {
  * @return ZPLC_COMM_HANDLER_DONE, ZPLC_COMM_HANDLER_PENDING or
  *         ZPLC_COMM_HANDLER_FAIL(status); the result of a RESET call is ignored
  */
-typedef int (*zplc_comm_handler_t)(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
-                                   uint16_t fb_len, zplc_comm_call_t call);
+typedef int (*zplc_comm_handler_t)(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len, zplc_comm_call_t call);
 
 /* clang-format off */
 /* >>> GENERATED (tools/contract/generate.py): comm-blocks. Do not edit. >>> */
@@ -422,8 +421,7 @@ extern "C" {
 /**
  * @brief Register a handler for a communication FB kind.
  */
-int zplc_comm_register_handler(zplc_comm_fb_kind_t kind,
-                               zplc_comm_handler_t fn);
+int zplc_comm_register_handler(zplc_comm_fb_kind_t kind, zplc_comm_handler_t fn);
 
 /**
  * @brief True for the blocks that report a state that can change on any scan: MQTT_CONNECT, MQTT_SUBSCRIBE and
@@ -472,8 +470,7 @@ int zplc_comm_fb_is_service(zplc_comm_fb_kind_t kind);
  *               handshake or than the size of the kind in the table
  * @return 0, or -1 when the block is refused
  */
-int zplc_comm_fb_exec(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
-                      uint16_t fb_len);
+int zplc_comm_fb_exec(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len);
 
 /**
  * @brief Reset a communication FB instance (called by VM from OP_COMM_RESET).
@@ -483,8 +480,7 @@ int zplc_comm_fb_exec(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
  * @param fb_len Length of the block; refused (-1) as for zplc_comm_fb_exec()
  * @return 0, or -1 when the block is refused
  */
-int zplc_comm_fb_reset(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
-                       uint16_t fb_len);
+int zplc_comm_fb_reset(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len);
 
 #ifdef __cplusplus
 }

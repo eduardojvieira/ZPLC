@@ -22,15 +22,15 @@
 static int test_count = 0;
 static int fail_count = 0;
 
-#define CHECK(cond, msg)                                                       \
-  do {                                                                         \
-    test_count++;                                                              \
-    if (!(cond)) {                                                             \
-      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__);                  \
-      fail_count++;                                                            \
-    } else {                                                                   \
-      printf("PASS: %s\n", msg);                                               \
-    }                                                                          \
+#define CHECK(cond, msg)                                      \
+  do {                                                        \
+    test_count++;                                             \
+    if (!(cond)) {                                            \
+      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__); \
+      fail_count++;                                           \
+    } else {                                                  \
+      printf("PASS: %s\n", msg);                              \
+    }                                                         \
   } while (0)
 
 /* ----------------------------------------------------------------------------
@@ -243,8 +243,8 @@ static const zplc_sched_port_t port = {
 static void fake_trace(void *ctx, zplc_sched_trace_kind_t kind, uint16_t task_id, uint64_t a, uint64_t b) {
   (void)ctx;
   if (fake.trace_count < TRACE_CAPACITY) {
-    snprintf(fake.trace[fake.trace_count], sizeof(fake.trace[0]), "%d t%u %llu %llu", (int)kind, (unsigned)task_id,
-             (unsigned long long)a, (unsigned long long)b);
+    snprintf(fake.trace[fake.trace_count], sizeof(fake.trace[0]), "%d t%u %llu %llu", (int)kind, (unsigned)task_id, (unsigned long long)a,
+             (unsigned long long)b);
     fake.trace_count++;
   }
 }
@@ -255,9 +255,7 @@ static void script(const uint64_t *values, size_t length) {
   fake.script_next = 0U;
 }
 
-static void reset_fake(void) {
-  memset(&fake, 0, sizeof(fake));
-}
+static void reset_fake(void) { memset(&fake, 0, sizeof(fake)); }
 
 /* ----------------------------------------------------------------------------
  * Tasks: three tiny programs. Task i stores 10+i in OPI byte i and halts.
@@ -331,9 +329,7 @@ static void setup(uint32_t miss_limit, uint8_t kind_of_task1) {
   }
 }
 
-static void run_all(void) {
-  zplc_sched_core_set_running(&core);
-}
+static void run_all(void) { zplc_sched_core_set_running(&core); }
 
 static int admit_all(uint64_t release) {
   int admitted = 0;
@@ -399,8 +395,7 @@ static void test_order_is_release_then_priority_then_id(void) {
   admit_all(0U);
   count = zplc_sched_core_collect(&core, order, TASKS);
   CHECK(count == 3U && order[0] == 1U && order[1] == 2U && order[2] == 0U, "a full tie is ordered by id");
-  CHECK(zplc_sched_core_before(&core.slot[1], &core.slot[2]) != 0 &&
-            zplc_sched_core_before(&core.slot[2], &core.slot[1]) == 0,
+  CHECK(zplc_sched_core_before(&core.slot[1], &core.slot[2]) != 0 && zplc_sched_core_before(&core.slot[2], &core.slot[1]) == 0,
         "the comparison is directional");
 }
 
@@ -425,8 +420,7 @@ static void test_scan_phases_are_ordered(void) {
   CHECK(report.committed == 1U && report.faulted == 0U && report.paused == 0U, "the report says committed");
   CHECK(core.input_latch_count == 1U && core.output_commit_count == 1U, "one latch and one commit per batch");
   CHECK(zplc_opi_read8(0U) == 10U && zplc_opi_read8(1U) == 11U && zplc_opi_read8(2U) == 12U, "every task ran");
-  CHECK(core.slot[0].pending == 0U && core.slot[1].pending == 0U && core.slot[2].pending == 0U,
-        "no release is pending afterwards");
+  CHECK(core.slot[0].pending == 0U && core.slot[1].pending == 0U && core.slot[2].pending == 0U, "no release is pending afterwards");
   CHECK(core.slot[0].task.stats.cycle_count == 1U && core.slot[0].task.stats.last_exec_time_us == 100U,
         "a task's duration runs from where the previous one ended");
   CHECK(core.state == ZPLC_SCHED_STATE_RUNNING, "the runtime keeps running");
@@ -437,13 +431,11 @@ static void test_idle_core_does_nothing(void) {
 
   printf("\n=== Test: a core that is not running reads nothing ===\n");
   setup(0U, 0U);
-  CHECK(zplc_sched_core_scan(&core, &port, order, 1U, 0, NULL) == 0 && fake.log[0] == '\0',
-        "an idle core samples nothing");
+  CHECK(zplc_sched_core_scan(&core, &port, order, 1U, 0, NULL) == 0 && fake.log[0] == '\0', "an idle core samples nothing");
   run_all();
   zplc_sched_core_latch_fault_image(&core, &port, ZPLC_SCHED_FAULT_RUNTIME, 0U);
   fake.log[0] = '\0';
-  CHECK(zplc_sched_core_scan(&core, &port, order, 1U, 0, NULL) == 0 && fake.log[0] == '\0',
-        "a faulted core samples nothing");
+  CHECK(zplc_sched_core_scan(&core, &port, order, 1U, 0, NULL) == 0 && fake.log[0] == '\0', "a faulted core samples nothing");
 }
 
 static void miss_scenario(uint32_t limit, uint64_t end_offset, int expected_fault, const char *what) {
@@ -459,7 +451,7 @@ static void miss_scenario(uint32_t limit, uint64_t end_offset, int expected_faul
   order[0] = 0U;
   times[0] = 1000U;
   times[1] = 1000U + 10000U + end_offset;
-  script(times, 2U);  /* batch start, end of the task */
+  script(times, 2U); /* batch start, end of the task */
   result = zplc_sched_core_scan(&core, &port, order, 1U, 0, &report);
   CHECK((result == ZPLC_SCHED_ERR_DEADLINE) == (expected_fault != 0), what);
 }
@@ -489,14 +481,13 @@ static void test_deadline_accounting(void) {
             "a miss below the limit is a warning, not a fault");
       CHECK(report.warning_task == 1 && core.last_overrun_us == 2500U, "the warning and the overrun are recorded");
     } else {
-      CHECK(result == ZPLC_SCHED_ERR_DEADLINE && core.fault_latched == 1U &&
-                core.fault_reason == (uint8_t)ZPLC_SCHED_FAULT_DEADLINE_MISS && core.fault_task_id == 1U,
+      CHECK(result == ZPLC_SCHED_ERR_DEADLINE && core.fault_latched == 1U && core.fault_reason == (uint8_t)ZPLC_SCHED_FAULT_DEADLINE_MISS &&
+                core.fault_task_id == 1U,
             "the third consecutive miss latches the fault with its task");
       CHECK(report.deadline_task == 1 && core.state == ZPLC_SCHED_STATE_ERROR, "the report names the task");
     }
   }
-  CHECK(core.slot[0].task.stats.overrun_count == 3U && zplc_sched_core_total_misses(&core) == 3U,
-        "every miss is counted");
+  CHECK(core.slot[0].task.stats.overrun_count == 3U && zplc_sched_core_total_misses(&core) == 3U, "every miss is counted");
 
   /* An in-time scan ends the run of misses. */
   setup(3U, 0U);
@@ -542,8 +533,7 @@ static void test_scan_period_statistics(void) {
     script(times, 2U);
     (void)zplc_sched_core_scan(&core, &port, order, 1U, 0, &report);
     if (i == 0) {
-      CHECK(core.slot[0].task.stats.min_period_us == 0U && core.slot[0].task.stats.max_period_us == 0U,
-            "one scan has no period yet");
+      CHECK(core.slot[0].task.stats.min_period_us == 0U && core.slot[0].task.stats.max_period_us == 0U, "one scan has no period yet");
     }
   }
   CHECK(core.slot[0].task.stats.min_period_us == 9300U, "the shortest period is the shortest start to start");
@@ -581,8 +571,7 @@ static void test_batch_start_reference_is_the_dispatch(void) {
   times[0] = 60000U;
   times[1] = 60000U + 10001U;
   script(times, 2U);
-  CHECK(zplc_sched_core_scan(&core, &port, order, 1U, 0, NULL) == ZPLC_SCHED_ERR_DEADLINE,
-        "and one microsecond more is a miss");
+  CHECK(zplc_sched_core_scan(&core, &port, order, 1U, 0, NULL) == ZPLC_SCHED_ERR_DEADLINE, "and one microsecond more is a miss");
 }
 
 static void test_vm_fault_latches_and_settles(void) {
@@ -605,8 +594,7 @@ static void test_vm_fault_latches_and_settles(void) {
   CHECK(strcmp(fake.log, "sample lock_image latch reset publish unlock_image safe wdt_fault stop_releases ") == 0,
         "the image is reset under the lock, the pins are driven after it is released, then the watchdog");
   CHECK(report.committed == 0U && core.output_commit_count == 0U, "nothing is committed");
-  CHECK(core.state == ZPLC_SCHED_STATE_ERROR && core.slot[0].task.state == ZPLC_TASK_STATE_ERROR,
-        "every task is in ERROR");
+  CHECK(core.state == ZPLC_SCHED_STATE_ERROR && core.slot[0].task.state == ZPLC_TASK_STATE_ERROR, "every task is in ERROR");
   CHECK(fake.latched_count == 1 && fake.latched_reason == (int)ZPLC_SCHED_FAULT_VM && fake.latched_task == 2U,
         "the platform was told of the fault once, with its reason and task, to keep where a reset will not erase it");
   CHECK(zplc_sched_core_latch_fault_image(&core, &port, ZPLC_SCHED_FAULT_IO, 3U) == 0 &&
@@ -663,8 +651,7 @@ static void test_lock_failures(void) {
   admit_all(1000U);
   fake.lock_image_result = -16;
   result = zplc_sched_core_scan(&core, &port, order, 1U, 0, NULL);
-  CHECK(result == ZPLC_SCHED_ERR_LOCK && core.fault_reason == (uint8_t)ZPLC_SCHED_FAULT_LOCK,
-        "no image lock: the fault latches");
+  CHECK(result == ZPLC_SCHED_ERR_LOCK && core.fault_reason == (uint8_t)ZPLC_SCHED_FAULT_LOCK, "no image lock: the fault latches");
   CHECK(strstr(fake.log, "safe") != NULL && strstr(fake.log, "stop_releases") != NULL, "the pins are driven safe anyway");
   CHECK(strstr(fake.log, "latch") == NULL && strstr(fake.log, "reset") == NULL, "no scan and no image reset ran");
 
@@ -724,12 +711,10 @@ static void test_control_path_safe_state(void) {
   CHECK(strcmp(fake.log, "lock_image reset unlock_image safe ") == 0, "image under the lock, pins after it");
   fake.log[0] = '\0';
   fake.drive_safe_result = -5;
-  CHECK(zplc_sched_core_apply_safe_outputs(&core, &port) == -5 && core.fault_latched == 1U,
-        "pins that cannot be driven latch the fault");
+  CHECK(zplc_sched_core_apply_safe_outputs(&core, &port) == -5 && core.fault_latched == 1U, "pins that cannot be driven latch the fault");
   setup(0U, 0U);
   run_all();
-  CHECK(zplc_sched_core_drive_safe_outputs(&core, &port) == 0 && strcmp(fake.log, "safe ") == 0,
-        "pause: the pins only");
+  CHECK(zplc_sched_core_drive_safe_outputs(&core, &port) == 0 && strcmp(fake.log, "safe ") == 0, "pause: the pins only");
   CHECK(strcmp(zplc_sched_fault_reason_name(ZPLC_SCHED_FAULT_DEADLINE_MISS), "deadline_miss") == 0 &&
             strcmp(zplc_sched_fault_reason_name(ZPLC_SCHED_FAULT_VM), "vm_fault") == 0 &&
             strcmp(zplc_sched_fault_reason_name(ZPLC_SCHED_FAULT_NONE), "none") == 0,

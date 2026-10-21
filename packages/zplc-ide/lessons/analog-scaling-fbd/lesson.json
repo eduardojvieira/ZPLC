@@ -5,17 +5,9 @@
   "order": 30,
   "module": 4,
   "level": "intermediate",
-  "prerequisites": [
-    "analog-scaling-integer",
-    "counter-batch-fbd"
-  ],
-  "languages": [
-    "FBD"
-  ],
-  "tracks": [
-    "simulation",
-    "hardware"
-  ],
+  "prerequisites": ["analog-scaling-integer", "counter-batch-fbd"],
+  "languages": ["FBD"],
+  "tracks": ["simulation", "hardware"],
   "unsupported": {},
   "plant": null,
   "estimatedMinutes": 20,

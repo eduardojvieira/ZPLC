@@ -16,7 +16,11 @@ describe('WASMAdapter (IDE-025)', () => {
   });
 
   it('fails a connection without a module with the reason the build gave, and stays disconnected', async () => {
-    const adapter = new WASMAdapter({ loadModule: async () => { throw new Error('clang not found on the PATH'); } });
+    const adapter = new WASMAdapter({
+      loadModule: async () => {
+        throw new Error('clang not found on the PATH');
+      },
+    });
     await expect(adapter.connect()).rejects.toThrow('clang not found on the PATH');
     expect(adapter.connected).toBe(false);
   });
@@ -35,7 +39,9 @@ describe('WASMAdapter (IDE-025)', () => {
 
   it('takes the capabilities of the controller from the same profile that the handshake reports', () => {
     const capabilities = getWasmCapabilities();
-    expect(capabilities.supportsPause && capabilities.supportsResume && capabilities.supportsStep && capabilities.supportsBreakpoints).toBe(true);
+    expect(capabilities.supportsPause && capabilities.supportsResume && capabilities.supportsStep && capabilities.supportsBreakpoints).toBe(
+      true,
+    );
     expect(capabilities.features['simulation-inputs']?.status).toBe('supported');
   });
 });

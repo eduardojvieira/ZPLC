@@ -31,7 +31,11 @@ export function udevRulesCommand(projectDir) {
   const repoRoot = path.resolve(projectDir, '..', '..');
   return {
     command: 'bun',
-    args: [path.join(repoRoot, 'scripts', 'release', 'udev-rules.ts'), '--out', path.join(projectDir, 'build', 'linux', '70-zplc-boards.rules')],
+    args: [
+      path.join(repoRoot, 'scripts', 'release', 'udev-rules.ts'),
+      '--out',
+      path.join(projectDir, 'build', 'linux', '70-zplc-boards.rules'),
+    ],
   };
 }
 

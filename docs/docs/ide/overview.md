@@ -11,12 +11,12 @@ an implicit legacy rewrite.
 
 ## Boundaries
 
-| Layer | Responsibility |
-| --- | --- |
-| Renderer | Workbench, visual models, diagnostics, evidence presentation. |
-| Preload/main | Validated, narrow filesystem and supervised runtime operations. |
-| Compiler | Canonical source/visual-model compilation to `.zplc`. |
-| Runtime adapters | Native POSIX simulation or a connected compatible runtime. |
+| Layer            | Responsibility                                                  |
+| ---------------- | --------------------------------------------------------------- |
+| Renderer         | Workbench, visual models, diagnostics, evidence presentation.   |
+| Preload/main     | Validated, narrow filesystem and supervised runtime operations. |
+| Compiler         | Canonical source/visual-model compilation to `.zplc`.           |
+| Runtime adapters | Native POSIX simulation or a connected compatible runtime.      |
 
 ## How the layers talk
 

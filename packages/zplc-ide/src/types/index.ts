@@ -1,6 +1,6 @@
 /**
  * ZPLC type definitions
- * 
+ *
  * Core types for the IEC 61131-3 Web IDE
  */
 
@@ -36,7 +36,9 @@ export const PLC_LANGUAGES: Record<PLCLanguage, PLCLanguageInfo> = {
     fullName: 'Structured Text',
     extension: '.st',
     isVisual: false,
-    get description() { return t('types.lang.ST'); },
+    get description() {
+      return t('types.lang.ST');
+    },
   },
   IL: {
     id: 'IL',
@@ -44,7 +46,9 @@ export const PLC_LANGUAGES: Record<PLCLanguage, PLCLanguageInfo> = {
     fullName: 'Instruction List',
     extension: '.il',
     isVisual: false,
-    get description() { return t('types.lang.IL'); },
+    get description() {
+      return t('types.lang.IL');
+    },
   },
   LD: {
     id: 'LD',
@@ -52,7 +56,9 @@ export const PLC_LANGUAGES: Record<PLCLanguage, PLCLanguageInfo> = {
     fullName: 'Ladder Diagram',
     extension: '.ld.json',
     isVisual: true,
-    get description() { return t('types.lang.LD'); },
+    get description() {
+      return t('types.lang.LD');
+    },
   },
   FBD: {
     id: 'FBD',
@@ -60,7 +66,9 @@ export const PLC_LANGUAGES: Record<PLCLanguage, PLCLanguageInfo> = {
     fullName: 'Function Block Diagram',
     extension: '.fbd.json',
     isVisual: true,
-    get description() { return t('types.lang.FBD'); },
+    get description() {
+      return t('types.lang.FBD');
+    },
   },
   SFC: {
     id: 'SFC',
@@ -68,7 +76,9 @@ export const PLC_LANGUAGES: Record<PLCLanguage, PLCLanguageInfo> = {
     fullName: 'Sequential Function Chart',
     extension: '.sfc.json',
     isVisual: true,
-    get description() { return t('types.lang.SFC'); },
+    get description() {
+      return t('types.lang.SFC');
+    },
   },
 };
 
@@ -178,7 +188,20 @@ export interface BuildResult {
 // Console / Output
 // =============================================================================
 
-export type ConsoleTab = 'explorer' | 'inspector' | 'output' | 'problems' | 'tests' | 'lab' | 'learn' | 'changes' | 'agent' | 'terminal' | 'watch' | 'trace' | 'interlocks';
+export type ConsoleTab =
+  | 'explorer'
+  | 'inspector'
+  | 'output'
+  | 'problems'
+  | 'tests'
+  | 'lab'
+  | 'learn'
+  | 'changes'
+  | 'agent'
+  | 'terminal'
+  | 'watch'
+  | 'trace'
+  | 'interlocks';
 
 export interface ConsoleEntry {
   id: string;
@@ -215,28 +238,36 @@ export const POU_TYPES: Record<POUType, POUInfo> = {
     name: 'Program',
     fullName: 'Program',
     extension: '.st',
-    get description() { return t('types.pou.PRG'); },
+    get description() {
+      return t('types.pou.PRG');
+    },
   },
   FB: {
     type: 'FB',
     name: 'Function Block',
     fullName: 'Function Block',
     extension: '.st',
-    get description() { return t('types.pou.FB'); },
+    get description() {
+      return t('types.pou.FB');
+    },
   },
   FUN: {
     type: 'FUN',
     name: 'Function',
     fullName: 'Function',
     extension: '.st',
-    get description() { return t('types.pou.FUN'); },
+    get description() {
+      return t('types.pou.FUN');
+    },
   },
   GVL: {
     type: 'GVL',
     name: 'Global Variables',
     fullName: 'Global Variable List',
     extension: '.gvl',
-    get description() { return t('types.pou.GVL'); },
+    get description() {
+      return t('types.pou.GVL');
+    },
   },
 };
 
@@ -251,9 +282,9 @@ export type TaskTrigger = 'cyclic' | 'event' | 'freewheeling';
 export interface TaskDefinition {
   name: string;
   trigger: TaskTrigger;
-  interval_ms?: number;        // Cycle time in ms (for cyclic tasks)
-  priority: number;            // 0 = highest, 255 = lowest
-  programs: string[];          // List of program names assigned to this task
+  interval_ms?: number; // Cycle time in ms (for cyclic tasks)
+  priority: number; // 0 = highest, 255 = lowest
+  programs: string[]; // List of program names assigned to this task
 
   // Deprecated fields (for backwards compatibility)
   /** @deprecated Use interval_ms instead */
@@ -271,10 +302,10 @@ export interface TaskDefinition {
 /** I/O Pin configuration */
 export interface IOPinConfig {
   name: string;
-  address: string;       // e.g., "%I0.0", "%Q0.0", "%IW0", "%QW0"
+  address: string; // e.g., "%I0.0", "%Q0.0", "%IW0", "%QW0"
   description?: string;
-  pin?: number;          // Physical GPIO pin
-  channel?: number;      // ADC/DAC channel index (e.g., 0 for ADC0/GP26)
+  pin?: number; // Physical GPIO pin
+  channel?: number; // ADC/DAC channel index (e.g., 0 for ADC0/GP26)
   type?: 'BOOL' | 'INT' | 'REAL';
   /**
    * Digital outputs only (RT-023): the value the output takes whenever the program does not control it (STOP, a
@@ -285,8 +316,8 @@ export interface IOPinConfig {
 
 /** Target hardware configuration */
 export interface TargetConfig {
-  board: string;         // e.g., "rpi_pico", "arduino_giga_r1"
-  cpu?: string;          // e.g., "rp2040", "stm32h747"
+  board: string; // e.g., "rpi_pico", "arduino_giga_r1"
+  cpu?: string; // e.g., "rp2040", "stm32h747"
   clock_mhz?: number;
 }
 
@@ -445,7 +476,7 @@ export interface CommunicationConfig {
   tags?: CommunicationTagConfig[];
 }
 
-/** 
+/**
  * zplc.json - Main project configuration file
  * This is the new standard format replacing project.yaml
  */
@@ -484,8 +515,8 @@ export interface ZPLCProjectConfig {
 
   // Build settings
   build?: {
-    outDir?: string;           // Output directory (default: "build")
-    entryPoints?: string[];    // Override: explicit entry points
+    outDir?: string; // Output directory (default: "build")
+    entryPoints?: string[]; // Override: explicit entry points
     generateDebugInfo?: boolean; // The CLI writes the debug map beside the artifact
   };
 }
@@ -583,7 +614,7 @@ export interface ProjectConfig {
   taskMode: TaskMode;
   cycleTimeMs: number;
   priority: number;
-  startPOU: string;      // Entry point program name
+  startPOU: string; // Entry point program name
 }
 
 /** @deprecated */
@@ -631,10 +662,10 @@ export interface SerializableProject {
 
 /** Loaded project with all files and configuration */
 export interface LoadedProject {
-  path: string;                    // Folder path
-  zplcConfig: ZPLCProjectConfig;   // Parsed zplc.json
-  files: ProjectFile[];            // All source files
-  config: ProjectConfig;           // Runtime config (derived from zplcConfig)
+  path: string; // Folder path
+  zplcConfig: ZPLCProjectConfig; // Parsed zplc.json
+  files: ProjectFile[]; // All source files
+  config: ProjectConfig; // Runtime config (derived from zplcConfig)
 }
 
 // =============================================================================
@@ -643,8 +674,8 @@ export interface LoadedProject {
 
 /** Extended ProjectFile with file handle for direct disk access */
 export interface ProjectFileWithHandle extends ProjectFile {
-  handle?: FileSystemFileHandle;   // Browser file handle (if opened from disk)
-  parentPath: string;              // Parent directory path
+  handle?: FileSystemFileHandle; // Browser file handle (if opened from disk)
+  parentPath: string; // Parent directory path
 }
 
 /** Directory tree node for sidebar rendering */
@@ -666,10 +697,10 @@ export interface FileTreeNode {
 /** Project state when opened from file system */
 export interface FileSystemProject {
   rootHandle: FileSystemDirectoryHandle;
-  rootPath: string;                 // Display name of root folder
-  config: ZPLCProjectConfig;        // Parsed zplc.json
-  fileTree: FileTreeNode;           // Recursive file tree
-  files: Map<string, ProjectFileWithHandle>;  // Flat map of loaded files
+  rootPath: string; // Display name of root folder
+  config: ZPLCProjectConfig; // Parsed zplc.json
+  fileTree: FileTreeNode; // Recursive file tree
+  files: Map<string, ProjectFileWithHandle>; // Flat map of loaded files
 }
 
 /** Folder access exists in the desktop app (native dialog through the bridge) or in a browser with the picker. */
@@ -734,55 +765,65 @@ END_VAR
 
 END_PROGRAM`;
     case 'LD':
-      return JSON.stringify({
-        "name": "NewProgram",
-        "description": "New Ladder Diagram",
-        "version": "1.0.0",
-        "variables": {
-          "local": [],
-          "outputs": []
+      return JSON.stringify(
+        {
+          name: 'NewProgram',
+          description: 'New Ladder Diagram',
+          version: '1.0.0',
+          variables: {
+            local: [],
+            outputs: [],
+          },
+          rungs: [],
+          metadata: {
+            created: new Date().toISOString().split('T')[0],
+            iecStandard: 'IEC 61131-3',
+          },
         },
-        "rungs": [],
-        "metadata": {
-          "created": new Date().toISOString().split('T')[0],
-          "iecStandard": "IEC 61131-3"
-        }
-      }, null, 2);
+        null,
+        2,
+      );
     case 'FBD':
-      return JSON.stringify({
-        "name": "NewProgram",
-        "description": "New Function Block Diagram",
-        "version": "1.0.0",
-        "variables": {
-          "local": [],
-          "outputs": []
+      return JSON.stringify(
+        {
+          name: 'NewProgram',
+          description: 'New Function Block Diagram',
+          version: '1.0.0',
+          variables: {
+            local: [],
+            outputs: [],
+          },
+          blocks: [],
+          connections: [],
+          metadata: {
+            created: new Date().toISOString().split('T')[0],
+            iecStandard: 'IEC 61131-3',
+          },
         },
-        "blocks": [],
-        "connections": [],
-        "metadata": {
-          "created": new Date().toISOString().split('T')[0],
-          "iecStandard": "IEC 61131-3"
-        }
-      }, null, 2);
+        null,
+        2,
+      );
     case 'SFC':
-      return JSON.stringify({
-        "name": "NewProgram",
-        "description": "New Sequential Function Chart",
-        "version": "1.0.0",
-        "variables": {
-          "local": [],
-          "outputs": []
+      return JSON.stringify(
+        {
+          name: 'NewProgram',
+          description: 'New Sequential Function Chart',
+          version: '1.0.0',
+          variables: {
+            local: [],
+            outputs: [],
+          },
+          steps: [{ id: 'step_init', name: 'Init', isInitial: true, position: { x: 200, y: 100 }, actions: [] }],
+          transitions: [],
+          actions: [],
+          metadata: {
+            created: new Date().toISOString().split('T')[0],
+            iecStandard: 'IEC 61131-3',
+          },
         },
-        "steps": [
-          { "id": "step_init", "name": "Init", "isInitial": true, "position": { "x": 200, "y": 100 }, "actions": [] }
-        ],
-        "transitions": [],
-        "actions": [],
-        "metadata": {
-          "created": new Date().toISOString().split('T')[0],
-          "iecStandard": "IEC 61131-3"
-        }
-      }, null, 2);
+        null,
+        2,
+      );
     default:
       return '';
   }

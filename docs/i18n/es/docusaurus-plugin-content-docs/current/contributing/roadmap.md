@@ -56,15 +56,15 @@ un comando local repetible.
 
 ## Más adelante
 
-| Fase | Qué entrega |
-|---|---|
-| Nuevo shell y cinco lenguajes | Una capa de vistas de la aplicación reconstruida, e Instruction List, Ladder, FBD y SFC que compilan bien, se depuran y se monitorean. |
-| Learn en simulación | Un curso que abre desde la pantalla de bienvenida y califica con honestidad, en inglés y español, sin hardware. |
-| Confianza en el runtime y primera placa | La misma semántica del planificador en el simulador y en el destino, salidas seguras ante una falla, memoria retentiva que sobrevive a un ciclo de energía, y el primer registro de banco en la Raspberry Pi Pico. |
-| Comunicaciones y segunda placa | Modbus, MQTT, Sparkplug B y los bloques de nube reparados, y evidencia de banco en la ESP32-S3. |
-| Lenguaje completo y curso completo | La matriz de conformidad cerrada y el curso terminado en ambas pistas. |
-| Distribución, documentación y accesibilidad | Cada canal de instaladores entregado o enviado, la documentación terminada en dos idiomas, y la accesibilidad cerrada. |
-| Disponibilidad general | Las compuertas de publicación cumplidas sobre el commit etiquetado. |
+| Fase                                        | Qué entrega                                                                                                                                                                                                        |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Nuevo shell y cinco lenguajes               | Una capa de vistas de la aplicación reconstruida, e Instruction List, Ladder, FBD y SFC que compilan bien, se depuran y se monitorean.                                                                             |
+| Learn en simulación                         | Un curso que abre desde la pantalla de bienvenida y califica con honestidad, en inglés y español, sin hardware.                                                                                                    |
+| Confianza en el runtime y primera placa     | La misma semántica del planificador en el simulador y en el destino, salidas seguras ante una falla, memoria retentiva que sobrevive a un ciclo de energía, y el primer registro de banco en la Raspberry Pi Pico. |
+| Comunicaciones y segunda placa              | Modbus, MQTT, Sparkplug B y los bloques de nube reparados, y evidencia de banco en la ESP32-S3.                                                                                                                    |
+| Lenguaje completo y curso completo          | La matriz de conformidad cerrada y el curso terminado en ambas pistas.                                                                                                                                             |
+| Distribución, documentación y accesibilidad | Cada canal de instaladores entregado o enviado, la documentación terminada en dos idiomas, y la accesibilidad cerrada.                                                                                             |
+| Disponibilidad general                      | Las compuertas de publicación cumplidas sobre el commit etiquetado.                                                                                                                                                |
 
 ## Cuándo podrá usarlo
 

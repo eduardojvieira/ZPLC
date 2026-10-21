@@ -1,17 +1,9 @@
 {
   "requirement": "CMP-005",
   "title": "an IF on an INT is rejected",
-  "matrix": [
-    "functions.implicit-widening-conversion"
-  ],
+  "matrix": ["functions.implicit-widening-conversion"],
   "build": "fails",
-  "lines": [
-    5
-  ],
-  "codes": [
-    "TYPE_MISMATCH"
-  ],
-  "messageIncludes": [
-    "BOOL"
-  ]
+  "lines": [5],
+  "codes": ["TYPE_MISMATCH"],
+  "messageIncludes": ["BOOL"]
 }

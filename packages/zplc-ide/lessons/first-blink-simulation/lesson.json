@@ -6,12 +6,8 @@
   "module": 0,
   "level": "foundation",
   "prerequisites": [],
-  "languages": [
-    "ST"
-  ],
-  "tracks": [
-    "simulation"
-  ],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
   "unsupported": {
     "hardware": {
       "reason": {

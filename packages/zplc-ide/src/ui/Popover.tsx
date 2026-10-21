@@ -36,27 +36,40 @@ export function Popover({ trigger, label, placement = 'bottom-start', className,
   // Focus moves into the panel when it opens: its first control, or the panel itself.
   useEffect(() => {
     if (!open) return;
-    const first = panel.current?.querySelector<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])');
+    const first = panel.current?.querySelector<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])',
+    );
     (first ?? panel.current)?.focus();
   }, [open]);
 
-  const place = useCallback((node: HTMLDivElement | null) => {
-    panel.current = node;
-    const target = anchor.current?.firstElementChild;
-    if (!node || !target) return;
-    const rect = target.getBoundingClientRect();
-    const size = node.getBoundingClientRect();
-    const placed = placeOverlay({ anchor: { left: rect.left, top: rect.top, width: rect.width, height: rect.height }, overlay: { width: size.width, height: size.height }, viewport: { width: window.innerWidth, height: window.innerHeight }, placement });
-    node.style.left = `${placed.left}px`;
-    node.style.top = `${placed.top}px`;
-    node.style.visibility = 'visible';
-  }, [placement]);
+  const place = useCallback(
+    (node: HTMLDivElement | null) => {
+      panel.current = node;
+      const target = anchor.current?.firstElementChild;
+      if (!node || !target) return;
+      const rect = target.getBoundingClientRect();
+      const size = node.getBoundingClientRect();
+      const placed = placeOverlay({
+        anchor: { left: rect.left, top: rect.top, width: rect.width, height: rect.height },
+        overlay: { width: size.width, height: size.height },
+        viewport: { width: window.innerWidth, height: window.innerHeight },
+        placement,
+      });
+      node.style.left = `${placed.left}px`;
+      node.style.top = `${placed.top}px`;
+      node.style.visibility = 'visible';
+    },
+    [placement],
+  );
 
   return (
     <>
       <span ref={anchor} style={{ display: 'contents' }}>
         {cloneElement(trigger, {
-          onClick: (event: unknown) => { trigger.props.onClick?.(event); setOpen((current) => !current); },
+          onClick: (event: unknown) => {
+            trigger.props.onClick?.(event);
+            setOpen((current) => !current);
+          },
           'aria-haspopup': 'dialog',
           'aria-expanded': open,
           'aria-controls': open ? id : undefined,
@@ -64,7 +77,15 @@ export function Popover({ trigger, label, placement = 'bottom-start', className,
       </span>
       {open && (
         <Portal>
-          <div ref={place} id={id} role="dialog" aria-label={label} tabIndex={-1} className={cx('ui-popover', className)} style={{ position: 'fixed', left: 0, top: 0, visibility: 'hidden' }}>
+          <div
+            ref={place}
+            id={id}
+            role="dialog"
+            aria-label={label}
+            tabIndex={-1}
+            className={cx('ui-popover', className)}
+            style={{ position: 'fixed', left: 0, top: 0, visibility: 'hidden' }}
+          >
             {children}
           </div>
         </Portal>

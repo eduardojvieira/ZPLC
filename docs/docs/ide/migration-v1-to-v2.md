@@ -41,12 +41,12 @@ as it was. Review the file, then copy it over `zplc.json` when you accept it.
 
 ## What changes
 
-| Area | v2 behavior |
-| --- | --- |
-| Project model | An explicit Save writes `schemaVersion: 2` to the workspace’s `zplc.json`. |
-| Original folder | Stays unchanged during preview; Save updates the selected workspace’s original `zplc.json`. |
-| Preview | The ZPLC view is a preview; it is not a promise that every legacy construct is supported. |
-| Evidence | Compile, test, and POSIX simulation results apply to the saved workspace and are host evidence only. |
+| Area            | v2 behavior                                                                                          |
+| --------------- | ---------------------------------------------------------------------------------------------------- |
+| Project model   | An explicit Save writes `schemaVersion: 2` to the workspace’s `zplc.json`.                           |
+| Original folder | Stays unchanged during preview; Save updates the selected workspace’s original `zplc.json`.          |
+| Preview         | The ZPLC view is a preview; it is not a promise that every legacy construct is supported.            |
+| Evidence        | Compile, test, and POSIX simulation results apply to the saved workspace and are host evidence only. |
 
 ## Golden scope
 
@@ -63,12 +63,12 @@ bypass a diagnostic.
 
 ## What is verified, and what is not
 
-| Part | Verified | Level |
-| --- | --- | --- |
-| `migrate-preview` writes nothing, and `migrate` writes only the file named by `--output` and leaves the folder byte-identical | Unit tests of the command line, and the two commands above run on a copy of the bundled project `motor_start_stop` with its `schemaVersion` removed | Host |
-| ZPLC shows the difference before it writes, and applies it on **Apply migration** | Journey 31 in the real application | Host |
-| The saved version 2 form keeps what the project does | A test exports the migration of the motor start/stop project and checks that its golden scenario gives the same observable on the native runtime | Host |
-| The migrated project behaves the same on a board | Not claimed: no target, electrical or timing equivalence | None |
+| Part                                                                                                                          | Verified                                                                                                                                            | Level |
+| ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `migrate-preview` writes nothing, and `migrate` writes only the file named by `--output` and leaves the folder byte-identical | Unit tests of the command line, and the two commands above run on a copy of the bundled project `motor_start_stop` with its `schemaVersion` removed | Host  |
+| ZPLC shows the difference before it writes, and applies it on **Apply migration**                                             | Journey 31 in the real application                                                                                                                  | Host  |
+| The saved version 2 form keeps what the project does                                                                          | A test exports the migration of the motor start/stop project and checks that its golden scenario gives the same observable on the native runtime    | Host  |
+| The migrated project behaves the same on a board                                                                              | Not claimed: no target, electrical or timing equivalence                                                                                            | None  |
 
 ## Next step
 

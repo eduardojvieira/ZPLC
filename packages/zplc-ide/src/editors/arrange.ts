@@ -8,8 +8,25 @@
 import type { Node } from '@xyflow/react';
 import { t, tn } from '../i18n';
 
-export type ArrangeCommand = 'alignLeft' | 'alignCenter' | 'alignRight' | 'alignTop' | 'alignMiddle' | 'alignBottom' | 'distributeHorizontally' | 'distributeVertically';
-export const ARRANGE_COMMANDS: readonly ArrangeCommand[] = ['alignLeft', 'alignCenter', 'alignRight', 'alignTop', 'alignMiddle', 'alignBottom', 'distributeHorizontally', 'distributeVertically'];
+export type ArrangeCommand =
+  | 'alignLeft'
+  | 'alignCenter'
+  | 'alignRight'
+  | 'alignTop'
+  | 'alignMiddle'
+  | 'alignBottom'
+  | 'distributeHorizontally'
+  | 'distributeVertically';
+export const ARRANGE_COMMANDS: readonly ArrangeCommand[] = [
+  'alignLeft',
+  'alignCenter',
+  'alignRight',
+  'alignTop',
+  'alignMiddle',
+  'alignBottom',
+  'distributeHorizontally',
+  'distributeVertically',
+];
 export const isArrangeCommand = (command: string): command is ArrangeCommand => (ARRANGE_COMMANDS as readonly string[]).includes(command);
 
 export interface Arranged {
@@ -22,7 +39,13 @@ export interface Arranged {
 
 const DEFAULT_SIZE = { width: 120, height: 60 };
 
-interface Box { node: Node; left: number; top: number; width: number; height: number }
+interface Box {
+  node: Node;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
 
 const boxOf = (node: Node): Box => ({
   node,
@@ -58,13 +81,26 @@ export function arrangeSelection(nodes: Node[], command: ArrangeCommand): Arrang
 
   for (const box of boxes) {
     switch (command) {
-      case 'alignLeft': place(box, left, box.top); break;
-      case 'alignRight': place(box, right - box.width, box.top); break;
-      case 'alignCenter': place(box, (left + right) / 2 - box.width / 2, box.top); break;
-      case 'alignTop': place(box, box.left, top); break;
-      case 'alignBottom': place(box, box.left, bottom - box.height); break;
-      case 'alignMiddle': place(box, box.left, (top + bottom) / 2 - box.height / 2); break;
-      default: break;
+      case 'alignLeft':
+        place(box, left, box.top);
+        break;
+      case 'alignRight':
+        place(box, right - box.width, box.top);
+        break;
+      case 'alignCenter':
+        place(box, (left + right) / 2 - box.width / 2, box.top);
+        break;
+      case 'alignTop':
+        place(box, box.left, top);
+        break;
+      case 'alignBottom':
+        place(box, box.left, bottom - box.height);
+        break;
+      case 'alignMiddle':
+        place(box, box.left, (top + bottom) / 2 - box.height / 2);
+        break;
+      default:
+        break;
     }
   }
   if (distributes(command)) {

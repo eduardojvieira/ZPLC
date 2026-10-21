@@ -26,33 +26,16 @@ interface PowerRailProps {
 
 export function PowerRail({ side, x, height, rows }: PowerRailProps) {
   // Calculate wire connection points for each row
-  const wireConnections = Array.from({ length: rows }, (_, i) =>
-    PADDING + i * CELL_HEIGHT + WIRE_Y
-  );
+  const wireConnections = Array.from({ length: rows }, (_, i) => PADDING + i * CELL_HEIGHT + WIRE_Y);
 
   return (
     <g>
       {/* Main vertical rail */}
-      <line
-        x1={x}
-        y1={PADDING}
-        x2={x}
-        y2={height - PADDING}
-        stroke={COLORS.fb}
-        strokeWidth={4}
-      />
+      <line x1={x} y1={PADDING} x2={x} y2={height - PADDING} stroke={COLORS.fb} strokeWidth={4} />
 
       {/* Connection stubs to each row */}
       {wireConnections.map((wy, i) => (
-        <line
-          key={i}
-          x1={x}
-          y1={wy}
-          x2={side === 'left' ? x + 10 : x - 10}
-          y2={wy}
-          stroke={COLORS.wire}
-          strokeWidth={STROKE_WIDTH}
-        />
+        <line key={i} x1={x} y1={wy} x2={side === 'left' ? x + 10 : x - 10} y2={wy} stroke={COLORS.wire} strokeWidth={STROKE_WIDTH} />
       ))}
     </g>
   );
@@ -67,7 +50,7 @@ interface VerticalLinkProps {
   fromRow: number;
   toRow: number;
   gridOffsetX: number;
-  position: 'start' | 'end' | 'middle';  // Where in the cell the vertical line is
+  position: 'start' | 'end' | 'middle'; // Where in the cell the vertical line is
 }
 
 export function VerticalLink({ col, fromRow, toRow, gridOffsetX, position }: VerticalLinkProps) {
@@ -88,16 +71,7 @@ export function VerticalLink({ col, fromRow, toRow, gridOffsetX, position }: Ver
   const y1 = PADDING + fromRow * CELL_HEIGHT + WIRE_Y;
   const y2 = PADDING + toRow * CELL_HEIGHT + WIRE_Y;
 
-  return (
-    <line
-      x1={x}
-      y1={y1}
-      x2={x}
-      y2={y2}
-      stroke={COLORS.wire}
-      strokeWidth={STROKE_WIDTH}
-    />
-  );
+  return <line x1={x} y1={y1} x2={x} y2={y2} stroke={COLORS.wire} strokeWidth={STROKE_WIDTH} />;
 }
 
 // =============================================================================
@@ -149,11 +123,11 @@ export function BranchConnector({ branch, gridOffsetX, readOnly, onDelete }: Bra
           key={`start-stub-${row}`}
           x1={startX}
           y1={y}
-          x2={startX + 8}  // Small horizontal connection
+          x2={startX + 8} // Small horizontal connection
           y2={y}
           stroke={isHovered ? COLORS.selected : COLORS.wire}
           strokeWidth={STROKE_WIDTH}
-        />
+        />,
       );
     }
 
@@ -168,17 +142,13 @@ export function BranchConnector({ branch, gridOffsetX, readOnly, onDelete }: Bra
           y2={y}
           stroke={isHovered ? COLORS.selected : COLORS.wire}
           strokeWidth={STROKE_WIDTH}
-        />
+        />,
       );
     }
   }
 
   return (
-    <g
-      className="branch-connector"
-      onMouseEnter={() => !readOnly && setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+    <g className="branch-connector" onMouseEnter={() => !readOnly && setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
       {/* Left vertical rail */}
       <line
         x1={startX}
@@ -190,14 +160,7 @@ export function BranchConnector({ branch, gridOffsetX, readOnly, onDelete }: Bra
       />
 
       {/* Right vertical rail */}
-      <line
-        x1={endX}
-        y1={endY1}
-        x2={endX}
-        y2={endY2}
-        stroke={isHovered ? COLORS.selected : COLORS.wire}
-        strokeWidth={STROKE_WIDTH}
-      />
+      <line x1={endX} y1={endY1} x2={endX} y2={endY2} stroke={isHovered ? COLORS.selected : COLORS.wire} strokeWidth={STROKE_WIDTH} />
 
       {/* Connection stubs */}
       {stubs}
@@ -253,22 +216,12 @@ interface DropZoneProps {
   onDragOver: (col: number, row: number) => void;
   onDragLeave: () => void;
   hasElement: boolean;
-  isDragging: boolean;  // New: track if any drag is happening
+  isDragging: boolean; // New: track if any drag is happening
   /** The cell was clicked: the keyboard cursor goes there. */
   onPick?: (col: number, row: number) => void;
 }
 
-export function DropZone({
-  col,
-  row,
-  gridOffsetX,
-  isOver,
-  onDragOver,
-  onDragLeave,
-  hasElement,
-  isDragging,
-  onPick,
-}: DropZoneProps) {
+export function DropZone({ col, row, gridOffsetX, isOver, onDragOver, onDragLeave, hasElement, isDragging, onPick }: DropZoneProps) {
   const x = gridOffsetX + col * CELL_WIDTH;
   const y = PADDING + row * CELL_HEIGHT;
 
@@ -306,7 +259,8 @@ export function DropZone({
       strokeDasharray={isOver ? 'none' : '4,2'}
       onDragOver={handleDragOver}
       onDragLeave={onDragLeave}
-      onClick={() => onPick?.(col, row)} data-ld-drop-zone={`${row},${col}`}
+      onClick={() => onPick?.(col, row)}
+      data-ld-drop-zone={`${row},${col}`}
       style={{
         cursor: hasElement ? 'default' : 'crosshair',
         pointerEvents: hasElement ? 'none' : 'auto',
@@ -390,8 +344,11 @@ export function RungHeader({ rung, cols, rows, readOnly, onChange, editRequest }
       </span>
 
       {isEditing ? (
-        <TextField bare
-          aria-label={t('a11y.ld.comment')} ref={inputRef} type="text"
+        <TextField
+          bare
+          aria-label={t('a11y.ld.comment')}
+          ref={inputRef}
+          type="text"
           value={commentDraft}
           onChange={(e) => setCommentDraft(e.target.value)}
           onBlur={handleSave}
@@ -404,10 +361,11 @@ export function RungHeader({ rung, cols, rows, readOnly, onChange, editRequest }
         <Tooltip content={readOnly ? rung.comment : t('editors.ld.editComment')}>
           <span
             onClick={handleStartEdit}
-            className={`flex-1 min-w-0 text-xs italic truncate ${readOnly ? '' : 'cursor-pointer hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] rounded px-1 -mx-1'
-              } ${rung.comment ? 'text-[var(--color-surface-200)]' : 'text-[var(--color-surface-400)]'}`}
+            className={`flex-1 min-w-0 text-xs italic truncate ${
+              readOnly ? '' : 'cursor-pointer hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] rounded px-1 -mx-1'
+            } ${rung.comment ? 'text-[var(--color-surface-200)]' : 'text-[var(--color-surface-400)]'}`}
           >
-            {rung.comment ? `— ${rung.comment}` : (readOnly ? '' : t('editors.ld.clickToComment'))}
+            {rung.comment ? `— ${rung.comment}` : readOnly ? '' : t('editors.ld.clickToComment')}
           </span>
         </Tooltip>
       )}

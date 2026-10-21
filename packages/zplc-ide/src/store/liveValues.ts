@@ -8,10 +8,7 @@
 
 import type { IDEState, LiveValue } from './useIDEStore';
 
-export function withLiveValues(
-  state: IDEState,
-  readings: Iterable<readonly [string, LiveValue]>,
-): IDEState | Pick<IDEState, 'debug'> {
+export function withLiveValues(state: IDEState, readings: Iterable<readonly [string, LiveValue]>): IDEState | Pick<IDEState, 'debug'> {
   let next: Map<string, LiveValue> | undefined;
   for (const [path, value] of readings) {
     if (state.debug.liveValues.has(path) && state.debug.liveValues.get(path) === value) continue;

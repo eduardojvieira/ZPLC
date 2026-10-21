@@ -2,13 +2,7 @@
   "requirement": "CMP-032",
   "title": "a bit of a BOOL is rejected",
   "build": "fails",
-  "lines": [
-    6
-  ],
-  "codes": [
-    "INVALID_BIT_ACCESS"
-  ],
-  "messageIncludes": [
-    "Bit access"
-  ]
+  "lines": [6],
+  "codes": ["INVALID_BIT_ACCESS"],
+  "messageIncludes": ["Bit access"]
 }

@@ -28,7 +28,8 @@ describe('design tokens (UX-003)', () => {
       for (const density of ['comfortable', 'compact'] as const) {
         const tokens = resolveTokens(theme, density);
         expect(Object.keys(tokens).length).toBe(TOKENS.length);
-        for (const [name, value] of Object.entries(tokens)) expect({ name, theme, unresolved: value.includes('var(') }).toEqual({ name, theme, unresolved: false });
+        for (const [name, value] of Object.entries(tokens))
+          expect({ name, theme, unresolved: value.includes('var(') }).toEqual({ name, theme, unresolved: false });
       }
     }
   });
@@ -70,7 +71,8 @@ describe('type, shape and density tokens (UX-006, UX-007, UX-008)', () => {
   it('makes radius, elevation and icon size tokens, flat at rest, with a shadow only for transient overlays', () => {
     expect(light['--elevation-flat']).toBe('none');
     expect(light['--elevation-overlay']).not.toBe('none');
-    for (const name of ['--radius-control', '--radius-surface', '--radius-overlay', '--icon-size-sm', '--icon-size-md', '--icon-size-lg']) expect(light[name]).toMatch(/^\d+px$/);
+    for (const name of ['--radius-control', '--radius-surface', '--radius-overlay', '--icon-size-sm', '--icon-size-md', '--icon-size-lg'])
+      expect(light[name]).toMatch(/^\d+px$/);
     expect(resolveTokens('high-contrast')['--elevation-overlay']).toBe('none');
   });
 

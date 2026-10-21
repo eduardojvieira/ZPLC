@@ -6,7 +6,11 @@ import { compileSingleFileWithTask, type DebugMap, type PLCLanguage } from '../c
 import type { ProjectFileWithHandle } from '../types';
 
 // The store imports the bundled-example loader, which only exists under Vite (import.meta.glob).
-await mock.module('../utils/projectLoader', () => ({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null }));
+await mock.module('../utils/projectLoader', () => ({
+  getAvailableProjects: () => [],
+  loadProject: () => null,
+  loadProjectAssets: () => null,
+}));
 const { useIDEStore } = await import('../store/useIDEStore');
 const { elementBreakpointsOf, reconcileElementBreakpoints, toggleElementBreakpoint } = await import('./elementBreakpoints');
 
@@ -15,7 +19,13 @@ const ldText = readFileSync(join(projects, 'blinky/src/main.ld.json'), 'utf8');
 const ldModel = JSON.parse(ldText) as { rungs: Array<{ id: string; number: number; grid: unknown[][]; comment?: string }> };
 
 const file = (path: string, language: PLCLanguage): ProjectFileWithHandle => ({
-  id: `file:${path}`, name: path.split('/').pop()!, path, parentPath: 'src', language, content: '', isModified: false,
+  id: `file:${path}`,
+  name: path.split('/').pop()!,
+  path,
+  parentPath: 'src',
+  language,
+  content: '',
+  isModified: false,
 });
 
 function build(language: PLCLanguage, content: string, sourceRef: string): DebugMap {
@@ -30,7 +40,11 @@ const pcOfRung = (map: DebugMap, rung: string): number => {
 let session = 700;
 beforeEach(() => {
   session += 1;
-  useIDEStore.setState((state) => ({ projectSession: session, loadedFiles: new Map(), debug: { ...state.debug, debugMap: null, breakpoints: new Map() } }));
+  useIDEStore.setState((state) => ({
+    projectSession: session,
+    loadedFiles: new Map(),
+    debug: { ...state.debug, debugMap: null, breakpoints: new Map() },
+  }));
 });
 afterEach(() => {
   useIDEStore.setState((state) => ({ loadedFiles: new Map(), debug: { ...state.debug, debugMap: null, breakpoints: new Map() } }));
@@ -92,7 +106,10 @@ describe('LNG-004 a breakpoint on an element is armed at the element and follows
 
     // a copy of the first rung goes in front of everything: every generated line after it moves
     const copy = structuredClone(ldModel.rungs[0]!);
-    const inserted = { ...ldModel, rungs: [{ ...copy, id: 'rung_new', number: 1 }, ...ldModel.rungs.map((rung, index) => ({ ...rung, number: index + 2 }))] };
+    const inserted = {
+      ...ldModel,
+      rungs: [{ ...copy, id: 'rung_new', number: 1 }, ...ldModel.rungs.map((rung, index) => ({ ...rung, number: index + 2 }))],
+    };
     const after = build('LD', JSON.stringify(inserted), ld.path);
     useIDEStore.getState().setDebugMap(after);
     reconcileElementBreakpoints();
@@ -108,7 +125,10 @@ describe('LNG-004 a breakpoint on an element is armed at the element and follows
     useIDEStore.getState().setDebugMap(before);
     toggleElementBreakpoint(ld.id, `rung:${second}`);
 
-    const without = { ...ldModel, rungs: ldModel.rungs.filter((rung) => rung.id !== second).map((rung, index) => ({ ...rung, number: index + 1 })) };
+    const without = {
+      ...ldModel,
+      rungs: ldModel.rungs.filter((rung) => rung.id !== second).map((rung, index) => ({ ...rung, number: index + 1 })),
+    };
     useIDEStore.getState().setDebugMap(build('LD', JSON.stringify(without), ld.path));
     reconcileElementBreakpoints();
 

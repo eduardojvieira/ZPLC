@@ -31,7 +31,8 @@ export const consoleEn = {
   'console.changeReviewRequiresThe': 'Change review requires the desktop app.',
   'console.openASavedProject': 'Open a saved project folder to review a change.',
   'console.chooseTheSavedWorkspace': 'Choose the saved workspace zplc.json before reviewing the active file.',
-  'console.onlyAModifiedActive': 'Only a modified active structured text file under src/ can be reviewed. Other unsaved buffers are left out.',
+  'console.onlyAModifiedActive':
+    'Only a modified active structured text file under src/ can be reviewed. Other unsaved buffers are left out.',
   'console.onlyTheActiveStructured': 'Only the active structured text buffer is reviewed. Other unsaved buffers are left out.',
   'console.nativePosixHostEvidence': 'Native POSIX host evidence — not hardware or HIL evidence.',
   'console.reviewItselfDoesNot': 'Review itself does not write files.',
@@ -58,7 +59,8 @@ export const consoleEn = {
   'console.editRequiresTheActive': 'Edit requires the active saved, unmodified structured text file under src/.',
   'console.boundedDiagnosticsHostTrace': 'Bounded diagnostics: {length}; host trace samples: {length2}.',
   'console.noSourceFileOr': 'No source file or active editor content is sent.',
-  'console.doNotPutSecrets': 'Do not put secrets in the prompt. Known sensitive patterns in the prompt or context are rejected before network access; do not paste secrets. Terminal, raw serial, and physical controls are excluded.',
+  'console.doNotPutSecrets':
+    'Do not put secrets in the prompt. Known sensitive patterns in the prompt or context are rejected before network access; do not paste secrets. Terminal, raw serial, and physical controls are excluded.',
   'console.sendRequest': 'Send request',
   'console.cancelRequest': 'Cancel request',
   'console.providerRequestFailed': 'Provider request failed: {code}.',
@@ -246,7 +248,8 @@ export const consoleEs: Record<keyof typeof consoleEn, string> = {
   'console.changeReviewRequiresThe': 'La revisión de cambios requiere la aplicación de escritorio.',
   'console.openASavedProject': 'Abra una carpeta de proyecto guardada para revisar un cambio.',
   'console.chooseTheSavedWorkspace': 'Elija el zplc.json guardado del espacio de trabajo antes de revisar el archivo activo.',
-  'console.onlyAModifiedActive': 'Solo se puede revisar un archivo de texto estructurado activo y modificado dentro de src/. Los demás búferes sin guardar quedan fuera.',
+  'console.onlyAModifiedActive':
+    'Solo se puede revisar un archivo de texto estructurado activo y modificado dentro de src/. Los demás búferes sin guardar quedan fuera.',
   'console.onlyTheActiveStructured': 'Solo se revisa el búfer activo de texto estructurado. Los demás búferes sin guardar quedan fuera.',
   'console.nativePosixHostEvidence': 'Evidencia del host POSIX nativo; no es evidencia de hardware ni de HIL.',
   'console.reviewItselfDoesNot': 'La revisión por sí misma no escribe archivos.',
@@ -273,7 +276,8 @@ export const consoleEs: Record<keyof typeof consoleEn, string> = {
   'console.editRequiresTheActive': 'La edición requiere el archivo de texto estructurado activo, guardado y sin modificar dentro de src/.',
   'console.boundedDiagnosticsHostTrace': 'Diagnósticos acotados: {length}; muestras de traza del host: {length2}.',
   'console.noSourceFileOr': 'No se envía ningún archivo fuente ni el contenido del editor activo.',
-  'console.doNotPutSecrets': 'No incluya secretos en la solicitud. Los patrones sensibles conocidos en la solicitud o en el contexto se rechazan antes de acceder a la red; no pegue secretos. Se excluyen el terminal, el puerto serie en bruto y los controles físicos.',
+  'console.doNotPutSecrets':
+    'No incluya secretos en la solicitud. Los patrones sensibles conocidos en la solicitud o en el contexto se rechazan antes de acceder a la red; no pegue secretos. Se excluyen el terminal, el puerto serie en bruto y los controles físicos.',
   'console.sendRequest': 'Enviar la solicitud',
   'console.cancelRequest': 'Cancelar la solicitud',
   'console.providerRequestFailed': 'Falló la solicitud al proveedor: {code}.',
@@ -317,7 +321,8 @@ export const consoleEs: Record<keyof typeof consoleEn, string> = {
   'console.checkingProviderConfiguration': 'Comprobando la configuración del proveedor…',
   'console.sendingExplicitProviderRequest': 'Enviando la solicitud explícita al proveedor…',
   'console.cancellingProviderRequest': 'Cancelando la solicitud al proveedor…',
-  'console.agentIsUnavailableIn': 'El agente no está disponible en este host. Use la aplicación de escritorio y configure un almacén de claves compatible.',
+  'console.agentIsUnavailableIn':
+    'El agente no está disponible en este host. Use la aplicación de escritorio y configure un almacén de claves compatible.',
   'console.agentRequestIsNo': 'La solicitud al agente ya no está vigente o no se pudo completar. Revise el contexto e inténtelo de nuevo.',
   'console.providerStatusHasNot': 'El estado del proveedor no se ha confirmado.',
   'console.vaultUnavailableKeysAre': 'Almacén de claves no disponible: {vaultReason}. Las claves no se guardan aquí.',
@@ -332,20 +337,24 @@ export const consoleEs: Record<keyof typeof consoleEn, string> = {
   'console.start': 'Iniciar',
   'console.assertEStop': 'Activar el paro de emergencia',
   'console.releaseEStop': 'Liberar el paro de emergencia',
-  'console.inputCommandWasNot': 'No se confirmó el comando de entrada; los controles no estarán disponibles hasta recibir una instantánea nativa nueva.',
+  'console.inputCommandWasNot':
+    'No se confirmó el comando de entrada; los controles no estarán disponibles hasta recibir una instantánea nativa nueva.',
   'console.stagingHostInputWaiting': 'Preparando la entrada del host; esperando una instantánea nativa nueva.',
   'console.eStop': 'Paro de emergencia: {value}',
   'console.inputControlsUnavailable': 'Controles de entrada no disponibles.',
   'console.scenarioEvidenceRecordedTest': 'Evidencia de escenarios (resultado de prueba registrado)',
-  'console.recordedDuringThisHost': 'Registrado durante esta ejecución de pruebas en el host. No se actualiza con el panel de traza en vivo.',
+  'console.recordedDuringThisHost':
+    'Registrado durante esta ejecución de pruebas en el host. No se actualiza con el panel de traza en vivo.',
   'console.nativePosixTestEvidence': 'Artefactos de evidencia de pruebas POSIX nativas.',
   'console.artifact': 'Artefacto',
   'console.sha256': 'SHA-256',
   'console.bytes2': 'Bytes',
   'console.sha2562': 'SHA-256 {sha256}',
   'console.canonicalBuildTestLink': 'Vínculo de la prueba con la compilación canónica',
-  'console.canonicalSavedBuildLinked': 'Compilación guardada canónica vinculada · ejecución POSIX nativa · coincide el .zplc · traza registrada.',
-  'console.notLinkedToThe': 'No está vinculado a la compilación guardada canónica actual. Este resultado de prueba queda solo como evidencia registrada.',
+  'console.canonicalSavedBuildLinked':
+    'Compilación guardada canónica vinculada · ejecución POSIX nativa · coincide el .zplc · traza registrada.',
+  'console.notLinkedToThe':
+    'No está vinculado a la compilación guardada canónica actual. Este resultado de prueba queda solo como evidencia registrada.',
   'console.noScenarioEvidenceWas': 'No se registró evidencia de escenarios; no hay vínculo con una compilación canónica.',
   'console.logicalSingleTaskScan': 'Escaneo lógico de una sola tarea.',
   'console.hostEvidenceBadge': 'Solo evidencia del equipo anfitrión',
@@ -365,7 +374,8 @@ export const consoleEs: Record<keyof typeof consoleEn, string> = {
   'console.recordedMotorOutput': 'Salida registrada del motor',
   'console.recordedMotorOutputSamples': 'Muestras registradas de la salida del motor',
   'console.atMs': '{signal} {state} a los {atMs} ms',
-  'console.recordedNativePosixScenario': 'Resultado registrado de un escenario POSIX nativo; no es evidencia del runtime en vivo, del hardware ni de HIL.',
+  'console.recordedNativePosixScenario':
+    'Resultado registrado de un escenario POSIX nativo; no es evidencia del runtime en vivo, del hardware ni de HIL.',
   'console.motorPlantRecordedHost': 'Escenario del host registrado de la planta del motor',
   'console.motorPlantRecordedHost2': 'Planta del motor · escenario del host registrado',
   'console.recordedMotorPlantMatrix': 'Matriz registrada de la planta del motor',

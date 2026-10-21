@@ -36,7 +36,12 @@ describe('when a recent project was last opened (IDE-008)', () => {
 });
 
 describe('the rows of the Recent section (IDE-008)', () => {
-  const entry = (name: string, ago: number, available = true): RecentProject => ({ recentId: `${name}`.padEnd(64, '0'), displayName: name, lastOpenedAt: NOW - ago, available });
+  const entry = (name: string, ago: number, available = true): RecentProject => ({
+    recentId: `${name}`.padEnd(64, '0'),
+    displayName: name,
+    lastOpenedAt: NOW - ago,
+    available,
+  });
 
   it('keeps the order the main process gave, the most recent first, so that the first row is the last project', () => {
     const rows = recentRows([entry('plant', MINUTE), entry('line', 3 * DAY)], NOW);

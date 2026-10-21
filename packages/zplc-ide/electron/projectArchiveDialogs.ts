@@ -5,7 +5,12 @@
  * released installer holds neither the module nor the variable name).
  */
 
-interface DialogOptions { title: string; defaultPath?: string; filters?: Array<{ name: string; extensions: string[] }>; properties?: string[] }
+interface DialogOptions {
+  title: string;
+  defaultPath?: string;
+  filters?: Array<{ name: string; extensions: string[] }>;
+  properties?: string[];
+}
 type DialogResult = { canceled: boolean; filePaths: string[] };
 type SaveResult = { canceled: boolean; filePath?: string };
 
@@ -14,7 +19,10 @@ export interface ArchiveDialogHost {
   showOpenDialog(window: unknown, options: DialogOptions): Promise<DialogResult>;
 }
 
-interface OwnedWindow { isDestroyed(): boolean; webContents: { id: number } }
+interface OwnedWindow {
+  isDestroyed(): boolean;
+  webContents: { id: number };
+}
 
 export interface ArchiveDialogDeps {
   dialog: ArchiveDialogHost;
@@ -44,8 +52,12 @@ export function createArchiveDialogs(deps: ArchiveDialogDeps) {
       if (window === null) return null;
       const answer = await answeredByHook();
       if (answer !== undefined) return answer;
-      const result = await deps.dialog.showSaveDialog(window, { title: 'Export project archive', defaultPath: defaultName, filters: [ARCHIVE_FILTER] });
-      return result.canceled ? null : result.filePath ?? null;
+      const result = await deps.dialog.showSaveDialog(window, {
+        title: 'Export project archive',
+        defaultPath: defaultName,
+        filters: [ARCHIVE_FILTER],
+      });
+      return result.canceled ? null : (result.filePath ?? null);
     },
 
     async openFile(ownerId: number): Promise<string | null> {
@@ -53,8 +65,12 @@ export function createArchiveDialogs(deps: ArchiveDialogDeps) {
       if (window === null) return null;
       const answer = await answeredByHook();
       if (answer !== undefined) return answer;
-      const result = await deps.dialog.showOpenDialog(window, { title: 'Import project archive', filters: [ARCHIVE_FILTER], properties: ['openFile'] });
-      return result.canceled ? null : result.filePaths[0] ?? null;
+      const result = await deps.dialog.showOpenDialog(window, {
+        title: 'Import project archive',
+        filters: [ARCHIVE_FILTER],
+        properties: ['openFile'],
+      });
+      return result.canceled ? null : (result.filePaths[0] ?? null);
     },
 
     async chooseFolder(ownerId: number): Promise<string | null> {
@@ -62,8 +78,11 @@ export function createArchiveDialogs(deps: ArchiveDialogDeps) {
       if (window === null) return null;
       const answer = await answeredByHook();
       if (answer !== undefined) return answer;
-      const result = await deps.dialog.showOpenDialog(window, { title: 'Choose an empty folder to import the project into', properties: ['openDirectory', 'createDirectory'] });
-      return result.canceled ? null : result.filePaths[0] ?? null;
+      const result = await deps.dialog.showOpenDialog(window, {
+        title: 'Choose an empty folder to import the project into',
+        properties: ['openDirectory', 'createDirectory'],
+      });
+      return result.canceled ? null : (result.filePaths[0] ?? null);
     },
   };
 }

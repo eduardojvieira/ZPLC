@@ -10,7 +10,11 @@ import { addBranchAt, bindingChoices, runLDCommand, type LDCursor, type LDOutcom
 const empty = (): LDModel => ({
   name: 'Main',
   variables: {
-    inputs: [{ name: 'Start', type: 'BOOL' }, { name: 'Stop', type: 'BOOL' }, { name: 'Level', type: 'INT' }],
+    inputs: [
+      { name: 'Start', type: 'BOOL' },
+      { name: 'Stop', type: 'BOOL' },
+      { name: 'Level', type: 'INT' },
+    ],
     outputs: [{ name: 'Lamp', type: 'BOOL' }],
     local: [{ name: 'Motor', type: 'BOOL' }],
   },
@@ -57,7 +61,18 @@ const cellOf = (model: LDModel, rung: number, row: number, col: number): LDEleme
 const where = (cursor: LDCursor | null) => cursor && [cursor.rungId, cursor.row, cursor.col];
 
 describe('LNG-012 ladder cursor', () => {
-  const twoRungs = (): LDModel => ({ ...empty(), rungs: [createEmptyRung(1), { ...createEmptyRung(2), id: 'rung_2', gridConfig: { rows: 2, cols: 4, cellWidth: 80, cellHeight: 60 }, grid: [[0, 1, 2, 3].map(() => ({ element: null, hasWire: true })), [0, 1, 2, 3].map(() => ({ element: null, hasWire: false }))] }] });
+  const twoRungs = (): LDModel => ({
+    ...empty(),
+    rungs: [
+      createEmptyRung(1),
+      {
+        ...createEmptyRung(2),
+        id: 'rung_2',
+        gridConfig: { rows: 2, cols: 4, cellWidth: 80, cellHeight: 60 },
+        grid: [[0, 1, 2, 3].map(() => ({ element: null, hasWire: true })), [0, 1, 2, 3].map(() => ({ element: null, hasWire: false }))],
+      },
+    ],
+  });
 
   it('starts on the first cell and moves one cell with the arrows, stopping at the edges', () => {
     const session = start();
@@ -129,14 +144,17 @@ describe('LNG-012 ladder keyboard authoring', () => {
     expect(built.source).toContain('Lamp := _rung1_result;');
   });
 
-  it('asks for the variable of a contact or a coil as soon as it is inserted, and leaves it unbound when the question is not answered', () => {
-    const session = start();
-    press(session, ['C']);
-    expect(session.last?.prompt?.kind).toBe('bind');
-    expect(cellOf(session.model, 0, 0, 0)?.type).toBe('contact_no');
-    expect(cellOf(session.model, 0, 0, 0)?.variable).toBeUndefined();
-    expect(transpileLDToST(session.model).success).toBe(false);
-  });
+  it(
+    'asks for the variable of a contact or a coil as soon as it is inserted, and leaves it unbound when the question is not ' + 'answered',
+    () => {
+      const session = start();
+      press(session, ['C']);
+      expect(session.last?.prompt?.kind).toBe('bind');
+      expect(cellOf(session.model, 0, 0, 0)?.type).toBe('contact_no');
+      expect(cellOf(session.model, 0, 0, 0)?.variable).toBeUndefined();
+      expect(transpileLDToST(session.model).success).toBe(false);
+    },
+  );
 
   it('opens the palette with Insert, I and Enter on an empty cell, and inserts what the palette answers at the cursor', () => {
     for (const key of ['Insert', 'I', 'Enter']) {
@@ -206,7 +224,17 @@ describe('LNG-012 what the keyboard does not do without a cursor to show it', ()
   };
 
   it('refuses to delete, move, bind or restructure what the user has not put the cursor on', () => {
-    for (const command of ['deleteElement', 'deleteRung', 'moveElementRight', 'moveRungDown', 'bindVariable', 'widenBranch', 'narrowBranch', 'removeBranch', 'addRow']) {
+    for (const command of [
+      'deleteElement',
+      'deleteRung',
+      'moveElementRight',
+      'moveRungDown',
+      'bindVariable',
+      'widenBranch',
+      'narrowBranch',
+      'removeBranch',
+      'addRow',
+    ]) {
       const session = withElement();
       const before = session.model;
       const outcome = runLDCommand(session.model, session.cursor, command);
@@ -235,7 +263,9 @@ describe('LNG-012 what the keyboard does not do without a cursor to show it', ()
 describe('LNG-012 binding a variable from the declared symbols', () => {
   const withTimer = (): LDModel => {
     const session = start();
-    const outcome = runLDCommand(session.model, null, 'insertElement', { insert: { type: 'function_block', fbType: 'TON', category: 'function_block' } });
+    const outcome = runLDCommand(session.model, null, 'insertElement', {
+      insert: { type: 'function_block', fbType: 'TON', category: 'function_block' },
+    });
     return outcome.model;
   };
 
@@ -306,9 +336,15 @@ describe('LNG-012 ladder structure from the keyboard', () => {
   });
 
   it('adds a rung after the rung of the cursor with an id that no rung has, even after a rung was deleted', () => {
-    const session = start({ ...empty(), rungs: [createEmptyRung(1), { ...createEmptyRung(2), id: 'rung_2' }, { ...createEmptyRung(3), id: 'rung_3' }] });
+    const session = start({
+      ...empty(),
+      rungs: [createEmptyRung(1), { ...createEmptyRung(2), id: 'rung_2' }, { ...createEmptyRung(3), id: 'rung_3' }],
+    });
     press(session, ['PageDown', 'Shift+Delete']);
-    expect(session.model.rungs.map((rung) => [rung.id, rung.number])).toEqual([['rung_1', 1], ['rung_3', 2]]);
+    expect(session.model.rungs.map((rung) => [rung.id, rung.number])).toEqual([
+      ['rung_1', 1],
+      ['rung_3', 2],
+    ]);
     press(session, ['Ctrl+Enter']);
     const ids = session.model.rungs.map((rung) => rung.id);
     expect(new Set(ids).size).toBe(3);
@@ -319,7 +355,10 @@ describe('LNG-012 ladder structure from the keyboard', () => {
   it('moves a rung with Alt and Up or Down, renumbering, and refuses at the ends', () => {
     const session = start({ ...empty(), rungs: [createEmptyRung(1), { ...createEmptyRung(2), id: 'rung_2' }] });
     press(session, ['Home', 'Alt+ArrowDown']);
-    expect(session.model.rungs.map((rung) => [rung.id, rung.number])).toEqual([['rung_2', 1], ['rung_1', 2]]);
+    expect(session.model.rungs.map((rung) => [rung.id, rung.number])).toEqual([
+      ['rung_2', 1],
+      ['rung_1', 2],
+    ]);
     press(session, ['Alt+ArrowDown']);
     expect(session.said.at(-1)).toBe('This is the last rung.');
     press(session, ['Alt+ArrowUp']);

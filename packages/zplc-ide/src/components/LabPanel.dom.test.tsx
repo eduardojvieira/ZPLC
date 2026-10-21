@@ -7,7 +7,11 @@ const { LabPanel } = await import('./LabPanel');
 
 beforeAll(() => {
   // happy-dom has no motion preference; the panel reads one
-  (window as unknown as { matchMedia: unknown }).matchMedia = () => ({ matches: false, addEventListener: () => undefined, removeEventListener: () => undefined });
+  (window as unknown as { matchMedia: unknown }).matchMedia = () => ({
+    matches: false,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  });
 });
 
 describe('Lab (LRN-018, LRN-020) in a DOM', () => {

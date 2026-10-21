@@ -4,9 +4,11 @@ import type { ZPLCProjectConfig } from '../types';
 import { buildProvisioningCommands, quoteZephyrShellArg } from './provisioningCommands';
 
 function decodeZephyrShellArgument(encoded: string): string {
-  return encoded.slice(1, -1).replace(/\\x([0-9a-f]{2})|\\(["\\])/gi, (_match, hex: string | undefined, escaped: string | undefined) => (
-    hex ? String.fromCharCode(Number.parseInt(hex, 16)) : escaped ?? ''
-  ));
+  return encoded
+    .slice(1, -1)
+    .replace(/\\x([0-9a-f]{2})|\\(["\\])/gi, (_match, hex: string | undefined, escaped: string | undefined) =>
+      hex ? String.fromCharCode(Number.parseInt(hex, 16)) : (escaped ?? ''),
+    );
 }
 
 const BASE_CONFIG: ZPLCProjectConfig = {
@@ -104,10 +106,11 @@ describe('buildProvisioningCommands', () => {
       lwtQos: 0 as const,
       lwtRetain: false,
     };
-    const security = (level: unknown): string | undefined => buildProvisioningCommands({
-      ...BASE_CONFIG,
-      communication: { mqtt: { ...mqtt, securityLevel: level as 'none' } },
-    }).find((command) => command.startsWith('zplc config set mqtt_security '));
+    const security = (level: unknown): string | undefined =>
+      buildProvisioningCommands({
+        ...BASE_CONFIG,
+        communication: { mqtt: { ...mqtt, securityLevel: level as 'none' } },
+      }).find((command) => command.startsWith('zplc config set mqtt_security '));
 
     it('sends the security level, and the level that was chosen is the level that is sent', () => {
       expect(security('none')).toBe('zplc config set mqtt_security 0');
@@ -123,7 +126,10 @@ describe('buildProvisioningCommands', () => {
     });
 
     it('sends the broker it was given and sends nothing for a project without MQTT', () => {
-      const commands = buildProvisioningCommands({ ...BASE_CONFIG, communication: { mqtt: { ...mqtt, securityLevel: 'tls-server-verify' } } });
+      const commands = buildProvisioningCommands({
+        ...BASE_CONFIG,
+        communication: { mqtt: { ...mqtt, securityLevel: 'tls-server-verify' } },
+      });
       expect(commands).toContain('zplc config set mqtt_broker "broker.example"');
       const without = buildProvisioningCommands(BASE_CONFIG);
       expect(without.some((command) => command.includes('mqtt_broker'))).toBe(false);
@@ -148,10 +154,12 @@ describe('buildProvisioningCommands', () => {
   });
 
   it('rejects non-finite numeric config values before producing commands', () => {
-    expect(() => buildProvisioningCommands({
-      ...BASE_CONFIG,
-      target: { board: 'test', clock_mhz: Number.NaN },
-    })).toThrow('Project configuration contains unsupported numeric values');
+    expect(() =>
+      buildProvisioningCommands({
+        ...BASE_CONFIG,
+        target: { board: 'test', clock_mhz: Number.NaN },
+      }),
+    ).toThrow('Project configuration contains unsupported numeric values');
   });
 });
 

@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 
 import { bytesToHex, RUNTIME_SESSION_SOURCE } from './debugAdapter';
-import {
-  normalizeNativeRuntimeSnapshot,
-  normalizeSerialRuntimeSnapshot,
-} from './runtimeSnapshot';
+import { normalizeNativeRuntimeSnapshot, normalizeSerialRuntimeSnapshot } from './runtimeSnapshot';
 import type { NativeRuntimeSnapshot } from './nativeProtocol';
 
 describe('bytesToHex', () => {

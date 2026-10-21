@@ -11,7 +11,9 @@ import { generate, updateHashes } from './generate-lesson-index';
 
 const ROOT = resolve(import.meta.dir, '../..');
 const temporary: string[] = [];
-afterEach(() => { for (const path of temporary.splice(0)) rmSync(path, { recursive: true, force: true }); });
+afterEach(() => {
+  for (const path of temporary.splice(0)) rmSync(path, { recursive: true, force: true });
+});
 
 function copyOfLessons(): string {
   const root = mkdtempSync(join(tmpdir(), 'zplc-lessons-'));
@@ -35,15 +37,26 @@ describe('the generated lesson index (LRN-027, LRN-028)', () => {
   it('refuses a lesson that names a plant without its mapping, or a mapping that names another plant (LRN-021)', () => {
     const root = copyOfLessons();
     rmSync(join(root, 'tank-level-fault-reset', 'plant-map.json'));
-    writeFileSync(join(root, 'motor-plant-feedback', 'plant-map.json'), readFileSync(join(LESSONS_DIRECTORY, 'tank-level-fault-reset', 'plant-map.json'), 'utf8'));
+    writeFileSync(
+      join(root, 'motor-plant-feedback', 'plant-map.json'),
+      readFileSync(join(LESSONS_DIRECTORY, 'tank-level-fault-reset', 'plant-map.json'), 'utf8'),
+    );
     const { problems } = generate(root);
     expect(problems.some((problem) => problem.includes('tank-level-fault-reset') && problem.includes('has no plant-map.json'))).toBe(true);
-    expect(problems.some((problem) => problem.includes('motor-plant-feedback/plant-map.json') && problem.includes('differs from the manifest plant'))).toBe(true);
+    expect(
+      problems.some(
+        (problem) => problem.includes('motor-plant-feedback/plant-map.json') && problem.includes('differs from the manifest plant'),
+      ),
+    ).toBe(true);
   });
 
   it('is current as a file: `--check` of the generator exits 0', () => {
     const run = Bun.spawnSync(['bun', join(import.meta.dir, 'generate-lesson-index.ts'), '--check'], { cwd: ROOT });
-    expect({ code: run.exitCode, out: run.stdout.toString(), err: run.stderr.toString() }).toEqual({ code: 0, out: 'lesson index is current\n', err: '' });
+    expect({ code: run.exitCode, out: run.stdout.toString(), err: run.stderr.toString() }).toEqual({
+      code: 0,
+      out: 'lesson index is current\n',
+      err: '',
+    });
   });
 
   it('refuses a scenario that changed without its hash being re-pinned, then accepts it with a new version', () => {
@@ -71,7 +84,9 @@ describe('the generated lesson index (LRN-027, LRN-028)', () => {
     manifest.unsupported.hardware.reason.en = 'A changed reason.';
     writeFileSync(file, JSON.stringify(manifest));
     expect(updateHashes(lessons)).toEqual(['first-blink-simulation']);
-    expect(loadLessonPackages(lessons).packages.find((item) => item.id === 'first-blink-simulation')?.manifest.version).toBe(manifest.version + 1);
+    expect(loadLessonPackages(lessons).packages.find((item) => item.id === 'first-blink-simulation')?.manifest.version).toBe(
+      manifest.version + 1,
+    );
     // Run again: the version is already raised over the committed index, so nothing changes.
     expect(updateHashes(lessons)).toEqual([]);
   });
@@ -84,14 +99,20 @@ describe('the generated lesson index (LRN-027, LRN-028)', () => {
     const broken = copyOfLessons();
     const file = join(broken, 'course.json');
     writeFileSync(file, readFileSync(file, 'utf8').replace('"requires": 1', '"requires": 5'));
-    expect(generate(broken).problems.some((problem) => problem.startsWith('course.json: module 2') && problem.includes('requires'))).toBe(true);
+    expect(generate(broken).problems.some((problem) => problem.startsWith('course.json: module 2') && problem.includes('requires'))).toBe(
+      true,
+    );
   });
 
   it('refuses a lesson placed in a module the manifest cannot name or at another level than its module (LRN-005, LRN-007)', () => {
     const lessons = copyOfLessons();
     const file = join(lessons, 'scan-cycle-one-scan-memory', 'lesson.json');
     writeFileSync(file, readFileSync(file, 'utf8').replace('"module": 1', '"module": 40'));
-    expect(generate(lessons).problems.some((problem) => problem.startsWith('scan-cycle-one-scan-memory/lesson.json') && problem.includes('manifest.module'))).toBe(true);
+    expect(
+      generate(lessons).problems.some(
+        (problem) => problem.startsWith('scan-cycle-one-scan-memory/lesson.json') && problem.includes('manifest.module'),
+      ),
+    ).toBe(true);
     const wrongLevel = copyOfLessons();
     const other = join(wrongLevel, 'scan-cycle-one-scan-memory', 'lesson.json');
     writeFileSync(other, readFileSync(other, 'utf8').replace('"level": "foundation"', '"level": "advanced"'));
@@ -127,7 +148,15 @@ describe('the generated lesson index (LRN-027, LRN-028)', () => {
   });
 });
 
-const SOURCE_ROOTS = ['packages/zplc-ide/src', 'packages/zplc-ide/electron', 'packages/zplc-ide/scripts', 'packages/zplc-compiler/src', 'packages/zplc-hil/src', 'scripts', 'tools'];
+const SOURCE_ROOTS = [
+  'packages/zplc-ide/src',
+  'packages/zplc-ide/electron',
+  'packages/zplc-ide/scripts',
+  'packages/zplc-compiler/src',
+  'packages/zplc-hil/src',
+  'scripts',
+  'tools',
+];
 const SKIPPED = /(?:^|\/)(?:node_modules|dist|electron-dist|build|generated|fixtures)(?:\/|$)|\.test\.[cm]?[jt]sx?$|\.d\.ts$/;
 const CODE = /\.(?:ts|tsx|js|jsx|mjs|cjs)$/;
 

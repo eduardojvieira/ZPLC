@@ -6,7 +6,11 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 import { shallow } from 'zustand/shallow';
 
-await mock.module('../utils/projectLoader', () => ({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null }));
+await mock.module('../utils/projectLoader', () => ({
+  getAvailableProjects: () => [],
+  loadProject: () => null,
+  loadProjectAssets: () => null,
+}));
 const { useIDEStore } = await import('./useIDEStore');
 const { REGION_SELECTORS } = await import('./regionSubscriptions');
 const { selectLiveValues } = await import('../hooks/useDebugValue');
@@ -18,15 +22,25 @@ type Selector = (state: State) => unknown;
 function renders(selectors: Record<string, Selector>, work: () => void): Record<string, number> {
   const counts: Record<string, number> = {};
   const last: Record<string, unknown> = {};
-  for (const [name, select] of Object.entries(selectors)) { counts[name] = 0; last[name] = select(useIDEStore.getState()); }
+  for (const [name, select] of Object.entries(selectors)) {
+    counts[name] = 0;
+    last[name] = select(useIDEStore.getState());
+  }
   const stop = useIDEStore.subscribe((state) => {
     for (const [name, select] of Object.entries(selectors)) {
       const next = select(state);
       // the components pass their selector to useShallow: a render is a change that is not shallowly equal
-      if (!shallow(last[name], next)) { counts[name] = (counts[name] ?? 0) + 1; last[name] = next; }
+      if (!shallow(last[name], next)) {
+        counts[name] = (counts[name] ?? 0) + 1;
+        last[name] = next;
+      }
     }
   });
-  try { work(); } finally { stop(); }
+  try {
+    work();
+  } finally {
+    stop();
+  }
   return counts;
 }
 
@@ -36,9 +50,19 @@ const watched = Array.from({ length: WATCHED }, (_, index) => `Plant.value${inde
 const source = Array.from({ length: 2000 }, (_, line) => `v${line % 50} := v${(line + 1) % 50} + ${line};`).join('\n');
 
 beforeEach(() => {
-  const file = { id: 'file:main', name: 'main.st', path: 'src/main.st', parentPath: 'src', language: 'ST' as const, content: source, isModified: false };
+  const file = {
+    id: 'file:main',
+    name: 'main.st',
+    path: 'src/main.st',
+    parentPath: 'src',
+    language: 'ST' as const,
+    content: source,
+    isModified: false,
+  };
   useIDEStore.setState((state) => ({
-    loadedFiles: new Map([[file.id, file]]), activeFileId: file.id, openTabs: [file.id],
+    loadedFiles: new Map([[file.id, file]]),
+    activeFileId: file.id,
+    openTabs: [file.id],
     debug: { ...state.debug, watchVariables: watched, liveValues: new Map(watched.map((path) => [path, 0])) },
   }));
 });
@@ -47,7 +71,9 @@ beforeEach(() => {
 // next file to find (useIDEStore.test.ts closes a project, which an unsaved file refuses).
 afterEach(() => {
   useIDEStore.setState((state) => ({
-    loadedFiles: new Map(), activeFileId: null, openTabs: [],
+    loadedFiles: new Map(),
+    activeFileId: null,
+    openTabs: [],
     debug: { ...state.debug, watchVariables: [], liveValues: new Map() },
   }));
 });
@@ -82,7 +108,9 @@ describe('regions render for what they show (IDE-013)', () => {
     useIDEStore.getState().updateLiveValues(readValues(1));
     const before = useIDEStore.getState();
     let publications = 0;
-    const stop = useIDEStore.subscribe(() => { publications += 1; });
+    const stop = useIDEStore.subscribe(() => {
+      publications += 1;
+    });
     for (let tick = 0; tick < TICKS; tick++) useIDEStore.getState().updateLiveValues(readValues(1));
     useIDEStore.getState().updateLiveValue(watched[0]!, 1 * 3 + 0);
     stop();

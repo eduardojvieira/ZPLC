@@ -4,5 +4,8 @@
   "tags": ["arch-sensitive", "float-conversion"],
   "scans": 1,
   "scanMs": 10,
-  "expect": [{ "at": "%QD0", "type": "DINT", "value": 2147483647 }, { "at": "%QD4", "type": "DINT", "value": -2147483648 }]
+  "expect": [
+    { "at": "%QD0", "type": "DINT", "value": 2147483647 },
+    { "at": "%QD4", "type": "DINT", "value": -2147483648 }
+  ]
 }

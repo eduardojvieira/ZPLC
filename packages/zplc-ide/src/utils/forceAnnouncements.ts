@@ -2,8 +2,14 @@
 import { t } from '../i18n';
 import type { Politeness } from './announce';
 
-export interface ForceSnapshot { paths: readonly string[]; unconfirmed: boolean }
-export interface Spoken { message: string; politeness: Politeness }
+export interface ForceSnapshot {
+  paths: readonly string[];
+  unconfirmed: boolean;
+}
+export interface Spoken {
+  message: string;
+  politeness: Politeness;
+}
 
 export function forceAnnouncements(previous: ForceSnapshot, next: ForceSnapshot): Spoken[] {
   const spoken: Spoken[] = [];

@@ -4,29 +4,40 @@
   "tickMs": 10,
   "durationMs": 100,
   "events": [
-    {"atMs": 0, "set": {"Conveyor.Start": false, "Conveyor.Stop": false, "Conveyor.Reset": false, "Conveyor.PartAtClassifier": false, "Conveyor.MetalDetected": false, "Conveyor.PartAtDiverter": false, "Conveyor.JamDetected": false}},
-    {"atMs": 10, "set": {"Conveyor.Start": true}},
-    {"atMs": 30, "set": {"Conveyor.JamDetected": true}},
-    {"atMs": 40, "set": {"Conveyor.JamDetected": false}},
-    {"atMs": 60, "set": {"Conveyor.Reset": true}},
-    {"atMs": 70, "set": {"Conveyor.Reset": false}},
-    {"atMs": 80, "set": {"Conveyor.Start": false}},
-    {"atMs": 90, "set": {"Conveyor.Start": true}}
+    {
+      "atMs": 0,
+      "set": {
+        "Conveyor.Start": false,
+        "Conveyor.Stop": false,
+        "Conveyor.Reset": false,
+        "Conveyor.PartAtClassifier": false,
+        "Conveyor.MetalDetected": false,
+        "Conveyor.PartAtDiverter": false,
+        "Conveyor.JamDetected": false
+      }
+    },
+    { "atMs": 10, "set": { "Conveyor.Start": true } },
+    { "atMs": 30, "set": { "Conveyor.JamDetected": true } },
+    { "atMs": 40, "set": { "Conveyor.JamDetected": false } },
+    { "atMs": 60, "set": { "Conveyor.Reset": true } },
+    { "atMs": 70, "set": { "Conveyor.Reset": false } },
+    { "atMs": 80, "set": { "Conveyor.Start": false } },
+    { "atMs": 90, "set": { "Conveyor.Start": true } }
   ],
   "expectations": [
-    {"kind": "AT", "atMs": 0, "condition": {"Conveyor.BeltCommand": false, "Conveyor.FaultLamp": false}},
-    {"kind": "AT", "atMs": 10, "condition": {"Conveyor.BeltCommand": true, "Conveyor.FaultLamp": false}},
-    {"kind": "AT", "atMs": 20, "condition": {"Conveyor.BeltCommand": true, "Conveyor.FaultLamp": false}},
-    {"kind": "AT", "atMs": 30, "condition": {"Conveyor.BeltCommand": false, "Conveyor.FaultLamp": true}},
-    {"kind": "AT", "atMs": 40, "condition": {"Conveyor.BeltCommand": false, "Conveyor.FaultLamp": true}},
-    {"kind": "AT", "atMs": 50, "condition": {"Conveyor.BeltCommand": false, "Conveyor.FaultLamp": true}},
-    {"kind": "AT", "atMs": 60, "condition": {"Conveyor.BeltCommand": false, "Conveyor.FaultLamp": false}},
-    {"kind": "AT", "atMs": 70, "condition": {"Conveyor.BeltCommand": false, "Conveyor.FaultLamp": false}},
-    {"kind": "AT", "atMs": 80, "condition": {"Conveyor.BeltCommand": false, "Conveyor.FaultLamp": false}},
-    {"kind": "AT", "atMs": 90, "condition": {"Conveyor.BeltCommand": true, "Conveyor.FaultLamp": false}},
-    {"kind": "AT", "atMs": 100, "condition": {"Conveyor.BeltCommand": true, "Conveyor.FaultLamp": false}},
-    {"kind": "FOR", "fromMs": 60, "forMs": 20, "condition": {"Conveyor.BeltCommand": false, "Conveyor.FaultLamp": false}},
-    {"kind": "RISING", "fromMs": 90, "withinMs": 0, "condition": {"Conveyor.BeltCommand": true}},
-    {"kind": "NEVER", "condition": {"Conveyor.BeltCommand": true, "Conveyor.FaultLamp": true}}
+    { "kind": "AT", "atMs": 0, "condition": { "Conveyor.BeltCommand": false, "Conveyor.FaultLamp": false } },
+    { "kind": "AT", "atMs": 10, "condition": { "Conveyor.BeltCommand": true, "Conveyor.FaultLamp": false } },
+    { "kind": "AT", "atMs": 20, "condition": { "Conveyor.BeltCommand": true, "Conveyor.FaultLamp": false } },
+    { "kind": "AT", "atMs": 30, "condition": { "Conveyor.BeltCommand": false, "Conveyor.FaultLamp": true } },
+    { "kind": "AT", "atMs": 40, "condition": { "Conveyor.BeltCommand": false, "Conveyor.FaultLamp": true } },
+    { "kind": "AT", "atMs": 50, "condition": { "Conveyor.BeltCommand": false, "Conveyor.FaultLamp": true } },
+    { "kind": "AT", "atMs": 60, "condition": { "Conveyor.BeltCommand": false, "Conveyor.FaultLamp": false } },
+    { "kind": "AT", "atMs": 70, "condition": { "Conveyor.BeltCommand": false, "Conveyor.FaultLamp": false } },
+    { "kind": "AT", "atMs": 80, "condition": { "Conveyor.BeltCommand": false, "Conveyor.FaultLamp": false } },
+    { "kind": "AT", "atMs": 90, "condition": { "Conveyor.BeltCommand": true, "Conveyor.FaultLamp": false } },
+    { "kind": "AT", "atMs": 100, "condition": { "Conveyor.BeltCommand": true, "Conveyor.FaultLamp": false } },
+    { "kind": "FOR", "fromMs": 60, "forMs": 20, "condition": { "Conveyor.BeltCommand": false, "Conveyor.FaultLamp": false } },
+    { "kind": "RISING", "fromMs": 90, "withinMs": 0, "condition": { "Conveyor.BeltCommand": true } },
+    { "kind": "NEVER", "condition": { "Conveyor.BeltCommand": true, "Conveyor.FaultLamp": true } }
   ]
 }

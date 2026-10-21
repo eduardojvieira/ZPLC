@@ -77,7 +77,10 @@ export async function unlistedSourceFiles(tree: FileTreeNode | null, libraries: 
   const list = async (logical: string): Promise<ScanEntry[] | null> => {
     const node = logical === '' ? tree : findNode(tree, logical);
     if (!node || node.type !== 'directory') return null;
-    return (node.children ?? []).map((child) => ({ name: child.name, kind: child.type === 'directory' ? 'directory' as const : 'file' as const }));
+    return (node.children ?? []).map((child) => ({
+      name: child.name,
+      kind: child.type === 'directory' ? ('directory' as const) : ('file' as const),
+    }));
   };
   return scanUnlistedSources(list, ['src', ...libraries]);
 }

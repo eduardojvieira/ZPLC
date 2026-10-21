@@ -2,10 +2,6 @@
   "requirement": "CMP-024",
   "title": "a reference of another type given to a function parameter is rejected",
   "build": "fails",
-  "lines": [
-    11
-  ],
-  "codes": [
-    "TYPE_MISMATCH"
-  ]
+  "lines": [11],
+  "codes": ["TYPE_MISMATCH"]
 }

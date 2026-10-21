@@ -1,6 +1,6 @@
 /**
  * SFC Custom Node Types Registry
- * 
+ *
  * Exports all custom node components and the nodeTypes mapping
  * for ReactFlow.
  */
@@ -9,10 +9,7 @@ import SFCStepNode from './SFCStepNode';
 import SFCTransitionNode from './SFCTransitionNode';
 
 // Export individual components
-export {
-  SFCStepNode,
-  SFCTransitionNode,
-};
+export { SFCStepNode, SFCTransitionNode };
 
 // ReactFlow nodeTypes mapping
 export const nodeTypes = {

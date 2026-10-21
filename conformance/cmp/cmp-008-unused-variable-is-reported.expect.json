@@ -1,9 +1,7 @@
 {
   "requirement": "CMP-008",
   "title": "a variable that is never read nor written is reported at its declaration",
-  "matrix": [
-    "declarations.var-var-input-var-output"
-  ],
+  "matrix": ["declarations.var-var-input-var-output"],
   "note": "CMP-008: the build succeeds and reports UNUSED_VARIABLE at the declaration; a variable with a direct address is not reported, it is read by the I/O image",
   "scans": 1,
   "scanMs": 10,

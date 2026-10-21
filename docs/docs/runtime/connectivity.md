@@ -32,6 +32,7 @@ The firmware implements:
 ## Configuring Connectivity
 
 Connectivity is defined in your project's `zplc.json` file. Through ZPLC, you can:
+
 1. Configure Modbus RTU/TCP networks (baud rates, IP addresses, node IDs).
 2. Set up MQTT broker credentials and certificates.
 3. Map internal PLC variables directly to Modbus registers/coils or MQTT topics via **Communication Bindings**.
@@ -42,13 +43,13 @@ The runtime handles the underlying protocol dispatch automatically while your PL
 
 The four areas of a Modbus server are four address spaces: a coil, a discrete input, an input register and a holding register with the same number are four different variables. The number of the `{modbus:N}` tag of a variable says which one it is, in the notation of the Modbus world:
 
-| `N` | Area | Address on the wire | A client can |
-| --- | --- | --- | --- |
-| 10001 to 19999 | Discrete input | `N - 10001` | read it (function 2) |
-| 30001 to 39999 | Input register | `N - 30001` | read it (function 4) |
-| 40001 to 49999 | Holding register | `N - 40001` | read it (function 3) and write it (6, 16) |
-| any other number, a `BOOL` | Coil | `N` | read it (function 1) and write it (5, 15) |
-| any other number, another type | Holding register | `N` | read it (function 3) and write it (6, 16) |
+| `N`                            | Area             | Address on the wire | A client can                              |
+| ------------------------------ | ---------------- | ------------------- | ----------------------------------------- |
+| 10001 to 19999                 | Discrete input   | `N - 10001`         | read it (function 2)                      |
+| 30001 to 39999                 | Input register   | `N - 30001`         | read it (function 4)                      |
+| 40001 to 49999                 | Holding register | `N - 40001`         | read it (function 3) and write it (6, 16) |
+| any other number, a `BOOL`     | Coil             | `N`                 | read it (function 1) and write it (5, 15) |
+| any other number, another type | Holding register | `N`                 | read it (function 3) and write it (6, 16) |
 
 A variable is served in one area only. A request of an address that no variable has in the area it asks for is answered with exception 2 (illegal data address), even when another area has a variable at that number. Discrete inputs and input registers have no write function, and the server does not write them. A 32-bit variable takes two consecutive registers; a bit area carries one bit for each variable.
 
@@ -89,14 +90,14 @@ TLS needs random numbers that nobody can predict. A firmware build that enables 
 
 No message that arrives from Modbus, MQTT or a cloud service changes RUN/STOP, sets or clears a force, or downloads a program. Those actions exist only in the diagnostic shell and in the ZPLC application, on the serial link.
 
-| Source | What it can change | What it cannot reach |
-| --- | --- | --- |
-| Modbus TCP and RTU server | The bytes of the variables you bound with `{modbus}`, through the server mapping and the force-aware write of the exchange: an address with an active force keeps it | RUN/STOP, forces, program download |
-| MQTT topics of subscribed variables (`DCMD`, command topics) | The bytes of the variables you marked `{subscribe}`, through the force-aware write: an address with an active force keeps it | RUN/STOP, forces, program download |
-| Sparkplug B `NCMD`/`DCMD` Rebirth | Makes the node publish its birth certificates again | RUN/STOP, forces, program download |
-| Azure cloud-to-device message | The payload of the `AZURE_C2D_RECV` block that your program runs | RUN/STOP, forces, program download |
-| Azure direct methods and device twin, AWS shadow and jobs | Nothing: they are logged, and a direct method is answered `501` (not implemented) | RUN/STOP, forces, program download |
-| Provisioning reply (Azure DPS, AWS fleet) | Only after your program started the block: the assigned hub or the issued credentials | RUN/STOP, forces, program download |
+| Source                                                       | What it can change                                                                                                                                                   | What it cannot reach               |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| Modbus TCP and RTU server                                    | The bytes of the variables you bound with `{modbus}`, through the server mapping and the force-aware write of the exchange: an address with an active force keeps it | RUN/STOP, forces, program download |
+| MQTT topics of subscribed variables (`DCMD`, command topics) | The bytes of the variables you marked `{subscribe}`, through the force-aware write: an address with an active force keeps it                                         | RUN/STOP, forces, program download |
+| Sparkplug B `NCMD`/`DCMD` Rebirth                            | Makes the node publish its birth certificates again                                                                                                                  | RUN/STOP, forces, program download |
+| Azure cloud-to-device message                                | The payload of the `AZURE_C2D_RECV` block that your program runs                                                                                                     | RUN/STOP, forces, program download |
+| Azure direct methods and device twin, AWS shadow and jobs    | Nothing: they are logged, and a direct method is answered `501` (not implemented)                                                                                    | RUN/STOP, forces, program download |
+| Provisioning reply (Azure DPS, AWS fleet)                    | Only after your program started the block: the assigned hub or the issued credentials                                                                                | RUN/STOP, forces, program download |
 
 This is checked in two places. The object files of the handlers of every board image are read at link level (`tools/firmware-test/check_inbound_authority.py`, run by `run.sh size`): none of them references the scheduler's start, stop, pause, resume, step or load, the force set and clear calls, the program loader or store, or a reboot, and the exchange object they write through is held to the same list. And two tests put the inbound code in front of a core whose authority entries count their calls: one drives every Modbus function code and every write count through the server's framing and mapping (`firmware/tests/inbound_authority`), and one delivers hostile topics and payloads (stop, run, force, load commands in text and JSON, every byte value, the longest payload, node-control metrics of Sparkplug B) to the MQTT client of the product under each of its five profiles (`firmware/tests/inbound_mqtt`). The only write a message caused in them was a write to a bound variable, queued through the exchange (`zplc_exchange_write`), the one interface the inbound code may reach.
 
@@ -106,4 +107,3 @@ This is checked in two places. The object files of the handlers of every board i
 
 - A board whose store cannot be mounted cannot save settings: the Nucleo-H743ZI keeps its storage in one 128 KB sector, which the store cannot use (IO-008). `config save` there reports an error; it no longer says `OK`.
 - The save writes the entries one after the other. A power loss in the middle leaves some settings new and some old, each one valid by itself.
-

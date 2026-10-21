@@ -7,10 +7,16 @@ const ok = { result: 'success' };
 const everything = (): Needs => ({
   'validate-version': ok,
   'verify-release-candidate': ok,
-  'build-macos': ok, 'build-windows': ok, 'build-linux': ok,
-  'prepare-release-evidence-macos': ok, 'prepare-release-evidence-windows': ok, 'prepare-release-evidence-linux': ok,
+  'build-macos': ok,
+  'build-windows': ok,
+  'build-linux': ok,
+  'prepare-release-evidence-macos': ok,
+  'prepare-release-evidence-windows': ok,
+  'prepare-release-evidence-linux': ok,
   'create-draft-release': ok,
-  'upload-release-macos': ok, 'upload-release-windows': ok, 'upload-release-linux': ok,
+  'upload-release-macos': ok,
+  'upload-release-windows': ok,
+  'upload-release-linux': ok,
 });
 
 describe('the outcome of a release run', () => {
@@ -20,20 +26,26 @@ describe('the outcome of a release run', () => {
 
   it('accepts a rehearsal, where no draft exists and no upload ran', () => {
     const needs = everything();
-    for (const job of ['create-draft-release', 'upload-release-macos', 'upload-release-windows', 'upload-release-linux']) needs[job] = { result: 'skipped' };
+    for (const job of ['create-draft-release', 'upload-release-macos', 'upload-release-windows', 'upload-release-linux'])
+      needs[job] = { result: 'skipped' };
     expect(checkRunOutcome(needs)).toEqual([]);
   });
 
   it('finds files that reached the draft after a build that failed', () => {
     const needs = everything();
     needs['build-windows'] = { result: 'failure' };
-    expect(checkRunOutcome(needs)).toEqual(['upload-release-windows ran although build-windows was failure: files reached the draft that were not installed and launched']);
+    expect(checkRunOutcome(needs)).toEqual([
+      'upload-release-windows ran although build-windows was failure: files reached the draft that were not installed and launched',
+    ]);
   });
 
   it('finds files that reached the draft without the evidence of their platform', () => {
     const needs = everything();
     needs['prepare-release-evidence-linux'] = { result: 'skipped' };
-    expect(checkRunOutcome(needs)).toEqual(['upload-release-linux ran although prepare-release-evidence-linux was skipped: files reached the draft that no check of the produced files had passed']);
+    expect(checkRunOutcome(needs)).toEqual([
+      'upload-release-linux ran although prepare-release-evidence-linux was skipped: files reached the draft that no check of the ' +
+        'produced files had passed',
+    ]);
   });
 
   it('accepts a platform that failed and uploaded nothing', () => {

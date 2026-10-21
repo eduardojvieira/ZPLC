@@ -84,10 +84,12 @@ function annotateDiagram(pou: DebugPOUInfo, map: readonly SourceMapRange[]): voi
 function firstOfEachLine(ranges: readonly SourceLineMapping[]): BreakpointLocation[] {
   const byLine = new Map<number, SourceLineMapping[]>();
   for (const range of [...ranges].sort((a, b) => a.pc - b.pc)) byLine.set(range.line, [...(byLine.get(range.line) ?? []), range]);
-  return [...byLine.values()].map((onLine) => {
-    const stop = onLine.find((range) => range.element !== undefined && parseElement(range.element)?.role !== undefined) ?? onLine[0]!;
-    return { line: stop.line, pc: stop.pc, valid: true, ...(stop.element === undefined ? {} : { element: stop.element }) };
-  }).sort((a, b) => a.pc - b.pc);
+  return [...byLine.values()]
+    .map((onLine) => {
+      const stop = onLine.find((range) => range.element !== undefined && parseElement(range.element)?.role !== undefined) ?? onLine[0]!;
+      return { line: stop.line, pc: stop.pc, valid: true, ...(stop.element === undefined ? {} : { element: stop.element }) };
+    })
+    .sort((a, b) => a.pc - b.pc);
 }
 
 // =============================================================================
@@ -96,12 +98,20 @@ function firstOfEachLine(ranges: readonly SourceLineMapping[]): BreakpointLocati
 
 /** The same file by any spelling the editor and the build use: `src/main.ld.json`, `./src/main.ld.json`, `src/main.ld`. */
 const sameFile = (a: string, b: string): boolean => {
-  const key = (value: string) => value.replace(/\\/g, '/').replace(/^(\.\/)+/, '').replace(/^file:/i, '').replace(/\.json$/i, '').toLowerCase();
+  const key = (value: string) =>
+    value
+      .replace(/\\/g, '/')
+      .replace(/^(\.\/)+/, '')
+      .replace(/^file:/i, '')
+      .replace(/\.json$/i, '')
+      .toLowerCase();
   return key(a) === key(b);
 };
 
 function pouOf(debugMap: DebugMap | null | undefined, sourceRef: string): DebugPOUInfo | undefined {
-  return debugMap ? Object.values(debugMap.pou).find((pou) => pou.sourceRef !== undefined && sameFile(pou.sourceRef, sourceRef)) : undefined;
+  return debugMap
+    ? Object.values(debugMap.pou).find((pou) => pou.sourceRef !== undefined && sameFile(pou.sourceRef, sourceRef))
+    : undefined;
 }
 
 /** The program of the debug map that was built from the file (LNG-006): the one whose variables its diagram shows. */
@@ -114,8 +124,14 @@ export function debugPouOf(debugMap: DebugMap | null | undefined, sourceRef: str
  * block that generated no statement, a step no transition enters). A rung or step holds its parts: the place that is
  * executed first stands for it.
  */
-export function elementBreakpointLine(debugMap: DebugMap | null | undefined, sourceRef: string, element: SourceElementId): number | undefined {
-  let locations = (pouOf(debugMap, sourceRef)?.breakpoints ?? []).filter((location) => location.valid && location.element !== undefined && elementWithin(element, location.element));
+export function elementBreakpointLine(
+  debugMap: DebugMap | null | undefined,
+  sourceRef: string,
+  element: SourceElementId,
+): number | undefined {
+  let locations = (pouOf(debugMap, sourceRef)?.breakpoints ?? []).filter(
+    (location) => location.valid && location.element !== undefined && elementWithin(element, location.element),
+  );
   // a step or a transition that the chart enters or fires stops there, not at the statements it also has on every scan
   const roles = locations.filter((location) => parseElement(location.element!)?.role !== undefined);
   if (roles.length > 0) locations = roles;
@@ -138,7 +154,9 @@ export function breakpointElements(debugMap: DebugMap | null | undefined, source
 
 /** The element whose statement the instruction at `pc` belongs to. */
 export function elementAtPc(debugMap: DebugMap | null | undefined, sourceRef: string, pc: number): SourceElementId | undefined {
-  const range = pouOf(debugMap, sourceRef)?.sourceMap.find((candidate) => pc >= candidate.pc && pc < candidate.pc + Math.max(candidate.length, 1));
+  const range = pouOf(debugMap, sourceRef)?.sourceMap.find(
+    (candidate) => pc >= candidate.pc && pc < candidate.pc + Math.max(candidate.length, 1),
+  );
   return range?.element;
 }
 

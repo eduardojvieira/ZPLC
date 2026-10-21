@@ -15,7 +15,8 @@ const say = (lang: WiringLocale, key: Phrase, values: Record<string, string> = {
   phrases[lang][key].replace(/\{(\w+)\}/g, (_match, name: string) => values[name] ?? `{${name}}`);
 
 const ohmsText = (ohms: number): string => (ohms >= 1000 && ohms % 1000 === 0 ? `${ohms / 1000} kΩ` : `${ohms} Ω`);
-const colorOf = (lang: WiringLocale, color: string | undefined): string => (color === 'red' || color === 'green' || color === 'yellow' ? say(lang, color) : color ?? '');
+const colorOf = (lang: WiringLocale, color: string | undefined): string =>
+  color === 'red' || color === 'green' || color === 'yellow' ? say(lang, color) : (color ?? '');
 const where = (channel: BoardChannel): string => `${channel.pin} (${channel.location ?? channel.address}, ${channel.id})`;
 
 /** One sentence per part wired on the board, in the order of the wiring file. */
@@ -25,9 +26,16 @@ export function wiringCard(board: WiringBoard, wiring: WiringFile, lang: WiringL
     if (!found) return [];
     const channel = channelIn(found, lang);
     const values = {
-      label: part.label[lang], pin: where(channel), ground: board.ground, supply: board.supply, analogGround: board.analogGround,
-      color: colorOf(lang, part.color), ohms: ohmsText(part.resistorOhms ?? part.ohms ?? 0),
-      pinName: channel.pin, location: channel.location ?? channel.address, id: channel.id,
+      label: part.label[lang],
+      pin: where(channel),
+      ground: board.ground,
+      supply: board.supply,
+      analogGround: board.analogGround,
+      color: colorOf(lang, part.color),
+      ohms: ohmsText(part.resistorOhms ?? part.ohms ?? 0),
+      pinName: channel.pin,
+      location: channel.location ?? channel.address,
+      id: channel.id,
     };
     if (isOnBoard(found)) return [say(lang, 'onBoard', values)];
     const kind = (['led', 'button', 'jumper', 'potentiometer', 'capacitor', 'resistor'] as const).find((entry) => entry === part.kind);
@@ -58,15 +66,19 @@ function symbol(part: WiringPart, board: WiringBoard, y: number, lang: WiringLoc
         line(`360,${y} 392,${y}`),
         `<polygon points="392,${y - 10} 392,${y + 10} 412,${y}" fill="${LED_FILL[part.color ?? ''] ?? '#ffffff'}"/>`,
         line(`412,${y - 10} 412,${y + 10}`),
-        line(`402,${y - 14} 410,${y - 22}`), line(`408,${y - 12} 416,${y - 20}`),
+        line(`402,${y - 14} 410,${y - 22}`),
+        line(`408,${y - 12} 416,${y - 20}`),
         text(402, y + 26, say(lang, 'symbolLed', { color: colorOf(lang, part.color) }), ' text-anchor="middle" font-size="11"'),
         toRail(412),
       ];
     case 'button':
       return [
         line(`264,${y} 334,${y}`),
-        `<circle cx="337" cy="${y}" r="3" fill="#ffffff"/>`, `<circle cx="377" cy="${y}" r="3" fill="#ffffff"/>`,
-        line(`337,${y - 4} 375,${y - 16}`), line(`356,${y - 10} 356,${y - 24}`), line(`348,${y - 24} 364,${y - 24}`),
+        `<circle cx="337" cy="${y}" r="3" fill="#ffffff"/>`,
+        `<circle cx="377" cy="${y}" r="3" fill="#ffffff"/>`,
+        line(`337,${y - 4} 375,${y - 16}`),
+        line(`356,${y - 10} 356,${y - 24}`),
+        line(`348,${y - 24} 364,${y - 24}`),
         text(357, y + 22, say(lang, 'symbolButton'), ' text-anchor="middle" font-size="11"'),
         toRail(380),
       ];
@@ -87,7 +99,9 @@ function symbol(part: WiringPart, board: WiringBoard, y: number, lang: WiringLoc
       ];
     case 'capacitor':
       return [
-        line(`264,${y} 346,${y}`), line(`346,${y - 10} 346,${y + 10}`), line(`354,${y - 10} 354,${y + 10}`),
+        line(`264,${y} 346,${y}`),
+        line(`346,${y - 10} 346,${y + 10}`),
+        line(`354,${y - 10} 354,${y + 10}`),
         text(350, y + 24, say(lang, 'symbolCapacitor'), ' text-anchor="middle" font-size="11"'),
         toRail(354),
       ];
@@ -131,12 +145,18 @@ export function renderWiringSvg(board: WiringBoard, wiring: WiringFile, lang: Wi
     const bottom = TOP + rows.length * ROW;
     body.push(
       line(`${RAIL},${top} ${RAIL},${bottom}`, ' stroke-width="3"'),
-      line(`${RAIL - 12},${bottom} ${RAIL + 12},${bottom}`), line(`${RAIL - 8},${bottom + 5} ${RAIL + 8},${bottom + 5}`), line(`${RAIL - 4},${bottom + 10} ${RAIL + 4},${bottom + 10}`),
+      line(`${RAIL - 12},${bottom} ${RAIL + 12},${bottom}`),
+      line(`${RAIL - 8},${bottom + 5} ${RAIL + 8},${bottom + 5}`),
+      line(`${RAIL - 4},${bottom + 10} ${RAIL + 4},${bottom + 10}`),
       text(RAIL + 16, bottom + 30, board.ground, ' text-anchor="end" font-size="12" font-weight="bold"'),
     );
   }
   return [
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WIDTH} ${height}" width="${WIDTH}" height="${height}" role="img" aria-labelledby="${id}-title ${id}-desc" font-family="sans-serif" fill="#111111" stroke="#222222" stroke-width="1.5">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 ` +
+      `0 ${WIDTH} ${
+        height
+      }" width="${WIDTH}" height="${height}" role="img" aria-labelledby="${id}-title ${id}-desc" font-family="sans-serif" fill="#111111" ` +
+      `stroke="#222222" stroke-width="1.5">`,
     `<title id="${id}-title">${escape(heading)}</title>`,
     `<desc id="${id}-desc">${escape(wiringCard(board, wiring, lang).join(' '))}</desc>`,
     ...body.map((element) => element.replace('<text ', '<text stroke="none" ')),

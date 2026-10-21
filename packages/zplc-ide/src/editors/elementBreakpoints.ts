@@ -61,7 +61,11 @@ export function toggleElementBreakpoint(fileId: string, element: SourceElementId
   if (elements.has(element)) {
     elements.delete(element);
   } else {
-    if (hasBreakpointElements(state.debug.debugMap, file.path) && elementBreakpointLine(state.debug.debugMap, file.path, element) === undefined) return false;
+    if (
+      hasBreakpointElements(state.debug.debugMap, file.path) &&
+      elementBreakpointLine(state.debug.debugMap, file.path, element) === undefined
+    )
+      return false;
     elements.add(element);
   }
   at.byFile.set(fileId, elements);
@@ -84,7 +88,10 @@ export function reconcileElementBreakpoints(): void {
     const file = state.loadedFiles.get(fileId);
     if (!file || !hasBreakpointElements(state.debug.debugMap, file.path)) continue;
     for (const element of [...elements]) {
-      if (elementBreakpointLine(state.debug.debugMap, file.path, element) === undefined) { elements.delete(element); any = true; }
+      if (elementBreakpointLine(state.debug.debugMap, file.path, element) === undefined) {
+        elements.delete(element);
+        any = true;
+      }
     }
     arm(fileId);
   }
@@ -106,7 +113,15 @@ export interface ElementBreakpoints {
 
 /** For the editor of the active file. */
 export function useElementBreakpoints(): ElementBreakpoints {
-  useSyncExternalStore((listener) => { listeners.add(listener); return () => { listeners.delete(listener); }; }, () => version);
+  useSyncExternalStore(
+    (listener) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    () => version,
+  );
   const fileId = useIDEStore((state) => state.activeFileId);
   const path = useIDEStore((state) => (state.activeFileId ? state.loadedFiles.get(state.activeFileId)?.path : undefined));
   const debugMap = useIDEStore((state) => state.debug.debugMap);
@@ -127,7 +142,9 @@ export function useElementBreakpoints(): ElementBreakpoints {
     inactiveReason,
     isSet: (element) => elements.has(element),
     canSet,
-    toggle: (element) => { if (fileId) toggleElementBreakpoint(fileId, element); },
+    toggle: (element) => {
+      if (fileId) toggleElementBreakpoint(fileId, element);
+    },
     pausedAt: path !== undefined && line !== null && pc !== null ? elementAtPc(debugMap, path, pc) : undefined,
   };
 }

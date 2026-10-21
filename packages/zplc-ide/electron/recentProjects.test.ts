@@ -6,11 +6,20 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { RECENT_PROJECTS_FILENAME, RECENT_PROJECTS_LIMITS, createRecentProjects, parseRecentProjects, projectKey } from './recentProjects';
 
 const directories: string[] = [];
-afterEach(async () => { await Promise.all(directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true }))); });
-async function fixture(): Promise<string> { const directory = await mkdtemp(join(tmpdir(), 'zplc-recent-')); directories.push(directory); return directory; }
+afterEach(async () => {
+  await Promise.all(directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
+});
+async function fixture(): Promise<string> {
+  const directory = await mkdtemp(join(tmpdir(), 'zplc-recent-'));
+  directories.push(directory);
+  return directory;
+}
 
 /** A clock that moves forward by one second at each reading, so that "most recent first" is observable. */
-function clock(start = 1_000_000) { let now = start; return () => (now += 1_000); }
+function clock(start = 1_000_000) {
+  let now = start;
+  return () => (now += 1_000);
+}
 
 describe('recent projects store', () => {
   test('starts empty and names a project by a hash of its real path, never by the path', async () => {
@@ -83,14 +92,23 @@ describe('recent projects store', () => {
     const directory = await fixture();
     const store = createRecentProjects(directory, clock());
     await Promise.all(Array.from({ length: 8 }, (_, index) => store.record(`/home/ana/p${index}`)));
-    expect((await store.list()).map((entry) => entry.path).sort()).toEqual(Array.from({ length: 8 }, (_, index) => `/home/ana/p${index}`).sort());
+    expect((await store.list()).map((entry) => entry.path).sort()).toEqual(
+      Array.from({ length: 8 }, (_, index) => `/home/ana/p${index}`).sort(),
+    );
   });
 
   test('reads a corrupt, oversized, wrongly shaped or linked file as an empty list and replaces it on the next record', async () => {
     const directory = await fixture();
     const file = join(directory, RECENT_PROJECTS_FILENAME);
     const store = createRecentProjects(directory, clock());
-    for (const content of ['{broken', 'x'.repeat(RECENT_PROJECTS_LIMITS.maxBytes + 1), '{"schemaVersion":2,"projects":[]}', '{"schemaVersion":1,"projects":[],"extra":1}', '[]', 'null']) {
+    for (const content of [
+      '{broken',
+      'x'.repeat(RECENT_PROJECTS_LIMITS.maxBytes + 1),
+      '{"schemaVersion":2,"projects":[]}',
+      '{"schemaVersion":1,"projects":[],"extra":1}',
+      '[]',
+      'null',
+    ]) {
       await writeFile(file, content);
       await expect(store.list()).resolves.toEqual([]);
     }
@@ -104,13 +122,15 @@ describe('recent projects store', () => {
 
   test('does not write into a user-data path that is a link or missing parent chain is created privately', async () => {
     const directory = await fixture();
-    const real = join(directory, 'real'); await mkdir(real);
-    const link = join(directory, 'link'); await symlink(real, link);
+    const real = join(directory, 'real');
+    await mkdir(real);
+    const link = join(directory, 'link');
+    await symlink(real, link);
     await expect(createRecentProjects(link).record('/home/ana/plant')).rejects.toThrow('Invalid recent projects directory');
     await expect(createRecentProjects(link).list()).resolves.toEqual([]);
     const fresh = join(directory, 'new', 'profile');
     await createRecentProjects(fresh).record('/home/ana/plant');
-    expect((await readdir(fresh))).toEqual([RECENT_PROJECTS_FILENAME]);
+    expect(await readdir(fresh)).toEqual([RECENT_PROJECTS_FILENAME]);
   });
 });
 
@@ -134,7 +154,8 @@ describe('recent projects file format', () => {
       [{ ...good, lastOpenedAt: '1' }],
       [{ ...good, path: 'relative', id: projectKey('relative') }],
       Array.from({ length: 11 }, (_, index) => entry(`/p${index}`, index)),
-    ]) expect(parseRecentProjects(file(projects))).toBeUndefined();
+    ])
+      expect(parseRecentProjects(file(projects))).toBeUndefined();
     expect(parseRecentProjects('{"schemaVersion":1}')).toBeUndefined();
   });
 });

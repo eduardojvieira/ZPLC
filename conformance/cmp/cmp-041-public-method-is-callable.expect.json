@@ -5,7 +5,5 @@
   "note": "IEC 61131-3 ed. 3, access specifiers of methods: a PUBLIC method is accessible from anywhere",
   "scans": 1,
   "scanMs": 10,
-  "expect": [
-    {"at": "%QW0", "type": "INT", "value": 3}
-  ]
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 3 }]
 }

@@ -21,15 +21,43 @@ const HASH_B = 'b'.repeat(64);
 
 export function grade(overrides: Partial<GradeRecord> = {}): GradeRecord {
   return {
-    schemaVersion: 1, lessonId: 'motor-start-stop-safe', lessonVersion: 1, track: 'simulation', scenarioId: 'MotorStartStop', scenarioSha256: HASH_A, programSha256: HASH_B,
-    runtimeVersion: '1.0.0', time: '2026-10-10T12:00:00.000Z', result: 'passed', assertions: { total: 27, passed: 27 }, failedAssertions: [], ...overrides,
+    schemaVersion: 1,
+    lessonId: 'motor-start-stop-safe',
+    lessonVersion: 1,
+    track: 'simulation',
+    scenarioId: 'MotorStartStop',
+    scenarioSha256: HASH_A,
+    programSha256: HASH_B,
+    runtimeVersion: '1.0.0',
+    time: '2026-10-10T12:00:00.000Z',
+    result: 'passed',
+    assertions: { total: 27, passed: 27 },
+    failedAssertions: [],
+    ...overrides,
   };
 }
 
-const failed = (): GradeRecord => grade({
-  result: 'failed', assertions: { total: 27, passed: 26 },
-  failedAssertions: [{ index: 3, kind: 'AT', atMs: 20, expected: { 'Motor.Forward': true }, observed: { 'Motor.Forward': false }, trace: { scenarioId: 'MotorStartStop', traceSha256: HASH_A, cursor: 2, atMs: 20, uri: `zplc://runtime/snapshot/MotorStartStop/2/${HASH_A}` } }],
-});
+const failed = (): GradeRecord =>
+  grade({
+    result: 'failed',
+    assertions: { total: 27, passed: 26 },
+    failedAssertions: [
+      {
+        index: 3,
+        kind: 'AT',
+        atMs: 20,
+        expected: { 'Motor.Forward': true },
+        observed: { 'Motor.Forward': false },
+        trace: {
+          scenarioId: 'MotorStartStop',
+          traceSha256: HASH_A,
+          cursor: 2,
+          atMs: 20,
+          uri: `zplc://runtime/snapshot/MotorStartStop/2/${HASH_A}`,
+        },
+      },
+    ],
+  });
 
 describe('a hardware run is kept apart from a simulation pass (LRN-024)', () => {
   const ID = 'motor-start-stop-safe';
@@ -37,7 +65,15 @@ describe('a hardware run is kept apart from a simulation pass (LRN-024)', () => 
 
   it('LRN-024 keeps a passing hardware grade without passing the lesson, and a simulation pass without a hardware pass', () => {
     const onBoard = withGrade(emptyProgress(), hardware());
-    expect(onBoard.lessons[ID]).toEqual({ state: 'in-progress', grade: null, passedAt: null, startedAt: '2026-10-11T12:00:00.000Z', hintsShown: [], solutionShown: false, hardware: hardware() });
+    expect(onBoard.lessons[ID]).toEqual({
+      state: 'in-progress',
+      grade: null,
+      passedAt: null,
+      startedAt: '2026-10-11T12:00:00.000Z',
+      hintsShown: [],
+      solutionShown: false,
+      hardware: hardware(),
+    });
     expect(passedLessonIds(onBoard)).toEqual([]);
     const both = withGrade(onBoard, grade());
     expect(both.lessons[ID]).toMatchObject({ state: 'passed', grade: grade(), passedAt: grade().time, hardware: hardware() });
@@ -57,35 +93,65 @@ describe('a hardware run is kept apart from a simulation pass (LRN-024)', () => 
   });
 
   it('LRN-024 refuses a document that keeps a grade in the wrong place', () => {
-    const document = JSON.parse(serializeProgress(withGrade(withGrade(emptyProgress(), grade()), hardware()))) as { lessons: Record<string, Record<string, unknown>> };
+    const document = JSON.parse(serializeProgress(withGrade(withGrade(emptyProgress(), grade()), hardware()))) as {
+      lessons: Record<string, Record<string, unknown>>;
+    };
     const lesson = document.lessons[ID]!;
     for (const broken of [
       { ...lesson, hardware: grade() },
       { ...lesson, grade: hardware(), passedAt: hardware().time },
       { ...lesson, hardware: { ...failed(), track: 'hardware' } },
       { ...lesson, hardware: hardware({ lessonId: 'edge-counter-pulses' }) },
-    ]) expect(parseProgress(JSON.stringify({ ...document, lessons: { [ID]: broken } }))).toBeUndefined();
+    ])
+      expect(parseProgress(JSON.stringify({ ...document, lessons: { [ID]: broken } }))).toBeUndefined();
     const withoutHardware = { ...lesson };
     delete withoutHardware.hardware;
     expect(parseProgress(JSON.stringify({ ...document, lessons: { [ID]: withoutHardware } }))).toBeUndefined();
   });
 
-  it('LRN-031 migrates a stored version 3 document: no hardware grade, and a hardware record a version 3 file held moves out of the pass (fixture)', () => {
-    const v3 = (stored: GradeRecord) => JSON.stringify({
-      schemaVersion: 3, last: null,
-      lessons: { [ID]: { state: 'passed', grade: stored, passedAt: stored.time, startedAt: null, hintsShown: [1], solutionShown: false } },
-    });
-    expect(parseProgress(v3(grade()))!.lessons[ID]).toEqual({ state: 'passed', grade: grade(), passedAt: grade().time, startedAt: null, hintsShown: [1], solutionShown: false, hardware: null });
-    expect(parseProgress(v3(hardware()))!.lessons[ID]).toEqual({ state: 'in-progress', grade: null, passedAt: null, startedAt: null, hintsShown: [1], solutionShown: false, hardware: hardware() });
-    expect(JSON.parse(serializeProgress(parseProgress(v3(grade()))!))).toMatchObject({ schemaVersion: 4 });
-    const imported = parseImport(JSON.stringify({ ...JSON.parse(v3(grade())), kind: 'zplc-learn-progress' }));
-    expect(imported.ok && imported.progress.lessons[ID]!.hardware).toBeNull();
-  });
+  it(
+    'LRN-031 migrates a stored version 3 document: no hardware grade, and a hardware record a version 3 file held moves out of the pass ' +
+      '(fixture)',
+    () => {
+      const v3 = (stored: GradeRecord) =>
+        JSON.stringify({
+          schemaVersion: 3,
+          last: null,
+          lessons: {
+            [ID]: { state: 'passed', grade: stored, passedAt: stored.time, startedAt: null, hintsShown: [1], solutionShown: false },
+          },
+        });
+      expect(parseProgress(v3(grade()))!.lessons[ID]).toEqual({
+        state: 'passed',
+        grade: grade(),
+        passedAt: grade().time,
+        startedAt: null,
+        hintsShown: [1],
+        solutionShown: false,
+        hardware: null,
+      });
+      expect(parseProgress(v3(hardware()))!.lessons[ID]).toEqual({
+        state: 'in-progress',
+        grade: null,
+        passedAt: null,
+        startedAt: null,
+        hintsShown: [1],
+        solutionShown: false,
+        hardware: hardware(),
+      });
+      expect(JSON.parse(serializeProgress(parseProgress(v3(grade()))!))).toMatchObject({ schemaVersion: 4 });
+      const imported = parseImport(JSON.stringify({ ...JSON.parse(v3(grade())), kind: 'zplc-learn-progress' }));
+      expect(imported.ok && imported.progress.lessons[ID]!.hardware).toBeNull();
+    },
+  );
 });
 
 describe('the Learn progress document (LRN-031, LRN-032)', () => {
   it('round-trips through its canonical text and rejects every inexact shape', () => {
-    const progress = withGrade(withNote(emptyProgress(), { lessonId: 'edge-counter-pulses', hint: 2 }, '2026-10-10T11:00:00.000Z'), grade());
+    const progress = withGrade(
+      withNote(emptyProgress(), { lessonId: 'edge-counter-pulses', hint: 2 }, '2026-10-10T11:00:00.000Z'),
+      grade(),
+    );
     const text = serializeProgress(progress);
     expect(parseProgress(text)).toEqual(progress);
     expect(serializeProgress(parseProgress(text)!)).toBe(text);
@@ -96,11 +162,46 @@ describe('the Learn progress document (LRN-031, LRN-032)', () => {
       { ...document, schemaVersion: 1 },
       { ...document, schemaVersion: 9 },
       { ...document, last: { lessonId: 'Not An Id', at: '2026-10-10T11:00:00.000Z' } },
-      { ...document, lessons: { 'motor-start-stop-safe': { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsShown: [3], solutionShown: false, hardware: null } } },
+      {
+        ...document,
+        lessons: {
+          'motor-start-stop-safe': {
+            state: 'passed',
+            grade: null,
+            passedAt: null,
+            startedAt: null,
+            hintsShown: [3],
+            solutionShown: false,
+            hardware: null,
+          },
+        },
+      },
       // An own key named __proto__ (an object literal would set the prototype instead).
-      { ...document, lessons: Object.fromEntries([['__proto__', { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsShown: [], solutionShown: false, hardware: null }]]) },
-      { ...document, lessons: { 'edge-counter-pulses': { state: 'in-progress', grade: grade({ lessonId: 'edge-counter-pulses' }), passedAt: null, startedAt: null, hintsShown: [], solutionShown: false, hardware: null } } },
-    ]) expect(parseProgress(JSON.stringify(broken))).toBeUndefined();
+      {
+        ...document,
+        lessons: Object.fromEntries([
+          [
+            '__proto__',
+            { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsShown: [], solutionShown: false, hardware: null },
+          ],
+        ]),
+      },
+      {
+        ...document,
+        lessons: {
+          'edge-counter-pulses': {
+            state: 'in-progress',
+            grade: grade({ lessonId: 'edge-counter-pulses' }),
+            passedAt: null,
+            startedAt: null,
+            hintsShown: [],
+            solutionShown: false,
+            hardware: null,
+          },
+        },
+      },
+    ])
+      expect(parseProgress(JSON.stringify(broken))).toBeUndefined();
     expect(parseProgress('{')).toBeUndefined();
     expect(parseProgress('x'.repeat(300 * 1024))).toBeUndefined();
   });
@@ -112,15 +213,37 @@ describe('the Learn progress document (LRN-031, LRN-032)', () => {
     progress = withNote(progress, { lessonId: 'edge-counter-pulses', hint: 1 }, '2026-10-10T11:06:00.000Z');
     expect(progress.lessons['edge-counter-pulses']!.hintsShown).toEqual([1, 2]);
     const other = withNote(emptyProgress(), { lessonId: 'edge-counter-pulses', hint: 1 }, '2026-10-10T09:00:00.000Z');
-    expect(mergeProgress(other, withNote(emptyProgress(), { lessonId: 'edge-counter-pulses', hint: 2 }, '2026-10-10T10:00:00.000Z')).lessons['edge-counter-pulses']!.hintsShown).toEqual([1, 2]);
-    expect(parseProgress(JSON.stringify({ ...JSON.parse(serializeProgress(progress)), lessons: { 'edge-counter-pulses': { ...progress.lessons['edge-counter-pulses'], hintsShown: [2, 1] } } }))).toBeUndefined();
+    expect(
+      mergeProgress(other, withNote(emptyProgress(), { lessonId: 'edge-counter-pulses', hint: 2 }, '2026-10-10T10:00:00.000Z')).lessons[
+        'edge-counter-pulses'
+      ]!.hintsShown,
+    ).toEqual([1, 2]);
+    expect(
+      parseProgress(
+        JSON.stringify({
+          ...JSON.parse(serializeProgress(progress)),
+          lessons: { 'edge-counter-pulses': { ...progress.lessons['edge-counter-pulses'], hintsShown: [2, 1] } },
+        }),
+      ),
+    ).toBeUndefined();
   });
 
   it('migrates a stored version 2 document, which kept only the highest hint level, and an export of it (fixture)', () => {
-    const v2 = (hintsUsed: number) => JSON.stringify({
-      schemaVersion: 2, last: { lessonId: 'edge-counter-pulses', at: '2026-10-10T11:00:00.000Z' },
-      lessons: { 'edge-counter-pulses': { state: 'in-progress', grade: null, passedAt: null, startedAt: '2026-10-10T10:00:00.000Z', hintsUsed, solutionShown: false } },
-    });
+    const v2 = (hintsUsed: number) =>
+      JSON.stringify({
+        schemaVersion: 2,
+        last: { lessonId: 'edge-counter-pulses', at: '2026-10-10T11:00:00.000Z' },
+        lessons: {
+          'edge-counter-pulses': {
+            state: 'in-progress',
+            grade: null,
+            passedAt: null,
+            startedAt: '2026-10-10T10:00:00.000Z',
+            hintsUsed,
+            solutionShown: false,
+          },
+        },
+      });
     expect(parseProgress(v2(2))!.lessons['edge-counter-pulses']).toMatchObject({ hintsShown: [1, 2] });
     expect(parseProgress(v2(1))!.lessons['edge-counter-pulses']).toMatchObject({ hintsShown: [1] });
     expect(parseProgress(v2(0))!.lessons['edge-counter-pulses']).toMatchObject({ hintsShown: [] });
@@ -151,15 +274,32 @@ describe('the Learn progress document (LRN-031, LRN-032)', () => {
   it('migrates the file of the first release and keeps lessons it does not know', () => {
     const migrated = migrateLegacyMastery('{"schemaVersion":1,"mastered":["motor-start-stop-safe","a-lesson-of-a-newer-build"]}')!;
     expect(passedLessonIds(migrated)).toEqual(['a-lesson-of-a-newer-build', 'motor-start-stop-safe']);
-    expect(migrated.lessons['motor-start-stop-safe']).toEqual({ state: 'passed', grade: null, passedAt: null, startedAt: null, hintsShown: [], solutionShown: false, hardware: null });
-    for (const raw of ['{"schemaVersion":1,"mastered":["x"]}', '{"schemaVersion":1,"mastered":["motor-start-stop-safe","motor-start-stop-safe"]}', '{"schemaVersion":2,"mastered":[]}', '{"schemaVersion":1,"mastered":[],"x":1}', '[]']) {
+    expect(migrated.lessons['motor-start-stop-safe']).toEqual({
+      state: 'passed',
+      grade: null,
+      passedAt: null,
+      startedAt: null,
+      hintsShown: [],
+      solutionShown: false,
+      hardware: null,
+    });
+    for (const raw of [
+      '{"schemaVersion":1,"mastered":["x"]}',
+      '{"schemaVersion":1,"mastered":["motor-start-stop-safe","motor-start-stop-safe"]}',
+      '{"schemaVersion":2,"mastered":[]}',
+      '{"schemaVersion":1,"mastered":[],"x":1}',
+      '[]',
+    ]) {
       expect(migrateLegacyMastery(raw)).toBeUndefined();
     }
   });
 
   it('merges commutatively and idempotently, newest passing grade first', () => {
     const older = withGrade(emptyProgress(), grade({ time: '2026-10-09T09:00:00.000Z', programSha256: HASH_A }));
-    const newer = withGrade(withNote(emptyProgress(), { lessonId: 'motor-start-stop-safe', hint: 1 }, '2026-10-10T08:00:00.000Z'), grade({ time: '2026-10-10T12:00:00.000Z', programSha256: HASH_B }));
+    const newer = withGrade(
+      withNote(emptyProgress(), { lessonId: 'motor-start-stop-safe', hint: 1 }, '2026-10-10T08:00:00.000Z'),
+      grade({ time: '2026-10-10T12:00:00.000Z', programSha256: HASH_B }),
+    );
     const other = withPassedIds(emptyProgress(), ['edge-counter-pulses']);
     const left = mergeProgress(mergeProgress(older, newer), other);
     const right = mergeProgress(other, mergeProgress(newer, older));

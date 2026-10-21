@@ -4,7 +4,10 @@
  */
 import { useSyncExternalStore } from 'react';
 
-export interface CommandSurfaces { palette: boolean; shortcuts: boolean }
+export interface CommandSurfaces {
+  palette: boolean;
+  shortcuts: boolean;
+}
 
 let surfaces: CommandSurfaces = { palette: false, shortcuts: false };
 const listeners = new Set<() => void>();
@@ -21,7 +24,12 @@ export const openShortcuts = (): void => set({ palette: false, shortcuts: true }
 export const closeSurfaces = (): void => set({ palette: false, shortcuts: false });
 export const getSurfaces = (): CommandSurfaces => surfaces;
 
-const subscribe = (listener: () => void): (() => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; };
+const subscribe = (listener: () => void): (() => void) => {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+};
 
 export function useCommandSurfaces(): CommandSurfaces {
   return useSyncExternalStore(subscribe, getSurfaces, getSurfaces);

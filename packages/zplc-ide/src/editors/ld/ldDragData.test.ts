@@ -4,7 +4,7 @@ import { DRAG_MIME_TYPE, parseLDDropData } from './ldDragData';
 
 function dataTransferWith(data: string): Pick<DataTransfer, 'getData'> {
   return {
-    getData: (type: string) => type === DRAG_MIME_TYPE ? data : '',
+    getData: (type: string) => (type === DRAG_MIME_TYPE ? data : ''),
   };
 }
 

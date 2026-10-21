@@ -11,7 +11,11 @@ describe('search in the project (UX-011)', () => {
   it('UX-011 groups the matches by file in path order, with the line and column of each', () => {
     const found = searchProject(files, 'motor');
     expect(found.files.map((file) => file.path)).toEqual(['src/A.st', 'src/B.st']);
-    expect(found.files[0]!.matches.map((match) => [match.line, match.column])).toEqual([[2, 5], [3, 3], [3, 13]]);
+    expect(found.files[0]!.matches.map((match) => [match.line, match.column])).toEqual([
+      [2, 5],
+      [3, 3],
+      [3, 13],
+    ]);
     expect(found.total).toBe(4);
     expect(found.truncated).toBe(false);
   });
@@ -30,15 +34,30 @@ describe('search in the project (UX-011)', () => {
   });
 
   it('UX-011 stops at the match limit and says so', () => {
-    const many = [{ path: 'src/Many.st', content: Array.from({ length: SEARCH_LIMITS.matches + 50 }, () => 'x').join('\n') }, { path: 'src/More.st', content: 'x\n'.repeat(600) }];
+    const many = [
+      { path: 'src/Many.st', content: Array.from({ length: SEARCH_LIMITS.matches + 50 }, () => 'x').join('\n') },
+      { path: 'src/More.st', content: 'x\n'.repeat(600) },
+    ];
     const found = searchProject(many, 'x');
     expect(found.total).toBeLessThanOrEqual(SEARCH_LIMITS.matches);
     expect(found.truncated).toBe(true);
   });
 });
 
-const node = (path: string, language: FileTreeNode['language']): FileTreeNode => ({ id: path, name: path.split('/').at(-1)!, type: 'file', path, language });
-const tree: FileTreeNode = { id: 'root', name: 'P', type: 'directory', path: '', children: [node('src/Open.st', 'ST'), node('src/Disk.st', 'ST'), node('src/List.il', 'IL'), node('src/Diagram.fbd.json', 'FBD')] };
+const node = (path: string, language: FileTreeNode['language']): FileTreeNode => ({
+  id: path,
+  name: path.split('/').at(-1)!,
+  type: 'file',
+  path,
+  language,
+});
+const tree: FileTreeNode = {
+  id: 'root',
+  name: 'P',
+  type: 'directory',
+  path: '',
+  children: [node('src/Open.st', 'ST'), node('src/Disk.st', 'ST'), node('src/List.il', 'IL'), node('src/Diagram.fbd.json', 'FBD')],
+};
 
 describe('the files the search reads (UX-011)', () => {
   it('UX-011 reads the text of the open editor (unsaved edits included) before the disk, and leaves diagrams out', async () => {
@@ -53,7 +72,10 @@ describe('the files the search reads (UX-011)', () => {
   });
 
   it('UX-011 skips a file that cannot be read instead of failing the search', async () => {
-    const read = async (file: FileTreeNode): Promise<string> => { if (file.path === 'src/Disk.st') throw new Error('gone'); return 'x'; };
+    const read = async (file: FileTreeNode): Promise<string> => {
+      if (file.path === 'src/Disk.st') throw new Error('gone');
+      return 'x';
+    };
     expect((await readSearchableFiles({ tree, loaded: new Map(), read })).map((file) => file.path)).toEqual(['src/Open.st', 'src/List.il']);
   });
 });

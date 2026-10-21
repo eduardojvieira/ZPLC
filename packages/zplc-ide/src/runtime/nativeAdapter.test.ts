@@ -63,18 +63,20 @@ const requestMock = mock(async (message: NativeRequest) => {
           halted: false,
           error: 0,
         },
-        tasks: [{
-          task_id: 0,
-          state: 'paused',
-          cycles: 8,
-          overruns: 1,
-          interval_us: 1000,
-          priority: 1,
-          pc: 13,
-          sp: 2,
-          halted: false,
-          error: 0,
-        }],
+        tasks: [
+          {
+            task_id: 0,
+            state: 'paused',
+            cycles: 8,
+            overruns: 1,
+            interval_us: 1000,
+            priority: 1,
+            pc: 13,
+            sp: 2,
+            halted: false,
+            error: 0,
+          },
+        ],
         opi: [1, 0, 1, 0, 0, 0, 0, 0],
         ipi: [0, 0, 0, 0, 0, 0, 0, 0],
         force_entries: [],
@@ -114,28 +116,16 @@ const request = async <TResult = unknown>(message: NativeRequest): Promise<TResu
 };
 
 function createEventApi() {
-  let eventHandler: ((event: {
-    type: 'event';
-    method: string;
-    params: Record<string, unknown>;
-  }) => void) | null = null;
+  let eventHandler: ((event: { type: 'event'; method: string; params: Record<string, unknown> }) => void) | null = null;
 
   return {
-    onEvent: (callback: (event: {
-      type: 'event';
-      method: string;
-      params: Record<string, unknown>;
-    }) => void) => {
+    onEvent: (callback: (event: { type: 'event'; method: string; params: Record<string, unknown> }) => void) => {
       eventHandler = callback;
       return () => {
         eventHandler = null;
       };
     },
-    emit: (event: {
-      type: 'event';
-      method: string;
-      params: Record<string, unknown>;
-    }) => {
+    emit: (event: { type: 'event'; method: string; params: Record<string, unknown> }) => {
       eventHandler?.(event);
     },
   };
@@ -156,7 +146,9 @@ function nativeSnapshot(overrides: Record<string, unknown> = {}) {
     program_generation: 1,
     stats: { cycles: 8, active_tasks: 1, overruns: 1, program_size: 5 },
     focused_vm: { pc: 13, sp: 2, halted: false, error: 0 },
-    tasks: [{ task_id: 0, state: 'paused', cycles: 8, overruns: 1, interval_us: 1000, priority: 1, pc: 13, sp: 2, halted: false, error: 0 }],
+    tasks: [
+      { task_id: 0, state: 'paused', cycles: 8, overruns: 1, interval_us: 1000, priority: 1, pc: 13, sp: 2, halted: false, error: 0 },
+    ],
     opi: [1, 0, 1, 0, 0, 0, 0, 0],
     ipi: [0, 0, 0, 0, 0, 0, 0, 0],
     force_entries: [],
@@ -183,13 +175,20 @@ describe('NativeAdapter', () => {
   });
 
   it('tells the console what the simulated communication endpoints are, or that they did not start (COM-009)', async () => {
-    const hello = (status: 'degraded' | 'unavailable', reason: string) => async () => ({
-      protocol_version: '1.0', runtime_kind: 'native-posix', runtime_version: '1.5.0',
-      capability_profile: { profile_id: 'native-posix-mvp', features: [{ name: 'communication-endpoints', status, reason }] },
-    } as never);
+    const hello = (status: 'degraded' | 'unavailable', reason: string) => async () =>
+      ({
+        protocol_version: '1.0',
+        runtime_kind: 'native-posix',
+        runtime_version: '1.5.0',
+        capability_profile: { profile_id: 'native-posix-mvp', features: [{ name: 'communication-endpoints', status, reason }] },
+      }) as never;
     for (const [status, reason, expected] of [
       ['degraded', 'endpoints on 127.0.0.1 (Modbus 1502, MQTT 1883)', 'Simulation endpoints on 127.0.0.1 (Modbus 1502, MQTT 1883)'],
-      ['unavailable', 'every block reports unavailable in simulation', 'Simulation endpoints are unavailable: every block reports unavailable in simulation'],
+      [
+        'unavailable',
+        'every block reports unavailable in simulation',
+        'Simulation endpoints are unavailable: every block reports unavailable in simulation',
+      ],
     ] as const) {
       const adapter = new NativeAdapter({ startSession: hello(status, reason), stopSession, request });
       const lines: string[] = [];
@@ -207,10 +206,13 @@ describe('NativeAdapter', () => {
   it('rejects an invalid native hello, stops the child, and stays disconnected', async () => {
     const localStop = mock(async () => undefined);
     const adapter = new NativeAdapter({
-      startSession: async () => ({
-        protocol_version: '1.0', runtime_kind: 'native-posix', runtime_version: '1.5.0',
-        capability_profile: { profile_id: 'native-posix-mvp', features: [null] },
-      } as never),
+      startSession: async () =>
+        ({
+          protocol_version: '1.0',
+          runtime_kind: 'native-posix',
+          runtime_version: '1.5.0',
+          capability_profile: { profile_id: 'native-posix-mvp', features: [null] },
+        }) as never,
       stopSession: localStop,
       request,
     });
@@ -269,7 +271,9 @@ describe('NativeAdapter', () => {
     const connectedAdapter = async (draft: number | undefined) => {
       const adapter = new NativeAdapter({
         startSession: async () => ({
-          protocol_version: '1.0', runtime_kind: 'native-posix', runtime_version: '1.5.0',
+          protocol_version: '1.0',
+          runtime_kind: 'native-posix',
+          runtime_version: '1.5.0',
           ...(draft === undefined ? {} : { draft_counter: draft }),
           capability_profile: { profile_id: 'native-posix-mvp', features },
         }),
@@ -290,9 +294,7 @@ describe('NativeAdapter', () => {
 
     it('refuses a program built for another draft before sending it, and shows both numbers', async () => {
       const adapter = await connectedAdapter(5);
-      await expect(adapter.loadProgram(artifact(2))).rejects.toThrow(
-        'Program was built for contract draft 2, this runtime is draft 5',
-      );
+      await expect(adapter.loadProgram(artifact(2))).rejects.toThrow('Program was built for contract draft 2, this runtime is draft 5');
       expect(requestMock).not.toHaveBeenCalled();
       expect(adapter.connected).toBe(true);
       expect(adapter.state).toBe('idle');
@@ -300,9 +302,7 @@ describe('NativeAdapter', () => {
 
     it('says none for a program built before the counter', async () => {
       const adapter = await connectedAdapter(5);
-      await expect(adapter.loadProgram(artifact(0))).rejects.toThrow(
-        'Program was built for contract draft none, this runtime is draft 5',
-      );
+      await expect(adapter.loadProgram(artifact(0))).rejects.toThrow('Program was built for contract draft none, this runtime is draft 5');
       expect(requestMock).not.toHaveBeenCalled();
     });
 
@@ -325,7 +325,9 @@ describe('NativeAdapter', () => {
         startSession: async () => {
           const draft = hellos.shift();
           return {
-            protocol_version: '1.0', runtime_kind: 'native-posix', runtime_version: '1.5.0',
+            protocol_version: '1.0',
+            runtime_kind: 'native-posix',
+            runtime_version: '1.5.0',
             ...(draft === undefined ? {} : { draft_counter: draft }),
             capability_profile: { profile_id: 'native-posix-mvp', features },
           };
@@ -348,7 +350,9 @@ describe('NativeAdapter', () => {
     const requests: NativeRequest[] = [];
     const adapter = new NativeAdapter({
       startSession: async () => ({
-        protocol_version: '1.0', runtime_kind: 'native-posix', runtime_version: '1.5.0',
+        protocol_version: '1.0',
+        runtime_kind: 'native-posix',
+        runtime_version: '1.5.0',
         capability_profile: { profile_id: 'native-posix-mvp', features: [{ name: 'simulation-inputs', status: 'supported' }] },
       }),
       stopSession,
@@ -366,23 +370,31 @@ describe('NativeAdapter', () => {
     await adapter.start();
     await adapter.setSimulationInput('motor.start', true);
 
-    expect(requests.at(-1)).toEqual(createNativeRequest(expect.any(String), 'simulation.input.set', {
-      input_id: 'motor.start', active: true, program_generation: 1,
-    }));
+    expect(requests.at(-1)).toEqual(
+      createNativeRequest(expect.any(String), 'simulation.input.set', {
+        input_id: 'motor.start',
+        active: true,
+        program_generation: 1,
+      }),
+    );
     await expect(adapter.setSimulationInput('motor.overload' as 'motor.start', true)).rejects.toThrow();
   });
 
   it('fails closed for a noncanonical native input capability session', async () => {
-    for (const [runtime_kind, profile_id] of [['wasm', 'native-posix-mvp'], ['native-posix', 'other-profile']]) {
+    for (const [runtime_kind, profile_id] of [
+      ['wasm', 'native-posix-mvp'],
+      ['native-posix', 'other-profile'],
+    ]) {
       const adapter = new NativeAdapter({
         startSession: async () => ({
-          protocol_version: '1.0', runtime_kind, runtime_version: '1.5.0',
+          protocol_version: '1.0',
+          runtime_kind,
+          runtime_version: '1.5.0',
           capability_profile: { profile_id, features: [{ name: 'simulation-inputs', status: 'supported' }] },
         }),
         stopSession,
-        request: async <TResult>(message: NativeRequest): Promise<TResult> => (
-          message.method === 'program.load' ? { program_size: 1, program_generation: 1 } : {}
-        ) as TResult,
+        request: async <TResult>(message: NativeRequest): Promise<TResult> =>
+          (message.method === 'program.load' ? { program_size: 1, program_generation: 1 } : {}) as TResult,
       });
       await adapter.connect();
       expect(adapter.supportsSimulationInput).toBe(false);
@@ -401,13 +413,14 @@ describe('NativeAdapter', () => {
     ]) {
       const adapter = new NativeAdapter({
         startSession: async () => ({
-          protocol_version: '1.0', runtime_kind: 'native-posix', runtime_version: '1.5.0',
+          protocol_version: '1.0',
+          runtime_kind: 'native-posix',
+          runtime_version: '1.5.0',
           capability_profile: { profile_id: 'native-posix-mvp', features: [{ name: 'simulation-inputs', status: 'supported' }] },
         }),
         stopSession,
-        request: async <TResult>(message: NativeRequest): Promise<TResult> => (
-          message.method === 'program.load' ? { program_size: 1, program_generation: 1 } : acknowledgement
-        ) as TResult,
+        request: async <TResult>(message: NativeRequest): Promise<TResult> =>
+          (message.method === 'program.load' ? { program_size: 1, program_generation: 1 } : acknowledgement) as TResult,
       });
       await adapter.connect();
       await adapter.loadProgram(new Uint8Array([0x00]));
@@ -420,7 +433,9 @@ describe('NativeAdapter', () => {
     let invalid = false;
     const adapter = new NativeAdapter({
       startSession: async () => ({
-        protocol_version: '1.0', runtime_kind: 'native-posix', runtime_version: '1.5.0',
+        protocol_version: '1.0',
+        runtime_kind: 'native-posix',
+        runtime_version: '1.5.0',
         capability_profile: { profile_id: 'native-posix-mvp', features: [{ name: 'simulation-inputs', status: 'supported' }] },
       }),
       stopSession,
@@ -442,7 +457,9 @@ describe('NativeAdapter', () => {
   it('rejects malformed activation and reset acknowledgements without retaining a token', async () => {
     const adapter = new NativeAdapter({
       startSession: async () => ({
-        protocol_version: '1.0', runtime_kind: 'native-posix', runtime_version: '1.5.0',
+        protocol_version: '1.0',
+        runtime_kind: 'native-posix',
+        runtime_version: '1.5.0',
         capability_profile: { profile_id: 'native-posix-mvp', features: [{ name: 'simulation-inputs', status: 'supported' }] },
       }),
       stopSession,
@@ -458,13 +475,16 @@ describe('NativeAdapter', () => {
 
     const resetAdapter = new NativeAdapter({
       startSession: async () => ({
-        protocol_version: '1.0', runtime_kind: 'native-posix', runtime_version: '1.5.0',
+        protocol_version: '1.0',
+        runtime_kind: 'native-posix',
+        runtime_version: '1.5.0',
         capability_profile: { profile_id: 'native-posix-mvp', features: [{ name: 'simulation-inputs', status: 'supported' }] },
       }),
       stopSession,
-      request: async <TResult>(message: NativeRequest): Promise<TResult> => (
-        message.method === 'program.load' ? { program_size: 1, program_generation: 1 } : { program_generation: 1, extra: true }
-      ) as TResult,
+      request: async <TResult>(message: NativeRequest): Promise<TResult> =>
+        (message.method === 'program.load'
+          ? { program_size: 1, program_generation: 1 }
+          : { program_generation: 1, extra: true }) as TResult,
     });
     await resetAdapter.connect();
     await resetAdapter.loadProgram(new Uint8Array([0]));
@@ -476,16 +496,20 @@ describe('NativeAdapter', () => {
   it('synchronizes a valid zero program generation from status without retaining an older token', async () => {
     const adapter = new NativeAdapter({
       startSession: async () => ({
-        protocol_version: '1.0', runtime_kind: 'native-posix', runtime_version: '1.5.0',
+        protocol_version: '1.0',
+        runtime_kind: 'native-posix',
+        runtime_version: '1.5.0',
         capability_profile: { profile_id: 'native-posix-mvp', features: [{ name: 'simulation-inputs', status: 'supported' }] },
       }),
       stopSession,
       request: async <TResult>(message: NativeRequest): Promise<TResult> => {
         if (message.method === 'program.load') return { program_size: 1, program_generation: 1 } as TResult;
-        if (message.method === 'status.get') return nativeSnapshot({
-          state: 'running', program_generation: 0,
-          stats: { cycles: 0, active_tasks: 1, overruns: 0, program_size: 0 },
-        }) as TResult;
+        if (message.method === 'status.get')
+          return nativeSnapshot({
+            state: 'running',
+            program_generation: 0,
+            stats: { cycles: 0, active_tasks: 1, overruns: 0, program_size: 0 },
+          }) as TResult;
         return {} as TResult;
       },
     });
@@ -501,7 +525,9 @@ describe('NativeAdapter', () => {
     const acknowledgement = deferred<Record<string, unknown>>();
     const adapter = new NativeAdapter({
       startSession: async () => ({
-        protocol_version: '1.0', runtime_kind: 'native-posix', runtime_version: '1.5.0',
+        protocol_version: '1.0',
+        runtime_kind: 'native-posix',
+        runtime_version: '1.5.0',
         capability_profile: { profile_id: 'native-posix-mvp', features: [{ name: 'simulation-inputs', status: 'supported' }] },
       }),
       stopSession,
@@ -517,7 +543,9 @@ describe('NativeAdapter', () => {
     await adapter.start();
     const pending = adapter.setSimulationInput('motor.start', true);
     eventApi.emit({
-      type: 'event', method: 'capability.updated', params: {
+      type: 'event',
+      method: 'capability.updated',
+      params: {
         profile_id: 'native-posix-mvp',
         features: [
           { name: 'simulation-inputs', status: 'supported' },
@@ -535,7 +563,9 @@ describe('NativeAdapter', () => {
     const acknowledgement = deferred<Record<string, unknown>>();
     const adapter = new NativeAdapter({
       startSession: async () => ({
-        protocol_version: '1.0', runtime_kind: 'native-posix', runtime_version: '1.5.0',
+        protocol_version: '1.0',
+        runtime_kind: 'native-posix',
+        runtime_version: '1.5.0',
         capability_profile: { profile_id: 'native-posix-mvp', features: [{ name: 'simulation-inputs', status: 'supported' }] },
       }),
       stopSession,
@@ -551,8 +581,11 @@ describe('NativeAdapter', () => {
     await adapter.start();
     const pending = adapter.setSimulationInput('motor.start', true);
     eventApi.emit({
-      type: 'event', method: 'capability.updated', params: {
-        profile_id: 'native-posix-mvp', features: [null],
+      type: 'event',
+      method: 'capability.updated',
+      params: {
+        profile_id: 'native-posix-mvp',
+        features: [null],
       },
     });
     acknowledgement.resolve({ input_id: 'motor.start', active: true, program_generation: 1, cycle_count_at_apply: 0, state: 'staged' });
@@ -746,9 +779,10 @@ describe('NativeAdapter', () => {
       const adapter = new NativeAdapter({
         startSession,
         stopSession,
-        request: async <TResult>(message: NativeRequest): Promise<TResult> => (message.method === 'status.get'
-          ? nativeSnapshot({ stats: { cycles: 31, active_tasks: 1, overruns: 0, program_size: 5 } })
-          : {}) as TResult,
+        request: async <TResult>(message: NativeRequest): Promise<TResult> =>
+          (message.method === 'status.get'
+            ? nativeSnapshot({ stats: { cycles: 31, active_tasks: 1, overruns: 0, program_size: 5 } })
+            : {}) as TResult,
       });
       adapter.setEventHandlers({ onInfoUpdate: (info) => infos.push(info.cycles) });
       await adapter.connect();
@@ -801,11 +835,12 @@ describe('NativeAdapter', () => {
         onStateChange: (state) => states.push(state),
         onBreakpointHit: (pc) => hits.push(pc),
       });
-      const emitStatus = (state: string, pc: number) => eventApi.emit({
-        type: 'event',
-        method: 'status.changed',
-        params: nativeSnapshot({ state, focused_vm: { pc, sp: 2, halted: false, error: state === 'error' ? 3 : 0 } }),
-      });
+      const emitStatus = (state: string, pc: number) =>
+        eventApi.emit({
+          type: 'event',
+          method: 'status.changed',
+          params: nativeSnapshot({ state, focused_vm: { pc, sp: 2, halted: false, error: state === 'error' ? 3 : 0 } }),
+        });
       return { adapter, reply, states, hits, emitStatus };
     }
 
@@ -1048,9 +1083,12 @@ describe('NativeAdapter', () => {
     await adapter.connect();
 
     await adapter.scenarioStep(20);
-    expect(requestMock).toHaveBeenCalledWith(expect.objectContaining({
-      method: 'scenario.step', params: { at_ms: 20 },
-    }));
+    expect(requestMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'scenario.step',
+        params: { at_ms: 20 },
+      }),
+    );
     await expect(adapter.scenarioStep(-1)).rejects.toThrow('uint32');
     await expect(adapter.scenarioStep(1.5)).rejects.toThrow('uint32');
   });
@@ -1125,7 +1163,16 @@ describe('NativeAdapter', () => {
 
   it('rejects native snapshots outside the exact POSIX session contract', async () => {
     const task = (task_id: number, priority: number, interval_us = 10_000) => ({
-      task_id, state: 'paused', cycles: 8, overruns: 1, interval_us, priority, pc: 13, sp: 2, halted: false, error: 0,
+      task_id,
+      state: 'paused',
+      cycles: 8,
+      overruns: 1,
+      interval_us,
+      priority,
+      pc: 13,
+      sp: 2,
+      halted: false,
+      error: 0,
     });
     const validTaskSet = nativeSnapshot({
       stats: { cycles: 8, active_tasks: 2, overruns: 1, program_size: 5 },
@@ -1169,10 +1216,12 @@ describe('NativeAdapter', () => {
       nativeSnapshot({ focused_vm: { pc: 0x1_0000, sp: 2, halted: false, error: 0 } }),
       nativeSnapshot({ focused_vm: { pc: 2, sp: 0x1_0000, halted: false, error: 0x100 } }),
       nativeSnapshot({ force_entries: [{ address: 0x0fff, size: 2, bytes_hex: '0000', state: 'forced' }] }),
-      nativeSnapshot({ force_entries: [
-        { address: 0, size: 2, bytes_hex: '0000', state: 'forced' },
-        { address: 1, size: 1, bytes_hex: '00', state: 'forced' },
-      ] }),
+      nativeSnapshot({
+        force_entries: [
+          { address: 0, size: 2, bytes_hex: '0000', state: 'forced' },
+          { address: 1, size: 1, bytes_hex: '00', state: 'forced' },
+        ],
+      }),
     ];
 
     for (const invalidSnapshot of invalidSnapshots) {

@@ -37,7 +37,9 @@ function buildAsar(files: Record<string, string>): Uint8Array {
 }
 
 const roots: string[] = [];
-afterAll(() => { for (const root of roots) rmSync(root, { recursive: true, force: true }); });
+afterAll(() => {
+  for (const root of roots) rmSync(root, { recursive: true, force: true });
+});
 
 /** A repository folder and an unpacked package that match each other, which a test then breaks in one place. */
 function fixture(options: { bundle?: string; notices?: string; omitExample?: boolean } = {}) {
@@ -53,25 +55,39 @@ function fixture(options: { bundle?: string; notices?: string; omitExample?: boo
   const program = 'PROGRAM Main\nVAR x : BOOL; END_VAR\nx := NOT x; (* it\'s "quoted" *)\nEND_PROGRAM\n';
   writeFileSync(join(pkg, 'projects/blinky/zplc.json'), manifest);
   writeFileSync(join(pkg, 'projects/blinky/src/main.st'), program);
-  writeFileSync(join(pkg, 'src/components/learnContent.en.v1.ts'), "export const x = [{\n  id: 'scan-cycle-one-scan-memory', title: 'Scan' },\n  { id: 'motor-start-stop-safe' }];\n");
+  writeFileSync(
+    join(pkg, 'src/components/learnContent.en.v1.ts'),
+    "export const x = [{\n  id: 'scan-cycle-one-scan-memory', title: 'Scan' },\n  { id: 'motor-start-stop-safe' }];\n",
+  );
   writeFileSync(join(pkg, 'lessons/first-blink/lesson.json'), JSON.stringify({ id: 'first-blink', version: 1 }));
   writeFileSync(join(repo, 'examples/01_hello.zplc'), 'ZPLCBYTES');
   writeFileSync(join(repo, 'examples/README.md'), 'not shipped');
 
-  const bundle = options.bundle ?? `const a=${JSON.stringify(manifest)};const b=${JSON.stringify(program)};const lessons=["scan-cycle-one-scan-memory","motor-start-stop-safe","first-blink"];`;
+  const bundle =
+    options.bundle ??
+    `const a=${JSON.stringify(manifest)};const b=${JSON.stringify(
+      program,
+    )};const lessons=["scan-cycle-one-scan-memory","motor-start-stop-safe","first-blink"];`;
   const resources = join(root, 'out/linux-unpacked/resources');
   mkdirSync(join(resources, 'examples'), { recursive: true });
   mkdirSync(join(resources, 'native-runtime'), { recursive: true });
-  writeFileSync(join(resources, 'app.asar'), buildAsar({
-    'dist/assets/index-abc.js': bundle,
-    'dist/assets/codicon-xyz.ttf': 'font',
-    'node_modules/react/package.json': '{"name":"react"}',
-    'node_modules/@xyflow/react/package.json': '{"name":"@xyflow/react"}',
-    'package.json': '{"name":"@zplc/ide"}',
-  }));
+  writeFileSync(
+    join(resources, 'app.asar'),
+    buildAsar({
+      'dist/assets/index-abc.js': bundle,
+      'dist/assets/codicon-xyz.ttf': 'font',
+      'node_modules/react/package.json': '{"name":"react"}',
+      'node_modules/@xyflow/react/package.json': '{"name":"@xyflow/react"}',
+      'package.json': '{"name":"@zplc/ide"}',
+    }),
+  );
   if (!options.omitExample) writeFileSync(join(resources, 'examples/01_hello.zplc'), 'ZPLCBYTES');
   writeFileSync(join(resources, 'native-runtime/zplc_runtime'), 'binary');
-  writeFileSync(join(resources, 'THIRD-PARTY-NOTICES.txt'), options.notices ?? 'react@19.0.0\nLicense: MIT\n\n@xyflow/react@12.0.0\nLicense: MIT\n\nCodicons (assets/codicon-xyz.ttf)\nLicense: CC-BY-4.0\n');
+  writeFileSync(
+    join(resources, 'THIRD-PARTY-NOTICES.txt'),
+    options.notices ??
+      'react@19.0.0\nLicense: MIT\n\n@xyflow/react@12.0.0\nLicense: MIT\n\nCodicons (assets/codicon-xyz.ttf)\nLicense: CC-BY-4.0\n',
+  );
   writeFileSync(join(resources, '..', 'LICENSE.electron.txt'), 'electron');
   writeFileSync(join(resources, '..', 'LICENSES.chromium.html'), 'chromium');
   return { repo, pkg, resources };
@@ -97,7 +113,12 @@ describe('the encodings of a string in a minified bundle (REL-034)', () => {
 });
 
 describe('the Linux desktop identity of the unpacked package (REL-011)', () => {
-  const IDENTITY = { productName: 'ZPLC', appId: 'com.zenithindustrialcloud.zplc', executableName: 'zplc', desktopName: 'com.zenithindustrialcloud.zplc' };
+  const IDENTITY = {
+    productName: 'ZPLC',
+    appId: 'com.zenithindustrialcloud.zplc',
+    executableName: 'zplc',
+    desktopName: 'com.zenithindustrialcloud.zplc',
+  };
 
   /** A Linux unpacked package: the manifest of the archive replaced, Electron's chrome-sandbox and the executable beside the resources. */
   function linux(manifest: string, executable = IDENTITY.executableName) {
@@ -127,11 +148,17 @@ describe('the Linux desktop identity of the unpacked package (REL-011)', () => {
 
   test('names a package whose desktop name is not the identity, one with no desktopName, and one without the executable', () => {
     const wrong = linux('{"name":"@zplc/ide","desktopName":"zplc-ide"}');
-    expect(checkPackagedContent({ resources: wrong.resources, repoRoot: wrong.repo })).toContain('desktopName zplc-ide of app.asar is not com.zenithindustrialcloud.zplc, the desktop name of scripts/release/identity.json');
+    expect(checkPackagedContent({ resources: wrong.resources, repoRoot: wrong.repo })).toContain(
+      'desktopName zplc-ide of app.asar is not com.zenithindustrialcloud.zplc, the desktop name of scripts/release/identity.json',
+    );
     const none = linux('{"name":"@zplc/ide"}');
-    expect(checkPackagedContent({ resources: none.resources, repoRoot: none.repo })).toContain('the package.json of app.asar has no desktopName: the window and the desktop entry would not match');
+    expect(checkPackagedContent({ resources: none.resources, repoRoot: none.repo })).toContain(
+      'the package.json of app.asar has no desktopName: the window and the desktop entry would not match',
+    );
     const renamed = linux('{"name":"@zplc/ide","desktopName":"com.zenithindustrialcloud.zplc"}', 'zplc-ide');
-    expect(checkPackagedContent({ resources: renamed.resources, repoRoot: renamed.repo })).toContain('the unpacked package has no executable zplc, the executable name of scripts/release/identity.json');
+    expect(checkPackagedContent({ resources: renamed.resources, repoRoot: renamed.repo })).toContain(
+      'the unpacked package has no executable zplc, the executable name of scripts/release/identity.json',
+    );
   });
 
   test('asks nothing of a package that is not a Linux one', () => {
@@ -147,7 +174,9 @@ describe('packaged content (REL-034)', () => {
   });
 
   test('names an example project file that is not in the renderer bundle', () => {
-    const { repo, resources } = fixture({ bundle: 'const nothing=1;const lessons=["scan-cycle-one-scan-memory","motor-start-stop-safe","first-blink"];' });
+    const { repo, resources } = fixture({
+      bundle: 'const nothing=1;const lessons=["scan-cycle-one-scan-memory","motor-start-stop-safe","first-blink"];',
+    });
     const problems = checkPackagedContent({ resources, repoRoot: repo });
     expect(problems).toContain('example project file projects/blinky/zplc.json is not in the renderer bundle');
     expect(problems).toContain('example project file projects/blinky/src/main.st is not in the renderer bundle');
@@ -183,7 +212,14 @@ describe('packaged content (REL-034)', () => {
 
 describe('the firmware images of the package (REL-025)', () => {
   const sha = (text: string) => createHash('sha256').update(text).digest('hex');
-  const image = (board: string, file: string, learner: boolean, content: string, role = 'flash') => ({ board, file, learner, role, sha256: sha(content), bytes: content.length });
+  const image = (board: string, file: string, learner: boolean, content: string, role = 'flash') => ({
+    board,
+    file,
+    learner,
+    role,
+    sha256: sha(content),
+    bytes: content.length,
+  });
   /** A resources folder with a firmware folder: the manifest, the files it names, and what a test then breaks. */
   function resources(options: { omit?: string[]; extra?: Record<string, string>; boards?: string[] } = {}): string {
     const root = mkdtempSync(join(tmpdir(), 'zplc-firmware-'));
@@ -191,18 +227,28 @@ describe('the firmware images of the package (REL-025)', () => {
     const folder = join(root, 'firmware');
     mkdirSync(folder, { recursive: true });
     const contents: Record<string, string> = {
-      'zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2': 'pico', 'zplc-runtime-2.0.0-rc.4-esp32-s3-devkitc.bin': 'esp',
+      'zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2': 'pico',
+      'zplc-runtime-2.0.0-rc.4-esp32-s3-devkitc.bin': 'esp',
       'zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin': 'nucleo',
     };
     const boards = options.boards ?? ['rpi_pico', 'esp32s3_devkitc'];
     const images = [
       ...(boards.includes('rpi_pico') ? [image('rpi_pico', 'zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2', true, 'pico')] : []),
-      ...(boards.includes('esp32s3_devkitc') ? [image('esp32s3_devkitc', 'zplc-runtime-2.0.0-rc.4-esp32-s3-devkitc.bin', true, 'esp')] : []),
+      ...(boards.includes('esp32s3_devkitc')
+        ? [image('esp32s3_devkitc', 'zplc-runtime-2.0.0-rc.4-esp32-s3-devkitc.bin', true, 'esp')]
+        : []),
       image('nucleo_h743zi', 'zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin', false, 'nucleo'),
     ];
-    writeFileSync(join(folder, 'zplc-runtime-2.0.0-rc.4.manifest.json'), JSON.stringify({ schema: 'zplc.firmware-release/1', version: '2.0.0-rc.4', commit: 'a'.repeat(40), images, builds: {} }));
+    writeFileSync(
+      join(folder, 'zplc-runtime-2.0.0-rc.4.manifest.json'),
+      JSON.stringify({ schema: 'zplc.firmware-release/1', version: '2.0.0-rc.4', commit: 'a'.repeat(40), images, builds: {} }),
+    );
     for (const [name, content] of Object.entries({ ...contents, ...options.extra })) {
-      if (!(options.omit ?? []).includes(name) && (name in (options.extra ?? {}) || images.some((entry) => entry.file === name && entry.learner))) writeFileSync(join(folder, name), content);
+      if (
+        !(options.omit ?? []).includes(name) &&
+        (name in (options.extra ?? {}) || images.some((entry) => entry.file === name && entry.learner))
+      )
+        writeFileSync(join(folder, name), content);
     }
     return root;
   }
@@ -219,7 +265,9 @@ describe('the firmware images of the package (REL-025)', () => {
   });
 
   test('names a learner image that is missing, one that differs from the manifest, and an image that should not be there', () => {
-    expect(checkFirmware(resources({ omit: ['zplc-runtime-2.0.0-rc.4-esp32-s3-devkitc.bin'] }), true)).toEqual(['firmware/zplc-runtime-2.0.0-rc.4-esp32-s3-devkitc.bin is not in the resources']);
+    expect(checkFirmware(resources({ omit: ['zplc-runtime-2.0.0-rc.4-esp32-s3-devkitc.bin'] }), true)).toEqual([
+      'firmware/zplc-runtime-2.0.0-rc.4-esp32-s3-devkitc.bin is not in the resources',
+    ]);
     const changed = resources({ extra: { 'zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2': 'changed' } });
     expect(checkFirmware(changed, true).join('\n')).toContain('does not have the checksum or size that the manifest states');
     const extra = resources({ extra: { 'zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin': 'nucleo' } });

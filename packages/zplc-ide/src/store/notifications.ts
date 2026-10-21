@@ -21,7 +21,10 @@ export type NotificationKind = 'build' | 'save' | 'deploy' | 'connection' | 'tes
 export type NotificationStatus = 'running' | 'success' | 'warning' | 'error' | 'cancelled';
 
 /** The way back from a failure: what the button says, and what it does. */
-export interface NotificationRecovery { label: string; run: () => void }
+export interface NotificationRecovery {
+  label: string;
+  run: () => void;
+}
 
 export interface AppNotification {
   id: string;
@@ -67,13 +70,25 @@ function bounded(list: AppNotification[]): AppNotification[] {
   let overflow = list.length - NOTIFICATION_LIMIT;
   if (overflow <= 0) return list;
   return list.filter((entry) => {
-    if (overflow > 0 && isFinished(entry)) { overflow -= 1; return false; }
+    if (overflow > 0 && isFinished(entry)) {
+      overflow -= 1;
+      return false;
+    }
     return true;
   });
 }
 
 export function beginNotification(list: AppNotification[], start: NotificationStart, id: string, now: number): AppNotification[] {
-  const entry: AppNotification = { id, kind: start.kind, status: 'running', title: start.title, details: start.details, startedAt: now, ...(start.detail ? { detail: start.detail } : {}), ...(start.cancel ? { cancel: start.cancel } : {}) };
+  const entry: AppNotification = {
+    id,
+    kind: start.kind,
+    status: 'running',
+    title: start.title,
+    details: start.details,
+    startedAt: now,
+    ...(start.detail ? { detail: start.detail } : {}),
+    ...(start.cancel ? { cancel: start.cancel } : {}),
+  };
   return bounded([...list, entry]);
 }
 
@@ -81,8 +96,14 @@ export function beginNotification(list: AppNotification[], start: NotificationSt
 export function finishNotification(list: AppNotification[], id: string, result: NotificationResult, now: number): AppNotification[] {
   const existing = list.find((entry) => entry.id === id);
   const finished: AppNotification = {
-    id, kind: result.kind, status: result.status, title: result.title, details: result.details,
-    startedAt: existing?.startedAt ?? now, finishedAt: now, ...(result.detail ? { detail: result.detail } : {}),
+    id,
+    kind: result.kind,
+    status: result.status,
+    title: result.title,
+    details: result.details,
+    startedAt: existing?.startedAt ?? now,
+    finishedAt: now,
+    ...(result.detail ? { detail: result.detail } : {}),
     ...(result.recover && (result.status === 'error' || result.status === 'warning') ? { recover: result.recover } : {}),
   };
   // The latest finished result of a kind replaces the earlier one.
@@ -134,9 +155,19 @@ export const useNotifications = create<NotificationState>((set) => ({
     set((state) => ({ items: beginNotification(state.items, start, id, Date.now()) }));
     return id;
   },
-  finish: (id, result) => { say(result); set((state) => ({ items: finishNotification(state.items, id, result, Date.now()) })); },
-  report: (result) => { say(result); set((state) => ({ items: finishNotification(state.items, crypto.randomUUID(), result, Date.now()) })); },
+  finish: (id, result) => {
+    say(result);
+    set((state) => ({ items: finishNotification(state.items, id, result, Date.now()) }));
+  },
+  report: (result) => {
+    say(result);
+    set((state) => ({ items: finishNotification(state.items, crypto.randomUUID(), result, Date.now()) }));
+  },
   dismiss: (id) => set((state) => ({ items: dismissNotification(state.items, id) })),
-  expire: () => set((state) => { const items = expireNotifications(state.items, Date.now()); return items === state.items ? state : { items }; }),
+  expire: () =>
+    set((state) => {
+      const items = expireNotifications(state.items, Date.now());
+      return items === state.items ? state : { items };
+    }),
   clear: () => set({ items: [] }),
 }));

@@ -1,9 +1,7 @@
 {
   "requirement": "CMP-008",
   "title": "a real literal with an exponent and no fraction builds and is reported as non-IEC",
-  "matrix": [
-    "literals.decimal-real-exponent-boolean"
-  ],
+  "matrix": ["literals.decimal-real-exponent-boolean"],
   "note": "CMP-008: IEC 61131-3 writes a real literal as integer.integer with an optional exponent (1.0E3); 1e3 is accepted and reported as NON_IEC_REAL_LITERAL",
   "scans": 1,
   "scanMs": 10,

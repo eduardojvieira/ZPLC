@@ -48,7 +48,12 @@ describe('closed editor models', () => {
 
   it('disposes only the closed models of the host', () => {
     const disposed: string[] = [];
-    const model = (path: string) => ({ uri: monacoUriPath(path), dispose: () => { disposed.push(path); } });
+    const model = (path: string) => ({
+      uri: monacoUriPath(path),
+      dispose: () => {
+        disposed.push(path);
+      },
+    });
     const keep = editorModelPath(4, 'file:src/Motor.st');
     const drop = editorModelPath(4, 'file:src/Old.st');
     const stale = editorModelPath(2, 'file:src/Pump.st');

@@ -13,7 +13,15 @@
 import { describe, expect, test } from 'bun:test';
 import { asReal, bitsOf, simulate } from './routine-sim.ts';
 import {
-    ACOSF_LABEL, ASINF_LABEL, ATAN2F_LABEL, ATANF_LABEL, EXPF_LABEL, LOG2G_LABEL, SINCOSF_LABEL, SQRTF_LABEL, TANF_LABEL,
+    ACOSF_LABEL,
+    ASINF_LABEL,
+    ATAN2F_LABEL,
+    ATANF_LABEL,
+    EXPF_LABEL,
+    LOG2G_LABEL,
+    SINCOSF_LABEL,
+    SQRTF_LABEL,
+    TANF_LABEL,
 } from './mathlib.ts';
 
 /** A repeatable pseudo-random sequence in [0, 1). */
@@ -77,7 +85,10 @@ describe('mathlib accuracy against Math.*', () => {
     });
 
     test('SIN and COS: absolute 2e-7 to |x| of 1000 and 2e-6 below 100000', () => {
-        for (const [reference, f] of [[Math.sin, sine], [Math.cos, cosine]] as const) {
+        for (const [reference, f] of [
+            [Math.sin, sine],
+            [Math.cos, cosine],
+        ] as const) {
             expect(worst(linear(-1000, 1000, 30000), f, reference).absolute).toBeLessThan(2e-7);
             expect(worst(linear(-99999, 99999, 30000), f, reference).absolute).toBeLessThan(2e-6);
             // the multiples of pi/2 and their neighbours
@@ -122,7 +133,11 @@ describe('mathlib accuracy against Math.*', () => {
     });
 
     test('ATAN: absolute 2e-7 for every REAL', () => {
-        const grid = [...linear(-10, 10, 20000), ...logarithmic(1e-12, 1e30, 10000, 3), ...logarithmic(1e-12, 1e30, 10000, 4).map((x) => -x)];
+        const grid = [
+            ...linear(-10, 10, 20000),
+            ...logarithmic(1e-12, 1e30, 10000, 3),
+            ...logarithmic(1e-12, 1e30, 10000, 4).map((x) => -x),
+        ];
         expect(worst(grid, (x) => call(ATANF_LABEL, x), Math.atan).absolute).toBeLessThan(2e-7);
     });
 
@@ -216,32 +231,46 @@ describe('mathlib special values', () => {
 
 describe('mathlib stack discipline', () => {
     const next = seeded(9);
-    const patterns = Array.from({ length: 6000 }, () => (Math.imul(next() * 4294967296, 1) >>> 0));
+    const patterns = Array.from({ length: 6000 }, () => Math.imul(next() * 4294967296, 1) >>> 0);
     // an exponent field of every value, with a random mantissa and sign, and the neighbours of 0, 1 and infinity
-    const edges = [0, 0x80000000, 0x00000001, 0x007fffff, 0x00800000, 0x3f800000, 0xbf800000, 0x7f7fffff, 0x7f800000, 0xff800000, 0x7fc00000, 0xffc00000];
+    const edges = [
+        0, 0x80000000, 0x00000001, 0x007fffff, 0x00800000, 0x3f800000, 0xbf800000, 0x7f7fffff, 0x7f800000, 0xff800000, 0x7fc00000,
+        0xffc00000,
+    ];
     const routines: Array<[string, number]> = [
-        [SQRTF_LABEL, 1], [LOG2G_LABEL, 1], [EXPF_LABEL, 1], [TANF_LABEL, 1], [ATANF_LABEL, 1], [ASINF_LABEL, 1], [ACOSF_LABEL, 1],
-        [SINCOSF_LABEL, 2], [ATAN2F_LABEL, 2],
+        [SQRTF_LABEL, 1],
+        [LOG2G_LABEL, 1],
+        [EXPF_LABEL, 1],
+        [TANF_LABEL, 1],
+        [ATANF_LABEL, 1],
+        [ASINF_LABEL, 1],
+        [ACOSF_LABEL, 1],
+        [SINCOSF_LABEL, 2],
+        [ATAN2F_LABEL, 2],
     ];
 
     for (const [label, arity] of routines) {
-        test(`${label} leaves exactly one value and never divides by zero, on ${patterns.length + edges.length * edges.length} patterns`, () => {
-            let longest = 0;
-            const run = (args: number[]): void => {
-                const result = simulate(label, args);
-                expect(result.stack.length).toBe(1);
-                longest = Math.max(longest, result.steps);
-            };
-            for (const bits of [...patterns, ...edges]) {
-                // sin/cos and atan2 take a second argument: the phase 0 or 1, and any REAL
-                if (label === SINCOSF_LABEL) run([bits, bits & 1]);
-                else if (arity === 1) run([bits]);
-                else run([bits, patterns[(bits >>> 7) % patterns.length]!]);
-            }
-            if (arity === 2) for (const a of edges) for (const b of edges) run(label === SINCOSF_LABEL ? [a, b & 1] : [a, b]);
-            // no loop depends on the argument: the longest run is a fixed number of instructions (mathlib.ts states them)
-            const bound = label === SINCOSF_LABEL ? 430 : label === TANF_LABEL ? 520 : 250;
-            expect(longest).toBeLessThanOrEqual(bound);
-        });
+        test(
+            `${label} leaves exactly one value and never divides by zero, ` +
+                `on ${patterns.length + edges.length * edges.length} patterns`,
+            () => {
+                let longest = 0;
+                const run = (args: number[]): void => {
+                    const result = simulate(label, args);
+                    expect(result.stack.length).toBe(1);
+                    longest = Math.max(longest, result.steps);
+                };
+                for (const bits of [...patterns, ...edges]) {
+                    // sin/cos and atan2 take a second argument: the phase 0 or 1, and any REAL
+                    if (label === SINCOSF_LABEL) run([bits, bits & 1]);
+                    else if (arity === 1) run([bits]);
+                    else run([bits, patterns[(bits >>> 7) % patterns.length]!]);
+                }
+                if (arity === 2) for (const a of edges) for (const b of edges) run(label === SINCOSF_LABEL ? [a, b & 1] : [a, b]);
+                // no loop depends on the argument: the longest run is a fixed number of instructions (mathlib.ts states them)
+                const bound = label === SINCOSF_LABEL ? 430 : label === TANF_LABEL ? 520 : 250;
+                expect(longest).toBeLessThanOrEqual(bound);
+            },
+        );
     }
 });

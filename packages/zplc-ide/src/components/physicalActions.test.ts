@@ -1,9 +1,22 @@
 import { afterEach, describe, expect, it } from 'bun:test';
 import { answerConfirmation, currentConfirmation, mountConfirmHost } from '../store/actionConfirm';
-import { confirmForce, confirmForceChange, confirmRelease, confirmReleaseAll, confirmReset, confirmStop, forceValueText, needsPhysicalConfirmation, proceedAfterConfirmation } from './physicalActions';
+import {
+  confirmForce,
+  confirmForceChange,
+  confirmRelease,
+  confirmReleaseAll,
+  confirmReset,
+  confirmStop,
+  forceValueText,
+  needsPhysicalConfirmation,
+  proceedAfterConfirmation,
+} from './physicalActions';
 
 let unmount: (() => void) | null = null;
-afterEach(() => { unmount?.(); unmount = null; });
+afterEach(() => {
+  unmount?.();
+  unmount = null;
+});
 
 /** Asks the question, reads what the dialog would show, and answers it. */
 async function ask(question: () => Promise<boolean>, answer = true) {
@@ -51,7 +64,10 @@ describe('UX-020 physical actions on a device ask first', () => {
 
   it('UX-020 goes ahead in a simulation without asking, and on hardware only after a yes', async () => {
     let asked = 0;
-    const ask = (answer: boolean) => async () => { asked += 1; return answer; };
+    const ask = (answer: boolean) => async () => {
+      asked += 1;
+      return answer;
+    };
     expect(await proceedAfterConfirmation('simulate', ask(false))).toBe(true);
     expect(asked).toBe(0);
     expect(await proceedAfterConfirmation('hardware', ask(false))).toBe(false);

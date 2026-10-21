@@ -33,24 +33,24 @@ Run every command from the repository root. The times were measured on
 2026-10-10 on a Linux x86-64 desktop with warm caches while other jobs were
 running, so read them as an order of magnitude.
 
-| Layer | Command | Typical time | What a pass shows |
-|---|---|---|---|
-| Set-up | `bun run setup` | about 10 s | Dependencies installed, compiler built, native runtime built |
-| C core and host runtime | `bun run test:core` | about 1 min, the first run included | The C suites pass under the address and undefined-behaviour sanitizers |
-| Compiler | `bun run test:compiler:ci` | about 6 s | Compiler and assembler tests pass, and every failure is a listed one |
-| Application, CLI, conformance | `bun run test:ide:ci` | about 1 min | The suites of the application and the conformance cases behave as listed |
-| Lint and types | `bun run lint`, `bun run typecheck` and `bun run build:ide` | about 35 s, 20 to 40 s and 15 s | ESLint is clean, including the rules that reject an unhandled promise; every TypeScript program, tests and scripts included, type-checks; and the application builds |
-| Application structure | `bun run lint:ide` (the rules run after ESLint), or `bun tools/ci/ide-structure.ts` | under 1 s | No store module imports a component, no command-line module imports from `electron/`, no static import cycle exists, and no hand-written module has more than 1600 lines, except those on `tools/ci/module-size-offenders.json`; both that list and the one import it allows (`tools/ci/layering-exceptions.json`) can only shrink |
-| C static analysis | `bun run lint:c` | about 15 s | `clang-tidy` with `.clang-tidy`, every finding an error, is clean on the core, the POSIX HAL and the host application; the Zephyr HAL and `firmware/app` are analysed too when a board build exists |
-| Test sources | `bun run check:test-sources` | under 1 s | No test reads the text of product source or matches the assembly the compiler emitted, except the files listed for replacement in `tools/ci/pinned-source-offenders.json` |
-| Binary contract | `bun run contract:check` | about 1 s | Generated files match `contract.json` |
-| Simulation | `bun run simulate packages/zplc-ide/projects/motor_plant` | under 1 s | The project's scenario tests pass on the native runtime |
-| Application journeys | `bun run test:journeys` | 70 to 90 s | The real application passes its end-to-end journeys (needs a display) |
-| Firmware on Linux | `bun run setup:firmware`, then `bun run test:firmware` | about 6 min once, then about 4 min | Zephyr suites pass on `native_sim`, QEMU and the size budgets |
-| Documentation | `bun run check:docs` | about 15 s warm, 1 min cold | References are fresh, every name a page mentions exists, no sentence claims a capability that nothing executed backs, pages are complete, English and Spanish pages match in structure, every sample and configuration fragment marked as such builds and gives the result its fence states, every image is a captured one, and the site builds |
-| Release rehearsal | `bun run release:rehearsal` | about 5 s | The checks the release workflow runs before it builds anything |
-| Brand assets | `bun tools/ci/brand/generate-icons.ts --check` | under 1 s | Every icon and the social card were generated from the one mark, `tools/brand/mark.svg`; regenerate them without `--check` (needs `rsvg-convert` and Python with Pillow) |
-| Release output checks | `bun test ./tools/ci` | about 5 s | The installer names and containers, the launch records, the run outcome and the cask and AUR package renderers behave as their fixtures say; the workflow that runs them on produced files has not run in CI yet |
+| Layer                         | Command                                                                             | Typical time                        | What a pass shows                                                                                                                                                                                                                                                                                                                               |
+| ----------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Set-up                        | `bun run setup`                                                                     | about 10 s                          | Dependencies installed, compiler built, native runtime built                                                                                                                                                                                                                                                                                    |
+| C core and host runtime       | `bun run test:core`                                                                 | about 1 min, the first run included | The C suites pass under the address and undefined-behaviour sanitizers                                                                                                                                                                                                                                                                          |
+| Compiler                      | `bun run test:compiler:ci`                                                          | about 6 s                           | Compiler and assembler tests pass, and every failure is a listed one                                                                                                                                                                                                                                                                            |
+| Application, CLI, conformance | `bun run test:ide:ci`                                                               | about 1 min                         | The suites of the application and the conformance cases behave as listed                                                                                                                                                                                                                                                                        |
+| Lint and types                | `bun run lint`, `bun run typecheck` and `bun run build:ide`                         | about 35 s, 20 to 40 s and 15 s     | ESLint is clean, including the rules that reject an unhandled promise; every TypeScript program, tests and scripts included, type-checks; and the application builds                                                                                                                                                                            |
+| Application structure         | `bun run lint:ide` (the rules run after ESLint), or `bun tools/ci/ide-structure.ts` | under 1 s                           | No store module imports a component, no command-line module imports from `electron/`, no static import cycle exists, and no hand-written module has more than 1600 lines, except those on `tools/ci/module-size-offenders.json`; both that list and the one import it allows (`tools/ci/layering-exceptions.json`) can only shrink              |
+| C static analysis             | `bun run lint:c`                                                                    | about 15 s                          | `clang-tidy` with `.clang-tidy`, every finding an error, is clean on the core, the POSIX HAL and the host application; the Zephyr HAL and `firmware/app` are analysed too when a board build exists                                                                                                                                             |
+| Test sources                  | `bun run check:test-sources`                                                        | under 1 s                           | No test reads the text of product source or matches the assembly the compiler emitted, except the files listed for replacement in `tools/ci/pinned-source-offenders.json`                                                                                                                                                                       |
+| Binary contract               | `bun run contract:check`                                                            | about 1 s                           | Generated files match `contract.json`                                                                                                                                                                                                                                                                                                           |
+| Simulation                    | `bun run simulate packages/zplc-ide/projects/motor_plant`                           | under 1 s                           | The project's scenario tests pass on the native runtime                                                                                                                                                                                                                                                                                         |
+| Application journeys          | `bun run test:journeys`                                                             | 70 to 90 s                          | The real application passes its end-to-end journeys (needs a display)                                                                                                                                                                                                                                                                           |
+| Firmware on Linux             | `bun run setup:firmware`, then `bun run test:firmware`                              | about 6 min once, then about 4 min  | Zephyr suites pass on `native_sim`, QEMU and the size budgets                                                                                                                                                                                                                                                                                   |
+| Documentation                 | `bun run check:docs`                                                                | about 15 s warm, 1 min cold         | References are fresh, every name a page mentions exists, no sentence claims a capability that nothing executed backs, pages are complete, English and Spanish pages match in structure, every sample and configuration fragment marked as such builds and gives the result its fence states, every image is a captured one, and the site builds |
+| Release rehearsal             | `bun run release:rehearsal`                                                         | about 5 s                           | The checks the release workflow runs before it builds anything                                                                                                                                                                                                                                                                                  |
+| Brand assets                  | `bun tools/ci/brand/generate-icons.ts --check`                                      | under 1 s                           | Every icon and the social card were generated from the one mark, `tools/brand/mark.svg`; regenerate them without `--check` (needs `rsvg-convert` and Python with Pillow)                                                                                                                                                                        |
+| Release output checks         | `bun test ./tools/ci`                                                               | about 5 s                           | The installer names and containers, the launch records, the run outcome and the cask and AUR package renderers behave as their fixtures say; the workflow that runs them on produced files has not run in CI yet                                                                                                                                |
 
 A pass at one level never proves a higher one: a host test says nothing about a
 board. [Firmware testing](../development/firmware-testing.md) explains what each
@@ -58,15 +58,15 @@ firmware mode shows and what it does not.
 
 ## Contribution rules
 
-| Area | Required practice |
-|---|---|
-| Runtime and hardware | Preserve C99/HAL boundaries, safe/off failure behavior, and recovery semantics. |
-| Trust boundaries | Validate bytecode, IPC, paths, and external input before mutation. |
-| Electron | Keep the renderer unprivileged and IPC narrow and validated. |
-| Evidence | Label host, QEMU, target build, HIL, and manual results accurately. |
-| Dependencies | Add one only with a concrete need and architectural justification. |
-| Physical operations | Keep build, flash, deploy, and run/debug separate; do not automate physical control through AI or MCP. |
-| Hardware tests | A person starts every command that drives a board, at an interactive terminal, and a record says which image it tested. See [Hardware in the Loop](../development/hardware-in-the-loop.md). |
+| Area                 | Required practice                                                                                                                                                                           |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Runtime and hardware | Preserve C99/HAL boundaries, safe/off failure behavior, and recovery semantics.                                                                                                             |
+| Trust boundaries     | Validate bytecode, IPC, paths, and external input before mutation.                                                                                                                          |
+| Electron             | Keep the renderer unprivileged and IPC narrow and validated.                                                                                                                                |
+| Evidence             | Label host, QEMU, target build, HIL, and manual results accurately.                                                                                                                         |
+| Dependencies         | Add one only with a concrete need and architectural justification.                                                                                                                          |
+| Physical operations  | Keep build, flash, deploy, and run/debug separate; do not automate physical control through AI or MCP.                                                                                      |
+| Hardware tests       | A person starts every command that drives a board, at an interactive terminal, and a record says which image it tested. See [Hardware in the Loop](../development/hardware-in-the-loop.md). |
 
 Do not publish, flash hardware, deploy a PLC program, or actuate equipment
 without explicit authorization.
@@ -82,21 +82,21 @@ generated from them, and CI fails on a hand-written list of ids (LRN-028).
 2. Create `packages/zplc-ide/lessons/<id>/` with the files below.
 3. Run the generator, then the lesson CI.
 
-| File | What it holds |
-|---|---|
-| `lesson.json` | The manifest: id, version, module, level, prerequisites, languages, tracks, plant, estimated minutes, the starter and solution projects, and the reference scenario with its content hash. |
-| `scenario.json` | The reference scenario the lesson is graded by. Keep a copy in the starter's `tests/` folder so that the learner can run it from Tests; CI fails when the copy differs. |
+| File                           | What it holds                                                                                                                                                                                             |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lesson.json`                  | The manifest: id, version, module, level, prerequisites, languages, tracks, plant, estimated minutes, the starter and solution projects, and the reference scenario with its content hash.                |
+| `scenario.json`                | The reference scenario the lesson is graded by. Keep a copy in the starter's `tests/` folder so that the learner can run it from Tests; CI fails when the copy differs.                                   |
 | `text.en.json`, `text.es.json` | The text: title, summary, scope, objectives, the six stages (`objective`, `predict`, `edit`, `run`, `observe`, `reflect`), two hint levels and the fault to fix. Both files must have the same structure. |
-| `checks.json` | Optional: wrong programs that must stay red, and other correct programs that must pass. |
+| `checks.json`                  | Optional: wrong programs that must stay red, and other correct programs that must pass.                                                                                                                   |
 
 The text marks every time and value it quotes, so that CI can check it against the scenario. The
 generator expands the markup once; no lesson string is replaced when the application runs (LRN-038).
 
-| Markup | Shows | CI checks |
-|---|---|---|
-| `{{t:250}}` | `250` | The time is on the timeline of the scenario: a multiple of its tick and at most its duration. |
-| `{{assertions}}` | The number of assertions | Nothing to check: the number comes from the scenario. |
-| `{{v:Sig=true@30\|text}}` | `text` | The scenario asserts those values at 30 ms: an `AT` there, or a `FOR` or `ALWAYS` that covers it. |
+| Markup                    | Shows                    | CI checks                                                                                         |
+| ------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------- |
+| `{{t:250}}`               | `250`                    | The time is on the timeline of the scenario: a multiple of its tick and at most its duration.     |
+| `{{assertions}}`          | The number of assertions | Nothing to check: the number comes from the scenario.                                             |
+| `{{v:Sig=true@30\|text}}` | `text`                   | The scenario asserts those values at 30 ms: an `AT` there, or a `FOR` or `ALWAYS` that covers it. |
 
 ```bash
 bun tools/ci/generate-lesson-index.ts                  # writes packages/zplc-ide/src/generated/lessonIndex.ts
@@ -134,13 +134,13 @@ END_PROGRAM
 ```
 ````
 
-| Word | Meaning |
-|---|---|
-| `runnable` | The sample is compiled with the repository compiler. A sample that does not compile fails `bun run check:docs`: fix the sample, or remove the word. |
+| Word                      | Meaning                                                                                                                                                                                                                                                                                                                              |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `runnable`                | The sample is compiled with the repository compiler. A sample that does not compile fails `bun run check:docs`: fix the sample, or remove the word.                                                                                                                                                                                  |
 | `expect="Name=Value ..."` | The sample is also run on the native runtime, and every named value is compared after the last scan. `Name` is a variable of the program or a direct address such as `%QX0.0` or `%QW0` (`Name:TYPE` sets the type of an address); `Value` is `TRUE`, `FALSE` or a number. The page must say the result in words next to the sample. |
-| `scans=N`, `scan_ms=N` | How many scans to run (default 1) and the period of each in milliseconds (default 10). Only with `expect`. |
-| `fragment` | The block is a bare body (variables and statements): it is wrapped in `PROGRAM DocSample ... END_PROGRAM` before it is compiled. |
-| `language=il` | The sample is Instruction List, written in an `iecst` fence. |
+| `scans=N`, `scan_ms=N`    | How many scans to run (default 1) and the period of each in milliseconds (default 10). Only with `expect`.                                                                                                                                                                                                                           |
+| `fragment`                | The block is a bare body (variables and statements): it is wrapped in `PROGRAM DocSample ... END_PROGRAM` before it is compiled.                                                                                                                                                                                                     |
+| `language=il`             | The sample is Instruction List, written in an `iecst` fence.                                                                                                                                                                                                                                                                         |
 
 The English page and its Spanish twin mark the same samples the same way, with the same
 result. The sample is written in code and so it is the same in both languages. The check
@@ -153,12 +153,12 @@ missing.
 A page that shows a piece of `zplc.json`, a scenario or a picture of the application is
 checked the same way, by what the fence says:
 
-| Fence | What the check does |
-|---|---|
+| Fence                | What the check does                                                                                                                                                                                                                                                                                                                                                                     |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `json zplc-fragment` | The keys are merged into a minimal project for the host simulator, checked against `packages/zplc-ide/zplc.schema.json` (a key that the schema does not name is an error) and built. A fragment with `board=<ide id>` is merged into a project for that board, and every address of `io.inputs` and `io.outputs` must be a channel of the board unless it is listed under `io.virtual`. |
-| `json zplc-scenario` | The scenario is written to the `tests` folder of a project whose program is the first `runnable` Structured Text sample of the same page, and every expectation must pass on the native runtime. |
-| `json zplc-board` | The entry is checked by the validator of the board manifest (`firmware/zephyr/scripts/zplc_boards.py`) together with the manifest of this repository: a missing key, a wrong address, a channel that the rules refuse or a name that another board already has is an error. |
-| `![alt](/img/...)` | The image must be listed in `docs/static/img/manifest.json`, which `bun run docs:screenshots` writes with the commit the application was built from: a page shows no picture that automation did not capture. |
+| `json zplc-scenario` | The scenario is written to the `tests` folder of a project whose program is the first `runnable` Structured Text sample of the same page, and every expectation must pass on the native runtime.                                                                                                                                                                                        |
+| `json zplc-board`    | The entry is checked by the validator of the board manifest (`firmware/zephyr/scripts/zplc_boards.py`) together with the manifest of this repository: a missing key, a wrong address, a channel that the rules refuse or a name that another board already has is an error.                                                                                                             |
+| `![alt](/img/...)`   | The image must be listed in `docs/static/img/manifest.json`, which `bun run docs:screenshots` writes with the commit the application was built from: a page shows no picture that automation did not capture.                                                                                                                                                                           |
 
 The English page and its Spanish twin show the same fragments and scenarios. The checks
 are `bun run check:docs-config` and `bun tools/docs/capture-screenshots.ts --check`.
@@ -192,13 +192,13 @@ the refusal shows both:
 
 > Program was built for contract draft 2, this runtime is draft 3
 
-| Where | What happens on a mismatch |
-|---|---|
-| Loader (`zplc_loader_verify`) | Returns `ZPLC_LOADER_ERR_DRAFT` (`-17`). The counter is read before the version, the flags and the CRC, because another draft may lay the rest out differently. `zplc_loader_artifact_draft_counter` reads it without trusting anything else. |
-| Native simulation | `program.load` fails with the sentence above and the loaded program keeps running. The ZPLC application says it before sending anything. The runtime reports its counter in `session.hello` (`draft_counter`). |
-| Firmware upload | `zplc load` and `zplc sched load` answer `ERROR: Program was built for contract draft N, this runtime is draft M (-17)`. `zplc sys info --json` reports `draft_counter`. |
-| Hardware deploy from the ZPLC application | The preflight compares the artifact with the `draft_counter` of the connected board and refuses before anything is sent. |
-| CLI | `zplc-cli compile` states the counter of what it built. |
+| Where                                     | What happens on a mismatch                                                                                                                                                                                                                    |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Loader (`zplc_loader_verify`)             | Returns `ZPLC_LOADER_ERR_DRAFT` (`-17`). The counter is read before the version, the flags and the CRC, because another draft may lay the rest out differently. `zplc_loader_artifact_draft_counter` reads it without trusting anything else. |
+| Native simulation                         | `program.load` fails with the sentence above and the loaded program keeps running. The ZPLC application says it before sending anything. The runtime reports its counter in `session.hello` (`draft_counter`).                                |
+| Firmware upload                           | `zplc load` and `zplc sched load` answer `ERROR: Program was built for contract draft N, this runtime is draft M (-17)`. `zplc sys info --json` reports `draft_counter`.                                                                      |
+| Hardware deploy from the ZPLC application | The preflight compares the artifact with the `draft_counter` of the connected board and refuses before anything is sent.                                                                                                                      |
+| CLI                                       | `zplc-cli compile` states the counter of what it built.                                                                                                                                                                                       |
 
 An artifact built before the counter carries 0, and a firmware image that does
 not report one has none: both are refused, and the sentence says `none`. After

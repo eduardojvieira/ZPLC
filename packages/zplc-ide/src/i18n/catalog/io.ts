@@ -56,7 +56,8 @@ export const ioEs: Record<keyof typeof ioEn, string> = {
   'io.imageAddressesNoPin': 'Direcciones de la imagen que ningún pin de la placa maneja; se leen en el depurador o desde una prueba.',
   'io.remove': 'Quitar',
   'io.inputAndOutputChannels': '{boardLabel}: {length} canales de entrada y {length2} de salida',
-  'io.aRowCanOnly': 'Una fila solo puede ubicarse en un canal que tenga la placa; una variable ubicada en cualquier otro lugar hace fallar la compilación.',
+  'io.aRowCanOnly':
+    'Una fila solo puede ubicarse en un canal que tenga la placa; una variable ubicada en cualquier otro lugar hace fallar la compilación.',
   'io.channelsOf': 'Canales de {boardLabel}',
   'io.notMapped': 'Sin asignar: {value}',
   'io.address': 'Dirección',

@@ -58,7 +58,7 @@ export const WARNING_CODES = [
     'WATCHDOG_RESET_NO_EFFECT',
 ] as const;
 
-export type WarningCode = typeof WARNING_CODES[number];
+export type WarningCode = (typeof WARNING_CODES)[number];
 
 /**
  * Which warnings a build reports: `none`; `default`, the ones that point at a defect or a portability problem;
@@ -158,21 +158,24 @@ export class CodegenError extends Error {
  * `caught` as a positioned CodegenError, or null when it is not an error at all.
  * An error that has no position (line 0, or a line without a column) is placed at `fallback`.
  */
-export function codegenErrorFrom(
-    caught: unknown,
-    fallback: SourceSpan,
-): CodegenError | null {
+export function codegenErrorFrom(caught: unknown, fallback: SourceSpan): CodegenError | null {
     if (caught instanceof CodegenError) {
         if (caught.line > 0 && caught.column > 0) return caught;
-        const [line, column, endLine, endColumn] = caught.line > 0
-            ? [caught.line, 1, caught.line, 2]
-            : [fallback.line, fallback.column, fallback.endLine, fallback.endColumn];
+        const [line, column, endLine, endColumn] =
+            caught.line > 0 ? [caught.line, 1, caught.line, 2] : [fallback.line, fallback.column, fallback.endLine, fallback.endColumn];
         Object.assign(caught, { line, column, endLine, endColumn });
         return caught;
     }
     if (caught instanceof Error) {
         // an error that was not raised as one of the compiler's own is a condition it did not expect
-        return new CodegenError('INTERNAL_COMPILER_ERROR', caught.message, fallback.line, fallback.column, fallback.endLine, fallback.endColumn);
+        return new CodegenError(
+            'INTERNAL_COMPILER_ERROR',
+            caught.message,
+            fallback.line,
+            fallback.column,
+            fallback.endLine,
+            fallback.endColumn,
+        );
     }
     return null;
 }

@@ -11,9 +11,7 @@ import { SYSTEM_REGISTER_OFFSET, parseDirectAddress, type BoardChannel } from '.
 import type { ProcessImageAccess } from './programIo';
 
 export type IoAdmissionCode =
-  | 'ZPLC_DEVICE_IO_DESCRIPTION_MISSING'
-  | 'ZPLC_DEVICE_IO_DESCRIPTION_MISMATCH'
-  | 'ZPLC_DEVICE_PROGRAM_IO_MISMATCH';
+  'ZPLC_DEVICE_IO_DESCRIPTION_MISSING' | 'ZPLC_DEVICE_IO_DESCRIPTION_MISMATCH' | 'ZPLC_DEVICE_PROGRAM_IO_MISMATCH';
 
 /** The identity of the I/O description of the firmware image, as `zplc sys io --json` reports it. */
 export interface DeviceIoIdentity {
@@ -58,7 +56,11 @@ function describeChannels(channels: readonly BoardChannel[]): string {
  * Whether the program may be deployed to the board it targets.
  * `accesses` is what the code touches (undefined when it cannot be read), `device` what the firmware reported.
  */
-export function checkProgramIo({ accesses, board, device }: {
+export function checkProgramIo({
+  accesses,
+  board,
+  device,
+}: {
   readonly accesses: readonly ProcessImageAccess[] | undefined;
   readonly board: string | undefined;
   readonly device: DeviceIoIdentity | null;
@@ -66,18 +68,32 @@ export function checkProgramIo({ accesses, board, device }: {
   const identity = getBoardIoIdentity(board);
   if (!board || !identity) return { ok: true };
   if (accesses === undefined) {
-    return { ok: false, code: 'ZPLC_DEVICE_PROGRAM_IO_MISMATCH', detail: `the code of the program cannot be read, so its I/O cannot be compared with board ${identity.displayName}` };
+    return {
+      ok: false,
+      code: 'ZPLC_DEVICE_PROGRAM_IO_MISMATCH',
+      detail: `the code of the program cannot be read, so its I/O cannot be compared with board ${identity.displayName}`,
+    };
   }
   const touched = accesses.filter((access) => !(access.region === 'I' && access.byte >= SYSTEM_REGISTER_OFFSET));
   if (touched.length === 0) return { ok: true };
   if (device === null) {
-    return { ok: false, code: 'ZPLC_DEVICE_IO_DESCRIPTION_MISSING', detail: `the firmware of the board does not report its I/O description, so the I/O of the program cannot be compared with board ${identity.displayName}` };
+    return {
+      ok: false,
+      code: 'ZPLC_DEVICE_IO_DESCRIPTION_MISSING',
+      detail:
+        `the firmware of the board does not report its I/O description, so the I/O of the program cannot be compared with ` +
+        `board ${identity.displayName}`,
+    };
   }
   if (device.boardId !== identity.boardId || device.hash !== identity.hash) {
     return {
       ok: false,
       code: 'ZPLC_DEVICE_IO_DESCRIPTION_MISMATCH',
-      detail: `the firmware describes the I/O of board ${device.boardId} as ${device.hash}, the ZPLC application describes board ${identity.displayName} (${identity.boardId}) as ${identity.hash}`,
+      detail:
+        `the firmware describes the I/O of ` +
+        `board ${device.boardId} as ${device.hash}, the ZPLC application describes board ${
+          identity.displayName
+        } (${identity.boardId}) as ${identity.hash}`,
     };
   }
   const inputBytes = coveredBytes(channelsOf(board, 'I'));
@@ -133,42 +149,81 @@ export function checkLocatedVariables(
     const byte = variable.addr - base;
     if (region === 'I' && byte >= SYSTEM_REGISTER_OFFSET) continue;
     // an address the project declares virtual (an image word no pin drives) is exempt
-    if (virtualAddresses.has(variable.size === 2 && variable.bitOffset === undefined ? `%${region}W${byte / 2}` : variable.bitOffset !== undefined ? `%${region}X${byte}.${variable.bitOffset}` : `%${region}B${byte}`)) continue;
+    if (
+      virtualAddresses.has(
+        variable.size === 2 && variable.bitOffset === undefined
+          ? `%${region}W${byte / 2}`
+          : variable.bitOffset !== undefined
+            ? `%${region}X${byte}.${variable.bitOffset}`
+            : `%${region}B${byte}`,
+      )
+    )
+      continue;
     const channels = channelsOf(board, region);
-    const found = variable.bitOffset !== undefined && variable.size <= 1
-      ? channels.some((channel) => {
-          const address = parseDirectAddress(channel.address)!;
-          return address.bit === variable.bitOffset && address.byte === byte;
-        })
-      : variable.size === 2 && channels.some((channel) => {
-          const address = parseDirectAddress(channel.address)!;
-          return address.bit === undefined && address.byte === byte;
-        });
-    const wholeBytes = variable.bitOffset === undefined && variable.size !== 2
-      ? Array.from({ length: Math.max(1, variable.size) }, (_, offset) => byte + offset).every((each) => coveredBytes(channels).has(each))
-      : false;
+    const found =
+      variable.bitOffset !== undefined && variable.size <= 1
+        ? channels.some((channel) => {
+            const address = parseDirectAddress(channel.address)!;
+            return address.bit === variable.bitOffset && address.byte === byte;
+          })
+        : variable.size === 2 &&
+          channels.some((channel) => {
+            const address = parseDirectAddress(channel.address)!;
+            return address.bit === undefined && address.byte === byte;
+          });
+    const wholeBytes =
+      variable.bitOffset === undefined && variable.size !== 2
+        ? Array.from({ length: Math.max(1, variable.size) }, (_, offset) => byte + offset).every((each) => coveredBytes(channels).has(each))
+        : false;
     if (found || wholeBytes) continue;
-    const address = variable.bitOffset !== undefined
-      ? `%${region}X${byte}.${variable.bitOffset}`
-      : variable.size === 2 ? `%${region}W${byte / 2}` : byteAddress(region, byte);
+    const address =
+      variable.bitOffset !== undefined
+        ? `%${region}X${byte}.${variable.bitOffset}`
+        : variable.size === 2
+          ? `%${region}W${byte / 2}`
+          : byteAddress(region, byte);
     errors.push(
-      `Variable '${variable.name}' is located at ${address}, which board ${label(board)} has no channel for `
-      + `(${region === 'I' ? 'inputs' : 'outputs'}: ${describeChannels(channels)})`,
+      `Variable '${variable.name}' is located at ${address}, which board ${label(board)} has no channel for ` +
+        `(${region === 'I' ? 'inputs' : 'outputs'}: ${describeChannels(channels)})`,
     );
   }
   return errors;
 }
 
 /** The located variables of a compiler debug map (the variables of every POU that sit in the process images). */
-export function locatedVariablesOf(map: { readonly pou: Readonly<Record<string, { readonly vars: Readonly<Record<string, {
-  readonly addr: number; readonly size: number; readonly region: string; readonly bitOffset?: number }>> }>> }): LocatedVariable[] {
+export function locatedVariablesOf(map: {
+  readonly pou: Readonly<
+    Record<
+      string,
+      {
+        readonly vars: Readonly<
+          Record<
+            string,
+            {
+              readonly addr: number;
+              readonly size: number;
+              readonly region: string;
+              readonly bitOffset?: number;
+            }
+          >
+        >;
+      }
+    >
+  >;
+}): LocatedVariable[] {
   const found = new Map<string, LocatedVariable>();
   for (const pou of Object.values(map.pou)) {
     for (const [name, info] of Object.entries(pou.vars)) {
       if (info.region !== 'IPI' && info.region !== 'OPI') continue;
       const key = `${info.region}:${info.addr}:${info.bitOffset ?? -1}:${name}`;
       if (!found.has(key)) {
-        found.set(key, { name, region: info.region, addr: info.addr, size: info.size, ...(info.bitOffset === undefined ? {} : { bitOffset: info.bitOffset }) });
+        found.set(key, {
+          name,
+          region: info.region,
+          addr: info.addr,
+          size: info.size,
+          ...(info.bitOffset === undefined ? {} : { bitOffset: info.bitOffset }),
+        });
       }
     }
   }

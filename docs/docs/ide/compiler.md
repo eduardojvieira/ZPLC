@@ -71,17 +71,17 @@ warning has a stable code, a position and, in a project, the file it belongs to;
 the ZPLC application, the CLI (`Warning:`) and the Tool API show the same warnings for the
 same project.
 
-| Code | Reported when | Level |
-|---|---|---|
-| `NON_IEC_HEX_LITERAL` | `0xFF` is written; IEC 61131-3 writes `16#FF` | `default` |
-| `NON_IEC_REAL_LITERAL` | a real literal has an exponent and no fraction, `1e3`; IEC writes `1.0E3` | `default` |
-| `IMPLICIT_NARROWING` | a value is stored in a narrower type and keeps its low bits (an error under `compiler.strictTypes`) | `default` |
-| `UNREACHABLE_STATEMENT` | a statement follows `RETURN`, `EXIT` or `CONTINUE`, or an `IF` or `CASE` with an `ELSE` whose every branch leaves, in the same list: one warning for the rest of the list | `default` |
-| `UNUSED_VARIABLE` | a `VAR` or `VAR_TEMP` variable is never read nor written | `default` |
-| `WRITE_ONLY_VARIABLE` | a `VAR` or `VAR_TEMP` variable is written and never read | `all` |
-| `OPTION_IGNORED` | an option of `zplc.json` has a value that changes nothing | `default` |
-| `SOURCE_NOT_COMPILED` | a Structured Text file of the project folder is in neither `src` nor a listed library | `default` |
-| `WATCHDOG_RESET_NO_EFFECT` | `WATCHDOG_RESET()` is called: it does nothing, the runtime feeds the hardware watchdog itself after each completed scan | `default` |
+| Code                       | Reported when                                                                                                                                                             | Level     |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| `NON_IEC_HEX_LITERAL`      | `0xFF` is written; IEC 61131-3 writes `16#FF`                                                                                                                             | `default` |
+| `NON_IEC_REAL_LITERAL`     | a real literal has an exponent and no fraction, `1e3`; IEC writes `1.0E3`                                                                                                 | `default` |
+| `IMPLICIT_NARROWING`       | a value is stored in a narrower type and keeps its low bits (an error under `compiler.strictTypes`)                                                                       | `default` |
+| `UNREACHABLE_STATEMENT`    | a statement follows `RETURN`, `EXIT` or `CONTINUE`, or an `IF` or `CASE` with an `ELSE` whose every branch leaves, in the same list: one warning for the rest of the list | `default` |
+| `UNUSED_VARIABLE`          | a `VAR` or `VAR_TEMP` variable is never read nor written                                                                                                                  | `default` |
+| `WRITE_ONLY_VARIABLE`      | a `VAR` or `VAR_TEMP` variable is written and never read                                                                                                                  | `all`     |
+| `OPTION_IGNORED`           | an option of `zplc.json` has a value that changes nothing                                                                                                                 | `default` |
+| `SOURCE_NOT_COMPILED`      | a Structured Text file of the project folder is in neither `src` nor a listed library                                                                                     | `default` |
+| `WATCHDOG_RESET_NO_EFFECT` | `WATCHDOG_RESET()` is called: it does nothing, the runtime feeds the hardware watchdog itself after each completed scan                                                   | `default` |
 
 A branch that a constant condition disables (`IF FALSE THEN`) is not
 unreachable code: IEC 61131-3 defines no rule for it and the compiler evaluates
@@ -92,14 +92,14 @@ another unit reads as `instance.member` counts as used.
 
 ## Project options
 
-| Option | Values | Default | Effect |
-|---|---|---|---|
-| `compiler.warnings` | `none`, `default`, `all` | `default` | Which warnings the build reports. `none` reports none, `all` adds `WRITE_ONLY_VARIABLE`. |
-| `compiler.strictTypes` | `true`, `false` | `false` | An implicit narrowing is an error at the value, naming both types, instead of the warning `IMPLICIT_NARROWING`. |
-| `compiler.debug` | `true`, `false` | `true` | The debug map carries the statement ranges and line mappings that breakpoints and the current line need. With `false` it lists the variables and the memory only; the code is the same. |
-| `compiler.optimization` | `none`, `size`, `speed` | `none` | The compiler has one code generator: the code is the same at every value. `size` and `speed` are accepted so that old projects build, and the build warns with `OPTION_IGNORED`. |
-| `build.generateDebugInfo` | `true`, `false` | `false` | `zplc-cli compile <workspace> --output <file>` also writes the debug map beside the artifact, as `<file>.map.json`. |
-| `libraries` | list of folders | none | Folders of source files compiled with the project, see below. |
+| Option                    | Values                   | Default   | Effect                                                                                                                                                                                  |
+| ------------------------- | ------------------------ | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `compiler.warnings`       | `none`, `default`, `all` | `default` | Which warnings the build reports. `none` reports none, `all` adds `WRITE_ONLY_VARIABLE`.                                                                                                |
+| `compiler.strictTypes`    | `true`, `false`          | `false`   | An implicit narrowing is an error at the value, naming both types, instead of the warning `IMPLICIT_NARROWING`.                                                                         |
+| `compiler.debug`          | `true`, `false`          | `true`    | The debug map carries the statement ranges and line mappings that breakpoints and the current line need. With `false` it lists the variables and the memory only; the code is the same. |
+| `compiler.optimization`   | `none`, `size`, `speed`  | `none`    | The compiler has one code generator: the code is the same at every value. `size` and `speed` are accepted so that old projects build, and the build warns with `OPTION_IGNORED`.        |
+| `build.generateDebugInfo` | `true`, `false`          | `false`   | `zplc-cli compile <workspace> --output <file>` also writes the debug map beside the artifact, as `<file>.map.json`.                                                                     |
+| `libraries`               | list of folders          | none      | Folders of source files compiled with the project, see below.                                                                                                                           |
 
 A value that is not in the table is a project error that names the option.
 
@@ -144,13 +144,13 @@ The code generator writes assembly text and the assembler turns it into the
 bytecode of the artifact. An operand has to fit its field. A value that does not
 is an error that names the line and the field; the assembler never truncates it.
 
-| Field | Opcodes | Accepted values |
-|---|---|---|
-| 8, 16 or 32-bit immediate | `PUSH8`, `PICK`, `PUSH16`, `PUSH32` | from -2^(n-1) to 2^n - 1: written signed or unsigned, the VM sign-extends it |
-| 16-bit memory address | `LOAD8` to `STORE64` | 0 to 65535 |
-| 16-bit code address | `JMP`, `JZ`, `JNZ`, `CALL` | an instruction of the code, 0 to 65535 |
-| signed 8-bit offset | `JR`, `JRZ`, `JRNZ` | -128 to 127 from the next instruction |
-| 32-bit kind | `COMM_EXEC`, `COMM_STATUS`, `COMM_RESET` | 0 to 4294967295 |
+| Field                     | Opcodes                                  | Accepted values                                                              |
+| ------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------- |
+| 8, 16 or 32-bit immediate | `PUSH8`, `PICK`, `PUSH16`, `PUSH32`      | from -2^(n-1) to 2^n - 1: written signed or unsigned, the VM sign-extends it |
+| 16-bit memory address     | `LOAD8` to `STORE64`                     | 0 to 65535                                                                   |
+| 16-bit code address       | `JMP`, `JZ`, `JNZ`, `CALL`               | an instruction of the code, 0 to 65535                                       |
+| signed 8-bit offset       | `JR`, `JRZ`, `JRNZ`                      | -128 to 127 from the next instruction                                        |
+| 32-bit kind               | `COMM_EXEC`, `COMM_STATUS`, `COMM_RESET` | 0 to 4294967295                                                              |
 
 A jump to a label after the last instruction, to a numeric target outside the
 code, or to a label further than 127 bytes with a relative jump is an error. So
@@ -163,12 +163,12 @@ type of the lines it emits is built from that table, and every line is checked
 when it is written. A line that is not in the table is an internal compiler
 error that names it; it never reaches the assembler.
 
-| Directive | Effect on the output |
-|---|---|
-| `.ORG addr` | The next byte is at `addr`; the gap is filled with `NOP` bytes. Moving backwards is an error. |
-| `.ENTRY label` or `.ENTRY addr` | Sets the entry point of the file; it has to be an instruction of the code. |
-| `.DB v, v, ...` and `.BYTE` | Emits each value, from -128 to 255, as one byte at this place. A label after it is past the bytes. The loader verifies the code segment as instructions, so the bytes must decode as such. |
-| `.TAG addr type id value` | Adds a variable tag to the TAGS segment; the four numbers have to fit 16, 8, 8 and 32 bits. |
+| Directive                       | Effect on the output                                                                                                                                                                       |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `.ORG addr`                     | The next byte is at `addr`; the gap is filled with `NOP` bytes. Moving backwards is an error.                                                                                              |
+| `.ENTRY label` or `.ENTRY addr` | Sets the entry point of the file; it has to be an instruction of the code.                                                                                                                 |
+| `.DB v, v, ...` and `.BYTE`     | Emits each value, from -128 to 255, as one byte at this place. A label after it is past the bytes. The loader verifies the code segment as instructions, so the bytes must decode as such. |
+| `.TAG addr type id value`       | Adds a variable tag to the TAGS segment; the four numbers have to fit 16, 8, 8 and 32 bits.                                                                                                |
 
 ## Build identity
 

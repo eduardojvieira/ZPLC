@@ -6,7 +6,15 @@ import { buildWasmRuntime, isCi, runtimeModuleSource, WASM_RUNTIME_MODULE_ID, ty
 // IDE-025: the browser runtime is built with the IDE. A machine without clang and wasm-ld degrades with a reason, and CI,
 // where it is built for the release, fails; a build that fails fails everywhere.
 
-const MANIFEST = { file: 'zplc-runtime.wasm', bytes: 3, sha256: 'ab'.repeat(32), commit: 'c'.repeat(40), dirty: false, version: '2.0.0', toolchain: 'clang version 23' };
+const MANIFEST = {
+  file: 'zplc-runtime.wasm',
+  bytes: 3,
+  sha256: 'ab'.repeat(32),
+  commit: 'c'.repeat(40),
+  dirty: false,
+  version: '2.0.0',
+  toolchain: 'clang version 23',
+};
 
 /** A builder that wrote its two files, as tools/wasm-core/build.ts does with --out and --manifest. */
 function wrote(command: string[]): Spawned {
@@ -15,7 +23,11 @@ function wrote(command: string[]): Spawned {
   return { status: 0, stdout: '', stderr: '' };
 }
 
-const missing: Spawned = { status: 3, stdout: '', stderr: 'wasm-core: cannot build the WebAssembly runtime: clang and wasm-ld (the lld package) not found on the PATH\n' };
+const missing: Spawned = {
+  status: 3,
+  stdout: '',
+  stderr: 'wasm-core: cannot build the WebAssembly runtime: clang and wasm-ld (the lld package) not found on the PATH\n',
+};
 
 describe('the build of the browser runtime inside the IDE build (IDE-025)', () => {
   it('embeds the module and its manifest when the tools are there', () => {
@@ -27,7 +39,14 @@ describe('the build of the browser runtime inside the IDE build (IDE-025)', () =
 
   it('runs the builder of tools/wasm-core with an output and a manifest in a temporary folder', () => {
     let seen: string[] = [];
-    buildWasmRuntime({ root: '/repo', ci: false, spawn: (command) => { seen = command; return wrote(command); } });
+    buildWasmRuntime({
+      root: '/repo',
+      ci: false,
+      spawn: (command) => {
+        seen = command;
+        return wrote(command);
+      },
+    });
     expect(seen[1]).toBe('/repo/tools/wasm-core/build.ts');
     expect(seen[seen.indexOf('--out') + 1]).toMatch(/zplc-ide-wasm-.*\/zplc-runtime\.wasm$/);
     expect(seen[seen.indexOf('--manifest') + 1]).toMatch(/zplc-runtime\.json$/);

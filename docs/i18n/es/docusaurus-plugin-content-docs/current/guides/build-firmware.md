@@ -3,7 +3,7 @@ slug: /guides/build-firmware
 id: build-firmware
 title: Compilar el firmware desde el código fuente
 sidebar_label: Compilar el firmware
-description: "Cómo compilar la imagen del runtime de ZPLC para una placa desde el código fuente con el script del repositorio, y qué demuestra una compilación terminada."
+description: 'Cómo compilar la imagen del runtime de ZPLC para una placa desde el código fuente con el script del repositorio, y qué demuestra una compilación terminada.'
 tags: [how-to, hardware, firmware]
 ---
 
@@ -56,8 +56,8 @@ west build -p always -b rpi_pico/rp2040 firmware/app
 
 ## Qué está verificado y qué no
 
-| Parte | Verificado | Nivel |
-| --- | --- | --- |
+| Parte                                                      | Verificado                                       | Nivel       |
+| ---------------------------------------------------------- | ------------------------------------------------ | ----------- |
 | El firmware de cada placa compila y cabe en su presupuesto | Integración continua, con los comandos de arriba | Compilación |
-| Los pasos de esta página en una máquina limpia | No ejecutados aquí | Ninguno |
-| Que la imagen corra en la placa | No probado | Ninguno |
+| Los pasos de esta página en una máquina limpia             | No ejecutados aquí                               | Ninguno     |
+| Que la imagen corra en la placa                            | No probado                                       | Ninguno     |

@@ -2,12 +2,6 @@
   "requirement": "CMP-007",
   "title": "the END_IF of a broken IF is not a second error",
   "build": "fails",
-  "lines": [
-    5,
-    10
-  ],
-  "codes": [
-    "UNEXPECTED_TOKEN",
-    "UNEXPECTED_TOKEN"
-  ]
+  "lines": [5, 10],
+  "codes": ["UNEXPECTED_TOKEN", "UNEXPECTED_TOKEN"]
 }

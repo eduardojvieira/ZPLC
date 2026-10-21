@@ -34,26 +34,36 @@ export function wasmCapabilityProfile(storage: WasmRetainStorage = 'project'): N
       {
         name: 'tasks',
         status: 'degraded',
-        reason: 'Cyclic tasks run on the scheduler core of the firmware, but the browser releases them from its own timers; event and interrupt tasks do not exist in simulation.',
+        reason:
+          'Cyclic tasks run on the scheduler core of the firmware, but the browser releases them from its own timers; event and ' +
+          'interrupt tasks do not exist in simulation.',
         recommended_action: 'Confirm task timing and deadline behaviour on hardware.',
       },
       {
         name: 'timing',
         status: 'degraded',
-        reason: 'The scan period follows the browser clock and its timers, which are throttled in a background tab and have no real-time guarantee: a scan can run late and a deadline miss reports the browser, not the target. What is deterministic is the result of each scan, not when it happens.',
+        reason:
+          'The scan period follows the browser clock and its timers, which are throttled in a background tab and have no real-time ' +
+          'guarantee: a scan can run late and a deadline miss reports the browser, not the target. What is deterministic is the result ' +
+          'of each scan, not when it happens.',
         recommended_action: 'Use a scenario with a virtual clock in the native simulation for timing, or hardware.',
       },
       storage === 'project'
         ? {
             name: 'retentive-memory',
             status: 'degraded',
-            reason: 'RETAIN follows the same rules as the firmware (checksum, layout, program identity, two alternating records), and the records are written to the build folder of the open project after the scan that saves them: closing the page between the save and the write can lose that one record, and the previous one stays valid.',
+            reason:
+              'RETAIN follows the same rules as the firmware (checksum, layout, program identity, two alternating records), and the ' +
+              'records are written to the build folder of the open project after the scan that saves them: closing the page between ' +
+              'the save and the write can lose that one record, and the previous one stays valid.',
             recommended_action: 'Confirm power-cycle behaviour of retained values on hardware.',
           }
         : {
             name: 'retentive-memory',
             status: 'degraded',
-            reason: 'No project folder is open, so RETAIN records live in the memory of this page and are gone when it closes. The rules are the same as the firmware; the storage is not.',
+            reason:
+              'No project folder is open, so RETAIN records live in the memory of this page and are gone when it closes. The rules are ' +
+              'the same as the firmware; the storage is not.',
             recommended_action: 'Open a project folder, or use the native simulation.',
           },
       {

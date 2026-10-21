@@ -65,21 +65,19 @@ static void open_frame(const uint8_t *buf, size_t total, zplc_proto_frame_t *fra
   (void)total;
 }
 
-size_t zplc_proto_write_header(uint8_t *out, uint8_t kind, uint8_t message, uint32_t sequence, uint16_t length,
-                               int authenticated) {
+size_t zplc_proto_write_header(uint8_t *out, uint8_t kind, uint8_t message, uint32_t sequence, uint16_t length, int authenticated) {
   out[ZPLC_PROTO_OFFSET_SYNC] = ZPLC_PROTO_SYNC0;
   out[ZPLC_PROTO_OFFSET_SYNC + 1U] = ZPLC_PROTO_SYNC1;
   out[ZPLC_PROTO_OFFSET_VERSION] = (uint8_t)ZPLC_PROTO_VERSION;
-  out[ZPLC_PROTO_OFFSET_FLAGS] =
-      (uint8_t)((kind & ZPLC_PROTO_KIND_MASK) | (authenticated != 0 ? ZPLC_PROTO_FLAG_AUTH : 0U));
+  out[ZPLC_PROTO_OFFSET_FLAGS] = (uint8_t)((kind & ZPLC_PROTO_KIND_MASK) | (authenticated != 0 ? ZPLC_PROTO_FLAG_AUTH : 0U));
   out[ZPLC_PROTO_OFFSET_MESSAGE] = message;
   zplc_put_u32_le(out + ZPLC_PROTO_OFFSET_SEQUENCE, sequence);
   zplc_put_u16_le(out + ZPLC_PROTO_OFFSET_LENGTH, length);
   return ZPLC_PROTO_HEADER_BYTES;
 }
 
-size_t zplc_proto_begin(uint8_t *out, size_t capacity, uint8_t kind, uint8_t message, uint32_t sequence,
-                        const uint8_t *payload, uint16_t length, int authenticated) {
+size_t zplc_proto_begin(uint8_t *out, size_t capacity, uint8_t kind, uint8_t message, uint32_t sequence, const uint8_t *payload,
+                        uint16_t length, int authenticated) {
   if (out == NULL || length > ZPLC_PROTO_PAYLOAD_MAX_HARD || (length != 0U && payload == NULL) ||
       capacity < zplc_proto_frame_size(length, authenticated)) {
     return 0U;
@@ -106,8 +104,8 @@ size_t zplc_proto_finish(uint8_t *out, size_t used, const uint8_t *mac) {
   return end + ZPLC_PROTO_CRC_BYTES;
 }
 
-size_t zplc_proto_encode(uint8_t *out, size_t capacity, uint8_t kind, uint8_t message, uint32_t sequence,
-                         const uint8_t *payload, uint16_t length) {
+size_t zplc_proto_encode(uint8_t *out, size_t capacity, uint8_t kind, uint8_t message, uint32_t sequence, const uint8_t *payload,
+                         uint16_t length) {
   const size_t used = zplc_proto_begin(out, capacity, kind, message, sequence, payload, length, 0);
 
   return used == 0U ? 0U : zplc_proto_finish(out, used, NULL);
@@ -142,9 +140,7 @@ void zplc_proto_decoder_init(zplc_proto_decoder_t *decoder, size_t payload_max) 
   decoder->payload_max = payload_max > ZPLC_PROTO_PAYLOAD_MAX ? ZPLC_PROTO_PAYLOAD_MAX : payload_max;
 }
 
-void zplc_proto_decoder_reset(zplc_proto_decoder_t *decoder) {
-  decoder->fill = 0U;
-}
+void zplc_proto_decoder_reset(zplc_proto_decoder_t *decoder) { decoder->fill = 0U; }
 
 static void discard_first(zplc_proto_decoder_t *decoder) {
   decoder->fill -= 1U;
@@ -172,8 +168,8 @@ static void abandon_candidate(zplc_proto_decoder_t *decoder, int reason) {
   discard_first(decoder);
 }
 
-void zplc_proto_decoder_feed(zplc_proto_decoder_t *decoder, const uint8_t *data, size_t length,
-                             zplc_proto_frame_fn on_frame, void *context) {
+void zplc_proto_decoder_feed(zplc_proto_decoder_t *decoder, const uint8_t *data, size_t length, zplc_proto_frame_fn on_frame,
+                             void *context) {
   size_t index;
 
   for (index = 0U; index < length; index++) {

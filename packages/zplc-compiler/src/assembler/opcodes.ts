@@ -25,7 +25,7 @@ import { Opcode as GeneratedOpcode, OPCODE_TABLE, getOperandSize as generatedOpe
  */
 export const Opcode = GeneratedOpcode;
 
-export type OpcodeValue = typeof Opcode[keyof typeof Opcode];
+export type OpcodeValue = (typeof Opcode)[keyof typeof Opcode];
 
 /**
  * Opcode name to value lookup table.
@@ -35,9 +35,7 @@ export const OPCODE_BY_NAME: Record<string, number> = { ...Opcode };
 /**
  * Opcode value to name lookup table.
  */
-export const OPCODE_BY_VALUE: Record<number, string> = Object.fromEntries(
-    Object.entries(Opcode).map(([key, val]) => [val, key])
-);
+export const OPCODE_BY_VALUE: Record<number, string> = Object.fromEntries(Object.entries(Opcode).map(([key, val]) => [val, key]));
 
 /**
  * Get the operand size in bytes for an opcode.
@@ -82,8 +80,7 @@ export function isAddressOperand(opcode: number): boolean {
  * Pre-computed operand sizes for all known opcodes.
  */
 export const OPERAND_SIZES: Record<number, number> = Object.fromEntries(
-    (Object.values(Opcode) as number[])
-        .map((opcode) => [opcode, getOperandSize(opcode)])
+    (Object.values(Opcode) as number[]).map((opcode) => [opcode, getOperandSize(opcode)]),
 );
 
 /**
@@ -113,7 +110,13 @@ export function operandField(opcode: number): OperandField | undefined {
     if (!entry || entry.operand === 0) return undefined;
     const bits = entry.operand * 8;
     if (opcodeHasFlag(opcode, 'relative')) {
-        return { description: `signed ${bits}-bit offset`, min: -(2 ** (bits - 1)), max: 2 ** (bits - 1) - 1, relative: true, codeAddress: false };
+        return {
+            description: `signed ${bits}-bit offset`,
+            min: -(2 ** (bits - 1)),
+            max: 2 ** (bits - 1) - 1,
+            relative: true,
+            codeAddress: false,
+        };
     }
     if (opcodeHasFlag(opcode, 'absolute')) {
         return { description: `${bits}-bit code address`, min: 0, max: 2 ** bits - 1, relative: false, codeAddress: true };

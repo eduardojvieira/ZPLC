@@ -3,7 +3,7 @@ slug: /tutorials/blink-without-hardware
 id: blink-without-hardware
 title: Blink sin hardware
 sidebar_label: Blink sin hardware
-description: "Desde la descarga de ZPLC hasta una salida simulada que conmuta y una prueba de escenario que pasa, sin ninguna placa."
+description: 'Desde la descarga de ZPLC hasta una salida simulada que conmuta y una prueba de escenario que pasa, sin ninguna placa.'
 tags: [tutorial, simulation, structured-text]
 ---
 
@@ -185,12 +185,12 @@ a pasar.
 
 ## Qué demuestra esto y qué no
 
-| Afirmación | Evidencia | Nivel |
-| --- | --- | --- |
-| El programa compila, se ejecuta en el simulador y su salida conmuta | La verificación de la documentación ejecuta el código de la página | Host |
-| Los siete pasos funcionan en la aplicación real | El recorrido de extremo a extremo `Blink without hardware (the tutorial)` de `bun run test:journeys` los realiza, de modo que esta página no puede separarse del producto | Host |
-| El escenario pasa y falla como se describe | ZPLC ejecuta `tests/blinky-visual.scenario.json` con el reloj virtual del simulador | Host |
-| Cualquier cosa sobre una placa | Nada en esta página | Aún no verificado en hardware: vea [Compatibilidad de hardware](../reference/capabilities-evidence.md) |
+| Afirmación                                                          | Evidencia                                                                                                                                                                 | Nivel                                                                                                  |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| El programa compila, se ejecuta en el simulador y su salida conmuta | La verificación de la documentación ejecuta el código de la página                                                                                                        | Host                                                                                                   |
+| Los siete pasos funcionan en la aplicación real                     | El recorrido de extremo a extremo `Blink without hardware (the tutorial)` de `bun run test:journeys` los realiza, de modo que esta página no puede separarse del producto | Host                                                                                                   |
+| El escenario pasa y falla como se describe                          | ZPLC ejecuta `tests/blinky-visual.scenario.json` con el reloj virtual del simulador                                                                                       | Host                                                                                                   |
+| Cualquier cosa sobre una placa                                      | Nada en esta página                                                                                                                                                       | Aún no verificado en hardware: vea [Compatibilidad de hardware](../reference/capabilities-evidence.md) |
 
 Un resultado aprobado aquí es un resultado de host con el reloj virtual del simulador.
 

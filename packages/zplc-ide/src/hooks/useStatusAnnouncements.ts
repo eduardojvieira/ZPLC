@@ -9,7 +9,10 @@ import { useIDEStore } from '../store/useIDEStore';
 import { announce } from '../utils/announce';
 import { forceAnnouncements, type ForceSnapshot } from '../utils/forceAnnouncements';
 
-const snapshotOf = (state: ReturnType<typeof useIDEStore.getState>): ForceSnapshot => ({ paths: [...state.debug.forcedValues.keys()], unconfirmed: state.debug.forcesUnconfirmed });
+const snapshotOf = (state: ReturnType<typeof useIDEStore.getState>): ForceSnapshot => ({
+  paths: [...state.debug.forcedValues.keys()],
+  unconfirmed: state.debug.forcesUnconfirmed,
+});
 
 /** Mounted once, by the application. */
 export function useStatusAnnouncements(): void {

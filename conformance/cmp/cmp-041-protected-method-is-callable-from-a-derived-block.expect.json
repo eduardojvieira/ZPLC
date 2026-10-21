@@ -1,9 +1,7 @@
 {
   "requirement": "CMP-041",
   "title": "a PROTECTED method is callable inside the blocks that extend it, and a PRIVATE one inside its own block",
-  "matrix": [
-    "pous.public-private-protected-abstract"
-  ],
+  "matrix": ["pous.public-private-protected-abstract"],
   "note": "IEC 61131-3 ed. 3, access specifiers of methods: PROTECTED is accessible in the block and the blocks that extend it; PRIVATE only in the block that declares it",
   "scans": 1,
   "scanMs": 10,

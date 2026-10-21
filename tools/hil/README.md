@@ -30,26 +30,26 @@ says so and is never hardware evidence.
 
 ## Exit status (HIL-004)
 
-| Status | Meaning |
-|--------|---------|
-| 0 | every check held |
-| 1 | a check failed, or the script made no check |
-| 2 | no device could be used: no port chosen, the port would not open, or the fixture would not compile |
-| 77 | skipped: the firmware image has no HIL trace (`CONFIG_ZPLC_HIL_DEBUG` is off, as in a release image); not a pass |
+| Status | Meaning                                                                                                          |
+| ------ | ---------------------------------------------------------------------------------------------------------------- |
+| 0      | every check held                                                                                                 |
+| 1      | a check failed, or the script made no check                                                                      |
+| 2      | no device could be used: no port chosen, the port would not open, or the fixture would not compile               |
+| 77     | skipped: the firmware image has no HIL trace (`CONFIG_ZPLC_HIL_DEBUG` is off, as in a release image); not a pass |
 
 ## Scripts
 
-| Script | What it does |
-|--------|--------------|
-| `run_chain.py` | The whole chain for one board, prompting for each physical step; writes a run record (HIL-009, HIL-012). |
-| `run_all_languages.py` | The IL, LD, FBD, SFC and ST suites and the reference projects. |
-| `run_all_hil_tests.py` | The opcode-level scripts. They need a firmware image with the HIL trace. |
-| `test_il_suite.py`, `test_ld_suite.py`, `test_fbd_suite.py`, `test_sfc_suite.py`, `test_st_suite.py`, `test_examples_suite.py` | A language's fixtures, or the reference projects, on the device. |
-| `test_*.py` (the others) | One fixture, or one family of opcodes, on the device. Each exits non-zero when a value differs. |
-| `test_modbus_tcp.py`, `test_modbus_rtu_serial.py`, `test_comm_security.py` | Fieldbus and communication security on a board, against a local endpoint. They take `--port`. |
-| `verify_compilation.py` | Compiles every fixture and reference project (no device). Exits 1 when one does not compile. |
-| `run_board_matrix.py` | The cross-build of every supported board (no device). |
-| `audit_*.py`, `validate_*.py` | Repository truth checks that CI runs. |
+| Script                                                                                                                         | What it does                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `run_chain.py`                                                                                                                 | The whole chain for one board, prompting for each physical step; writes a run record (HIL-009, HIL-012). |
+| `run_all_languages.py`                                                                                                         | The IL, LD, FBD, SFC and ST suites and the reference projects.                                           |
+| `run_all_hil_tests.py`                                                                                                         | The opcode-level scripts. They need a firmware image with the HIL trace.                                 |
+| `test_il_suite.py`, `test_ld_suite.py`, `test_fbd_suite.py`, `test_sfc_suite.py`, `test_st_suite.py`, `test_examples_suite.py` | A language's fixtures, or the reference projects, on the device.                                         |
+| `test_*.py` (the others)                                                                                                       | One fixture, or one family of opcodes, on the device. Each exits non-zero when a value differs.          |
+| `test_modbus_tcp.py`, `test_modbus_rtu_serial.py`, `test_comm_security.py`                                                     | Fieldbus and communication security on a board, against a local endpoint. They take `--port`.            |
+| `verify_compilation.py`                                                                                                        | Compiles every fixture and reference project (no device). Exits 1 when one does not compile.             |
+| `run_board_matrix.py`                                                                                                          | The cross-build of every supported board (no device).                                                    |
+| `audit_*.py`, `validate_*.py`                                                                                                  | Repository truth checks that CI runs.                                                                    |
 
 ## Bench utilities (HIL-004)
 
@@ -57,15 +57,15 @@ These do not judge a result, so they cannot fail a run. A person runs them to lo
 listed with their reason in [`non-gating.json`](non-gating.json), which `test_hil_scripts.py` keeps in step with this
 table and with the directory.
 
-| Script | Purpose |
-|--------|---------|
-| `check_alive.py` | Wake a board's shell with a CR, ask `help`, and print what comes back. |
-| `check_hw.py` | Open the port, wake the shell, ask `help` and print the first bytes of the answer. |
-| `debug_peek.py` | Write the input and output images with `zplc dbg poke` while the board is stopped, then read them back. |
-| `inspect_zplc.py` | Print the header, segment table and contract draft of a `.zplc` file (no device). |
-| `rescue.py` | Send a break, then `zplc stop` ten times and `zplc reset`, to bring back a board that is stuck. |
-| `rescue_device.py` | Send Ctrl+C and Enter five times, then `zplc stop`, and say whether the board answered. |
-| `sniff.py` | Load a four-byte program, start it in verbose HIL mode and print every line the shell says for five seconds. |
+| Script             | Purpose                                                                                                      |
+| ------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `check_alive.py`   | Wake a board's shell with a CR, ask `help`, and print what comes back.                                       |
+| `check_hw.py`      | Open the port, wake the shell, ask `help` and print the first bytes of the answer.                           |
+| `debug_peek.py`    | Write the input and output images with `zplc dbg poke` while the board is stopped, then read them back.      |
+| `inspect_zplc.py`  | Print the header, segment table and contract draft of a `.zplc` file (no device).                            |
+| `rescue.py`        | Send a break, then `zplc stop` ten times and `zplc reset`, to bring back a board that is stuck.              |
+| `rescue_device.py` | Send Ctrl+C and Enter five times, then `zplc stop`, and say whether the board answered.                      |
+| `sniff.py`         | Load a four-byte program, start it in verbose HIL mode and print every line the shell says for five seconds. |
 
 ## Fixtures
 
@@ -81,7 +81,6 @@ built with `hil_debug.conf` of this directory on top of the profile, `west build
 -DEXTRA_CONF_FILE=<path of hil_debug.conf>`, and `run_chain.py <board> --hil-trace` prints that command with the path
 filled in and records it. The identity the image reports (`zplc sys build --json`, `options`) says whether the trace is
 on, and the record keeps it. On a release image those scripts exit 77.
-
 
 ## Run records (HIL-009)
 
@@ -108,10 +107,10 @@ log says when it was not written and why. Adding it to `evidence_refs` of the bo
 
 ## What a person must do
 
-| Step | Who |
-|------|-----|
-| Flash the image | a person; no tool here flashes |
-| Name the port when more than one device matches | a person (`--port`) |
-| Type the identity the device reports at each physical step | a person; `run_chain.py` and `zplc-hil run` refuse without an interactive terminal and have no flag that skips it |
-| Wiring for the loopback, analog and fieldbus items of HIL-010 | a person, by the bench guide (HIL-014, docs/docs/development/hardware-in-the-loop.md) |
-| Turn the potentiometer, cut the power, plug the board back in | a person, at the prompt of the chain, typing the identity the device reports |
+| Step                                                          | Who                                                                                                               |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Flash the image                                               | a person; no tool here flashes                                                                                    |
+| Name the port when more than one device matches               | a person (`--port`)                                                                                               |
+| Type the identity the device reports at each physical step    | a person; `run_chain.py` and `zplc-hil run` refuse without an interactive terminal and have no flag that skips it |
+| Wiring for the loopback, analog and fieldbus items of HIL-010 | a person, by the bench guide (HIL-014, docs/docs/development/hardware-in-the-loop.md)                             |
+| Turn the potentiometer, cut the power, plug the board back in | a person, at the prompt of the chain, typing the identity the device reports                                      |

@@ -7,14 +7,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import {
-    getFB,
-    getFn,
-    isFB,
-    isFn,
-    getAllFBNames,
-    getAllFnNames,
-} from './index.ts';
+import { getFB, getFn, isFB, isFn, getAllFBNames, getAllFnNames } from './index.ts';
 import type { FunctionBlockDef, FunctionDef, CodeGenContext } from './types.ts';
 import { conversionResultType } from './conversions.ts';
 import type { Expression } from '../ast.ts';
@@ -38,7 +31,10 @@ const COMM_FB_NAMES = [
 // Helper to capture emitted assembly
 // ============================================================================
 
-function createMockContext(baseAddress: number, instanceName: string): {
+function createMockContext(
+    baseAddress: number,
+    instanceName: string,
+): {
     ctx: CodeGenContext;
     output: string[];
     labelCounter: { value: number };
@@ -62,7 +58,9 @@ function createMockContext(baseAddress: number, instanceName: string): {
                 output.push(`    ; TODO: ${expr.kind}`);
             }
         },
-        fail: (message: string) => { throw new Error(message); },
+        fail: (message: string) => {
+            throw new Error(message);
+        },
     };
 
     return { ctx, output, labelCounter };
@@ -100,7 +98,7 @@ describe('stdlib registry', () => {
         // New in v1.2 - System Buffers
         expect(fbNames).toContain('FIFO');
         expect(fbNames).toContain('LIFO');
-        COMM_FB_NAMES.forEach(name => expect(fbNames).toContain(name));
+        COMM_FB_NAMES.forEach((name) => expect(fbNames).toContain(name));
         expect(fbNames.length).toBe(34);
     });
 
@@ -213,7 +211,7 @@ describe('stdlib registry', () => {
 
         expect(mqttPublish).toBeDefined();
 
-        const topic = mqttPublish!.members.find(member => member.name === 'TOPIC');
+        const topic = mqttPublish!.members.find((member) => member.name === 'TOPIC');
         expect(topic).toBeDefined();
         expect(topic!.size).toBe(85);
         expect(topic!.isInternal).toBe(false);
@@ -238,14 +236,21 @@ describe('timer function blocks', () => {
         const ton = getFB('TON')!;
         const members = ton.members;
 
-        const findMember = (name: string) => members.find(m => m.name === name);
+        const findMember = (name: string) => members.find((m) => m.name === name);
 
         expect(findMember('IN')).toEqual({ name: 'IN', size: 1, offset: 0, isInput: true, isOutput: false, isInternal: false });
         expect(findMember('Q')).toEqual({ name: 'Q', size: 1, offset: 1, isInput: false, isOutput: true, isInternal: false });
         expect(findMember('PT')).toEqual({ name: 'PT', size: 4, offset: 2, isInput: true, isOutput: false, isInternal: false });
         expect(findMember('ET')).toEqual({ name: 'ET', size: 4, offset: 6, isInput: false, isOutput: true, isInternal: false });
         expect(findMember('_start')).toEqual({ name: '_start', size: 4, offset: 10, isInput: false, isOutput: false, isInternal: true });
-        expect(findMember('_running')).toEqual({ name: '_running', size: 1, offset: 14, isInput: false, isOutput: false, isInternal: true });
+        expect(findMember('_running')).toEqual({
+            name: '_running',
+            size: 1,
+            offset: 14,
+            isInput: false,
+            isOutput: false,
+            isInternal: true,
+        });
     });
 
     test('TON generates code', () => {
@@ -258,9 +263,9 @@ describe('timer function blocks', () => {
         ]);
 
         expect(output.length).toBeGreaterThan(10);
-        expect(output.some(l => l.includes('STORE8 0x2000'))).toBe(true);  // IN address
-        expect(output.some(l => l.includes('TON Timer Logic'))).toBe(true);
-        expect(output.some(l => l.includes('GET_TICKS'))).toBe(true);
+        expect(output.some((l) => l.includes('STORE8 0x2000'))).toBe(true); // IN address
+        expect(output.some((l) => l.includes('TON Timer Logic'))).toBe(true);
+        expect(output.some((l) => l.includes('GET_TICKS'))).toBe(true);
     });
 
     test('TOF has same size as TON', () => {
@@ -286,7 +291,7 @@ describe('edge detector function blocks', () => {
         expect(rtrig.size).toBe(4);
 
         const members = rtrig.members;
-        const findMember = (name: string) => members.find(m => m.name === name);
+        const findMember = (name: string) => members.find((m) => m.name === name);
 
         expect(findMember('CLK')).toEqual({ name: 'CLK', size: 1, offset: 0, isInput: true, isOutput: false, isInternal: false });
         expect(findMember('Q')).toEqual({ name: 'Q', size: 1, offset: 1, isInput: false, isOutput: true, isInternal: false });
@@ -297,12 +302,10 @@ describe('edge detector function blocks', () => {
         const rtrig = getFB('R_TRIG')!;
         const { ctx, output } = createMockContext(0x2000, 'RisingEdge');
 
-        rtrig.generateCall(ctx, [
-            { name: 'CLK', value: { kind: 'BoolLiteral', value: true, line: 1, column: 1 } },
-        ]);
+        rtrig.generateCall(ctx, [{ name: 'CLK', value: { kind: 'BoolLiteral', value: true, line: 1, column: 1 } }]);
 
-        expect(output.some(l => l.includes('R_TRIG Logic'))).toBe(true);
-        expect(output.some(l => l.includes('NOT'))).toBe(true);  // NOT _prev for edge detection
+        expect(output.some((l) => l.includes('R_TRIG Logic'))).toBe(true);
+        expect(output.some((l) => l.includes('NOT'))).toBe(true); // NOT _prev for edge detection
     });
 
     test('F_TRIG has correct size', () => {
@@ -321,7 +324,7 @@ describe('bistable function blocks', () => {
         expect(rs.size).toBe(4);
 
         const members = rs.members;
-        const findMember = (name: string) => members.find(m => m.name === name);
+        const findMember = (name: string) => members.find((m) => m.name === name);
 
         expect(findMember('S')).toEqual({ name: 'S', size: 1, offset: 0, isInput: true, isOutput: false, isInternal: false });
         expect(findMember('R1')).toEqual({ name: 'R1', size: 1, offset: 1, isInput: true, isOutput: false, isInternal: false });
@@ -337,7 +340,7 @@ describe('bistable function blocks', () => {
             { name: 'R1', value: { kind: 'BoolLiteral', value: false, line: 1, column: 1 } },
         ]);
 
-        expect(output.some(l => l.includes('RS Bistable Logic'))).toBe(true);
+        expect(output.some((l) => l.includes('RS Bistable Logic'))).toBe(true);
     });
 
     test('SR has correct member layout', () => {
@@ -345,9 +348,9 @@ describe('bistable function blocks', () => {
         expect(sr.size).toBe(4);
 
         const members = sr.members;
-        expect(members.find(m => m.name === 'S1')).toBeDefined();
-        expect(members.find(m => m.name === 'R')).toBeDefined();
-        expect(members.find(m => m.name === 'Q1')).toBeDefined();
+        expect(members.find((m) => m.name === 'S1')).toBeDefined();
+        expect(members.find((m) => m.name === 'R')).toBeDefined();
+        expect(members.find((m) => m.name === 'Q1')).toBeDefined();
     });
 });
 
@@ -361,7 +364,7 @@ describe('counter function blocks', () => {
         expect(ctu.size).toBe(8);
 
         const members = ctu.members;
-        const findMember = (name: string) => members.find(m => m.name === name);
+        const findMember = (name: string) => members.find((m) => m.name === name);
 
         expect(findMember('CU')).toEqual({ name: 'CU', size: 1, offset: 0, isInput: true, isOutput: false, isInternal: false });
         expect(findMember('R')).toEqual({ name: 'R', size: 1, offset: 1, isInput: true, isOutput: false, isInternal: false });
@@ -380,8 +383,8 @@ describe('counter function blocks', () => {
             { name: 'PV', value: { kind: 'IntLiteral', value: 10, line: 1, column: 1 } },
         ]);
 
-        expect(output.some(l => l.includes('CTU Count Up Logic'))).toBe(true);
-        expect(output.some(l => l.includes('ADD'))).toBe(true);  // Increment
+        expect(output.some((l) => l.includes('CTU Count Up Logic'))).toBe(true);
+        expect(output.some((l) => l.includes('ADD'))).toBe(true); // Increment
     });
 
     test('CTD has correct size', () => {
@@ -394,10 +397,10 @@ describe('counter function blocks', () => {
         expect(ctud.size).toBe(12);
 
         const members = ctud.members;
-        expect(members.find(m => m.name === 'CU')).toBeDefined();
-        expect(members.find(m => m.name === 'CD')).toBeDefined();
-        expect(members.find(m => m.name === 'QU')).toBeDefined();
-        expect(members.find(m => m.name === 'QD')).toBeDefined();
+        expect(members.find((m) => m.name === 'CU')).toBeDefined();
+        expect(members.find((m) => m.name === 'CD')).toBeDefined();
+        expect(members.find((m) => m.name === 'QU')).toBeDefined();
+        expect(members.find((m) => m.name === 'QD')).toBeDefined();
     });
 });
 
@@ -415,9 +418,9 @@ describe('standard functions', () => {
             { kind: 'IntLiteral', value: 10, line: 1, column: 1 },
         ]);
 
-        expect(output.some(l => l.includes('MAX'))).toBe(true);
-        expect(output.some(l => l.includes('GT'))).toBe(true);  // Greater than comparison
-        expect(output.some(l => l.includes('DROP'))).toBe(true);  // Drop the smaller value
+        expect(output.some((l) => l.includes('MAX'))).toBe(true);
+        expect(output.some((l) => l.includes('GT'))).toBe(true); // Greater than comparison
+        expect(output.some((l) => l.includes('DROP'))).toBe(true); // Drop the smaller value
     });
 
     test('MIN generates comparison code', () => {
@@ -429,8 +432,8 @@ describe('standard functions', () => {
             { kind: 'IntLiteral', value: 10, line: 1, column: 1 },
         ]);
 
-        expect(output.some(l => l.includes('MIN'))).toBe(true);
-        expect(output.some(l => l.includes('LT'))).toBe(true);  // Less than comparison
+        expect(output.some((l) => l.includes('MIN'))).toBe(true);
+        expect(output.some((l) => l.includes('LT'))).toBe(true); // Less than comparison
     });
 
     test('LIMIT has 3 arguments', () => {
@@ -444,19 +447,19 @@ describe('standard functions', () => {
         const { ctx, output } = createMockContext(0, '');
 
         sel.generateInline(ctx, [
-            { kind: 'BoolLiteral', value: true, line: 1, column: 1 },  // G
-            { kind: 'IntLiteral', value: 0, line: 1, column: 1 },     // IN0
-            { kind: 'IntLiteral', value: 1, line: 1, column: 1 },     // IN1
+            { kind: 'BoolLiteral', value: true, line: 1, column: 1 }, // G
+            { kind: 'IntLiteral', value: 0, line: 1, column: 1 }, // IN0
+            { kind: 'IntLiteral', value: 1, line: 1, column: 1 }, // IN1
         ]);
 
-        expect(output.some(l => l.includes('SEL'))).toBe(true);
-        expect(output.some(l => l.includes('JNZ'))).toBe(true);  // Jump based on G
+        expect(output.some((l) => l.includes('SEL'))).toBe(true);
+        expect(output.some((l) => l.includes('JNZ'))).toBe(true); // Jump based on G
     });
 
     test('MUX is variadic', () => {
         const mux = getFn('MUX')!;
         expect(mux.variadic).toBe(true);
-        expect(mux.argCount).toBe(2);  // Minimum: K + 1 input
+        expect(mux.argCount).toBe(2); // Minimum: K + 1 input
     });
 
     test('MUX generates multiplexer code', () => {
@@ -464,14 +467,14 @@ describe('standard functions', () => {
         const { ctx, output } = createMockContext(0, '');
 
         mux.generateInline(ctx, [
-            { kind: 'IntLiteral', value: 1, line: 1, column: 1 },  // K
+            { kind: 'IntLiteral', value: 1, line: 1, column: 1 }, // K
             { kind: 'IntLiteral', value: 10, line: 1, column: 1 }, // IN0
             { kind: 'IntLiteral', value: 20, line: 1, column: 1 }, // IN1
             { kind: 'IntLiteral', value: 30, line: 1, column: 1 }, // IN2
         ]);
 
-        expect(output.some(l => l.includes('MUX'))).toBe(true);
-        expect(output.some(l => l.includes('EQ'))).toBe(true);  // Comparison for each case
+        expect(output.some((l) => l.includes('MUX'))).toBe(true);
+        expect(output.some((l) => l.includes('EQ'))).toBe(true); // Comparison for each case
     });
 
     test('WATCHDOG_RESET is a compatibility NOP with no watchdog effect', () => {
@@ -480,9 +483,7 @@ describe('standard functions', () => {
 
         watchdogReset.generateInline(ctx, []);
 
-        const instructions = output
-            .map(line => line.trim())
-            .filter(line => line && !line.startsWith(';'));
+        const instructions = output.map((line) => line.trim()).filter((line) => line && !line.startsWith(';'));
 
         expect(instructions).toEqual(['NOP']);
         expect(output.join('\n')).toContain('compatibility NOP');

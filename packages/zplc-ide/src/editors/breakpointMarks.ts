@@ -15,7 +15,8 @@ export function markBreakpointNodes(
   return nodes.map((node) => {
     const element = elementOf(node);
     if (element === undefined) return node;
-    const paused = breakpoints.pausedAt !== undefined && (breakpoints.pausedAt === element || breakpoints.pausedAt.startsWith(`${element}/`));
+    const paused =
+      breakpoints.pausedAt !== undefined && (breakpoints.pausedAt === element || breakpoints.pausedAt.startsWith(`${element}/`));
     if (!paused && !breakpoints.isSet(element)) return node;
     const outline = paused
       ? '3px solid var(--color-accent-yellow)'

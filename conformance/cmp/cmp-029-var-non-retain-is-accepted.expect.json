@@ -5,7 +5,5 @@
   "note": "IEC 61131-3, the RETAIN and NON_RETAIN qualifiers: the NON_RETAIN qualifier marks variables that are initialised on a warm start; a first start gives the initial value",
   "scans": 1,
   "scanMs": 10,
-  "expect": [
-    {"at": "%QW0", "type": "INT", "value": 5}
-  ]
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 5 }]
 }

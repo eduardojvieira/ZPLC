@@ -15,8 +15,6 @@
 
 /** Decode a complete textual MQTT command into little-endian PLC bytes.
  * Outputs are changed only on success. */
-int zplc_mqtt_command_decode(uint8_t var_type, const uint8_t *payload,
-                             size_t payload_len, uint8_t *out_bytes,
-                             size_t *out_size);
+int zplc_mqtt_command_decode(uint8_t var_type, const uint8_t *payload, size_t payload_len, uint8_t *out_bytes, size_t *out_size);
 
 #endif /* ZPLC_MQTT_COMMAND_H */

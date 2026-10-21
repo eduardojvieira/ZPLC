@@ -23,7 +23,27 @@ describe('the wiring diagram of a lesson on a learner board (LRN-014)', () => {
 
   it('labels every part and every pin in words, with the GPIO and the header position, so colour is never the only cue', () => {
     const svg = renderWiringSvg(ESP32S3, WIRING, 'en');
-    for (const text of ['Lamp', 'Warning', 'Start', 'Armed', 'Stop', 'Level', 'GPIO15', 'J1-8', 'DO0', 'GPIO5', 'J1-5', 'GPIO4', 'J1-4', '330 Ω', 'red LED', 'yellow LED', '10 kΩ', 'GND · J1-22', '3V3 · J1-1']) {
+    for (const text of [
+      'Lamp',
+      'Warning',
+      'Start',
+      'Armed',
+      'Stop',
+      'Level',
+      'GPIO15',
+      'J1-8',
+      'DO0',
+      'GPIO5',
+      'J1-5',
+      'GPIO4',
+      'J1-4',
+      '330 Ω',
+      'red LED',
+      'yellow LED',
+      '10 kΩ',
+      'GND · J1-22',
+      '3V3 · J1-1',
+    ]) {
       expect({ text, found: svg.includes(text) }).toEqual({ text, found: true });
     }
     // The Pico's on-board LED is named and drawn as on the board, with nothing wired to it.

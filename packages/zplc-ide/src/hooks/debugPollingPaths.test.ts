@@ -50,9 +50,7 @@ describe('buildPolledDebugPaths', () => {
   });
 
   it('describes variables with absolute addresses instead of relative offsets', () => {
-    const projectConfig = JSON.parse(
-      readFileSync(new URL('../../projects/pico_blinky/zplc.json', import.meta.url), 'utf8'),
-    );
+    const projectConfig = JSON.parse(readFileSync(new URL('../../projects/pico_blinky/zplc.json', import.meta.url), 'utf8'));
     const programSources = [
       {
         name: 'main.st',
@@ -61,10 +59,7 @@ describe('buildPolledDebugPaths', () => {
       },
     ];
     const compiled = compileMultiTaskProject(projectConfig, programSources);
-    const result = describePolledDebugVariable(
-      compiled.debugMap,
-      'LED_Output',
-    );
+    const result = describePolledDebugVariable(compiled.debugMap, 'LED_Output');
 
     expect(result).toEqual({
       name: 'LED_Output',

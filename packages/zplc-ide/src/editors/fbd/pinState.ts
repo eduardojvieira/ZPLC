@@ -17,7 +17,9 @@ export function pinValuesOf(
   states: ReadonlyMap<string, ElementState>,
 ): Map<string, Record<string, Reading>> {
   const outputs = (blockId: string): Record<string, Reading> => states.get(blockElement(blockId))?.pins ?? {};
-  const constants = new Map(blocks.filter((block) => block.type === 'constant').map((block) => [block.id, block.value as Reading] as const));
+  const constants = new Map(
+    blocks.filter((block) => block.type === 'constant').map((block) => [block.id, block.value as Reading] as const),
+  );
   const sourceValue = (connection: FBDConnection): Reading =>
     constants.has(connection.from.block) ? constants.get(connection.from.block) : outputs(connection.from.block)[connection.from.port];
   const pins = new Map<string, Record<string, Reading>>(blocks.map((block) => [block.id, { ...outputs(block.id) }]));

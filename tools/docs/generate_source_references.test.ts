@@ -16,9 +16,11 @@ describe('source references: every source is understood (DOC-008)', () => {
 
   it('lists every Kconfig symbol of the module and every command of the shell', () => {
     const kconfig = PAGES.find((page) => page.path === 'reference/kconfig.md')!.body('en');
-    for (const symbol of parseKconfig(read(SOURCES.kconfig))) expect([symbol.name, kconfig.includes(`\`CONFIG_${symbol.name}\``)]).toEqual([symbol.name, true]);
+    for (const symbol of parseKconfig(read(SOURCES.kconfig)))
+      expect([symbol.name, kconfig.includes(`\`CONFIG_${symbol.name}\``)]).toEqual([symbol.name, true]);
     const shell = PAGES.find((page) => page.path === 'reference/shell-commands.md')!.body('en');
-    for (const command of parseShellCommands(read(SOURCES.shell))) expect([command.path.join(' '), shell.includes(`\`${command.path.join(' ')}\``)]).toEqual([command.path.join(' '), true]);
+    for (const command of parseShellCommands(read(SOURCES.shell)))
+      expect([command.path.join(' '), shell.includes(`\`${command.path.join(' ')}\``)]).toEqual([command.path.join(' '), true]);
   });
 });
 
@@ -29,7 +31,11 @@ describe('source references: the two languages say the same thing (DOC-008)', ()
       const spanish = page.body('es');
       expect([page.path, headingLevels(spanish)]).toEqual([page.path, headingLevels(english)]);
       // the first cell of each row names the thing that the row is about; it is the same in both languages
-      const subjects = (text: string) => text.split('\n').filter((line, index, lines) => line.startsWith('| ') && !line.startsWith('| ---') && lines[index - 1]?.startsWith('| ')).map((line) => line.split(' | ')[0]);
+      const subjects = (text: string) =>
+        text
+          .split('\n')
+          .filter((line, index, lines) => line.startsWith('| ') && !line.startsWith('| ---') && lines[index - 1]?.startsWith('| '))
+          .map((line) => line.split(' | ')[0]);
       expect([page.path, subjects(spanish)]).toEqual([page.path, subjects(english)]);
     }
   });
@@ -55,7 +61,13 @@ describe('source references: the project file schema is flattened to its fields 
         name: { type: 'string', minLength: 1, description: 'The name.' },
         io: { type: 'object', properties: { inputs: { type: 'array', items: { $ref: '#/definitions/point' } } } },
       },
-      definitions: { point: { type: 'object', required: ['address'], properties: { address: { type: 'string' }, bits: { type: 'integer', default: 12, minimum: 1, maximum: 16 } } } },
+      definitions: {
+        point: {
+          type: 'object',
+          required: ['address'],
+          properties: { address: { type: 'string' }, bits: { type: 'integer', default: 12, minimum: 1, maximum: 16 } },
+        },
+      },
     };
     expect(schemaRows(schema)).toEqual([
       { path: 'name', type: 'string (length >= 1)', required: true, default: '', description: 'The name.' },

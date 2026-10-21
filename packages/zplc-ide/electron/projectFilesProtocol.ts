@@ -43,14 +43,28 @@ export type ProjectFilesErrorCode =
 export type ProjectFilesResult<T> = { ok: true; value: T } | { ok: false; code: ProjectFilesErrorCode };
 
 export type ProjectEntryKind = 'file' | 'directory';
-export interface ProjectFolder { rootId: string; name: string }
+export interface ProjectFolder {
+  rootId: string;
+  name: string;
+}
 /**
  * A folder the user chose earlier through the native dialog (IDE-008). `recentId` is opaque (a hash of the real path),
  * `displayName` is the folder's base name, never its path, and `available` says whether the folder is still there.
  */
-export interface RecentProject { recentId: string; displayName: string; lastOpenedAt: number; available: boolean }
-export interface ProjectEntry { name: string; kind: ProjectEntryKind }
-export interface ProjectStat { kind: ProjectEntryKind; size: number }
+export interface RecentProject {
+  recentId: string;
+  displayName: string;
+  lastOpenedAt: number;
+  available: boolean;
+}
+export interface ProjectEntry {
+  name: string;
+  kind: ProjectEntryKind;
+}
+export interface ProjectStat {
+  kind: ProjectEntryKind;
+  size: number;
+}
 
 export interface ProjectFilesRequests {
   list: { rootId: string; path: string };
@@ -73,7 +87,15 @@ export interface ProjectFilesValues {
 }
 
 export type ProjectFilesOp = keyof ProjectFilesRequests;
-export const PROJECT_FILES_OPS = ['list', 'stat', 'read', 'write', 'mkdir', 'remove', 'rename'] as const satisfies readonly ProjectFilesOp[];
+export const PROJECT_FILES_OPS = [
+  'list',
+  'stat',
+  'read',
+  'write',
+  'mkdir',
+  'remove',
+  'rename',
+] as const satisfies readonly ProjectFilesOp[];
 
 /** Recent projects: reopening a remembered folder is the only way, besides the dialog, to give a window a project folder. */
 export interface RecentRequests {
@@ -89,11 +111,17 @@ export const PROJECT_RECENT_OPS = ['listRecent', 'openRecent', 'forgetRecent', '
  * Watching the window's folder for changes made outside Studio (IDE-004). One request names the folder by its opaque id;
  * asking again replaces the watch. The main process answers with `ProjectChange` events, batched.
  */
-export interface WatchRequests { watch: { rootId: string } }
+export interface WatchRequests {
+  watch: { rootId: string };
+}
 export const PROJECT_WATCH_OPS = ['watch'] as const;
 
 /** Paths (relative, "/"-separated) that changed under the folder; `overflow` says there were too many to list, so look at everything. */
-export interface ProjectChange { rootId: string; paths: string[]; overflow: boolean }
+export interface ProjectChange {
+  rootId: string;
+  paths: string[];
+  overflow: boolean;
+}
 
 export const PROJECT_CHANGE_LIMITS = { maxPaths: 256 } as const;
 
@@ -102,7 +130,13 @@ export function parseProjectChange(value: unknown): ProjectChange | null {
   if (!isPlainObject(value)) return null;
   const keys = Object.keys(value).sort().join();
   const { rootId, paths, overflow } = value;
-  if (keys !== 'overflow,paths,rootId' || typeof rootId !== 'string' || rootId.length < 1 || rootId.length > PROJECT_FILES_LIMITS.maxRootIdChars) return null;
+  if (
+    keys !== 'overflow,paths,rootId' ||
+    typeof rootId !== 'string' ||
+    rootId.length < 1 ||
+    rootId.length > PROJECT_FILES_LIMITS.maxRootIdChars
+  )
+    return null;
   if (typeof overflow !== 'boolean' || !Array.isArray(paths) || paths.length > PROJECT_CHANGE_LIMITS.maxPaths) return null;
   if (!paths.every((path) => typeof path === 'string' && path.length >= 1 && path.length <= PROJECT_FILES_LIMITS.maxPathChars)) return null;
   return { rootId, paths: [...paths] as string[], overflow };
@@ -120,7 +154,9 @@ export type ProjectFilesBridge = {
   /** Subscribes to the batches of changes (IDE-004); returns the function that stops listening. */
   onChanged?(callback: (change: unknown) => void): () => void;
   // Project archives (IDE-022); absent where there is no main process to ask.
-} & Partial<ProjectArchiveBridge> & { [Op in ProjectFilesOp]: (request: ProjectFilesRequests[Op]) => Promise<ProjectFilesResult<ProjectFilesValues[Op]>> };
+} & Partial<ProjectArchiveBridge> & {
+    [Op in ProjectFilesOp]: (request: ProjectFilesRequests[Op]) => Promise<ProjectFilesResult<ProjectFilesValues[Op]>>;
+  };
 
 type Field = 'id' | 'path' | 'bytes' | 'bool';
 /** Field name to field type, for each operation's single request object. */
@@ -159,7 +195,8 @@ function parseShape(shape: Record<string, Field>, args: readonly unknown[]): Rec
   if (args.length !== 1 || !isPlainObject(request)) return null;
   const keys = Object.keys(request);
   const fields = Object.keys(shape);
-  if (keys.length !== fields.length || !fields.every((field) => Object.hasOwn(request, field) && CHECKS[shape[field]](request[field]))) return null;
+  if (keys.length !== fields.length || !fields.every((field) => Object.hasOwn(request, field) && CHECKS[shape[field]](request[field])))
+    return null;
   return request;
 }
 

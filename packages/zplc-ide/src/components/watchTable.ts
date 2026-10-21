@@ -13,19 +13,42 @@ export type WatchFormat = (typeof WATCH_FORMAT)[keyof typeof WATCH_FORMAT];
 export const WATCH_FORMATS: readonly WatchFormat[] = Object.values(WATCH_FORMAT);
 
 const BITS: Record<string, number> = {
-  SINT: 8, USINT: 8, BYTE: 8, INT: 16, UINT: 16, WORD: 16, DINT: 32, UDINT: 32, DWORD: 32, LINT: 64, ULINT: 64, LWORD: 64,
+  SINT: 8,
+  USINT: 8,
+  BYTE: 8,
+  INT: 16,
+  UINT: 16,
+  WORD: 16,
+  DINT: 32,
+  UDINT: 32,
+  DWORD: 32,
+  LINT: 64,
+  ULINT: 64,
+  LWORD: 64,
 };
 const NOT_NUMERIC = new Set(['BOOL', 'STRING']);
 
 const toBig = (value: LiveValue): bigint | null => {
-  try { return BigInt(typeof value === 'boolean' ? (value ? 1 : 0) : typeof value === 'number' ? Math.trunc(value) : value); } catch { return null; }
+  try {
+    return BigInt(typeof value === 'boolean' ? (value ? 1 : 0) : typeof value === 'number' ? Math.trunc(value) : value);
+  } catch {
+    return null;
+  }
 };
 
 function formatTime(ms: number): string {
   let rest = Math.max(0, Math.trunc(ms));
   const parts: string[] = [];
-  for (const [unit, size] of [['d', 86400000], ['h', 3600000], ['m', 60000], ['s', 1000]] as const) {
-    if (rest >= size) { parts.push(`${Math.floor(rest / size)}${unit}`); rest %= size; }
+  for (const [unit, size] of [
+    ['d', 86400000],
+    ['h', 3600000],
+    ['m', 60000],
+    ['s', 1000],
+  ] as const) {
+    if (rest >= size) {
+      parts.push(`${Math.floor(rest / size)}${unit}`);
+      rest %= size;
+    }
   }
   if (rest > 0 || parts.length === 0) parts.push(`${rest}ms`);
   return `T#${parts.join('')}`;
@@ -38,9 +61,12 @@ export function formatWatchValue(value: LiveValue | null, type: string | null, f
   }
   const isFloat = type === 'REAL' || type === 'LREAL';
   switch (format) {
-    case WATCH_FORMAT.DECIMAL: return String(value);
-    case WATCH_FORMAT.REAL: return isFloat ? formatDebugValue(value, type) : Number.isFinite(Number(value)) ? Number(value).toFixed(1) : String(value);
-    case WATCH_FORMAT.TIME: return Number.isFinite(Number(value)) ? formatTime(Number(value)) : String(value);
+    case WATCH_FORMAT.DECIMAL:
+      return String(value);
+    case WATCH_FORMAT.REAL:
+      return isFloat ? formatDebugValue(value, type) : Number.isFinite(Number(value)) ? Number(value).toFixed(1) : String(value);
+    case WATCH_FORMAT.TIME:
+      return Number.isFinite(Number(value)) ? formatTime(Number(value)) : String(value);
     case WATCH_FORMAT.HEX:
     case WATCH_FORMAT.BINARY: {
       const bits = BITS[type] ?? (type === 'REAL' ? 32 : type === 'LREAL' || type === 'TIME' ? 64 : 0);
@@ -48,7 +74,10 @@ export function formatWatchValue(value: LiveValue | null, type: string | null, f
       if (!bits || big === null) return formatDebugValue(value, type);
       const unsigned = BigInt.asUintN(bits, big);
       return format === WATCH_FORMAT.HEX
-        ? `16#${unsigned.toString(16).toUpperCase().padStart(bits / 4, '0')}`
+        ? `16#${unsigned
+            .toString(16)
+            .toUpperCase()
+            .padStart(bits / 4, '0')}`
         : `2#${unsigned.toString(2).padStart(bits, '0')}`;
     }
   }
@@ -56,7 +85,10 @@ export function formatWatchValue(value: LiveValue | null, type: string | null, f
 
 function floatBits(value: number, bits: number): bigint {
   const view = new DataView(new ArrayBuffer(8));
-  if (bits === 32) { view.setFloat32(0, value); return BigInt(view.getUint32(0)); }
+  if (bits === 32) {
+    view.setFloat32(0, value);
+    return BigInt(view.getUint32(0));
+  }
   view.setFloat64(0, value);
   return view.getBigUint64(0);
 }
@@ -88,17 +120,26 @@ export function parseWatchDraft(raw: string, type: string): LiveValue | null {
 export type WatchSortKey = 'name' | 'value' | 'type' | 'address';
 export type WatchSortDirection = 'asc' | 'desc';
 
-interface SortableRow { path: string; result: { value: LiveValue | null; type: string | null; address: number | null } }
+interface SortableRow {
+  path: string;
+  result: { value: LiveValue | null; type: string | null; address: number | null };
+}
 
 /** The rows in the order of a column; without a key they stay in the order they were added. A missing value sorts last. */
 export function sortWatchRows<T extends SortableRow>(rows: readonly T[], key: WatchSortKey | null, direction: WatchSortDirection): T[] {
   if (key === null) return [...rows];
   const pick = (row: T): string | number | null => {
     switch (key) {
-      case 'name': return row.path.toLowerCase();
-      case 'type': return row.result.type;
-      case 'address': return row.result.address;
-      case 'value': { const v = row.result.value; return v === null ? null : typeof v === 'boolean' ? Number(v) : v; }
+      case 'name':
+        return row.path.toLowerCase();
+      case 'type':
+        return row.result.type;
+      case 'address':
+        return row.result.address;
+      case 'value': {
+        const v = row.result.value;
+        return v === null ? null : typeof v === 'boolean' ? Number(v) : v;
+      }
     }
   };
   const sign = direction === 'asc' ? 1 : -1;
@@ -106,7 +147,12 @@ export function sortWatchRows<T extends SortableRow>(rows: readonly T[], key: Wa
     const left = pick(a);
     const right = pick(b);
     if (left === null || right === null) return left === right ? 0 : left === null ? 1 : -1;
-    return sign * (typeof left === 'number' && typeof right === 'number' ? left - right : String(left).localeCompare(String(right), undefined, { numeric: true }));
+    return (
+      sign *
+      (typeof left === 'number' && typeof right === 'number'
+        ? left - right
+        : String(left).localeCompare(String(right), undefined, { numeric: true }))
+    );
   });
 }
 
@@ -121,5 +167,8 @@ export function completeWatchSymbols(map: DebugMap | null, typed: string, limit 
       for (const member of Object.keys(info.children ?? {})) found.add(`${name}.${member}`);
     }
   }
-  return [...found].filter((name) => name.toLowerCase().startsWith(prefix)).sort((a, b) => a.localeCompare(b)).slice(0, limit);
+  return [...found]
+    .filter((name) => name.toLowerCase().startsWith(prefix))
+    .sort((a, b) => a.localeCompare(b))
+    .slice(0, limit);
 }

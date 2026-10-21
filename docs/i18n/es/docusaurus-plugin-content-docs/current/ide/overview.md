@@ -12,12 +12,12 @@ depender de una reescritura implícita del proyecto antiguo.
 
 ## Límites
 
-| Capa | Responsabilidad |
-| --- | --- |
-| Renderer | Entorno de trabajo, modelos visuales, diagnósticos y presentación de resultados. |
-| Preload/main | Operaciones acotadas y validadas sobre archivos, y ejecución supervisada del runtime. |
-| Compilador | Compilación canónica de fuentes y modelos visuales a `.zplc`. |
-| Adaptadores de runtime | Simulación POSIX nativa o un runtime compatible conectado. |
+| Capa                   | Responsabilidad                                                                       |
+| ---------------------- | ------------------------------------------------------------------------------------- |
+| Renderer               | Entorno de trabajo, modelos visuales, diagnósticos y presentación de resultados.      |
+| Preload/main           | Operaciones acotadas y validadas sobre archivos, y ejecución supervisada del runtime. |
+| Compilador             | Compilación canónica de fuentes y modelos visuales a `.zplc`.                         |
+| Adaptadores de runtime | Simulación POSIX nativa o un runtime compatible conectado.                            |
 
 ## Cómo se comunican las capas
 

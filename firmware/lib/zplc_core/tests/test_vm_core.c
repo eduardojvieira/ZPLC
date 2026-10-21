@@ -25,121 +25,116 @@ static int test_count = 0;
 static int fail_count = 0;
 static uint8_t loader_workspace[ZPLC_LOADER_VERIFY_WORKSPACE_SIZE];
 
-#define TEST_ASSERT(cond, msg) do { \
-    test_count++; \
-    if (!(cond)) { \
-        fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__); \
-        fail_count++; \
-    } else { \
-        printf("PASS: %s\n", msg); \
-    } \
-} while(0)
+#define TEST_ASSERT(cond, msg)                                \
+  do {                                                        \
+    test_count++;                                             \
+    if (!(cond)) {                                            \
+      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__); \
+      fail_count++;                                           \
+    } else {                                                  \
+      printf("PASS: %s\n", msg);                              \
+    }                                                         \
+  } while (0)
 
-#define TEST_ASSERT_EQ(actual, expected, msg) do { \
-    test_count++; \
-    if ((actual) != (expected)) { \
-        fprintf(stderr, "FAIL: %s - expected %d, got %d (line %d)\n", \
-                msg, (int)(expected), (int)(actual), __LINE__); \
-        fail_count++; \
-    } else { \
-        printf("PASS: %s = %d\n", msg, (int)(actual)); \
-    } \
-} while(0)
+#define TEST_ASSERT_EQ(actual, expected, msg)                                                                       \
+  do {                                                                                                              \
+    test_count++;                                                                                                   \
+    if ((actual) != (expected)) {                                                                                   \
+      fprintf(stderr, "FAIL: %s - expected %d, got %d (line %d)\n", msg, (int)(expected), (int)(actual), __LINE__); \
+      fail_count++;                                                                                                 \
+    } else {                                                                                                        \
+      printf("PASS: %s = %d\n", msg, (int)(actual));                                                                \
+    }                                                                                                               \
+  } while (0)
 
-static uint32_t crc32_update(uint32_t crc, const uint8_t *data, size_t length)
-{
-    size_t index;
-    for (index = 0U; index < length; index++) {
-        uint32_t bit;
-        crc ^= data[index];
-        for (bit = 0U; bit < 8U; bit++) {
-            crc = (crc & 1U) != 0U ? (crc >> 1) ^ 0xEDB88320U : crc >> 1;
-        }
+static uint32_t crc32_update(uint32_t crc, const uint8_t *data, size_t length) {
+  size_t index;
+  for (index = 0U; index < length; index++) {
+    uint32_t bit;
+    crc ^= data[index];
+    for (bit = 0U; bit < 8U; bit++) {
+      crc = (crc & 1U) != 0U ? (crc >> 1) ^ 0xEDB88320U : crc >> 1;
     }
-    return crc;
+  }
+  return crc;
 }
 
-static void refresh_crc(uint8_t *file, size_t length)
-{
-    uint32_t crc = crc32_update(0xFFFFFFFFU, file, 12U);
-    crc = crc32_update(crc, file + 16U, length - 16U) ^ 0xFFFFFFFFU;
-    file[12] = (uint8_t)crc;
-    file[13] = (uint8_t)(crc >> 8);
-    file[14] = (uint8_t)(crc >> 16);
-    file[15] = (uint8_t)(crc >> 24);
+static void refresh_crc(uint8_t *file, size_t length) {
+  uint32_t crc = crc32_update(0xFFFFFFFFU, file, 12U);
+  crc = crc32_update(crc, file + 16U, length - 16U) ^ 0xFFFFFFFFU;
+  file[12] = (uint8_t)crc;
+  file[13] = (uint8_t)(crc >> 8);
+  file[14] = (uint8_t)(crc >> 16);
+  file[15] = (uint8_t)(crc >> 24);
 }
 
-static void write_u16_le(uint8_t *data, uint16_t value)
-{
-    data[0] = (uint8_t)value;
-    data[1] = (uint8_t)(value >> 8);
+static void write_u16_le(uint8_t *data, uint16_t value) {
+  data[0] = (uint8_t)value;
+  data[1] = (uint8_t)(value >> 8);
 }
 
-static void write_u32_le(uint8_t *data, uint32_t value)
-{
-    data[0] = (uint8_t)value;
-    data[1] = (uint8_t)(value >> 8);
-    data[2] = (uint8_t)(value >> 16);
-    data[3] = (uint8_t)(value >> 24);
+static void write_u32_le(uint8_t *data, uint32_t value) {
+  data[0] = (uint8_t)value;
+  data[1] = (uint8_t)(value >> 8);
+  data[2] = (uint8_t)(value >> 16);
+  data[3] = (uint8_t)(value >> 24);
 }
 
-static size_t build_verified_program(uint8_t *file, size_t capacity,
-                                     const uint8_t *code, size_t code_size,
-                                     uint16_t entry_point, int with_task,
-                                     int with_tag)
-{
-    uint16_t segment_count = (uint16_t)(1 + with_task + with_tag);
-    size_t offset = ZPLC_FILE_HEADER_SIZE + segment_count * ZPLC_SEGMENT_ENTRY_SIZE;
-    size_t code_offset = offset;
-    uint32_t data_size = (with_task ? ZPLC_TASK_DEF_SIZE : 0U) +
-                         (with_tag ? ZPLC_TAG_ENTRY_SIZE : 0U);
+static size_t build_verified_program(uint8_t *file, size_t capacity, const uint8_t *code, size_t code_size, uint16_t entry_point,
+                                     int with_task, int with_tag) {
+  uint16_t segment_count = (uint16_t)(1 + with_task + with_tag);
+  size_t offset = ZPLC_FILE_HEADER_SIZE + segment_count * ZPLC_SEGMENT_ENTRY_SIZE;
+  size_t code_offset = offset;
+  uint32_t data_size = (with_task ? ZPLC_TASK_DEF_SIZE : 0U) + (with_tag ? ZPLC_TAG_ENTRY_SIZE : 0U);
 
-    if (code_size == 0U || offset + code_size + data_size > capacity) return 0U;
-    memset(file, 0, offset + code_size + data_size);
-    memcpy(file, "ZPLC", 4U);
-    write_u16_le(file + 4U, ZPLC_VERSION_MAJOR);
-    write_u16_le(file + 6U, ZPLC_VERSION_MINOR);
-    write_u32_le(file + 28U, ZPLC_DRAFT_COUNTER);
-    write_u32_le(file + 16U, (uint32_t)code_size);
-    write_u32_le(file + 20U, data_size);
-    write_u16_le(file + 24U, entry_point);
-    write_u16_le(file + 26U, segment_count);
-    write_u16_le(file + 32U, ZPLC_SEG_CODE);
-    write_u32_le(file + 36U, (uint32_t)code_size);
-    offset = 40U;
-    if (with_task) {
-        write_u16_le(file + offset, ZPLC_SEG_TASK);
-        write_u32_le(file + offset + 4U, ZPLC_TASK_DEF_SIZE);
-        offset += ZPLC_SEGMENT_ENTRY_SIZE;
-    }
-    if (with_tag) {
-        write_u16_le(file + offset, ZPLC_SEG_TAGS);
-        write_u32_le(file + offset + 4U, ZPLC_TAG_ENTRY_SIZE);
-    }
-    memcpy(file + code_offset, code, code_size);
-    offset = code_offset + code_size;
-    if (with_task) {
-        write_u32_le(file + offset + 4U, 10000U);
-        write_u16_le(file + offset + 10U, 64U);
-        offset += ZPLC_TASK_DEF_SIZE;
-    }
-    if (with_tag) {
-        write_u16_le(file + offset, ZPLC_MEM_OPI_BASE);
-        file[offset + 2U] = ZPLC_TYPE_BOOL;
-        file[offset + 3U] = ZPLC_TAG_PUBLISH;
-        write_u32_le(file + offset + 4U, 0x12345678U);
-        offset += ZPLC_TAG_ENTRY_SIZE;
-    }
-    refresh_crc(file, offset);
-    return offset;
+  if (code_size == 0U || offset + code_size + data_size > capacity)
+    return 0U;
+  memset(file, 0, offset + code_size + data_size);
+  memcpy(file, "ZPLC", 4U);
+  write_u16_le(file + 4U, ZPLC_VERSION_MAJOR);
+  write_u16_le(file + 6U, ZPLC_VERSION_MINOR);
+  write_u32_le(file + 28U, ZPLC_DRAFT_COUNTER);
+  write_u32_le(file + 16U, (uint32_t)code_size);
+  write_u32_le(file + 20U, data_size);
+  write_u16_le(file + 24U, entry_point);
+  write_u16_le(file + 26U, segment_count);
+  write_u16_le(file + 32U, ZPLC_SEG_CODE);
+  write_u32_le(file + 36U, (uint32_t)code_size);
+  offset = 40U;
+  if (with_task) {
+    write_u16_le(file + offset, ZPLC_SEG_TASK);
+    write_u32_le(file + offset + 4U, ZPLC_TASK_DEF_SIZE);
+    offset += ZPLC_SEGMENT_ENTRY_SIZE;
+  }
+  if (with_tag) {
+    write_u16_le(file + offset, ZPLC_SEG_TAGS);
+    write_u32_le(file + offset + 4U, ZPLC_TAG_ENTRY_SIZE);
+  }
+  memcpy(file + code_offset, code, code_size);
+  offset = code_offset + code_size;
+  if (with_task) {
+    write_u32_le(file + offset + 4U, 10000U);
+    write_u16_le(file + offset + 10U, 64U);
+    offset += ZPLC_TASK_DEF_SIZE;
+  }
+  if (with_tag) {
+    write_u16_le(file + offset, ZPLC_MEM_OPI_BASE);
+    file[offset + 2U] = ZPLC_TYPE_BOOL;
+    file[offset + 3U] = ZPLC_TAG_PUBLISH;
+    write_u32_le(file + offset + 4U, 0x12345678U);
+    offset += ZPLC_TAG_ENTRY_SIZE;
+  }
+  refresh_crc(file, offset);
+  return offset;
 }
 
-static int region_has_value(uint16_t base, size_t size, uint8_t value)
-{
-    const uint8_t *region = zplc_mem_get_region(base);
-    size_t index;
-    for (index = 0U; index < size; index++) if (region[index] != value) return 0;
-    return 1;
+static int region_has_value(uint16_t base, size_t size, uint8_t value) {
+  const uint8_t *region = zplc_mem_get_region(base);
+  size_t index;
+  for (index = 0U; index < size; index++)
+    if (region[index] != value)
+      return 0;
+  return 1;
 }
 
 /* ============================================================================
@@ -149,551 +144,532 @@ static int region_has_value(uint16_t base, size_t size, uint8_t value)
 /**
  * @brief Append a PUSH32 instruction with a 32-bit value.
  */
-static size_t emit_push32(uint8_t *buf, size_t offset, uint32_t value)
-{
-    buf[offset++] = OP_PUSH32;
-    buf[offset++] = (uint8_t)(value & 0xFF);
-    buf[offset++] = (uint8_t)((value >> 8) & 0xFF);
-    buf[offset++] = (uint8_t)((value >> 16) & 0xFF);
-    buf[offset++] = (uint8_t)((value >> 24) & 0xFF);
-    return offset;
+static size_t emit_push32(uint8_t *buf, size_t offset, uint32_t value) {
+  buf[offset++] = OP_PUSH32;
+  buf[offset++] = (uint8_t)(value & 0xFF);
+  buf[offset++] = (uint8_t)((value >> 8) & 0xFF);
+  buf[offset++] = (uint8_t)((value >> 16) & 0xFF);
+  buf[offset++] = (uint8_t)((value >> 24) & 0xFF);
+  return offset;
 }
 
 /**
  * @brief Append a PUSH8 instruction with an 8-bit value.
  */
-static size_t emit_push8(uint8_t *buf, size_t offset, int8_t value)
-{
-    buf[offset++] = OP_PUSH8;
-    buf[offset++] = (uint8_t)value;
-    return offset;
+static size_t emit_push8(uint8_t *buf, size_t offset, int8_t value) {
+  buf[offset++] = OP_PUSH8;
+  buf[offset++] = (uint8_t)value;
+  return offset;
 }
 
 /**
  * @brief Append a simple opcode (no operand).
  */
-static size_t emit_op(uint8_t *buf, size_t offset, uint8_t opcode)
-{
-    buf[offset++] = opcode;
-    return offset;
+static size_t emit_op(uint8_t *buf, size_t offset, uint8_t opcode) {
+  buf[offset++] = opcode;
+  return offset;
 }
 
 /**
  * @brief Append a STORE32 instruction.
  */
-static size_t emit_store32(uint8_t *buf, size_t offset, uint16_t addr)
-{
-    buf[offset++] = OP_STORE32;
-    buf[offset++] = (uint8_t)(addr & 0xFF);
-    buf[offset++] = (uint8_t)((addr >> 8) & 0xFF);
-    return offset;
+static size_t emit_store32(uint8_t *buf, size_t offset, uint16_t addr) {
+  buf[offset++] = OP_STORE32;
+  buf[offset++] = (uint8_t)(addr & 0xFF);
+  buf[offset++] = (uint8_t)((addr >> 8) & 0xFF);
+  return offset;
 }
 
 /**
  * @brief Append a LOAD32 instruction.
  */
-static size_t emit_load32(uint8_t *buf, size_t offset, uint16_t addr)
-{
-    buf[offset++] = OP_LOAD32;
-    buf[offset++] = (uint8_t)(addr & 0xFF);
-    buf[offset++] = (uint8_t)((addr >> 8) & 0xFF);
-    return offset;
+static size_t emit_load32(uint8_t *buf, size_t offset, uint16_t addr) {
+  buf[offset++] = OP_LOAD32;
+  buf[offset++] = (uint8_t)(addr & 0xFF);
+  buf[offset++] = (uint8_t)((addr >> 8) & 0xFF);
+  return offset;
 }
 
 /**
  * @brief Append a PUSH16 instruction with a 16-bit value.
  */
-static size_t emit_push16(uint8_t *buf, size_t offset, uint16_t value)
-{
-    buf[offset++] = OP_PUSH16;
-    buf[offset++] = (uint8_t)(value & 0xFF);
-    buf[offset++] = (uint8_t)((value >> 8) & 0xFF);
-    return offset;
+static size_t emit_push16(uint8_t *buf, size_t offset, uint16_t value) {
+  buf[offset++] = OP_PUSH16;
+  buf[offset++] = (uint8_t)(value & 0xFF);
+  buf[offset++] = (uint8_t)((value >> 8) & 0xFF);
+  return offset;
 }
 
 /**
  * @brief Append a communication opcode with a 32-bit FB kind operand.
  */
-static size_t emit_comm32(uint8_t *buf, size_t offset, uint8_t opcode, uint32_t operand)
-{
-    buf[offset++] = opcode;
-    buf[offset++] = (uint8_t)(operand & 0xFFU);
-    buf[offset++] = (uint8_t)((operand >> 8) & 0xFFU);
-    buf[offset++] = (uint8_t)((operand >> 16) & 0xFFU);
-    buf[offset++] = (uint8_t)((operand >> 24) & 0xFFU);
-    return offset;
+static size_t emit_comm32(uint8_t *buf, size_t offset, uint8_t opcode, uint32_t operand) {
+  buf[offset++] = opcode;
+  buf[offset++] = (uint8_t)(operand & 0xFFU);
+  buf[offset++] = (uint8_t)((operand >> 8) & 0xFFU);
+  buf[offset++] = (uint8_t)((operand >> 16) & 0xFFU);
+  buf[offset++] = (uint8_t)((operand >> 24) & 0xFFU);
+  return offset;
 }
 
 /**
  * @brief Append a JZ instruction.
  */
-static size_t emit_jz(uint8_t *buf, size_t offset, uint16_t addr)
-{
-    buf[offset++] = OP_JZ;
-    buf[offset++] = (uint8_t)(addr & 0xFF);
-    buf[offset++] = (uint8_t)((addr >> 8) & 0xFF);
-    return offset;
+static size_t emit_jz(uint8_t *buf, size_t offset, uint16_t addr) {
+  buf[offset++] = OP_JZ;
+  buf[offset++] = (uint8_t)(addr & 0xFF);
+  buf[offset++] = (uint8_t)((addr >> 8) & 0xFF);
+  return offset;
 }
 
 /**
  * @brief Append a JMP instruction.
  */
-static size_t emit_jmp(uint8_t *buf, size_t offset, uint16_t addr)
-{
-    buf[offset++] = OP_JMP;
-    buf[offset++] = (uint8_t)(addr & 0xFF);
-    buf[offset++] = (uint8_t)((addr >> 8) & 0xFF);
-    return offset;
+static size_t emit_jmp(uint8_t *buf, size_t offset, uint16_t addr) {
+  buf[offset++] = OP_JMP;
+  buf[offset++] = (uint8_t)(addr & 0xFF);
+  buf[offset++] = (uint8_t)((addr >> 8) & 0xFF);
+  return offset;
 }
 
 /* ============================================================================
  * Basic Stack Operation Tests
  * ============================================================================ */
 
-static void test_push_and_halt(void)
-{
-    uint8_t code[16];
-    size_t len = 0;
-    const zplc_vm_state_t *state;
+static void test_push_and_halt(void) {
+  uint8_t code[16];
+  size_t len = 0;
+  const zplc_vm_state_t *state;
 
-    printf("\n=== Test: PUSH32 and HALT ===\n");
+  printf("\n=== Test: PUSH32 and HALT ===\n");
 
-    /* Program: PUSH32 42, HALT */
-    len = emit_push32(code, len, 42);
-    len = emit_op(code, len, OP_HALT);
+  /* Program: PUSH32 42, HALT */
+  len = emit_push32(code, len, 42);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    TEST_ASSERT_EQ(zplc_test_load_raw(code, len), 0, "Load raw bytecode");
+  zplc_core_init();
+  TEST_ASSERT_EQ(zplc_test_load_raw(code, len), 0, "Load raw bytecode");
 
-    /* Execute */
-    zplc_core_run(0);
+  /* Execute */
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT(state->halted, "VM halted");
-    TEST_ASSERT_EQ(state->sp, 1, "Stack has 1 item");
-    TEST_ASSERT_EQ(state->stack[0], 42, "Stack[0] = 42");
+  state = zplc_core_get_state();
+  TEST_ASSERT(state->halted, "VM halted");
+  TEST_ASSERT_EQ(state->sp, 1, "Stack has 1 item");
+  TEST_ASSERT_EQ(state->stack[0], 42, "Stack[0] = 42");
 }
 
-static void test_arithmetic(void)
-{
-    uint8_t code[64];
-    size_t len = 0;
-    const zplc_vm_state_t *state;
+static void test_arithmetic(void) {
+  uint8_t code[64];
+  size_t len = 0;
+  const zplc_vm_state_t *state;
 
-    printf("\n=== Test: Arithmetic Operations ===\n");
+  printf("\n=== Test: Arithmetic Operations ===\n");
 
-    /* Program: PUSH32 10, PUSH32 20, ADD, HALT */
-    /* Expected: 10 + 20 = 30 */
-    len = emit_push32(code, len, 10);
-    len = emit_push32(code, len, 20);
-    len = emit_op(code, len, OP_ADD);
-    len = emit_op(code, len, OP_HALT);
+  /* Program: PUSH32 10, PUSH32 20, ADD, HALT */
+  /* Expected: 10 + 20 = 30 */
+  len = emit_push32(code, len, 10);
+  len = emit_push32(code, len, 20);
+  len = emit_op(code, len, OP_ADD);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 30, "10 + 20 = 30");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 30, "10 + 20 = 30");
 
-    /* Test subtraction */
-    len = 0;
-    len = emit_push32(code, len, 100);
-    len = emit_push32(code, len, 30);
-    len = emit_op(code, len, OP_SUB);
-    len = emit_op(code, len, OP_HALT);
+  /* Test subtraction */
+  len = 0;
+  len = emit_push32(code, len, 100);
+  len = emit_push32(code, len, 30);
+  len = emit_op(code, len, OP_SUB);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 70, "100 - 30 = 70");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 70, "100 - 30 = 70");
 
-    /* Test multiplication */
-    len = 0;
-    len = emit_push32(code, len, 7);
-    len = emit_push32(code, len, 6);
-    len = emit_op(code, len, OP_MUL);
-    len = emit_op(code, len, OP_HALT);
+  /* Test multiplication */
+  len = 0;
+  len = emit_push32(code, len, 7);
+  len = emit_push32(code, len, 6);
+  len = emit_op(code, len, OP_MUL);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 42, "7 * 6 = 42");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 42, "7 * 6 = 42");
 
-    /* Test division */
-    len = 0;
-    len = emit_push32(code, len, 100);
-    len = emit_push32(code, len, 10);
-    len = emit_op(code, len, OP_DIV);
-    len = emit_op(code, len, OP_HALT);
+  /* Test division */
+  len = 0;
+  len = emit_push32(code, len, 100);
+  len = emit_push32(code, len, 10);
+  len = emit_op(code, len, OP_DIV);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 10, "100 / 10 = 10");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 10, "100 / 10 = 10");
 
-    /* Test modulo */
-    len = 0;
-    len = emit_push32(code, len, 17);
-    len = emit_push32(code, len, 5);
-    len = emit_op(code, len, OP_MOD);
-    len = emit_op(code, len, OP_HALT);
+  /* Test modulo */
+  len = 0;
+  len = emit_push32(code, len, 17);
+  len = emit_push32(code, len, 5);
+  len = emit_op(code, len, OP_MOD);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 2, "17 % 5 = 2");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 2, "17 % 5 = 2");
 }
 
-static void test_stack_operations(void)
-{
-    uint8_t code[64];
-    size_t len = 0;
-    const zplc_vm_state_t *state;
+static void test_stack_operations(void) {
+  uint8_t code[64];
+  size_t len = 0;
+  const zplc_vm_state_t *state;
 
-    printf("\n=== Test: Stack Operations ===\n");
+  printf("\n=== Test: Stack Operations ===\n");
 
-    /* Test DUP: PUSH 5, DUP -> [5, 5] */
-    len = 0;
-    len = emit_push32(code, len, 5);
-    len = emit_op(code, len, OP_DUP);
-    len = emit_op(code, len, OP_HALT);
+  /* Test DUP: PUSH 5, DUP -> [5, 5] */
+  len = 0;
+  len = emit_push32(code, len, 5);
+  len = emit_op(code, len, OP_DUP);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->sp, 2, "DUP: sp = 2");
-    TEST_ASSERT_EQ(state->stack[0], 5, "DUP: stack[0] = 5");
-    TEST_ASSERT_EQ(state->stack[1], 5, "DUP: stack[1] = 5");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->sp, 2, "DUP: sp = 2");
+  TEST_ASSERT_EQ(state->stack[0], 5, "DUP: stack[0] = 5");
+  TEST_ASSERT_EQ(state->stack[1], 5, "DUP: stack[1] = 5");
 
-    /* Test DROP: PUSH 10, PUSH 20, DROP -> [10] */
-    len = 0;
-    len = emit_push32(code, len, 10);
-    len = emit_push32(code, len, 20);
-    len = emit_op(code, len, OP_DROP);
-    len = emit_op(code, len, OP_HALT);
+  /* Test DROP: PUSH 10, PUSH 20, DROP -> [10] */
+  len = 0;
+  len = emit_push32(code, len, 10);
+  len = emit_push32(code, len, 20);
+  len = emit_op(code, len, OP_DROP);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->sp, 1, "DROP: sp = 1");
-    TEST_ASSERT_EQ(state->stack[0], 10, "DROP: stack[0] = 10");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->sp, 1, "DROP: sp = 1");
+  TEST_ASSERT_EQ(state->stack[0], 10, "DROP: stack[0] = 10");
 
-    /* Test SWAP: PUSH 1, PUSH 2, SWAP -> [2, 1] */
-    len = 0;
-    len = emit_push32(code, len, 1);
-    len = emit_push32(code, len, 2);
-    len = emit_op(code, len, OP_SWAP);
-    len = emit_op(code, len, OP_HALT);
+  /* Test SWAP: PUSH 1, PUSH 2, SWAP -> [2, 1] */
+  len = 0;
+  len = emit_push32(code, len, 1);
+  len = emit_push32(code, len, 2);
+  len = emit_op(code, len, OP_SWAP);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 2, "SWAP: stack[0] = 2");
-    TEST_ASSERT_EQ(state->stack[1], 1, "SWAP: stack[1] = 1");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 2, "SWAP: stack[0] = 2");
+  TEST_ASSERT_EQ(state->stack[1], 1, "SWAP: stack[1] = 1");
 }
 
 /* ============================================================================
  * Logic Operation Tests
  * ============================================================================ */
 
-static void test_logic_operations(void)
-{
-    uint8_t code[64];
-    size_t len = 0;
-    const zplc_vm_state_t *state;
+static void test_logic_operations(void) {
+  uint8_t code[64];
+  size_t len = 0;
+  const zplc_vm_state_t *state;
 
-    printf("\n=== Test: Logic Operations ===\n");
+  printf("\n=== Test: Logic Operations ===\n");
 
-    /* Test AND: 0xFF00 & 0x0FF0 = 0x0F00 */
-    len = 0;
-    len = emit_push32(code, len, 0xFF00);
-    len = emit_push32(code, len, 0x0FF0);
-    len = emit_op(code, len, OP_AND);
-    len = emit_op(code, len, OP_HALT);
+  /* Test AND: 0xFF00 & 0x0FF0 = 0x0F00 */
+  len = 0;
+  len = emit_push32(code, len, 0xFF00);
+  len = emit_push32(code, len, 0x0FF0);
+  len = emit_op(code, len, OP_AND);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 0x0F00, "0xFF00 & 0x0FF0 = 0x0F00");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 0x0F00, "0xFF00 & 0x0FF0 = 0x0F00");
 
-    /* Test OR: 0xF000 | 0x000F = 0xF00F */
-    len = 0;
-    len = emit_push32(code, len, 0xF000);
-    len = emit_push32(code, len, 0x000F);
-    len = emit_op(code, len, OP_OR);
-    len = emit_op(code, len, OP_HALT);
+  /* Test OR: 0xF000 | 0x000F = 0xF00F */
+  len = 0;
+  len = emit_push32(code, len, 0xF000);
+  len = emit_push32(code, len, 0x000F);
+  len = emit_op(code, len, OP_OR);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 0xF00F, "0xF000 | 0x000F = 0xF00F");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 0xF00F, "0xF000 | 0x000F = 0xF00F");
 
-    /* Test NOT: ~0x00000000 = 0xFFFFFFFF */
-    len = 0;
-    len = emit_push32(code, len, 0x00000000);
-    len = emit_op(code, len, OP_NOT);
-    len = emit_op(code, len, OP_HALT);
+  /* Test NOT: ~0x00000000 = 0xFFFFFFFF */
+  len = 0;
+  len = emit_push32(code, len, 0x00000000);
+  len = emit_op(code, len, OP_NOT);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 0xFFFFFFFF, "~0x00000000 = 0xFFFFFFFF");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 0xFFFFFFFF, "~0x00000000 = 0xFFFFFFFF");
 }
 
 /* ============================================================================
  * Comparison Operation Tests
  * ============================================================================ */
 
-static void test_comparison_operations(void)
-{
-    uint8_t code[64];
-    size_t len = 0;
-    const zplc_vm_state_t *state;
+static void test_comparison_operations(void) {
+  uint8_t code[64];
+  size_t len = 0;
+  const zplc_vm_state_t *state;
 
-    printf("\n=== Test: Comparison Operations ===\n");
+  printf("\n=== Test: Comparison Operations ===\n");
 
-    /* Test EQ: 42 == 42 -> 1 */
-    len = 0;
-    len = emit_push32(code, len, 42);
-    len = emit_push32(code, len, 42);
-    len = emit_op(code, len, OP_EQ);
-    len = emit_op(code, len, OP_HALT);
+  /* Test EQ: 42 == 42 -> 1 */
+  len = 0;
+  len = emit_push32(code, len, 42);
+  len = emit_push32(code, len, 42);
+  len = emit_op(code, len, OP_EQ);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 1, "42 == 42 -> 1");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 1, "42 == 42 -> 1");
 
-    /* Test EQ: 42 == 43 -> 0 */
-    len = 0;
-    len = emit_push32(code, len, 42);
-    len = emit_push32(code, len, 43);
-    len = emit_op(code, len, OP_EQ);
-    len = emit_op(code, len, OP_HALT);
+  /* Test EQ: 42 == 43 -> 0 */
+  len = 0;
+  len = emit_push32(code, len, 42);
+  len = emit_push32(code, len, 43);
+  len = emit_op(code, len, OP_EQ);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 0, "42 == 43 -> 0");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 0, "42 == 43 -> 0");
 
-    /* Test GT: 10 > 5 -> 1 */
-    len = 0;
-    len = emit_push32(code, len, 10);
-    len = emit_push32(code, len, 5);
-    len = emit_op(code, len, OP_GT);
-    len = emit_op(code, len, OP_HALT);
+  /* Test GT: 10 > 5 -> 1 */
+  len = 0;
+  len = emit_push32(code, len, 10);
+  len = emit_push32(code, len, 5);
+  len = emit_op(code, len, OP_GT);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 1, "10 > 5 -> 1");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 1, "10 > 5 -> 1");
 
-    /* Test LT: 5 < 10 -> 1 */
-    len = 0;
-    len = emit_push32(code, len, 5);
-    len = emit_push32(code, len, 10);
-    len = emit_op(code, len, OP_LT);
-    len = emit_op(code, len, OP_HALT);
+  /* Test LT: 5 < 10 -> 1 */
+  len = 0;
+  len = emit_push32(code, len, 5);
+  len = emit_push32(code, len, 10);
+  len = emit_op(code, len, OP_LT);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 1, "5 < 10 -> 1");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 1, "5 < 10 -> 1");
 }
 
 /* ============================================================================
  * Memory Access Tests
  * ============================================================================ */
 
-static void test_memory_access(void)
-{
-    uint8_t code[64];
-    size_t len = 0;
-    const zplc_vm_state_t *state;
+static void test_memory_access(void) {
+  uint8_t code[64];
+  size_t len = 0;
+  const zplc_vm_state_t *state;
 
-    printf("\n=== Test: Memory Access ===\n");
+  printf("\n=== Test: Memory Access ===\n");
 
-    /* Test STORE32/LOAD32 in work memory (0x2000+) */
-    /* Program: PUSH 12345, STORE32 0x2000, LOAD32 0x2000, HALT */
-    len = 0;
-    len = emit_push32(code, len, 12345);
-    len = emit_store32(code, len, 0x2000);  /* Store to work memory */
-    len = emit_load32(code, len, 0x2000);   /* Load back */
-    len = emit_op(code, len, OP_HALT);
+  /* Test STORE32/LOAD32 in work memory (0x2000+) */
+  /* Program: PUSH 12345, STORE32 0x2000, LOAD32 0x2000, HALT */
+  len = 0;
+  len = emit_push32(code, len, 12345);
+  len = emit_store32(code, len, 0x2000); /* Store to work memory */
+  len = emit_load32(code, len, 0x2000);  /* Load back */
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 12345, "STORE/LOAD work memory: 12345");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 12345, "STORE/LOAD work memory: 12345");
 
-    /* Test writing to OPI (0x1000+) */
-    len = 0;
-    len = emit_push32(code, len, 0xDEADBEEF);
-    len = emit_store32(code, len, 0x1000);  /* Store to OPI */
-    len = emit_op(code, len, OP_HALT);
+  /* Test writing to OPI (0x1000+) */
+  len = 0;
+  len = emit_push32(code, len, 0xDEADBEEF);
+  len = emit_store32(code, len, 0x1000); /* Store to OPI */
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    TEST_ASSERT_EQ(zplc_core_get_opi(0), 0xDEADBEEF, "OPI[0] = 0xDEADBEEF");
+  TEST_ASSERT_EQ(zplc_core_get_opi(0), 0xDEADBEEF, "OPI[0] = 0xDEADBEEF");
 
-    /* Test reading from IPI (0x0000+) */
-    len = 0;
-    len = emit_load32(code, len, 0x0000);   /* Load from IPI */
-    len = emit_op(code, len, OP_HALT);
+  /* Test reading from IPI (0x0000+) */
+  len = 0;
+  len = emit_load32(code, len, 0x0000); /* Load from IPI */
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_core_set_ipi(0, 0xCAFEBABE);       /* Set input value */
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_core_set_ipi(0, 0xCAFEBABE); /* Set input value */
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 0xCAFEBABE, "Load IPI: 0xCAFEBABE");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 0xCAFEBABE, "Load IPI: 0xCAFEBABE");
 }
 
 /* ============================================================================
  * Control Flow Tests
  * ============================================================================ */
 
-static void test_control_flow(void)
-{
-    uint8_t code[64];
-    size_t len = 0;
-    const zplc_vm_state_t *state;
+static void test_control_flow(void) {
+  uint8_t code[64];
+  size_t len = 0;
+  const zplc_vm_state_t *state;
 
-    printf("\n=== Test: Control Flow ===\n");
+  printf("\n=== Test: Control Flow ===\n");
 
-    /*
+  /*
      * Test JMP: Jump over an instruction
      * 0: JMP 6       (3 bytes)
      * 3: PUSH32 999  (5 bytes) <- should be skipped
      * 8: PUSH32 42   (5 bytes)
      * 13: HALT
      */
-    len = 0;
-    len = emit_jmp(code, len, 8);           /* Jump to offset 8 */
-    len = emit_push32(code, len, 999);      /* Should be skipped */
-    len = emit_push32(code, len, 42);       /* This should execute */
-    len = emit_op(code, len, OP_HALT);
+  len = 0;
+  len = emit_jmp(code, len, 8);      /* Jump to offset 8 */
+  len = emit_push32(code, len, 999); /* Should be skipped */
+  len = emit_push32(code, len, 42);  /* This should execute */
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->sp, 1, "JMP: only one value on stack");
-    TEST_ASSERT_EQ(state->stack[0], 42, "JMP: skipped 999, got 42");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->sp, 1, "JMP: only one value on stack");
+  TEST_ASSERT_EQ(state->stack[0], 42, "JMP: skipped 999, got 42");
 
-    /*
+  /*
      * Test JZ (jump if zero):
      * PUSH 0, JZ skip, PUSH 100, skip: PUSH 42, HALT
      */
-    len = 0;
-    len = emit_push32(code, len, 0);        /* Push 0 (false) */
-    len = emit_jz(code, len, 13);           /* JZ to offset 13 */
-    len = emit_push32(code, len, 100);      /* Should be skipped */
-    len = emit_push32(code, len, 42);       /* offset 13: This executes */
-    len = emit_op(code, len, OP_HALT);
+  len = 0;
+  len = emit_push32(code, len, 0);   /* Push 0 (false) */
+  len = emit_jz(code, len, 13);      /* JZ to offset 13 */
+  len = emit_push32(code, len, 100); /* Should be skipped */
+  len = emit_push32(code, len, 42);  /* offset 13: This executes */
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->sp, 1, "JZ(true): only one value on stack");
-    TEST_ASSERT_EQ(state->stack[0], 42, "JZ(true): jumped, got 42");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->sp, 1, "JZ(true): only one value on stack");
+  TEST_ASSERT_EQ(state->stack[0], 42, "JZ(true): jumped, got 42");
 
-    /*
+  /*
      * Test JZ not taken:
      * PUSH 1, JZ skip, PUSH 100, HALT, skip: PUSH 42, HALT
      */
-    len = 0;
-    len = emit_push32(code, len, 1);        /* Push 1 (true) */
-    len = emit_jz(code, len, 18);           /* JZ to offset 18 (not taken) */
-    len = emit_push32(code, len, 100);      /* This executes */
-    len = emit_op(code, len, OP_HALT);
-    len = emit_push32(code, len, 42);       /* Skipped */
-    len = emit_op(code, len, OP_HALT);
+  len = 0;
+  len = emit_push32(code, len, 1);   /* Push 1 (true) */
+  len = emit_jz(code, len, 18);      /* JZ to offset 18 (not taken) */
+  len = emit_push32(code, len, 100); /* This executes */
+  len = emit_op(code, len, OP_HALT);
+  len = emit_push32(code, len, 42); /* Skipped */
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 100, "JZ(false): no jump, got 100");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 100, "JZ(false): no jump, got 100");
 }
 
 /* ============================================================================
  * Error Handling Tests
  * ============================================================================ */
 
-static void test_error_handling(void)
-{
-    uint8_t code[64];
-    size_t len = 0;
-    int result;
+static void test_error_handling(void) {
+  uint8_t code[64];
+  size_t len = 0;
+  int result;
 
-    printf("\n=== Test: Error Handling ===\n");
+  printf("\n=== Test: Error Handling ===\n");
 
-    /* Test division by zero */
-    len = 0;
-    len = emit_push32(code, len, 10);
-    len = emit_push32(code, len, 0);
-    len = emit_op(code, len, OP_DIV);
-    len = emit_op(code, len, OP_HALT);
+  /* Test division by zero */
+  len = 0;
+  len = emit_push32(code, len, 10);
+  len = emit_push32(code, len, 0);
+  len = emit_op(code, len, OP_DIV);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    result = zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  result = zplc_core_run(0);
 
-    TEST_ASSERT(result < 0, "Division by zero returns error");
-    TEST_ASSERT_EQ(zplc_core_get_error(), ZPLC_VM_DIV_BY_ZERO,
-                   "Error code is DIV_BY_ZERO");
+  TEST_ASSERT(result < 0, "Division by zero returns error");
+  TEST_ASSERT_EQ(zplc_core_get_error(), ZPLC_VM_DIV_BY_ZERO, "Error code is DIV_BY_ZERO");
 
-    /* Test stack underflow */
-    len = 0;
-    len = emit_op(code, len, OP_DROP);      /* Drop with empty stack */
-    len = emit_op(code, len, OP_HALT);
+  /* Test stack underflow */
+  len = 0;
+  len = emit_op(code, len, OP_DROP); /* Drop with empty stack */
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    result = zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  result = zplc_core_run(0);
 
-    TEST_ASSERT(result < 0, "Stack underflow returns error");
-    TEST_ASSERT_EQ(zplc_core_get_error(), ZPLC_VM_STACK_UNDERFLOW,
-                   "Error code is STACK_UNDERFLOW");
+  TEST_ASSERT(result < 0, "Stack underflow returns error");
+  TEST_ASSERT_EQ(zplc_core_get_error(), ZPLC_VM_STACK_UNDERFLOW, "Error code is STACK_UNDERFLOW");
 }
 
 /* ============================================================================
@@ -701,151 +677,148 @@ static void test_error_handling(void)
  * null-reference faults, CMP-023 and CMP-024)
  * ============================================================================ */
 
-static void test_indirect_access_outside_memory(void)
-{
-    uint8_t code[32];
-    size_t len;
-    int result;
+static void test_indirect_access_outside_memory(void) {
+  uint8_t code[32];
+  size_t len;
+  int result;
 
-    printf("\n=== Test: Indirect access outside the data memory ===\n");
+  printf("\n=== Test: Indirect access outside the data memory ===\n");
 
-    /* The generated code raises its defined fault by reading an address of the CODE region ... */
-    len = 0;
-    len = emit_push16(code, len, 0x5000);
-    len = emit_op(code, len, OP_LOADI8);
-    len = emit_op(code, len, OP_HALT);
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    result = zplc_core_run(0);
-    TEST_ASSERT(result < 0, "LOADI8 of a CODE address returns an error");
-    TEST_ASSERT_EQ(zplc_core_get_error(), ZPLC_VM_OUT_OF_BOUNDS, "LOADI8 of a CODE address: OUT_OF_BOUNDS");
+  /* The generated code raises its defined fault by reading an address of the CODE region ... */
+  len = 0;
+  len = emit_push16(code, len, 0x5000);
+  len = emit_op(code, len, OP_LOADI8);
+  len = emit_op(code, len, OP_HALT);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  result = zplc_core_run(0);
+  TEST_ASSERT(result < 0, "LOADI8 of a CODE address returns an error");
+  TEST_ASSERT_EQ(zplc_core_get_error(), ZPLC_VM_OUT_OF_BOUNDS, "LOADI8 of a CODE address: OUT_OF_BOUNDS");
 
-    /* ... and a null reference is 0xFFFF, which no region contains: 8, 16 and 32 bits, read and write */
-    len = 0;
-    len = emit_push16(code, len, 0xFFFF);
-    len = emit_op(code, len, OP_LOADI32);
-    len = emit_op(code, len, OP_HALT);
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    result = zplc_core_run(0);
-    TEST_ASSERT(result < 0, "LOADI32 of the null reference returns an error");
-    TEST_ASSERT_EQ(zplc_core_get_error(), ZPLC_VM_OUT_OF_BOUNDS, "LOADI32 of 0xFFFF: OUT_OF_BOUNDS");
+  /* ... and a null reference is 0xFFFF, which no region contains: 8, 16 and 32 bits, read and write */
+  len = 0;
+  len = emit_push16(code, len, 0xFFFF);
+  len = emit_op(code, len, OP_LOADI32);
+  len = emit_op(code, len, OP_HALT);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  result = zplc_core_run(0);
+  TEST_ASSERT(result < 0, "LOADI32 of the null reference returns an error");
+  TEST_ASSERT_EQ(zplc_core_get_error(), ZPLC_VM_OUT_OF_BOUNDS, "LOADI32 of 0xFFFF: OUT_OF_BOUNDS");
 
-    len = 0;
-    len = emit_push16(code, len, 0xFFFF);
-    len = emit_op(code, len, OP_LOADI16);
-    len = emit_op(code, len, OP_HALT);
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    result = zplc_core_run(0);
-    TEST_ASSERT(result < 0, "LOADI16 of the null reference returns an error");
-    TEST_ASSERT_EQ(zplc_core_get_error(), ZPLC_VM_OUT_OF_BOUNDS, "LOADI16 of 0xFFFF: OUT_OF_BOUNDS");
+  len = 0;
+  len = emit_push16(code, len, 0xFFFF);
+  len = emit_op(code, len, OP_LOADI16);
+  len = emit_op(code, len, OP_HALT);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  result = zplc_core_run(0);
+  TEST_ASSERT(result < 0, "LOADI16 of the null reference returns an error");
+  TEST_ASSERT_EQ(zplc_core_get_error(), ZPLC_VM_OUT_OF_BOUNDS, "LOADI16 of 0xFFFF: OUT_OF_BOUNDS");
 
-    len = 0;
-    len = emit_push16(code, len, 0xFFFF);
-    len = emit_push8(code, len, 1);
-    len = emit_op(code, len, OP_STOREI8);
-    len = emit_op(code, len, OP_HALT);
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    result = zplc_core_run(0);
-    TEST_ASSERT(result < 0, "STOREI8 through the null reference returns an error");
-    TEST_ASSERT_EQ(zplc_core_get_error(), ZPLC_VM_OUT_OF_BOUNDS, "STOREI8 to 0xFFFF: OUT_OF_BOUNDS");
+  len = 0;
+  len = emit_push16(code, len, 0xFFFF);
+  len = emit_push8(code, len, 1);
+  len = emit_op(code, len, OP_STOREI8);
+  len = emit_op(code, len, OP_HALT);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  result = zplc_core_run(0);
+  TEST_ASSERT(result < 0, "STOREI8 through the null reference returns an error");
+  TEST_ASSERT_EQ(zplc_core_get_error(), ZPLC_VM_OUT_OF_BOUNDS, "STOREI8 to 0xFFFF: OUT_OF_BOUNDS");
 
-    len = 0;
-    len = emit_push16(code, len, 0xFFFF);
-    len = emit_push8(code, len, 1);
-    len = emit_op(code, len, OP_STOREI32);
-    len = emit_op(code, len, OP_HALT);
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    result = zplc_core_run(0);
-    TEST_ASSERT(result < 0, "STOREI32 through the null reference returns an error");
-    TEST_ASSERT_EQ(zplc_core_get_error(), ZPLC_VM_OUT_OF_BOUNDS, "STOREI32 to 0xFFFF: OUT_OF_BOUNDS");
+  len = 0;
+  len = emit_push16(code, len, 0xFFFF);
+  len = emit_push8(code, len, 1);
+  len = emit_op(code, len, OP_STOREI32);
+  len = emit_op(code, len, OP_HALT);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  result = zplc_core_run(0);
+  TEST_ASSERT(result < 0, "STOREI32 through the null reference returns an error");
+  TEST_ASSERT_EQ(zplc_core_get_error(), ZPLC_VM_OUT_OF_BOUNDS, "STOREI32 to 0xFFFF: OUT_OF_BOUNDS");
 
-    /* A WORK address is not a fault */
-    len = 0;
-    len = emit_push16(code, len, 0x2000);
-    len = emit_op(code, len, OP_LOADI8);
-    len = emit_op(code, len, OP_HALT);
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    result = zplc_core_run(0);
-    TEST_ASSERT(result >= 0, "LOADI8 of a WORK address runs");
+  /* A WORK address is not a fault */
+  len = 0;
+  len = emit_push16(code, len, 0x2000);
+  len = emit_op(code, len, OP_LOADI8);
+  len = emit_op(code, len, OP_HALT);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  result = zplc_core_run(0);
+  TEST_ASSERT(result >= 0, "LOADI8 of a WORK address runs");
 }
 
 /* ============================================================================
  * Complex Program Test
  * ============================================================================ */
 
-static void test_complex_program(void)
-{
-    uint8_t code[128];
-    size_t len = 0;
-    const zplc_vm_state_t *state;
+static void test_complex_program(void) {
+  uint8_t code[128];
+  size_t len = 0;
+  const zplc_vm_state_t *state;
 
-    printf("\n=== Test: Complex Program ===\n");
+  printf("\n=== Test: Complex Program ===\n");
 
-    /*
+  /*
      * Program: Calculate (10 + 20) * 3 - 5 = 85
      * Then store to OPI[0]
      */
-    len = 0;
-    len = emit_push32(code, len, 10);
-    len = emit_push32(code, len, 20);
-    len = emit_op(code, len, OP_ADD);       /* 10 + 20 = 30 */
-    len = emit_push32(code, len, 3);
-    len = emit_op(code, len, OP_MUL);       /* 30 * 3 = 90 */
-    len = emit_push32(code, len, 5);
-    len = emit_op(code, len, OP_SUB);       /* 90 - 5 = 85 */
-    len = emit_store32(code, len, 0x1000);  /* Store to OPI */
-    len = emit_op(code, len, OP_HALT);
+  len = 0;
+  len = emit_push32(code, len, 10);
+  len = emit_push32(code, len, 20);
+  len = emit_op(code, len, OP_ADD); /* 10 + 20 = 30 */
+  len = emit_push32(code, len, 3);
+  len = emit_op(code, len, OP_MUL); /* 30 * 3 = 90 */
+  len = emit_push32(code, len, 5);
+  len = emit_op(code, len, OP_SUB);      /* 90 - 5 = 85 */
+  len = emit_store32(code, len, 0x1000); /* Store to OPI */
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT(state->halted, "Complex program halted");
-    TEST_ASSERT_EQ(state->sp, 0, "Stack is empty after STORE");
-    TEST_ASSERT_EQ(zplc_core_get_opi(0), 85, "(10+20)*3-5 = 85 in OPI");
+  state = zplc_core_get_state();
+  TEST_ASSERT(state->halted, "Complex program halted");
+  TEST_ASSERT_EQ(state->sp, 0, "Stack is empty after STORE");
+  TEST_ASSERT_EQ(zplc_core_get_opi(0), 85, "(10+20)*3-5 = 85 in OPI");
 }
 
 /* ============================================================================
  * PUSH8 Test (Sign Extension)
  * ============================================================================ */
 
-static void test_push8_sign_extension(void)
-{
-    uint8_t code[32];
-    size_t len = 0;
-    const zplc_vm_state_t *state;
+static void test_push8_sign_extension(void) {
+  uint8_t code[32];
+  size_t len = 0;
+  const zplc_vm_state_t *state;
 
-    printf("\n=== Test: PUSH8 Sign Extension ===\n");
+  printf("\n=== Test: PUSH8 Sign Extension ===\n");
 
-    /* Positive value: PUSH8 42 */
-    len = 0;
-    len = emit_push8(code, len, 42);
-    len = emit_op(code, len, OP_HALT);
+  /* Positive value: PUSH8 42 */
+  len = 0;
+  len = emit_push8(code, len, 42);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 42, "PUSH8 42 -> 42");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 42, "PUSH8 42 -> 42");
 
-    /* Negative value: PUSH8 -1 (0xFF) should become 0xFFFFFFFF */
-    len = 0;
-    len = emit_push8(code, len, -1);
-    len = emit_op(code, len, OP_HALT);
+  /* Negative value: PUSH8 -1 (0xFF) should become 0xFFFFFFFF */
+  len = 0;
+  len = emit_push8(code, len, -1);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 0xFFFFFFFF, "PUSH8 -1 -> 0xFFFFFFFF");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 0xFFFFFFFF, "PUSH8 -1 -> 0xFFFFFFFF");
 }
 
 /* ============================================================================
@@ -855,278 +828,273 @@ static void test_push8_sign_extension(void)
 /**
  * @brief Helper to convert float to uint32_t bit pattern.
  */
-static uint32_t float_to_bits(float f)
-{
-    uint32_t bits;
-    memcpy(&bits, &f, sizeof(bits));
-    return bits;
+static uint32_t float_to_bits(float f) {
+  uint32_t bits;
+  memcpy(&bits, &f, sizeof(bits));
+  return bits;
 }
 
 /**
  * @brief Helper to convert uint32_t bit pattern to float.
  */
-static float bits_to_float(uint32_t bits)
-{
-    float f;
-    memcpy(&f, &bits, sizeof(f));
-    return f;
+static float bits_to_float(uint32_t bits) {
+  float f;
+  memcpy(&f, &bits, sizeof(f));
+  return f;
 }
 
-static void test_float_arithmetic(void)
-{
-    uint8_t code[64];
-    size_t len = 0;
-    const zplc_vm_state_t *state;
-    float result;
+static void test_float_arithmetic(void) {
+  uint8_t code[64];
+  size_t len = 0;
+  const zplc_vm_state_t *state;
+  float result;
 
-    printf("\n=== Test: Float Arithmetic ===\n");
+  printf("\n=== Test: Float Arithmetic ===\n");
 
-    /* Test ADDF: 3.5 + 2.5 = 6.0 */
-    len = 0;
-    len = emit_push32(code, len, float_to_bits(3.5f));
-    len = emit_push32(code, len, float_to_bits(2.5f));
-    len = emit_op(code, len, OP_ADDF);
-    len = emit_op(code, len, OP_HALT);
+  /* Test ADDF: 3.5 + 2.5 = 6.0 */
+  len = 0;
+  len = emit_push32(code, len, float_to_bits(3.5f));
+  len = emit_push32(code, len, float_to_bits(2.5f));
+  len = emit_op(code, len, OP_ADDF);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    result = bits_to_float(state->stack[0]);
-    TEST_ASSERT(result == 6.0f, "ADDF: 3.5 + 2.5 = 6.0");
+  state = zplc_core_get_state();
+  result = bits_to_float(state->stack[0]);
+  TEST_ASSERT(result == 6.0f, "ADDF: 3.5 + 2.5 = 6.0");
 
-    /* Test SUBF: 10.0 - 3.5 = 6.5 */
-    len = 0;
-    len = emit_push32(code, len, float_to_bits(10.0f));
-    len = emit_push32(code, len, float_to_bits(3.5f));
-    len = emit_op(code, len, OP_SUBF);
-    len = emit_op(code, len, OP_HALT);
+  /* Test SUBF: 10.0 - 3.5 = 6.5 */
+  len = 0;
+  len = emit_push32(code, len, float_to_bits(10.0f));
+  len = emit_push32(code, len, float_to_bits(3.5f));
+  len = emit_op(code, len, OP_SUBF);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    result = bits_to_float(state->stack[0]);
-    TEST_ASSERT(result == 6.5f, "SUBF: 10.0 - 3.5 = 6.5");
+  state = zplc_core_get_state();
+  result = bits_to_float(state->stack[0]);
+  TEST_ASSERT(result == 6.5f, "SUBF: 10.0 - 3.5 = 6.5");
 
-    /* Test MULF: 3.0 * 4.0 = 12.0 */
-    len = 0;
-    len = emit_push32(code, len, float_to_bits(3.0f));
-    len = emit_push32(code, len, float_to_bits(4.0f));
-    len = emit_op(code, len, OP_MULF);
-    len = emit_op(code, len, OP_HALT);
+  /* Test MULF: 3.0 * 4.0 = 12.0 */
+  len = 0;
+  len = emit_push32(code, len, float_to_bits(3.0f));
+  len = emit_push32(code, len, float_to_bits(4.0f));
+  len = emit_op(code, len, OP_MULF);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    result = bits_to_float(state->stack[0]);
-    TEST_ASSERT(result == 12.0f, "MULF: 3.0 * 4.0 = 12.0");
+  state = zplc_core_get_state();
+  result = bits_to_float(state->stack[0]);
+  TEST_ASSERT(result == 12.0f, "MULF: 3.0 * 4.0 = 12.0");
 
-    /* Test DIVF: 15.0 / 3.0 = 5.0 */
-    len = 0;
-    len = emit_push32(code, len, float_to_bits(15.0f));
-    len = emit_push32(code, len, float_to_bits(3.0f));
-    len = emit_op(code, len, OP_DIVF);
-    len = emit_op(code, len, OP_HALT);
+  /* Test DIVF: 15.0 / 3.0 = 5.0 */
+  len = 0;
+  len = emit_push32(code, len, float_to_bits(15.0f));
+  len = emit_push32(code, len, float_to_bits(3.0f));
+  len = emit_op(code, len, OP_DIVF);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    result = bits_to_float(state->stack[0]);
-    TEST_ASSERT(result == 5.0f, "DIVF: 15.0 / 3.0 = 5.0");
+  state = zplc_core_get_state();
+  result = bits_to_float(state->stack[0]);
+  TEST_ASSERT(result == 5.0f, "DIVF: 15.0 / 3.0 = 5.0");
 
-    /* Test NEGF: -(-7.5) = 7.5 */
-    len = 0;
-    len = emit_push32(code, len, float_to_bits(-7.5f));
-    len = emit_op(code, len, OP_NEGF);
-    len = emit_op(code, len, OP_HALT);
+  /* Test NEGF: -(-7.5) = 7.5 */
+  len = 0;
+  len = emit_push32(code, len, float_to_bits(-7.5f));
+  len = emit_op(code, len, OP_NEGF);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    result = bits_to_float(state->stack[0]);
-    TEST_ASSERT(result == 7.5f, "NEGF: -(-7.5) = 7.5");
+  state = zplc_core_get_state();
+  result = bits_to_float(state->stack[0]);
+  TEST_ASSERT(result == 7.5f, "NEGF: -(-7.5) = 7.5");
 
-    /* Test ABSF: abs(-9.25) = 9.25 */
-    len = 0;
-    len = emit_push32(code, len, float_to_bits(-9.25f));
-    len = emit_op(code, len, OP_ABSF);
-    len = emit_op(code, len, OP_HALT);
+  /* Test ABSF: abs(-9.25) = 9.25 */
+  len = 0;
+  len = emit_push32(code, len, float_to_bits(-9.25f));
+  len = emit_op(code, len, OP_ABSF);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    result = bits_to_float(state->stack[0]);
-    TEST_ASSERT(result == 9.25f, "ABSF: abs(-9.25) = 9.25");
+  state = zplc_core_get_state();
+  result = bits_to_float(state->stack[0]);
+  TEST_ASSERT(result == 9.25f, "ABSF: abs(-9.25) = 9.25");
 
-    /* Test DIVF by zero - should error */
-    len = 0;
-    len = emit_push32(code, len, float_to_bits(10.0f));
-    len = emit_push32(code, len, float_to_bits(0.0f));
-    len = emit_op(code, len, OP_DIVF);
-    len = emit_op(code, len, OP_HALT);
+  /* Test DIVF by zero - should error */
+  len = 0;
+  len = emit_push32(code, len, float_to_bits(10.0f));
+  len = emit_push32(code, len, float_to_bits(0.0f));
+  len = emit_op(code, len, OP_DIVF);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    TEST_ASSERT_EQ(zplc_core_get_error(), ZPLC_VM_DIV_BY_ZERO,
-                   "DIVF by zero triggers error");
+  TEST_ASSERT_EQ(zplc_core_get_error(), ZPLC_VM_DIV_BY_ZERO, "DIVF by zero triggers error");
 }
 
 /* ============================================================================
  * Type Conversion Tests
  * ============================================================================ */
 
-static void test_type_conversions(void)
-{
-    uint8_t code[64];
-    size_t len = 0;
-    const zplc_vm_state_t *state;
-    float result;
+static void test_type_conversions(void) {
+  uint8_t code[64];
+  size_t len = 0;
+  const zplc_vm_state_t *state;
+  float result;
 
-    printf("\n=== Test: Type Conversions ===\n");
+  printf("\n=== Test: Type Conversions ===\n");
 
-    /* Test I2F: 42 -> 42.0f */
-    len = 0;
-    len = emit_push32(code, len, 42);
-    len = emit_op(code, len, OP_I2F);
-    len = emit_op(code, len, OP_HALT);
+  /* Test I2F: 42 -> 42.0f */
+  len = 0;
+  len = emit_push32(code, len, 42);
+  len = emit_op(code, len, OP_I2F);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    result = bits_to_float(state->stack[0]);
-    TEST_ASSERT(result == 42.0f, "I2F: 42 -> 42.0f");
+  state = zplc_core_get_state();
+  result = bits_to_float(state->stack[0]);
+  TEST_ASSERT(result == 42.0f, "I2F: 42 -> 42.0f");
 
-    /* Test I2F with negative: -100 -> -100.0f */
-    len = 0;
-    len = emit_push32(code, len, (uint32_t)-100);
-    len = emit_op(code, len, OP_I2F);
-    len = emit_op(code, len, OP_HALT);
+  /* Test I2F with negative: -100 -> -100.0f */
+  len = 0;
+  len = emit_push32(code, len, (uint32_t)-100);
+  len = emit_op(code, len, OP_I2F);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    result = bits_to_float(state->stack[0]);
-    TEST_ASSERT(result == -100.0f, "I2F: -100 -> -100.0f");
+  state = zplc_core_get_state();
+  result = bits_to_float(state->stack[0]);
+  TEST_ASSERT(result == -100.0f, "I2F: -100 -> -100.0f");
 
-    /* Test F2I: 3.7 -> 3 (truncate) */
-    len = 0;
-    len = emit_push32(code, len, float_to_bits(3.7f));
-    len = emit_op(code, len, OP_F2I);
-    len = emit_op(code, len, OP_HALT);
+  /* Test F2I: 3.7 -> 3 (truncate) */
+  len = 0;
+  len = emit_push32(code, len, float_to_bits(3.7f));
+  len = emit_op(code, len, OP_F2I);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ((int32_t)state->stack[0], 3, "F2I: 3.7 -> 3");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ((int32_t)state->stack[0], 3, "F2I: 3.7 -> 3");
 
-    /* Test F2I with negative: -5.9 -> -5 (truncate towards zero) */
-    len = 0;
-    len = emit_push32(code, len, float_to_bits(-5.9f));
-    len = emit_op(code, len, OP_F2I);
-    len = emit_op(code, len, OP_HALT);
+  /* Test F2I with negative: -5.9 -> -5 (truncate towards zero) */
+  len = 0;
+  len = emit_push32(code, len, float_to_bits(-5.9f));
+  len = emit_op(code, len, OP_F2I);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ((int32_t)state->stack[0], -5, "F2I: -5.9 -> -5");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ((int32_t)state->stack[0], -5, "F2I: -5.9 -> -5");
 
-    /* Test I2B: 0 -> 0, non-zero -> 1 */
-    len = 0;
-    len = emit_push32(code, len, 0);
-    len = emit_op(code, len, OP_I2B);
-    len = emit_op(code, len, OP_HALT);
+  /* Test I2B: 0 -> 0, non-zero -> 1 */
+  len = 0;
+  len = emit_push32(code, len, 0);
+  len = emit_op(code, len, OP_I2B);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 0, "I2B: 0 -> 0");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 0, "I2B: 0 -> 0");
 
-    len = 0;
-    len = emit_push32(code, len, 42);
-    len = emit_op(code, len, OP_I2B);
-    len = emit_op(code, len, OP_HALT);
+  len = 0;
+  len = emit_push32(code, len, 42);
+  len = emit_op(code, len, OP_I2B);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 1, "I2B: 42 -> 1");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 1, "I2B: 42 -> 1");
 
-    /* Test EXT8: 0x80 (128) sign-extended to 0xFFFFFF80 (-128) */
-    len = 0;
-    len = emit_push32(code, len, 0x80);
-    len = emit_op(code, len, OP_EXT8);
-    len = emit_op(code, len, OP_HALT);
+  /* Test EXT8: 0x80 (128) sign-extended to 0xFFFFFF80 (-128) */
+  len = 0;
+  len = emit_push32(code, len, 0x80);
+  len = emit_op(code, len, OP_EXT8);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ((int32_t)state->stack[0], -128, "EXT8: 0x80 -> -128");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ((int32_t)state->stack[0], -128, "EXT8: 0x80 -> -128");
 
-    /* Test EXT16: 0x8000 sign-extended to 0xFFFF8000 (-32768) */
-    len = 0;
-    len = emit_push32(code, len, 0x8000);
-    len = emit_op(code, len, OP_EXT16);
-    len = emit_op(code, len, OP_HALT);
+  /* Test EXT16: 0x8000 sign-extended to 0xFFFF8000 (-32768) */
+  len = 0;
+  len = emit_push32(code, len, 0x8000);
+  len = emit_op(code, len, OP_EXT16);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ((int32_t)state->stack[0], -32768, "EXT16: 0x8000 -> -32768");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ((int32_t)state->stack[0], -32768, "EXT16: 0x8000 -> -32768");
 
-    /* Test ZEXT8: 0xFF with garbage upper bits -> 0xFF */
-    len = 0;
-    len = emit_push32(code, len, 0xDEADBEFF);
-    len = emit_op(code, len, OP_ZEXT8);
-    len = emit_op(code, len, OP_HALT);
+  /* Test ZEXT8: 0xFF with garbage upper bits -> 0xFF */
+  len = 0;
+  len = emit_push32(code, len, 0xDEADBEFF);
+  len = emit_op(code, len, OP_ZEXT8);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 0xFF, "ZEXT8: 0xDEADBEFF -> 0xFF");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 0xFF, "ZEXT8: 0xDEADBEFF -> 0xFF");
 
-    /* Test ZEXT16: 0xABCD with garbage upper bits -> 0xABCD */
-    len = 0;
-    len = emit_push32(code, len, 0xDEADABCD);
-    len = emit_op(code, len, OP_ZEXT16);
-    len = emit_op(code, len, OP_HALT);
+  /* Test ZEXT16: 0xABCD with garbage upper bits -> 0xABCD */
+  len = 0;
+  len = emit_push32(code, len, 0xDEADABCD);
+  len = emit_op(code, len, OP_ZEXT16);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 0xABCD, "ZEXT16: 0xDEADABCD -> 0xABCD");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 0xABCD, "ZEXT16: 0xDEADABCD -> 0xABCD");
 }
 
 /* ============================================================================
@@ -1136,106 +1104,102 @@ static void test_type_conversions(void)
 /**
  * @brief Emit a LOAD64 instruction.
  */
-static size_t emit_load64(uint8_t *buf, size_t offset, uint16_t addr)
-{
-    buf[offset++] = OP_LOAD64;
-    buf[offset++] = (uint8_t)(addr & 0xFF);
-    buf[offset++] = (uint8_t)((addr >> 8) & 0xFF);
-    return offset;
+static size_t emit_load64(uint8_t *buf, size_t offset, uint16_t addr) {
+  buf[offset++] = OP_LOAD64;
+  buf[offset++] = (uint8_t)(addr & 0xFF);
+  buf[offset++] = (uint8_t)((addr >> 8) & 0xFF);
+  return offset;
 }
 
 /**
  * @brief Emit a STORE64 instruction.
  */
-static size_t emit_store64(uint8_t *buf, size_t offset, uint16_t addr)
-{
-    buf[offset++] = OP_STORE64;
-    buf[offset++] = (uint8_t)(addr & 0xFF);
-    buf[offset++] = (uint8_t)((addr >> 8) & 0xFF);
-    return offset;
+static size_t emit_store64(uint8_t *buf, size_t offset, uint16_t addr) {
+  buf[offset++] = OP_STORE64;
+  buf[offset++] = (uint8_t)(addr & 0xFF);
+  buf[offset++] = (uint8_t)((addr >> 8) & 0xFF);
+  return offset;
 }
 
-static void test_64bit_memory(void)
-{
-    uint8_t code[64];
-    size_t len = 0;
-    const zplc_vm_state_t *state;
+static void test_64bit_memory(void) {
+  uint8_t code[64];
+  size_t len = 0;
+  const zplc_vm_state_t *state;
 
-    printf("\n=== Test: 64-bit Memory Operations ===\n");
+  printf("\n=== Test: 64-bit Memory Operations ===\n");
 
-    /*
+  /*
      * Test STORE64/LOAD64:
      * Push low word (0xDEADBEEF), push high word (0xCAFEBABE)
      * STORE64 to OPI @ 0x1000
      * LOAD64 from OPI @ 0x1000
      * Verify both words on stack
      */
-    len = 0;
-    len = emit_push32(code, len, 0xDEADBEEF);  /* low word */
-    len = emit_push32(code, len, 0xCAFEBABE);  /* high word (TOS) */
-    len = emit_store64(code, len, 0x1000);     /* Store to OPI */
-    len = emit_load64(code, len, 0x1000);      /* Load back from OPI */
-    len = emit_op(code, len, OP_HALT);
+  len = 0;
+  len = emit_push32(code, len, 0xDEADBEEF); /* low word */
+  len = emit_push32(code, len, 0xCAFEBABE); /* high word (TOS) */
+  len = emit_store64(code, len, 0x1000);    /* Store to OPI */
+  len = emit_load64(code, len, 0x1000);     /* Load back from OPI */
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->sp, 2, "LOAD64 pushes 2 values");
-    TEST_ASSERT_EQ(state->stack[0], 0xDEADBEEF, "LOAD64 low word = 0xDEADBEEF");
-    TEST_ASSERT_EQ(state->stack[1], 0xCAFEBABE, "LOAD64 high word = 0xCAFEBABE");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->sp, 2, "LOAD64 pushes 2 values");
+  TEST_ASSERT_EQ(state->stack[0], 0xDEADBEEF, "LOAD64 low word = 0xDEADBEEF");
+  TEST_ASSERT_EQ(state->stack[1], 0xCAFEBABE, "LOAD64 high word = 0xCAFEBABE");
 
-    /* Verify the memory was actually written */
-    TEST_ASSERT_EQ(zplc_core_get_opi(0), 0xDEADBEEF, "OPI[0:3] = 0xDEADBEEF");
-    TEST_ASSERT_EQ(zplc_core_get_opi(4), 0xCAFEBABE, "OPI[4:7] = 0xCAFEBABE");
+  /* Verify the memory was actually written */
+  TEST_ASSERT_EQ(zplc_core_get_opi(0), 0xDEADBEEF, "OPI[0:3] = 0xDEADBEEF");
+  TEST_ASSERT_EQ(zplc_core_get_opi(4), 0xCAFEBABE, "OPI[4:7] = 0xCAFEBABE");
 }
 
 /* ============================================================================
  * GET_TICKS System Call Test
  * ============================================================================ */
 
-static void test_get_ticks(void)
-{
-    uint8_t code[64];
-    size_t len = 0;
-    const zplc_vm_state_t *state;
+static void test_get_ticks(void) {
+  uint8_t code[64];
+  size_t len = 0;
+  const zplc_vm_state_t *state;
 
-    printf("\n=== Test: GET_TICKS System Call ===\n");
+  printf("\n=== Test: GET_TICKS System Call ===\n");
 
-    /*
+  /*
      * Test GET_TICKS: Push system tick counter to stack.
      * Since this calls the HAL, the exact value depends on timing,
      * but we can verify the opcode executes and pushes a value.
      */
-    len = 0;
-    len = emit_op(code, len, OP_GET_TICKS);  /* Push current tick */
-    len = emit_op(code, len, OP_HALT);
+  len = 0;
+  len = emit_op(code, len, OP_GET_TICKS); /* Push current tick */
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT(state->halted, "GET_TICKS: VM halted");
-    TEST_ASSERT_EQ(state->sp, 1, "GET_TICKS: 1 value on stack");
+  state = zplc_core_get_state();
+  TEST_ASSERT(state->halted, "GET_TICKS: VM halted");
+  TEST_ASSERT_EQ(state->sp, 1, "GET_TICKS: 1 value on stack");
 
-    /*
+  /*
      * Test GET_TICKS multiple times - values should be monotonically
      * increasing (or at least equal, if called fast enough).
      */
-    len = 0;
-    len = emit_op(code, len, OP_GET_TICKS);  /* First tick */
-    len = emit_op(code, len, OP_GET_TICKS);  /* Second tick */
-    len = emit_op(code, len, OP_GE);         /* tick2 >= tick1 ? */
-    len = emit_op(code, len, OP_HALT);
+  len = 0;
+  len = emit_op(code, len, OP_GET_TICKS); /* First tick */
+  len = emit_op(code, len, OP_GET_TICKS); /* Second tick */
+  len = emit_op(code, len, OP_GE);        /* tick2 >= tick1 ? */
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 1, "GET_TICKS: time is monotonic (tick2 >= tick1)");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 1, "GET_TICKS: time is monotonic (tick2 >= tick1)");
 }
 
 /* ============================================================================
@@ -1252,43 +1216,39 @@ static void test_get_ticks(void)
 /* Targets without a file system (the Zephyr core suites) cannot read the file;
  * the integration tests below then skip exactly as they do on the host when
  * the file is absent. */
-static int load_zplc_file(const char *path)
-{
-    (void)path;
-    return -1;
+static int load_zplc_file(const char *path) {
+  (void)path;
+  return -1;
 }
 #else
-static int load_zplc_file(const char *path)
-{
-    FILE *fp;
-    uint8_t buffer[4096];
-    size_t size;
+static int load_zplc_file(const char *path) {
+  FILE *fp;
+  uint8_t buffer[4096];
+  size_t size;
 
-    fp = fopen(path, "rb");
-    if (fp == NULL) {
-        return -1;
-    }
+  fp = fopen(path, "rb");
+  if (fp == NULL) {
+    return -1;
+  }
 
-    size = fread(buffer, 1, sizeof(buffer), fp);
-    fclose(fp);
+  size = fread(buffer, 1, sizeof(buffer), fp);
+  fclose(fp);
 
-    if (size < 32) {
-        return -2;  /* File too small for header */
-    }
+  if (size < 32) {
+    return -2; /* File too small for header */
+  }
 
-    return zplc_core_load(buffer, size, loader_workspace,
-                          sizeof(loader_workspace));
+  return zplc_core_load(buffer, size, loader_workspace, sizeof(loader_workspace));
 }
 #endif
 
-static void test_integration_assembled_program(void)
-{
-    int result;
-    uint16_t opi_value;
+static void test_integration_assembled_program(void) {
+  int result;
+  uint16_t opi_value;
 
-    printf("\n=== Test: Integration - Assembled Program ===\n");
+  printf("\n=== Test: Integration - Assembled Program ===\n");
 
-    /*
+  /*
      * Test loading a pre-assembled .zplc file (02_addition.asm).
      *
      * Program logic:
@@ -1302,47 +1262,46 @@ static void test_integration_assembled_program(void)
      * Expected result: OPI[0] = 300
      */
 
-    zplc_core_init();
+  zplc_core_init();
 
-    /* Load the assembled program - try multiple paths */
-    result = load_zplc_file("examples/02_addition.zplc");
-    if (result != 0) {
-        result = load_zplc_file("../examples/02_addition.zplc");
-    }
-    if (result != 0) {
-        result = load_zplc_file("../../../../examples/02_addition.zplc");
-    }
+  /* Load the assembled program - try multiple paths */
+  result = load_zplc_file("examples/02_addition.zplc");
+  if (result != 0) {
+    result = load_zplc_file("../examples/02_addition.zplc");
+  }
+  if (result != 0) {
+    result = load_zplc_file("../../../../examples/02_addition.zplc");
+  }
 
-    if (result != 0) {
-        printf("SKIP: Integration test - could not load .zplc file (run assembler first)\n");
-        printf("  Run: python3 tools/zplc_asm.py examples/02_addition.asm\n");
-        return;
-    }
+  if (result != 0) {
+    printf("SKIP: Integration test - could not load .zplc file (run assembler first)\n");
+    printf("  Run: python3 tools/zplc_asm.py examples/02_addition.asm\n");
+    return;
+  }
 
-    TEST_ASSERT_EQ(result, 0, "Load .zplc file succeeded");
+  TEST_ASSERT_EQ(result, 0, "Load .zplc file succeeded");
 
-    /* Loading re-initialises memory, so the inputs are set after it (16-bit
+  /* Loading re-initialises memory, so the inputs are set after it (16-bit
      * values at non-overlapping offsets). */
-    zplc_core_set_ipi16(0, 100);  /* IPI[0:1] = 100 */
-    zplc_core_set_ipi16(2, 200);  /* IPI[2:3] = 200 */
+  zplc_core_set_ipi16(0, 100); /* IPI[0:1] = 100 */
+  zplc_core_set_ipi16(2, 200); /* IPI[2:3] = 200 */
 
-    /* Execute the program */
-    result = zplc_core_run(0);
-    TEST_ASSERT(result >= 0, "Program executed without error");
+  /* Execute the program */
+  result = zplc_core_run(0);
+  TEST_ASSERT(result >= 0, "Program executed without error");
 
-    /* Verify result: 100 + 200 = 300 in OPI[0] */
-    opi_value = (uint16_t)(zplc_core_get_opi(0) & 0xFFFF);
-    TEST_ASSERT_EQ(opi_value, 300, "Integration: 100 + 200 = 300");
+  /* Verify result: 100 + 200 = 300 in OPI[0] */
+  opi_value = (uint16_t)(zplc_core_get_opi(0) & 0xFFFF);
+  TEST_ASSERT_EQ(opi_value, 300, "Integration: 100 + 200 = 300");
 }
 
-static void test_integration_float_math(void)
-{
-    int result;
-    uint16_t opi_value;
+static void test_integration_float_math(void) {
+  int result;
+  uint16_t opi_value;
 
-    printf("\n=== Test: Integration - Float Math (Celsius to Fahrenheit) ===\n");
+  printf("\n=== Test: Integration - Float Math (Celsius to Fahrenheit) ===\n");
 
-    /*
+  /*
      * Test loading 08_float_math.zplc
      *
      * Program logic: Fahrenheit = (Celsius * 9 / 5) + 32
@@ -1351,71 +1310,70 @@ static void test_integration_float_math(void)
      *   (25 * 9 / 5) + 32 = 45 + 32 = 77
      */
 
-    zplc_core_init();
+  zplc_core_init();
 
-    /* Load the assembled program - try multiple paths */
-    result = load_zplc_file("examples/08_float_math.zplc");
-    if (result != 0) {
-        result = load_zplc_file("../examples/08_float_math.zplc");
-    }
-    if (result != 0) {
-        result = load_zplc_file("../../../../examples/08_float_math.zplc");
-    }
+  /* Load the assembled program - try multiple paths */
+  result = load_zplc_file("examples/08_float_math.zplc");
+  if (result != 0) {
+    result = load_zplc_file("../examples/08_float_math.zplc");
+  }
+  if (result != 0) {
+    result = load_zplc_file("../../../../examples/08_float_math.zplc");
+  }
 
-    if (result != 0) {
-        printf("SKIP: Float math test - could not load .zplc file\n");
-        printf("  Run: python3 tools/zplc_asm.py examples/08_float_math.asm\n");
-        return;
-    }
+  if (result != 0) {
+    printf("SKIP: Float math test - could not load .zplc file\n");
+    printf("  Run: python3 tools/zplc_asm.py examples/08_float_math.asm\n");
+    return;
+  }
 
-    TEST_ASSERT_EQ(result, 0, "Load float_math.zplc succeeded");
+  TEST_ASSERT_EQ(result, 0, "Load float_math.zplc succeeded");
 
-    /* Loading re-initialises memory: set Celsius temperature = 25 after it. */
-    zplc_core_set_ipi16(0, 25);
+  /* Loading re-initialises memory: set Celsius temperature = 25 after it. */
+  zplc_core_set_ipi16(0, 25);
 
-    /* Execute the program */
-    result = zplc_core_run(0);
-    TEST_ASSERT(result >= 0, "Float math program executed without error");
+  /* Execute the program */
+  result = zplc_core_run(0);
+  TEST_ASSERT(result >= 0, "Float math program executed without error");
 
-    /* Verify result: 25°C = 77°F */
-    opi_value = (uint16_t)(zplc_core_get_opi(0) & 0xFFFF);
-    TEST_ASSERT_EQ(opi_value, 77, "Float math: 25 degC = 77 degF");
+  /* Verify result: 25°C = 77°F */
+  opi_value = (uint16_t)(zplc_core_get_opi(0) & 0xFFFF);
+  TEST_ASSERT_EQ(opi_value, 77, "Float math: 25 degC = 77 degF");
 
-    /* Test another value: 0°C = 32°F */
-    zplc_core_init();
-    if (load_zplc_file("examples/08_float_math.zplc") != 0) {
-        load_zplc_file("../../../../examples/08_float_math.zplc");
-    }
-    zplc_core_set_ipi16(0, 0);
-    zplc_core_run(0);
-    opi_value = (uint16_t)(zplc_core_get_opi(0) & 0xFFFF);
-    TEST_ASSERT_EQ(opi_value, 32, "Float math: 0 degC = 32 degF");
+  /* Test another value: 0°C = 32°F */
+  zplc_core_init();
+  if (load_zplc_file("examples/08_float_math.zplc") != 0) {
+    load_zplc_file("../../../../examples/08_float_math.zplc");
+  }
+  zplc_core_set_ipi16(0, 0);
+  zplc_core_run(0);
+  opi_value = (uint16_t)(zplc_core_get_opi(0) & 0xFFFF);
+  TEST_ASSERT_EQ(opi_value, 32, "Float math: 0 degC = 32 degF");
 
-    /* Test: 100°C = 212°F (boiling point) */
-    zplc_core_init();
-    if (load_zplc_file("examples/08_float_math.zplc") != 0) {
-        load_zplc_file("../../../../examples/08_float_math.zplc");
-    }
-    zplc_core_set_ipi16(0, 100);
-    zplc_core_run(0);
-    opi_value = (uint16_t)(zplc_core_get_opi(0) & 0xFFFF);
-    TEST_ASSERT_EQ(opi_value, 212, "Float math: 100 degC = 212 degF");
+  /* Test: 100°C = 212°F (boiling point) */
+  zplc_core_init();
+  if (load_zplc_file("examples/08_float_math.zplc") != 0) {
+    load_zplc_file("../../../../examples/08_float_math.zplc");
+  }
+  zplc_core_set_ipi16(0, 100);
+  zplc_core_run(0);
+  opi_value = (uint16_t)(zplc_core_get_opi(0) & 0xFFFF);
+  TEST_ASSERT_EQ(opi_value, 212, "Float math: 100 degC = 212 degF");
 }
 
 /* ============================================================================
  * Instance-Based VM API Tests (Multitask Support)
  * ============================================================================ */
 
-static void test_instance_based_vm(void)
-{
-    zplc_vm_t vm1, vm2;
-    uint8_t code1[32], code2[32];
-    size_t len1 = 0, len2 = 0;
-    int result;
+static void test_instance_based_vm(void) {
+  zplc_vm_t vm1, vm2;
+  uint8_t code1[32], code2[32];
+  size_t len1 = 0, len2 = 0;
+  int result;
 
-    printf("\n=== Test: Instance-Based VM API ===\n");
+  printf("\n=== Test: Instance-Based VM API ===\n");
 
-    /*
+  /*
      * Create two independent VMs with different programs.
      * VM1: Push 100, HALT -> stack[0] = 100
      * VM2: Push 200, HALT -> stack[0] = 200
@@ -1423,89 +1381,83 @@ static void test_instance_based_vm(void)
      * Both use the shared code segment but different entry points.
      */
 
-    /* Build program 1: PUSH32 100, HALT */
-    len1 = emit_push32(code1, len1, 100);
-    len1 = emit_op(code1, len1, OP_HALT);
+  /* Build program 1: PUSH32 100, HALT */
+  len1 = emit_push32(code1, len1, 100);
+  len1 = emit_op(code1, len1, OP_HALT);
 
-    /* Build program 2: PUSH32 200, HALT */
-    len2 = emit_push32(code2, len2, 200);
-    len2 = emit_op(code2, len2, OP_HALT);
+  /* Build program 2: PUSH32 200, HALT */
+  len2 = emit_push32(code2, len2, 200);
+  len2 = emit_op(code2, len2, OP_HALT);
 
-    /* Initialize shared memory */
-    zplc_mem_init();
+  /* Initialize shared memory */
+  zplc_mem_init();
 
-    /* Load both programs into shared code segment */
-    result = zplc_test_mem_load_code(code1, len1, 0);
-    TEST_ASSERT_EQ(result, 0, "Load code1 at offset 0");
+  /* Load both programs into shared code segment */
+  result = zplc_test_mem_load_code(code1, len1, 0);
+  TEST_ASSERT_EQ(result, 0, "Load code1 at offset 0");
 
-    result = zplc_test_mem_load_code(code2, len2, (uint16_t)len1);
-    TEST_ASSERT_EQ(result, 0, "Load code2 at offset len1");
+  result = zplc_test_mem_load_code(code2, len2, (uint16_t)len1);
+  TEST_ASSERT_EQ(result, 0, "Load code2 at offset len1");
 
-    /* Initialize both VMs */
-    zplc_vm_init(&vm1);
-    zplc_vm_init(&vm2);
+  /* Initialize both VMs */
+  zplc_vm_init(&vm1);
+  zplc_vm_init(&vm2);
 
-    /* Set different entry points */
-    result = zplc_vm_set_entry(&vm1, 0, (uint32_t)len1);
-    TEST_ASSERT_EQ(result, 0, "Set VM1 entry at 0");
+  /* Set different entry points */
+  result = zplc_vm_set_entry(&vm1, 0, (uint32_t)len1);
+  TEST_ASSERT_EQ(result, 0, "Set VM1 entry at 0");
 
-    result = zplc_vm_set_entry(&vm2, (uint16_t)len1, (uint32_t)len2);
-    TEST_ASSERT_EQ(result, 0, "Set VM2 entry at len1");
+  result = zplc_vm_set_entry(&vm2, (uint16_t)len1, (uint32_t)len2);
+  TEST_ASSERT_EQ(result, 0, "Set VM2 entry at len1");
 
-    /* Run both VMs */
-    result = zplc_vm_run(&vm1, 0);
-    TEST_ASSERT(result >= 0, "VM1 executed successfully");
+  /* Run both VMs */
+  result = zplc_vm_run(&vm1, 0);
+  TEST_ASSERT(result >= 0, "VM1 executed successfully");
 
-    result = zplc_vm_run(&vm2, 0);
-    TEST_ASSERT(result >= 0, "VM2 executed successfully");
+  result = zplc_vm_run(&vm2, 0);
+  TEST_ASSERT(result >= 0, "VM2 executed successfully");
 
-    /* Verify independent execution */
-    TEST_ASSERT_EQ(vm1.stack[0], 100, "VM1 stack[0] = 100");
-    TEST_ASSERT_EQ(vm2.stack[0], 200, "VM2 stack[0] = 200");
-    TEST_ASSERT(vm1.halted, "VM1 halted");
-    TEST_ASSERT(vm2.halted, "VM2 halted");
+  /* Verify independent execution */
+  TEST_ASSERT_EQ(vm1.stack[0], 100, "VM1 stack[0] = 100");
+  TEST_ASSERT_EQ(vm2.stack[0], 200, "VM2 stack[0] = 200");
+  TEST_ASSERT(vm1.halted, "VM1 halted");
+  TEST_ASSERT(vm2.halted, "VM2 halted");
 
-    /* Verify they can be reset independently */
-    zplc_vm_reset_cycle(&vm1);
-    TEST_ASSERT_EQ(vm1.pc, 0, "VM1 reset: PC = 0");
-    TEST_ASSERT_EQ(vm1.sp, 0, "VM1 reset: SP = 0");
-    TEST_ASSERT(!vm1.halted, "VM1 reset: not halted");
-    TEST_ASSERT(vm2.halted, "VM2 still halted after VM1 reset");
+  /* Verify they can be reset independently */
+  zplc_vm_reset_cycle(&vm1);
+  TEST_ASSERT_EQ(vm1.pc, 0, "VM1 reset: PC = 0");
+  TEST_ASSERT_EQ(vm1.sp, 0, "VM1 reset: SP = 0");
+  TEST_ASSERT(!vm1.halted, "VM1 reset: not halted");
+  TEST_ASSERT(vm2.halted, "VM2 still halted after VM1 reset");
 }
 
-static void test_test_memory_loader_rejects_overflow(void)
-{
-    const uint8_t initial_code = OP_HALT;
-    const uint8_t byte = 0xA5U;
-    const uint8_t *stored;
-    uint32_t code_size;
+static void test_test_memory_loader_rejects_overflow(void) {
+  const uint8_t initial_code = OP_HALT;
+  const uint8_t byte = 0xA5U;
+  const uint8_t *stored;
+  uint32_t code_size;
 
-    printf("\n=== Test: test memory loader overflow rejection ===\n");
-    zplc_mem_init();
-    TEST_ASSERT_EQ(zplc_test_mem_load_code(&initial_code, 1U, 0U), 0,
-                   "Seed test code before overflow rejection");
-    code_size = zplc_mem_get_code_size();
-    TEST_ASSERT_EQ(zplc_test_mem_load_code(&byte, SIZE_MAX, 1U), -2,
-                   "Reject overflowing test code range");
-    TEST_ASSERT_EQ(zplc_mem_get_code_size(), code_size,
-                   "Overflow rejection preserves test code size");
-    stored = zplc_mem_get_code(0U, 1U);
-    TEST_ASSERT(stored != NULL && stored[0] == initial_code,
-                "Overflow rejection preserves existing test code");
+  printf("\n=== Test: test memory loader overflow rejection ===\n");
+  zplc_mem_init();
+  TEST_ASSERT_EQ(zplc_test_mem_load_code(&initial_code, 1U, 0U), 0, "Seed test code before overflow rejection");
+  code_size = zplc_mem_get_code_size();
+  TEST_ASSERT_EQ(zplc_test_mem_load_code(&byte, SIZE_MAX, 1U), -2, "Reject overflowing test code range");
+  TEST_ASSERT_EQ(zplc_mem_get_code_size(), code_size, "Overflow rejection preserves test code size");
+  stored = zplc_mem_get_code(0U, 1U);
+  TEST_ASSERT(stored != NULL && stored[0] == initial_code, "Overflow rejection preserves existing test code");
 }
 
-static void test_multiple_entry_points(void)
-{
-    zplc_vm_t vms[4];
-    uint8_t programs[4][16];
-    size_t lengths[4];
-    uint16_t offsets[4];
-    int i, result;
-    uint16_t current_offset = 0;
+static void test_multiple_entry_points(void) {
+  zplc_vm_t vms[4];
+  uint8_t programs[4][16];
+  size_t lengths[4];
+  uint16_t offsets[4];
+  int i, result;
+  uint16_t current_offset = 0;
 
-    printf("\n=== Test: Multiple Entry Points (Scheduler Simulation) ===\n");
+  printf("\n=== Test: Multiple Entry Points (Scheduler Simulation) ===\n");
 
-    /*
+  /*
      * Simulate 4 tasks with different programs, like the scheduler does.
      * Each task increments a different counter in Work memory.
      *
@@ -1515,125 +1467,124 @@ static void test_multiple_entry_points(void)
      * Task 3: Work[12] += 4
      */
 
-    /* Initialize shared memory */
-    zplc_mem_init();
+  /* Initialize shared memory */
+  zplc_mem_init();
 
-    /* Build and load 4 programs */
+  /* Build and load 4 programs */
+  for (i = 0; i < 4; i++) {
+    size_t len = 0;
+    uint16_t work_addr = 0x2000 + (i * 4);
+    uint8_t increment = (uint8_t)(i + 1);
+
+    /* LOAD32 work_addr, PUSH8 increment, ADD, STORE32 work_addr, HALT */
+    len = emit_load32(programs[i], len, work_addr);
+    len = emit_push8(programs[i], len, increment);
+    len = emit_op(programs[i], len, OP_ADD);
+    len = emit_store32(programs[i], len, work_addr);
+    len = emit_op(programs[i], len, OP_HALT);
+
+    lengths[i] = len;
+    offsets[i] = current_offset;
+
+    result = zplc_test_mem_load_code(programs[i], len, current_offset);
+    TEST_ASSERT_EQ(result, 0, "Load program into code segment");
+
+    current_offset += (uint16_t)len;
+  }
+
+  /* Initialize all VMs with their entry points */
+  for (i = 0; i < 4; i++) {
+    zplc_vm_init(&vms[i]);
+    result = zplc_vm_set_entry(&vms[i], offsets[i], (uint32_t)lengths[i]);
+    TEST_ASSERT_EQ(result, 0, "Set VM entry point");
+  }
+
+  /* Run each VM multiple times (simulating scheduler cycles) */
+  for (int cycle = 0; cycle < 10; cycle++) {
     for (i = 0; i < 4; i++) {
-        size_t len = 0;
-        uint16_t work_addr = 0x2000 + (i * 4);
-        uint8_t increment = (uint8_t)(i + 1);
-
-        /* LOAD32 work_addr, PUSH8 increment, ADD, STORE32 work_addr, HALT */
-        len = emit_load32(programs[i], len, work_addr);
-        len = emit_push8(programs[i], len, increment);
-        len = emit_op(programs[i], len, OP_ADD);
-        len = emit_store32(programs[i], len, work_addr);
-        len = emit_op(programs[i], len, OP_HALT);
-
-        lengths[i] = len;
-        offsets[i] = current_offset;
-
-        result = zplc_test_mem_load_code(programs[i], len, current_offset);
-        TEST_ASSERT_EQ(result, 0, "Load program into code segment");
-
-        current_offset += (uint16_t)len;
+      zplc_vm_reset_cycle(&vms[i]);
+      result = zplc_vm_run(&vms[i], 0);
+      TEST_ASSERT(result >= 0, "VM cycle executed");
     }
+  }
 
-    /* Initialize all VMs with their entry points */
-    for (i = 0; i < 4; i++) {
-        zplc_vm_init(&vms[i]);
-        result = zplc_vm_set_entry(&vms[i], offsets[i], (uint32_t)lengths[i]);
-        TEST_ASSERT_EQ(result, 0, "Set VM entry point");
-    }
-
-    /* Run each VM multiple times (simulating scheduler cycles) */
-    for (int cycle = 0; cycle < 10; cycle++) {
-        for (i = 0; i < 4; i++) {
-            zplc_vm_reset_cycle(&vms[i]);
-            result = zplc_vm_run(&vms[i], 0);
-            TEST_ASSERT(result >= 0, "VM cycle executed");
-        }
-    }
-
-    /* Verify counters:
+  /* Verify counters:
      * Task 0: 10 cycles × 1 = 10
      * Task 1: 10 cycles × 2 = 20
      * Task 2: 10 cycles × 3 = 30
      * Task 3: 10 cycles × 4 = 40
      */
-    uint8_t *work = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
-    TEST_ASSERT(work != NULL, "Work memory accessible");
+  uint8_t *work = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
+  TEST_ASSERT(work != NULL, "Work memory accessible");
 
-    uint32_t counter0 = work[0] | (work[1] << 8) | (work[2] << 16) | (work[3] << 24);
-    uint32_t counter1 = work[4] | (work[5] << 8) | (work[6] << 16) | (work[7] << 24);
-    uint32_t counter2 = work[8] | (work[9] << 8) | (work[10] << 16) | (work[11] << 24);
-    uint32_t counter3 = work[12] | (work[13] << 8) | (work[14] << 16) | (work[15] << 24);
+  uint32_t counter0 = work[0] | (work[1] << 8) | (work[2] << 16) | (work[3] << 24);
+  uint32_t counter1 = work[4] | (work[5] << 8) | (work[6] << 16) | (work[7] << 24);
+  uint32_t counter2 = work[8] | (work[9] << 8) | (work[10] << 16) | (work[11] << 24);
+  uint32_t counter3 = work[12] | (work[13] << 8) | (work[14] << 16) | (work[15] << 24);
 
-    TEST_ASSERT_EQ(counter0, 10, "Task 0: 10 cycles x 1 = 10");
-    TEST_ASSERT_EQ(counter1, 20, "Task 1: 10 cycles x 2 = 20");
-    TEST_ASSERT_EQ(counter2, 30, "Task 2: 10 cycles x 3 = 30");
-    TEST_ASSERT_EQ(counter3, 40, "Task 3: 10 cycles x 4 = 40");
+  TEST_ASSERT_EQ(counter0, 10, "Task 0: 10 cycles x 1 = 10");
+  TEST_ASSERT_EQ(counter1, 20, "Task 1: 10 cycles x 2 = 20");
+  TEST_ASSERT_EQ(counter2, 30, "Task 2: 10 cycles x 3 = 30");
+  TEST_ASSERT_EQ(counter3, 40, "Task 3: 10 cycles x 4 = 40");
 }
 
-static void test_vm_isolation(void)
-{
-    zplc_vm_t vm1, vm2;
-    uint8_t code[32];
-    size_t len = 0;
-    int result;
+static void test_vm_isolation(void) {
+  zplc_vm_t vm1, vm2;
+  uint8_t code[32];
+  size_t len = 0;
+  int result;
 
-    printf("\n=== Test: VM Stack Isolation ===\n");
+  printf("\n=== Test: VM Stack Isolation ===\n");
 
-    /*
+  /*
      * Verify that two VMs have completely isolated stacks.
      * Both run the same program, but should have independent state.
      */
 
-    /* Program: PUSH 1, PUSH 2, PUSH 3, ADD, HALT -> stack = [1, 5] */
-    len = emit_push32(code, len, 1);
-    len = emit_push32(code, len, 2);
-    len = emit_push32(code, len, 3);
-    len = emit_op(code, len, OP_ADD);  /* 2 + 3 = 5 */
-    len = emit_op(code, len, OP_HALT);
+  /* Program: PUSH 1, PUSH 2, PUSH 3, ADD, HALT -> stack = [1, 5] */
+  len = emit_push32(code, len, 1);
+  len = emit_push32(code, len, 2);
+  len = emit_push32(code, len, 3);
+  len = emit_op(code, len, OP_ADD); /* 2 + 3 = 5 */
+  len = emit_op(code, len, OP_HALT);
 
-    /* Initialize shared memory and load code once */
-    zplc_mem_init();
-    zplc_test_mem_load_code(code, len, 0);
+  /* Initialize shared memory and load code once */
+  zplc_mem_init();
+  zplc_test_mem_load_code(code, len, 0);
 
-    /* Setup both VMs */
-    zplc_vm_init(&vm1);
-    zplc_vm_init(&vm2);
-    zplc_vm_set_entry(&vm1, 0, (uint32_t)len);
-    zplc_vm_set_entry(&vm2, 0, (uint32_t)len);
+  /* Setup both VMs */
+  zplc_vm_init(&vm1);
+  zplc_vm_init(&vm2);
+  zplc_vm_set_entry(&vm1, 0, (uint32_t)len);
+  zplc_vm_set_entry(&vm2, 0, (uint32_t)len);
 
-    /* Run VM1 only */
-    result = zplc_vm_run(&vm1, 0);
-    TEST_ASSERT(result >= 0, "VM1 executed");
+  /* Run VM1 only */
+  result = zplc_vm_run(&vm1, 0);
+  TEST_ASSERT(result >= 0, "VM1 executed");
 
-    /* Verify VM1 state */
-    TEST_ASSERT_EQ(vm1.sp, 2, "VM1 has 2 items on stack");
-    TEST_ASSERT_EQ(vm1.stack[0], 1, "VM1 stack[0] = 1");
-    TEST_ASSERT_EQ(vm1.stack[1], 5, "VM1 stack[1] = 5");
-    TEST_ASSERT(vm1.halted, "VM1 halted");
+  /* Verify VM1 state */
+  TEST_ASSERT_EQ(vm1.sp, 2, "VM1 has 2 items on stack");
+  TEST_ASSERT_EQ(vm1.stack[0], 1, "VM1 stack[0] = 1");
+  TEST_ASSERT_EQ(vm1.stack[1], 5, "VM1 stack[1] = 5");
+  TEST_ASSERT(vm1.halted, "VM1 halted");
 
-    /* Verify VM2 is still pristine */
-    TEST_ASSERT_EQ(vm2.sp, 0, "VM2 stack empty (not run yet)");
-    TEST_ASSERT(!vm2.halted, "VM2 not halted (not run yet)");
-    TEST_ASSERT_EQ(vm2.pc, 0, "VM2 PC at entry point");
+  /* Verify VM2 is still pristine */
+  TEST_ASSERT_EQ(vm2.sp, 0, "VM2 stack empty (not run yet)");
+  TEST_ASSERT(!vm2.halted, "VM2 not halted (not run yet)");
+  TEST_ASSERT_EQ(vm2.pc, 0, "VM2 PC at entry point");
 
-    /* Now run VM2 */
-    result = zplc_vm_run(&vm2, 0);
-    TEST_ASSERT(result >= 0, "VM2 executed");
+  /* Now run VM2 */
+  result = zplc_vm_run(&vm2, 0);
+  TEST_ASSERT(result >= 0, "VM2 executed");
 
-    /* Verify VM2 has same results but independent */
-    TEST_ASSERT_EQ(vm2.sp, 2, "VM2 has 2 items on stack");
-    TEST_ASSERT_EQ(vm2.stack[0], 1, "VM2 stack[0] = 1");
-    TEST_ASSERT_EQ(vm2.stack[1], 5, "VM2 stack[1] = 5");
+  /* Verify VM2 has same results but independent */
+  TEST_ASSERT_EQ(vm2.sp, 2, "VM2 has 2 items on stack");
+  TEST_ASSERT_EQ(vm2.stack[0], 1, "VM2 stack[0] = 1");
+  TEST_ASSERT_EQ(vm2.stack[1], 5, "VM2 stack[1] = 5");
 
-    /* Modify VM1 stack and verify VM2 unaffected */
-    vm1.stack[0] = 999;
-    TEST_ASSERT_EQ(vm2.stack[0], 1, "VM2 stack unaffected by VM1 modification");
+  /* Modify VM1 stack and verify VM2 unaffected */
+  vm1.stack[0] = 999;
+  TEST_ASSERT_EQ(vm2.stack[0], 1, "VM2 stack unaffected by VM1 modification");
 }
 
 /* ============================================================================
@@ -1649,433 +1600,390 @@ static void test_vm_isolation(void)
  *   - Code segment (bytecode)
  *   - Task segment (16 bytes per task)
  */
-static size_t build_multitask_zplc(uint8_t *buf, size_t buf_size,
-                                   const uint8_t *code, size_t code_size,
-                                   uint8_t task_count)
-{
-    size_t offset = 0;
-    size_t task_seg_size = task_count * ZPLC_TASK_DEF_SIZE;
-    size_t total_size = ZPLC_FILE_HEADER_SIZE + 
-                        (2 * ZPLC_SEGMENT_ENTRY_SIZE) +  /* CODE + TASK */
-                        code_size + 
-                        task_seg_size;
-    uint8_t i;
+static size_t build_multitask_zplc(uint8_t *buf, size_t buf_size, const uint8_t *code, size_t code_size, uint8_t task_count) {
+  size_t offset = 0;
+  size_t task_seg_size = task_count * ZPLC_TASK_DEF_SIZE;
+  size_t total_size = ZPLC_FILE_HEADER_SIZE + (2 * ZPLC_SEGMENT_ENTRY_SIZE) + /* CODE + TASK */
+                      code_size + task_seg_size;
+  uint8_t i;
 
-    if (buf_size < total_size) {
-        return 0;
-    }
+  if (buf_size < total_size) {
+    return 0;
+  }
 
-    memset(buf, 0, total_size);
+  memset(buf, 0, total_size);
 
-    /* ===== Header (32 bytes) ===== */
-    /* magic (4 bytes, little-endian) */
-    buf[offset++] = 0x5A;  /* 'Z' */
-    buf[offset++] = 0x50;  /* 'P' */
-    buf[offset++] = 0x4C;  /* 'L' */
-    buf[offset++] = 0x43;  /* 'C' */
+  /* ===== Header (32 bytes) ===== */
+  /* magic (4 bytes, little-endian) */
+  buf[offset++] = 0x5A; /* 'Z' */
+  buf[offset++] = 0x50; /* 'P' */
+  buf[offset++] = 0x4C; /* 'L' */
+  buf[offset++] = 0x43; /* 'C' */
 
-    /* version_major (2 bytes) */
-    buf[offset++] = ZPLC_VERSION_MAJOR & 0xFF;
-    buf[offset++] = (ZPLC_VERSION_MAJOR >> 8) & 0xFF;
+  /* version_major (2 bytes) */
+  buf[offset++] = ZPLC_VERSION_MAJOR & 0xFF;
+  buf[offset++] = (ZPLC_VERSION_MAJOR >> 8) & 0xFF;
 
-    /* version_minor (2 bytes) */
-    buf[offset++] = ZPLC_VERSION_MINOR & 0xFF;
-    buf[offset++] = (ZPLC_VERSION_MINOR >> 8) & 0xFF;
+  /* version_minor (2 bytes) */
+  buf[offset++] = ZPLC_VERSION_MINOR & 0xFF;
+  buf[offset++] = (ZPLC_VERSION_MINOR >> 8) & 0xFF;
 
-    /* flags (4 bytes) */
-    offset += 4;
+  /* flags (4 bytes) */
+  offset += 4;
 
-    /* crc32 (4 bytes) */
-    offset += 4;
+  /* crc32 (4 bytes) */
+  offset += 4;
 
-    /* code_size (4 bytes) */
-    buf[offset++] = code_size & 0xFF;
-    buf[offset++] = (code_size >> 8) & 0xFF;
-    buf[offset++] = (code_size >> 16) & 0xFF;
-    buf[offset++] = (code_size >> 24) & 0xFF;
+  /* code_size (4 bytes) */
+  buf[offset++] = code_size & 0xFF;
+  buf[offset++] = (code_size >> 8) & 0xFF;
+  buf[offset++] = (code_size >> 16) & 0xFF;
+  buf[offset++] = (code_size >> 24) & 0xFF;
 
-    /* data_size (4 bytes) */
-    buf[offset++] = task_seg_size & 0xFF;
-    buf[offset++] = (task_seg_size >> 8) & 0xFF;
-    buf[offset++] = (task_seg_size >> 16) & 0xFF;
-    buf[offset++] = (task_seg_size >> 24) & 0xFF;
+  /* data_size (4 bytes) */
+  buf[offset++] = task_seg_size & 0xFF;
+  buf[offset++] = (task_seg_size >> 8) & 0xFF;
+  buf[offset++] = (task_seg_size >> 16) & 0xFF;
+  buf[offset++] = (task_seg_size >> 24) & 0xFF;
 
-    /* entry_point (2 bytes) - first task's entry */
-    buf[offset++] = 0;
-    buf[offset++] = 0;
+  /* entry_point (2 bytes) - first task's entry */
+  buf[offset++] = 0;
+  buf[offset++] = 0;
 
-    /* segment_count (2 bytes) = 2 */
-    buf[offset++] = 2;
-    buf[offset++] = 0;
+  /* segment_count (2 bytes) = 2 */
+  buf[offset++] = 2;
+  buf[offset++] = 0;
 
-    /* draft_counter (4 bytes) */
-    buf[offset++] = ZPLC_DRAFT_COUNTER & 0xFF;
-    buf[offset++] = (ZPLC_DRAFT_COUNTER >> 8) & 0xFF;
-    buf[offset++] = (ZPLC_DRAFT_COUNTER >> 16) & 0xFF;
-    buf[offset++] = (ZPLC_DRAFT_COUNTER >> 24) & 0xFF;
+  /* draft_counter (4 bytes) */
+  buf[offset++] = ZPLC_DRAFT_COUNTER & 0xFF;
+  buf[offset++] = (ZPLC_DRAFT_COUNTER >> 8) & 0xFF;
+  buf[offset++] = (ZPLC_DRAFT_COUNTER >> 16) & 0xFF;
+  buf[offset++] = (ZPLC_DRAFT_COUNTER >> 24) & 0xFF;
 
-    /* Verify header size */
-    if (offset != ZPLC_FILE_HEADER_SIZE) {
-        return 0;
-    }
+  /* Verify header size */
+  if (offset != ZPLC_FILE_HEADER_SIZE) {
+    return 0;
+  }
 
-    /* ===== Segment Entry 1: CODE (8 bytes) ===== */
-    buf[offset++] = ZPLC_SEG_CODE & 0xFF;  /* type */
-    buf[offset++] = (ZPLC_SEG_CODE >> 8) & 0xFF;
-    buf[offset++] = 0;  /* flags */
-    buf[offset++] = 0;
-    buf[offset++] = code_size & 0xFF;  /* size */
-    buf[offset++] = (code_size >> 8) & 0xFF;
-    buf[offset++] = (code_size >> 16) & 0xFF;
-    buf[offset++] = (code_size >> 24) & 0xFF;
+  /* ===== Segment Entry 1: CODE (8 bytes) ===== */
+  buf[offset++] = ZPLC_SEG_CODE & 0xFF; /* type */
+  buf[offset++] = (ZPLC_SEG_CODE >> 8) & 0xFF;
+  buf[offset++] = 0; /* flags */
+  buf[offset++] = 0;
+  buf[offset++] = code_size & 0xFF; /* size */
+  buf[offset++] = (code_size >> 8) & 0xFF;
+  buf[offset++] = (code_size >> 16) & 0xFF;
+  buf[offset++] = (code_size >> 24) & 0xFF;
 
-    /* ===== Segment Entry 2: TASK (8 bytes) ===== */
-    buf[offset++] = ZPLC_SEG_TASK & 0xFF;  /* type */
-    buf[offset++] = (ZPLC_SEG_TASK >> 8) & 0xFF;
-    buf[offset++] = 0;  /* flags */
-    buf[offset++] = 0;
-    buf[offset++] = task_seg_size & 0xFF;  /* size */
-    buf[offset++] = (task_seg_size >> 8) & 0xFF;
-    buf[offset++] = (task_seg_size >> 16) & 0xFF;
-    buf[offset++] = (task_seg_size >> 24) & 0xFF;
+  /* ===== Segment Entry 2: TASK (8 bytes) ===== */
+  buf[offset++] = ZPLC_SEG_TASK & 0xFF; /* type */
+  buf[offset++] = (ZPLC_SEG_TASK >> 8) & 0xFF;
+  buf[offset++] = 0; /* flags */
+  buf[offset++] = 0;
+  buf[offset++] = task_seg_size & 0xFF; /* size */
+  buf[offset++] = (task_seg_size >> 8) & 0xFF;
+  buf[offset++] = (task_seg_size >> 16) & 0xFF;
+  buf[offset++] = (task_seg_size >> 24) & 0xFF;
 
-    /* ===== Code Segment ===== */
-    memcpy(&buf[offset], code, code_size);
-    offset += code_size;
+  /* ===== Code Segment ===== */
+  memcpy(&buf[offset], code, code_size);
+  offset += code_size;
 
-    /* ===== Task Segment (16 bytes per task) ===== */
-    for (i = 0; i < task_count; i++) {
-        size_t task_offset = offset + (i * ZPLC_TASK_DEF_SIZE);
-        uint16_t task_id = i;
-        uint8_t task_type = ZPLC_TASK_CYCLIC;
-        uint8_t priority = i;
-        uint32_t interval_us = 10000U * (uint32_t)(i + 1U);
-        uint16_t entry_point = (uint16_t)(i * 3U);
-        uint16_t stack_size = 64;
+  /* ===== Task Segment (16 bytes per task) ===== */
+  for (i = 0; i < task_count; i++) {
+    size_t task_offset = offset + (i * ZPLC_TASK_DEF_SIZE);
+    uint16_t task_id = i;
+    uint8_t task_type = ZPLC_TASK_CYCLIC;
+    uint8_t priority = i;
+    uint32_t interval_us = 10000U * (uint32_t)(i + 1U);
+    uint16_t entry_point = (uint16_t)(i * 3U);
+    uint16_t stack_size = 64;
 
-        /* id (2 bytes) */
-        buf[task_offset + 0] = task_id & 0xFF;
-        buf[task_offset + 1] = (task_id >> 8) & 0xFF;
+    /* id (2 bytes) */
+    buf[task_offset + 0] = task_id & 0xFF;
+    buf[task_offset + 1] = (task_id >> 8) & 0xFF;
 
-        /* type (1 byte) */
-        buf[task_offset + 2] = task_type;
+    /* type (1 byte) */
+    buf[task_offset + 2] = task_type;
 
-        /* priority (1 byte) */
-        buf[task_offset + 3] = priority;
+    /* priority (1 byte) */
+    buf[task_offset + 3] = priority;
 
-        /* interval_us (4 bytes) */
-        buf[task_offset + 4] = interval_us & 0xFF;
-        buf[task_offset + 5] = (interval_us >> 8) & 0xFF;
-        buf[task_offset + 6] = (interval_us >> 16) & 0xFF;
-        buf[task_offset + 7] = (interval_us >> 24) & 0xFF;
+    /* interval_us (4 bytes) */
+    buf[task_offset + 4] = interval_us & 0xFF;
+    buf[task_offset + 5] = (interval_us >> 8) & 0xFF;
+    buf[task_offset + 6] = (interval_us >> 16) & 0xFF;
+    buf[task_offset + 7] = (interval_us >> 24) & 0xFF;
 
-        /* entry_point (2 bytes) */
-        buf[task_offset + 8] = entry_point & 0xFF;
-        buf[task_offset + 9] = (entry_point >> 8) & 0xFF;
+    /* entry_point (2 bytes) */
+    buf[task_offset + 8] = entry_point & 0xFF;
+    buf[task_offset + 9] = (entry_point >> 8) & 0xFF;
 
-        /* stack_size (2 bytes) */
-        buf[task_offset + 10] = stack_size & 0xFF;
-        buf[task_offset + 11] = (stack_size >> 8) & 0xFF;
+    /* stack_size (2 bytes) */
+    buf[task_offset + 10] = stack_size & 0xFF;
+    buf[task_offset + 11] = (stack_size >> 8) & 0xFF;
 
-        /* reserved (4 bytes) - already zero */
-    }
+    /* reserved (4 bytes) - already zero */
+  }
 
-    refresh_crc(buf, total_size);
-    return total_size;
+  refresh_crc(buf, total_size);
+  return total_size;
 }
 
-static void test_load_tasks_basic(void)
-{
-    uint8_t file_buf[512];
-    uint8_t code[32];
-    size_t code_len = 0;
-    size_t file_size;
-    zplc_task_def_t tasks[4];
-    int result;
+static void test_load_tasks_basic(void) {
+  uint8_t file_buf[512];
+  uint8_t code[32];
+  size_t code_len = 0;
+  size_t file_size;
+  zplc_task_def_t tasks[4];
+  int result;
 
-    printf("\n=== Test: Load Tasks from .zplc ===\n");
+  printf("\n=== Test: Load Tasks from .zplc ===\n");
 
-    /* Build simple code: 2 programs, each is PUSH8 N, HALT */
-    code_len = emit_push8(code, code_len, 1);
-    code_len = emit_op(code, code_len, OP_HALT);  /* Task 0: offset 0, len 3 */
-    code_len = emit_push8(code, code_len, 2);
-    code_len = emit_op(code, code_len, OP_HALT);  /* Task 1: offset 3, len 3 */
-    code_len = emit_push8(code, code_len, 3);
-    code_len = emit_op(code, code_len, OP_HALT);  /* Task 2: offset 6, len 3 */
+  /* Build simple code: 2 programs, each is PUSH8 N, HALT */
+  code_len = emit_push8(code, code_len, 1);
+  code_len = emit_op(code, code_len, OP_HALT); /* Task 0: offset 0, len 3 */
+  code_len = emit_push8(code, code_len, 2);
+  code_len = emit_op(code, code_len, OP_HALT); /* Task 1: offset 3, len 3 */
+  code_len = emit_push8(code, code_len, 3);
+  code_len = emit_op(code, code_len, OP_HALT); /* Task 2: offset 6, len 3 */
 
-    /* Build a .zplc file with 3 tasks */
-    file_size = build_multitask_zplc(file_buf, sizeof(file_buf), 
-                                     code, code_len, 3);
-    TEST_ASSERT(file_size > 0, "Build multi-task .zplc file");
+  /* Build a .zplc file with 3 tasks */
+  file_size = build_multitask_zplc(file_buf, sizeof(file_buf), code, code_len, 3);
+  TEST_ASSERT(file_size > 0, "Build multi-task .zplc file");
 
-    /* Initialize memory */
-    zplc_mem_init();
+  /* Initialize memory */
+  zplc_mem_init();
 
-    /* Load tasks */
-    result = zplc_core_load_tasks(file_buf, file_size, tasks, 4,
-                                  loader_workspace, sizeof(loader_workspace));
-    TEST_ASSERT_EQ(result, 3, "Loaded 3 tasks");
+  /* Load tasks */
+  result = zplc_core_load_tasks(file_buf, file_size, tasks, 4, loader_workspace, sizeof(loader_workspace));
+  TEST_ASSERT_EQ(result, 3, "Loaded 3 tasks");
 
-    /* Verify task 0 */
-    TEST_ASSERT_EQ(tasks[0].id, 0, "Task 0: id = 0");
-    TEST_ASSERT_EQ(tasks[0].type, ZPLC_TASK_CYCLIC, "Task 0: type = CYCLIC");
-    TEST_ASSERT_EQ(tasks[0].priority, 0, "Task 0: priority = 0");
-    TEST_ASSERT_EQ(tasks[0].entry_point, 0, "Task 0: entry_point = 0");
+  /* Verify task 0 */
+  TEST_ASSERT_EQ(tasks[0].id, 0, "Task 0: id = 0");
+  TEST_ASSERT_EQ(tasks[0].type, ZPLC_TASK_CYCLIC, "Task 0: type = CYCLIC");
+  TEST_ASSERT_EQ(tasks[0].priority, 0, "Task 0: priority = 0");
+  TEST_ASSERT_EQ(tasks[0].entry_point, 0, "Task 0: entry_point = 0");
 
-    /* Verify task 1 (CYCLIC) */
-    TEST_ASSERT_EQ(tasks[1].id, 1, "Task 1: id = 1");
-    TEST_ASSERT_EQ(tasks[1].type, ZPLC_TASK_CYCLIC, "Task 1: type = CYCLIC");
-    TEST_ASSERT_EQ(tasks[1].priority, 1, "Task 1: priority = 1");
-    TEST_ASSERT_EQ(tasks[1].interval_us, 20000, "Task 1: interval_us = 20000");
-    TEST_ASSERT_EQ(tasks[1].entry_point, 3, "Task 1: entry_point = 3");
+  /* Verify task 1 (CYCLIC) */
+  TEST_ASSERT_EQ(tasks[1].id, 1, "Task 1: id = 1");
+  TEST_ASSERT_EQ(tasks[1].type, ZPLC_TASK_CYCLIC, "Task 1: type = CYCLIC");
+  TEST_ASSERT_EQ(tasks[1].priority, 1, "Task 1: priority = 1");
+  TEST_ASSERT_EQ(tasks[1].interval_us, 20000, "Task 1: interval_us = 20000");
+  TEST_ASSERT_EQ(tasks[1].entry_point, 3, "Task 1: entry_point = 3");
 
-    /* Verify task 2 (CYCLIC) */
-    TEST_ASSERT_EQ(tasks[2].id, 2, "Task 2: id = 2");
-    TEST_ASSERT_EQ(tasks[2].type, ZPLC_TASK_CYCLIC, "Task 2: type = CYCLIC");
-    TEST_ASSERT_EQ(tasks[2].interval_us, 30000, "Task 2: interval_us = 30000");
-    TEST_ASSERT_EQ(tasks[2].entry_point, 6, "Task 2: entry_point = 6");
-    TEST_ASSERT_EQ(tasks[2].stack_size, 64, "Task 2: stack_size = 64");
+  /* Verify task 2 (CYCLIC) */
+  TEST_ASSERT_EQ(tasks[2].id, 2, "Task 2: id = 2");
+  TEST_ASSERT_EQ(tasks[2].type, ZPLC_TASK_CYCLIC, "Task 2: type = CYCLIC");
+  TEST_ASSERT_EQ(tasks[2].interval_us, 30000, "Task 2: interval_us = 30000");
+  TEST_ASSERT_EQ(tasks[2].entry_point, 6, "Task 2: entry_point = 6");
+  TEST_ASSERT_EQ(tasks[2].stack_size, 64, "Task 2: stack_size = 64");
 
-    /* Verify code was loaded */
-    TEST_ASSERT_EQ(zplc_mem_get_code_size(), code_len, "Code loaded correctly");
+  /* Verify code was loaded */
+  TEST_ASSERT_EQ(zplc_mem_get_code_size(), code_len, "Code loaded correctly");
 }
 
-static void test_load_tasks_execute(void)
-{
-    uint8_t file_buf[512];
-    uint8_t code[64];
-    size_t code_len = 0;
-    size_t file_size;
-    zplc_task_def_t tasks[2];
-    zplc_vm_t vms[2];
-    int result, i;
+static void test_load_tasks_execute(void) {
+  uint8_t file_buf[512];
+  uint8_t code[64];
+  size_t code_len = 0;
+  size_t file_size;
+  zplc_task_def_t tasks[2];
+  zplc_vm_t vms[2];
+  int result, i;
 
-    printf("\n=== Test: Load and Execute Tasks ===\n");
+  printf("\n=== Test: Load and Execute Tasks ===\n");
 
-    /*
+  /*
      * Build 2 programs:
      *   Task 0 (offset 0): PUSH32 100, STORE32 0x1000, HALT -> OPI[0] = 100
      *   Task 1 (offset 9): PUSH32 200, STORE32 0x1004, HALT -> OPI[4] = 200
      */
-    /* Task 0 */
-    code_len = emit_push32(code, code_len, 100);
-    code_len = emit_store32(code, code_len, 0x1000);
-    code_len = emit_op(code, code_len, OP_HALT);
-    /* Task 1 (starts at offset 9) */
-    code_len = emit_push32(code, code_len, 200);
-    code_len = emit_store32(code, code_len, 0x1004);
-    code_len = emit_op(code, code_len, OP_HALT);
+  /* Task 0 */
+  code_len = emit_push32(code, code_len, 100);
+  code_len = emit_store32(code, code_len, 0x1000);
+  code_len = emit_op(code, code_len, OP_HALT);
+  /* Task 1 (starts at offset 9) */
+  code_len = emit_push32(code, code_len, 200);
+  code_len = emit_store32(code, code_len, 0x1004);
+  code_len = emit_op(code, code_len, OP_HALT);
 
-    /* Build .zplc file with 2 tasks */
-    file_size = build_multitask_zplc(file_buf, sizeof(file_buf),
-                                     code, code_len, 2);
-    TEST_ASSERT(file_size > 0, "Build 2-task .zplc file");
+  /* Build .zplc file with 2 tasks */
+  file_size = build_multitask_zplc(file_buf, sizeof(file_buf), code, code_len, 2);
+  TEST_ASSERT(file_size > 0, "Build 2-task .zplc file");
 
-    /* Manually fix entry points in the file since our builder uses i*6 */
-    /* Task 0 entry_point is at: header(32) + seg_table(16) + code_len + 8 */
-    /* Task 1 entry_point is at: header(32) + seg_table(16) + code_len + 8 + 16 */
-    size_t task_seg_start = ZPLC_FILE_HEADER_SIZE + 
-                            (2 * ZPLC_SEGMENT_ENTRY_SIZE) + 
-                            code_len;
-    /* Task 0: entry_point = 0 */
-    file_buf[task_seg_start + 8] = 0;
-    file_buf[task_seg_start + 9] = 0;
-    /* Task 1: entry_point = 9 */
-    file_buf[task_seg_start + 16 + 8] = 9;
-    file_buf[task_seg_start + 16 + 9] = 0;
-    refresh_crc(file_buf, file_size);
+  /* Manually fix entry points in the file since our builder uses i*6 */
+  /* Task 0 entry_point is at: header(32) + seg_table(16) + code_len + 8 */
+  /* Task 1 entry_point is at: header(32) + seg_table(16) + code_len + 8 + 16 */
+  size_t task_seg_start = ZPLC_FILE_HEADER_SIZE + (2 * ZPLC_SEGMENT_ENTRY_SIZE) + code_len;
+  /* Task 0: entry_point = 0 */
+  file_buf[task_seg_start + 8] = 0;
+  file_buf[task_seg_start + 9] = 0;
+  /* Task 1: entry_point = 9 */
+  file_buf[task_seg_start + 16 + 8] = 9;
+  file_buf[task_seg_start + 16 + 9] = 0;
+  refresh_crc(file_buf, file_size);
 
-    /* Initialize memory */
-    zplc_mem_init();
+  /* Initialize memory */
+  zplc_mem_init();
 
-    /* Load tasks */
-    result = zplc_core_load_tasks(file_buf, file_size, tasks, 2,
-                                  loader_workspace, sizeof(loader_workspace));
-    TEST_ASSERT_EQ(result, 2, "Loaded 2 tasks");
+  /* Load tasks */
+  result = zplc_core_load_tasks(file_buf, file_size, tasks, 2, loader_workspace, sizeof(loader_workspace));
+  TEST_ASSERT_EQ(result, 2, "Loaded 2 tasks");
 
-    /* Initialize VMs and set entry points from loaded tasks */
-    for (i = 0; i < 2; i++) {
-        zplc_vm_init(&vms[i]);
-        result = zplc_vm_set_entry(&vms[i], tasks[i].entry_point, 
-                                   (uint32_t)code_len - tasks[i].entry_point);
-        TEST_ASSERT_EQ(result, 0, "Set VM entry point from task");
-    }
+  /* Initialize VMs and set entry points from loaded tasks */
+  for (i = 0; i < 2; i++) {
+    zplc_vm_init(&vms[i]);
+    result = zplc_vm_set_entry(&vms[i], tasks[i].entry_point, (uint32_t)code_len - tasks[i].entry_point);
+    TEST_ASSERT_EQ(result, 0, "Set VM entry point from task");
+  }
 
-    /* Execute both tasks */
-    for (i = 0; i < 2; i++) {
-        result = zplc_vm_run(&vms[i], 0);
-        TEST_ASSERT(result >= 0, "Task executed successfully");
-    }
+  /* Execute both tasks */
+  for (i = 0; i < 2; i++) {
+    result = zplc_vm_run(&vms[i], 0);
+    TEST_ASSERT(result >= 0, "Task executed successfully");
+  }
 
-    /* Verify OPI results */
-    TEST_ASSERT_EQ(zplc_core_get_opi(0), 100, "Task 0: OPI[0] = 100");
-    TEST_ASSERT_EQ(zplc_core_get_opi(4), 200, "Task 1: OPI[4] = 200");
+  /* Verify OPI results */
+  TEST_ASSERT_EQ(zplc_core_get_opi(0), 100, "Task 0: OPI[0] = 100");
+  TEST_ASSERT_EQ(zplc_core_get_opi(4), 200, "Task 1: OPI[4] = 200");
 }
 
-static void test_load_tasks_errors(void)
-{
-    uint8_t file_buf[256];
-    uint8_t code[] = { OP_NOP, OP_HALT, OP_NOP, OP_NOP, OP_HALT, OP_NOP,
-                       OP_NOP, OP_HALT, OP_HALT };
-    zplc_task_def_t tasks[4];
-    zplc_task_def_t sentinel[4];
-    uint8_t saved_code[sizeof(code)];
-    size_t file_size;
-    uint32_t saved_code_size;
-    int result;
+static void test_load_tasks_errors(void) {
+  uint8_t file_buf[256];
+  uint8_t code[] = {OP_NOP, OP_HALT, OP_NOP, OP_NOP, OP_HALT, OP_NOP, OP_NOP, OP_HALT, OP_HALT};
+  zplc_task_def_t tasks[4];
+  zplc_task_def_t sentinel[4];
+  uint8_t saved_code[sizeof(code)];
+  size_t file_size;
+  uint32_t saved_code_size;
+  int result;
 
-    printf("\n=== Test: Load Tasks Error Handling ===\n");
+  printf("\n=== Test: Load Tasks Error Handling ===\n");
 
-    /* Test NULL pointer */
-    result = zplc_core_load_tasks(NULL, 100, tasks, 4,
-                                  loader_workspace, sizeof(loader_workspace));
-    TEST_ASSERT_EQ(result, ZPLC_LOADER_ERR_SIZE, "NULL binary is rejected");
+  /* Test NULL pointer */
+  result = zplc_core_load_tasks(NULL, 100, tasks, 4, loader_workspace, sizeof(loader_workspace));
+  TEST_ASSERT_EQ(result, ZPLC_LOADER_ERR_SIZE, "NULL binary is rejected");
 
-    /* Test invalid magic */
-    memset(file_buf, 0, sizeof(file_buf));
-    file_buf[0] = 'X';  /* Wrong magic */
-    result = zplc_core_load_tasks(file_buf, sizeof(file_buf), tasks, 4,
-                                  loader_workspace, sizeof(loader_workspace));
-    TEST_ASSERT_EQ(result, ZPLC_LOADER_ERR_MAGIC, "Invalid magic is rejected");
+  /* Test invalid magic */
+  memset(file_buf, 0, sizeof(file_buf));
+  file_buf[0] = 'X'; /* Wrong magic */
+  result = zplc_core_load_tasks(file_buf, sizeof(file_buf), tasks, 4, loader_workspace, sizeof(loader_workspace));
+  TEST_ASSERT_EQ(result, ZPLC_LOADER_ERR_MAGIC, "Invalid magic is rejected");
 
-    /* Test file without TASK segment (single-task file) */
-    {
-        uint8_t code[] = { OP_NOP, OP_HALT };
-        size_t no_task_size = build_verified_program(
-            file_buf, sizeof(file_buf), code, sizeof(code), 0U, 0, 0);
-        result = zplc_core_load_tasks(file_buf, no_task_size, tasks, 4,
-                                      loader_workspace, sizeof(loader_workspace));
-    }
-    TEST_ASSERT_EQ(result, ZPLC_LOADER_ERR_TASK, "No TASK segment is rejected");
+  /* Test file without TASK segment (single-task file) */
+  {
+    uint8_t code[] = {OP_NOP, OP_HALT};
+    size_t no_task_size = build_verified_program(file_buf, sizeof(file_buf), code, sizeof(code), 0U, 0, 0);
+    result = zplc_core_load_tasks(file_buf, no_task_size, tasks, 4, loader_workspace, sizeof(loader_workspace));
+  }
+  TEST_ASSERT_EQ(result, ZPLC_LOADER_ERR_TASK, "No TASK segment is rejected");
 
-    file_size = build_multitask_zplc(file_buf, sizeof(file_buf), code,
-                                     sizeof(code), 3U);
-    TEST_ASSERT(file_size > 0U, "Build over-capacity task program");
-    zplc_mem_init();
-    TEST_ASSERT_EQ(zplc_core_load_tasks(file_buf, file_size, tasks, 4,
-                                        loader_workspace, sizeof(loader_workspace)),
-                   3, "Load baseline task program");
-    saved_code_size = zplc_mem_get_code_size();
-    memcpy(saved_code, zplc_mem_get_code(0U, saved_code_size), saved_code_size);
-    memset(tasks, 0xA5, sizeof(tasks));
-    memcpy(sentinel, tasks, sizeof(tasks));
-    TEST_ASSERT_EQ(zplc_core_load_tasks(file_buf, file_size, tasks, 2,
-                                        loader_workspace, sizeof(loader_workspace)),
-                   ZPLC_LOADER_ERR_TASK, "Over-capacity tasks are rejected");
-    TEST_ASSERT(memcmp(tasks, sentinel, sizeof(tasks)) == 0 &&
-                zplc_mem_get_code_size() == saved_code_size &&
-                memcmp(zplc_mem_get_code(0U, saved_code_size), saved_code,
-                       saved_code_size) == 0,
-                "Over-capacity rejection preserves output and core");
+  file_size = build_multitask_zplc(file_buf, sizeof(file_buf), code, sizeof(code), 3U);
+  TEST_ASSERT(file_size > 0U, "Build over-capacity task program");
+  zplc_mem_init();
+  TEST_ASSERT_EQ(zplc_core_load_tasks(file_buf, file_size, tasks, 4, loader_workspace, sizeof(loader_workspace)), 3,
+                 "Load baseline task program");
+  saved_code_size = zplc_mem_get_code_size();
+  memcpy(saved_code, zplc_mem_get_code(0U, saved_code_size), saved_code_size);
+  memset(tasks, 0xA5, sizeof(tasks));
+  memcpy(sentinel, tasks, sizeof(tasks));
+  TEST_ASSERT_EQ(zplc_core_load_tasks(file_buf, file_size, tasks, 2, loader_workspace, sizeof(loader_workspace)), ZPLC_LOADER_ERR_TASK,
+                 "Over-capacity tasks are rejected");
+  TEST_ASSERT(memcmp(tasks, sentinel, sizeof(tasks)) == 0 && zplc_mem_get_code_size() == saved_code_size &&
+                  memcmp(zplc_mem_get_code(0U, saved_code_size), saved_code, saved_code_size) == 0,
+              "Over-capacity rejection preserves output and core");
 }
 
-static void test_verified_load_is_atomic(void)
-{
-    uint8_t program_a[128], program_c[128], corrupt[128];
-    uint8_t code_a[] = { OP_NOP, OP_PUSH8, 7U, OP_HALT };
-    uint8_t code_c[] = { OP_NOP, OP_HALT };
-    uint8_t saved_code[sizeof(code_a)];
-    zplc_tag_entry_t saved_tag;
-    zplc_task_def_t tasks[2], sentinel[2];
-    size_t a_size, c_size;
-    uint32_t saved_code_size;
-    uint16_t saved_pc;
-    int result;
+static void test_verified_load_is_atomic(void) {
+  uint8_t program_a[128], program_c[128], corrupt[128];
+  uint8_t code_a[] = {OP_NOP, OP_PUSH8, 7U, OP_HALT};
+  uint8_t code_c[] = {OP_NOP, OP_HALT};
+  uint8_t saved_code[sizeof(code_a)];
+  zplc_tag_entry_t saved_tag;
+  zplc_task_def_t tasks[2], sentinel[2];
+  size_t a_size, c_size;
+  uint32_t saved_code_size;
+  uint16_t saved_pc;
+  int result;
 
-    printf("\n=== Test: verified load atomicity ===\n");
-    a_size = build_verified_program(program_a, sizeof(program_a), code_a,
-                                    sizeof(code_a), 1U, 1, 1);
-    c_size = build_verified_program(program_c, sizeof(program_c), code_c,
-                                    sizeof(code_c), 0U, 0, 0);
-    zplc_core_init();
-    result = zplc_core_load(program_a, a_size, loader_workspace,
-                            sizeof(loader_workspace));
-    TEST_ASSERT_EQ(result, ZPLC_LOADER_OK,
-                   "valid tagged program A loads");
-    if (result != ZPLC_LOADER_OK) return;
-    saved_code_size = zplc_mem_get_code_size();
-    memcpy(saved_code, zplc_mem_get_code(0U, saved_code_size), saved_code_size);
-    saved_pc = zplc_core_get_pc();
-    saved_tag = *zplc_core_get_tag(0U);
-    memset(zplc_mem_get_region(ZPLC_MEM_IPI_BASE), 0x11, ZPLC_MEM_IPI_SIZE);
-    memset(zplc_mem_get_region(ZPLC_MEM_OPI_BASE), 0x22, ZPLC_MEM_OPI_SIZE);
-    memset(zplc_mem_get_region(ZPLC_MEM_WORK_BASE), 0x33, ZPLC_MEM_WORK_SIZE);
-    memset(zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE), 0x44, ZPLC_MEM_RETAIN_SIZE);
-    memcpy(corrupt, program_a, a_size);
-    corrupt[a_size - 1U] ^= 1U;
-    TEST_ASSERT_EQ(zplc_core_load(corrupt, a_size, loader_workspace,
-                                  sizeof(loader_workspace)), ZPLC_LOADER_ERR_CRC32,
-                   "CRC-corrupt program is rejected");
-    TEST_ASSERT(zplc_mem_get_code_size() == saved_code_size &&
-                memcmp(zplc_mem_get_code(0U, saved_code_size), saved_code, saved_code_size) == 0 &&
-                zplc_core_get_pc() == saved_pc && zplc_core_get_tag_count() == 1U &&
-                memcmp(zplc_core_get_tag(0U), &saved_tag, sizeof(saved_tag)) == 0 &&
-                region_has_value(ZPLC_MEM_IPI_BASE, ZPLC_MEM_IPI_SIZE, 0x11U) &&
-                region_has_value(ZPLC_MEM_OPI_BASE, ZPLC_MEM_OPI_SIZE, 0x22U) &&
-                region_has_value(ZPLC_MEM_WORK_BASE, ZPLC_MEM_WORK_SIZE, 0x33U) &&
-                region_has_value(ZPLC_MEM_RETAIN_BASE, ZPLC_MEM_RETAIN_SIZE, 0x44U),
-                "CRC rejection leaves core program and tags intact");
-    memcpy(corrupt, program_a, a_size);
-    corrupt[ZPLC_FILE_HEADER_SIZE + 3U * ZPLC_SEGMENT_ENTRY_SIZE + 1U] = 0xFFU;
-    refresh_crc(corrupt, a_size);
-    TEST_ASSERT_EQ(zplc_core_load(corrupt, a_size, loader_workspace,
-                                  sizeof(loader_workspace)), ZPLC_LOADER_ERR_OPCODE,
-                   "semantic-invalid opcode is rejected");
-    TEST_ASSERT(zplc_mem_get_code_size() == saved_code_size &&
-                memcmp(zplc_mem_get_code(0U, saved_code_size), saved_code, saved_code_size) == 0 &&
-                zplc_core_get_pc() == saved_pc && zplc_core_get_tag_count() == 1U,
-                "semantic rejection leaves core intact");
-    memset(tasks, 0xA5, sizeof(tasks));
-    memcpy(sentinel, tasks, sizeof(tasks));
-    memcpy(corrupt, program_a, a_size);
-    corrupt[a_size - 1U] ^= 1U;
-    TEST_ASSERT_EQ(zplc_core_load_tasks(corrupt, a_size, tasks, 2,
-                                        loader_workspace, sizeof(loader_workspace)),
-                   ZPLC_LOADER_ERR_CRC32, "load_tasks rejects corrupt CRC before mutation");
-    TEST_ASSERT(memcmp(tasks, sentinel, sizeof(tasks)) == 0 &&
-                zplc_mem_get_code_size() == saved_code_size,
-                "CRC rejection preserves load_tasks output and core");
-    memcpy(corrupt, program_a, a_size);
-    corrupt[ZPLC_FILE_HEADER_SIZE + 3U * ZPLC_SEGMENT_ENTRY_SIZE + 1U] = 0xFFU;
-    refresh_crc(corrupt, a_size);
-    TEST_ASSERT_EQ(zplc_core_load_tasks(corrupt, a_size, tasks, 2,
-                                        loader_workspace, sizeof(loader_workspace)),
-                   ZPLC_LOADER_ERR_OPCODE, "load_tasks rejects invalid program before mutation");
-    TEST_ASSERT(memcmp(tasks, sentinel, sizeof(tasks)) == 0 &&
-                zplc_mem_get_code_size() == saved_code_size &&
-                memcmp(zplc_mem_get_code(0U, saved_code_size), saved_code, saved_code_size) == 0,
-                "load_tasks rejection preserves output and core");
-    TEST_ASSERT_EQ(zplc_core_load_tasks(program_c, c_size, tasks, 2,
-                                        loader_workspace, sizeof(loader_workspace)),
-                   ZPLC_LOADER_ERR_TASK, "load_tasks rejects verified file without TASK");
-    TEST_ASSERT(memcmp(tasks, sentinel, sizeof(tasks)) == 0 &&
-                zplc_mem_get_code_size() == saved_code_size,
-                "missing TASK preserves output and core");
-    TEST_ASSERT_EQ(zplc_core_load(program_c, c_size, loader_workspace,
-                                  sizeof(loader_workspace)), ZPLC_LOADER_OK,
-                   "shorter program C loads");
-    TEST_ASSERT(zplc_mem_get_code_size() == sizeof(code_c) &&
-                zplc_core_get_tag_count() == 0U && zplc_core_get_pc() == 0U &&
-                region_has_value(ZPLC_MEM_IPI_BASE, ZPLC_MEM_IPI_SIZE, 0U) &&
-                region_has_value(ZPLC_MEM_OPI_BASE, ZPLC_MEM_OPI_SIZE, 0U) &&
-                region_has_value(ZPLC_MEM_WORK_BASE, ZPLC_MEM_WORK_SIZE, 0U) &&
-                region_has_value(ZPLC_MEM_RETAIN_BASE, ZPLC_MEM_RETAIN_SIZE, 0U),
-                "shorter program replaces code, clears tags, and resets process memory");
+  printf("\n=== Test: verified load atomicity ===\n");
+  a_size = build_verified_program(program_a, sizeof(program_a), code_a, sizeof(code_a), 1U, 1, 1);
+  c_size = build_verified_program(program_c, sizeof(program_c), code_c, sizeof(code_c), 0U, 0, 0);
+  zplc_core_init();
+  result = zplc_core_load(program_a, a_size, loader_workspace, sizeof(loader_workspace));
+  TEST_ASSERT_EQ(result, ZPLC_LOADER_OK, "valid tagged program A loads");
+  if (result != ZPLC_LOADER_OK)
+    return;
+  saved_code_size = zplc_mem_get_code_size();
+  memcpy(saved_code, zplc_mem_get_code(0U, saved_code_size), saved_code_size);
+  saved_pc = zplc_core_get_pc();
+  saved_tag = *zplc_core_get_tag(0U);
+  memset(zplc_mem_get_region(ZPLC_MEM_IPI_BASE), 0x11, ZPLC_MEM_IPI_SIZE);
+  memset(zplc_mem_get_region(ZPLC_MEM_OPI_BASE), 0x22, ZPLC_MEM_OPI_SIZE);
+  memset(zplc_mem_get_region(ZPLC_MEM_WORK_BASE), 0x33, ZPLC_MEM_WORK_SIZE);
+  memset(zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE), 0x44, ZPLC_MEM_RETAIN_SIZE);
+  memcpy(corrupt, program_a, a_size);
+  corrupt[a_size - 1U] ^= 1U;
+  TEST_ASSERT_EQ(zplc_core_load(corrupt, a_size, loader_workspace, sizeof(loader_workspace)), ZPLC_LOADER_ERR_CRC32,
+                 "CRC-corrupt program is rejected");
+  TEST_ASSERT(zplc_mem_get_code_size() == saved_code_size &&
+                  memcmp(zplc_mem_get_code(0U, saved_code_size), saved_code, saved_code_size) == 0 && zplc_core_get_pc() == saved_pc &&
+                  zplc_core_get_tag_count() == 1U && memcmp(zplc_core_get_tag(0U), &saved_tag, sizeof(saved_tag)) == 0 &&
+                  region_has_value(ZPLC_MEM_IPI_BASE, ZPLC_MEM_IPI_SIZE, 0x11U) &&
+                  region_has_value(ZPLC_MEM_OPI_BASE, ZPLC_MEM_OPI_SIZE, 0x22U) &&
+                  region_has_value(ZPLC_MEM_WORK_BASE, ZPLC_MEM_WORK_SIZE, 0x33U) &&
+                  region_has_value(ZPLC_MEM_RETAIN_BASE, ZPLC_MEM_RETAIN_SIZE, 0x44U),
+              "CRC rejection leaves core program and tags intact");
+  memcpy(corrupt, program_a, a_size);
+  corrupt[ZPLC_FILE_HEADER_SIZE + 3U * ZPLC_SEGMENT_ENTRY_SIZE + 1U] = 0xFFU;
+  refresh_crc(corrupt, a_size);
+  TEST_ASSERT_EQ(zplc_core_load(corrupt, a_size, loader_workspace, sizeof(loader_workspace)), ZPLC_LOADER_ERR_OPCODE,
+                 "semantic-invalid opcode is rejected");
+  TEST_ASSERT(zplc_mem_get_code_size() == saved_code_size &&
+                  memcmp(zplc_mem_get_code(0U, saved_code_size), saved_code, saved_code_size) == 0 && zplc_core_get_pc() == saved_pc &&
+                  zplc_core_get_tag_count() == 1U,
+              "semantic rejection leaves core intact");
+  memset(tasks, 0xA5, sizeof(tasks));
+  memcpy(sentinel, tasks, sizeof(tasks));
+  memcpy(corrupt, program_a, a_size);
+  corrupt[a_size - 1U] ^= 1U;
+  TEST_ASSERT_EQ(zplc_core_load_tasks(corrupt, a_size, tasks, 2, loader_workspace, sizeof(loader_workspace)), ZPLC_LOADER_ERR_CRC32,
+                 "load_tasks rejects corrupt CRC before mutation");
+  TEST_ASSERT(memcmp(tasks, sentinel, sizeof(tasks)) == 0 && zplc_mem_get_code_size() == saved_code_size,
+              "CRC rejection preserves load_tasks output and core");
+  memcpy(corrupt, program_a, a_size);
+  corrupt[ZPLC_FILE_HEADER_SIZE + 3U * ZPLC_SEGMENT_ENTRY_SIZE + 1U] = 0xFFU;
+  refresh_crc(corrupt, a_size);
+  TEST_ASSERT_EQ(zplc_core_load_tasks(corrupt, a_size, tasks, 2, loader_workspace, sizeof(loader_workspace)), ZPLC_LOADER_ERR_OPCODE,
+                 "load_tasks rejects invalid program before mutation");
+  TEST_ASSERT(memcmp(tasks, sentinel, sizeof(tasks)) == 0 && zplc_mem_get_code_size() == saved_code_size &&
+                  memcmp(zplc_mem_get_code(0U, saved_code_size), saved_code, saved_code_size) == 0,
+              "load_tasks rejection preserves output and core");
+  TEST_ASSERT_EQ(zplc_core_load_tasks(program_c, c_size, tasks, 2, loader_workspace, sizeof(loader_workspace)), ZPLC_LOADER_ERR_TASK,
+                 "load_tasks rejects verified file without TASK");
+  TEST_ASSERT(memcmp(tasks, sentinel, sizeof(tasks)) == 0 && zplc_mem_get_code_size() == saved_code_size,
+              "missing TASK preserves output and core");
+  TEST_ASSERT_EQ(zplc_core_load(program_c, c_size, loader_workspace, sizeof(loader_workspace)), ZPLC_LOADER_OK, "shorter program C loads");
+  TEST_ASSERT(
+      zplc_mem_get_code_size() == sizeof(code_c) && zplc_core_get_tag_count() == 0U && zplc_core_get_pc() == 0U &&
+          region_has_value(ZPLC_MEM_IPI_BASE, ZPLC_MEM_IPI_SIZE, 0U) && region_has_value(ZPLC_MEM_OPI_BASE, ZPLC_MEM_OPI_SIZE, 0U) &&
+          region_has_value(ZPLC_MEM_WORK_BASE, ZPLC_MEM_WORK_SIZE, 0U) && region_has_value(ZPLC_MEM_RETAIN_BASE, ZPLC_MEM_RETAIN_SIZE, 0U),
+      "shorter program replaces code, clears tags, and resets process memory");
 }
 
 /* ============================================================================
  * Indirect Memory Access Tests (LOADI/STOREI)
  * ============================================================================ */
 
-static void test_indirect_memory(void)
-{
-    uint8_t code[128];
-    size_t len = 0;
-    const zplc_vm_state_t *state;
+static void test_indirect_memory(void) {
+  uint8_t code[128];
+  size_t len = 0;
+  const zplc_vm_state_t *state;
 
-    printf("\n=== Test: Indirect Memory Access (LOADI/STOREI) ===\n");
+  printf("\n=== Test: Indirect Memory Access (LOADI/STOREI) ===\n");
 
-    /*
+  /*
      * Test STOREI32: Store a value to computed address
      * 
      * Program:
@@ -2087,21 +1995,21 @@ static void test_indirect_memory(void)
      *
      * Expected: stack[0] = 12345
      */
-    len = 0;
-    len = emit_push16(code, len, 0x2000);    /* Address */
-    len = emit_push32(code, len, 12345);     /* Value */
-    code[len++] = OP_STOREI32;               /* Indirect store */
-    len = emit_load32(code, len, 0x2000);    /* Load back */
-    len = emit_op(code, len, OP_HALT);
+  len = 0;
+  len = emit_push16(code, len, 0x2000); /* Address */
+  len = emit_push32(code, len, 12345);  /* Value */
+  code[len++] = OP_STOREI32;            /* Indirect store */
+  len = emit_load32(code, len, 0x2000); /* Load back */
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 12345, "STOREI32: stored 12345 via indirect");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 12345, "STOREI32: stored 12345 via indirect");
 
-    /*
+  /*
      * Test LOADI32: Load from computed address
      * 
      * Program:
@@ -2113,21 +2021,21 @@ static void test_indirect_memory(void)
      *
      * Expected: stack[0] = 0xABCD1234
      */
-    len = 0;
-    len = emit_push32(code, len, 0xABCD1234);
-    len = emit_store32(code, len, 0x2004);   /* Store known value */
-    len = emit_push16(code, len, 0x2004);    /* Address to load */
-    code[len++] = OP_LOADI32;                /* Indirect load */
-    len = emit_op(code, len, OP_HALT);
+  len = 0;
+  len = emit_push32(code, len, 0xABCD1234);
+  len = emit_store32(code, len, 0x2004); /* Store known value */
+  len = emit_push16(code, len, 0x2004);  /* Address to load */
+  code[len++] = OP_LOADI32;              /* Indirect load */
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 0xABCD1234, "LOADI32: loaded 0xABCD1234 via indirect");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 0xABCD1234, "LOADI32: loaded 0xABCD1234 via indirect");
 
-    /*
+  /*
      * Test STOREI8/LOADI8: 8-bit indirect access
      * 
      * Program:
@@ -2140,22 +2048,22 @@ static void test_indirect_memory(void)
      *
      * Expected: stack[0] = 0x42
      */
-    len = 0;
-    len = emit_push16(code, len, 0x2010);
-    len = emit_push8(code, len, 0x42);
-    code[len++] = OP_STOREI8;
-    len = emit_push16(code, len, 0x2010);
-    code[len++] = OP_LOADI8;
-    len = emit_op(code, len, OP_HALT);
+  len = 0;
+  len = emit_push16(code, len, 0x2010);
+  len = emit_push8(code, len, 0x42);
+  code[len++] = OP_STOREI8;
+  len = emit_push16(code, len, 0x2010);
+  code[len++] = OP_LOADI8;
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 0x42, "STOREI8/LOADI8: stored/loaded 0x42 via indirect");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 0x42, "STOREI8/LOADI8: stored/loaded 0x42 via indirect");
 
-    /*
+  /*
      * Test STOREI16/LOADI16: 16-bit indirect access
      * 
      * Program:
@@ -2168,22 +2076,22 @@ static void test_indirect_memory(void)
      *
      * Expected: stack[0] = 0x1234
      */
-    len = 0;
-    len = emit_push16(code, len, 0x2020);
-    len = emit_push16(code, len, 0x1234);
-    code[len++] = OP_STOREI16;
-    len = emit_push16(code, len, 0x2020);
-    code[len++] = OP_LOADI16;
-    len = emit_op(code, len, OP_HALT);
+  len = 0;
+  len = emit_push16(code, len, 0x2020);
+  len = emit_push16(code, len, 0x1234);
+  code[len++] = OP_STOREI16;
+  len = emit_push16(code, len, 0x2020);
+  code[len++] = OP_LOADI16;
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 0x1234, "STOREI16/LOADI16: stored/loaded 0x1234 via indirect");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 0x1234, "STOREI16/LOADI16: stored/loaded 0x1234 via indirect");
 
-    /*
+  /*
      * Test array-like access pattern (FIFO/LIFO simulation):
      * 
      * Program: Store values at array[0], array[1], array[2] then load array[1]
@@ -2197,35 +2105,35 @@ static void test_indirect_memory(void)
      *
      * Expected: stack[0] = 200
      */
-    len = 0;
-    /* Store array[0] = 100 */
-    len = emit_push16(code, len, 0x2100);    /* base + 0*4 */
-    len = emit_push32(code, len, 100);
-    code[len++] = OP_STOREI32;
+  len = 0;
+  /* Store array[0] = 100 */
+  len = emit_push16(code, len, 0x2100); /* base + 0*4 */
+  len = emit_push32(code, len, 100);
+  code[len++] = OP_STOREI32;
 
-    /* Store array[1] = 200 */
-    len = emit_push16(code, len, 0x2104);    /* base + 1*4 */
-    len = emit_push32(code, len, 200);
-    code[len++] = OP_STOREI32;
+  /* Store array[1] = 200 */
+  len = emit_push16(code, len, 0x2104); /* base + 1*4 */
+  len = emit_push32(code, len, 200);
+  code[len++] = OP_STOREI32;
 
-    /* Store array[2] = 300 */
-    len = emit_push16(code, len, 0x2108);    /* base + 2*4 */
-    len = emit_push32(code, len, 300);
-    code[len++] = OP_STOREI32;
+  /* Store array[2] = 300 */
+  len = emit_push16(code, len, 0x2108); /* base + 2*4 */
+  len = emit_push32(code, len, 300);
+  code[len++] = OP_STOREI32;
 
-    /* Load array[1] */
-    len = emit_push16(code, len, 0x2104);
-    code[len++] = OP_LOADI32;
-    len = emit_op(code, len, OP_HALT);
+  /* Load array[1] */
+  len = emit_push16(code, len, 0x2104);
+  code[len++] = OP_LOADI32;
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 200, "Array access: array[1] = 200");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 200, "Array access: array[1] = 200");
 
-    /*
+  /*
      * Test computed index (dynamic array access):
      *
      * Program: 
@@ -2235,27 +2143,27 @@ static void test_indirect_memory(void)
      *
      * Expected: Load array[2] = 300 (set in previous test, memory persists)
      */
-    len = 0;
-    /* Compute: 0x2100 + (2 * 4) = 0x2108 */
-    len = emit_push16(code, len, 0x2100);    /* Base */
-    len = emit_push8(code, len, 2);          /* Index */
-    len = emit_push8(code, len, 4);          /* Element size */
-    len = emit_op(code, len, OP_MUL);        /* index * 4 = 8 */
-    len = emit_op(code, len, OP_ADD);        /* base + 8 = 0x2108 */
-    code[len++] = OP_LOADI32;                /* Load from computed address */
-    len = emit_op(code, len, OP_HALT);
+  len = 0;
+  /* Compute: 0x2100 + (2 * 4) = 0x2108 */
+  len = emit_push16(code, len, 0x2100); /* Base */
+  len = emit_push8(code, len, 2);       /* Index */
+  len = emit_push8(code, len, 4);       /* Element size */
+  len = emit_op(code, len, OP_MUL);     /* index * 4 = 8 */
+  len = emit_op(code, len, OP_ADD);     /* base + 8 = 0x2108 */
+  code[len++] = OP_LOADI32;             /* Load from computed address */
+  len = emit_op(code, len, OP_HALT);
 
-    /* NOTE: Don't reinit - use memory from previous test */
-    zplc_test_load_raw(code, len);
-    zplc_vm_t *vm = zplc_core_get_default_vm();
-    vm->pc = 0;
-    vm->sp = 0;
-    vm->halted = 0;
-    vm->error = ZPLC_VM_OK;
-    zplc_core_run(0);
+  /* NOTE: Don't reinit - use memory from previous test */
+  zplc_test_load_raw(code, len);
+  zplc_vm_t *vm = zplc_core_get_default_vm();
+  vm->pc = 0;
+  vm->sp = 0;
+  vm->halted = 0;
+  vm->error = ZPLC_VM_OK;
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 300, "Computed index: array[2] = 300");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 300, "Computed index: array[2] = 300");
 }
 
 /* ============================================================================
@@ -2266,121 +2174,119 @@ static void test_indirect_memory(void)
  * Helper to get pointer to memory at given absolute address.
  * Routes to the correct region (IPI/OPI/Work/Retain) based on address.
  */
-static uint8_t* get_memory_ptr(uint16_t addr)
-{
-    uint8_t *region;
-    uint16_t offset;
-    
-    if (addr >= ZPLC_MEM_WORK_BASE && addr < ZPLC_MEM_RETAIN_BASE) {
-        region = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
-        offset = addr - ZPLC_MEM_WORK_BASE;
-    } else if (addr >= ZPLC_MEM_RETAIN_BASE && addr < ZPLC_MEM_CODE_BASE) {
-        region = zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE);
-        offset = addr - ZPLC_MEM_RETAIN_BASE;
-    } else if (addr >= ZPLC_MEM_OPI_BASE && addr < ZPLC_MEM_WORK_BASE) {
-        region = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
-        offset = addr - ZPLC_MEM_OPI_BASE;
-    } else {
-        region = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
-        offset = addr - ZPLC_MEM_IPI_BASE;
-    }
-    
-    return region ? (region + offset) : NULL;
+static uint8_t *get_memory_ptr(uint16_t addr) {
+  uint8_t *region;
+  uint16_t offset;
+
+  if (addr >= ZPLC_MEM_WORK_BASE && addr < ZPLC_MEM_RETAIN_BASE) {
+    region = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
+    offset = addr - ZPLC_MEM_WORK_BASE;
+  } else if (addr >= ZPLC_MEM_RETAIN_BASE && addr < ZPLC_MEM_CODE_BASE) {
+    region = zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE);
+    offset = addr - ZPLC_MEM_RETAIN_BASE;
+  } else if (addr >= ZPLC_MEM_OPI_BASE && addr < ZPLC_MEM_WORK_BASE) {
+    region = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+    offset = addr - ZPLC_MEM_OPI_BASE;
+  } else {
+    region = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
+    offset = addr - ZPLC_MEM_IPI_BASE;
+  }
+
+  return region ? (region + offset) : NULL;
 }
 
 /**
  * Helper to initialize a string in memory.
  * Layout: [len:2][cap:2][data:cap+1]
  */
-static void init_string(uint16_t addr, uint16_t capacity, const char *value)
-{
-    uint8_t *mem = get_memory_ptr(addr);
-    uint16_t len = 0;
-    uint16_t i;
+static void init_string(uint16_t addr, uint16_t capacity, const char *value) {
+  uint8_t *mem = get_memory_ptr(addr);
+  uint16_t len = 0;
+  uint16_t i;
 
-    if (!mem) return;
+  if (!mem)
+    return;
 
-    /* Calculate length */
-    if (value) {
-        while (value[len] && len < capacity) {
-            len++;
-        }
+  /* Calculate length */
+  if (value) {
+    while (value[len] && len < capacity) {
+      len++;
     }
+  }
 
-    /* Write header (little-endian) */
-    mem[0] = (uint8_t)(len & 0xFF);
-    mem[1] = (uint8_t)((len >> 8) & 0xFF);
-    mem[2] = (uint8_t)(capacity & 0xFF);
-    mem[3] = (uint8_t)((capacity >> 8) & 0xFF);
+  /* Write header (little-endian) */
+  mem[0] = (uint8_t)(len & 0xFF);
+  mem[1] = (uint8_t)((len >> 8) & 0xFF);
+  mem[2] = (uint8_t)(capacity & 0xFF);
+  mem[3] = (uint8_t)((capacity >> 8) & 0xFF);
 
-    /* Write data */
-    for (i = 0; i < len; i++) {
-        mem[4 + i] = (uint8_t)value[i];
-    }
-    mem[4 + len] = 0; /* Null terminator */
+  /* Write data */
+  for (i = 0; i < len; i++) {
+    mem[4 + i] = (uint8_t)value[i];
+  }
+  mem[4 + len] = 0; /* Null terminator */
 }
 
 /**
  * Helper to read string length from memory.
  */
-static uint16_t read_string_len(uint16_t addr)
-{
-    uint8_t *mem = get_memory_ptr(addr);
-    if (!mem) return 0;
-    return (uint16_t)mem[0] | ((uint16_t)mem[1] << 8);
+static uint16_t read_string_len(uint16_t addr) {
+  uint8_t *mem = get_memory_ptr(addr);
+  if (!mem)
+    return 0;
+  return (uint16_t)mem[0] | ((uint16_t)mem[1] << 8);
 }
 
 /**
  * Helper to compare string data in memory.
  */
-static int string_equals(uint16_t addr, const char *expected)
-{
-    uint8_t *mem = get_memory_ptr(addr);
-    uint16_t len;
-    uint16_t i;
+static int string_equals(uint16_t addr, const char *expected) {
+  uint8_t *mem = get_memory_ptr(addr);
+  uint16_t len;
+  uint16_t i;
 
-    if (!mem) return 0;
-    
-    len = (uint16_t)mem[0] | ((uint16_t)mem[1] << 8);
+  if (!mem)
+    return 0;
 
-    for (i = 0; i < len; i++) {
-        if (mem[4 + i] != (uint8_t)expected[i]) {
-            return 0;
-        }
+  len = (uint16_t)mem[0] | ((uint16_t)mem[1] << 8);
+
+  for (i = 0; i < len; i++) {
+    if (mem[4 + i] != (uint8_t)expected[i]) {
+      return 0;
     }
-    return expected[len] == '\0';
+  }
+  return expected[len] == '\0';
 }
 
-static void test_string_operations(void)
-{
-    uint8_t code[64];
-    size_t len = 0;
-    const zplc_vm_state_t *state;
+static void test_string_operations(void) {
+  uint8_t code[64];
+  size_t len = 0;
+  const zplc_vm_state_t *state;
 
-    printf("\n=== Test: String Operations ===\n");
+  printf("\n=== Test: String Operations ===\n");
 
-    /*
+  /*
      * Test STRLEN: Get length of string
      *
      * Setup: String "Hello" at 0x2200
      * Program: PUSH16 0x2200, STRLEN, HALT
      * Expected: stack[0] = 5
      */
-    zplc_core_init();
-    init_string(0x2200, 80, "Hello");
+  zplc_core_init();
+  init_string(0x2200, 80, "Hello");
 
-    len = 0;
-    len = emit_push16(code, len, 0x2200);
-    code[len++] = OP_STRLEN;
-    len = emit_op(code, len, OP_HALT);
+  len = 0;
+  len = emit_push16(code, len, 0x2200);
+  code[len++] = OP_STRLEN;
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 5, "STRLEN: 'Hello' has length 5");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 5, "STRLEN: 'Hello' has length 5");
 
-    /*
+  /*
      * Test STRCPY: Copy string (safe, bounds-checked)
      *
      * Setup: 
@@ -2389,23 +2295,23 @@ static void test_string_operations(void)
      * Program: PUSH16 0x2200, PUSH16 0x2300, STRCPY, HALT
      * Expected: Destination contains "Hello"
      */
-    zplc_core_init();
-    init_string(0x2200, 80, "Hello");
-    init_string(0x2300, 80, "");
+  zplc_core_init();
+  init_string(0x2200, 80, "Hello");
+  init_string(0x2300, 80, "");
 
-    len = 0;
-    len = emit_push16(code, len, 0x2200); /* src */
-    len = emit_push16(code, len, 0x2300); /* dst */
-    code[len++] = OP_STRCPY;
-    len = emit_op(code, len, OP_HALT);
+  len = 0;
+  len = emit_push16(code, len, 0x2200); /* src */
+  len = emit_push16(code, len, 0x2300); /* dst */
+  code[len++] = OP_STRCPY;
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    TEST_ASSERT_EQ(read_string_len(0x2300), 5, "STRCPY: destination length = 5");
-    TEST_ASSERT(string_equals(0x2300, "Hello"), "STRCPY: destination = 'Hello'");
+  TEST_ASSERT_EQ(read_string_len(0x2300), 5, "STRCPY: destination length = 5");
+  TEST_ASSERT(string_equals(0x2300, "Hello"), "STRCPY: destination = 'Hello'");
 
-    /*
+  /*
      * Test STRCPY with truncation (bounds check)
      *
      * Setup:
@@ -2413,23 +2319,23 @@ static void test_string_operations(void)
      *   Destination at 0x2300 (cap=5, too small)
      * Expected: Destination contains "Hello" (truncated to capacity)
      */
-    zplc_core_init();
-    init_string(0x2200, 80, "Hello World");
-    init_string(0x2300, 5, ""); /* Small capacity! */
+  zplc_core_init();
+  init_string(0x2200, 80, "Hello World");
+  init_string(0x2300, 5, ""); /* Small capacity! */
 
-    len = 0;
-    len = emit_push16(code, len, 0x2200);
-    len = emit_push16(code, len, 0x2300);
-    code[len++] = OP_STRCPY;
-    len = emit_op(code, len, OP_HALT);
+  len = 0;
+  len = emit_push16(code, len, 0x2200);
+  len = emit_push16(code, len, 0x2300);
+  code[len++] = OP_STRCPY;
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    TEST_ASSERT_EQ(read_string_len(0x2300), 5, "STRCPY truncation: length = 5");
-    TEST_ASSERT(string_equals(0x2300, "Hello"), "STRCPY truncation: = 'Hello'");
+  TEST_ASSERT_EQ(read_string_len(0x2300), 5, "STRCPY truncation: length = 5");
+  TEST_ASSERT(string_equals(0x2300, "Hello"), "STRCPY truncation: = 'Hello'");
 
-    /*
+  /*
      * Test STRCAT: Concatenate strings
      *
      * Setup:
@@ -2437,227 +2343,226 @@ static void test_string_operations(void)
      *   Destination "Hello " at 0x2300 (cap=80)
      * Expected: Destination = "Hello World"
      */
-    zplc_core_init();
-    init_string(0x2200, 80, "World");
-    init_string(0x2300, 80, "Hello ");
+  zplc_core_init();
+  init_string(0x2200, 80, "World");
+  init_string(0x2300, 80, "Hello ");
 
-    len = 0;
-    len = emit_push16(code, len, 0x2200);
-    len = emit_push16(code, len, 0x2300);
-    code[len++] = OP_STRCAT;
-    len = emit_op(code, len, OP_HALT);
+  len = 0;
+  len = emit_push16(code, len, 0x2200);
+  len = emit_push16(code, len, 0x2300);
+  code[len++] = OP_STRCAT;
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    TEST_ASSERT_EQ(read_string_len(0x2300), 11, "STRCAT: length = 11");
-    TEST_ASSERT(string_equals(0x2300, "Hello World"), "STRCAT: = 'Hello World'");
+  TEST_ASSERT_EQ(read_string_len(0x2300), 11, "STRCAT: length = 11");
+  TEST_ASSERT(string_equals(0x2300, "Hello World"), "STRCAT: = 'Hello World'");
 
-    /*
+  /*
      * Test STRCMP: Compare equal strings
      */
-    zplc_core_init();
-    init_string(0x2200, 80, "Hello");
-    init_string(0x2300, 80, "Hello");
+  zplc_core_init();
+  init_string(0x2200, 80, "Hello");
+  init_string(0x2300, 80, "Hello");
 
-    len = 0;
-    len = emit_push16(code, len, 0x2200);
-    len = emit_push16(code, len, 0x2300);
-    code[len++] = OP_STRCMP;
-    len = emit_op(code, len, OP_HALT);
+  len = 0;
+  len = emit_push16(code, len, 0x2200);
+  len = emit_push16(code, len, 0x2300);
+  code[len++] = OP_STRCMP;
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 0, "STRCMP: 'Hello' == 'Hello' -> 0");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 0, "STRCMP: 'Hello' == 'Hello' -> 0");
 
-    /*
+  /*
      * Test STRCMP: First string less
      */
-    zplc_core_init();
-    init_string(0x2200, 80, "Apple");
-    init_string(0x2300, 80, "Banana");
+  zplc_core_init();
+  init_string(0x2200, 80, "Apple");
+  init_string(0x2300, 80, "Banana");
 
-    len = 0;
-    len = emit_push16(code, len, 0x2200);
-    len = emit_push16(code, len, 0x2300);
-    code[len++] = OP_STRCMP;
-    len = emit_op(code, len, OP_HALT);
+  len = 0;
+  len = emit_push16(code, len, 0x2200);
+  len = emit_push16(code, len, 0x2300);
+  code[len++] = OP_STRCMP;
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ((int32_t)state->stack[0], -1, "STRCMP: 'Apple' < 'Banana' -> -1");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ((int32_t)state->stack[0], -1, "STRCMP: 'Apple' < 'Banana' -> -1");
 
-    /*
+  /*
      * Test STRCLR: Clear string
      */
-    zplc_core_init();
-    init_string(0x2200, 80, "Hello World");
+  zplc_core_init();
+  init_string(0x2200, 80, "Hello World");
 
-    len = 0;
-    len = emit_push16(code, len, 0x2200);
-    code[len++] = OP_STRCLR;
-    len = emit_op(code, len, OP_HALT);
+  len = 0;
+  len = emit_push16(code, len, 0x2200);
+  code[len++] = OP_STRCLR;
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    TEST_ASSERT_EQ(read_string_len(0x2200), 0, "STRCLR: length = 0");
+  TEST_ASSERT_EQ(read_string_len(0x2200), 0, "STRCLR: length = 0");
 }
 
 /**
  * @brief Test debugger breakpoint functionality
  */
-static void test_breakpoints(void)
-{
-    uint8_t code[64];
-    size_t len = 0;
-    zplc_vm_t *vm;
-    int result;
+static void test_breakpoints(void) {
+  uint8_t code[64];
+  size_t len = 0;
+  zplc_vm_t *vm;
+  int result;
 
-    printf("\n=== Test: Debugger Breakpoints ===\n");
+  printf("\n=== Test: Debugger Breakpoints ===\n");
 
-    /*
+  /*
      * Test 1: OP_BREAK instruction pauses execution
      * Program: PUSH32 10, BREAK, PUSH32 20, HALT
      * Expected: VM pauses after BREAK, then resume continues
      */
-    len = 0;
-    len = emit_push32(code, len, 10);  /* PC 0-4 */
-    code[len++] = OP_BREAK;            /* PC 5 */
-    len = emit_push32(code, len, 20);  /* PC 6-10 */
-    len = emit_op(code, len, OP_HALT); /* PC 11 */
+  len = 0;
+  len = emit_push32(code, len, 10);  /* PC 0-4 */
+  code[len++] = OP_BREAK;            /* PC 5 */
+  len = emit_push32(code, len, 20);  /* PC 6-10 */
+  len = emit_op(code, len, OP_HALT); /* PC 11 */
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    
-    /* Run - should pause at BREAK */
-    vm = zplc_core_get_default_vm();
-    result = zplc_vm_run(vm, 0);
-    
-    TEST_ASSERT(zplc_vm_is_paused(vm), "OP_BREAK pauses VM");
-    TEST_ASSERT_EQ(vm->pc, 6, "PC advances past BREAK");
-    TEST_ASSERT_EQ(vm->sp, 1, "First PUSH executed before BREAK");
-    TEST_ASSERT_EQ(vm->stack[0], 10, "Stack[0] = 10 before BREAK");
-    
-    /* Resume and continue */
-    zplc_vm_resume(vm);
-    TEST_ASSERT(!zplc_vm_is_paused(vm), "Resume clears paused flag");
-    
-    result = zplc_vm_run(vm, 0);
-    TEST_ASSERT(vm->halted, "VM halted after resume");
-    TEST_ASSERT_EQ(vm->sp, 2, "Both PUSHes executed");
-    TEST_ASSERT_EQ(vm->stack[1], 20, "Stack[1] = 20 after resume");
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
 
-    /*
+  /* Run - should pause at BREAK */
+  vm = zplc_core_get_default_vm();
+  result = zplc_vm_run(vm, 0);
+
+  TEST_ASSERT(zplc_vm_is_paused(vm), "OP_BREAK pauses VM");
+  TEST_ASSERT_EQ(vm->pc, 6, "PC advances past BREAK");
+  TEST_ASSERT_EQ(vm->sp, 1, "First PUSH executed before BREAK");
+  TEST_ASSERT_EQ(vm->stack[0], 10, "Stack[0] = 10 before BREAK");
+
+  /* Resume and continue */
+  zplc_vm_resume(vm);
+  TEST_ASSERT(!zplc_vm_is_paused(vm), "Resume clears paused flag");
+
+  result = zplc_vm_run(vm, 0);
+  TEST_ASSERT(vm->halted, "VM halted after resume");
+  TEST_ASSERT_EQ(vm->sp, 2, "Both PUSHes executed");
+  TEST_ASSERT_EQ(vm->stack[1], 20, "Stack[1] = 20 after resume");
+
+  /*
      * Test 2: Add/Remove breakpoints
      */
-    zplc_vm_init(vm);
-    zplc_vm_clear_breakpoints(vm);
-    
-    TEST_ASSERT_EQ(zplc_vm_get_breakpoint_count(vm), 0, "Breakpoint count = 0 initially");
-    
-    result = zplc_vm_add_breakpoint(vm, 100);
-    TEST_ASSERT_EQ(result, 0, "Add breakpoint returns 0");
-    TEST_ASSERT_EQ(zplc_vm_get_breakpoint_count(vm), 1, "Breakpoint count = 1");
-    TEST_ASSERT_EQ(zplc_vm_get_breakpoint(vm, 0), 100, "Breakpoint[0] = 100");
-    
-    result = zplc_vm_add_breakpoint(vm, 200);
-    TEST_ASSERT_EQ(result, 0, "Add second breakpoint");
-    TEST_ASSERT_EQ(zplc_vm_get_breakpoint_count(vm), 2, "Breakpoint count = 2");
-    
-    /* Try adding duplicate */
-    result = zplc_vm_add_breakpoint(vm, 100);
-    TEST_ASSERT_EQ(result, -3, "Duplicate breakpoint returns -3");
-    TEST_ASSERT_EQ(zplc_vm_get_breakpoint_count(vm), 2, "Count unchanged after dup");
-    
-    /* Remove breakpoint */
-    result = zplc_vm_remove_breakpoint(vm, 100);
-    TEST_ASSERT_EQ(result, 0, "Remove breakpoint returns 0");
-    TEST_ASSERT_EQ(zplc_vm_get_breakpoint_count(vm), 1, "Count = 1 after remove");
-    TEST_ASSERT_EQ(zplc_vm_get_breakpoint(vm, 0), 200, "Remaining breakpoint = 200");
-    
-    /* Remove non-existent */
-    result = zplc_vm_remove_breakpoint(vm, 999);
-    TEST_ASSERT_EQ(result, -2, "Remove non-existent returns -2");
-    
-    /* Clear all */
-    zplc_vm_clear_breakpoints(vm);
-    TEST_ASSERT_EQ(zplc_vm_get_breakpoint_count(vm), 0, "Clear removes all breakpoints");
+  zplc_vm_init(vm);
+  zplc_vm_clear_breakpoints(vm);
 
-    /*
+  TEST_ASSERT_EQ(zplc_vm_get_breakpoint_count(vm), 0, "Breakpoint count = 0 initially");
+
+  result = zplc_vm_add_breakpoint(vm, 100);
+  TEST_ASSERT_EQ(result, 0, "Add breakpoint returns 0");
+  TEST_ASSERT_EQ(zplc_vm_get_breakpoint_count(vm), 1, "Breakpoint count = 1");
+  TEST_ASSERT_EQ(zplc_vm_get_breakpoint(vm, 0), 100, "Breakpoint[0] = 100");
+
+  result = zplc_vm_add_breakpoint(vm, 200);
+  TEST_ASSERT_EQ(result, 0, "Add second breakpoint");
+  TEST_ASSERT_EQ(zplc_vm_get_breakpoint_count(vm), 2, "Breakpoint count = 2");
+
+  /* Try adding duplicate */
+  result = zplc_vm_add_breakpoint(vm, 100);
+  TEST_ASSERT_EQ(result, -3, "Duplicate breakpoint returns -3");
+  TEST_ASSERT_EQ(zplc_vm_get_breakpoint_count(vm), 2, "Count unchanged after dup");
+
+  /* Remove breakpoint */
+  result = zplc_vm_remove_breakpoint(vm, 100);
+  TEST_ASSERT_EQ(result, 0, "Remove breakpoint returns 0");
+  TEST_ASSERT_EQ(zplc_vm_get_breakpoint_count(vm), 1, "Count = 1 after remove");
+  TEST_ASSERT_EQ(zplc_vm_get_breakpoint(vm, 0), 200, "Remaining breakpoint = 200");
+
+  /* Remove non-existent */
+  result = zplc_vm_remove_breakpoint(vm, 999);
+  TEST_ASSERT_EQ(result, -2, "Remove non-existent returns -2");
+
+  /* Clear all */
+  zplc_vm_clear_breakpoints(vm);
+  TEST_ASSERT_EQ(zplc_vm_get_breakpoint_count(vm), 0, "Clear removes all breakpoints");
+
+  /*
      * Test 3: Breakpoint by PC address
      * Program: PUSH32 1, PUSH32 2, PUSH32 3, HALT
      * Set breakpoint at PC=10 (second PUSH32)
      */
-    len = 0;
-    len = emit_push32(code, len, 1);  /* PC 0-4 */
-    len = emit_push32(code, len, 2);  /* PC 5-9 */
-    len = emit_push32(code, len, 3);  /* PC 10-14 */
-    len = emit_op(code, len, OP_HALT);/* PC 15 */
+  len = 0;
+  len = emit_push32(code, len, 1);   /* PC 0-4 */
+  len = emit_push32(code, len, 2);   /* PC 5-9 */
+  len = emit_push32(code, len, 3);   /* PC 10-14 */
+  len = emit_op(code, len, OP_HALT); /* PC 15 */
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    
-    vm = zplc_core_get_default_vm();
-    zplc_vm_add_breakpoint(vm, 10);  /* Break before third PUSH32 */
-    
-    result = zplc_vm_run(vm, 0);
-    TEST_ASSERT(zplc_vm_is_paused(vm), "Paused at PC breakpoint");
-    TEST_ASSERT_EQ(vm->pc, 10, "PC = 10 at breakpoint");
-    TEST_ASSERT_EQ(vm->sp, 2, "Two PUSHes executed before breakpoint");
-    TEST_ASSERT_EQ(vm->stack[0], 1, "Stack[0] = 1");
-    TEST_ASSERT_EQ(vm->stack[1], 2, "Stack[1] = 2");
-    
-    /* Resume past breakpoint */
-    zplc_vm_resume(vm);
-    
-    /* Remove breakpoint so we don't hit it again */
-    zplc_vm_clear_breakpoints(vm);
-    
-    result = zplc_vm_run(vm, 0);
-    TEST_ASSERT(vm->halted, "VM halted after resume from PC breakpoint");
-    TEST_ASSERT_EQ(vm->sp, 3, "All three PUSHes executed");
-    TEST_ASSERT_EQ(vm->stack[2], 3, "Stack[2] = 3");
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
 
-    /*
+  vm = zplc_core_get_default_vm();
+  zplc_vm_add_breakpoint(vm, 10); /* Break before third PUSH32 */
+
+  result = zplc_vm_run(vm, 0);
+  TEST_ASSERT(zplc_vm_is_paused(vm), "Paused at PC breakpoint");
+  TEST_ASSERT_EQ(vm->pc, 10, "PC = 10 at breakpoint");
+  TEST_ASSERT_EQ(vm->sp, 2, "Two PUSHes executed before breakpoint");
+  TEST_ASSERT_EQ(vm->stack[0], 1, "Stack[0] = 1");
+  TEST_ASSERT_EQ(vm->stack[1], 2, "Stack[1] = 2");
+
+  /* Resume past breakpoint */
+  zplc_vm_resume(vm);
+
+  /* Remove breakpoint so we don't hit it again */
+  zplc_vm_clear_breakpoints(vm);
+
+  result = zplc_vm_run(vm, 0);
+  TEST_ASSERT(vm->halted, "VM halted after resume from PC breakpoint");
+  TEST_ASSERT_EQ(vm->sp, 3, "All three PUSHes executed");
+  TEST_ASSERT_EQ(vm->stack[2], 3, "Stack[2] = 3");
+
+  /*
      * Test 4: Single-step debugging
      */
-    len = 0;
-    len = emit_push32(code, len, 100);
-    len = emit_push32(code, len, 200);
-    len = emit_op(code, len, OP_ADD);
-    len = emit_op(code, len, OP_HALT);
+  len = 0;
+  len = emit_push32(code, len, 100);
+  len = emit_push32(code, len, 200);
+  len = emit_op(code, len, OP_ADD);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    vm = zplc_core_get_default_vm();
-    
-    /* Step 1: Execute first PUSH32 */
-    result = zplc_vm_step(vm);
-    TEST_ASSERT_EQ(result, ZPLC_VM_OK, "Step 1 returns OK");
-    TEST_ASSERT_EQ(vm->pc, 5, "PC = 5 after first step");
-    TEST_ASSERT_EQ(vm->sp, 1, "SP = 1 after first step");
-    
-    /* Step 2: Execute second PUSH32 */
-    result = zplc_vm_step(vm);
-    TEST_ASSERT_EQ(result, ZPLC_VM_OK, "Step 2 returns OK");
-    TEST_ASSERT_EQ(vm->pc, 10, "PC = 10 after second step");
-    TEST_ASSERT_EQ(vm->sp, 2, "SP = 2 after second step");
-    
-    /* Step 3: Execute ADD */
-    result = zplc_vm_step(vm);
-    TEST_ASSERT_EQ(result, ZPLC_VM_OK, "Step 3 returns OK");
-    TEST_ASSERT_EQ(vm->sp, 1, "SP = 1 after ADD");
-    TEST_ASSERT_EQ(vm->stack[0], 300, "100 + 200 = 300");
-    
-    /* Step 4: Execute HALT */
-    result = zplc_vm_step(vm);
-    TEST_ASSERT_EQ(result, ZPLC_VM_HALTED, "Step 4 returns HALTED");
-    TEST_ASSERT(vm->halted, "VM is halted");
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  vm = zplc_core_get_default_vm();
+
+  /* Step 1: Execute first PUSH32 */
+  result = zplc_vm_step(vm);
+  TEST_ASSERT_EQ(result, ZPLC_VM_OK, "Step 1 returns OK");
+  TEST_ASSERT_EQ(vm->pc, 5, "PC = 5 after first step");
+  TEST_ASSERT_EQ(vm->sp, 1, "SP = 1 after first step");
+
+  /* Step 2: Execute second PUSH32 */
+  result = zplc_vm_step(vm);
+  TEST_ASSERT_EQ(result, ZPLC_VM_OK, "Step 2 returns OK");
+  TEST_ASSERT_EQ(vm->pc, 10, "PC = 10 after second step");
+  TEST_ASSERT_EQ(vm->sp, 2, "SP = 2 after second step");
+
+  /* Step 3: Execute ADD */
+  result = zplc_vm_step(vm);
+  TEST_ASSERT_EQ(result, ZPLC_VM_OK, "Step 3 returns OK");
+  TEST_ASSERT_EQ(vm->sp, 1, "SP = 1 after ADD");
+  TEST_ASSERT_EQ(vm->stack[0], 300, "100 + 200 = 300");
+
+  /* Step 4: Execute HALT */
+  result = zplc_vm_step(vm);
+  TEST_ASSERT_EQ(result, ZPLC_VM_HALTED, "Step 4 returns HALTED");
+  TEST_ASSERT(vm->halted, "VM is halted");
 }
 
 /**
@@ -2667,329 +2572,298 @@ static void test_breakpoints(void)
  * that paused part-way through a scan it must continue that scan from the
  * preserved pc, stack and call stack instead of restarting at the entry point.
  */
-static void test_resume_continues_interrupted_scan(void)
-{
-    uint8_t code[64];
-    uint8_t other[16];
-    size_t len = 0;
-    size_t other_len = 0;
-    zplc_vm_t *vm;
-    int result;
+static void test_resume_continues_interrupted_scan(void) {
+  uint8_t code[64];
+  uint8_t other[16];
+  size_t len = 0;
+  size_t other_len = 0;
+  zplc_vm_t *vm;
+  int result;
 
-    printf("\n=== Test: Resume continues the interrupted scan ===\n");
+  printf("\n=== Test: Resume continues the interrupted scan ===\n");
 
-    /* PC 0: PUSH32 10, PC 5: PUSH32 20, PC 10: ADD, PC 11: STORE32 %Q, PC 14: HALT */
-    len = emit_push32(code, len, 10);
-    len = emit_push32(code, len, 20);
-    len = emit_op(code, len, OP_ADD);
-    len = emit_store32(code, len, ZPLC_MEM_OPI_BASE);
-    len = emit_op(code, len, OP_HALT);
+  /* PC 0: PUSH32 10, PC 5: PUSH32 20, PC 10: ADD, PC 11: STORE32 %Q, PC 14: HALT */
+  len = emit_push32(code, len, 10);
+  len = emit_push32(code, len, 20);
+  len = emit_op(code, len, OP_ADD);
+  len = emit_store32(code, len, ZPLC_MEM_OPI_BASE);
+  len = emit_op(code, len, OP_HALT);
 
-    /* Mid-scan breakpoint: the pushes before it survive, the store after it runs. */
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    vm = zplc_core_get_default_vm();
-    zplc_vm_add_breakpoint(vm, 10);
+  /* Mid-scan breakpoint: the pushes before it survive, the store after it runs. */
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  vm = zplc_core_get_default_vm();
+  zplc_vm_add_breakpoint(vm, 10);
 
-    result = zplc_vm_run_cycle(vm);
-    TEST_ASSERT(zplc_vm_is_paused(vm), "Scan pauses at the mid-scan breakpoint");
-    TEST_ASSERT_EQ(vm->pc, 10, "Paused at the breakpoint pc");
-    TEST_ASSERT_EQ(vm->sp, 2, "Both pushes executed before the breakpoint");
-    TEST_ASSERT_EQ(result, 2, "Only the instructions before the breakpoint ran");
-    TEST_ASSERT_EQ(zplc_core_get_opi(0), 0, "Output after the breakpoint not yet written");
+  result = zplc_vm_run_cycle(vm);
+  TEST_ASSERT(zplc_vm_is_paused(vm), "Scan pauses at the mid-scan breakpoint");
+  TEST_ASSERT_EQ(vm->pc, 10, "Paused at the breakpoint pc");
+  TEST_ASSERT_EQ(vm->sp, 2, "Both pushes executed before the breakpoint");
+  TEST_ASSERT_EQ(result, 2, "Only the instructions before the breakpoint ran");
+  TEST_ASSERT_EQ(zplc_core_get_opi(0), 0, "Output after the breakpoint not yet written");
 
-    zplc_vm_resume(vm);
-    result = zplc_vm_run_cycle(vm);
-    TEST_ASSERT(!zplc_vm_is_paused(vm), "Resumed scan does not pause at the same breakpoint again");
-    TEST_ASSERT(vm->halted, "Resumed scan runs to the end of the program");
-    TEST_ASSERT_EQ(result, 2, "Resumed scan runs only the remaining instructions");
-    TEST_ASSERT_EQ(zplc_core_get_opi(0), 30, "Stack built before the breakpoint is used after it");
-    TEST_ASSERT(vm->scan_resumed == 0U, "Continuing the scan consumes the resume marker");
+  zplc_vm_resume(vm);
+  result = zplc_vm_run_cycle(vm);
+  TEST_ASSERT(!zplc_vm_is_paused(vm), "Resumed scan does not pause at the same breakpoint again");
+  TEST_ASSERT(vm->halted, "Resumed scan runs to the end of the program");
+  TEST_ASSERT_EQ(result, 2, "Resumed scan runs only the remaining instructions");
+  TEST_ASSERT_EQ(zplc_core_get_opi(0), 30, "Stack built before the breakpoint is used after it");
+  TEST_ASSERT(vm->scan_resumed == 0U, "Continuing the scan consumes the resume marker");
 
-    /* The same pc in a LATER scan pauses again, and resuming finishes that scan too. */
-    result = zplc_vm_run_cycle(vm);
-    TEST_ASSERT(zplc_vm_is_paused(vm) && vm->pc == 10 && vm->sp == 2,
-                "Next scan starts fresh and pauses at the same breakpoint pc");
-    TEST_ASSERT_EQ(result, 2, "Next scan restarted from the entry point");
-    zplc_vm_resume(vm);
-    result = zplc_vm_run_cycle(vm);
-    TEST_ASSERT(vm->halted && !zplc_vm_is_paused(vm), "Second resumed scan also completes");
+  /* The same pc in a LATER scan pauses again, and resuming finishes that scan too. */
+  result = zplc_vm_run_cycle(vm);
+  TEST_ASSERT(zplc_vm_is_paused(vm) && vm->pc == 10 && vm->sp == 2, "Next scan starts fresh and pauses at the same breakpoint pc");
+  TEST_ASSERT_EQ(result, 2, "Next scan restarted from the entry point");
+  zplc_vm_resume(vm);
+  result = zplc_vm_run_cycle(vm);
+  TEST_ASSERT(vm->halted && !zplc_vm_is_paused(vm), "Second resumed scan also completes");
 
-    /* Breakpoint at the entry point: continuing and restarting coincide. */
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    vm = zplc_core_get_default_vm();
-    zplc_vm_add_breakpoint(vm, 0);
-    result = zplc_vm_run_cycle(vm);
-    TEST_ASSERT(zplc_vm_is_paused(vm) && vm->pc == 0 && result == 0,
-                "Entry breakpoint pauses before any instruction");
-    zplc_vm_resume(vm);
-    result = zplc_vm_run_cycle(vm);
-    TEST_ASSERT(vm->halted && result == 4, "Resume from the entry breakpoint runs the whole scan");
-    TEST_ASSERT_EQ(zplc_core_get_opi(0), 30, "Entry breakpoint scan wrote its output");
+  /* Breakpoint at the entry point: continuing and restarting coincide. */
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  vm = zplc_core_get_default_vm();
+  zplc_vm_add_breakpoint(vm, 0);
+  result = zplc_vm_run_cycle(vm);
+  TEST_ASSERT(zplc_vm_is_paused(vm) && vm->pc == 0 && result == 0, "Entry breakpoint pauses before any instruction");
+  zplc_vm_resume(vm);
+  result = zplc_vm_run_cycle(vm);
+  TEST_ASSERT(vm->halted && result == 4, "Resume from the entry breakpoint runs the whole scan");
+  TEST_ASSERT_EQ(zplc_core_get_opi(0), 30, "Entry breakpoint scan wrote its output");
 
-    /* Without a resume the paused scan is abandoned: the next run_cycle starts over. */
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    vm = zplc_core_get_default_vm();
-    zplc_vm_add_breakpoint(vm, 10);
-    (void)zplc_vm_run_cycle(vm);
-    TEST_ASSERT(vm->scan_resumed == 0U, "Pausing alone does not arm a continuation");
-    result = zplc_vm_run_cycle(vm);
-    TEST_ASSERT(zplc_vm_is_paused(vm) && vm->pc == 10 && vm->sp == 2 && result == 2,
-                "run_cycle without resume restarts the scan and pauses again");
+  /* Without a resume the paused scan is abandoned: the next run_cycle starts over. */
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  vm = zplc_core_get_default_vm();
+  zplc_vm_add_breakpoint(vm, 10);
+  (void)zplc_vm_run_cycle(vm);
+  TEST_ASSERT(vm->scan_resumed == 0U, "Pausing alone does not arm a continuation");
+  result = zplc_vm_run_cycle(vm);
+  TEST_ASSERT(zplc_vm_is_paused(vm) && vm->pc == 10 && vm->sp == 2 && result == 2,
+              "run_cycle without resume restarts the scan and pauses again");
 
-    /* Resume of a VM that is not paused does not turn the next scan into a continuation. */
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    vm = zplc_core_get_default_vm();
-    (void)zplc_vm_run(vm, 2);
-    TEST_ASSERT(!zplc_vm_is_paused(vm) && vm->pc == 10, "Bounded run leaves the VM mid-scan, not paused");
-    zplc_vm_resume(vm);
-    TEST_ASSERT(vm->scan_resumed == 0U, "Resume of a running VM arms no continuation");
-    result = zplc_vm_run_cycle(vm);
-    TEST_ASSERT(vm->halted && result == 4, "run_cycle after such a resume still starts a new scan");
+  /* Resume of a VM that is not paused does not turn the next scan into a continuation. */
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  vm = zplc_core_get_default_vm();
+  (void)zplc_vm_run(vm, 2);
+  TEST_ASSERT(!zplc_vm_is_paused(vm) && vm->pc == 10, "Bounded run leaves the VM mid-scan, not paused");
+  zplc_vm_resume(vm);
+  TEST_ASSERT(vm->scan_resumed == 0U, "Resume of a running VM arms no continuation");
+  result = zplc_vm_run_cycle(vm);
+  TEST_ASSERT(vm->halted && result == 4, "run_cycle after such a resume still starts a new scan");
 
-    /* Every path that restarts the scan drops the continuation. */
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    vm = zplc_core_get_default_vm();
-    zplc_vm_add_breakpoint(vm, 10);
-    (void)zplc_vm_run_cycle(vm);
-    zplc_vm_resume(vm);
-    TEST_ASSERT(vm->scan_resumed == 1U, "Resume of a paused scan arms the continuation");
-    zplc_vm_reset_cycle(vm);
-    TEST_ASSERT(vm->scan_resumed == 0U && vm->scan_instructions == 0U, "reset_cycle drops the continuation");
+  /* Every path that restarts the scan drops the continuation. */
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  vm = zplc_core_get_default_vm();
+  zplc_vm_add_breakpoint(vm, 10);
+  (void)zplc_vm_run_cycle(vm);
+  zplc_vm_resume(vm);
+  TEST_ASSERT(vm->scan_resumed == 1U, "Resume of a paused scan arms the continuation");
+  zplc_vm_reset_cycle(vm);
+  TEST_ASSERT(vm->scan_resumed == 0U && vm->scan_instructions == 0U, "reset_cycle drops the continuation");
 
-    (void)zplc_vm_run_cycle(vm);
-    zplc_vm_resume(vm);
-    TEST_ASSERT_EQ(zplc_vm_set_entry(vm, 0U, (uint32_t)len), 0, "set_entry accepted");
-    TEST_ASSERT(vm->scan_resumed == 0U && vm->scan_instructions == 0U, "set_entry drops the continuation");
+  (void)zplc_vm_run_cycle(vm);
+  zplc_vm_resume(vm);
+  TEST_ASSERT_EQ(zplc_vm_set_entry(vm, 0U, (uint32_t)len), 0, "set_entry accepted");
+  TEST_ASSERT(vm->scan_resumed == 0U && vm->scan_instructions == 0U, "set_entry drops the continuation");
 
-    (void)zplc_vm_run_cycle(vm);
-    zplc_vm_resume(vm);
-    other_len = emit_push32(other, other_len, 7);
-    other_len = emit_store32(other, other_len, ZPLC_MEM_OPI_BASE);
-    other_len = emit_op(other, other_len, OP_HALT);
-    zplc_test_load_raw(other, other_len);
-    vm = zplc_core_get_default_vm();
-    TEST_ASSERT(vm->scan_resumed == 0U && vm->scan_instructions == 0U && vm->breakpoint_count == 0U,
-                "Loading a program drops the continuation and the breakpoints");
-    result = zplc_vm_run_cycle(vm);
-    TEST_ASSERT(vm->halted && zplc_core_get_opi(0) == 7, "Reloaded program runs a whole new scan");
+  (void)zplc_vm_run_cycle(vm);
+  zplc_vm_resume(vm);
+  other_len = emit_push32(other, other_len, 7);
+  other_len = emit_store32(other, other_len, ZPLC_MEM_OPI_BASE);
+  other_len = emit_op(other, other_len, OP_HALT);
+  zplc_test_load_raw(other, other_len);
+  vm = zplc_core_get_default_vm();
+  TEST_ASSERT(vm->scan_resumed == 0U && vm->scan_instructions == 0U && vm->breakpoint_count == 0U,
+              "Loading a program drops the continuation and the breakpoints");
+  result = zplc_vm_run_cycle(vm);
+  TEST_ASSERT(vm->halted && zplc_core_get_opi(0) == 7, "Reloaded program runs a whole new scan");
 
-    /* The logical scan budget covers the whole scan, not each resume. */
-    len = 0;
-    code[len++] = OP_NOP;              /* PC 0 */
-    code[len++] = OP_NOP;              /* PC 1: breakpoint */
-    code[len++] = OP_NOP;              /* PC 2 */
-    code[len++] = OP_NOP;              /* PC 3 */
-    code[len++] = OP_HALT;             /* PC 4 */
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    vm = zplc_core_get_default_vm();
-    zplc_vm_add_breakpoint(vm, 1);
-    (void)zplc_vm_run_cycle(vm);
-    TEST_ASSERT_EQ(vm->scan_instructions, 1, "Pause records the instructions the scan already used");
-    vm->scan_instructions = ZPLC_VM_CYCLE_INSTRUCTION_BUDGET - 2U; /* as if a long scan paused here */
-    zplc_vm_resume(vm);
-    result = zplc_vm_run_cycle(vm);
-    TEST_ASSERT_EQ(result, -ZPLC_VM_WATCHDOG, "Resumed scan keeps counting against the cycle budget");
-    TEST_ASSERT(vm->halted && vm->error == ZPLC_VM_WATCHDOG, "Budget exhaustion across a pause faults the VM");
+  /* The logical scan budget covers the whole scan, not each resume. */
+  len = 0;
+  code[len++] = OP_NOP;  /* PC 0 */
+  code[len++] = OP_NOP;  /* PC 1: breakpoint */
+  code[len++] = OP_NOP;  /* PC 2 */
+  code[len++] = OP_NOP;  /* PC 3 */
+  code[len++] = OP_HALT; /* PC 4 */
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  vm = zplc_core_get_default_vm();
+  zplc_vm_add_breakpoint(vm, 1);
+  (void)zplc_vm_run_cycle(vm);
+  TEST_ASSERT_EQ(vm->scan_instructions, 1, "Pause records the instructions the scan already used");
+  vm->scan_instructions = ZPLC_VM_CYCLE_INSTRUCTION_BUDGET - 2U; /* as if a long scan paused here */
+  zplc_vm_resume(vm);
+  result = zplc_vm_run_cycle(vm);
+  TEST_ASSERT_EQ(result, -ZPLC_VM_WATCHDOG, "Resumed scan keeps counting against the cycle budget");
+  TEST_ASSERT(vm->halted && vm->error == ZPLC_VM_WATCHDOG, "Budget exhaustion across a pause faults the VM");
 }
 
 /* ============================================================================
  * Force Override Tests
  * ============================================================================ */
 
-static void test_force_overrides(void)
-{
-    uint8_t code[64];
-    size_t len = 0;
-    const zplc_vm_state_t *state;
-    const uint8_t forced_value[4] = {0x44, 0x33, 0x22, 0x11};
-    const uint8_t raw_write[4] = {0xDD, 0xCC, 0xBB, 0xAA};
-    uint16_t forced_addr = 0;
-    uint16_t forced_size = 0;
-    uint8_t forced_bytes[8] = {0};
-    uint8_t max_force[ZPLC_FORCE_MAX_BYTES];
-    uint8_t max_force_copy[ZPLC_FORCE_MAX_BYTES];
-    uint8_t short_force[ZPLC_FORCE_MAX_BYTES];
-    uint8_t short_force_before[ZPLC_FORCE_MAX_BYTES];
+static void test_force_overrides(void) {
+  uint8_t code[64];
+  size_t len = 0;
+  const zplc_vm_state_t *state;
+  const uint8_t forced_value[4] = {0x44, 0x33, 0x22, 0x11};
+  const uint8_t raw_write[4] = {0xDD, 0xCC, 0xBB, 0xAA};
+  uint16_t forced_addr = 0;
+  uint16_t forced_size = 0;
+  uint8_t forced_bytes[8] = {0};
+  uint8_t max_force[ZPLC_FORCE_MAX_BYTES];
+  uint8_t max_force_copy[ZPLC_FORCE_MAX_BYTES];
+  uint8_t short_force[ZPLC_FORCE_MAX_BYTES];
+  uint8_t short_force_before[ZPLC_FORCE_MAX_BYTES];
 
-    printf("\n=== Test: Force Overrides ===\n");
+  printf("\n=== Test: Force Overrides ===\n");
 
-    zplc_core_init();
+  zplc_core_init();
 
-    TEST_ASSERT_EQ(zplc_force_set_bytes(0x2000, forced_value, 4), 0,
-                   "Set force entry for work memory");
-    TEST_ASSERT_EQ(zplc_force_get_count(), 1, "Force entry count = 1");
-    TEST_ASSERT_EQ(zplc_force_get(0, &forced_addr, &forced_size, forced_bytes,
-                                  sizeof(forced_bytes)), 0,
-                   "Read back force entry");
-    TEST_ASSERT_EQ(forced_addr, 0x2000, "Force entry address = 0x2000");
-    TEST_ASSERT_EQ(forced_size, 4, "Force entry size = 4");
-    TEST_ASSERT_EQ(forced_bytes[0], 0x44, "Force entry byte[0] = 0x44");
-    TEST_ASSERT_EQ(forced_bytes[1], 0x33, "Force entry byte[1] = 0x33");
-    TEST_ASSERT_EQ(forced_bytes[2], 0x22, "Force entry byte[2] = 0x22");
-    TEST_ASSERT_EQ(forced_bytes[3], 0x11, "Force entry byte[3] = 0x11");
+  TEST_ASSERT_EQ(zplc_force_set_bytes(0x2000, forced_value, 4), 0, "Set force entry for work memory");
+  TEST_ASSERT_EQ(zplc_force_get_count(), 1, "Force entry count = 1");
+  TEST_ASSERT_EQ(zplc_force_get(0, &forced_addr, &forced_size, forced_bytes, sizeof(forced_bytes)), 0, "Read back force entry");
+  TEST_ASSERT_EQ(forced_addr, 0x2000, "Force entry address = 0x2000");
+  TEST_ASSERT_EQ(forced_size, 4, "Force entry size = 4");
+  TEST_ASSERT_EQ(forced_bytes[0], 0x44, "Force entry byte[0] = 0x44");
+  TEST_ASSERT_EQ(forced_bytes[1], 0x33, "Force entry byte[1] = 0x33");
+  TEST_ASSERT_EQ(forced_bytes[2], 0x22, "Force entry byte[2] = 0x22");
+  TEST_ASSERT_EQ(forced_bytes[3], 0x11, "Force entry byte[3] = 0x11");
 
-    /* Program tries to overwrite the forced work value. */
-    len = 0;
-    len = emit_push32(code, len, 0xAABBCCDD);
-    len = emit_store32(code, len, 0x2000);
-    len = emit_load32(code, len, 0x2000);
-    len = emit_op(code, len, OP_HALT);
+  /* Program tries to overwrite the forced work value. */
+  len = 0;
+  len = emit_push32(code, len, 0xAABBCCDD);
+  len = emit_store32(code, len, 0x2000);
+  len = emit_load32(code, len, 0x2000);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 0x11223344,
-                   "Forced work value survives VM STORE32");
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 0x11223344, "Forced work value survives VM STORE32");
 
-    /* External raw writes must also preserve overlapping forced bytes. */
-    TEST_ASSERT_EQ(zplc_force_set_bytes(0x0000, forced_value, 4), 0,
-                   "Set force entry for IPI memory");
-    TEST_ASSERT_EQ(zplc_force_write_bytes(0x0000, raw_write, 4), 0,
-                   "Raw write with overlapping force succeeds");
-    TEST_ASSERT_EQ(zplc_ipi_read32(0), 0x11223344,
-                   "Forced IPI value survives raw write overlay");
+  /* External raw writes must also preserve overlapping forced bytes. */
+  TEST_ASSERT_EQ(zplc_force_set_bytes(0x0000, forced_value, 4), 0, "Set force entry for IPI memory");
+  TEST_ASSERT_EQ(zplc_force_write_bytes(0x0000, raw_write, 4), 0, "Raw write with overlapping force succeeds");
+  TEST_ASSERT_EQ(zplc_ipi_read32(0), 0x11223344, "Forced IPI value survives raw write overlay");
 
-    TEST_ASSERT_EQ(zplc_force_clear(0x2000), 0, "Clear work-memory force entry");
-    TEST_ASSERT_EQ(zplc_force_clear(0x0000), 0, "Clear IPI force entry");
-    TEST_ASSERT_EQ(zplc_force_get_count(), 0, "Force entry count = 0 after clear");
+  TEST_ASSERT_EQ(zplc_force_clear(0x2000), 0, "Clear work-memory force entry");
+  TEST_ASSERT_EQ(zplc_force_clear(0x0000), 0, "Clear IPI force entry");
+  TEST_ASSERT_EQ(zplc_force_get_count(), 0, "Force entry count = 0 after clear");
 
-    /* After clearing, the program can write the value normally. */
-    zplc_core_init();
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
-    state = zplc_core_get_state();
-    TEST_ASSERT_EQ(state->stack[0], 0xAABBCCDD,
-                   "Cleared force allows normal VM STORE32");
+  /* After clearing, the program can write the value normally. */
+  zplc_core_init();
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
+  state = zplc_core_get_state();
+  TEST_ASSERT_EQ(state->stack[0], 0xAABBCCDD, "Cleared force allows normal VM STORE32");
 
-    zplc_core_init();
-    TEST_ASSERT_EQ(zplc_force_set_bytes(0x2004, forced_value, 4), 0,
-                   "Set second force entry");
-    zplc_force_clear_all();
-    TEST_ASSERT_EQ(zplc_force_get_count(), 0, "Clear-all removes every force entry");
+  zplc_core_init();
+  TEST_ASSERT_EQ(zplc_force_set_bytes(0x2004, forced_value, 4), 0, "Set second force entry");
+  zplc_force_clear_all();
+  TEST_ASSERT_EQ(zplc_force_get_count(), 0, "Clear-all removes every force entry");
 
-    zplc_core_init();
-    TEST_ASSERT_EQ(zplc_force_set_bytes(0x0000, forced_value, 4), 0,
-                   "Set force entry for partial overlap test");
-    TEST_ASSERT_EQ(zplc_force_write_bytes(0x0002, raw_write, 2), 0,
-                   "Partial overlapping raw write succeeds");
-    TEST_ASSERT_EQ(zplc_ipi_read32(0), 0x11223344,
-                   "Partial overlap still preserves all forced bytes");
+  zplc_core_init();
+  TEST_ASSERT_EQ(zplc_force_set_bytes(0x0000, forced_value, 4), 0, "Set force entry for partial overlap test");
+  TEST_ASSERT_EQ(zplc_force_write_bytes(0x0002, raw_write, 2), 0, "Partial overlapping raw write succeeds");
+  TEST_ASSERT_EQ(zplc_ipi_read32(0), 0x11223344, "Partial overlap still preserves all forced bytes");
 
-    zplc_core_init();
-    TEST_ASSERT_EQ(zplc_force_set_bytes(0x2008, forced_value, 4), 0,
-                   "Set baseline force entry");
-    TEST_ASSERT_EQ(zplc_force_set_bytes(0x200A, raw_write, 4), -3,
-                   "Reject overlapping force ranges");
-    TEST_ASSERT_EQ(zplc_force_get_count(), 1,
-                   "Overlapping force rejection keeps existing table intact");
+  zplc_core_init();
+  TEST_ASSERT_EQ(zplc_force_set_bytes(0x2008, forced_value, 4), 0, "Set baseline force entry");
+  TEST_ASSERT_EQ(zplc_force_set_bytes(0x200A, raw_write, 4), -3, "Reject overlapping force ranges");
+  TEST_ASSERT_EQ(zplc_force_get_count(), 1, "Overlapping force rejection keeps existing table intact");
 
-    zplc_core_init();
-    for (size_t index = 0U; index < sizeof(max_force); ++index) {
-        max_force[index] = (uint8_t)index;
-    }
-    TEST_ASSERT_EQ(zplc_force_set_bytes(0x2000U, max_force, sizeof(max_force)), 0,
-                   "Set maximum-size force entry");
-    memset(short_force, 0xA5, sizeof(short_force));
-    memcpy(short_force_before, short_force, sizeof(short_force));
-    TEST_ASSERT_EQ(zplc_force_get(0U, &forced_addr, &forced_size, short_force,
-                                  sizeof(short_force) - 1U), -2,
-                   "Reject too-small force output buffer");
-    TEST_ASSERT(memcmp(short_force, short_force_before, sizeof(short_force)) == 0,
-                "Too-small force buffer remains untouched");
-    TEST_ASSERT_EQ(forced_addr, 0x2000U, "Too-small read still reports force address");
-    TEST_ASSERT_EQ(forced_size, ZPLC_FORCE_MAX_BYTES,
-                   "Too-small read still reports force size");
-    TEST_ASSERT_EQ(zplc_force_get(0U, &forced_addr, &forced_size, NULL, 0U), 0,
-                   "Metadata-only force lookup succeeds");
-    TEST_ASSERT_EQ(zplc_force_get(0U, &forced_addr, &forced_size, NULL, 1U), -2,
-                   "NULL force buffer with capacity is rejected");
-    TEST_ASSERT_EQ(zplc_force_get(0U, &forced_addr, &forced_size, max_force_copy,
-                                  sizeof(max_force_copy)), 0,
-                   "Maximum-size force entry copies into exact output buffer");
-    TEST_ASSERT(memcmp(max_force, max_force_copy, sizeof(max_force)) == 0,
-                "Maximum-size force bytes round-trip exactly");
+  zplc_core_init();
+  for (size_t index = 0U; index < sizeof(max_force); ++index) {
+    max_force[index] = (uint8_t)index;
+  }
+  TEST_ASSERT_EQ(zplc_force_set_bytes(0x2000U, max_force, sizeof(max_force)), 0, "Set maximum-size force entry");
+  memset(short_force, 0xA5, sizeof(short_force));
+  memcpy(short_force_before, short_force, sizeof(short_force));
+  TEST_ASSERT_EQ(zplc_force_get(0U, &forced_addr, &forced_size, short_force, sizeof(short_force) - 1U), -2,
+                 "Reject too-small force output buffer");
+  TEST_ASSERT(memcmp(short_force, short_force_before, sizeof(short_force)) == 0, "Too-small force buffer remains untouched");
+  TEST_ASSERT_EQ(forced_addr, 0x2000U, "Too-small read still reports force address");
+  TEST_ASSERT_EQ(forced_size, ZPLC_FORCE_MAX_BYTES, "Too-small read still reports force size");
+  TEST_ASSERT_EQ(zplc_force_get(0U, &forced_addr, &forced_size, NULL, 0U), 0, "Metadata-only force lookup succeeds");
+  TEST_ASSERT_EQ(zplc_force_get(0U, &forced_addr, &forced_size, NULL, 1U), -2, "NULL force buffer with capacity is rejected");
+  TEST_ASSERT_EQ(zplc_force_get(0U, &forced_addr, &forced_size, max_force_copy, sizeof(max_force_copy)), 0,
+                 "Maximum-size force entry copies into exact output buffer");
+  TEST_ASSERT(memcmp(max_force, max_force_copy, sizeof(max_force)) == 0, "Maximum-size force bytes round-trip exactly");
 }
 
 /* COM-020: a released force gives each byte the value the program (or an external write) last gave it, so the outputs
  * follow the program after a session ends. A byte the program never wrote goes back to what it was before the force:
  * an output nobody drives does not stay on with the forced value. */
-static void test_a_released_force_gives_the_value_back_to_the_program(void)
-{
-    const uint8_t on = 0x0FU;
-    const uint8_t forced_value[4] = {0x44, 0x33, 0x22, 0x11};
-    const uint8_t external[4] = {0x05, 0x06, 0x07, 0x08};
-    const uint8_t *opi;
-    const uint8_t *work;
-    uint8_t code[32];
-    size_t len = 0;
+static void test_a_released_force_gives_the_value_back_to_the_program(void) {
+  const uint8_t on = 0x0FU;
+  const uint8_t forced_value[4] = {0x44, 0x33, 0x22, 0x11};
+  const uint8_t external[4] = {0x05, 0x06, 0x07, 0x08};
+  const uint8_t *opi;
+  const uint8_t *work;
+  uint8_t code[32];
+  size_t len = 0;
 
-    printf("\n=== Test: a released force gives the value back to the program ===\n");
+  printf("\n=== Test: a released force gives the value back to the program ===\n");
 
-    zplc_core_init();
-    opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
-    TEST_ASSERT_EQ(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &on, 1U), 0, "Force an output nobody drives");
-    TEST_ASSERT_EQ(opi[0], 0x0F, "The output takes the forced value");
-    TEST_ASSERT_EQ(zplc_force_clear(ZPLC_MEM_OPI_BASE), 0, "Release it");
-    TEST_ASSERT_EQ(opi[0], 0x00, "The output goes back to its value before the force, not the forced one");
+  zplc_core_init();
+  opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+  TEST_ASSERT_EQ(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &on, 1U), 0, "Force an output nobody drives");
+  TEST_ASSERT_EQ(opi[0], 0x0F, "The output takes the forced value");
+  TEST_ASSERT_EQ(zplc_force_clear(ZPLC_MEM_OPI_BASE), 0, "Release it");
+  TEST_ASSERT_EQ(opi[0], 0x00, "The output goes back to its value before the force, not the forced one");
 
-    zplc_core_init();
-    work = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
-    len = emit_push32(code, len, 0xAABBCCDD);
-    len = emit_store32(code, len, 0x2000);
-    len = emit_op(code, len, OP_HALT);
-    TEST_ASSERT_EQ(zplc_force_set_bytes(0x2000, forced_value, 4), 0, "Force a variable the program writes");
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
-    TEST_ASSERT_EQ(work[0], 0x44, "The program's write does not reach a forced byte");
-    TEST_ASSERT_EQ(zplc_force_clear(0x2000), 0, "Release it");
-    TEST_ASSERT(work[0] == 0xDD && work[1] == 0xCC && work[2] == 0xBB && work[3] == 0xAA,
-                "The variable holds what the program wrote while it was forced");
+  zplc_core_init();
+  work = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
+  len = emit_push32(code, len, 0xAABBCCDD);
+  len = emit_store32(code, len, 0x2000);
+  len = emit_op(code, len, OP_HALT);
+  TEST_ASSERT_EQ(zplc_force_set_bytes(0x2000, forced_value, 4), 0, "Force a variable the program writes");
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
+  TEST_ASSERT_EQ(work[0], 0x44, "The program's write does not reach a forced byte");
+  TEST_ASSERT_EQ(zplc_force_clear(0x2000), 0, "Release it");
+  TEST_ASSERT(work[0] == 0xDD && work[1] == 0xCC && work[2] == 0xBB && work[3] == 0xAA,
+              "The variable holds what the program wrote while it was forced");
 
-    zplc_core_init();
-    TEST_ASSERT_EQ(zplc_force_set_bytes(0x0000, forced_value, 4), 0, "Force an input");
-    TEST_ASSERT_EQ(zplc_force_write_bytes(0x0000, external, 4), 0, "An external write while it is forced");
-    zplc_force_clear_all();
-    TEST_ASSERT_EQ(zplc_ipi_read32(0), 0x08070605U, "Clearing every force gives the input what the external write wrote");
+  zplc_core_init();
+  TEST_ASSERT_EQ(zplc_force_set_bytes(0x0000, forced_value, 4), 0, "Force an input");
+  TEST_ASSERT_EQ(zplc_force_write_bytes(0x0000, external, 4), 0, "An external write while it is forced");
+  zplc_force_clear_all();
+  TEST_ASSERT_EQ(zplc_ipi_read32(0), 0x08070605U, "Clearing every force gives the input what the external write wrote");
 
-    zplc_core_init();
-    opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
-    TEST_ASSERT_EQ(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &on, 1U), 0, "Force an output again");
-    zplc_force_clear_all();
-    TEST_ASSERT_EQ(opi[0], 0x00, "Clearing every force releases it the same way");
+  zplc_core_init();
+  opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+  TEST_ASSERT_EQ(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &on, 1U), 0, "Force an output again");
+  zplc_force_clear_all();
+  TEST_ASSERT_EQ(opi[0], 0x00, "Clearing every force releases it the same way");
 }
 
-static void test_comm_status_reads_fb_status_word(void)
-{
-    uint8_t code[16];
-    size_t len = 0;
-    const zplc_vm_state_t *state;
-    const uint32_t expected_status = 0x78563412U;
+static void test_comm_status_reads_fb_status_word(void) {
+  uint8_t code[16];
+  size_t len = 0;
+  const zplc_vm_state_t *state;
+  const uint32_t expected_status = 0x78563412U;
 
-    printf("\n=== Test: Communication STATUS opcode ===\n");
+  printf("\n=== Test: Communication STATUS opcode ===\n");
 
-    zplc_core_init();
-    TEST_ASSERT_EQ(zplc_ipi_write32(4U, expected_status), 0,
-                   "Write FB STATUS word into IPI memory");
+  zplc_core_init();
+  TEST_ASSERT_EQ(zplc_ipi_write32(4U, expected_status), 0, "Write FB STATUS word into IPI memory");
 
-    len = emit_push16(code, len, ZPLC_MEM_IPI_BASE);
-    len = emit_comm32(code, len, OP_COMM_STATUS, ZPLC_COMM_FB_COMM_STATUS);
-    len = emit_op(code, len, OP_HALT);
+  len = emit_push16(code, len, ZPLC_MEM_IPI_BASE);
+  len = emit_comm32(code, len, OP_COMM_STATUS, ZPLC_COMM_FB_COMM_STATUS);
+  len = emit_op(code, len, OP_HALT);
 
-    zplc_test_load_raw(code, len);
-    zplc_core_run(0);
+  zplc_test_load_raw(code, len);
+  zplc_core_run(0);
 
-    state = zplc_core_get_state();
-    TEST_ASSERT(state->halted, "VM halted after COMM_STATUS program");
-    TEST_ASSERT_EQ(state->sp, 1, "COMM_STATUS leaves one stack result");
-    TEST_ASSERT_EQ(state->stack[0], expected_status,
-                   "COMM_STATUS pushes FB STATUS word");
+  state = zplc_core_get_state();
+  TEST_ASSERT(state->halted, "VM halted after COMM_STATUS program");
+  TEST_ASSERT_EQ(state->sp, 1, "COMM_STATUS leaves one stack result");
+  TEST_ASSERT_EQ(state->stack[0], expected_status, "COMM_STATUS pushes FB STATUS word");
 }
 
 /*
@@ -2998,221 +2872,180 @@ static void test_comm_status_reads_fb_status_word(void)
  * narrowing the operand before validating it turns 0x00000114 into the valid
  * kind 0x14. The VM must reject the whole operand.
  */
-static void test_comm_kind_operand_is_validated_before_narrowing(void)
-{
-    static const uint32_t wide_operands[] = {
-        0x00000100U | (uint32_t)ZPLC_COMM_FB_COMM_STATUS,
-        0x00010000U | (uint32_t)ZPLC_COMM_FB_COMM_STATUS,
-        0x80000000U | (uint32_t)ZPLC_COMM_FB_COMM_STATUS,
-    };
-    size_t index;
+static void test_comm_kind_operand_is_validated_before_narrowing(void) {
+  static const uint32_t wide_operands[] = {
+      0x00000100U | (uint32_t)ZPLC_COMM_FB_COMM_STATUS,
+      0x00010000U | (uint32_t)ZPLC_COMM_FB_COMM_STATUS,
+      0x80000000U | (uint32_t)ZPLC_COMM_FB_COMM_STATUS,
+  };
+  size_t index;
 
-    printf("\n=== Test: comm kind operand wider than the enum ===\n");
+  printf("\n=== Test: comm kind operand wider than the enum ===\n");
 
-    for (index = 0U; index < sizeof(wide_operands) / sizeof(wide_operands[0]);
-         index++) {
-        uint8_t code[16];
-        size_t len = 0;
-        const zplc_vm_state_t *state;
+  for (index = 0U; index < sizeof(wide_operands) / sizeof(wide_operands[0]); index++) {
+    uint8_t code[16];
+    size_t len = 0;
+    const zplc_vm_state_t *state;
 
-        zplc_core_init();
-        len = emit_push16(code, len, ZPLC_MEM_IPI_BASE);
-        len = emit_comm32(code, len, OP_COMM_STATUS, wide_operands[index]);
-        len = emit_op(code, len, OP_HALT);
+    zplc_core_init();
+    len = emit_push16(code, len, ZPLC_MEM_IPI_BASE);
+    len = emit_comm32(code, len, OP_COMM_STATUS, wide_operands[index]);
+    len = emit_op(code, len, OP_HALT);
 
-        TEST_ASSERT_EQ(zplc_test_load_raw(code, len), 0,
-                       "Load wide comm kind probe");
-        (void)zplc_core_run(0);
+    TEST_ASSERT_EQ(zplc_test_load_raw(code, len), 0, "Load wide comm kind probe");
+    (void)zplc_core_run(0);
 
-        state = zplc_core_get_state();
-        TEST_ASSERT_EQ(state->error, ZPLC_VM_INVALID_OPCODE,
-                       "Wide comm kind operand is rejected, not narrowed");
-        TEST_ASSERT_EQ(state->sp, 0, "Rejected comm operand pushes no STATUS");
-    }
+    state = zplc_core_get_state();
+    TEST_ASSERT_EQ(state->error, ZPLC_VM_INVALID_OPCODE, "Wide comm kind operand is rejected, not narrowed");
+    TEST_ASSERT_EQ(state->sp, 0, "Rejected comm operand pushes no STATUS");
+  }
 }
 
-static void test_bounded_vm_execution(void)
-{
-    uint8_t loop[] = { OP_JMP, 0U, 0U };
-    uint8_t halt[] = { OP_NOP, OP_HALT };
-    uint8_t pause_code[] = { OP_BREAK, OP_HALT };
-    zplc_vm_t vm;
-    zplc_vm_t snapshot;
+static void test_bounded_vm_execution(void) {
+  uint8_t loop[] = {OP_JMP, 0U, 0U};
+  uint8_t halt[] = {OP_NOP, OP_HALT};
+  uint8_t pause_code[] = {OP_BREAK, OP_HALT};
+  zplc_vm_t vm;
+  zplc_vm_t snapshot;
 
-    printf("\n=== Test: bounded VM execution ===\n");
-    zplc_core_init();
-    TEST_ASSERT_EQ(zplc_vm_init(&vm), 0, "Initialize bounded VM");
-    TEST_ASSERT_EQ(zplc_test_mem_load_code(loop, sizeof(loop), 0U), 0,
-                   "Load self-loop code");
-    TEST_ASSERT_EQ(zplc_vm_set_entry(&vm, 0U, sizeof(loop)), 0,
-                   "Set self-loop entry");
-    TEST_ASSERT_EQ(zplc_vm_run_bounded(&vm, 3U), -ZPLC_VM_WATCHDOG,
-                   "Self-loop reaches bounded watchdog");
-    TEST_ASSERT_EQ(vm.error, ZPLC_VM_WATCHDOG, "Bounded watchdog records VM error");
-    TEST_ASSERT(vm.halted != 0U && vm.paused == 0U,
-                "Bounded watchdog halts and clears pause");
+  printf("\n=== Test: bounded VM execution ===\n");
+  zplc_core_init();
+  TEST_ASSERT_EQ(zplc_vm_init(&vm), 0, "Initialize bounded VM");
+  TEST_ASSERT_EQ(zplc_test_mem_load_code(loop, sizeof(loop), 0U), 0, "Load self-loop code");
+  TEST_ASSERT_EQ(zplc_vm_set_entry(&vm, 0U, sizeof(loop)), 0, "Set self-loop entry");
+  TEST_ASSERT_EQ(zplc_vm_run_bounded(&vm, 3U), -ZPLC_VM_WATCHDOG, "Self-loop reaches bounded watchdog");
+  TEST_ASSERT_EQ(vm.error, ZPLC_VM_WATCHDOG, "Bounded watchdog records VM error");
+  TEST_ASSERT(vm.halted != 0U && vm.paused == 0U, "Bounded watchdog halts and clears pause");
 
-    zplc_core_init();
-    TEST_ASSERT_EQ(zplc_vm_init(&vm), 0, "Reinitialize bounded VM");
-    TEST_ASSERT_EQ(zplc_test_mem_load_code(halt, sizeof(halt), 0U), 0,
-                   "Load NOP HALT code");
-    TEST_ASSERT_EQ(zplc_vm_set_entry(&vm, 0U, sizeof(halt)), 0,
-                   "Set NOP HALT entry");
-    TEST_ASSERT_EQ(zplc_vm_run_bounded(&vm, 1U), -ZPLC_VM_WATCHDOG,
-                   "Budget faults before later HALT");
-    zplc_vm_reset_cycle(&vm);
-    TEST_ASSERT_EQ(zplc_vm_run_bounded(&vm, 2U), 1,
-                   "HALT within bound succeeds with run count convention");
-    zplc_vm_reset_cycle(&vm);
-    TEST_ASSERT_EQ(zplc_test_mem_load_code(pause_code, sizeof(pause_code), 0U), 0,
-                   "Load bounded-run pause code");
-    TEST_ASSERT_EQ(zplc_vm_set_entry(&vm, 0U, sizeof(pause_code)), 0,
-                   "Set bounded-run pause entry");
-    TEST_ASSERT_EQ(zplc_vm_run_bounded(&vm, 1U), 0,
-                   "Breakpoint pause succeeds without watchdog");
-    TEST_ASSERT(vm.paused != 0U && vm.error == ZPLC_VM_PAUSED,
-                "Bounded run preserves breakpoint pause state");
+  zplc_core_init();
+  TEST_ASSERT_EQ(zplc_vm_init(&vm), 0, "Reinitialize bounded VM");
+  TEST_ASSERT_EQ(zplc_test_mem_load_code(halt, sizeof(halt), 0U), 0, "Load NOP HALT code");
+  TEST_ASSERT_EQ(zplc_vm_set_entry(&vm, 0U, sizeof(halt)), 0, "Set NOP HALT entry");
+  TEST_ASSERT_EQ(zplc_vm_run_bounded(&vm, 1U), -ZPLC_VM_WATCHDOG, "Budget faults before later HALT");
+  zplc_vm_reset_cycle(&vm);
+  TEST_ASSERT_EQ(zplc_vm_run_bounded(&vm, 2U), 1, "HALT within bound succeeds with run count convention");
+  zplc_vm_reset_cycle(&vm);
+  TEST_ASSERT_EQ(zplc_test_mem_load_code(pause_code, sizeof(pause_code), 0U), 0, "Load bounded-run pause code");
+  TEST_ASSERT_EQ(zplc_vm_set_entry(&vm, 0U, sizeof(pause_code)), 0, "Set bounded-run pause entry");
+  TEST_ASSERT_EQ(zplc_vm_run_bounded(&vm, 1U), 0, "Breakpoint pause succeeds without watchdog");
+  TEST_ASSERT(vm.paused != 0U && vm.error == ZPLC_VM_PAUSED, "Bounded run preserves breakpoint pause state");
 
-    zplc_vm_reset_cycle(&vm);
-    snapshot = vm;
-    TEST_ASSERT_EQ(zplc_vm_run_bounded(&vm, 0U), -1,
-                   "Zero bounded budget is rejected");
-    TEST_ASSERT(memcmp(&vm, &snapshot, sizeof(vm)) == 0,
-                "Zero bounded budget does not mutate VM");
+  zplc_vm_reset_cycle(&vm);
+  snapshot = vm;
+  TEST_ASSERT_EQ(zplc_vm_run_bounded(&vm, 0U), -1, "Zero bounded budget is rejected");
+  TEST_ASSERT(memcmp(&vm, &snapshot, sizeof(vm)) == 0, "Zero bounded budget does not mutate VM");
 
-    TEST_ASSERT_EQ(zplc_test_mem_load_code(loop, sizeof(loop), 0U), 0,
-                   "Reload self-loop for partial run");
-    TEST_ASSERT_EQ(zplc_vm_set_entry(&vm, 0U, sizeof(loop)), 0,
-                   "Reset partial-run entry");
-    TEST_ASSERT_EQ(zplc_vm_run(&vm, 1U), 1,
-                   "Generic run remains resumable at its limit");
-    TEST_ASSERT_EQ(vm.error, ZPLC_VM_OK, "Generic limited run remains nonfaulting");
-    TEST_ASSERT_EQ(zplc_vm_run(&vm, 1U), 1,
-                   "Generic run can continue after its limit");
+  TEST_ASSERT_EQ(zplc_test_mem_load_code(loop, sizeof(loop), 0U), 0, "Reload self-loop for partial run");
+  TEST_ASSERT_EQ(zplc_vm_set_entry(&vm, 0U, sizeof(loop)), 0, "Reset partial-run entry");
+  TEST_ASSERT_EQ(zplc_vm_run(&vm, 1U), 1, "Generic run remains resumable at its limit");
+  TEST_ASSERT_EQ(vm.error, ZPLC_VM_OK, "Generic limited run remains nonfaulting");
+  TEST_ASSERT_EQ(zplc_vm_run(&vm, 1U), 1, "Generic run can continue after its limit");
 
-    zplc_test_load_raw(loop, sizeof(loop));
-    TEST_ASSERT_EQ(zplc_core_run_cycle(), -ZPLC_VM_WATCHDOG,
-                   "Default PLC cycle is bounded");
+  zplc_test_load_raw(loop, sizeof(loop));
+  TEST_ASSERT_EQ(zplc_core_run_cycle(), -ZPLC_VM_WATCHDOG, "Default PLC cycle is bounded");
 }
 
-static void test_vm_stack_limit_defaults_and_hard_guard(void)
-{
-    uint8_t push_code[] = { OP_PUSH8, 0U, OP_HALT };
-    uint8_t drop_code[] = { OP_DROP, OP_HALT };
-    zplc_vm_t vm;
+static void test_vm_stack_limit_defaults_and_hard_guard(void) {
+  uint8_t push_code[] = {OP_PUSH8, 0U, OP_HALT};
+  uint8_t drop_code[] = {OP_DROP, OP_HALT};
+  zplc_vm_t vm;
 
-    printf("\n=== Test: VM stack limit defaults and hard guard ===\n");
-    zplc_core_init();
-    TEST_ASSERT_EQ(zplc_vm_init(&vm), 0, "Initialize stack-limited VM");
-    TEST_ASSERT_EQ(vm.stack_limit, ZPLC_STACK_MAX_DEPTH,
-                   "Default VM retains the legacy maximum stack depth");
+  printf("\n=== Test: VM stack limit defaults and hard guard ===\n");
+  zplc_core_init();
+  TEST_ASSERT_EQ(zplc_vm_init(&vm), 0, "Initialize stack-limited VM");
+  TEST_ASSERT_EQ(vm.stack_limit, ZPLC_STACK_MAX_DEPTH, "Default VM retains the legacy maximum stack depth");
 
-    TEST_ASSERT_EQ(zplc_test_mem_load_code(push_code, sizeof(push_code), 0U), 0,
-                   "Load stack-overflow probe program");
-    TEST_ASSERT_EQ(zplc_vm_set_entry(&vm, 0U, sizeof(push_code)), 0,
-                   "Set stack-overflow probe entry");
-    vm.sp = ZPLC_STACK_MAX_DEPTH;
-    vm.stack_limit = UINT16_MAX;
-    TEST_ASSERT_EQ(zplc_vm_run_bounded(&vm, 2U),
-                   -ZPLC_VM_STACK_OVERFLOW,
-                   "Hard stack array bound survives a corrupted high limit");
-    TEST_ASSERT_EQ(vm.sp, ZPLC_STACK_MAX_DEPTH,
-                   "Hard stack guard prevents writes past the VM array");
+  TEST_ASSERT_EQ(zplc_test_mem_load_code(push_code, sizeof(push_code), 0U), 0, "Load stack-overflow probe program");
+  TEST_ASSERT_EQ(zplc_vm_set_entry(&vm, 0U, sizeof(push_code)), 0, "Set stack-overflow probe entry");
+  vm.sp = ZPLC_STACK_MAX_DEPTH;
+  vm.stack_limit = UINT16_MAX;
+  TEST_ASSERT_EQ(zplc_vm_run_bounded(&vm, 2U), -ZPLC_VM_STACK_OVERFLOW, "Hard stack array bound survives a corrupted high limit");
+  TEST_ASSERT_EQ(vm.sp, ZPLC_STACK_MAX_DEPTH, "Hard stack guard prevents writes past the VM array");
 
-    TEST_ASSERT_EQ(zplc_vm_init(&vm), 0, "Reinitialize stack guard VM");
-    TEST_ASSERT_EQ(zplc_test_mem_load_code(drop_code, sizeof(drop_code), 0U), 0,
-                   "Load direct stack-read probe program");
-    TEST_ASSERT_EQ(zplc_vm_set_entry(&vm, 0U, sizeof(drop_code)), 0,
-                   "Set direct stack-read probe entry");
-    vm.sp = ZPLC_STACK_MAX_DEPTH + 1U;
-    vm.paused = 1U;
-    TEST_ASSERT_EQ(zplc_vm_step(&vm), ZPLC_VM_STACK_OVERFLOW,
-                   "Corrupted SP faults before paused or DROP stack access");
-    TEST_ASSERT(vm.halted != 0U && vm.paused == 0U,
-                "Corrupted SP fault halts and clears a stale pause");
+  TEST_ASSERT_EQ(zplc_vm_init(&vm), 0, "Reinitialize stack guard VM");
+  TEST_ASSERT_EQ(zplc_test_mem_load_code(drop_code, sizeof(drop_code), 0U), 0, "Load direct stack-read probe program");
+  TEST_ASSERT_EQ(zplc_vm_set_entry(&vm, 0U, sizeof(drop_code)), 0, "Set direct stack-read probe entry");
+  vm.sp = ZPLC_STACK_MAX_DEPTH + 1U;
+  vm.paused = 1U;
+  TEST_ASSERT_EQ(zplc_vm_step(&vm), ZPLC_VM_STACK_OVERFLOW, "Corrupted SP faults before paused or DROP stack access");
+  TEST_ASSERT(vm.halted != 0U && vm.paused == 0U, "Corrupted SP fault halts and clears a stale pause");
 
-    TEST_ASSERT_EQ(zplc_vm_init(&vm), 0, "Reinitialize zero-limit VM");
-    TEST_ASSERT_EQ(zplc_test_mem_load_code(drop_code, sizeof(drop_code), 0U), 0,
-                   "Reload direct stack-read probe program");
-    TEST_ASSERT_EQ(zplc_vm_set_entry(&vm, 0U, sizeof(drop_code)), 0,
-                   "Reset direct stack-read probe entry");
-    vm.stack_limit = 0U;
-    TEST_ASSERT_EQ(zplc_vm_step(&vm), ZPLC_VM_STACK_OVERFLOW,
-                   "Zero stack limit faults before DROP stack access");
+  TEST_ASSERT_EQ(zplc_vm_init(&vm), 0, "Reinitialize zero-limit VM");
+  TEST_ASSERT_EQ(zplc_test_mem_load_code(drop_code, sizeof(drop_code), 0U), 0, "Reload direct stack-read probe program");
+  TEST_ASSERT_EQ(zplc_vm_set_entry(&vm, 0U, sizeof(drop_code)), 0, "Reset direct stack-read probe entry");
+  vm.stack_limit = 0U;
+  TEST_ASSERT_EQ(zplc_vm_step(&vm), ZPLC_VM_STACK_OVERFLOW, "Zero stack limit faults before DROP stack access");
 
-    TEST_ASSERT_EQ(zplc_vm_init(&vm), 0, "Reinitialize high-limit VM");
-    vm.sp = ZPLC_STACK_MAX_DEPTH + 1U;
-    vm.stack_limit = UINT16_MAX;
-    vm.call_stack[0] = 0xBEEFU;
-    TEST_ASSERT_EQ(zplc_vm_get_stack(&vm, ZPLC_STACK_MAX_DEPTH), 0U,
-                   "Stack accessor rejects indices beyond physical stack storage");
+  TEST_ASSERT_EQ(zplc_vm_init(&vm), 0, "Reinitialize high-limit VM");
+  vm.sp = ZPLC_STACK_MAX_DEPTH + 1U;
+  vm.stack_limit = UINT16_MAX;
+  vm.call_stack[0] = 0xBEEFU;
+  TEST_ASSERT_EQ(zplc_vm_get_stack(&vm, ZPLC_STACK_MAX_DEPTH), 0U, "Stack accessor rejects indices beyond physical stack storage");
 }
 
 /* ============================================================================
  * Main
  * ============================================================================ */
 
-int main(void)
-{
-    printf("================================================\n");
-    printf("  ZPLC Virtual Machine Core Tests\n");
-    printf("  Core Version: %s\n", zplc_core_version());
-    printf("================================================\n");
+int main(void) {
+  printf("================================================\n");
+  printf("  ZPLC Virtual Machine Core Tests\n");
+  printf("  Core Version: %s\n", zplc_core_version());
+  printf("================================================\n");
 
-    test_push_and_halt();
-    test_arithmetic();
-    test_stack_operations();
-    test_logic_operations();
-    test_comparison_operations();
-    test_memory_access();
-    test_control_flow();
-    test_error_handling();
-    test_indirect_access_outside_memory();
-    test_complex_program();
-    test_push8_sign_extension();
-    test_float_arithmetic();
-    test_type_conversions();
-    test_64bit_memory();
-    test_get_ticks();
-    test_integration_assembled_program();
-    test_integration_float_math();
+  test_push_and_halt();
+  test_arithmetic();
+  test_stack_operations();
+  test_logic_operations();
+  test_comparison_operations();
+  test_memory_access();
+  test_control_flow();
+  test_error_handling();
+  test_indirect_access_outside_memory();
+  test_complex_program();
+  test_push8_sign_extension();
+  test_float_arithmetic();
+  test_type_conversions();
+  test_64bit_memory();
+  test_get_ticks();
+  test_integration_assembled_program();
+  test_integration_float_math();
 
-    /* Instance-Based VM Tests (Multitask Support) */
-    test_instance_based_vm();
-    test_test_memory_loader_rejects_overflow();
-    test_multiple_entry_points();
-    test_vm_isolation();
+  /* Instance-Based VM Tests (Multitask Support) */
+  test_instance_based_vm();
+  test_test_memory_loader_rejects_overflow();
+  test_multiple_entry_points();
+  test_vm_isolation();
 
-    /* Multi-Task Loading Tests */
-    test_load_tasks_basic();
-    test_load_tasks_execute();
-    test_load_tasks_errors();
-    test_verified_load_is_atomic();
+  /* Multi-Task Loading Tests */
+  test_load_tasks_basic();
+  test_load_tasks_execute();
+  test_load_tasks_errors();
+  test_verified_load_is_atomic();
 
-    /* Indirect Memory Access Tests (v1.1: LOADI/STOREI) */
-    test_indirect_memory();
+  /* Indirect Memory Access Tests (v1.1: LOADI/STOREI) */
+  test_indirect_memory();
 
-    /* String Operations Tests (v1.2: STRING type) */
-    test_string_operations();
+  /* String Operations Tests (v1.2: STRING type) */
+  test_string_operations();
 
-    /* Debugger Breakpoint Tests (v1.3: Debug support) */
-    test_breakpoints();
-    test_resume_continues_interrupted_scan();
+  /* Debugger Breakpoint Tests (v1.3: Debug support) */
+  test_breakpoints();
+  test_resume_continues_interrupted_scan();
 
-    /* Force Override Tests */
-    test_force_overrides();
-    test_a_released_force_gives_the_value_back_to_the_program();
+  /* Force Override Tests */
+  test_force_overrides();
+  test_a_released_force_gives_the_value_back_to_the_program();
 
-    /* Communication opcode regression tests */
-    test_comm_status_reads_fb_status_word();
-    test_comm_kind_operand_is_validated_before_narrowing();
-    test_bounded_vm_execution();
-    test_vm_stack_limit_defaults_and_hard_guard();
+  /* Communication opcode regression tests */
+  test_comm_status_reads_fb_status_word();
+  test_comm_kind_operand_is_validated_before_narrowing();
+  test_bounded_vm_execution();
+  test_vm_stack_limit_defaults_and_hard_guard();
 
-    printf("\n================================================\n");
-    printf("  Results: %d tests, %d passed, %d failed\n",
-           test_count, test_count - fail_count, fail_count);
-    printf("================================================\n");
+  printf("\n================================================\n");
+  printf("  Results: %d tests, %d passed, %d failed\n", test_count, test_count - fail_count, fail_count);
+  printf("================================================\n");
 
-    return (fail_count == 0) ? 0 : 1;
+  return (fail_count == 0) ? 0 : 1;
 }

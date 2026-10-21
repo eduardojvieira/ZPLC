@@ -21,7 +21,11 @@ import {
 const document = (): FBDModel => ({
   name: 'Main',
   variables: {
-    inputs: [{ name: 'Start', type: 'BOOL' }, { name: 'Stop', type: 'BOOL' }, { name: 'Level', type: 'INT' }],
+    inputs: [
+      { name: 'Start', type: 'BOOL' },
+      { name: 'Stop', type: 'BOOL' },
+      { name: 'Level', type: 'INT' },
+    ],
     outputs: [{ name: 'Lamp', type: 'BOOL' }],
     local: [{ name: 'Motor', type: 'BOOL' }],
   },
@@ -47,7 +51,8 @@ function take(session: Session, outcome: FBDOutcome): FBDOutcome {
   return outcome;
 }
 
-const run = (session: Session, command: string, argument = {}) => take(session, runFBDCommand(session.model, session.state, command, argument));
+const run = (session: Session, command: string, argument = {}) =>
+  take(session, runFBDCommand(session.model, session.state, command, argument));
 
 /** Presses the keys as the editor receives them; a question about a binding is answered with the next of `answers`. */
 function press(session: Session, keys: string[], answers: string[] = []): Session {
@@ -63,14 +68,20 @@ function press(session: Session, keys: string[], answers: string[] = []): Sessio
 
 const selected = (session: Session): Node | undefined => session.state.nodes.find((node) => node.selected);
 const data = (node: Node | undefined) => (node?.data ?? {}) as Record<string, unknown>;
-const documentOf = (session: Session): FBDModel => ({ ...session.model, blocks: nodesToBlocks(session.state.nodes), connections: edgesToConnections(session.state.edges) });
-const named = (session: Session, name: string): Node => session.state.nodes.find((node) => data(node).variableName === name || data(node).instanceName === name)!;
+const documentOf = (session: Session): FBDModel => ({
+  ...session.model,
+  blocks: nodesToBlocks(session.state.nodes),
+  connections: edgesToConnections(session.state.edges),
+});
+const named = (session: Session, name: string): Node =>
+  session.state.nodes.find((node) => data(node).variableName === name || data(node).instanceName === name)!;
 
 /** Chooses, from the list a command offers, the wire from `from` to `to` (as `Block.PIN` of the labels). */
 function wire(session: Session, command: 'connect' | 'disconnect', label: RegExp | string): FBDOutcome {
   const asked = run(session, command);
   const choice = asked.choices?.find((item) => (typeof label === 'string' ? item.label === label : label.test(item.label)));
-  if (!choice) throw new Error(`${command} does not offer ${String(label)}; it offers ${asked.choices?.map((item) => item.label).join(', ')}`);
+  if (!choice)
+    throw new Error(`${command} does not offer ${String(label)}; it offers ${asked.choices?.map((item) => item.label).join(', ')}`);
   return run(session, command, command === 'connect' ? { wire: choice.id } : { edgeId: choice.id });
 }
 
@@ -89,11 +100,17 @@ describe('LNG-012 function block diagram keyboard authoring', () => {
     wire(session, 'connect', 'AND.OUT → Lamp.IN');
 
     const model = documentOf(session);
-    expect(model.connections.map((connection) => `${connection.from.block}.${connection.from.port}>${connection.to.block}.${connection.to.port}`).sort()).toEqual([
-      `${named(session, 'Start').id}.OUT>${session.state.nodes.find((node) => data(node).type === 'AND')!.id}.IN1`,
-      `${named(session, 'Stop').id}.OUT>${session.state.nodes.find((node) => data(node).type === 'AND')!.id}.IN2`,
-      `${session.state.nodes.find((node) => data(node).type === 'AND')!.id}.OUT>${named(session, 'Lamp').id}.IN`,
-    ].sort());
+    expect(
+      model.connections
+        .map((connection) => `${connection.from.block}.${connection.from.port}>${connection.to.block}.${connection.to.port}`)
+        .sort(),
+    ).toEqual(
+      [
+        `${named(session, 'Start').id}.OUT>${session.state.nodes.find((node) => data(node).type === 'AND')!.id}.IN1`,
+        `${named(session, 'Stop').id}.OUT>${session.state.nodes.find((node) => data(node).type === 'AND')!.id}.IN2`,
+        `${session.state.nodes.find((node) => data(node).type === 'AND')!.id}.OUT>${named(session, 'Lamp').id}.IN`,
+      ].sort(),
+    );
     const built = transpileFBDToST(model);
     expect(built.errors).toEqual([]);
     expect(built.success).toBe(true);
@@ -332,7 +349,10 @@ describe('LNG-012 deleting and commenting from the keyboard', () => {
     press(session, ['V'], ['Start']);
     run(session, 'insertElement', { blockType: 'AND' });
     wire(session, 'connect', 'Start.OUT → AND.IN1');
-    session.state = { nodes: session.state.nodes.map((node) => ({ ...node, selected: false })), edges: session.state.edges.map((edge): Edge => ({ ...edge, selected: true })) };
+    session.state = {
+      nodes: session.state.nodes.map((node) => ({ ...node, selected: false })),
+      edges: session.state.edges.map((edge): Edge => ({ ...edge, selected: true })),
+    };
     press(session, ['Backspace']);
     expect(session.state.edges).toHaveLength(0);
     expect(session.state.nodes).toHaveLength(2);
@@ -361,7 +381,9 @@ describe('LNG-012 function block diagram palette', () => {
   });
 
   it('has a command for every key of the table and a key for every command', () => {
-    const ids = actionsOf('fbd').map((action) => action.id).sort();
+    const ids = actionsOf('fbd')
+      .map((action) => action.id)
+      .sort();
     const commands = [...FBD_MODEL_COMMANDS, ...FBD_EDITOR_COMMANDS].filter((id) => id !== 'insertElement').sort();
     expect(ids).toEqual(commands);
   });
@@ -409,7 +431,14 @@ describe('UX-033 aligning and distributing blocks from the keyboard', () => {
 describe('LNG-012 selecting more than one block from the keyboard', () => {
   const row = (): Session => {
     const session = start();
-    const at = (id: string, x: number, y: number, selected = false) => ({ id, type: 'logicGate', position: { x, y }, measured: { width: 60, height: 20 }, selected, data: {} });
+    const at = (id: string, x: number, y: number, selected = false) => ({
+      id,
+      type: 'logicGate',
+      position: { x, y },
+      measured: { width: 60, height: 20 },
+      selected,
+      data: {},
+    });
     session.state = { nodes: [at('a', 0, 40, true), at('b', 200, 70), at('c', 400, 10)], edges: [] };
     return session;
   };

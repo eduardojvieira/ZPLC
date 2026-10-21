@@ -19,47 +19,73 @@ export function ThemeMenu() {
     { id: 'system' as const, label: t('theme.system'), icon: Monitor },
   ];
   return (
-  <div className="relative max-[1100px]:hidden" ref={menuRef} onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); closeMenu(true); } }}>
-    <Button variant="bare"
-      ref={triggerRef}
-      type="button"
-      onClick={() => open ? closeMenu() : openMenu()}
-      className="focus-ring flex items-center gap-1 p-1.5 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)] transition-colors"
-      aria-label={t('toolbar.theme.label')}
-      aria-haspopup="menu"
-      aria-expanded={open}
-      aria-controls="toolbar-theme-menu"
-      tooltip={t('toolbar.theme.title', { theme: themeOptions.find((option) => option.id === theme)?.label ?? theme })}
+    <div
+      className="relative max-[1100px]:hidden"
+      ref={menuRef}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          closeMenu(true);
+        }
+      }}
     >
-      {isDark ? <Moon size={16} /> : <Sun size={16} />}
-    </Button>
+      <Button
+        variant="bare"
+        ref={triggerRef}
+        type="button"
+        onClick={() => (open ? closeMenu() : openMenu())}
+        className={
+          'focus-ring flex items-center gap-1 p-1.5 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)] ' +
+          'transition-colors'
+        }
+        aria-label={t('toolbar.theme.label')}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls="toolbar-theme-menu"
+        tooltip={t('toolbar.theme.title', { theme: themeOptions.find((option) => option.id === theme)?.label ?? theme })}
+      >
+        {isDark ? <Moon size={16} /> : <Sun size={16} />}
+      </Button>
 
-    {open && (
-      <div id="toolbar-theme-menu" role="menu" aria-label={t('toolbar.theme.label')} className="absolute right-0 top-full mt-1 py-1 w-32 bg-[var(--color-surface-700)] border border-[var(--color-surface-600)] rounded-lg shadow-lg z-50">
-        {themeOptions.map((option) => {
-          const Icon = option.icon;
-          const isActive = theme === option.id;
-          return (
-            <Button variant="bare"
-              key={option.id}
-              ref={option.id === themeOptions[0].id ? firstItemRef : undefined}
-              type="button"
-              role="menuitemradio"
-              aria-checked={isActive}
-              aria-label={t('toolbar.theme.use', { theme: option.label.toLowerCase() })}
-              onClick={() => { setTheme(option.id); closeMenu(true); }}
-              className={`focus-ring w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors ${isActive
-                ? 'bg-[var(--color-accent-blue)] text-[var(--color-on-accent)]'
-                : 'text-[var(--color-surface-100)] hover:bg-[var(--menu-item-bg-active)]'
+      {open && (
+        <div
+          id="toolbar-theme-menu"
+          role="menu"
+          aria-label={t('toolbar.theme.label')}
+          className={
+            'absolute right-0 top-full mt-1 py-1 w-32 bg-[var(--color-surface-700)] border border-[var(--color-surface-600)] ' +
+            'rounded-lg shadow-lg z-50'
+          }
+        >
+          {themeOptions.map((option) => {
+            const Icon = option.icon;
+            const isActive = theme === option.id;
+            return (
+              <Button
+                variant="bare"
+                key={option.id}
+                ref={option.id === themeOptions[0].id ? firstItemRef : undefined}
+                type="button"
+                role="menuitemradio"
+                aria-checked={isActive}
+                aria-label={t('toolbar.theme.use', { theme: option.label.toLowerCase() })}
+                onClick={() => {
+                  setTheme(option.id);
+                  closeMenu(true);
+                }}
+                className={`focus-ring w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors ${
+                  isActive
+                    ? 'bg-[var(--color-accent-blue)] text-[var(--color-on-accent)]'
+                    : 'text-[var(--color-surface-100)] hover:bg-[var(--menu-item-bg-active)]'
                 }`}
-            >
-              <Icon size={14} />
-              <span>{option.label}</span>
-            </Button>
-          );
-        })}
-      </div>
-    )}
-  </div>
+              >
+                <Icon size={14} />
+                <span>{option.label}</span>
+              </Button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }

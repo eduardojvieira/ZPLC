@@ -106,7 +106,10 @@ function takesConcatenation(node: ts.Node): boolean {
   if (ts.isCallExpression(parent) || ts.isNewExpression(parent)) {
     if (parent.expression === node) return false;
     // a module specifier: require('x'), import('x')
-    return !(ts.isCallExpression(parent) && (parent.expression.kind === ts.SyntaxKind.ImportKeyword || parent.expression.getText() === 'require'));
+    return !(
+      ts.isCallExpression(parent) &&
+      (parent.expression.kind === ts.SyntaxKind.ImportKeyword || parent.expression.getText() === 'require')
+    );
   }
   if (ts.isVariableDeclaration(parent) || ts.isPropertyAssignment(parent) || ts.isPropertyDeclaration(parent)) {
     return parent.initializer === node;
@@ -216,7 +219,10 @@ export function wrapText(file: string, text: string, limit: number = LIMIT): str
       }
       // a block comment: one line, or a line of several
       if (comment.pos >= lineStart && comment.end <= lineEnd && startsLine) {
-        const body = text.slice(comment.pos + 2, comment.end - 2).replace(/^\*/, '').trim();
+        const body = text
+          .slice(comment.pos + 2, comment.end - 2)
+          .replace(/^\*/, '')
+          .trim();
         if (DIRECTIVE.test(body) || /\S {3,}\S/.test(body)) return;
         const lead = `${indent} * `;
         const wrapped = wrapWords(body.split(/\s+/).filter(Boolean), lead, lead, limit);
@@ -249,7 +255,8 @@ export function wrapText(file: string, text: string, limit: number = LIMIT): str
     const candidates = segments
       // a key or a name is short and may be typed (t('a.b.c'), a union member): only a piece of prose is cut
       .filter(
-        (segment) => segment.to - segment.from >= 40 && segment.to > lineStart && segment.from < lineEnd && takesConcatenation(segment.owner),
+        (segment) =>
+          segment.to - segment.from >= 40 && segment.to > lineStart && segment.from < lineEnd && takesConcatenation(segment.owner),
       )
       .sort((a, b) => b.to - b.from - (a.to - a.from));
     for (const segment of candidates) {

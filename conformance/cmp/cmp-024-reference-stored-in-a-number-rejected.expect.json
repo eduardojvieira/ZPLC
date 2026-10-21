@@ -2,10 +2,6 @@
   "requirement": "CMP-024",
   "title": "a reference assigned to a DINT is rejected",
   "build": "fails",
-  "lines": [
-    6
-  ],
-  "codes": [
-    "TYPE_MISMATCH"
-  ]
+  "lines": [6],
+  "codes": ["TYPE_MISMATCH"]
 }

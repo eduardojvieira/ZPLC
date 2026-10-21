@@ -69,7 +69,10 @@ import type { ToolWorkerRequest } from './toolWorkerProtocol.js';
 import { record, workspaceCompileFailure } from './workspaceCompileFailure.js';
 
 /** The renderer document that owns the window: its web contents and the epoch of the document it loaded. */
-export interface RendererOwner { ownerId: number; epoch: number }
+export interface RendererOwner {
+  ownerId: number;
+  epoch: number;
+}
 
 type ExecutionStart = { jobId: string; actor: 'human-studio' | 'agent'; permission: string; operation: string; startedAt: string };
 
@@ -123,7 +126,10 @@ export interface IpcDeps {
 const WORKSPACE_FAILED = 'Workspace operation failed';
 
 const noArguments = (args: readonly unknown[]): boolean => args.length === 0;
-const oneArgument = (check: (value: unknown) => boolean) => (args: readonly unknown[]): boolean => args.length === 1 && check(args[0]);
+const oneArgument =
+  (check: (value: unknown) => boolean) =>
+  (args: readonly unknown[]): boolean =>
+    args.length === 1 && check(args[0]);
 
 /** Turns private Tool API fields into the sole structured-clone payload accepted by Toolbar. */
 export function toWorkspaceCompileEnvelope(value: unknown, execution?: unknown): unknown {
@@ -133,13 +139,27 @@ export function toWorkspaceCompileEnvelope(value: unknown, execution?: unknown):
   const debugMap = record(result.debugMap);
   const taskCount = summary?.taskCount;
   const codeSize = summary?.codeSize;
-  if (!summary || typeof summary.name !== 'string' || summary.name.length === 0 || summary.name.length > 256
-    || typeof taskCount !== 'number' || !Number.isSafeInteger(taskCount) || taskCount < 1
-    || typeof codeSize !== 'number' || !Number.isSafeInteger(codeSize) || codeSize < 0
-    || !(result.zplcFile instanceof Uint8Array) || result.zplcFile.byteLength === 0
-    || !(result.bytecode instanceof Uint8Array) || result.bytecode.byteLength === 0
-    || typeof result.assembly !== 'string'
-    || !debugMap || !record(debugMap.pou) || !record(debugMap.memoryLayout)) return workspaceCompileFailure(undefined);
+  if (
+    !summary ||
+    typeof summary.name !== 'string' ||
+    summary.name.length === 0 ||
+    summary.name.length > 256 ||
+    typeof taskCount !== 'number' ||
+    !Number.isSafeInteger(taskCount) ||
+    taskCount < 1 ||
+    typeof codeSize !== 'number' ||
+    !Number.isSafeInteger(codeSize) ||
+    codeSize < 0 ||
+    !(result.zplcFile instanceof Uint8Array) ||
+    result.zplcFile.byteLength === 0 ||
+    !(result.bytecode instanceof Uint8Array) ||
+    result.bytecode.byteLength === 0 ||
+    typeof result.assembly !== 'string' ||
+    !debugMap ||
+    !record(debugMap.pou) ||
+    !record(debugMap.memoryLayout)
+  )
+    return workspaceCompileFailure(undefined);
   return {
     ok: true,
     summary: { name: summary.name, taskCount, codeSize },
@@ -168,7 +188,10 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
     operation: string,
     value: unknown,
   ): Promise<unknown> => {
-    const execution = toolApi.finishToolExecution({ jobId: start.jobId, startedAt: start.startedAt, actor: 'human-studio', permission, operation }, value);
+    const execution = toolApi.finishToolExecution(
+      { jobId: start.jobId, startedAt: start.startedAt, actor: 'human-studio', permission, operation },
+      value,
+    );
     if (!toolApi.isToolExecutionEnvelope(execution)) throw new Error(WORKSPACE_FAILED);
     await deps.toolExecutionAudit.add(execution);
     return execution;
@@ -197,8 +220,15 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
     return { value, execution: await finishStudioExecution(toolApi, options, permission, operation, value) };
   };
 
-  const finishAgentReviewExecution = async (toolApi: ToolApiModule, start: { jobId: string; startedAt: string }, value: unknown): Promise<void> => {
-    const execution = toolApi.finishToolExecution({ jobId: start.jobId, startedAt: start.startedAt, actor: 'agent', permission: 'tests:run', operation: 'change-set-review' }, value);
+  const finishAgentReviewExecution = async (
+    toolApi: ToolApiModule,
+    start: { jobId: string; startedAt: string },
+    value: unknown,
+  ): Promise<void> => {
+    const execution = toolApi.finishToolExecution(
+      { jobId: start.jobId, startedAt: start.startedAt, actor: 'agent', permission: 'tests:run', operation: 'change-set-review' },
+      value,
+    );
     if (!toolApi.isToolExecutionEnvelope(execution)) throw new Error(WORKSPACE_FAILED);
     await deps.toolExecutionAudit.add(execution);
   };
@@ -222,16 +252,19 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
     failure?: string,
   ): IpcHandler<RendererOwner> => ({ accepts, run: (owner, args) => run(owner, args as unknown as Args), ...(failure ? { failure } : {}) });
 
-  const projectFileHandler = (channel: string) => handler(
-    // The shared handler validates the message against the schema of the operation and answers a typed refusal.
-    () => true,
-    (owner, args) => deps.projectFiles.handle(owner.ownerId, channel, args),
-  );
+  const projectFileHandler = (channel: string) =>
+    handler(
+      // The shared handler validates the message against the schema of the operation and answers a typed refusal.
+      () => true,
+      (owner, args) => deps.projectFiles.handle(owner.ownerId, channel, args),
+    );
 
   const table: Record<string, IpcHandler<RendererOwner>> = {
     [APP_INFO_CHANNEL.GET]: handler(noArguments, () => deps.appInfo()),
 
-    [CLOSE_GUARD_CHANNEL.SET_DIRTY]: handler(oneArgument(isAllowedCloseGuardDirty), (_owner, [dirty]: [boolean]) => { deps.closeGuard.setDirty(dirty); }),
+    [CLOSE_GUARD_CHANNEL.SET_DIRTY]: handler(oneArgument(isAllowedCloseGuardDirty), (_owner, [dirty]: [boolean]) => {
+      deps.closeGuard.setDirty(dirty);
+    }),
     [CLOSE_GUARD_CHANNEL.CLOSE_NOW]: handler(noArguments, async (owner) => {
       const action = deps.closeGuard.confirm();
       // The user answered save or discard: nothing is left to recover, so the next start offers nothing (IDE-006).
@@ -244,7 +277,10 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
     [TOOL_EXECUTION_AUDIT_CHANNEL.LIST]: handler(noArguments, () => deps.toolExecutionAudit.list()),
 
     ...createLearnProgressHandlers<RendererOwner>(deps.learnProgress),
-    ...createLearnWorkspaceHandlers<RendererOwner>({ root: deps.learnWorkspaceRoot, adopt: (ownerId, directory) => deps.projectFiles.adoptFolder(ownerId, directory) }),
+    ...createLearnWorkspaceHandlers<RendererOwner>({
+      root: deps.learnWorkspaceRoot,
+      adopt: (ownerId, directory) => deps.projectFiles.adoptFolder(ownerId, directory),
+    }),
 
     // Per-project session (IDE-008): the renderer names the window's folder by its opaque id; the main process finds the
     // real path, validates the document and keeps it under the user-data directory, never inside the project.
@@ -253,12 +289,15 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
       if (!store) throw denied();
       return store.load(folderOf(owner, request.rootId));
     }),
-    [SESSION_CHANNEL.SAVE]: handler(oneArgument(isAllowedSessionSaveRequest), async (owner, [request]: [{ rootId: string; state: unknown }]) => {
-      const store = deps.sessionStore();
-      if (!store) throw denied();
-      await store.save(folderOf(owner, request.rootId), request.state);
-      return null;
-    }),
+    [SESSION_CHANNEL.SAVE]: handler(
+      oneArgument(isAllowedSessionSaveRequest),
+      async (owner, [request]: [{ rootId: string; state: unknown }]) => {
+        const store = deps.sessionStore();
+        if (!store) throw denied();
+        await store.save(folderOf(owner, request.rootId), request.state);
+        return null;
+      },
+    ),
 
     // The serial port the user chose in the dialog of the window (IDE-018): a request id and a port id of the offer, or a cancel.
     // The broker answers Electron's one-time callback and ignores an answer that is not from the window that was asked.
@@ -266,40 +305,49 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
       deps.serialPorts.choose(owner.ownerId, choice.requestId, choice.portId);
       return null;
     }),
-    [PORT_CHOICE_CHANNEL.LIST]: handler(oneArgument(isSerialPortListRequest), (owner, [request]: [SerialPortListRequest]) => (
-      deps.serialPorts.list(owner.ownerId, request.requestId)
-    )),
+    [PORT_CHOICE_CHANNEL.LIST]: handler(oneArgument(isSerialPortListRequest), (owner, [request]: [SerialPortListRequest]) =>
+      deps.serialPorts.list(owner.ownerId, request.requestId),
+    ),
 
     // Update check (IDE-010): one fixed address, no argument from the renderer.
     [UPDATE_CHECK_CHANNEL.RUN]: handler(noArguments, () => deps.checkForUpdate()),
 
     // The language and theme of the window (UX-014, UX-016): two values of closed lists, nothing else.
-    [WINDOW_PREFERENCES_CHANNEL.REPORT]: handler(oneArgument((value) => parseShellPreferences(value) !== null), (_owner, [preferences]: [ShellPreferences]) => {
-      deps.reportShellPreferences(parseShellPreferences(preferences)!);
-      return null;
-    }),
+    [WINDOW_PREFERENCES_CHANNEL.REPORT]: handler(
+      oneArgument((value) => parseShellPreferences(value) !== null),
+      (_owner, [preferences]: [ShellPreferences]) => {
+        deps.reportShellPreferences(parseShellPreferences(preferences)!);
+        return null;
+      },
+    ),
 
     // Firmware images (REL-025): the manifest and files of this installation. Listing only: Studio never flashes a board.
     [FIRMWARE_IMAGES_CHANNEL.LIST]: handler(noArguments, () => deps.firmwareImages()),
 
     // Recovery of modified files (IDE-006): kept under the user-data directory, named by the real path of the window's folder.
-    [RECOVERY_CHANNEL.WRITE]: handler(oneArgument(isAllowedRecoveryWriteRequest), async (owner, [request]: [{ rootId: string; path: string; content: string }]) => {
-      const store = deps.recoveryStore();
-      if (!store) throw denied();
-      await store.write(folderOf(owner, request.rootId), request.path, request.content);
-      return null;
-    }),
+    [RECOVERY_CHANNEL.WRITE]: handler(
+      oneArgument(isAllowedRecoveryWriteRequest),
+      async (owner, [request]: [{ rootId: string; path: string; content: string }]) => {
+        const store = deps.recoveryStore();
+        if (!store) throw denied();
+        await store.write(folderOf(owner, request.rootId), request.path, request.content);
+        return null;
+      },
+    ),
     [RECOVERY_CHANNEL.LIST]: handler(oneArgument(isAllowedRecoveryListRequest), async (owner, [request]: [{ rootId: string }]) => {
       const store = deps.recoveryStore();
       if (!store) throw denied();
       return store.list(folderOf(owner, request.rootId));
     }),
-    [RECOVERY_CHANNEL.DISCARD]: handler(oneArgument(isAllowedRecoveryDiscardRequest), async (owner, [request]: [{ rootId: string; path: string | null }]) => {
-      const store = deps.recoveryStore();
-      if (!store) throw denied();
-      await store.discard(folderOf(owner, request.rootId), request.path);
-      return null;
-    }),
+    [RECOVERY_CHANNEL.DISCARD]: handler(
+      oneArgument(isAllowedRecoveryDiscardRequest),
+      async (owner, [request]: [{ rootId: string; path: string | null }]) => {
+        const store = deps.recoveryStore();
+        if (!store) throw denied();
+        await store.discard(folderOf(owner, request.rootId), request.path);
+        return null;
+      },
+    ),
 
     [NATIVE_SIMULATION_CHANNEL.START_SESSION]: handler(
       noArguments,
@@ -308,11 +356,15 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
       'the native runtime did not start: it is missing, was not built for this platform, or is switched off.',
     ),
     [NATIVE_SIMULATION_CHANNEL.STOP_SESSION]: handler(noArguments, (owner) => deps.nativeSimulation.stop(owner)),
-    [NATIVE_SIMULATION_CHANNEL.REQUEST]: handler(oneArgument(isAllowedNativeSimulationRequest), (owner, [request]: [NativeSimulationRequest]) => deps.nativeSimulation.request(owner, request)),
+    [NATIVE_SIMULATION_CHANNEL.REQUEST]: handler(
+      oneArgument(isAllowedNativeSimulationRequest),
+      (owner, [request]: [NativeSimulationRequest]) => deps.nativeSimulation.request(owner, request),
+    ),
 
     [WORKSPACE_TESTS_CHANNEL.REGISTER_PROJECT_FILE]: handler(
       oneArgument((manifestPath) => typeof manifestPath === 'string'),
-      async (owner, [manifestPath]: [string]) => deps.workspaceGateway.registerProjectManifest(owner.ownerId, manifestPath, deps.projectFiles.currentRoot(owner.ownerId)),
+      async (owner, [manifestPath]: [string]) =>
+        deps.workspaceGateway.registerProjectManifest(owner.ownerId, manifestPath, deps.projectFiles.currentRoot(owner.ownerId)),
       WORKSPACE_FAILED,
     ),
     // The project folder the window chose is the workspace of Build, Tests and Simulate: the renderer sends the id of
@@ -327,33 +379,63 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
     ),
     [WORKSPACE_TESTS_CHANNEL.RUN]: handler(
       oneArgument(isAllowedWorkspaceTestRunRequest),
-      (owner, [request]: [{ workspaceId: string; rootId: string; scenarioId?: string }]) => deps.workspaceGateway.run(owner.ownerId, { workspaceId: request.workspaceId }, async (root, options) => {
-        const toolApi = await deps.loadToolApi();
-        const { value, execution } = request.scenarioId === undefined
-          ? await inWorker(toolApi, options, { operation: 'test', root }, 'tests:run', 'test')
-          : await inWorker(toolApi, options, { operation: 'scenario-run', root, scenarioId: request.scenarioId }, 'tests:run', 'scenario-run');
-        return { ...(value as object), execution };
-      }, folderOf(owner, request.rootId)),
+      (owner, [request]: [{ workspaceId: string; rootId: string; scenarioId?: string }]) =>
+        deps.workspaceGateway.run(
+          owner.ownerId,
+          { workspaceId: request.workspaceId },
+          async (root, options) => {
+            const toolApi = await deps.loadToolApi();
+            const { value, execution } =
+              request.scenarioId === undefined
+                ? await inWorker(toolApi, options, { operation: 'test', root }, 'tests:run', 'test')
+                : await inWorker(
+                    toolApi,
+                    options,
+                    { operation: 'scenario-run', root, scenarioId: request.scenarioId },
+                    'tests:run',
+                    'scenario-run',
+                  );
+            return { ...(value as object), execution };
+          },
+          folderOf(owner, request.rootId),
+        ),
       WORKSPACE_FAILED,
     ),
     [WORKSPACE_TESTS_CHANNEL.CANCEL]: handler(noArguments, (owner) => deps.workspaceGateway.cancel(owner.ownerId)),
     [WORKSPACE_TESTS_CHANNEL.COMPILE]: handler(
       oneArgument(isAllowedWorkspaceOperationRequest),
-      (owner, [request]: [{ workspaceId: string; rootId: string }]) => deps.workspaceGateway.run(owner.ownerId, { workspaceId: request.workspaceId }, async (root, options) => {
-        const toolApi = await deps.loadToolApi();
-        const { value, execution } = await inWorker(toolApi, options, { operation: 'compile', root }, 'compiler:check', 'compile');
-        return toWorkspaceCompileEnvelope(value, execution);
-      }, folderOf(owner, request.rootId)),
+      (owner, [request]: [{ workspaceId: string; rootId: string }]) =>
+        deps.workspaceGateway.run(
+          owner.ownerId,
+          { workspaceId: request.workspaceId },
+          async (root, options) => {
+            const toolApi = await deps.loadToolApi();
+            const { value, execution } = await inWorker(toolApi, options, { operation: 'compile', root }, 'compiler:check', 'compile');
+            return toWorkspaceCompileEnvelope(value, execution);
+          },
+          folderOf(owner, request.rootId),
+        ),
       WORKSPACE_FAILED,
     ),
     [WORKSPACE_TESTS_CHANNEL.SAFETY_CHECK]: handler(
       oneArgument(isAllowedWorkspaceOperationRequest),
       async (owner, [request]: [{ workspaceId: string; rootId: string }]) => {
-        const result = await deps.workspaceGateway.run(owner.ownerId, { workspaceId: request.workspaceId }, async (root, options) => {
-          const toolApi = await deps.loadToolApi();
-          const { value, execution } = await inWorker(toolApi, options, { operation: 'safety-check', root }, 'safety:check', 'safety-check');
-          return { ...(value as object), execution };
-        }, folderOf(owner, request.rootId));
+        const result = await deps.workspaceGateway.run(
+          owner.ownerId,
+          { workspaceId: request.workspaceId },
+          async (root, options) => {
+            const toolApi = await deps.loadToolApi();
+            const { value, execution } = await inWorker(
+              toolApi,
+              options,
+              { operation: 'safety-check', root },
+              'safety:check',
+              'safety-check',
+            );
+            return { ...(value as object), execution };
+          },
+          folderOf(owner, request.rootId),
+        );
         const safe = sanitizeWorkspaceSafetyCheck(result);
         if (!safe) throw new Error(WORKSPACE_FAILED);
         return safe;
@@ -367,11 +449,22 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
     [WORKSPACE_TESTS_CHANNEL.LESSON_CHECK]: handler(
       oneArgument(isLessonCheckRequest),
       async (owner, [request]: [{ workspaceId: string; rootId: string; lessonId: string }]) => {
-        const answer = await deps.workspaceGateway.run(owner.ownerId, { workspaceId: request.workspaceId }, async (root, options) => {
-          const toolApi = await deps.loadToolApi();
-          const { value, execution } = await inWorker(toolApi, options, { operation: 'lesson-check', root, lessonId: request.lessonId }, 'tests:run', 'scenario-run');
-          return lessonCheckAnswer(value, execution);
-        }, folderOf(owner, request.rootId));
+        const answer = await deps.workspaceGateway.run(
+          owner.ownerId,
+          { workspaceId: request.workspaceId },
+          async (root, options) => {
+            const toolApi = await deps.loadToolApi();
+            const { value, execution } = await inWorker(
+              toolApi,
+              options,
+              { operation: 'lesson-check', root, lessonId: request.lessonId },
+              'tests:run',
+              'scenario-run',
+            );
+            return lessonCheckAnswer(value, execution);
+          },
+          folderOf(owner, request.rootId),
+        );
         if (!answer) throw new Error(WORKSPACE_FAILED);
         return answer;
       },
@@ -381,18 +474,26 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
     [CANDIDATE_CHANGE_SET_CHANNEL.REVIEW]: handler(
       oneArgument(isAllowedCandidateChangeSetReviewRequest),
       async (owner, [request]: [{ workspaceId: string; edit: { path: string; content: string } }]) => {
-        const result = await deps.workspaceGateway.run(owner.ownerId, { workspaceId: request.workspaceId }, async (root, options) => {
-          const toolApi = await deps.loadToolApi();
-          let value: unknown;
-          try {
-            value = await deps.toolWorker.run({ operation: 'change-set-review', root, edits: [{ path: request.edit.path, content: request.edit.content }] }, options.signal);
-          } catch {
-            await finishAgentReviewExecution(toolApi, options, { evidence: { outcome: 'failed' } });
-            throw new Error(WORKSPACE_FAILED);
-          }
-          await finishAgentReviewExecution(toolApi, options, value);
-          return value;
-        }, deps.projectFiles.currentRoot(owner.ownerId));
+        const result = await deps.workspaceGateway.run(
+          owner.ownerId,
+          { workspaceId: request.workspaceId },
+          async (root, options) => {
+            const toolApi = await deps.loadToolApi();
+            let value: unknown;
+            try {
+              value = await deps.toolWorker.run(
+                { operation: 'change-set-review', root, edits: [{ path: request.edit.path, content: request.edit.content }] },
+                options.signal,
+              );
+            } catch {
+              await finishAgentReviewExecution(toolApi, options, { evidence: { outcome: 'failed' } });
+              throw new Error(WORKSPACE_FAILED);
+            }
+            await finishAgentReviewExecution(toolApi, options, value);
+            return value;
+          },
+          deps.projectFiles.currentRoot(owner.ownerId),
+        );
         const safe = sanitizeCandidateChangeSetReview(result, request.edit.path);
         if (!safe) throw new Error(WORKSPACE_FAILED);
         return safe;
@@ -402,12 +503,20 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
 
     [AI_PROVIDER_CHANNEL.GET_STATUS]: handler(noArguments, () => provider().getStatus()),
     [AI_PROVIDER_CHANNEL.GET_CONFIG]: handler(noArguments, () => provider().getConfig()),
-    [AI_PROVIDER_CHANNEL.SAVE_CONFIG]: handler(oneArgument(isAllowedAiProviderConfig), (_owner, [config]: [{ enabled: boolean; endpoint: string; model: string }]) => provider().saveConfig(config)),
+    [AI_PROVIDER_CHANNEL.SAVE_CONFIG]: handler(
+      oneArgument(isAllowedAiProviderConfig),
+      (_owner, [config]: [{ enabled: boolean; endpoint: string; model: string }]) => provider().saveConfig(config),
+    ),
     [AI_PROVIDER_CHANNEL.STORE_KEY]: handler(oneArgument(isAllowedAiProviderKey), (_owner, [key]: [string]) => provider().storeKey(key)),
     [AI_PROVIDER_CHANNEL.CLEAR_KEY]: handler(noArguments, () => provider().clearKey()),
     [AI_PROVIDER_CHANNEL.REQUEST]: handler(oneArgument(isAllowedAiProviderRequest), (owner, [request]: [AiRequest]) => {
       const active = provider();
-      return deps.workspaceGateway.run(owner.ownerId, { workspaceId: request.workspaceId }, (root, options) => active.request(root, request, options.signal), deps.projectFiles.currentRoot(owner.ownerId));
+      return deps.workspaceGateway.run(
+        owner.ownerId,
+        { workspaceId: request.workspaceId },
+        (root, options) => active.request(root, request, options.signal),
+        deps.projectFiles.currentRoot(owner.ownerId),
+      );
     }),
     [AI_PROVIDER_CHANNEL.CANCEL]: handler(noArguments, (owner) => {
       const fromProvider = provider().cancel();
@@ -415,37 +524,57 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
       return { requested: fromProvider.requested || fromWorkspace.requested };
     }),
 
-    [TOOLCHAIN_CHANNEL.INSPECT]: handler(noArguments, async (owner) => {
-      const selected = await deps.pickToolchainRepository();
-      if (!deps.isCurrent(owner)) throw denied();
-      if (selected === null) {
-        deps.firmwareGateway.revokeOwner(owner.ownerId);
-        return null;
-      }
-      const toolApi = await deps.loadToolApi();
-      const inspect = toolApi.toolchainInspect;
-      if (typeof inspect !== 'function') throw new Error('Toolchain inspection failed');
-      if (!deps.isCurrent(owner)) throw denied();
-      const start = toolApi.startToolExecution('human-studio', 'toolchain:inspect', 'toolchain-inspect');
-      const value = await deps.firmwareGateway.inspect(owner.ownerId, selected, inspect);
-      return { ...(value as object), execution: await finishStudioExecution(toolApi, start, 'toolchain:inspect', 'toolchain-inspect', value) };
-    }, 'Toolchain inspection failed'),
-
-    [FIRMWARE_BUILD_CHANNEL.START]: handler(oneArgument(isAllowedFirmwareBuildRequest), async (owner, [request]: [{ ideId: string }]) => {
-      const toolApi = await deps.loadToolApi();
-      const inspect = toolApi.toolchainInspect;
-      const build = toolApi.firmwareBuild;
-      if (typeof inspect !== 'function' || typeof build !== 'function') throw new Error('Firmware build failed');
-      if (!deps.isCurrent(owner)) throw denied();
-      return deps.firmwareGateway.start(owner.ownerId, request, inspect, async () => {
-        const approved = await deps.confirmFirmwareBuild(request.ideId);
+    [TOOLCHAIN_CHANNEL.INSPECT]: handler(
+      noArguments,
+      async (owner) => {
+        const selected = await deps.pickToolchainRepository();
         if (!deps.isCurrent(owner)) throw denied();
-        return approved;
-      }, async (root, ideId, options) => {
-        const value = await build(root, ideId, options);
-        return { ...(value as object), execution: await finishStudioExecution(toolApi, options, 'firmware:build', 'firmware-build', value) };
-      });
-    }, 'Firmware build failed'),
+        if (selected === null) {
+          deps.firmwareGateway.revokeOwner(owner.ownerId);
+          return null;
+        }
+        const toolApi = await deps.loadToolApi();
+        const inspect = toolApi.toolchainInspect;
+        if (typeof inspect !== 'function') throw new Error('Toolchain inspection failed');
+        if (!deps.isCurrent(owner)) throw denied();
+        const start = toolApi.startToolExecution('human-studio', 'toolchain:inspect', 'toolchain-inspect');
+        const value = await deps.firmwareGateway.inspect(owner.ownerId, selected, inspect);
+        return {
+          ...(value as object),
+          execution: await finishStudioExecution(toolApi, start, 'toolchain:inspect', 'toolchain-inspect', value),
+        };
+      },
+      'Toolchain inspection failed',
+    ),
+
+    [FIRMWARE_BUILD_CHANNEL.START]: handler(
+      oneArgument(isAllowedFirmwareBuildRequest),
+      async (owner, [request]: [{ ideId: string }]) => {
+        const toolApi = await deps.loadToolApi();
+        const inspect = toolApi.toolchainInspect;
+        const build = toolApi.firmwareBuild;
+        if (typeof inspect !== 'function' || typeof build !== 'function') throw new Error('Firmware build failed');
+        if (!deps.isCurrent(owner)) throw denied();
+        return deps.firmwareGateway.start(
+          owner.ownerId,
+          request,
+          inspect,
+          async () => {
+            const approved = await deps.confirmFirmwareBuild(request.ideId);
+            if (!deps.isCurrent(owner)) throw denied();
+            return approved;
+          },
+          async (root, ideId, options) => {
+            const value = await build(root, ideId, options);
+            return {
+              ...(value as object),
+              execution: await finishStudioExecution(toolApi, options, 'firmware:build', 'firmware-build', value),
+            };
+          },
+        );
+      },
+      'Firmware build failed',
+    ),
     [FIRMWARE_BUILD_CHANNEL.CANCEL]: handler(noArguments, (owner) => deps.firmwareGateway.cancel(owner.ownerId)),
   };
 

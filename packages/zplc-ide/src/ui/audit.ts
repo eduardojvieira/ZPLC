@@ -17,7 +17,13 @@ export interface MarkupElement {
 
 const VOID = new Set(['input', 'br', 'img', 'hr', 'meta', 'link', 'source', 'col', 'area', 'base', 'wbr', 'embed']);
 
-const decode = (text: string): string => text.replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+const decode = (text: string): string =>
+  text
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
 
 export function parseMarkup(html: string): MarkupElement {
   const root: MarkupElement = { tag: '#root', attrs: {}, children: [], parent: null };
@@ -26,10 +32,16 @@ export function parseMarkup(html: string): MarkupElement {
   for (const match of html.matchAll(token)) {
     const [whole, closing, tag, rawAttrs, selfClosing, text] = match;
     if (whole.startsWith('<!--')) continue;
-    if (text !== undefined) { current.children.push(decode(text)); continue; }
+    if (text !== undefined) {
+      current.children.push(decode(text));
+      continue;
+    }
     if (closing) {
       for (let node: MarkupElement | null = current; node; node = node.parent) {
-        if (node.tag === tag.toLowerCase()) { current = node.parent ?? root; break; }
+        if (node.tag === tag.toLowerCase()) {
+          current = node.parent ?? root;
+          break;
+        }
       }
       continue;
     }
@@ -62,10 +74,32 @@ export function textOf(node: MarkupElement | string): string {
 
 const NAMED_BY_CONTENT = new Set(['button', 'a', 'summary']);
 const FORM_CONTROLS = new Set(['input', 'select', 'textarea']);
-const ROLES_NEEDING_NAME = new Set(['button', 'tab', 'menuitem', 'switch', 'checkbox', 'radio', 'combobox', 'textbox', 'slider', 'tablist', 'menu', 'dialog', 'alertdialog', 'group', 'toolbar', 'tree', 'grid']);
+const ROLES_NEEDING_NAME = new Set([
+  'button',
+  'tab',
+  'menuitem',
+  'switch',
+  'checkbox',
+  'radio',
+  'combobox',
+  'textbox',
+  'slider',
+  'tablist',
+  'menu',
+  'dialog',
+  'alertdialog',
+  'group',
+  'toolbar',
+  'tree',
+  'grid',
+]);
 const ROLES_NAMED_BY_CONTENT = new Set(['button', 'tab', 'menuitem', 'switch', 'checkbox', 'radio']);
 
-export interface AuditProblem { rule: string; element: string; message: string }
+export interface AuditProblem {
+  rule: string;
+  element: string;
+  message: string;
+}
 
 const describe = (element: MarkupElement): string => {
   const id = element.attrs.id ? `#${element.attrs.id}` : '';
@@ -94,7 +128,10 @@ export function auditMarkup(html: string): AuditProblem[] {
   const nameOf = (element: MarkupElement): string => {
     const labelledby = element.attrs['aria-labelledby'];
     if (labelledby !== undefined) {
-      const referenced = labelledby.split(/\s+/).map((id) => byId.get(id)).filter((node): node is MarkupElement => node !== undefined);
+      const referenced = labelledby
+        .split(/\s+/)
+        .map((id) => byId.get(id))
+        .filter((node): node is MarkupElement => node !== undefined);
       const text = referenced.map(textOf).join(' ').trim();
       if (text !== '') return text;
     }
@@ -114,23 +151,47 @@ export function auditMarkup(html: string): AuditProblem[] {
   for (const element of elements) {
     const type = element.attrs.type;
     const hidden = element.tag === 'input' && type === 'hidden';
-    const isControl = (FORM_CONTROLS.has(element.tag) && !hidden) || element.tag === 'button' || (element.tag === 'a' && element.attrs.href !== undefined);
+    const isControl =
+      (FORM_CONTROLS.has(element.tag) && !hidden) || element.tag === 'button' || (element.tag === 'a' && element.attrs.href !== undefined);
     const role = element.attrs.role;
     const needsName = isControl || (role !== undefined && ROLES_NEEDING_NAME.has(role));
     if (needsName && element.attrs['aria-hidden'] !== 'true' && nameOf(element) === '') {
-      problems.push({ rule: 'control-without-name', element: describe(element), message: 'A control, tab, menu, group or dialog must have an accessible name (a label, aria-label or aria-labelledby).' });
+      problems.push({
+        rule: 'control-without-name',
+        element: describe(element),
+        message: 'A control, tab, menu, group or dialog must have an accessible name (a label, aria-label or aria-labelledby).',
+      });
     }
     for (const attribute of ['aria-labelledby', 'aria-describedby'] as const) {
       for (const id of (element.attrs[attribute] ?? '').split(/\s+/).filter(Boolean)) {
-        if (!byId.has(id)) problems.push({ rule: 'dangling-reference', element: describe(element), message: `${attribute} points at "${id}", which is not in the document.` });
+        if (!byId.has(id))
+          problems.push({
+            rule: 'dangling-reference',
+            element: describe(element),
+            message: `${attribute} points at "${id}", which is not in the document.`,
+          });
       }
     }
     if (element.tag === 'label' && element.attrs.for !== undefined && !byId.has(element.attrs.for)) {
-      problems.push({ rule: 'dangling-reference', element: describe(element), message: `The label is for "${element.attrs.for}", which is not in the document.` });
+      problems.push({
+        rule: 'dangling-reference',
+        element: describe(element),
+        message: `The label is for "${element.attrs.for}", which is not in the document.`,
+      });
     }
     const tabindex = element.attrs.tabindex;
-    if (tabindex !== undefined && Number.parseInt(tabindex, 10) > 0) problems.push({ rule: 'positive-tabindex', element: describe(element), message: 'A positive tabindex breaks the natural focus order.' });
-    if (element.attrs.title !== undefined && element.tag !== 'svg') problems.push({ rule: 'title-attribute', element: describe(element), message: 'A title attribute is not an accessible tooltip; use the kit Tooltip (UX-002).' });
+    if (tabindex !== undefined && Number.parseInt(tabindex, 10) > 0)
+      problems.push({
+        rule: 'positive-tabindex',
+        element: describe(element),
+        message: 'A positive tabindex breaks the natural focus order.',
+      });
+    if (element.attrs.title !== undefined && element.tag !== 'svg')
+      problems.push({
+        rule: 'title-attribute',
+        element: describe(element),
+        message: 'A title attribute is not an accessible tooltip; use the kit Tooltip (UX-002).',
+      });
   }
   return problems;
 }

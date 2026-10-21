@@ -28,7 +28,8 @@ export const INDEX_FILE = join(ROOT, 'packages/zplc-ide/src/generated/lessonInde
 export const INDEX_DATA_FILE = join(ROOT, 'packages/zplc-ide/src/generated/lessonIndex.json');
 
 /** An index entry without its version, the way two entries are compared for a change a learner can see. */
-const content = (entry: { version?: number; hardware?: unknown }): string => canonicalJson({ ...entry, version: 0, hardware: entry.hardware ?? null });
+const content = (entry: { version?: number; hardware?: unknown }): string =>
+  canonicalJson({ ...entry, version: 0, hardware: entry.hardware ?? null });
 
 /**
  * Pins the hash of every changed scenario and raises its lesson version; then raises by one the version of every other
@@ -40,7 +41,10 @@ export function updateHashes(lessonsDirectory = LESSONS_DIRECTORY): string[] {
   for (const id of readdirSync(lessonsDirectory)) {
     const directory = join(lessonsDirectory, id);
     if (!statSync(directory).isDirectory() || !existsSync(join(directory, 'lesson.json'))) continue;
-    const manifest = JSON.parse(readFileSync(join(directory, 'lesson.json'), 'utf8')) as { version: number; scenario: { file: string; sha256: string } };
+    const manifest = JSON.parse(readFileSync(join(directory, 'lesson.json'), 'utf8')) as {
+      version: number;
+      scenario: { file: string; sha256: string };
+    };
     const hash = scenarioHash(JSON.parse(readFileSync(join(directory, manifest.scenario.file), 'utf8')));
     if (hash === manifest.scenario.sha256) continue;
     manifest.scenario.sha256 = hash;
@@ -50,7 +54,12 @@ export function updateHashes(lessonsDirectory = LESSONS_DIRECTORY): string[] {
   }
   const { course } = loadCourse(lessonsDirectory);
   if (!course || !existsSync(INDEX_DATA_FILE)) return changed;
-  const committed = new Map((JSON.parse(readFileSync(INDEX_DATA_FILE, 'utf8')) as { lessons: Array<{ id: string; version: number }> }).lessons.map((entry) => [entry.id, entry]));
+  const committed = new Map(
+    (JSON.parse(readFileSync(INDEX_DATA_FILE, 'utf8')) as { lessons: Array<{ id: string; version: number }> }).lessons.map((entry) => [
+      entry.id,
+      entry,
+    ]),
+  );
   for (const entry of buildIndex(loadLessonPackages(lessonsDirectory).packages, course).index.lessons) {
     const before = committed.get(entry.id);
     if (!before || changed.includes(entry.id) || entry.version !== before.version || content(entry) === content(before)) continue;
@@ -76,17 +85,27 @@ export function generate(lessonsDirectory = LESSONS_DIRECTORY): { problems: stri
 
 function main(): number {
   const { values } = parseArgs({ options: { check: { type: 'boolean' }, 'update-hashes': { type: 'boolean' } }, strict: true });
-  if (values['update-hashes']) for (const id of updateHashes()) console.log(`raised the version of ${id} (a new scenario hash or a changed content)`);
+  if (values['update-hashes'])
+    for (const id of updateHashes()) console.log(`raised the version of ${id} (a new scenario hash or a changed content)`);
   const { problems, source, data } = generate();
   if (problems.length > 0) {
     for (const problem of problems) console.error(`lesson packages: ${problem}`);
     return 1;
   }
-  const files = [[INDEX_FILE, source], [INDEX_DATA_FILE, data]] as const;
+  const files = [
+    [INDEX_FILE, source],
+    [INDEX_DATA_FILE, data],
+  ] as const;
   const stale = files.filter(([path, text]) => !existsSync(path) || readFileSync(path, 'utf8') !== text);
   if (values.check) {
-    if (stale.length === 0) { console.log('lesson index is current'); return 0; }
-    console.error(`${stale.map(([path]) => relative(ROOT, path)).join(' and ')} out of date with the lesson packages: run \`bun tools/ci/generate-lesson-index.ts\``);
+    if (stale.length === 0) {
+      console.log('lesson index is current');
+      return 0;
+    }
+    console.error(
+      `${stale.map(([path]) => relative(ROOT, path)).join(' and ')} out of date with the lesson packages: run ` +
+        `\`bun tools/ci/generate-lesson-index.ts\``,
+    );
     return 1;
   }
   for (const [path, text] of stale) writeFileSync(path, text);

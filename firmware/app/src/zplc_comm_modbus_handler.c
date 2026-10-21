@@ -35,8 +35,7 @@ LOG_MODULE_REGISTER(zplc_comm_modbus, LOG_LEVEL_INF);
 #define MAX_MODBUS_COIL_COUNT 1U
 
 /* HOST is the STRING member between ADDR/COUNT/VALUE and PORT */
-#define MODBUS_HOST_BYTES                                                      \
-  (ZPLC_COMM_MB_READ_HREG_PORT_OFFSET - ZPLC_COMM_MB_READ_HREG_HOST_OFFSET)
+#define MODBUS_HOST_BYTES (ZPLC_COMM_MB_READ_HREG_PORT_OFFSET - ZPLC_COMM_MB_READ_HREG_HOST_OFFSET)
 
 /* The TCP and the RTU client wait for the peer for the configured timeout, once
  * to connect and once to read. A request is allowed that twice and a margin,
@@ -90,31 +89,17 @@ static const zplc_comm_req_pool_t s_pool = {
 };
 
 /* Declarations from zplc_modbus_client.c */
-extern int zplc_modbus_rtu_client_read_holding(uint8_t slave_id,
-                                               uint16_t start_reg,
-                                               uint16_t count, uint16_t *out);
-extern int zplc_modbus_rtu_client_write_register(uint8_t slave_id, uint16_t reg,
-                                                 uint16_t value);
-extern int zplc_modbus_rtu_client_read_coils(uint8_t slave_id,
-                                             uint16_t start_addr,
-                                             uint16_t count, uint8_t *out_bits);
-extern int zplc_modbus_rtu_client_write_coil(uint8_t slave_id, uint16_t addr,
-                                             bool state);
+extern int zplc_modbus_rtu_client_read_holding(uint8_t slave_id, uint16_t start_reg, uint16_t count, uint16_t *out);
+extern int zplc_modbus_rtu_client_write_register(uint8_t slave_id, uint16_t reg, uint16_t value);
+extern int zplc_modbus_rtu_client_read_coils(uint8_t slave_id, uint16_t start_addr, uint16_t count, uint8_t *out_bits);
+extern int zplc_modbus_rtu_client_write_coil(uint8_t slave_id, uint16_t addr, bool state);
 
-extern int zplc_modbus_tcp_client_read_holding(const char *host, uint16_t port,
-                                               uint8_t unit_id,
-                                               uint16_t start_reg,
-                                               uint16_t count, uint16_t *out);
-extern int zplc_modbus_tcp_client_write_register(const char *host,
-                                                 uint16_t port, uint8_t unit_id,
-                                                 uint16_t reg, uint16_t value);
-extern int zplc_modbus_tcp_client_read_coils(const char *host, uint16_t port,
-                                             uint8_t unit_id,
-                                             uint16_t start_addr,
-                                             uint16_t count, uint8_t *out_bits);
-extern int zplc_modbus_tcp_client_write_coil(const char *host, uint16_t port,
-                                             uint8_t unit_id, uint16_t addr,
-                                             bool state);
+extern int zplc_modbus_tcp_client_read_holding(const char *host, uint16_t port, uint8_t unit_id, uint16_t start_reg, uint16_t count,
+                                               uint16_t *out);
+extern int zplc_modbus_tcp_client_write_register(const char *host, uint16_t port, uint8_t unit_id, uint16_t reg, uint16_t value);
+extern int zplc_modbus_tcp_client_read_coils(const char *host, uint16_t port, uint8_t unit_id, uint16_t start_addr, uint16_t count,
+                                             uint8_t *out_bits);
+extern int zplc_modbus_tcp_client_write_coil(const char *host, uint16_t port, uint8_t unit_id, uint16_t addr, bool state);
 
 /* Run one request on the client; returns 0 or a negative errno. */
 static int modbus_run_request(struct modbus_req *tx) {
@@ -125,20 +110,16 @@ static int modbus_run_request(struct modbus_req *tx) {
   if (tx->proto == 0U) { /* RTU */
     switch (tx->kind) {
     case ZPLC_COMM_FB_MB_READ_HREG:
-      rc = zplc_modbus_rtu_client_read_holding(tx->unit_id, tx->addr, tx->count,
-                                               regs);
+      rc = zplc_modbus_rtu_client_read_holding(tx->unit_id, tx->addr, tx->count, regs);
       break;
     case ZPLC_COMM_FB_MB_WRITE_HREG:
-      rc = zplc_modbus_rtu_client_write_register(tx->unit_id, tx->addr,
-                                                 tx->write_val_word);
+      rc = zplc_modbus_rtu_client_write_register(tx->unit_id, tx->addr, tx->write_val_word);
       break;
     case ZPLC_COMM_FB_MB_READ_COIL:
-      rc = zplc_modbus_rtu_client_read_coils(tx->unit_id, tx->addr, tx->count,
-                                             coils);
+      rc = zplc_modbus_rtu_client_read_coils(tx->unit_id, tx->addr, tx->count, coils);
       break;
     case ZPLC_COMM_FB_MB_WRITE_COIL:
-      rc = zplc_modbus_rtu_client_write_coil(tx->unit_id, tx->addr,
-                                             tx->write_val_bool);
+      rc = zplc_modbus_rtu_client_write_coil(tx->unit_id, tx->addr, tx->write_val_bool);
       break;
     default:
       rc = -ENOTSUP;
@@ -146,20 +127,16 @@ static int modbus_run_request(struct modbus_req *tx) {
   } else if (tx->proto == 1U) { /* TCP */
     switch (tx->kind) {
     case ZPLC_COMM_FB_MB_READ_HREG:
-      rc = zplc_modbus_tcp_client_read_holding(tx->host, tx->port, tx->unit_id,
-                                               tx->addr, tx->count, regs);
+      rc = zplc_modbus_tcp_client_read_holding(tx->host, tx->port, tx->unit_id, tx->addr, tx->count, regs);
       break;
     case ZPLC_COMM_FB_MB_WRITE_HREG:
-      rc = zplc_modbus_tcp_client_write_register(
-          tx->host, tx->port, tx->unit_id, tx->addr, tx->write_val_word);
+      rc = zplc_modbus_tcp_client_write_register(tx->host, tx->port, tx->unit_id, tx->addr, tx->write_val_word);
       break;
     case ZPLC_COMM_FB_MB_READ_COIL:
-      rc = zplc_modbus_tcp_client_read_coils(tx->host, tx->port, tx->unit_id,
-                                             tx->addr, tx->count, coils);
+      rc = zplc_modbus_tcp_client_read_coils(tx->host, tx->port, tx->unit_id, tx->addr, tx->count, coils);
       break;
     case ZPLC_COMM_FB_MB_WRITE_COIL:
-      rc = zplc_modbus_tcp_client_write_coil(tx->host, tx->port, tx->unit_id,
-                                             tx->addr, tx->write_val_bool);
+      rc = zplc_modbus_tcp_client_write_coil(tx->host, tx->port, tx->unit_id, tx->addr, tx->write_val_bool);
       break;
     default:
       rc = -ENOTSUP;
@@ -183,9 +160,7 @@ static void modbus_process(struct modbus_req *tx) {
   }
   result = modbus_run_request(tx);
   /* The result is in the slot before the state says so (the lock orders it). */
-  zplc_comm_req_finish(&s_pool, &tx->head,
-                       result == 0 ? ZPLC_COMM_HANDLER_DONE
-                                   : zplc_comm_fail_from_errno(result));
+  zplc_comm_req_finish(&s_pool, &tx->head, result == 0 ? ZPLC_COMM_HANDLER_DONE : zplc_comm_fail_from_errno(result));
 }
 
 static void modbus_async_thread(void *p1, void *p2, void *p3) {
@@ -227,24 +202,19 @@ static uint32_t modbus_request_timeout_ms(void) {
 }
 
 /* START: one request for a rising EN. */
-static int modbus_start(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
-                        uint16_t fb_len) {
+static int modbus_start(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len) {
   struct modbus_req *tx;
-  const uint16_t slave =
-      zplc_fb_get_u16(fb_mem, fb_len, ZPLC_COMM_MB_READ_HREG_SLAVE_ID_OFFSET);
+  const uint16_t slave = zplc_fb_get_u16(fb_mem, fb_len, ZPLC_COMM_MB_READ_HREG_SLAVE_ID_OFFSET);
   const uint8_t proto = fb_mem[ZPLC_COMM_MB_READ_HREG_PROTO_OFFSET];
-  const uint16_t count =
-      zplc_fb_get_u16(fb_mem, fb_len, ZPLC_COMM_MB_READ_HREG_COUNT_OFFSET);
-  const uint16_t port =
-      zplc_fb_get_u16(fb_mem, fb_len, ZPLC_COMM_MB_READ_HREG_PORT_OFFSET);
+  const uint16_t count = zplc_fb_get_u16(fb_mem, fb_len, ZPLC_COMM_MB_READ_HREG_COUNT_OFFSET);
+  const uint16_t port = zplc_fb_get_u16(fb_mem, fb_len, ZPLC_COMM_MB_READ_HREG_PORT_OFFSET);
 
   /* A request that can never be served is refused before it takes a slot. */
   if (proto > 1U || slave > 0xFFU || !validate_modbus_count(kind, count)) {
     return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_INVALID_ADDR);
   }
 
-  tx = (struct modbus_req *)zplc_comm_req_claim(&s_pool, fb_mem,
-                                                k_uptime_get_32());
+  tx = (struct modbus_req *)zplc_comm_req_claim(&s_pool, fb_mem, k_uptime_get_32());
   if (tx == NULL) {
     /* A full queue is an error with a status code, not a silent wait (COM-008). */
     return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_QUEUE_FULL);
@@ -260,15 +230,11 @@ static int modbus_start(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
   tx->read_reg = 0U;
   tx->read_coil = 0U;
   if (kind == ZPLC_COMM_FB_MB_WRITE_HREG) {
-    tx->write_val_word = zplc_fb_get_u16(fb_mem, fb_len,
-                                         ZPLC_COMM_MB_WRITE_HREG_VALUE_OFFSET);
-  } else if (kind == ZPLC_COMM_FB_MB_WRITE_COIL &&
-             zplc_fb_fits(fb_len, ZPLC_COMM_MB_WRITE_COIL_VALUE_OFFSET, 1U)) {
+    tx->write_val_word = zplc_fb_get_u16(fb_mem, fb_len, ZPLC_COMM_MB_WRITE_HREG_VALUE_OFFSET);
+  } else if (kind == ZPLC_COMM_FB_MB_WRITE_COIL && zplc_fb_fits(fb_len, ZPLC_COMM_MB_WRITE_COIL_VALUE_OFFSET, 1U)) {
     tx->write_val_bool = fb_mem[ZPLC_COMM_MB_WRITE_COIL_VALUE_OFFSET] != 0U;
   }
-  (void)zplc_fb_string_copy(tx->host, sizeof(tx->host), fb_mem, fb_len,
-                            ZPLC_COMM_MB_READ_HREG_HOST_OFFSET,
-                            MODBUS_HOST_BYTES);
+  (void)zplc_fb_string_copy(tx->host, sizeof(tx->host), fb_mem, fb_len, ZPLC_COMM_MB_READ_HREG_HOST_OFFSET, MODBUS_HOST_BYTES);
   tx->port = port;
   if (proto == 1U && (tx->host[0] == '\0' || port == 0U)) {
     zplc_comm_req_cancel(&s_pool, &tx->head);
@@ -284,23 +250,18 @@ static int modbus_start(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
 }
 
 /* POLL: the result of the request of this block, and the outputs of a read. */
-static int modbus_poll(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
-                       uint16_t fb_len) {
+static int modbus_poll(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len) {
   zplc_comm_req_t *slot = NULL;
-  const int result = zplc_comm_req_peek(&s_pool, fb_mem, k_uptime_get_32(),
-                                        modbus_request_timeout_ms(), &slot);
+  const int result = zplc_comm_req_peek(&s_pool, fb_mem, k_uptime_get_32(), modbus_request_timeout_ms(), &slot);
 
   if (result == ZPLC_COMM_HANDLER_DONE && slot != NULL) {
     const struct modbus_req *tx = (const struct modbus_req *)slot;
 
     /* The result lands in VALUE and nowhere else (COM-001). */
-    if (kind == ZPLC_COMM_FB_MB_READ_HREG &&
-        zplc_fb_fits(fb_len, ZPLC_COMM_MB_READ_HREG_VALUE_OFFSET, 2U)) {
+    if (kind == ZPLC_COMM_FB_MB_READ_HREG && zplc_fb_fits(fb_len, ZPLC_COMM_MB_READ_HREG_VALUE_OFFSET, 2U)) {
       fb_mem[ZPLC_COMM_MB_READ_HREG_VALUE_OFFSET] = (uint8_t)(tx->read_reg & 0xFFU);
-      fb_mem[ZPLC_COMM_MB_READ_HREG_VALUE_OFFSET + 1U] =
-          (uint8_t)((tx->read_reg >> 8) & 0xFFU);
-    } else if (kind == ZPLC_COMM_FB_MB_READ_COIL &&
-               zplc_fb_fits(fb_len, ZPLC_COMM_MB_READ_COIL_VALUE_OFFSET, 1U)) {
+      fb_mem[ZPLC_COMM_MB_READ_HREG_VALUE_OFFSET + 1U] = (uint8_t)((tx->read_reg >> 8) & 0xFFU);
+    } else if (kind == ZPLC_COMM_FB_MB_READ_COIL && zplc_fb_fits(fb_len, ZPLC_COMM_MB_READ_COIL_VALUE_OFFSET, 1U)) {
       fb_mem[ZPLC_COMM_MB_READ_COIL_VALUE_OFFSET] = tx->read_coil;
     }
     zplc_comm_req_release(&s_pool, slot);
@@ -312,8 +273,7 @@ static int modbus_poll(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
  * Handler called by the VM through the dispatcher. It runs in the scan thread:
  * nothing here waits for the network.
  */
-int zplc_comm_modbus_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
-                             uint16_t fb_len, zplc_comm_call_t call) {
+int zplc_comm_modbus_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len, zplc_comm_call_t call) {
   // The block is the instance of one of the four Modbus kinds; every offset
   // below is inside the layout the table gives that kind (COM-001).
   switch (kind) {
@@ -337,12 +297,10 @@ int zplc_comm_modbus_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
     // here (COM-008).
     zplc_comm_req_abort(&s_pool, fb_mem);
     /* the instance is as new again: the result of a read goes too */
-    if (kind == ZPLC_COMM_FB_MB_READ_HREG &&
-        zplc_fb_fits(fb_len, ZPLC_COMM_MB_READ_HREG_VALUE_OFFSET, 2U)) {
+    if (kind == ZPLC_COMM_FB_MB_READ_HREG && zplc_fb_fits(fb_len, ZPLC_COMM_MB_READ_HREG_VALUE_OFFSET, 2U)) {
       fb_mem[ZPLC_COMM_MB_READ_HREG_VALUE_OFFSET] = 0U;
       fb_mem[ZPLC_COMM_MB_READ_HREG_VALUE_OFFSET + 1U] = 0U;
-    } else if (kind == ZPLC_COMM_FB_MB_READ_COIL &&
-               zplc_fb_fits(fb_len, ZPLC_COMM_MB_READ_COIL_VALUE_OFFSET, 1U)) {
+    } else if (kind == ZPLC_COMM_FB_MB_READ_COIL && zplc_fb_fits(fb_len, ZPLC_COMM_MB_READ_COIL_VALUE_OFFSET, 1U)) {
       fb_mem[ZPLC_COMM_MB_READ_COIL_VALUE_OFFSET] = 0U;
     }
     return ZPLC_COMM_HANDLER_DONE;
@@ -355,24 +313,16 @@ int zplc_comm_modbus_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
 }
 
 int zplc_comm_modbus_handler_init(void) {
-  k_msgq_init(&s_tx_queue, (char *)s_tx_queue_buf, sizeof(void *),
-              MAX_ASYNC_TX);
+  k_msgq_init(&s_tx_queue, (char *)s_tx_queue_buf, sizeof(void *), MAX_ASYNC_TX);
 
-  k_thread_create(&s_handler_thread, s_handler_stack,
-                  K_THREAD_STACK_SIZEOF(s_handler_stack), modbus_async_thread,
-                  NULL, NULL, NULL,
-                  K_PRIO_PREEMPT(ZPLC_COMM_THREAD_PRIORITY), 0,
-                  K_NO_WAIT);
+  k_thread_create(&s_handler_thread, s_handler_stack, K_THREAD_STACK_SIZEOF(s_handler_stack), modbus_async_thread, NULL, NULL, NULL,
+                  K_PRIO_PREEMPT(ZPLC_COMM_THREAD_PRIORITY), 0, K_NO_WAIT);
   k_thread_name_set(&s_handler_thread, "modbus_fb_worker");
 
-  zplc_comm_register_handler(ZPLC_COMM_FB_MB_READ_HREG,
-                             zplc_comm_modbus_handler);
-  zplc_comm_register_handler(ZPLC_COMM_FB_MB_WRITE_HREG,
-                             zplc_comm_modbus_handler);
-  zplc_comm_register_handler(ZPLC_COMM_FB_MB_READ_COIL,
-                             zplc_comm_modbus_handler);
-  zplc_comm_register_handler(ZPLC_COMM_FB_MB_WRITE_COIL,
-                             zplc_comm_modbus_handler);
+  zplc_comm_register_handler(ZPLC_COMM_FB_MB_READ_HREG, zplc_comm_modbus_handler);
+  zplc_comm_register_handler(ZPLC_COMM_FB_MB_WRITE_HREG, zplc_comm_modbus_handler);
+  zplc_comm_register_handler(ZPLC_COMM_FB_MB_READ_COIL, zplc_comm_modbus_handler);
+  zplc_comm_register_handler(ZPLC_COMM_FB_MB_WRITE_COIL, zplc_comm_modbus_handler);
 
   return 0;
 }

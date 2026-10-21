@@ -36,7 +36,8 @@ uint32_t zplc_config_get_modbus_tcp_client_timeout_ms(void) { return 500U; }
 static struct modbus_req *queue_items[QUEUE_DEPTH];
 static int queue_count;
 int k_msgq_get(struct k_msgq *queue, void *data, int timeout) {
-  (void)queue; (void)timeout;
+  (void)queue;
+  (void)timeout;
   if (queue_count == 0) {
     return -1;
   }
@@ -46,7 +47,8 @@ int k_msgq_get(struct k_msgq *queue, void *data, int timeout) {
   return 0;
 }
 int k_msgq_put(struct k_msgq *queue, const void *data, int timeout) {
-  (void)queue; (void)timeout;
+  (void)queue;
+  (void)timeout;
   if (queue_count >= QUEUE_DEPTH) {
     return -35; /* ENOMSG: the queue is full */
   }
@@ -54,27 +56,38 @@ int k_msgq_put(struct k_msgq *queue, const void *data, int timeout) {
   return 0;
 }
 void k_msgq_init(struct k_msgq *queue, char *buffer, size_t size, uint32_t count) {
-  (void)queue; (void)buffer; (void)size; (void)count;
+  (void)queue;
+  (void)buffer;
+  (void)size;
+  (void)count;
 }
-int k_thread_create(struct k_thread *thread, char *stack, size_t size,
-                    k_thread_entry_t entry, void *a, void *b, void *c,
-                    int priority, uint32_t options, int delay) {
-  (void)thread; (void)stack; (void)size; (void)entry; (void)a; (void)b;
-  (void)c; (void)priority; (void)options; (void)delay;
+int k_thread_create(struct k_thread *thread, char *stack, size_t size, k_thread_entry_t entry, void *a, void *b, void *c, int priority,
+                    uint32_t options, int delay) {
+  (void)thread;
+  (void)stack;
+  (void)size;
+  (void)entry;
+  (void)a;
+  (void)b;
+  (void)c;
+  (void)priority;
+  (void)options;
+  (void)delay;
   return 0;
 }
 int k_thread_name_set(struct k_thread *thread, const char *name) {
-  (void)thread; (void)name;
+  (void)thread;
+  (void)name;
   return 0;
 }
 
 /* --- the Modbus client: what the worker calls, and what it answers ---------- */
 static struct {
   int calls;
-  int rc;          /* the answer: 0 or a negative errno */
-  uint16_t reg;    /* what a read of holding registers gives */
-  uint8_t coil;    /* what a read of coils gives */
-  int last_rtu;    /* the last call was RTU */
+  int rc;       /* the answer: 0 or a negative errno */
+  uint16_t reg; /* what a read of holding registers gives */
+  uint8_t coil; /* what a read of coils gives */
+  int last_rtu; /* the last call was RTU */
   char host[96];
   uint16_t port;
   uint8_t unit;
@@ -83,9 +96,7 @@ static struct {
   bool coil_value;
 } client;
 
-static void client_reset(void) {
-  memset(&client, 0, sizeof(client));
-}
+static void client_reset(void) { memset(&client, 0, sizeof(client)); }
 
 static int note_tcp(const char *h, uint16_t p, uint8_t u, uint16_t a) {
   client.calls++;
@@ -107,7 +118,9 @@ static int note_rtu(uint8_t u, uint16_t a) {
 int zplc_modbus_rtu_client_read_holding(uint8_t s, uint16_t r, uint16_t c, uint16_t *o) {
   int rc = note_rtu(s, r);
   (void)c;
-  if (rc == 0) { o[0] = client.reg; }
+  if (rc == 0) {
+    o[0] = client.reg;
+  }
   return rc;
 }
 int zplc_modbus_rtu_client_write_register(uint8_t s, uint16_t r, uint16_t v) {
@@ -115,13 +128,16 @@ int zplc_modbus_rtu_client_write_register(uint8_t s, uint16_t r, uint16_t v) {
   return note_rtu(s, r);
 }
 int zplc_modbus_rtu_client_write_multiple(uint8_t s, uint16_t r, uint16_t c, const uint16_t *v) {
-  (void)c; (void)v;
+  (void)c;
+  (void)v;
   return note_rtu(s, r);
 }
 int zplc_modbus_rtu_client_read_coils(uint8_t s, uint16_t a, uint16_t c, uint8_t *o) {
   int rc = note_rtu(s, a);
   (void)c;
-  if (rc == 0) { o[0] = client.coil; }
+  if (rc == 0) {
+    o[0] = client.coil;
+  }
   return rc;
 }
 int zplc_modbus_rtu_client_write_coil(uint8_t s, uint16_t a, bool v) {
@@ -131,7 +147,9 @@ int zplc_modbus_rtu_client_write_coil(uint8_t s, uint16_t a, bool v) {
 int zplc_modbus_tcp_client_read_holding(const char *h, uint16_t p, uint8_t u, uint16_t r, uint16_t c, uint16_t *o) {
   int rc = note_tcp(h, p, u, r);
   (void)c;
-  if (rc == 0) { o[0] = client.reg; }
+  if (rc == 0) {
+    o[0] = client.reg;
+  }
   return rc;
 }
 int zplc_modbus_tcp_client_write_register(const char *h, uint16_t p, uint8_t u, uint16_t r, uint16_t v) {
@@ -139,13 +157,16 @@ int zplc_modbus_tcp_client_write_register(const char *h, uint16_t p, uint8_t u, 
   return note_tcp(h, p, u, r);
 }
 int zplc_modbus_tcp_client_write_multiple(const char *h, uint16_t p, uint8_t u, uint16_t r, uint16_t c, const uint16_t *v) {
-  (void)c; (void)v;
+  (void)c;
+  (void)v;
   return note_tcp(h, p, u, r);
 }
 int zplc_modbus_tcp_client_read_coils(const char *h, uint16_t p, uint8_t u, uint16_t a, uint16_t c, uint8_t *o) {
   int rc = note_tcp(h, p, u, a);
   (void)c;
-  if (rc == 0) { o[0] = client.coil; }
+  if (rc == 0) {
+    o[0] = client.coil;
+  }
   return rc;
 }
 int zplc_modbus_tcp_client_write_coil(const char *h, uint16_t p, uint8_t u, uint16_t a, bool v) {
@@ -199,14 +220,11 @@ static void reset_world(void) {
 }
 
 static uint32_t status_of(const uint8_t *memory) {
-  return (uint32_t)memory[4] | ((uint32_t)memory[5] << 8) |
-         ((uint32_t)memory[6] << 16) | ((uint32_t)memory[7] << 24);
+  return (uint32_t)memory[4] | ((uint32_t)memory[5] << 8) | ((uint32_t)memory[6] << 16) | ((uint32_t)memory[7] << 24);
 }
 
 /* BUSY, DONE, ERROR as one number: 100 busy, 10 done, 1 error. */
-static int state_of(const uint8_t *memory) {
-  return memory[1] * 100 + memory[2] * 10 + memory[3];
-}
+static int state_of(const uint8_t *memory) { return memory[1] * 100 + memory[2] * 10 + memory[3]; }
 
 static void scan(zplc_comm_fb_kind_t kind, uint8_t *memory) {
   assert(zplc_comm_fb_exec(kind, memory, zplc_comm_fb_size((uint32_t)kind)) == 0);
@@ -237,9 +255,8 @@ static size_t slots_in_use(void) {
 /* A count the VALUE member cannot hold is refused with a defined status and
  * nothing is queued; a count it can hold is accepted (COM-001). */
 static void test_count_is_validated_against_the_result_member(void) {
-  static const zplc_comm_fb_kind_t kinds[4] = {
-      ZPLC_COMM_FB_MB_READ_HREG, ZPLC_COMM_FB_MB_WRITE_HREG,
-      ZPLC_COMM_FB_MB_READ_COIL, ZPLC_COMM_FB_MB_WRITE_COIL};
+  static const zplc_comm_fb_kind_t kinds[4] = {ZPLC_COMM_FB_MB_READ_HREG, ZPLC_COMM_FB_MB_WRITE_HREG, ZPLC_COMM_FB_MB_READ_COIL,
+                                               ZPLC_COMM_FB_MB_WRITE_COIL};
   static const uint16_t counts[] = {0U, 2U, 3U, 47U, 48U, 110U, 123U, 124U, 250U, 2000U, 2001U, 0xFFFFU};
   size_t kind, index;
   printf("test_count_is_validated_against_the_result_member...\n");
@@ -270,10 +287,8 @@ static void test_count_is_validated_against_the_result_member(void) {
 /* The limits are what VALUE holds: the result ends before HOST begins. */
 static void test_result_buffer_does_not_overlap_the_parameters(void) {
   printf("test_result_buffer_does_not_overlap_the_parameters...\n");
-  assert(ZPLC_COMM_MB_READ_HREG_VALUE_OFFSET + 2U * MAX_MODBUS_REG_COUNT <=
-         ZPLC_COMM_MB_READ_HREG_HOST_OFFSET);
-  assert(ZPLC_COMM_MB_READ_COIL_VALUE_OFFSET + MAX_MODBUS_COIL_COUNT <=
-         ZPLC_COMM_MB_READ_COIL_HOST_OFFSET);
+  assert(ZPLC_COMM_MB_READ_HREG_VALUE_OFFSET + 2U * MAX_MODBUS_REG_COUNT <= ZPLC_COMM_MB_READ_HREG_HOST_OFFSET);
+  assert(ZPLC_COMM_MB_READ_COIL_VALUE_OFFSET + MAX_MODBUS_COIL_COUNT <= ZPLC_COMM_MB_READ_COIL_HOST_OFFSET);
 }
 
 /* COM-002: BUSY sticks across scans while the worker has not finished, and the
@@ -311,8 +326,7 @@ static void test_busy_sticks_until_the_worker_finishes_and_the_result_stays_in_v
   {
     size_t i;
     for (i = 8U; i < SIZE; i++) {
-      if (i == ZPLC_COMM_MB_READ_HREG_VALUE_OFFSET ||
-          i == ZPLC_COMM_MB_READ_HREG_VALUE_OFFSET + 1U) {
+      if (i == ZPLC_COMM_MB_READ_HREG_VALUE_OFFSET || i == ZPLC_COMM_MB_READ_HREG_VALUE_OFFSET + 1U) {
         continue;
       }
       assert(memory[i] == before[i]);
@@ -355,13 +369,13 @@ static void test_one_trigger_is_one_request_and_a_new_rise_is_another(void) {
 
 /* The status of a failed request is a documented code, whatever the client's errno (COM-006, COM-018). */
 static void test_a_failed_request_reports_a_documented_status(void) {
-  static const struct { int rc; uint32_t status; } cases[] = {
-      {-110 /* ETIMEDOUT */, ZPLC_COMM_TIMEOUT},
-      {-111 /* ECONNREFUSED */, ZPLC_COMM_NOT_CONNECTED},
-      {-104 /* ECONNRESET */, ZPLC_COMM_NOT_CONNECTED},
-      {-5 /* EIO */, ZPLC_COMM_PROTO_ERROR},
-      {-95 /* ENOTSUP */, ZPLC_COMM_UNAVAILABLE},
-      {-9999, ZPLC_COMM_UNKNOWN},
+  static const struct {
+    int rc;
+    uint32_t status;
+  } cases[] = {
+      {-110 /* ETIMEDOUT */, ZPLC_COMM_TIMEOUT},        {-111 /* ECONNREFUSED */, ZPLC_COMM_NOT_CONNECTED},
+      {-104 /* ECONNRESET */, ZPLC_COMM_NOT_CONNECTED}, {-5 /* EIO */, ZPLC_COMM_PROTO_ERROR},
+      {-95 /* ENOTSUP */, ZPLC_COMM_UNAVAILABLE},       {-9999, ZPLC_COMM_UNKNOWN},
   };
   size_t i;
   printf("test_a_failed_request_reports_a_documented_status...\n");
@@ -438,7 +452,7 @@ static void test_reset_while_in_flight_keeps_the_slot_until_the_worker_is_throug
   }
   assert(state_of(others[MAX_ASYNC_TX - 1U]) == 1);
   assert(status_of(others[MAX_ASYNC_TX - 1U]) == ZPLC_COMM_QUEUE_FULL); /* COM-008 */
-  assert(running->host[0] != '\0'); /* the worker's buffers are intact */
+  assert(running->host[0] != '\0');                                     /* the worker's buffers are intact */
   assert(strcmp(running->host, "10.0.0.7") == 0);
 
   /* the worker finishes: the abandoned result is dropped and the slot is free */
@@ -569,12 +583,9 @@ static void test_short_block_is_refused(void) {
   memset(memory, 0, SIZE - 1U);
   memory[0] = 1;
   reset_world();
-  assert(zplc_comm_modbus_handler(ZPLC_COMM_FB_MB_READ_HREG, memory, SIZE - 1U,
-                                  ZPLC_COMM_CALL_START) < 0);
-  assert(zplc_comm_modbus_handler(ZPLC_COMM_FB_MB_READ_HREG, memory, SIZE - 1U,
-                                  ZPLC_COMM_CALL_RESET) < 0);
-  assert(zplc_comm_modbus_handler(ZPLC_COMM_FB_MQTT_CONNECT, memory, 12U,
-                                  ZPLC_COMM_CALL_START) < 0);
+  assert(zplc_comm_modbus_handler(ZPLC_COMM_FB_MB_READ_HREG, memory, SIZE - 1U, ZPLC_COMM_CALL_START) < 0);
+  assert(zplc_comm_modbus_handler(ZPLC_COMM_FB_MB_READ_HREG, memory, SIZE - 1U, ZPLC_COMM_CALL_RESET) < 0);
+  assert(zplc_comm_modbus_handler(ZPLC_COMM_FB_MQTT_CONNECT, memory, 12U, ZPLC_COMM_CALL_START) < 0);
   assert(queue_count == 0 && memory[1] == 0);
   free(memory);
 }

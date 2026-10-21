@@ -143,7 +143,7 @@ export function floatBits(value: number): number {
  * pattern of a number. Every NaN is the quiet NaN 0x7FF8000000000000, as the VM makes it.
  */
 export function doubleWords(value: number): [low: number, high: number] {
-    if (Number.isNaN(value)) return [0, 0x7FF80000];
+    if (Number.isNaN(value)) return [0, 0x7ff80000];
     const view = new DataView(new ArrayBuffer(8));
     view.setFloat64(0, value, true);
     return [view.getUint32(0, true), view.getUint32(4, true)];
@@ -284,12 +284,18 @@ export type CompareOp = 'EQ' | 'NE' | 'LT' | 'LE' | 'GT' | 'GE';
 /** Instructions that turn the result of FCMP_LABEL into the BOOL of one comparison operator. */
 export function fcmpTest(op: CompareOp): AsmLine[] {
     switch (op) {
-        case 'EQ': return ['    PUSH8 0', '    EQ'];
-        case 'NE': return ['    PUSH8 0', '    NE'];
-        case 'LT': return ['    PUSH8 -1', '    EQ'];
-        case 'GT': return ['    PUSH8 1', '    EQ'];
-        case 'LE': return ['    PUSH8 1', '    LT'];
-        case 'GE': return ['    PUSH8 2', '    LTU'];
+        case 'EQ':
+            return ['    PUSH8 0', '    EQ'];
+        case 'NE':
+            return ['    PUSH8 0', '    NE'];
+        case 'LT':
+            return ['    PUSH8 -1', '    EQ'];
+        case 'GT':
+            return ['    PUSH8 1', '    EQ'];
+        case 'LE':
+            return ['    PUSH8 1', '    LT'];
+        case 'GE':
+            return ['    PUSH8 2', '    LTU'];
     }
 }
 
@@ -411,12 +417,18 @@ export const CMP64_HELPER: AsmLine[] = [
 /** Instructions that turn the result of CMP64S_LABEL or CMP64U_LABEL into the BOOL of one operator. */
 export function cmp64Test(op: CompareOp): AsmLine[] {
     switch (op) {
-        case 'EQ': return ['    PUSH8 0', '    EQ'];
-        case 'NE': return ['    PUSH8 0', '    NE'];
-        case 'LT': return ['    PUSH8 0', '    LT'];
-        case 'LE': return ['    PUSH8 1', '    LT'];
-        case 'GT': return ['    PUSH8 0', '    GT'];
-        case 'GE': return ['    PUSH8 -1', '    GT'];
+        case 'EQ':
+            return ['    PUSH8 0', '    EQ'];
+        case 'NE':
+            return ['    PUSH8 0', '    NE'];
+        case 'LT':
+            return ['    PUSH8 0', '    LT'];
+        case 'LE':
+            return ['    PUSH8 1', '    LT'];
+        case 'GT':
+            return ['    PUSH8 0', '    GT'];
+        case 'GE':
+            return ['    PUSH8 -1', '    GT'];
     }
 }
 

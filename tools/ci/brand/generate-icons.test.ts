@@ -17,16 +17,30 @@ describe('the one vector mark and its one-colour variants', () => {
   });
 
   it('use only colours of the Studio palette', () => {
-    const palette = new Set((['light', 'dark', 'high-contrast'] as const).flatMap((theme) => Object.values(declaredTokens(theme)).flatMap((value) => value.match(/#[0-9a-f]{6}\b/gi) ?? [])).map((colour) => colour.toLowerCase()));
+    const palette = new Set(
+      (['light', 'dark', 'high-contrast'] as const)
+        .flatMap((theme) => Object.values(declaredTokens(theme)).flatMap((value) => value.match(/#[0-9a-f]{6}\b/gi) ?? []))
+        .map((colour) => colour.toLowerCase()),
+    );
     for (const { path, text } of marks) {
       const used = [...new Set((text.match(/#[0-9a-f]{6}\b/gi) ?? []).map((colour) => colour.toLowerCase()))];
       expect({ path, outside: used.filter((colour) => !palette.has(colour)) }).toEqual({ path, outside: [] });
     }
-    expect(read(MARK).toString('utf8').match(/#[0-9a-f]{6}\b/gi)!.length).toBeGreaterThan(0);
+    expect(
+      read(MARK)
+        .toString('utf8')
+        .match(/#[0-9a-f]{6}\b/gi)!.length,
+    ).toBeGreaterThan(0);
   });
 
   it('draws each variant as one compound path in one colour: dark, light, and the colour of the text around it', () => {
-    const fills = VARIANTS.map((path) => [...read(path).toString('utf8').matchAll(/<path [^>]*fill="([^"]+)"/g)].map((match) => match[1]));
+    const fills = VARIANTS.map((path) =>
+      [
+        ...read(path)
+          .toString('utf8')
+          .matchAll(/<path [^>]*fill="([^"]+)"/g),
+      ].map((match) => match[1]),
+    );
     expect(fills).toEqual([['#172127'], ['#E5EDEB'], ['currentColor']]);
   });
 });
@@ -54,9 +68,24 @@ describe('what is made from the mark', () => {
   it('is what the site and the installers name: the favicon, the social card and the application icons', async () => {
     // a variable path: the site configuration is plain JavaScript with no declaration file
     const configPath = '../../../docs/docusaurus.config.js';
-    const config = (await import(configPath)).default as { favicon: string; themeConfig: { image: string; navbar: { logo: { src: string } } } };
-    expect([config.favicon, config.themeConfig.image, config.themeConfig.navbar.logo.src]).toEqual(['img/favicon.png', 'img/social-card.png', 'img/logo.svg']);
-    const builder = Bun.YAML.parse(readFileSync(join(ROOT, 'packages/zplc-ide/electron-builder.yml'), 'utf8')) as { mac: { icon: string }; win: { icon: string }; linux: { icon: string } };
-    expect([builder.mac.icon, builder.win.icon, builder.linux.icon]).toEqual(['../../tools/brand/icon.icns', '../../tools/brand/icon.png', '../../tools/brand/icon.png']);
+    const config = (await import(configPath)).default as {
+      favicon: string;
+      themeConfig: { image: string; navbar: { logo: { src: string } } };
+    };
+    expect([config.favicon, config.themeConfig.image, config.themeConfig.navbar.logo.src]).toEqual([
+      'img/favicon.png',
+      'img/social-card.png',
+      'img/logo.svg',
+    ]);
+    const builder = Bun.YAML.parse(readFileSync(join(ROOT, 'packages/zplc-ide/electron-builder.yml'), 'utf8')) as {
+      mac: { icon: string };
+      win: { icon: string };
+      linux: { icon: string };
+    };
+    expect([builder.mac.icon, builder.win.icon, builder.linux.icon]).toEqual([
+      '../../tools/brand/icon.icns',
+      '../../tools/brand/icon.png',
+      '../../tools/brand/icon.png',
+    ]);
   });
 });

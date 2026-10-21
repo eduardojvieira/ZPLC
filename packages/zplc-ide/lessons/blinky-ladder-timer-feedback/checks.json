@@ -13,9 +13,7 @@
         "src/Blinky.st": "PROGRAM Blinky\nVAR_OUTPUT LED_Output AT %Q0.0 : BOOL; END_VAR\nVAR OffTimer : TON; OnTimer : TON; State : BOOL := FALSE; END_VAR\nOffTimer(IN := NOT State, PT := T#500ms);\nOnTimer(IN := State, PT := T#500ms);\nIF OffTimer.Q THEN State := TRUE; END_IF;\nIF OnTimer.Q THEN State := FALSE; END_IF;\nLED_Output := State;\nEND_PROGRAM\n",
         "zplc.json": "{\"schemaVersion\":2,\"name\":\"Blinky starter\",\"version\":\"1.0.0\",\"target\":{\"board\":\"posix\"},\"tasks\":[{\"name\":\"MainTask\",\"trigger\":\"cyclic\",\"interval_ms\":10,\"priority\":1,\"programs\":[\"Blinky.st\"]}]}"
       },
-      "remove": [
-        "src/Blinky.ld.json"
-      ]
+      "remove": ["src/Blinky.ld.json"]
     },
     {
       "intent": "Structured Text instead of Ladder: one TON restarted by its own output and a toggled state",
@@ -23,9 +21,7 @@
         "src/Blinky.st": "PROGRAM Blinky\nVAR_OUTPUT LED_Output AT %Q0.0 : BOOL; END_VAR\nVAR BlinkTimer : TON; LedState : BOOL := FALSE; END_VAR\nBlinkTimer(IN := TRUE, PT := T#500ms);\nIF BlinkTimer.Q THEN LedState := NOT LedState; BlinkTimer(IN := FALSE, PT := T#500ms); END_IF;\nLED_Output := LedState;\nEND_PROGRAM\n",
         "zplc.json": "{\"schemaVersion\":2,\"name\":\"Blinky starter\",\"version\":\"1.0.0\",\"target\":{\"board\":\"posix\"},\"tasks\":[{\"name\":\"MainTask\",\"trigger\":\"cyclic\",\"interval_ms\":10,\"priority\":1,\"programs\":[\"Blinky.st\"]}]}"
       },
-      "remove": [
-        "src/Blinky.ld.json"
-      ]
+      "remove": ["src/Blinky.ld.json"]
     },
     {
       "intent": "Structured Text instead of Ladder: exact 500 ms half period counted in scans",
@@ -33,9 +29,7 @@
         "src/Blinky.st": "PROGRAM Blinky\nVAR_OUTPUT LED_Output AT %Q0.0 : BOOL; END_VAR\nVAR Scans : INT := 0; END_VAR\nScans := Scans + 1;\nIF Scans >= 100 THEN Scans := 0; END_IF;\nLED_Output := Scans >= 50;\nEND_PROGRAM\n",
         "zplc.json": "{\"schemaVersion\":2,\"name\":\"Blinky starter\",\"version\":\"1.0.0\",\"target\":{\"board\":\"posix\"},\"tasks\":[{\"name\":\"MainTask\",\"trigger\":\"cyclic\",\"interval_ms\":10,\"priority\":1,\"programs\":[\"Blinky.st\"]}]}"
       },
-      "remove": [
-        "src/Blinky.ld.json"
-      ]
+      "remove": ["src/Blinky.ld.json"]
     }
   ],
   "wrong": [

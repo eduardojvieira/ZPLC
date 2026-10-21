@@ -8,7 +8,10 @@ import { existsSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import ts from 'typescript';
 
-export interface Program { cwd: string; project: string }
+export interface Program {
+  cwd: string;
+  project: string;
+}
 
 export const PROGRAMS: readonly Program[] = [
   { cwd: 'packages/zplc-compiler', project: 'tsconfig.json' },
@@ -27,7 +30,9 @@ export function parseProgram(root: string, { cwd, project }: Program): ts.Parsed
   const path = join(root, cwd, project);
   const host: ts.ParseConfigFileHost = {
     ...ts.sys,
-    onUnRecoverableConfigFileDiagnostic: (diagnostic) => { throw new Error(ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')); },
+    onUnRecoverableConfigFileDiagnostic: (diagnostic) => {
+      throw new Error(ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'));
+    },
   };
   const parsed = ts.getParsedCommandLineOfConfigFile(path, { noEmit: true }, host);
   if (!parsed) throw new Error(`Cannot read ${relative(root, path)}`);
@@ -37,10 +42,17 @@ export function parseProgram(root: string, { cwd, project }: Program): ts.Parsed
 /** The diagnostics of one program, formatted as `tsc` prints them. */
 export function checkProgram(root: string, program: Program): string[] {
   const parsed = parseProgram(root, program);
-  const compilation = ts.createProgram({ rootNames: parsed.fileNames, options: parsed.options, projectReferences: parsed.projectReferences });
-  const host: ts.FormatDiagnosticsHost = { getCurrentDirectory: () => join(root, program.cwd), getCanonicalFileName: (name) => name, getNewLine: () => '\n' };
-  return [...parsed.errors, ...ts.getPreEmitDiagnostics(compilation)]
-    .map((diagnostic) => ts.formatDiagnostic(diagnostic, host).trimEnd());
+  const compilation = ts.createProgram({
+    rootNames: parsed.fileNames,
+    options: parsed.options,
+    projectReferences: parsed.projectReferences,
+  });
+  const host: ts.FormatDiagnosticsHost = {
+    getCurrentDirectory: () => join(root, program.cwd),
+    getCanonicalFileName: (name) => name,
+    getNewLine: () => '\n',
+  };
+  return [...parsed.errors, ...ts.getPreEmitDiagnostics(compilation)].map((diagnostic) => ts.formatDiagnostic(diagnostic, host).trimEnd());
 }
 
 function main(): number {
@@ -54,7 +66,10 @@ function main(): number {
   for (const program of PROGRAMS) {
     const label = join(program.cwd, program.project);
     const diagnostics = checkProgram(root, program);
-    if (diagnostics.length === 0) { console.log(`ok   ${label}`); continue; }
+    if (diagnostics.length === 0) {
+      console.log(`ok   ${label}`);
+      continue;
+    }
     failed += diagnostics.length;
     console.error(`FAIL ${label}: ${diagnostics.length} error${diagnostics.length === 1 ? '' : 's'}`);
     for (const line of diagnostics) {

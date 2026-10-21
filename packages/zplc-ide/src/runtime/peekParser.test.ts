@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 
-import {
-  extractVariableBytes,
-  groupVariablesForBatchPeek,
-  parsePeekBytes,
-  parseMpeekResponse,
-  buildMpeekArgument,
-} from './peekParser';
+import { extractVariableBytes, groupVariablesForBatchPeek, parsePeekBytes, parseMpeekResponse, buildMpeekArgument } from './peekParser';
 import type { WatchVariable } from './debugAdapter';
 
 // ---------------------------------------------------------------------------
@@ -14,11 +8,7 @@ import type { WatchVariable } from './debugAdapter';
 // ---------------------------------------------------------------------------
 
 /** Build a minimal WatchVariable for test purposes */
-function makeVar(
-  name: string,
-  address: number,
-  type: WatchVariable['type'],
-): WatchVariable {
+function makeVar(name: string, address: number, type: WatchVariable['type']): WatchVariable {
   return { name, address, type, forceable: false, value: undefined, maxLength: undefined, bitOffset: undefined };
 }
 
@@ -28,20 +18,13 @@ function makeVar(
 
 describe('parsePeekBytes', () => {
   it('parses memory dump rows while ignoring headers and echoed commands', () => {
-    const bytes = parsePeekBytes([
-      'zplc dbg peek 0x2000 2',
-      'Memory at 0x2000 (2 bytes):',
-      '2000: 07 00',
-    ], 2);
+    const bytes = parsePeekBytes(['zplc dbg peek 0x2000 2', 'Memory at 0x2000 (2 bytes):', '2000: 07 00'], 2);
 
     expect(Array.from(bytes)).toEqual([0x07, 0x00]);
   });
 
   it('truncates extra bytes beyond requested length', () => {
-    const bytes = parsePeekBytes([
-      'Memory at 0x2000 (4 bytes):',
-      '2000: 11 22 33 44 55 66',
-    ], 4);
+    const bytes = parsePeekBytes(['Memory at 0x2000 (4 bytes):', '2000: 11 22 33 44 55 66'], 4);
 
     expect(Array.from(bytes)).toEqual([0x11, 0x22, 0x33, 0x44]);
   });
@@ -58,57 +41,50 @@ describe('groupVariablesForBatchPeek', () => {
 
   it('creates one group per variable when addresses are far apart', () => {
     // 0x1000 and 0x2000 are 4096 bytes apart — well beyond MAX_MERGE_GAP
-    const vars = [
-      makeVar('LED_Output', 0x1000, 'BOOL'),
-      makeVar('Counter', 0x2000, 'INT'),
-    ];
+    const vars = [makeVar('LED_Output', 0x1000, 'BOOL'), makeVar('Counter', 0x2000, 'INT')];
 
     const groups = groupVariablesForBatchPeek(vars);
 
     expect(groups).toHaveLength(2);
     expect(groups[0].baseAddress).toBe(0x1000);
-    expect(groups[0].span).toBe(1);       // BOOL = 1 byte
+    expect(groups[0].span).toBe(1); // BOOL = 1 byte
     expect(groups[0].variables).toHaveLength(1);
     expect(groups[1].baseAddress).toBe(0x2000);
-    expect(groups[1].span).toBe(2);       // INT = 2 bytes
+    expect(groups[1].span).toBe(2); // INT = 2 bytes
     expect(groups[1].variables).toHaveLength(1);
   });
 
   it('merges adjacent variables into one group (pico_blinky WORK region)', () => {
     // pico_blinky layout: Counter(0x2000,INT=2), SlowCounter(0x2002,INT=2), LED_State(0x2004,BOOL=1)
-    const vars = [
-      makeVar('Counter', 0x2000, 'INT'),
-      makeVar('SlowCounter', 0x2002, 'INT'),
-      makeVar('LED_State', 0x2004, 'BOOL'),
-    ];
+    const vars = [makeVar('Counter', 0x2000, 'INT'), makeVar('SlowCounter', 0x2002, 'INT'), makeVar('LED_State', 0x2004, 'BOOL')];
 
     const groups = groupVariablesForBatchPeek(vars);
 
     expect(groups).toHaveLength(1);
     expect(groups[0].baseAddress).toBe(0x2000);
-    expect(groups[0].span).toBe(5);       // from 0x2000 to end of 0x2004 (1 byte BOOL)
+    expect(groups[0].span).toBe(5); // from 0x2000 to end of 0x2004 (1 byte BOOL)
     expect(groups[0].variables).toHaveLength(3);
   });
 
   it('merges variables with a small gap (≤16 bytes) into one group', () => {
     // Gap of exactly 4 bytes between end of first var and start of second
     const vars = [
-      makeVar('A', 0x1000, 'INT'),   // ends at 0x1002
-      makeVar('B', 0x1006, 'INT'),   // starts at 0x1006 → gap = 4 bytes
+      makeVar('A', 0x1000, 'INT'), // ends at 0x1002
+      makeVar('B', 0x1006, 'INT'), // starts at 0x1006 → gap = 4 bytes
     ];
 
     const groups = groupVariablesForBatchPeek(vars);
 
     expect(groups).toHaveLength(1);
     expect(groups[0].baseAddress).toBe(0x1000);
-    expect(groups[0].span).toBe(8);  // 0x1008 - 0x1000
+    expect(groups[0].span).toBe(8); // 0x1008 - 0x1000
   });
 
   it('splits variables with a gap > 16 bytes into separate groups', () => {
     // Gap of 17 bytes between end of first var and start of second
     const vars = [
-      makeVar('A', 0x1000, 'INT'),    // ends at 0x1002
-      makeVar('B', 0x1013, 'BOOL'),   // starts at 0x1013 → gap = 17 bytes
+      makeVar('A', 0x1000, 'INT'), // ends at 0x1002
+      makeVar('B', 0x1013, 'BOOL'), // starts at 0x1013 → gap = 17 bytes
     ];
 
     const groups = groupVariablesForBatchPeek(vars);
@@ -118,11 +94,7 @@ describe('groupVariablesForBatchPeek', () => {
 
   it('sorts input variables by address before grouping', () => {
     // Provide in reverse order — result must be correctly ordered
-    const vars = [
-      makeVar('LED_State', 0x2004, 'BOOL'),
-      makeVar('Counter', 0x2000, 'INT'),
-      makeVar('SlowCounter', 0x2002, 'INT'),
-    ];
+    const vars = [makeVar('LED_State', 0x2004, 'BOOL'), makeVar('Counter', 0x2000, 'INT'), makeVar('SlowCounter', 0x2002, 'INT')];
 
     const groups = groupVariablesForBatchPeek(vars);
 
@@ -140,7 +112,7 @@ describe('groupVariablesForBatchPeek', () => {
 
     expect(groups).toHaveLength(1);
     expect(groups[0].baseAddress).toBe(0x3000);
-    expect(groups[0].span).toBe(4);  // DINT = 4 bytes
+    expect(groups[0].span).toBe(4); // DINT = 4 bytes
   });
 });
 
@@ -178,7 +150,7 @@ describe('extractVariableBytes', () => {
   });
 
   it('returns zero-filled array when variable is out of buffer range', () => {
-    const buffer = new Uint8Array([0xAA, 0xBB]);
+    const buffer = new Uint8Array([0xaa, 0xbb]);
     const outOfRange = makeVar('X', 0x5000, 'INT');
 
     const bytes = extractVariableBytes(buffer, 0x2000, outOfRange);
@@ -219,9 +191,7 @@ describe('parseMpeekResponse', () => {
   });
 
   it('parses a response that has ANSI escape codes (terminal output)', () => {
-    const lines = [
-      '\x1B[1;32m{"t":"mpeek","results":[{"addr":4096,"bytes":"FF"}]}\x1B[0m',
-    ];
+    const lines = ['\x1B[1;32m{"t":"mpeek","results":[{"addr":4096,"bytes":"FF"}]}\x1B[0m'];
     const result = parseMpeekResponse(lines);
 
     expect(result.size).toBe(1);
@@ -248,9 +218,7 @@ describe('parseMpeekResponse', () => {
   });
 
   it('skips malformed result entries but still parses the good ones', () => {
-    const lines = [
-      '{"t":"mpeek","results":[{"addr":8192,"bytes":"0700"},{"bad":true}]}',
-    ];
+    const lines = ['{"t":"mpeek","results":[{"addr":8192,"bytes":"0700"},{"bad":true}]}'];
     const result = parseMpeekResponse(lines);
 
     // Only the valid entry should be in the map
@@ -259,11 +227,7 @@ describe('parseMpeekResponse', () => {
   });
 
   it('filters out uart:~$ shell prompt lines', () => {
-    const lines = [
-      'uart:~$ zplc dbg mpeek 0x2000:2',
-      '{"t":"mpeek","results":[{"addr":8192,"bytes":"AABB"}]}',
-      'uart:~$',
-    ];
+    const lines = ['uart:~$ zplc dbg mpeek 0x2000:2', '{"t":"mpeek","results":[{"addr":8192,"bytes":"AABB"}]}', 'uart:~$'];
     const result = parseMpeekResponse(lines);
 
     expect(result.size).toBe(1);

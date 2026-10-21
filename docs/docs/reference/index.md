@@ -3,7 +3,7 @@ slug: /reference
 id: index
 title: Reference
 sidebar_label: Reference
-description: "Look a fact up: the languages, the functions and function blocks, the project and scenario files, the command line, the runtime and the boards."
+description: 'Look a fact up: the languages, the functions and function blocks, the project and scenario files, the command line, the runtime and the boards.'
 tags: [reference]
 ---
 

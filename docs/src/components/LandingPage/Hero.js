@@ -29,15 +29,11 @@ export default function Hero() {
           <p className={styles.heroSubtitle}>{hero.subtitle}</p>
 
           <div className={styles.buttons}>
-            <Link
-              className={`button button--primary button--lg ${styles.heroButton} ${styles.primaryButton}`}
-              to={hero.primaryTo}>
+            <Link className={`button button--primary button--lg ${styles.heroButton} ${styles.primaryButton}`} to={hero.primaryTo}>
               {hero.primaryCta}
               <span className={styles.buttonArrow}>→</span>
             </Link>
-            <Link
-              className={`button button--secondary button--lg ${styles.heroButton} ${styles.secondaryButton}`}
-              to={hero.secondaryTo}>
+            <Link className={`button button--secondary button--lg ${styles.heroButton} ${styles.secondaryButton}`} to={hero.secondaryTo}>
               {hero.secondaryCta}
             </Link>
           </div>

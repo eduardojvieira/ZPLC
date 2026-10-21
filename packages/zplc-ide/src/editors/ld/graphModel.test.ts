@@ -12,7 +12,12 @@ async function blinky(): Promise<LDModel> {
 }
 
 function elementIds(model: LDModel): string[] {
-  return model.rungs.flatMap((rung) => rung.grid?.flatMap((row) => row.flatMap((cell) => cell.element ? [cell.element.id] : [])) ?? rung.elements?.map((element) => element.id) ?? []);
+  return model.rungs.flatMap(
+    (rung) =>
+      rung.grid?.flatMap((row) => row.flatMap((cell) => (cell.element ? [cell.element.id] : []))) ??
+      rung.elements?.map((element) => element.id) ??
+      [],
+  );
 }
 
 describe('LD whole-rung clipboard', () => {
@@ -27,7 +32,12 @@ describe('LD whole-rung clipboard', () => {
     expect(pasted?.rungs.map((rung) => rung.number)).toEqual([1, 2, 3, 4, 5]);
     expect(pasted?.variables.local.map((variable) => variable.name)).toEqual(['OffTimer', 'OnTimer', 'OffTimer_copy']);
     expect(new Set(elementIds(pasted!)).size).toBe(elementIds(pasted!).length);
-    expect(pasted?.rungs[1]?.grid?.flat().map((cell) => cell.element?.instance).filter(Boolean)).toContain('OffTimer_copy');
+    expect(
+      pasted?.rungs[1]?.grid
+        ?.flat()
+        .map((cell) => cell.element?.instance)
+        .filter(Boolean),
+    ).toContain('OffTimer_copy');
     expect(transpileLDToST(pasted).success).toBe(true);
     expect(serializeLDModel(model)).toBe(original);
   });
@@ -47,12 +57,31 @@ describe('LD whole-rung clipboard', () => {
     const model: LDModel = {
       name: 'BlinkCopy',
       variables: { local: [{ name: 'PulseGen', type: 'BLINK' }], outputs: [] },
-      rungs: [{
-        id: 'rung_1', number: 1, gridConfig: { rows: 1, cols: 2, cellWidth: 80, cellHeight: 60 }, branches: [], grid: [[
-          { element: { id: 'pulse_contact', type: 'contact_no', variable: 'PulseGen.Q', row: 0, col: 0 }, hasWire: true },
-          { element: { id: 'pulse_block', type: 'function_block', fbType: 'BLINK', instance: 'PulseGen', parameters: {}, row: 0, col: 1 }, hasWire: true },
-        ]],
-      }],
+      rungs: [
+        {
+          id: 'rung_1',
+          number: 1,
+          gridConfig: { rows: 1, cols: 2, cellWidth: 80, cellHeight: 60 },
+          branches: [],
+          grid: [
+            [
+              { element: { id: 'pulse_contact', type: 'contact_no', variable: 'PulseGen.Q', row: 0, col: 0 }, hasWire: true },
+              {
+                element: {
+                  id: 'pulse_block',
+                  type: 'function_block',
+                  fbType: 'BLINK',
+                  instance: 'PulseGen',
+                  parameters: {},
+                  row: 0,
+                  col: 1,
+                },
+                hasWire: true,
+              },
+            ],
+          ],
+        },
+      ],
     };
     expect(transpileLDToST(model).success).toBe(true);
     const fragment = copyLDRungFragment(model, 'rung_1');
@@ -60,7 +89,12 @@ describe('LD whole-rung clipboard', () => {
 
     expect(fragment?.localVariables.map((variable) => variable.name)).toEqual(['PulseGen']);
     expect(pasted?.variables.local.map((variable) => variable.name)).toEqual(['PulseGen', 'PulseGen_copy']);
-    expect(pasted?.rungs[1]?.grid?.flat().map((cell) => cell.element?.instance).filter(Boolean)).toEqual(['PulseGen_copy']);
+    expect(
+      pasted?.rungs[1]?.grid
+        ?.flat()
+        .map((cell) => cell.element?.instance)
+        .filter(Boolean),
+    ).toEqual(['PulseGen_copy']);
     expect(pasted?.rungs[1]?.grid?.[0]?.[0]?.element?.variable).toBe('PulseGen_copy.Q');
     expect(transpileLDToST(pasted).success).toBe(true);
   });
@@ -82,7 +116,12 @@ describe('LD whole-rung clipboard', () => {
     const rung = structuredClone(model.rungs[0]!);
     rung.gridConfig = { ...rung.gridConfig!, rows: 2 };
     rung.grid![0]![1] = { element: { id: 'timer_contact', type: 'contact_no', variable: 'OffTimer.Q', row: 0, col: 1 }, hasWire: true };
-    rung.grid!.push(Array.from({ length: 8 }, (_, col) => ({ element: col === 0 ? { id: 'parallel_contact', type: 'contact_no' as const, variable: 'LED_Output', row: 1, col } : null, hasWire: col === 0 })));
+    rung.grid!.push(
+      Array.from({ length: 8 }, (_, col) => ({
+        element: col === 0 ? { id: 'parallel_contact', type: 'contact_no' as const, variable: 'LED_Output', row: 1, col } : null,
+        hasWire: col === 0,
+      })),
+    );
     rung.branches = [{ id: 'parallel_path', startCol: 0, endCol: 0, rows: [0, 1] }];
     const branched = { ...model, rungs: [rung, ...model.rungs.slice(1)] };
     const pasted = pasteLDRungFragment(branched, copyLDRungFragment(branched, 'rung_1')!, 'rung_1')!;
@@ -95,8 +134,32 @@ describe('LD whole-rung clipboard', () => {
     expect(transpileLDToST(pasted).success).toBe(true);
 
     const fragment = copyLDRungFragment(branched, 'rung_1')!;
-    expect(pasteLDRungFragment(branched, { ...fragment, rung: { ...fragment.rung, branches: [...fragment.rung.branches!, { id: 'nested_path', startCol: 1, endCol: 2, rows: [0, 1], parentBranchId: 'parallel_path' }] } }, 'rung_1')).toBeUndefined();
-    expect(pasteLDRungFragment(branched, { ...fragment, rung: { ...fragment.rung, branches: [...fragment.rung.branches!, { id: 'overlap_path', startCol: 0, endCol: 1, rows: [0, 1] }] } }, 'rung_1')).toBeUndefined();
+    expect(
+      pasteLDRungFragment(
+        branched,
+        {
+          ...fragment,
+          rung: {
+            ...fragment.rung,
+            branches: [
+              ...fragment.rung.branches!,
+              { id: 'nested_path', startCol: 1, endCol: 2, rows: [0, 1], parentBranchId: 'parallel_path' },
+            ],
+          },
+        },
+        'rung_1',
+      ),
+    ).toBeUndefined();
+    expect(
+      pasteLDRungFragment(
+        branched,
+        {
+          ...fragment,
+          rung: { ...fragment.rung, branches: [...fragment.rung.branches!, { id: 'overlap_path', startCol: 0, endCol: 1, rows: [0, 1] }] },
+        },
+        'rung_1',
+      ),
+    ).toBeUndefined();
   });
 
   it('fails closed for duplicate writers, malformed topology, and missing or mismatched FB locals', async () => {
@@ -108,8 +171,12 @@ describe('LD whole-rung clipboard', () => {
     const timer = copyLDRungFragment(model, 'rung_1')!;
     expect(copyLDRungFragment({ ...model, variables: { ...model.variables, local: [] } }, 'rung_1')).toBeUndefined();
     expect(pasteLDRungFragment(model, { ...timer, localVariables: [] }, 'rung_1')).toBeUndefined();
-    expect(pasteLDRungFragment(model, { ...timer, localVariables: [{ ...timer.localVariables[0]!, type: 'TOF' }] }, 'rung_1')).toBeUndefined();
-    expect(pasteLDRungFragment(model, { ...timer, rung: { ...timer.rung, grid: [[{ element: null, hasWire: false }]] } }, 'rung_1')).toBeUndefined();
+    expect(
+      pasteLDRungFragment(model, { ...timer, localVariables: [{ ...timer.localVariables[0]!, type: 'TOF' }] }, 'rung_1'),
+    ).toBeUndefined();
+    expect(
+      pasteLDRungFragment(model, { ...timer, rung: { ...timer.rung, grid: [[{ element: null, hasWire: false }]] } }, 'rung_1'),
+    ).toBeUndefined();
     expect(serializeLDModel(model)).toBe(original);
   });
 });

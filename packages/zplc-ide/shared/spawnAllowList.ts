@@ -8,7 +8,8 @@
  * allows, so a value that is not that shape stops the spawn instead of reaching an argument vector.
  *
  * A `tool-worker` entry is started by the caller's own fork (Electron's utility process), which has no shell either;
- * `spawnVector` gives its script and its empty argument list. Pure TypeScript over `node:child_process` and `node:path`, importable by the main process and by the Tool API bundle.
+ * `spawnVector` gives its script and its empty argument list. Pure TypeScript over `node:child_process` and `node:path`, importable by the
+ * main process and by the Tool API bundle.
  */
 import { spawn, type ChildProcess, type SpawnOptions } from 'node:child_process';
 import path from 'node:path';
@@ -39,7 +40,10 @@ export type SpawnEntry =
    */
   | { kind: 'tool-worker'; script: string };
 
-export interface SpawnVector { command: string; args: string[] }
+export interface SpawnVector {
+  command: string;
+  args: string[];
+}
 
 /** The same rule as the board manifest reader of the Tool API: lower case, digits, `_`, `/` and `-`. */
 const ZEPHYR_BOARD = /^[a-z0-9][a-z0-9_/-]{0,127}$/;
@@ -47,7 +51,8 @@ const ZEPHYR_BOARD = /^[a-z0-9][a-z0-9_/-]{0,127}$/;
 const hasNul = (value: string): boolean => value.includes('\0');
 
 function absolute(value: unknown, what: string): string {
-  if (typeof value !== 'string' || value.length === 0 || value.length > 4096 || hasNul(value)) throw new Error(`Refused to spawn: ${what} is not a path`);
+  if (typeof value !== 'string' || value.length === 0 || value.length > 4096 || hasNul(value))
+    throw new Error(`Refused to spawn: ${what} is not a path`);
   return path.resolve(value);
 }
 
@@ -57,8 +62,12 @@ export function spawnVector(entry: SpawnEntry): SpawnVector {
     case 'native-runtime':
       return { command: absolute(entry.binary, 'the runtime binary'), args: [] };
     case 'firmware-build': {
-      if (typeof entry.zephyrBoard !== 'string' || !ZEPHYR_BOARD.test(entry.zephyrBoard)) throw new Error('Refused to spawn: the board is not a manifest board id');
-      return { command: 'west', args: ['build', '-b', entry.zephyrBoard, 'firmware/app', '-d', absolute(entry.buildPath, 'the build directory'), '--pristine'] };
+      if (typeof entry.zephyrBoard !== 'string' || !ZEPHYR_BOARD.test(entry.zephyrBoard))
+        throw new Error('Refused to spawn: the board is not a manifest board id');
+      return {
+        command: 'west',
+        args: ['build', '-b', entry.zephyrBoard, 'firmware/app', '-d', absolute(entry.buildPath, 'the build directory'), '--pristine'],
+      };
     }
     case 'toolchain-probe': {
       if (!Object.hasOwn(TOOLCHAIN_PROBES, entry.probe)) throw new Error('Refused to spawn: unknown toolchain probe');

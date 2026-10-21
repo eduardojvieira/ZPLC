@@ -63,7 +63,10 @@ export function asmLineProblem(line: string): string | undefined {
 
 /** An internal error: the generator wrote a line that is not in the contract. */
 export class AsmEmissionError extends Error {
-    constructor(readonly assemblyLine: string, problem: string) {
+    constructor(
+        readonly assemblyLine: string,
+        problem: string,
+    ) {
         super(`Internal compiler error: the code generator emitted \`${assemblyLine.trim()}\`: ${problem}`);
         this.name = 'AsmEmissionError';
     }

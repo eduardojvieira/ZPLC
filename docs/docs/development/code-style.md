@@ -13,11 +13,11 @@ page records what is configured, why, and the decisions a contributor meets.
 
 ## The commands
 
-| Command | What it does |
-|---|---|
-| `bun run format` | Writes the layout of every tracked file the formatters own |
-| `bun run format:check` | Checks it without writing, then runs the line-length guard; this is the `format` job of CI |
-| `bun run check:line-length` | Only the guard: lists every hand-written source line over the limit |
+| Command                     | What it does                                                                               |
+| --------------------------- | ------------------------------------------------------------------------------------------ |
+| `bun run format`            | Writes the layout of every tracked file the formatters own                                 |
+| `bun run format:check`      | Checks it without writing, then runs the line-length guard; this is the `format` job of CI |
+| `bun run check:line-length` | Only the guard: lists every hand-written source line over the limit                        |
 
 `format` is a fixed point. It runs Prettier, then `tools/ci/wrap-long-lines.ts`
 (which cuts what Prettier cannot), then Prettier again on the cuts, until no file
@@ -25,11 +25,11 @@ changes.
 
 ## The tools and their versions
 
-| Language | Tool | Version | Settings |
-|---|---|---|---|
-| TypeScript, JavaScript, CSS, JSON, Markdown | Prettier (MIT) | 3.9.10, an exact `devDependency` of the root `package.json` (about 10 MB unpacked) | `.prettierrc.json` |
-| C and headers | clang-format (Apache-2.0 with LLVM exceptions) | 23.1.3, the PyPI wheel (about 2 MB); `pipx install clang-format==23.1.3` | `.clang-format` |
-| Editors | EditorConfig | | `.editorconfig` |
+| Language                                    | Tool                                           | Version                                                                            | Settings           |
+| ------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------ |
+| TypeScript, JavaScript, CSS, JSON, Markdown | Prettier (MIT)                                 | 3.9.10, an exact `devDependency` of the root `package.json` (about 10 MB unpacked) | `.prettierrc.json` |
+| C and headers                               | clang-format (Apache-2.0 with LLVM exceptions) | 23.1.3, the PyPI wheel (about 2 MB); `pipx install clang-format==23.1.3`           | `.clang-format`    |
+| Editors                                     | EditorConfig                                   |                                                                                    | `.editorconfig`    |
 
 The output of both tools changes between versions, so the versions are exact.
 `tools/ci/format.ts` refuses another clang-format. The `format` job of
@@ -48,12 +48,12 @@ The limit applies to hand-written source code: TypeScript, TSX, JavaScript, CSS,
 and headers. It is 140 and not 120 because of what each choice costs. Measured on
 the 1522 guarded files (297,933 lines) before formatting:
 
-| Lines longer than | Lines | Share |
-|---|---|---|
-| 100 columns | 33,724 | 11.3% |
-| 120 columns | 16,843 | 5.7% |
-| 140 columns | 9,083 | 3.0% |
-| 160 columns | 5,618 | 1.9% |
+| Lines longer than | Lines  | Share |
+| ----------------- | ------ | ----- |
+| 100 columns       | 33,724 | 11.3% |
+| 120 columns       | 16,843 | 5.7%  |
+| 140 columns       | 9,083  | 3.0%  |
+| 160 columns       | 5,618  | 1.9%  |
 
 After Prettier and clang-format, the lines that no formatter can wrap (long
 strings, comments, test titles) were 4163 at 120 columns and 1476 at 140. The

@@ -17,20 +17,29 @@ describe('error boundary state', () => {
 
   it('clears the error when the reset key changes and keeps it otherwise', () => {
     const error = new Error('boom');
-    expect(ErrorBoundary.getDerivedStateFromProps({ region: 'Editor', resetKey: 'file:b', children: null }, { error, resetKey: 'file:a' }))
-      .toEqual({ error: null, resetKey: 'file:b' });
-    expect(ErrorBoundary.getDerivedStateFromProps({ region: 'Editor', resetKey: 'file:a', children: null }, { error, resetKey: 'file:a' })).toBeNull();
+    expect(
+      ErrorBoundary.getDerivedStateFromProps({ region: 'Editor', resetKey: 'file:b', children: null }, { error, resetKey: 'file:a' }),
+    ).toEqual({ error: null, resetKey: 'file:b' });
+    expect(
+      ErrorBoundary.getDerivedStateFromProps({ region: 'Editor', resetKey: 'file:a', children: null }, { error, resetKey: 'file:a' }),
+    ).toBeNull();
   });
 
   it('renders its children when nothing failed', () => {
-    const html = renderToStaticMarkup(<ErrorBoundary region="Editor"><p>editor content</p></ErrorBoundary>);
+    const html = renderToStaticMarkup(
+      <ErrorBoundary region="Editor">
+        <p>editor content</p>
+      </ErrorBoundary>,
+    );
     expect(html).toBe('<p>editor content</p>');
   });
 });
 
 describe('region error', () => {
   it('names the region, shows the message and offers a retry', () => {
-    const html = renderToStaticMarkup(<RegionError region="Editor" error={new Error('Cannot read properties of undefined')} onRetry={() => undefined} />);
+    const html = renderToStaticMarkup(
+      <RegionError region="Editor" error={new Error('Cannot read properties of undefined')} onRetry={() => undefined} />,
+    );
     expect(html).toContain('role="alert"');
     expect(html).toContain('data-region-error="Editor"');
     expect(html).toContain('Editor stopped working');
@@ -39,9 +48,18 @@ describe('region error', () => {
   });
 
   it('offers an extra recovery action when the region has one', () => {
-    const html = renderToStaticMarkup(<RegionError region="ZPLC" error={new Error('boom')} onRetry={() => undefined} recovery={{ label: 'Close project', run: () => undefined }} />);
+    const html = renderToStaticMarkup(
+      <RegionError
+        region="ZPLC"
+        error={new Error('boom')}
+        onRetry={() => undefined}
+        recovery={{ label: 'Close project', run: () => undefined }}
+      />,
+    );
     expect(html).toContain('>Close project<');
-    expect(renderToStaticMarkup(<RegionError region="Editor" error={new Error('boom')} onRetry={() => undefined} />)).not.toContain('Close project');
+    expect(renderToStaticMarkup(<RegionError region="Editor" error={new Error('boom')} onRetry={() => undefined} />)).not.toContain(
+      'Close project',
+    );
   });
 });
 
@@ -49,10 +67,15 @@ describe('region error', () => {
 function mountedBoundary(region: string, children: ReactElement) {
   const boundary = new ErrorBoundary({ region, children });
   boundary.setState = ((update: unknown) => {
-    const next = typeof update === 'function' ? (update as (state: typeof boundary.state, props: typeof boundary.props) => object)(boundary.state, boundary.props) : update;
+    const next =
+      typeof update === 'function'
+        ? (update as (state: typeof boundary.state, props: typeof boundary.props) => object)(boundary.state, boundary.props)
+        : update;
     boundary.state = { ...boundary.state, ...(next as object) };
   }) as typeof boundary.setState;
-  const fail = (error: unknown) => { boundary.state = { ...boundary.state, ...ErrorBoundary.getDerivedStateFromError(error) }; };
+  const fail = (error: unknown) => {
+    boundary.state = { ...boundary.state, ...ErrorBoundary.getDerivedStateFromError(error) };
+  };
   return { boundary, fail };
 }
 

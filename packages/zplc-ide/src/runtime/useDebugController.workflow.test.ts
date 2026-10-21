@@ -7,7 +7,12 @@ import { wasmCapabilityProfile } from './wasmCapabilities';
 describe('shared workflow capability surface', () => {
   it('lets the controls the browser runtime has through, and says why for one that it has only in part', () => {
     const capabilities = getWasmCapabilities();
-    for (const [feature, label] of [['pause', 'Pause'], ['resume', 'Resume'], ['step', 'Step'], ['breakpoints', 'Breakpoint sync']] as const) {
+    for (const [feature, label] of [
+      ['pause', 'Pause'],
+      ['resume', 'Resume'],
+      ['step', 'Step'],
+      ['breakpoints', 'Breakpoint sync'],
+    ] as const) {
       const action = getDebugFeatureActionability(capabilities, feature, label);
       expect(action.allowed).toBe(true);
       expect(action.message).toBeNull();

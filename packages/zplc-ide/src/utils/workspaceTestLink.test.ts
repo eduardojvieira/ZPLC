@@ -8,11 +8,22 @@ await mock.module('./projectLoader', () => ({ getAvailableProjects: () => [], lo
 const { useIDEStore } = await import('../store/useIDEStore');
 const { canLinkProjectWorkspace, linkProjectWorkspace } = await import('./workspaceTestLink');
 
-const NOT_REACHED = async () => { throw new Error('the bridge must not be called'); };
+const NOT_REACHED = async () => {
+  throw new Error('the bridge must not be called');
+};
 const bridge: ProjectFilesBridge = {
   chooseFolder: async () => ({ ok: true, value: { rootId: 'root-1', name: 'plant' } }),
-  list: NOT_REACHED, stat: NOT_REACHED, read: NOT_REACHED, write: NOT_REACHED, mkdir: NOT_REACHED, remove: NOT_REACHED, rename: NOT_REACHED,
-  listRecent: NOT_REACHED, openRecent: NOT_REACHED, forgetRecent: NOT_REACHED, markOpened: NOT_REACHED,
+  list: NOT_REACHED,
+  stat: NOT_REACHED,
+  read: NOT_REACHED,
+  write: NOT_REACHED,
+  mkdir: NOT_REACHED,
+  remove: NOT_REACHED,
+  rename: NOT_REACHED,
+  listRecent: NOT_REACHED,
+  openRecent: NOT_REACHED,
+  forgetRecent: NOT_REACHED,
+  markOpened: NOT_REACHED,
 };
 
 let requests: unknown[];
@@ -31,7 +42,12 @@ async function openProject(session = 3): Promise<void> {
 beforeEach(async () => {
   requests = [];
   registration = async () => ({ workspaceId: 'workspace-1' });
-  installWindow({ registerProjectRoot: (request: unknown) => { requests.push(request); return registration(request); } });
+  installWindow({
+    registerProjectRoot: (request: unknown) => {
+      requests.push(request);
+      return registration(request);
+    },
+  });
   await openProject();
 });
 
@@ -80,7 +96,11 @@ describe('linking the open project to its workspace without choosing a file (IDE
   });
 
   it('leaves the project unlinked when the main process refuses, answers nothing, or fails', async () => {
-    for (const answer of [() => Promise.reject(new Error('Workspace operation failed')), async () => null, async () => ({ workspaceId: '' })]) {
+    for (const answer of [
+      () => Promise.reject(new Error('Workspace operation failed')),
+      async () => null,
+      async () => ({ workspaceId: '' }),
+    ]) {
       registration = answer as typeof registration;
       expect(await linkProjectWorkspace()).toBeNull();
       expect(useIDEStore.getState().workspaceScenarioLink).toBeNull();
@@ -89,11 +109,17 @@ describe('linking the open project to its workspace without choosing a file (IDE
 
   it('shares one registration between callers that ask for the same project at the same time', async () => {
     let answer: (value: { workspaceId: string }) => void = () => undefined;
-    registration = () => new Promise((resolve) => { answer = resolve; });
+    registration = () =>
+      new Promise((resolve) => {
+        answer = resolve;
+      });
     const opening = linkProjectWorkspace();
     const build = linkProjectWorkspace();
     answer({ workspaceId: 'workspace-1' });
-    expect(await Promise.all([opening, build])).toEqual([{ workspaceId: 'workspace-1', projectSession: 3 }, { workspaceId: 'workspace-1', projectSession: 3 }]);
+    expect(await Promise.all([opening, build])).toEqual([
+      { workspaceId: 'workspace-1', projectSession: 3 },
+      { workspaceId: 'workspace-1', projectSession: 3 },
+    ]);
     expect(requests).toHaveLength(1);
     // Once it has settled the next call registers the folder again, so that it matches the folder as it is then.
     registration = async () => ({ workspaceId: 'workspace-2' });
@@ -103,7 +129,10 @@ describe('linking the open project to its workspace without choosing a file (IDE
 
   it('does not hand a registration for a replaced project to a caller of the new one', async () => {
     const answers: Array<(value: { workspaceId: string }) => void> = [];
-    registration = () => new Promise((resolve) => { answers.push(resolve); });
+    registration = () =>
+      new Promise((resolve) => {
+        answers.push(resolve);
+      });
     const first = linkProjectWorkspace();
     useIDEStore.setState({ projectSession: 4 });
     const second = linkProjectWorkspace();
@@ -115,7 +144,10 @@ describe('linking the open project to its workspace without choosing a file (IDE
 
   it('drops an answer that arrives after another project replaced the one it was asked for', async () => {
     let answer: (value: { workspaceId: string }) => void = () => undefined;
-    registration = () => new Promise((resolve) => { answer = resolve; });
+    registration = () =>
+      new Promise((resolve) => {
+        answer = resolve;
+      });
     const pending = linkProjectWorkspace();
     useIDEStore.setState({ projectSession: 4 });
     answer({ workspaceId: 'workspace-1' });

@@ -37,10 +37,7 @@
           "id": "branch_1",
           "startCol": 1,
           "endCol": 4,
-          "rows": [
-            0,
-            1
-          ]
+          "rows": [0, 1]
         }
       ],
       "gridConfig": {

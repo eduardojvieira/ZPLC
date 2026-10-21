@@ -4,7 +4,11 @@ import { flattenTree, treeKey, type TreeNodeSpec } from './tree';
 import { sortRows, nextSort } from './dataGrid';
 
 describe('combo box logic (UX-001)', () => {
-  const options = [{ value: 'a', label: 'Analog input' }, { value: 'b', label: 'Boolean output' }, { value: 'c', label: 'Analog output' }];
+  const options = [
+    { value: 'a', label: 'Analog input' },
+    { value: 'b', label: 'Boolean output' },
+    { value: 'c', label: 'Analog output' },
+  ];
   it('UX-001 filters the options by what was typed, ignoring case, and keeps all of them for an empty query', () => {
     expect(filterOptions(options, 'ANALOG').map((o) => o.value)).toEqual(['a', 'c']);
     expect(filterOptions(options, '').length).toBe(3);
@@ -20,13 +24,26 @@ describe('combo box logic (UX-001)', () => {
 
 describe('tree logic (UX-001)', () => {
   const nodes: TreeNodeSpec[] = [
-    { id: 'p', label: 'Project', children: [{ id: 'p1', label: 'Main' }, { id: 'p2', label: 'Lib', children: [{ id: 'p21', label: 'Util' }] }] },
+    {
+      id: 'p',
+      label: 'Project',
+      children: [
+        { id: 'p1', label: 'Main' },
+        { id: 'p2', label: 'Lib', children: [{ id: 'p21', label: 'Util' }] },
+      ],
+    },
     { id: 'q', label: 'Boards' },
   ];
   it('UX-001 lists only the visible rows with their level, set size and position', () => {
     expect(flattenTree(nodes, new Set()).map((r) => r.id)).toEqual(['p', 'q']);
     const rows = flattenTree(nodes, new Set(['p', 'p2']));
-    expect(rows.map((r) => [r.id, r.level, r.setSize, r.position])).toEqual([['p', 1, 2, 1], ['p1', 2, 2, 1], ['p2', 2, 2, 2], ['p21', 3, 1, 1], ['q', 1, 2, 2]]);
+    expect(rows.map((r) => [r.id, r.level, r.setSize, r.position])).toEqual([
+      ['p', 1, 2, 1],
+      ['p1', 2, 2, 1],
+      ['p2', 2, 2, 2],
+      ['p21', 3, 1, 1],
+      ['q', 1, 2, 2],
+    ]);
   });
   it('UX-001 expands with ArrowRight, collapses with ArrowLeft, goes to the parent and walks the rows with the arrows', () => {
     const open = new Set(['p']);
@@ -42,7 +59,11 @@ describe('tree logic (UX-001)', () => {
 });
 
 describe('data grid logic (UX-001)', () => {
-  const rows = [{ n: 'b', v: 10 }, { n: 'a', v: 9 }, { n: 'c', v: 100 }];
+  const rows = [
+    { n: 'b', v: 10 },
+    { n: 'a', v: 9 },
+    { n: 'c', v: 100 },
+  ];
   it('UX-001 sorts numbers as numbers and text by locale, leaving the input untouched, and cycles none, ascending, descending', () => {
     expect(sortRows(rows, (r) => r.v, 'ascending').map((r) => r.n)).toEqual(['a', 'b', 'c']);
     expect(sortRows(rows, (r) => r.n, 'descending').map((r) => r.n)).toEqual(['c', 'b', 'a']);

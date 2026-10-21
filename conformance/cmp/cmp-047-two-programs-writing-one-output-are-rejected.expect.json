@@ -9,7 +9,13 @@
   "messageIncludes": ["motor", "overlaps"],
   "files": ["cmp-047-two-programs-writing-one-output-are-rejected-second.st"],
   "tasks": [
-    {"name": "FastTask", "trigger": "cyclic", "interval_ms": 10, "priority": 1, "programs": ["main.st"]},
-    {"name": "SlowTask", "trigger": "cyclic", "interval_ms": 20, "priority": 2, "programs": ["cmp-047-two-programs-writing-one-output-are-rejected-second.st"]}
+    { "name": "FastTask", "trigger": "cyclic", "interval_ms": 10, "priority": 1, "programs": ["main.st"] },
+    {
+      "name": "SlowTask",
+      "trigger": "cyclic",
+      "interval_ms": 20,
+      "priority": 2,
+      "programs": ["cmp-047-two-programs-writing-one-output-are-rejected-second.st"]
+    }
   ]
 }

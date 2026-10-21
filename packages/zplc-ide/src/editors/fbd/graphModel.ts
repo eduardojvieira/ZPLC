@@ -4,7 +4,19 @@ import { judgeConnection } from '../../models/pinTypes';
 import type { ProjectBlock } from '../../models/projectBlocks';
 import { blockElement, connectionElement } from '../../models/sourceElements';
 
-const BLOCK_FIELDS = new Set(['id', 'type', 'position', 'instanceName', 'variableName', 'address', 'dataType', 'value', 'comment', 'inputs', 'outputs']);
+const BLOCK_FIELDS = new Set([
+  'id',
+  'type',
+  'position',
+  'instanceName',
+  'variableName',
+  'address',
+  'dataType',
+  'value',
+  'comment',
+  'inputs',
+  'outputs',
+]);
 
 /**
  * What the canvas holds in a node for a block: the fields it edits, and the rest of the block as it was in the file, so
@@ -13,8 +25,15 @@ const BLOCK_FIELDS = new Set(['id', 'type', 'position', 'instanceName', 'variabl
 export function blockNodeData(block: FBDBlock): Record<string, unknown> {
   const extra = Object.fromEntries(Object.entries(block).filter(([field]) => !BLOCK_FIELDS.has(field)));
   return {
-    type: block.type, instanceName: block.instanceName, variableName: block.variableName, address: block.address,
-    dataType: block.dataType, value: block.value, comment: block.comment, inputs: block.inputs, outputs: block.outputs,
+    type: block.type,
+    instanceName: block.instanceName,
+    variableName: block.variableName,
+    address: block.address,
+    dataType: block.dataType,
+    value: block.value,
+    comment: block.comment,
+    inputs: block.inputs,
+    outputs: block.outputs,
     ...(Object.keys(extra).length > 0 ? { extra } : {}),
   };
 }
@@ -24,19 +43,27 @@ export function nodesToBlocks(nodes: Node[]): FBDBlock[] {
     const data = node.data as Record<string, unknown>;
     return {
       ...(data.extra as Record<string, unknown> | undefined),
-      id: node.id, type: data.type as string, position: node.position,
+      id: node.id,
+      type: data.type as string,
+      position: node.position,
       instanceName: data.instanceName as string | undefined,
       variableName: data.variableName as string | undefined,
       address: data.address as string | undefined,
-      dataType: data.dataType as string | undefined, value: data.value,
+      dataType: data.dataType as string | undefined,
+      value: data.value,
       comment: data.comment as string | undefined,
-      inputs: data.inputs as FBDBlock['inputs'], outputs: data.outputs as FBDBlock['outputs'],
+      inputs: data.inputs as FBDBlock['inputs'],
+      outputs: data.outputs as FBDBlock['outputs'],
     };
   });
 }
 
 export function edgesToConnections(edges: Edge[]): FBDConnection[] {
-  return edges.map((edge) => ({ id: edge.id, from: { block: edge.source, port: edge.sourceHandle || 'OUT' }, to: { block: edge.target, port: edge.targetHandle || 'IN' } }));
+  return edges.map((edge) => ({
+    id: edge.id,
+    from: { block: edge.source, port: edge.sourceHandle || 'OUT' },
+    to: { block: edge.target, port: edge.targetHandle || 'IN' },
+  }));
 }
 
 /** The two ends of a wire as the canvas reports them: a pin of a block each. */
@@ -60,12 +87,20 @@ export function connectBlocks(
     { block: params.target, port: params.targetHandle || 'IN' },
     projectBlocks,
   );
-  if (verdict.reason !== undefined || !verdict.from || !verdict.to) return { edges, refusal: verdict.reason ?? 'a wire joins an output to an input' };
+  if (verdict.reason !== undefined || !verdict.from || !verdict.to)
+    return { edges, refusal: verdict.reason ?? 'a wire joins an output to an input' };
   return {
-    edges: addEdge({
-      source: verdict.from.block, sourceHandle: verdict.from.port, target: verdict.to.block, targetHandle: verdict.to.port,
-      type: 'smoothstep', style: { stroke: 'var(--visual-wire)', strokeWidth: 2 },
-    }, edges),
+    edges: addEdge(
+      {
+        source: verdict.from.block,
+        sourceHandle: verdict.from.port,
+        target: verdict.to.block,
+        targetHandle: verdict.to.port,
+        type: 'smoothstep',
+        style: { stroke: 'var(--visual-wire)', strokeWidth: 2 },
+      },
+      edges,
+    ),
   };
 }
 
@@ -121,11 +156,15 @@ export function copyFBDFragment(nodes: Node[], edges: Edge[]): FBDClipboardFragm
   const selectedIds = new Set(selected.map((node) => node.id));
   const fragment = {
     blocks: clone(nodesToBlocks(selected)),
-    connections: clone(edges.filter((edge) => selectedIds.has(edge.source) && selectedIds.has(edge.target)).map((edge) => ({
-      id: edge.id,
-      from: { block: edge.source, port: edge.sourceHandle || 'OUT' },
-      to: { block: edge.target, port: edge.targetHandle || 'IN' },
-    }))),
+    connections: clone(
+      edges
+        .filter((edge) => selectedIds.has(edge.source) && selectedIds.has(edge.target))
+        .map((edge) => ({
+          id: edge.id,
+          from: { block: edge.source, port: edge.sourceHandle || 'OUT' },
+          to: { block: edge.target, port: edge.targetHandle || 'IN' },
+        })),
+    ),
   };
   try {
     validateFBDModel({ name: 'clipboard', variables: { local: [], outputs: [] }, ...fragment });
@@ -140,7 +179,10 @@ export function pasteFBDFragment(model: FBDModel, fragment: FBDClipboardFragment
   if (fragment.blocks.length === 0) return undefined;
   try {
     validateFBDModel({ name: 'clipboard', variables: { local: [], outputs: [] }, ...fragment });
-    const copiedAlready = Math.max(...fragment.blocks.map((block) => model.blocks.filter((candidate) => candidate.id.startsWith(`${block.id}_copy`)).length), 0);
+    const copiedAlready = Math.max(
+      ...fragment.blocks.map((block) => model.blocks.filter((candidate) => candidate.id.startsWith(`${block.id}_copy`)).length),
+      0,
+    );
     const offset = 40 * (copiedAlready + 1);
     const ids = new Set(model.blocks.map((block) => block.id));
     const instanceNames = model.blocks.filter((block) => block.instanceName).map((block) => block.instanceName!);
@@ -159,10 +201,21 @@ export function pasteFBDFragment(model: FBDModel, fragment: FBDClipboardFragment
     const connections = fragment.connections.map((connection) => {
       const id = uniqueCaseInsensitive(`${connection.id}_copy`, connectionIds);
       connectionIds.add(id);
-      return { ...clone(connection), id, from: { ...connection.from, block: remapped.get(connection.from.block)! }, to: { ...connection.to, block: remapped.get(connection.to.block)! } };
+      return {
+        ...clone(connection),
+        id,
+        from: { ...connection.from, block: remapped.get(connection.from.block)! },
+        to: { ...connection.to, block: remapped.get(connection.to.block)! },
+      };
     });
-    const candidate = validateFBDModel({ ...model, blocks: [...model.blocks, ...blocks], connections: [...model.connections, ...connections] });
-    const functionBlockNames = candidate.blocks.filter((block) => isFunctionBlock(block.type)).map((block) => block.instanceName?.toLowerCase());
+    const candidate = validateFBDModel({
+      ...model,
+      blocks: [...model.blocks, ...blocks],
+      connections: [...model.connections, ...connections],
+    });
+    const functionBlockNames = candidate.blocks
+      .filter((block) => isFunctionBlock(block.type))
+      .map((block) => block.instanceName?.toLowerCase());
     if (functionBlockNames.some((name) => !name) || new Set(functionBlockNames).size !== functionBlockNames.length) return undefined;
     return candidate;
   } catch {

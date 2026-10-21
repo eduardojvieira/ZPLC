@@ -25,10 +25,16 @@ describe('the evaluation stack of a task', () => {
         const source = [
             'PUSH8 1',
             'JZ other',
-            'PUSH8 1', 'PUSH8 2', 'PUSH8 3', 'DROP', 'DROP', 'DROP',
+            'PUSH8 1',
+            'PUSH8 2',
+            'PUSH8 3',
+            'DROP',
+            'DROP',
+            'DROP',
             'JMP done',
             'other:',
-            'PUSH8 1', 'DROP',
+            'PUSH8 1',
+            'DROP',
             'done:',
             'HALT',
         ].join('\n');
@@ -55,11 +61,19 @@ describe('the evaluation stack of a task', () => {
 describe('a call', () => {
     test('adds the deepest point of the callee to the depth where it is called, and a frame', () => {
         const source = [
-            'PUSH8 1', 'PUSH8 2',
+            'PUSH8 1',
+            'PUSH8 2',
             'CALL deep',
-            'DROP', 'DROP', 'HALT',
+            'DROP',
+            'DROP',
+            'HALT',
             'deep:',
-            'PUSH8 3', 'PUSH8 4', 'PUSH8 5', 'DROP', 'DROP', 'DROP',
+            'PUSH8 3',
+            'PUSH8 4',
+            'PUSH8 5',
+            'DROP',
+            'DROP',
+            'DROP',
             'RET',
         ].join('\n');
         expect(depths(source)).toEqual([{ stack: 5, frames: 2 }]);
@@ -72,11 +86,21 @@ describe('a call', () => {
 
     test('nested calls count one frame each, the deepest chain winning', () => {
         const source = [
-            'CALL a', 'HALT',
-            'a:', 'CALL b', 'RET',
-            'b:', 'CALL c', 'RET',
-            'c:', 'PUSH8 1', 'DROP', 'RET',
-            'd:', 'CALL c', 'RET',
+            'CALL a',
+            'HALT',
+            'a:',
+            'CALL b',
+            'RET',
+            'b:',
+            'CALL c',
+            'RET',
+            'c:',
+            'PUSH8 1',
+            'DROP',
+            'RET',
+            'd:',
+            'CALL c',
+            'RET',
         ].join('\n');
         expect(depths(source)).toEqual([{ stack: 1, frames: 4 }]);
     });

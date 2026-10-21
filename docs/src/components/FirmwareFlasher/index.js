@@ -21,13 +21,21 @@ export default function FirmwareFlasher({ lang = 'en' }) {
     if (ok) void import('esp-web-tools/dist/web/install-button.js');
   }, []);
 
-  useEffect(() => () => { if (chosen) URL.revokeObjectURL(chosen.manifestUrl); }, [chosen]);
+  useEffect(
+    () => () => {
+      if (chosen) URL.revokeObjectURL(chosen.manifestUrl);
+    },
+    [chosen],
+  );
 
   async function onFile(file) {
     setChosen(null);
     setWrong(false);
     const version = file === undefined ? undefined : versionOfImage(file.name);
-    if (file === undefined || version === undefined) { setWrong(file !== undefined); return; }
+    if (file === undefined || version === undefined) {
+      setWrong(file !== undefined);
+      return;
+    }
     const bytes = await file.arrayBuffer();
     const imageUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
     const manifest = buildFlashManifest({ version, imageUrl });
@@ -37,22 +45,27 @@ export default function FirmwareFlasher({ lang = 'en' }) {
 
   return (
     <section className="firmware-flasher" aria-label={text.title}>
-      <p><strong>{text.safety}</strong></p>
+      <p>
+        <strong>{text.safety}</strong>
+      </p>
       {supported === true ? (
         <>
           <p>{text.steps}</p>
           <label>
-            {text.choose}{' '}
-            <input type="file" accept={`.${IMAGE_EXTENSION}`} onChange={(event) => void onFile(event.target.files?.[0])} />
+            {text.choose} <input type="file" accept={`.${IMAGE_EXTENSION}`} onChange={(event) => void onFile(event.target.files?.[0])} />
           </label>
           {wrong && <p role="alert">{text.wrongFile}</p>}
           {chosen && (
             <>
-              <p>{text.checksum} <code>{chosen.sha256}</code></p>
+              <p>
+                {text.checksum} <code>{chosen.sha256}</code>
+              </p>
               {React.createElement(
                 'esp-web-install-button',
                 { manifest: chosen.manifestUrl },
-                <button slot="activate" type="button" className="button button--primary">{text.install}</button>,
+                <button slot="activate" type="button" className="button button--primary">
+                  {text.install}
+                </button>,
                 <span slot="unsupported">{text.unsupported}</span>,
                 <span slot="not-allowed">{text.notAllowed}</span>,
               )}

@@ -25,10 +25,23 @@ export function Tree({ label, nodes, defaultExpanded = [], selected, onSelect, r
   const [focusId, setFocusId] = useState<string | undefined>(undefined);
   const active = rows.some((row) => row.id === focusId) ? focusId! : (rows.find((row) => row.id === selected) ?? rows[0])?.id;
   const root = useRef<HTMLUListElement>(null);
-  const toggle = (id: string, open: boolean): void => setExpanded((current) => { const next = new Set(current); if (open) next.add(id); else next.delete(id); return next; });
-  const move = (id: string): void => { setFocusId(id); queueMicrotask(() => root.current?.querySelector<HTMLElement>(`[data-row="${CSS.escape(id)}"]`)?.focus()); };
+  const toggle = (id: string, open: boolean): void =>
+    setExpanded((current) => {
+      const next = new Set(current);
+      if (open) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  const move = (id: string): void => {
+    setFocusId(id);
+    queueMicrotask(() => root.current?.querySelector<HTMLElement>(`[data-row="${CSS.escape(id)}"]`)?.focus());
+  };
   const onKeyDown = (event: KeyboardEvent<HTMLElement>, row: TreeRow): void => {
-    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect?.(row.id); return; }
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onSelect?.(row.id);
+      return;
+    }
     const result = treeKey(event.key, rows, row.id);
     if (!result) return;
     event.preventDefault();
@@ -40,11 +53,26 @@ export function Tree({ label, nodes, defaultExpanded = [], selected, onSelect, r
       {rows.map((row) => (
         <li key={row.id} role="none">
           <div
-            role="treeitem" data-row={row.id} tabIndex={row.id === active ? 0 : -1} aria-level={row.level} aria-setsize={row.setSize} aria-posinset={row.position}
-            aria-expanded={row.expandable ? row.expanded : undefined} aria-selected={row.id === selected} className="ui-treeitem" style={{ paddingInlineStart: `${(row.level - 1) * 1}rem` }}
-            onClick={() => { setFocusId(row.id); onSelect?.(row.id); if (row.expandable) toggle(row.id, !row.expanded); }} onKeyDown={(event) => onKeyDown(event, row)}
+            role="treeitem"
+            data-row={row.id}
+            tabIndex={row.id === active ? 0 : -1}
+            aria-level={row.level}
+            aria-setsize={row.setSize}
+            aria-posinset={row.position}
+            aria-expanded={row.expandable ? row.expanded : undefined}
+            aria-selected={row.id === selected}
+            className="ui-treeitem"
+            style={{ paddingInlineStart: `${(row.level - 1) * 1}rem` }}
+            onClick={() => {
+              setFocusId(row.id);
+              onSelect?.(row.id);
+              if (row.expandable) toggle(row.id, !row.expanded);
+            }}
+            onKeyDown={(event) => onKeyDown(event, row)}
           >
-            <span aria-hidden="true" className="ui-tree-twisty">{row.expandable ? (row.expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />) : null}</span>
+            <span aria-hidden="true" className="ui-tree-twisty">
+              {row.expandable ? row.expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} /> : null}
+            </span>
             {renderLabel ? renderLabel(row) : row.label}
           </div>
         </li>

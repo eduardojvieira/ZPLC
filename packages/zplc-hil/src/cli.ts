@@ -30,17 +30,26 @@ import { ShellLink } from './shellLink';
 import { firmwareIdentity, sha256, summarize, validate, VERSION_OF_HARNESS } from './record';
 import type { RunRecord, RunStep } from './record';
 
-interface CompiledScenarioLike { readonly id: string }
-interface ScenarioRunResultLike { passed: boolean; assertions: Array<{ kind: string; passed: boolean; atMs?: number }> }
+interface CompiledScenarioLike {
+  readonly id: string;
+}
+interface ScenarioRunResultLike {
+  passed: boolean;
+  assertions: Array<{ kind: string; passed: boolean; atMs?: number }>;
+}
 interface EngineLike {
   compileScenario(input: unknown, debugMap: unknown): CompiledScenarioLike;
   runScenario(scenario: CompiledScenarioLike, zplc: Uint8Array, runtime: ScenarioRuntimePort): Promise<ScenarioRunResultLike>;
 }
 interface ToolApiLike {
-  compilerCompile(root: string): Promise<{ ok: boolean; zplcFile?: Uint8Array; debugMap?: unknown; evidence: { diagnostics: Array<{ message: string }> } }>;
+  compilerCompile(
+    root: string,
+  ): Promise<{ ok: boolean; zplcFile?: Uint8Array; debugMap?: unknown; evidence: { diagnostics: Array<{ message: string }> } }>;
 }
 
-const USAGE = 'usage: zplc-hil run --board <ide_id> --workspace <dir> --scenario <file> [--port PORT] [--link serial|host-runtime] [--tolerance-ms N] [--record-dir DIR] [--operator NAME] [--firmware-image FILE]';
+const USAGE =
+  'usage: zplc-hil run --board <ide_id> --workspace <dir> --scenario <file> [--port PORT] [--link serial|host-runtime] [--tolerance-ms ' +
+  'N] [--record-dir DIR] [--operator NAME] [--firmware-image FILE]';
 
 export interface CliIo extends HumanIo {
   error(text: string): void;
@@ -58,7 +67,10 @@ export interface CliDeps {
 async function engine(): Promise<{ engine: EngineLike; tools: ToolApiLike }> {
   // loaded by path at run time: the scenario engine and the Tool API belong to Studio's package, and this package does not depend on it
   const load = async <T>(file: string): Promise<T> => (await import(pathToFileURL(join(REPOSITORY_ROOT, file)).href)) as T;
-  return { engine: await load<EngineLike>('packages/zplc-ide/src/test-engine/index.ts'), tools: await load<ToolApiLike>('packages/zplc-ide/src/cli/toolApi.ts') };
+  return {
+    engine: await load<EngineLike>('packages/zplc-ide/src/test-engine/index.ts'),
+    tools: await load<ToolApiLike>('packages/zplc-ide/src/cli/toolApi.ts'),
+  };
 }
 
 function now(): string {
@@ -69,11 +81,18 @@ export async function main(argv: string[], deps: CliDeps): Promise<number> {
   let parsed;
   try {
     parsed = parseArgs({
-      args: argv, allowPositionals: true,
+      args: argv,
+      allowPositionals: true,
       options: {
-        board: { type: 'string' }, workspace: { type: 'string' }, scenario: { type: 'string' }, port: { type: 'string' },
-        link: { type: 'string', default: 'serial' }, 'tolerance-ms': { type: 'string', default: '50' }, 'record-dir': { type: 'string' },
-        operator: { type: 'string' }, 'firmware-image': { type: 'string' },
+        board: { type: 'string' },
+        workspace: { type: 'string' },
+        scenario: { type: 'string' },
+        port: { type: 'string' },
+        link: { type: 'string', default: 'serial' },
+        'tolerance-ms': { type: 'string', default: '50' },
+        'record-dir': { type: 'string' },
+        operator: { type: 'string' },
+        'firmware-image': { type: 'string' },
       },
     });
   } catch (error) {
@@ -97,7 +116,8 @@ export async function main(argv: string[], deps: CliDeps): Promise<number> {
     }
   }
 
-  const operator = values.operator ?? (link === 'serial' ? (await deps.io.ask('Operator name for the record: ')).trim() || 'unknown' : 'rehearsal');
+  const operator =
+    values.operator ?? (link === 'serial' ? (await deps.io.ask('Operator name for the record: ')).trim() || 'unknown' : 'rehearsal');
   const started = now();
   const steps: RunStep[] = [];
   const record = (step: Omit<RunStep, 'started_at' | 'ended_at'> & { started_at?: string }): RunStep => {
@@ -124,18 +144,47 @@ export async function main(argv: string[], deps: CliDeps): Promise<number> {
         ? await HostRuntimeLink.open(deps.env.ZPLC_NATIVE_SIM_BIN ?? '')
         : await openSerial(values.port, values.board, deps.env);
     const identity: DeviceIdentity = await opened.identity();
-    record({ id: 'handshake', title: 'Identity handshake', kind: 'automatic', result: 'pass', detail: `the device reports ${identity.board}` });
+    record({
+      id: 'handshake',
+      title: 'Identity handshake',
+      kind: 'automatic',
+      result: 'pass',
+      detail: `the device reports ${identity.board}`,
+    });
 
     for (const step of [
-      { id: 'confirm-identity', title: 'Confirm the board', instruction: 'Check that this is the board you mean to drive and that it is connected to the port that was used.' },
-      { id: 'safe-to-drive', title: 'Outputs are safe to drive', instruction: 'Nothing connected to the outputs can hurt anyone or damage equipment when it is switched on and off, and the scenario will force inputs.' },
+      {
+        id: 'confirm-identity',
+        title: 'Confirm the board',
+        instruction: 'Check that this is the board you mean to drive and that it is connected to the port that was used.',
+      },
+      {
+        id: 'safe-to-drive',
+        title: 'Outputs are safe to drive',
+        instruction:
+          'Nothing connected to the outputs can hurt anyone or damage equipment when it is switched on and off, and the scenario will ' +
+          'force inputs.',
+      },
     ]) {
       if (link === 'host-runtime') {
-        record({ id: step.id, title: step.title, kind: 'physical', result: 'pass', detail: 'rehearsal on the host runtime: nobody is asked' });
+        record({
+          id: step.id,
+          title: step.title,
+          kind: 'physical',
+          result: 'pass',
+          detail: 'rehearsal on the host runtime: nobody is asked',
+        });
         continue;
       }
       const confirmation = await confirmPhysicalStep(deps.io, step, identity.board);
-      record({ id: step.id, title: step.title, kind: 'physical', result: 'pass', confirmed_at: confirmation.confirmedAt, confirmed_identity: confirmation.confirmedIdentity });
+      record({
+        id: step.id,
+        title: step.title,
+        kind: 'physical',
+        result: 'pass',
+        confirmed_at: confirmation.confirmedAt,
+        confirmed_identity: confirmation.confirmedIdentity,
+      });
     }
 
     const toleranceMs = Number(values['tolerance-ms']);
@@ -150,7 +199,10 @@ export async function main(argv: string[], deps: CliDeps): Promise<number> {
     let result: ScenarioRunResultLike | undefined;
     let release: ReleaseReport | undefined;
     try {
-      const done = await withHardwarePort(opened, { toleranceMs, signal: controller.signal }, (p) => { port = p; return scenarios.runScenario(scenario, compiled.zplcFile!, p); });
+      const done = await withHardwarePort(opened, { toleranceMs, signal: controller.signal }, (p) => {
+        port = p;
+        return scenarios.runScenario(scenario, compiled.zplcFile!, p);
+      });
       ({ value: result, release } = done);
     } catch (error) {
       failure = error instanceof AggregateError ? (error.errors[0] as Error) : (error as Error);
@@ -158,35 +210,71 @@ export async function main(argv: string[], deps: CliDeps): Promise<number> {
     }
     const voided = failure instanceof ScenarioTimingError;
     if (result) {
-      record({ id: 'scenario', title: `Scenario ${scenario.id}`, kind: 'automatic', result: result.passed ? 'pass' : 'fail',
+      record({
+        id: 'scenario',
+        title: `Scenario ${scenario.id}`,
+        kind: 'automatic',
+        result: result.passed ? 'pass' : 'fail',
         detail: result.assertions.map((a) => `${a.kind} ${a.passed ? 'held' : `failed at ${a.atMs} ms`}`).join('; '),
-        measurements: { max_late_ms: port?.maxLateMs ?? 0, ticks: port?.observations.length ?? 0 } });
+        measurements: { max_late_ms: port?.maxLateMs ?? 0, ticks: port?.observations.length ?? 0 },
+      });
     } else {
-      record({ id: 'scenario', title: `Scenario ${scenario.id}`, kind: 'automatic', result: 'error',
+      record({
+        id: 'scenario',
+        title: `Scenario ${scenario.id}`,
+        kind: 'automatic',
+        result: 'error',
         detail: `${voided ? 'void: ' : ''}${failure?.message ?? 'the scenario did not run'}`,
-        measurements: { max_late_ms: port?.maxLateMs ?? 0, ticks: port?.observations.length ?? 0 } });
+        measurements: { max_late_ms: port?.maxLateMs ?? 0, ticks: port?.observations.length ?? 0 },
+      });
       deps.stderr(`error: ${failure?.message ?? 'the scenario did not run'}`);
     }
-    if (release) record({ id: 'release', title: 'Forces released, board stopped', kind: 'automatic', result: release.ok ? 'pass' : 'fail', detail: release.errors.join('; ') });
+    if (release)
+      record({
+        id: 'release',
+        title: 'Forces released, board stopped',
+        kind: 'automatic',
+        result: release.ok ? 'pass' : 'fail',
+        detail: release.errors.join('; '),
+      });
 
     const reportedImage = identity.raw.image_sha256;
-    const imageSha256 = values['firmware-image'] ? sha256(readFileSync(resolve(values['firmware-image'])))
-      : typeof reportedImage === 'string' && /^[0-9a-f]{64}$/.test(reportedImage) ? reportedImage : undefined;
+    const imageSha256 = values['firmware-image']
+      ? sha256(readFileSync(resolve(values['firmware-image'])))
+      : typeof reportedImage === 'string' && /^[0-9a-f]{64}$/.test(reportedImage)
+        ? reportedImage
+        : undefined;
     const final: RunRecord = {
-      schema: 'zplc.hil.run-record/1', run_id: randomUUID().replaceAll('-', ''), kind: 'scenario',
-      evidence: opened.kind === 'serial' ? 'hardware' : opened.kind, evidence_level: opened.kind === 'serial' ? 'hardware' : null,
-      result: 'incomplete', started_at: started, ended_at: now(),
+      schema: 'zplc.hil.run-record/1',
+      run_id: randomUUID().replaceAll('-', ''),
+      kind: 'scenario',
+      evidence: opened.kind === 'serial' ? 'hardware' : opened.kind,
+      evidence_level: opened.kind === 'serial' ? 'hardware' : null,
+      result: 'incomplete',
+      started_at: started,
+      ended_at: now(),
       board: { id: values.board },
-      device: { reported_board: identity.board, board_profile: identity.boardProfile ?? null, zplc_version: identity.zplcVersion ?? null, zephyr_version: identity.zephyrVersion ?? null, link: opened.kind },
+      device: {
+        reported_board: identity.board,
+        board_profile: identity.boardProfile ?? null,
+        zplc_version: identity.zplcVersion ?? null,
+        zephyr_version: identity.zephyrVersion ?? null,
+        link: opened.kind,
+      },
       firmware: { ...firmwareIdentity(identity.build), ...(imageSha256 ? { image_sha256: imageSha256 } : {}) },
       programs: [{ id: scenario.id, sha256: sha256(compiled.zplcFile) }],
       scenario: { id: scenario.id, sha256: sha256(scenarioBytes), tolerance_ms: toleranceMs },
       tools: { harness: VERSION_OF_HARNESS, platform: `${platform()} ${release_()} ${arch()}`, bun: process.versions.bun ?? null },
       operator: { name: operator },
-      steps, tests: [], logs: [],
+      steps,
+      tests: [],
+      logs: [],
       measurements: {
         // A tick is sampled once the device clock has reached it, never earlier: the tolerance is the most it may be late.
-        tolerance_semantics: 'lateness-bound', tolerance_ms: toleranceMs, void: voided, max_late_ms: port?.maxLateMs ?? 0,
+        tolerance_semantics: 'lateness-bound',
+        tolerance_ms: toleranceMs,
+        void: voided,
+        max_late_ms: port?.maxLateMs ?? 0,
         ticks: (port?.observations ?? []).map((o) => ({ atMs: o.atMs, deviceMs: o.deviceMs, lateMs: o.lateMs, cycles: o.cycles })),
       },
     };
@@ -222,7 +310,13 @@ async function openSerial(port: string | undefined, board: string, env: Record<s
 
 if (import.meta.main) {
   const io = await terminalIo();
-  const code = await main(process.argv.slice(2), { io, stderr: (text) => { console.error(text); }, env: process.env });
+  const code = await main(process.argv.slice(2), {
+    io,
+    stderr: (text) => {
+      console.error(text);
+    },
+    env: process.env,
+  });
   io.close();
   process.exit(code);
 }

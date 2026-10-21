@@ -22,9 +22,7 @@
 
 #define UNTOUCHED 0xA5A5A5A5U
 
-static void say(const char *name) {
-  (void)printf("%s...\n", name);
-}
+static void say(const char *name) { (void)printf("%s...\n", name); }
 
 static uint32_t parse_u(const char *text, int base, uint32_t min, uint32_t max, int *rc) {
   uint32_t out = UNTOUCHED;
@@ -103,12 +101,29 @@ static void test_a_key_that_takes_no_number_is_not_found(void) {
 }
 
 static void test_every_numeric_key_has_one_range_and_the_documented_ones_are_present(void) {
-  static const char *const expected[] = {
-      "wifi_security", "modbus_id", "modbus_tcp_port", "modbus_rtu_baud", "modbus_rtu_parity",
-      "modbus_rtu_client_slave_id", "modbus_rtu_client_poll_ms", "modbus_tcp_client_port", "modbus_tcp_client_unit_id",
-      "modbus_tcp_client_poll_ms", "modbus_tcp_client_timeout_ms", "mqtt_profile", "mqtt_protocol", "mqtt_transport",
-      "mqtt_port", "mqtt_keepalive", "mqtt_publish_interval", "mqtt_publish_qos", "mqtt_subscribe_qos",
-      "mqtt_session_expiry", "mqtt_security", "mqtt_lwt_qos", "azure_sas_expiry_s"};
+  static const char *const expected[] = {"wifi_security",
+                                         "modbus_id",
+                                         "modbus_tcp_port",
+                                         "modbus_rtu_baud",
+                                         "modbus_rtu_parity",
+                                         "modbus_rtu_client_slave_id",
+                                         "modbus_rtu_client_poll_ms",
+                                         "modbus_tcp_client_port",
+                                         "modbus_tcp_client_unit_id",
+                                         "modbus_tcp_client_poll_ms",
+                                         "modbus_tcp_client_timeout_ms",
+                                         "mqtt_profile",
+                                         "mqtt_protocol",
+                                         "mqtt_transport",
+                                         "mqtt_port",
+                                         "mqtt_keepalive",
+                                         "mqtt_publish_interval",
+                                         "mqtt_publish_qos",
+                                         "mqtt_subscribe_qos",
+                                         "mqtt_session_expiry",
+                                         "mqtt_security",
+                                         "mqtt_lwt_qos",
+                                         "azure_sas_expiry_s"};
   size_t index;
   size_t other;
   say("test_every_numeric_key_has_one_range_and_the_documented_ones_are_present");
@@ -128,7 +143,7 @@ static void test_a_number_with_a_base_prefix_is_read_in_that_base_only_when_aske
   say("test_a_number_with_a_base_prefix_is_read_in_that_base_only_when_asked");
   assert(parse_u("0x1F", 0, 0U, UINT16_MAX, &rc) == 31U && rc == 0);
   assert(parse_u("31", 0, 0U, UINT16_MAX, &rc) == 31U && rc == 0);
-  assert(parse_u("0x", 0, 0U, UINT16_MAX, &rc) == UNTOUCHED && rc == -EINVAL); /* "0" then "x": trailing text */
+  assert(parse_u("0x", 0, 0U, UINT16_MAX, &rc) == UNTOUCHED && rc == -EINVAL);      /* "0" then "x": trailing text */
   assert(parse_u("0x10000", 0, 0U, UINT16_MAX, &rc) == UNTOUCHED && rc == -ERANGE); /* a pc of 65536 wrapped to 0 */
   assert(parse_u("70000", 0, 0U, UINT16_MAX, &rc) == UNTOUCHED && rc == -ERANGE);
   assert(parse_u("0x10", 10, 0U, UINT16_MAX, &rc) == UNTOUCHED && rc == -EINVAL);
@@ -177,12 +192,12 @@ static void test_hex_decodes_pairs_and_refuses_anything_else(void) {
   assert(zplc_hex_decode("00fFa5", out, sizeof(out)) == 3);
   assert(out[0] == 0x00U && out[1] == 0xFFU && out[2] == 0xA5U);
   assert(zplc_hex_decode("", out, sizeof(out)) == 0);
-  assert(zplc_hex_decode("abc", out, sizeof(out)) == -EINVAL);     /* odd length */
-  assert(zplc_hex_decode("zz", out, sizeof(out)) == -EINVAL);      /* decoded as 0x00 before */
+  assert(zplc_hex_decode("abc", out, sizeof(out)) == -EINVAL); /* odd length */
+  assert(zplc_hex_decode("zz", out, sizeof(out)) == -EINVAL);  /* decoded as 0x00 before */
   assert(zplc_hex_decode("0g", out, sizeof(out)) == -EINVAL);
   assert(zplc_hex_decode("0x", out, sizeof(out)) == -EINVAL);
-  assert(zplc_hex_decode("+1", out, sizeof(out)) == -EINVAL);      /* strtoul accepted a sign */
-  assert(zplc_hex_decode(" 1", out, sizeof(out)) == -EINVAL);      /* and a blank */
+  assert(zplc_hex_decode("+1", out, sizeof(out)) == -EINVAL); /* strtoul accepted a sign */
+  assert(zplc_hex_decode(" 1", out, sizeof(out)) == -EINVAL); /* and a blank */
   assert(zplc_hex_decode("0102030405", out, sizeof(out)) == -ENOSPC);
   assert(zplc_hex_decode("01020304", out, sizeof(out)) == 4 && out[3] == 4U);
 }

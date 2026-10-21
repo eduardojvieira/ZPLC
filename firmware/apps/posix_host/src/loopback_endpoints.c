@@ -117,8 +117,7 @@ static size_t exception(uint8_t function, uint8_t code, uint8_t *pdu) {
 }
 
 /* The PDU of the answer to one request; the lock is held. */
-static size_t modbus_answer(struct zplc_loopback_modbus *s, const uint8_t *request, size_t length,
-                            uint8_t *pdu) {
+static size_t modbus_answer(struct zplc_loopback_modbus *s, const uint8_t *request, size_t length, uint8_t *pdu) {
   const uint8_t function = request[0];
   const uint16_t address = length >= 3U ? get_be16(&request[1]) : 0U;
   const uint16_t count = length >= 5U ? get_be16(&request[3]) : 0U;
@@ -482,8 +481,7 @@ static bool mq_matches(const char *filter, const char *topic) {
 }
 
 /* A PUBLISH of QoS 0 to one client. */
-static void mq_send_publish(struct mq_client *c, const char *topic, const uint8_t *payload, size_t length,
-                            bool retain) {
+static void mq_send_publish(struct mq_client *c, const char *topic, const uint8_t *payload, size_t length, bool retain) {
   uint8_t wire[MQ_BUFFER + 8U];
   const size_t topic_len = strlen(topic);
   const size_t body = 2U + topic_len + length;
@@ -529,8 +527,7 @@ static void mq_route(struct zplc_loopback_mqtt *b, const char *topic, const uint
   }
 }
 
-static void mq_keep_retained(struct zplc_loopback_mqtt *b, const char *topic, const uint8_t *payload,
-                             size_t length) {
+static void mq_keep_retained(struct zplc_loopback_mqtt *b, const char *topic, const uint8_t *payload, size_t length) {
   struct mq_retained *slot = NULL;
   size_t i;
 
@@ -898,9 +895,8 @@ uint32_t zplc_loopback_mqtt_publishes(zplc_loopback_mqtt_t *b) {
   return count;
 }
 
-bool zplc_loopback_mqtt_last_publish(zplc_loopback_mqtt_t *b, char *topic, size_t topic_capacity,
-                                     uint8_t *payload, size_t payload_capacity, size_t *payload_length,
-                                     uint8_t *qos, bool *retain) {
+bool zplc_loopback_mqtt_last_publish(zplc_loopback_mqtt_t *b, char *topic, size_t topic_capacity, uint8_t *payload, size_t payload_capacity,
+                                     size_t *payload_length, uint8_t *qos, bool *retain) {
   bool have;
 
   pthread_mutex_lock(&b->lock);
@@ -928,8 +924,7 @@ bool zplc_loopback_mqtt_last_publish(zplc_loopback_mqtt_t *b, char *topic, size_
   return have;
 }
 
-void zplc_loopback_mqtt_inject(zplc_loopback_mqtt_t *b, const char *topic, const uint8_t *payload,
-                               size_t length) {
+void zplc_loopback_mqtt_inject(zplc_loopback_mqtt_t *b, const char *topic, const uint8_t *payload, size_t length) {
   pthread_mutex_lock(&b->lock);
   mq_route(b, topic, payload, length);
   pthread_mutex_unlock(&b->lock);

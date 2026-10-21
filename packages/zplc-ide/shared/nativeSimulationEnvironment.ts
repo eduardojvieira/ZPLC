@@ -38,7 +38,5 @@ export function nativeSimulationEnvironment(
  * @returns why the simulation will not start, or null when nothing switched it off
  */
 export function nativeRuntimeSwitchedOff(environment: NodeJS.ProcessEnv, isDev: boolean): string | null {
-  return isDev && environment.ZPLC_RUNTIME === 'wasm'
-    ? 'Native simulation is switched off by ZPLC_RUNTIME=wasm.'
-    : null;
+  return isDev && environment.ZPLC_RUNTIME === 'wasm' ? 'Native simulation is switched off by ZPLC_RUNTIME=wasm.' : null;
 }

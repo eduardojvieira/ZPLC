@@ -43,7 +43,9 @@ describe('Display components (UX-001) in a DOM', () => {
   });
 
   it('an empty state is a heading with a description and a reachable action', async () => {
-    const { user } = dom.render(<EmptyState title="No tasks yet" description="Add the first task" action={<Button>Add task</Button>} headingLevel={2} />);
+    const { user } = dom.render(
+      <EmptyState title="No tasks yet" description="Add the first task" action={<Button>Add task</Button>} headingLevel={2} />,
+    );
     expect(dom.screen.getByRole('heading', { level: 2, name: 'No tasks yet' })).toBeTruthy();
     await user.tab();
     expect(document.activeElement?.textContent).toBe('Add task');
@@ -57,7 +59,15 @@ describe('Display components (UX-001) in a DOM', () => {
   });
 
   it('a property list pairs each term with its value', () => {
-    dom.render(<PropertyList label="Task" items={[{ label: 'Interval', value: '10 ms' }, { label: 'Priority', value: 1 }]} />);
+    dom.render(
+      <PropertyList
+        label="Task"
+        items={[
+          { label: 'Interval', value: '10 ms' },
+          { label: 'Priority', value: 1 },
+        ]}
+      />,
+    );
     const term = dom.screen.getByText('Interval');
     expect(term.tagName).toBe('DT');
     expect(term.nextElementSibling?.textContent).toBe('10 ms');

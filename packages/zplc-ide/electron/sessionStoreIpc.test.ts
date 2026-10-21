@@ -15,7 +15,7 @@ describe('session IPC boundary (IDE-008)', () => {
     expect(mainSource).toContain('sessionStore.prune(new Set((await recentProjects.list()).map((entry) => entry.id)))');
     const store = read('sessionStore.ts');
     expect(store).not.toMatch(/process\.env|homedir|tmpdir|ipcMain|webContents/);
-    expect(store).toContain("path.join(userDataPath, SESSION_DIRECTORY)");
+    expect(store).toContain('path.join(userDataPath, SESSION_DIRECTORY)');
   });
 
   it('brings no npm runtime dependency into the main process', () => {

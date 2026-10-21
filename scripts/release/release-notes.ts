@@ -52,7 +52,10 @@ const PLATFORM_NAMES: Record<'macos' | 'windows' | 'linux', string> = { macos: '
 export function releaseTitle(results: RunResults): string {
   if (!results.version.includes('-')) return `ZPLC v${results.version}`;
   if (!results.completeness || results.completeness.trim() === '') {
-    throw new Error(`Prerelease ${results.version} has no completeness statement: its title must say how complete it is (scripts/release/release-status.json)`);
+    throw new Error(
+      `Prerelease ${results.version} has no completeness statement: its title must say how complete it ` +
+        `is (scripts/release/release-status.json)`,
+    );
   }
   return `ZPLC v${results.version}: release candidate, ${results.completeness.trim()}`;
 }
@@ -71,12 +74,18 @@ export function changelogSection(text: string, version: string): string[] {
   return items;
 }
 
-export interface ChangelogParts { structured: boolean; changes: string[]; breaking: string[]; migration: string[]; limits: string[] }
+export interface ChangelogParts {
+  structured: boolean;
+  changes: string[];
+  breaking: string[];
+  migration: string[];
+  limits: string[];
+}
 
 const PART_HEADINGS: Record<string, keyof Omit<ChangelogParts, 'structured'> | 'ignore'> = {
   'what changed for you': 'changes',
   'breaking changes': 'breaking',
-  'migration': 'migration',
+  migration: 'migration',
   'known limits': 'limits',
   'details for contributors': 'ignore',
 };
@@ -110,11 +119,15 @@ export function changelogParts(text: string, version: string): ChangelogParts {
     }
     if (target === undefined || target === 'ignore') continue;
     const item = /^(?:-|\d+\.)\s+(.*)$/.exec(line);
-    if (item) { parts[target].push(item[1]!.trim()); continue; }
+    if (item) {
+      parts[target].push(item[1]!.trim());
+      continue;
+    }
     if (/^\s+\S/.test(line) && parts[target].length > 0) parts[target][parts[target].length - 1] += ` ${line.trim()}`;
   }
   // "None." under a heading says that nothing is recorded, and is not an item
-  for (const key of ['changes', 'breaking', 'migration', 'limits'] as const) parts[key] = parts[key].filter((item) => item !== '' && !/^none\.?$/i.test(item));
+  for (const key of ['changes', 'breaking', 'migration', 'limits'] as const)
+    parts[key] = parts[key].filter((item) => item !== '' && !/^none\.?$/i.test(item));
   return parts;
 }
 
@@ -123,12 +136,15 @@ function signingText(asset: AssetResult): string {
   switch (asset.signing) {
     case 'adhoc':
       return verified
-        ? 'Signed ad hoc and sealed; signature verified in this run. Not notarized: macOS asks for approval the first time a downloaded copy opens.'
-        : `Intended to be signed ad hoc; the signature check did not pass in this run (${asset.checks.signature === 'failed' ? 'it failed' : 'it did not run'}), so no signature is claimed. Not notarized.`;
+        ? 'Signed ad hoc and sealed; signature verified in this run. Not notarized: macOS asks for approval the first time a downloaded ' +
+            'copy opens.'
+        : `Intended to be signed ad hoc; the signature check did not pass in this run ` +
+            `(${asset.checks.signature === 'failed' ? 'it failed' : 'it did not run'}), so no signature is claimed. Not notarized.`;
     case 'signed':
       return verified
         ? 'Signed; signature verified in this run.'
-        : `Claimed signed, but the signature check did not pass in this run (${asset.checks.signature === 'failed' ? 'it failed' : 'it did not run'}), so no signature is claimed.`;
+        : `Claimed signed, but the signature check did not pass in this run ` +
+            `(${asset.checks.signature === 'failed' ? 'it failed' : 'it did not run'}), so no signature is claimed.`;
     case 'unsigned':
       return asset.platform === 'windows'
         ? 'Unsigned. Windows warns before it runs, and Smart App Control blocks it.'
@@ -164,17 +180,28 @@ function cell(text: string): string {
 
 export function renderReleaseNotes(results: RunResults): string {
   for (const { channel, state } of results.channels) {
-    if (!CHANNEL_STATES.includes(state)) throw new Error(`Unknown channel state for ${channel}: ${state} (channel state must be one of ${CHANNEL_STATES.join(', ')})`);
+    if (!CHANNEL_STATES.includes(state))
+      throw new Error(`Unknown channel state for ${channel}: ${state} (channel state must be one of ${CHANNEL_STATES.join(', ')})`);
   }
   const out: string[] = [];
   out.push(`## Release v${results.version}`, '');
   out.push(`Built from commit \`${results.commit}\` by [this run](${results.runUrl}).`, '');
 
   out.push('### What changed', '');
-  out.push(...(results.changes.length > 0 ? results.changes.map((change) => `- ${change}`) : ['No user-facing change is recorded for this version.']), '');
+  out.push(
+    ...(results.changes.length > 0
+      ? results.changes.map((change) => `- ${change}`)
+      : ['No user-facing change is recorded for this version.']),
+    '',
+  );
 
   out.push('### Breaking changes', '');
-  out.push(...((results.breaking ?? []).length > 0 ? results.breaking!.map((change) => `- ${change}`) : ['No breaking change is recorded for this version.']), '');
+  out.push(
+    ...((results.breaking ?? []).length > 0
+      ? results.breaking!.map((change) => `- ${change}`)
+      : ['No breaking change is recorded for this version.']),
+    '',
+  );
   if ((results.migration ?? []).length > 0) {
     out.push('### Migration', '', ...results.migration!.map((step) => `- ${step}`), '');
   }
@@ -186,7 +213,9 @@ export function renderReleaseNotes(results: RunResults): string {
     out.push(...results.knownIssues.map((issue) => `- ${issue}`));
     if (results.knownFailures.length > 0) {
       out.push('', 'Checks that fail and are listed as expected failures:', '');
-      out.push(...results.knownFailures.map((failure) => `- ${failure.id}: ${failure.summary}${failure.tracking ? ` (${failure.tracking})` : ''}`));
+      out.push(
+        ...results.knownFailures.map((failure) => `- ${failure.id}: ${failure.summary}${failure.tracking ? ` (${failure.tracking})` : ''}`),
+      );
     }
   }
   out.push('');
@@ -201,12 +230,27 @@ export function renderReleaseNotes(results: RunResults): string {
   for (const platform of ['macos', 'windows', 'linux'] as const) {
     if (results.assets.some((asset) => asset.platform === platform)) continue;
     const job = results.jobs.find((candidate) => candidate.job === `build-${platform}`);
-    out.push(`No files were published for ${PLATFORM_NAMES[platform]}: its build job ${job ? `ended in ${job.result}` : 'did not report a result'}.`, '');
+    out.push(
+      `No files were published for ${PLATFORM_NAMES[platform]}: its build job ${
+        job ? `ended in ${job.result}` : 'did not report a result'
+      }.`,
+      '',
+    );
   }
   // the images of every board or none (REL-022): the notes say which job to read when there are none
   if (!results.assets.some((asset) => asset.platform === 'firmware')) {
-    const failed = results.jobs.filter((candidate) => /^(?:build|assemble)-firmware$|^prepare-release-evidence-firmware$/.test(candidate.job) && candidate.result !== 'success');
-    out.push(`No firmware image was published: ${failed.length > 0 ? failed.map((candidate) => `${candidate.job} ended in ${candidate.result}`).join(', ') : 'the firmware jobs did not report a result'}.`, '');
+    const failed = results.jobs.filter(
+      (candidate) =>
+        /^(?:build|assemble)-firmware$|^prepare-release-evidence-firmware$/.test(candidate.job) && candidate.result !== 'success',
+    );
+    out.push(
+      `No firmware image was published: ${
+        failed.length > 0
+          ? failed.map((candidate) => `${candidate.job} ended in ${candidate.result}`).join(', ')
+          : 'the firmware jobs did not ' + 'report a result'
+      }.`,
+      '',
+    );
   }
 
   out.push('### Tests executed in this run', '');
@@ -214,8 +258,16 @@ export function renderReleaseNotes(results: RunResults): string {
     out.push('The run recorded no test results, so these notes make no claim about tests.');
   } else {
     out.push('| Suite | Job | Executed | Failed | Skipped |', '| --- | --- | --- | --- | --- |');
-    for (const suite of results.suites) out.push(`| ${cell(suite.suite)} | ${cell(suite.job)} | ${suite.executed} | ${suite.failed} | ${suite.skipped} |`);
-    const total = results.suites.reduce((sum, suite) => ({ executed: sum.executed + suite.executed, failed: sum.failed + suite.failed, skipped: sum.skipped + suite.skipped }), { executed: 0, failed: 0, skipped: 0 });
+    for (const suite of results.suites)
+      out.push(`| ${cell(suite.suite)} | ${cell(suite.job)} | ${suite.executed} | ${suite.failed} | ${suite.skipped} |`);
+    const total = results.suites.reduce(
+      (sum, suite) => ({
+        executed: sum.executed + suite.executed,
+        failed: sum.failed + suite.failed,
+        skipped: sum.skipped + suite.skipped,
+      }),
+      { executed: 0, failed: 0, skipped: 0 },
+    );
     out.push('', `${total.executed} tests executed, ${total.failed} failed, ${total.skipped} skipped.`);
   }
   out.push('');
@@ -224,26 +276,58 @@ export function renderReleaseNotes(results: RunResults): string {
     out.push('### Windows: unsigned installers', '');
     out.push('The setup and portable executables are not signed, so their file names carry `unsigned`. To run one:', '');
     out.push('1. Windows shows "Windows protected your PC" (SmartScreen).', '2. Select **More info**, then **Run anyway**.', '');
-    out.push('Smart App Control blocks unsigned apps and offers no Run anyway option. On a PC where Smart App Control is on, these files do not run.', '');
+    out.push(
+      'Smart App Control blocks unsigned apps and offers no Run anyway option. On a PC where Smart App Control is on, these files do not ' +
+        'run.',
+      '',
+    );
   }
   if (results.channels.length > 0) {
     out.push('### Windows channels', '', '| Channel | State |', '| --- | --- |');
     out.push(...results.channels.map((channel) => `| ${channel.channel} | ${channel.state} |`));
-    out.push('', 'A channel is live, submitted, refused or not yet submittable. Until a channel is live, the unsigned files above are the only Windows download.', '');
+    out.push(
+      '',
+      'A channel is live, submitted, refused or not yet submittable. Until a channel is live, the unsigned files above are the only ' +
+        'Windows download.',
+      '',
+    );
   }
 
   out.push('### Verify what you downloaded', '');
   out.push('Every file is listed in `SHA256SUMS`. In the folder with your download:', '', '```text');
-  out.push('Linux:    sha256sum --ignore-missing -c SHA256SUMS', 'macOS:    shasum -a 256 -c SHA256SUMS', 'Windows:  Get-FileHash .\\<file> -Algorithm SHA256   (compare it with the line for your file)', '```', '');
-  out.push('The build provenance attestation says which run built the file:', '', '```text', 'gh attestation verify <file> --repo eduardojvieira/ZPLC', '```', '');
-  out.push('An attestation proves where a file was built, not that it is safe, and it does not change the warnings of your operating system.', '');
+  out.push(
+    'Linux:    sha256sum --ignore-missing -c SHA256SUMS',
+    'macOS:    shasum -a 256 -c SHA256SUMS',
+    'Windows:  Get-FileHash .\\<file> -Algorithm SHA256   (compare it with the line for your file)',
+    '```',
+    '',
+  );
+  out.push(
+    'The build provenance attestation says which run built the file:',
+    '',
+    '```text',
+    'gh attestation verify <file> --repo eduardojvieira/ZPLC',
+    '```',
+    '',
+  );
+  out.push(
+    'An attestation proves where a file was built, not that it is safe, and it does not change the warnings of your operating system.',
+    '',
+  );
 
   out.push('### Evidence boundary', '');
-  out.push('Repository and hosted workflow results do not establish HIL, board qualification, timing, safety certification, or human release sign-off.');
+  out.push(
+    'Repository and hosted workflow results do not establish HIL, board qualification, timing, safety certification, or human release ' +
+      'sign-off.',
+  );
   out.push('Prerelease tags remain release candidates, not GA declarations.', '');
 
   out.push('### Documentation', '');
-  out.push('- [Full Documentation](https://eduardojvieira.github.io/ZPLC/)', '- [Reference Documentation](https://eduardojvieira.github.io/ZPLC/reference)', '');
+  out.push(
+    '- [Full Documentation](https://eduardojvieira.github.io/ZPLC/)',
+    '- [Reference Documentation](https://eduardojvieira.github.io/ZPLC/reference)',
+    '',
+  );
   return out.join('\n');
 }
 
@@ -267,7 +351,9 @@ function main(argv: string[]): number {
     options[flag!.slice(2)] = argv[index + 1]!;
   }
   if (!options.results || !options.out) {
-    console.error('usage: release-notes.ts --results <run-results.json> --out <notes.md> [--title-out <file>] [--changelog <CHANGELOG.md>]');
+    console.error(
+      'usage: release-notes.ts --results <run-results.json> --out <notes.md> [--title-out <file>] [--changelog <CHANGELOG.md>]',
+    );
     return 2;
   }
   try {

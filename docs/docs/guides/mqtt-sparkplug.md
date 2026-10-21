@@ -3,7 +3,7 @@ slug: /guides/mqtt-sparkplug
 id: mqtt-sparkplug
 title: Publish with MQTT and Sparkplug B
 sidebar_label: MQTT and Sparkplug B
-description: "Publish variables to a broker and receive values back, with a generic MQTT profile or Sparkplug B, with the contract that exists today."
+description: 'Publish variables to a broker and receive values back, with a generic MQTT profile or Sparkplug B, with the contract that exists today.'
 tags: [how-to, mqtt, sparkplug, communication]
 ---
 
@@ -94,13 +94,13 @@ that you forced keeps its forced value, and the write takes effect at the next s
 The documentation check merges this fragment into a project and builds it. Choose
 the `profile`:
 
-| `profile` | Use it for | Messages |
-| --- | --- | --- |
-| `sparkplug-b` | A Sparkplug B host application | Birth, data and death messages with a protobuf payload |
-| `generic-broker` | Any MQTT broker | One JSON telemetry message |
-| `aws-iot-core` | AWS IoT Core | The generic messages; AWS IoT Core authenticates a device with a client certificate and key |
-| `azure-iot-hub` | Azure IoT Hub | Device-to-cloud messages on the hub's topics |
-| `azure-event-grid-mqtt` | Azure Event Grid MQTT | Telemetry on the topic you name in `azureEventGridTopic`, or on the generic topic |
+| `profile`               | Use it for                     | Messages                                                                                    |
+| ----------------------- | ------------------------------ | ------------------------------------------------------------------------------------------- |
+| `sparkplug-b`           | A Sparkplug B host application | Birth, data and death messages with a protobuf payload                                      |
+| `generic-broker`        | Any MQTT broker                | One JSON telemetry message                                                                  |
+| `aws-iot-core`          | AWS IoT Core                   | The generic messages; AWS IoT Core authenticates a device with a client certificate and key |
+| `azure-iot-hub`         | Azure IoT Hub                  | Device-to-cloud messages on the hub's topics                                                |
+| `azure-event-grid-mqtt` | Azure Event Grid MQTT          | Telemetry on the topic you name in `azureEventGridTopic`, or on the generic topic           |
 
 Keep `securityLevel` at `tls-server-verify` or stronger. Turning verification off
 is an explicit setting that a release image refuses, and an image that allows it
@@ -128,11 +128,11 @@ describes; no command prints a stored certificate, key or password.
 set. These shapes are read from the firmware and may change; read them as the
 contract of this release.
 
-| Profile | Telemetry | Commands to a variable |
-| --- | --- | --- |
-| `sparkplug-b` | `spBv1.0/<groupId>/DDATA/<device>`, after `NBIRTH` | `spBv1.0/<groupId>/DCMD/<device>/tag_<address>` |
-| `generic-broker`, `aws-iot-core` | `<topicNamespace>/telemetry/<device>` | `<topicNamespace>/cmd/<device>/tag_<address>` |
-| `azure-iot-hub` | `devices/<device>/messages/events/` | `devices/<device>/messages/devicebound/#` |
+| Profile                          | Telemetry                                          | Commands to a variable                          |
+| -------------------------------- | -------------------------------------------------- | ----------------------------------------------- |
+| `sparkplug-b`                    | `spBv1.0/<groupId>/DDATA/<device>`, after `NBIRTH` | `spBv1.0/<groupId>/DCMD/<device>/tag_<address>` |
+| `generic-broker`, `aws-iot-core` | `<topicNamespace>/telemetry/<device>`              | `<topicNamespace>/cmd/<device>/tag_<address>`   |
+| `azure-iot-hub`                  | `devices/<device>/messages/events/`                | `devices/<device>/messages/devicebound/#`       |
 
 A generic message is JSON: `{"profile":"...","ts":<uptime in ms>,"metrics":{"tag_00a0":1.5}}`.
 A metric is keyed by `tag_` and the four-digit hexadecimal address of the variable
@@ -191,15 +191,15 @@ The blocks follow the one handshake of the twelve communication blocks
 
 ## What is verified, and what is not
 
-| Part | Verified | Level |
-| --- | --- | --- |
-| Hostile topics and payloads cannot change run state, forces or the loaded program, under all five profiles | Test of the product's client with spies on every authority | Host and `native_sim` |
-| Command payloads of every supported type decode, and a malformed one is refused | Unit test of the decoder | Host and `native_sim` |
-| Block handlers: pins, handshake, status codes, bounds, hand-over to the client thread | Test with a stand-in client | Host and `native_sim` |
-| The MQTT client of the simulation runtime: session, publish, subscribe, loss of the session, reconnection, silent loss, a message published while the session is down | Run against a broker written for the test on loopback, on real sockets, under the address, undefined-behaviour and thread sanitizers | Host |
-| TLS refuses a non-cryptographic random generator at build time | Build rule | Build |
-| The MQTT client of the controller against a broker | Not run in the test suite | None |
-| A session with a real broker, a TLS handshake, a Sparkplug B host application, QoS 1 delivery | Not tested | None |
+| Part                                                                                                                                                                  | Verified                                                                                                                             | Level                 |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | --------------------- |
+| Hostile topics and payloads cannot change run state, forces or the loaded program, under all five profiles                                                            | Test of the product's client with spies on every authority                                                                           | Host and `native_sim` |
+| Command payloads of every supported type decode, and a malformed one is refused                                                                                       | Unit test of the decoder                                                                                                             | Host and `native_sim` |
+| Block handlers: pins, handshake, status codes, bounds, hand-over to the client thread                                                                                 | Test with a stand-in client                                                                                                          | Host and `native_sim` |
+| The MQTT client of the simulation runtime: session, publish, subscribe, loss of the session, reconnection, silent loss, a message published while the session is down | Run against a broker written for the test on loopback, on real sockets, under the address, undefined-behaviour and thread sanitizers | Host                  |
+| TLS refuses a non-cryptographic random generator at build time                                                                                                        | Build rule                                                                                                                           | Build                 |
+| The MQTT client of the controller against a broker                                                                                                                    | Not run in the test suite                                                                                                            | None                  |
+| A session with a real broker, a TLS handshake, a Sparkplug B host application, QoS 1 delivery                                                                         | Not tested                                                                                                                           | None                  |
 
 ## See also
 

@@ -5,16 +5,9 @@
   "order": 7,
   "module": 3,
   "level": "foundation",
-  "prerequisites": [
-    "timers-on-delay-off-delay"
-  ],
-  "languages": [
-    "ST"
-  ],
-  "tracks": [
-    "simulation",
-    "hardware"
-  ],
+  "prerequisites": ["timers-on-delay-off-delay"],
+  "languages": ["ST"],
+  "tracks": ["simulation", "hardware"],
   "unsupported": {},
   "plant": null,
   "estimatedMinutes": 15,

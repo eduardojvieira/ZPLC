@@ -1,9 +1,7 @@
 {
   "requirement": "CMP-008",
   "title": "a variable that is read is not reported, however often it is written",
-  "matrix": [
-    "declarations.var-var-input-var-output"
-  ],
+  "matrix": ["declarations.var-var-input-var-output"],
   "note": "CMP-008: a write-only variable is the separate warning WRITE_ONLY_VARIABLE, reported at the level 'all' only; scratch is read here",
   "scans": 1,
   "scanMs": 10,

@@ -5,7 +5,13 @@ import { LEARNER_BOARDS, createLearnBoardState } from './learnBoard';
 
 function memoryStorage(initial: Record<string, string> = {}) {
   const items = new Map(Object.entries(initial));
-  return { getItem: (key: string) => items.get(key) ?? null, setItem: (key: string, value: string) => { items.set(key, value); }, items };
+  return {
+    getItem: (key: string) => items.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      items.set(key, value);
+    },
+    items,
+  };
 }
 
 describe('the board of the hardware track (LRN-013)', () => {
@@ -29,7 +35,14 @@ describe('the board of the hardware track (LRN-013)', () => {
     const none = createLearnBoardState(undefined);
     none.getState().choose('rpi-pico-rp2040');
     expect(none.getState().board).toBe('rpi-pico-rp2040');
-    const broken = { getItem: () => { throw new Error('denied'); }, setItem: () => { throw new Error('denied'); } };
+    const broken = {
+      getItem: () => {
+        throw new Error('denied');
+      },
+      setItem: () => {
+        throw new Error('denied');
+      },
+    };
     const store = createLearnBoardState(broken);
     expect(store.getState().board).toBeNull();
     store.getState().choose('esp32-s3-devkitc');

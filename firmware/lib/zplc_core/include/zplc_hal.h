@@ -31,14 +31,14 @@ extern "C" {
 
 /** @brief HAL operation result codes */
 typedef enum {
-    ZPLC_HAL_OK         = 0,    /**< Operation successful */
-    ZPLC_HAL_ERROR      = -1,   /**< Generic error */
-    ZPLC_HAL_TIMEOUT    = -2,   /**< Operation timed out */
-    ZPLC_HAL_BUSY       = -3,   /**< Resource busy */
-    ZPLC_HAL_NOT_IMPL   = -4,   /**< Function unavailable, or persisted key absent */
-    ZPLC_HAL_CORRUPT    = -5,   /**< Persisted record exists but is structurally invalid */
-    /* The mutation is visible but its durable commit could not be confirmed. */
-    ZPLC_HAL_COMMIT_UNKNOWN = -6
+  ZPLC_HAL_OK = 0,        /**< Operation successful */
+  ZPLC_HAL_ERROR = -1,    /**< Generic error */
+  ZPLC_HAL_TIMEOUT = -2,  /**< Operation timed out */
+  ZPLC_HAL_BUSY = -3,     /**< Resource busy */
+  ZPLC_HAL_NOT_IMPL = -4, /**< Function unavailable, or persisted key absent */
+  ZPLC_HAL_CORRUPT = -5,  /**< Persisted record exists but is structurally invalid */
+  /* The mutation is visible but its durable commit could not be confirmed. */
+  ZPLC_HAL_COMMIT_UNKNOWN = -6
 } zplc_hal_result_t;
 
 /* ============================================================================
@@ -146,9 +146,7 @@ zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value);
  * @return ZPLC_HAL_OK on success, ZPLC_HAL_COMMIT_UNKNOWN when a visible
  *         mutation could not be confirmed durable, error code otherwise.
  */
-zplc_hal_result_t zplc_hal_persist_save(const char *key,
-                                         const void *data,
-                                         size_t len);
+zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data, size_t len);
 
 /**
  * @brief Load data from persistent storage.
@@ -161,9 +159,7 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key,
  *         ZPLC_HAL_CORRUPT if an existing record is structurally invalid,
  *         error code otherwise.
  */
-zplc_hal_result_t zplc_hal_persist_load(const char *key,
-                                         void *data,
-                                         size_t len);
+zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data, size_t len);
 
 /**
  * @brief Delete data from persistent storage.
@@ -202,7 +198,7 @@ zplc_hal_result_t zplc_hal_net_get_ip(char *buf, size_t len);
  * ============================================================================ */
 
 /** @brief Opaque mutex handle */
-typedef void* zplc_hal_mutex_t;
+typedef void *zplc_hal_mutex_t;
 
 /**
  * @brief Create a new mutex.
@@ -271,37 +267,37 @@ void zplc_hal_log(const char *fmt, ...);
 
 /** @brief Kind of an I/O channel. */
 typedef enum {
-    ZPLC_IO_KIND_DIGITAL = 0, /**< One bit of the process image; HAL gpio channel */
-    ZPLC_IO_KIND_ANALOG = 1   /**< One 16-bit little-endian word; HAL adc channel */
+  ZPLC_IO_KIND_DIGITAL = 0, /**< One bit of the process image; HAL gpio channel */
+  ZPLC_IO_KIND_ANALOG = 1   /**< One 16-bit little-endian word; HAL adc channel */
 } zplc_io_kind_t;
 
 /** @brief Direction of an I/O channel, seen from the program. */
 typedef enum {
-    ZPLC_IO_DIR_INPUT = 0,  /**< Physical input, written to the input image (IPI) */
-    ZPLC_IO_DIR_OUTPUT = 1  /**< Physical output, read from the output image (OPI) */
+  ZPLC_IO_DIR_INPUT = 0, /**< Physical input, written to the input image (IPI) */
+  ZPLC_IO_DIR_OUTPUT = 1 /**< Physical output, read from the output image (OPI) */
 } zplc_io_dir_t;
 
 /** @brief One channel of the board description. */
 typedef struct {
-    const char *id;         /**< Channel id of the description, e.g. "DO0" */
-    const char *pin;        /**< Pin or terminal name printed on the board, e.g. "GP0" */
-    uint16_t image_offset;  /**< Byte offset in the input image (inputs) or output image (outputs) */
-    uint8_t kind;           /**< zplc_io_kind_t */
-    uint8_t direction;      /**< zplc_io_dir_t */
-    uint8_t bit;            /**< Bit of the byte for a digital channel, 0 for an analog one */
-    uint8_t hal_channel;    /**< Number given to zplc_hal_gpio_* (digital) or zplc_hal_adc_read (analog) */
-    uint8_t safe;           /**< Logical value of an output in the safe state */
-    uint8_t required;       /**< 1: the channel must initialise for zplc_hal_init to succeed */
+  const char *id;        /**< Channel id of the description, e.g. "DO0" */
+  const char *pin;       /**< Pin or terminal name printed on the board, e.g. "GP0" */
+  uint16_t image_offset; /**< Byte offset in the input image (inputs) or output image (outputs) */
+  uint8_t kind;          /**< zplc_io_kind_t */
+  uint8_t direction;     /**< zplc_io_dir_t */
+  uint8_t bit;           /**< Bit of the byte for a digital channel, 0 for an analog one */
+  uint8_t hal_channel;   /**< Number given to zplc_hal_gpio_* (digital) or zplc_hal_adc_read (analog) */
+  uint8_t safe;          /**< Logical value of an output in the safe state */
+  uint8_t required;      /**< 1: the channel must initialise for zplc_hal_init to succeed */
 } zplc_io_channel_t;
 
 /** @brief The whole description of a board, as built. */
 typedef struct {
-    const char *board_id;           /**< Board id of the manifest, or the id of the default profile */
-    uint32_t description_hash;      /**< FNV-1a 32 of the canonical description; the ZPLC application compares it */
-    uint16_t input_bytes;           /**< Bytes of the input image the channels need (or the Kconfig override) */
-    uint16_t output_bytes;          /**< Bytes of the output image the channels need (or the Kconfig override) */
-    uint16_t channel_count;         /**< Entries of `channels` */
-    const zplc_io_channel_t *channels; /**< Outputs first, then inputs, each by image address */
+  const char *board_id;              /**< Board id of the manifest, or the id of the default profile */
+  uint32_t description_hash;         /**< FNV-1a 32 of the canonical description; the ZPLC application compares it */
+  uint16_t input_bytes;              /**< Bytes of the input image the channels need (or the Kconfig override) */
+  uint16_t output_bytes;             /**< Bytes of the output image the channels need (or the Kconfig override) */
+  uint16_t channel_count;            /**< Entries of `channels` */
+  const zplc_io_channel_t *channels; /**< Outputs first, then inputs, each by image address */
 } zplc_io_table_t;
 
 /**

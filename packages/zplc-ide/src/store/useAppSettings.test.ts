@@ -5,7 +5,13 @@ import { applyDisplaySettings, createAppSettingsStore } from './useAppSettings';
 
 const memory = (initial: Record<string, string> = {}) => {
   const data = { ...initial };
-  return { data, getItem: (key: string) => data[key] ?? null, setItem: (key: string, value: string) => { data[key] = value; } };
+  return {
+    data,
+    getItem: (key: string) => data[key] ?? null,
+    setItem: (key: string, value: string) => {
+      data[key] = value;
+    },
+  };
 };
 
 describe('application settings store (IDE-010)', () => {

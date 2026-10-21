@@ -1,12 +1,12 @@
 /**
  * @file connectionManager.ts
  * @brief Global Serial Connection Manager for ZPLC
- * 
+ *
  * Manages a single shared SerialAdapter instance that can be used by:
  * - Toolbar (connect/disconnect, upload)
  * - Terminal (shell commands)
  * - ControllerView (status polling)
- * 
+ *
  * Implements passthrough mode to pause polling when terminal is active.
  */
 
@@ -18,12 +18,7 @@ import type { CommunicationMapEntry, MqttRuntimeStatus, SystemInfo, StatusInfo }
 import type { ZPLCProjectConfig } from '../types';
 import type { LoadProgramOptions, RuntimeSnapshot } from './debugAdapter';
 import type { UploadTraceCallback } from './uploadTrace';
-import {
-  DeviceAdmissionError,
-  DEVICE_ADMISSION_CODE,
-  parseDeviceHandshake,
-  validateHardwareDeployAdmission,
-} from './deviceHandshake';
+import { DeviceAdmissionError, DEVICE_ADMISSION_CODE, parseDeviceHandshake, validateHardwareDeployAdmission } from './deviceHandshake';
 
 /** Connection state change callback */
 export type ConnectionCallback = (connected: boolean) => void;
@@ -61,7 +56,7 @@ export class ConnectionManager {
   private connectionPublished = false;
   private _passthroughMode = false;
   private pollInterval: ReturnType<typeof setInterval> | null = null;
-  
+
   // Callbacks
   private connectionCallbacks: Set<ConnectionCallback> = new Set();
   private statusCallbacks: Set<StatusCallback> = new Set();
@@ -69,7 +64,7 @@ export class ConnectionManager {
   private systemInfoCallbacks: Set<SystemInfoCallback> = new Set();
   private communicationMapCallbacks: Set<CommunicationMapCallback> = new Set();
   private mqttStatusCallbacks: Set<MqttStatusCallback> = new Set();
-  
+
   // Cached state
   private _systemInfo: SystemInfo | null = null;
   private _status: StatusInfo | null = null;
@@ -226,10 +221,11 @@ export class ConnectionManager {
         // A firmware that pushes events is read when it says something changed; one that does not is polled.
         this.publishLinkInfo(adapter);
         this.linkUnsubscribe?.();
-        this.linkUnsubscribe = this.framedOf(adapter)?.linkEvents.subscribe(() => {
-          this.publishLinkInfo(adapter);
-          if (this.isCurrent(generation, adapter) && !this._passthroughMode) void this.poll(generation, adapter);
-        }) ?? null;
+        this.linkUnsubscribe =
+          this.framedOf(adapter)?.linkEvents.subscribe(() => {
+            this.publishLinkInfo(adapter);
+            if (this.isCurrent(generation, adapter) && !this._passthroughMode) void this.poll(generation, adapter);
+          }) ?? null;
 
         try {
           const systemInfo = await adapter.getSystemInfo();
@@ -285,8 +281,12 @@ export class ConnectionManager {
 
     this.connectPromise = attempt;
     void attempt.then(
-      () => { if (this.connectPromise === attempt) this.connectPromise = null; },
-      () => { if (this.connectPromise === attempt) this.connectPromise = null; },
+      () => {
+        if (this.connectPromise === attempt) this.connectPromise = null;
+      },
+      () => {
+        if (this.connectPromise === attempt) this.connectPromise = null;
+      },
     );
     return attempt;
   }
@@ -325,8 +325,12 @@ export class ConnectionManager {
 
     this.disconnectPromise = attempt;
     void attempt.then(
-      () => { if (this.disconnectPromise === attempt) this.disconnectPromise = null; },
-      () => { if (this.disconnectPromise === attempt) this.disconnectPromise = null; },
+      () => {
+        if (this.disconnectPromise === attempt) this.disconnectPromise = null;
+      },
+      () => {
+        if (this.disconnectPromise === attempt) this.disconnectPromise = null;
+      },
     );
     return attempt;
   }
@@ -341,7 +345,7 @@ export class ConnectionManager {
   enablePassthrough(): void {
     this._passthroughMode = true;
     this.stopPolling();
-    
+
     if (this.adapter) {
       this.adapter.setPassthroughMode(true);
     }
@@ -352,11 +356,11 @@ export class ConnectionManager {
    */
   disablePassthrough(): void {
     this._passthroughMode = false;
-    
+
     if (this.adapter) {
       this.adapter.setPassthroughMode(false);
     }
-    
+
     if (this.connected) {
       this.startPolling();
     }
@@ -432,9 +436,12 @@ export class ConnectionManager {
 
     // Start polling after a short delay to let serial buffer settle
     // Don't poll immediately to avoid conflicts with recent commands
-    this.pollInterval = setInterval(() => {
-      void this.poll(generation, adapter);
-    }, this.framedOf(adapter)?.linkStatus().source === 'events' ? this.RECONCILE_INTERVAL : this.POLL_INTERVAL);
+    this.pollInterval = setInterval(
+      () => {
+        void this.poll(generation, adapter);
+      },
+      this.framedOf(adapter)?.linkStatus().source === 'events' ? this.RECONCILE_INTERVAL : this.POLL_INTERVAL,
+    );
   }
 
   private stopPolling(): void {
@@ -599,27 +606,27 @@ export class ConnectionManager {
   }
 
   private notifyConnectionChange(connected: boolean): void {
-    this.connectionCallbacks.forEach(cb => cb(connected));
+    this.connectionCallbacks.forEach((cb) => cb(connected));
   }
 
   private notifyStatus(status: StatusInfo): void {
-    this.statusCallbacks.forEach(cb => cb(status));
+    this.statusCallbacks.forEach((cb) => cb(status));
   }
 
   private notifyRuntimeSnapshot(snapshot: RuntimeSnapshot): void {
-    this.runtimeSnapshotCallbacks.forEach(cb => cb(snapshot));
+    this.runtimeSnapshotCallbacks.forEach((cb) => cb(snapshot));
   }
 
   private notifySystemInfo(info: SystemInfo): void {
-    this.systemInfoCallbacks.forEach(cb => cb(info));
+    this.systemInfoCallbacks.forEach((cb) => cb(info));
   }
 
   private notifyCommunicationMap(entries: CommunicationMapEntry[]): void {
-    this.communicationMapCallbacks.forEach(cb => cb(entries));
+    this.communicationMapCallbacks.forEach((cb) => cb(entries));
   }
 
   private notifyMqttStatus(status: MqttRuntimeStatus | null): void {
-    this.mqttStatusCallbacks.forEach(cb => cb(status));
+    this.mqttStatusCallbacks.forEach((cb) => cb(status));
   }
 
   // =========================================================================
@@ -649,11 +656,7 @@ export class ConnectionManager {
    * Upload bytecode to device
    * NOTE: Caller should use pausePolling()/resumePolling() to manage polling
    */
-  async deployProgram(
-    bytecode: Uint8Array,
-    projectBoard: string | undefined,
-    options?: LoadProgramOptions,
-  ): Promise<void> {
+  async deployProgram(bytecode: Uint8Array, projectBoard: string | undefined, options?: LoadProgramOptions): Promise<void> {
     const adapter = this.adapter;
     const generation = this.generation;
     if (!adapter || !this.connected) {

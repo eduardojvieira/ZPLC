@@ -12,20 +12,26 @@ import { useIDEStore } from '../store/useIDEStore';
 export function useDeclaredInputs(adapter: IDebugAdapter | null | undefined) {
   const forcesUnconfirmed = useIDEStore((state) => state.debug.forcesUnconfirmed);
   const adapterRef = useRef(adapter);
-  useEffect(() => { adapterRef.current = adapter; }, [adapter]);
+  useEffect(() => {
+    adapterRef.current = adapter;
+  }, [adapter]);
 
   /** Sets any declared input of the program in simulation, changing only its own bit or bytes. */
-  const setDeclaredInput = useCallback(async (input: DeclaredInput, value: boolean | number) => {
-    const currentAdapter = adapterRef.current;
-    if (!currentAdapter || !currentAdapter.connected) throw new Error('Connect the simulator before setting an input.');
-    if (currentAdapter.type === 'serial') throw new Error('Inputs can be set in simulation only. Use Force for hardware.');
-    if (forcesUnconfirmed) throw new Error('Force state unconfirmed. Reconnect and verify before operating.');
-    // A bit of a shared byte is set by writing the byte as it is now with that bit changed.
-    const current = input.bitOffset !== undefined ? (await currentAdapter.peek(input.address, 1))[0] : undefined;
-    const write = inputWrite(input, value, current);
-    if (adapterRef.current !== currentAdapter || !currentAdapter.connected) throw new Error('The simulator changed before the input was set.');
-    await currentAdapter.setValue(write.address, write.bytes);
-  }, [forcesUnconfirmed]);
+  const setDeclaredInput = useCallback(
+    async (input: DeclaredInput, value: boolean | number) => {
+      const currentAdapter = adapterRef.current;
+      if (!currentAdapter || !currentAdapter.connected) throw new Error('Connect the simulator before setting an input.');
+      if (currentAdapter.type === 'serial') throw new Error('Inputs can be set in simulation only. Use Force for hardware.');
+      if (forcesUnconfirmed) throw new Error('Force state unconfirmed. Reconnect and verify before operating.');
+      // A bit of a shared byte is set by writing the byte as it is now with that bit changed.
+      const current = input.bitOffset !== undefined ? (await currentAdapter.peek(input.address, 1))[0] : undefined;
+      const write = inputWrite(input, value, current);
+      if (adapterRef.current !== currentAdapter || !currentAdapter.connected)
+        throw new Error('The simulator changed before the input was set.');
+      await currentAdapter.setValue(write.address, write.bytes);
+    },
+    [forcesUnconfirmed],
+  );
 
   /** Reads inputs and outputs of the I/O map back, by path; a point that could not be read is absent from the map. */
   const readDeclaredInputs = useCallback(async (inputs: ReadonlyArray<IoPoint & { path: string }>) => {
@@ -40,7 +46,10 @@ export function useDeclaredInputs(adapter: IDebugAdapter | null | undefined) {
     for (const input of inputs) {
       const width = Math.max(1, input.size);
       if (!Array.from({ length: width }, (_, offset) => memory.has(input.address + offset)).every(Boolean)) continue;
-      values.set(input.path, decodeInput(input, (address, length) => Uint8Array.from({ length }, (_, offset) => memory.get(address + offset) ?? 0)));
+      values.set(
+        input.path,
+        decodeInput(input, (address, length) => Uint8Array.from({ length }, (_, offset) => memory.get(address + offset) ?? 0)),
+      );
     }
     return values;
   }, []);

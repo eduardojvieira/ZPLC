@@ -53,15 +53,23 @@ export const ERROR_CODE_TABLE = {
     INVALID_NUMBER_LITERAL: {
         phases: ['lexer'],
         summary: {
-            en: 'A number is written in a form the language does not define: a digit separator in the wrong place, a base that is not 2, 8 or 16, a digit that is not valid in its base, or a base prefix without digits.',
-            es: 'Un número está escrito en una forma que el lenguaje no define: un separador de dígitos mal ubicado, una base que no es 2, 8 ni 16, un dígito que no es válido en su base, o un prefijo de base sin dígitos.',
+            en:
+                'A number is written in a form the language does not define: a digit separator in the wrong place, a base that is not 2, ' +
+                '8 or 16, a digit that is not valid in its base, or a base prefix without digits.',
+            es:
+                'Un número está escrito en una forma que el lenguaje no define: un separador de dígitos mal ubicado, una base que no es ' +
+                '2, 8 ni 16, un dígito que no es válido en su base, o un prefijo de base sin dígitos.',
         },
     },
     INVALID_TYPED_LITERAL: {
         phases: ['lexer', 'parser'],
         summary: {
-            en: 'A typed literal such as `INT#5` names an unknown type, has no value, has a value that does not belong to the type (a fraction in an integer, `BOOL#2`) or a value outside the range of the type.',
-            es: 'Un literal tipado como `INT#5` nombra un tipo desconocido, no tiene valor, tiene un valor que no pertenece al tipo (una fracción en un entero, `BOOL#2`) o un valor fuera del rango del tipo.',
+            en:
+                'A typed literal such as `INT#5` names an unknown type, has no value, has a value that does not belong to the type (a ' +
+                'fraction in an integer, `BOOL#2`) or a value outside the range of the type.',
+            es:
+                'Un literal tipado como `INT#5` nombra un tipo desconocido, no tiene valor, tiene un valor que no pertenece al tipo (una ' +
+                'fracción en un entero, `BOOL#2`) o un valor fuera del rango del tipo.',
         },
     },
 
@@ -76,15 +84,23 @@ export const ERROR_CODE_TABLE = {
     UNSUPPORTED_CONSTRUCT: {
         phases: ['parser', 'codegen'],
         summary: {
-            en: 'A construct of IEC 61131-3 that this release does not implement (a namespace, a pointer, a property, a textual configuration, a call form) is rejected by name instead of being compiled wrongly.',
-            es: 'Una construcción de IEC 61131-3 que esta versión no implementa (un espacio de nombres, un puntero, una propiedad, una configuración textual, una forma de llamada) se rechaza por su nombre en lugar de compilarse mal.',
+            en:
+                'A construct of IEC 61131-3 that this release does not implement (a namespace, a pointer, a property, a textual ' +
+                'configuration, a call form) is rejected by name instead of being compiled wrongly.',
+            es:
+                'Una construcción de IEC 61131-3 que esta versión no implementa (un espacio de nombres, un puntero, una propiedad, una ' +
+                'configuración textual, una forma de llamada) se rechaza por su nombre en lugar de compilarse mal.',
         },
     },
     INVALID_ARRAY_DECLARATION: {
         phases: ['parser'],
         summary: {
-            en: 'An array declaration is not valid: more than three dimensions, a bound that is not an integer constant, or an upper bound below the lower bound.',
-            es: 'Una declaración de arreglo no es válida: más de tres dimensiones, un límite que no es una constante entera, o un límite superior menor que el inferior.',
+            en:
+                'An array declaration is not valid: more than three dimensions, a bound that is not an integer constant, or an upper ' +
+                'bound below the lower bound.',
+            es:
+                'Una declaración de arreglo no es válida: más de tres dimensiones, un límite que no es una constante entera, o un límite ' +
+                'superior menor que el inferior.',
         },
     },
     CIRCULAR_TYPE_ALIAS: {
@@ -104,8 +120,12 @@ export const ERROR_CODE_TABLE = {
     INVALID_TIME_LITERAL: {
         phases: ['parser', 'codegen'],
         summary: {
-            en: 'A TIME, DATE, TIME_OF_DAY or DATE_AND_TIME literal is malformed, is finer than TIME can hold (1 ms), or is outside the range of its type.',
-            es: 'Un literal TIME, DATE, TIME_OF_DAY o DATE_AND_TIME está mal formado, es más fino de lo que TIME puede representar (1 ms), o está fuera del rango de su tipo.',
+            en:
+                'A TIME, DATE, TIME_OF_DAY or DATE_AND_TIME literal is malformed, is finer than TIME can hold (1 ms), or is outside the ' +
+                'range of its type.',
+            es:
+                'Un literal TIME, DATE, TIME_OF_DAY o DATE_AND_TIME está mal formado, es más fino de lo que TIME puede representar (1 ' +
+                'ms), o está fuera del rango de su tipo.',
         },
     },
     INVALID_DIRECT_ADDRESS: {
@@ -139,8 +159,12 @@ export const ERROR_CODE_TABLE = {
     INVALID_OUTPUT_BINDING: {
         phases: ['parser', 'codegen'],
         summary: {
-            en: 'The output binding `=>` is not used the way the language defines: it must name the variable that receives the output, and only a function block call has output bindings.',
-            es: 'El enlace de salida `=>` no se usa como el lenguaje lo define: debe nombrar la variable que recibe la salida, y solo la llamada a un bloque de función tiene enlaces de salida.',
+            en:
+                'The output binding `=>` is not used the way the language defines: it must name the variable that receives the output, ' +
+                'and only a function block call has output bindings.',
+            es:
+                'El enlace de salida `=>` no se usa como el lenguaje lo define: debe nombrar la variable que recibe la salida, y solo la ' +
+                'llamada a un bloque de función tiene enlaces de salida.',
         },
     },
 
@@ -197,8 +221,12 @@ export const ERROR_CODE_TABLE = {
     INVALID_ARGUMENTS: {
         phases: ['codegen'],
         summary: {
-            en: 'The arguments of a call do not fit its declaration: a parameter given twice, a positional argument after a named one, or the wrong number of arguments.',
-            es: 'Los argumentos de una llamada no corresponden con su declaración: un parámetro dado dos veces, un argumento posicional después de uno con nombre, o una cantidad incorrecta de argumentos.',
+            en:
+                'The arguments of a call do not fit its declaration: a parameter given twice, a positional argument after a named one, ' +
+                'or the wrong number of arguments.',
+            es:
+                'Los argumentos de una llamada no corresponden con su declaración: un parámetro dado dos veces, un argumento posicional ' +
+                'después de uno con nombre, o una cantidad incorrecta de argumentos.',
         },
     },
     RECURSIVE_CALL: {
@@ -211,22 +239,32 @@ export const ERROR_CODE_TABLE = {
     DUPLICATE_DECLARATION: {
         phases: ['codegen'],
         summary: {
-            en: 'A name is declared twice in the same scope, or a function, function block, type or global is declared in two files of the project.',
-            es: 'Un nombre se declara dos veces en el mismo alcance, o una función, un bloque de función, un tipo o una global se declara en dos archivos del proyecto.',
+            en:
+                'A name is declared twice in the same scope, or a function, function block, type or global is declared in two files of ' +
+                'the project.',
+            es:
+                'Un nombre se declara dos veces en el mismo alcance, o una función, un bloque de función, un tipo o una global se ' +
+                'declara en dos archivos del proyecto.',
         },
     },
     TYPE_MISMATCH: {
         phases: ['codegen'],
         summary: {
-            en: 'A value of one type is used where another is required: an assignment, an operand, a condition, an argument or an initial value.',
-            es: 'Un valor de un tipo se usa donde se requiere otro: una asignación, un operando, una condición, un argumento o un valor inicial.',
+            en:
+                'A value of one type is used where another is required: an assignment, an operand, a condition, an argument or an ' +
+                'initial value.',
+            es:
+                'Un valor de un tipo se usa donde se requiere otro: una asignación, un operando, una condición, un argumento o un valor ' +
+                'inicial.',
         },
     },
     NARROWING_NOT_ALLOWED: {
         phases: ['codegen'],
         summary: {
             en: 'A value is stored in a narrower type and the project turns implicit narrowing into an error (`compiler.strictTypes`).',
-            es: 'Un valor se guarda en un tipo más estrecho y el proyecto convierte el estrechamiento implícito en un error (`compiler.strictTypes`).',
+            es:
+                'Un valor se guarda en un tipo más estrecho y el proyecto convierte el estrechamiento implícito en un error ' +
+                '(`compiler.strictTypes`).',
         },
     },
     CONSTANT_OUT_OF_RANGE: {
@@ -247,21 +285,31 @@ export const ERROR_CODE_TABLE = {
         phases: ['codegen'],
         summary: {
             en: 'A constant is assigned to, bound to an output, passed as an in-out parameter or referenced for writing.',
-            es: 'Una constante recibe una asignación, se enlaza a una salida, se pasa como parámetro de entrada y salida o se referencia para escribirla.',
+            es:
+                'Una constante recibe una asignación, se enlaza a una salida, se pasa como parámetro de entrada y salida o se referencia ' +
+                'para escribirla.',
         },
     },
     INVALID_INITIALISER: {
         phases: ['codegen'],
         summary: {
-            en: 'An initial value does not fit the declaration: the wrong form for the type, too many values, or an unknown member in a structure initialiser.',
-            es: 'Un valor inicial no corresponde con la declaración: la forma incorrecta para el tipo, demasiados valores, o un miembro desconocido en el inicializador de una estructura.',
+            en:
+                'An initial value does not fit the declaration: the wrong form for the type, too many values, or an unknown member in a ' +
+                'structure initialiser.',
+            es:
+                'Un valor inicial no corresponde con la declaración: la forma incorrecta para el tipo, demasiados valores, o un miembro ' +
+                'desconocido en el inicializador de una estructura.',
         },
     },
     INVALID_ARRAY_ACCESS: {
         phases: ['codegen', 'parser'],
         summary: {
-            en: 'An index is applied to something that is not an array, with the wrong number of indices (more than three is never accepted), or with an index that is not a 32-bit integer.',
-            es: 'Se aplica un índice a algo que no es un arreglo, con una cantidad incorrecta de índices, o con un índice que no es un entero de 32 bits.',
+            en:
+                'An index is applied to something that is not an array, with the wrong number of indices (more than three is never ' +
+                'accepted), or with an index that is not a 32-bit integer.',
+            es:
+                'Se aplica un índice a algo que no es un arreglo, con una cantidad incorrecta de índices, o con un índice que no es un ' +
+                'entero de 32 bits.',
         },
     },
     INDEX_OUT_OF_BOUNDS: {
@@ -274,22 +322,34 @@ export const ERROR_CODE_TABLE = {
     INVALID_MEMBER_ACCESS: {
         phases: ['codegen'],
         summary: {
-            en: 'A member is accessed on something that has no members, or a whole structure or function block is used where a value is required.',
-            es: 'Se accede a un miembro de algo que no tiene miembros, o se usa una estructura o un bloque de función completos donde se requiere un valor.',
+            en:
+                'A member is accessed on something that has no members, or a whole structure or function block is used where a value is ' +
+                'required.',
+            es:
+                'Se accede a un miembro de algo que no tiene miembros, o se usa una estructura o un bloque de función completos donde se ' +
+                'requiere un valor.',
         },
     },
     INVALID_REFERENCE: {
         phases: ['codegen'],
         summary: {
-            en: 'A reference is created or followed in a way that is not allowed: dereferencing something that is not a `REF_TO` variable, assigning to one a value that is not a reference, or referencing a constant.',
-            es: 'Una referencia se crea o se sigue de una manera no permitida: desreferenciar algo que no es una variable `REF_TO`, asignarle un valor que no es una referencia, o referenciar una constante.',
+            en:
+                'A reference is created or followed in a way that is not allowed: dereferencing something that is not a `REF_TO` ' +
+                'variable, assigning to one a value that is not a reference, or referencing a constant.',
+            es:
+                'Una referencia se crea o se sigue de una manera no permitida: desreferenciar algo que no es una variable `REF_TO`, ' +
+                'asignarle un valor que no es una referencia, o referenciar una constante.',
         },
     },
     INVALID_CASE_LABEL: {
         phases: ['codegen'],
         summary: {
-            en: 'A `CASE` label is not an integer constant, a range is empty, the label does not fit the selector, or the selector is not an integer or an enumeration.',
-            es: 'Una etiqueta de `CASE` no es una constante entera, un rango está vacío, la etiqueta no cabe en el selector, o el selector no es un entero ni una enumeración.',
+            en:
+                'A `CASE` label is not an integer constant, a range is empty, the label does not fit the selector, or the selector is ' +
+                'not an integer or an enumeration.',
+            es:
+                'Una etiqueta de `CASE` no es una constante entera, un rango está vacío, la etiqueta no cabe en el selector, o el ' +
+                'selector no es un entero ni una enumeración.',
         },
     },
     OVERLAPPING_CASE_LABELS: {
@@ -316,8 +376,12 @@ export const ERROR_CODE_TABLE = {
     UNSUPPORTED_ARGUMENT_TYPE: {
         phases: ['codegen'],
         summary: {
-            en: 'A standard function is given a type it does not accept in this release (a 64-bit or LREAL argument where only 32 bits are defined, or a WSTRING).',
-            es: 'A una función estándar se le da un tipo que no acepta en esta versión (un argumento de 64 bits o LREAL donde solo se definen 32 bits, o un WSTRING).',
+            en:
+                'A standard function is given a type it does not accept in this release (a 64-bit or LREAL argument where only 32 bits ' +
+                'are defined, or a WSTRING).',
+            es:
+                'A una función estándar se le da un tipo que no acepta en esta versión (un argumento de 64 bits o LREAL donde solo se ' +
+                'definen 32 bits, o un WSTRING).',
         },
     },
 
@@ -339,15 +403,23 @@ export const ERROR_CODE_TABLE = {
     INVALID_OVERRIDE: {
         phases: ['codegen'],
         summary: {
-            en: 'A method is declared `OVERRIDE` with no base method, overrides a `FINAL` method, changes the return type, or hides an inherited method without `OVERRIDE`.',
-            es: 'Un método se declara `OVERRIDE` sin método base, sobrescribe un método `FINAL`, cambia el tipo de retorno, u oculta un método heredado sin `OVERRIDE`.',
+            en:
+                'A method is declared `OVERRIDE` with no base method, overrides a `FINAL` method, changes the return type, or hides an ' +
+                'inherited method without `OVERRIDE`.',
+            es:
+                'Un método se declara `OVERRIDE` sin método base, sobrescribe un método `FINAL`, cambia el tipo de retorno, u oculta un ' +
+                'método heredado sin `OVERRIDE`.',
         },
     },
     INTERFACE_NOT_IMPLEMENTED: {
         phases: ['codegen'],
         summary: {
-            en: 'A function block names an interface it does not fully implement, or a value is assigned to an interface variable that does not implement it.',
-            es: 'Un bloque de función nombra una interfaz que no implementa por completo, o se asigna a una variable de interfaz un valor que no la implementa.',
+            en:
+                'A function block names an interface it does not fully implement, or a value is assigned to an interface variable that ' +
+                'does not implement it.',
+            es:
+                'Un bloque de función nombra una interfaz que no implementa por completo, o se asigna a una variable de interfaz un ' +
+                'valor que no la implementa.',
         },
     },
     ACCESS_VIOLATION: {
@@ -376,29 +448,45 @@ export const ERROR_CODE_TABLE = {
     WORK_MEMORY_EXCEEDED: {
         phases: ['codegen'],
         summary: {
-            en: 'The variables of the project need more WORK memory than the target profile has. The message states the bytes required, the bytes available and the largest consumers.',
-            es: 'Las variables del proyecto necesitan más memoria WORK de la que tiene el perfil del destino. El mensaje indica los bytes requeridos, los bytes disponibles y los mayores consumidores.',
+            en:
+                'The variables of the project need more WORK memory than the target profile has. The message states the bytes required, ' +
+                'the bytes available and the largest consumers.',
+            es:
+                'Las variables del proyecto necesitan más memoria WORK de la que tiene el perfil del destino. El mensaje indica los ' +
+                'bytes requeridos, los bytes disponibles y los mayores consumidores.',
         },
     },
     RETAIN_MEMORY_EXCEEDED: {
         phases: ['codegen'],
         summary: {
-            en: 'The `RETAIN` variables of the project need more retentive memory than the target profile has. The message states the bytes required, the bytes available and the largest consumers.',
-            es: 'Las variables `RETAIN` del proyecto necesitan más memoria retentiva de la que tiene el perfil del destino. El mensaje indica los bytes requeridos, los bytes disponibles y los mayores consumidores.',
+            en:
+                'The `RETAIN` variables of the project need more retentive memory than the target profile has. The message states the ' +
+                'bytes required, the bytes available and the largest consumers.',
+            es:
+                'Las variables `RETAIN` del proyecto necesitan más memoria retentiva de la que tiene el perfil del destino. El mensaje ' +
+                'indica los bytes requeridos, los bytes disponibles y los mayores consumidores.',
         },
     },
     CODE_MEMORY_EXCEEDED: {
         phases: ['codegen'],
         summary: {
-            en: 'The generated program is larger than the code memory of the target profile. The message states the bytes required, the bytes available and the largest consumers.',
-            es: 'El programa generado es mayor que la memoria de código del perfil del destino. El mensaje indica los bytes requeridos, los bytes disponibles y los mayores consumidores.',
+            en:
+                'The generated program is larger than the code memory of the target profile. The message states the bytes required, the ' +
+                'bytes available and the largest consumers.',
+            es:
+                'El programa generado es mayor que la memoria de código del perfil del destino. El mensaje indica los bytes requeridos, ' +
+                'los bytes disponibles y los mayores consumidores.',
         },
     },
     INVALID_MEMORY_PROFILE: {
         phases: ['codegen'],
         summary: {
-            en: 'The target memory profile given to the compiler is not valid: a capacity that is not a positive integer or that exceeds what the virtual machine addresses.',
-            es: 'El perfil de memoria del destino dado al compilador no es válido: una capacidad que no es un entero positivo o que excede lo que direcciona la máquina virtual.',
+            en:
+                'The target memory profile given to the compiler is not valid: a capacity that is not a positive integer or that exceeds ' +
+                'what the virtual machine addresses.',
+            es:
+                'El perfil de memoria del destino dado al compilador no es válido: una capacidad que no es un entero positivo o que ' +
+                'excede lo que direcciona la máquina virtual.',
         },
     },
     ADDRESS_OUT_OF_REGION: {
@@ -412,28 +500,38 @@ export const ERROR_CODE_TABLE = {
         phases: ['codegen'],
         summary: {
             en: 'A located `%M` variable overlaps the storage of another variable, the initialization flag or the string pool.',
-            es: 'Una variable ubicada `%M` se superpone con el almacenamiento de otra variable, con la bandera de inicialización o con el depósito de cadenas.',
+            es:
+                'Una variable ubicada `%M` se superpone con el almacenamiento de otra variable, con la bandera de inicialización o con ' +
+                'el depósito de cadenas.',
         },
     },
     INVALID_LOCATED_VARIABLE: {
         phases: ['codegen'],
         summary: {
-            en: 'A located variable has a size or a type that its address does not allow, such as a bit address on a variable that is not BOOL.',
-            es: 'Una variable ubicada tiene un tamaño o un tipo que su dirección no permite, como una dirección de bit en una variable que no es BOOL.',
+            en:
+                'A located variable has a size or a type that its address does not allow, such as a bit address on a variable that is ' +
+                'not BOOL.',
+            es:
+                'Una variable ubicada tiene un tamaño o un tipo que su dirección no permite, como una dirección de bit en una variable ' +
+                'que no es BOOL.',
         },
     },
     INVALID_TAG: {
         phases: ['codegen'],
         summary: {
             en: 'A communication tag on a variable names a type or a region the tag cannot use, or a Modbus address outside 0 to 65535.',
-            es: 'Una etiqueta de comunicación en una variable nombra un tipo o una región que la etiqueta no puede usar, o una dirección Modbus fuera de 0 a 65535.',
+            es:
+                'Una etiqueta de comunicación en una variable nombra un tipo o una región que la etiqueta no puede usar, o una dirección ' +
+                'Modbus fuera de 0 a 65535.',
         },
     },
     STACK_DEPTH_EXCEEDED: {
         phases: ['codegen'],
         summary: {
             en: 'A task needs an evaluation stack or a call nesting deeper than the target holds, or its depth cannot be determined.',
-            es: 'Una tarea necesita una pila de evaluación o un anidamiento de llamadas más profundos de lo que el destino admite, o su profundidad no se puede determinar.',
+            es:
+                'Una tarea necesita una pila de evaluación o un anidamiento de llamadas más profundos de lo que el destino admite, o su ' +
+                'profundidad no se puede determinar.',
         },
     },
 
@@ -455,8 +553,12 @@ export const ERROR_CODE_TABLE = {
     INVALID_TASK_CONFIGURATION: {
         phases: ['codegen'],
         summary: {
-            en: 'The tasks of `zplc.json` are not valid: none, too many, a trigger that is not supported, an interval or a priority out of range, or a task that does not reference exactly one program.',
-            es: 'Las tareas de `zplc.json` no son válidas: ninguna, demasiadas, un disparador no soportado, un intervalo o una prioridad fuera de rango, o una tarea que no referencia exactamente un programa.',
+            en:
+                'The tasks of `zplc.json` are not valid: none, too many, a trigger that is not supported, an interval or a priority out ' +
+                'of range, or a task that does not reference exactly one program.',
+            es:
+                'Las tareas de `zplc.json` no son válidas: ninguna, demasiadas, un disparador no soportado, un intervalo o una prioridad ' +
+                'fuera de rango, o una tarea que no referencia exactamente un programa.',
         },
     },
     UNKNOWN_TASK_PROGRAM: {
@@ -476,30 +578,46 @@ export const ERROR_CODE_TABLE = {
     INVALID_SAFE_VALUE: {
         phases: ['codegen'],
         summary: {
-            en: 'The safe values that the project declares for its outputs cannot be loaded: more of them than the loader takes, an offset outside the output image, a bit past 7, a value that is not 0 or 1, or the same output twice.',
-            es: 'Los valores seguros que el proyecto declara para sus salidas no se pueden cargar: más de los que admite el cargador, un desplazamiento fuera de la imagen de salidas, un bit mayor que 7, un valor que no es 0 ni 1, o la misma salida dos veces.',
+            en:
+                'The safe values that the project declares for its outputs cannot be loaded: more of them than the loader takes, an ' +
+                'offset outside the output image, a bit past 7, a value that is not 0 or 1, or the same output twice.',
+            es:
+                'Los valores seguros que el proyecto declara para sus salidas no se pueden cargar: más de los que admite el cargador, un ' +
+                'desplazamiento fuera de la imagen de salidas, un bit mayor que 7, un valor que no es 0 ni 1, o la misma salida dos veces.',
         },
     },
     ASSEMBLER_ERROR: {
         phases: ['assembler'],
         summary: {
-            en: 'The assembler refused the generated code, for example an operand or a relocated address that does not fit its field. It is a defect of the compiler when the source is valid.',
-            es: 'El ensamblador rechazó el código generado, por ejemplo un operando o una dirección reubicada que no cabe en su campo. Es un defecto del compilador cuando la fuente es válida.',
+            en:
+                'The assembler refused the generated code, for example an operand or a relocated address that does not fit its field. It ' +
+                'is a defect of the compiler when the source is valid.',
+            es:
+                'El ensamblador rechazó el código generado, por ejemplo un operando o una dirección reubicada que no cabe en su campo. ' +
+                'Es un defecto del compilador cuando la fuente es válida.',
         },
     },
     INTERNAL_COMPILER_ERROR: {
         phases: ['codegen', 'lexer', 'parser', 'assembler'],
         summary: {
-            en: 'The compiler stopped on a condition it did not expect; the message names it. It is never a mistake of the program: report it with the source.',
-            es: 'El compilador se detuvo ante una condición que no esperaba; el mensaje la nombra. Nunca es un error del programa: repórtelo con la fuente.',
+            en:
+                'The compiler stopped on a condition it did not expect; the message names it. It is never a mistake of the program: ' +
+                'report it with the source.',
+            es:
+                'El compilador se detuvo ante una condición que no esperaba; el mensaje la nombra. Nunca es un error del programa: ' +
+                'repórtelo con la fuente.',
         },
     },
 
     NO_BOARD_CHANNEL: {
         phases: ['codegen'],
         summary: {
-            en: 'A located variable sits at an address where the board of the project has no channel; the message names the variable, the address and the board.',
-            es: 'Una variable ubicada está en una dirección donde la placa del proyecto no tiene canal; el mensaje nombra la variable, la dirección y la placa.',
+            en:
+                'A located variable sits at an address where the board of the project has no channel; the message names the variable, ' +
+                'the address and the board.',
+            es:
+                'Una variable ubicada está en una dirección donde la placa del proyecto no tiene canal; el mensaje nombra la variable, ' +
+                'la dirección y la placa.',
         },
     },
 
@@ -507,8 +625,12 @@ export const ERROR_CODE_TABLE = {
     TRANSLATION_FAILED: {
         phases: ['codegen', 'parser'],
         summary: {
-            en: 'A ladder, function block diagram, sequential function chart or instruction list source cannot be translated to Structured Text; the message names the element.',
-            es: 'Una fuente de escalera, diagrama de bloques de función, diagrama funcional secuencial o lista de instrucciones no se puede traducir a Texto Estructurado; el mensaje nombra el elemento.',
+            en:
+                'A ladder, function block diagram, sequential function chart or instruction list source cannot be translated to ' +
+                'Structured Text; the message names the element.',
+            es:
+                'Una fuente de escalera, diagrama de bloques de función, diagrama funcional secuencial o lista de instrucciones no se ' +
+                'puede traducir a Texto Estructurado; el mensaje nombra el elemento.',
         },
     },
 } as const satisfies Record<string, ErrorCodeInfo>;

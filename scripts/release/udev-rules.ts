@@ -12,9 +12,16 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
-export interface UsbId { vid: string; pid: string; source: string }
+export interface UsbId {
+  vid: string;
+  pid: string;
+  source: string;
+}
 export type UsbIds = Record<string, { ids: UsbId[]; note?: string }>;
-export interface BoardEntry { ide_id: string; display_name: string }
+export interface BoardEntry {
+  ide_id: string;
+  display_name: string;
+}
 
 /** Before 70-uaccess.rules and 73-seat-late.rules, where systemd acts on the tag. */
 export const RULE_FILE_NAME = '70-zplc-boards.rules';
@@ -26,7 +33,12 @@ const HEX4 = /^[0-9a-fA-F]{4}$/;
 
 export function readUsbIds(path = join(ROOT, 'tools/hil/usb-ids.json')): UsbIds {
   const parsed = JSON.parse(readFileSync(path, 'utf8')) as { boards: Record<string, { ids?: UsbId[]; note?: string }> };
-  return Object.fromEntries(Object.entries(parsed.boards).map(([board, entry]) => [board, { ids: entry.ids ?? [], ...(entry.note === undefined ? {} : { note: entry.note }) }]));
+  return Object.fromEntries(
+    Object.entries(parsed.boards).map(([board, entry]) => [
+      board,
+      { ids: entry.ids ?? [], ...(entry.note === undefined ? {} : { note: entry.note }) },
+    ]),
+  );
 }
 
 export function renderUdevRules(usbIds: UsbIds, boards: BoardEntry[]): string {
@@ -55,12 +67,19 @@ export function renderUdevRules(usbIds: UsbIds, boards: BoardEntry[]): string {
   ];
   for (const { vid, pid, boards: users } of [...pairs.values()].sort((a, b) => `${a.vid}:${a.pid}`.localeCompare(`${b.vid}:${b.pid}`))) {
     lines.push(`# ${vid}:${pid}: ${users.join(', ')}`);
-    lines.push(`SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{idVendor}=="${vid}", ATTRS{idProduct}=="${pid}", TAG+="uaccess", ENV{ID_MM_DEVICE_IGNORE}="1"`);
+    lines.push(
+      `SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ` +
+        `ATTRS{idVendor}=="${vid}", ATTRS{idProduct}=="${pid}", TAG+="uaccess", ENV{ID_MM_DEVICE_IGNORE}="1"`,
+    );
     lines.push('');
   }
-  const uncovered = boards.filter((board) => !(usbIds[board.ide_id]?.ids.length));
+  const uncovered = boards.filter((board) => !usbIds[board.ide_id]?.ids.length);
   if (uncovered.length > 0) {
-    lines.push('# No rule below for these boards: their serial port is on a USB bridge whose identifiers depend on the board', '# revision, or the board has no recorded identifier. Add the user to the serial group instead (dialout on Debian,', '# Ubuntu and Fedora, uucp on Arch):');
+    lines.push(
+      '# No rule below for these boards: their serial port is on a USB bridge whose identifiers depend on the board',
+      '# revision, or the board has no recorded identifier. Add the user to the serial group instead (dialout on Debian,',
+      '# Ubuntu and Fedora, uucp on Arch):',
+    );
     for (const board of uncovered) lines.push(`# ${board.display_name} (${board.ide_id}): no USB identifier is recorded`);
     lines.push('');
   }

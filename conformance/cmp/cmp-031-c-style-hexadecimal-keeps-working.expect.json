@@ -5,7 +5,5 @@
   "note": "CMP-031: the non-IEC 0x form MUST keep working; the warning it must also produce has no channel a case can read (CMP-008)",
   "scans": 1,
   "scanMs": 10,
-  "expect": [
-    {"at": "%QW0", "type": "INT", "value": 255}
-  ]
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 255 }]
 }

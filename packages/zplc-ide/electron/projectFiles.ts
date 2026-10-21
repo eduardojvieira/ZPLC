@@ -2,7 +2,8 @@
  * Project files owned by the main process (IDE-001, first task).
  *
  * The folder is chosen through the native dialog, or reopened from the list of folders that the user chose that way
- * before (IDE-008, `recentProjects.ts`); its real path is kept here, per window, and never reaches the renderer. The renderer asks for typed operations on paths relative to that root. Every
+ * before (IDE-008, `recentProjects.ts`); its real path is kept here, per window, and never reaches the renderer. The renderer asks for
+ * typed operations on paths relative to that root. Every
  * operation resolves its path through `locate`, the one containment check: no absolute path, no ".."
  * segment, and the real path of the target (or of its nearest existing ancestor) must lie inside the
  * real path of the root, so a link that leaves the folder is refused. Results carry a typed code and
@@ -48,8 +49,15 @@ class Refusal extends Error {
 }
 
 const ERRNO_CODES: Record<string, ProjectFilesErrorCode> = {
-  ENOENT: 'not-found', ENOTDIR: 'not-a-directory', EISDIR: 'not-a-file', EEXIST: 'exists', ENOTEMPTY: 'not-empty',
-  EACCES: 'denied', EPERM: 'denied', EROFS: 'denied', ENAMETOOLONG: 'invalid-path',
+  ENOENT: 'not-found',
+  ENOTDIR: 'not-a-directory',
+  EISDIR: 'not-a-file',
+  EEXIST: 'exists',
+  ENOTEMPTY: 'not-empty',
+  EACCES: 'denied',
+  EPERM: 'denied',
+  EROFS: 'denied',
+  ENAMETOOLONG: 'invalid-path',
 };
 
 function codeOf(error: unknown): ProjectFilesErrorCode {
@@ -133,7 +141,10 @@ const operations: Operations = {
       let kind: ProjectEntryKind | undefined = entry.isDirectory() ? 'directory' : entry.isFile() ? 'file' : undefined;
       if (entry.isSymbolicLink()) {
         // A link is listed as what it points to, only when that lies inside the root.
-        const info = await locate(root, relative ? `${relative}/${entry.name}` : entry.name).then((target) => stat(target.real), () => undefined);
+        const info = await locate(root, relative ? `${relative}/${entry.name}` : entry.name).then(
+          (target) => stat(target.real),
+          () => undefined,
+        );
         kind = info?.isDirectory() ? 'directory' : info?.isFile() ? 'file' : undefined;
       }
       if (kind) entries.push({ name: entry.name, kind });
@@ -197,7 +208,13 @@ const operations: Operations = {
     const source = await locateEntry(root, from);
     const target = await locateEntry(root, to);
     await lstat(source);
-    if (await lstat(target).then(() => true, () => false)) throw new Refusal('exists');
+    if (
+      await lstat(target).then(
+        () => true,
+        () => false,
+      )
+    )
+      throw new Refusal('exists');
     // ponytail: a file created at the target between the check above and this call is replaced. Upgrade: link-then-unlink in WP-34.
     await rename(source, target);
     return null;
@@ -206,7 +223,10 @@ const operations: Operations = {
 
 const OP_BY_CHANNEL = new Map<string, ProjectFilesOp>(PROJECT_FILES_OPS.map((op) => [PROJECT_FILES_CHANNEL[op], op]));
 
-interface Folder { id: string; real: string }
+interface Folder {
+  id: string;
+  real: string;
+}
 
 /**
  * The real path of a remembered folder if the user's choice still stands: it exists, is a directory, and its real path
@@ -256,7 +276,7 @@ export function createProjectFiles(
 
   async function choose(ownerId: number): Promise<ProjectFolder | null> {
     // A project that was just imported from an archive is the answer once, with no dialog (IDE-022).
-    const chosen = archive?.takeImportedFolder(ownerId) ?? await chooseDirectory(ownerId);
+    const chosen = archive?.takeImportedFolder(ownerId) ?? (await chooseDirectory(ownerId));
     if (chosen === null) return null;
     const real = await realpath(chosen);
     if (!(await stat(real)).isDirectory()) throw new Refusal('not-a-directory');
@@ -265,12 +285,17 @@ export function createProjectFiles(
 
   async function listRecent(): Promise<RecentProject[]> {
     const entries = (await recent()?.list()) ?? [];
-    return Promise.all(entries.map(async (entry) => ({
-      recentId: entry.id,
-      displayName: path.basename(entry.path) || 'Project',
-      lastOpenedAt: entry.lastOpenedAt,
-      available: await reopenable(entry).then(() => true, () => false),
-    })));
+    return Promise.all(
+      entries.map(async (entry) => ({
+        recentId: entry.id,
+        displayName: path.basename(entry.path) || 'Project',
+        lastOpenedAt: entry.lastOpenedAt,
+        available: await reopenable(entry).then(
+          () => true,
+          () => false,
+        ),
+      })),
+    );
   }
 
   return {
@@ -342,7 +367,10 @@ export function createProjectFiles(
       return folders.get(ownerId)?.real ?? null;
     },
 
-    /** Makes a folder the main process itself chose (the app-owned Learn workspace, never a renderer path) the window's project, as the dialog does. */
+    /**
+     * Makes a folder the main process itself chose (the app-owned Learn workspace, never a renderer path) the window's project, as the
+     * dialog does.
+     */
     async adoptFolder(ownerId: number, directory: string): Promise<ProjectFolder> {
       const real = await realpath(directory);
       if (!(await stat(real)).isDirectory()) throw new Refusal('not-a-directory');

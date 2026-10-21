@@ -22,7 +22,9 @@ const kinds = [
 
 function committed(suffix: string): string[] {
   return ['conformance', 'packages/zplc-ide/projects', 'examples']
-    .flatMap((folder) => [...new Bun.Glob(`**/*${suffix}`).scanSync({ cwd: join(repositoryRoot, folder) })].map((path) => join(folder, path)))
+    .flatMap((folder) =>
+      [...new Bun.Glob(`**/*${suffix}`).scanSync({ cwd: join(repositoryRoot, folder) })].map((path) => join(folder, path)),
+    )
     .sort();
 }
 
@@ -73,7 +75,11 @@ describe('LNG-014 the committed visual files', () => {
 
 describe('LNG-014 the one form of a visual file', () => {
   it('is two-space JSON that ends in one newline, whichever editor wrote it', () => {
-    for (const text of [serializeLDModel(parseLDModel(createEmptyFileContent('LD'))), serializeFBDModel(parseFBDModel(createEmptyFileContent('FBD'))), serializeSFCModel(parseSFCModel(createEmptyFileContent('SFC')))]) {
+    for (const text of [
+      serializeLDModel(parseLDModel(createEmptyFileContent('LD'))),
+      serializeFBDModel(parseFBDModel(createEmptyFileContent('FBD'))),
+      serializeSFCModel(parseSFCModel(createEmptyFileContent('SFC'))),
+    ]) {
       expect(text.endsWith('}\n')).toBe(true);
       expect(text.endsWith('\n\n')).toBe(false);
       expect(text).toBe(`${JSON.stringify(JSON.parse(text), null, 2)}\n`);
@@ -110,8 +116,19 @@ describe('LNG-014 the commit of an editor that changed nothing says what the fil
       if (!loadFBDFile(path, text).ok) continue;
       const model = parseFBDModel(text);
       // what the canvas holds for a block (FBDEditor blocksToNodes), and for a wire
-      const nodes: Node[] = model.blocks.map((block) => ({ id: block.id, type: 'block', position: block.position, data: blockNodeData(block) }));
-      const edges: Edge[] = model.connections.map((wire) => ({ id: wire.id, source: wire.from.block, sourceHandle: wire.from.port, target: wire.to.block, targetHandle: wire.to.port }));
+      const nodes: Node[] = model.blocks.map((block) => ({
+        id: block.id,
+        type: 'block',
+        position: block.position,
+        data: blockNodeData(block),
+      }));
+      const edges: Edge[] = model.connections.map((wire) => ({
+        id: wire.id,
+        source: wire.from.block,
+        sourceHandle: wire.from.port,
+        target: wire.to.block,
+        targetHandle: wire.to.port,
+      }));
       const next = serializeFBDModel({ ...model, blocks: nodesToBlocks(nodes), connections: edgesToConnections(edges) });
       if (!isUnchangedVisualDocument('FBD', text, next)) rewritten.push(path);
     }
@@ -126,10 +143,19 @@ describe('LNG-014 the commit of an editor that changed nothing says what the fil
       const nodes: Node[] = [
         ...model.steps.map((step) => ({ id: step.id, type: 'step', position: step.position, data: stepNodeData(step) })),
         // the editor places a transition that has no position at a default one: the position is its layout, not an edit
-        ...model.transitions.map((transition) => ({ id: transition.id, type: 'transition', position: transition.position ?? { x: 200, y: 150 }, data: transitionNodeData(transition) })),
+        ...model.transitions.map((transition) => ({
+          id: transition.id,
+          type: 'transition',
+          position: transition.position ?? { x: 200, y: 150 },
+          data: transitionNodeData(transition),
+        })),
       ];
       const edges: Edge[] = model.transitions.flatMap((transition) => [
-        ...(transition.fromSteps ?? [transition.fromStep]).map((from) => ({ id: `${from}>${transition.id}`, source: from, target: transition.id })),
+        ...(transition.fromSteps ?? [transition.fromStep]).map((from) => ({
+          id: `${from}>${transition.id}`,
+          source: from,
+          target: transition.id,
+        })),
         ...(transition.toSteps ?? [transition.toStep]).map((to) => ({ id: `${transition.id}>${to}`, source: transition.id, target: to })),
       ]);
       const rebuilt = nodesToTransitions(nodes, edges).map((transition, index) => {

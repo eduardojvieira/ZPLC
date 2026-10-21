@@ -24,15 +24,15 @@
 static int test_count = 0;
 static int fail_count = 0;
 
-#define CHECK(cond, msg)                                                       \
-  do {                                                                         \
-    test_count++;                                                              \
-    if (!(cond)) {                                                             \
-      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__);                  \
-      fail_count++;                                                            \
-    } else {                                                                   \
-      printf("PASS: %s\n", msg);                                               \
-    }                                                                          \
+#define CHECK(cond, msg)                                      \
+  do {                                                        \
+    test_count++;                                             \
+    if (!(cond)) {                                            \
+      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__); \
+      fail_count++;                                           \
+    } else {                                                  \
+      printf("PASS: %s\n", msg);                              \
+    }                                                         \
   } while (0)
 
 static zplc_single_task_t single;
@@ -126,8 +126,8 @@ static void test_an_armed_trace_keeps_one_sample_per_scan(void) {
   CHECK(sample.batch == 1U, "it is the first scan of the run");
   CHECK(sample.in[0] == 0x11U, "it has the input the scan latched");
   CHECK(sample.out[0] == 0x11U && sample.out[1] == 1U, "and the outputs the scan wrote");
-  CHECK(zplc_io_trace_get(&trace, 2U, &sample) == 0 && sample.t_us == 116000U && sample.batch == 3U &&
-            sample.in[0] == 0x33U && sample.out[0] == 0x33U && sample.out[1] == 3U,
+  CHECK(zplc_io_trace_get(&trace, 2U, &sample) == 0 && sample.t_us == 116000U && sample.batch == 3U && sample.in[0] == 0x33U &&
+            sample.out[0] == 0x33U && sample.out[1] == 3U,
         "sample 2 is the third scan");
   CHECK(zplc_io_trace_get(&trace, 3U, &sample) == -1, "a sample not yet written is not held");
 }
@@ -160,10 +160,8 @@ static void test_the_ring_keeps_the_newest_samples(void) {
   zplc_io_trace_get_status(&trace, &status);
   CHECK(status.written == 6U && status.first == 2U && status.capacity == 4U, "6 written, the oldest held is 2");
   CHECK(zplc_io_trace_get(&trace, 1U, &sample) == -1, "an overwritten sample is not held");
-  CHECK(zplc_io_trace_get(&trace, 2U, &sample) == 0 && sample.in[0] == 30U && sample.batch == 3U,
-        "sample 2 is the third scan");
-  CHECK(zplc_io_trace_get(&trace, 5U, &sample) == 0 && sample.in[0] == 60U && sample.t_us == 60000U,
-        "sample 5 is the sixth scan");
+  CHECK(zplc_io_trace_get(&trace, 2U, &sample) == 0 && sample.in[0] == 30U && sample.batch == 3U, "sample 2 is the third scan");
+  CHECK(zplc_io_trace_get(&trace, 5U, &sample) == 0 && sample.in[0] == 60U && sample.t_us == 60000U, "sample 5 is the sixth scan");
 }
 
 static void test_a_new_run_counts_its_scans_from_one(void) {
@@ -193,8 +191,7 @@ static void test_arm_refuses_what_it_cannot_record(void) {
   CHECK(zplc_io_trace_arm(&trace, 0U, 0U, 0U) == ZPLC_IO_TRACE_ERR_ARGS, "a sample of no bytes is refused");
   CHECK(zplc_io_trace_arm(&trace, 0U, ZPLC_IO_TRACE_MAX_IO_BYTES + 1U, 1U) == ZPLC_IO_TRACE_ERR_ARGS,
         "more input bytes than a sample holds are refused");
-  CHECK(zplc_io_trace_arm(&trace, 1000U, 1U, 1U) == ZPLC_IO_TRACE_ERR_ARGS,
-        "a capacity the buffer cannot hold is refused");
+  CHECK(zplc_io_trace_arm(&trace, 1000U, 1U, 1U) == ZPLC_IO_TRACE_ERR_ARGS, "a capacity the buffer cannot hold is refused");
   zplc_io_trace_init(&unfed, storage, (uint32_t)sizeof(storage), trace_clock, NULL, read_image);
   CHECK(zplc_io_trace_arm(&unfed, 0U, 1U, 1U) == ZPLC_IO_TRACE_ERR_UNFED, "a trace no scheduler feeds is refused");
   CHECK(zplc_io_trace_arm(&trace, 2U, 1U, 1U) == 2, "a trace that fits is armed");
@@ -227,8 +224,7 @@ static void measure_the_cost_per_scan(void) {
 
   printf("\n=== Measure: the cost of the hook per scan on this host ===\n");
   load_copy_program();
-  CHECK(zplc_io_trace_arm(&trace, 0U, ZPLC_IO_TRACE_MAX_IO_BYTES, ZPLC_IO_TRACE_MAX_IO_BYTES) > 0,
-        "armed with the widest sample");
+  CHECK(zplc_io_trace_arm(&trace, 0U, ZPLC_IO_TRACE_MAX_IO_BYTES, ZPLC_IO_TRACE_MAX_IO_BYTES) > 0, "armed with the widest sample");
   (void)clock_gettime(CLOCK_MONOTONIC, &start);
   for (round = 0U; round < rounds; round++) {
     zplc_io_trace_sched_hook(&trace, ZPLC_SCHED_TRACE_LATCH, 0U, round + 1U, 0U);

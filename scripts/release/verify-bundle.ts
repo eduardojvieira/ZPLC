@@ -12,7 +12,11 @@ import { lstatSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 
-export interface BundleIdentity { version: string; tag: string; commitSha: string }
+export interface BundleIdentity {
+  version: string;
+  tag: string;
+  commitSha: string;
+}
 
 const SUM_LINE = /^([a-f0-9]{64}) {2}(.+)$/;
 
@@ -31,12 +35,15 @@ export function verifyBundle(directory: string, identity: BundleIdentity): strin
   if (sums.length !== 1 || evidence.length !== 1) return problems;
 
   const listed = new Map<string, string>();
-  readFileSync(join(directory, sums[0]!), 'utf8').split('\n').filter((line) => line !== '').forEach((line, index) => {
-    const match = SUM_LINE.exec(line);
-    if (!match) problems.push(`${sums[0]} line ${index + 1} is not "<sha256>  <name>"`);
-    else if (listed.has(match[2]!)) problems.push(`${sums[0]} names ${match[2]} twice`);
-    else listed.set(match[2]!, match[1]!);
-  });
+  readFileSync(join(directory, sums[0]!), 'utf8')
+    .split('\n')
+    .filter((line) => line !== '')
+    .forEach((line, index) => {
+      const match = SUM_LINE.exec(line);
+      if (!match) problems.push(`${sums[0]} line ${index + 1} is not "<sha256>  <name>"`);
+      else if (listed.has(match[2]!)) problems.push(`${sums[0]} names ${match[2]} twice`);
+      else listed.set(match[2]!, match[1]!);
+    });
   for (const [name, hash] of listed) {
     if (!kinds.get(name)?.isFile()) problems.push(`${sums[0]} names ${name}, which the bundle does not hold`);
     else if (sha256(join(directory, name)) !== hash) problems.push(`${name} does not have the checksum that ${sums[0]} states`);
@@ -46,19 +53,26 @@ export function verifyBundle(directory: string, identity: BundleIdentity): strin
   if (assets.length === 0) problems.push('the bundle holds no asset');
 
   const record = JSON.parse(readFileSync(join(directory, evidence[0]!), 'utf8')) as {
-    schemaVersion?: unknown; version?: string; tag?: string; commitSha?: string; artifacts?: Array<{ name: string; byteLength: number; sha256: string }>;
+    schemaVersion?: unknown;
+    version?: string;
+    tag?: string;
+    commitSha?: string;
+    artifacts?: Array<{ name: string; byteLength: number; sha256: string }>;
   };
   if (record.schemaVersion !== 1) problems.push(`${evidence[0]} has schemaVersion ${JSON.stringify(record.schemaVersion)}, not 1`);
   for (const key of ['version', 'tag', 'commitSha'] as const) {
-    if (record[key] !== identity[key]) problems.push(`${evidence[0]} says ${key} ${JSON.stringify(record[key])}, this run is ${JSON.stringify(identity[key])}`);
+    if (record[key] !== identity[key])
+      problems.push(`${evidence[0]} says ${key} ${JSON.stringify(record[key])}, this run is ${JSON.stringify(identity[key])}`);
   }
   const recorded = new Map((record.artifacts ?? []).map((artifact) => [artifact.name, artifact]));
   for (const name of assets) {
     const artifact = recorded.get(name);
     if (!artifact) problems.push(`${evidence[0]} does not list ${name}`);
-    else if (artifact.sha256 !== listed.get(name) || artifact.byteLength !== kinds.get(name)!.size) problems.push(`${evidence[0]} describes ${name} differently from the file and from ${sums[0]}`);
+    else if (artifact.sha256 !== listed.get(name) || artifact.byteLength !== kinds.get(name)!.size)
+      problems.push(`${evidence[0]} describes ${name} differently from the file and from ${sums[0]}`);
   }
-  for (const name of recorded.keys()) if (!assets.includes(name)) problems.push(`${evidence[0]} lists ${name}, which the bundle does not hold`);
+  for (const name of recorded.keys())
+    if (!assets.includes(name)) problems.push(`${evidence[0]} lists ${name}, which the bundle does not hold`);
 
   for (const name of assets.filter((candidate) => candidate.endsWith('.cdx.json'))) {
     const document = JSON.parse(readFileSync(join(directory, name), 'utf8')) as { bomFormat?: string; components?: unknown[] };
@@ -82,7 +96,10 @@ if (import.meta.main) {
   const problems = verifyBundle(resolve(directory), { version: values.version, tag: values.tag, commitSha: values['commit-sha'] });
   // the bill of materials is held to the lockfile and the recorded floor by the tool that writes it
   for (const name of readdirSync(directory).filter((file) => file.endsWith('.cdx.json'))) {
-    const checked = Bun.spawnSync(['bun', join(import.meta.dir, 'sbom.ts'), '--verify', join(directory, name)], { stdout: 'pipe', stderr: 'pipe' });
+    const checked = Bun.spawnSync(['bun', join(import.meta.dir, 'sbom.ts'), '--verify', join(directory, name)], {
+      stdout: 'pipe',
+      stderr: 'pipe',
+    });
     if (checked.exitCode !== 0) problems.push(`${name} fails the bill of materials check: ${checked.stderr.toString().trim()}`);
   }
   if (problems.length > 0) {

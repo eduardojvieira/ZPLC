@@ -7,12 +7,14 @@ import { projectRootId } from '../ipc/projectFilesHandles';
 import { useIDEStore } from '../store/useIDEStore';
 
 const KIB = 1024;
-const sizeOf = (bytes: number) => (bytes < KIB * KIB ? `${Math.max(1, Math.round(bytes / KIB))} KiB` : `${(bytes / (KIB * KIB)).toFixed(1)} MiB`);
+const sizeOf = (bytes: number) =>
+  bytes < KIB * KIB ? `${Math.max(1, Math.round(bytes / KIB))} KiB` : `${(bytes / (KIB * KIB)).toFixed(1)} MiB`;
 
 /** Writes the open project to one archive file the user chooses; the result is a line in the Output panel. */
 export async function exportOpenProjectArchive(): Promise<void> {
   const state = useIDEStore.getState();
-  const report = (type: 'success' | 'warning' | 'error' | 'info', message: string) => state.addConsoleEntry({ type, message, source: 'system' });
+  const report = (type: 'success' | 'warning' | 'error' | 'info', message: string) =>
+    state.addConsoleEntry({ type, message, source: 'system' });
   const rootId = projectRootId(state.directoryHandle);
   if (!state.isProjectOpen || rootId === null) {
     report('error', 'Exporting a project archive needs a project folder opened in the desktop app.');
@@ -26,7 +28,12 @@ export async function exportOpenProjectArchive(): Promise<void> {
   const outcome = await exportArchive(window.electronAPI?.projectFiles, rootId);
   if (outcome.status === 'done') {
     const { fileName, fileCount, folderCount, bytes, skipped } = outcome.value;
-    report('success', `Exported ${fileName}: ${fileCount} files and ${folderCount} folders, ${sizeOf(bytes)}${skipped > 0 ? `; ${skipped} link${skipped === 1 ? '' : 's'} left out` : ''}.`);
+    report(
+      'success',
+      `Exported ${fileName}: ${fileCount} files and ${folderCount} folders, ${sizeOf(bytes)}${
+        skipped > 0 ? `; ${skipped} link${skipped === 1 ? '' : 's'} left out` : ''
+      }.`,
+    );
   } else if (outcome.status === 'failed') report('error', `Export failed: ${outcome.message}`);
   else if (outcome.status === 'unavailable') report('error', 'Exporting a project archive needs the desktop app.');
 }

@@ -23,7 +23,14 @@ const OTHER = assemble('    PUSH32 5\n    STORE32 0x1000\n    HALT\n').zplcFile;
 
 const hex = (bytes: Uint8Array) => Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 
-interface RetainStatus { reason: string; restored: boolean; sequence: number; saves: number; save_errors: number; saved_at_ms: number | null }
+interface RetainStatus {
+  reason: string;
+  restored: boolean;
+  sequence: number;
+  saves: number;
+  save_errors: number;
+  saved_at_ms: number | null;
+}
 
 /** One runtime of the module, driven by request lines and polls at times the test names, over a store it is given. */
 async function boot(records: WasmRecordStore, clock: { now: number }) {
@@ -31,7 +38,10 @@ async function boot(records: WasmRecordStore, clock: { now: number }) {
   let counter = 0;
   const send = (method: string, params: object = {}) => {
     counter += 1;
-    const answer = JSON.parse(runtime.request(JSON.stringify({ id: `r${counter}`, type: 'request', method, params })).response) as { result?: Record<string, unknown>; error?: { message: string } };
+    const answer = JSON.parse(runtime.request(JSON.stringify({ id: `r${counter}`, type: 'request', method, params })).response) as {
+      result?: Record<string, unknown>;
+      error?: { message: string };
+    };
     return answer;
   };
   return {
@@ -113,7 +123,8 @@ describe('RETAIN on the WebAssembly runtime follows the rules of the firmware (R
     expect(chunks.every((chunk) => chunk !== undefined)).toBe(true);
     expect(records.get('retain_a5')).toBeUndefined();
     const intact = new Uint8Array(chunks.flatMap((chunk) => [...chunk]));
-    const store = (record: Uint8Array) => chunks.forEach((_, index) => records.set(`retain_a${index}`, record.slice(index * 1024, (index + 1) * 1024)));
+    const store = (record: Uint8Array) =>
+      chunks.forEach((_, index) => records.set(`retain_a${index}`, record.slice(index * 1024, (index + 1) * 1024)));
 
     // one flipped bit of the payload: the checksum no longer matches
     const damaged = new Uint8Array(intact);
@@ -197,7 +208,13 @@ describe('RETAIN on the WebAssembly runtime follows the rules of the firmware (R
     run.send('execution.stop');
     expect(run.status().saves).toBe(1);
     // the next save cannot be written
-    const failing: WasmRecordStore = { get: (key) => records.get(key), set: () => { throw new Error('disk full'); }, delete: (key) => records.delete(key) };
+    const failing: WasmRecordStore = {
+      get: (key) => records.get(key),
+      set: () => {
+        throw new Error('disk full');
+      },
+      delete: (key) => records.delete(key),
+    };
     run.end();
     const broken = await boot(failing, clock);
     broken.load(COUNTER);
@@ -256,8 +273,12 @@ class MemoryDirectory {
         if (this.failWrites) throw new Error('the folder is read-only');
         let written = new Uint8Array();
         return {
-          async write(data: Uint8Array) { written = new Uint8Array(data); },
-          async close() { files.set(name, written); },
+          async write(data: Uint8Array) {
+            written = new Uint8Array(data);
+          },
+          async close() {
+            files.set(name, written);
+          },
         };
       },
     };

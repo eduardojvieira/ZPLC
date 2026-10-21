@@ -48,8 +48,14 @@ function run(source: string, memory: Uint8Array = new Uint8Array(0x10000)): numb
     const stack: number[] = [];
     const calls: number[] = [];
     const float = new DataView(new ArrayBuffer(4));
-    const toFloat = (bits: number): number => { float.setUint32(0, bits >>> 0, true); return float.getFloat32(0, true); };
-    const toBits = (value: number): number => { float.setFloat32(0, value, true); return float.getUint32(0, true); };
+    const toFloat = (bits: number): number => {
+        float.setUint32(0, bits >>> 0, true);
+        return float.getFloat32(0, true);
+    };
+    const toBits = (value: number): number => {
+        float.setFloat32(0, value, true);
+        return float.getUint32(0, true);
+    };
     const pop = (): number => {
         const value = stack.pop();
         if (value === undefined) throw new Error('stack underflow');
@@ -59,90 +65,345 @@ function run(source: string, memory: Uint8Array = new Uint8Array(0x10000)): numb
     for (let steps = 0; steps < 100_000; steps += 1) {
         const op = code[pc]!;
         switch (op) {
-            case 0x01: return stack.map((v) => v >>> 0); // HALT
-            case 0x10: { const a = pop(); stack.push(a, a); pc += 1; break; }
-            case 0x11: pop(); pc += 1; break;
-            case 0x12: { const b = pop(); const a = pop(); stack.push(b, a); pc += 1; break; }
-            case 0x13: { const b = pop(); const a = pop(); stack.push(a, b, a); pc += 1; break; }
-            case 0x14: { const c = pop(); const b = pop(); const a = pop(); stack.push(b, c, a); pc += 1; break; }
-            case 0x20: { const b = pop(); const a = pop(); stack.push((a + b) >>> 0); pc += 1; break; }
-            case 0x21: { const b = pop(); const a = pop(); stack.push((a - b) >>> 0); pc += 1; break; }
-            case 0x22: { const b = pop(); const a = pop(); stack.push(Number((BigInt(a) * BigInt(b)) & 0xFFFFFFFFn)); pc += 1; break; }
+            case 0x01:
+                return stack.map((v) => v >>> 0); // HALT
+            case 0x10: {
+                const a = pop();
+                stack.push(a, a);
+                pc += 1;
+                break;
+            }
+            case 0x11:
+                pop();
+                pc += 1;
+                break;
+            case 0x12: {
+                const b = pop();
+                const a = pop();
+                stack.push(b, a);
+                pc += 1;
+                break;
+            }
+            case 0x13: {
+                const b = pop();
+                const a = pop();
+                stack.push(a, b, a);
+                pc += 1;
+                break;
+            }
+            case 0x14: {
+                const c = pop();
+                const b = pop();
+                const a = pop();
+                stack.push(b, c, a);
+                pc += 1;
+                break;
+            }
+            case 0x20: {
+                const b = pop();
+                const a = pop();
+                stack.push((a + b) >>> 0);
+                pc += 1;
+                break;
+            }
+            case 0x21: {
+                const b = pop();
+                const a = pop();
+                stack.push((a - b) >>> 0);
+                pc += 1;
+                break;
+            }
+            case 0x22: {
+                const b = pop();
+                const a = pop();
+                stack.push(Number((BigInt(a) * BigInt(b)) & 0xffffffffn));
+                pc += 1;
+                break;
+            }
             case 0x23: {
-                const b = pop(); const a = pop();
+                const b = pop();
+                const a = pop();
                 if (b === 0) throw new Error('division by zero');
-                stack.push(b === 0xFFFFFFFF ? (0 - a) >>> 0 : (Math.trunc((a | 0) / (b | 0)) >>> 0));
-                pc += 1; break;
+                stack.push(b === 0xffffffff ? (0 - a) >>> 0 : Math.trunc((a | 0) / (b | 0)) >>> 0);
+                pc += 1;
+                break;
             }
             case 0x24: {
-                const b = pop(); const a = pop();
+                const b = pop();
+                const a = pop();
                 if (b === 0) throw new Error('division by zero');
-                stack.push(b === 0xFFFFFFFF ? 0 : (((a | 0) % (b | 0)) >>> 0));
-                pc += 1; break;
+                stack.push(b === 0xffffffff ? 0 : ((a | 0) % (b | 0)) >>> 0);
+                pc += 1;
+                break;
             }
-            case 0x25: { const a = pop(); stack.push((0 - a) >>> 0); pc += 1; break; }
-            case 0x26: { const a = pop(); stack.push(a >>> 31 ? (0 - a) >>> 0 : a); pc += 1; break; }
-            case 0x28: { const b = pop(); const a = pop(); stack.push(toBits(toFloat(a) + toFloat(b))); pc += 1; break; }
-            case 0x29: { const b = pop(); const a = pop(); stack.push(toBits(toFloat(a) - toFloat(b))); pc += 1; break; }
-            case 0x2A: { const b = pop(); const a = pop(); stack.push(toBits(toFloat(a) * toFloat(b))); pc += 1; break; }
-            case 0x2B: {
-                const b = pop(); const a = pop();
+            case 0x25: {
+                const a = pop();
+                stack.push((0 - a) >>> 0);
+                pc += 1;
+                break;
+            }
+            case 0x26: {
+                const a = pop();
+                stack.push(a >>> 31 ? (0 - a) >>> 0 : a);
+                pc += 1;
+                break;
+            }
+            case 0x28: {
+                const b = pop();
+                const a = pop();
+                stack.push(toBits(toFloat(a) + toFloat(b)));
+                pc += 1;
+                break;
+            }
+            case 0x29: {
+                const b = pop();
+                const a = pop();
+                stack.push(toBits(toFloat(a) - toFloat(b)));
+                pc += 1;
+                break;
+            }
+            case 0x2a: {
+                const b = pop();
+                const a = pop();
+                stack.push(toBits(toFloat(a) * toFloat(b)));
+                pc += 1;
+                break;
+            }
+            case 0x2b: {
+                const b = pop();
+                const a = pop();
                 if (toFloat(b) === 0) throw new Error('division by zero');
                 stack.push(toBits(toFloat(a) / toFloat(b)));
-                pc += 1; break;
+                pc += 1;
+                break;
             }
-            case 0x2C: { const a = pop(); stack.push((a ^ 0x80000000) >>> 0); pc += 1; break; }
-            case 0x2D: { const a = pop(); stack.push((a & 0x7FFFFFFF) >>> 0); pc += 1; break; }
-            case 0x33: { const a = pop(); stack.push((~a) >>> 0); pc += 1; break; }
-            case 0x30: { const b = pop(); const a = pop(); stack.push((a & b) >>> 0); pc += 1; break; }
-            case 0x31: { const b = pop(); const a = pop(); stack.push((a | b) >>> 0); pc += 1; break; }
-            case 0x32: { const b = pop(); const a = pop(); stack.push((a ^ b) >>> 0); pc += 1; break; }
-            case 0x34: { const b = pop(); const a = pop(); stack.push(b >= 32 ? 0 : (a << b) >>> 0); pc += 1; break; }
-            case 0x35: { const b = pop(); const a = pop(); stack.push(b >= 32 ? 0 : a >>> b); pc += 1; break; }
-            case 0x36: { const b = pop(); const a = pop(); stack.push((a | 0) >> Math.min(b, 31) >>> 0); pc += 1; break; }
-            case 0x38: { const b = pop(); const a = pop(); stack.push(a === b ? 1 : 0); pc += 1; break; }
-            case 0x39: { const b = pop(); const a = pop(); stack.push(a !== b ? 1 : 0); pc += 1; break; }
-            case 0x3A: { const b = pop(); const a = pop(); stack.push((a | 0) < (b | 0) ? 1 : 0); pc += 1; break; }
-            case 0x3B: { const b = pop(); const a = pop(); stack.push((a | 0) <= (b | 0) ? 1 : 0); pc += 1; break; }
-            case 0x3C: { const b = pop(); const a = pop(); stack.push((a | 0) > (b | 0) ? 1 : 0); pc += 1; break; }
-            case 0x3D: { const b = pop(); const a = pop(); stack.push((a | 0) >= (b | 0) ? 1 : 0); pc += 1; break; }
-            case 0x3E: { const b = pop(); const a = pop(); stack.push(a < b ? 1 : 0); pc += 1; break; }
-            case 0x3F: { const b = pop(); const a = pop(); stack.push(a > b ? 1 : 0); pc += 1; break; }
-            case 0x40: stack.push((view.getInt8(pc + 1)) >>> 0); pc += 2; break;
-            case 0x41: { const n = code[pc + 1]!; stack.push(stack[stack.length - 1 - n]!); pc += 2; break; }
-            case 0x80: stack.push(ram.getUint8(view.getUint16(pc + 1, true))); pc += 3; break;
-            case 0x81: stack.push(ram.getUint16(view.getUint16(pc + 1, true), true)); pc += 3; break;
-            case 0x82: stack.push(ram.getUint32(view.getUint16(pc + 1, true), true)); pc += 3; break;
+            case 0x2c: {
+                const a = pop();
+                stack.push((a ^ 0x80000000) >>> 0);
+                pc += 1;
+                break;
+            }
+            case 0x2d: {
+                const a = pop();
+                stack.push((a & 0x7fffffff) >>> 0);
+                pc += 1;
+                break;
+            }
+            case 0x33: {
+                const a = pop();
+                stack.push(~a >>> 0);
+                pc += 1;
+                break;
+            }
+            case 0x30: {
+                const b = pop();
+                const a = pop();
+                stack.push((a & b) >>> 0);
+                pc += 1;
+                break;
+            }
+            case 0x31: {
+                const b = pop();
+                const a = pop();
+                stack.push((a | b) >>> 0);
+                pc += 1;
+                break;
+            }
+            case 0x32: {
+                const b = pop();
+                const a = pop();
+                stack.push((a ^ b) >>> 0);
+                pc += 1;
+                break;
+            }
+            case 0x34: {
+                const b = pop();
+                const a = pop();
+                stack.push(b >= 32 ? 0 : (a << b) >>> 0);
+                pc += 1;
+                break;
+            }
+            case 0x35: {
+                const b = pop();
+                const a = pop();
+                stack.push(b >= 32 ? 0 : a >>> b);
+                pc += 1;
+                break;
+            }
+            case 0x36: {
+                const b = pop();
+                const a = pop();
+                stack.push(((a | 0) >> Math.min(b, 31)) >>> 0);
+                pc += 1;
+                break;
+            }
+            case 0x38: {
+                const b = pop();
+                const a = pop();
+                stack.push(a === b ? 1 : 0);
+                pc += 1;
+                break;
+            }
+            case 0x39: {
+                const b = pop();
+                const a = pop();
+                stack.push(a !== b ? 1 : 0);
+                pc += 1;
+                break;
+            }
+            case 0x3a: {
+                const b = pop();
+                const a = pop();
+                stack.push((a | 0) < (b | 0) ? 1 : 0);
+                pc += 1;
+                break;
+            }
+            case 0x3b: {
+                const b = pop();
+                const a = pop();
+                stack.push((a | 0) <= (b | 0) ? 1 : 0);
+                pc += 1;
+                break;
+            }
+            case 0x3c: {
+                const b = pop();
+                const a = pop();
+                stack.push((a | 0) > (b | 0) ? 1 : 0);
+                pc += 1;
+                break;
+            }
+            case 0x3d: {
+                const b = pop();
+                const a = pop();
+                stack.push((a | 0) >= (b | 0) ? 1 : 0);
+                pc += 1;
+                break;
+            }
+            case 0x3e: {
+                const b = pop();
+                const a = pop();
+                stack.push(a < b ? 1 : 0);
+                pc += 1;
+                break;
+            }
+            case 0x3f: {
+                const b = pop();
+                const a = pop();
+                stack.push(a > b ? 1 : 0);
+                pc += 1;
+                break;
+            }
+            case 0x40:
+                stack.push(view.getInt8(pc + 1) >>> 0);
+                pc += 2;
+                break;
+            case 0x41: {
+                const n = code[pc + 1]!;
+                stack.push(stack[stack.length - 1 - n]!);
+                pc += 2;
+                break;
+            }
+            case 0x80:
+                stack.push(ram.getUint8(view.getUint16(pc + 1, true)));
+                pc += 3;
+                break;
+            case 0x81:
+                stack.push(ram.getUint16(view.getUint16(pc + 1, true), true));
+                pc += 3;
+                break;
+            case 0x82:
+                stack.push(ram.getUint32(view.getUint16(pc + 1, true), true));
+                pc += 3;
+                break;
             case 0x83: {
                 const at = view.getUint16(pc + 1, true);
-                stack.push(ram.getUint32(at, true), ram.getUint32(at + 4, true)); pc += 3; break;
+                stack.push(ram.getUint32(at, true), ram.getUint32(at + 4, true));
+                pc += 3;
+                break;
             }
-            case 0x84: ram.setUint8(view.getUint16(pc + 1, true), pop()); pc += 3; break;
-            case 0x85: ram.setUint16(view.getUint16(pc + 1, true), pop(), true); pc += 3; break;
-            case 0x86: ram.setUint32(view.getUint16(pc + 1, true), pop(), true); pc += 3; break;
+            case 0x84:
+                ram.setUint8(view.getUint16(pc + 1, true), pop());
+                pc += 3;
+                break;
+            case 0x85:
+                ram.setUint16(view.getUint16(pc + 1, true), pop(), true);
+                pc += 3;
+                break;
+            case 0x86:
+                ram.setUint32(view.getUint16(pc + 1, true), pop(), true);
+                pc += 3;
+                break;
             case 0x87: {
                 const at = view.getUint16(pc + 1, true);
-                const high = pop(); const low = pop();
-                ram.setUint32(at, low, true); ram.setUint32(at + 4, high, true); pc += 3; break;
+                const high = pop();
+                const low = pop();
+                ram.setUint32(at, low, true);
+                ram.setUint32(at + 4, high, true);
+                pc += 3;
+                break;
             }
-            case 0x88: stack.push(view.getInt16(pc + 1, true) >>> 0); pc += 3; break;
-            case 0xC0: stack.push(view.getUint32(pc + 1, true)); pc += 5; break;
-            case 0x90: pc = view.getUint16(pc + 1, true); break;
-            case 0x91: pc = pop() === 0 ? view.getUint16(pc + 1, true) : pc + 3; break;
-            case 0x92: pc = pop() !== 0 ? view.getUint16(pc + 1, true) : pc + 3; break;
-            case 0x93: calls.push(pc + 3); pc = view.getUint16(pc + 1, true); break;
-            case 0x94: pc = calls.pop()!; break;
-            case 0xA0: { const a = pop(); stack.push(toBits(a | 0)); pc += 1; break; }
-            case 0xA1: {
+            case 0x88:
+                stack.push(view.getInt16(pc + 1, true) >>> 0);
+                pc += 3;
+                break;
+            case 0xc0:
+                stack.push(view.getUint32(pc + 1, true));
+                pc += 5;
+                break;
+            case 0x90:
+                pc = view.getUint16(pc + 1, true);
+                break;
+            case 0x91:
+                pc = pop() === 0 ? view.getUint16(pc + 1, true) : pc + 3;
+                break;
+            case 0x92:
+                pc = pop() !== 0 ? view.getUint16(pc + 1, true) : pc + 3;
+                break;
+            case 0x93:
+                calls.push(pc + 3);
+                pc = view.getUint16(pc + 1, true);
+                break;
+            case 0x94:
+                pc = calls.pop()!;
+                break;
+            case 0xa0: {
+                const a = pop();
+                stack.push(toBits(a | 0));
+                pc += 1;
+                break;
+            }
+            case 0xa1: {
                 const f = toFloat(pop());
-                stack.push(Number.isNaN(f) ? 0 : f >= 2147483648 ? 0x7FFFFFFF : f <= -2147483648 ? 0x80000000 : Math.trunc(f) >>> 0);
-                pc += 1; break;
+                stack.push(Number.isNaN(f) ? 0 : f >= 2147483648 ? 0x7fffffff : f <= -2147483648 ? 0x80000000 : Math.trunc(f) >>> 0);
+                pc += 1;
+                break;
             }
-            case 0xA3: { const a = pop(); stack.push(((a << 24) >> 24) >>> 0); pc += 1; break; }
-            case 0xA4: { const a = pop(); stack.push(((a << 16) >> 16) >>> 0); pc += 1; break; }
-            case 0xA5: { const a = pop(); stack.push(a & 0xFF); pc += 1; break; }
-            case 0xA6: { const a = pop(); stack.push(a & 0xFFFF); pc += 1; break; }
-            default: throw new Error(`reference VM: opcode 0x${op.toString(16)} at ${pc}`);
+            case 0xa3: {
+                const a = pop();
+                stack.push(((a << 24) >> 24) >>> 0);
+                pc += 1;
+                break;
+            }
+            case 0xa4: {
+                const a = pop();
+                stack.push(((a << 16) >> 16) >>> 0);
+                pc += 1;
+                break;
+            }
+            case 0xa5: {
+                const a = pop();
+                stack.push(a & 0xff);
+                pc += 1;
+                break;
+            }
+            case 0xa6: {
+                const a = pop();
+                stack.push(a & 0xffff);
+                pc += 1;
+                break;
+            }
+            default:
+                throw new Error(`reference VM: opcode 0x${op.toString(16)} at ${pc}`);
         }
     }
     throw new Error('reference VM: did not halt');
@@ -155,8 +416,10 @@ const push = (value: number): string => `    PUSH32 ${value >>> 0}`;
 // ============================================================================
 
 describe('unsigned 32-bit division helper', () => {
-    const operands = [0, 1, 2, 3, 7, 10, 255, 256, 65535, 65536, 1000000007, 0x7FFFFFFE, 0x7FFFFFFF, 0x80000000,
-        0x80000001, 0xAAAAAAAA, 3000000000, 4000000000, 0xFFFFFFFE, 0xFFFFFFFF];
+    const operands = [
+        0, 1, 2, 3, 7, 10, 255, 256, 65535, 65536, 1000000007, 0x7ffffffe, 0x7fffffff, 0x80000000, 0x80000001, 0xaaaaaaaa, 3000000000,
+        4000000000, 0xfffffffe, 0xffffffff,
+    ];
     const divide = (a: number, b: number): number =>
         run([push(a), push(b), `    CALL ${UDIV32_LABEL}`, '    HALT', ...UDIV32_HELPER].join('\n'))[0]!;
 
@@ -169,7 +432,7 @@ describe('unsigned 32-bit division helper', () => {
     });
 
     it('faults on a divisor of 0, as the signed division does', () => {
-        for (const a of [0, 5, 0x80000000, 0xFFFFFFFF]) {
+        for (const a of [0, 5, 0x80000000, 0xffffffff]) {
             expect(() => divide(a, 0)).toThrow('division by zero');
         }
     });
@@ -182,8 +445,25 @@ describe('unsigned 32-bit division helper', () => {
 describe('REAL comparison helper', () => {
     const bits = (value: number): number => floatBits(value);
     const operands: number[] = [
-        bits(0), bits(-0), bits(1), bits(-1), bits(1.5), bits(-1.5), bits(3e38), bits(-3e38), 1, 0x80000001,
-        bits(Infinity), bits(-Infinity), 0x7FC00000, 0xFFC00001, 0x7F800001, bits(1e-30), bits(-1e-30), bits(16777216), bits(16777217),
+        bits(0),
+        bits(-0),
+        bits(1),
+        bits(-1),
+        bits(1.5),
+        bits(-1.5),
+        bits(3e38),
+        bits(-3e38),
+        1,
+        0x80000001,
+        bits(Infinity),
+        bits(-Infinity),
+        0x7fc00000,
+        0xffc00001,
+        0x7f800001,
+        bits(1e-30),
+        bits(-1e-30),
+        bits(16777216),
+        bits(16777217),
     ];
     const asFloat = (pattern: number): number => {
         const view = new DataView(new ArrayBuffer(4));
@@ -193,7 +473,12 @@ describe('REAL comparison helper', () => {
     const compare = (op: CompareOp, a: number, b: number): boolean =>
         run([push(a), push(b), `    CALL ${FCMP_LABEL}`, ...fcmpTest(op), '    HALT', ...FCMP_HELPER].join('\n'))[0] === 1;
     const reference: Record<CompareOp, (x: number, y: number) => boolean> = {
-        EQ: (x, y) => x === y, NE: (x, y) => x !== y, LT: (x, y) => x < y, LE: (x, y) => x <= y, GT: (x, y) => x > y, GE: (x, y) => x >= y,
+        EQ: (x, y) => x === y,
+        NE: (x, y) => x !== y,
+        LT: (x, y) => x < y,
+        LE: (x, y) => x <= y,
+        GT: (x, y) => x > y,
+        GE: (x, y) => x >= y,
     };
 
     for (const op of ['EQ', 'NE', 'LT', 'LE', 'GT', 'GE'] as CompareOp[]) {
@@ -208,11 +493,25 @@ describe('REAL comparison helper', () => {
 });
 
 describe('64-bit helpers', () => {
-    const operands: bigint[] = [0n, 1n, 2n, 0xFFFFFFFFn, 0x100000000n, 0x100000001n, 0x7FFFFFFFFFFFFFFFn,
-        0x8000000000000000n, 0x8000000000000001n, 0xFFFFFFFF00000000n, 0xFFFFFFFFFFFFFFFEn, 0xFFFFFFFFFFFFFFFFn,
-        0x00000000FFFFFFFFn + 1n, 0x123456789ABCDEF0n, 0xFEDCBA9876543210n];
-    const lo = (v: bigint): number => Number(v & 0xFFFFFFFFn);
-    const hi = (v: bigint): number => Number((v >> 32n) & 0xFFFFFFFFn);
+    const operands: bigint[] = [
+        0n,
+        1n,
+        2n,
+        0xffffffffn,
+        0x100000000n,
+        0x100000001n,
+        0x7fffffffffffffffn,
+        0x8000000000000000n,
+        0x8000000000000001n,
+        0xffffffff00000000n,
+        0xfffffffffffffffen,
+        0xffffffffffffffffn,
+        0x00000000ffffffffn + 1n,
+        0x123456789abcdef0n,
+        0xfedcba9876543210n,
+    ];
+    const lo = (v: bigint): number => Number(v & 0xffffffffn);
+    const hi = (v: bigint): number => Number((v >> 32n) & 0xffffffffn);
     const pair = (v: bigint): string => `${push(lo(v))}\n${push(hi(v))}`;
     const signed = (v: bigint): bigint => BigInt.asIntN(64, v);
     const join = (cells: number[]): bigint => (BigInt(cells[1]!) << 32n) | BigInt(cells[0]!);
@@ -228,15 +527,25 @@ describe('64-bit helpers', () => {
         }
     });
 
-    for (const [name, label, view] of [['signed', CMP64S_LABEL, signed], ['unsigned', CMP64U_LABEL, (v: bigint) => v]] as const) {
+    for (const [name, label, view] of [
+        ['signed', CMP64S_LABEL, signed],
+        ['unsigned', CMP64U_LABEL, (v: bigint) => v],
+    ] as const) {
         it(`CMP64 orders ${name} values for every pair of edge operands and every operator`, () => {
             const ops: Record<CompareOp, (x: bigint, y: bigint) => boolean> = {
-                EQ: (x, y) => x === y, NE: (x, y) => x !== y, LT: (x, y) => x < y, LE: (x, y) => x <= y, GT: (x, y) => x > y, GE: (x, y) => x >= y,
+                EQ: (x, y) => x === y,
+                NE: (x, y) => x !== y,
+                LT: (x, y) => x < y,
+                LE: (x, y) => x <= y,
+                GT: (x, y) => x > y,
+                GE: (x, y) => x >= y,
             };
             for (const a of operands) {
                 for (const b of operands) {
                     for (const op of Object.keys(ops) as CompareOp[]) {
-                        const result = run([pair(a), pair(b), `    CALL ${label}`, ...cmp64Test(op), '    HALT', ...CMP64_HELPER].join('\n'));
+                        const result = run(
+                            [pair(a), pair(b), `    CALL ${label}`, ...cmp64Test(op), '    HALT', ...CMP64_HELPER].join('\n'),
+                        );
                         expect(result).toEqual([ops[op](view(a), view(b)) ? 1 : 0]);
                     }
                 }
@@ -247,7 +556,7 @@ describe('64-bit helpers', () => {
 
 describe('unsigned 32-bit to REAL conversion', () => {
     it('rounds once, to nearest, for the whole range', () => {
-        const values = [0, 1, 65535, 65536, 16777217, 0x7FFFFFFF, 0x80000000, 0x80000001, 3000000000, 0xFFFFFF7F, 0xFFFFFFFF];
+        const values = [0, 1, 65535, 65536, 16777217, 0x7fffffff, 0x80000000, 0x80000001, 3000000000, 0xffffff7f, 0xffffffff];
         for (const value of values) {
             const result = run([push(value), ...UNSIGNED_TO_REAL, '    HALT'].join('\n'))[0]!;
             expect(result).toBe(floatBits(Math.fround(value)));
@@ -424,12 +733,19 @@ const wrap = (scalar: Scalar, value: bigint): bigint =>
 
 describe('executed programs: integer operators at the limits of their type', () => {
     const arithmetic: Array<[string, (a: bigint, b: bigint) => bigint]> = [
-        ['+', (a, b) => a + b], ['-', (a, b) => a - b], ['*', (a, b) => a * b],
-        ['/', (a, b) => a / b], ['MOD', (a, b) => a % b],
+        ['+', (a, b) => a + b],
+        ['-', (a, b) => a - b],
+        ['*', (a, b) => a * b],
+        ['/', (a, b) => a / b],
+        ['MOD', (a, b) => a % b],
     ];
     const comparison: Array<[string, (a: bigint, b: bigint) => boolean]> = [
-        ['<', (a, b) => a < b], ['<=', (a, b) => a <= b], ['>', (a, b) => a > b],
-        ['>=', (a, b) => a >= b], ['=', (a, b) => a === b], ['<>', (a, b) => a !== b],
+        ['<', (a, b) => a < b],
+        ['<=', (a, b) => a <= b],
+        ['>', (a, b) => a > b],
+        ['>=', (a, b) => a >= b],
+        ['=', (a, b) => a === b],
+        ['<>', (a, b) => a !== b],
     ];
 
     for (const scalar of SCALARS) {
@@ -498,22 +814,31 @@ describe('executed programs: REAL operators', () => {
     const literals = ['-2.5', '-1.0', '0.0', '1.5', '3.25', '-3.0E38', '3.0E38', '1.0E-30'];
     const values = literals.map((text) => Math.fround(Number(text)));
     const arithmetic: Array<[string, (a: number, b: number) => number]> = [
-        ['+', (a, b) => a + b], ['-', (a, b) => a - b], ['*', (a, b) => a * b], ['/', (a, b) => a / b],
+        ['+', (a, b) => a + b],
+        ['-', (a, b) => a - b],
+        ['*', (a, b) => a * b],
+        ['/', (a, b) => a / b],
     ];
     const comparison: Array<[string, (a: number, b: number) => boolean]> = [
-        ['<', (a, b) => a < b], ['<=', (a, b) => a <= b], ['>', (a, b) => a > b],
-        ['>=', (a, b) => a >= b], ['=', (a, b) => a === b], ['<>', (a, b) => a !== b],
+        ['<', (a, b) => a < b],
+        ['<=', (a, b) => a <= b],
+        ['>', (a, b) => a > b],
+        ['>=', (a, b) => a >= b],
+        ['=', (a, b) => a === b],
+        ['<>', (a, b) => a !== b],
     ];
 
     it('arithmetic is single precision, with negative operands', () => {
         for (const [operator, apply] of arithmetic) {
-            literals.forEach((la, i) => literals.forEach((lb, j) => {
-                const a = values[i]!; const b = values[j]!;
-                if (operator === '/' && b === 0) return;
-                const result = Math.fround(apply(a, b));
-                // an overflow to infinity is not a case for this table
-                if (!Number.isFinite(result)) return;
-                const memory = execute(`PROGRAM T
+            literals.forEach((la, i) =>
+                literals.forEach((lb, j) => {
+                    const a = values[i]!;
+                    const b = values[j]!;
+                    if (operator === '/' && b === 0) return;
+                    const result = Math.fround(apply(a, b));
+                    // an overflow to infinity is not a case for this table
+                    if (!Number.isFinite(result)) return;
+                    const memory = execute(`PROGRAM T
 VAR
   a : REAL := ${la};
   b : REAL := ${lb};
@@ -521,16 +846,18 @@ VAR
 END_VAR
   r := a ${operator} b;
 END_PROGRAM`);
-                const observed = new DataView(memory.buffer, 0x1000, 4).getFloat32(0, true);
-                if (!Object.is(observed, result)) throw new Error(`${la} ${operator} ${lb}: expected ${result}, observed ${observed}`);
-            }));
+                    const observed = new DataView(memory.buffer, 0x1000, 4).getFloat32(0, true);
+                    if (!Object.is(observed, result)) throw new Error(`${la} ${operator} ${lb}: expected ${result}, observed ${observed}`);
+                }),
+            );
         }
     });
 
     it('comparison is the IEEE order', () => {
         for (const [operator, test] of comparison) {
-            literals.forEach((la, i) => literals.forEach((lb, j) => {
-                const memory = execute(`PROGRAM T
+            literals.forEach((la, i) =>
+                literals.forEach((lb, j) => {
+                    const memory = execute(`PROGRAM T
 VAR
   a : REAL := ${la};
   b : REAL := ${lb};
@@ -538,9 +865,11 @@ VAR
 END_VAR
   r := a ${operator} b;
 END_PROGRAM`);
-                const observed = (memory[0x1000]! & 1) === 1;
-                if (observed !== test(values[i]!, values[j]!)) throw new Error(`${la} ${operator} ${lb}: expected ${test(values[i]!, values[j]!)}, observed ${observed}`);
-            }));
+                    const observed = (memory[0x1000]! & 1) === 1;
+                    if (observed !== test(values[i]!, values[j]!))
+                        throw new Error(`${la} ${operator} ${lb}: expected ${test(values[i]!, values[j]!)}, observed ${observed}`);
+                }),
+            );
         }
     });
 

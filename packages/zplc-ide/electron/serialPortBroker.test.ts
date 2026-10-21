@@ -1,9 +1,21 @@
 import { describe, expect, test } from 'bun:test';
 
 import { createSerialPortBroker, type SystemSerialPort } from './serialPortBroker';
-import { SERIAL_PORT_LIMITS, isSerialPortChoice, isSerialPortListRequest, parseSerialPortOffer, type SerialPortOffer } from './serialPortProtocol';
+import {
+  SERIAL_PORT_LIMITS,
+  isSerialPortChoice,
+  isSerialPortListRequest,
+  parseSerialPortOffer,
+  type SerialPortOffer,
+} from './serialPortProtocol';
 
-const PICO: SystemSerialPort = { portId: 'private-port-1', displayName: 'Pico', vendorId: '11914', productId: '10', serialNumber: 'E6614C311B' };
+const PICO: SystemSerialPort = {
+  portId: 'private-port-1',
+  displayName: 'Pico',
+  vendorId: '11914',
+  productId: '10',
+  serialNumber: 'E6614C311B',
+};
 const BRIDGE: SystemSerialPort = { portId: 'private-port-2', portName: 'ttyUSB0', vendorId: '1027', productId: '24577' };
 
 function fixture(options: { deliver?: boolean } = {}) {
@@ -11,10 +23,15 @@ function fixture(options: { deliver?: boolean } = {}) {
   let next = 0;
   const answers: string[] = [];
   const broker = createSerialPortBroker({
-    send: (ownerId, offer) => { sent.push({ ownerId, offer }); return options.deliver !== false; },
+    send: (ownerId, offer) => {
+      sent.push({ ownerId, offer });
+      return options.deliver !== false;
+    },
     newRequestId: () => `request-${++next}`,
   });
-  const callback = (portId: string) => { answers.push(portId); };
+  const callback = (portId: string) => {
+    answers.push(portId);
+  };
   return { broker, sent, answers, callback };
 }
 
@@ -23,10 +40,16 @@ describe('serial port broker (IDE-018)', () => {
     const { broker, sent, answers, callback } = fixture();
     const requestId = broker.open({ ownerId: 7, ports: [PICO, BRIDGE], callback });
     expect(sent).toHaveLength(1);
-    expect(sent[0]).toEqual({ ownerId: 7, offer: { requestId, ports: [
-      { portId: 'private-port-1', name: 'Pico', vendorId: 0x2E8A, productId: 0x000A, serialNumber: 'E6614C311B' },
-      { portId: 'private-port-2', name: 'ttyUSB0', vendorId: 0x0403, productId: 0x6001 },
-    ] } });
+    expect(sent[0]).toEqual({
+      ownerId: 7,
+      offer: {
+        requestId,
+        ports: [
+          { portId: 'private-port-1', name: 'Pico', vendorId: 0x2e8a, productId: 0x000a, serialNumber: 'E6614C311B' },
+          { portId: 'private-port-2', name: 'ttyUSB0', vendorId: 0x0403, productId: 0x6001 },
+        ],
+      },
+    });
     expect(parseSerialPortOffer(sent[0]!.offer)).toEqual(sent[0]!.offer);
 
     broker.choose(7, requestId, 'private-port-2');
@@ -67,9 +90,10 @@ describe('serial port broker (IDE-018)', () => {
   test('cleans and bounds what a device calls itself, and offers a port that has no name as "Serial port n"', () => {
     const { broker, sent, callback } = fixture();
     broker.open({
-      ownerId: 1, callback,
+      ownerId: 1,
+      callback,
       ports: [
-        { portId: 'a', displayName: `PLC${String.fromCharCode(0, 0x202E, 0x200B)} ${'x'.repeat(200)}` },
+        { portId: 'a', displayName: `PLC${String.fromCharCode(0, 0x202e, 0x200b)} ${'x'.repeat(200)}` },
         { portId: 'b' },
         { portId: '', displayName: 'no identifier' },
         { portId: 'c', displayName: 'bad numbers', vendorId: '99999999', productId: 'abc' },
@@ -78,7 +102,7 @@ describe('serial port broker (IDE-018)', () => {
     const ports = sent[0]!.offer.ports;
     expect(ports.map((port) => port.portId)).toEqual(['a', 'b', 'c']);
     expect(ports[0]!.name).toHaveLength(SERIAL_PORT_LIMITS.maxTextChars);
-    for (const code of [0, 0x202E, 0x200B]) expect(ports[0]!.name.includes(String.fromCharCode(code))).toBe(false);
+    for (const code of [0, 0x202e, 0x200b]) expect(ports[0]!.name.includes(String.fromCharCode(code))).toBe(false);
     expect(ports[1]!.name).toBe('Serial port 2');
     expect(ports[2]).toEqual({ portId: 'c', name: 'bad numbers' });
     expect(parseSerialPortOffer(sent[0]!.offer)).not.toBeNull();
@@ -86,7 +110,11 @@ describe('serial port broker (IDE-018)', () => {
 
   test('offers at most sixteen ports', () => {
     const { broker, sent, callback } = fixture();
-    broker.open({ ownerId: 1, callback, ports: Array.from({ length: 40 }, (_, index) => ({ portId: `p${index}`, displayName: `Port ${index}` })) });
+    broker.open({
+      ownerId: 1,
+      callback,
+      ports: Array.from({ length: 40 }, (_, index) => ({ portId: `p${index}`, displayName: `Port ${index}` })),
+    });
     expect(sent[0]!.offer.ports).toHaveLength(SERIAL_PORT_LIMITS.maxPorts);
   });
 
@@ -117,18 +145,35 @@ describe('serial port messages', () => {
     const port = { portId: 'p', name: 'Pico', vendorId: 1, productId: 2 };
     expect(parseSerialPortOffer({ requestId: 'r', ports: [port] })).toEqual({ requestId: 'r', ports: [port] });
     for (const bad of [
-      null, [], { requestId: 'r' }, { requestId: '', ports: [] }, { requestId: 'r', ports: [], extra: 1 },
-      { requestId: 'r', ports: [{ ...port, extra: 1 }] }, { requestId: 'r', ports: [{ ...port, vendorId: 70000 }] },
-      { requestId: 'r', ports: [{ ...port, productId: -1 }] }, { requestId: 'r', ports: [{ ...port, vendorId: '1' }] },
-      { requestId: 'r', ports: [port, port] }, { requestId: 'r', ports: [{ portId: 'p' }] },
+      null,
+      [],
+      { requestId: 'r' },
+      { requestId: '', ports: [] },
+      { requestId: 'r', ports: [], extra: 1 },
+      { requestId: 'r', ports: [{ ...port, extra: 1 }] },
+      { requestId: 'r', ports: [{ ...port, vendorId: 70000 }] },
+      { requestId: 'r', ports: [{ ...port, productId: -1 }] },
+      { requestId: 'r', ports: [{ ...port, vendorId: '1' }] },
+      { requestId: 'r', ports: [port, port] },
+      { requestId: 'r', ports: [{ portId: 'p' }] },
       { requestId: 'r', ports: Array.from({ length: 17 }, (_, index) => ({ portId: `p${index}`, name: 'x' })) },
-    ]) expect(parseSerialPortOffer(bad)).toBeNull();
+    ])
+      expect(parseSerialPortOffer(bad)).toBeNull();
   });
 
   test('an answer is a request id and a port id or null, and nothing else', () => {
     expect(isSerialPortChoice({ requestId: 'r', portId: 'p' })).toBe(true);
     expect(isSerialPortChoice({ requestId: 'r', portId: null })).toBe(true);
-    for (const bad of [null, 'r', {}, { requestId: 'r' }, { requestId: 'r', portId: '' }, { requestId: 'r', portId: 'p', path: '/dev/ttyUSB0' }, { requestId: 5, portId: 'p' }, { requestId: 'r', portId: 'x'.repeat(300) }]) {
+    for (const bad of [
+      null,
+      'r',
+      {},
+      { requestId: 'r' },
+      { requestId: 'r', portId: '' },
+      { requestId: 'r', portId: 'p', path: '/dev/ttyUSB0' },
+      { requestId: 5, portId: 'p' },
+      { requestId: 'r', portId: 'x'.repeat(300) },
+    ]) {
       expect(isSerialPortChoice(bad)).toBe(false);
     }
     expect(isSerialPortListRequest({ requestId: 'r' })).toBe(true);

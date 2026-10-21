@@ -15,10 +15,11 @@ For those cases, ZPLC allows you to extend the core embedded system natively in 
 ## The Architectural Separation
 
 It is vital to maintain separation of concerns:
+
 - **Use standard ZPLC Logic (ST, SFC, LD)**: For factory automation, general operations, sequence logic, PID handling, and business logic mapping.
 - **Use Native Zephyr C**: For highly rigid operations such as writing display I2C drivers, proprietary motion control algorithms, hardware cryptographic services, and legacy protocols.
 
-*Native C tasks are not directly bound into the programmable ZPLC logic flow in ZPLC.* They run as independent, side-by-side threads in the Zephyr ecosystem.
+_Native C tasks are not directly bound into the programmable ZPLC logic flow in ZPLC._ They run as independent, side-by-side threads in the Zephyr ecosystem.
 
 ## Standard Workflow
 
@@ -30,6 +31,7 @@ If you require native integration, you must build the ZPLC firmware from its sou
 4. Interact with the ZPLC runtime via `zplc_hal_*` functions inside your C logic if necessary.
 
 **Example `CMakeLists.txt` extension:**
+
 ```cmake
 target_sources(app PRIVATE src/custom/custom_sensor_driver.c)
 ```

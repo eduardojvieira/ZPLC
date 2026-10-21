@@ -41,9 +41,9 @@ K_MUTEX_DEFINE(s_lock);
  * Together they let us compute current UTC without repeated SNTP calls:
  *   now_utc_ms = s_epoch_base_ms + (k_uptime_get() - s_uptime_base_ms)
  */
-static int64_t  s_epoch_base_ms  = -1;
-static int64_t  s_uptime_base_ms = 0;
-static bool     s_synced         = false;
+static int64_t s_epoch_base_ms = -1;
+static int64_t s_uptime_base_ms = 0;
+static bool s_synced = false;
 
 /* ============================================================================
  * Internal Helpers
@@ -60,38 +60,36 @@ static bool     s_synced         = false;
  *         negative errno on failure.
  */
 #if defined(CONFIG_SNTP)
-static int do_sntp_sync(const char *server)
-{
-    struct sntp_time sntp_result;
-    int ret;
+static int do_sntp_sync(const char *server) {
+  struct sntp_time sntp_result;
+  int ret;
 
-    if (!server || server[0] == '\0') {
-        LOG_WRN("SNTP: no server configured — using default pool.ntp.org");
-        server = "pool.ntp.org";
-    }
+  if (!server || server[0] == '\0') {
+    LOG_WRN("SNTP: no server configured — using default pool.ntp.org");
+    server = "pool.ntp.org";
+  }
 
-    LOG_INF("SNTP: syncing with %s ...", server);
+  LOG_INF("SNTP: syncing with %s ...", server);
 
-    ret = sntp_simple(server, 5000U /* ms */, &sntp_result);
-    if (ret < 0) {
-        LOG_ERR("SNTP: sync failed (err %d)", ret);
-        return ret;
-    }
+  ret = sntp_simple(server, 5000U /* ms */, &sntp_result);
+  if (ret < 0) {
+    LOG_ERR("SNTP: sync failed (err %d)", ret);
+    return ret;
+  }
 
-    if (k_mutex_lock(&s_lock, K_FOREVER) != 0) {
-        LOG_ERR("SNTP: the time lock could not be taken");
-        return -EBUSY;
-    }
-    /* sntp_time.seconds is seconds since Unix epoch (NTP epoch offset applied
+  if (k_mutex_lock(&s_lock, K_FOREVER) != 0) {
+    LOG_ERR("SNTP: the time lock could not be taken");
+    return -EBUSY;
+  }
+  /* sntp_time.seconds is seconds since Unix epoch (NTP epoch offset applied
      * by Zephyr's SNTP driver — result is already in Unix time). */
-    s_epoch_base_ms  = (int64_t)sntp_result.seconds * 1000LL
-                       + (int64_t)(sntp_result.fraction >> 22); /* ~ms */
-    s_uptime_base_ms = k_uptime_get();
-    s_synced         = true;
-    k_mutex_unlock(&s_lock);
+  s_epoch_base_ms = (int64_t)sntp_result.seconds * 1000LL + (int64_t)(sntp_result.fraction >> 22); /* ~ms */
+  s_uptime_base_ms = k_uptime_get();
+  s_synced = true;
+  k_mutex_unlock(&s_lock);
 
-    LOG_INF("SNTP: synchronized — Unix epoch %lld ms", (long long)s_epoch_base_ms);
-    return 0;
+  LOG_INF("SNTP: synchronized — Unix epoch %lld ms", (long long)s_epoch_base_ms);
+  return 0;
 }
 #endif
 
@@ -99,67 +97,63 @@ static int do_sntp_sync(const char *server)
  * Public API
  * ============================================================================ */
 
-int zplc_time_init(void)
-{
+int zplc_time_init(void) {
 #if defined(CONFIG_SNTP)
-    /* Check if NTP is enabled in config */
-    if (!zplc_config_get_ntp_enabled()) {
-        LOG_INF("SNTP: disabled by config — timestamps will use k_uptime_get()");
-        return 0;
-    }
-
-    char server[64];
-    zplc_config_get_ntp_server(server, sizeof(server));
-
-    /* Attempt initial sync. Non-fatal on failure — will retry via resync(). */
-    int ret = do_sntp_sync(server);
-    if (ret < 0) {
-        LOG_WRN("SNTP: initial sync failed, retrying on next resync() call");
-        /* Return 0 — failure is non-fatal, caller continues with uptime */
-    }
-
+  /* Check if NTP is enabled in config */
+  if (!zplc_config_get_ntp_enabled()) {
+    LOG_INF("SNTP: disabled by config — timestamps will use k_uptime_get()");
     return 0;
+  }
+
+  char server[64];
+  zplc_config_get_ntp_server(server, sizeof(server));
+
+  /* Attempt initial sync. Non-fatal on failure — will retry via resync(). */
+  int ret = do_sntp_sync(server);
+  if (ret < 0) {
+    LOG_WRN("SNTP: initial sync failed, retrying on next resync() call");
+    /* Return 0 — failure is non-fatal, caller continues with uptime */
+  }
+
+  return 0;
 #else
-    LOG_INF("SNTP support disabled in this build");
-    return 0;
+  LOG_INF("SNTP support disabled in this build");
+  return 0;
 #endif
 }
 
-bool zplc_time_is_synced(void)
-{
-    if (k_mutex_lock(&s_lock, K_FOREVER) != 0) {
-        return false;
-    }
-    bool synced = s_synced;
-    k_mutex_unlock(&s_lock);
-    return synced;
+bool zplc_time_is_synced(void) {
+  if (k_mutex_lock(&s_lock, K_FOREVER) != 0) {
+    return false;
+  }
+  bool synced = s_synced;
+  k_mutex_unlock(&s_lock);
+  return synced;
 }
 
-int64_t zplc_time_get_unix_ms(void)
-{
-    if (k_mutex_lock(&s_lock, K_FOREVER) != 0) {
-        return -1;
-    }
-    if (!s_synced) {
-        k_mutex_unlock(&s_lock);
-        return -1;
-    }
-    int64_t now = s_epoch_base_ms + (k_uptime_get() - s_uptime_base_ms);
+int64_t zplc_time_get_unix_ms(void) {
+  if (k_mutex_lock(&s_lock, K_FOREVER) != 0) {
+    return -1;
+  }
+  if (!s_synced) {
     k_mutex_unlock(&s_lock);
-    return now;
+    return -1;
+  }
+  int64_t now = s_epoch_base_ms + (k_uptime_get() - s_uptime_base_ms);
+  k_mutex_unlock(&s_lock);
+  return now;
 }
 
-int zplc_time_resync(void)
-{
+int zplc_time_resync(void) {
 #if !defined(CONFIG_SNTP)
-    return -ENOTSUP;
+  return -ENOTSUP;
 #else
-    if (!zplc_config_get_ntp_enabled()) {
-        return 0;
-    }
+  if (!zplc_config_get_ntp_enabled()) {
+    return 0;
+  }
 
-    char server[64];
-    zplc_config_get_ntp_server(server, sizeof(server));
-    return do_sntp_sync(server);
+  char server[64];
+  zplc_config_get_ntp_server(server, sizeof(server));
+  return do_sntp_sync(server);
 #endif
 }

@@ -5,7 +5,10 @@
  */
 import type { ZPLCProjectConfig } from '../types';
 
-export interface DiffLine { kind: 'same' | 'removed' | 'added'; text: string }
+export interface DiffLine {
+  kind: 'same' | 'removed' | 'added';
+  text: string;
+}
 
 /** Beyond this many line pairs in the part that differs, the comparison reports the whole part as replaced. */
 const COMPARISON_BUDGET = 4_000_000;
@@ -28,7 +31,10 @@ export function diffLines(before: string, after: string): DiffLine[] {
   while (start < left.length && start < right.length && left[start] === right[start]) start += 1;
   let leftEnd = left.length;
   let rightEnd = right.length;
-  while (leftEnd > start && rightEnd > start && left[leftEnd - 1] === right[rightEnd - 1]) { leftEnd -= 1; rightEnd -= 1; }
+  while (leftEnd > start && rightEnd > start && left[leftEnd - 1] === right[rightEnd - 1]) {
+    leftEnd -= 1;
+    rightEnd -= 1;
+  }
 
   const out: DiffLine[] = left.slice(0, start).map((text) => ({ kind: 'same', text }));
   const a = left.slice(start, leftEnd);
@@ -46,9 +52,17 @@ export function diffLines(before: string, after: string): DiffLine[] {
     let i = 0;
     let j = 0;
     while (i < a.length || j < b.length) {
-      if (i < a.length && j < b.length && a[i] === b[j]) { out.push({ kind: 'same', text: a[i]! }); i += 1; j += 1; }
-      else if (j >= b.length || (i < a.length && common[i + 1]![j]! >= common[i]![j + 1]!)) { out.push({ kind: 'removed', text: a[i]! }); i += 1; }
-      else { out.push({ kind: 'added', text: b[j]! }); j += 1; }
+      if (i < a.length && j < b.length && a[i] === b[j]) {
+        out.push({ kind: 'same', text: a[i]! });
+        i += 1;
+        j += 1;
+      } else if (j >= b.length || (i < a.length && common[i + 1]![j]! >= common[i]![j + 1]!)) {
+        out.push({ kind: 'removed', text: a[i]! });
+        i += 1;
+      } else {
+        out.push({ kind: 'added', text: b[j]! });
+        j += 1;
+      }
     }
   }
   out.push(...left.slice(leftEnd).map((text): DiffLine => ({ kind: 'same', text })));
@@ -69,7 +83,13 @@ export function changedHunks(lines: readonly DiffLine[], context = 2): DiffLine[
   return ranges.map(([from, to]) => lines.slice(from, to).map((line) => ({ ...line })));
 }
 
-export interface MigrationDifference { file: 'zplc.json'; changed: boolean; removed: number; added: number; hunks: DiffLine[][] }
+export interface MigrationDifference {
+  file: 'zplc.json';
+  changed: boolean;
+  removed: number;
+  added: number;
+  hunks: DiffLine[][];
+}
 
 /** What saving `config` would change in the zplc.json whose text is `before`. */
 export function describeMigration(before: string, config: ZPLCProjectConfig): MigrationDifference {

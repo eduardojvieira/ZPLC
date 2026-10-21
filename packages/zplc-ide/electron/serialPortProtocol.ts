@@ -48,11 +48,15 @@ export interface SerialPortListRequest {
 }
 
 function isUnsafeCodePoint(code: number): boolean {
-  return code < 0x20 || code === 0x7F || code === 0x061C
-    || (code >= 0x200B && code <= 0x200F)
-    || (code >= 0x202A && code <= 0x202E)
-    || (code >= 0x2060 && code <= 0x2069)
-    || code === 0xFEFF;
+  return (
+    code < 0x20 ||
+    code === 0x7f ||
+    code === 0x061c ||
+    (code >= 0x200b && code <= 0x200f) ||
+    (code >= 0x202a && code <= 0x202e) ||
+    (code >= 0x2060 && code <= 0x2069) ||
+    code === 0xfeff
+  );
 }
 
 /**
@@ -62,7 +66,9 @@ function isUnsafeCodePoint(code: number): boolean {
 export function cleanPortText(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const text = Array.from(value, (character) => (isUnsafeCodePoint(character.codePointAt(0) ?? 0) ? ' ' : character))
-    .join('').replace(/\s+/g, ' ').trim();
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim();
   return text.length > 0 ? Array.from(text).slice(0, SERIAL_PORT_LIMITS.maxTextChars).join('') : null;
 }
 
@@ -80,17 +86,23 @@ const isRequestId = (value: unknown): value is string =>
 const isPortId = (value: unknown): value is string =>
   typeof value === 'string' && value.length >= 1 && value.length <= SERIAL_PORT_LIMITS.maxPortIdChars;
 const isUsbNumber = (value: unknown): value is number =>
-  typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 0xFFFF;
+  typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 0xffff;
 
 function parsePort(value: unknown): SerialPortOffered | null {
-  if (!isPlainObject(value) || !hasOnlyKeys(value, ['portId', 'name', 'vendorId', 'productId', 'serialNumber'], ['portId', 'name'])) return null;
+  if (!isPlainObject(value) || !hasOnlyKeys(value, ['portId', 'name', 'vendorId', 'productId', 'serialNumber'], ['portId', 'name']))
+    return null;
   const { portId, name, vendorId, productId, serialNumber } = value;
   if (!isPortId(portId) || typeof name !== 'string' || name.length < 1 || name.length > SERIAL_PORT_LIMITS.maxTextChars) return null;
   if (vendorId !== undefined && !isUsbNumber(vendorId)) return null;
   if (productId !== undefined && !isUsbNumber(productId)) return null;
-  if (serialNumber !== undefined && (typeof serialNumber !== 'string' || serialNumber.length < 1 || serialNumber.length > SERIAL_PORT_LIMITS.maxTextChars)) return null;
+  if (
+    serialNumber !== undefined &&
+    (typeof serialNumber !== 'string' || serialNumber.length < 1 || serialNumber.length > SERIAL_PORT_LIMITS.maxTextChars)
+  )
+    return null;
   return {
-    portId, name,
+    portId,
+    name,
     ...(vendorId === undefined ? {} : { vendorId }),
     ...(productId === undefined ? {} : { productId }),
     ...(serialNumber === undefined ? {} : { serialNumber }),
@@ -111,8 +123,12 @@ export function parseSerialPortOffer(value: unknown): SerialPortOffer | null {
 
 /** The window's answer, as the main process accepts it. */
 export function isSerialPortChoice(value: unknown): value is SerialPortChoice {
-  return isPlainObject(value) && hasOnlyKeys(value, ['requestId', 'portId'], ['requestId', 'portId'])
-    && isRequestId(value.requestId) && (value.portId === null || isPortId(value.portId));
+  return (
+    isPlainObject(value) &&
+    hasOnlyKeys(value, ['requestId', 'portId'], ['requestId', 'portId']) &&
+    isRequestId(value.requestId) &&
+    (value.portId === null || isPortId(value.portId))
+  );
 }
 
 export function isSerialPortListRequest(value: unknown): value is SerialPortListRequest {

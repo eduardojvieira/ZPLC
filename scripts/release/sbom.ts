@@ -13,7 +13,10 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { integrityHex, parseLockfile, productionClosure, resolveDependency, type Lockfile } from './lockfile';
 
-export interface WorkspaceManifest { name: string; version?: string }
+export interface WorkspaceManifest {
+  name: string;
+  version?: string;
+}
 
 export interface SbomInput {
   lockText: string;
@@ -60,7 +63,11 @@ function genericPurl(name: string, version: string, vcsUrl?: string): string {
   return vcsUrl === undefined ? base : `${base}?vcs_url=${encodeURIComponent(vcsUrl)}`;
 }
 
-export interface WestProject { name: string; url: string; revision: string }
+export interface WestProject {
+  name: string;
+  url: string;
+  revision: string;
+}
 
 interface WestManifest {
   manifest?: {
@@ -73,7 +80,7 @@ export function westProjects(text: string): WestProject[] {
   const manifest = (Bun.YAML.parse(text) as WestManifest | null)?.manifest;
   const bases = new Map((manifest?.remotes ?? []).map((remote) => [remote.name, remote['url-base'] ?? '']));
   return (manifest?.projects ?? []).map((project) => {
-    const base = project.remote === undefined ? '' : bases.get(project.remote) ?? '';
+    const base = project.remote === undefined ? '' : (bases.get(project.remote) ?? '');
     const url = project.url ?? (base === '' ? '' : `${base.replace(/\/$/, '')}/${project['repo-path'] ?? project.name}`);
     return { name: project.name, url, revision: project.revision ?? 'unknown' };
   });
@@ -81,7 +88,9 @@ export function westProjects(text: string): WestProject[] {
 
 function westPurl(project: WestProject): string {
   const github = /^https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/.exec(project.url);
-  return github ? `pkg:github/${github[1]}/${github[2]}@${project.revision}` : genericPurl(project.name, project.revision, project.url || undefined);
+  return github
+    ? `pkg:github/${github[1]}/${github[2]}@${project.revision}`
+    : genericPurl(project.name, project.revision, project.url || undefined);
 }
 
 export function buildSbom(input: SbomInput): Sbom {
@@ -100,7 +109,10 @@ export function buildSbom(input: SbomInput): Sbom {
     const entry = lock.packages.get(key);
     if (!entry) return undefined;
     return entry.workspacePath !== undefined
-      ? genericPurl(entry.name, input.workspaceManifests[entry.workspacePath]?.version ?? lock.workspaces.get(entry.workspacePath)?.version ?? 'unknown')
+      ? genericPurl(
+          entry.name,
+          input.workspaceManifests[entry.workspacePath]?.version ?? lock.workspaces.get(entry.workspacePath)?.version ?? 'unknown',
+        )
       : npmPurl(entry.name, entry.version);
   };
 
@@ -176,7 +188,10 @@ export function buildSbom(input: SbomInput): Sbom {
   };
 }
 
-export interface SbomCheckOptions { lock: Lockfile; floor: number }
+export interface SbomCheckOptions {
+  lock: Lockfile;
+  floor: number;
+}
 
 /** What is wrong with the document; an empty list means it holds every locked package and meets the floor. */
 export function checkSbom(sbom: Pick<Sbom, 'components'>, { lock, floor }: SbomCheckOptions): string[] {
@@ -186,16 +201,26 @@ export function checkSbom(sbom: Pick<Sbom, 'components'>, { lock, floor }: SbomC
     if (entry.workspacePath === undefined) locked.set(npmPurl(entry.name, entry.version), entry.id);
   }
   const held = new Set(sbom.components.map((component) => component.purl));
-  const missing = [...locked].filter(([purl]) => !held.has(purl)).map(([, id]) => id).sort();
+  const missing = [...locked]
+    .filter(([purl]) => !held.has(purl))
+    .map(([, id]) => id)
+    .sort();
   const heldNpm = [...held].filter((purl) => purl.startsWith('pkg:npm/')).length;
   if (missing.length > 0) {
-    problems.push(`bun.lock lists ${locked.size} packages but the document holds ${heldNpm}: missing ${missing.slice(0, 10).join(', ')}${missing.length > 10 ? `, and ${missing.length - 10} more` : ''}`);
+    problems.push(
+      `bun.lock lists ${locked.size} packages but the document holds ${heldNpm}: missing ${missing.slice(0, 10).join(', ')}${
+        missing.length > 10 ? `, and ${missing.length - 10} more` : ''
+      }`,
+    );
   }
   if (sbom.components.length < floor) {
-    problems.push(`the document holds ${sbom.components.length} components, below the recorded floor of ${floor} (scripts/release/sbom-floor.json)`);
+    problems.push(
+      `the document holds ${sbom.components.length} components, below the recorded floor of ${floor} (scripts/release/sbom-floor.json)`,
+    );
   }
   for (const component of sbom.components) {
-    if (!component.name || !component.version || !component.purl) problems.push(`a component has no name, version or purl: ${JSON.stringify(component)}`);
+    if (!component.name || !component.version || !component.purl)
+      problems.push(`a component has no name, version or purl: ${JSON.stringify(component)}`);
   }
   return problems;
 }
@@ -211,7 +236,11 @@ function repositoryInput(root: string, westImports: string[]): SbomInput {
     if (path !== '') manifests[path] = JSON.parse(read(`${path}/package.json`)) as WorkspaceManifest;
   }
   let commit: string | undefined;
-  try { commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); } catch { /* a source archive has no git */ }
+  try {
+    commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  } catch {
+    /* a source archive has no git */
+  }
   const epoch = process.env.SOURCE_DATE_EPOCH;
   return {
     lockText,
@@ -234,7 +263,10 @@ function main(argv: string[]): number {
     else if (flag === '--west-import') options.westImports.push(argv[++index] ?? '');
     else if (flag === '--check') options.check = true;
     else if (flag === '--update-floor') options.updateFloor = true;
-    else { console.error(`sbom: unknown argument ${flag}`); return 2; }
+    else {
+      console.error(`sbom: unknown argument ${flag}`);
+      return 2;
+    }
   }
   if (!options.out && !options.verify && !options.check && !options.updateFloor) {
     console.error('usage: sbom.ts --out <file> | --check | --verify <file> | --update-floor [--west-import <zephyr west.yml>]');
@@ -257,7 +289,10 @@ function main(argv: string[]): number {
   const problems = checkSbom(sbom, { lock, floor });
   for (const problem of problems) console.error(`sbom: ${problem}`);
   if (options.updateFloor) {
-    if (sbom.components.length < floor) { console.error(`sbom: the floor is ${floor} and is never lowered here`); return 1; }
+    if (sbom.components.length < floor) {
+      console.error(`sbom: the floor is ${floor} and is never lowered here`);
+      return 1;
+    }
     writeFileSync(floorPath, `${JSON.stringify({ schema: 1, components: sbom.components.length }, null, 2)}\n`);
     console.log(`sbom: floor is now ${sbom.components.length}`);
   }
@@ -265,7 +300,8 @@ function main(argv: string[]): number {
     writeFileSync(options.out, `${JSON.stringify(sbom, null, 2)}\n`);
     console.log(`sbom: wrote ${sbom.components.length} components to ${options.out}`);
   }
-  if (options.check && problems.length === 0) console.log(`sbom: ${sbom.components.length} components, bun.lock lists ${lock.packages.size} entries, floor ${floor}`);
+  if (options.check && problems.length === 0)
+    console.log(`sbom: ${sbom.components.length} components, bun.lock lists ${lock.packages.size} entries, floor ${floor}`);
   return problems.length === 0 ? 0 : 1;
 }
 

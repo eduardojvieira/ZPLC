@@ -29,7 +29,7 @@ END_PROGRAM`;
 
         // Check globals (Red, Green, Blue)
         expect(symbols.get('Red')).toBeDefined();
-        
+
         // Check code
         // c := Green -> Green is 1 -> PUSH8 1
         expect(code).toContain('PUSH8 1');

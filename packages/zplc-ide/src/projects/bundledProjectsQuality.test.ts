@@ -14,7 +14,10 @@ import { compileScenario, runScenario } from '../test-engine';
 // without retained data, and a scenario for every example the test engine can run.
 const projectsRoot = fileURLToPath(new URL('../../projects', import.meta.url));
 const boardsRoot = fileURLToPath(new URL('../../../../firmware/app/boards', import.meta.url));
-const allProjects = readdirSync(projectsRoot, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+const allProjects = readdirSync(projectsRoot, { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name)
+  .sort();
 const exampleProjects = allProjects.filter((name) => !name.endsWith('_starter'));
 const rootOf = (name: string): string => join(projectsRoot, name);
 
@@ -35,7 +38,9 @@ const stSourcesOf = (name: string) => sourcesOf(name).filter(({ file }) => file.
 const stripComments = (text: string): string => text.replace(/\(\*[\s\S]*?\*\)/g, '');
 const commentsOf = (text: string): string => [...text.matchAll(/\(\*([\s\S]*?)\*\)/g)].map((match) => match[1]).join('\n');
 const scenarioCount = (name: string): number =>
-  existsSync(join(rootOf(name), 'tests')) ? readdirSync(join(rootOf(name), 'tests')).filter((file) => file.endsWith('.scenario.json')).length : 0;
+  existsSync(join(rootOf(name), 'tests'))
+    ? readdirSync(join(rootOf(name), 'tests')).filter((file) => file.endsWith('.scenario.json')).length
+    : 0;
 
 // Hardware demos: everything that targets a board the firmware has an overlay for.
 const hardwareDemos = exampleProjects.filter((name) => /^(pico_|esp32)/.test(name) || name === 'multitask_demo' || name === 'analog_test');
@@ -46,12 +51,17 @@ describe('no credentials in any bundled manifest', () => {
     if (Array.isArray(value)) return value.flatMap((item, index) => credentialPaths(item, `${at}[${index}]`));
     if (typeof value !== 'object' || value === null) return [];
     return Object.entries(value).flatMap(([key, child]) =>
-      typeof child === 'string' && child.trim() !== '' && CREDENTIAL_KEY.test(key) ? [`${at}.${key}`] : credentialPaths(child, `${at}.${key}`));
+      typeof child === 'string' && child.trim() !== '' && CREDENTIAL_KEY.test(key)
+        ? [`${at}.${key}`]
+        : credentialPaths(child, `${at}.${key}`),
+    );
   };
   const enabledPaths = (value: unknown, at = '$'): string[] => {
     if (Array.isArray(value)) return value.flatMap((item, index) => enabledPaths(item, `${at}[${index}]`));
     if (typeof value !== 'object' || value === null) return [];
-    return Object.entries(value).flatMap(([key, child]) => (key === 'enabled' && child === true ? [`${at}.enabled`] : enabledPaths(child, `${at}.${key}`)));
+    return Object.entries(value).flatMap(([key, child]) =>
+      key === 'enabled' && child === true ? [`${at}.enabled`] : enabledPaths(child, `${at}.${key}`),
+    );
   };
 
   for (const name of allProjects) {
@@ -98,20 +108,43 @@ describe('every example the test engine can run has a scenario', () => {
 });
 
 describe('hardware demos read their pins from the board overlay', () => {
-  const OVERLAY_OF_BOARD: Record<string, string> = { rpi_pico: 'rpi_pico_rp2040.overlay', esp32s3_devkitc: 'esp32s3_devkitc_esp32s3_procpu.overlay' };
+  const OVERLAY_OF_BOARD: Record<string, string> = {
+    rpi_pico: 'rpi_pico_rp2040.overlay',
+    esp32s3_devkitc: 'esp32s3_devkitc_esp32s3_procpu.overlay',
+  };
   // GPIO number of "<&gpioN pin ...": the ESP32-S3 has two banks (gpio1 starts at GPIO32); the RP2040 has one.
   const overlayPins = (file: string): { outputs: Map<number, number>; inputs: Map<number, number> } => {
     const text = readFileSync(join(boardsRoot, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-    const pins = (node: string) => new Map([...text.matchAll(new RegExp(`${node}_(\\d+)\\s*\\{[^}]*?gpios\\s*=\\s*<&gpio(\\d)\\s+(\\d+)`, 'g'))]
-      .map((match): [number, number] => [Number(match[1]), Number(match[2]) * 32 + Number(match[3])]));
+    const pins = (node: string) =>
+      new Map(
+        [...text.matchAll(new RegExp(`${node}_(\\d+)\\s*\\{[^}]*?gpios\\s*=\\s*<&gpio(\\d)\\s+(\\d+)`, 'g'))].map(
+          (match): [number, number] => [Number(match[1]), Number(match[2]) * 32 + Number(match[3])],
+        ),
+      );
     return { outputs: pins('led'), inputs: pins('button') };
   };
 
   it('the overlay parser finds the pins it is checked against', () => {
     // IO-009: the Pico maps its on-board LED (GP25) as the fifth output and has four inputs; the DevKitC-1 has four outputs
-    expect([...overlayPins('rpi_pico_rp2040.overlay').outputs]).toEqual([[0, 0], [1, 1], [2, 2], [3, 3], [4, 25]]);
-    expect([...overlayPins('rpi_pico_rp2040.overlay').inputs]).toEqual([[0, 15], [1, 14], [2, 13], [3, 12]]);
-    expect([...overlayPins('esp32s3_devkitc_esp32s3_procpu.overlay').outputs]).toEqual([[0, 15], [1, 16], [2, 17], [3, 18]]);
+    expect([...overlayPins('rpi_pico_rp2040.overlay').outputs]).toEqual([
+      [0, 0],
+      [1, 1],
+      [2, 2],
+      [3, 3],
+      [4, 25],
+    ]);
+    expect([...overlayPins('rpi_pico_rp2040.overlay').inputs]).toEqual([
+      [0, 15],
+      [1, 14],
+      [2, 13],
+      [3, 12],
+    ]);
+    expect([...overlayPins('esp32s3_devkitc_esp32s3_procpu.overlay').outputs]).toEqual([
+      [0, 15],
+      [1, 16],
+      [2, 17],
+      [3, 18],
+    ]);
   });
 
   for (const name of hardwareDemos) {
@@ -124,7 +157,10 @@ describe('hardware demos read their pins from the board overlay', () => {
 
       const { outputs, inputs } = overlayPins(OVERLAY_OF_BOARD[board]!);
       const manifest = manifestOf(name);
-      for (const [points, table] of [[manifest.io?.outputs ?? [], outputs], [manifest.io?.inputs ?? [], inputs]] as const) {
+      for (const [points, table] of [
+        [manifest.io?.outputs ?? [], outputs],
+        [manifest.io?.inputs ?? [], inputs],
+      ] as const) {
         for (const point of points) {
           const index = Number(/^%[IQ]X?0\.(\d+)$/.exec(point.address)?.[1]);
           expect(table.has(index), `${name}: ${point.address} (${point.name}) has no pin in the ${board} overlay`).toBe(true);
@@ -134,11 +170,20 @@ describe('hardware demos read their pins from the board overlay', () => {
       // Any "GPIO nn" or "GPnn" in the text has to be a pin the overlay gives to some channel (or an RP2040 ADC pin), unless the
       // sentence says that pin is NOT driven ("the overlay does not drive the built-in LED on GP25").
       const allowed = new Set<number>([...outputs.values(), ...inputs.values(), ...(board === 'rpi_pico' ? [26, 27, 28, 29] : [])]);
-      const prose = [manifest.description ?? '', ...(manifest.io?.outputs ?? []).map((p) => p.description ?? ''), ...(manifest.io?.inputs ?? []).map((p) => p.description ?? ''),
-        ...stSourcesOf(name).map(({ text }) => commentsOf(text))].join('\n');
-      const mentioned = prose.split(/\.\s|\n/).filter((sentence) => !/\bnot\b|n't/i.test(sentence))
+      const prose = [
+        manifest.description ?? '',
+        ...(manifest.io?.outputs ?? []).map((p) => p.description ?? ''),
+        ...(manifest.io?.inputs ?? []).map((p) => p.description ?? ''),
+        ...stSourcesOf(name).map(({ text }) => commentsOf(text)),
+      ].join('\n');
+      const mentioned = prose
+        .split(/\.\s|\n/)
+        .filter((sentence) => !/\bnot\b|n't/i.test(sentence))
         .flatMap((sentence) => [...sentence.matchAll(/\bGPIO ?(\d+)\b|\bGP(\d+)\b/g)].map((match) => Number(match[1] ?? match[2])));
-      expect(mentioned.filter((pin) => !allowed.has(pin)), `${name} mentions a pin its overlay does not use`).toEqual([]);
+      expect(
+        mentioned.filter((pin) => !allowed.has(pin)),
+        `${name} mentions a pin its overlay does not use`,
+      ).toEqual([]);
     });
   }
 
@@ -154,8 +199,11 @@ describe('hardware demos read their pins from the board overlay', () => {
     for (const name of exampleProjects) {
       const adc = manifestOf(name).io?.analog?.adc ?? [];
       for (const point of adc) expect(point.address, `${name}: ${point.name}`).toBe(`%IW${4 + (point.channel ?? -1)}`);
-      const used = new Set(stSourcesOf(name).flatMap(({ text }) => [...stripComments(text).matchAll(/AT\s+(%IW\d+)/g)].map((match) => match[1]!)));
-      if (used.size > 0) expect([...used].sort(), `${name}: %IW addresses the source reads`).toEqual(adc.map((point) => point.address).sort());
+      const used = new Set(
+        stSourcesOf(name).flatMap(({ text }) => [...stripComments(text).matchAll(/AT\s+(%IW\d+)/g)].map((match) => match[1]!)),
+      );
+      if (used.size > 0)
+        expect([...used].sort(), `${name}: %IW addresses the source reads`).toEqual(adc.map((point) => point.address).sort());
     }
   });
 
@@ -168,10 +216,15 @@ describe('hardware demos read their pins from the board overlay', () => {
 
   it('every I/O point a demo declares is used by its sources', () => {
     for (const name of hardwareDemos) {
-      const code = stSourcesOf(name).map(({ text }) => stripComments(text)).join('\n');
+      const code = stSourcesOf(name)
+        .map(({ text }) => stripComments(text))
+        .join('\n');
       const manifest = manifestOf(name);
       const declared = [...(manifest.io?.inputs ?? []), ...(manifest.io?.outputs ?? []), ...(manifest.io?.analog?.adc ?? [])];
-      expect(declared.filter((point) => !new RegExp(`\\b${point.name}\\b`).test(code)).map((point) => point.name), `${name}: declared but unused`).toEqual([]);
+      expect(
+        declared.filter((point) => !new RegExp(`\\b${point.name}\\b`).test(code)).map((point) => point.name),
+        `${name}: declared but unused`,
+      ).toEqual([]);
     }
   });
 });
@@ -180,32 +233,39 @@ describe('what the examples say about timing, persistence and function blocks is
   const retainExists = exampleProjects.some((name) => stSourcesOf(name).some(({ text }) => /\bRETAIN\b/.test(stripComments(text))));
 
   it('no manifest claims to test persistence unless an example with RETAIN exists', () => {
-    const CLAIM = /(?<!\b(?:not|never|cannot|n't) )\b(tests?|verif(?:y|ies)|demonstrates?|proves?)\s+(?:NVS\s+)?(?:persist\w*|retentive|retention)/i;
+    const CLAIM =
+      /(?<!\b(?:not|never|cannot|n't) )\b(tests?|verif(?:y|ies)|demonstrates?|proves?)\s+(?:NVS\s+)?(?:persist\w*|retentive|retention)/i;
     for (const name of allProjects) if (!retainExists) expect(manifestOf(name).description ?? '', name).not.toMatch(CLAIM);
   });
 
   it('no source claims a power cycle keeps data when nothing is retained', () => {
-    for (const name of exampleProjects) for (const { file, text } of stSourcesOf(name)) {
-      if (!retainExists) expect(commentsOf(text), `${name}/${file}`).not.toMatch(/should continue blinking|to verify persistence/i);
-    }
+    for (const name of exampleProjects)
+      for (const { file, text } of stSourcesOf(name)) {
+        if (!retainExists) expect(commentsOf(text), `${name}/${file}`).not.toMatch(/should continue blinking|to verify persistence/i);
+      }
   });
 
   it('no example keeps a leftover "TEMPORARY TEST VALUE" comment', () => {
-    for (const name of allProjects) for (const { file, text } of sourcesOf(name)) expect(text, `${name}/${file}`).not.toMatch(/TEMPORARY TEST/i);
+    for (const name of allProjects)
+      for (const { file, text } of sourcesOf(name)) expect(text, `${name}/${file}`).not.toMatch(/TEMPORARY TEST/i);
   });
 
   // BLINK is not in IEC 61131-3. No example may recommend it as the standard way; a teaching example that uses it has to say it is
   // an extension (kitchen_sink is a list-of-blocks conformance fixture, not a teaching example).
   it('a source that uses BLINK never recommends it as IEC, and says it is a ZPLC extension', () => {
-    for (const name of exampleProjects) for (const { file, text } of stSourcesOf(name)) {
-      if (!/:\s*BLINK\s*;/.test(stripComments(text))) continue;
-      expect(commentsOf(text), `${name}/${file}`).not.toMatch(/recommended way/i);
-      if (name !== 'kitchen_sink') expect(commentsOf(text), `${name}/${file}`).toMatch(/ZPLC extension/);
-    }
+    for (const name of exampleProjects)
+      for (const { file, text } of stSourcesOf(name)) {
+        if (!/:\s*BLINK\s*;/.test(stripComments(text))) continue;
+        expect(commentsOf(text), `${name}/${file}`).not.toMatch(/recommended way/i);
+        if (name !== 'kitchen_sink') expect(commentsOf(text), `${name}/${file}`).toMatch(/ZPLC extension/);
+      }
   });
 
   it('pico_blinky_ton builds a TON and pico_blinky_blink builds the BLINK function block', () => {
-    const built = (name: string) => stSourcesOf(name).map(({ text }) => stripComments(text)).join('\n');
+    const built = (name: string) =>
+      stSourcesOf(name)
+        .map(({ text }) => stripComments(text))
+        .join('\n');
     expect(built('pico_blinky_ton')).toMatch(/:\s*TON\s*;/);
     expect(built('pico_blinky_ton')).not.toMatch(/\bBLINK\b/);
     expect(built('pico_blinky_blink')).toMatch(/:\s*BLINK\s*;/);
@@ -214,7 +274,9 @@ describe('what the examples say about timing, persistence and function blocks is
 
   it('a counted blink says what it counts: task interval times scans is the time its comments claim', () => {
     for (const name of ['pico_blinky', 'esp32s3_blinky']) {
-      const text = stSourcesOf(name).map((source) => source.text).join('\n');
+      const text = stSourcesOf(name)
+        .map((source) => source.text)
+        .join('\n');
       const scans = Number(/Counter >= (\d+)/.exec(stripComments(text))?.[1]);
       expect((manifestOf(name).tasks[0]!.interval_ms ?? 0) * scans, name).toBe(500);
       expect(text, name).not.toMatch(/\b481\b/);
@@ -223,7 +285,8 @@ describe('what the examples say about timing, persistence and function blocks is
 
   // The VAR_OUTPUT block of each program names the LED it drives (the old FastBlink called its LED1 "LED2").
   it('multitask_demo comments name the LED each program drives', () => {
-    const outputs = (file: string): string => /VAR_OUTPUT([\s\S]*?)END_VAR/.exec(sourcesOf('multitask_demo').find((source) => source.file === file)!.text)![1]!;
+    const outputs = (file: string): string =>
+      /VAR_OUTPUT([\s\S]*?)END_VAR/.exec(sourcesOf('multitask_demo').find((source) => source.file === file)!.text)![1]!;
     expect(outputs('FastBlink.st')).toMatch(/LED1/);
     expect(outputs('FastBlink.st')).not.toMatch(/LED2/);
     expect(outputs('SlowBlink.st')).toMatch(/LED2/);
@@ -232,10 +295,23 @@ describe('what the examples say about timing, persistence and function blocks is
 });
 
 describe('the reference examples explain themselves', () => {
-  const EXPLAINED = ['motor_start_stop', 'scan_snapshot', 'tank_level', 'pedestrian_crossing', 'conveyor_01', 'edge_counter', 'motor_plant', ...hardwareDemos];
+  const EXPLAINED = [
+    'motor_start_stop',
+    'scan_snapshot',
+    'tank_level',
+    'pedestrian_crossing',
+    'conveyor_01',
+    'edge_counter',
+    'motor_plant',
+    ...hardwareDemos,
+  ];
   for (const name of EXPLAINED) {
     it(`${name} has comments that say what it is for`, () => {
-      expect(stSourcesOf(name).map(({ text }) => commentsOf(text)).join('\n').length).toBeGreaterThan(300);
+      expect(
+        stSourcesOf(name)
+          .map(({ text }) => commentsOf(text))
+          .join('\n').length,
+      ).toBeGreaterThan(300);
     });
   }
 
@@ -279,13 +355,20 @@ describe('edge_counter counts edges with CTU alone', () => {
   // A pulse held for seven scans must count once, so CountReached stays FALSE until the third distinct pulse. This runs inline
   // on purpose: edge_counter is a golden project whose scenario list other tests pin.
   const HELD_PULSE = {
-    schemaVersion: 1, id: 'EdgeCounterHeldPulse', tickMs: 10, durationMs: 140,
+    schemaVersion: 1,
+    id: 'EdgeCounterHeldPulse',
+    tickMs: 10,
+    durationMs: 140,
     events: [
       { atMs: 0, set: { 'EdgeCounter.PulseInput': false, 'EdgeCounter.Reset': false } },
-      { atMs: 10, set: { 'EdgeCounter.PulseInput': true } }, { atMs: 80, set: { 'EdgeCounter.PulseInput': false } },
-      { atMs: 90, set: { 'EdgeCounter.PulseInput': true } }, { atMs: 100, set: { 'EdgeCounter.PulseInput': false } },
-      { atMs: 110, set: { 'EdgeCounter.PulseInput': true } }, { atMs: 120, set: { 'EdgeCounter.PulseInput': false } },
-      { atMs: 130, set: { 'EdgeCounter.Reset': true } }, { atMs: 140, set: { 'EdgeCounter.Reset': false } },
+      { atMs: 10, set: { 'EdgeCounter.PulseInput': true } },
+      { atMs: 80, set: { 'EdgeCounter.PulseInput': false } },
+      { atMs: 90, set: { 'EdgeCounter.PulseInput': true } },
+      { atMs: 100, set: { 'EdgeCounter.PulseInput': false } },
+      { atMs: 110, set: { 'EdgeCounter.PulseInput': true } },
+      { atMs: 120, set: { 'EdgeCounter.PulseInput': false } },
+      { atMs: 130, set: { 'EdgeCounter.Reset': true } },
+      { atMs: 140, set: { 'EdgeCounter.Reset': false } },
     ],
     expectations: [
       { kind: 'FOR', fromMs: 10, forMs: 90, condition: { 'EdgeCounter.CountReached': false } },
@@ -294,64 +377,18 @@ describe('edge_counter counts edges with CTU alone', () => {
       { kind: 'AT', atMs: 130, condition: { 'EdgeCounter.CountReached': false } },
     ],
   };
-  itNative('counts a pulse held for seven scans once', async () => {
-    const previous = process.env.ZPLC_NATIVE_SIM_BIN;
-    process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
-    try {
-      const built = await compilerCompile(rootOf('edge_counter'));
-      if (!built.ok || !built.debugMap) throw new Error(JSON.stringify(built.evidence.diagnostics));
-      const session = await createNativeScenarioSession(process.env);
-      try {
-        const result = await runScenario(compileScenario(HELD_PULSE, built.debugMap), built.zplcFile!, session.runtime);
-        expect(result.assertions.map((assertion) => assertion.passed)).toEqual([true, true, true, true]);
-      } finally {
-        await session.close();
-      }
-    } finally {
-      if (previous === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
-      else process.env.ZPLC_NATIVE_SIM_BIN = previous;
-    }
-  }, 30_000);
-});
-
-describe('motor_plant supervises the start', () => {
-  // motor_plant is a golden project whose scenario list other tests pin, so these two run inline. The AtSpeed feedback is
-  // written by the scenario itself (no plant), which is what lets one run withhold it.
-  const withoutPlant = (id: string, durationMs: number, events: unknown[], expectations: unknown[]) =>
-    ({ schemaVersion: 1, id, tickMs: 10, durationMs, events, expectations });
-  const at = (atMs: number, condition: Record<string, boolean>) => ({ kind: 'AT', atMs, condition });
-  const STALLED = withoutPlant('MotorStartFails', 1500, [
-    { atMs: 0, set: { 'MotorPlant.Start': false, 'MotorPlant.Stop': false, 'MotorPlant.AtSpeed': false } },
-    { atMs: 10, set: { 'MotorPlant.Start': true } }, { atMs: 20, set: { 'MotorPlant.Start': false } },
-    { atMs: 1300, set: { 'MotorPlant.Stop': true } }, { atMs: 1310, set: { 'MotorPlant.Stop': false } },
-  ], [
-    at(500, { 'MotorPlant.Command': true, 'MotorPlant.Running': false, 'MotorPlant.Fault': false }),   // waiting for speed
-    at(1200, { 'MotorPlant.Command': false, 'MotorPlant.Running': false, 'MotorPlant.Fault': true }),   // timed out: off and latched
-    at(1290, { 'MotorPlant.Command': false, 'MotorPlant.Fault': true }),                                // stays latched
-    at(1310, { 'MotorPlant.Command': false, 'MotorPlant.Fault': false }),                               // Stop clears the fault, does not restart
-    at(1500, { 'MotorPlant.Command': false, 'MotorPlant.Fault': false }),
-  ]);
-  const HEALTHY = withoutPlant('MotorStartsInTime', 1500, [
-    { atMs: 0, set: { 'MotorPlant.Start': false, 'MotorPlant.Stop': false, 'MotorPlant.AtSpeed': false } },
-    { atMs: 10, set: { 'MotorPlant.Start': true } }, { atMs: 20, set: { 'MotorPlant.Start': false } },
-    { atMs: 520, set: { 'MotorPlant.AtSpeed': true } },
-  ], [
-    at(500, { 'MotorPlant.Command': true, 'MotorPlant.Running': false, 'MotorPlant.Fault': false }),
-    at(530, { 'MotorPlant.Command': true, 'MotorPlant.Running': true, 'MotorPlant.Fault': false }),
-    at(1500, { 'MotorPlant.Command': true, 'MotorPlant.Running': true, 'MotorPlant.Fault': false }),     // no late trip
-  ]);
-
-  for (const [title, scenario] of [['drops the command and latches a fault when AtSpeed never arrives', STALLED], ['does not trip when AtSpeed arrives in time', HEALTHY]] as const) {
-    itNative(title, async () => {
+  itNative(
+    'counts a pulse held for seven scans once',
+    async () => {
       const previous = process.env.ZPLC_NATIVE_SIM_BIN;
       process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
       try {
-        const built = await compilerCompile(rootOf('motor_plant'));
+        const built = await compilerCompile(rootOf('edge_counter'));
         if (!built.ok || !built.debugMap) throw new Error(JSON.stringify(built.evidence.diagnostics));
         const session = await createNativeScenarioSession(process.env);
         try {
-          const result = await runScenario(compileScenario(scenario, built.debugMap), built.zplcFile!, session.runtime);
-          expect(result.assertions.every((assertion) => assertion.passed)).toBe(true);
+          const result = await runScenario(compileScenario(HELD_PULSE, built.debugMap), built.zplcFile!, session.runtime);
+          expect(result.assertions.map((assertion) => assertion.passed)).toEqual([true, true, true, true]);
         } finally {
           await session.close();
         }
@@ -359,6 +396,82 @@ describe('motor_plant supervises the start', () => {
         if (previous === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
         else process.env.ZPLC_NATIVE_SIM_BIN = previous;
       }
-    }, 30_000);
+    },
+    30_000,
+  );
+});
+
+describe('motor_plant supervises the start', () => {
+  // motor_plant is a golden project whose scenario list other tests pin, so these two run inline. The AtSpeed feedback is
+  // written by the scenario itself (no plant), which is what lets one run withhold it.
+  const withoutPlant = (id: string, durationMs: number, events: unknown[], expectations: unknown[]) => ({
+    schemaVersion: 1,
+    id,
+    tickMs: 10,
+    durationMs,
+    events,
+    expectations,
+  });
+  const at = (atMs: number, condition: Record<string, boolean>) => ({ kind: 'AT', atMs, condition });
+  const STALLED = withoutPlant(
+    'MotorStartFails',
+    1500,
+    [
+      { atMs: 0, set: { 'MotorPlant.Start': false, 'MotorPlant.Stop': false, 'MotorPlant.AtSpeed': false } },
+      { atMs: 10, set: { 'MotorPlant.Start': true } },
+      { atMs: 20, set: { 'MotorPlant.Start': false } },
+      { atMs: 1300, set: { 'MotorPlant.Stop': true } },
+      { atMs: 1310, set: { 'MotorPlant.Stop': false } },
+    ],
+    [
+      at(500, { 'MotorPlant.Command': true, 'MotorPlant.Running': false, 'MotorPlant.Fault': false }), // waiting for speed
+      at(1200, { 'MotorPlant.Command': false, 'MotorPlant.Running': false, 'MotorPlant.Fault': true }), // timed out: off and latched
+      at(1290, { 'MotorPlant.Command': false, 'MotorPlant.Fault': true }), // stays latched
+      at(1310, { 'MotorPlant.Command': false, 'MotorPlant.Fault': false }), // Stop clears the fault, does not restart
+      at(1500, { 'MotorPlant.Command': false, 'MotorPlant.Fault': false }),
+    ],
+  );
+  const HEALTHY = withoutPlant(
+    'MotorStartsInTime',
+    1500,
+    [
+      { atMs: 0, set: { 'MotorPlant.Start': false, 'MotorPlant.Stop': false, 'MotorPlant.AtSpeed': false } },
+      { atMs: 10, set: { 'MotorPlant.Start': true } },
+      { atMs: 20, set: { 'MotorPlant.Start': false } },
+      { atMs: 520, set: { 'MotorPlant.AtSpeed': true } },
+    ],
+    [
+      at(500, { 'MotorPlant.Command': true, 'MotorPlant.Running': false, 'MotorPlant.Fault': false }),
+      at(530, { 'MotorPlant.Command': true, 'MotorPlant.Running': true, 'MotorPlant.Fault': false }),
+      at(1500, { 'MotorPlant.Command': true, 'MotorPlant.Running': true, 'MotorPlant.Fault': false }), // no late trip
+    ],
+  );
+
+  for (const [title, scenario] of [
+    ['drops the command and latches a fault when AtSpeed never arrives', STALLED],
+    ['does not trip when AtSpeed arrives in time', HEALTHY],
+  ] as const) {
+    itNative(
+      title,
+      async () => {
+        const previous = process.env.ZPLC_NATIVE_SIM_BIN;
+        process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
+        try {
+          const built = await compilerCompile(rootOf('motor_plant'));
+          if (!built.ok || !built.debugMap) throw new Error(JSON.stringify(built.evidence.diagnostics));
+          const session = await createNativeScenarioSession(process.env);
+          try {
+            const result = await runScenario(compileScenario(scenario, built.debugMap), built.zplcFile!, session.runtime);
+            expect(result.assertions.every((assertion) => assertion.passed)).toBe(true);
+          } finally {
+            await session.close();
+          }
+        } finally {
+          if (previous === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
+          else process.env.ZPLC_NATIVE_SIM_BIN = previous;
+        }
+      },
+      30_000,
+    );
   }
 });

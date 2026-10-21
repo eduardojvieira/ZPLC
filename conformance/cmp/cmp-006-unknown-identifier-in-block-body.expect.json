@@ -2,13 +2,7 @@
   "requirement": "CMP-006",
   "title": "an error in the body of a function block is reported at its line, once",
   "build": "fails",
-  "lines": [
-    4
-  ],
-  "codes": [
-    "UNKNOWN_IDENTIFIER"
-  ],
-  "messageIncludes": [
-    "factor"
-  ]
+  "lines": [4],
+  "codes": ["UNKNOWN_IDENTIFIER"],
+  "messageIncludes": ["factor"]
 }

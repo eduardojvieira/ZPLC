@@ -38,22 +38,22 @@
 static int test_count = 0;
 static int fail_count = 0;
 
-#define CHECK(cond, msg)                                                       \
-  do {                                                                         \
-    test_count++;                                                              \
-    if (!(cond)) {                                                             \
-      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__);                  \
-      fail_count++;                                                            \
-    } else {                                                                   \
-      printf("PASS: %s\n", msg);                                               \
-    }                                                                          \
+#define CHECK(cond, msg)                                      \
+  do {                                                        \
+    test_count++;                                             \
+    if (!(cond)) {                                            \
+      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__); \
+      fail_count++;                                           \
+    } else {                                                  \
+      printf("PASS: %s\n", msg);                              \
+    }                                                         \
   } while (0)
 
 #define PROGRAM_CAPACITY 256U
 
 /* A container with a CODE and a TASK segment. The task t runs the code from entry[t]. */
-static size_t build_container(uint8_t *out, size_t capacity, const uint8_t *code, size_t code_size,
-                              const zplc_trace_task_t *tasks, const uint16_t *entry, unsigned count) {
+static size_t build_container(uint8_t *out, size_t capacity, const uint8_t *code, size_t code_size, const zplc_trace_task_t *tasks,
+                              const uint16_t *entry, unsigned count) {
   const size_t task_size = (size_t)count * ZPLC_TASK_DEF_SIZE;
   const size_t total = ZPLC_FILE_HEADER_SIZE + 2U * ZPLC_SEGMENT_ENTRY_SIZE + code_size + task_size;
   size_t offset;
@@ -206,8 +206,7 @@ static void test_the_adapter_decides_the_golden_trace(void) {
   }
   CHECK(trace_equals(ZPLC_TRACE_GOLDEN, (unsigned)ZPLC_TRACE_GOLDEN_COUNT), "every decision is the golden one");
   CHECK(zplc_fr_sched_state() == ZPLC_SCHED_STATE_ERROR, "the third miss in a row latches the fault");
-  CHECK(zplc_fr_sched_core()->fault_reason == (uint8_t)ZPLC_SCHED_FAULT_DEADLINE_MISS &&
-            zplc_fr_sched_core()->fault_task_id == 1U,
+  CHECK(zplc_fr_sched_core()->fault_reason == (uint8_t)ZPLC_SCHED_FAULT_DEADLINE_MISS && zplc_fr_sched_core()->fault_task_id == 1U,
         "the core names the reason and the task");
   CHECK(zplc_fr_sched_core()->last_overrun_us == 20000U, "the last overrun was 20 ms");
   CHECK(zplc_fr_sched_core()->input_latch_count == 5U && zplc_fr_sched_core()->output_commit_count == 4U,
@@ -289,12 +288,11 @@ static void test_the_timers_release_the_task_and_the_pins_follow(void) {
   /* The timers count kernel ticks, so the bounds are in kernel time. On the simulator the tick is a usleep() loop and
    * runs slower than the wall clock under load: the wall time is printed, never asserted. */
   ideal = kernel_ms / 10U;
-  printf("  %lu scans in %lu kernel ms (%lu wall ms); an ideal timer gives %lu\n", (unsigned long)batches,
-         (unsigned long)kernel_ms, (unsigned long)(elapsed_us / 1000U), (unsigned long)ideal);
+  printf("  %lu scans in %lu kernel ms (%lu wall ms); an ideal timer gives %lu\n", (unsigned long)batches, (unsigned long)kernel_ms,
+         (unsigned long)(elapsed_us / 1000U), (unsigned long)ideal);
   CHECK(batches <= ideal + 1U, "never more scans than the kernel time allows (a hard bound)");
   CHECK(batches >= ideal / 3U && batches > 0U, "at least a third of the ideal count on a loaded host");
-  CHECK(zplc_freertos_sim_get_output(0U) == 1U && zplc_freertos_sim_get_output(3U) == 1U &&
-            zplc_freertos_sim_get_output(1U) == 0U,
+  CHECK(zplc_freertos_sim_get_output(0U) == 1U && zplc_freertos_sim_get_output(3U) == 1U && zplc_freertos_sim_get_output(1U) == 0U,
         "the inputs of the board reach the program and its outputs reach the pins");
   zplc_freertos_sim_set_input(0U, 0U);
   wait_ms(150U);

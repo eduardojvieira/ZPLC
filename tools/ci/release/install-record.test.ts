@@ -10,10 +10,15 @@ import { installerNames, type InstallerOs } from './verify-installers';
 
 const VERSION = '2.0.0-rc.4';
 const roots: string[] = [];
-afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
+afterEach(() => {
+  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+});
 
 const RUNNER_OS: Record<InstallerOs, string> = { mac: 'macOS', win: 'Windows', linux: 'Linux' };
-const runnerOf = (os: InstallerOs, arch: 'x64' | 'arm64'): RunnerEnv => ({ RUNNER_OS: RUNNER_OS[os], RUNNER_ARCH: arch === 'x64' ? 'X64' : 'ARM64' });
+const runnerOf = (os: InstallerOs, arch: 'x64' | 'arm64'): RunnerEnv => ({
+  RUNNER_OS: RUNNER_OS[os],
+  RUNNER_ARCH: arch === 'x64' ? 'X64' : 'ARM64',
+});
 
 /** A folder of produced installers and the records that a run which opened every one of them would have written. */
 function opened(os: InstallerOs): { installers: string; records: string } {
@@ -39,19 +44,31 @@ describe('the record that every published installer format was opened and launch
   });
 
   it('opens each format its own way: a disk image is mounted, a package is installed, an archive is unpacked', () => {
-    expect(INSTALL_METHOD).toEqual({ dmg: 'mounted', zip: 'unpacked', setup: 'installed', portable: 'run-in-place', appimage: 'run-in-container', deb: 'installed-in-container', rpm: 'installed-in-container' });
+    expect(INSTALL_METHOD).toEqual({
+      dmg: 'mounted',
+      zip: 'unpacked',
+      setup: 'installed',
+      portable: 'run-in-place',
+      appimage: 'run-in-container',
+      deb: 'installed-in-container',
+      rpm: 'installed-in-container',
+    });
   });
 
   it('names the installer that no run opened', () => {
     const { installers, records } = opened('mac');
     rmSync(recordPath(records, 'zplc-2.0.0-rc.4-mac-arm64.zip'));
-    expect(verifyInstallRecords(installers, records, VERSION, 'mac')).toEqual(['zplc-2.0.0-rc.4-mac-arm64.zip has no record of being mounted or installed and launched']);
+    expect(verifyInstallRecords(installers, records, VERSION, 'mac')).toEqual([
+      'zplc-2.0.0-rc.4-mac-arm64.zip has no record of being mounted or installed and launched',
+    ]);
   });
 
   it('refuses a record of another file with the same name, because the checksum no longer matches', () => {
     const { installers, records } = opened('win');
     writeFileSync(join(installers, 'zplc-2.0.0-rc.4-win-x64-portable-unsigned.exe'), 'MZ replaced after the launch');
-    expect(verifyInstallRecords(installers, records, VERSION, 'win')).toEqual(['zplc-2.0.0-rc.4-win-x64-portable-unsigned.exe is not the file that was launched (checksum differs from its record)']);
+    expect(verifyInstallRecords(installers, records, VERSION, 'win')).toEqual([
+      'zplc-2.0.0-rc.4-win-x64-portable-unsigned.exe is not the file that was launched (checksum differs from its record)',
+    ]);
   });
 
   it('refuses an installer that was opened on the wrong system or the wrong architecture', () => {
@@ -83,6 +100,8 @@ describe('the record that every published installer format was opened and launch
     roots.push(root);
     const path = join(root, 'ZPLC IDE-2.0.0-rc.4-mac-x64.dmg');
     writeFileSync(path, sample('dmg', 'x64'));
-    expect(() => writeInstallRecord(path, VERSION, join(root, 'out'), runnerOf('mac', 'x64'))).toThrow('is not one of the installers named by');
+    expect(() => writeInstallRecord(path, VERSION, join(root, 'out'), runnerOf('mac', 'x64'))).toThrow(
+      'is not one of the installers named by',
+    );
   });
 });

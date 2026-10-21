@@ -4,10 +4,18 @@ import { DeviceCommandError, extractJson, parseDump } from '../src/link';
 import { ShellLink } from '../src/shellLink';
 import type { ShellTransport } from '../src/shellLink';
 
-const SYS_INFO = '{"board":"rpi_pico","board_profile":"rpi_pico_rp2040","zplc_version":"2.0.0","zephyr_version":"4.0.0","uptime_ms":1,"cpu_freq_mhz":125,"device_protocol_version":1,"bytecode_abi_major":1,"bytecode_abi_minor":0,"draft_counter":4,"capabilities":{"fpu":true,"mpu":false,"scheduler":true,"max_tasks":4},"memory":{"work_size":8192,"retain_size":4096,"ipi_size":4096,"opi_size":4096}}';
+const SYS_INFO =
+  '{"board":"rpi_pico","board_profile":"rpi_pico_rp2040","zplc_version":"2.0.0","zephyr_version":"4.0.0","uptime_ms":1,"cpu_freq_mhz":125' +
+  ',"device_protocol_version":1,"bytecode_abi_major":1,"bytecode_abi_minor":0,"draft_counter":4,"capabilities":{"fpu":true,"mpu":false,' +
+  '"scheduler":true,"max_tasks":4},"memory":{"work_size":8192,"retain_size":4096,"ipi_size":4096,"opi_size":4096}}';
 
-const BUILD = '{"version":"2.0.0-rc.3","commit":"5ebf45775faaccf2730e543b27b1eee391742abc","dirty":false,"board":"rpi_pico/rp2040","abi_major":1,"abi_minor":0,"draft_counter":4,"options_hash":"0123abcd","options":"SCHEDULER=y,WORK_MEMORY_SIZE=8192"}';
-const VERSION_TEXT = 'ZPLC Runtime v2.0.0-rc.3\r\nCommit:         5ebf45775faaccf2730e543b27b1eee391742abc\r\nDirty:          no\r\nBoard:          rpi_pico/rp2040\r\nBytecode ABI:   1.0\r\nContract draft: 4\r\nOptions hash:   0123abcd\r\nOptions:        SCHEDULER=y,WORK_MEMORY_SIZE=8192';
+const BUILD =
+  '{"version":"2.0.0-rc.3","commit":"5ebf45775faaccf2730e543b27b1eee391742abc","dirty":false,"board":"rpi_pico/rp2040","abi_major":1,"abi' +
+  '_minor":0,"draft_counter":4,"options_hash":"0123abcd","options":"SCHEDULER=y,WORK_MEMORY_SIZE=8192"}';
+const VERSION_TEXT =
+  'ZPLC Runtime v2.0.0-rc.3\r\nCommit:         5ebf45775faaccf2730e543b27b1eee391742abc\r\nDirty:          no\r\nBoard: ' +
+  '         rpi_pico/rp2040\r\nBytecode ABI:   1.0\r\nContract draft: 4\r\nOptions hash:   0123abcd\r\nOptions: ' +
+  '       SCHEDULER=y,WORK_MEMORY_SIZE=8192';
 
 /** The firmware shell as a script: a reply for a command, in the shapes of shell_cmds.c. */
 class Shell implements ShellTransport {
@@ -26,10 +34,14 @@ class Shell implements ShellTransport {
     if (line === 'zplc sys info --json') return reply(SYS_INFO.replace('"scheduler":true', `"scheduler":${this.scheduler}`));
     if (line === 'zplc sys build --json') return reply(this.build ? BUILD : 'ERROR: unknown command');
     if (line === 'zplc version') return reply(this.build ? VERSION_TEXT : 'ZPLC Runtime v1.5.0\r\nBuilt: Oct 10 2026 12:00:00');
-    if (line === 'zplc status --json') return reply('{"state":"running","uptime_ms":4200,"stats":{"cycles":42,"program_size":10},"opi":[0,0,0,0,0,0,0,0]}');
+    if (line === 'zplc status --json')
+      return reply('{"state":"running","uptime_ms":4200,"stats":{"cycles":42,"program_size":10},"opi":[0,0,0,0,0,0,0,0]}');
     if (/^zplc (sched )?load \d+$/.test(line)) return reply('OK: Ready to receive bytes');
     if (/^zplc (sched )?data [0-9a-f]+$/.test(line)) {
-      if (this.failDataChunks > 0) { this.failDataChunks -= 1; return reply('ERROR: chunk refused'); }
+      if (this.failDataChunks > 0) {
+        this.failDataChunks -= 1;
+        return reply('ERROR: chunk refused');
+      }
       return reply('OK: Received 16 bytes');
     }
     if (line.startsWith('zplc dbg peek')) {
@@ -37,12 +49,29 @@ class Shell implements ShellTransport {
       const start = Number(address);
       const bytes = Array.from({ length: Number(length) }, (_, i) => this.memory.get(start + i) ?? 0);
       const rows = [] as string[];
-      for (let at = 0; at < bytes.length; at += 16) rows.push(`${(start + at).toString(16).toUpperCase().padStart(4, '0')}: ${bytes.slice(at, at + 16).map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' ')} `);
+      for (let at = 0; at < bytes.length; at += 16)
+        rows.push(
+          `${(start + at).toString(16).toUpperCase().padStart(4, '0')}: ${bytes
+            .slice(at, at + 16)
+            .map((b) => b.toString(16).toUpperCase().padStart(2, '0'))
+            .join(' ')} `,
+        );
       return reply(`Memory at ${address} (${length} bytes):\r\n${rows.join('\r\n')}`);
     }
-    if (line.startsWith('zplc dbg poke')) { const [, , , address, value] = line.split(' '); this.memory.set(Number(address), Number(value)); return reply('OK: Wrote'); }
-    if (line.startsWith('zplc dbg force set')) { const [, , , , address, hex] = line.split(' '); this.forceEntries = [{ addr: Number(address), size: hex!.length / 2, bytes: hex! }]; return reply('OK: Forced'); }
-    if (line === 'zplc dbg force clear_all') { this.forceEntries = []; return reply('OK: Cleared all force entries'); }
+    if (line.startsWith('zplc dbg poke')) {
+      const [, , , address, value] = line.split(' ');
+      this.memory.set(Number(address), Number(value));
+      return reply('OK: Wrote');
+    }
+    if (line.startsWith('zplc dbg force set')) {
+      const [, , , , address, hex] = line.split(' ');
+      this.forceEntries = [{ addr: Number(address), size: hex!.length / 2, bytes: hex! }];
+      return reply('OK: Forced');
+    }
+    if (line === 'zplc dbg force clear_all') {
+      this.forceEntries = [];
+      return reply('OK: Cleared all force entries');
+    }
     if (line === 'zplc dbg force list --json') return reply(JSON.stringify({ count: this.forceEntries.length, items: this.forceEntries }));
     if (/^zplc (stop|start|reset)$/.test(line)) return reply('OK: done');
     if (line.startsWith('zplc hil mode')) return reply('OK: HIL mode set');
@@ -51,23 +80,46 @@ class Shell implements ShellTransport {
 
   onLine(listener: (line: string) => void): () => void {
     this.lines.add(listener);
-    return () => { this.lines.delete(listener); };
+    return () => {
+      this.lines.delete(listener);
+    };
   }
 
-  emit(line: string): void { for (const listener of this.lines) listener(line); }
-  close(): Promise<void> { return Promise.resolve(); }
+  emit(line: string): void {
+    for (const listener of this.lines) listener(line);
+  }
+  close(): Promise<void> {
+    return Promise.resolve();
+  }
 }
 
 describe('the shell link speaks the firmware grammar (HIL-001)', () => {
   test('the identity is what the device reports in zplc sys info', async () => {
     const link = new ShellLink(new Shell());
     const identity = await link.identity();
-    expect(identity).toMatchObject({ board: 'rpi_pico', boardProfile: 'rpi_pico_rp2040', zplcVersion: '2.0.0', abiMajor: 1, draftCounter: 4, schedulerCommands: true });
+    expect(identity).toMatchObject({
+      board: 'rpi_pico',
+      boardProfile: 'rpi_pico_rp2040',
+      zplcVersion: '2.0.0',
+      abiMajor: 1,
+      draftCounter: 4,
+      schedulerCommands: true,
+    });
   });
 
   test('the identity carries the build the image reports, from zplc sys build --json', async () => {
     const identity = await new ShellLink(new Shell()).identity();
-    expect(identity.build).toEqual({ version: '2.0.0-rc.3', commit: '5ebf45775faaccf2730e543b27b1eee391742abc', dirty: false, board: 'rpi_pico/rp2040', abiMajor: 1, abiMinor: 0, draftCounter: 4, optionsHash: '0123abcd', options: 'SCHEDULER=y,WORK_MEMORY_SIZE=8192' });
+    expect(identity.build).toEqual({
+      version: '2.0.0-rc.3',
+      commit: '5ebf45775faaccf2730e543b27b1eee391742abc',
+      dirty: false,
+      board: 'rpi_pico/rp2040',
+      abiMajor: 1,
+      abiMinor: 0,
+      draftCounter: 4,
+      optionsHash: '0123abcd',
+      options: 'SCHEDULER=y,WORK_MEMORY_SIZE=8192',
+    });
     expect(identity.board).toBe('rpi_pico');
   });
 
@@ -81,7 +133,12 @@ describe('the shell link speaks the firmware grammar (HIL-001)', () => {
     const shell = new Shell();
     const link = new ShellLink(shell);
     await link.load(Uint8Array.from({ length: 40 }, (_, i) => i));
-    expect(shell.sent.filter((line) => line.startsWith('zplc sys') || line === 'zplc stop' || line.startsWith('zplc sched load'))).toEqual(['zplc sys info --json', 'zplc sys build --json', 'zplc stop', 'zplc sched load 40']);
+    expect(shell.sent.filter((line) => line.startsWith('zplc sys') || line === 'zplc stop' || line.startsWith('zplc sched load'))).toEqual([
+      'zplc sys info --json',
+      'zplc sys build --json',
+      'zplc stop',
+      'zplc sched load 40',
+    ]);
     expect(shell.sent.filter((line) => line.startsWith('zplc sched data'))).toHaveLength(3);
     expect(shell.sent.filter((line) => line.startsWith('zplc sched data'))[0]).toBe('zplc sched data 000102030405060708090a0b0c0d0e0f');
   });
@@ -107,7 +164,11 @@ describe('the shell link speaks the firmware grammar (HIL-001)', () => {
       let left = misses;
       const answer = shell.send.bind(shell);
       shell.send = (line: string) => {
-        if (/^zplc sched data/.test(line) && left > 0) { left -= 1; shell.sent.push(line); return Promise.reject(new Error('no "OK:" after data')); }
+        if (/^zplc sched data/.test(line) && left > 0) {
+          left -= 1;
+          shell.sent.push(line);
+          return Promise.reject(new Error('no "OK:" after data'));
+        }
         return answer(line);
       };
       return shell;
@@ -120,7 +181,11 @@ describe('the shell link speaks the firmware grammar (HIL-001)', () => {
     const shell = new Shell();
     const link = new ShellLink(shell);
     await link.poke(0x1000, Uint8Array.of(7, 0, 42));
-    expect(shell.sent.filter((line) => line.startsWith('zplc dbg poke'))).toEqual(['zplc dbg poke 0x1000 7', 'zplc dbg poke 0x1001 0', 'zplc dbg poke 0x1002 42']);
+    expect(shell.sent.filter((line) => line.startsWith('zplc dbg poke'))).toEqual([
+      'zplc dbg poke 0x1000 7',
+      'zplc dbg poke 0x1001 0',
+      'zplc dbg poke 0x1002 42',
+    ]);
     expect(Array.from(await link.peek(0x1000, 3))).toEqual([7, 0, 42]);
     expect(Array.from(await link.peek(0x2000, 200))).toHaveLength(200);
   });

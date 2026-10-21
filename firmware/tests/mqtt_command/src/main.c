@@ -4,14 +4,11 @@
 #include <zephyr/ztest.h>
 #include <zplc_isa.h>
 
-static void expect_decode(uint8_t type, const char *text,
-                          const uint8_t *expected, size_t expected_size) {
+static void expect_decode(uint8_t type, const char *text, const uint8_t *expected, size_t expected_size) {
   uint8_t bytes[4] = {0U};
   size_t size = 0U;
 
-  zassert_ok(zplc_mqtt_command_decode(type, (const uint8_t *)text, strlen(text),
-                                      bytes, &size),
-             "%s", text);
+  zassert_ok(zplc_mqtt_command_decode(type, (const uint8_t *)text, strlen(text), bytes, &size), "%s", text);
   zassert_equal(size, expected_size, "decoded size");
   zassert_mem_equal(bytes, expected, size, "decoded bytes");
 }
@@ -41,9 +38,7 @@ ZTEST(mqtt_command, test_decodes_all_supported_command_types) {
     uint8_t bytes[4] = {0U};
     size_t size = 0U;
 
-    zassert_ok(zplc_mqtt_command_decode(ZPLC_TYPE_UINT, longest,
-                                        sizeof(longest), bytes, &size),
-               "maximum payload length");
+    zassert_ok(zplc_mqtt_command_decode(ZPLC_TYPE_UINT, longest, sizeof(longest), bytes, &size), "maximum payload length");
     zassert_mem_equal(bytes, one, sizeof(one), "maximum payload bytes");
     zassert_equal(size, 2U, "maximum payload size");
   }
@@ -54,9 +49,7 @@ static void expect_rejected(uint8_t type, const char *text) {
   const uint8_t sentinel[4] = {0xA5U, 0xA5U, 0xA5U, 0xA5U};
   size_t size = 99U;
 
-  zassert_true(zplc_mqtt_command_decode(type, (const uint8_t *)text,
-                                        strlen(text), bytes, &size) < 0,
-               "%s", text);
+  zassert_true(zplc_mqtt_command_decode(type, (const uint8_t *)text, strlen(text), bytes, &size) < 0, "%s", text);
   zassert_mem_equal(bytes, sentinel, sizeof(bytes), "bytes preserved");
   zassert_equal(size, 99U, "size preserved");
 }
@@ -81,29 +74,14 @@ ZTEST(mqtt_command, test_rejects_invalid_input_without_mutating_outputs) {
   expect_rejected(ZPLC_TYPE_REAL, "1.0junk");
   expect_rejected(ZPLC_TYPE_BOOL, " true");
   expect_rejected(ZPLC_TYPE_BOOL, "true ");
-  zassert_equal(zplc_mqtt_command_decode(ZPLC_TYPE_BOOL, embedded_nul,
-                                         sizeof(embedded_nul), bytes, &size),
-                -EINVAL, "embedded NUL");
-  zassert_equal(zplc_mqtt_command_decode(ZPLC_TYPE_BOOL, oversized,
-                                         sizeof(oversized), bytes, &size),
-                -EMSGSIZE, "oversized");
-  zassert_equal(
-      zplc_mqtt_command_decode(0xFFU, (const uint8_t *)"1", 1U, bytes, &size),
-      -ENOTSUP, "unknown type");
-  zassert_equal(
-      zplc_mqtt_command_decode(ZPLC_TYPE_BOOL, NULL, 1U, bytes, &size), -EINVAL,
-      "NULL payload");
-  zassert_equal(zplc_mqtt_command_decode(ZPLC_TYPE_BOOL, (const uint8_t *)"",
-                                         0U, bytes, &size),
-                -EINVAL, "empty");
-  zassert_equal(zplc_mqtt_command_decode(ZPLC_TYPE_BOOL, (const uint8_t *)"1",
-                                         1U, NULL, &size),
-                -EINVAL, "NULL bytes");
-  zassert_equal(zplc_mqtt_command_decode(ZPLC_TYPE_BOOL, (const uint8_t *)"1",
-                                         1U, bytes, NULL),
-                -EINVAL, "NULL size");
-  zassert_mem_equal(bytes, sentinel, sizeof(bytes),
-                    "bytes preserved after all rejects");
+  zassert_equal(zplc_mqtt_command_decode(ZPLC_TYPE_BOOL, embedded_nul, sizeof(embedded_nul), bytes, &size), -EINVAL, "embedded NUL");
+  zassert_equal(zplc_mqtt_command_decode(ZPLC_TYPE_BOOL, oversized, sizeof(oversized), bytes, &size), -EMSGSIZE, "oversized");
+  zassert_equal(zplc_mqtt_command_decode(0xFFU, (const uint8_t *)"1", 1U, bytes, &size), -ENOTSUP, "unknown type");
+  zassert_equal(zplc_mqtt_command_decode(ZPLC_TYPE_BOOL, NULL, 1U, bytes, &size), -EINVAL, "NULL payload");
+  zassert_equal(zplc_mqtt_command_decode(ZPLC_TYPE_BOOL, (const uint8_t *)"", 0U, bytes, &size), -EINVAL, "empty");
+  zassert_equal(zplc_mqtt_command_decode(ZPLC_TYPE_BOOL, (const uint8_t *)"1", 1U, NULL, &size), -EINVAL, "NULL bytes");
+  zassert_equal(zplc_mqtt_command_decode(ZPLC_TYPE_BOOL, (const uint8_t *)"1", 1U, bytes, NULL), -EINVAL, "NULL size");
+  zassert_mem_equal(bytes, sentinel, sizeof(bytes), "bytes preserved after all rejects");
   zassert_equal(size, 99U, "size preserved after all rejects");
 }
 

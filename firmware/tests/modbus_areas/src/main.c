@@ -130,8 +130,7 @@ static void load_program(void) {
   crc = crc32_update(0xFFFFFFFFU, file, 12U);
   crc = crc32_update(crc, file + 16U, offset - 16U) ^ 0xFFFFFFFFU;
   put_u32(file + 12U, crc);
-  zassert_equal(zplc_core_load(file, offset, workspace, sizeof(workspace)), ZPLC_LOADER_OK,
-                "the program with its Modbus tags loads");
+  zassert_equal(zplc_core_load(file, offset, workspace, sizeof(workspace)), ZPLC_LOADER_OK, "the program with its Modbus tags loads");
   zassert_equal(zplc_core_get_tag_count(), ARRAY_SIZE(tags), "the tags");
 }
 
@@ -209,10 +208,8 @@ ZTEST(modbus_areas, test_a_write_to_an_input_area_is_refused) {
   const uint8_t word[] = {0x12U, 0x34U};
   const uint8_t on[] = {0xFFU, 0x00U};
 
-  zassert_equal(zplc_modbus_write_mapped(0U, 1U, word, false, false, ZPLC_MODBUS_AREA_INPUT_REGISTER), -1,
-                "a write of an input register");
-  zassert_equal(zplc_modbus_write_mapped(0U, 1U, on, true, false, ZPLC_MODBUS_AREA_DISCRETE_INPUT), -1,
-                "a write of a discrete input");
+  zassert_equal(zplc_modbus_write_mapped(0U, 1U, word, false, false, ZPLC_MODBUS_AREA_INPUT_REGISTER), -1, "a write of an input register");
+  zassert_equal(zplc_modbus_write_mapped(0U, 1U, on, true, false, ZPLC_MODBUS_AREA_DISCRETE_INPUT), -1, "a write of a discrete input");
   zassert_equal(live(WORK(0x02))[0], 0U, "the input register is untouched");
   zassert_equal(live(WORK(0x05))[0], 0U, "the discrete input is untouched");
   /* and the areas that can be written write their own variable and no other */
@@ -262,28 +259,25 @@ ZTEST(modbus_areas, test_the_range_of_the_wire_is_served_to_its_last_address) {
 
   zplc_exchange_publish();
   zassert_equal(read_register(ZPLC_MODBUS_AREA_HOLDING_REGISTER, 65535U), 0, "address 65535");
-  zassert_ok(zplc_modbus_write_mapped(65535U, 1U, value, false, false, ZPLC_MODBUS_AREA_HOLDING_REGISTER),
-             "write at address 65535");
-  zassert_equal(zplc_modbus_read_mapped(65535U, 2U, out, sizeof(out), false, ZPLC_MODBUS_AREA_HOLDING_REGISTER), -1,
-                "a range past 65535");
+  zassert_ok(zplc_modbus_write_mapped(65535U, 1U, value, false, false, ZPLC_MODBUS_AREA_HOLDING_REGISTER), "write at address 65535");
+  zassert_equal(zplc_modbus_read_mapped(65535U, 2U, out, sizeof(out), false, ZPLC_MODBUS_AREA_HOLDING_REGISTER), -1, "a range past 65535");
   zassert_equal(zplc_modbus_read_mapped(0U, 2U, out, sizeof(out), false, ZPLC_MODBUS_AREA_HOLDING_REGISTER), -1,
                 "a range that includes an item that is not served (register 1)");
   zassert_equal(zplc_modbus_read_mapped(10U, 2U, out, sizeof(out), false, ZPLC_MODBUS_AREA_HOLDING_REGISTER), 4,
                 "the two registers of a 32-bit value");
-  zassert_equal(zplc_modbus_read_mapped(10U, 1U, out, 1U, false, ZPLC_MODBUS_AREA_HOLDING_REGISTER), -1,
-                "a response that does not fit");
+  zassert_equal(zplc_modbus_read_mapped(10U, 1U, out, 1U, false, ZPLC_MODBUS_AREA_HOLDING_REGISTER), -1, "a response that does not fit");
 }
 
 /* The framing of the TCP server, in front of the same two seams the server of the application ends in: what a
  * client sees when it asks for, or writes, an address that only an input has. */
-static int ops_read(uint16_t address, uint16_t count, uint8_t *response, size_t capacity, bool bits,
-                    zplc_modbus_area_t area, void *context) {
+static int ops_read(uint16_t address, uint16_t count, uint8_t *response, size_t capacity, bool bits, zplc_modbus_area_t area,
+                    void *context) {
   ARG_UNUSED(context);
   return zplc_modbus_read_mapped(address, count, response, capacity, bits, area);
 }
 
-static int ops_write(uint16_t address, uint16_t count, const uint8_t *data, bool bits, bool multiple,
-                     zplc_modbus_area_t area, void *context) {
+static int ops_write(uint16_t address, uint16_t count, const uint8_t *data, bool bits, bool multiple, zplc_modbus_area_t area,
+                     void *context) {
   ARG_UNUSED(context);
   return zplc_modbus_write_mapped(address, count, data, bits, multiple, area);
 }
@@ -291,8 +285,8 @@ static int ops_write(uint16_t address, uint16_t count, const uint8_t *data, bool
 /* One request of function `function` for `address` and `value` (count of a read, value of a single write). */
 static size_t ask(uint8_t function, uint16_t address, uint16_t value, uint8_t *response) {
   static const zplc_modbus_tcp_ops_t ops = {.unit_id = 1U, .read = ops_read, .write = ops_write, .context = NULL};
-  const uint8_t request[12] = {0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x01, function,
-                               (uint8_t)(address >> 8), (uint8_t)address, (uint8_t)(value >> 8), (uint8_t)value};
+  const uint8_t request[12] = {
+      0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x01, function, (uint8_t)(address >> 8), (uint8_t)address, (uint8_t)(value >> 8), (uint8_t)value};
   size_t length = 0U;
 
   zassert_ok(zplc_modbus_tcp_process_adu(request, sizeof(request), response, 260U, &length, &ops), "framing");

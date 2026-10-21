@@ -8,14 +8,28 @@ import { transpileFBDToST } from './fbdToST';
 // generated program declares them, and the program builds.
 const read = (id: string, name: string, y: number) => ({ id, type: 'input', variableName: name, position: { x: 0, y } });
 const write = (id: string, name: string, y: number) => ({ id, type: 'output', variableName: name, position: { x: 600, y } });
-const constant = (id: string, value: string | number, dataType: string, y: number) => ({ id, type: 'constant', value, dataType, position: { x: 0, y } });
-const wire = (from: string, fromPort: string, to: string, toPort: string) => ({ id: `${from}_${fromPort}_${to}_${toPort}`, from: { block: from, port: fromPort }, to: { block: to, port: toPort } });
+const constant = (id: string, value: string | number, dataType: string, y: number) => ({
+  id,
+  type: 'constant',
+  value,
+  dataType,
+  position: { x: 0, y },
+});
+const wire = (from: string, fromPort: string, to: string, toPort: string) => ({
+  id: `${from}_${fromPort}_${to}_${toPort}`,
+  from: { block: from, port: fromPort },
+  to: { block: to, port: toPort },
+});
 
 const model: FBDModel = {
   name: 'Main',
   variables: {
     inputs: [{ name: 'Send', type: 'BOOL' }],
-    outputs: [{ name: 'Read', type: 'BOOL' }, { name: 'Value', type: 'UINT' }, { name: 'Joined', type: 'BOOL' }],
+    outputs: [
+      { name: 'Read', type: 'BOOL' },
+      { name: 'Value', type: 'UINT' },
+      { name: 'Joined', type: 'BOOL' },
+    ],
     local: [],
   },
   blocks: [
@@ -30,9 +44,14 @@ const model: FBDModel = {
     write('joined', 'Joined', 300),
   ],
   connections: [
-    wire('send', 'OUT', 'rd', 'EN'), wire('host', 'OUT', 'rd', 'HOST'), wire('port', 'OUT', 'rd', 'PORT'), wire('addr', 'OUT', 'rd', 'ADDR'),
-    wire('rd', 'DONE', 'read', 'IN'), wire('rd', 'VALUE', 'value', 'IN'),
-    wire('send', 'OUT', 'con', 'EN'), wire('con', 'DONE', 'joined', 'IN'),
+    wire('send', 'OUT', 'rd', 'EN'),
+    wire('host', 'OUT', 'rd', 'HOST'),
+    wire('port', 'OUT', 'rd', 'PORT'),
+    wire('addr', 'OUT', 'rd', 'ADDR'),
+    wire('rd', 'DONE', 'read', 'IN'),
+    wire('rd', 'VALUE', 'value', 'IN'),
+    wire('send', 'OUT', 'con', 'EN'),
+    wire('con', 'DONE', 'joined', 'IN'),
   ],
 } as unknown as FBDModel;
 

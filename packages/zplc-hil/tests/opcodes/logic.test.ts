@@ -21,9 +21,9 @@ export const logicTests: HILTestCase[] = [
     assertions: [
       {
         type: 'pattern',
-        pattern: /\{"t":"opcode","op":"AND",.*"tos":3855\}/ // 16#0F0F = 3855
-      }
-    ]
+        pattern: /\{"t":"opcode","op":"AND",.*"tos":3855\}/, // 16#0F0F = 3855
+      },
+    ],
   },
   {
     id: 'opcodes.logic.eq',
@@ -44,10 +44,10 @@ export const logicTests: HILTestCase[] = [
     assertions: [
       {
         type: 'pattern',
-        pattern: /\{"t":"opcode","op":"EQ",.*"tos":1\}/
-      }
-    ]
-  }
+        pattern: /\{"t":"opcode","op":"EQ",.*"tos":1\}/,
+      },
+    ],
+  },
 ];
 
 describeCases('HIL cases: logic opcodes (HIL-001)', logicTests);

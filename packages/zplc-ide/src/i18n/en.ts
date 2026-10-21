@@ -60,7 +60,8 @@ export const baseEn = {
   'preferences.minimap': 'Show the minimap in the code editor',
   'preferences.updates.now': 'Check now',
   'preferences.updates.checking': 'Checking…',
-  'preferences.updates.note': 'The check asks the GitHub releases of this project for the latest version. It sends nothing about you, downloads nothing and is off until you turn it on.',
+  'preferences.updates.note':
+    'The check asks the GitHub releases of this project for the latest version. It sends nothing about you, downloads nothing and is off until you turn it on.',
   // Theme
   'theme.label': 'Theme',
   'theme.light': 'Light',
@@ -78,13 +79,16 @@ export const baseEn = {
   'updateNotice.dismissLabel': `Dismiss the notice about ${PRODUCT_NAME} {version}`,
   'updateNotice.howTo': 'How to update',
   'updateNotice.untouched': `${PRODUCT_NAME} does not download or install anything. Your projects are folders you chose, so an update does not touch them.`,
-  'updateNotice.step.win32Setup': 'Setup: download the new `setup-unsigned.exe` file, check its checksum and run it over the installed version.',
+  'updateNotice.step.win32Setup':
+    'Setup: download the new `setup-unsigned.exe` file, check its checksum and run it over the installed version.',
   'updateNotice.step.win32Portable': 'Portable: download the new `portable-unsigned.exe` file and replace the old one.',
-  'updateNotice.step.darwin': 'Download the new `.dmg` (or `.zip`) file, check its checksum and drag the new application into "Applications", replacing the old one.',
+  'updateNotice.step.darwin':
+    'Download the new `.dmg` (or `.zip`) file, check its checksum and drag the new application into "Applications", replacing the old one.',
   'updateNotice.step.deb': '`.deb`: download the new package, check its checksum and install it with `sudo apt install ./<file>.deb`.',
   'updateNotice.step.rpm': '`.rpm`: download the new package, check its checksum and install it with `sudo dnf install ./<file>.rpm`.',
   'updateNotice.step.appImage': 'AppImage: download the new file, check its checksum and replace the old one.',
-  'updateNotice.step.other': 'Download the new installer of your system from the release, check its checksum and install it over the old one.',
+  'updateNotice.step.other':
+    'Download the new installer of your system from the release, check its checksum and install it over the old one.',
   // Serial port dialog
   'serialPort.title': 'Choose a serial port',
   'serialPort.intro': `${PRODUCT_NAME} uses only the port you choose, for this connection. Choosing a port does not send a program or start anything.`,
@@ -281,7 +285,8 @@ export const baseEn = {
   'connection.link.framed': 'framed link',
   'connection.link.shell': 'text shell link',
   'deploy.title': 'Deploy to the device?',
-  'deploy.description.running': 'The PLC is running. Deploy stops it, writes the program and leaves the PLC stopped. Run is a separate action.',
+  'deploy.description.running':
+    'The PLC is running. Deploy stops it, writes the program and leaves the PLC stopped. Run is a separate action.',
   'deploy.description.stopped': 'Deploy writes the program and leaves the PLC stopped. Run is a separate action.',
   'deploy.action.stopAndDeploy': 'Stop PLC and deploy',
   'deploy.action.deploy': 'Deploy',
@@ -315,17 +320,21 @@ export const baseEn = {
   'deploy.status.mismatch': 'Does not match',
   'deploy.status.unreported': 'Not reported',
   'deploy.status.info': 'Not compared',
-  'deploy.mismatch.profile': 'The project builds for {project} and the device reports {device}. Choose the right target in the project settings or connect the right device.',
-  'deploy.mismatch.abi': 'The program uses ABI {project} and the device runs ABI {device}. Rebuild the program or install matching firmware.',
+  'deploy.mismatch.profile':
+    'The project builds for {project} and the device reports {device}. Choose the right target in the project settings or connect the right device.',
+  'deploy.mismatch.abi':
+    'The program uses ABI {project} and the device runs ABI {device}. Rebuild the program or install matching firmware.',
   'deploy.mismatch.size': 'The program is {size} bytes and the device accepts at most {max}.',
   'deploy.mismatch.tasks': 'The program has {count} tasks and the device supports {max}.',
   'deploy.mismatch.noDevice': 'The device did not report valid system information.',
   'deploy.safe.none': 'Every output stays off while the old program stops, the new one is written and the PLC stays stopped.',
-  'deploy.safe.declared': 'Every output stays at its safe value while the old program stops, the new one is written and the PLC stays stopped. Declared by the project: {values}. Every other output is off.',
+  'deploy.safe.declared':
+    'Every output stays at its safe value while the old program stops, the new one is written and the PLC stays stopped. Declared by the project: {values}. Every other output is off.',
   'deploy.safe.scope': `This is checked by host and simulator tests. The ${PRODUCT_NAME} application does not measure the pins of this board.`,
   'deploy.safe.on': 'on',
   'deploy.safe.off': 'off',
-  'deploy.transfer.framed': 'The chunks go in order. The device reports the size and CRC-32 of what it holds, and they must match what was announced.',
+  'deploy.transfer.framed':
+    'The chunks go in order. The device reports the size and CRC-32 of what it holds, and they must match what was announced.',
   'deploy.transfer.shell': 'This firmware uses the older text shell. The device answers each line and the program is not read back.',
   'status.label': 'Operational status',
   'status.mode': 'Mode',
@@ -587,7 +596,8 @@ export const baseEn = {
   'search.query': 'Search text',
   'search.placeholder': 'Search the project files',
   'search.matchCase': 'Match case',
-  'search.scope': 'Searches the structured text and instruction list files, with the changes that are not saved. Diagrams are not searched.',
+  'search.scope':
+    'Searches the structured text and instruction list files, with the changes that are not saved. Diagrams are not searched.',
   'search.searching': 'Searching…',
   'search.summary': 'Matches: {count} in {files} files',
   'search.truncated': 'Only the first {count} matches are shown',
@@ -637,4 +647,3 @@ export const en = {
 } as const;
 
 export type MessageKey = keyof typeof en;
-

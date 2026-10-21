@@ -1,9 +1,14 @@
-/** The latest presentation of the host scenario run, shared so that the lessons in the sidebar can show whether the lesson's check passed. */
+/**
+ * The latest presentation of the host scenario run, shared so that the lessons in the sidebar can show whether the lesson's check passed.
+ */
 import { useEffect } from 'react';
 import { create } from 'zustand';
 import type { WorkspaceTestPresentation } from '../components/workspaceTestPresentation';
 
-export const useWorkspaceTestResult = create<{ presentation: WorkspaceTestPresentation | undefined; publish: (presentation: WorkspaceTestPresentation | undefined) => void }>((set) => ({
+export const useWorkspaceTestResult = create<{
+  presentation: WorkspaceTestPresentation | undefined;
+  publish: (presentation: WorkspaceTestPresentation | undefined) => void;
+}>((set) => ({
   presentation: undefined,
   publish: (presentation) => set((state) => (state.presentation === presentation ? state : { presentation })),
 }));

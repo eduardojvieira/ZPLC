@@ -1,5 +1,6 @@
 /**
- * Application settings of the user (IDE-007, IDE-010): editor font size and tab size, density, language (`auto` follows the operating system), autosave and
+ * Application settings of the user (IDE-007, IDE-010): editor font size and tab size, density, language (`auto` follows the operating
+ * system), autosave and
  * the update check. The theme is the one setting that has always lived in the store of the shell (`useIDEStore`), and
  * stays there. The settings are one JSON entry of the storage of the user (the renderer's local storage lives in the
  * user's profile directory, so they persist per user). Every field is validated when it is read: a missing, corrupt
@@ -31,7 +32,10 @@ export interface AppSettings {
   checkForUpdates: boolean;
   /** Every Learn lesson can be started whatever the learner has passed (LRN-005); off by default, so the course keeps its order. */
   unlockAllLessons: boolean;
-  /** The classroom setting (LRN-033): Learn offers no reference solution while it is on. Off by default; a setting of this computer, no account. */
+  /**
+   * The classroom setting (LRN-033): Learn offers no reference solution while it is on. Off by default; a setting of this computer, no
+   * account.
+   */
   hideSolutions: boolean;
 }
 
@@ -57,11 +61,16 @@ const oneOf = <T extends readonly unknown[]>(choices: T, value: unknown): value 
 
 /** A fresh, valid settings object from anything: each field is kept when valid and otherwise takes its default. */
 export function parseSettings(raw: unknown, defaults: AppSettings = DEFAULT_SETTINGS): AppSettings {
-  const value = typeof raw === 'object' && raw !== null && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
+  const value = typeof raw === 'object' && raw !== null && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
   const { editorFontSize, editorTabSize, density, language, autosaveSeconds, checkForUpdates, unlockAllLessons, hideSolutions } = value;
   return {
-    editorFontSize: typeof editorFontSize === 'number' && Number.isInteger(editorFontSize)
-      && editorFontSize >= FONT_SIZE_RANGE.min && editorFontSize <= FONT_SIZE_RANGE.max ? editorFontSize : defaults.editorFontSize,
+    editorFontSize:
+      typeof editorFontSize === 'number' &&
+      Number.isInteger(editorFontSize) &&
+      editorFontSize >= FONT_SIZE_RANGE.min &&
+      editorFontSize <= FONT_SIZE_RANGE.max
+        ? editorFontSize
+        : defaults.editorFontSize,
     editorTabSize: oneOf(TAB_SIZE_CHOICES, editorTabSize) ? editorTabSize : defaults.editorTabSize,
     density: oneOf(DENSITY_CHOICES, density) ? density : defaults.density,
     language: oneOf(LANGUAGE_CHOICES, language) ? language : defaults.language,

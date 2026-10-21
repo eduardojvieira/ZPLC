@@ -1,6 +1,6 @@
 /**
  * SFCStepNode - Custom ReactFlow node for SFC Steps
- * 
+ *
  * Renders a Step box per IEC 61131-3 SFC specification:
  * - Single border for regular steps
  * - Double border for initial step
@@ -52,10 +52,10 @@ function formatTime(ms: number | undefined): string {
 }
 
 const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
-  const { 
-    name, 
-    isInitial, 
-    actions, 
+  const {
+    name,
+    isInitial,
+    actions,
     comment,
     debugActive = false,
     isActive = false,
@@ -67,7 +67,7 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
     readOnly = false,
     onChangeData,
   } = data as unknown as StepData;
-  
+
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(name);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -94,34 +94,39 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
     setIsEditing(false);
   }, [id, editName, name, onChangeData]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleSave();
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      setEditName(name);
-      setIsEditing(false);
-    }
-    e.stopPropagation();
-  }, [handleSave, name]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSave();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setEditName(name);
+        setIsEditing(false);
+      }
+      e.stopPropagation();
+    },
+    [handleSave, name],
+  );
 
   // Determine visual state based on debug mode
   const isStepActive = debugActive && isActive;
   // the step in the signal vocabulary: active is a confirmed TRUE, idle is FALSE, a state that was not read is unknown
   const tone = signalTone({ forced, fault, type: 'BOOL', value: stateUnavailable ? null : isActive });
-  const stateWord = tone === 'forced' || tone === 'fault' ? SIGNAL_CUES[tone].label : stateUnavailable ? 'UNAVAILABLE' : isStepActive ? 'ACTIVE' : 'IDLE';
-  
+  const stateWord =
+    tone === 'forced' || tone === 'fault' ? SIGNAL_CUES[tone].label : stateUnavailable ? 'UNAVAILABLE' : isStepActive ? 'ACTIVE' : 'IDLE';
+
   // Dynamic classes based on state
   const stepBoxClasses = `
     relative h-[56px] w-[120px] rounded-[2px] transition-all duration-200
-    ${isInitial 
-      ? isStepActive
-        ? 'border-4 border-double border-[var(--signal-true-border)] bg-[var(--signal-true-bg)]'
-        : 'border-4 border-double border-[var(--color-accent-blue)] bg-[var(--visual-node)]'
-      : isStepActive
-        ? 'border-[3px] border-[var(--signal-true-border)] bg-[var(--signal-true-bg)]'
-        : 'border-2 border-[var(--border-color)] bg-[var(--visual-node)]'
+    ${
+      isInitial
+        ? isStepActive
+          ? 'border-4 border-double border-[var(--signal-true-border)] bg-[var(--signal-true-bg)]'
+          : 'border-4 border-double border-[var(--color-accent-blue)] bg-[var(--visual-node)]'
+        : isStepActive
+          ? 'border-[3px] border-[var(--signal-true-border)] bg-[var(--signal-true-bg)]'
+          : 'border-2 border-[var(--border-color)] bg-[var(--visual-node)]'
     }
     ${selected ? 'ring-2 ring-[var(--color-accent-blue)]' : ''}
   `;
@@ -135,17 +140,18 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
         id="in"
         className="!h-3 !w-3 !-top-1.5 !border-2 !border-[var(--color-accent-blue)] !bg-[var(--color-accent-blue)] transition-colors"
       />
-      
+
       {/* Step box */}
       <Tooltip content={comment}>
         <div className={`sfc-step-box flex h-full w-full items-center justify-center ${stepBoxClasses}`}>
           {/* Step name */}
-          <div 
+          <div
             className="relative w-full cursor-pointer px-3 text-center"
             onDoubleClick={() => !debugActive && !readOnly && setIsEditing(true)}
           >
             {isEditing ? (
-              <TextField bare
+              <TextField
+                bare
                 aria-label={t('a11y.sfc.stepName')}
                 ref={inputRef}
                 type="text"
@@ -158,70 +164,87 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
-              <span className={`block max-h-[36px] overflow-hidden break-words text-center font-semibold leading-tight ${isStepActive ? 'text-[var(--signal-true-fg)]' : 'text-[var(--text-primary)]'}`}>
+              <span
+                className={
+                  `block max-h-[36px] overflow-hidden break-words text-center font-semibold ` +
+                  `leading-tight ${isStepActive ? 'text-[var(--signal-true-fg)]' : 'text-[var(--text-primary)]'}`
+                }
+              >
                 {name}
               </span>
             )}
           </div>
-  
         </div>
       </Tooltip>
 
       {/* Debug information is an annotation; it must not change the IEC block geometry. */}
       {debugActive && (
-          <div className="absolute top-full left-1/2 z-10 mt-1 w-[120px] -translate-x-1/2 border border-[var(--border-color)] bg-[var(--color-surface-700)] px-2 py-1 text-center">
-            <div className="flex items-center justify-center gap-2 text-[length:var(--font-size-caption)]">
-              {/* State: the glyph and the word say it as well as the colour */}
-              <SignalChip tone={tone} detail={stateWord} />
+        <div
+          className={
+            'absolute top-full left-1/2 z-10 mt-1 w-[120px] -translate-x-1/2 border border-[var(--border-color)] ' +
+            'bg-[var(--color-surface-700)] px-2 py-1 text-center'
+          }
+        >
+          <div className="flex items-center justify-center gap-2 text-[length:var(--font-size-caption)]">
+            {/* State: the glyph and the word say it as well as the colour */}
+            <SignalChip tone={tone} detail={stateWord} />
 
-              {/* Time in step (only when active or has time) */}
-              {(isStepActive || timeInStep !== undefined) && timeInStep !== undefined && timeInStep > 0 && (
-                <div className="flex items-center gap-1 text-[var(--signal-value-fg)]">
-                  <Timer size={10} />
-                  <span className="font-mono">{formatTime(timeInStep)}</span>
-                </div>
-              )}
-            </div>
-            
-            {/* Activation count */}
-            {activationCount !== undefined && activationCount > 0 && (
-              <div className="text-[length:var(--font-size-caption)] text-[var(--text-tertiary)] mt-0.5">
-                {t('editors.sfc.activations', { count: activationCount })}
+            {/* Time in step (only when active or has time) */}
+            {(isStepActive || timeInStep !== undefined) && timeInStep !== undefined && timeInStep > 0 && (
+              <div className="flex items-center gap-1 text-[var(--signal-value-fg)]">
+                <Timer size={10} />
+                <span className="font-mono">{formatTime(timeInStep)}</span>
               </div>
             )}
           </div>
-        )}
+
+          {/* Activation count */}
+          {activationCount !== undefined && activationCount > 0 && (
+            <div className="text-[length:var(--font-size-caption)] text-[var(--text-tertiary)] mt-0.5">
+              {t('editors.sfc.activations', { count: activationCount })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Associated actions block (to the right) */}
       {actions && actions.length > 0 && (
         <div data-sfc-actions className="absolute left-full top-1/2 z-10 ml-3 flex -translate-y-1/2 items-center gap-1">
           {/* Connection line */}
           <div className={`w-4 ${isStepActive ? 'h-[3px] bg-[var(--signal-true-border)]' : 'h-px bg-[var(--visual-wire)]'}`} />
-          
+
           {/* Actions box */}
-          <div className={`border rounded-[2px] text-xs ${
-            isStepActive 
-              ? 'border-2 border-[var(--signal-true-border)] bg-[var(--color-surface-700)]' 
-              : 'border-[var(--border-color)] bg-[var(--color-surface-700)]'
-          }`}>
+          <div
+            className={`border rounded-[2px] text-xs ${
+              isStepActive
+                ? 'border-2 border-[var(--signal-true-border)] bg-[var(--color-surface-700)]'
+                : 'border-[var(--border-color)] bg-[var(--color-surface-700)]'
+            }`}
+          >
             {actions.map((action, idx) => (
-              <div 
+              <div
                 key={idx}
                 className={`flex items-center border-b last:border-b-0 ${
                   isStepActive ? 'border-[var(--signal-true-border)]' : 'border-[var(--border-color)]'
                 }`}
               >
                 {/* Qualifier */}
-                <div className={`px-1.5 py-1 font-mono border-r ${
-                  isStepActive 
-                    ? 'bg-[var(--signal-true-bg)] text-[var(--signal-true-fg)] border-[var(--signal-true-border)]' 
-                    : 'bg-[var(--visual-panel)] text-[var(--text-secondary)] border-[var(--border-color)]'
-                }`}>
+                <div
+                  className={`px-1.5 py-1 font-mono border-r ${
+                    isStepActive
+                      ? 'bg-[var(--signal-true-bg)] text-[var(--signal-true-fg)] border-[var(--signal-true-border)]'
+                      : 'bg-[var(--visual-panel)] text-[var(--text-secondary)] border-[var(--border-color)]'
+                  }`}
+                >
                   {action.qualifier}
                 </div>
                 {/* Action name */}
                 <Tooltip content={action.actionName}>
-                  <div className={`max-w-[132px] break-words px-2 py-1 ${isStepActive ? 'text-[var(--signal-true-fg)]' : 'text-[var(--text-secondary)]'}`}>
+                  <div
+                    className={`max-w-[132px] break-words px-2 py-1 ${
+                      isStepActive ? 'text-[var(--signal-true-fg)]' : 'text-[var(--text-secondary)]'
+                    }`}
+                  >
                     {action.actionName}
                   </div>
                 </Tooltip>
@@ -241,7 +264,12 @@ const SFCStepNode = memo(({ id, data, selected }: NodeProps) => {
 
       {/* Comment (if present and not debugging) */}
       {comment && !debugActive && (
-        <div className="absolute top-full left-1/2 mt-1 w-[120px] -translate-x-1/2 px-1 text-[length:var(--font-size-caption)] italic text-[var(--text-tertiary)] text-center truncate">
+        <div
+          className={
+            'absolute top-full left-1/2 mt-1 w-[120px] -translate-x-1/2 px-1 text-[length:var(--font-size-caption)] italic ' +
+            'text-[var(--text-tertiary)] text-center truncate'
+          }
+        >
           {comment}
         </div>
       )}

@@ -10,8 +10,17 @@ function Host({ onClose = () => undefined }: { onClose?: () => void }) {
   return (
     <>
       <Button onClick={() => setOpen(true)}>Open dialog</Button>
-      <Dialog open={open} onClose={() => { onClose(); setOpen(false); }} title="Rename task" description="Pick a new name">
-        <input aria-label="New name" /><Button>Apply</Button>
+      <Dialog
+        open={open}
+        onClose={() => {
+          onClose();
+          setOpen(false);
+        }}
+        title="Rename task"
+        description="Pick a new name"
+      >
+        <input aria-label="New name" />
+        <Button>Apply</Button>
       </Dialog>
     </>
   );
@@ -68,7 +77,17 @@ describe('Dialog (UX-001) in a DOM', () => {
 
 describe('AlertDialog (UX-001) in a DOM', () => {
   const alert = (props: Partial<Parameters<typeof AlertDialog>[0]> = {}) => (
-    <AlertDialog open title="Delete task" description="This cannot be undone" actionLabel="Delete" cancelLabel="Keep" destructive onAction={() => undefined} onCancel={() => undefined} {...props} />
+    <AlertDialog
+      open
+      title="Delete task"
+      description="This cannot be undone"
+      actionLabel="Delete"
+      cancelLabel="Keep"
+      destructive
+      onAction={() => undefined}
+      onCancel={() => undefined}
+      {...props}
+    />
   );
 
   it('is an alert dialog and the safe answer takes the focus', () => {
@@ -99,7 +118,8 @@ describe('AlertDialog (UX-001) in a DOM', () => {
   it('while busy every answer is disabled and Escape does not cancel', async () => {
     const onCancel = mock(() => undefined);
     const { user } = dom.render(alert({ busy: true, onCancel, secondary: { label: 'Archive', onSelect: () => undefined } }));
-    for (const name of ['Keep', 'Archive', 'Delete']) expect((dom.screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(true);
+    for (const name of ['Keep', 'Archive', 'Delete'])
+      expect((dom.screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(true);
     await user.keyboard('{Escape}');
     expect(onCancel).not.toHaveBeenCalled();
   });

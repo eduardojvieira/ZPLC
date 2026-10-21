@@ -21,7 +21,8 @@ export const toolbarMsgEn = {
   'toolbarMsg.buildingProject': 'Building project',
   'toolbarMsg.buildFailed': 'Build failed',
   'toolbarMsg.canonicalWorkspaceBuildFailed': 'Canonical workspace build failed',
-  'toolbarMsg.builtSavedWorkspaceLocally': 'Built saved workspace locally: {length} bytes ({codeSize} code, {taskCount} tasks, contract draft {DRAFT_COUNTER})',
+  'toolbarMsg.builtSavedWorkspaceLocally':
+    'Built saved workspace locally: {length} bytes ({codeSize} code, {taskCount} tasks, contract draft {DRAFT_COUNTER})',
   'toolbarMsg.buildSucceeded': 'Build succeeded',
   'toolbarMsg.bytes': '{name}: {length} bytes, {value}',
   'toolbarMsg.buildCancelled': 'Build cancelled',
@@ -90,12 +91,14 @@ export const toolbarMsgEs: Record<keyof typeof toolbarMsgEn, string> = {
   'toolbarMsg.openTestsAndChoose': 'Abra “Pruebas” y elija el zplc.json guardado antes de compilar este proyecto.',
   'toolbarMsg.saveChangesBeforeBuilding': 'Guarde los cambios antes de compilar el espacio de trabajo guardado.',
   'toolbarMsg.buildDidNotStart': 'La compilación no se inició',
-  'toolbarMsg.savedWorkspaceCouldNot': 'No se pudo abrir el espacio de trabajo guardado. Compruebe que la carpeta del proyecto aún tiene su zplc.json.',
+  'toolbarMsg.savedWorkspaceCouldNot':
+    'No se pudo abrir el espacio de trabajo guardado. Compruebe que la carpeta del proyecto aún tiene su zplc.json.',
   'toolbarMsg.buildingSavedWorkspaceLocally': 'Compilando el espacio de trabajo guardado de forma local...',
   'toolbarMsg.buildingProject': 'Compilando el proyecto',
   'toolbarMsg.buildFailed': 'La compilación falló',
   'toolbarMsg.canonicalWorkspaceBuildFailed': 'Falló la compilación canónica del espacio de trabajo',
-  'toolbarMsg.builtSavedWorkspaceLocally': 'Espacio de trabajo guardado compilado de forma local: {length} bytes ({codeSize} de código, {taskCount} tareas, borrador de contrato {DRAFT_COUNTER})',
+  'toolbarMsg.builtSavedWorkspaceLocally':
+    'Espacio de trabajo guardado compilado de forma local: {length} bytes ({codeSize} de código, {taskCount} tareas, borrador de contrato {DRAFT_COUNTER})',
   'toolbarMsg.buildSucceeded': 'Compilación correcta',
   'toolbarMsg.bytes': '{name}: {length} bytes, {value}',
   'toolbarMsg.buildCancelled': 'Compilación cancelada',
@@ -132,7 +135,8 @@ export const toolbarMsgEs: Record<keyof typeof toolbarMsgEn, string> = {
   'toolbarMsg.connectFirst': 'Conéctese primero.',
   'toolbarMsg.deployTheCurrentBuild': 'Despliegue la compilación actual antes de ejecutar.',
   'toolbarMsg.noCompiledBytecodeCompile': 'No hay bytecode compilado. Compile primero.',
-  'toolbarMsg.simulatorReceivedAnEarlier': 'El simulador recibió una compilación anterior. Compile el código fuente actual antes de ejecutar.',
+  'toolbarMsg.simulatorReceivedAnEarlier':
+    'El simulador recibió una compilación anterior. Compile el código fuente actual antes de ejecutar.',
   'toolbarMsg.failedToLoad': 'No se pudo cargar: {value}',
   'toolbarMsg.executionStarted': 'Ejecución iniciada',
   'toolbarMsg.runFailed': 'Falló la ejecución: {value}',

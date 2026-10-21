@@ -31,7 +31,10 @@ export interface ExternalChangePlan {
  * `disk` has the current content of the files that were read: a string, null for a file that is gone, undefined for
  * one that could not be read now. A path that is not in the map was not checked and is left alone.
  */
-export function planExternalChanges(files: readonly OpenFileInfo[], disk: ReadonlyMap<string, string | null | undefined>): ExternalChangePlan {
+export function planExternalChanges(
+  files: readonly OpenFileInfo[],
+  disk: ReadonlyMap<string, string | null | undefined>,
+): ExternalChangePlan {
   const plan: ExternalChangePlan = { reload: [], conflicts: [], close: [] };
   for (const file of files) {
     if (!disk.has(file.path)) continue;

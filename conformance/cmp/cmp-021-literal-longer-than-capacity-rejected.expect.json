@@ -2,10 +2,6 @@
   "requirement": "CMP-021",
   "title": "a literal longer than the capacity of its variable is rejected",
   "build": "fails",
-  "lines": [
-    5
-  ],
-  "codes": [
-    "STRING_TOO_LONG"
-  ]
+  "lines": [5],
+  "codes": ["STRING_TOO_LONG"]
 }

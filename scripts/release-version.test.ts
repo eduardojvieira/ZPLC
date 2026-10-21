@@ -43,7 +43,7 @@ describe('release version helpers', () => {
         version: '1.4.8',
         private: true,
       }),
-      '1.5.0'
+      '1.5.0',
     );
 
     expect(JSON.parse(updated)).toEqual({
@@ -59,9 +59,7 @@ describe('release version helpers', () => {
       'packages/zplc-compiler/package.json': JSON.stringify({ version: '1.4.3' }),
     });
 
-    expect(drift).toEqual([
-      'packages/zplc-compiler/package.json: expected 1.5.0, found 1.4.3',
-    ]);
+    expect(drift).toEqual(['packages/zplc-compiler/package.json: expected 1.5.0, found 1.4.3']);
   });
 
   it('propagates a prerelease version to all package manifests', () => {

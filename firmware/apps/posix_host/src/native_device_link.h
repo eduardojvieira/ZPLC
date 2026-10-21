@@ -22,23 +22,21 @@ extern "C" {
 #endif
 
 typedef struct {
-    zplc_native_runtime_session_t *session;
-    uint8_t key[ZPLC_PROTO_KEY_BYTES];
-    int key_set;
-    /* the public key programs have to be signed with (COM-026) */
-    uint8_t signing_key[ZPLC_PROTO_KEY_BYTES];
-    int signing_key_set;
-    /* a program being transferred */
-    uint8_t *staged;
-    uint32_t staged_expected;
-    uint32_t staged_size;
-    uint32_t started_ms;
+  zplc_native_runtime_session_t *session;
+  uint8_t key[ZPLC_PROTO_KEY_BYTES];
+  int key_set;
+  /* the public key programs have to be signed with (COM-026) */
+  uint8_t signing_key[ZPLC_PROTO_KEY_BYTES];
+  int signing_key_set;
+  /* a program being transferred */
+  uint8_t *staged;
+  uint32_t staged_expected;
+  uint32_t staged_size;
+  uint32_t started_ms;
 } zplc_native_device_link_port_t;
 
 /** Fill the table of the engine with the session of the simulator. */
-void zplc_native_device_link_port_init(zplc_native_device_link_port_t *port,
-                                       zplc_native_runtime_session_t *session,
-                                       zplc_proto_ops_t *ops);
+void zplc_native_device_link_port_init(zplc_native_device_link_port_t *port, zplc_native_runtime_session_t *session, zplc_proto_ops_t *ops);
 
 void zplc_native_device_link_port_release(zplc_native_device_link_port_t *port);
 

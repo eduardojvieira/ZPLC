@@ -6,7 +6,8 @@ import { claimMotorInputCommand, shouldClearMotorInputFailure } from './liveNati
 
 // Console.tsx and the modules split out of it (IDE-014): the pins below read the text of all of them, as they did of the one file.
 const CONSOLE_MODULES = ['Console.tsx', 'ConsoleReviewPanels.tsx', 'LiveNativeMotorControls.tsx', 'WorkspaceTestResult.tsx'];
-const consoleSources = (): string => CONSOLE_MODULES.map((file) => compactSource(readFileSync(join(import.meta.dir, file), 'utf8'))).join('\n');
+const consoleSources = (): string =>
+  CONSOLE_MODULES.map((file) => compactSource(readFileSync(join(import.meta.dir, file), 'utf8'))).join('\n');
 
 describe('Console tab boundary', () => {
   it('excludes a concurrent motor command and clears a failure only after a newer sample', () => {
@@ -81,7 +82,7 @@ describe('Console tab boundary', () => {
     expect(source).toContain('scrollBeyondLastLine: false');
     expect(source).toContain('renderSideBySide: true');
     expect(source).toContain("state.kind === 'running' || state.kind === 'cancelling' ? { kind: 'stale' }");
-    expect(source).toContain("The change is no longer current. Review again.");
+    expect(source).toContain('The change is no longer current. Review again.');
     expect(source).toContain("setCandidateReviewState({ kind: 'saving' })");
     expect(source).toContain('Review itself does not write files.');
     expect(source).toContain('Open a saved project folder to review a change.');
@@ -129,11 +130,16 @@ describe('Console tab boundary', () => {
     expect(source).toMatch(/activeConsoleTab === 'interlocks' && \(?<InterlockCoverage/); // a formatter adds the parenthesis
     expect(source).toContain('workspaceTests.safetyCheck({ workspaceId })');
     expect(source).toContain('presentWorkspaceSafetyCheck(result)');
-    expect(source).toContain('isWorkspaceTestRunCurrent(latest, { projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId })');
+    expect(source).toContain(
+      'isWorkspaceTestRunCurrent(latest, { projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId })',
+    );
     expect(source).not.toContain('workspaceTests.safetyCheck({ workspaceId, path');
     expect(source).not.toMatch(/safetyCheck\.(flash|deploy|force|run|stop|shell)/);
-    expect(source).toContain("let published = false;");
-    expect(source).toContain("setWorkspaceSafetyState({ status: 'running', projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId })");
+    expect(source).toContain('let published = false;');
+    expect(source).toContain(
+      "setWorkspaceSafetyState({ status: 'running', projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, " +
+        'workspaceId })',
+    );
     expect(source).toContain("'status' in workspaceSafetyState ? workspaceSafetyState.status : workspaceSafetyState");
     expect(source).toContain("typeof state === 'object' && 'status' in state && state.status === 'running' ? 'idle' : state");
   });
@@ -144,23 +150,25 @@ describe('Console tab boundary', () => {
     expect(source).toContain('registerProjectFile(file)');
     expect(source).toContain('isWorkspaceManifestRegistrationCurrent(useIDEStore.getState().projectSession, expectedProjectSession)');
     expect(source).toContain('current.hasUnsavedChanges()');
-    expect(source).toContain('isWorkspaceTestRunCurrent(latest, { projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId })');
-    expect(source).toContain("Choose zplc.json");
-    expect(source).toContain("Choose zplc.json again");
-    expect(source).toContain("Linked saved workspace ready for host scenarios.");
-    expect(source).toContain("Select the saved workspace zplc.json whose scenarios you want to run.");
+    expect(source).toContain(
+      'isWorkspaceTestRunCurrent(latest, { projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId })',
+    );
+    expect(source).toContain('Choose zplc.json');
+    expect(source).toContain('Choose zplc.json again');
+    expect(source).toContain('Linked saved workspace ready for host scenarios.');
+    expect(source).toContain('Select the saved workspace zplc.json whose scenarios you want to run.');
     // The chooser is the kit's FileInput: a hidden input (ui/Field.tsx) that the visible buttons open.
     expect(source).toContain('<FileInput');
     expect(source).toContain('data-workspace-manifest-input');
     expect(source).not.toContain('<input');
     expect(source).not.toContain('aria-label="Choose saved workspace zplc.json"');
-    expect(source).toContain('input.value = \'\';');
+    expect(source).toContain("input.value = '';");
     expect(source).toContain('Tests use saved workspace files and do not include changes that are not saved.');
     expect(source).toContain('Cancel scenarios');
     expect(source).toContain('Cancelling…');
     expect(source).toContain('workspaceTests.cancel()');
     expect(source).toContain('const runWorkspaceTests = async (scenarioId?: string) => {');
-    expect(source).toContain("const request = { workspaceId, ...(scenarioId === undefined ? {} : { scenarioId }) };");
+    expect(source).toContain('const request = { workspaceId, ...(scenarioId === undefined ? {} : { scenarioId }) };');
     expect(source).toContain('workspaceTests.run(request)');
     expect(source).toContain('onClick={() => { void runWorkspaceTests(); }}');
     expect(source).toContain('Run this scenario again');
@@ -248,7 +256,11 @@ describe('Console tab boundary', () => {
     expect(source).toContain('Pump');
     expect(source).toContain('Alarm');
     expect(source).toContain('Recorded native POSIX scenario result — not live runtime, hardware, or HIL evidence.');
-    expect(source).toContain("open={presentation.kind === 'assertion-failed' || presentation.preview.scenarios.some((scenario) => presentRecordedMotorPlant(scenario) || presentRecordedConveyorPlant(scenario) || presentRecordedPedestrianCrossing(scenario) || presentRecordedTankLevel(scenario))}");
+    expect(source).toContain(
+      "open={presentation.kind === 'assertion-failed' || presentation.preview.scenarios.some((scenario) => " +
+        'presentRecordedMotorPlant(scenario) || presentRecordedConveyorPlant(scenario) || presentRecordedPedestrianCrossing(scenario) || ' +
+        'presentRecordedTankLevel(scenario))}',
+    );
     expect(source).not.toContain('Reset plant');
     expect(source).not.toContain('resetPlant');
   });
@@ -268,7 +280,9 @@ describe('Console tab boundary', () => {
     expect(source).toContain("command('motor.estop', true)");
     expect(source).toContain("command('motor.estop', false)");
     expect(source).toContain('Input command was not confirmed; controls are unavailable until a fresh native snapshot.');
-    expect(source).toContain('simulationInputsAuthorized={debugController?.adapter instanceof NativeAdapter && debugController.adapter.supportsSimulationInput}');
+    expect(source).toContain(
+      'simulationInputsAuthorized={debugController?.adapter instanceof NativeAdapter && debugController.adapter.supportsSimulationInput}',
+    );
     expect(source).toContain("disabled={disabled || controls.eStopAsserted} onClick={() => void command('motor.estop', true)}");
     expect(source).toContain("disabled={disabled || !controls.eStopAsserted} onClick={() => void command('motor.estop', false)}");
     expect(source).toContain('Staging host input; waiting for a fresh native snapshot.');

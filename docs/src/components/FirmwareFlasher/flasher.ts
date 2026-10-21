@@ -34,7 +34,8 @@ export function buildFlashManifest({ version, imageUrl }: { version: string; ima
 }
 
 /** Web Serial: Chrome and Edge on a computer. Firefox, Safari and the phones do not have it. */
-export const webSerialSupported = (navigatorLike: { serial?: unknown } | undefined): boolean => navigatorLike !== undefined && 'serial' in navigatorLike;
+export const webSerialSupported = (navigatorLike: { serial?: unknown } | undefined): boolean =>
+  navigatorLike !== undefined && 'serial' in navigatorLike;
 
 export async function sha256Hex(bytes: ArrayBuffer): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', bytes);
@@ -57,9 +58,15 @@ export interface Text {
 export const TEXT: Record<'en' | 'es', Text> = {
   en: {
     title: 'Flash the ESP32-S3 from the browser',
-    safety: 'AI never flashes. ZPLC\'s assistant and the MCP server never write a board. You start every step: you choose the file, you press Install, you pick the serial port in the dialog of the browser, and you confirm.',
-    unsupported: 'The browser flasher needs Web Serial, which only Chrome and Edge on a computer have. Use one of them, or write the image with the command line below.',
-    checking: 'Checking the browser. The flasher needs JavaScript and Web Serial (Chrome and Edge on a computer); the command line below works everywhere.',
+    safety:
+      "AI never flashes. ZPLC's assistant and the MCP server never write a board. You start every step: you choose the file, you press " +
+      'Install, you pick the serial port in the dialog of the browser, and you confirm.',
+    unsupported:
+      'The browser flasher needs Web Serial, which only Chrome and Edge on a computer have. Use one of them, or write the image with the ' +
+      'command line below.',
+    checking:
+      'Checking the browser. The flasher needs JavaScript and Web Serial (Chrome and Edge on a computer); the command line below works ' +
+      'everywhere.',
     choose: 'Image of the release (zplc-runtime-<version>-esp32-s3-devkitc.bin)',
     wrongFile: 'This file is not the ESP32-S3 image of a release. Its name must be zplc-runtime-<version>-esp32-s3-devkitc.bin.',
     checksum: 'SHA-256 of this file. Compare it with the line of SHA256SUMS before you install:',
@@ -69,9 +76,15 @@ export const TEXT: Record<'en' | 'es', Text> = {
   },
   es: {
     title: 'Grabe el ESP32-S3 desde el navegador',
-    safety: 'La IA nunca graba una placa: ni el asistente de ZPLC ni el servidor MCP lo hacen. Usted inicia cada paso: elige el archivo, pulsa Instalar, elige el puerto serie en el diálogo del navegador y confirma.',
-    unsupported: 'El grabador del navegador necesita Web Serial, que solo tienen Chrome y Edge en una computadora. Use uno de ellos, o grabe la imagen con la línea de comandos que sigue.',
-    checking: 'Comprobando el navegador. El grabador necesita JavaScript y Web Serial (Chrome y Edge en una computadora); la línea de comandos que sigue funciona en cualquier navegador.',
+    safety:
+      'La IA nunca graba una placa: ni el asistente de ZPLC ni el servidor MCP lo hacen. Usted inicia cada paso: elige el archivo, pulsa ' +
+      'Instalar, elige el puerto serie en el diálogo del navegador y confirma.',
+    unsupported:
+      'El grabador del navegador necesita Web Serial, que solo tienen Chrome y Edge en una computadora. Use uno de ellos, o grabe la ' +
+      'imagen con la línea de comandos que sigue.',
+    checking:
+      'Comprobando el navegador. El grabador necesita JavaScript y Web Serial (Chrome y Edge en una computadora); la línea de comandos ' +
+      'que sigue funciona en cualquier navegador.',
     choose: 'Imagen de la versión (zplc-runtime-<versión>-esp32-s3-devkitc.bin)',
     wrongFile: 'Este archivo no es la imagen del ESP32-S3 de una versión. Su nombre debe ser zplc-runtime-<versión>-esp32-s3-devkitc.bin.',
     checksum: 'SHA-256 de este archivo. Compárelo con la línea de SHA256SUMS antes de instalar:',

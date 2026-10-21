@@ -41,8 +41,13 @@ describe('declarationsOf (IDE-023)', () => {
   });
 
   it('lists a program, an interface and a type alias too, in the order of the file', () => {
-    const source = 'INTERFACE IMotor\nMETHOD Start : BOOL\nEND_METHOD\nEND_INTERFACE\n\nTYPE Speed : INT;\nEND_TYPE\n\nPROGRAM Main\nEND_PROGRAM\n';
-    expect(declarationsOf('src/Main.st', source).map(({ name, kind }) => `${kind} ${name}`)).toEqual(['INTERFACE IMotor', 'TYPE Speed', 'PROGRAM Main']);
+    const source =
+      'INTERFACE IMotor\nMETHOD Start : BOOL\nEND_METHOD\nEND_INTERFACE\n\nTYPE Speed : INT;\nEND_TYPE\n\nPROGRAM Main\nEND_PROGRAM\n';
+    expect(declarationsOf('src/Main.st', source).map(({ name, kind }) => `${kind} ${name}`)).toEqual([
+      'INTERFACE IMotor',
+      'TYPE Speed',
+      'PROGRAM Main',
+    ]);
   });
 
   it('names the file on every declaration, so that activating one can open it', () => {

@@ -10,7 +10,7 @@ export interface LDVariable {
   name: string;
   type: string;
   initialValue?: unknown;
-  address?: string;        // e.g., "%Q0.0" for physical outputs
+  address?: string; // e.g., "%Q0.0" for physical outputs
   comment?: string;
 }
 
@@ -24,21 +24,21 @@ export interface LDVariables {
 // Element Types
 // =============================================================================
 
-export type LDContactType = 
-  | 'contact_no'      // Normally Open (examines ON)
-  | 'contact_nc'      // Normally Closed (examines OFF)
-  | 'contact_p'       // Positive transition (rising edge)
-  | 'contact_n';      // Negative transition (falling edge)
+export type LDContactType =
+  | 'contact_no' // Normally Open (examines ON)
+  | 'contact_nc' // Normally Closed (examines OFF)
+  | 'contact_p' // Positive transition (rising edge)
+  | 'contact_n'; // Negative transition (falling edge)
 
 export type LDCoilType =
-  | 'coil'            // Standard coil
-  | 'coil_negated'    // Negated coil
-  | 'coil_set'        // Set/Latch coil (S)
-  | 'coil_reset'      // Reset/Unlatch coil (R)
-  | 'coil_p'          // Positive transition coil
-  | 'coil_n';         // Negative transition coil
+  | 'coil' // Standard coil
+  | 'coil_negated' // Negated coil
+  | 'coil_set' // Set/Latch coil (S)
+  | 'coil_reset' // Reset/Unlatch coil (R)
+  | 'coil_p' // Positive transition coil
+  | 'coil_n'; // Negative transition coil
 
-export type LDElementType = 
+export type LDElementType =
   // Power rails (auto-generated, not placed by user)
   | 'left_rail'
   | 'right_rail'
@@ -67,7 +67,7 @@ export interface LDCell {
 /**
  * Vertical link connecting two rows at a specific column.
  * Creates OR logic (parallel branch).
- * 
+ *
  * Visual representation:
  *   Row 0: ─┬─
  *          │
@@ -85,7 +85,7 @@ export interface LDVerticalLink {
 /**
  * A parallel branch region in the ladder rung.
  * Defines where power splits into multiple parallel paths and rejoins.
- * 
+ *
  * Visual representation:
  *        startCol              endCol
  *           │                    │
@@ -93,7 +93,7 @@ export interface LDVerticalLink {
  *   ────────┬────[C1]────[C2]───┬────────
  *           │                    │
  *           └────[C3]───────────┘
- *           
+ *
  * The branch spans from startCol to endCol, with paths on different rows.
  */
 export interface LDBranch {
@@ -147,26 +147,26 @@ export interface LDPosition {
 export interface LDElement {
   id: string;
   type: LDElementType;
-  
+
   // Grid position (new grid-based model)
   row?: number;
   col?: number;
-  
+
   // Legacy position (for backward compatibility)
   position?: LDPosition;
-  
+
   // For contacts and coils
   variable?: string;
-  
+
   // For function blocks
-  fbType?: string;       // e.g., 'TON', 'CTU'
-  instance?: string;     // Instance name
-  parameters?: Record<string, string>;  // Input parameter values
-  outputs?: Record<string, string>;     // Output variable bindings
-  
+  fbType?: string; // e.g., 'TON', 'CTU'
+  instance?: string; // Instance name
+  parameters?: Record<string, string>; // Input parameter values
+  outputs?: Record<string, string>; // Output variable bindings
+
   // For function blocks: how many rows it spans
   rowSpan?: number;
-  
+
   comment?: string;
 }
 
@@ -175,8 +175,8 @@ export interface LDElement {
 // =============================================================================
 
 export interface LDConnection {
-  from: string;   // Element ID (or "elementId.port" for FBs)
-  to: string;     // Element ID (or "elementId.port" for FBs)
+  from: string; // Element ID (or "elementId.port" for FBs)
+  to: string; // Element ID (or "elementId.port" for FBs)
 }
 
 // =============================================================================
@@ -185,7 +185,7 @@ export interface LDConnection {
 
 /**
  * A ladder rung - one horizontal "line" of logic.
- * 
+ *
  * Supports two modes:
  * 1. Grid-based (new): Uses `grid` and `verticalLinks` for visual editing
  * 2. Linear (legacy): Uses `elements` and `connections` arrays
@@ -194,13 +194,13 @@ export interface LDRung {
   id: string;
   number: number;
   comment?: string;
-  
+
   // Grid-based model (NEW - preferred)
-  grid?: LDCell[][];                  // 2D array: grid[row][col]
-  verticalLinks?: LDVerticalLink[];   // OR branches between rows (legacy, auto-generated)
-  branches?: LDBranch[];              // Parallel branch regions (NEW)
-  gridConfig?: LDGridConfig;          // Grid dimensions
-  
+  grid?: LDCell[][]; // 2D array: grid[row][col]
+  verticalLinks?: LDVerticalLink[]; // OR branches between rows (legacy, auto-generated)
+  branches?: LDBranch[]; // Parallel branch regions (NEW)
+  gridConfig?: LDGridConfig; // Grid dimensions
+
   // Linear model (LEGACY - for backward compatibility)
   elements?: LDElement[];
   connections?: LDConnection[];
@@ -227,12 +227,12 @@ export interface LDModel {
   name: string;
   description?: string;
   version?: string;
-  
+
   variables: LDVariables;
   rungs: LDRung[];
-  
+
   // Default grid configuration for all rungs
   defaultGridConfig?: LDGridConfig;
-  
+
   metadata?: LDMetadata;
 }

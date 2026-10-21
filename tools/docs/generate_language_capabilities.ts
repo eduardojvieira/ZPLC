@@ -24,7 +24,10 @@ export type Cell =
   | { kind: 'conformance'; ref: string }
   | { kind: 'board' }
   | null;
-export interface CapabilityTable { capabilities: string[]; languages: Record<string, Record<string, Cell>> }
+export interface CapabilityTable {
+  capabilities: string[];
+  languages: Record<string, Record<string, Cell>>;
+}
 
 export const LANGUAGES = ['st', 'il', 'ld', 'fbd', 'sfc'] as const;
 export const CAPABILITIES = ['edit', 'build', 'simulate', 'debug', 'pause', 'watch', 'force', 'deploy'] as const;
@@ -72,9 +75,15 @@ export function unresolved(source: CapabilityTable, root = ROOT): string[] {
       const where = `${language}/${capability}`;
       if (cell === undefined) problems.push(`${where}: no entry (use null for a gap)`);
       else if (cell === null || cell.kind === 'board') continue;
-      else if (cell.kind === 'journey' && !journeys.includes(`name: '${cell.ref}'`)) problems.push(`${where}: no journey named '${cell.ref}'`);
-      else if (cell.kind === 'conformance' && !existsSync(join(root, 'conformance', `${cell.ref}.expect.json`))) problems.push(`${where}: no conformance case ${cell.ref}`);
-      else if (cell.kind === 'test' && !(existsSync(join(root, cell.ref)) && readFileSync(join(root, cell.ref), 'utf8').includes(cell.contains))) problems.push(`${where}: ${cell.ref} has no '${cell.contains}'`);
+      else if (cell.kind === 'journey' && !journeys.includes(`name: '${cell.ref}'`))
+        problems.push(`${where}: no journey named '${cell.ref}'`);
+      else if (cell.kind === 'conformance' && !existsSync(join(root, 'conformance', `${cell.ref}.expect.json`)))
+        problems.push(`${where}: no conformance case ${cell.ref}`);
+      else if (
+        cell.kind === 'test' &&
+        !(existsSync(join(root, cell.ref)) && readFileSync(join(root, cell.ref), 'utf8').includes(cell.contains))
+      )
+        problems.push(`${where}: ${cell.ref} has no '${cell.contains}'`);
     }
   }
   return problems;
@@ -90,8 +99,22 @@ export function capabilityBlock(lang: Lang, source = loadTable()): string {
     CAPABILITIES.map((capability) => {
       const cell = source.languages[language]![capability] ?? null;
       const evidence = cell === null ? NONE[lang] : cell.kind === 'board' ? BOARD[lang] : KIND[cell.kind][lang];
-      const check = cell === null ? '' : cell.kind === 'board' ? BOARD_SOURCE[lang] : cell.kind === 'journey' ? `\`${cell.ref}\`` : cell.kind === 'test' ? `\`${cell.contains}\`` : `\`${cell.ref.split('/').pop()}\``;
-      return [LANGUAGE_NAME[language][lang], CAPABILITY_NAME[capability][lang], evidence, cell !== null && cell.kind !== 'board' ? check.replace(/\|/g, '\\|') : prose(check)];
+      const check =
+        cell === null
+          ? ''
+          : cell.kind === 'board'
+            ? BOARD_SOURCE[lang]
+            : cell.kind === 'journey'
+              ? `\`${cell.ref}\``
+              : cell.kind === 'test'
+                ? `\`${cell.contains}\``
+                : `\`${cell.ref.split('/').pop()}\``;
+      return [
+        LANGUAGE_NAME[language][lang],
+        CAPABILITY_NAME[capability][lang],
+        evidence,
+        cell !== null && cell.kind !== 'board' ? check.replace(/\|/g, '\\|') : prose(check),
+      ];
     }),
   );
   return markdownTable(HEAD[lang], rows);
@@ -120,5 +143,8 @@ if (import.meta.main) {
     process.exit(problems.length + stale.length > 0 ? 1 : 0);
   }
   if (problems.length > 0) process.exit(1);
-  for (const { file, content } of stale) { writeFileSync(join(ROOT, file), content); console.log(`Wrote ${file}`); }
+  for (const { file, content } of stale) {
+    writeFileSync(join(ROOT, file), content);
+    console.log(`Wrote ${file}`);
+  }
 }

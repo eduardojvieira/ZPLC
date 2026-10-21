@@ -2,13 +2,7 @@
   "requirement": "CMP-009",
   "title": "a (* comment closed with */ is reported where it opens",
   "build": "fails",
-  "lines": [
-    5
-  ],
-  "codes": [
-    "UNTERMINATED_COMMENT"
-  ],
-  "messageIncludes": [
-    "Unterminated comment"
-  ]
+  "lines": [5],
+  "codes": ["UNTERMINATED_COMMENT"],
+  "messageIncludes": ["Unterminated comment"]
 }

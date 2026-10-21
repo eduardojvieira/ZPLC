@@ -5,7 +5,24 @@ import type { SectionProps } from '../components/settings/settingsSectionProps';
 
 export type ConfigListener = (config: ZPLCProjectConfig) => void;
 
-export function SectionHost({ Section, initial, onConfig }: { Section: ComponentType<SectionProps>; initial?: Partial<ZPLCProjectConfig>; onConfig?: ConfigListener }) {
+export function SectionHost({
+  Section,
+  initial,
+  onConfig,
+}: {
+  Section: ComponentType<SectionProps>;
+  initial?: Partial<ZPLCProjectConfig>;
+  onConfig?: ConfigListener;
+}) {
   const [config, setConfig] = useState<ZPLCProjectConfig>({ ...DEFAULT_ZPLC_CONFIG, tasks: [], ...initial } as ZPLCProjectConfig);
-  return <Section config={config} updateConfig={(updates) => { const next = { ...config, ...updates }; setConfig(next); onConfig?.(next); }} />;
+  return (
+    <Section
+      config={config}
+      updateConfig={(updates) => {
+        const next = { ...config, ...updates };
+        setConfig(next);
+        onConfig?.(next);
+      }}
+    />
+  );
 }

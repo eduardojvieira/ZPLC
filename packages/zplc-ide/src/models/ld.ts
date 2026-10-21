@@ -1,9 +1,9 @@
 /**
  * LD (Ladder Diagram) Model Types
- * 
+ *
  * TypeScript types matching the LD JSON schema used for visual editing.
  * Based on IEC 61131-3 LD language specification.
- * 
+ *
  * This model supports:
  * - Grid-based rung layout (rows x columns)
  * - Parallel branches (OR logic via vertical links)
@@ -25,10 +25,10 @@ import { t } from '../i18n';
  */
 export function parseLDModel(json: string): LDModel {
   const parsed = JSON.parse(json) as LDModel;
-  
+
   // Auto-convert and normalize rungs
   if (parsed.rungs) {
-    parsed.rungs = parsed.rungs.map(rung => {
+    parsed.rungs = parsed.rungs.map((rung) => {
       if (!isGridBasedRung(rung) && rung.elements) {
         return normalizeGridRung(convertToGridRung(rung));
       }
@@ -36,7 +36,7 @@ export function parseLDModel(json: string): LDModel {
       return normalizeGridRung(rung);
     });
   }
-  
+
   return parsed;
 }
 

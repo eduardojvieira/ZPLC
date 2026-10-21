@@ -19,7 +19,8 @@ export function signalFlagsOf(
   // the map does not change while this lives, and the monitor asks for every entry at every reading
   const addresses = new Map<string, number | undefined>();
   const addressOf = (variable: string): number | undefined => {
-    if (!addresses.has(variable)) addresses.set(variable, sourceRef === undefined ? undefined : resolveVariable(debugMap, sourceRef, variable)?.address);
+    if (!addresses.has(variable))
+      addresses.set(variable, sourceRef === undefined ? undefined : resolveVariable(debugMap, sourceRef, variable)?.address);
     return addresses.get(variable);
   };
   return (variable) => {

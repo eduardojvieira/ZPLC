@@ -58,6 +58,7 @@ The compiler normalizes all IEC language paths into the same bytecode/runtime co
 ### 3. The Runtime Core
 
 The runtime (`libzplc_core`) is the execution boundary written in strict C99. It relies on standard operational models:
+
 - **Shared memory regions** globally defined for Inputs (IPI), Outputs (OPI), Work, Retain, and Code.
 - **VM instances** holding private execution states (stack pointers, registers) per task.
 - **Scheduler APIs** managing task registration, polling, and cyclical timing.
@@ -66,10 +67,11 @@ The runtime (`libzplc_core`) is the execution boundary written in strict C99. It
 
 The Hardware Abstraction Layer (HAL) is the bridge between the deterministic core and the physical microcontrollers.
 To port ZPLC to a new architecture, a developer only needs to implement `zplc_hal.h`:
+
 - Timing (`zplc_hal_tick`, `zplc_hal_sleep`)
 - Digital and analog I/O manipulation
 - NVS Persistence
-- Networking and Sockets 
+- Networking and Sockets
 - Logging Initialization
 
 By restricting everything to the HAL, ZPLC guarantees deep portability.

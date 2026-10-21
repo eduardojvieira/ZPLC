@@ -30,7 +30,7 @@ export class Device extends EventEmitter implements IDeviceConnection {
   status: DeviceStatus = 'disconnected';
   firmwareVersion?: string;
   capabilities: string[] = [];
-  
+
   private serial?: SerialPort;
   private parser?: ReadlineParser;
   private frameHandler?: (frame: DebugFrame) => void;
@@ -141,13 +141,13 @@ export class Device extends EventEmitter implements IDeviceConnection {
           type: payload.t || 'unknown',
           timestamp,
           raw: cleanLine,
-          payload
+          payload,
         };
-        
+
         if (frame.type === 'ready') {
-            this.firmwareVersion = payload.fw;
-            this.capabilities = payload.caps || [];
-            this.emit('ready', payload);
+          this.firmwareVersion = payload.fw;
+          this.capabilities = payload.caps || [];
+          this.emit('ready', payload);
         }
       }
     } catch (e) {
@@ -160,8 +160,8 @@ export class Device extends EventEmitter implements IDeviceConnection {
         this.frameHandler(frame);
       }
     } else {
-        // Emit raw lines too for debugging
-        this.emit('line', line);
+      // Emit raw lines too for debugging
+      this.emit('line', line);
     }
   }
 }
@@ -174,9 +174,9 @@ export async function connect(port: string, options?: ConnectionOptions): Promis
 
 export async function listDevices(): Promise<DeviceInfo[]> {
   const ports = await SerialPort.list();
-  return ports.map(p => ({
+  return ports.map((p) => ({
     port: p.path,
     manufacturer: p.manufacturer,
-    serialNumber: p.serialNumber
+    serialNumber: p.serialNumber,
   }));
 }

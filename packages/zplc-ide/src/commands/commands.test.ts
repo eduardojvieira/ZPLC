@@ -7,9 +7,24 @@ import { bindCommands, getCommandState, publishCommandState, resetCommandsForTes
 import { menuCategories, menuCommands, menuTranslator } from './menuEntry';
 import { filterEntries, fuzzyScore, nextIndex } from './palette';
 import { COMMAND_CATEGORIES, COMMAND_LIST, INITIAL_COMMAND_STATE, commandById, isCommandEnabled, isCommandId } from './registry';
-import { CHORD_TIMEOUT_MS, chordMatches, createShortcutMatcher, formatShortcut, parseChord, parseShortcut, toAccelerator } from './shortcuts';
+import {
+  CHORD_TIMEOUT_MS,
+  chordMatches,
+  createShortcutMatcher,
+  formatShortcut,
+  parseChord,
+  parseShortcut,
+  toAccelerator,
+} from './shortcuts';
 
-const key = (name: string, modifiers: Partial<{ ctrlKey: boolean; metaKey: boolean; shiftKey: boolean; altKey: boolean }> = {}) => ({ key: name, ctrlKey: false, metaKey: false, shiftKey: false, altKey: false, ...modifiers });
+const key = (name: string, modifiers: Partial<{ ctrlKey: boolean; metaKey: boolean; shiftKey: boolean; altKey: boolean }> = {}) => ({
+  key: name,
+  ctrlKey: false,
+  metaKey: false,
+  shiftKey: false,
+  altKey: false,
+  ...modifiers,
+});
 
 afterEach(() => resetCommandsForTest());
 
@@ -38,14 +53,25 @@ describe('command registry (UX-015)', () => {
   });
 
   it('UX-015 keeps every shortcut that existed before the registry', () => {
-    const before: Array<[string, string]> = [['Mod+S', 'file.save'], ['Mod+B', 'build.compile'], ['F5', 'debug.run'], ['Shift+F5', 'debug.stop'], ['F6', 'debug.pause'], ['F10', 'debug.step'], ['F8', 'debug.reset']];
+    const before: Array<[string, string]> = [
+      ['Mod+S', 'file.save'],
+      ['Mod+B', 'build.compile'],
+      ['F5', 'debug.run'],
+      ['Shift+F5', 'debug.stop'],
+      ['F6', 'debug.pause'],
+      ['F10', 'debug.step'],
+      ['F8', 'debug.reset'],
+    ];
     for (const [shortcut, id] of before) expect(COMMAND_LIST.find((command) => command.shortcut === shortcut)?.id).toBe(id);
   });
 
-  it('UX-015 puts the command palette on Ctrl or Cmd+Shift+P and the shortcut reference on the two-step Ctrl or Cmd+K Ctrl or Cmd+S', () => {
-    expect(commandById('view.commandPalette').shortcut).toBe('Mod+Shift+P');
-    expect(commandById('help.shortcuts').shortcut).toBe('Mod+K Mod+S');
-  });
+  it(
+    'UX-015 puts the command palette on Ctrl or Cmd+Shift+P and the shortcut reference on the two-step Ctrl or Cmd+K Ctrl or ' + 'Cmd+S',
+    () => {
+      expect(commandById('view.commandPalette').shortcut).toBe('Mod+Shift+P');
+      expect(commandById('help.shortcuts').shortcut).toBe('Mod+K Mod+S');
+    },
+  );
 
   it('UX-015 offers a command only in a state where it can work', () => {
     const state = { ...INITIAL_COMMAND_STATE, projectOpen: true, connected: true, vmState: 'running' };
@@ -60,8 +86,19 @@ describe('command registry (UX-015)', () => {
   });
 
   it('UX-015 marks every command that acts on the device or the running program as physical', () => {
-    const physical = COMMAND_LIST.filter((command) => command.physical).map((command) => command.id).sort();
-    expect(physical).toEqual(['debug.pause', 'debug.reset', 'debug.run', 'debug.step', 'debug.stop', 'online.connect', 'online.deploy', 'online.disconnect']);
+    const physical = COMMAND_LIST.filter((command) => command.physical)
+      .map((command) => command.id)
+      .sort();
+    expect(physical).toEqual([
+      'debug.pause',
+      'debug.reset',
+      'debug.run',
+      'debug.step',
+      'debug.stop',
+      'online.connect',
+      'online.deploy',
+      'online.disconnect',
+    ]);
   });
 
   it('UX-015 reaches every command from the keyboard: by its shortcut or by the palette, which lists them all', () => {
@@ -74,9 +111,16 @@ describe('command registry (UX-015)', () => {
 describe('application menu from the registry (UX-014, UX-015)', () => {
   const clicks: string[] = [];
   const template = buildMenuTemplate('linux', menuCommands, menuTranslator('en'), {
-    isPackaged: true, appName: 'ZPLC', categories: menuCategories, run: (id) => { clicks.push(id); }, requestReload: () => undefined,
+    isPackaged: true,
+    appName: 'ZPLC',
+    categories: menuCategories,
+    run: (id) => {
+      clicks.push(id);
+    },
+    requestReload: () => undefined,
   });
-  const flat = (items: MenuItemConstructorOptions[]): MenuItemConstructorOptions[] => items.flatMap((item) => [item, ...(Array.isArray(item.submenu) ? flat(item.submenu) : [])]);
+  const flat = (items: MenuItemConstructorOptions[]): MenuItemConstructorOptions[] =>
+    items.flatMap((item) => [item, ...(Array.isArray(item.submenu) ? flat(item.submenu) : [])]);
 
   it('UX-014 lists every registered command in the menu of its category, once', () => {
     clicks.length = 0;
@@ -86,9 +130,24 @@ describe('application menu from the registry (UX-014, UX-015)', () => {
   });
 
   it('UX-014 titles the menus and the commands in the language of the setting', () => {
-    const spanish = buildMenuTemplate('linux', menuCommands, menuTranslator('es'), { isPackaged: true, appName: 'ZPLC', categories: menuCategories, run: () => undefined, requestReload: () => undefined });
+    const spanish = buildMenuTemplate('linux', menuCommands, menuTranslator('es'), {
+      isPackaged: true,
+      appName: 'ZPLC',
+      categories: menuCategories,
+      run: () => undefined,
+      requestReload: () => undefined,
+    });
     expect(template.map((menu) => menu.label)).toEqual(['File', 'Edit', 'View', 'Project', 'Build', 'Online', 'Debug', 'Help']);
-    expect(spanish.map((menu) => menu.label)).toEqual(['Archivo', 'Edición', 'Ver', 'Proyecto', 'Compilación', 'En línea', 'Depuración', 'Ayuda']);
+    expect(spanish.map((menu) => menu.label)).toEqual([
+      'Archivo',
+      'Edición',
+      'Ver',
+      'Proyecto',
+      'Compilación',
+      'En línea',
+      'Depuración',
+      'Ayuda',
+    ]);
   });
 
   it('UX-015 shows the shortcut of a command as the accelerator of its item; a two-step shortcut has none', () => {
@@ -131,8 +190,11 @@ describe('shortcuts (UX-015)', () => {
     expect(toAccelerator('Mod+K Mod+S')).toBeNull();
   });
 
-  const matcherFor = (now: () => number) => createShortcutMatcher(
-    COMMAND_LIST.flatMap((command) => (command.shortcut ? [{ id: command.id, chords: parseShortcut(command.shortcut) }] : [])), now);
+  const matcherFor = (now: () => number) =>
+    createShortcutMatcher(
+      COMMAND_LIST.flatMap((command) => (command.shortcut ? [{ id: command.id, chords: parseShortcut(command.shortcut) }] : [])),
+      now,
+    );
 
   it('UX-015 resolves every default shortcut to its command', () => {
     const matcher = matcherFor(() => 0);
@@ -198,7 +260,14 @@ describe('running a command (UX-015)', () => {
 
   it('UX-015 runs the bound handler, and the menu or palette (respectEnabled) only when the state offers the command', () => {
     const calls: string[] = [];
-    bindCommands({ 'file.save': () => { calls.push('save'); }, 'file.open': () => { calls.push('open'); } });
+    bindCommands({
+      'file.save': () => {
+        calls.push('save');
+      },
+      'file.open': () => {
+        calls.push('open');
+      },
+    });
     expect(runCommand('file.save', { respectEnabled: true })).toBe('unavailable');
     expect(runCommand('file.save')).toBe('ran');
     publishCommandState({ hasActiveFile: true });
@@ -209,8 +278,16 @@ describe('running a command (UX-015)', () => {
 
   it('UX-015 unbinds exactly what a component bound, so a newer binding of the same id survives', () => {
     const calls: string[] = [];
-    const first = bindCommands({ 'file.open': () => { calls.push('first'); } });
-    bindCommands({ 'file.open': () => { calls.push('second'); } });
+    const first = bindCommands({
+      'file.open': () => {
+        calls.push('first');
+      },
+    });
+    bindCommands({
+      'file.open': () => {
+        calls.push('second');
+      },
+    });
     first();
     runCommand('file.open');
     expect(calls).toEqual(['second']);

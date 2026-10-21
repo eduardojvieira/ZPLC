@@ -1,20 +1,10 @@
 {
   "requirement": "CMP-041",
   "title": "a block that extends an ABSTRACT one and leaves its abstract method unimplemented is rejected",
-  "matrix": [
-    "pous.public-private-protected-abstract"
-  ],
+  "matrix": ["pous.public-private-protected-abstract"],
   "note": "IEC 61131-3 ed. 3, ABSTRACT: a block that is not itself abstract implements every abstract method it inherits",
   "build": "fails",
-  "lines": [
-    6
-  ],
-  "codes": [
-    "INVALID_INHERITANCE"
-  ],
-  "messageIncludes": [
-    "Lazy",
-    "ABSTRACT",
-    "Step"
-  ]
+  "lines": [6],
+  "codes": ["INVALID_INHERITANCE"],
+  "messageIncludes": ["Lazy", "ABSTRACT", "Step"]
 }

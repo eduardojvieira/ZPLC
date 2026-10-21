@@ -51,14 +51,16 @@ export function stInlineTargets(index: ProjectIndex, file: string): InlineTarget
     let valid = true;
     while (tokens[cursor - 1]?.type === TokenType.DOT) {
       const before = tokens[cursor - 2];
-      if (before?.type !== TokenType.IDENTIFIER) { valid = false; break; }
+      if (before?.type !== TokenType.IDENTIFIER) {
+        valid = false;
+        break;
+      }
       path.unshift(before.value);
       cursor -= 2;
     }
     if (!valid) continue;
-    const rootSymbol = path.length === 1
-      ? symbol
-      : index.symbol(index.referenceAt(file, tokens[cursor]!.line, tokens[cursor]!.column)?.symbol ?? -1);
+    const rootSymbol =
+      path.length === 1 ? symbol : index.symbol(index.referenceAt(file, tokens[cursor]!.line, tokens[cursor]!.column)?.symbol ?? -1);
     if (!rootSymbol || !VALUE_KINDS.has(rootSymbol.kind)) continue;
     // the value of `A.B` is shown at `B`: a name that is the first of a longer chain is shown at the end of the chain; an
     // element of an array is not a variable of the map
@@ -76,7 +78,10 @@ export function ilInlineTargets(source: string): InlineTarget[] {
     const found: InlineTarget[] = [];
     for (const instruction of program.instructions) {
       // the operand of a call is the block instance, which has no value of its own: its members are the values
-      const operands = [instruction.operator.startsWith('CAL') ? undefined : instruction.operand, ...(instruction.fbParams ?? []).map((parameter) => parameter.value)];
+      const operands = [
+        instruction.operator.startsWith('CAL') ? undefined : instruction.operand,
+        ...(instruction.fbParams ?? []).map((parameter) => parameter.value),
+      ];
       for (const operand of operands) {
         if (!operand || (operand.type !== 'identifier' && operand.type !== 'member_access')) continue;
         const base = (operand.base ?? operand.value).toUpperCase();
@@ -127,6 +132,8 @@ export function inlineValues(
     perLine.set(target.line, list);
   }
   return [...perLine.values()].flatMap((list) =>
-    [...list].sort((left, right) => Number(right.label.includes('.')) - Number(left.label.includes('.')) || left.column - right.column).slice(0, MAX_PER_LINE),
+    [...list]
+      .sort((left, right) => Number(right.label.includes('.')) - Number(left.label.includes('.')) || left.column - right.column)
+      .slice(0, MAX_PER_LINE),
   );
 }

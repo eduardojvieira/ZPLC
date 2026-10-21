@@ -28,7 +28,12 @@ export function ContextMenu({ x, y, node, onClose, onNewFolder, onRename, onDupl
     { id: 'rename', label: t('fileMenu.rename'), onSelect: onRename },
     ...(node.type === 'file' ? [{ id: 'duplicate', label: t('fileMenu.duplicate'), onSelect: onDuplicate }] : []),
     { id: 'move', label: t('fileMenu.move'), onSelect: onMove },
-    { id: 'delete', label: node.type === 'directory' ? t('fileMenu.deleteFolder') : t('fileMenu.delete'), onSelect: onDelete, destructive: true },
+    {
+      id: 'delete',
+      label: node.type === 'directory' ? t('fileMenu.deleteFolder') : t('fileMenu.delete'),
+      onSelect: onDelete,
+      destructive: true,
+    },
   ];
   return <PointMenu label={t('fileMenu.actionsFor', { name: node.name })} items={items} x={x} y={y} onClose={onClose} />;
 }
@@ -60,7 +65,11 @@ export function DeleteModal({ isOpen, fileName, isDeleting, error, onConfirm, on
       onAction={onConfirm}
       onCancel={onCancel}
     >
-      {error && <p role="alert" aria-live="assertive" className="text-sm text-[var(--color-accent-red)]">{error}</p>}
+      {error && (
+        <p role="alert" aria-live="assertive" className="text-sm text-[var(--color-accent-red)]">
+          {error}
+        </p>
+      )}
     </AlertDialog>
   );
 }

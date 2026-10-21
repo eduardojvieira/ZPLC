@@ -2,7 +2,8 @@ import { PRODUCT_NAME } from '../../productName';
 /** The text of one surface, in English and in Spanish (UX-029, UX-030). Keys `settingsSurface.*`. */
 export const settingsSurfaceEn = {
   'settings.communication.scope': 'v1.5 communication scope',
-  'settings.communication.scopeBody': 'MQTT, Modbus RTU, and Modbus TCP are only release-ready when the selected board, runtime support, and release evidence all agree.',
+  'settings.communication.scopeBody':
+    'MQTT, Modbus RTU, and Modbus TCP are only release-ready when the selected board, runtime support, and release evidence all agree.',
   'settings.communication.profile': 'Current board network profile:',
   'settings.firmware.title': 'Firmware image',
   'settings.firmware.heading': 'Firmware image: {name}',
@@ -57,7 +58,8 @@ export const settingsSurfaceEn = {
 
 export const settingsSurfaceEs: Record<keyof typeof settingsSurfaceEn, string> = {
   'settings.communication.scope': 'Alcance de la comunicación de la v1.5',
-  'settings.communication.scopeBody': 'MQTT, Modbus RTU y Modbus TCP solo están listos para la versión publicada cuando coinciden la placa elegida, el soporte del tiempo de ejecución y la evidencia de la versión.',
+  'settings.communication.scopeBody':
+    'MQTT, Modbus RTU y Modbus TCP solo están listos para la versión publicada cuando coinciden la placa elegida, el soporte del tiempo de ejecución y la evidencia de la versión.',
   'settings.communication.profile': 'Perfil de red de la placa actual:',
   'settings.firmware.title': 'Imagen de firmware',
   'settings.firmware.heading': 'Imagen de firmware: {name}',

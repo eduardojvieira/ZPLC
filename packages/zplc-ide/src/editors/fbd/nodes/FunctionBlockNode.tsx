@@ -1,9 +1,9 @@
 /**
  * FunctionBlockNode - Custom ReactFlow node for IEC 61131-3 Function Blocks
- * 
+ *
  * Renders TON, TOF, TP, CTU, CTD, CTUD, R_TRIG, F_TRIG, SR, RS etc.
  * Industrial-grade styling with input/output handles.
- * 
+ *
  * Supports:
  * - Live value display when debugging with enhanced visibility
  * - Context menu for Instance Monitor
@@ -42,7 +42,7 @@ interface FunctionBlockData {
  */
 function formatLiveValue(value: unknown, type: string): string {
   if (value === undefined || value === null) return '—';
-  
+
   if (type === 'BOOL') {
     return value ? 'TRUE' : 'FALSE';
   }
@@ -64,22 +64,13 @@ function formatLiveValue(value: unknown, type: string): string {
 }
 
 const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
-  const { 
-    type, 
-    instanceName, 
-    comment,
-    pinValues,
-    pinFlags,
-    debugActive,
-    onOpenMonitor,
-    onChangeData,
-    readOnly, inputs, outputs,
-  } = data as unknown as FunctionBlockData;
-  
+  const { type, instanceName, comment, pinValues, pinFlags, debugActive, onOpenMonitor, onChangeData, readOnly, inputs, outputs } =
+    data as unknown as FunctionBlockData;
+
   const defaults = getDefaultPorts(type);
   const ports = { inputs: inputs ?? defaults.inputs, outputs: outputs ?? defaults.outputs };
   const [showMenu, setShowMenu] = useState(false);
-  
+
   // Handle context menu / right-click
   const handleOpenMonitor = useCallback(() => {
     setShowMenu(false);
@@ -87,30 +78,35 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
       onOpenMonitor(instanceName, type);
     }
   }, [onOpenMonitor, instanceName, type]);
-  
+
   // Width needs to be larger when debug is active to show values
   const baseWidth = debugActive ? 160 : 120;
   const maxPorts = Math.max(ports.inputs.length, ports.outputs.length);
-  const portHeight = debugActive ? 28 : 24;  // More space for value display
+  const portHeight = debugActive ? 28 : 24; // More space for value display
   const bodyHeight = Math.max(maxPorts * portHeight + 16, 60);
 
   // Get live value and metadata for a port
   const getPortValue = (portName: string): { display: string; raw: unknown; type: string; tone: SignalTone } => {
-    const port = [...ports.inputs, ...ports.outputs].find(p => p.name === portName);
+    const port = [...ports.inputs, ...ports.outputs].find((p) => p.name === portName);
     const portType = port?.type || 'INT';
-    
-if (!debugActive) {
+
+    if (!debugActive) {
       return { display: '', raw: undefined, type: portType, tone: 'unknown' };
     }
     const value = pinValues?.[portName];
-    return { 
-      display: formatLiveValue(value, portType), 
-      raw: value, 
+    return {
+      display: formatLiveValue(value, portType),
+      raw: value,
       type: portType,
-      tone: sampleTone({ value, type: portType, forced: pinFlags?.[portName]?.forced, error: pinFlags?.[portName]?.fault ? 'fault' : null }),
+      tone: sampleTone({
+        value,
+        type: portType,
+        forced: pinFlags?.[portName]?.forced,
+        error: pinFlags?.[portName]?.fault ? 'fault' : null,
+      }),
     };
   };
-  
+
   // Check if any output is TRUE (for visual feedback)
   const hasActiveOutput = debugActive && ports.outputs.some((port) => port.type === 'BOOL' && pinValues?.[port.name] === true);
 
@@ -120,46 +116,46 @@ if (!debugActive) {
         <div
           className={`
             rounded border-2 transition-all duration-200
-            ${selected 
-              ? 'border-[var(--color-accent-blue)] ring-2 ring-[var(--color-accent-blue)]' 
-              : 'border-[var(--border-color)]'
-            }
+            ${selected ? 'border-[var(--color-accent-blue)] ring-2 ring-[var(--color-accent-blue)]' : 'border-[var(--border-color)]'}
             zplc-visual-card bg-[var(--visual-node)]
           `}
           style={{ minWidth: baseWidth }}
         >
           {/* Header with type name */}
-          <div className="bg-[var(--visual-panel)] border-b border-[var(--border-color)] px-3 py-1.5 rounded-t text-center relative flex items-center justify-center gap-2">
+          <div
+            className={
+              'bg-[var(--visual-panel)] border-b border-[var(--border-color)] px-3 py-1.5 rounded-t text-center relative ' +
+              'flex ' +
+              'items-center justify-center gap-2'
+            }
+          >
             {/* Debug indicator */}
-            {debugActive && (
-              <Activity 
-                size={12} 
-                className="absolute left-2 text-[var(--text-secondary)]"
-                aria-hidden="true"
-              />
-            )}
-            
-            <span className="text-[var(--text-primary)] font-bold text-sm tracking-wide">
-              {type}
-            </span>
-            
+            {debugActive && <Activity size={12} className="absolute left-2 text-[var(--text-secondary)]" aria-hidden="true" />}
+
+            <span className="text-[var(--text-primary)] font-bold text-sm tracking-wide">{type}</span>
+
             {/* Menu button */}
             {isFunctionBlock(type) && instanceName && (
-              <Button variant="bare"
+              <Button
+                variant="bare"
                 aria-label={t('a11y.fbd.blockMenu')}
-                onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
-                className="focus-ring absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMenu(!showMenu);
+                }}
+                className={
+                  'focus-ring absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded ' +
+                  'hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--text-secondary)] ' +
+                  'hover:text-[var(--text-primary)]'
+                }
               >
                 <MoreVertical size={14} />
               </Button>
             )}
           </div>
-  
+
           {/* Body with ports */}
-          <div 
-            className="relative px-2 py-2 flex justify-between gap-2"
-            style={{ minHeight: bodyHeight }}
-          >
+          <div className="relative px-2 py-2 flex justify-between gap-2" style={{ minHeight: bodyHeight }}>
             {/* Input ports (left side) */}
             <div className="flex flex-col gap-1">
               {ports.inputs.map((port) => {
@@ -174,18 +170,23 @@ if (!debugActive) {
                       style={{ top: '50%' }}
                     />
                     <Tooltip content={port.name}>
-                      <span className="max-w-[72px] truncate text-xs text-[var(--text-secondary)] font-mono pl-3">
-                        {port.name}
-                      </span>
+                      <span className="max-w-[72px] truncate text-xs text-[var(--text-secondary)] font-mono pl-3">{port.name}</span>
                     </Tooltip>
                     {debugActive && display && (
-                      <SignalValue tone={tone} className="text-[length:var(--font-size-caption)] font-mono ml-1 px-1 py-0.5 rounded bg-[var(--color-surface-900)]/50">{display}</SignalValue>
+                      <SignalValue
+                        tone={tone}
+                        className={
+                          'text-[length:var(--font-size-caption)] font-mono ml-1 px-1 py-0.5 ' + 'rounded bg-[var(--color-surface-900)]/50'
+                        }
+                      >
+                        {display}
+                      </SignalValue>
                     )}
                   </div>
                 );
               })}
             </div>
-  
+
             {/* Output ports (right side) */}
             <div className="flex flex-col gap-1 items-end">
               {ports.outputs.map((port) => {
@@ -193,12 +194,17 @@ if (!debugActive) {
                 return (
                   <div key={port.name} className="flex items-center gap-1 relative" style={{ height: portHeight }}>
                     {debugActive && display && (
-                      <SignalValue tone={tone} className="text-[length:var(--font-size-caption)] font-mono mr-1 px-1 py-0.5 rounded bg-[var(--color-surface-900)]/50">{display}</SignalValue>
+                      <SignalValue
+                        tone={tone}
+                        className={
+                          'text-[length:var(--font-size-caption)] font-mono mr-1 px-1 py-0.5 ' + 'rounded bg-[var(--color-surface-900)]/50'
+                        }
+                      >
+                        {display}
+                      </SignalValue>
                     )}
                     <Tooltip content={port.name}>
-                      <span className="max-w-[72px] truncate text-xs text-[var(--text-secondary)] font-mono pr-3">
-                        {port.name}
-                      </span>
+                      <span className="max-w-[72px] truncate text-xs text-[var(--text-secondary)] font-mono pr-3">{port.name}</span>
                     </Tooltip>
                     <Handle
                       type="source"
@@ -212,18 +218,19 @@ if (!debugActive) {
               })}
             </div>
           </div>
-  
+
           {/* Instance name footer (if applicable) */}
           {isFunctionBlock(type) && instanceName && (
-            <div className="bg-[var(--color-surface-700)] px-2 py-1 rounded-b border-t border-[var(--border-color)] flex items-center justify-between">
+            <div
+              className={
+                'bg-[var(--color-surface-700)] px-2 py-1 rounded-b border-t border-[var(--border-color)] flex items-center ' +
+                'justify-between'
+              }
+            >
               <Tooltip content={instanceName}>
-                <span className="max-w-[110px] truncate text-xs text-[var(--text-tertiary)] font-mono">
-                  {instanceName}
-                </span>
+                <span className="max-w-[110px] truncate text-xs text-[var(--text-tertiary)] font-mono">{instanceName}</span>
               </Tooltip>
-              {debugActive && (
-                <SignalValue tone={hasActiveOutput ? 'true' : 'false'} className="text-xs" />
-              )}
+              {debugActive && <SignalValue tone={hasActiveOutput ? 'true' : 'false'} className="text-xs" />}
             </div>
           )}
         </div>
@@ -233,14 +240,20 @@ if (!debugActive) {
       {showMenu && (
         <>
           {/* Backdrop to close menu */}
-          <div 
-            className="fixed inset-0 z-40" 
-            onClick={() => setShowMenu(false)}
-          />
-          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-[var(--color-surface-800)] border border-[var(--border-color)] rounded min-w-[140px]">
-            <Button variant="bare"
+          <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+          <div
+            className={
+              'absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-[var(--color-surface-800)] border ' +
+              'border-[var(--border-color)] rounded min-w-[140px]'
+            }
+          >
+            <Button
+              variant="bare"
               onClick={handleOpenMonitor}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--color-surface-700)] rounded"
+              className={
+                'flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--text-secondary)] ' +
+                'hover:bg-[var(--color-surface-700)] rounded'
+              }
             >
               <Eye size={14} />
               {t('editors.fbd.instanceMonitor')}

@@ -54,7 +54,11 @@ describe('LNG-004 the debug map of a Ladder diagram names rungs and cells', () =
 
   it('lists the elements execution can stop at and says nothing about a rung that is not there', () => {
     const map = build('LD', content, ref);
-    expect(breakpointElements(map, ref).some((element) => element === `rung:${model.rungs[0]!.id}` || element.startsWith(`rung:${model.rungs[0]!.id}/`))).toBe(true);
+    expect(
+      breakpointElements(map, ref).some(
+        (element) => element === `rung:${model.rungs[0]!.id}` || element.startsWith(`rung:${model.rungs[0]!.id}/`),
+      ),
+    ).toBe(true);
     expect(elementBreakpointLine(map, ref, 'rung:nowhere')).toBeUndefined();
     expect(elementBreakpointLine(null, ref, 'rung:rung_1')).toBeUndefined();
   });
@@ -121,7 +125,9 @@ describe('LNG-004 the debug map of an SFC chart names steps and transitions', ()
 
 describe('LNG-004 the debug map of an IL program names IL lines', () => {
   const ref = 'src/main.il';
-  const content = 'PROGRAM Main\nVAR\n  Sw AT %IX0.0 : BOOL;\n  Lamp AT %QX0.0 : BOOL;\nEND_VAR\n  LD Sw\n  JMPC skip\n  ST Lamp\nskip: LD Sw\n  ST Lamp\nEND_PROGRAM\n';
+  const content =
+    'PROGRAM Main\nVAR\n  Sw AT %IX0.0 : BOOL;\n  Lamp AT %QX0.0 : BOOL;\nEND_VAR\n  LD Sw\n  JMPC skip\n  ST Lamp\nskip: LD Sw\n  ST ' +
+    'Lamp\nEND_PROGRAM\n';
 
   it('states the lines of the IL source, and only the ones the author wrote', () => {
     const map = build('IL', content, ref);
@@ -151,15 +157,26 @@ describe('LNG-004 the elements survive the debug map of a project built as one u
   const cell = (element: object | null) => ({ element, hasWire: true });
   const ld = JSON.stringify({
     name: 'Main',
-    variables: { local: [{ name: 'latch', type: 'Hold' }], inputs: [{ name: 'Sw', type: 'BOOL', address: '%IX0.0' }], outputs: [{ name: 'Lamp', type: 'BOOL', address: '%QX0.0' }] },
-    rungs: [{
-      id: 'r1', number: 1, gridConfig: { rows: 1, cols: 3, cellWidth: 80, cellHeight: 60 }, branches: [],
-      grid: [[
-        cell({ id: 'c', type: 'contact_no', variable: 'Sw', row: 0, col: 0 }),
-        cell({ id: 'f', type: 'function_block', fbType: 'Hold', instance: 'latch', parameters: { Set: 'Sw' }, row: 0, col: 1 }),
-        cell({ id: 'k', type: 'coil', variable: 'Lamp', row: 0, col: 2 }),
-      ]],
-    }],
+    variables: {
+      local: [{ name: 'latch', type: 'Hold' }],
+      inputs: [{ name: 'Sw', type: 'BOOL', address: '%IX0.0' }],
+      outputs: [{ name: 'Lamp', type: 'BOOL', address: '%QX0.0' }],
+    },
+    rungs: [
+      {
+        id: 'r1',
+        number: 1,
+        gridConfig: { rows: 1, cols: 3, cellWidth: 80, cellHeight: 60 },
+        branches: [],
+        grid: [
+          [
+            cell({ id: 'c', type: 'contact_no', variable: 'Sw', row: 0, col: 0 }),
+            cell({ id: 'f', type: 'function_block', fbType: 'Hold', instance: 'latch', parameters: { Set: 'Sw' }, row: 0, col: 1 }),
+            cell({ id: 'k', type: 'coil', variable: 'Lamp', row: 0, col: 2 }),
+          ],
+        ],
+      },
+    ],
   });
 
   function unit(): DebugMap {

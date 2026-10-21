@@ -11,8 +11,23 @@
 import { TokenType, type Token } from '@zplc/compiler';
 
 export type SymbolKind =
-  | 'program' | 'function' | 'functionBlock' | 'interface' | 'struct' | 'enum' | 'alias' | 'method'
-  | 'global' | 'variable' | 'input' | 'output' | 'inout' | 'temp' | 'external' | 'field' | 'enumValue';
+  | 'program'
+  | 'function'
+  | 'functionBlock'
+  | 'interface'
+  | 'struct'
+  | 'enum'
+  | 'alias'
+  | 'method'
+  | 'global'
+  | 'variable'
+  | 'input'
+  | 'output'
+  | 'inout'
+  | 'temp'
+  | 'external'
+  | 'field'
+  | 'enumValue';
 
 /** A type as written: the named type it comes down to, and whether it is an array or a reference to one. */
 export interface TypeRef {
@@ -82,25 +97,55 @@ export interface ScanSink {
 }
 
 const SECTIONS: ReadonlyMap<string, SymbolKind> = new Map([
-  [TokenType.VAR, 'variable'], [TokenType.VAR_INPUT, 'input'], [TokenType.VAR_OUTPUT, 'output'],
-  [TokenType.VAR_IN_OUT, 'inout'], [TokenType.VAR_TEMP, 'temp'], [TokenType.VAR_EXTERNAL, 'external'],
+  [TokenType.VAR, 'variable'],
+  [TokenType.VAR_INPUT, 'input'],
+  [TokenType.VAR_OUTPUT, 'output'],
+  [TokenType.VAR_IN_OUT, 'inout'],
+  [TokenType.VAR_TEMP, 'temp'],
+  [TokenType.VAR_EXTERNAL, 'external'],
   [TokenType.VAR_GLOBAL, 'global'],
 ]);
 const SECTION_LABEL: Record<string, string> = {
-  variable: 'VAR', input: 'VAR_INPUT', output: 'VAR_OUTPUT', inout: 'VAR_IN_OUT', temp: 'VAR_TEMP',
-  external: 'VAR_EXTERNAL', global: 'VAR_GLOBAL', field: 'STRUCT',
+  variable: 'VAR',
+  input: 'VAR_INPUT',
+  output: 'VAR_OUTPUT',
+  inout: 'VAR_IN_OUT',
+  temp: 'VAR_TEMP',
+  external: 'VAR_EXTERNAL',
+  global: 'VAR_GLOBAL',
+  field: 'STRUCT',
 };
 const UNIT_STARTS: ReadonlySet<string> = new Set([
-  TokenType.PROGRAM, TokenType.FUNCTION, TokenType.FUNCTION_BLOCK, TokenType.INTERFACE, TokenType.TYPE,
+  TokenType.PROGRAM,
+  TokenType.FUNCTION,
+  TokenType.FUNCTION_BLOCK,
+  TokenType.INTERFACE,
+  TokenType.TYPE,
 ]);
 const MODIFIERS = new Set(['RETAIN', 'PERSISTENT', 'NON_RETAIN']);
 const ELEMENTARY: ReadonlySet<string> = new Set([
-  TokenType.BOOL, TokenType.TIME, TokenType.SINT, TokenType.USINT, TokenType.INT, TokenType.UINT, TokenType.DINT, TokenType.UDINT,
-  TokenType.LINT, TokenType.ULINT, TokenType.REAL, TokenType.LREAL, TokenType.STRING,
+  TokenType.BOOL,
+  TokenType.TIME,
+  TokenType.SINT,
+  TokenType.USINT,
+  TokenType.INT,
+  TokenType.UINT,
+  TokenType.DINT,
+  TokenType.UDINT,
+  TokenType.LINT,
+  TokenType.ULINT,
+  TokenType.REAL,
+  TokenType.LREAL,
+  TokenType.STRING,
 ]);
 const ENUM_SEPARATORS: ReadonlySet<string> = new Set([TokenType.LPAREN, TokenType.COMMA]);
 const ACCESS_AND_MODIFIERS: ReadonlySet<string> = new Set([
-  TokenType.PUBLIC, TokenType.PRIVATE, TokenType.PROTECTED, TokenType.FINAL, TokenType.ABSTRACT, TokenType.OVERRIDE,
+  TokenType.PUBLIC,
+  TokenType.PRIVATE,
+  TokenType.PROTECTED,
+  TokenType.FINAL,
+  TokenType.ABSTRACT,
+  TokenType.OVERRIDE,
 ]);
 
 export const sectionOf = (type: string): SymbolKind | undefined => SECTIONS.get(type);
@@ -116,8 +161,15 @@ export function scanFile(path: string, tokens: Token[], sink: ScanSink): FileSca
 
   const addSymbol = (token: Token, kind: SymbolKind, container: number, extra: Partial<IndexedSymbol> = {}): IndexedSymbol => {
     const symbol: IndexedSymbol = {
-      id: sink.symbols.length, name: token.value, kind, file: path, line: token.line, column: token.column, container,
-      detail: sectionLabel(kind), ...extra,
+      id: sink.symbols.length,
+      name: token.value,
+      kind,
+      file: path,
+      line: token.line,
+      column: token.column,
+      container,
+      detail: sectionLabel(kind),
+      ...extra,
     };
     sink.symbols.push(symbol);
     scan.symbols.push(symbol.id);
@@ -147,8 +199,10 @@ export function scanFile(path: string, tokens: Token[], sink: ScanSink): FileSca
     let text = '';
     for (let index = from; index < to; index++) {
       const token = tokens[index]!;
-      const glue = index === from || ['LBRACKET', 'RBRACKET', 'DOTDOT', 'COMMA', 'RPAREN'].includes(token.type)
-        || ['LBRACKET', 'DOTDOT', 'LPAREN'].includes(typeOf(index - 1));
+      const glue =
+        index === from ||
+        ['LBRACKET', 'RBRACKET', 'DOTDOT', 'COMMA', 'RPAREN'].includes(token.type) ||
+        ['LBRACKET', 'DOTDOT', 'LPAREN'].includes(typeOf(index - 1));
       text += (glue ? '' : ' ') + (token.type === TokenType.STRING_LITERAL ? `'${token.value}'` : token.value);
     }
     return text;
@@ -179,7 +233,8 @@ export function scanFile(path: string, tokens: Token[], sink: ScanSink): FileSca
       let end = index + 1;
       // STRING[80], STRING(80), WSTRING[80]
       if (typeOf(end) === TokenType.LBRACKET) end = skipBalanced(end, TokenType.LBRACKET, TokenType.RBRACKET);
-      else if (typeOf(end) === TokenType.LPAREN && typeOf(end + 1) === TokenType.INTEGER) end = skipBalanced(end, TokenType.LPAREN, TokenType.RPAREN);
+      else if (typeOf(end) === TokenType.LPAREN && typeOf(end + 1) === TokenType.INTEGER)
+        end = skipBalanced(end, TokenType.LPAREN, TokenType.RPAREN);
       if (first.type === TokenType.IDENTIFIER) scan.typeRefs.push({ token: index, scope });
       return { end, text: textOf(start, end), ref: { name: first.value, array: false, pointer: false } };
     }
@@ -204,14 +259,20 @@ export function scanFile(path: string, tokens: Token[], sink: ScanSink): FileSca
   const scanDeclarations = (index: number, container: number, kind: SymbolKind, until: ReadonlySet<string>): number => {
     let cursor = index;
     while (cursor < tokens.length && !until.has(typeOf(cursor)) && typeOf(cursor) !== 'EOF' && !UNIT_STARTS.has(typeOf(cursor))) {
-      if (typeOf(cursor) !== TokenType.IDENTIFIER) { cursor++; continue; }
+      if (typeOf(cursor) !== TokenType.IDENTIFIER) {
+        cursor++;
+        continue;
+      }
       const names: Token[] = [at(cursor)];
       cursor++;
       for (;;) {
         if (typeOf(cursor) === TokenType.LCURLY) cursor = skipBalanced(cursor, TokenType.LCURLY, TokenType.RCURLY);
-        else if (typeOf(cursor) === TokenType.COMMA && typeOf(cursor + 1) === TokenType.IDENTIFIER) { names.push(at(cursor + 1)); cursor += 2; }
-        else if (typeOf(cursor) === TokenType.AT) { cursor += typeOf(cursor + 1) === TokenType.IO_ADDRESS ? 2 : 1; }
-        else break;
+        else if (typeOf(cursor) === TokenType.COMMA && typeOf(cursor + 1) === TokenType.IDENTIFIER) {
+          names.push(at(cursor + 1));
+          cursor += 2;
+        } else if (typeOf(cursor) === TokenType.AT) {
+          cursor += typeOf(cursor + 1) === TokenType.IO_ADDRESS ? 2 : 1;
+        } else break;
       }
       let type: { end: number; text: string; ref: TypeRef } | undefined;
       let initial: { from: number; to: number } | undefined;
@@ -228,7 +289,11 @@ export function scanFile(path: string, tokens: Token[], sink: ScanSink): FileSca
       // a name with no type is not a declaration: in a buffer that is being typed it is a statement
       if (type) {
         for (const name of names) {
-          addSymbol(name, kind, container, { type: type.ref, typeText: type.text, detail: `${sectionLabel(kind)}${type.text ? ` ${type.text}` : ''}` });
+          addSymbol(name, kind, container, {
+            type: type.ref,
+            typeText: type.text,
+            detail: `${sectionLabel(kind)}${type.text ? ` ${type.text}` : ''}`,
+          });
         }
       }
       if (initial && initial.to > initial.from) {
@@ -244,8 +309,14 @@ export function scanFile(path: string, tokens: Token[], sink: ScanSink): FileSca
   const scanVarBlock = (index: number, container: number): number => {
     const section = sectionOf(typeOf(index))!;
     let cursor = index + 1;
-    while (typeOf(cursor) === TokenType.CONSTANT
-      || (typeOf(cursor) === TokenType.IDENTIFIER && MODIFIERS.has(at(cursor).value.toUpperCase()) && typeOf(cursor + 1) !== TokenType.COLON && typeOf(cursor + 1) !== TokenType.COMMA)) cursor++;
+    while (
+      typeOf(cursor) === TokenType.CONSTANT ||
+      (typeOf(cursor) === TokenType.IDENTIFIER &&
+        MODIFIERS.has(at(cursor).value.toUpperCase()) &&
+        typeOf(cursor + 1) !== TokenType.COLON &&
+        typeOf(cursor + 1) !== TokenType.COMMA)
+    )
+      cursor++;
     cursor = scanDeclarations(cursor, container, section, END_VAR);
     return typeOf(cursor) === TokenType.END_VAR ? cursor + 1 : cursor;
   };
@@ -254,11 +325,19 @@ export function scanFile(path: string, tokens: Token[], sink: ScanSink): FileSca
   const scanBody = (index: number, container: number, ends: ReadonlySet<string>, methods = false): number => {
     let cursor = index;
     let statements = index;
-    const flush = (to: number): void => { if (to > statements) scan.ranges.push({ from: statements, to, scope: container }); };
+    const flush = (to: number): void => {
+      if (to > statements) scan.ranges.push({ from: statements, to, scope: container });
+    };
     while (cursor < tokens.length) {
       const type = typeOf(cursor);
-      if (ends.has(type)) { flush(cursor); return cursor + 1; }
-      if (type === 'EOF' || UNIT_STARTS.has(type)) { flush(cursor); return cursor; }
+      if (ends.has(type)) {
+        flush(cursor);
+        return cursor + 1;
+      }
+      if (type === 'EOF' || UNIT_STARTS.has(type)) {
+        flush(cursor);
+        return cursor;
+      }
       if (SECTIONS.has(type)) {
         flush(cursor);
         cursor = scanVarBlock(cursor, container);
@@ -281,7 +360,13 @@ export function scanFile(path: string, tokens: Token[], sink: ScanSink): FileSca
 
   const scanMethod = (index: number, owner: number): number => {
     let cursor = index + 1;
-    while (ACCESS_AND_MODIFIERS.has(typeOf(cursor)) || (typeOf(cursor) === TokenType.IDENTIFIER && at(cursor).value.toUpperCase() === 'INTERNAL' && typeOf(cursor + 1) === TokenType.IDENTIFIER)) cursor++;
+    while (
+      ACCESS_AND_MODIFIERS.has(typeOf(cursor)) ||
+      (typeOf(cursor) === TokenType.IDENTIFIER &&
+        at(cursor).value.toUpperCase() === 'INTERNAL' &&
+        typeOf(cursor + 1) === TokenType.IDENTIFIER)
+    )
+      cursor++;
     if (typeOf(cursor) !== TokenType.IDENTIFIER) return scanBody(cursor, owner, END_METHOD);
     const nameToken = at(cursor);
     cursor++;
@@ -330,7 +415,13 @@ export function scanFile(path: string, tokens: Token[], sink: ScanSink): FileSca
           }
         }
         cursor = close;
-        while (cursor < tokens.length && typeOf(cursor) !== TokenType.SEMICOLON && typeOf(cursor) !== TokenType.END_TYPE && typeOf(cursor) !== 'EOF') cursor++;
+        while (
+          cursor < tokens.length &&
+          typeOf(cursor) !== TokenType.SEMICOLON &&
+          typeOf(cursor) !== TokenType.END_TYPE &&
+          typeOf(cursor) !== 'EOF'
+        )
+          cursor++;
         enumeration.extent = extentOf(nameIndex, cursor);
         if (typeOf(cursor) === TokenType.SEMICOLON) cursor++;
       } else {
@@ -346,7 +437,8 @@ export function scanFile(path: string, tokens: Token[], sink: ScanSink): FileSca
         if (typeOf(cursor) === TokenType.SEMICOLON) cursor++;
       }
     }
-    while (cursor < tokens.length && typeOf(cursor) !== TokenType.END_TYPE && typeOf(cursor) !== 'EOF' && !UNIT_STARTS.has(typeOf(cursor))) cursor++;
+    while (cursor < tokens.length && typeOf(cursor) !== TokenType.END_TYPE && typeOf(cursor) !== 'EOF' && !UNIT_STARTS.has(typeOf(cursor)))
+      cursor++;
     return typeOf(cursor) === TokenType.END_TYPE ? cursor + 1 : cursor;
   };
 
@@ -368,7 +460,10 @@ export function scanFile(path: string, tokens: Token[], sink: ScanSink): FileSca
       const found: string[] = [];
       let at2 = from;
       while (at2 < tokens.length && until(typeOf(at2))) {
-        if (typeOf(at2) === TokenType.IDENTIFIER) { found.push(at(at2).value); scan.typeRefs.push({ token: at2, scope: -1 }); }
+        if (typeOf(at2) === TokenType.IDENTIFIER) {
+          found.push(at(at2).value);
+          scan.typeRefs.push({ token: at2, scope: -1 });
+        }
         at2++;
       }
       return { names: found, end: at2 };
@@ -386,8 +481,14 @@ export function scanFile(path: string, tokens: Token[], sink: ScanSink): FileSca
       }
     }
     const symbol = addSymbol(nameToken, kind, -1, {
-      detail: kind === 'function' ? `FUNCTION${returns?.text ? ` : ${returns.text}` : ''}` : kind === 'program' ? 'PROGRAM'
-        : kind === 'interface' ? 'INTERFACE' : 'FUNCTION_BLOCK',
+      detail:
+        kind === 'function'
+          ? `FUNCTION${returns?.text ? ` : ${returns.text}` : ''}`
+          : kind === 'program'
+            ? 'PROGRAM'
+            : kind === 'interface'
+              ? 'INTERFACE'
+              : 'FUNCTION_BLOCK',
       ...extra,
     });
     const ends = kind === 'program' ? END_PROGRAM : kind === 'function' ? END_FUNCTION : kind === 'interface' ? END_INTERFACE : END_FB;
@@ -399,13 +500,26 @@ export function scanFile(path: string, tokens: Token[], sink: ScanSink): FileSca
   let cursor = 0;
   while (cursor < tokens.length) {
     switch (typeOf(cursor)) {
-      case TokenType.PROGRAM: cursor = scanPou(cursor, 'program'); break;
-      case TokenType.FUNCTION: cursor = scanPou(cursor, 'function'); break;
-      case TokenType.FUNCTION_BLOCK: cursor = scanPou(cursor, 'functionBlock'); break;
-      case TokenType.INTERFACE: cursor = scanPou(cursor, 'interface'); break;
-      case TokenType.TYPE: cursor = scanType(cursor); break;
-      case TokenType.VAR_GLOBAL: cursor = scanVarBlock(cursor, -1); break;
-      default: cursor++;
+      case TokenType.PROGRAM:
+        cursor = scanPou(cursor, 'program');
+        break;
+      case TokenType.FUNCTION:
+        cursor = scanPou(cursor, 'function');
+        break;
+      case TokenType.FUNCTION_BLOCK:
+        cursor = scanPou(cursor, 'functionBlock');
+        break;
+      case TokenType.INTERFACE:
+        cursor = scanPou(cursor, 'interface');
+        break;
+      case TokenType.TYPE:
+        cursor = scanType(cursor);
+        break;
+      case TokenType.VAR_GLOBAL:
+        cursor = scanVarBlock(cursor, -1);
+        break;
+      default:
+        cursor++;
     }
   }
   return scan;

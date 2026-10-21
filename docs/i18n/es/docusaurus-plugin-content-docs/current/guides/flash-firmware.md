@@ -3,7 +3,7 @@ slug: /guides/flash-firmware
 id: flash-firmware
 title: Grabar el firmware
 sidebar_label: Grabar el firmware
-description: "Cómo escribir la imagen del runtime ZPLC en una placa: los pasos del modo de arranque de la Raspberry Pi Pico y del ESP32-S3, y la línea de comandos para cada placa."
+description: 'Cómo escribir la imagen del runtime ZPLC en una placa: los pasos del modo de arranque de la Raspberry Pi Pico y del ESP32-S3, y la línea de comandos para cada placa.'
 tags: [how-to, hardware, firmware]
 ---
 
@@ -41,15 +41,15 @@ Compruebe el archivo antes de escribirlo:
 sha256sum --check --ignore-missing SHA256SUMS
 ```
 
-| Placa | Id del manifiesto | Imagen de la versión | La escribe |
-| --- | --- | --- | --- |
-| Raspberry Pi Pico | `rpi-pico-rp2040` | `zplc-runtime-<versión>-rpi-pico-rp2040.uf2` | la ROM de arranque: usted copia el archivo |
-| Waveshare RP2040-Zero | `waveshare-rp2040-zero` | `zplc-runtime-<versión>-waveshare-rp2040-zero.uf2` | la ROM de arranque: usted copia el archivo |
-| ESP32-S3-DevKitC-1 | `esp32-s3-devkitc` | `zplc-runtime-<versión>-esp32-s3-devkitc.bin` | `esptool` o `west flash` |
-| Arduino GIGA R1 (M7) | `arduino-giga-r1-m7` | `zplc-runtime-<versión>-arduino-giga-r1-m7.bin` | `dfu-util` o `west flash` |
-| Arduino Opta WiFi (M7) | `arduino-opta-wifi-m7` | `zplc-runtime-<versión>-arduino-opta-wifi-m7.bin` | `dfu-util` o `west flash` |
-| STM32 Nucleo-H743ZI | `nucleo-h743zi` | `zplc-runtime-<versión>-nucleo-h743zi.bin` | `west flash` |
-| STM32F746G Discovery | `stm32f746g-disco` | `zplc-runtime-<versión>-stm32f746g-disco.bin` | `west flash` |
+| Placa                  | Id del manifiesto       | Imagen de la versión                               | La escribe                                 |
+| ---------------------- | ----------------------- | -------------------------------------------------- | ------------------------------------------ |
+| Raspberry Pi Pico      | `rpi-pico-rp2040`       | `zplc-runtime-<versión>-rpi-pico-rp2040.uf2`       | la ROM de arranque: usted copia el archivo |
+| Waveshare RP2040-Zero  | `waveshare-rp2040-zero` | `zplc-runtime-<versión>-waveshare-rp2040-zero.uf2` | la ROM de arranque: usted copia el archivo |
+| ESP32-S3-DevKitC-1     | `esp32-s3-devkitc`      | `zplc-runtime-<versión>-esp32-s3-devkitc.bin`      | `esptool` o `west flash`                   |
+| Arduino GIGA R1 (M7)   | `arduino-giga-r1-m7`    | `zplc-runtime-<versión>-arduino-giga-r1-m7.bin`    | `dfu-util` o `west flash`                  |
+| Arduino Opta WiFi (M7) | `arduino-opta-wifi-m7`  | `zplc-runtime-<versión>-arduino-opta-wifi-m7.bin`  | `dfu-util` o `west flash`                  |
+| STM32 Nucleo-H743ZI    | `nucleo-h743zi`         | `zplc-runtime-<versión>-nucleo-h743zi.bin`         | `west flash`                               |
+| STM32F746G Discovery   | `stm32f746g-disco`      | `zplc-runtime-<versión>-stm32f746g-disco.bin`      | `west flash`                               |
 
 ## 2. Raspberry Pi Pico y Waveshare RP2040-Zero: descarga y modo de arranque
 
@@ -89,8 +89,8 @@ octal): no arranca en la N8 ni en la N8R2 ([Referencia de placas](../reference/b
 esptool --chip esp32s3 --port <puerto serie> write-flash 0x0 zplc-runtime-<versión>-esp32-s3-devkitc.bin
 ```
 
-   Para una imagen que compiló usted mismo, el archivo es `build/zephyr/zephyr.bin`. La
-   versión 4 de esptool escribe el mismo comando como `esptool.py ... write_flash`.
+Para una imagen que compiló usted mismo, el archivo es `build/zephyr/zephyr.bin`. La
+versión 4 de esptool escribe el mismo comando como `esptool.py ... write_flash`.
 
 4. Pulse RST para salir del modo de descarga y arrancar el programa que escribió. Si la
    consola sigue en silencio, la placa sigue en modo de descarga: pulse RST otra vez.
@@ -124,15 +124,15 @@ de Zephyr con `--build-dir`, `west flash` escribe la imagen con el runner de la 
 Los runners que cada placa nombra en su definición de Zephyr son los de esta tabla; elija
 uno con `--runner <nombre>`.
 
-| Placa | Runners | Un comando |
-| --- | --- | --- |
-| Raspberry Pi Pico | `uf2`, `openocd`, `jlink`, `pyocd`, `blackmagicprobe` | `west flash --runner uf2` con la placa en modo de arranque |
-| Waveshare RP2040-Zero | `uf2` | `west flash --runner uf2` con la placa en modo de arranque |
-| ESP32-S3-DevKitC-1 | `esp32`, `openocd` | `west flash --runner esp32` con la placa en modo de descarga |
-| Arduino GIGA R1 (M7) | `dfu-util`, `openocd`, `jlink`, `blackmagicprobe` | `west flash --runner dfu-util` con la placa en su modo de arranque DFU |
-| Arduino Opta WiFi (M7) | `dfu-util`, `stm32cubeprogrammer`, `openocd` | `west flash --runner dfu-util` con la placa en su modo de arranque DFU |
-| STM32 Nucleo-H743ZI | `stm32cubeprogrammer`, `openocd`, `jlink`, `pyocd` | `west flash --runner stm32cubeprogrammer` por el ST-LINK de la placa |
-| STM32F746G Discovery | `stm32cubeprogrammer`, `openocd`, `jlink` | `west flash --runner stm32cubeprogrammer` por el ST-LINK de la placa |
+| Placa                  | Runners                                               | Un comando                                                             |
+| ---------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------- |
+| Raspberry Pi Pico      | `uf2`, `openocd`, `jlink`, `pyocd`, `blackmagicprobe` | `west flash --runner uf2` con la placa en modo de arranque             |
+| Waveshare RP2040-Zero  | `uf2`                                                 | `west flash --runner uf2` con la placa en modo de arranque             |
+| ESP32-S3-DevKitC-1     | `esp32`, `openocd`                                    | `west flash --runner esp32` con la placa en modo de descarga           |
+| Arduino GIGA R1 (M7)   | `dfu-util`, `openocd`, `jlink`, `blackmagicprobe`     | `west flash --runner dfu-util` con la placa en su modo de arranque DFU |
+| Arduino Opta WiFi (M7) | `dfu-util`, `stm32cubeprogrammer`, `openocd`          | `west flash --runner dfu-util` con la placa en su modo de arranque DFU |
+| STM32 Nucleo-H743ZI    | `stm32cubeprogrammer`, `openocd`, `jlink`, `pyocd`    | `west flash --runner stm32cubeprogrammer` por el ST-LINK de la placa   |
+| STM32F746G Discovery   | `stm32cubeprogrammer`, `openocd`, `jlink`             | `west flash --runner stm32cubeprogrammer` por el ST-LINK de la placa   |
 
 Un runner necesita su propia herramienta en su computadora (`esptool`, `dfu-util`,
 OpenOCD, el programador de STM32). Si no se encuentra la herramienta o la placa, el
@@ -147,9 +147,9 @@ que escribió. Luego [conecte ZPLC](../tutorials/first-board.md#3-conecte-zplc).
 
 ## Qué está verificado y qué no
 
-| Parte | Verificado | Nivel |
-| --- | --- | --- |
-| El firmware de cada placa compila y cabe en su presupuesto | Compilación en integración continua | Compilación |
-| Los nombres, direcciones y sumas de verificación de las imágenes de la versión | Los comprueba el canal de versiones | Host |
-| Los pasos del modo de arranque y los comandos del programador | Escritos a partir de las herramientas de cada placa, no ejecutados | Ninguno |
-| Una grabación en una placa real | Nadie la ha registrado | Ninguno |
+| Parte                                                                          | Verificado                                                         | Nivel       |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------ | ----------- |
+| El firmware de cada placa compila y cabe en su presupuesto                     | Compilación en integración continua                                | Compilación |
+| Los nombres, direcciones y sumas de verificación de las imágenes de la versión | Los comprueba el canal de versiones                                | Host        |
+| Los pasos del modo de arranque y los comandos del programador                  | Escritos a partir de las herramientas de cada placa, no ejecutados | Ninguno     |
+| Una grabación en una placa real                                                | Nadie la ha registrado                                             | Ninguno     |

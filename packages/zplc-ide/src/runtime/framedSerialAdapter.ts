@@ -88,9 +88,16 @@ export class FramedSerialAdapter extends SerialAdapter {
   override setEventHandlers(events: DebugAdapterEvents): void {
     // the frames of the link are not console text: the terminal does not show hexadecimal
     const onSerialData = events.onSerialData;
-    super.setEventHandlers(onSerialData === undefined
-      ? events
-      : { ...events, onSerialData: (line: string) => { if (!/ZF:(?:[0-9a-fA-F]{2})+/.test(line)) onSerialData(line); } });
+    super.setEventHandlers(
+      onSerialData === undefined
+        ? events
+        : {
+            ...events,
+            onSerialData: (line: string) => {
+              if (!/ZF:(?:[0-9a-fA-F]{2})+/.test(line)) onSerialData(line);
+            },
+          },
+    );
   }
 
   /** How long one request to the device may wait for its answer. Tests on a loaded machine raise it. */
@@ -132,11 +139,18 @@ export class FramedSerialAdapter extends SerialAdapter {
     const connection = this.connection;
     if (!connection) return;
     const textConsole: ShellConsole = {
-      writeText: async (text) => { await connection.writer.write(new TextEncoder().encode(text)); },
-      onText: (handler) => { addDataListener(connection, handler); return () => removeDataListener(connection, handler); },
+      writeText: async (text) => {
+        await connection.writer.write(new TextEncoder().encode(text));
+      },
+      onText: (handler) => {
+        addDataListener(connection, handler);
+        return () => removeDataListener(connection, handler);
+      },
     };
     // a frame the device prints inside other text is taken out of the receive buffer the text commands read
-    this.stripFrames = () => { connection._rxBuffer = ShellLineTransport.withoutFrames(connection._rxBuffer); };
+    this.stripFrames = () => {
+      connection._rxBuffer = ShellLineTransport.withoutFrames(connection._rxBuffer);
+    };
     addDataListener(connection, this.stripFrames);
     const transport = new ShellLineTransport(textConsole);
     const link = new DeviceLink(transport, { requestTimeoutMs: this.linkRequestTimeoutMs });
@@ -165,9 +179,11 @@ export class FramedSerialAdapter extends SerialAdapter {
     this.transport = transport;
     link.onEvent((event) => this.handleLinkEvent(event));
     try {
-      await this.withCommandMutex(() => link.request('EVENTS_SET', {
-        mask: EVENT_MASK.STATUS | EVENT_MASK.FAULT | EVENT_MASK.BREAKPOINT | EVENT_MASK.FORCE | EVENT_MASK.LOG,
-      }));
+      await this.withCommandMutex(() =>
+        link.request('EVENTS_SET', {
+          mask: EVENT_MASK.STATUS | EVENT_MASK.FAULT | EVENT_MASK.BREAKPOINT | EVENT_MASK.FORCE | EVENT_MASK.LOG,
+        }),
+      );
       this.linkEvents.useEvents();
     } catch {
       this.linkEvents.usePollingLabel();
@@ -255,8 +271,10 @@ export class FramedSerialAdapter extends SerialAdapter {
     const largest = (this.link.info?.maxPayload ?? 512) - 2;
     if (bytes.length > largest) {
       // Two writes are not one: a value that does not fit a frame is refused, not split.
-      throw new Error(`A value of ${bytes.length} bytes at ${hex4(address)} does not fit one frame (${largest} bytes). `
-        + 'ZPLC does not write it in parts: the scan could run between them.');
+      throw new Error(
+        `A value of ${bytes.length} bytes at ${hex4(address)} does not fit one frame (${largest} bytes). ` +
+          'ZPLC does not write it in parts: the scan could run between them.',
+      );
     }
     await this.changing((link) => link.request('MEM_WRITE', { address, data: bytes }));
   }
@@ -296,7 +314,9 @@ export class FramedSerialAdapter extends SerialAdapter {
         address,
         size,
         type: size === 1 ? 'BYTE' : size === 2 ? 'WORD' : 'DWORD',
-        bytesHex: Array.from(data, (byte) => byte.toString(16).padStart(2, '0')).join('').toUpperCase(),
+        bytesHex: Array.from(data, (byte) => byte.toString(16).padStart(2, '0'))
+          .join('')
+          .toUpperCase(),
         state: WATCH_FORCE_STATE.FORCED,
       });
       offset += 4 + size;
@@ -416,7 +436,10 @@ export class FramedSerialAdapter extends SerialAdapter {
       for (let index = 0; index < chunks; index++) {
         const offset = index * chunk;
         await this.ask((link) => link.request('PROGRAM_CHUNK', { offset, data: bytecode.subarray(offset, offset + chunk) }));
-        trace?.({ kind: 'stage', message: t('link.sent', { sent: Math.min(offset + chunk, bytecode.length), bytes: bytecode.length, index: index + 1, chunks }) });
+        trace?.({
+          kind: 'stage',
+          message: t('link.sent', { sent: Math.min(offset + chunk, bytecode.length), bytes: bytecode.length, index: index + 1, chunks }),
+        });
       }
       if (this.link.info?.signatureRequired) {
         const signer = this.signer;

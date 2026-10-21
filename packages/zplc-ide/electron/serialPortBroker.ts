@@ -36,7 +36,7 @@ interface Pending {
 function usbNumber(value: unknown): number | undefined {
   if (typeof value !== 'string' || !/^\d{1,5}$/.test(value)) return undefined;
   const number = Number(value);
-  return number <= 0xFFFF ? number : undefined;
+  return number <= 0xffff ? number : undefined;
 }
 
 function offered(port: SystemSerialPort, index: number): SerialPortOffered | null {
@@ -131,7 +131,9 @@ export function createSerialPortBroker(options: SerialPortBrokerOptions) {
     },
 
     /** Questions open now (a test asserts that none is left). */
-    size(): number { return pending.size; },
+    size(): number {
+      return pending.size;
+    },
   };
 }
 

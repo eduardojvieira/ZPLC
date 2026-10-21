@@ -59,12 +59,19 @@ export function passedIn(index: LessonIndex, id: string, document: LearnProgress
   return entry !== undefined && !entry.tracks.includes('simulation') && recorded?.hardware != null;
 }
 
-export function lessonStateOf(index: LessonIndex, id: string, progress: LearnProgress | null, unlockAll: boolean): { state: LessonState; missing: readonly string[] } {
+export function lessonStateOf(
+  index: LessonIndex,
+  id: string,
+  progress: LearnProgress | null,
+  unlockAll: boolean,
+): { state: LessonState; missing: readonly string[] } {
   const document = progress ?? emptyProgress();
   const recorded = document.lessons[id];
   if (passedIn(index, id, document)) return { state: 'passed', missing: [] };
   if (recorded?.state === 'in-progress') return { state: 'in-progress', missing: [] };
-  const missing = unlockAll ? [] : (entryOf(index, id)?.prerequisites ?? []).filter((prerequisite) => !passedIn(index, prerequisite, document));
+  const missing = unlockAll
+    ? []
+    : (entryOf(index, id)?.prerequisites ?? []).filter((prerequisite) => !passedIn(index, prerequisite, document));
   return missing.length > 0 ? { state: 'locked', missing } : { state: 'available', missing: [] };
 }
 
@@ -79,7 +86,9 @@ export function courseOrder(index: LessonIndex): readonly LessonIndexEntry[] {
   while (remaining.length > 0) {
     const ready = remaining.filter((lesson) => lesson.prerequisites.every((prerequisite) => done.has(prerequisite)));
     const pool = ready.length > 0 ? ready : remaining;
-    const next = pool.reduce((best, lesson) => (lesson.module < best.module || (lesson.module === best.module && lesson.order < best.order) ? lesson : best));
+    const next = pool.reduce((best, lesson) =>
+      lesson.module < best.module || (lesson.module === best.module && lesson.order < best.order) ? lesson : best,
+    );
     remaining.splice(remaining.indexOf(next), 1);
     done.add(next.id);
     result.push(next);
@@ -87,7 +96,11 @@ export function courseOrder(index: LessonIndex): readonly LessonIndexEntry[] {
   return result;
 }
 
-export function buildCourseView(index: LessonIndex, progress: LearnProgress | null, options: { locale: LessonLocale; unlockAll: boolean }): CourseView {
+export function buildCourseView(
+  index: LessonIndex,
+  progress: LearnProgress | null,
+  options: { locale: LessonLocale; unlockAll: boolean },
+): CourseView {
   const { locale, unlockAll } = options;
   const ordered = courseOrder(index);
   const lessons = ordered.map((entry): CourseLessonView => ({
@@ -143,5 +156,9 @@ export function trackSupport(index: LessonIndex, lessonId: string, trackId: stri
   // The lesson's own words first; the generic words of the track only for a lesson that gave none.
   const own = entryOf(index, lessonId)?.unsupported[trackId];
   const track = index.course.tracks.find((candidate) => candidate.id === trackId);
-  return { supported: false, reason: own?.reason[locale] ?? track?.unsupported.reason[locale] ?? '', instead: own?.instead[locale] ?? track?.unsupported.instead[locale] ?? '' };
+  return {
+    supported: false,
+    reason: own?.reason[locale] ?? track?.unsupported.reason[locale] ?? '',
+    instead: own?.instead[locale] ?? track?.unsupported.instead[locale] ?? '',
+  };
 }

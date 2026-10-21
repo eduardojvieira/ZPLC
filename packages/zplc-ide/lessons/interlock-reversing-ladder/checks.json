@@ -7,9 +7,7 @@
         "src/Reversing.st": "PROGRAM Reversing\nVAR_INPUT FwdPB AT %I0.0 : BOOL; RevPB AT %I0.1 : BOOL; StopPB AT %I0.2 : BOOL; LubeOk AT %I0.3 : BOOL; END_VAR\nVAR_OUTPUT Forward AT %Q0.0 : BOOL; Reverse AT %Q0.1 : BOOL; END_VAR\nForward := (FwdPB OR Forward) AND NOT StopPB AND LubeOk AND NOT Reverse;\nReverse := (RevPB OR Reverse) AND NOT StopPB AND LubeOk AND NOT Forward;\nEND_PROGRAM\n",
         "zplc.json": "{\"schemaVersion\":2,\"name\":\"reversing_ladder_starter\",\"version\":\"1.0.0\",\"target\":{\"board\":\"posix\"},\"tasks\":[{\"name\":\"MainTask\",\"trigger\":\"cyclic\",\"interval_ms\":10,\"priority\":1,\"programs\":[\"Reversing.st\"]}]}"
       },
-      "remove": [
-        "src/Reversing.ld.json"
-      ]
+      "remove": ["src/Reversing.ld.json"]
     },
     {
       "intent": "places each interlock contact right after StopPB, before the start branch",

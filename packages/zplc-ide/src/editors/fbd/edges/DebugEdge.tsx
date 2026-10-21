@@ -10,12 +10,7 @@
 import { memo } from 'react';
 import { SIGNAL_CHIP_CLASS } from '../../../theme/signalTone';
 import { edgeSignal } from './edgeSignal';
-import {
-  BaseEdge,
-  EdgeLabelRenderer,
-  getSmoothStepPath,
-  type EdgeProps,
-} from '@xyflow/react';
+import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from '@xyflow/react';
 
 interface DebugEdgeData {
   /** Live value flowing through this edge */
@@ -29,20 +24,10 @@ interface DebugEdgeData {
   fault?: boolean;
 }
 
-const DebugEdge = memo(({
-  id,
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
-  sourcePosition,
-  targetPosition,
-  data,
-  markerEnd,
-}: EdgeProps) => {
+const DebugEdge = memo(({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, markerEnd }: EdgeProps) => {
   const edgeData = (data as DebugEdgeData) || {};
   const { liveValue, dataType, debugActive } = edgeData;
-  
+
   const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,
     sourceY,
@@ -67,7 +52,7 @@ const DebugEdge = memo(({
           strokeDasharray: signal.dash,
         }}
       />
-      
+
       {/* Value label - only show when debugging and has value */}
       {hasValue && (
         <EdgeLabelRenderer>
@@ -81,7 +66,9 @@ const DebugEdge = memo(({
           >
             <div
               data-signal={signal.tone}
-              className={`px-1.5 py-0.5 rounded text-[length:var(--font-size-caption)] font-mono font-medium ${SIGNAL_CHIP_CLASS[signal.tone]}`}
+              className={
+                `px-1.5 py-0.5 rounded text-[length:var(--font-size-caption)] font-mono ` + `font-medium ${SIGNAL_CHIP_CLASS[signal.tone]}`
+              }
             >
               {signal.label}
             </div>

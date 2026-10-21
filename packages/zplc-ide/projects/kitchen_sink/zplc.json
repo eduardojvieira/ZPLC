@@ -18,90 +18,70 @@
       "trigger": "cyclic",
       "interval_ms": 100,
       "priority": 1,
-      "programs": [
-        "sequencing.st"
-      ]
+      "programs": ["sequencing.st"]
     },
     {
       "name": "ProcessTask",
       "trigger": "cyclic",
       "interval_ms": 100,
       "priority": 2,
-      "programs": [
-        "process_control.st"
-      ]
+      "programs": ["process_control.st"]
     },
     {
       "name": "PidTask",
       "trigger": "cyclic",
       "interval_ms": 100,
       "priority": 3,
-      "programs": [
-        "pid.st"
-      ]
+      "programs": ["pid.st"]
     },
     {
       "name": "BuffersTask",
       "trigger": "cyclic",
       "interval_ms": 100,
       "priority": 4,
-      "programs": [
-        "buffers.st"
-      ]
+      "programs": ["buffers.st"]
     },
     {
       "name": "MathTask",
       "trigger": "cyclic",
       "interval_ms": 100,
       "priority": 5,
-      "programs": [
-        "math.st"
-      ]
+      "programs": ["math.st"]
     },
     {
       "name": "BitsScalingTask",
       "trigger": "cyclic",
       "interval_ms": 100,
       "priority": 6,
-      "programs": [
-        "bits_scaling.st"
-      ]
+      "programs": ["bits_scaling.st"]
     },
     {
       "name": "StringsMeasureTask",
       "trigger": "cyclic",
       "interval_ms": 100,
       "priority": 7,
-      "programs": [
-        "strings_measure.st"
-      ]
+      "programs": ["strings_measure.st"]
     },
     {
       "name": "StringsBuildTask",
       "trigger": "cyclic",
       "interval_ms": 100,
       "priority": 8,
-      "programs": [
-        "strings_build.st"
-      ]
+      "programs": ["strings_build.st"]
     },
     {
       "name": "StringsEditTask",
       "trigger": "cyclic",
       "interval_ms": 100,
       "priority": 9,
-      "programs": [
-        "strings_edit.st"
-      ]
+      "programs": ["strings_edit.st"]
     },
     {
       "name": "StringsCompareTask",
       "trigger": "cyclic",
       "interval_ms": 100,
       "priority": 10,
-      "programs": [
-        "strings_compare.st"
-      ]
+      "programs": ["strings_compare.st"]
     }
   ],
   "build": {

@@ -1,15 +1,15 @@
 import * as esbuild from 'esbuild';
 
 await esbuild.build({
-  entryPoints: ['src/index.ts'],
-  bundle: true,
-  outfile: 'dist/index.js',
-  platform: 'node',
-  target: 'node18',
-  format: 'esm',
-  sourcemap: true,
-  minify: false,
-  external: [],
+    entryPoints: ['src/index.ts'],
+    bundle: true,
+    outfile: 'dist/index.js',
+    platform: 'node',
+    target: 'node18',
+    format: 'esm',
+    sourcemap: true,
+    minify: false,
+    external: [],
 });
 
 // Also generate declaration file with tsc

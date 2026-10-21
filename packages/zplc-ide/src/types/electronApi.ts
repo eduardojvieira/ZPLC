@@ -45,11 +45,7 @@ declare global {
           method: string;
           params: Record<string, unknown>;
         }) => Promise<TResult>;
-        onEvent?: (callback: (event: {
-          type: 'event';
-          method: string;
-          params: Record<string, unknown>;
-        }) => void) => () => void;
+        onEvent?: (callback: (event: { type: 'event'; method: string; params: Record<string, unknown> }) => void) => () => void;
       };
       workspaceTests: {
         registerProjectFile: (file: File) => Promise<{ workspaceId: string } | null>;
@@ -127,7 +123,9 @@ declare global {
       recovery?: RecoveryBridge;
       /** Asks the main process whether a newer release exists, when the user turned the update check on or pressed Check now (IDE-010). */
       updateCheck?: UpdateCheckBridge;
-      /** The firmware images of the release this installation belongs to, with checksums and flashing steps; Studio never flashes (REL-025). */
+      /**
+       * The firmware images of the release this installation belongs to, with checksums and flashing steps; Studio never flashes (REL-025).
+       */
       firmwareImages?: FirmwareImagesBridge;
       isElectron: boolean;
       platform: string;

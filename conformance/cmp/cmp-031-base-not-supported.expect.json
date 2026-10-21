@@ -2,13 +2,7 @@
   "requirement": "CMP-031",
   "title": "a number base other than 2, 8 and 16 is rejected",
   "build": "fails",
-  "lines": [
-    5
-  ],
-  "codes": [
-    "INVALID_NUMBER_LITERAL"
-  ],
-  "messageIncludes": [
-    "number base"
-  ]
+  "lines": [5],
+  "codes": ["INVALID_NUMBER_LITERAL"],
+  "messageIncludes": ["number base"]
 }

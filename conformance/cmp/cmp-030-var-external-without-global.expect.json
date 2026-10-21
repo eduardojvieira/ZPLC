@@ -2,14 +2,7 @@
   "requirement": "CMP-030",
   "title": "VAR_EXTERNAL of a name that is not a global is rejected",
   "build": "fails",
-  "lines": [
-    2
-  ],
-  "codes": [
-    "INVALID_EXTERNAL_DECLARATION"
-  ],
-  "messageIncludes": [
-    "VAR_EXTERNAL",
-    "Missing"
-  ]
+  "lines": [2],
+  "codes": ["INVALID_EXTERNAL_DECLARATION"],
+  "messageIncludes": ["VAR_EXTERNAL", "Missing"]
 }

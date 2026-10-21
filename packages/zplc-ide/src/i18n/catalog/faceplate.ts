@@ -2,7 +2,8 @@
 export const faceplateEn = {
   // Faceplate.tsx
   'faceplate.title': 'Live I/O',
-  'faceplate.intro': 'Every input and output of the running program, read from its I/O map. A change to an input reaches the program at the start of the next scan. Force holds an input at its value.',
+  'faceplate.intro':
+    'Every input and output of the running program, read from its I/O map. A change to an input reaches the program at the start of the next scan. Force holds an input at its value.',
   'faceplate.inputsHeading': 'Inputs',
   'faceplate.outputsHeading': 'Outputs',
   'faceplate.inputsCaption': 'Inputs declared by the running program',
@@ -45,7 +46,8 @@ export const faceplateEn = {
 export const faceplateEs: Record<keyof typeof faceplateEn, string> = {
   // Faceplate.tsx
   'faceplate.title': 'E/S en vivo',
-  'faceplate.intro': 'Todas las entradas y salidas del programa en ejecución, leídas de su mapa de E/S. Un cambio en una entrada llega al programa al inicio del ciclo siguiente. Forzar mantiene una entrada en su valor.',
+  'faceplate.intro':
+    'Todas las entradas y salidas del programa en ejecución, leídas de su mapa de E/S. Un cambio en una entrada llega al programa al inicio del ciclo siguiente. Forzar mantiene una entrada en su valor.',
   'faceplate.inputsHeading': 'Entradas',
   'faceplate.outputsHeading': 'Salidas',
   'faceplate.inputsCaption': 'Entradas que declara el programa en ejecución',
@@ -75,12 +77,14 @@ export const faceplateEs: Record<keyof typeof faceplateEn, string> = {
   'faceplate.pending': 'Pendiente hasta el próximo ciclo',
   'faceplate.applied': 'Aplicado',
   'faceplate.announceApplied': '{name} vale {value}. Aplicado en el límite del ciclo.',
-  'faceplate.paused': 'La simulación está en pausa. Reanúdela para operar las entradas; un programa en pausa se edita desde la tabla de observación.',
+  'faceplate.paused':
+    'La simulación está en pausa. Reanúdela para operar las entradas; un programa en pausa se edita desde la tabla de observación.',
   'faceplate.noMap': 'Compile el proyecto e inicie la simulación para ver sus entradas y salidas.',
   'faceplate.notConnected': 'Inicie la simulación para operar las entradas.',
   'faceplate.notRunning': 'La simulación no está en ejecución. Inicie la simulación para operar las entradas.',
   'faceplate.faulted': 'La simulación se detuvo por una falla. Reiníciela para operar las entradas.',
   'faceplate.hardware': 'Las entradas se operan en simulación. En hardware, fuerce una entrada desde la tabla de observación.',
-  'faceplate.noCapability': 'Este simulador no aplica los cambios de entrada en el límite del ciclo, así que las entradas son de solo lectura.',
+  'faceplate.noCapability':
+    'Este simulador no aplica los cambios de entrada en el límite del ciclo, así que las entradas son de solo lectura.',
   'faceplate.failed': 'No se pudo cambiar la entrada.',
 };

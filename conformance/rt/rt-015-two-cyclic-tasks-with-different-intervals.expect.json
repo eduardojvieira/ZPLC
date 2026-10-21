@@ -7,11 +7,17 @@
   "scanMs": 10,
   "files": ["rt-015-two-cyclic-tasks-with-different-intervals-slow.st"],
   "tasks": [
-    {"name": "FastTask", "trigger": "cyclic", "interval_ms": 10, "priority": 1, "programs": ["main.st"]},
-    {"name": "SlowTask", "trigger": "cyclic", "interval_ms": 20, "priority": 2, "programs": ["rt-015-two-cyclic-tasks-with-different-intervals-slow.st"]}
+    { "name": "FastTask", "trigger": "cyclic", "interval_ms": 10, "priority": 1, "programs": ["main.st"] },
+    {
+      "name": "SlowTask",
+      "trigger": "cyclic",
+      "interval_ms": 20,
+      "priority": 2,
+      "programs": ["rt-015-two-cyclic-tasks-with-different-intervals-slow.st"]
+    }
   ],
   "expect": [
-    {"at": "%QW0", "type": "INT", "value": 4},
-    {"at": "%QW1", "type": "INT", "value": 2}
+    { "at": "%QW0", "type": "INT", "value": 4 },
+    { "at": "%QW1", "type": "INT", "value": 2 }
   ]
 }

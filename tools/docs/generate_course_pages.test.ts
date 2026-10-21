@@ -41,7 +41,13 @@ describe('LRN-035 course pages: a page for every module and lesson, generated fr
         const body = page.body(lang);
         expect(body).toContain(module.why[lang]);
         const listed = [...body.matchAll(/\(\.\.\/lessons\/([a-z0-9-]+)\.md\)/g)].map((match) => match[1]);
-        expect([module.id, lang, listed]).toEqual([module.id, lang, courseOrder(LESSON_INDEX).filter((lesson) => lesson.module === module.id).map((lesson) => lesson.id)]);
+        expect([module.id, lang, listed]).toEqual([
+          module.id,
+          lang,
+          courseOrder(LESSON_INDEX)
+            .filter((lesson) => lesson.module === module.id)
+            .map((lesson) => lesson.id),
+        ]);
       }
     }
   });
@@ -59,18 +65,42 @@ describe('LRN-035 course pages: a page for every module and lesson, generated fr
   });
 });
 
-describe('LRN-035 stopgap, the faceplate leg: the faceplate page, in both languages, linked from Learn (the board kit pages are still to come)', () => {
-  const page = (lang: 'en' | 'es') => readFileSync(`${ROOT}${lang === 'en' ? 'docs/docs' : 'docs/i18n/es/docusaurus-plugin-content-docs/current'}/learn/faceplate.md`, 'utf8');
-  const learn = (lang: 'en' | 'es') => readFileSync(`${ROOT}${lang === 'en' ? 'docs/docs' : 'docs/i18n/es/docusaurus-plugin-content-docs/current'}/learn/index.md`, 'utf8');
+describe(
+  'LRN-035 stopgap, the faceplate leg: the faceplate page, in both languages, linked from Learn (the board kit pages are still to ' +
+    'come)',
+  () => {
+    const page = (lang: 'en' | 'es') =>
+      readFileSync(
+        `${ROOT}${lang === 'en' ? 'docs/docs' : 'docs/i18n/es/docusaurus-plugin-content-docs/current'}/learn/faceplate.md`,
+        'utf8',
+      );
+    const learn = (lang: 'en' | 'es') =>
+      readFileSync(`${ROOT}${lang === 'en' ? 'docs/docs' : 'docs/i18n/es/docusaurus-plugin-content-docs/current'}/learn/index.md`, 'utf8');
 
-  it('LRN-035 stopgap: says what the faceplate lists, how each input is operated and when a change reaches the program, in the words Studio shows', () => {
-    for (const [lang, catalog] of [['en', faceplateEn], ['es', faceplateEs]] as const) {
-      // Markdown wraps lines, so the page is read with its whitespace folded.
-      const text = page(lang).replace(/\s+/g, ' ');
-      // The page quotes the faceplate as Studio labels it, so a renamed label shows here as a stale page.
-      for (const key of ['faceplate.title', 'faceplate.pending', 'faceplate.applied', 'faceplate.hold', 'faceplate.set', 'faceplate.noMap'] as const) expect([lang, key, text.includes(catalog[key])]).toEqual([lang, key, true]);
-      expect(text).toMatch(lang === 'en' ? /## When a change reaches the program/ : /## Cuándo llega un cambio al programa/);
-      expect(learn(lang)).toContain('](./faceplate.md)');
-    }
-  });
-});
+    it(
+      'LRN-035 stopgap: says what the faceplate lists, how each input is operated and when a change reaches the program, in the words ' +
+        'Studio shows',
+      () => {
+        for (const [lang, catalog] of [
+          ['en', faceplateEn],
+          ['es', faceplateEs],
+        ] as const) {
+          // Markdown wraps lines, so the page is read with its whitespace folded.
+          const text = page(lang).replace(/\s+/g, ' ');
+          // The page quotes the faceplate as Studio labels it, so a renamed label shows here as a stale page.
+          for (const key of [
+            'faceplate.title',
+            'faceplate.pending',
+            'faceplate.applied',
+            'faceplate.hold',
+            'faceplate.set',
+            'faceplate.noMap',
+          ] as const)
+            expect([lang, key, text.includes(catalog[key])]).toEqual([lang, key, true]);
+          expect(text).toMatch(lang === 'en' ? /## When a change reaches the program/ : /## Cuándo llega un cambio al programa/);
+          expect(learn(lang)).toContain('](./faceplate.md)');
+        }
+      },
+    );
+  },
+);

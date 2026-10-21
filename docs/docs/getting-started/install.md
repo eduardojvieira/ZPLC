@@ -3,7 +3,7 @@ slug: /getting-started/install
 id: install
 title: Install ZPLC
 sidebar_label: Install
-description: "Download, verify, open, update and remove ZPLC on Windows, macOS and Linux, from the channels that exist today."
+description: 'Download, verify, open, update and remove ZPLC on Windows, macOS and Linux, from the channels that exist today.'
 tags: [install, download, verify]
 ---
 
@@ -49,12 +49,12 @@ The steps of each system are under [First launch](#first-launch).
 
 ## Channels
 
-| Channel | State | What it is |
-| --- | --- | --- |
-| [GitHub releases](https://github.com/eduardojvieira/ZPLC/releases) | Live | Installers for Windows, macOS and Linux, the standalone command line and MCP server, a bill of materials and checksums. |
-| Build from source | Works on Linux and macOS | The path of [Run ZPLC from source](./index.md#run-zplc-from-source). |
-| Homebrew cask, Arch User Repository | Not live yet | The pipeline can write both for every published release ([below](#homebrew-and-arch-linux-not-live-yet)); there is nothing to install until the project creates the tap and the AUR package. |
-| Microsoft Store, winget | Not yet submittable | The channels need a signing identity or an account the project does not have. |
+| Channel                                                            | State                    | What it is                                                                                                                                                                                   |
+| ------------------------------------------------------------------ | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [GitHub releases](https://github.com/eduardojvieira/ZPLC/releases) | Live                     | Installers for Windows, macOS and Linux, the standalone command line and MCP server, a bill of materials and checksums.                                                                      |
+| Build from source                                                  | Works on Linux and macOS | The path of [Run ZPLC from source](./index.md#run-zplc-from-source).                                                                                                                         |
+| Homebrew cask, Arch User Repository                                | Not live yet             | The pipeline can write both for every published release ([below](#homebrew-and-arch-linux-not-live-yet)); there is nothing to install until the project creates the tap and the AUR package. |
+| Microsoft Store, winget                                            | Not yet submittable      | The channels need a signing identity or an account the project does not have.                                                                                                                |
 
 Do not install ZPLC from a package manager or a store: until a channel above is
 live, any package that says it is ZPLC did not come from this project.
@@ -82,6 +82,7 @@ today.
   of the release. If you prefer the dialogs, use the DMG and its steps above. If
   the package manager starts to reject casks that do this, the cask will no longer
   remove the flag and the steps of the DMG apply.
+
 - **Arch Linux (not yet live).** Until the AUR package exists, nothing installs
   from it. The package, `zplc-bin`, will repackage the `.deb` of the release
   for `x86_64` and `aarch64`, with the checksum of the release and the udev rule of
@@ -94,11 +95,11 @@ every release whether or not these channels are live.
 
 ## What is signed
 
-| System | Signature of the installer | What the system does |
-| --- | --- | --- |
-| Windows | None. The file name says `unsigned`. | SmartScreen warns; Smart App Control, when it is on, blocks the file. |
-| macOS | Ad hoc: the bundle is sealed but has no developer identity, and it is never notarized. | Gatekeeper treats it as an app from an unidentified developer. |
-| Linux | None. | Nothing asks you; check the checksum yourself. |
+| System  | Signature of the installer                                                             | What the system does                                                  |
+| ------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Windows | None. The file name says `unsigned`.                                                   | SmartScreen warns; Smart App Control, when it is on, blocks the file. |
+| macOS   | Ad hoc: the bundle is sealed but has no developer identity, and it is never notarized. | Gatekeeper treats it as an app from an unidentified developer.        |
+| Linux   | None.                                                                                  | Nothing asks you; check the checksum yourself.                        |
 
 Integrity comes from the checksums and from a build provenance attestation, which
 you can check as shown [below](#verify-the-download). The notes of every release
@@ -112,15 +113,15 @@ choose a release whose name starts with `ZPLC v2.0`. While 2.0 is a prerelease,
 GitHub still marks the older 1.5.0 release as Latest; scroll down to the 2.0
 prerelease.
 
-| Your system | File of the rc.3 release |
-| --- | --- |
-| Windows, Intel or AMD | `ZPLC.IDE-2.0.0-rc.3-win-x64-Setup.exe`, or `...-win-x64-Portable.exe` to run without installing |
-| Windows on ARM | `ZPLC.IDE-2.0.0-rc.3-win-arm64-Setup.exe` |
-| macOS, Apple silicon | `ZPLC.IDE-2.0.0-rc.3-mac-arm64.dmg` |
-| macOS, Intel | `ZPLC.IDE-2.0.0-rc.3-mac-x64.dmg` |
-| Linux, Fedora family | `ZPLC.IDE-2.0.0-rc.3-linux-x86_64.rpm` |
-| Linux, Ubuntu | `ZPLC.IDE-2.0.0-rc.3-linux-amd64.deb` |
-| Linux, other distributions | `ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage` |
+| Your system                | File of the rc.3 release                                                                         |
+| -------------------------- | ------------------------------------------------------------------------------------------------ |
+| Windows, Intel or AMD      | `ZPLC.IDE-2.0.0-rc.3-win-x64-Setup.exe`, or `...-win-x64-Portable.exe` to run without installing |
+| Windows on ARM             | `ZPLC.IDE-2.0.0-rc.3-win-arm64-Setup.exe`                                                        |
+| macOS, Apple silicon       | `ZPLC.IDE-2.0.0-rc.3-mac-arm64.dmg`                                                              |
+| macOS, Intel               | `ZPLC.IDE-2.0.0-rc.3-mac-x64.dmg`                                                                |
+| Linux, Fedora family       | `ZPLC.IDE-2.0.0-rc.3-linux-x86_64.rpm`                                                           |
+| Linux, Ubuntu              | `ZPLC.IDE-2.0.0-rc.3-linux-amd64.deb`                                                            |
+| Linux, other distributions | `ZPLC.IDE-2.0.0-rc.3-linux-x86_64.AppImage`                                                      |
 
 The rc.3 files were built by a preview build and uploaded by hand. Releases that
 the release pipeline makes name all fourteen installer files from one template,
@@ -289,14 +290,14 @@ entries over, so a stored AI assistant key may need to be entered again.
 
 ## Uninstall
 
-| System | How |
-| --- | --- |
-| Windows, setup | **Settings**, **Apps**, **Installed apps**, then remove **ZPLC**. |
-| Windows, portable | Delete the `Portable.exe` file. |
-| macOS | Drag **ZPLC** from Applications to the Trash. |
-| Linux, RPM | `sudo dnf remove zplc` |
-| Linux, DEB | `sudo apt remove zplc` |
-| Linux, AppImage | Delete the file. |
+| System            | How                                                               |
+| ----------------- | ----------------------------------------------------------------- |
+| Windows, setup    | **Settings**, **Apps**, **Installed apps**, then remove **ZPLC**. |
+| Windows, portable | Delete the `Portable.exe` file.                                   |
+| macOS             | Drag **ZPLC** from Applications to the Trash.                     |
+| Linux, RPM        | `sudo dnf remove zplc`                                            |
+| Linux, DEB        | `sudo apt remove zplc`                                            |
+| Linux, AppImage   | Delete the file.                                                  |
 
 ZPLC keeps its preferences, recent projects, lesson progress and recovery
 copies in the user-data folder of the application for your account; removing the
@@ -304,17 +305,17 @@ application does not remove it. Your project folders are never inside it.
 
 ## Troubleshooting
 
-| What you see | Why | What to do |
-| --- | --- | --- |
-| **Windows protected your PC** | SmartScreen: the file is unsigned. | **More info**, then **Run anyway**, after the checksum matched. |
-| Windows blocks the file and has no **Run anyway** | Smart App Control is on. | Turn it off in Windows Security, or run from source. |
-| macOS says it could not verify the app | The app has no developer identity and is not notarized. | **Open Anyway** in **Privacy & Security**. |
-| macOS says the app is damaged | The quarantine flag of the download, on an app that is not notarized. | Check the checksum, then remove the flag with `xattr`. |
-| The checksum does not match | The download is incomplete, or it is not the published file. | Download it again. If it still differs, do not open it. |
-| `gh attestation verify` fails | The file was not built by the project's workflow, or it is a file of a release made by hand, such as rc.3. | Check the checksum and download from the releases page of this repository. |
-| The AppImage does not start | Other Electron AppImages need `libfuse2` on Ubuntu 22.10 and later, and extra settings for the Chromium sandbox on Ubuntu 24.04 and later. Neither was tried with ZPLC. | Use the `.rpm` or `.deb` where your system supports it, or run ZPLC from source. |
-| The port of a board is refused | Your user is not in the serial group. | See [Linux: serial port access](#linux-serial-port-access). |
-| The ZPLC application cannot connect to the simulator, in a build from source | The native runtime is a separate program. | Build it first and point the application to it, as in [Run ZPLC from source](./index.md#run-zplc-from-source). |
+| What you see                                                                 | Why                                                                                                                                                                     | What to do                                                                                                     |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Windows protected your PC**                                                | SmartScreen: the file is unsigned.                                                                                                                                      | **More info**, then **Run anyway**, after the checksum matched.                                                |
+| Windows blocks the file and has no **Run anyway**                            | Smart App Control is on.                                                                                                                                                | Turn it off in Windows Security, or run from source.                                                           |
+| macOS says it could not verify the app                                       | The app has no developer identity and is not notarized.                                                                                                                 | **Open Anyway** in **Privacy & Security**.                                                                     |
+| macOS says the app is damaged                                                | The quarantine flag of the download, on an app that is not notarized.                                                                                                   | Check the checksum, then remove the flag with `xattr`.                                                         |
+| The checksum does not match                                                  | The download is incomplete, or it is not the published file.                                                                                                            | Download it again. If it still differs, do not open it.                                                        |
+| `gh attestation verify` fails                                                | The file was not built by the project's workflow, or it is a file of a release made by hand, such as rc.3.                                                              | Check the checksum and download from the releases page of this repository.                                     |
+| The AppImage does not start                                                  | Other Electron AppImages need `libfuse2` on Ubuntu 22.10 and later, and extra settings for the Chromium sandbox on Ubuntu 24.04 and later. Neither was tried with ZPLC. | Use the `.rpm` or `.deb` where your system supports it, or run ZPLC from source.                               |
+| The port of a board is refused                                               | Your user is not in the serial group.                                                                                                                                   | See [Linux: serial port access](#linux-serial-port-access).                                                    |
+| The ZPLC application cannot connect to the simulator, in a build from source | The native runtime is a separate program.                                                                                                                               | Build it first and point the application to it, as in [Run ZPLC from source](./index.md#run-zplc-from-source). |
 
 If your problem is not here, open an issue from the bug report template of the
 [repository](https://github.com/eduardojvieira/ZPLC/issues). Do not put

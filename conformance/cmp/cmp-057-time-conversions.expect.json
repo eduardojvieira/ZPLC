@@ -7,11 +7,11 @@
   "scans": 1,
   "scanMs": 10,
   "expect": [
-    {"at": "%QD0", "type": "DINT", "value": 2000},
-    {"at": "%QD1", "type": "DINT", "value": 1500},
-    {"at": "%QD2", "type": "UDINT", "value": 3600000},
-    {"at": "%QD3", "type": "REAL", "value": 1500.0},
-    {"at": "%QD4", "type": "DINT", "value": 2500},
-    {"at": "%QW10", "type": "WORD", "value": 4464}
+    { "at": "%QD0", "type": "DINT", "value": 2000 },
+    { "at": "%QD1", "type": "DINT", "value": 1500 },
+    { "at": "%QD2", "type": "UDINT", "value": 3600000 },
+    { "at": "%QD3", "type": "REAL", "value": 1500.0 },
+    { "at": "%QD4", "type": "DINT", "value": 2500 },
+    { "at": "%QW10", "type": "WORD", "value": 4464 }
   ]
 }

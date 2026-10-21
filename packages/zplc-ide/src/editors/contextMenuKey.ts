@@ -11,5 +11,12 @@ export const isContextMenuKey = (event: { key: string; shiftKey?: boolean }): bo
 /** Sends a `contextmenu` event to `target`, at its top left corner moved a little in, as the browser positions the key. */
 export function openContextMenuOn(target: Element): void {
   const box = target.getBoundingClientRect();
-  target.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: box.left + Math.min(24, box.width / 2), clientY: box.top + Math.min(24, box.height / 2) }));
+  target.dispatchEvent(
+    new MouseEvent('contextmenu', {
+      bubbles: true,
+      cancelable: true,
+      clientX: box.left + Math.min(24, box.width / 2),
+      clientY: box.top + Math.min(24, box.height / 2),
+    }),
+  );
 }

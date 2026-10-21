@@ -21,9 +21,7 @@
       "trigger": "cyclic",
       "interval_ms": 10,
       "priority": 1,
-      "programs": [
-        "VerifyBoard.st"
-      ]
+      "programs": ["VerifyBoard.st"]
     }
   ]
 }

@@ -2,10 +2,6 @@
   "requirement": "CMP-026",
   "title": "an assignment to a VAR CONSTANT of a program is rejected",
   "build": "fails",
-  "lines": [
-    8
-  ],
-  "codes": [
-    "ASSIGNMENT_TO_CONSTANT"
-  ]
+  "lines": [8],
+  "codes": ["ASSIGNMENT_TO_CONSTANT"]
 }

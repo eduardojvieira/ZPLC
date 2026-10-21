@@ -6,7 +6,9 @@ import { FaceplatePanel } from './FaceplatePanel';
 export function WatchTab({ controller }: { controller?: DebugController }) {
   return (
     <>
-      <div className="px-2 pt-2"><FaceplatePanel controller={controller} /></div>
+      <div className="px-2 pt-2">
+        <FaceplatePanel controller={controller} />
+      </div>
       <DebugWatchPanel
         setValue={controller?.setValue}
         toggleForceValue={controller?.toggleForceValue}

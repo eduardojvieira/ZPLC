@@ -13,7 +13,8 @@ export const editorsEn = {
   'editors.fbd.searchBlocks': 'Search the blocks',
   'editors.fbd.insertTooltip': '{name}: press to insert beside the selected block, or drag onto the canvas',
   'editors.fbd.io': 'I/O',
-  'editors.fbd.help': 'Press a block to insert it beside the selected one, or drag it onto the canvas. Connect outputs (green) to inputs (blue), or press "C" on a block.',
+  'editors.fbd.help':
+    'Press a block to insert it beside the selected one, or drag it onto the canvas. Connect outputs (green) to inputs (blue), or press "C" on a block.',
   'editors.fbd.live': 'Live',
   'editors.fbd.offline': 'Offline',
   'editors.fbd.inputs': 'Inputs',
@@ -54,7 +55,8 @@ export const editorsEn = {
   'editors.sfc.elements': 'SFC elements',
   'editors.sfc.searchElements': 'Search the elements',
   'editors.sfc.insertTooltip': '{name}: press to insert after the selected element, or drag onto the canvas',
-  'editors.sfc.help': 'Press an element to insert it after the selected one, or drag it onto the canvas. Connect steps with transitions, or press "C" on one. Double-click, or press "F2", to edit names and conditions.',
+  'editors.sfc.help':
+    'Press an element to insert it after the selected one, or drag it onto the canvas. Connect steps with transitions, or press "C" on one. Double-click, or press "F2", to edit names and conditions.',
   'editors.sfc.qualifiers': 'Action qualifiers:',
   'editors.sfc.qualN': 'Non-stored',
   'editors.sfc.qualS': 'Set',
@@ -84,7 +86,8 @@ export const editorsEs: Record<keyof typeof editorsEn, string> = {
   'editors.fbd.searchBlocks': 'Buscar bloques',
   'editors.fbd.insertTooltip': '{name}: pulse para insertar junto al bloque seleccionado, o arrastre al lienzo',
   'editors.fbd.io': 'E/S',
-  'editors.fbd.help': 'Pulse un bloque para insertarlo junto al seleccionado, o arrástrelo al lienzo. Conecte las salidas (verde) a las entradas (azul), o pulse «C» sobre un bloque.',
+  'editors.fbd.help':
+    'Pulse un bloque para insertarlo junto al seleccionado, o arrástrelo al lienzo. Conecte las salidas (verde) a las entradas (azul), o pulse «C» sobre un bloque.',
   'editors.fbd.live': 'En vivo',
   'editors.fbd.offline': 'Sin conexión',
   'editors.fbd.inputs': 'Entradas',
@@ -117,7 +120,8 @@ export const editorsEs: Record<keyof typeof editorsEn, string> = {
   'editors.ld.coils': 'Bobinas',
   'editors.ld.structure': 'Estructura',
   'editors.ld.functionBlocks': 'Bloques de función',
-  'editors.ld.help': 'Pulse un elemento para insertarlo en el cursor, o arrástrelo a la cuadrícula. Use «Rama» para crear caminos paralelos.',
+  'editors.ld.help':
+    'Pulse un elemento para insertarlo en el cursor, o arrástrelo a la cuadrícula. Use «Rama» para crear caminos paralelos.',
   'editors.sfc.canvas': 'Lienzo del diagrama funcional secuencial',
   'editors.sfc.debugActive': 'Modo de depuración activo',
   'editors.sfc.activeSteps.one': '{count} paso activo',
@@ -125,7 +129,8 @@ export const editorsEs: Record<keyof typeof editorsEn, string> = {
   'editors.sfc.elements': 'Elementos SFC',
   'editors.sfc.searchElements': 'Buscar elementos',
   'editors.sfc.insertTooltip': '{name}: pulse para insertar después del elemento seleccionado, o arrastre al lienzo',
-  'editors.sfc.help': 'Pulse un elemento para insertarlo después del seleccionado, o arrástrelo al lienzo. Conecte los pasos con transiciones, o pulse «C» sobre una. Haga doble clic, o pulse «F2», para editar nombres y condiciones.',
+  'editors.sfc.help':
+    'Pulse un elemento para insertarlo después del seleccionado, o arrástrelo al lienzo. Conecte los pasos con transiciones, o pulse «C» sobre una. Haga doble clic, o pulse «F2», para editar nombres y condiciones.',
   'editors.sfc.qualifiers': 'Calificadores de acción:',
   'editors.sfc.qualN': 'No almacenada',
   'editors.sfc.qualS': 'Activar',

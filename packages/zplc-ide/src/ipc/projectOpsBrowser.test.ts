@@ -2,14 +2,56 @@ import { describe, expect, test } from 'bun:test';
 import { createProjectFolder, readProjectFile, removeProjectEntry, renameProjectEntry, writeProjectFile } from './projectOps';
 
 type Node = Dir | File;
-class File { readonly kind = 'file' as const; constructor(readonly name: string, public bytes = new Uint8Array()) {}
-  async getFile() { const bytes = this.bytes; return { arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) }; }
-  async createWritable() { return { write: async (data: Uint8Array) => { this.bytes = new Uint8Array(data); }, close: async () => undefined }; } }
-class Dir { readonly kind = 'directory' as const; readonly children = new Map<string, Node>(); constructor(readonly name: string) {}
-  async getDirectoryHandle(name: string, options?: { create?: boolean }) { const found = this.children.get(name); if (found?.kind === 'directory') return found; if (found || !options?.create) throw Object.assign(new Error('x'), { name: 'NotFoundError' }); const made = new Dir(name); this.children.set(name, made); return made; }
-  async getFileHandle(name: string, options?: { create?: boolean }) { const found = this.children.get(name); if (found?.kind === 'file') return found; if (found || !options?.create) throw Object.assign(new Error('x'), { name: 'NotFoundError' }); const made = new File(name); this.children.set(name, made); return made; }
-  async removeEntry(name: string, options?: { recursive?: boolean }) { const found = this.children.get(name); if (!found) throw Object.assign(new Error('x'), { name: 'NotFoundError' }); if (found.kind === 'directory' && found.children.size > 0 && !options?.recursive) throw Object.assign(new Error('x'), { name: 'InvalidModificationError' }); this.children.delete(name); }
-  async *values() { yield* this.children.values(); } }
+class File {
+  readonly kind = 'file' as const;
+  constructor(
+    readonly name: string,
+    public bytes = new Uint8Array(),
+  ) {}
+  async getFile() {
+    const bytes = this.bytes;
+    return { arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) };
+  }
+  async createWritable() {
+    return {
+      write: async (data: Uint8Array) => {
+        this.bytes = new Uint8Array(data);
+      },
+      close: async () => undefined,
+    };
+  }
+}
+class Dir {
+  readonly kind = 'directory' as const;
+  readonly children = new Map<string, Node>();
+  constructor(readonly name: string) {}
+  async getDirectoryHandle(name: string, options?: { create?: boolean }) {
+    const found = this.children.get(name);
+    if (found?.kind === 'directory') return found;
+    if (found || !options?.create) throw Object.assign(new Error('x'), { name: 'NotFoundError' });
+    const made = new Dir(name);
+    this.children.set(name, made);
+    return made;
+  }
+  async getFileHandle(name: string, options?: { create?: boolean }) {
+    const found = this.children.get(name);
+    if (found?.kind === 'file') return found;
+    if (found || !options?.create) throw Object.assign(new Error('x'), { name: 'NotFoundError' });
+    const made = new File(name);
+    this.children.set(name, made);
+    return made;
+  }
+  async removeEntry(name: string, options?: { recursive?: boolean }) {
+    const found = this.children.get(name);
+    if (!found) throw Object.assign(new Error('x'), { name: 'NotFoundError' });
+    if (found.kind === 'directory' && found.children.size > 0 && !options?.recursive)
+      throw Object.assign(new Error('x'), { name: 'InvalidModificationError' });
+    this.children.delete(name);
+  }
+  async *values() {
+    yield* this.children.values();
+  }
+}
 const bytes = (text: string) => new TextEncoder().encode(text);
 const text = (data: Uint8Array) => new TextDecoder().decode(data);
 

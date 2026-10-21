@@ -51,7 +51,14 @@ describe('the hardware runtime port of the scenario engine (HIL-002)', () => {
     const link = new FakeLink();
     link.scanMs = 1_000_000;
     let clock = 0;
-    const port = new HardwareRuntimePort(link, { sleep: () => { clock += 5_000; return Promise.resolve(); }, now: () => clock, timeoutMs: 10_000 });
+    const port = new HardwareRuntimePort(link, {
+      sleep: () => {
+        clock += 5_000;
+        return Promise.resolve();
+      },
+      now: () => clock,
+      timeoutMs: 10_000,
+    });
     await port.loadProgram(Uint8Array.of(1));
     await port.reset();
     await expect(port.step(0)).rejects.toThrow(/did not reach tick/);
@@ -90,12 +97,14 @@ describe('forces are released by the tool at the end and on abort (HIL-003)', ()
 
   test('when the run throws, the forces are still cleared and the board stopped, and the error is kept', async () => {
     const link = new FakeLink();
-    await expect(withHardwarePort(link, noWait, async (port) => {
-      await port.loadProgram(Uint8Array.of(1));
-      await port.reset();
-      await tick(port, 0, true);
-      throw new Error('the scenario broke');
-    })).rejects.toThrow('the scenario broke');
+    await expect(
+      withHardwarePort(link, noWait, async (port) => {
+        await port.loadProgram(Uint8Array.of(1));
+        await port.reset();
+        await tick(port, 0, true);
+        throw new Error('the scenario broke');
+      }),
+    ).rejects.toThrow('the scenario broke');
     expect(link.forced.size).toBe(0);
     expect(link.running).toBe(false);
   });
@@ -103,13 +112,15 @@ describe('forces are released by the tool at the end and on abort (HIL-003)', ()
   test('on abort the next poll stops the run and the release still happens', async () => {
     const link = new FakeLink();
     const controller = new AbortController();
-    await expect(withHardwarePort(link, { ...noWait, signal: controller.signal }, async (port) => {
-      await port.loadProgram(Uint8Array.of(1));
-      await port.reset();
-      await tick(port, 0, true);
-      controller.abort();
-      await port.step(10);
-    })).rejects.toThrow();
+    await expect(
+      withHardwarePort(link, { ...noWait, signal: controller.signal }, async (port) => {
+        await port.loadProgram(Uint8Array.of(1));
+        await port.reset();
+        await tick(port, 0, true);
+        controller.abort();
+        await port.step(10);
+      }),
+    ).rejects.toThrow();
     expect(link.forced.size).toBe(0);
     expect(link.running).toBe(false);
   });

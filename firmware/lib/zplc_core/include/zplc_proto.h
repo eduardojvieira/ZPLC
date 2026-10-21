@@ -37,16 +37,14 @@ extern "C" {
 #define ZPLC_PROTO_PAYLOAD_MAX_CONFIGURED ZPLC_PROTO_PAYLOAD_MAX_DEFAULT
 #endif
 
-#if (ZPLC_PROTO_PAYLOAD_MAX_CONFIGURED < ZPLC_PROTO_PAYLOAD_MAX_MIN) || \
-    (ZPLC_PROTO_PAYLOAD_MAX_CONFIGURED > ZPLC_PROTO_PAYLOAD_MAX_HARD)
+#if (ZPLC_PROTO_PAYLOAD_MAX_CONFIGURED < ZPLC_PROTO_PAYLOAD_MAX_MIN) || (ZPLC_PROTO_PAYLOAD_MAX_CONFIGURED > ZPLC_PROTO_PAYLOAD_MAX_HARD)
 #error "ZPLC_PROTO_PAYLOAD_MAX is outside the limits of the protocol"
 #endif
 
 #define ZPLC_PROTO_PAYLOAD_MAX ((size_t)ZPLC_PROTO_PAYLOAD_MAX_CONFIGURED)
 
 /** @brief Bytes of the largest frame: header, payload, code and checksum. */
-#define ZPLC_PROTO_FRAME_MAX                                                                                       \
-  (ZPLC_PROTO_HEADER_BYTES + ZPLC_PROTO_PAYLOAD_MAX + ZPLC_PROTO_MAC_BYTES + ZPLC_PROTO_CRC_BYTES)
+#define ZPLC_PROTO_FRAME_MAX (ZPLC_PROTO_HEADER_BYTES + ZPLC_PROTO_PAYLOAD_MAX + ZPLC_PROTO_MAC_BYTES + ZPLC_PROTO_CRC_BYTES)
 
 /** @brief Why a buffer is not a frame (zplc_proto_parse). */
 #define ZPLC_PROTO_PARSE_SHORT (-1)     /**< fewer bytes than the header and the length need */
@@ -59,11 +57,11 @@ extern "C" {
 
 /** @brief A frame that passed the checks of the codec. The pointers point into the buffer that was parsed. */
 typedef struct {
-  uint8_t kind;           /**< ZPLC_PROTO_KIND_* */
-  uint8_t message;        /**< the message number */
-  uint8_t authenticated;  /**< 1 when a code follows the payload */
+  uint8_t kind;          /**< ZPLC_PROTO_KIND_* */
+  uint8_t message;       /**< the message number */
+  uint8_t authenticated; /**< 1 when a code follows the payload */
   uint32_t sequence;
-  uint16_t length;        /**< bytes of the payload */
+  uint16_t length; /**< bytes of the payload */
   const uint8_t *payload;
   const uint8_t *mac;     /**< ZPLC_PROTO_MAC_BYTES bytes, or NULL */
   const uint8_t *covered; /**< the bytes the code covers: the header and the payload */
@@ -92,8 +90,7 @@ typedef void (*zplc_proto_frame_fn)(void *context, const zplc_proto_frame_t *fra
 
 /** @brief Bytes of a frame with a payload of @p length bytes. */
 static inline size_t zplc_proto_frame_size(size_t length, int authenticated) {
-  return (size_t)ZPLC_PROTO_HEADER_BYTES + length + (authenticated != 0 ? (size_t)ZPLC_PROTO_MAC_BYTES : 0U) +
-         (size_t)ZPLC_PROTO_CRC_BYTES;
+  return (size_t)ZPLC_PROTO_HEADER_BYTES + length + (authenticated != 0 ? (size_t)ZPLC_PROTO_MAC_BYTES : 0U) + (size_t)ZPLC_PROTO_CRC_BYTES;
 }
 
 /**
@@ -101,8 +98,7 @@ static inline size_t zplc_proto_frame_size(size_t length, int authenticated) {
  *
  * For a sender that builds the payload in place. Returns the number of header bytes.
  */
-size_t zplc_proto_write_header(uint8_t *out, uint8_t kind, uint8_t message, uint32_t sequence, uint16_t length,
-                               int authenticated);
+size_t zplc_proto_write_header(uint8_t *out, uint8_t kind, uint8_t message, uint32_t sequence, uint16_t length, int authenticated);
 
 /**
  * @brief Write the header and the payload of a frame.
@@ -112,8 +108,8 @@ size_t zplc_proto_write_header(uint8_t *out, uint8_t kind, uint8_t message, uint
  *
  * The caller computes the code over the returned bytes and hands it to zplc_proto_finish().
  */
-size_t zplc_proto_begin(uint8_t *out, size_t capacity, uint8_t kind, uint8_t message, uint32_t sequence,
-                        const uint8_t *payload, uint16_t length, int authenticated);
+size_t zplc_proto_begin(uint8_t *out, size_t capacity, uint8_t kind, uint8_t message, uint32_t sequence, const uint8_t *payload,
+                        uint16_t length, int authenticated);
 
 /**
  * @brief Append the code (when the frame was begun authenticated) and the checksum.
@@ -125,8 +121,8 @@ size_t zplc_proto_begin(uint8_t *out, size_t capacity, uint8_t kind, uint8_t mes
 size_t zplc_proto_finish(uint8_t *out, size_t used, const uint8_t *mac);
 
 /** @brief A frame without a code in one call; returns its size, or 0 when it does not fit. */
-size_t zplc_proto_encode(uint8_t *out, size_t capacity, uint8_t kind, uint8_t message, uint32_t sequence,
-                         const uint8_t *payload, uint16_t length);
+size_t zplc_proto_encode(uint8_t *out, size_t capacity, uint8_t kind, uint8_t message, uint32_t sequence, const uint8_t *payload,
+                         uint16_t length);
 
 /**
  * @brief Check and open one whole frame (a transport that frames its own lines).
@@ -149,8 +145,8 @@ void zplc_proto_decoder_reset(zplc_proto_decoder_t *decoder);
  * among the bytes it holds, so a frame inside a damaged one is delivered and a damaged frame costs nothing
  * after itself. The work per input byte is bounded by ZPLC_PROTO_FRAME_MAX.
  */
-void zplc_proto_decoder_feed(zplc_proto_decoder_t *decoder, const uint8_t *data, size_t length,
-                             zplc_proto_frame_fn on_frame, void *context);
+void zplc_proto_decoder_feed(zplc_proto_decoder_t *decoder, const uint8_t *data, size_t length, zplc_proto_frame_fn on_frame,
+                             void *context);
 
 #ifdef __cplusplus
 }

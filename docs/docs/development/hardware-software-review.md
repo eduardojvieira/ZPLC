@@ -25,32 +25,32 @@ The same scenarios are in `tools/hil/software-review/scenarios.json`. The verdic
 
 There are 116 scenarios.
 
-| Requirement | Subject | Scenarios |
-|---|---|---|
-| HIL-001 | packages/zplc-hil runs the real chain | 5 |
-| HIL-002 | Scenario engine on a board | 7 |
-| HIL-005 | Language fixtures on a board | 5 |
-| HIL-010 | The bench record of each learner board | 34 |
-| HIL-012 | One command per board | 6 |
-| HIL-014 | The bench guide | 6 |
-| HIL-015 | Simulation against hardware | 7 |
-| LRN-013 | Choose a board in Learn | 6 |
-| LRN-024 | Hardware check, labelled apart | 7 |
-| RT-025 | RETAIN across a power cycle | 8 |
-| LNG-004 | Breakpoints on source elements | 8 |
-| IO-006 | Analog input and output | 6 |
-| COM-016 | TLS and the random generator | 5 |
-| DOC-004 | First board and build from source | 6 |
+| Requirement | Subject                                | Scenarios |
+| ----------- | -------------------------------------- | --------- |
+| HIL-001     | packages/zplc-hil runs the real chain  | 5         |
+| HIL-002     | Scenario engine on a board             | 7         |
+| HIL-005     | Language fixtures on a board           | 5         |
+| HIL-010     | The bench record of each learner board | 34        |
+| HIL-012     | One command per board                  | 6         |
+| HIL-014     | The bench guide                        | 6         |
+| HIL-015     | Simulation against hardware            | 7         |
+| LRN-013     | Choose a board in Learn                | 6         |
+| LRN-024     | Hardware check, labelled apart         | 7         |
+| RT-025      | RETAIN across a power cycle            | 8         |
+| LNG-004     | Breakpoints on source elements         | 8         |
+| IO-006      | Analog input and output                | 6         |
+| COM-016     | TLS and the random generator           | 5         |
+| DOC-004     | First board and build from source      | 6         |
 
 ## Results of the review
 
 Two reviewers judged the 116 scenarios on 2026-10-20 by reading the code and running what runs on a development machine (unit, C and native_sim tests, the native runtime, the emulated bench, QEMU and firmware builds). The scenarios judged "should not pass" were fixed where the fix was small and a test could prove it, and judged again on the fixed tree: the verdicts below are the final ones. The verdicts, with their reasoning and the command run, are in `tools/hil/software-review/verdicts.json`.
 
-| Verdict | Scenarios |
-|---|---|
-| Should pass | 110 |
-| Should not pass | 1 |
-| Cannot be judged in software | 5 |
+| Verdict                      | Scenarios |
+| ---------------------------- | --------- |
+| Should pass                  | 110       |
+| Should not pass              | 1         |
+| Cannot be judged in software | 5         |
 
 No physical bench run is recorded for any of these scenarios.
 
@@ -114,9 +114,9 @@ For each one, the silicon fact that a person checks at a bench:
 - **Given:** the files under packages/zplc-hil/tests/opcodes and tests/blocks
 - **When:** bun test runs the package
 - **Then:** every file reports at least one passing test, none is skipped or empty
-- **Code:** packages/zplc-hil/tests/opcodes/&#42;.test.ts; packages/zplc-hil/tests/blocks/&#42;.test.ts
+- **Code:** packages/zplc-hil/tests/opcodes/\*.test.ts; packages/zplc-hil/tests/blocks/\*.test.ts
 - **Simulation:**
-  - packages/zplc-hil/tests/**: `cd packages/zplc-hil && bun test `
+  - packages/zplc-hil/tests/\*\*: `cd packages/zplc-hil && bun test `
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
 - **Verdict:** should pass
 
@@ -278,7 +278,7 @@ For each one, the silicon fact that a person checks at a bench:
 - **Given:** work_size of boards.json: 8192 for rpi_pico, 2048 for esp32s3_devkitc
 - **When:** the chain compiles the fixtures
 - **Then:** the program fits the work memory of the board under test; a program that does not is refused at preflight, not at deploy
-- **Code:** `tools/hil/hil_steps.py:165` _build; `tools/hil/run_chain.py:64` _channels; `firmware/app/boards/boards.json` (memory.work_size)
+- **Code:** `tools/hil/hil_steps.py:165` \_build; `tools/hil/run_chain.py:64` \_channels; `firmware/app/boards/boards.json` (memory.work_size)
 - **Simulation:**
   - tools/hil/test_hil_bench.py CompilePerBoardTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k every_step_program_compiles_for_both_learner_boards`
   - tools/hil/test_hil_chain.py PreflightTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_chain.py' -k each_fixture_is_compiled_for_the_board_under_test`
@@ -515,7 +515,7 @@ For each one, the silicon fact that a person checks at a bench:
 - **Given:** a 1 ms task that drives DO0 and loops for half of the VM instruction budget
 - **When:** the scans run late three times
 - **Then:** the deadline_miss fault latches within 10 s, the scheduler enters the safe state and every output reads its safe value
-- **Code:** `tools/hil/hil_steps.py:492` overrun_fault; `tools/hil/hil_steps.py:461` _fault_leaves_outputs_off; `firmware/lib/zplc_core/src/core/zplc_sched_core.c:460` zplc_sched_core_fault; `firmware/lib/zplc_core/src/core/zplc_sched_core.c:476` zplc_sched_core_apply_safe_outputs; `firmware/lib/zplc_core/src/hal/zephyr/zplc_scheduler_zephyr.c:2142` zplc_sched_enter_safe_error
+- **Code:** `tools/hil/hil_steps.py:492` overrun_fault; `tools/hil/hil_steps.py:461` \_fault_leaves_outputs_off; `firmware/lib/zplc_core/src/core/zplc_sched_core.c:460` zplc_sched_core_fault; `firmware/lib/zplc_core/src/core/zplc_sched_core.c:476` zplc_sched_core_apply_safe_outputs; `firmware/lib/zplc_core/src/hal/zephyr/zplc_scheduler_zephyr.c:2142` zplc_sched_enter_safe_error
 - **Simulation:**
   - firmware/lib/zplc_core/tests/test_sched_core.c: `bun run test:core  (ctest --test-dir build/core-sanitized -R test_sched_core)`
   - firmware/tests/scheduler_watchdog (native_sim): `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
@@ -691,7 +691,7 @@ For each one, the silicon fact that a person checks at a bench:
 - **Given:** the Modbus RTU client enabled at 19200 baud, stored, board restarted, and a Modbus RTU server on the host on a USB-serial adapter
 - **When:** the program reads holding register 100
 - **Then:** the value read is 0x5A17 with no error
-- **Code:** `tools/hil/hil_steps.py:706` _fieldbus_rtu; `firmware/app/src/zplc_modbus.c:658` zplc_modbus_rtu_init; `firmware/app/src/zplc_modbus_client.c:266` zplc_modbus_client_poll_tags
+- **Code:** `tools/hil/hil_steps.py:706` \_fieldbus_rtu; `firmware/app/src/zplc_modbus.c:658` zplc_modbus_rtu_init; `firmware/app/src/zplc_modbus_client.c:266` zplc_modbus_client_poll_tags
 - **Simulation:**
   - tools/hil/test_hil_bench.py StepTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k modbus_rtu_on_the_pico`
   - emulated Pico bench (UART1 on a host pty): read 0x5A17: `bash tools/hil/emulator/setup.sh; tools/hil/emulator/build.sh pico; python3 tools/hil/run_chain.py rpi_pico --bench emulated`
@@ -704,7 +704,7 @@ For each one, the silicon fact that a person checks at a bench:
 - **Given:** Wi-Fi credentials stored and the loopback endpoints of zplc_loopback on the LAN
 - **When:** a register is written and read back over Modbus TCP
 - **Then:** the value read back matches the value written, with no error
-- **Code:** `tools/hil/hil_steps.py:734` _fieldbus_network; `firmware/app/src/zplc_modbus_tcp.c:122` zplc_modbus_tcp_process_adu; `firmware/app/src/shell_cmds.c:4937` wifi connect
+- **Code:** `tools/hil/hil_steps.py:734` \_fieldbus_network; `firmware/app/src/zplc_modbus_tcp.c:122` zplc_modbus_tcp_process_adu; `firmware/app/src/shell_cmds.c:4937` wifi connect
 - **Simulation:**
   - firmware/tests/modbus_tcp, modbus_client_tcp (native_sim): `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
   - tools/hil/test_hil_bench.py: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k modbus_tcp_and_mqtt_on_the_esp32s3`
@@ -718,7 +718,7 @@ For each one, the silicon fact that a person checks at a bench:
 - **Given:** the broker of zplc_loopback reachable on the host's LAN address
 - **When:** the device publishes and the host hears it back
 - **Then:** the published payload arrives at the broker with the topic and bytes sent
-- **Code:** `tools/hil/hil_steps.py:734` _fieldbus_network; `firmware/app/src/zplc_mqtt.c:2428` zplc_mqtt_fb_publish; `firmware/app/src/zplc_comm_mqtt_handler.c`
+- **Code:** `tools/hil/hil_steps.py:734` \_fieldbus_network; `firmware/app/src/zplc_mqtt.c:2428` zplc_mqtt_fb_publish; `firmware/app/src/zplc_comm_mqtt_handler.c`
 - **Simulation:**
   - firmware/tests/inbound_mqtt, mqtt_command, mqtt_broker_double (native_sim): `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
   - emulated ESP32-S3: not emulable (no Wi-Fi): none yet
@@ -1242,7 +1242,7 @@ For each one, the silicon fact that a person checks at a bench:
 - **Given:** every board of boards.json other than the two learner boards
 - **When:** check_storage_partitions.py and the Kconfig are read
 - **Then:** each board has the records' partition (zplc_nvs_partition or storage_partition; ZMS on the Nucleo-H743ZI); the option is off in every shipped profile until a hardware record exists, which is the state this requirement's 'every shipped board' meets or does not
-- **Code:** `tools/hil/check_storage_partitions.py`; `firmware/zephyr/Kconfig:427`; firmware/app/boards/&#42;.conf; `firmware/app/boards/boards.json`
+- **Code:** `tools/hil/check_storage_partitions.py`; `firmware/zephyr/Kconfig:427`; firmware/app/boards/\*.conf; `firmware/app/boards/boards.json`
 - **Simulation:**
   - tools/hil/check_storage_partitions.py: `python3 tools/hil/check_storage_partitions.py`
 - **Only silicon:** flash behaviour of each board's flash controller, none of which has been measured

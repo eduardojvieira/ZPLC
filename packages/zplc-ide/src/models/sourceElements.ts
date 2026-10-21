@@ -60,7 +60,10 @@ export const actionElement = (id: string): SourceElementId => `action:${encode(i
 
 /** The longest element id a diagnostic may carry across the main process and the window. */
 export const SOURCE_ELEMENT_ID_MAX_CHARS = 256;
-const ELEMENT_ID_FORM = new RegExp(String.raw`^(?:line|rung|block|connection|step|transition|action):[A-Za-z0-9_%.,!~*'()` + String.raw`-]+(?:\/(?:cell:\d+,\d+|element:[A-Za-z0-9_%.,!~*'()-]+|enter|fire))?$`);
+const ELEMENT_ID_FORM = new RegExp(
+  String.raw`^(?:line|rung|block|connection|step|transition|action):[A-Za-z0-9_%.,!~*'()` +
+    String.raw`-]+(?:\/(?:cell:\d+,\d+|element:[A-Za-z0-9_%.,!~*'()-]+|enter|fire))?$`,
+);
 
 /**
  * Whether a value is an element id as the ids above are written: the part before the first `:` names the kind, the ids are
@@ -72,7 +75,13 @@ export function isSourceElementId(value: unknown): value is SourceElementId {
 }
 
 const LANGUAGE_OF: Record<string, ElementLanguage> = {
-  line: 'IL', rung: 'LD', block: 'FBD', connection: 'FBD', step: 'SFC', transition: 'SFC', action: 'SFC',
+  line: 'IL',
+  rung: 'LD',
+  block: 'FBD',
+  connection: 'FBD',
+  step: 'SFC',
+  transition: 'SFC',
+  action: 'SFC',
 };
 
 export function parseElement(element: SourceElementId): ParsedElement | undefined {
@@ -94,7 +103,9 @@ export function parseElement(element: SourceElementId): ParsedElement | undefine
   if (kind !== 'rung' || !second) return undefined;
   if (second[0] === 'cell') {
     const match = /^(\d+),(\d+)$/.exec(second[1]);
-    return match ? { language: 'LD', kind: 'cell', id: `${match[1]},${match[2]}`, rung: id, row: Number(match[1]), col: Number(match[2]) } : undefined;
+    return match
+      ? { language: 'LD', kind: 'cell', id: `${match[1]},${match[2]}`, rung: id, row: Number(match[1]), col: Number(match[2]) }
+      : undefined;
   }
   return second[0] === 'element' ? { language: 'LD', kind: 'element', id: decodeURIComponent(second[1]), rung: id } : undefined;
 }
@@ -109,15 +120,24 @@ export function describeElement(element: SourceElementId): string {
   const parsed = parseElement(element);
   if (!parsed) return element;
   switch (parsed.kind) {
-    case 'line': return `IL line ${parsed.id}`;
-    case 'rung': return `LD rung '${parsed.id}'`;
-    case 'cell': return `LD rung '${parsed.rung}', cell ${parsed.row},${parsed.col}`;
-    case 'element': return `LD rung '${parsed.rung}', element '${parsed.id}'`;
-    case 'block': return `FBD block '${parsed.id}'`;
-    case 'connection': return `FBD wire '${parsed.id}'`;
-    case 'step': return `SFC step '${parsed.id}'`;
-    case 'transition': return `SFC transition '${parsed.id}' condition`;
-    case 'action': return `SFC action '${parsed.id}' body`;
+    case 'line':
+      return `IL line ${parsed.id}`;
+    case 'rung':
+      return `LD rung '${parsed.id}'`;
+    case 'cell':
+      return `LD rung '${parsed.rung}', cell ${parsed.row},${parsed.col}`;
+    case 'element':
+      return `LD rung '${parsed.rung}', element '${parsed.id}'`;
+    case 'block':
+      return `FBD block '${parsed.id}'`;
+    case 'connection':
+      return `FBD wire '${parsed.id}'`;
+    case 'step':
+      return `SFC step '${parsed.id}'`;
+    case 'transition':
+      return `SFC transition '${parsed.id}' condition`;
+    case 'action':
+      return `SFC action '${parsed.id}' body`;
   }
 }
 
@@ -148,8 +168,12 @@ export function elementAtLine(map: readonly SourceMapRange[] | undefined, line: 
   let best: SourceMapRange | undefined;
   for (const range of map ?? []) {
     if (line < range.line || line > range.endLine) continue;
-    if (!best || range.endLine - range.line < best.endLine - best.line
-      || (range.endLine - range.line === best.endLine - best.line && range.element.length > best.element.length)) best = range;
+    if (
+      !best ||
+      range.endLine - range.line < best.endLine - best.line ||
+      (range.endLine - range.line === best.endLine - best.line && range.element.length > best.element.length)
+    )
+      best = range;
   }
   return best?.element;
 }

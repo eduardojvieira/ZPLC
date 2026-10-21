@@ -62,13 +62,15 @@ export const learnHomeEn = {
   'learn.workspaceOpen': 'The workspace of this lesson is open. Edit, save, then check.',
   'learn.reset': 'Restore the starter',
   'learn.reset.title': 'Restore the starter?',
-  'learn.reset.description': 'The program and the scenario files of this lesson go back to the starter. Your changes to those files are lost. Files you added stay.',
+  'learn.reset.description':
+    'The program and the scenario files of this lesson go back to the starter. Your changes to those files are lost. Files you added stay.',
   'learn.reset.action': 'Restore the starter',
   'learn.reset.cancel': 'Keep my changes',
   'learn.reset.done': 'The starter was restored.',
   'learn.reset.failed': 'The starter could not be restored. Your files may be unchanged or partly changed; review the folder.',
   'learn.solution.title': 'Show the reference solution?',
-  'learn.solution.description': 'Your progress records that you looked at the solution of this lesson. Try the hints first if you have not.',
+  'learn.solution.description':
+    'Your progress records that you looked at the solution of this lesson. Try the hints first if you have not.',
   'learn.solution.action': 'Show the solution',
   'learn.solution.cancel': 'Keep trying',
   'learn.solution.shown': 'Reference solution',
@@ -111,7 +113,8 @@ export const learnHomeEs: Record<keyof typeof learnHomeEn, string> = {
   'learn.home.unlockAll.on': 'Todas las lecciones están desbloqueadas.',
   'learn.home.unlockAll.off': 'Las lecciones se desbloquean en el orden del curso.',
   'learn.home.hideSolutions': 'Aula: ocultar las soluciones de referencia',
-  'learn.home.hideSolutionsHint': 'Aprender no ofrece ninguna solución de referencia mientras este ajuste esté activado. El ajuste queda en este equipo.',
+  'learn.home.hideSolutionsHint':
+    'Aprender no ofrece ninguna solución de referencia mientras este ajuste esté activado. El ajuste queda en este equipo.',
   'learn.home.hideSolutions.on': 'Las soluciones de referencia están ocultas.',
   'learn.home.hideSolutions.off': 'Las soluciones de referencia se pueden pedir.',
   'learn.home.transfer': 'Su progreso',
@@ -136,11 +139,13 @@ export const learnHomeEs: Record<keyof typeof learnHomeEn, string> = {
   'learn.workspaceOpen': 'El espacio de trabajo de esta lección está abierto. Edite, guarde y luego compruebe.',
   'learn.reset': 'Restaurar el proyecto inicial',
   'learn.reset.title': '¿Restaurar el proyecto inicial?',
-  'learn.reset.description': 'El programa y los archivos de escenario de esta lección vuelven al proyecto inicial. Se pierden sus cambios en esos archivos. Los archivos que usted agregó se conservan.',
+  'learn.reset.description':
+    'El programa y los archivos de escenario de esta lección vuelven al proyecto inicial. Se pierden sus cambios en esos archivos. Los archivos que usted agregó se conservan.',
   'learn.reset.action': 'Restaurar el proyecto inicial',
   'learn.reset.cancel': 'Conservar mis cambios',
   'learn.reset.done': 'Se restauró el proyecto inicial.',
-  'learn.reset.failed': 'No se pudo restaurar el proyecto inicial. Es posible que sus archivos no hayan cambiado o que hayan cambiado en parte; revise la carpeta.',
+  'learn.reset.failed':
+    'No se pudo restaurar el proyecto inicial. Es posible que sus archivos no hayan cambiado o que hayan cambiado en parte; revise la carpeta.',
   'learn.solution.title': '¿Mostrar la solución de referencia?',
   'learn.solution.description': 'Su progreso registra que vio la solución de esta lección. Pruebe primero las pistas si no lo ha hecho.',
   'learn.solution.action': 'Mostrar la solución',

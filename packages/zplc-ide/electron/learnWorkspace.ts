@@ -28,9 +28,12 @@ export async function prepareLearnWorkspace(root: string, lessonId: string): Pro
     if (!isMissing(error)) throw error;
     await mkdir(directory, { recursive: true });
   }
-  const fresh = await readFile(path.join(directory, 'zplc.json')).then(() => false, (error: unknown) => {
-    if (isMissing(error)) return true;
-    throw error;
-  });
+  const fresh = await readFile(path.join(directory, 'zplc.json')).then(
+    () => false,
+    (error: unknown) => {
+      if (isMissing(error)) return true;
+      throw error;
+    },
+  );
   return { directory, fresh };
 }

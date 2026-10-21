@@ -24,19 +24,55 @@ export function forceValueText(value: number | boolean | string | null): string 
 const cancelLabel = (): string => t('common.cancel');
 
 export const confirmStop = (): Promise<boolean> =>
-  confirmAction({ title: t('confirm.stop.title'), description: t('confirm.stop.description'), actionLabel: t('confirm.stop.action'), cancelLabel: cancelLabel(), destructive: true });
+  confirmAction({
+    title: t('confirm.stop.title'),
+    description: t('confirm.stop.description'),
+    actionLabel: t('confirm.stop.action'),
+    cancelLabel: cancelLabel(),
+    destructive: true,
+  });
 
 export const confirmReset = (): Promise<boolean> =>
-  confirmAction({ title: t('confirm.reset.title'), description: t('confirm.reset.description'), actionLabel: t('confirm.reset.action'), cancelLabel: cancelLabel(), destructive: true });
+  confirmAction({
+    title: t('confirm.reset.title'),
+    description: t('confirm.reset.description'),
+    actionLabel: t('confirm.reset.action'),
+    cancelLabel: cancelLabel(),
+    destructive: true,
+  });
 
 export const confirmForce = (name: string, value: number | boolean | string | null): Promise<boolean> =>
-  confirmAction({ title: t('confirm.force.title', { name }), description: t('confirm.force.description', { name, value: forceValueText(value) }), actionLabel: t('confirm.force.action'), cancelLabel: cancelLabel(), destructive: true });
+  confirmAction({
+    title: t('confirm.force.title', { name }),
+    description: t('confirm.force.description', { name, value: forceValueText(value) }),
+    actionLabel: t('confirm.force.action'),
+    cancelLabel: cancelLabel(),
+    destructive: true,
+  });
 
 export const confirmForceChange = (name: string, value: number | boolean | string | null): Promise<boolean> =>
-  confirmAction({ title: t('confirm.forceChange.title', { name }), description: t('confirm.forceChange.description', { name, value: forceValueText(value) }), actionLabel: t('confirm.forceChange.action'), cancelLabel: cancelLabel(), destructive: true });
+  confirmAction({
+    title: t('confirm.forceChange.title', { name }),
+    description: t('confirm.forceChange.description', { name, value: forceValueText(value) }),
+    actionLabel: t('confirm.forceChange.action'),
+    cancelLabel: cancelLabel(),
+    destructive: true,
+  });
 
 export const confirmRelease = (name: string): Promise<boolean> =>
-  confirmAction({ title: t('confirm.release.title', { name }), description: t('confirm.release.description', { name }), actionLabel: t('confirm.release.action'), cancelLabel: cancelLabel(), destructive: true });
+  confirmAction({
+    title: t('confirm.release.title', { name }),
+    description: t('confirm.release.description', { name }),
+    actionLabel: t('confirm.release.action'),
+    cancelLabel: cancelLabel(),
+    destructive: true,
+  });
 
 export const confirmReleaseAll = (): Promise<boolean> =>
-  confirmAction({ title: t('confirm.releaseAll.title'), description: t('confirm.releaseAll.description'), actionLabel: t('confirm.releaseAll.action'), cancelLabel: cancelLabel(), destructive: true });
+  confirmAction({
+    title: t('confirm.releaseAll.title'),
+    description: t('confirm.releaseAll.description'),
+    actionLabel: t('confirm.releaseAll.action'),
+    cancelLabel: cancelLabel(),
+    destructive: true,
+  });

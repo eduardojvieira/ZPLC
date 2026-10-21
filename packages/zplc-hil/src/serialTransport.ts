@@ -7,7 +7,11 @@ const PROMPT = 'zplc:~$';
 export async function listSerialPorts(): Promise<ListedPort[]> {
   const { SerialPort } = await import('serialport');
   return (await SerialPort.list()).map((port) => ({
-    path: port.path, vendorId: port.vendorId, productId: port.productId, serialNumber: port.serialNumber, manufacturer: port.manufacturer,
+    path: port.path,
+    vendorId: port.vendorId,
+    productId: port.productId,
+    serialNumber: port.serialNumber,
+    manufacturer: port.manufacturer,
   }));
 }
 
@@ -19,18 +23,27 @@ export class SerialShellTransport implements ShellTransport {
   private buffer = '';
   private readonly listeners = new Set<(line: string) => void>();
   private pendingLine = '';
-  private readonly port: { write(data: string, callback: (error?: Error | null) => void): void; close(callback: (error?: Error | null) => void): void; isOpen: boolean };
+  private readonly port: {
+    write(data: string, callback: (error?: Error | null) => void): void;
+    close(callback: (error?: Error | null) => void): void;
+    isOpen: boolean;
+  };
 
   private constructor(port: SerialShellTransport['port']) {
     this.port = port;
   }
 
   static async open(path: string, baudRate = 115200): Promise<SerialShellTransport> {
-    if (process.env.ZPLC_HIL_FORBID_SERIAL) throw new Error('a serial port may not be opened here (ZPLC_HIL_FORBID_SERIAL is set: this is a test run)');
+    if (process.env.ZPLC_HIL_FORBID_SERIAL)
+      throw new Error('a serial port may not be opened here (ZPLC_HIL_FORBID_SERIAL is set: this is a test run)');
     const { SerialPort } = await import('serialport');
     const port = new SerialPort({ path, baudRate, autoOpen: false, dsrdtr: false, rtscts: false });
-    await new Promise<void>((resolve, reject) => { port.open((error) => (error ? reject(error) : resolve())); });
-    await new Promise<void>((resolve) => { port.set({ dtr: false, rts: false }, () => resolve()); });
+    await new Promise<void>((resolve, reject) => {
+      port.open((error) => (error ? reject(error) : resolve()));
+    });
+    await new Promise<void>((resolve) => {
+      port.set({ dtr: false, rts: false }, () => resolve());
+    });
     const transport = new SerialShellTransport(port);
     port.on('data', (chunk: Buffer) => transport.take(chunk.toString('utf8')));
     await new Promise((resolve) => setTimeout(resolve, 1000)); // the board resets when the port opens
@@ -55,19 +68,35 @@ export class SerialShellTransport implements ShellTransport {
         if (this.buffer.includes(waitFor)) {
           // an answer that comes before its prompt is given the prompt too, or the prompt would end the next command's answer early
           answered ??= Date.now();
-          if (waitFor === PROMPT || this.buffer.includes(PROMPT) || Date.now() - answered > 300) { clearInterval(timer); resolve(this.buffer); }
-        } else if (Date.now() - started > (options.timeoutMs ?? 5000)) { clearInterval(timer); reject(new Error(`no ${JSON.stringify(waitFor)} after ${line}`)); }
+          if (waitFor === PROMPT || this.buffer.includes(PROMPT) || Date.now() - answered > 300) {
+            clearInterval(timer);
+            resolve(this.buffer);
+          }
+        } else if (Date.now() - started > (options.timeoutMs ?? 5000)) {
+          clearInterval(timer);
+          reject(new Error(`no ${JSON.stringify(waitFor)} after ${line}`));
+        }
       }, 10);
-      this.port.write(`${line}\r\n`, (error) => { if (error) { clearInterval(timer); reject(error); } });
+      this.port.write(`${line}\r\n`, (error) => {
+        if (error) {
+          clearInterval(timer);
+          reject(error);
+        }
+      });
     });
   }
 
   onLine(listener: (line: string) => void): () => void {
     this.listeners.add(listener);
-    return () => { this.listeners.delete(listener); };
+    return () => {
+      this.listeners.delete(listener);
+    };
   }
 
   close(): Promise<void> {
-    return new Promise((resolve) => { if (this.port.isOpen) this.port.close(() => resolve()); else resolve(); });
+    return new Promise((resolve) => {
+      if (this.port.isOpen) this.port.close(() => resolve());
+      else resolve();
+    });
   }
 }

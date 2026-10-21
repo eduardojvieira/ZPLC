@@ -7,13 +7,26 @@ import { readFileSync } from 'node:fs';
 
 const ROOT = new URL('../../', import.meta.url).pathname;
 const BLOCKS = [
-  'MB_READ_HREG', 'MB_WRITE_HREG', 'MB_READ_COIL', 'MB_WRITE_COIL',
-  'MQTT_CONNECT', 'MQTT_PUBLISH', 'MQTT_SUBSCRIBE',
-  'AZURE_C2D_RECV', 'AZURE_DPS_PROV', 'AZURE_EG_PUB', 'AWS_FLEET_PROV', 'SPB_REBIRTH',
+  'MB_READ_HREG',
+  'MB_WRITE_HREG',
+  'MB_READ_COIL',
+  'MB_WRITE_COIL',
+  'MQTT_CONNECT',
+  'MQTT_PUBLISH',
+  'MQTT_SUBSCRIBE',
+  'AZURE_C2D_RECV',
+  'AZURE_DPS_PROV',
+  'AZURE_EG_PUB',
+  'AWS_FLEET_PROV',
+  'SPB_REBIRTH',
 ];
 const PAGES = {
   en: { path: 'docs/docs/runtime/communication-function-blocks.md', heading: '## What each block was verified against', no: 'No' },
-  es: { path: 'docs/i18n/es/docusaurus-plugin-content-docs/current/runtime/communication-function-blocks.md', heading: '## Contra qué se verificó cada bloque', no: 'No' },
+  es: {
+    path: 'docs/i18n/es/docusaurus-plugin-content-docs/current/runtime/communication-function-blocks.md',
+    heading: '## Contra qué se verificó cada bloque',
+    no: 'No',
+  },
 } as const;
 
 /** The rows of the first table under `heading`, as lists of cells. */
@@ -26,7 +39,12 @@ function table(text: string, heading: string): string[][] {
   for (const line of lines) {
     if (line.startsWith('|')) {
       inTable = true;
-      rows.push(line.split('|').slice(1, -1).map((cell) => cell.trim()));
+      rows.push(
+        line
+          .split('|')
+          .slice(1, -1)
+          .map((cell) => cell.trim()),
+      );
     } else if (inTable) {
       break;
     } else if (line.startsWith('## ')) {

@@ -51,12 +51,12 @@ export function parseNumber(s: string): number {
         if (s[1] === '\\') {
             // Escape sequences
             const escapes: Record<string, number> = {
-                'n': 10,   // newline
-                'r': 13,   // carriage return
-                't': 9,    // tab
-                '\\': 92,  // backslash
-                "'": 39,   // single quote
-                '0': 0,    // null
+                n: 10, // newline
+                r: 13, // carriage return
+                t: 9, // tab
+                '\\': 92, // backslash
+                "'": 39, // single quote
+                '0': 0, // null
             };
             if (s.length >= 4 && s[2] in escapes) {
                 return escapes[s[2]];
@@ -110,7 +110,7 @@ interface ParserState {
     instructions: Instruction[];
     labels: Map<string, Label>;
     currentAddress: number;
-    entryPoint: number | string;  // Can be number or label name until resolved
+    entryPoint: number | string; // Can be number or label name until resolved
     /** Variable tags */
     tags: TagDef[];
     /** Line of the `.ENTRY` directive, for the errors about its label */
@@ -124,7 +124,7 @@ interface ParserState {
 }
 
 /** An address or a count that has to fit the 16-bit address fields of the container */
-const ADDRESS_MAX = 0xFFFF;
+const ADDRESS_MAX = 0xffff;
 
 // =============================================================================
 // Pass 1: Parse and Collect Labels
@@ -211,11 +211,7 @@ function parseLine(line: string, lineNum: number, state: ParserState): void {
 
     if (operandSize > 0) {
         if (!operandStr) {
-            throw new AssemblerError(
-                `Instruction '${mnemonic}' requires an operand`,
-                lineNum,
-                line
-            );
+            throw new AssemblerError(`Instruction '${mnemonic}' requires an operand`, lineNum, line);
         }
 
         // Check if it's a label reference
@@ -225,11 +221,7 @@ function parseLine(line: string, lineNum: number, state: ParserState): void {
             try {
                 operandVal = parseNumber(operandStr);
             } catch (e) {
-                throw new AssemblerError(
-                    `Invalid operand '${operandStr}': ${(e as Error).message}`,
-                    lineNum,
-                    line
-                );
+                throw new AssemblerError(`Invalid operand '${operandStr}': ${(e as Error).message}`, lineNum, line);
             }
             // a value that does not fit the field is an error here, at its line (CMP-049)
             const field = operandField(opcode);
@@ -238,11 +230,7 @@ function parseLine(line: string, lineNum: number, state: ParserState): void {
             }
         }
     } else if (operandStr) {
-        throw new AssemblerError(
-            `Instruction '${mnemonic}' takes no operand`,
-            lineNum,
-            line
-        );
+        throw new AssemblerError(`Instruction '${mnemonic}' takes no operand`, lineNum, line);
     }
 
     // Create instruction
@@ -264,13 +252,13 @@ function parseLine(line: string, lineNum: number, state: ParserState): void {
         pc: state.currentAddress,
         size: instrSize,
     };
-    
+
     // Attach pending source annotation if present
     if (state.pendingSourceAnnotation) {
         mapping.sourceAnnotation = state.pendingSourceAnnotation;
-        state.pendingSourceAnnotation = null;  // Consume it
+        state.pendingSourceAnnotation = null; // Consume it
     }
-    
+
     state.instructionMappings.push(mapping);
 
     // Advance address
@@ -315,18 +303,14 @@ function directiveNumber(
         throw new AssemblerError(`Invalid value '${text}' for ${directive}: ${(error as Error).message}`, lineNum, line);
     }
     if (!Number.isInteger(value) || value < min || value > max) {
-        throw new AssemblerError(
-            `${directive} value ${value} does not fit its ${description} (${min} to ${max})`,
-            lineNum,
-            line,
-        );
+        throw new AssemblerError(`${directive} value ${value} does not fit its ${description} (${min} to ${max})`, lineNum, line);
     }
     return value;
 }
 
 /** A byte of data: `.DB` values and the NOP fill of `.ORG`. */
 function pushRaw(state: ParserState, byte: number, lineNum: number): void {
-    state.instructions.push({ opcode: byte & 0xFF, operand: null, operandLabel: null, lineNum, address: state.currentAddress, raw: true });
+    state.instructions.push({ opcode: byte & 0xff, operand: null, operandLabel: null, lineNum, address: state.currentAddress, raw: true });
     state.currentAddress += 1;
 }
 
@@ -338,12 +322,7 @@ function pushRaw(state: ParserState, byte: number, lineNum: number): void {
  * .DB v, ...     emits each value as one byte, here (.BYTE is the same)
  * .TAG a t i v   records a variable tag: address, data type, tag id, value
  */
-function handleDirective(
-    directive: string,
-    operand: string,
-    lineNum: number,
-    state: ParserState
-): void {
+function handleDirective(directive: string, operand: string, lineNum: number, state: ParserState): void {
     const line = `${directive} ${operand}`.trim();
     state.sourceText.set(lineNum, line);
     switch (directive) {
@@ -353,11 +332,7 @@ function handleDirective(
             }
             const address = directiveNumber('.ORG', operand.trim(), 0, ADDRESS_MAX, '16-bit address', lineNum, line);
             if (address < state.currentAddress) {
-                throw new AssemblerError(
-                    `.ORG ${address} moves backwards from ${state.currentAddress}`,
-                    lineNum,
-                    line
-                );
+                throw new AssemblerError(`.ORG ${address} moves backwards from ${state.currentAddress}`, lineNum, line);
             }
             while (state.currentAddress < address) {
                 pushRaw(state, Opcode.NOP, lineNum);
@@ -401,9 +376,9 @@ function handleDirective(
             }
             state.tags.push({
                 varAddr: directiveNumber('.TAG', parts[0]!, 0, ADDRESS_MAX, '16-bit address', lineNum, line),
-                varType: directiveNumber('.TAG', parts[1]!, 0, 0xFF, '8-bit data type', lineNum, line),
-                tagId: directiveNumber('.TAG', parts[2]!, 0, 0xFF, '8-bit tag id', lineNum, line),
-                value: directiveNumber('.TAG', parts[3]!, 0, 0xFFFFFFFF, '32-bit value', lineNum, line),
+                varType: directiveNumber('.TAG', parts[1]!, 0, 0xff, '8-bit data type', lineNum, line),
+                tagId: directiveNumber('.TAG', parts[2]!, 0, 0xff, '8-bit tag id', lineNum, line),
+                value: directiveNumber('.TAG', parts[3]!, 0, 0xffffffff, '32-bit value', lineNum, line),
             });
             break;
         }
@@ -438,11 +413,7 @@ function resolveLabels(state: ParserState): void {
             const label = state.labels.get(instr.operandLabel);
 
             if (!label) {
-                throw new AssemblerError(
-                    `Undefined label '${instr.operandLabel}'`,
-                    instr.lineNum,
-                    source(instr.lineNum)
-                );
+                throw new AssemblerError(`Undefined label '${instr.operandLabel}'`, instr.lineNum, source(instr.lineNum));
             }
 
             if (relative) {
@@ -453,7 +424,7 @@ function resolveLabels(state: ParserState): void {
                     throw new AssemblerError(
                         `Relative jump to '${instr.operandLabel}' out of range (${offset})`,
                         instr.lineNum,
-                        source(instr.lineNum)
+                        source(instr.lineNum),
                     );
                 }
                 instr.operand = offset;
@@ -462,16 +433,17 @@ function resolveLabels(state: ParserState): void {
                     throw new AssemblerError(
                         `${mnemonic} to '${instr.operandLabel}' at ${label.address} does not fit the 16-bit code address`,
                         instr.lineNum,
-                        source(instr.lineNum)
+                        source(instr.lineNum),
                     );
                 }
                 instr.operand = label.address;
             }
             if (label.address >= codeSize) {
                 throw new AssemblerError(
-                    `${mnemonic} to '${instr.operandLabel}': the label is after the last instruction (at ${label.address}, the code is ${codeSize} bytes)`,
+                    `${mnemonic} to '${instr.operandLabel}': the label is after the last instruction ` +
+                        `(at ${label.address}, the code is ${codeSize} bytes)`,
                     instr.lineNum,
-                    source(instr.lineNum)
+                    source(instr.lineNum),
                 );
             }
         } else if (instr.operand !== null && (relative || absolute)) {
@@ -481,7 +453,7 @@ function resolveLabels(state: ParserState): void {
                 throw new AssemblerError(
                     `${mnemonic} target ${target} is outside the code (${codeSize} bytes)`,
                     instr.lineNum,
-                    source(instr.lineNum)
+                    source(instr.lineNum),
                 );
             }
         }
@@ -491,17 +463,13 @@ function resolveLabels(state: ParserState): void {
     if (typeof state.entryPoint === 'string') {
         const label = state.labels.get(state.entryPoint);
         if (!label) {
-            throw new AssemblerError(
-                `Undefined entry point label '${state.entryPoint}'`,
-                state.entryLine,
-                source(state.entryLine)
-            );
+            throw new AssemblerError(`Undefined entry point label '${state.entryPoint}'`, state.entryLine, source(state.entryLine));
         }
         if (label.address > ADDRESS_MAX) {
             throw new AssemblerError(
                 `Entry point '${state.entryPoint}' at ${label.address} does not fit the 16-bit entry point`,
                 label.lineNum,
-                source(label.lineNum)
+                source(label.lineNum),
             );
         }
         state.entryPoint = label.address;
@@ -510,7 +478,7 @@ function resolveLabels(state: ParserState): void {
         throw new AssemblerError(
             `Entry point ${state.entryPoint} is outside the code (${codeSize} bytes)`,
             state.entryLine,
-            source(state.entryLine)
+            source(state.entryLine),
         );
     }
 }

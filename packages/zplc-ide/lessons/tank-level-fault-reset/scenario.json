@@ -5,7 +5,10 @@
   "tickMs": 10,
   "durationMs": 150,
   "events": [
-    { "atMs": 0, "set": { "TankLevel.AutoEnable": false, "TankLevel.PumpFault": false, "TankLevel.EStop": false, "TankLevel.Reset": false } },
+    {
+      "atMs": 0,
+      "set": { "TankLevel.AutoEnable": false, "TankLevel.PumpFault": false, "TankLevel.EStop": false, "TankLevel.Reset": false }
+    },
     { "atMs": 10, "set": { "TankLevel.AutoEnable": true } },
     { "atMs": 80, "set": { "TankLevel.PumpFault": true } },
     { "atMs": 90, "set": { "TankLevel.PumpFault": false, "TankLevel.Reset": false } },

@@ -85,7 +85,14 @@ export class TestRunner {
       try {
         result = await this.executeTest(test, attempt);
       } catch (error) {
-        result = { testId: test.id, status: 'error', duration: 0, attempts: attempt, frames: [], error: error instanceof Error ? error.message : String(error) };
+        result = {
+          testId: test.id,
+          status: 'error',
+          duration: 0,
+          attempts: attempt,
+          frames: [],
+          error: error instanceof Error ? error.message : String(error),
+        };
       }
       if (result.status === 'pass' || attempt > maxRetries) return result;
       await this.link.stop().catch(() => undefined);
@@ -108,19 +115,31 @@ export class TestRunner {
       // run until the program halts (a HALTED frame) or the observation window ends
       const window = this.options.settleMs ?? Math.min(test.timeout ?? 500, 5000);
       for (let waited = 0; waited < window && !frames.some((f) => f.payload.t === 'error' && f.payload.msg === 'HALTED'); waited += 10) {
-        await new Promise((resolve) => { setTimeout(resolve, 10); });
+        await new Promise((resolve) => {
+          setTimeout(resolve, 10);
+        });
       }
       const memory = new Map<number, Uint8Array>();
       for (const assertion of test.assertions) {
         if (assertion.type === 'memory' && assertion.address !== undefined) {
           const wanted = Array.isArray(assertion.expected) ? assertion.expected.length : 1;
-          memory.set(assertion.address, await this.link.peek(assertion.address, wanted)); // while it runs: STOP puts the outputs in their safe state
+          // while it runs: STOP puts the outputs in their safe state
+          memory.set(assertion.address, await this.link.peek(assertion.address, wanted));
         }
       }
       await this.link.stop();
       for (const assertion of test.assertions) {
         if (!this.judge(assertion, frames, memory)) {
-          return { testId: test.id, status: 'fail', duration: Date.now() - started, attempts: attempt, frames, failedAssertion: assertion, error: `Assertion failed: ${assertion.type}`, programSha256: compiled.sha256 };
+          return {
+            testId: test.id,
+            status: 'fail',
+            duration: Date.now() - started,
+            attempts: attempt,
+            frames,
+            failedAssertion: assertion,
+            error: `Assertion failed: ${assertion.type}`,
+            programSha256: compiled.sha256,
+          };
         }
       }
       return { testId: test.id, status: 'pass', duration: Date.now() - started, attempts: attempt, frames, programSha256: compiled.sha256 };
@@ -131,11 +150,16 @@ export class TestRunner {
 
   private judge(assertion: Assertion, frames: DebugFrame[], memory: Map<number, Uint8Array>): boolean {
     switch (assertion.type) {
-      case 'pattern': return assertion.pattern !== undefined && assertPattern(frames, assertion.pattern);
-      case 'value': return assertion.address !== undefined && assertValue(frames, assertion.address, assertion.expected);
-      case 'error': return assertion.code !== undefined && assertError(frames, assertion.code);
-      case 'no_error': return assertNoError(frames);
-      case 'timing': return assertion.timing !== undefined && assertTiming(frames, assertion.timing);
+      case 'pattern':
+        return assertion.pattern !== undefined && assertPattern(frames, assertion.pattern);
+      case 'value':
+        return assertion.address !== undefined && assertValue(frames, assertion.address, assertion.expected);
+      case 'error':
+        return assertion.code !== undefined && assertError(frames, assertion.code);
+      case 'no_error':
+        return assertNoError(frames);
+      case 'timing':
+        return assertion.timing !== undefined && assertTiming(frames, assertion.timing);
       case 'memory': {
         const read = assertion.address === undefined ? undefined : memory.get(assertion.address);
         if (!read) return false;

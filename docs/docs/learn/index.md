@@ -3,7 +3,7 @@ slug: /learn
 id: index
 title: Learn
 sidebar_label: Learn
-description: "Where to practise PLC programming with ZPLC today: the lessons in ZPLC, the bundled example projects and scenario tests."
+description: 'Where to practise PLC programming with ZPLC today: the lessons in ZPLC, the bundled example projects and scenario tests.'
 tags: [learn, lessons, examples]
 ---
 

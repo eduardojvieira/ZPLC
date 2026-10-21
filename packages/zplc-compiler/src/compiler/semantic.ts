@@ -46,12 +46,22 @@ export function checkDeclaredTypes(unit: CompilationUnit | Program): CodegenErro
     let file: string | undefined;
     const declarations: Array<{ type: STDataType; at: SourceSpan; what: string; file?: string }> = [];
     const variable = (declaration: VarDecl): void => {
-        declarations.push({ type: declaration.dataType, at: declaration.typeAt ?? declaration, what: `the declaration of '${declaration.name}'`, file });
+        declarations.push({
+            type: declaration.dataType,
+            at: declaration.typeAt ?? declaration,
+            what: `the declaration of '${declaration.name}'`,
+            file,
+        });
     };
     const method = (owner: string, declaration: MethodDecl): void => {
         for (const each of [...declaration.inputs, ...declaration.outputs, ...declaration.locals]) variable(each);
         if (declaration.returnType !== null) {
-            declarations.push({ type: declaration.returnType, at: declaration.returnTypeAt ?? declaration, what: `the return type of '${owner}.${declaration.name}'`, file });
+            declarations.push({
+                type: declaration.returnType,
+                at: declaration.returnTypeAt ?? declaration,
+                what: `the return type of '${owner}.${declaration.name}'`,
+                file,
+            });
         }
     };
     const block = (declaration: FunctionBlockDecl): void => {
@@ -76,7 +86,12 @@ export function checkDeclaredTypes(unit: CompilationUnit | Program): CodegenErro
         for (const declaration of unit.functions) {
             file = declaration.sourceRef;
             [...declaration.inputs, ...declaration.locals].forEach(variable);
-            declarations.push({ type: declaration.returnType, at: declaration.returnTypeAt ?? declaration, what: `the return type of '${declaration.name}'`, file });
+            declarations.push({
+                type: declaration.returnType,
+                at: declaration.returnTypeAt ?? declaration,
+                what: `the return type of '${declaration.name}'`,
+                file,
+            });
         }
         unit.functionBlocks.forEach(block);
         for (const iface of unit.interfaces) {
@@ -104,7 +119,14 @@ export function checkDeclaredTypes(unit: CompilationUnit | Program): CodegenErro
         const message = deferred
             ? `The type '${type}' is not supported in this release (it is planned for 2.x); it is used in ${what}`
             : `Unknown type '${type}' in ${what}`;
-        const error = new CodegenError(deferred ? 'UNSUPPORTED_CONSTRUCT' : 'UNKNOWN_TYPE', message, at.line, at.column, at.endLine, at.endColumn);
+        const error = new CodegenError(
+            deferred ? 'UNSUPPORTED_CONSTRUCT' : 'UNKNOWN_TYPE',
+            message,
+            at.line,
+            at.column,
+            at.endLine,
+            at.endColumn,
+        );
         if (where !== undefined) error.sourceRef = where;
         errors.push(error);
     };
@@ -124,8 +146,11 @@ interface CallSite {
 }
 
 /** Every expression of `statements`, outermost first, and the function-block call statements among them. */
-function visitStatements(statements: readonly Statement[], onExpression: (expr: Expression) => void,
-                         onCall: (name: string, at: SourceSpan) => void): void {
+function visitStatements(
+    statements: readonly Statement[],
+    onExpression: (expr: Expression) => void,
+    onCall: (name: string, at: SourceSpan) => void,
+): void {
     const expression = (expr: Expression | NamedArgument | null | undefined): void => {
         if (!expr) return;
         if ((expr as { kind: string }).kind === 'NamedArgument') {
@@ -135,17 +160,41 @@ function visitStatements(statements: readonly Statement[], onExpression: (expr: 
         const node = expr as Expression;
         onExpression(node);
         switch (node.kind) {
-            case 'MemberAccess': expression(node.object); break;
-            case 'ArrayAccess': expression(node.array); node.indices.forEach(expression); break;
-            case 'UnaryExpr': expression(node.operand); break;
-            case 'BinaryExpr': expression(node.left); expression(node.right); break;
-            case 'FunctionCall': node.args.forEach(expression); break;
-            case 'MethodCall': expression(node.object); node.args.forEach(expression); break;
-            case 'FBCall': node.parameters.forEach((parameter) => expression(parameter.value)); break;
-            case 'ReferenceExpr': expression(node.operand); break;
-            case 'DereferenceExpr': expression(node.operand); break;
-            case 'BitAccess': expression(node.operand); break;
-            default: break;
+            case 'MemberAccess':
+                expression(node.object);
+                break;
+            case 'ArrayAccess':
+                expression(node.array);
+                node.indices.forEach(expression);
+                break;
+            case 'UnaryExpr':
+                expression(node.operand);
+                break;
+            case 'BinaryExpr':
+                expression(node.left);
+                expression(node.right);
+                break;
+            case 'FunctionCall':
+                node.args.forEach(expression);
+                break;
+            case 'MethodCall':
+                expression(node.object);
+                node.args.forEach(expression);
+                break;
+            case 'FBCall':
+                node.parameters.forEach((parameter) => expression(parameter.value));
+                break;
+            case 'ReferenceExpr':
+                expression(node.operand);
+                break;
+            case 'DereferenceExpr':
+                expression(node.operand);
+                break;
+            case 'BitAccess':
+                expression(node.operand);
+                break;
+            default:
+                break;
         }
     };
     for (const statement of statements) {
@@ -214,11 +263,16 @@ export function checkRecursion(unit: CompilationUnit): CodegenError[] {
         const variables = new NameMap<true>();
         for (const variable of [...declaration.inputs, ...declaration.locals]) variables.set(variable.name, true);
         const sites: CallSite[] = [];
-        visitStatements(declaration.body, (expr) => {
-            if (expr.kind === 'FunctionCall' && functions.has(expr.name)) sites.push({ callee: expr.name, at: expr, file: declaration.sourceRef });
-        }, (name, at) => {
-            if (functions.has(name) && !variables.has(name)) sites.push({ callee: name, at, file: declaration.sourceRef });
-        });
+        visitStatements(
+            declaration.body,
+            (expr) => {
+                if (expr.kind === 'FunctionCall' && functions.has(expr.name))
+                    sites.push({ callee: expr.name, at: expr, file: declaration.sourceRef });
+            },
+            (name, at) => {
+                if (functions.has(name) && !variables.has(name)) sites.push({ callee: name, at, file: declaration.sourceRef });
+            },
+        );
         calls.set(declaration.name, sites);
     }
 
@@ -234,9 +288,13 @@ export function checkRecursion(unit: CompilationUnit): CodegenError[] {
             const at = path.findIndex((entry) => entry.toUpperCase() === target.name.toUpperCase());
             if (at >= 0) {
                 const cycle = [...path.slice(at), target.name];
-                const message = cycle.length === 2
-                    ? `Function '${target.name}' calls itself: a function cannot be recursive`
-                    : `Function '${target.name}' calls itself through ${cycle.slice(1, -1).map((each) => `'${each}'`).join(', ')}: a function cannot be recursive`;
+                const message =
+                    cycle.length === 2
+                        ? `Function '${target.name}' calls itself: a function cannot be recursive`
+                        : `Function '${target.name}' calls itself through ${cycle
+                              .slice(1, -1)
+                              .map((each) => `'${each}'`)
+                              .join(', ')}: a function cannot be recursive`;
                 const error = new CodegenError('RECURSIVE_CALL', message, site.at.line, site.at.column, site.at.endLine, site.at.endColumn);
                 if (site.file !== undefined) error.sourceRef = site.file;
                 errors.push(error);

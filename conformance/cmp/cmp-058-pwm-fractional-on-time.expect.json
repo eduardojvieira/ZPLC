@@ -5,14 +5,12 @@
   "note": "Not an IEC block: Q is TRUE while the elapsed time of the period is below PERIOD * DUTY; with 1000 ms and 0.0305 the on time is 30.5 ms, so Q is TRUE at 0, 10, 20 and 30 ms and FALSE at 40 ms",
   "scans": 6,
   "scanMs": 10,
-  "inputs": [
-    {"at": "%IX0.0", "type": "BOOL", "value": true, "beforeScan": 1}
-  ],
+  "inputs": [{ "at": "%IX0.0", "type": "BOOL", "value": true, "beforeScan": 1 }],
   "expect": [
-    {"at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 1},
-    {"at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 3},
-    {"at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 4},
-    {"at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 5},
-    {"at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 6}
+    { "at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 1 },
+    { "at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 3 },
+    { "at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 4 },
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 5 },
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 6 }
   ]
 }

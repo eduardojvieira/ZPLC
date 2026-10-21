@@ -26,8 +26,7 @@
 #ifdef HAVE_EMULATED_OUTPUT
 #define LED0_CONTROLLER DEVICE_DT_GET(DT_GPIO_CTLR(DT_ALIAS(led0), gpios))
 #define LED0_PIN DT_GPIO_PIN(DT_ALIAS(led0), gpios)
-#define assert_physical_output(expected, message) \
-  zassert_equal(gpio_emul_output_get(LED0_CONTROLLER, LED0_PIN), (expected), message)
+#define assert_physical_output(expected, message) zassert_equal(gpio_emul_output_get(LED0_CONTROLLER, LED0_PIN), (expected), message)
 #else
 #define assert_physical_output(expected, message) ((void)(expected))
 #endif
@@ -40,11 +39,8 @@ static size_t stored_size;
 static zplc_program_store_restore_t stored_result;
 static int stored_commit_result;
 
-static zplc_program_store_restore_t test_store_restore(uint8_t *workspace,
-                                                        size_t workspace_capacity,
-                                                        size_t *program_size) {
-  if (stored_result == ZPLC_PROGRAM_STORE_OK ||
-      stored_result == ZPLC_PROGRAM_STORE_LEGACY) {
+static zplc_program_store_restore_t test_store_restore(uint8_t *workspace, size_t workspace_capacity, size_t *program_size) {
+  if (stored_result == ZPLC_PROGRAM_STORE_OK || stored_result == ZPLC_PROGRAM_STORE_LEGACY) {
     if (stored_size > workspace_capacity)
       return ZPLC_PROGRAM_STORE_ERROR;
     memcpy(workspace, stored_program, stored_size);
@@ -55,8 +51,7 @@ static zplc_program_store_restore_t test_store_restore(uint8_t *workspace,
   return stored_result;
 }
 
-static int test_store_commit(uint8_t *workspace, size_t program_size,
-                             size_t workspace_capacity) {
+static int test_store_commit(uint8_t *workspace, size_t program_size, size_t workspace_capacity) {
   if (stored_commit_result == ZPLC_PROGRAM_STORE_COMMIT_OK) {
     zassert_true(program_size <= workspace_capacity, "valid migration input");
     memcpy(stored_program, workspace, program_size);
@@ -90,9 +85,7 @@ static void put_u32(uint8_t *data, uint32_t value) {
 }
 
 static size_t build_program(uint8_t *program, uint8_t output_value) {
-  uint8_t code[] = {OP_PUSH8, output_value, OP_STORE8,
-                    (uint8_t)ZPLC_MEM_OPI_BASE,
-                    (uint8_t)(ZPLC_MEM_OPI_BASE >> 8), OP_HALT};
+  uint8_t code[] = {OP_PUSH8, output_value, OP_STORE8, (uint8_t)ZPLC_MEM_OPI_BASE, (uint8_t)(ZPLC_MEM_OPI_BASE >> 8), OP_HALT};
   const size_t code_offset = ZPLC_FILE_HEADER_SIZE + 2U * ZPLC_SEGMENT_ENTRY_SIZE;
   const size_t task_offset = code_offset + sizeof(code);
   const size_t total = task_offset + ZPLC_TASK_DEF_SIZE;
@@ -160,8 +153,7 @@ ZTEST(program_boot_restore, test_verified_active_is_ready_idle_and_safe) {
   stored_size = build_program(stored_program, 1U);
   stored_result = ZPLC_PROGRAM_STORE_OK;
   zassert_equal(restore(staging, &loaded_size), 1, "one task restored");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE,
-                "restore never auto-starts");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "restore never auto-starts");
   zassert_equal(loaded_size, stored_size, "published after validation");
   zassert_mem_equal(staging, stored_program, stored_size, "the artifact is in the staging buffer");
   zassert_ok(zplc_sched_get_task(0, &task), "read restored task");
@@ -243,15 +235,13 @@ ZTEST(program_boot_restore, test_invalid_payload_latches_safe_error) {
   stored_program[ZPLC_FILE_HEADER_SIZE + 2U * ZPLC_SEGMENT_ENTRY_SIZE] = 0xFFU;
   refresh_program_crc(stored_program, invalid_size);
   stored_result = ZPLC_PROGRAM_STORE_OK;
-  zassert_equal(restore(staging, &loaded_size), ZPLC_BOOT_RESTORE_ERROR,
-                "invalid payload rejected");
+  zassert_equal(restore(staging, &loaded_size), ZPLC_BOOT_RESTORE_ERROR, "invalid payload rejected");
   zassert_equal(loaded_size, 0U, "nothing published");
   zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "safe error");
   zassert_true(zplc_sched_start() != 0, "start rejected after restore fault");
   zassert_equal(zplc_core_get_opi(0U), 0U, "outputs remain safe");
   stored_size = build_program(stored_program, 1U);
-  zassert_equal(restore(staging, &loaded_size), 1,
-                "verified replacement recovers empty error scheduler");
+  zassert_equal(restore(staging, &loaded_size), 1, "verified replacement recovers empty error scheduler");
   zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "recovered idle");
   zassert_ok(zplc_sched_start(), "recovered candidate may start explicitly");
   boot_teardown();
@@ -264,9 +254,7 @@ ZTEST(program_boot_restore, test_legacy_commit_unknown_latches_safe_error) {
   stored_size = build_program(stored_program, 1U);
   stored_result = ZPLC_PROGRAM_STORE_LEGACY;
   stored_commit_result = ZPLC_PROGRAM_STORE_COMMIT_UNKNOWN;
-  zassert_equal(restore(staging, &loaded_size),
-                ZPLC_BOOT_RESTORE_COMMIT_UNKNOWN,
-                "ambiguous legacy migration fails closed");
+  zassert_equal(restore(staging, &loaded_size), ZPLC_BOOT_RESTORE_COMMIT_UNKNOWN, "ambiguous legacy migration fails closed");
   zassert_equal(loaded_size, 0U, "legacy artifact never published");
   zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "safe error");
   zassert_true(zplc_sched_start() != 0, "start remains rejected");
@@ -278,8 +266,7 @@ ZTEST(program_boot_restore, test_empty_store_keeps_scheduler_safe_and_unloaded) 
   size_t loaded_size = 99U;
 
   boot_setup();
-  zassert_equal(restore(staging, &loaded_size), ZPLC_BOOT_RESTORE_EMPTY,
-                "empty store is an explicit safe boot");
+  zassert_equal(restore(staging, &loaded_size), ZPLC_BOOT_RESTORE_EMPTY, "empty store is an explicit safe boot");
   zassert_equal(loaded_size, 0U, "no program loaded");
   zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "idle safely");
   zassert_equal(zplc_core_get_opi(0U), 0U, "outputs safe");
@@ -301,8 +288,7 @@ ZTEST(program_boot_restore, test_reload_takes_the_program_from_the_store_not_fro
   /* An upload that started and never finished leaves the buffer full of something else. */
   memset(staging, 0xA5, sizeof(staging));
   loaded_size = 0U;
-  zassert_equal(zplc_program_reload_scheduler(staging, sizeof(staging), &loaded_size), 1,
-                "the program is reloaded from the store");
+  zassert_equal(zplc_program_reload_scheduler(staging, sizeof(staging), &loaded_size), 1, "the program is reloaded from the store");
   zassert_equal(loaded_size, stored_size, "its size");
   zassert_mem_equal(staging, stored_program, stored_size, "restored into the one buffer");
   zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "stopped, never auto-started");
@@ -327,8 +313,7 @@ ZTEST(program_boot_restore, test_reload_loads_what_the_store_holds_now) {
   memset(stored_program, 0, sizeof(stored_program));
   memcpy(stored_program, replacement, replacement_size);
   stored_size = replacement_size;
-  zassert_equal(zplc_program_reload_scheduler(staging, sizeof(staging), &loaded_size), 1,
-                "reload");
+  zassert_equal(zplc_program_reload_scheduler(staging, sizeof(staging), &loaded_size), 1, "reload");
   zassert_equal(loaded_size, replacement_size, "the replacement size");
   zassert_mem_equal(staging, replacement, replacement_size, "the replacement, not the first program");
   boot_teardown();
@@ -344,8 +329,7 @@ ZTEST(program_boot_restore, test_reload_stops_a_running_scheduler) {
   zassert_equal(restore(staging, &loaded_size), 1, "boot restore");
   zassert_ok(zplc_sched_start(), "start");
   zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_RUNNING, "running");
-  zassert_equal(zplc_program_reload_scheduler(staging, sizeof(staging), &loaded_size), 1,
-                "reload");
+  zassert_equal(zplc_program_reload_scheduler(staging, sizeof(staging), &loaded_size), 1, "reload");
   zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "stopped by the reload");
   zassert_equal(zplc_core_get_opi(0U), 0U, "outputs safe");
   boot_teardown();
@@ -361,18 +345,15 @@ ZTEST(program_boot_restore, test_reload_failure_latches_nothing_and_leaves_no_pr
   stored_result = ZPLC_PROGRAM_STORE_OK;
   zassert_equal(restore(staging, &loaded_size), 1, "boot restore");
   stored_result = ZPLC_PROGRAM_STORE_ERROR; /* the backend cannot be read */
-  zassert_true(zplc_program_reload_scheduler(staging, sizeof(staging), &loaded_size) < 0,
-               "a store that cannot be read is an error");
+  zassert_true(zplc_program_reload_scheduler(staging, sizeof(staging), &loaded_size) < 0, "a store that cannot be read is an error");
   zassert_equal(loaded_size, 0U, "no program is claimed");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE,
-                "the scheduler is stopped, not latched");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "the scheduler is stopped, not latched");
   zassert_true(zplc_sched_start() != 0, "there is no program to start");
   for (index = 0U; index < sizeof(staging); ++index)
     zassert_equal(staging[index], 0U, "staging is cleared");
   /* The store comes back: the same reload works, the runtime was never latched. */
   stored_result = ZPLC_PROGRAM_STORE_OK;
-  zassert_equal(zplc_program_reload_scheduler(staging, sizeof(staging), &loaded_size), 1,
-                "reload after the store recovers");
+  zassert_equal(zplc_program_reload_scheduler(staging, sizeof(staging), &loaded_size), 1, "reload after the store recovers");
   boot_teardown();
 }
 
@@ -387,8 +368,7 @@ ZTEST(program_boot_restore, test_reload_of_a_payload_that_fails_verification_is_
   stored_program[ZPLC_FILE_HEADER_SIZE + 2U * ZPLC_SEGMENT_ENTRY_SIZE] = 0xFFU;
   refresh_program_crc(stored_program, invalid_size);
   stored_result = ZPLC_PROGRAM_STORE_OK;
-  zassert_true(zplc_program_reload_scheduler(staging, sizeof(staging), &loaded_size) < 0,
-               "the verifier refuses it");
+  zassert_true(zplc_program_reload_scheduler(staging, sizeof(staging), &loaded_size) < 0, "the verifier refuses it");
   zassert_equal(loaded_size, 0U, "nothing loaded");
   zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "stopped, not latched");
   boot_teardown();
@@ -400,8 +380,7 @@ ZTEST(program_boot_restore, test_reload_of_an_empty_store_loads_nothing) {
 
   boot_setup();
   memset(staging, 0xA5, sizeof(staging));
-  zassert_equal(zplc_program_reload_scheduler(staging, sizeof(staging), &loaded_size), 0,
-                "an empty store is not an error");
+  zassert_equal(zplc_program_reload_scheduler(staging, sizeof(staging), &loaded_size), 0, "an empty store is not an error");
   zassert_equal(loaded_size, 0U, "no program");
   zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE, "idle");
   boot_teardown();
@@ -416,14 +395,11 @@ ZTEST(program_boot_restore, test_legacy_prepare_confirms_migration_before_ready)
   boot_setup();
   stored_size = build_program(stored_program, 1U);
   stored_result = ZPLC_PROGRAM_STORE_LEGACY;
-  zassert_equal(zplc_boot_restore_legacy_prepare(
-                    staging, sizeof(staging), workspace, sizeof(workspace),
-                    &program_size, &interval_ms),
+  zassert_equal(zplc_boot_restore_legacy_prepare(staging, sizeof(staging), workspace, sizeof(workspace), &program_size, &interval_ms),
                 ZPLC_BOOT_RESTORE_READY, "confirmed migration is ready");
   zassert_equal(program_size, stored_size, "legacy artifact size");
   zassert_equal(interval_ms, 10U, "legacy interval in milliseconds");
-  zassert_equal(stored_result, ZPLC_PROGRAM_STORE_OK,
-                "migration is committed before publication");
+  zassert_equal(stored_result, ZPLC_PROGRAM_STORE_OK, "migration is committed before publication");
   boot_teardown();
 }
 
@@ -439,11 +415,8 @@ ZTEST(program_boot_restore, test_legacy_prepare_commit_unknown_clears_staging) {
   stored_result = ZPLC_PROGRAM_STORE_LEGACY;
   stored_commit_result = ZPLC_PROGRAM_STORE_COMMIT_UNKNOWN;
   memset(staging, 0xA5, sizeof(staging));
-  zassert_equal(zplc_boot_restore_legacy_prepare(
-                    staging, sizeof(staging), workspace, sizeof(workspace),
-                    &program_size, &interval_ms),
-                ZPLC_BOOT_RESTORE_COMMIT_UNKNOWN,
-                "ambiguous publication stays distinguishable");
+  zassert_equal(zplc_boot_restore_legacy_prepare(staging, sizeof(staging), workspace, sizeof(workspace), &program_size, &interval_ms),
+                ZPLC_BOOT_RESTORE_COMMIT_UNKNOWN, "ambiguous publication stays distinguishable");
   zassert_equal(program_size, 0U, "nothing published");
   for (index = 0U; index < sizeof(staging); ++index)
     zassert_equal(staging[index], 0U, "staging is cleared");
@@ -456,8 +429,7 @@ ZTEST(program_boot_restore, test_legacy_prepare_commit_unknown_clears_staging) {
  * is what the reset left: a processor fault the firmware rebooted for, a fault the scheduler latched before its
  * watchdog reset the part, or nothing (a power-on).
  */
-static void boot_after_reset_that_left(const zplc_fault_record_t *record, int expect_fault_reset,
-                                       int expect_fault) {
+static void boot_after_reset_that_left(const zplc_fault_record_t *record, int expect_fault_reset, int expect_fault) {
   uint8_t staging[WORKSPACE_CAPACITY];
   const zplc_reset_report_t *report;
   zplc_task_t task;
@@ -488,9 +460,7 @@ static void boot_after_reset_that_left(const zplc_fault_record_t *record, int ex
   boot_teardown();
 }
 
-ZTEST(program_boot_restore, test_a_power_on_restores_into_stop) {
-  boot_after_reset_that_left(NULL, 0, 0);
-}
+ZTEST(program_boot_restore, test_a_power_on_restores_into_stop) { boot_after_reset_that_left(NULL, 0, 0); }
 
 ZTEST(program_boot_restore, test_a_processor_fault_restores_into_stop_and_shows_the_reason) {
   zplc_fault_record_t record;

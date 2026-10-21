@@ -40,18 +40,21 @@ Start every command with `zplc`.
 The `dbg` commands give you direct access to the execution state, memory and breakpoints.
 
 ### Breakpoints (`bp`)
+
 - `zplc dbg bp list` - Lists the active breakpoints.
 - `zplc dbg bp add <pc>` - Adds a breakpoint at the given program counter (PC) address.
 - `zplc dbg bp remove <pc>` - Removes the breakpoint at the given PC address.
 - `zplc dbg bp clear` - Clears all breakpoints.
 
 ### Forcing Variables (`force`)
+
 - `zplc dbg force list` - Lists the forced memory addresses.
 - `zplc dbg force set <addr> <hexbytes>` - Forces a memory address to hold the given bytes, overriding the program's own assignments.
 - `zplc dbg force clear <addr>` - Removes the force on one address.
 - `zplc dbg force clear_all` - Removes all forces, so the program controls every address again.
 
 ### Execution Control
+
 - `zplc dbg pause` - Pauses the scheduler between scans. The physical outputs go to their safe state; the output image and the force table are kept.
 - `zplc dbg resume` - Resumes. A scan that stopped at a breakpoint continues from where it stopped, and the first scan commit drives the outputs again from the kept image.
 - `zplc dbg step` - Finishes the scan that stopped at a breakpoint, or runs one whole scan, and pauses at the next cycle boundary or at the next breakpoint. The image shows the stepped scan; the outputs are safe.
@@ -59,6 +62,7 @@ The `dbg` commands give you direct access to the execution state, memory and bre
 `zplc stop` is not a pause: it also zeroes the output image, clears the force table and returns every task to its entry point. See [Pause, resume, step and stop](../runtime/scheduler.md#pause-resume-step-and-stop).
 
 ### Memory Introspection
+
 - `zplc dbg info` - Shows the virtual machine state and the current PC.
 - `zplc dbg mpeek addr:len[,addr:len...]` - Reads one or more blocks of memory at the given hexadecimal addresses.
 - `zplc dbg poke <addr> <value>` - Writes a value to a memory address.
@@ -73,6 +77,7 @@ through the force-aware interface: a forced address keeps its forced value. Whil
 scan and the write is applied at once.
 
 ### Ticks, Tasks and Timers
+
 - `zplc dbg ticks` - Prints the system tick count in milliseconds.
 - `zplc dbg task <task_id>` - Shows the definition and limits of one task.
 - `zplc dbg timer <addr>` - Reads the 16-byte instance of a `TON`, `TOF` or `TP` at the address and prints `IN`, `Q`, `PT` and `ET` (in milliseconds) and whether the timer is running.

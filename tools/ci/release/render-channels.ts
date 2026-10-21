@@ -60,7 +60,12 @@ export function renderCask(template: string, version: string, sums: Map<string, 
 export const pkgver = (version: string): string => version.replace(/-/g, '_');
 
 /** The PKGBUILD of a version: the .deb of each architecture, from `baseUrl` (the download address of the release by default). */
-export function renderPkgbuild(template: string, version: string, sums: Map<string, string>, baseUrl = `https://github.com/${REPOSITORY}/releases/download/v${version}`): string {
+export function renderPkgbuild(
+  template: string,
+  version: string,
+  sums: Map<string, string>,
+  baseUrl = `https://github.com/${REPOSITORY}/releases/download/v${version}`,
+): string {
   return fill(template, {
     VERSION: version,
     PKGVER: pkgver(version),
@@ -71,12 +76,26 @@ export function renderPkgbuild(template: string, version: string, sums: Map<stri
 }
 
 if (import.meta.main) {
-  const { values } = parseArgs({ args: Bun.argv.slice(2), options: { version: { type: 'string' }, sums: { type: 'string' }, cask: { type: 'string' }, pkgbuild: { type: 'string' }, 'base-url': { type: 'string' } } });
+  const { values } = parseArgs({
+    args: Bun.argv.slice(2),
+    options: {
+      version: { type: 'string' },
+      sums: { type: 'string' },
+      cask: { type: 'string' },
+      pkgbuild: { type: 'string' },
+      'base-url': { type: 'string' },
+    },
+  });
   if (!values.version || !values.sums || (!values.cask && !values.pkgbuild)) {
     console.error('usage: render-channels.ts --version <v> --sums <SHA256SUMS> [--cask <file>] [--pkgbuild <file>] [--base-url <address>]');
     process.exit(2);
   }
   const sums = parseSums(readFileSync(values.sums, 'utf8'));
-  if (values.cask) writeFileSync(values.cask, renderCask(readFileSync(join(ROOT, 'packaging/homebrew/zplc.rb.in'), 'utf8'), values.version, sums));
-  if (values.pkgbuild) writeFileSync(values.pkgbuild, renderPkgbuild(readFileSync(join(ROOT, 'packaging/aur/PKGBUILD.in'), 'utf8'), values.version, sums, values['base-url']));
+  if (values.cask)
+    writeFileSync(values.cask, renderCask(readFileSync(join(ROOT, 'packaging/homebrew/zplc.rb.in'), 'utf8'), values.version, sums));
+  if (values.pkgbuild)
+    writeFileSync(
+      values.pkgbuild,
+      renderPkgbuild(readFileSync(join(ROOT, 'packaging/aur/PKGBUILD.in'), 'utf8'), values.version, sums, values['base-url']),
+    );
 }

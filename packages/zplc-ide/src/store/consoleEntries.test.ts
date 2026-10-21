@@ -15,10 +15,13 @@ function createExistingEntry(index: number): ConsoleEntry {
 
 describe('appendConsoleEntries', () => {
   it('appends multiple entries in one pass', () => {
-    const result = appendConsoleEntries([], [
-      { type: 'info', message: 'a', source: 'device' },
-      { type: 'info', message: 'b', source: 'runtime' },
-    ]);
+    const result = appendConsoleEntries(
+      [],
+      [
+        { type: 'info', message: 'a', source: 'device' },
+        { type: 'info', message: 'b', source: 'runtime' },
+      ],
+    );
 
     expect(result).toHaveLength(2);
     expect(result.map((entry) => entry.message)).toEqual(['a', 'b']);
@@ -26,9 +29,7 @@ describe('appendConsoleEntries', () => {
 
   it('caps console history to the newest entries', () => {
     const existing = Array.from({ length: MAX_CONSOLE_ENTRIES }, (_, index) => createExistingEntry(index));
-    const result = appendConsoleEntries(existing, [
-      { type: 'info', message: 'new-entry', source: 'device' },
-    ]);
+    const result = appendConsoleEntries(existing, [{ type: 'info', message: 'new-entry', source: 'device' }]);
 
     expect(result).toHaveLength(MAX_CONSOLE_ENTRIES);
     expect(result[0]?.message).toBe('entry-1');

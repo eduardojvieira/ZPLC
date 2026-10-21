@@ -1,30 +1,18 @@
 /**
  * ControllerView Component
- * 
+ *
  * Sidebar panel showing connected device information:
  * - Device info (board, version, capabilities)
  * - State and cycle count
  * - Task list with cycle counts
  * - Memory configuration
  * - OPI/IPI preview
- * 
+ *
  * Uses the global connectionManager for status updates.
  */
 
 import { useState, useEffect } from 'react';
-import {
-  Cpu,
-  Activity,
-  HardDrive,
-  Wifi,
-  WifiOff,
-  RefreshCw,
-  Clock,
-  Layers,
-  Radio,
-  ChevronDown,
-  ChevronRight,
-} from 'lucide-react';
+import { Cpu, Activity, HardDrive, Wifi, WifiOff, RefreshCw, Clock, Layers, Radio, ChevronDown, ChevronRight } from 'lucide-react';
 import { connectionManager, type LinkInfo } from '../runtime/connectionManager';
 import type { CommunicationMapEntry, MqttRuntimeStatus, SystemInfo, StatusInfo } from '../runtime/serialAdapter';
 import { Button, NumberField, SignalValue } from '../ui';
@@ -41,7 +29,7 @@ export function ControllerView() {
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
   const [linkInfo, setLinkInfo] = useState<LinkInfo>(connectionManager.linkInfo);
   const [modbusDrafts, setModbusDrafts] = useState<Record<number, string>>({});
-  
+
   // UI state
   const [expandedSections, setExpandedSections] = useState({
     info: true,
@@ -110,7 +98,7 @@ export function ControllerView() {
    * Toggle section expansion
    */
   const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+    setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
   /**
@@ -142,12 +130,8 @@ export function ControllerView() {
     return (
       <div className="p-4 text-center">
         <WifiOff size={32} className="mx-auto mb-2 text-[var(--color-surface-500)]" />
-        <p className="text-sm text-[var(--color-surface-400)]">
-          {t('controller.noDeviceConnected')}
-        </p>
-        <p className="text-xs text-[var(--color-surface-400)] mt-1">
-          {t('controller.useToolbarConnect')}
-        </p>
+        <p className="text-sm text-[var(--color-surface-400)]">{t('controller.noDeviceConnected')}</p>
+        <p className="text-xs text-[var(--color-surface-400)] mt-1">{t('controller.useToolbarConnect')}</p>
       </div>
     );
   }
@@ -157,9 +141,7 @@ export function ControllerView() {
     return (
       <div className="p-4 text-center">
         <RefreshCw size={24} className="mx-auto mb-2 text-[var(--color-accent-blue)] animate-spin motion-reduce:animate-none" />
-        <p className="text-sm text-[var(--color-surface-300)]">
-          {t('controller.fetchingDeviceInfo')}
-        </p>
+        <p className="text-sm text-[var(--color-surface-300)]">{t('controller.fetchingDeviceInfo')}</p>
       </div>
     );
   }
@@ -169,12 +151,8 @@ export function ControllerView() {
       {/* Connection Status Header */}
       <div className="flex items-center gap-2 p-3 bg-[var(--color-surface-700)] border-b border-[var(--color-surface-600)]">
         <Wifi size={16} className="text-[var(--color-accent-green)]" />
-        <span className="font-medium text-[var(--color-surface-100)]">
-          {systemInfo?.board || t('controller.zplcDevice')}
-        </span>
-        {!connectionManager.passthroughMode && (
-          <Activity size={12} className="ml-auto text-[var(--color-accent-blue)]" />
-        )}
+        <span className="font-medium text-[var(--color-surface-100)]">{systemInfo?.board || t('controller.zplcDevice')}</span>
+        {!connectionManager.passthroughMode && <Activity size={12} className="ml-auto text-[var(--color-accent-blue)]" />}
         {connectionManager.passthroughMode && (
           <span className="ml-auto text-xs px-1.5 py-0.5 rounded bg-[var(--color-accent-purple)]/20 text-[var(--color-accent-purple)]">
             {t('controller.terminal')}
@@ -184,12 +162,18 @@ export function ControllerView() {
 
       {/* Device Info Section */}
       <div className="border-b border-[var(--color-surface-700)]">
-        <Button variant="secondary" size="sm" aria-expanded={expandedSections.info === true} onClick={() => toggleSection('info')} className="w-full justify-start text-left">
+        <Button
+          variant="secondary"
+          size="sm"
+          aria-expanded={expandedSections.info === true}
+          onClick={() => toggleSection('info')}
+          className="w-full justify-start text-left"
+        >
           {expandedSections.info ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           <Cpu size={14} className="text-[var(--color-accent-purple)]" />
           <span className="text-[var(--color-surface-200)]">{t('controller.deviceInfo')}</span>
         </Button>
-        
+
         {expandedSections.info && systemInfo && (
           <div className="px-4 pb-3 space-y-1.5 text-xs">
             <div className="flex justify-between">
@@ -206,9 +190,7 @@ export function ControllerView() {
             </div>
             <div className="flex justify-between">
               <span className="text-[var(--color-surface-400)]">{t('console.uptime')}</span>
-              <span className="text-[var(--color-surface-200)]">
-                {formatUptime(status?.uptime_ms || systemInfo.uptime_ms)}
-              </span>
+              <span className="text-[var(--color-surface-200)]">{formatUptime(status?.uptime_ms || systemInfo.uptime_ms)}</span>
             </div>
             {/* How the firmware is talked to and how its state is known (COM-025, COM-029) */}
             {linkInfo.firmware && (
@@ -217,7 +199,9 @@ export function ControllerView() {
                 <span className="text-[var(--color-surface-200)]" data-testid="device-link-protocol">
                   {linkInfo.firmware.protocol.kind === 'framed'
                     ? t('controller.framedProtocol', { version: linkInfo.firmware.protocol.version })
-                    : linkInfo.firmware.protocol.kind === 'shell-only' ? t('controller.textShellOlderProtocol') : t('controller.unknown')}
+                    : linkInfo.firmware.protocol.kind === 'shell-only'
+                      ? t('controller.textShellOlderProtocol')
+                      : t('controller.unknown')}
                 </span>
               </div>
             )}
@@ -264,7 +248,10 @@ export function ControllerView() {
         <>
           {/* State indicator */}
           <div className="px-4 py-2 flex items-center gap-2 border-b border-[var(--color-surface-700)]">
-            <SignalValue tone={status.state === 'RUNNING' ? 'true' : status.state === 'IDLE' ? 'false' : 'unknown'} className="text-xs font-medium uppercase">
+            <SignalValue
+              tone={status.state === 'RUNNING' ? 'true' : status.state === 'IDLE' ? 'false' : 'unknown'}
+              className="text-xs font-medium uppercase"
+            >
               {status.state || t('controller.unknown2')}
             </SignalValue>
             <span className="ml-auto text-xs text-[var(--color-surface-400)]">
@@ -275,15 +262,19 @@ export function ControllerView() {
           {/* Tasks Section */}
           {status.tasks && status.tasks.length > 0 && (
             <div className="border-b border-[var(--color-surface-700)]">
-              <Button variant="secondary" size="sm" aria-expanded={expandedSections.tasks === true} onClick={() => toggleSection('tasks')} className="w-full justify-start text-left">
+              <Button
+                variant="secondary"
+                size="sm"
+                aria-expanded={expandedSections.tasks === true}
+                onClick={() => toggleSection('tasks')}
+                className="w-full justify-start text-left"
+              >
                 {expandedSections.tasks ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                 <Layers size={14} className="text-[var(--color-accent-blue)]" />
                 <span className="text-[var(--color-surface-200)]">{t('deploy.row.tasks')}</span>
-                <span className="ml-auto text-xs text-[var(--color-surface-400)]">
-                  {status.tasks.length}
-                </span>
+                <span className="ml-auto text-xs text-[var(--color-surface-400)]">{status.tasks.length}</span>
               </Button>
-              
+
               {expandedSections.tasks && (
                 <div className="px-2 pb-2">
                   <table className="w-full text-xs">
@@ -297,22 +288,13 @@ export function ControllerView() {
                     </thead>
                     <tbody>
                       {status.tasks.map((task, idx) => (
-                        <tr 
-                          key={idx}
-                          className="hover:bg-[var(--color-surface-700)]"
-                        >
-                          <td className="px-2 py-1 text-[var(--color-surface-200)]">
-                            {task.id}
-                          </td>
-                          <td className="px-2 py-1 text-[var(--color-surface-300)]">
-                            {task.prio}
-                          </td>
+                        <tr key={idx} className="hover:bg-[var(--color-surface-700)]">
+                          <td className="px-2 py-1 text-[var(--color-surface-200)]">{task.id}</td>
+                          <td className="px-2 py-1 text-[var(--color-surface-300)]">{task.prio}</td>
                           <td className="px-2 py-1 text-right text-[var(--color-surface-300)]">
                             {t('controller.ms', { value: (task.interval_us / 1000).toFixed(0) })}
                           </td>
-                          <td className="px-2 py-1 text-right text-[var(--color-surface-200)]">
-                            {task.cycles.toLocaleString()}
-                          </td>
+                          <td className="px-2 py-1 text-right text-[var(--color-surface-200)]">{task.cycles.toLocaleString()}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -323,13 +305,17 @@ export function ControllerView() {
           )}
 
           <div className="border-b border-[var(--color-surface-700)]">
-            <Button variant="secondary" size="sm" aria-expanded={expandedSections.communication === true} onClick={() => toggleSection('communication')} className="w-full justify-start text-left">
+            <Button
+              variant="secondary"
+              size="sm"
+              aria-expanded={expandedSections.communication === true}
+              onClick={() => toggleSection('communication')}
+              className="w-full justify-start text-left"
+            >
               {expandedSections.communication ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               <Radio size={14} className="text-[var(--color-accent-green)]" />
               <span className="text-[var(--color-surface-200)]">{t('navigator.group.communication')}</span>
-              <span className="ml-auto text-xs text-[var(--color-surface-400)]">
-                {communicationMap.length}
-              </span>
+              <span className="ml-auto text-xs text-[var(--color-surface-400)]">{communicationMap.length}</span>
             </Button>
 
             {expandedSections.communication && (
@@ -341,29 +327,43 @@ export function ControllerView() {
                 </div>
 
                 {communicationMap.length === 0 ? (
-                  <p className="px-2 py-2 text-xs text-[var(--color-surface-400)]">
-                    {t('controller.noRuntimeCommunicationBindings')}
-                  </p>
+                  <p className="px-2 py-2 text-xs text-[var(--color-surface-400)]">{t('controller.noRuntimeCommunicationBindings')}</p>
                 ) : (
                   <div className="space-y-2">
                     {communicationMap.map((entry) => (
                       <div key={entry.index} className="rounded border border-[var(--color-surface-700)] p-2 text-xs">
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-[var(--color-surface-200)]">#{entry.index}</span>
-                          <span className="rounded bg-[var(--color-surface-700)] px-1.5 py-0.5 uppercase text-[11px] text-[var(--text-secondary)]">
+                          <span
+                            className={
+                              'rounded bg-[var(--color-surface-700)] px-1.5 py-0.5 uppercase text-[11px] ' + 'text-[var(--text-secondary)]'
+                            }
+                          >
                             {entry.kind}
                           </span>
                           <span className="text-[var(--color-surface-400)]">{entry.type}</span>
                           <span className="text-[var(--color-surface-500)]">{t('controller.x', { width: entry.width })}</span>
-                          <span className="ml-auto font-mono text-[var(--color-surface-400)]">{t('console.0x', { value: entry.var_addr.toString(16).padStart(4, '0') })}</span>
+                          <span className="ml-auto font-mono text-[var(--color-surface-400)]">
+                            {t('console.0x', { value: entry.var_addr.toString(16).padStart(4, '0') })}
+                          </span>
                         </div>
 
                         {entry.kind === 'modbus' ? (
                           <div className="mt-2 flex items-center gap-2">
                             <span className="text-[var(--color-surface-500)]">
-                              {t('controller.serverMap', { effective_value: entry.effective_value, value: entry.width > 1 ? `-${entry.effective_value + entry.width - 1}` : '' })}
+                              {t('controller.serverMap', {
+                                effective_value: entry.effective_value,
+                                value: entry.width > 1 ? `-${entry.effective_value + entry.width - 1}` : '',
+                              })}
                             </span>
-                            <NumberField aria-label={t('controller.overrideValueOfBinding', { index: entry.index })} min={1} max={65535 - entry.width + 1} value={modbusDrafts[entry.index] ?? String(entry.effective_value)} onChange={(e) => setModbusDrafts((prev) => ({ ...prev, [entry.index]: e.target.value }))} className="w-24" />
+                            <NumberField
+                              aria-label={t('controller.overrideValueOfBinding', { index: entry.index })}
+                              min={1}
+                              max={65535 - entry.width + 1}
+                              value={modbusDrafts[entry.index] ?? String(entry.effective_value)}
+                              onChange={(e) => setModbusDrafts((prev) => ({ ...prev, [entry.index]: e.target.value }))}
+                              className="w-24"
+                            />
                             <Button variant="primary" size="sm" onClick={() => void applyModbusOverride(entry)}>
                               {t('controller.apply')}
                             </Button>
@@ -387,7 +387,13 @@ export function ControllerView() {
           </div>
 
           <div className="border-b border-[var(--color-surface-700)]">
-            <Button variant="secondary" size="sm" aria-expanded={expandedSections.mqtt === true} onClick={() => toggleSection('mqtt')} className="w-full justify-start text-left">
+            <Button
+              variant="secondary"
+              size="sm"
+              aria-expanded={expandedSections.mqtt === true}
+              onClick={() => toggleSection('mqtt')}
+              className="w-full justify-start text-left"
+            >
               {expandedSections.mqtt ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               <Radio size={14} className="text-[var(--color-accent-blue)]" />
               <span className="text-[var(--color-surface-200)]">{t('controller.mqttRuntime')}</span>
@@ -398,70 +404,108 @@ export function ControllerView() {
 
             {expandedSections.mqtt && mqttStatus && (
               <div className="px-4 pb-3 space-y-1.5 text-xs">
-                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">{t('mqtt.broker')}</span><span className="text-[var(--color-surface-200)]">{mqttStatus.broker || '-'}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">{t('mqtt.clientId')}</span><span className="text-[var(--color-surface-200)]">{mqttStatus.client_id || '-'}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">{t('mqtt.profile')}</span><span className="text-[var(--color-surface-200)]">{mqttStatus.profile}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">{t('controller.protocol')}</span><span className="text-[var(--color-surface-200)]">{mqttStatus.protocol === 0 ? '3.1.1' : '5.0'}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">{t('mqtt.transport')}</span><span className="text-[var(--color-surface-200)]">{['tcp', 'tls', 'ws', 'wss'][mqttStatus.transport] ?? mqttStatus.transport}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">{t('controller.qos')}</span><span className="text-[var(--color-surface-200)]">{t('controller.pubSub', { publish_qos: mqttStatus.publish_qos, subscribe_qos: mqttStatus.subscribe_qos })}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">{t('controller.session')}</span><span className="text-[var(--color-surface-200)]">{mqttStatus.session_present ? t('controller.present') : t('controller.new')}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">{t('controller.flags')}</span><span className="text-[var(--color-surface-200)]">{mqttStatus.retain_enabled ? t('controller.retain') : ''}{mqttStatus.lwt_enabled ? t('controller.lwt') : t('controller.plain')}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">{t('controller.lastError')}</span><span className="text-[var(--color-surface-200)]">{mqttStatus.last_error}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">{t('controller.lastPublish')}</span><span className="text-[var(--color-surface-200)]">{t('controller.ms2', { last_publish_ms: mqttStatus.last_publish_ms })}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">{t('controller.backOff')}</span><span className="text-[var(--color-surface-200)]">{t('controller.s', { reconnect_backoff_s: mqttStatus.reconnect_backoff_s })}</span></div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--color-surface-400)]">{t('mqtt.broker')}</span>
+                  <span className="text-[var(--color-surface-200)]">{mqttStatus.broker || '-'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--color-surface-400)]">{t('mqtt.clientId')}</span>
+                  <span className="text-[var(--color-surface-200)]">{mqttStatus.client_id || '-'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--color-surface-400)]">{t('mqtt.profile')}</span>
+                  <span className="text-[var(--color-surface-200)]">{mqttStatus.profile}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--color-surface-400)]">{t('controller.protocol')}</span>
+                  <span className="text-[var(--color-surface-200)]">{mqttStatus.protocol === 0 ? '3.1.1' : '5.0'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--color-surface-400)]">{t('mqtt.transport')}</span>
+                  <span className="text-[var(--color-surface-200)]">
+                    {['tcp', 'tls', 'ws', 'wss'][mqttStatus.transport] ?? mqttStatus.transport}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--color-surface-400)]">{t('controller.qos')}</span>
+                  <span className="text-[var(--color-surface-200)]">
+                    {t('controller.pubSub', { publish_qos: mqttStatus.publish_qos, subscribe_qos: mqttStatus.subscribe_qos })}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--color-surface-400)]">{t('controller.session')}</span>
+                  <span className="text-[var(--color-surface-200)]">
+                    {mqttStatus.session_present ? t('controller.present') : t('controller.new')}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--color-surface-400)]">{t('controller.flags')}</span>
+                  <span className="text-[var(--color-surface-200)]">
+                    {mqttStatus.retain_enabled ? t('controller.retain') : ''}
+                    {mqttStatus.lwt_enabled ? t('controller.lwt') : t('controller.plain')}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--color-surface-400)]">{t('controller.lastError')}</span>
+                  <span className="text-[var(--color-surface-200)]">{mqttStatus.last_error}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--color-surface-400)]">{t('controller.lastPublish')}</span>
+                  <span className="text-[var(--color-surface-200)]">
+                    {t('controller.ms2', { last_publish_ms: mqttStatus.last_publish_ms })}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--color-surface-400)]">{t('controller.backOff')}</span>
+                  <span className="text-[var(--color-surface-200)]">
+                    {t('controller.s', { reconnect_backoff_s: mqttStatus.reconnect_backoff_s })}
+                  </span>
+                </div>
               </div>
             )}
           </div>
 
           {/* Memory Section */}
           <div className="border-b border-[var(--color-surface-700)]">
-            <Button variant="secondary" size="sm" aria-expanded={expandedSections.memory === true} onClick={() => toggleSection('memory')} className="w-full justify-start text-left">
+            <Button
+              variant="secondary"
+              size="sm"
+              aria-expanded={expandedSections.memory === true}
+              onClick={() => toggleSection('memory')}
+              className="w-full justify-start text-left"
+            >
               {expandedSections.memory ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               <HardDrive size={14} className="text-[var(--color-accent-yellow)]" />
               <span className="text-[var(--color-surface-200)]">{t('controller.memory')}</span>
             </Button>
-            
+
             {expandedSections.memory && systemInfo && (
               <div className="px-4 pb-3 space-y-2 text-xs">
                 <div>
                   <div className="flex justify-between mb-1">
                     <span className="text-[var(--color-surface-400)]">{t('controller.workMemory')}</span>
-                    <span className="text-[var(--color-surface-200)]">
-                      {formatBytes(systemInfo.memory.work_size)}
-                    </span>
+                    <span className="text-[var(--color-surface-200)]">{formatBytes(systemInfo.memory.work_size)}</span>
                   </div>
                   <div className="h-1.5 bg-[var(--color-surface-700)] rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-[var(--color-accent-blue)]" 
-                      style={{ width: '25%' }} 
-                    />
+                    <div className="h-full bg-[var(--color-accent-blue)]" style={{ width: '25%' }} />
                   </div>
                 </div>
                 <div>
                   <div className="flex justify-between mb-1">
                     <span className="text-[var(--color-surface-400)]">{t('controller.retainMemory')}</span>
-                    <span className="text-[var(--color-surface-200)]">
-                      {formatBytes(systemInfo.memory.retain_size)}
-                    </span>
+                    <span className="text-[var(--color-surface-200)]">{formatBytes(systemInfo.memory.retain_size)}</span>
                   </div>
                   <div className="h-1.5 bg-[var(--color-surface-700)] rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-[var(--color-accent-purple)]" 
-                      style={{ width: '10%' }} 
-                    />
+                    <div className="h-full bg-[var(--color-accent-purple)]" style={{ width: '10%' }} />
                   </div>
                 </div>
                 <div className="flex justify-between pt-1">
                   <span className="text-[var(--color-surface-400)]">{t('controller.ipiSize')}</span>
-                  <span className="text-[var(--color-surface-200)]">
-                    {formatBytes(systemInfo.memory.ipi_size)}
-                  </span>
+                  <span className="text-[var(--color-surface-200)]">{formatBytes(systemInfo.memory.ipi_size)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[var(--color-surface-400)]">{t('controller.opiSize')}</span>
-                  <span className="text-[var(--color-surface-200)]">
-                    {formatBytes(systemInfo.memory.opi_size)}
-                  </span>
+                  <span className="text-[var(--color-surface-200)]">{formatBytes(systemInfo.memory.opi_size)}</span>
                 </div>
               </div>
             )}
@@ -469,12 +513,18 @@ export function ControllerView() {
 
           {/* I/O Preview Section */}
           <div className="border-b border-[var(--color-surface-700)]">
-            <Button variant="secondary" size="sm" aria-expanded={expandedSections.io === true} onClick={() => toggleSection('io')} className="w-full justify-start text-left">
+            <Button
+              variant="secondary"
+              size="sm"
+              aria-expanded={expandedSections.io === true}
+              onClick={() => toggleSection('io')}
+              className="w-full justify-start text-left"
+            >
               {expandedSections.io ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               <Activity size={14} className="text-[var(--color-accent-green)]" />
               <span className="text-[var(--color-surface-200)]">{t('controller.iOPreview')}</span>
             </Button>
-            
+
             {expandedSections.io && status.opi && (
               <div className="px-4 pb-3 text-xs">
                 <div className="mb-2 text-[var(--color-surface-400)]">{t('controller.opiFirst8Bytes')}</div>

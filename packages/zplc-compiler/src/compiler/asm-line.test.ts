@@ -36,7 +36,14 @@ describe('what is written is checked when it is written (CMP-048)', () => {
     });
 
     test('blank lines, comments, labels and the .TAG directive are accepted', () => {
-        for (const line of ['', '; === header ===', '    ; a note', 'loop_1:', 'loop_1:             ; [elapsed]', '.TAG 0x2000 4 1 0  ; x {publish}']) {
+        for (const line of [
+            '',
+            '; === header ===',
+            '    ; a note',
+            'loop_1:',
+            'loop_1:             ; [elapsed]',
+            '.TAG 0x2000 4 1 0  ; x {publish}',
+        ]) {
             expect(asmLineProblem(line)).toBeUndefined();
         }
     });

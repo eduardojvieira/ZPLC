@@ -21,7 +21,10 @@ const LABELS = {
 const VERDICTS = ['should_pass', 'should_not_pass', 'cannot_judge_in_software'] as const;
 type Verdict = (typeof VERDICTS)[number];
 type Entry = {
-  verdict: Verdict; judge: 'a' | 'b'; reasoning: string; evidence_run: string;
+  verdict: Verdict;
+  judge: 'a' | 'b';
+  reasoning: string;
+  evidence_run: string;
   rejudged?: { date: string; verdict: Verdict; reasoning: string; evidence_run: string };
 };
 
@@ -29,7 +32,9 @@ const scenarios = JSON.parse(readFileSync(join(REVIEW, 'scenarios.json'), 'utf8'
   requirements: Array<{ id: string; scenarios: Array<{ id: string; silicon_only: string }> }>;
 };
 const all = scenarios.requirements.flatMap((requirement) => requirement.scenarios);
-const verdicts = existsSync(join(REVIEW, 'verdicts.json')) ? (JSON.parse(readFileSync(join(REVIEW, 'verdicts.json'), 'utf8')) as Record<string, Entry>) : {};
+const verdicts = existsSync(join(REVIEW, 'verdicts.json'))
+  ? (JSON.parse(readFileSync(join(REVIEW, 'verdicts.json'), 'utf8')) as Record<string, Entry>)
+  : {};
 /** The final verdict of an entry: the re-judged one when the scenario was judged again. */
 const finalVerdict = (entry: Entry): Verdict => entry.rejudged?.verdict ?? entry.verdict;
 
@@ -56,23 +61,29 @@ describe('the software review of the hardware requirements (HIL-001, HIL-002, HI
     expect(cannot.length).toBeGreaterThan(0);
     for (const scenario of cannot) {
       // "nothing beyond the software" is the statement that a scenario has no silicon fact, so it cannot back this verdict
-      expect({ id: scenario.id, fact: scenario.silicon_only.length > 20 && !/^nothing beyond the software/.test(scenario.silicon_only) }).toEqual({ id: scenario.id, fact: true });
+      expect({
+        id: scenario.id,
+        fact: scenario.silicon_only.length > 20 && !/^nothing beyond the software/.test(scenario.silicon_only),
+      }).toEqual({ id: scenario.id, fact: true });
     }
   });
 
   for (const language of ['en', 'es'] as const) {
-    test(`the ${language} page counts what verdicts.json holds, lists each scenario that cannot be judged and each that should not pass`, () => {
-      const page = readFileSync(PAGES[language], 'utf8');
-      const counts = (verdict: Verdict) => all.filter((scenario) => finalVerdict(verdicts[scenario.id]) === verdict).length;
-      for (const verdict of VERDICTS) {
-        const row = page.match(new RegExp(`^\\| ${LABELS[language][verdict]}\\s*\\| (\\d+)\\s*\\|$`, 'm'));
-        expect({ language, verdict, count: row ? Number(row[1]) : null }).toEqual({ language, verdict, count: counts(verdict) });
-      }
-      for (const scenario of all) {
-        const verdict = finalVerdict(verdicts[scenario.id]);
-        if (verdict === 'should_pass') continue;
-        expect({ id: scenario.id, listed: page.includes(`**${scenario.id}**`) }).toEqual({ id: scenario.id, listed: true });
-      }
-    });
+    test(
+      `the ${language} page counts what verdicts.json holds, lists each scenario that cannot be judged and each that should not ` + `pass`,
+      () => {
+        const page = readFileSync(PAGES[language], 'utf8');
+        const counts = (verdict: Verdict) => all.filter((scenario) => finalVerdict(verdicts[scenario.id]) === verdict).length;
+        for (const verdict of VERDICTS) {
+          const row = page.match(new RegExp(`^\\| ${LABELS[language][verdict]}\\s*\\| (\\d+)\\s*\\|$`, 'm'));
+          expect({ language, verdict, count: row ? Number(row[1]) : null }).toEqual({ language, verdict, count: counts(verdict) });
+        }
+        for (const scenario of all) {
+          const verdict = finalVerdict(verdicts[scenario.id]);
+          if (verdict === 'should_pass') continue;
+          expect({ id: scenario.id, listed: page.includes(`**${scenario.id}**`) }).toEqual({ id: scenario.id, listed: true });
+        }
+      },
+    );
   }
 });

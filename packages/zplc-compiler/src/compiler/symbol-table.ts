@@ -12,7 +12,22 @@
  */
 
 import { getDataTypeSize, getArrayElementCount, isArrayType, DataType, NameMap, sameName, VarSection } from './ast.ts';
-import type { STDataType, DataTypeValue, VarSectionValue, IOAddress, VarDecl, Program, ArrayType, PointerType, CompilationUnit, Expression, Statement, InitialValue, TypeDefinition, FunctionBlockDecl } from './ast.ts';
+import type {
+    STDataType,
+    DataTypeValue,
+    VarSectionValue,
+    IOAddress,
+    VarDecl,
+    Program,
+    ArrayType,
+    PointerType,
+    CompilationUnit,
+    Expression,
+    Statement,
+    InitialValue,
+    TypeDefinition,
+    FunctionBlockDecl,
+} from './ast.ts';
 import { getFB } from './stdlib/index.ts';
 import { MEMORY_REGION } from '../contract.generated.ts';
 import { CodegenError } from './diagnostics.ts';
@@ -86,10 +101,10 @@ export interface UserFBDefinition {
     size: number;
     /** Declared ABSTRACT: no variable is of this type (CMP-041). */
     isAbstract?: boolean;
-    extends: string | null;  // Base FB name
-    implements: string[];    // Interface names
+    extends: string | null; // Base FB name
+    implements: string[]; // Interface names
     members: Map<string, MemberInfo>;
-    methods: Map<string, MethodInfo>;  // Methods defined in this FB
+    methods: Map<string, MethodInfo>; // Methods defined in this FB
 }
 
 /**
@@ -115,7 +130,7 @@ export interface MethodInfo {
     inputs: { name: string; dataType: STDataType; size: number; mangledName?: string; initialValue?: InitialValue | null }[];
     outputs: { name: string; dataType: STDataType; size: number; mangledName?: string; initialValue?: InitialValue | null }[];
     locals: { name: string; dataType: STDataType; size: number; mangledName?: string; initialValue?: InitialValue | null }[];
-    label: string;  // Code label for the method
+    label: string; // Code label for the method
     isAbstract: boolean;
     isFinal: boolean;
     isOverride: boolean;
@@ -133,8 +148,8 @@ export interface MethodInfo {
  */
 export interface InterfaceDefinition {
     name: string;
-    extends: string[];  // Base interfaces
-    methods: Map<string, MethodSignature>;  // Method signatures
+    extends: string[]; // Base interfaces
+    methods: Map<string, MethodSignature>; // Method signatures
 }
 
 /**
@@ -179,7 +194,9 @@ export function typeToString(type: unknown): string {
         if (kind === 'PointerType') return `REF_TO ${typeToString((type as PointerType).baseType)}`;
         if (kind === 'ArrayType') {
             const array = type as ArrayType;
-            return `ARRAY[${array.dimensions.map((d) => `${d.lowerBound}..${d.upperBound}`).join(', ')}] OF ${typeToString(array.elementType)}`;
+            return `ARRAY[${array.dimensions
+                .map((d) => `${d.lowerBound}..${d.upperBound}`)
+                .join(', ')}] OF ${typeToString(array.elementType)}`;
         }
     }
     return '?';
@@ -211,8 +228,8 @@ export class SymbolTable {
     private interfaces = new NameMap<InterfaceDefinition>();
     /** The names of the interfaces of the unit, known before their definitions are: a member may be of one (CMP-041). */
     private interfaceNames = new NameMap<true>();
-    private workOffset = 0;  // Current offset in work memory
-    private retainOffset = 0;  // Current offset in the retentive region (VAR RETAIN)
+    private workOffset = 0; // Current offset in work memory
+    private retainOffset = 0; // Current offset in the retentive region (VAR RETAIN)
     /**
      * Names that are in scope only while the code generator inlines a function block body or generates a
      * function: the members of the instance being inlined, instances declared inside it among them
@@ -228,7 +245,7 @@ export class SymbolTable {
     programScope: string | null = null;
     /** The only program of the unit, when it has one: a table of one program answers plain names without a scope. */
     private soleProgram: string | null = null;
-    private readonly workBase: number;  // Base address for work memory
+    private readonly workBase: number; // Base address for work memory
 
     /**
      * Create a new symbol table.
@@ -311,12 +328,26 @@ export class SymbolTable {
         // a variable of a program is stored under the name of the program; it may not share a name with a global
         const key = scope.program === undefined ? decl.name : `${scope.program}.${decl.name}`;
         if (this.symbols.has(key) || (scope.program !== undefined && this.symbols.has(decl.name))) {
-            throw new CodegenError('DUPLICATE_DECLARATION', `Symbol '${decl.name}' already defined`, decl.line, decl.column, decl.line, decl.column + decl.name.length);
+            throw new CodegenError(
+                'DUPLICATE_DECLARATION',
+                `Symbol '${decl.name}' already defined`,
+                decl.line,
+                decl.column,
+                decl.line,
+                decl.column + decl.name.length,
+            );
         }
 
         const instanceType = isArrayType(decl.dataType) ? (decl.dataType as ArrayType).elementType : decl.dataType;
         if (typeof instanceType === 'string' && this.userFBs.get(instanceType)?.isAbstract) {
-            throw new CodegenError('ABSTRACT_INSTANTIATION', `'${decl.name}' is an instance of the ABSTRACT function block '${instanceType}'`, decl.line, decl.column, decl.line, decl.column + decl.name.length);
+            throw new CodegenError(
+                'ABSTRACT_INSTANTIATION',
+                `'${decl.name}' is an instance of the ABSTRACT function block '${instanceType}'`,
+                decl.line,
+                decl.column,
+                decl.line,
+                decl.column + decl.name.length,
+            );
         }
 
         const varSize = this.sizeOf(decl.dataType);
@@ -417,7 +448,11 @@ export class SymbolTable {
             throw new CodegenError('INVALID_EXTERNAL_DECLARATION', `VAR_EXTERNAL '${decl.name}' has no VAR_GLOBAL declaration`, ...at);
         }
         if (JSON.stringify(global.dataType).toUpperCase() !== JSON.stringify(decl.dataType).toUpperCase()) {
-            throw new CodegenError('INVALID_EXTERNAL_DECLARATION', `VAR_EXTERNAL '${decl.name}' is declared with another type than its VAR_GLOBAL`, ...at);
+            throw new CodegenError(
+                'INVALID_EXTERNAL_DECLARATION',
+                `VAR_EXTERNAL '${decl.name}' is declared with another type than its VAR_GLOBAL`,
+                ...at,
+            );
         }
         return global;
     }
@@ -458,7 +493,7 @@ export class SymbolTable {
 
         if (expr.kind === 'MemberAccess') {
             const parent = this.resolveMemberPath(expr.object);
-            const typeName = (typeof parent.dataType === 'string') ? parent.dataType : null;
+            const typeName = typeof parent.dataType === 'string' ? parent.dataType : null;
 
             if (!typeName) {
                 throw new CodegenError('INVALID_MEMBER_ACCESS', `Cannot access member '${expr.member}' on non-struct type`, 0, 0);
@@ -471,7 +506,7 @@ export class SymbolTable {
                 if (!member) throw new CodegenError('UNKNOWN_MEMBER', `Unknown member '${expr.member}' on struct '${typeName}'`, 0, 0);
                 return {
                     address: parent.address + member.offset,
-                    dataType: member.dataType
+                    dataType: member.dataType,
                 };
             }
 
@@ -482,18 +517,18 @@ export class SymbolTable {
                 if (!member) throw new CodegenError('UNKNOWN_MEMBER', `Unknown member '${expr.member}' on FB '${typeName}'`, 0, 0);
                 return {
                     address: parent.address + member.offset,
-                    dataType: member.dataType
+                    dataType: member.dataType,
                 };
             }
 
             // 3. Check stdlib FBs
             const stdFB = getFB(typeName as DataTypeValue);
             if (stdFB) {
-                const member = stdFB.members.find(m => sameName(m.name, expr.member));
+                const member = stdFB.members.find((m) => sameName(m.name, expr.member));
                 if (!member) throw new CodegenError('UNKNOWN_MEMBER', `Unknown member '${expr.member}' on FB '${typeName}'`, 0, 0);
                 return {
                     address: parent.address + member.offset,
-                    dataType: member.dataType as STDataType
+                    dataType: member.dataType as STDataType,
                 };
             }
 
@@ -504,15 +539,22 @@ export class SymbolTable {
             // Only a path whose indices are all constants has one address; the code generator
             // computes the others at run time (it does not use this method for them).
             const array = this.resolveMemberPath(expr.array);
-            if (!isArrayType(array.dataType as STDataType)) throw new CodegenError('INVALID_ARRAY_ACCESS', 'Indexed value is not an array', 0, 0);
+            if (!isArrayType(array.dataType as STDataType))
+                throw new CodegenError('INVALID_ARRAY_ACCESS', 'Indexed value is not an array', 0, 0);
             const type = array.dataType as unknown as ArrayType;
             const stride = this.sizeOf(type.elementType);
             let element = 0;
             type.dimensions.forEach((dimension, d) => {
                 const index = expr.indices[d];
-                if (!index || index.kind !== 'IntLiteral') throw new CodegenError('INVALID_ARRAY_ACCESS', 'Array index is not a constant', 0, 0);
+                if (!index || index.kind !== 'IntLiteral')
+                    throw new CodegenError('INVALID_ARRAY_ACCESS', 'Array index is not a constant', 0, 0);
                 if (index.value < dimension.lowerBound || index.value > dimension.upperBound) {
-                    throw new CodegenError('INDEX_OUT_OF_BOUNDS', `Index ${index.value} is outside the array bounds ${dimension.lowerBound}..${dimension.upperBound}`, 0, 0);
+                    throw new CodegenError(
+                        'INDEX_OUT_OF_BOUNDS',
+                        `Index ${index.value} is outside the array bounds ${dimension.lowerBound}..${dimension.upperBound}`,
+                        0,
+                        0,
+                    );
                 }
                 const inner = type.dimensions.slice(d + 1).reduce((n, dim) => n * (dim.upperBound - dim.lowerBound + 1), 1);
                 element += (index.value - dimension.lowerBound) * inner;
@@ -580,9 +622,14 @@ export class SymbolTable {
     /** Whether the block `fbType`, or a block it extends, implements `iface` or an interface that extends it. */
     blockImplements(fbType: string, iface: string): boolean {
         const seen = new Set<string>();
-        for (let name: string | null = fbType; name !== null && !seen.has(name.toUpperCase()); name = this.userFBs.get(name)?.extends ?? null) {
+        for (
+            let name: string | null = fbType;
+            name !== null && !seen.has(name.toUpperCase());
+            name = this.userFBs.get(name)?.extends ?? null
+        ) {
             seen.add(name.toUpperCase());
-            if ((this.userFBs.get(name)?.implements ?? []).some((implemented) => this.interfaceDerivesFrom(implemented, iface))) return true;
+            if ((this.userFBs.get(name)?.implements ?? []).some((implemented) => this.interfaceDerivesFrom(implemented, iface)))
+                return true;
         }
         return false;
     }
@@ -602,15 +649,15 @@ export class SymbolTable {
     hasMethod(fbType: string, methodName: string): boolean {
         const fb = this.userFBs.get(fbType);
         if (!fb) return false;
-        
+
         // Check direct methods
         if (fb.methods.has(methodName)) return true;
-        
+
         // Check inherited methods from base FB
         if (fb.extends) {
             return this.hasMethod(fb.extends, methodName);
         }
-        
+
         return false;
     }
 
@@ -731,7 +778,7 @@ export class SymbolTable {
             const addrHex = `0x${sym.address.toString(16).padStart(4, '0')}`;
             const typeStr = typeof sym.dataType === 'string' ? sym.dataType : 'ARRAY';
             lines.push(
-                `${sym.name.padEnd(20)} ${typeStr.padEnd(11)} ${addrHex.padEnd(10)} ${sym.size.toString().padStart(5)}  ${sym.section}`
+                `${sym.name.padEnd(20)} ${typeStr.padEnd(11)} ${addrHex.padEnd(10)} ${sym.size.toString().padStart(5)}  ${sym.section}`,
             );
 
             // Dump members for function blocks or structs
@@ -739,9 +786,7 @@ export class SymbolTable {
                 for (const [member, offset] of sym.members) {
                     const memberAddr = sym.address + offset;
                     const memberAddrHex = `0x${memberAddr.toString(16).padStart(4, '0')}`;
-                    lines.push(
-                        `  .${member.padEnd(17)} ${''.padEnd(11)} ${memberAddrHex}`
-                    );
+                    lines.push(`  .${member.padEnd(17)} ${''.padEnd(11)} ${memberAddrHex}`);
                 }
             }
         }
@@ -805,373 +850,475 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
     let currentFile: string | undefined;
 
     try {
-    if (unit.kind === 'CompilationUnit') {
-        // the interfaces are known by name first: a member of a structure or a block may be of one
-        for (const iface of unit.interfaces ?? []) table.declareInterface(iface.name);
+        if (unit.kind === 'CompilationUnit') {
+            // the interfaces are known by name first: a member of a structure or a block may be of one
+            for (const iface of unit.interfaces ?? []) table.declareInterface(iface.name);
 
-        // 1. First Pass: Process Type Definitions (STRUCTs and ENUMs)
-        if (unit.typeDefinitions) {
-            for (const typeDef of dependenciesFirst(unit.typeDefinitions)) {
-                currentFile = typeDef.sourceRef;
-                if (typeDef.kind === 'StructDecl') {
-                    const members = new NameMap<MemberInfo>();
-                    let currentOffset = 0;
-                    for (const member of typeDef.members) {
-                        const memberSize = table.sizeOf(member.dataType);
+            // 1. First Pass: Process Type Definitions (STRUCTs and ENUMs)
+            if (unit.typeDefinitions) {
+                for (const typeDef of dependenciesFirst(unit.typeDefinitions)) {
+                    currentFile = typeDef.sourceRef;
+                    if (typeDef.kind === 'StructDecl') {
+                        const members = new NameMap<MemberInfo>();
+                        let currentOffset = 0;
+                        for (const member of typeDef.members) {
+                            const memberSize = table.sizeOf(member.dataType);
 
-                        const alignment = Math.min(memberSize, 4); // Align struct members
-                        currentOffset = alignTo(currentOffset, alignment);
+                            const alignment = Math.min(memberSize, 4); // Align struct members
+                            currentOffset = alignTo(currentOffset, alignment);
 
-                        members.set(member.name, {
-                            offset: currentOffset,
-                            size: memberSize,
-                            dataType: member.dataType,
-                            initialValue: member.initialValue,
-                        });
-                        currentOffset += memberSize;
-                    }
-                    table.addStructDefinition({
-                        name: typeDef.name,
-                        size: currentOffset,
-                        members
-                    });
-                } else if (typeDef.kind === 'EnumDecl') {
-                    const values = new NameMap<number>();
-                    for (const v of typeDef.values) {
-                        values.set(v.name, v.value);
-                        try {
-                            table.add({
-                                kind: 'VarDecl',
-                                name: v.name,
-                                dataType: typeDef.baseType,
-                                section: VarSection.CONSTANT,
-                                initialValue: { kind: 'IntLiteral', value: v.value, line: typeDef.line, column: typeDef.column },
-                                ioAddress: null,
-                                tags: {},
-                                line: typeDef.line,
-                                column: typeDef.column,
-                            }, { sourceRef: typeDef.sourceRef });
-                        } catch (e) {
-                            // an enumeration value whose name is already declared keeps the first declaration
+                            members.set(member.name, {
+                                offset: currentOffset,
+                                size: memberSize,
+                                dataType: member.dataType,
+                                initialValue: member.initialValue,
+                            });
+                            currentOffset += memberSize;
                         }
+                        table.addStructDefinition({
+                            name: typeDef.name,
+                            size: currentOffset,
+                            members,
+                        });
+                    } else if (typeDef.kind === 'EnumDecl') {
+                        const values = new NameMap<number>();
+                        for (const v of typeDef.values) {
+                            values.set(v.name, v.value);
+                            try {
+                                table.add(
+                                    {
+                                        kind: 'VarDecl',
+                                        name: v.name,
+                                        dataType: typeDef.baseType,
+                                        section: VarSection.CONSTANT,
+                                        initialValue: { kind: 'IntLiteral', value: v.value, line: typeDef.line, column: typeDef.column },
+                                        ioAddress: null,
+                                        tags: {},
+                                        line: typeDef.line,
+                                        column: typeDef.column,
+                                    },
+                                    { sourceRef: typeDef.sourceRef },
+                                );
+                            } catch (e) {
+                                // an enumeration value whose name is already declared keeps the first declaration
+                            }
+                        }
+                        table.addEnumDefinition({
+                            name: typeDef.name,
+                            baseType: typeDef.baseType,
+                            values,
+                        });
                     }
-                    table.addEnumDefinition({
-                        name: typeDef.name,
-                        baseType: typeDef.baseType,
-                        values
+                }
+            }
+
+            // 2. Second Pass: Process INTERFACE definitions
+            if (unit.interfaces) {
+                for (const iface of unit.interfaces) {
+                    currentFile = iface.sourceRef;
+                    const methodSigs = new NameMap<MethodSignature>();
+
+                    for (const method of iface.methods) {
+                        const inputs = method.inputs.map((v) => ({
+                            name: v.name,
+                            dataType: v.dataType as DataTypeValue,
+                            size: table.sizeOf(v.dataType),
+                        }));
+
+                        const outputs = method.outputs.map((v) => ({
+                            name: v.name,
+                            dataType: v.dataType as DataTypeValue,
+                            size: table.sizeOf(v.dataType),
+                        }));
+
+                        methodSigs.set(method.name, {
+                            name: method.name,
+                            returnType: method.returnType as DataTypeValue | null,
+                            inputs,
+                            outputs,
+                        });
+                    }
+
+                    table.addInterfaceDefinition({
+                        name: iface.name,
+                        extends: iface.extends,
+                        methods: methodSigs,
                     });
                 }
             }
-        }
 
-        // 2. Second Pass: Process INTERFACE definitions
-        if (unit.interfaces) {
-            for (const iface of unit.interfaces) {
-                currentFile = iface.sourceRef;
-                const methodSigs = new NameMap<MethodSignature>();
-                
-                for (const method of iface.methods) {
-                    const inputs = method.inputs.map(v => ({
-                        name: v.name,
-                        dataType: v.dataType as DataTypeValue,
-                        size: table.sizeOf(v.dataType)
-                    }));
-                    
-                    const outputs = method.outputs.map(v => ({
-                        name: v.name,
-                        dataType: v.dataType as DataTypeValue,
-                        size: table.sizeOf(v.dataType)
-                    }));
-                    
-                    methodSigs.set(method.name, {
+            // 3. Third Pass: Process User-Defined FUNCTION_BLOCK definitions
+            // Handle inheritance (process base classes first)
+            const unprocessedFBs = [...unit.functionBlocks];
+
+            while (unprocessedFBs.length > 0) {
+                // Find an FB that can be processed (no extends or base already processed), and whose members of a
+                // function block type are of blocks already processed: their size is known (CMP-042)
+                const baseReady = (fb: FunctionBlockDecl) => !fb.extends || table.getFBDefinition(fb.extends) !== undefined;
+                const membersReady = (fb: FunctionBlockDecl) =>
+                    [...fb.inputs, ...fb.outputs, ...fb.locals].every((member) => {
+                        const name = isArrayType(member.dataType) ? (member.dataType as ArrayType).elementType : member.dataType;
+                        return typeof name !== 'string' || !unprocessedFBs.some((other) => other !== fb && sameName(other.name, name));
+                    });
+                let fbIndex = unprocessedFBs.findIndex((fb) => baseReady(fb) && membersReady(fb));
+                if (fbIndex === -1) fbIndex = unprocessedFBs.findIndex(baseReady);
+
+                if (fbIndex === -1) {
+                    const missing = unprocessedFBs.map((fb) => `${fb.name} (extends ${fb.extends})`).join(', ');
+                    const first = unprocessedFBs[0]!;
+                    throw new CodegenError(
+                        'INVALID_INHERITANCE',
+                        `Circular inheritance or missing base FB in definitions: ${missing}`,
+                        first.line,
+                        first.column,
+                    );
+                }
+
+                const fb = unprocessedFBs[fbIndex];
+                unprocessedFBs.splice(fbIndex, 1);
+                currentFile = fb.sourceRef;
+
+                // FINAL blocks are not extended (CMP-041)
+                if (fb.extends) {
+                    const base = unit.functionBlocks.find((candidate) => sameName(candidate.name, fb.extends!));
+                    if (base?.isFinal) {
+                        throw new CodegenError(
+                            'INVALID_INHERITANCE',
+                            `Function block '${fb.name}' extends '${base.name}', which is FINAL`,
+                            fb.line,
+                            fb.column,
+                        );
+                    }
+                }
+
+                const fbMembers = new NameMap<MemberInfo>();
+                const methods = new NameMap<MethodInfo>();
+                let currentOffset = 0;
+
+                // Inheritance: Copy members and methods from base FB
+                if (fb.extends) {
+                    const baseFB = table.getFBDefinition(fb.extends);
+                    if (baseFB) {
+                        // 1. Copy members (variables)
+                        // Base members come first in memory layout
+                        for (const [name, info] of baseFB.members) {
+                            fbMembers.set(name, info);
+                        }
+                        currentOffset = baseFB.size;
+
+                        // 2. Copy methods (for inheritance)
+                        for (const [name, info] of baseFB.methods) {
+                            methods.set(name, info);
+                        }
+                    }
+                }
+
+                const allVars = [...fb.inputs, ...fb.outputs, ...fb.inouts, ...fb.locals];
+                for (const v of allVars) {
+                    // a member that is an instance of an ABSTRACT block has no code to run
+                    const memberType = isArrayType(v.dataType as STDataType) ? (v.dataType as ArrayType).elementType : v.dataType;
+                    if (
+                        typeof memberType === 'string' &&
+                        v.section !== VarSection.VAR_IN_OUT &&
+                        table.getFBDefinition(memberType)?.isAbstract
+                    ) {
+                        throw new CodegenError(
+                            'ABSTRACT_INSTANTIATION',
+                            `'${v.name}' is an instance of the ABSTRACT function block '${memberType}'`,
+                            v.line,
+                            v.column,
+                        );
+                    }
+                    // A member with the name of an inherited one hides it in lookups; both keep their own storage,
+                    // the members of the base coming first.
+
+                    // A VAR_IN_OUT member keeps the address of the caller's variable, not a copy of its value (CMP-028)
+                    const size = v.section === VarSection.VAR_IN_OUT ? REFERENCE_SIZE : table.sizeOf(v.dataType);
+
+                    const alignment = Math.min(size, 4);
+                    currentOffset = alignTo(currentOffset, alignment);
+
+                    fbMembers.set(v.name, {
+                        offset: currentOffset,
+                        size,
+                        dataType: v.dataType,
+                        section: v.section,
+                        initialValue: v.initialValue,
+                    });
+                    currentOffset += size;
+                }
+
+                // Process methods (new or overrides)
+                for (const method of fb.methods) {
+                    const processMethodVar = (v: VarDecl) => {
+                        const mangledName = `__M_${fb.name}_${method.name}_${v.name}`;
+                        // Register global symbol for static allocation
+                        // We check if it already exists (e.g. from previous pass or duplicate) to avoid error
+                        if (!table.has(mangledName)) {
+                            table.add(
+                                {
+                                    ...v,
+                                    name: mangledName,
+                                    section: VarSection.VAR, // Allocate in WORK memory
+                                },
+                                { sourceRef: fb.sourceRef },
+                            );
+                        }
+
+                        return {
+                            name: v.name,
+                            dataType: v.dataType as DataTypeValue,
+                            size: table.sizeOf(v.dataType),
+                            mangledName,
+                            initialValue: v.initialValue,
+                        };
+                    };
+
+                    const inputs = method.inputs.map(processMethodVar);
+                    const outputs = method.outputs.map(processMethodVar);
+                    const locals = method.locals.map(processMethodVar);
+
+                    // Check for override
+                    const baseMethod = methods.get(method.name);
+
+                    if (method.isOverride) {
+                        if (!baseMethod) {
+                            throw new CodegenError(
+                                'INVALID_OVERRIDE',
+                                `Method '${method.name}' marked as OVERRIDE but no base method found in '${fb.name}'`,
+                                method.line,
+                                method.column,
+                            );
+                        }
+                        if (baseMethod.isFinal) {
+                            throw new CodegenError(
+                                'INVALID_OVERRIDE',
+                                `Cannot override FINAL method '${method.name}' in '${fb.name}'`,
+                                method.line,
+                                method.column,
+                            );
+                        }
+                        if (method.returnType !== baseMethod.returnType) {
+                            throw new CodegenError(
+                                'INVALID_OVERRIDE',
+                                `Override method '${method.name}' return type '${method.returnType}' does not match base '${
+                                    baseMethod.returnType
+                                }'`,
+                                method.line,
+                                method.column,
+                            );
+                        }
+                    } else if (baseMethod) {
+                        throw new CodegenError(
+                            'INVALID_OVERRIDE',
+                            `Method '${method.name}' in '${fb.name}' hides inherited method. Use OVERRIDE explicitly.`,
+                            method.line,
+                            method.column,
+                        );
+                    }
+
+                    // If overriding, we replace the entry in the map
+                    methods.set(method.name, {
                         name: method.name,
                         returnType: method.returnType as DataTypeValue | null,
                         inputs,
-                        outputs
+                        outputs,
+                        locals,
+                        label: `${fb.name}__${method.name}`, // Code label specific to this FB type
+                        isAbstract: method.isAbstract,
+                        isFinal: method.isFinal,
+                        isOverride: method.isOverride || !!baseMethod, // Mark as override if it shadows base
+                        body: method.body,
+                        access: method.accessSpecifier,
+                        owner: fb.name,
+                        ...(fb.sourceRef === undefined ? {} : { sourceRef: fb.sourceRef }),
                     });
                 }
-                
-                table.addInterfaceDefinition({
-                    name: iface.name,
-                    extends: iface.extends,
-                    methods: methodSigs
-                });
-            }
-        }
 
-        // 3. Third Pass: Process User-Defined FUNCTION_BLOCK definitions
-        // Handle inheritance (process base classes first)
-        const unprocessedFBs = [...unit.functionBlocks];
-        
-        while (unprocessedFBs.length > 0) {
-            // Find an FB that can be processed (no extends or base already processed), and whose members of a
-            // function block type are of blocks already processed: their size is known (CMP-042)
-            const baseReady = (fb: FunctionBlockDecl) => !fb.extends || table.getFBDefinition(fb.extends) !== undefined;
-            const membersReady = (fb: FunctionBlockDecl) => [...fb.inputs, ...fb.outputs, ...fb.locals].every((member) => {
-                const name = isArrayType(member.dataType) ? (member.dataType as ArrayType).elementType : member.dataType;
-                return typeof name !== 'string' || !unprocessedFBs.some((other) => other !== fb && sameName(other.name, name));
-            });
-            let fbIndex = unprocessedFBs.findIndex((fb) => baseReady(fb) && membersReady(fb));
-            if (fbIndex === -1) fbIndex = unprocessedFBs.findIndex(baseReady);
+                // Validate Interfaces
+                if (fb.implements) {
+                    for (const ifaceName of fb.implements) {
+                        const validateInterface = (name: string) => {
+                            const iface = table.getInterfaceDefinition(name);
+                            if (!iface)
+                                throw new CodegenError(
+                                    'UNKNOWN_TYPE',
+                                    `Unknown interface '${name}' implemented by '${fb.name}'`,
+                                    fb.line,
+                                    fb.column,
+                                );
 
-            if (fbIndex === -1) {
-                const missing = unprocessedFBs.map(fb => `${fb.name} (extends ${fb.extends})`).join(', ');
-                const first = unprocessedFBs[0]!;
-                throw new CodegenError('INVALID_INHERITANCE', `Circular inheritance or missing base FB in definitions: ${missing}`, first.line, first.column);
-            }
-
-            const fb = unprocessedFBs[fbIndex];
-            unprocessedFBs.splice(fbIndex, 1);
-            currentFile = fb.sourceRef;
-
-            // FINAL blocks are not extended (CMP-041)
-            if (fb.extends) {
-                const base = unit.functionBlocks.find((candidate) => sameName(candidate.name, fb.extends!));
-                if (base?.isFinal) {
-                    throw new CodegenError('INVALID_INHERITANCE', `Function block '${fb.name}' extends '${base.name}', which is FINAL`, fb.line, fb.column);
-                }
-            }
-
-            const fbMembers = new NameMap<MemberInfo>();
-            const methods = new NameMap<MethodInfo>();
-            let currentOffset = 0;
-
-            // Inheritance: Copy members and methods from base FB
-            if (fb.extends) {
-                const baseFB = table.getFBDefinition(fb.extends);
-                if (baseFB) {
-                    // 1. Copy members (variables)
-                    // Base members come first in memory layout
-                    for (const [name, info] of baseFB.members) {
-                        fbMembers.set(name, info);
-                    }
-                    currentOffset = baseFB.size;
-
-                    // 2. Copy methods (for inheritance)
-                    for (const [name, info] of baseFB.methods) {
-                        methods.set(name, info);
-                    }
-                }
-            }
-
-            const allVars = [...fb.inputs, ...fb.outputs, ...fb.inouts, ...fb.locals];
-            for (const v of allVars) {
-                // a member that is an instance of an ABSTRACT block has no code to run
-                const memberType = isArrayType(v.dataType as STDataType) ? (v.dataType as ArrayType).elementType : v.dataType;
-                if (typeof memberType === 'string' && v.section !== VarSection.VAR_IN_OUT && table.getFBDefinition(memberType)?.isAbstract) {
-                    throw new CodegenError('ABSTRACT_INSTANTIATION', `'${v.name}' is an instance of the ABSTRACT function block '${memberType}'`, v.line, v.column);
-                }
-                // A member with the name of an inherited one hides it in lookups; both keep their own storage,
-                // the members of the base coming first.
-                
-                // A VAR_IN_OUT member keeps the address of the caller's variable, not a copy of its value (CMP-028)
-                const size = v.section === VarSection.VAR_IN_OUT ? REFERENCE_SIZE : table.sizeOf(v.dataType);
-
-                const alignment = Math.min(size, 4);
-                currentOffset = alignTo(currentOffset, alignment);
-
-                fbMembers.set(v.name, {
-                    offset: currentOffset,
-                    size,
-                    dataType: v.dataType,
-                    section: v.section,
-                    initialValue: v.initialValue,
-                });
-                currentOffset += size;
-            }
-
-            // Process methods (new or overrides)
-            for (const method of fb.methods) {
-                const processMethodVar = (v: VarDecl) => {
-                    const mangledName = `__M_${fb.name}_${method.name}_${v.name}`;
-                    // Register global symbol for static allocation
-                    // We check if it already exists (e.g. from previous pass or duplicate) to avoid error
-                    if (!table.has(mangledName)) {
-                        table.add({
-                            ...v,
-                            name: mangledName,
-                            section: VarSection.VAR // Allocate in WORK memory
-                        }, { sourceRef: fb.sourceRef });
-                    }
-                    
-                    return {
-                        name: v.name,
-                        dataType: v.dataType as DataTypeValue,
-                        size: table.sizeOf(v.dataType),
-                        mangledName,
-                        initialValue: v.initialValue,
-                    };
-                };
-
-                const inputs = method.inputs.map(processMethodVar);
-                const outputs = method.outputs.map(processMethodVar);
-                const locals = method.locals.map(processMethodVar);
-
-                // Check for override
-                const baseMethod = methods.get(method.name);
-                
-                if (method.isOverride) {
-                    if (!baseMethod) {
-                        throw new CodegenError('INVALID_OVERRIDE', `Method '${method.name}' marked as OVERRIDE but no base method found in '${fb.name}'`, method.line, method.column);
-                    }
-                    if (baseMethod.isFinal) {
-                        throw new CodegenError('INVALID_OVERRIDE', `Cannot override FINAL method '${method.name}' in '${fb.name}'`, method.line, method.column);
-                    }
-                    if (method.returnType !== baseMethod.returnType) {
-                        throw new CodegenError('INVALID_OVERRIDE', `Override method '${method.name}' return type '${method.returnType}' does not match base '${baseMethod.returnType}'`, method.line, method.column);
-                    }
-                } else if (baseMethod) {
-                    throw new CodegenError('INVALID_OVERRIDE', `Method '${method.name}' in '${fb.name}' hides inherited method. Use OVERRIDE explicitly.`, method.line, method.column);
-                }
-                
-                // If overriding, we replace the entry in the map
-                methods.set(method.name, {
-                    name: method.name,
-                    returnType: method.returnType as DataTypeValue | null,
-                    inputs,
-                    outputs,
-                    locals,
-                    label: `${fb.name}__${method.name}`,  // Code label specific to this FB type
-                    isAbstract: method.isAbstract,
-                    isFinal: method.isFinal,
-                    isOverride: method.isOverride || !!baseMethod, // Mark as override if it shadows base
-                    body: method.body,
-                    access: method.accessSpecifier,
-                    owner: fb.name,
-                    ...(fb.sourceRef === undefined ? {} : { sourceRef: fb.sourceRef }),
-                });
-            }
-
-            // Validate Interfaces
-            if (fb.implements) {
-                for (const ifaceName of fb.implements) {
-                    const validateInterface = (name: string) => {
-                        const iface = table.getInterfaceDefinition(name);
-                        if (!iface) throw new CodegenError('UNKNOWN_TYPE', `Unknown interface '${name}' implemented by '${fb.name}'`, fb.line, fb.column);
-                        
-                        // Check base interfaces
-                        for (const base of iface.extends) {
-                            validateInterface(base);
-                        }
-
-                        // Check methods
-                        for (const [methodName, sig] of iface.methods) {
-                            const method = methods.get(methodName);
-                            if (!method) {
-                                throw new CodegenError('INTERFACE_NOT_IMPLEMENTED', `Function Block '${fb.name}' implements interface '${ifaceName}' but is missing required method '${methodName}'`, fb.line, fb.column);
+                            // Check base interfaces
+                            for (const base of iface.extends) {
+                                validateInterface(base);
                             }
-                            
-                            // Check signature
-                            if (method.returnType !== sig.returnType) {
-                                throw new CodegenError('INTERFACE_NOT_IMPLEMENTED', `Method '${methodName}' in '${fb.name}' has return type '${method.returnType}' but interface '${ifaceName}' requires '${sig.returnType}'`, fb.line, fb.column);
-                            }
-                            
-                            // Check inputs
-                            if (method.inputs.length !== sig.inputs.length) {
-                                throw new CodegenError('INTERFACE_NOT_IMPLEMENTED', `Method '${methodName}' has different number of inputs than required by interface '${ifaceName}'`, fb.line, fb.column);
-                            }
-                            for (let i = 0; i < method.inputs.length; i++) {
-                                if (!sameName(method.inputs[i].name, sig.inputs[i].name) || method.inputs[i].dataType !== sig.inputs[i].dataType) {
-                                    throw new CodegenError('INTERFACE_NOT_IMPLEMENTED', `Input ${i} of method '${methodName}' does not match interface '${ifaceName}' signature`, fb.line, fb.column);
+
+                            // Check methods
+                            for (const [methodName, sig] of iface.methods) {
+                                const method = methods.get(methodName);
+                                if (!method) {
+                                    throw new CodegenError(
+                                        'INTERFACE_NOT_IMPLEMENTED',
+                                        `Function Block '${fb.name}' implements interface '${ifaceName}' but is missing required method '${
+                                            methodName
+                                        }'`,
+                                        fb.line,
+                                        fb.column,
+                                    );
+                                }
+
+                                // Check signature
+                                if (method.returnType !== sig.returnType) {
+                                    throw new CodegenError(
+                                        'INTERFACE_NOT_IMPLEMENTED',
+                                        `Method '${methodName}' in '${fb.name}' has return type '${
+                                            method.returnType
+                                        }' but interface '${ifaceName}' requires '${sig.returnType}'`,
+                                        fb.line,
+                                        fb.column,
+                                    );
+                                }
+
+                                // Check inputs
+                                if (method.inputs.length !== sig.inputs.length) {
+                                    throw new CodegenError(
+                                        'INTERFACE_NOT_IMPLEMENTED',
+                                        `Method '${methodName}' has different number of inputs than required by interface '${ifaceName}'`,
+                                        fb.line,
+                                        fb.column,
+                                    );
+                                }
+                                for (let i = 0; i < method.inputs.length; i++) {
+                                    if (
+                                        !sameName(method.inputs[i].name, sig.inputs[i].name) ||
+                                        method.inputs[i].dataType !== sig.inputs[i].dataType
+                                    ) {
+                                        throw new CodegenError(
+                                            'INTERFACE_NOT_IMPLEMENTED',
+                                            `Input ${i} of method '${methodName}' does not match interface '${ifaceName}' signature`,
+                                            fb.line,
+                                            fb.column,
+                                        );
+                                    }
+                                }
+
+                                // Check outputs
+                                if (method.outputs.length !== sig.outputs.length) {
+                                    throw new CodegenError(
+                                        'INTERFACE_NOT_IMPLEMENTED',
+                                        `Method '${methodName}' has different number of outputs than required by interface '${ifaceName}'`,
+                                        fb.line,
+                                        fb.column,
+                                    );
+                                }
+                                for (let i = 0; i < method.outputs.length; i++) {
+                                    if (
+                                        !sameName(method.outputs[i].name, sig.outputs[i].name) ||
+                                        method.outputs[i].dataType !== sig.outputs[i].dataType
+                                    ) {
+                                        throw new CodegenError(
+                                            'INTERFACE_NOT_IMPLEMENTED',
+                                            `Output ${i} of method '${methodName}' does not match interface '${ifaceName}' signature`,
+                                            fb.line,
+                                            fb.column,
+                                        );
+                                    }
                                 }
                             }
-                            
-                            // Check outputs
-                            if (method.outputs.length !== sig.outputs.length) {
-                                throw new CodegenError('INTERFACE_NOT_IMPLEMENTED', `Method '${methodName}' has different number of outputs than required by interface '${ifaceName}'`, fb.line, fb.column);
-                            }
-                            for (let i = 0; i < method.outputs.length; i++) {
-                                if (!sameName(method.outputs[i].name, sig.outputs[i].name) || method.outputs[i].dataType !== sig.outputs[i].dataType) {
-                                    throw new CodegenError('INTERFACE_NOT_IMPLEMENTED', `Output ${i} of method '${methodName}' does not match interface '${ifaceName}' signature`, fb.line, fb.column);
-                                }
-                            }
+                        };
+
+                        validateInterface(ifaceName);
+                    }
+                }
+
+                // a block that is not ABSTRACT implements every method it declares or inherits
+                if (!fb.isAbstract) {
+                    for (const [methodName, info] of methods) {
+                        if (info.isAbstract) {
+                            throw new CodegenError(
+                                'INVALID_INHERITANCE',
+                                info.owner === fb.name
+                                    ? `Method '${methodName}' of '${fb.name}' is ABSTRACT, so the function block must be declared ` +
+                                          `FUNCTION_BLOCK ABSTRACT`
+                                    : `Function block '${fb.name}' does not implement the ABSTRACT method ` +
+                                          `'${methodName}' of '${info.owner}'`,
+                                fb.line,
+                                fb.column,
+                            );
                         }
-                    };
-                    
-                    validateInterface(ifaceName);
+                    }
+                }
+
+                table.addFBDefinition({
+                    name: fb.name,
+                    size: currentOffset,
+                    ...(fb.isAbstract ? { isAbstract: true } : {}),
+                    extends: fb.extends,
+                    implements: fb.implements,
+                    members: fbMembers,
+                    methods,
+                });
+            }
+
+            // 3. Process VAR_GLOBAL blocks
+            for (const globalBlock of unit.globalVars) {
+                currentFile = globalBlock.sourceRef;
+                for (const decl of globalBlock.variables) {
+                    table.add(decl, { sourceRef: globalBlock.sourceRef });
                 }
             }
 
-            // a block that is not ABSTRACT implements every method it declares or inherits
-            if (!fb.isAbstract) {
-                for (const [methodName, info] of methods) {
-                    if (info.isAbstract) {
-                        throw new CodegenError(
-                            'INVALID_INHERITANCE',
-                            info.owner === fb.name
-                                ? `Method '${methodName}' of '${fb.name}' is ABSTRACT, so the function block must be declared FUNCTION_BLOCK ABSTRACT`
-                                : `Function block '${fb.name}' does not implement the ABSTRACT method '${methodName}' of '${info.owner}'`,
-                            fb.line, fb.column);
+            // 4. Process functions (inputs and locals). Each function is a scope of its own (CMP-034): its variables
+            // are declared as `Function.name`, so two functions may use the same names, and a parameter may be named
+            // like a variable of a program. The code generator resolves a name inside a function to these first.
+            for (const func of unit.functions) {
+                currentFile = func.sourceRef;
+                const scope = { sourceRef: func.sourceRef };
+                const own = (name: string) => `${func.name}.${name}`;
+                // Add inputs
+                for (const input of func.inputs) {
+                    table.add({ ...input, name: own(input.name) }, scope);
+                }
+                // Add locals; a VAR_EXTERNAL names a global and takes no storage in the function
+                for (const local of func.locals) {
+                    table.add(local.section === VarSection.VAR_EXTERNAL ? local : { ...local, name: own(local.name) }, scope);
+                }
+                // Add function name as result variable
+                table.add(
+                    {
+                        kind: 'VarDecl',
+                        name: own(func.name),
+                        dataType: func.returnType,
+                        section: VarSection.VAR,
+                        initialValue: null,
+                        tags: {},
+                        ioAddress: null,
+                        line: func.line,
+                        column: func.column,
+                    },
+                    scope,
+                );
+            }
+
+            // 5. Process programs: each keeps its variables under its own name (CMP-042)
+            for (const program of unit.programs) {
+                currentFile = program.sourceRef;
+                for (const block of program.varBlocks) {
+                    for (const decl of block.variables) {
+                        const symbol = table.add(decl, { program: program.name, sourceRef: program.sourceRef });
+                        if (decl.section !== VarSection.VAR_EXTERNAL) symbol.owner = program.name;
                     }
                 }
             }
-
-            table.addFBDefinition({
-                name: fb.name,
-                size: currentOffset,
-                ...(fb.isAbstract ? { isAbstract: true } : {}),
-                extends: fb.extends,
-                implements: fb.implements,
-                members: fbMembers,
-                methods
-            });
-        }
-
-        // 3. Process VAR_GLOBAL blocks
-        for (const globalBlock of unit.globalVars) {
-            currentFile = globalBlock.sourceRef;
-            for (const decl of globalBlock.variables) {
-                table.add(decl, { sourceRef: globalBlock.sourceRef });
-            }
-        }
-
-        // 4. Process functions (inputs and locals). Each function is a scope of its own (CMP-034): its variables
-        // are declared as `Function.name`, so two functions may use the same names, and a parameter may be named
-        // like a variable of a program. The code generator resolves a name inside a function to these first.
-        for (const func of unit.functions) {
-            currentFile = func.sourceRef;
-            const scope = { sourceRef: func.sourceRef };
-            const own = (name: string) => `${func.name}.${name}`;
-            // Add inputs
-            for (const input of func.inputs) {
-                table.add({ ...input, name: own(input.name) }, scope);
-            }
-            // Add locals; a VAR_EXTERNAL names a global and takes no storage in the function
-            for (const local of func.locals) {
-                table.add(local.section === VarSection.VAR_EXTERNAL ? local : { ...local, name: own(local.name) }, scope);
-            }
-            // Add function name as result variable
-            table.add({
-                kind: 'VarDecl',
-                name: own(func.name),
-                dataType: func.returnType,
-                section: VarSection.VAR,
-                initialValue: null, tags: {},
-                ioAddress: null,
-                line: func.line,
-                column: func.column,
-            }, scope);
-        }
-
-        // 5. Process programs: each keeps its variables under its own name (CMP-042)
-        for (const program of unit.programs) {
-            currentFile = program.sourceRef;
-            for (const block of program.varBlocks) {
+            if (unit.programs.length === 1) table.setSoleProgram(unit.programs[0]!.name);
+        } else {
+            // Legacy support for single Program
+            for (const block of (unit as Program).varBlocks) {
                 for (const decl of block.variables) {
-                    const symbol = table.add(decl, { program: program.name, sourceRef: program.sourceRef });
-                    if (decl.section !== VarSection.VAR_EXTERNAL) symbol.owner = program.name;
+                    table.add(decl);
                 }
             }
         }
-        if (unit.programs.length === 1) table.setSoleProgram(unit.programs[0]!.name);
-    } else {
-        // Legacy support for single Program
-        for (const block of (unit as Program).varBlocks) {
-            for (const decl of block.variables) {
-                table.add(decl);
-            }
-        }
-    }
     } catch (error) {
         if (error instanceof CodegenError && error.sourceRef === undefined && currentFile !== undefined) error.sourceRef = currentFile;
         throw error;
@@ -1187,7 +1334,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
 export function getLoadStoreSuffix(dataType: DataTypeValue | string): '8' | '16' | '32' | '64' {
     // Normalize to uppercase string for comparison
     const typeStr = typeof dataType === 'string' ? dataType.toUpperCase() : dataType;
-    
+
     switch (typeStr) {
         case 'BOOL':
         case 'SINT':
@@ -1203,16 +1350,16 @@ export function getLoadStoreSuffix(dataType: DataTypeValue | string): '8' | '16'
         case 'REAL':
         case 'TIME':
         case 'DWORD':
-        case 'DATE':            // D#... literal, 32-bit timestamp
-        case 'TIME_OF_DAY':     // TOD#... literal, 32-bit ms from midnight
-        case 'TOD':             // Alias for TIME_OF_DAY
+        case 'DATE': // D#... literal, 32-bit timestamp
+        case 'TIME_OF_DAY': // TOD#... literal, 32-bit ms from midnight
+        case 'TOD': // Alias for TIME_OF_DAY
             return '32';
         case 'LINT':
         case 'ULINT':
         case 'LREAL':
         case 'LWORD':
-        case 'DATE_AND_TIME':   // Full name
-        case 'DT':              // Alias for DATE_AND_TIME
+        case 'DATE_AND_TIME': // Full name
+        case 'DT': // Alias for DATE_AND_TIME
             return '64';
         default:
             return '32';
@@ -1224,11 +1371,7 @@ export function getLoadStoreSuffix(dataType: DataTypeValue | string): '8' | '16'
  * Uses the user function block and structure definitions, then the stdlib registry.
  * The type name is looked up as written: a user type is case-sensitive here, as in the table.
  */
-export function getMemberLoadStoreSuffix(
-    table: SymbolTable,
-    fbType: string,
-    memberName: string
-): '8' | '16' | '32' | '64' {
+export function getMemberLoadStoreSuffix(table: SymbolTable, fbType: string, memberName: string): '8' | '16' | '32' | '64' {
     const typeName = fbType.toUpperCase();
     let name = memberName.toUpperCase();
 
@@ -1237,10 +1380,14 @@ export function getMemberLoadStoreSuffix(
 
     const bySize = (size: number): '8' | '16' | '32' | '64' | undefined => {
         switch (size) {
-            case 1: return '8';
-            case 2: return '16';
-            case 4: return '32';
-            case 8: return '64';
+            case 1:
+                return '8';
+            case 2:
+                return '16';
+            case 4:
+                return '32';
+            case 8:
+                return '64';
         }
         return undefined;
     };
@@ -1259,11 +1406,8 @@ export function getMemberLoadStoreSuffix(
     const fbDef = getFB(typeName as DataTypeValue);
     if (fbDef) {
         // Try exact match, then normalized match
-        const member = fbDef.members.find(m => 
-            m.name.toUpperCase() === name || 
-            m.name.toUpperCase() === memberName.toUpperCase()
-        );
-        
+        const member = fbDef.members.find((m) => m.name.toUpperCase() === name || m.name.toUpperCase() === memberName.toUpperCase());
+
         if (member) {
             const suffix = bySize(member.size);
             if (suffix) return suffix;

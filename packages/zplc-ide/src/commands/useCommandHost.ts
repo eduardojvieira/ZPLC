@@ -29,7 +29,11 @@ const isTextField = (target: EventTarget | null): boolean => {
 /** Keyboard shortcuts of the registry. */
 export function useCommandShortcuts(): void {
   useEffect(() => {
-    const matcher = createShortcutMatcher(COMMAND_LIST.flatMap((command) => (command.shortcut ? [{ id: command.id as CommandId, chords: parseShortcut(command.shortcut) }] : [])));
+    const matcher = createShortcutMatcher(
+      COMMAND_LIST.flatMap((command) =>
+        command.shortcut ? [{ id: command.id as CommandId, chords: parseShortcut(command.shortcut) }] : [],
+      ),
+    );
     const onKeyDown = (event: KeyboardEvent): void => {
       const inField = isTextField(event.target);
       const result = matcher.handle(event);
@@ -63,44 +67,65 @@ const showActivity = (view: 'project' | 'search' | 'learn' | 'tests'): void => {
 /** The commands the shell owns; the toolbar binds the ones about building and running. */
 export function useShellCommands(): void {
   const projectOpen = useIDEStore((s) => s.isProjectOpen);
-  useEffect(() => { publishCommandState({ projectOpen }); }, [projectOpen]);
-  useEffect(() => bindCommands({
-    'file.open': () => { void useIDEStore.getState().openProjectFromFolder(); },
-    'file.new': () => { useNewProjectDialog.getState().show(); },
-    'file.export': () => exportOpenProjectArchive(),
-    'view.commandPalette': openPalette,
-    'help.shortcuts': openShortcuts,
-    'help.learn': openLearnHome,
-    'view.toggleConsole': () => useIDEStore.getState().toggleConsole(),
-    'view.togglePrimarySidebar': () => useShellLayout.getState().togglePrimary(),
-    'view.toggleSecondarySidebar': () => useShellLayout.getState().toggleSecondary(),
-    'view.showProject': () => showActivity('project'),
-    'view.showSearch': () => showActivity('search'),
-    'view.showLearn': () => showActivity('learn'),
-    'view.output': showPanel('output'),
-    'view.problems': showPanel('problems'),
-    'view.tests': () => { showActivity('tests'); showPanel('tests')(); },
-    'view.trace': showPanel('trace'),
-    'view.watch': showPanel('watch'),
-    'view.themeLight': () => useIDEStore.getState().setTheme('light'),
-    'view.themeDark': () => useIDEStore.getState().setTheme('dark'),
-    'view.themeHighContrast': () => useIDEStore.getState().setTheme('high-contrast'),
-    'view.themeSystem': () => useIDEStore.getState().setTheme('system'),
-    'project.settings': () => useIDEStore.getState().toggleSettings(),
-  }), []);
+  useEffect(() => {
+    publishCommandState({ projectOpen });
+  }, [projectOpen]);
+  useEffect(
+    () =>
+      bindCommands({
+        'file.open': () => {
+          void useIDEStore.getState().openProjectFromFolder();
+        },
+        'file.new': () => {
+          useNewProjectDialog.getState().show();
+        },
+        'file.export': () => exportOpenProjectArchive(),
+        'view.commandPalette': openPalette,
+        'help.shortcuts': openShortcuts,
+        'help.learn': openLearnHome,
+        'view.toggleConsole': () => useIDEStore.getState().toggleConsole(),
+        'view.togglePrimarySidebar': () => useShellLayout.getState().togglePrimary(),
+        'view.toggleSecondarySidebar': () => useShellLayout.getState().toggleSecondary(),
+        'view.showProject': () => showActivity('project'),
+        'view.showSearch': () => showActivity('search'),
+        'view.showLearn': () => showActivity('learn'),
+        'view.output': showPanel('output'),
+        'view.problems': showPanel('problems'),
+        'view.tests': () => {
+          showActivity('tests');
+          showPanel('tests')();
+        },
+        'view.trace': showPanel('trace'),
+        'view.watch': showPanel('watch'),
+        'view.themeLight': () => useIDEStore.getState().setTheme('light'),
+        'view.themeDark': () => useIDEStore.getState().setTheme('dark'),
+        'view.themeHighContrast': () => useIDEStore.getState().setTheme('high-contrast'),
+        'view.themeSystem': () => useIDEStore.getState().setTheme('system'),
+        'project.settings': () => useIDEStore.getState().toggleSettings(),
+      }),
+    [],
+  );
 }
 
 /** The menu of the operating system and the main process: commands in, language and theme out. */
 export function useMainProcessBridge(): void {
   const language = useAppSettings((s) => s.settings.language);
   const theme = useIDEStore((s) => s.theme);
-  useEffect(() => window.electronAPI?.menu?.onCommand((id) => {
-    if (!isCommandId(id)) return;
-    // The menu offers a command in every state; one the state does not offer is said in the console, not run.
-    if (runCommand(id, { respectEnabled: true }) === 'unavailable') {
-      useIDEStore.getState().addConsoleEntry({ type: 'info', message: t('commands.unavailable', { title: t(commandById(id).titleKey) }), source: 'system' });
-    }
-  }), []);
+  useEffect(
+    () =>
+      window.electronAPI?.menu?.onCommand((id) => {
+        if (!isCommandId(id)) return;
+        // The menu offers a command in every state; one the state does not offer is said in the console, not run.
+        if (runCommand(id, { respectEnabled: true }) === 'unavailable') {
+          useIDEStore.getState().addConsoleEntry({
+            type: 'info',
+            message: t('commands.unavailable', { title: t(commandById(id).titleKey) }),
+            source: 'system',
+          });
+        }
+      }),
+    [],
+  );
   useEffect(() => {
     void window.electronAPI?.windowPreferences?.report({ language: currentLocale(), theme }).catch(() => undefined);
   }, [language, theme]);

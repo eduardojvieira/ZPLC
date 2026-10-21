@@ -1,13 +1,29 @@
 import { describe, expect, it } from 'bun:test';
 
-import type { ProjectFilesBridge, ProjectFilesErrorCode, ProjectFilesResult, ProjectFolder, RecentProject } from '../../electron/projectFilesProtocol';
-import { chooseProjectFolder, forgetRecentProject, listRecentProjects, markProjectOpened, openRecentFolder, projectRootId } from './projectFilesHandles';
+import type {
+  ProjectFilesBridge,
+  ProjectFilesErrorCode,
+  ProjectFilesResult,
+  ProjectFolder,
+  RecentProject,
+} from '../../electron/projectFilesProtocol';
+import {
+  chooseProjectFolder,
+  forgetRecentProject,
+  listRecentProjects,
+  markProjectOpened,
+  openRecentFolder,
+  projectRootId,
+} from './projectFilesHandles';
 
 const encode = (text: string) => new TextEncoder().encode(text);
 const decode = (bytes: Uint8Array) => new TextDecoder().decode(bytes);
 
 /** An in-memory bridge: the shape of the preload object, with `null` standing for a folder. */
-function fakeBridge(seed: Record<string, string | null> = {}, folder: ProjectFilesResult<ProjectFolder | null> = { ok: true, value: { rootId: 'r1', name: 'plant' } }) {
+function fakeBridge(
+  seed: Record<string, string | null> = {},
+  folder: ProjectFilesResult<ProjectFolder | null> = { ok: true, value: { rootId: 'r1', name: 'plant' } },
+) {
   const nodes = new Map<string, Uint8Array | null>([['', null]]);
   for (const [path, text] of Object.entries(seed)) nodes.set(path, text === null ? null : encode(text));
   const calls: Array<{ op: string; request: Record<string, unknown> }> = [];
@@ -16,46 +32,75 @@ function fakeBridge(seed: Record<string, string | null> = {}, folder: ProjectFil
   const parentOf = (path: string) => (path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '');
   const ok = <T>(value: T): ProjectFilesResult<T> => ({ ok: true, value });
   const fail = (code: ProjectFilesErrorCode): ProjectFilesResult<never> => ({ ok: false, code });
-  const run = async <T>(op: string, request: Record<string, unknown>, produce: () => ProjectFilesResult<T>): Promise<ProjectFilesResult<T>> => {
+  const run = async <T>(
+    op: string,
+    request: Record<string, unknown>,
+    produce: () => ProjectFilesResult<T>,
+  ): Promise<ProjectFilesResult<T>> => {
     calls.push({ op, request });
     const code = forced.get(op);
     return code ? fail(code) : produce();
   };
   const bridge: ProjectFilesBridge = {
     chooseFolder: async () => folder,
-    listRecent: async () => { calls.push({ op: 'listRecent', request: {} }); return forced.has('listRecent') ? fail(forced.get('listRecent')!) : ok(recent); },
-    openRecent: (request) => run('openRecent', request, () => (recent.some((item) => item.recentId === request.recentId) ? ok({ rootId: 'r2', name: 'reopened' }) : fail('not-found'))),
+    listRecent: async () => {
+      calls.push({ op: 'listRecent', request: {} });
+      return forced.has('listRecent') ? fail(forced.get('listRecent')!) : ok(recent);
+    },
+    openRecent: (request) =>
+      run('openRecent', request, () =>
+        recent.some((item) => item.recentId === request.recentId) ? ok({ rootId: 'r2', name: 'reopened' }) : fail('not-found'),
+      ),
     forgetRecent: (request) => run('forgetRecent', request, () => ok(null)),
     markOpened: (request) => run('markOpened', request, () => ok(null)),
-    list: (request) => run('list', request, () => {
-      if (!nodes.has(request.path)) return fail('not-found');
-      if (nodes.get(request.path) !== null) return fail('not-a-directory');
-      const names = [...nodes.keys()].filter((path) => path !== '' && parentOf(path) === request.path);
-      return ok(names.map((path) => ({ name: path.slice(path.lastIndexOf('/') + 1), kind: nodes.get(path) === null ? 'directory' as const : 'file' as const })));
-    }),
-    stat: (request) => run('stat', request, () => {
-      const node = nodes.get(request.path);
-      if (node === undefined) return fail('not-found');
-      return ok(node === null ? { kind: 'directory' as const, size: 0 } : { kind: 'file' as const, size: node.byteLength });
-    }),
-    read: (request) => run('read', request, () => {
-      const node = nodes.get(request.path);
-      if (node === undefined) return fail('not-found');
-      return node === null ? fail('not-a-file') : ok(node);
-    }),
-    write: (request) => run('write', request, () => {
-      if (nodes.get(parentOf(request.path)) !== null || !nodes.has(parentOf(request.path))) return fail('not-found');
-      nodes.set(request.path, request.bytes);
-      return ok(null);
-    }),
-    mkdir: (request) => run('mkdir', request, () => { nodes.set(request.path, null); return ok(null); }),
-    remove: (request) => run('remove', request, () => {
-      const hasChildren = [...nodes.keys()].some((path) => parentOf(path) === request.path && path !== request.path);
-      if (hasChildren && !request.recursive) return fail('not-empty');
-      nodes.delete(request.path);
-      return ok(null);
-    }),
-    rename: (request) => run('rename', request, () => { nodes.set(request.to, nodes.get(request.from) ?? null); nodes.delete(request.from); return ok(null); }),
+    list: (request) =>
+      run('list', request, () => {
+        if (!nodes.has(request.path)) return fail('not-found');
+        if (nodes.get(request.path) !== null) return fail('not-a-directory');
+        const names = [...nodes.keys()].filter((path) => path !== '' && parentOf(path) === request.path);
+        return ok(
+          names.map((path) => ({
+            name: path.slice(path.lastIndexOf('/') + 1),
+            kind: nodes.get(path) === null ? ('directory' as const) : ('file' as const),
+          })),
+        );
+      }),
+    stat: (request) =>
+      run('stat', request, () => {
+        const node = nodes.get(request.path);
+        if (node === undefined) return fail('not-found');
+        return ok(node === null ? { kind: 'directory' as const, size: 0 } : { kind: 'file' as const, size: node.byteLength });
+      }),
+    read: (request) =>
+      run('read', request, () => {
+        const node = nodes.get(request.path);
+        if (node === undefined) return fail('not-found');
+        return node === null ? fail('not-a-file') : ok(node);
+      }),
+    write: (request) =>
+      run('write', request, () => {
+        if (nodes.get(parentOf(request.path)) !== null || !nodes.has(parentOf(request.path))) return fail('not-found');
+        nodes.set(request.path, request.bytes);
+        return ok(null);
+      }),
+    mkdir: (request) =>
+      run('mkdir', request, () => {
+        nodes.set(request.path, null);
+        return ok(null);
+      }),
+    remove: (request) =>
+      run('remove', request, () => {
+        const hasChildren = [...nodes.keys()].some((path) => parentOf(path) === request.path && path !== request.path);
+        if (hasChildren && !request.recursive) return fail('not-empty');
+        nodes.delete(request.path);
+        return ok(null);
+      }),
+    rename: (request) =>
+      run('rename', request, () => {
+        nodes.set(request.to, nodes.get(request.from) ?? null);
+        nodes.delete(request.from);
+        return ok(null);
+      }),
   };
   return { bridge, nodes, calls, forced, recent };
 }
@@ -87,7 +132,12 @@ describe('the project folder handle', () => {
   it('turns a failed dialog into an error that explains it without a path', async () => {
     const error = await rejection(chooseProjectFolder(fakeBridge({}, { ok: false, code: 'not-found' }).bridge));
     expect(error.name).toBe('NotFoundError');
-    const dead: ProjectFilesBridge = { ...fakeBridge().bridge, chooseFolder: async () => { throw new Error("Error invoking remote method 'project-files:choose-folder': Error: Request denied"); } };
+    const dead: ProjectFilesBridge = {
+      ...fakeBridge().bridge,
+      chooseFolder: async () => {
+        throw new Error("Error invoking remote method 'project-files:choose-folder': Error: Request denied");
+      },
+    };
     expect((await rejection(chooseProjectFolder(dead))).message).toBe('The operation failed. Try again.');
   });
 
@@ -272,9 +322,16 @@ describe('recent projects over the bridge (IDE-008)', () => {
     const { bridge, forced } = fakeBridge();
     forced.set('listRecent', 'failed');
     await expect(listRecentProjects(bridge)).resolves.toEqual([]);
-    await expect(listRecentProjects({ ...bridge, listRecent: async () => { throw new Error('document revoked'); } })).resolves.toEqual([]);
+    await expect(
+      listRecentProjects({
+        ...bridge,
+        listRecent: async () => {
+          throw new Error('document revoked');
+        },
+      }),
+    ).resolves.toEqual([]);
     for (const value of [null, 'x', {}, [{ recentId: 1 }], [{ recentId: 'a', displayName: 'p', lastOpenedAt: 'x', available: true }]]) {
-      await expect(listRecentProjects({ ...bridge, listRecent: async () => ({ ok: true, value } as never) })).resolves.toEqual([]);
+      await expect(listRecentProjects({ ...bridge, listRecent: async () => ({ ok: true, value }) as never })).resolves.toEqual([]);
     }
   });
 
@@ -293,7 +350,21 @@ describe('recent projects over the bridge (IDE-008)', () => {
     expect(missing.message).not.toMatch(/[\\/]/);
     forced.set('openRecent', 'not-a-directory');
     expect((await rejection(openRecentFolder(bridge, 'a'.repeat(64)))).name).toBe('TypeMismatchError');
-    expect((await rejection(openRecentFolder({ ...bridge, openRecent: async () => { throw new Error('gone'); } }, 'a'.repeat(64)))).name).toBe('Error');
+    expect(
+      (
+        await rejection(
+          openRecentFolder(
+            {
+              ...bridge,
+              openRecent: async () => {
+                throw new Error('gone');
+              },
+            },
+            'a'.repeat(64),
+          ),
+        )
+      ).name,
+    ).toBe('Error');
   });
 
   it('forgets an entry and marks a folder as opened, silently when the bridge fails', async () => {
@@ -304,10 +375,21 @@ describe('recent projects over the bridge (IDE-008)', () => {
       { op: 'forgetRecent', request: { recentId: 'a'.repeat(64) } },
       { op: 'markOpened', request: { rootId: 'r1' } },
     ]);
-    forced.set('forgetRecent', 'failed'); forced.set('markOpened', 'failed');
+    forced.set('forgetRecent', 'failed');
+    forced.set('markOpened', 'failed');
     await expect(forgetRecentProject(bridge, 'a'.repeat(64))).resolves.toBeUndefined();
     await expect(markProjectOpened(bridge, root)).resolves.toBeUndefined();
-    await expect(markProjectOpened({ ...bridge, markOpened: async () => { throw new Error('gone'); } }, root)).resolves.toBeUndefined();
+    await expect(
+      markProjectOpened(
+        {
+          ...bridge,
+          markOpened: async () => {
+            throw new Error('gone');
+          },
+        },
+        root,
+      ),
+    ).resolves.toBeUndefined();
   });
 
   it('marks nothing for a value that is not the folder handle', async () => {

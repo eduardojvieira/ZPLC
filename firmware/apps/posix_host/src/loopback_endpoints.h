@@ -26,10 +26,10 @@ extern "C" {
 
 typedef enum {
   ZPLC_LOOPBACK_MODBUS_GOOD = 0,
-  ZPLC_LOOPBACK_MODBUS_SILENT,     /**< reads the request and never answers; keeps the connection */
-  ZPLC_LOOPBACK_MODBUS_EXCEPTION,  /**< answers every request with exception 6 (server busy) */
-  ZPLC_LOOPBACK_MODBUS_CLOSE,      /**< closes the connection on a request, unanswered */
-  ZPLC_LOOPBACK_MODBUS_SLOW        /**< answers after the delay set with _set_delay_ms */
+  ZPLC_LOOPBACK_MODBUS_SILENT,    /**< reads the request and never answers; keeps the connection */
+  ZPLC_LOOPBACK_MODBUS_EXCEPTION, /**< answers every request with exception 6 (server busy) */
+  ZPLC_LOOPBACK_MODBUS_CLOSE,     /**< closes the connection on a request, unanswered */
+  ZPLC_LOOPBACK_MODBUS_SLOW       /**< answers after the delay set with _set_delay_ms */
 } zplc_loopback_modbus_mode_t;
 
 typedef struct zplc_loopback_modbus zplc_loopback_modbus_t;
@@ -60,12 +60,10 @@ uint32_t zplc_loopback_mqtt_subscriptions(zplc_loopback_mqtt_t *broker);
 /** PUBLISH packets received from clients since the start. */
 uint32_t zplc_loopback_mqtt_publishes(zplc_loopback_mqtt_t *broker);
 /** The last PUBLISH from a client: copies topic and payload (NUL-terminated), true when there was one. */
-bool zplc_loopback_mqtt_last_publish(zplc_loopback_mqtt_t *broker, char *topic, size_t topic_capacity,
-                                     uint8_t *payload, size_t payload_capacity, size_t *payload_length,
-                                     uint8_t *qos, bool *retain);
+bool zplc_loopback_mqtt_last_publish(zplc_loopback_mqtt_t *broker, char *topic, size_t topic_capacity, uint8_t *payload,
+                                     size_t payload_capacity, size_t *payload_length, uint8_t *qos, bool *retain);
 /** Publish a message from the broker itself to every client subscribed to `topic`. */
-void zplc_loopback_mqtt_inject(zplc_loopback_mqtt_t *broker, const char *topic, const uint8_t *payload,
-                               size_t length);
+void zplc_loopback_mqtt_inject(zplc_loopback_mqtt_t *broker, const char *topic, const uint8_t *payload, size_t length);
 
 #ifdef __cplusplus
 }

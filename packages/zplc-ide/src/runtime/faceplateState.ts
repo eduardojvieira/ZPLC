@@ -50,7 +50,10 @@ export function latestWins<T>(send: (value: T) => Promise<void>): (value: T) => 
     }
   };
   return (value) => {
-    if (inFlight) { waiting = { value }; return Promise.resolve(); }
+    if (inFlight) {
+      waiting = { value };
+      return Promise.resolve();
+    }
     return drain(value);
   };
 }
@@ -76,7 +79,13 @@ export type FaceplateUnavailable = 'noMap' | 'notConnected' | 'hardware' | 'faul
  * runtime may be holding a scan at a breakpoint, and a change must reach the program at a scan boundary, never inside one;
  * the Watch table is where a paused program is edited.
  */
-export function faceplateUnavailable(state: { hasMap: boolean; connected: boolean; simulated: boolean; vmState: string; supported: boolean }): FaceplateUnavailable | null {
+export function faceplateUnavailable(state: {
+  hasMap: boolean;
+  connected: boolean;
+  simulated: boolean;
+  vmState: string;
+  supported: boolean;
+}): FaceplateUnavailable | null {
   if (!state.hasMap) return 'noMap';
   if (!state.connected) return 'notConnected';
   if (!state.simulated) return 'hardware';

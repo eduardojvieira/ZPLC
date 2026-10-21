@@ -40,7 +40,9 @@ export function clearElementSelection(): void {
 
 export function subscribeElementSelection(listener: () => void): () => void {
   listeners.add(listener);
-  return () => { listeners.delete(listener); };
+  return () => {
+    listeners.delete(listener);
+  };
 }
 
 export function currentElementSelection(): ElementSelectionRequest | null {

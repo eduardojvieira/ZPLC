@@ -1,6 +1,6 @@
 /**
  * Generated Code Dialog
- * 
+ *
  * Modal dialog to display and copy generated code
  * (Structured Text from visual languages, or Assembly from compiler).
  */
@@ -21,21 +21,15 @@ interface GeneratedCodeDialogProps {
   onCreateFile?: (code: string) => void;
 }
 
-export function GeneratedCodeDialog({
-  isOpen,
-  onClose,
-  sourceLanguage,
-  generatedCode,
-  onCreateFile,
-}: GeneratedCodeDialogProps) {
+export function GeneratedCodeDialog({ isOpen, onClose, sourceLanguage, generatedCode, onCreateFile }: GeneratedCodeDialogProps) {
   const { t, tn } = useT();
   const [copied, setCopied] = useState(false);
 
   const isAssembly = sourceLanguage === 'ASM';
-  const title = isAssembly 
+  const title = isAssembly
     ? t('workbench.generated.titleAssembly')
     : t('workbench.generated.titleStructuredText', { language: sourceLanguage });
-  
+
   const fileExtension = isAssembly ? '.asm' : '.st';
   const description = isAssembly
     ? t('workbench.generated.descriptionAssembly')
@@ -60,12 +54,7 @@ export function GeneratedCodeDialog({
   const lineCount = generatedCode.split('\n').length;
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={title}
-      widthClass="max-w-4xl"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title={title} widthClass="max-w-4xl">
       {/* Stats & Actions Bar */}
       <div className="flex items-center justify-between px-4 py-2 bg-[var(--color-surface-700)] border-b border-[var(--color-surface-600)]">
         <div className="flex items-center gap-4 text-sm text-[var(--color-surface-300)]">
@@ -73,15 +62,15 @@ export function GeneratedCodeDialog({
             <FileText size={14} />
             {tn('workbench.generated.lines', lineCount)}
           </span>
-          <span>
-            {tn('workbench.generated.characters', generatedCode.length, { amount: generatedCode.length.toLocaleString() })}
-          </span>
+          <span>{tn('workbench.generated.characters', generatedCode.length, { amount: generatedCode.length.toLocaleString() })}</span>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <Button
             size="sm"
-            onClick={() => { void handleCopy(); }}
+            onClick={() => {
+              void handleCopy();
+            }}
             icon={copied ? <Check size={ICON_SIZES.sm} className="text-[var(--color-accent-green)]" /> : <Copy size={ICON_SIZES.sm} />}
           >
             {copied ? t('workbench.generated.copied') : t('workbench.generated.copy')}
@@ -104,9 +93,7 @@ export function GeneratedCodeDialog({
 
       {/* Footer */}
       <div className="px-4 py-3 border-t border-[var(--color-surface-600)] bg-[var(--color-surface-700)]">
-        <p className="text-xs text-[var(--color-surface-400)]">
-          {description}
-        </p>
+        <p className="text-xs text-[var(--color-surface-400)]">{description}</p>
       </div>
     </Modal>
   );

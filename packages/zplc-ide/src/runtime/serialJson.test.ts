@@ -6,7 +6,12 @@ import { takeJsonReply } from './serialJson';
 describe('the JSON reply of a shell command', () => {
   it('takes the first complete object after the echo of the command', () => {
     expect(takeJsonReply('zplc dbg trace status --json\r\n{"t":"trace","armed":false}\r\nuart:~$ ')).toEqual({ t: 'trace', armed: false });
-    expect(takeJsonReply('{"t":"trace_dump","from":0,"samples":[[0,1,"01","00"]],"next":1}')).toEqual({ t: 'trace_dump', from: 0, samples: [[0, 1, '01', '00']], next: 1 });
+    expect(takeJsonReply('{"t":"trace_dump","from":0,"samples":[[0,1,"01","00"]],"next":1}')).toEqual({
+      t: 'trace_dump',
+      from: 0,
+      samples: [[0, 1, '01', '00']],
+      next: 1,
+    });
   });
 
   it('waits while the object is still arriving', () => {

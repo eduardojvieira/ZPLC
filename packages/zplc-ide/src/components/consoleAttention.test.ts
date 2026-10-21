@@ -5,13 +5,19 @@ import { orderProblems, seenAfter, unseenCounts } from './consoleAttention';
 describe('the order of the problems (IDE-020)', () => {
   it('lists errors, then warnings, then information, and keeps the order inside a kind', () => {
     const messages = [
-      { type: 'info', message: 'i1' }, { type: 'warning', message: 'w1' }, { type: 'error', message: 'e1' },
-      { type: 'warning', message: 'w2' }, { type: 'error', message: 'e2' },
+      { type: 'info', message: 'i1' },
+      { type: 'warning', message: 'w1' },
+      { type: 'error', message: 'e1' },
+      { type: 'warning', message: 'w2' },
+      { type: 'error', message: 'e2' },
     ] as const;
     expect(orderProblems(messages).map((m) => m.message)).toEqual(['e1', 'e2', 'w1', 'w2', 'i1']);
   });
   it('does not change the list it is given', () => {
-    const messages = [{ type: 'warning', message: 'w' }, { type: 'error', message: 'e' }] as const;
+    const messages = [
+      { type: 'warning', message: 'w' },
+      { type: 'error', message: 'e' },
+    ] as const;
     orderProblems(messages);
     expect(messages[0].message).toBe('w');
   });

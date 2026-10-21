@@ -17,11 +17,22 @@ const removed: string[] = [];
 const exposed: Array<{ name: string; api: Api }> = [];
 
 void mock.module('electron', () => ({
-  contextBridge: { exposeInMainWorld: (name: string, api: Api) => { exposed.push({ name, api }); } },
+  contextBridge: {
+    exposeInMainWorld: (name: string, api: Api) => {
+      exposed.push({ name, api });
+    },
+  },
   ipcRenderer: {
-    invoke: (channel: string, ...args: unknown[]) => { invoked.push({ channel, args }); return Promise.resolve(null); },
-    on: (channel: string) => { listened.push(channel); },
-    removeListener: (channel: string) => { removed.push(channel); },
+    invoke: (channel: string, ...args: unknown[]) => {
+      invoked.push({ channel, args });
+      return Promise.resolve(null);
+    },
+    on: (channel: string) => {
+      listened.push(channel);
+    },
+    removeListener: (channel: string) => {
+      removed.push(channel);
+    },
   },
   webUtils: { getPathForFile: () => '/projects/demo/zplc.json' },
 }));
@@ -59,9 +70,27 @@ beforeAll(async () => {
 describe('preload bridge (IDE-017)', () => {
   it('exposes the same top-level objects as the packaged smoke expects, and nothing else', () => {
     expect(Object.keys(api).sort()).toEqual([
-      'aiProvider', 'candidateChangeSet', 'closeGuard', 'firmwareBuild', 'firmwareImages', 'getAppInfo', 'isElectron', 'learnProgress', 'learnWorkspace',
-      'menu', 'nativeSimulation', 'platform', 'portChoice', 'projectFiles', 'recovery', 'session', 'toolExecutionAudit', 'toolchain',
-      'updateCheck', 'windowPreferences', 'workspaceTests',
+      'aiProvider',
+      'candidateChangeSet',
+      'closeGuard',
+      'firmwareBuild',
+      'firmwareImages',
+      'getAppInfo',
+      'isElectron',
+      'learnProgress',
+      'learnWorkspace',
+      'menu',
+      'nativeSimulation',
+      'platform',
+      'portChoice',
+      'projectFiles',
+      'recovery',
+      'session',
+      'toolExecutionAudit',
+      'toolchain',
+      'updateCheck',
+      'windowPreferences',
+      'workspaceTests',
     ]);
   });
 
@@ -70,9 +99,18 @@ describe('preload bridge (IDE-017)', () => {
     // The project-files bridge: the folder dialog, the file operations, the recent projects, the watch (IDE-004), the
     // archives (IDE-022) and the one event; each operation has its channel in PROJECT_FILES_CHANNEL under its own name.
     expect(methods('projectFiles')).toEqual([
-      'chooseFolder', ...PROJECT_FILES_OPS, ...PROJECT_RECENT_OPS, ...PROJECT_WATCH_OPS, ...PROJECT_ARCHIVE_OPS, 'onChanged',
+      'chooseFolder',
+      ...PROJECT_FILES_OPS,
+      ...PROJECT_RECENT_OPS,
+      ...PROJECT_WATCH_OPS,
+      ...PROJECT_ARCHIVE_OPS,
+      'onChanged',
     ]);
-    expect(methods('projectFiles').filter((name) => name !== 'onChanged').sort()).toEqual(Object.keys(PROJECT_FILES_CHANNEL).sort());
+    expect(
+      methods('projectFiles')
+        .filter((name) => name !== 'onChanged')
+        .sort(),
+    ).toEqual(Object.keys(PROJECT_FILES_CHANNEL).sort());
     expect(methods('recovery')).toEqual(['write', 'list', 'discard']);
     expect(methods('session')).toEqual(['load', 'save']);
     expect(methods('portChoice')).toEqual(['choose', 'list', 'onRequested']);
@@ -82,14 +120,30 @@ describe('preload bridge (IDE-017)', () => {
     expect(methods('menu')).toEqual(['onCommand']);
     expect(methods('windowPreferences')).toEqual(['report']);
     expect(methods('closeGuard')).toEqual(['setDirty', 'closeNow', 'onCloseRequested']);
-    expect(methods('workspaceTests')).toEqual(['registerProjectFile', 'registerProjectRoot', 'run', 'cancel', 'compile', 'safetyCheck', 'lessonCheck']);
+    expect(methods('workspaceTests')).toEqual([
+      'registerProjectFile',
+      'registerProjectRoot',
+      'run',
+      'cancel',
+      'compile',
+      'safetyCheck',
+      'lessonCheck',
+    ]);
     expect(methods('candidateChangeSet')).toEqual(['review']);
     expect(methods('toolchain')).toEqual(['inspect']);
     expect(methods('firmwareBuild')).toEqual(['start', 'cancel']);
     expect(methods('toolExecutionAudit')).toEqual(['list']);
     expect(methods('aiProvider')).toEqual(['getStatus', 'getConfig', 'saveConfig', 'storeKey', 'clearKey', 'request', 'cancel']);
     expect(methods('nativeSimulation')).toEqual(['startSession', 'stopSession', 'request', 'onEvent']);
-    expect(methods('learnProgress')).toEqual(['read', 'merge', 'readProgress', 'recordGrade', 'noteLesson', 'exportProgress', 'importProgress']);
+    expect(methods('learnProgress')).toEqual([
+      'read',
+      'merge',
+      'readProgress',
+      'recordGrade',
+      'noteLesson',
+      'exportProgress',
+      'importProgress',
+    ]);
     expect(methods('learnWorkspace')).toEqual(['open']);
   });
 

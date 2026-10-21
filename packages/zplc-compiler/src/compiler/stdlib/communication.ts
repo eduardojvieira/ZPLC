@@ -19,29 +19,29 @@ import type { CodeGenContext, FunctionBlockDef, MemberDef, MemberSize } from './
 import { COMM_BLOCKS, COMM_FB_KIND as GENERATED_COMM_FB_KIND, STRING_LAYOUT } from '../../contract.generated';
 
 type CommGenerateCall = {
-  (ctx: CodeGenContext, params: FBParameter[]): void;
-  (baseAddr: number, params: FBParameter[], ctx: CodeGenContext): void;
+    (ctx: CodeGenContext, params: FBParameter[]): void;
+    (baseAddr: number, params: FBParameter[], ctx: CodeGenContext): void;
 };
 
 export interface CommMemberDef extends MemberDef {
-  name: string;
-  /** DataType enum value (tests access this as `m.type`) */
-  type: DataTypeValue;
-  /** Compiler-facing alias used by generic stdlib member resolution */
-  dataType: DataTypeValue;
-  size: MemberSize;
-  /** Byte offset from the FB base address */
-  offset: number;
-  isInput: boolean;
-  isOutput: boolean;
-  isInternal: false;
+    name: string;
+    /** DataType enum value (tests access this as `m.type`) */
+    type: DataTypeValue;
+    /** Compiler-facing alias used by generic stdlib member resolution */
+    dataType: DataTypeValue;
+    size: MemberSize;
+    /** Byte offset from the FB base address */
+    offset: number;
+    isInput: boolean;
+    isOutput: boolean;
+    isInternal: false;
 }
 
 export interface CommFBDef extends FunctionBlockDef {
-  name: string;
-  size: number;
-  members: CommMemberDef[];
-  generateCall: CommGenerateCall;
+    name: string;
+    size: number;
+    members: CommMemberDef[];
+    generateCall: CommGenerateCall;
 }
 
 export const COMM_FB_KIND = GENERATED_COMM_FB_KIND;
@@ -51,100 +51,90 @@ export const COMM_FB_KIND = GENERATED_COMM_FB_KIND;
 export const CommBlocks: Record<string, CommFBDef> = {};
 
 function reg(def: CommFBDef) {
-  CommBlocks[def.name] = def;
+    CommBlocks[def.name] = def;
 }
 
 /** Member of a generated block layout, with the IEC type name resolved to the compiler's DataType. */
 function member(entry: (typeof COMM_BLOCKS)[number]['members'][number]): CommMemberDef {
-  const type = DataType[entry.type as keyof typeof DataType];
-  if (type === undefined) {
-    throw new Error(`Unknown data type ${entry.type} for ${entry.name} in the generated contract`);
-  }
-  return {
-    name: entry.name,
-    type,
-    dataType: type,
-    size: entry.size as MemberSize,
-    offset: entry.offset,
-    isInput: entry.direction === 'in',
-    isOutput: entry.direction === 'out',
-    isInternal: false,
-  };
+    const type = DataType[entry.type as keyof typeof DataType];
+    if (type === undefined) {
+        throw new Error(`Unknown data type ${entry.type} for ${entry.name} in the generated contract`);
+    }
+    return {
+        name: entry.name,
+        type,
+        dataType: type,
+        size: entry.size as MemberSize,
+        offset: entry.offset,
+        isInput: entry.direction === 'in',
+        isOutput: entry.direction === 'out',
+        isInternal: false,
+    };
 }
 
 /**
  * Write all bound input params into FB work-memory then emit COMM_EXEC.
  * Signature: (baseAddr, params, ctx) to match the test contract.
  */
-function emitCommFB(
-  kind: number,
-  def: CommFBDef,
-  baseAddr: number,
-  params: FBParameter[],
-  ctx: CodeGenContext
-): void {
-  ctx.emit(`    ; ${def.name}: write inputs`);
-  for (const param of params) {
-    const member = def.members.find(m => m.name === param.name);
-    if (!member || !member.isInput) continue;
+function emitCommFB(kind: number, def: CommFBDef, baseAddr: number, params: FBParameter[], ctx: CodeGenContext): void {
+    ctx.emit(`    ; ${def.name}: write inputs`);
+    for (const param of params) {
+        const member = def.members.find((m) => m.name === param.name);
+        if (!member || !member.isInput) continue;
 
-    if (member.type === DataType.STRING) {
-      // A STRING member holds the string itself, in the layout of the string table (COM-005): the
-      // capacity the member has room for is written first, then the argument is copied (STRCPY cuts
-      // what does not fit). The handler reads the member as a string at this offset.
-      const capacity = member.size - STRING_LAYOUT.headerSize - 1;
-      ctx.emit(`    PUSH16 ${capacity}`);
-      ctx.emit(`    STORE16 ${baseAddr + member.offset + STRING_LAYOUT.capOffset}`);
-      ctx.emitExpression(param.value);
-      ctx.emit(`    PUSH16 ${baseAddr + member.offset}`);
-      ctx.emit('    STRCPY');
-      continue;
+        if (member.type === DataType.STRING) {
+            // A STRING member holds the string itself, in the layout of the string table (COM-005): the
+            // capacity the member has room for is written first, then the argument is copied (STRCPY cuts
+            // what does not fit). The handler reads the member as a string at this offset.
+            const capacity = member.size - STRING_LAYOUT.headerSize - 1;
+            ctx.emit(`    PUSH16 ${capacity}`);
+            ctx.emit(`    STORE16 ${baseAddr + member.offset + STRING_LAYOUT.capOffset}`);
+            ctx.emitExpression(param.value);
+            ctx.emit(`    PUSH16 ${baseAddr + member.offset}`);
+            ctx.emit('    STRCPY');
+            continue;
+        }
+
+        ctx.emitExpression(param.value);
+        switch (member.type) {
+            case DataType.BOOL:
+            case DataType.USINT:
+                ctx.emit(`    STORE8 ${baseAddr + member.offset}`);
+                break;
+            case DataType.UINT:
+            case DataType.INT:
+            case DataType.WORD:
+                ctx.emit(`    STORE16 ${baseAddr + member.offset}`);
+                break;
+            default:
+                ctx.emit(`    STORE32 ${baseAddr + member.offset}`);
+        }
     }
 
-    ctx.emitExpression(param.value);
-    switch (member.type) {
-      case DataType.BOOL:
-      case DataType.USINT:
-        ctx.emit(`    STORE8 ${baseAddr + member.offset}`);
-        break;
-      case DataType.UINT:
-      case DataType.INT:
-      case DataType.WORD:
-        ctx.emit(`    STORE16 ${baseAddr + member.offset}`);
-        break;
-      default:
-        ctx.emit(`    STORE32 ${baseAddr + member.offset}`);
-    }
-  }
-
-  ctx.emit(`    ; ${def.name}: dispatch (kind=0x${kind.toString(16)})`);
-  ctx.emit(`    PUSH16 ${baseAddr}`);
-  ctx.emit(`    COMM_EXEC 0x${kind.toString(16).padStart(4, '0')}`);
+    ctx.emit(`    ; ${def.name}: dispatch (kind=0x${kind.toString(16)})`);
+    ctx.emit(`    PUSH16 ${baseAddr}`);
+    ctx.emit(`    COMM_EXEC 0x${kind.toString(16).padStart(4, '0')}`);
 }
 
 function defineCommFB(definition: Omit<CommFBDef, 'generateCall'>, kind: number): CommFBDef {
-  const def = definition as CommFBDef;
+    const def = definition as CommFBDef;
 
-  function generateCall(ctx: CodeGenContext, params: FBParameter[]): void;
-  function generateCall(baseAddr: number, params: FBParameter[], ctx: CodeGenContext): void;
-  function generateCall(
-    arg1: number | CodeGenContext,
-    params: FBParameter[],
-    arg3?: CodeGenContext
-  ): void {
-    if (typeof arg1 === 'number') {
-      if (!arg3) {
-        throw new Error(`Missing code generation context for ${def.name}`);
-      }
-      emitCommFB(kind, def, arg1, params, arg3);
-      return;
+    function generateCall(ctx: CodeGenContext, params: FBParameter[]): void;
+    function generateCall(baseAddr: number, params: FBParameter[], ctx: CodeGenContext): void;
+    function generateCall(arg1: number | CodeGenContext, params: FBParameter[], arg3?: CodeGenContext): void {
+        if (typeof arg1 === 'number') {
+            if (!arg3) {
+                throw new Error(`Missing code generation context for ${def.name}`);
+            }
+            emitCommFB(kind, def, arg1, params, arg3);
+            return;
+        }
+
+        emitCommFB(kind, def, arg1.baseAddress, params, arg1);
     }
 
-    emitCommFB(kind, def, arg1.baseAddress, params, arg1);
-  }
-
-  def.generateCall = generateCall;
-  return def;
+    def.generateCall = generateCall;
+    return def;
 }
 
 // ─── Function blocks from the generated contract ─────────────────────────────
@@ -153,9 +143,14 @@ function defineCommFB(definition: Omit<CommFBDef, 'generateCall'>, kind: number)
 // +2 DONE(OUT), +3 ERROR(OUT), +4-7 STATUS(OUT DINT). The layouts, sizes and
 // kind identifiers are in tools/contract/contract.json.
 for (const block of COMM_BLOCKS) {
-  reg(defineCommFB({
-    name: block.name,
-    size: block.size,
-    members: block.members.map(member),
-  }, block.kind));
+    reg(
+        defineCommFB(
+            {
+                name: block.name,
+                size: block.size,
+                members: block.members.map(member),
+            },
+            block.kind,
+        ),
+    );
 }

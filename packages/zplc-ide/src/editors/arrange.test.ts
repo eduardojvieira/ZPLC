@@ -3,8 +3,14 @@ import { describe, expect, it } from 'bun:test';
 import type { Node } from '@xyflow/react';
 import { ARRANGE_COMMANDS, arrangeReason, arrangeSelection } from './arrange';
 
-const node = (id: string, x: number, y: number, width: number, height: number, selected = true): Node =>
-  ({ id, type: 'x', position: { x, y }, measured: { width, height }, selected, data: {} });
+const node = (id: string, x: number, y: number, width: number, height: number, selected = true): Node => ({
+  id,
+  type: 'x',
+  position: { x, y },
+  measured: { width, height },
+  selected,
+  data: {},
+});
 const at = (nodes: Node[], id: string) => nodes.find((candidate) => candidate.id === id)!.position;
 
 describe('aligning the selected nodes (UX-033)', () => {

@@ -6,7 +6,12 @@
  */
 export type TooltipPhase = 'closed' | 'pending' | 'open';
 
-export interface TooltipState { phase: TooltipPhase; hovered: boolean; focused: boolean; suppressed: boolean }
+export interface TooltipState {
+  phase: TooltipPhase;
+  hovered: boolean;
+  focused: boolean;
+  suppressed: boolean;
+}
 export type TooltipEvent = 'pointer-enter' | 'pointer-leave' | 'focus' | 'blur' | 'delay-elapsed' | 'escape' | 'pointer-down';
 
 export const INITIAL_TOOLTIP: TooltipState = { phase: 'closed', hovered: false, focused: false, suppressed: false };
@@ -19,13 +24,19 @@ export function tooltipTransition(state: TooltipState, event: TooltipEvent): { s
       return { state: { ...state, hovered: true, phase: 'pending' }, timer: 'start' };
     case 'pointer-leave': {
       const focused = state.focused;
-      return { state: { ...state, hovered: false, suppressed: false, phase: focused ? state.phase : 'closed' }, timer: focused ? null : 'clear' };
+      return {
+        state: { ...state, hovered: false, suppressed: false, phase: focused ? state.phase : 'closed' },
+        timer: focused ? null : 'clear',
+      };
     }
     case 'focus':
       if (state.suppressed) return { state: { ...state, focused: true }, timer: null };
       return { state: { ...state, focused: true, phase: 'open' }, timer: 'clear' };
     case 'blur':
-      return { state: { ...state, focused: false, suppressed: false, phase: state.hovered ? state.phase : 'closed' }, timer: state.hovered ? null : 'clear' };
+      return {
+        state: { ...state, focused: false, suppressed: false, phase: state.hovered ? state.phase : 'closed' },
+        timer: state.hovered ? null : 'clear',
+      };
     case 'delay-elapsed':
       return state.phase === 'pending' ? { state: { ...state, phase: 'open' }, timer: null } : { state, timer: null };
     case 'escape':

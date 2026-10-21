@@ -22,7 +22,10 @@ import type { Instruction } from './types';
 
 /** An analysis that cannot give a depth: recursion, a stack that grows without bound, a task that underflows. */
 export class DepthError extends Error {
-    constructor(message: string, readonly address?: number) {
+    constructor(
+        message: string,
+        readonly address?: number,
+    ) {
         super(message);
         this.name = 'DepthError';
     }
@@ -93,7 +96,10 @@ export function analyzeDepths(instructions: readonly Instruction[], entries: rea
 
         const arrive = (address: number, lo: number, hi: number): void => {
             if (lo < -UNBOUNDED || hi > UNBOUNDED) {
-                throw new DepthError(`The evaluation stack grows without bound in the code at ${hex(address)}: a loop leaves more values on it at each turn`, address);
+                throw new DepthError(
+                    `The evaluation stack grows without bound in the code at ${hex(address)}: a loop leaves more values on it at each turn`,
+                    address,
+                );
             }
             const known = depth.get(address);
             if (known === undefined) {
@@ -125,15 +131,13 @@ export function analyzeDepths(instructions: readonly Instruction[], entries: rea
             if (hi > peak) peak = hi;
 
             const target = info.flags.includes('relative')
-                ? address + 2 + ((instruction.operand ?? 0) << 24 >> 24)
-                : instruction.operand ?? 0;
+                ? address + 2 + (((instruction.operand ?? 0) << 24) >> 24)
+                : (instruction.operand ?? 0);
             switch (instruction.opcode) {
                 case Opcode.HALT:
                     continue;
                 case Opcode.RET:
-                    returns = returns
-                        ? { lo: Math.min(returns.lo, lo), hi: Math.max(returns.hi, hi) }
-                        : { lo, hi };
+                    returns = returns ? { lo: Math.min(returns.lo, lo), hi: Math.max(returns.hi, hi) } : { lo, hi };
                     continue;
                 case Opcode.JMP:
                 case Opcode.JR:

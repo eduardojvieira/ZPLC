@@ -2,10 +2,6 @@
   "requirement": "CMP-024",
   "title": "REF() of a DINT assigned to a REF_TO INT is rejected",
   "build": "fails",
-  "lines": [
-    6
-  ],
-  "codes": [
-    "TYPE_MISMATCH"
-  ]
+  "lines": [6],
+  "codes": ["TYPE_MISMATCH"]
 }

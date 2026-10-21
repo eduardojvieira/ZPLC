@@ -2,10 +2,6 @@
   "requirement": "CMP-028",
   "title": "a DINT variable passed to an INT VAR_IN_OUT is rejected",
   "build": "fails",
-  "lines": [
-    11
-  ],
-  "codes": [
-    "TYPE_MISMATCH"
-  ]
+  "lines": [11],
+  "codes": ["TYPE_MISMATCH"]
 }

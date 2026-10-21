@@ -1,3 +1,8 @@
 [
-  {"row": "blocks.communication-and-cloud-blocks", "requirement": "COM-006", "reason": "the twelve blocks need a protocol double (a Modbus, MQTT or cloud peer) that the runner does not start; the cases belong to the communication package", "added": "2026-10-10"}
+  {
+    "row": "blocks.communication-and-cloud-blocks",
+    "requirement": "COM-006",
+    "reason": "the twelve blocks need a protocol double (a Modbus, MQTT or cloud peer) that the runner does not start; the cases belong to the communication package",
+    "added": "2026-10-10"
+  }
 ]

@@ -5,16 +5,9 @@
   "order": 22,
   "module": 7,
   "level": "intermediate",
-  "prerequisites": [
-    "function-block-pump-pair"
-  ],
-  "languages": [
-    "ST"
-  ],
-  "tracks": [
-    "simulation",
-    "hardware"
-  ],
+  "prerequisites": ["function-block-pump-pair"],
+  "languages": ["ST"],
+  "tracks": ["simulation", "hardware"],
   "unsupported": {},
   "plant": null,
   "estimatedMinutes": 25,

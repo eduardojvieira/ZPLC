@@ -41,7 +41,11 @@ export interface WasmRuntimeBuild {
   unavailableReason: string | null;
 }
 
-export interface Spawned { status: number | null; stdout: string; stderr: string }
+export interface Spawned {
+  status: number | null;
+  stdout: string;
+  stderr: string;
+}
 
 export interface WasmRuntimeBuildOptions {
   /** The repository root, where tools/wasm-core lives. */
@@ -54,7 +58,7 @@ export interface WasmRuntimeBuildOptions {
 
 function defaultSpawn(command: string[]): Spawned {
   const done = spawnSync(command[0]!, command.slice(1), { encoding: 'utf8' });
-  return { status: done.status, stdout: done.stdout ?? '', stderr: done.stderr ?? (done.error?.message ?? '') };
+  return { status: done.status, stdout: done.stdout ?? '', stderr: done.stderr ?? done.error?.message ?? '' };
 }
 
 export function isCi(environment: NodeJS.ProcessEnv = process.env): boolean {
@@ -76,7 +80,8 @@ export function buildWasmRuntime(options: WasmRuntimeBuildOptions): WasmRuntimeB
       return {
         manifest: null,
         bytesBase64: null,
-        unavailableReason: `${reason}. This build has no browser runtime: native simulation is unaffected, and the web build of ZPLC cannot simulate.`,
+        unavailableReason:
+          `${reason}. This build has no browser runtime: native simulation is unaffected, and the web build of ZPLC ` + `cannot simulate.`,
       };
     }
     if (done.status !== 0) throw new Error(`the WebAssembly runtime did not build:\n${done.stdout}${done.stderr}`);

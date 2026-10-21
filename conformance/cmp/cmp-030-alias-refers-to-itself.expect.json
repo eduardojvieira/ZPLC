@@ -2,13 +2,7 @@
   "requirement": "CMP-030",
   "title": "type aliases that refer to each other are rejected",
   "build": "fails",
-  "lines": [
-    1
-  ],
-  "codes": [
-    "CIRCULAR_TYPE_ALIAS"
-  ],
-  "messageIncludes": [
-    "refers to itself"
-  ]
+  "lines": [1],
+  "codes": ["CIRCULAR_TYPE_ALIAS"],
+  "messageIncludes": ["refers to itself"]
 }

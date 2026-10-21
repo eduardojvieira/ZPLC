@@ -17,7 +17,9 @@ const withAsset = (patch: Partial<RunResults['assets'][number]>, index = 0): Run
 
 describe('the title of a release says how complete a prerelease is (REL-031)', () => {
   test('names the version and the completeness of a release candidate', () => {
-    expect(releaseTitle(fixture())).toBe('ZPLC v2.0.0-rc.4: release candidate, the Windows channels are not live and no board has a hardware record yet');
+    expect(releaseTitle(fixture())).toBe(
+      'ZPLC v2.0.0-rc.4: release candidate, the Windows channels are not live and no board has a hardware record yet',
+    );
   });
 
   test('refuses a prerelease with no statement of its completeness', () => {
@@ -40,11 +42,17 @@ describe('the signing state of every asset comes from the checks of the run (REL
 
   test('lists each asset with the job that built it and its signing state', () => {
     expect(notes).toContain('| zplc-2.0.0-rc.4-mac-arm64.dmg |');
-    expect(notes).toMatch(new RegExp(String.raw`\| zplc-2\.0\.0-rc\.4-mac-arm64\.dmg \| \[build-macos \(arm64\)\]\(https:\/\/github\.com\/` +
-        String.raw`example\/zplc\/actions\/runs\/1\/job\/10\) \| Signed ad hoc and sealed; ` +
-        String.raw`signature verified in this run\. Not notarized`));
+    expect(notes).toMatch(
+      new RegExp(
+        String.raw`\| zplc-2\.0\.0-rc\.4-mac-arm64\.dmg \| \[build-macos \(arm64\)\]\(https:\/\/github\.com\/` +
+          String.raw`example\/zplc\/actions\/runs\/1\/job\/10\) \| Signed ad hoc and sealed; ` +
+          String.raw`signature verified in this run\. Not notarized`,
+      ),
+    );
     expect(notes).toMatch(/\| zplc-2\.0\.0-rc\.4-win-x64-setup-unsigned\.exe \|[^\n]*\| Unsigned\./);
-    expect(notes).toMatch(/\| zplc-2\.0\.0-rc\.4-linux-x64\.deb \|[^\n]*\| Unsigned\.[^\n]*installed and launched in clean containers: passed/);
+    expect(notes).toMatch(
+      /\| zplc-2\.0\.0-rc\.4-linux-x64\.deb \|[^\n]*\| Unsigned\.[^\n]*installed and launched in clean containers: passed/,
+    );
   });
 
   test('does not call an asset signed when the signature check did not pass in the run', () => {
@@ -57,23 +65,54 @@ describe('the signing state of every asset comes from the checks of the run (REL
 
   test('labels a firmware image with the evidence level of its board and claims no launch (REL-022)', () => {
     const results = fixture();
-    results.assets.push({ name: 'zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2', platform: 'firmware', job: 'build-firmware', signing: 'unsigned', evidenceLevel: 'cross-build', checks: { signature: 'not-run', launch: 'not-run', install: 'not-run' } });
-    results.assets.push({ name: 'zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin', platform: 'firmware', job: 'build-firmware', signing: 'unsigned', checks: { signature: 'not-run', launch: 'not-run', install: 'not-run' } });
+    results.assets.push({
+      name: 'zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2',
+      platform: 'firmware',
+      job: 'build-firmware',
+      signing: 'unsigned',
+      evidenceLevel: 'cross-build',
+      checks: { signature: 'not-run', launch: 'not-run', install: 'not-run' },
+    });
+    results.assets.push({
+      name: 'zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin',
+      platform: 'firmware',
+      job: 'build-firmware',
+      signing: 'unsigned',
+      checks: { signature: 'not-run', launch: 'not-run', install: 'not-run' },
+    });
     const text = renderReleaseNotes(results);
     const row = (name: string) => text.split('\n').find((line) => line.startsWith(`| ${name} |`))!;
     expect(row('zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2')).toContain('Evidence level of the board: cross-build');
     expect(row('zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2')).toContain('has not been flashed or run on it');
     expect(row('zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2')).not.toContain('launched on its own system');
     expect(row('zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin')).toContain('evidence level of the board is not recorded in this run');
-    results.assets.push({ name: 'zplc-runtime-2.0.0-rc.4.manifest.json', platform: 'firmware', job: 'build-firmware', signing: 'unsigned', checks: { signature: 'not-run', launch: 'not-run', install: 'not-run' } });
-    expect(renderReleaseNotes(results).split('\n').find((line) => line.startsWith('| zplc-runtime-2.0.0-rc.4.manifest.json |'))).toContain('lists the firmware images of this release');
+    results.assets.push({
+      name: 'zplc-runtime-2.0.0-rc.4.manifest.json',
+      platform: 'firmware',
+      job: 'build-firmware',
+      signing: 'unsigned',
+      checks: { signature: 'not-run', launch: 'not-run', install: 'not-run' },
+    });
+    expect(
+      renderReleaseNotes(results)
+        .split('\n')
+        .find((line) => line.startsWith('| zplc-runtime-2.0.0-rc.4.manifest.json |')),
+    ).toContain('lists the firmware images of this release');
   });
 
   test('says which firmware job to read when the run published no firmware image (REL-022)', () => {
     const results = fixture();
     results.jobs.push({ job: 'build-firmware', result: 'failure' }, { job: 'assemble-firmware', result: 'skipped' });
-    expect(renderReleaseNotes(results)).toContain('No firmware image was published: build-firmware ended in failure, assemble-firmware ended in skipped.');
-    results.assets.push({ name: 'zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2', platform: 'firmware', job: 'build-firmware', signing: 'unsigned', checks: { signature: 'not-run', launch: 'not-run', install: 'not-run' } });
+    expect(renderReleaseNotes(results)).toContain(
+      'No firmware image was published: build-firmware ended in failure, assemble-firmware ended in skipped.',
+    );
+    results.assets.push({
+      name: 'zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2',
+      platform: 'firmware',
+      job: 'build-firmware',
+      signing: 'unsigned',
+      checks: { signature: 'not-run', launch: 'not-run', install: 'not-run' },
+    });
     expect(renderReleaseNotes(results)).not.toContain('No firmware image was published');
   });
 
@@ -128,7 +167,9 @@ describe('tests, known failures and changes (REL-027)', () => {
   });
 
   test('takes the changes of a version from its section of the changelog', () => {
-    const changelog = '# Changelog\n\n## Unreleased\n\n- Not yet.\n\n## 2.0.0-rc.4 - 2026-10-20\n\n- First change.\n  continued here.\n- Second change.\n\n## 2.0.0-rc.3 - 2026-09-01\n\n- Old.\n';
+    const changelog =
+      '# Changelog\n\n## Unreleased\n\n- Not yet.\n\n## 2.0.0-rc.4 - 2026-10-20\n\n- First change.\n  continued here.\n- Second ' +
+      'change.\n\n## 2.0.0-rc.3 - 2026-09-01\n\n- Old.\n';
     expect(changelogSection(changelog, '2.0.0-rc.4')).toEqual(['First change. continued here.', 'Second change.']);
     expect(changelogSection(changelog, '9.9.9')).toEqual([]);
   });
@@ -136,14 +177,41 @@ describe('tests, known failures and changes (REL-027)', () => {
 
 describe('what changed for a user, what breaks, how to migrate and what is limited (DOC-030)', () => {
   const changelog = [
-    '# Changelog', '', '## Unreleased', '', '- Not yet.', '',
-    '## 2.0.0-rc.4 - 2026-10-20', '',
-    '### What changed for you', '', '- The simulator runs tasks of different intervals.', '  Each is released on its own.', '- Archives export and import.', '',
-    '### Breaking changes', '', '- Programs built before contract draft 4 are refused.', '',
-    '### Migration', '', '1. Rebuild every program and reflash every board together.', '2. Name the broker of every controller.', '',
-    '### Known limits', '', '- No board has a hardware record.', '',
-    '### Details for contributors', '', '- `tools/contract/contract.json` carries the counter (CMP-052).', '',
-    '## 2.0.0-rc.3 - 2026-09-01', '', '- Old.', '',
+    '# Changelog',
+    '',
+    '## Unreleased',
+    '',
+    '- Not yet.',
+    '',
+    '## 2.0.0-rc.4 - 2026-10-20',
+    '',
+    '### What changed for you',
+    '',
+    '- The simulator runs tasks of different intervals.',
+    '  Each is released on its own.',
+    '- Archives export and import.',
+    '',
+    '### Breaking changes',
+    '',
+    '- Programs built before contract draft 4 are refused.',
+    '',
+    '### Migration',
+    '',
+    '1. Rebuild every program and reflash every board together.',
+    '2. Name the broker of every controller.',
+    '',
+    '### Known limits',
+    '',
+    '- No board has a hardware record.',
+    '',
+    '### Details for contributors',
+    '',
+    '- `tools/contract/contract.json` carries the counter (CMP-052).',
+    '',
+    '## 2.0.0-rc.3 - 2026-09-01',
+    '',
+    '- Old.',
+    '',
   ].join('\n');
 
   test('splits a section that names its parts, and leaves the details for contributors in the changelog', () => {
@@ -157,7 +225,13 @@ describe('what changed for a user, what breaks, how to migrate and what is limit
   });
 
   test('takes every bullet of an older section as a change, and says nothing is recorded under "None."', () => {
-    expect(changelogParts(changelog, '2.0.0-rc.3')).toEqual({ structured: false, changes: ['Old.'], breaking: [], migration: [], limits: [] });
+    expect(changelogParts(changelog, '2.0.0-rc.3')).toEqual({
+      structured: false,
+      changes: ['Old.'],
+      breaking: [],
+      migration: [],
+      limits: [],
+    });
     const none = '## 2.0.0 - 2026-11-01\n\n### What changed for you\n\n- A change.\n\n### Breaking changes\n\nNone.\n\n- None.\n';
     expect(changelogParts(none, '2.0.0').breaking).toEqual([]);
   });
@@ -181,7 +255,11 @@ describe('what changed for a user, what breaks, how to migrate and what is limit
     results.changes = [];
     const resultsPath = join(directory, 'results.json');
     writeFileSync(resultsPath, JSON.stringify(results));
-    const run = spawnSync('bun', ['scripts/release/release-notes.ts', '--results', resultsPath, '--out', join(directory, 'notes.md'), '--changelog', log], { cwd: root, encoding: 'utf8' });
+    const run = spawnSync(
+      'bun',
+      ['scripts/release/release-notes.ts', '--results', resultsPath, '--out', join(directory, 'notes.md'), '--changelog', log],
+      { cwd: root, encoding: 'utf8' },
+    );
     expect(run.status, run.stderr).toBe(0);
     const notes = readFileSync(join(directory, 'notes.md'), 'utf8');
     expect(notes).toContain('- Archives export and import.');
@@ -236,9 +314,23 @@ describe('what a person is told about Windows, verification and evidence (REL-03
 describe('the command line (REL-027)', () => {
   test('reads a run-results file and writes the title and the notes', () => {
     const directory = mkdtempSync(join(tmpdir(), 'zplc-notes-'));
-    const result = spawnSync('bun', ['scripts/release/release-notes.ts', '--results', join(import.meta.dir, 'fixtures', 'run-results.json'), '--out', join(directory, 'notes.md'), '--title-out', join(directory, 'title.txt')], { cwd: root, encoding: 'utf8' });
+    const result = spawnSync(
+      'bun',
+      [
+        'scripts/release/release-notes.ts',
+        '--results',
+        join(import.meta.dir, 'fixtures', 'run-results.json'),
+        '--out',
+        join(directory, 'notes.md'),
+        '--title-out',
+        join(directory, 'title.txt'),
+      ],
+      { cwd: root, encoding: 'utf8' },
+    );
     expect(result.status, result.stderr).toBe(0);
-    expect(readFileSync(join(directory, 'title.txt'), 'utf8')).toBe('ZPLC v2.0.0-rc.4: release candidate, the Windows channels are not live and no board has a hardware record yet');
+    expect(readFileSync(join(directory, 'title.txt'), 'utf8')).toBe(
+      'ZPLC v2.0.0-rc.4: release candidate, the Windows channels are not live and no board has a hardware record yet',
+    );
     expect(readFileSync(join(directory, 'notes.md'), 'utf8')).toContain('### Signing state and checks of every asset');
   });
 
@@ -246,7 +338,10 @@ describe('the command line (REL-027)', () => {
     const directory = mkdtempSync(join(tmpdir(), 'zplc-notes-'));
     const bad = join(directory, 'bad.json');
     writeFileSync(bad, JSON.stringify({ schemaVersion: 2 }));
-    const result = spawnSync('bun', ['scripts/release/release-notes.ts', '--results', bad, '--out', join(directory, 'notes.md')], { cwd: root, encoding: 'utf8' });
+    const result = spawnSync('bun', ['scripts/release/release-notes.ts', '--results', bad, '--out', join(directory, 'notes.md')], {
+      cwd: root,
+      encoding: 'utf8',
+    });
     expect(result.status).toBe(1);
     expect(result.stderr).toMatch(/schemaVersion/);
   });

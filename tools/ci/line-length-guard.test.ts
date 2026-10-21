@@ -75,7 +75,9 @@ describe('VF-017 formatter file selection', async () => {
   });
 
   it('gives every .prettierignore group of entries a reason in the comment that opens it', () => {
-    const groups = read('.prettierignore').trim().split(/\n\s*\n/);
+    const groups = read('.prettierignore')
+      .trim()
+      .split(/\n\s*\n/);
     expect(groups.filter((group) => !group.startsWith('#'))).toEqual([]);
   });
 });

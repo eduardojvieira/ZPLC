@@ -28,20 +28,85 @@ export const ROOT_DOCUMENTS = ['README.md', 'CONTRIBUTING.md', 'AGENTS.md', 'QUI
 const ALLOWLIST = 'docs/doc-claims-allowlist.json';
 
 export type Kind = 'kconfig' | 'shell' | 'cli' | 'c-api' | 'call' | 'path';
-export interface Claim { kind: Kind; token: string; page: string; line: number }
-export interface Finding extends Claim { message: string }
-export interface AllowEntry { kind: Kind; token: string; reason: string }
+export interface Claim {
+  kind: Kind;
+  token: string;
+  page: string;
+  line: number;
+}
+export interface Finding extends Claim {
+  message: string;
+}
+export interface AllowEntry {
+  kind: Kind;
+  token: string;
+  reason: string;
+}
 
 /** Names that are not functions of the registry but may be written with parentheses in ST, IL or the docs. */
 const IEC_CALLS = new Set([
-  'REF', 'ADR', 'SIZEOF', 'INT', 'SINT', 'DINT', 'LINT', 'UINT', 'USINT', 'UDINT', 'ULINT', 'REAL', 'LREAL', 'BOOL', 'BYTE', 'WORD',
-  'DWORD', 'LWORD', 'TIME', 'STRING', 'WSTRING', 'ARRAY', 'POINTER', 'CAL', 'CALC', 'CALCN', 'AND', 'OR', 'XOR', 'NOT', 'ANDN', 'ORN', 'XORN',
-  'ADD', 'SUB', 'MUL', 'DIV', 'GT', 'GE', 'EQ', 'NE', 'LT', 'LE', 'MOVE',
+  'REF',
+  'ADR',
+  'SIZEOF',
+  'INT',
+  'SINT',
+  'DINT',
+  'LINT',
+  'UINT',
+  'USINT',
+  'UDINT',
+  'ULINT',
+  'REAL',
+  'LREAL',
+  'BOOL',
+  'BYTE',
+  'WORD',
+  'DWORD',
+  'LWORD',
+  'TIME',
+  'STRING',
+  'WSTRING',
+  'ARRAY',
+  'POINTER',
+  'CAL',
+  'CALC',
+  'CALCN',
+  'AND',
+  'OR',
+  'XOR',
+  'NOT',
+  'ANDN',
+  'ORN',
+  'XORN',
+  'ADD',
+  'SUB',
+  'MUL',
+  'DIV',
+  'GT',
+  'GE',
+  'EQ',
+  'NE',
+  'LT',
+  'LE',
+  'MOVE',
 ]);
 
 const FENCE = /^(\s*)(`{3,}|~{3,})\s*([^\s`{]*)/;
 const SHELL_FENCES = new Set(['bash', 'sh', 'shell', 'console', 'zsh', 'shell-session']);
-const TOP_LEVEL = new Set(['firmware', 'packages', 'docs', 'tools', 'conformance', 'scripts', 'examples', 'specs', 'odd', '.github', '.agents', '.specify']);
+const TOP_LEVEL = new Set([
+  'firmware',
+  'packages',
+  'docs',
+  'tools',
+  'conformance',
+  'scripts',
+  'examples',
+  'specs',
+  'odd',
+  '.github',
+  '.agents',
+  '.specify',
+]);
 
 // ---------------------------------------------------------------------------
 // Extracting claims
@@ -61,11 +126,17 @@ export function extractClaims(page: string, text: string): Claim[] {
     }
     const open = FENCE.exec(raw);
     if (fence) {
-      if (open && open[2]!.startsWith(fence.marker[0]!) && open[2]!.length >= fence.marker.length && raw.trim() === open[2]) { fence = undefined; return; }
+      if (open && open[2]!.startsWith(fence.marker[0]!) && open[2]!.length >= fence.marker.length && raw.trim() === open[2]) {
+        fence = undefined;
+        return;
+      }
       if (fence.shell) claims.push(...claimsOf(raw.replace(/^\s*\$\s+/, ''), page, line, true));
       return;
     }
-    if (open) { fence = { marker: open[2]!, shell: SHELL_FENCES.has(open[3]!.toLowerCase()) }; return; }
+    if (open) {
+      fence = { marker: open[2]!, shell: SHELL_FENCES.has(open[3]!.toLowerCase()) };
+      return;
+    }
     for (const match of raw.matchAll(/(`{1,2})([^`]+?)\1/g)) claims.push(...claimsOf(match[2]!.trim(), page, line, false));
   });
   return claims;
@@ -83,18 +154,31 @@ function claimsOf(span: string, page: string, line: number, shellLine: boolean):
   const cli = /^zplc-cli\s+([a-z][\w-]*)/.exec(text);
   if (cli) add('cli', cli[1]!);
 
-  const words = shellLine ? text.split(/\s+/) : /^[\w./-]+\s/.test(text) && repoPath(text.split(/\s+/)[0]!) ? [text.split(/\s+/)[0]!] : [text];
+  const words = shellLine
+    ? text.split(/\s+/)
+    : /^[\w./-]+\s/.test(text) && repoPath(text.split(/\s+/)[0]!)
+      ? [text.split(/\s+/)[0]!]
+      : [text];
   for (const word of words) {
     const bare = word.replace(/^[("']+|[)"',;:.]+$/g, '');
     // Kconfig symbol, with or without a value
     const config = /^CONFIG_([A-Z0-9_]+)(?:=.*)?$/.exec(bare);
-    if (config) { add('kconfig', config[1]!); continue; }
+    if (config) {
+      add('kconfig', config[1]!);
+      continue;
+    }
     // C identifier that the runtime owns
     const cName = /^(zplc_[a-z0-9_]+)(?:\(.*)?$/.exec(bare);
-    if (cName && !shell) { add('c-api', cName[1]!); continue; }
+    if (cName && !shell) {
+      add('c-api', cName[1]!);
+      continue;
+    }
     // IEC call: an upper-case name followed by an argument list
     const call = /^([A-Z][A-Z0-9_]+)\(.*\)?$/.exec(bare);
-    if (call && !shellLine) { add('call', call[1]!); continue; }
+    if (call && !shellLine) {
+      add('call', call[1]!);
+      continue;
+    }
     // repository path
     const path = repoPath(bare);
     if (path) add('path', path);
@@ -116,9 +200,20 @@ export function shellToken(text: string, words: string): string {
 export function repoPath(word: string): string | undefined {
   if (/^[a-z]+:\/\//.test(word) || word.startsWith('/') || word.startsWith('~')) return undefined;
   if (/[<>*{}|$=]|\.\.\./.test(word)) return undefined;
-  const cleaned = word.replace(/^\.\//, '').replace(/:\d+(?:-\d+)?$/, '').replace(/#.*$/, '').replace(/\/+$/, '');
+  const cleaned = word
+    .replace(/^\.\//, '')
+    .replace(/:\d+(?:-\d+)?$/, '')
+    .replace(/#.*$/, '')
+    .replace(/\/+$/, '');
   const first = cleaned.split('/')[0]!;
-  if (!cleaned.includes('/') && !new RegExp(String.raw`^(west\.yml|CMakeLists\.txt|package\.json|bun\.lock|justfile|README\.md|CONTRIBUTING\.md|AGENTS\.md|` + String.raw`ARCHITECTURE\.md|VERSIONING\.md|SECURITY\.md|CHANGELOG\.md|LICENSE)$`).test(cleaned)) return undefined;
+  if (
+    !cleaned.includes('/') &&
+    !new RegExp(
+      String.raw`^(west\.yml|CMakeLists\.txt|package\.json|bun\.lock|justfile|README\.md|CONTRIBUTING\.md|AGENTS\.md|` +
+        String.raw`ARCHITECTURE\.md|VERSIONING\.md|SECURITY\.md|CHANGELOG\.md|LICENSE)$`,
+    ).test(cleaned)
+  )
+    return undefined;
   if (cleaned.includes('/') && !TOP_LEVEL.has(first)) return undefined;
   return cleaned;
 }
@@ -162,9 +257,35 @@ export function buildIndex(): Index {
       for (const dependency of symbol.depends) for (const name of dependency.match(/[A-Z][A-Z0-9_]+/g) ?? []) dependedOn.add(name);
     }
   }
-  const configUsed = new Set([...dependedOn, ...git(['grep', '-hoE', 'CONFIG_[A-Z0-9_]+', '--', '*.conf', '*.c', '*.h', '*.cmake', '*.txt', '*.overlay', 'Kconfig*', '*.yml', '*.json', ':!docs', ':!specs', ':!tools/docs'])
-    .split('\n').filter(Boolean).map((name) => name.replace(/^CONFIG_/, ''))]);
-  const cIdentifiers = new Set(git(['grep', '-hoE', '\\bzplc_[a-z0-9_]+\\b', '--', '*.c', '*.h', '*.cmake', 'CMakeLists.txt', ':!docs', ':!specs', ':!tools/docs']).split('\n').filter(Boolean));
+  const configUsed = new Set([
+    ...dependedOn,
+    ...git([
+      'grep',
+      '-hoE',
+      'CONFIG_[A-Z0-9_]+',
+      '--',
+      '*.conf',
+      '*.c',
+      '*.h',
+      '*.cmake',
+      '*.txt',
+      '*.overlay',
+      'Kconfig*',
+      '*.yml',
+      '*.json',
+      ':!docs',
+      ':!specs',
+      ':!tools/docs',
+    ])
+      .split('\n')
+      .filter(Boolean)
+      .map((name) => name.replace(/^CONFIG_/, '')),
+  ]);
+  const cIdentifiers = new Set(
+    git(['grep', '-hoE', '\\bzplc_[a-z0-9_]+\\b', '--', '*.c', '*.h', '*.cmake', 'CMakeLists.txt', ':!docs', ':!specs', ':!tools/docs'])
+      .split('\n')
+      .filter(Boolean),
+  );
   const cli = parseCli(read('packages/zplc-ide/src/cli/index.ts'));
   return {
     kconfig,
@@ -196,9 +317,12 @@ export function checkClaim(claim: Claim, index: Index): string | undefined {
       const words = command!.split(' ');
       let prefix = [words[0]!];
       for (const word of words.slice(1)) {
-        const children = index.shell.filter((entry) => entry.path.length === prefix.length + 1 && entry.path.slice(0, prefix.length).join(' ') === prefix.join(' '));
+        const children = index.shell.filter(
+          (entry) => entry.path.length === prefix.length + 1 && entry.path.slice(0, prefix.length).join(' ') === prefix.join(' '),
+        );
         if (children.length === 0) break; // a leaf: the rest are arguments
-        if (!children.some((child) => child.path[prefix.length] === word)) return `the shell has no command \`${[...prefix, word].join(' ')}\``;
+        if (!children.some((child) => child.path[prefix.length] === word))
+          return `the shell has no command \`${[...prefix, word].join(' ')}\``;
         prefix = [...prefix, word];
       }
       if (given === undefined) return undefined;
@@ -209,17 +333,28 @@ export function checkClaim(claim: Claim, index: Index): string | undefined {
       const extra = words.length - 1 - consumed;
       const total = Number(given) + extra;
       const most = entry.required + (entry.optional ?? 0);
-      if (total < entry.required || total > most) return `\`${prefix.join(' ')}\` takes ${entry.required} required and ${entry.optional ?? 0} optional argument(s); the page gives ${total}`;
+      if (total < entry.required || total > most)
+        return `\`${prefix.join(' ')}\` takes ${entry.required} required and ${
+          entry.optional ?? 0
+        } optional argument(s); the page gives ${total}`;
       return undefined;
     }
     case 'cli':
-      return index.cliCommands.has(claim.token) ? undefined : `zplc-cli has no command ${claim.token} (it has ${[...index.cliCommands].join(', ')})`;
+      return index.cliCommands.has(claim.token)
+        ? undefined
+        : `zplc-cli has no command ${claim.token} (it has ${[...index.cliCommands].join(', ')})`;
     case 'c-api':
-      return index.cIdentifiers.has(claim.token) ? undefined : `${claim.token} is not declared or used by any C source, header or tool of the repository`;
+      return index.cIdentifiers.has(claim.token)
+        ? undefined
+        : `${claim.token} is not declared or used by any C source, header or tool of the repository`;
     case 'call':
-      return index.calls.has(claim.token.toUpperCase()) || IEC_CALLS.has(claim.token.toUpperCase()) ? undefined : `${claim.token} is not a function or function block of the compiler registry`;
+      return index.calls.has(claim.token.toUpperCase()) || IEC_CALLS.has(claim.token.toUpperCase())
+        ? undefined
+        : `${claim.token} is not a function or function block of the compiler registry`;
     case 'path':
-      return index.files.has(claim.token) || index.directories.has(claim.token) ? undefined : `${claim.token} is not a tracked file or folder`;
+      return index.files.has(claim.token) || index.directories.has(claim.token)
+        ? undefined
+        : `${claim.token} is not a tracked file or folder`;
   }
 }
 
@@ -230,7 +365,10 @@ export function checkClaims(claims: Claim[], index: Index, allowlist: AllowEntry
     const message = checkClaim(claim, index);
     if (message === undefined) continue;
     const allowed = allowlist.find((entry) => entry.kind === claim.kind && entry.token === claim.token);
-    if (allowed) { used.add(allowed); continue; }
+    if (allowed) {
+      used.add(allowed);
+      continue;
+    }
     findings.push({ ...claim, message });
   }
   return { findings, unused: allowlist.filter((entry) => !used.has(entry)) };
@@ -240,9 +378,11 @@ export function allowlistErrors(allowlist: AllowEntry[]): string[] {
   return allowlist.flatMap((entry, position) => {
     const where = `${ALLOWLIST}[${position}]`;
     const errors: string[] = [];
-    if (!['kconfig', 'shell', 'cli', 'c-api', 'call', 'path'].includes(entry.kind)) errors.push(`${where}: kind must be one of kconfig, shell, cli, c-api, call, path`);
+    if (!['kconfig', 'shell', 'cli', 'c-api', 'call', 'path'].includes(entry.kind))
+      errors.push(`${where}: kind must be one of kconfig, shell, cli, c-api, call, path`);
     if (typeof entry.token !== 'string' || entry.token === '') errors.push(`${where}: token must be the text of the claim`);
-    if (typeof entry.reason !== 'string' || entry.reason.trim().length < 10) errors.push(`${where}: reason must say why the claim is deliberately absent`);
+    if (typeof entry.reason !== 'string' || entry.reason.trim().length < 10)
+      errors.push(`${where}: reason must say why the claim is deliberately absent`);
     return errors;
   });
 }

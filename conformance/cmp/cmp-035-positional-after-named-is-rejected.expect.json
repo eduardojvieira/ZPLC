@@ -1,14 +1,8 @@
 {
   "requirement": "CMP-035",
   "title": "an argument by position cannot follow one by name",
-  "matrix": [
-    "pous.function"
-  ],
+  "matrix": ["pous.function"],
   "build": "fails",
-  "lines": [
-    10
-  ],
-  "codes": [
-    "INVALID_ARGUMENTS"
-  ]
+  "lines": [10],
+  "codes": ["INVALID_ARGUMENTS"]
 }

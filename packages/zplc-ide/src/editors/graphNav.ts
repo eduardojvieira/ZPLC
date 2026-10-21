@@ -33,7 +33,14 @@ export function nearestNode(nodes: readonly Node[], from: Node, direction: Direc
   for (const node of nodes) {
     if (node.id === from.id) continue;
     const at = centre(node);
-    const along = direction === 'right' ? at.x - origin.x : direction === 'left' ? origin.x - at.x : direction === 'down' ? at.y - origin.y : origin.y - at.y;
+    const along =
+      direction === 'right'
+        ? at.x - origin.x
+        : direction === 'left'
+          ? origin.x - at.x
+          : direction === 'down'
+            ? at.y - origin.y
+            : origin.y - at.y;
     if (along <= 0) continue;
     const across = Math.abs(direction === 'left' || direction === 'right' ? at.y - origin.y : at.x - origin.x);
     const score = along + 2 * across;
@@ -44,7 +51,9 @@ export function nearestNode(nodes: readonly Node[], from: Node, direction: Direc
 
 /** The first node of the canvas in reading order: the top row, then the leftmost. */
 export function firstNode(nodes: readonly Node[]): Node | undefined {
-  return [...nodes].sort((first, second) => first.position.y - second.position.y || first.position.x - second.position.x || (first.id < second.id ? -1 : 1))[0];
+  return [...nodes].sort(
+    (first, second) => first.position.y - second.position.y || first.position.x - second.position.x || (first.id < second.id ? -1 : 1),
+  )[0];
 }
 
 /** The nodes and edges with only the node `id` selected. */
@@ -83,10 +92,12 @@ export function freePosition(
     x = 80;
     y = 80;
   }
-  const taken = (at: { x: number; y: number }) => nodes.some((node) => Math.abs(node.position.x - at.x) < size.width * 0.75 && Math.abs(node.position.y - at.y) < size.height * 0.75);
+  const taken = (at: { x: number; y: number }) =>
+    nodes.some((node) => Math.abs(node.position.x - at.x) < size.width * 0.75 && Math.abs(node.position.y - at.y) < size.height * 0.75);
   let place = { x: snap(x), y: snap(y) };
   // in the way: a node below goes on down, a node beside goes on down too, so that the column of a chain stays a column
-  for (let attempt = 0; attempt < 200 && taken(place); attempt++) place = placement === 'below' ? { x: place.x + size.width, y: place.y } : { x: place.x, y: place.y + size.height };
+  for (let attempt = 0; attempt < 200 && taken(place); attempt++)
+    place = placement === 'below' ? { x: place.x + size.width, y: place.y } : { x: place.x, y: place.y + size.height };
   return place;
 }
 

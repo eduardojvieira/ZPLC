@@ -16,7 +16,8 @@ import { Modal } from './Modal';
 import { useT } from '../i18n';
 
 const KIB = 1024;
-const sizeOf = (bytes: number) => (bytes < KIB * KIB ? `${Math.max(1, Math.round(bytes / KIB))} KiB` : `${(bytes / (KIB * KIB)).toFixed(1)} MiB`);
+const sizeOf = (bytes: number) =>
+  bytes < KIB * KIB ? `${Math.max(1, Math.round(bytes / KIB))} KiB` : `${(bytes / (KIB * KIB)).toFixed(1)} MiB`;
 
 export function ImportArchive({ disabled = false }: { disabled?: boolean }) {
   const { t, tn } = useT();
@@ -58,27 +59,47 @@ export function ImportArchive({ disabled = false }: { disabled?: boolean }) {
   return (
     <div className="mt-3" data-import-archive>
       <Button
-        onClick={() => { void choose(); }}
+        onClick={() => {
+          void choose();
+        }}
         disabled={disabled || busy !== null}
         data-import-archive-button
         icon={<Archive size={ICON_SIZES.md} className="text-[var(--color-accent-blue)]" />}
       >
         {busy === 'reading' ? t('importArchive.readingTheArchive') : t('importArchive.importAProjectArchive')}
       </Button>
-      {failure && !summary && <p role="alert" data-import-archive-error className="mt-2 break-words text-sm leading-5 text-[var(--color-accent-red)]">{failure}</p>}
+      {failure && !summary && (
+        <p role="alert" data-import-archive-error className="mt-2 break-words text-sm leading-5 text-[var(--color-accent-red)]">
+          {failure}
+        </p>
+      )}
 
       {summary && review && (
-        <Modal isOpen onClose={() => busy === null && setSummary(null)} title={t('importArchive.importAProjectArchive2')} widthClass="max-w-3xl">
+        <Modal
+          isOpen
+          onClose={() => busy === null && setSummary(null)}
+          title={t('importArchive.importAProjectArchive2')}
+          widthClass="max-w-3xl"
+        >
           <div className="space-y-3 p-4" data-import-archive-dialog>
             <p className="text-sm text-[var(--color-surface-200)]">
-              <span className="font-mono">{summary.fileName}</span>{' '}{t('importArchive.holds', { files: tn('importArchive.files', review.fileCount), folders: tn('importArchive.folders', review.folderCount), size: sizeOf(summary.bytes) })}
+              <span className="font-mono">{summary.fileName}</span>{' '}
+              {t('importArchive.holds', {
+                files: tn('importArchive.files', review.fileCount),
+                folders: tn('importArchive.folders', review.folderCount),
+                size: sizeOf(summary.bytes),
+              })}
             </p>
             {review.openable ? (
               <p className="text-sm text-[var(--color-surface-100)]" data-import-archive-project>
-                {t('welcome.recent.unnamed')}{' '}<strong>{review.name}</strong>{t('importArchive.version')}{' '}{review.version}{t('importArchive.projectFormat')}{' '}{review.schemaVersion === 1 ? t('importArchive.1ItMigratesTo') : '2'}.
+                {t('welcome.recent.unnamed')} <strong>{review.name}</strong>
+                {t('importArchive.version')} {review.version}
+                {t('importArchive.projectFormat')} {review.schemaVersion === 1 ? t('importArchive.1ItMigratesTo') : '2'}.
               </p>
             ) : (
-              <p role="alert" data-import-archive-problem className="text-sm text-[var(--color-accent-yellow)]">{review.problem}</p>
+              <p role="alert" data-import-archive-problem className="text-sm text-[var(--color-accent-yellow)]">
+                {review.problem}
+              </p>
             )}
             {review.difference && review.difference.changed && (
               <div>
@@ -86,10 +107,23 @@ export function ImportArchive({ disabled = false }: { disabled?: boolean }) {
                 <MigrationDifferenceView difference={review.difference} />
               </div>
             )}
-            {failure && <p role="alert" data-import-archive-error className="break-words text-sm text-[var(--color-accent-red)]">{failure}</p>}
+            {failure && (
+              <p role="alert" data-import-archive-error className="break-words text-sm text-[var(--color-accent-red)]">
+                {failure}
+              </p>
+            )}
             <div className="flex justify-end gap-2">
-              <Button disabled={busy !== null} onClick={() => setSummary(null)}>{t('common.cancel')}</Button>
-              <Button variant="primary" disabled={busy !== null || !review.openable} onClick={() => { void importIt(); }} data-import-archive-confirm>
+              <Button disabled={busy !== null} onClick={() => setSummary(null)}>
+                {t('common.cancel')}
+              </Button>
+              <Button
+                variant="primary"
+                disabled={busy !== null || !review.openable}
+                onClick={() => {
+                  void importIt();
+                }}
+                data-import-archive-confirm
+              >
                 {busy === 'importing' ? t('importArchive.importing') : t('importArchive.chooseAFolderAnd')}
               </Button>
             </div>

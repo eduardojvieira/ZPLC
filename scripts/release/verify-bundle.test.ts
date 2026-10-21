@@ -9,7 +9,9 @@ import { verifyBundle } from './verify-bundle';
 
 const identity = { version: '2.0.0-rc.4', tag: 'v2.0.0-rc.4', commitSha: 'a'.repeat(40) };
 const roots: string[] = [];
-afterAll(() => { for (const root of roots) rmSync(root, { recursive: true, force: true }); });
+afterAll(() => {
+  for (const root of roots) rmSync(root, { recursive: true, force: true });
+});
 
 /** A bundle made by the script that makes them, named per platform as the workflow names it. */
 async function bundle(): Promise<string> {
@@ -19,7 +21,10 @@ async function bundle(): Promise<string> {
   mkdirSync(input);
   writeFileSync(join(input, 'ZPLC-2.0.0-rc.4-linux-x64.AppImage'), 'appimage');
   writeFileSync(join(input, 'ZPLC-2.0.0-rc.4-linux-x64.deb'), 'deb');
-  writeFileSync(join(input, 'ZPLC-2.0.0-rc.4-linux.cdx.json'), JSON.stringify({ bomFormat: 'CycloneDX', components: [{ name: 'a', version: '1', purl: 'pkg:npm/a@1' }] }));
+  writeFileSync(
+    join(input, 'ZPLC-2.0.0-rc.4-linux.cdx.json'),
+    JSON.stringify({ bomFormat: 'CycloneDX', components: [{ name: 'a', version: '1', purl: 'pkg:npm/a@1' }] }),
+  );
   const output = join(root, 'release');
   await createReleaseIntegrityBundle({ inputDir: input, outputDir: output, ...identity });
   renameSync(join(output, 'SHA256SUMS'), join(output, 'SHA256SUMS-linux'));

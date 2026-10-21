@@ -2,7 +2,7 @@
   "name": "Blinky",
   "description": "ZPLC Blinky - Sequential Function Chart with timed steps",
   "version": "2.0.0",
-  
+
   "variables": {
     "local": [],
     "outputs": [
@@ -31,7 +31,7 @@
     },
     {
       "id": "step_led_off",
-      "name": "LED_OFF", 
+      "name": "LED_OFF",
       "isInitial": false,
       "position": { "x": 200, "y": 270 },
       "actions": [

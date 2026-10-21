@@ -22,9 +22,14 @@ import { cellLocation } from './cases';
 const loopbackBinary = process.env.ZPLC_LOOPBACK_BIN ?? join(dirname(nativeRuntimeBinary), 'zplc_loopback');
 const found = existsSync(nativeRuntimeBinary) && existsSync(loopbackBinary);
 const inCi = !['', '0', 'false'].includes(process.env.CI ?? '');
-const itSimulated = (found || !inCi
-  ? it.skipIf(!found)
-  : (name: string) => it(name, () => { throw new Error(`zplc_runtime or zplc_loopback not found (${nativeRuntimeBinary}, ${loopbackBinary}); CI is set`); })) as ReturnType<typeof it.skipIf>;
+const itSimulated = (
+  found || !inCi
+    ? it.skipIf(!found)
+    : (name: string) =>
+        it(name, () => {
+          throw new Error(`zplc_runtime or zplc_loopback not found (${nativeRuntimeBinary}, ${loopbackBinary}); CI is set`);
+        })
+) as ReturnType<typeof it.skipIf>;
 
 const REGISTER_VALUE = 0xcafe;
 const STATUS_NO_HANDLER = 3;
@@ -131,7 +136,7 @@ class Watcher {
       if (this.pending.length < 2 + length) return;
       const packet = this.pending.subarray(0, 2 + length);
       this.pending = this.pending.subarray(2 + length);
-      if ((packet[0]! >> 4) === 3) {
+      if (packet[0]! >> 4 === 3) {
         const topicLength = (packet[2]! << 8) | packet[3]!;
         this.messages.push({
           topic: packet.subarray(4, 4 + topicLength).toString(),
@@ -142,7 +147,16 @@ class Watcher {
   }
 }
 
-type Observed = { value: number; wrote: boolean; read: boolean; joined: boolean; published: boolean; got: boolean; cloud: number; gotLength: number };
+type Observed = {
+  value: number;
+  wrote: boolean;
+  read: boolean;
+  joined: boolean;
+  published: boolean;
+  got: boolean;
+  cloud: number;
+  gotLength: number;
+};
 
 async function runProgram(env: Record<string, string>, until: (observed: Observed) => boolean, onScan?: () => void): Promise<Observed> {
   const modbusPort = Number(env.ZPLC_TEST_MODBUS_PORT);
@@ -150,14 +164,26 @@ async function runProgram(env: Record<string, string>, until: (observed: Observe
   const persist = await mkdtemp(join(tmpdir(), 'zplc-comm-run-'));
   await mkdir(join(root, 'src'));
   await writeFile(join(root, 'src', 'main.st'), program(modbusPort));
-  await writeFile(join(root, 'zplc.json'), JSON.stringify({
-    schemaVersion: 2, name: 'comm', version: '1.0.0', target: { board: 'posix' },
-    tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.st'] }],
-  }));
+  await writeFile(
+    join(root, 'zplc.json'),
+    JSON.stringify({
+      schemaVersion: 2,
+      name: 'comm',
+      version: '1.0.0',
+      target: { board: 'posix' },
+      tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.st'] }],
+    }),
+  );
   const supervisor = new NativeSimulationSupervisor({
     clientName: 'zplc-communication-test',
     clientVersion: productManifest.version,
-    environment: { ...process.env, ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary, ZPLC_PERSIST_ROOT: persist, ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK: '1', ...env },
+    environment: {
+      ...process.env,
+      ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary,
+      ZPLC_PERSIST_ROOT: persist,
+      ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK: '1',
+      ...env,
+    },
   });
   const adapter = new NativeAdapter(supervisor);
   try {
@@ -210,47 +236,55 @@ describe('COM-009 the communication blocks in simulation', () => {
     loopback?.child.stdin.end();
   });
 
-  itSimulated('a program writes and reads a register, publishes, receives a message and meets a service it does not have', async () => {
-    const endpoints = loopback!;
-    const watcher = new Watcher(endpoints.mqtt);
-    watcher.start();
-    let announced = 0;
-    try {
-      const observed = await runProgram(
-        {
-          ZPLC_NATIVE_COMM: '1',
-          ZPLC_NATIVE_MQTT_BROKER: `127.0.0.1:${endpoints.mqtt}`,
-          ZPLC_TEST_MODBUS_PORT: String(endpoints.modbus),
-        },
-        (state) => state.read && state.published && state.got && watcher.messages.some((message) => message.topic === 'sim/out'),
-        () => {
-          // the program subscribes once it has joined; a message sent before that is dropped, so it is sent until seen
-          announced += 1;
-          if (announced % 8 === 0) watcher.publish('sim/in', 'hello');
-        },
-      );
-      expect(observed.wrote).toBe(true);
-      expect(observed.read).toBe(true);
-      expect(observed.value).toBe(REGISTER_VALUE);
-      expect(observed.joined).toBe(true);
-      expect(observed.published).toBe(true);
-      expect(watcher.messages.find((message) => message.topic === 'sim/out')?.payload).toBe('ping');
-      expect(observed.got).toBe(true);
-      expect(observed.gotLength).toBe(5);
-      expect(observed.cloud).toBe(STATUS_UNAVAILABLE);
-    } finally {
-      watcher.close();
-    }
-  }, 60_000);
+  itSimulated(
+    'a program writes and reads a register, publishes, receives a message and meets a service it does not have',
+    async () => {
+      const endpoints = loopback!;
+      const watcher = new Watcher(endpoints.mqtt);
+      watcher.start();
+      let announced = 0;
+      try {
+        const observed = await runProgram(
+          {
+            ZPLC_NATIVE_COMM: '1',
+            ZPLC_NATIVE_MQTT_BROKER: `127.0.0.1:${endpoints.mqtt}`,
+            ZPLC_TEST_MODBUS_PORT: String(endpoints.modbus),
+          },
+          (state) => state.read && state.published && state.got && watcher.messages.some((message) => message.topic === 'sim/out'),
+          () => {
+            // the program subscribes once it has joined; a message sent before that is dropped, so it is sent until seen
+            announced += 1;
+            if (announced % 8 === 0) watcher.publish('sim/in', 'hello');
+          },
+        );
+        expect(observed.wrote).toBe(true);
+        expect(observed.read).toBe(true);
+        expect(observed.value).toBe(REGISTER_VALUE);
+        expect(observed.joined).toBe(true);
+        expect(observed.published).toBe(true);
+        expect(watcher.messages.find((message) => message.topic === 'sim/out')?.payload).toBe('ping');
+        expect(observed.got).toBe(true);
+        expect(observed.gotLength).toBe(5);
+        expect(observed.cloud).toBe(STATUS_UNAVAILABLE);
+      } finally {
+        watcher.close();
+      }
+    },
+    60_000,
+  );
 
-  itSimulated('a session started without ZPLC_NATIVE_COMM answers "no handler", as it always did', async () => {
-    const endpoints = loopback!;
-    const observed = await runProgram(
-      { ZPLC_NATIVE_COMM: '', ZPLC_TEST_MODBUS_PORT: String(endpoints.modbus) },
-      (state) => state.cloud === STATUS_NO_HANDLER,
-    );
-    expect(observed.cloud).toBe(STATUS_NO_HANDLER);
-    expect(observed.wrote).toBe(false);
-    expect(observed.joined).toBe(false);
-  }, 30_000);
+  itSimulated(
+    'a session started without ZPLC_NATIVE_COMM answers "no handler", as it always did',
+    async () => {
+      const endpoints = loopback!;
+      const observed = await runProgram(
+        { ZPLC_NATIVE_COMM: '', ZPLC_TEST_MODBUS_PORT: String(endpoints.modbus) },
+        (state) => state.cloud === STATUS_NO_HANDLER,
+      );
+      expect(observed.cloud).toBe(STATUS_NO_HANDLER);
+      expect(observed.wrote).toBe(false);
+      expect(observed.joined).toBe(false);
+    },
+    30_000,
+  );
 });

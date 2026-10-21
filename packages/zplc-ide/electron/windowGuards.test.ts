@@ -6,8 +6,23 @@ import { completeGuardedAction, createReloadRequest, guardReloadChord, guardWind
 
 // IDE-005 by behaviour: the window, the reload chord and the answer of the user, with the event objects of Electron
 // replaced by emitters. The real key press and the real window close are in journeys 10 and 53.
-const veto = () => { const event = { prevented: false, preventDefault() { this.prevented = true; } }; return event; };
-const chord = (overrides: Partial<InputLike> = {}): InputLike => ({ type: 'keyDown', key: 'r', control: true, meta: false, alt: false, ...overrides });
+const veto = () => {
+  const event = {
+    prevented: false,
+    preventDefault() {
+      this.prevented = true;
+    },
+  };
+  return event;
+};
+const chord = (overrides: Partial<InputLike> = {}): InputLike => ({
+  type: 'keyDown',
+  key: 'r',
+  control: true,
+  meta: false,
+  alt: false,
+  ...overrides,
+});
 
 describe('window close and application quit (IDE-005)', () => {
   const setup = (dirty: boolean) => {

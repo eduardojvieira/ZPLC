@@ -6,7 +6,12 @@ import { useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { cx } from './cx';
 import { navigationTarget } from './logic/keyboard';
 
-export interface ToggleOption { value: string; label: ReactNode; disabled?: boolean; ariaLabel?: string }
+export interface ToggleOption {
+  value: string;
+  label: ReactNode;
+  disabled?: boolean;
+  ariaLabel?: string;
+}
 
 export interface ToggleGroupProps {
   label: string;
@@ -18,9 +23,14 @@ export interface ToggleGroupProps {
 
 export function ToggleGroup({ label, options, value, onValueChange, className }: ToggleGroupProps) {
   const group = useRef<HTMLDivElement>(null);
-  const tabbable = options.some((option) => option.value === value && !option.disabled) ? value : options.find((option) => !option.disabled)?.value;
+  const tabbable = options.some((option) => option.value === value && !option.disabled)
+    ? value
+    : options.find((option) => !option.disabled)?.value;
   const onKeyDown = (event: KeyboardEvent<HTMLElement>, index: number): void => {
-    const target = navigationTarget(event.key, index, options.length, { orientation: 'horizontal', isDisabled: (item) => options[item]?.disabled === true });
+    const target = navigationTarget(event.key, index, options.length, {
+      orientation: 'horizontal',
+      isDisabled: (item) => options[item]?.disabled === true,
+    });
     if (target === null) return;
     event.preventDefault();
     group.current?.querySelectorAll<HTMLElement>('button')[target]?.focus();

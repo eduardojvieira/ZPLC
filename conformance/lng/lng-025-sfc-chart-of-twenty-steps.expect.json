@@ -6,7 +6,7 @@
   "scans": 20,
   "scanMs": 10,
   "expect": [
-    {"at": "%QW0", "type": "INT", "value": 14, "afterScan": 14},
-    {"at": "%QW0", "type": "INT", "value": 20, "afterScan": 20}
+    { "at": "%QW0", "type": "INT", "value": 14, "afterScan": 14 },
+    { "at": "%QW0", "type": "INT", "value": 20, "afterScan": 20 }
   ]
 }

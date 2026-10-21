@@ -2,13 +2,19 @@ import type { CloseGuard, GuardedAction } from './closeGuard.js';
 import { isReloadShortcut, type InputLike } from './appMenu.js';
 
 /** The part of an Electron event that the guards use. */
-export interface VetoableEvent { preventDefault(): void }
+export interface VetoableEvent {
+  preventDefault(): void;
+}
 
 /** The part of a BrowserWindow the close guard uses. */
-export interface GuardedWindow { on(event: 'close', listener: (event: VetoableEvent) => void): unknown }
+export interface GuardedWindow {
+  on(event: 'close', listener: (event: VetoableEvent) => void): unknown;
+}
 
 /** The part of webContents the reload guard uses. */
-export interface GuardedContents { on(event: 'before-input-event', listener: (event: VetoableEvent, input: InputLike) => void): unknown }
+export interface GuardedContents {
+  on(event: 'before-input-event', listener: (event: VetoableEvent, input: InputLike) => void): unknown;
+}
 
 /** A window close (also the one that quitting the application makes) is held back while files are modified; the renderer asks. */
 export function guardWindowClose(window: GuardedWindow, guard: Pick<CloseGuard, 'request'>, ask: (action: GuardedAction) => void): void {
@@ -30,7 +36,11 @@ export function guardReloadChord(contents: GuardedContents, options: { isPackage
 }
 
 /** A reload that asks first when files are modified. */
-export function createReloadRequest(options: { guard: Pick<CloseGuard, 'request'>; reload: () => void; ask: (action: GuardedAction) => void }): () => void {
+export function createReloadRequest(options: {
+  guard: Pick<CloseGuard, 'request'>;
+  reload: () => void;
+  ask: (action: GuardedAction) => void;
+}): () => void {
   return () => {
     if (options.guard.request('reload') === 'proceed') options.reload();
     else options.ask('reload');

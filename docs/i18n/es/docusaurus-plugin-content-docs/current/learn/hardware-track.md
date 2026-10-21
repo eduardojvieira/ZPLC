@@ -3,7 +3,7 @@ slug: /learn/hardware-track
 id: hardware-track
 title: Ruta de hardware
 sidebar_label: Ruta de hardware
-description: "La ruta de hardware de Aprender, para una Raspberry Pi Pico o una ESP32-S3-DevKitC-1 propia: cómo elegir la placa, qué muestra una lección para ella, quién inicia cada operación física y cómo se hace y se identifica una comprobación en la placa. Ninguna placa tiene todavía un registro de hardware."
+description: 'La ruta de hardware de Aprender, para una Raspberry Pi Pico o una ESP32-S3-DevKitC-1 propia: cómo elegir la placa, qué muestra una lección para ella, quién inicia cada operación física y cómo se hace y se identifica una comprobación en la placa. Ninguna placa tiene todavía un registro de hardware.'
 tags: [learn, lessons, hardware]
 ---
 

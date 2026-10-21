@@ -26,7 +26,10 @@ const SOURCE_FOLDERS = ['packages/zplc-ide/src', 'packages/zplc-ide/index.html']
 /** Custom properties that a third-party stylesheet or the utility framework defines. */
 const FOREIGN = /^--(?:tw|xy|vscode|monaco)-/;
 
-export interface SourceFile { path: string; text: string }
+export interface SourceFile {
+  path: string;
+  text: string;
+}
 
 const TOKEN_USE = /var\(\s*(--[\w-]*\w)\s*[,)]/g;
 const lineOf = (text: string, index: number): number => text.slice(0, index).split('\n').length;
@@ -46,12 +49,20 @@ export function undefinedTokens(file: SourceFile, known: ReadonlySet<string> = T
 }
 
 export function contrastProblems(): string[] {
-  return THEME_IDS.flatMap((theme) => contrastResults(theme)
-    .filter((result) => !result.ok)
-    .map(({ pair, ratio }) => `UX-024: ${pair.fg} on ${pair.bg}${pair.over ? ` over ${pair.over}` : ''} is ${ratio.toFixed(2)}:1 in the ${theme} theme, needs ${pair.min}:1 (${pair.use})`));
+  return THEME_IDS.flatMap((theme) =>
+    contrastResults(theme)
+      .filter((result) => !result.ok)
+      .map(
+        ({ pair, ratio }) =>
+          `UX-024: ${pair.fg} on ${pair.bg}${
+            pair.over ? ` over ${pair.over}` : ''
+          } is ${ratio.toFixed(2)}:1 in the ${theme} theme, needs ${pair.min}:1 (${pair.use})`,
+      ),
+  );
 }
 
-const isSource = (path: string): boolean => /\.(?:tsx?|css|html)$/.test(path) && !/\.test\.tsx?$/.test(path) && !path.endsWith('.generated.css') && !path.endsWith('.d.ts');
+const isSource = (path: string): boolean =>
+  /\.(?:tsx?|css|html)$/.test(path) && !/\.test\.tsx?$/.test(path) && !path.endsWith('.generated.css') && !path.endsWith('.d.ts');
 
 export function readSources(root: string): SourceFile[] {
   const files: SourceFile[] = [];
@@ -66,14 +77,23 @@ export function readSources(root: string): SourceFile[] {
 export function tokenProblems(root = ROOT): string[] {
   const problems: string[] = [];
   const read = (path: string): string | null => (existsSync(join(root, path)) ? readFileSync(join(root, path), 'utf8') : null);
-  if (read(CSS_FILE) !== renderTokensCss()) problems.push(`UX-003: ${CSS_FILE} is not what packages/zplc-ide/src/theme/tokens.ts renders; run bun tools/ci/ux-tokens.ts --write`);
-  if (read(SCOPES_FILE) !== renderScopesCss()) problems.push(`UX-004: ${SCOPES_FILE} is not what packages/zplc-ide/src/theme/tokens.ts renders; run bun tools/ci/ux-tokens.ts --write`);
+  if (read(CSS_FILE) !== renderTokensCss())
+    problems.push(`UX-003: ${CSS_FILE} is not what packages/zplc-ide/src/theme/tokens.ts renders; run bun tools/ci/ux-tokens.ts --write`);
+  if (read(SCOPES_FILE) !== renderScopesCss())
+    problems.push(
+      `UX-004: ${SCOPES_FILE} is not what packages/zplc-ide/src/theme/tokens.ts renders; run bun tools/ci/ux-tokens.ts --write`,
+    );
   const design = read(DESIGN_FILE);
   if (design === null) problems.push(`UX-032: ${DESIGN_FILE} is missing`);
   else {
     let expected: string | null = null;
-    try { expected = applyGeneratedParts(design); } catch (error) { problems.push(`UX-032: ${DESIGN_FILE}: ${(error as Error).message}`); }
-    if (expected !== null && expected !== design) problems.push(`UX-032: ${DESIGN_FILE} differs from the token tables the source renders; run bun tools/ci/ux-tokens.ts --write`);
+    try {
+      expected = applyGeneratedParts(design);
+    } catch (error) {
+      problems.push(`UX-032: ${DESIGN_FILE}: ${(error as Error).message}`);
+    }
+    if (expected !== null && expected !== design)
+      problems.push(`UX-032: ${DESIGN_FILE} differs from the token tables the source renders; run bun tools/ci/ux-tokens.ts --write`);
   }
   for (const file of readSources(root)) problems.push(...undefinedTokens(file));
   problems.push(...contrastProblems());
@@ -90,7 +110,12 @@ if (import.meta.main) {
   if (process.argv.includes('--ratios')) {
     for (const theme of THEME_IDS) {
       console.log(`\n${theme}`);
-      for (const { pair, ratio, ok } of contrastResults(theme)) console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${ratio.toFixed(2).padStart(6)}:1 (min ${pair.min}) ${pair.fg} on ${pair.bg}${pair.over ? ` over ${pair.over}` : ''}`);
+      for (const { pair, ratio, ok } of contrastResults(theme))
+        console.log(
+          `  ${ok ? 'ok  ' : 'FAIL'} ${ratio.toFixed(2).padStart(6)}:1 (min ${pair.min}) ${pair.fg} on ${pair.bg}${
+            pair.over ? ` over ${pair.over}` : ''
+          }`,
+        );
     }
   }
   const problems = tokenProblems();

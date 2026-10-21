@@ -23,9 +23,7 @@ import { LITERAL_INT, UNKNOWN_TYPE, commonType, isWide, type CompareOp } from '.
  * integer or an LREAL among them makes every value two cells (CMP-015).
  */
 function emitOperands(ctx: CodeGenContext, args: Expression[]): string {
-    const type = ctx.typeOf
-        ? args.map((a) => ctx.typeOf!(a) ?? UNKNOWN_TYPE).reduce(commonType, LITERAL_INT)
-        : UNKNOWN_TYPE;
+    const type = ctx.typeOf ? args.map((a) => ctx.typeOf!(a) ?? UNKNOWN_TYPE).reduce(commonType, LITERAL_INT) : UNKNOWN_TYPE;
     for (const arg of args) {
         if ((type === 'REAL' || isWide(type)) && ctx.emitOperand) {
             ctx.emitOperand(arg, type);
@@ -82,34 +80,34 @@ export const MAX_FN: FunctionDef = {
         const skipLabel = ctx.newLabel('max_skip');
 
         // Emit both arguments
-        const type = emitOperands(ctx, args);  // IN1, IN2 on stack
+        const type = emitOperands(ctx, args); // IN1, IN2 on stack
 
         if (isWide(type)) {
             // two-cell values [a b]: compare copies, keep the larger pair
             ctx.emit(`    ; MAX(IN1, IN2) on 64-bit values`);
-            emitCopyPairBelow(ctx);   // [a b a]
-            emitCopyPairBelow(ctx);   // [a b a b]
+            emitCopyPairBelow(ctx); // [a b a]
+            emitCopyPairBelow(ctx); // [a b a b]
             emitOrder(ctx, 'GT', type);
             ctx.emit(`    JNZ ${skipLabel}`);
-            emitNipPair(ctx);         // [b]
+            emitNipPair(ctx); // [b]
             ctx.emit(`    JMP ${skipLabel}_end`);
             ctx.emit(`${skipLabel}:`);
             ctx.emit(`    DROP`);
-            ctx.emit(`    DROP`);     // [a]
+            ctx.emit(`    DROP`); // [a]
             ctx.emit(`${skipLabel}_end:`);
             return;
         }
 
         // Stack: [IN1, IN2]
         ctx.emit(`    ; MAX(IN1, IN2)`);
-        ctx.emit(`    OVER`);         // [IN1, IN2, IN1]
-        ctx.emit(`    OVER`);         // [IN1, IN2, IN1, IN2]
-        emitOrder(ctx, 'GT', type);   // [IN1, IN2, IN1>IN2?]
+        ctx.emit(`    OVER`); // [IN1, IN2, IN1]
+        ctx.emit(`    OVER`); // [IN1, IN2, IN1, IN2]
+        emitOrder(ctx, 'GT', type); // [IN1, IN2, IN1>IN2?]
         ctx.emit(`    JNZ ${skipLabel}`);
         // IN2 >= IN1, swap so IN2 is on bottom
-        ctx.emit(`    SWAP`);         // [IN2, IN1]
+        ctx.emit(`    SWAP`); // [IN2, IN1]
         ctx.emit(`${skipLabel}:`);
-        ctx.emit(`    DROP`);         // [max_value]
+        ctx.emit(`    DROP`); // [max_value]
     },
 };
 
@@ -135,33 +133,33 @@ export const MIN_FN: FunctionDef = {
 
         const skipLabel = ctx.newLabel('min_skip');
 
-        const type = emitOperands(ctx, args);  // IN1, IN2 on stack
+        const type = emitOperands(ctx, args); // IN1, IN2 on stack
 
         if (isWide(type)) {
             ctx.emit(`    ; MIN(IN1, IN2) on 64-bit values`);
-            emitCopyPairBelow(ctx);   // [a b a]
-            emitCopyPairBelow(ctx);   // [a b a b]
+            emitCopyPairBelow(ctx); // [a b a]
+            emitCopyPairBelow(ctx); // [a b a b]
             emitOrder(ctx, 'LT', type);
             ctx.emit(`    JNZ ${skipLabel}`);
-            emitNipPair(ctx);         // [b]
+            emitNipPair(ctx); // [b]
             ctx.emit(`    JMP ${skipLabel}_end`);
             ctx.emit(`${skipLabel}:`);
             ctx.emit(`    DROP`);
-            ctx.emit(`    DROP`);     // [a]
+            ctx.emit(`    DROP`); // [a]
             ctx.emit(`${skipLabel}_end:`);
             return;
         }
 
         // Stack: [IN1, IN2]
         ctx.emit(`    ; MIN(IN1, IN2)`);
-        ctx.emit(`    OVER`);         // [IN1, IN2, IN1]
-        ctx.emit(`    OVER`);         // [IN1, IN2, IN1, IN2]
-        emitOrder(ctx, 'LT', type);   // [IN1, IN2, IN1<IN2?]
+        ctx.emit(`    OVER`); // [IN1, IN2, IN1]
+        ctx.emit(`    OVER`); // [IN1, IN2, IN1, IN2]
+        emitOrder(ctx, 'LT', type); // [IN1, IN2, IN1<IN2?]
         ctx.emit(`    JNZ ${skipLabel}`);
         // IN2 <= IN1, swap so IN2 is on bottom
-        ctx.emit(`    SWAP`);         // [IN2, IN1]
+        ctx.emit(`    SWAP`); // [IN2, IN1]
         ctx.emit(`${skipLabel}:`);
-        ctx.emit(`    DROP`);         // [min_value]
+        ctx.emit(`    DROP`); // [min_value]
     },
 };
 
@@ -195,30 +193,30 @@ export const LIMIT_FN: FunctionDef = {
         const limitEnd = ctx.newLabel('limit_end');
 
         // Stack layout: we need MN, IN, MX
-        const type = emitOperands(ctx, args);  // MN, IN, MX
+        const type = emitOperands(ctx, args); // MN, IN, MX
 
         if (isWide(type)) {
             // [mn in mx] of two cells each
             ctx.emit(`    ; LIMIT(MN, IN, MX) on 64-bit values`);
-            emitCopyPairBelow(ctx);   // [mn in mx in]
-            emitCopyPairBelow(ctx);   // [mn in mx in mx]
+            emitCopyPairBelow(ctx); // [mn in mx in]
+            emitCopyPairBelow(ctx); // [mn in mx in mx]
             emitOrder(ctx, 'GT', type);
             ctx.emit(`    JNZ ${aboveMax}`);
             ctx.emit(`    DROP`);
-            ctx.emit(`    DROP`);     // [mn in]
-            emitCopyPairBelow(ctx);   // [mn in mn]
-            emitCopyPairBelow(ctx);   // [mn in mn in]
+            ctx.emit(`    DROP`); // [mn in]
+            emitCopyPairBelow(ctx); // [mn in mn]
+            emitCopyPairBelow(ctx); // [mn in mn in]
             emitOrder(ctx, 'GT', type);
             ctx.emit(`    JNZ ${belowMin}`);
-            emitNipPair(ctx);         // [in]
+            emitNipPair(ctx); // [in]
             ctx.emit(`    JMP ${limitEnd}`);
             ctx.emit(`${aboveMax}:`); // [mn in mx]
-            emitNipPair(ctx);         // [mn mx]
-            emitNipPair(ctx);         // [mx]
+            emitNipPair(ctx); // [mn mx]
+            emitNipPair(ctx); // [mx]
             ctx.emit(`    JMP ${limitEnd}`);
             ctx.emit(`${belowMin}:`); // [mn in]
             ctx.emit(`    DROP`);
-            ctx.emit(`    DROP`);     // [mn]
+            ctx.emit(`    DROP`); // [mn]
             ctx.emit(`${limitEnd}:`);
             return;
         }
@@ -227,34 +225,34 @@ export const LIMIT_FN: FunctionDef = {
         // Stack: [MN, IN, MX]
 
         // Check if IN > MX
-        ctx.emit(`    OVER`);         // [MN, IN, MX, IN]
-        ctx.emit(`    OVER`);         // [MN, IN, MX, IN, MX]
-        emitOrder(ctx, 'GT', type);   // [MN, IN, MX, IN>MX?]
+        ctx.emit(`    OVER`); // [MN, IN, MX, IN]
+        ctx.emit(`    OVER`); // [MN, IN, MX, IN, MX]
+        emitOrder(ctx, 'GT', type); // [MN, IN, MX, IN>MX?]
         ctx.emit(`    JNZ ${aboveMax}`);
 
         // Check if IN < MN
-        ctx.emit(`    DROP`);         // [MN, IN]
-        ctx.emit(`    OVER`);         // [MN, IN, MN]
-        ctx.emit(`    OVER`);         // [MN, IN, MN, IN]
-        emitOrder(ctx, 'GT', type);   // [MN, IN, MN>IN?]
+        ctx.emit(`    DROP`); // [MN, IN]
+        ctx.emit(`    OVER`); // [MN, IN, MN]
+        ctx.emit(`    OVER`); // [MN, IN, MN, IN]
+        emitOrder(ctx, 'GT', type); // [MN, IN, MN>IN?]
         ctx.emit(`    JNZ ${belowMin}`);
 
         // IN is within bounds
-        ctx.emit(`    SWAP`);         // [IN, MN]
-        ctx.emit(`    DROP`);         // [IN]
+        ctx.emit(`    SWAP`); // [IN, MN]
+        ctx.emit(`    DROP`); // [IN]
         ctx.emit(`    JMP ${limitEnd}`);
 
         // IN > MX: result is MX
         ctx.emit(`${aboveMax}:`);
-        ctx.emit(`    SWAP`);         // [MN, MX, IN]
-        ctx.emit(`    DROP`);         // [MN, MX]
-        ctx.emit(`    SWAP`);         // [MX, MN]
-        ctx.emit(`    DROP`);         // [MX]
+        ctx.emit(`    SWAP`); // [MN, MX, IN]
+        ctx.emit(`    DROP`); // [MN, MX]
+        ctx.emit(`    SWAP`); // [MX, MN]
+        ctx.emit(`    DROP`); // [MX]
         ctx.emit(`    JMP ${limitEnd}`);
 
         // IN < MN: result is MN
         ctx.emit(`${belowMin}:`);
-        ctx.emit(`    DROP`);         // [MN, IN] -> [MN]
+        ctx.emit(`    DROP`); // [MN, IN] -> [MN]
 
         ctx.emit(`${limitEnd}:`);
     },
@@ -290,7 +288,10 @@ export const SEL_FN: FunctionDef = {
 
         // two-cell values are converted to their common type, so that both branches leave two cells
         const wideType = ctx.typeOf
-            ? args.slice(1).map((a) => ctx.typeOf!(a) ?? UNKNOWN_TYPE).reduce(commonType, LITERAL_INT)
+            ? args
+                  .slice(1)
+                  .map((a) => ctx.typeOf!(a) ?? UNKNOWN_TYPE)
+                  .reduce(commonType, LITERAL_INT)
             : UNKNOWN_TYPE;
         const emitValue = (value: Expression): void => {
             if (isWide(wideType) && ctx.emitOperand) ctx.emitOperand(value, wideType);
@@ -298,16 +299,16 @@ export const SEL_FN: FunctionDef = {
         };
 
         // Evaluate G first
-        ctx.emitExpression(args[0]);  // G
+        ctx.emitExpression(args[0]); // G
         ctx.emit(`    JNZ ${selectIN1}`);
 
         // G is FALSE: use IN0
-        emitValue(args[1]);  // IN0
+        emitValue(args[1]); // IN0
         ctx.emit(`    JMP ${selEnd}`);
 
         // G is TRUE: use IN1
         ctx.emit(`${selectIN1}:`);
-        emitValue(args[2]);  // IN1
+        emitValue(args[2]); // IN1
 
         ctx.emit(`${selEnd}:`);
     },
@@ -332,7 +333,7 @@ export const SEL_FN: FunctionDef = {
  */
 export const MUX_FN: FunctionDef = {
     name: 'MUX',
-    argCount: 2,  // Minimum: K + 1 input
+    argCount: 2, // Minimum: K + 1 input
     variadic: true,
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
@@ -353,7 +354,10 @@ export const MUX_FN: FunctionDef = {
         ctx.emit(`    ; MUX(K, IN0, ..., IN${numInputs - 1})`);
 
         const wideType = ctx.typeOf
-            ? args.slice(1).map((a) => ctx.typeOf!(a) ?? UNKNOWN_TYPE).reduce(commonType, LITERAL_INT)
+            ? args
+                  .slice(1)
+                  .map((a) => ctx.typeOf!(a) ?? UNKNOWN_TYPE)
+                  .reduce(commonType, LITERAL_INT)
             : UNKNOWN_TYPE;
         const emitValue = (value: Expression): void => {
             if (isWide(wideType) && ctx.emitOperand) ctx.emitOperand(value, wideType);
@@ -361,7 +365,7 @@ export const MUX_FN: FunctionDef = {
         };
 
         // Evaluate K
-        ctx.emitExpression(args[0]);  // K on stack
+        ctx.emitExpression(args[0]); // K on stack
 
         // Generate jump table using cascading comparisons
         // This is not optimal but works for small N
@@ -373,20 +377,20 @@ export const MUX_FN: FunctionDef = {
         }
 
         // Default case (K out of range): use IN0
-        ctx.emit(`    DROP`);  // Drop K
+        ctx.emit(`    DROP`); // Drop K
         ctx.emit(`    JMP ${muxDefault}`);
 
         // Generate each case
         for (let i = 0; i < numInputs; i++) {
             ctx.emit(`${caseLabels[i]}:`);
-            ctx.emit(`    DROP`);  // Drop K
-            emitValue(args[i + 1]);  // INi
+            ctx.emit(`    DROP`); // Drop K
+            emitValue(args[i + 1]); // INi
             ctx.emit(`    JMP ${muxEnd}`);
         }
 
         // Default: use IN0
         ctx.emit(`${muxDefault}:`);
-        emitValue(args[1]);  // IN0
+        emitValue(args[1]); // IN0
 
         ctx.emit(`${muxEnd}:`);
     },
@@ -416,12 +420,12 @@ export const NAND_FN: FunctionDef = {
         }
 
         ctx.emit(`    ; NAND(IN1, IN2)`);
-        ctx.emitExpression(args[0]);  // IN1 on stack
-        ctx.emitExpression(args[1]);  // IN2 on stack
-        ctx.emit(`    AND`);          // [IN1 AND IN2]
+        ctx.emitExpression(args[0]); // IN1 on stack
+        ctx.emitExpression(args[1]); // IN2 on stack
+        ctx.emit(`    AND`); // [IN1 AND IN2]
         // logical, not bitwise: NOT of 0 or 1 is -1 or -2, which a BOOL cannot hold
         ctx.emit(`    PUSH8 0`);
-        ctx.emit(`    EQ`);           // [NOT(IN1 AND IN2)]
+        ctx.emit(`    EQ`); // [NOT(IN1 AND IN2)]
     },
 };
 
@@ -449,10 +453,10 @@ export const NOR_FN: FunctionDef = {
         }
 
         ctx.emit(`    ; NOR(IN1, IN2)`);
-        ctx.emitExpression(args[0]);  // IN1 on stack
-        ctx.emitExpression(args[1]);  // IN2 on stack
-        ctx.emit(`    OR`);           // [IN1 OR IN2]
+        ctx.emitExpression(args[0]); // IN1 on stack
+        ctx.emitExpression(args[1]); // IN2 on stack
+        ctx.emit(`    OR`); // [IN1 OR IN2]
         ctx.emit(`    PUSH8 0`);
-        ctx.emit(`    EQ`);           // [NOT(IN1 OR IN2)]
+        ctx.emit(`    EQ`); // [NOT(IN1 OR IN2)]
     },
 };

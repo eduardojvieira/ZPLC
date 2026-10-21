@@ -8,9 +8,20 @@ const { Sidebar } = await import('./Sidebar');
 
 const file = (id: string, name: string) => ({ id, name, type: 'file' as const, path: `src/${name}`, language: 'ST' as const });
 const tree = (expanded: boolean) => ({
-  id: 'root', name: 'Boiler', type: 'directory' as const, path: '', isExpanded: true,
+  id: 'root',
+  name: 'Boiler',
+  type: 'directory' as const,
+  path: '',
+  isExpanded: true,
   children: [
-    { id: 'src', name: 'src', type: 'directory' as const, path: 'src', isExpanded: expanded, children: [file('main', 'main.st'), file('motor', 'motor.st')] },
+    {
+      id: 'src',
+      name: 'src',
+      type: 'directory' as const,
+      path: 'src',
+      isExpanded: expanded,
+      children: [file('main', 'main.st'), file('motor', 'motor.st')],
+    },
     { id: 'readme', name: 'README.md', type: 'file' as const, path: 'README.md' },
   ],
 });
@@ -22,7 +33,14 @@ function prepare(expanded = true) {
   const openFile = mock<(id: string) => Promise<unknown>>(async () => undefined);
   const toggleDirectory = mock<(path: string) => unknown>(() => undefined);
   const refreshFileTree = mock(async () => undefined);
-  dom.patchStore(useIDEStore, { fileTree: tree(expanded) as never, projectName: 'Boiler', activeFileId: 'main', openFile, toggleDirectory, refreshFileTree } as never);
+  dom.patchStore(useIDEStore, {
+    fileTree: tree(expanded) as never,
+    projectName: 'Boiler',
+    activeFileId: 'main',
+    openFile,
+    toggleDirectory,
+    refreshFileTree,
+  } as never);
   return { openFile, toggleDirectory, refreshFileTree };
 }
 
@@ -102,7 +120,10 @@ describe('Explorer (UX-012, IDE-004) in a DOM', () => {
   });
 
   it('shows the empty state with a next action when the project has no file', () => {
-    dom.patchStore(useIDEStore, { fileTree: { id: 'root', name: 'Boiler', type: 'directory', path: '', children: [] } as never, projectName: 'Boiler' });
+    dom.patchStore(useIDEStore, {
+      fileTree: { id: 'root', name: 'Boiler', type: 'directory', path: '', children: [] } as never,
+      projectName: 'Boiler',
+    });
     dom.render(<Sidebar />);
     expect(dom.screen.getByText(dom.t('panel.explorer.empty.title'))).toBeTruthy();
   });

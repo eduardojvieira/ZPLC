@@ -21,7 +21,9 @@ describe('function reference: a registered name has an entry (DOC-007)', () => {
   it('fails for a registered block without an entry, and for an entry that names nothing', () => {
     const { TON: _removed, ...rest } = BLOCK_DOCS;
     expect(registryErrors(FUNCTION_DOCS, rest)).toEqual(['function block TON is registered and has no entry in stdlib/reference.ts']);
-    expect(registryErrors({ ...FUNCTION_DOCS, NO_SUCH_FUNCTION: FUNCTION_DOCS.MAX! })).toEqual(['stdlib/reference.ts documents the function NO_SUCH_FUNCTION, which is not registered']);
+    expect(registryErrors({ ...FUNCTION_DOCS, NO_SUCH_FUNCTION: FUNCTION_DOCS.MAX! })).toEqual([
+      'stdlib/reference.ts documents the function NO_SUCH_FUNCTION, which is not registered',
+    ]);
   });
 });
 
@@ -53,7 +55,10 @@ describe('function reference: the pages list every name, in both languages (DOC-
   });
 
   it('gives each example as a runnable sample that states its result', () => {
-    const { samples, errors } = extractSamples('p.md', exampleFence({ source: 'VAR\n    A : INT;\nEND_VAR\n\nA := 1;', expect: 'A=1', scans: 3 }));
+    const { samples, errors } = extractSamples(
+      'p.md',
+      exampleFence({ source: 'VAR\n    A : INT;\nEND_VAR\n\nA := 1;', expect: 'A=1', scans: 3 }),
+    );
     expect(errors).toEqual([]);
     expect(samples.map((sample) => [sample.expected, sample.scans])).toEqual([[[{ name: 'A', value: 1 }], 3]]);
   });
@@ -63,7 +68,8 @@ describe('function reference: the conversions are proven for every pair (DOC-007
   it('calls every conversion of a source type in the program of that type', () => {
     for (const from of CONVERSION_TYPES) {
       const example = conversionExample(from);
-      for (const to of CONVERSION_TYPES) if (to !== from) expect([from, to, example.source.includes(`${from}_TO_${to}(Source)`)]).toEqual([from, to, true]);
+      for (const to of CONVERSION_TYPES)
+        if (to !== from) expect([from, to, example.source.includes(`${from}_TO_${to}(Source)`)]).toEqual([from, to, true]);
     }
   });
 });

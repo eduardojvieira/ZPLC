@@ -3,7 +3,7 @@ slug: /reference/capabilities-evidence
 id: capabilities-evidence
 title: Hardware support
 sidebar_label: Hardware support
-description: "The levels of evidence ZPLC uses, and the level of every board today, derived from the evidence records."
+description: 'The levels of evidence ZPLC uses, and the level of every board today, derived from the evidence records.'
 tags: [reference, evidence, boards]
 ---
 
@@ -21,16 +21,16 @@ qualification.
 One vocabulary is used everywhere, in the documentation, in the ZPLC application, in commit
 messages and in pull requests. A higher level is never implied by a lower one.
 
-| Level | What it establishes | What it does not establish | Where you see it |
-| --- | --- | --- | --- |
-| Host | A unit, conformance or C test passed on the development computer. | Device timing, I/O or power behaviour. | Evidence lines of the documentation |
-| Native simulation | The native host runtime executed the scenario on a virtual clock. | Equivalence with the Zephyr target, or with a board. | ZPLC's **Simulate** mode |
-| Packaged host | A packaged desktop installer was launched on its own system in the release run. | Installer signing, notarization, or hardware behaviour. | The notes of each release |
-| Emulated target | A Zephyr suite passed on `native_sim` or on a QEMU Cortex-M target. | The exact board, its probe, wiring or electrical output. | The firmware testing page |
-| `cross-build` | The firmware builds for the board and fits its flash and RAM budget. | Flash, boot, deploy, persistence or any output. | **Support level** of a board, below |
-| `community-reported` | A user reported what happened on their own board, with the exact image it ran, through the board report form. | That the project reproduced it, that a procedure was followed, or any support level: a report never changes the level of a board. | The evidence column of a board, below |
-| `human-hil` | A person ran a recorded procedure on the exact board, with the firmware image named by its commit and hash, and it passed. | Production qualification beyond the recorded procedure. | **Support level** of a board, below |
-| Production-qualified | A separately governed production evidence package exists. | Safety certification, unless it says so. | No board has it |
+| Level                | What it establishes                                                                                                        | What it does not establish                                                                                                        | Where you see it                      |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| Host                 | A unit, conformance or C test passed on the development computer.                                                          | Device timing, I/O or power behaviour.                                                                                            | Evidence lines of the documentation   |
+| Native simulation    | The native host runtime executed the scenario on a virtual clock.                                                          | Equivalence with the Zephyr target, or with a board.                                                                              | ZPLC's **Simulate** mode              |
+| Packaged host        | A packaged desktop installer was launched on its own system in the release run.                                            | Installer signing, notarization, or hardware behaviour.                                                                           | The notes of each release             |
+| Emulated target      | A Zephyr suite passed on `native_sim` or on a QEMU Cortex-M target.                                                        | The exact board, its probe, wiring or electrical output.                                                                          | The firmware testing page             |
+| `cross-build`        | The firmware builds for the board and fits its flash and RAM budget.                                                       | Flash, boot, deploy, persistence or any output.                                                                                   | **Support level** of a board, below   |
+| `community-reported` | A user reported what happened on their own board, with the exact image it ran, through the board report form.              | That the project reproduced it, that a procedure was followed, or any support level: a report never changes the level of a board. | The evidence column of a board, below |
+| `human-hil`          | A person ran a recorded procedure on the exact board, with the firmware image named by its commit and hash, and it passed. | Production qualification beyond the recorded procedure.                                                                           | **Support level** of a board, below   |
+| Production-qualified | A separately governed production evidence package exists.                                                                  | Safety certification, unless it says so.                                                                                          | No board has it                       |
 
 A result that a person observed on a bench is a lead, not a qualification: a
 board reaches `human-hil` only through a record that names the firmware version,

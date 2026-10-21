@@ -4,13 +4,24 @@ import { presentFirmwareBuildResult, presentToolchainInspectResult } from './too
 import { getBoardEvidenceSummary } from '../../config/boardProfiles';
 
 const checks = [
-  'repository-manifest', 'west', 'python3', 'cmake', 'ninja',
-  'zephyr-base', 'zephyr-sdk', 'arm-toolchain', 'xtensa-toolchain',
+  'repository-manifest',
+  'west',
+  'python3',
+  'cmake',
+  'ninja',
+  'zephyr-base',
+  'zephyr-sdk',
+  'arm-toolchain',
+  'xtensa-toolchain',
 ] as const;
 
 const boards = [
-  ['rpi_pico', 'rpi_pico'], ['waveshare_rp2040_zero', 'waveshare_rp2040_zero'], ['nucleo_h743zi', 'nucleo_h743zi'],
-  ['stm32f746g_disco', 'stm32f746g_disco'], ['arduino_giga_r1', 'arduino_giga_r1/stm32h747xx/m7'], ['esp32s3_devkitc', 'esp32s3_devkitc/esp32s3/procpu'],
+  ['rpi_pico', 'rpi_pico'],
+  ['waveshare_rp2040_zero', 'waveshare_rp2040_zero'],
+  ['nucleo_h743zi', 'nucleo_h743zi'],
+  ['stm32f746g_disco', 'stm32f746g_disco'],
+  ['arduino_giga_r1', 'arduino_giga_r1/stm32h747xx/m7'],
+  ['esp32s3_devkitc', 'esp32s3_devkitc/esp32s3/procpu'],
 ].map(([ideId, zephyrBoard]) => ({ ideId, zephyrBoard, validationLevel: 'cross-build' }));
 
 function diagnostic() {
@@ -43,7 +54,13 @@ function result() {
       checks: checks.map((id) => ({ id, status: 'ready' })),
       boards: structuredClone(boards),
     },
-    evidence: { schemaVersion: 1, operation: 'toolchain-inspect', outcome: 'passed', diagnostics: [] as Array<{ code: string; message: string }>, artifacts: [] as Array<{ kind: string }> },
+    evidence: {
+      schemaVersion: 1,
+      operation: 'toolchain-inspect',
+      outcome: 'passed',
+      diagnostics: [] as Array<{ code: string; message: string }>,
+      artifacts: [] as Array<{ kind: string }>,
+    },
   };
 }
 
@@ -59,7 +76,9 @@ function attention() {
 describe('presentToolchainInspectResult', () => {
   it('keeps catalogued board evidence scoped to cross-build and hides flash until HIL qualification', () => {
     expect(getBoardEvidenceSummary('stm32f746g_disco')).toEqual({
-      zephyrBoard: 'stm32f746g_disco/stm32f746xx', validationLevel: 'cross-build', evidenceCount: 0,
+      zephyrBoard: 'stm32f746g_disco/stm32f746xx',
+      validationLevel: 'cross-build',
+      evidenceCount: 0,
     });
     expect(getBoardEvidenceSummary('custom')).toBeUndefined();
   });
@@ -93,14 +112,25 @@ describe('presentToolchainInspectResult', () => {
   it('fails closed for malformed Studio execution envelopes', () => {
     const value = { ...result(), execution: { ...studioExecution('toolchain-inspect', 'toolchain:inspect'), root: '/do-not-render' } };
     expect(presentToolchainInspectResult(value).kind).toBe('unavailable');
-    expect(presentToolchainInspectResult({ ...result(), execution: { ...studioExecution('toolchain-inspect', 'toolchain:inspect'), operation: 'compile' } }).kind).toBe('unavailable');
+    expect(
+      presentToolchainInspectResult({
+        ...result(),
+        execution: { ...studioExecution('toolchain-inspect', 'toolchain:inspect'), operation: 'compile' },
+      }).kind,
+    ).toBe('unavailable');
   });
 
   it('fails closed for malformed, contradictory, or secret-bearing results', () => {
     expect(presentToolchainInspectResult({ ...result(), ok: false }).kind).toBe('unavailable');
-    expect(presentToolchainInspectResult({ ...result(), summary: { ...result().summary, checks: result().summary.checks.slice(1) } }).kind).toBe('unavailable');
-    expect(presentToolchainInspectResult({ ...result(), summary: { ...result().summary, scope: 'target-hil' }, secret: 'do-not-render' }).kind).toBe('unavailable');
-    expect(presentToolchainInspectResult({ ...result(), summary: { ...result().summary, secret: 'do-not-render' } }).kind).toBe('unavailable');
+    expect(
+      presentToolchainInspectResult({ ...result(), summary: { ...result().summary, checks: result().summary.checks.slice(1) } }).kind,
+    ).toBe('unavailable');
+    expect(
+      presentToolchainInspectResult({ ...result(), summary: { ...result().summary, scope: 'target-hil' }, secret: 'do-not-render' }).kind,
+    ).toBe('unavailable');
+    expect(presentToolchainInspectResult({ ...result(), summary: { ...result().summary, secret: 'do-not-render' } }).kind).toBe(
+      'unavailable',
+    );
     const missingEvidence = result() as Record<string, unknown>;
     delete missingEvidence.evidence;
     expect(presentToolchainInspectResult(missingEvidence).kind).toBe('unavailable');
@@ -140,7 +170,11 @@ describe('presentToolchainInspectResult', () => {
     const invalidRevision = result() as { summary: { checks: Array<Record<string, unknown>> } };
     invalidRevision.summary.checks[5] = { ...invalidRevision.summary.checks[5]!, requiredRevision: 'not-a-sha' };
     expect(presentToolchainInspectResult(invalidRevision).kind).toBe('unavailable');
-    invalidRevision.summary.checks[5] = { ...invalidRevision.summary.checks[5]!, requiredRevision: 'a'.repeat(40), observedRevision: 'UPPERCASE'.padEnd(40, 'A') };
+    invalidRevision.summary.checks[5] = {
+      ...invalidRevision.summary.checks[5]!,
+      requiredRevision: 'a'.repeat(40),
+      observedRevision: 'UPPERCASE'.padEnd(40, 'A'),
+    };
     expect(presentToolchainInspectResult(invalidRevision).kind).toBe('unavailable');
   });
 
@@ -165,9 +199,12 @@ describe('presentFirmwareBuildResult', () => {
     return {
       ok: true,
       summary: {
-        schemaVersion: 1, scope: 'local-ephemeral-cross-build', sourceIdentity: 'unverified',
+        schemaVersion: 1,
+        scope: 'local-ephemeral-cross-build',
+        sourceIdentity: 'unverified',
         board: { boardId: 'do-not-render', ideId: 'rpi_pico', zephyrBoard: 'rpi_pico', validationLevel: 'cross-build' },
-        artifact, output: { stdoutBytes: 0, stderrBytes: 0, truncated: false },
+        artifact,
+        output: { stdoutBytes: 0, stderrBytes: 0, truncated: false },
       },
       evidence: { schemaVersion: 1, operation: 'firmware-build', outcome: 'passed', diagnostics: [], artifacts: [artifact] },
     };
@@ -208,12 +245,26 @@ describe('presentFirmwareBuildResult', () => {
   });
 
   it('presents content-free cancellation and failure states only', () => {
-    const failure = (code: string) => ({ ok: false, evidence: { schemaVersion: 1, operation: 'firmware-build', outcome: 'failed', diagnostics: [{ code, message: 'Firmware build is unavailable' }], artifacts: [] } });
+    const failure = (code: string) => ({
+      ok: false,
+      evidence: {
+        schemaVersion: 1,
+        operation: 'firmware-build',
+        outcome: 'failed',
+        diagnostics: [{ code, message: 'Firmware build is unavailable' }],
+        artifacts: [],
+      },
+    });
     expect(presentFirmwareBuildResult(failure('FIRMWARE_BUILD_CANCELLED'))).toEqual({ kind: 'cancelled' });
     expect(presentFirmwareBuildResult(failure('FIRMWARE_BUILD_CLEANUP_FAILED'))).toEqual({ kind: 'cleanup-unconfirmed' });
     expect(presentFirmwareBuildResult(failure('FIRMWARE_BUILD_TIMEOUT'))).toEqual({ kind: 'failed' });
     expect(presentFirmwareBuildResult({ ...failure('FIRMWARE_BUILD_TIMEOUT'), secret: 'do-not-render' })).toEqual({ kind: 'failed' });
-    expect(presentFirmwareBuildResult({ ...failure('FIRMWARE_BUILD_CANCELLED'), execution: studioExecution('firmware-build', 'firmware:build', 'cancelled') })).toEqual({ kind: 'cancelled' });
+    expect(
+      presentFirmwareBuildResult({
+        ...failure('FIRMWARE_BUILD_CANCELLED'),
+        execution: studioExecution('firmware-build', 'firmware:build', 'cancelled'),
+      }),
+    ).toEqual({ kind: 'cancelled' });
   });
 
   it('accepts the runner output budget as one combined eight-megabyte limit', () => {

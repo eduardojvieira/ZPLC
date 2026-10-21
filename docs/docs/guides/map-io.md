@@ -3,7 +3,7 @@ slug: /guides/map-io
 id: map-io
 title: Map variables to pins
 sidebar_label: Map I/O to pins
-description: "Connect the variables of a program to the inputs and outputs of a board, with the I/O description of the board and the I/O mapping editor of ZPLC."
+description: 'Connect the variables of a program to the inputs and outputs of a board, with the I/O description of the board and the I/O mapping editor of ZPLC.'
 tags: [how-to, io, boards, mapping]
 ---
 
@@ -63,15 +63,11 @@ only, so a row cannot be put where the board has nothing.
 ```json zplc-fragment board=rpi_pico
 {
   "io": {
-    "inputs": [
-      { "name": "Start", "address": "%IX0.0", "type": "BOOL", "pin": 15, "description": "Push button between GP15 and ground" }
-    ],
+    "inputs": [{ "name": "Start", "address": "%IX0.0", "type": "BOOL", "pin": 15, "description": "Push button between GP15 and ground" }],
     "outputs": [
       { "name": "LED_Output", "address": "%QX0.0", "type": "BOOL", "pin": 0, "description": "LED with a series resistor on GP0" }
     ],
-    "virtual": [
-      { "name": "SpareFlag", "address": "%QX0.6", "type": "BOOL", "description": "A bit of the output image that no pin drives" }
-    ]
+    "virtual": [{ "name": "SpareFlag", "address": "%QX0.6", "type": "BOOL", "description": "A bit of the output image that no pin drives" }]
   }
 }
 ```
@@ -104,12 +100,12 @@ description and the devicetree disagree.
 
 ## What is verified, and what is not
 
-| Part | Verified | Level |
-| --- | --- | --- |
-| The descriptions are consistent with the devicetree of each board | The firmware build fails otherwise | Build |
-| An unmapped address is an error in the editor, the build and the deploy | Unit tests, and journey 40 in the real application | Host |
-| The analog scaling of a channel, and the I/O table of the firmware | Tests on `native_sim` | Emulated target |
-| That a pin drives the signal the description says, and the level of an output | Not tested | None |
+| Part                                                                          | Verified                                           | Level           |
+| ----------------------------------------------------------------------------- | -------------------------------------------------- | --------------- |
+| The descriptions are consistent with the devicetree of each board             | The firmware build fails otherwise                 | Build           |
+| An unmapped address is an error in the editor, the build and the deploy       | Unit tests, and journey 40 in the real application | Host            |
+| The analog scaling of a channel, and the I/O table of the firmware            | Tests on `native_sim`                              | Emulated target |
+| That a pin drives the signal the description says, and the level of an output | Not tested                                         | None            |
 
 ## See also
 

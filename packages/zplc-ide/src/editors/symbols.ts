@@ -29,7 +29,9 @@ export interface DeclaredSymbol extends DeclaredVariable {
 export function declaredSymbols(tables: VariableTables | undefined): DeclaredSymbol[] {
   if (!tables) return [];
   const section = (variables: readonly DeclaredVariable[] | undefined, name: DeclaredSymbol['section']): DeclaredSymbol[] =>
-    (variables ?? []).filter((variable) => typeof variable?.name === 'string' && variable.name !== '').map((variable) => ({ ...variable, section: name }));
+    (variables ?? [])
+      .filter((variable) => typeof variable?.name === 'string' && variable.name !== '')
+      .map((variable) => ({ ...variable, section: name }));
   return [...section(tables.inputs, 'input'), ...section(tables.outputs, 'output'), ...section(tables.local, 'local')];
 }
 
@@ -52,5 +54,7 @@ export function sameType(first: string | undefined, second: string | undefined):
 
 /** The BOOL outputs of a function block type, from the library or from the project: what `Instance.Q` reads. */
 export function boolOutputsOf(type: string, projectBlocks?: readonly ProjectBlock[]): string[] {
-  return getDefaultPorts(type, projectBlocks).outputs.filter((port) => sameType(port.type, 'BOOL')).map((port) => port.name);
+  return getDefaultPorts(type, projectBlocks)
+    .outputs.filter((port) => sameType(port.type, 'BOOL'))
+    .map((port) => port.name);
 }

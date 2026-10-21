@@ -43,7 +43,10 @@ function brief(comment: string): string {
   return (end >= 0 ? sentence.slice(0, end + 1) : sentence).trim();
 }
 
-export interface Declaration { name: string; brief: string }
+export interface Declaration {
+  name: string;
+  brief: string;
+}
 
 /** The functions of the HAL header, in declaration order, each with the first sentence of its comment. */
 export function halFunctions(header: string): Declaration[] {
@@ -80,57 +83,105 @@ export function schedulerPort(header: string): Declaration[] {
   return found;
 }
 
-interface Group { id: string; title: L10n; what: L10n; owns: (name: string) => boolean }
+interface Group {
+  id: string;
+  title: L10n;
+  what: L10n;
+  owns: (name: string) => boolean;
+}
 
 const GROUPS: Group[] = [
   {
     id: 'clock',
     title: { en: 'Clock', es: 'Reloj' },
-    what: { en: 'The millisecond clock and the blocking sleep. The scheduler core also asks the adapter for a microsecond clock, `now_us`.', es: 'El reloj de milisegundos y la espera bloqueante. El núcleo del planificador además pide al adaptador un reloj de microsegundos, `now_us`.' },
+    what: {
+      en: 'The millisecond clock and the blocking sleep. The scheduler core also asks the adapter for a microsecond clock, `now_us`.',
+      es:
+        'El reloj de milisegundos y la espera bloqueante. El núcleo del planificador además pide al adaptador un reloj de ' +
+        'microsegundos, `now_us`.',
+    },
     owns: (name) => name === 'zplc_hal_tick' || name === 'zplc_hal_sleep',
   },
   {
     id: 'io',
     title: { en: 'I/O table', es: 'Tabla de E/S' },
-    what: { en: 'The channels of the board and the physical pins behind them. The core addresses a logical channel; the table says which pin it is and where it sits in the process image.', es: 'Los canales de la placa y los pines físicos que hay detrás. El núcleo direcciona un canal lógico; la tabla dice qué pin es y dónde está en la imagen de proceso.' },
+    what: {
+      en:
+        'The channels of the board and the physical pins behind them. The core addresses a logical channel; the table says which pin ' +
+        'it is and where it sits in the process image.',
+      es:
+        'Los canales de la placa y los pines físicos que hay detrás. El núcleo direcciona un canal lógico; la tabla dice qué pin es y ' +
+        'dónde está en la imagen de proceso.',
+    },
     owns: (name) => /^zplc_io_/.test(name) || /^zplc_hal_(gpio|adc|dac)_/.test(name),
   },
   {
     id: 'storage',
     title: { en: 'Non-volatile storage', es: 'Almacenamiento no volátil' },
-    what: { en: 'Keyed blobs that survive a power cycle: the stored program, the retentive memory, the configuration and the credentials.', es: 'Bloques con clave que sobreviven a un ciclo de energía: el programa guardado, la memoria retentiva, la configuración y las credenciales.' },
+    what: {
+      en: 'Keyed blobs that survive a power cycle: the stored program, the retentive memory, the configuration and the credentials.',
+      es:
+        'Bloques con clave que sobreviven a un ciclo de energía: el programa guardado, la memoria retentiva, la configuración y las ' +
+        'credenciales.',
+    },
     owns: (name) => /^zplc_hal_persist_/.test(name),
   },
   {
     id: 'locks',
     title: { en: 'Locks', es: 'Cerrojos' },
-    what: { en: 'Mutual exclusion between the scan and the threads around it. A lock that cannot be taken is a fault, not a retry.', es: 'Exclusión mutua entre el ciclo y los hilos que lo rodean. Un cerrojo que no se puede tomar es una falla, no un reintento.' },
+    what: {
+      en: 'Mutual exclusion between the scan and the threads around it. A lock that cannot be taken is a fault, not a retry.',
+      es: 'Exclusión mutua entre el ciclo y los hilos que lo rodean. Un cerrojo que no se puede tomar es una falla, no un reintento.',
+    },
     owns: (name) => /^zplc_hal_mutex_/.test(name),
   },
   {
     id: 'services',
     title: { en: 'Log and life cycle', es: 'Registro y ciclo de vida' },
-    what: { en: 'One log sink, and the calls that bring the port up before the runtime can enter RUN and take it down.', es: 'Un destino de registro, y las llamadas que levantan el puerto antes de que el runtime pueda entrar en RUN y lo bajan.' },
+    what: {
+      en: 'One log sink, and the calls that bring the port up before the runtime can enter RUN and take it down.',
+      es: 'Un destino de registro, y las llamadas que levantan el puerto antes de que el runtime pueda entrar en RUN y lo bajan.',
+    },
     owns: (name) => name === 'zplc_hal_log' || name === 'zplc_hal_init' || name === 'zplc_hal_shutdown',
   },
   {
     id: 'network',
     title: { en: 'Network (optional)', es: 'Red (opcional)' },
-    what: { en: 'Sockets and name resolution. The portable core does not call them: the applications that need a network bring their own transport (tools/ci/hal-contract.json keeps the ledger), so no conformance leg covers them.', es: 'Sockets y resolución de nombres. El núcleo portable no los llama: las aplicaciones que necesitan red traen su propio transporte (tools/ci/hal-contract.json lleva el registro), de modo que ninguna etapa de conformidad los cubre.' },
+    what: {
+      en:
+        'Sockets and name resolution. The portable core does not call them: the applications that need a network bring their own ' +
+        'transport (tools/ci/hal-contract.json keeps the ledger), so no conformance leg covers them.',
+      es:
+        'Sockets y resolución de nombres. El núcleo portable no los llama: las aplicaciones que necesitan red traen su propio ' +
+        'transporte (tools/ci/hal-contract.json lleva el registro), de modo que ninguna etapa de conformidad los cubre.',
+    },
     owns: (name) => /^zplc_hal_(net|dns|socket)_/.test(name),
   },
 ];
 
 const INTRO: L10n = {
   en: [
-    'A port is a platform that hosts the portable core: the virtual machine, the loader, the scheduler core and the storage of the program. The core owns what a program means; a port owns the clock, the pins, the storage, the locks and the thread that calls the scheduler. A port is written against two headers and nothing else, and passes one conformance suite.',
+    'A port is a platform that hosts the portable core: the virtual machine, the loader, the scheduler core and the storage of the ' +
+      'program. The core owns what a program means; a port owns the clock, the pins, the storage, the locks and the thread that calls ' +
+      'the scheduler. A port is written against two headers and nothing else, and passes one conformance suite.',
     '',
-    'Ports in the repository: the Zephyr firmware (`firmware/lib/zplc_core/src/hal/zephyr`), the POSIX host runtime that the ZPLC application simulates with (`.../posix`), the WebAssembly runtime (`.../wasm`) and the FreeRTOS port (`.../freertos`). The FreeRTOS port is the second embedded port that is not Zephyr: decision D-06 of the remediation spec chose to ship it in 2.0, and it is shown on the FreeRTOS POSIX simulator only, so no FreeRTOS board is qualified. This page and the suite are what a port is written against.',
+    'Ports in the repository: the Zephyr firmware (`firmware/lib/zplc_core/src/hal/zephyr`), the POSIX host runtime that the ZPLC ' +
+      'application simulates with (`.../posix`), the WebAssembly runtime (`.../wasm`) and the FreeRTOS port (`.../freertos`). The ' +
+      'FreeRTOS port is the second embedded port that is not Zephyr: decision D-06 of the remediation spec chose to ship it in 2.0, ' +
+      'and it is shown on the FreeRTOS POSIX simulator only, so no FreeRTOS board is qualified. This page and the suite are what a ' +
+      'port is written against.',
   ].join('\n'),
   es: [
-    'Un puerto es una plataforma que aloja el núcleo portable: la máquina virtual, el cargador, el núcleo del planificador y el almacenamiento del programa. El núcleo es dueño de lo que significa un programa; un puerto es dueño del reloj, los pines, el almacenamiento, los cerrojos y el hilo que llama al planificador. Un puerto se escribe contra dos encabezados y nada más, y pasa una suite de conformidad.',
+    'Un puerto es una plataforma que aloja el núcleo portable: la máquina virtual, el cargador, el núcleo del planificador y el ' +
+      'almacenamiento del programa. El núcleo es dueño de lo que significa un programa; un puerto es dueño del reloj, los pines, el ' +
+      'almacenamiento, los cerrojos y el hilo que llama al planificador. Un puerto se escribe contra dos encabezados y nada más, y ' +
+      'pasa una suite de conformidad.',
     '',
-    'Puertos del repositorio: el firmware de Zephyr (`firmware/lib/zplc_core/src/hal/zephyr`), el runtime POSIX del host con el que la aplicación ZPLC simula (`.../posix`), el runtime WebAssembly (`.../wasm`) y el puerto FreeRTOS (`.../freertos`). El puerto FreeRTOS es el segundo puerto embebido que no es de Zephyr: la decisión D-06 de la especificación de remediación resolvió entregarlo en 2.0, y se demuestra solo en el simulador POSIX de FreeRTOS, de modo que ninguna placa FreeRTOS está calificada. Esta página y la suite son contra lo que se escribe un puerto.',
+    'Puertos del repositorio: el firmware de Zephyr (`firmware/lib/zplc_core/src/hal/zephyr`), el runtime POSIX del host con el que la ' +
+      'aplicación ZPLC simula (`.../posix`), el runtime WebAssembly (`.../wasm`) y el puerto FreeRTOS (`.../freertos`). El puerto ' +
+      'FreeRTOS es el segundo puerto embebido que no es de Zephyr: la decisión D-06 de la especificación de remediación resolvió ' +
+      'entregarlo en 2.0, y se demuestra solo en el simulador POSIX de FreeRTOS, de modo que ninguna placa FreeRTOS está calificada. ' +
+      'Esta página y la suite son contra lo que se escribe un puerto.',
   ].join('\n'),
 };
 
@@ -142,40 +193,131 @@ const HEADINGS = {
 };
 
 const HAL_TEXT: L10n = {
-  en: `The functions of \`${HAL_HEADER}\`, by what they serve. A function that a board cannot perform returns \`ZPLC_HAL_NOT_IMPL\`, the defined "not supported" result; a port that leaves one out does not link, and \`tools/ci/check_hal_contract.py\` lists the functions that nothing calls.`,
-  es: `Las funciones de \`${HAL_HEADER}\`, según lo que sirven. Una función que una placa no puede realizar devuelve \`ZPLC_HAL_NOT_IMPL\`, el resultado definido de «no soportado»; un puerto que omite una no enlaza, y \`tools/ci/check_hal_contract.py\` lista las funciones que nadie llama.`,
+  en:
+    `The functions of \`${HAL_HEADER}\`, by what they serve. A function that a board cannot perform returns \`ZPLC_HAL_NOT_IMPL\`, the ` +
+    `defined "not supported" result; a port that leaves one out does not link, and \`tools/ci/check_hal_contract.py\` lists the ` +
+    `functions that nothing calls.`,
+  es:
+    `Las funciones de \`${HAL_HEADER}\`, según lo que sirven. Una función que una placa no puede realizar devuelve ` +
+    `\`ZPLC_HAL_NOT_IMPL\`, el resultado definido de «no soportado»; un puerto que omite una no enlaza, y ` +
+    `\`tools/ci/check_hal_contract.py\` lista las funciones que nadie llama.`,
 };
 
 const SCHED_TEXT: L10n = {
-  en: `What an adapter hands the scheduler core (\`zplc_sched_port_t\` of \`${SCHED_HEADER}\`). Every member but \`now_us\` is optional: an absent callback is a step the platform does not have. The core has no synchronization of its own; the adapter supplies the locks. The adapters that exist are the POSIX session of the host runtime, the Zephyr scheduler, the single-task configuration of the firmware and the FreeRTOS adapter (one software timer for each task, one scheduler task).`,
-  es: `Lo que un adaptador entrega al núcleo del planificador (\`zplc_sched_port_t\` de \`${SCHED_HEADER}\`). Todo miembro salvo \`now_us\` es opcional: un callback ausente es un paso que la plataforma no tiene. El núcleo no tiene sincronización propia; el adaptador aporta los cerrojos. Los adaptadores que existen son la sesión POSIX del runtime del host, el planificador de Zephyr, la configuración de una sola tarea del firmware y el adaptador de FreeRTOS (un temporizador de software por tarea y una tarea del planificador).`,
+  en:
+    `What an adapter hands the scheduler core (\`zplc_sched_port_t\` of \`${SCHED_HEADER}\`). Every member but \`now_us\` is optional: ` +
+    `an absent callback is a step the platform does not have. The core has no synchronization of its own; the adapter supplies the ` +
+    `locks. The adapters that exist are the POSIX session of the host runtime, the Zephyr scheduler, the single-task configuration of ` +
+    `the firmware and the FreeRTOS adapter (one software timer for each task, one scheduler task).`,
+  es:
+    `Lo que un adaptador entrega al núcleo del planificador (\`zplc_sched_port_t\` de \`${SCHED_HEADER}\`). Todo miembro salvo ` +
+    `\`now_us\` es opcional: un callback ausente es un paso que la plataforma no tiene. El núcleo no tiene sincronización propia; el ` +
+    `adaptador aporta los cerrojos. Los adaptadores que existen son la sesión POSIX del runtime del host, el planificador de Zephyr, ` +
+    `la configuración de una sola tarea del firmware y el adaptador de FreeRTOS (un temporizador de software por tarea y una tarea ` +
+    `del planificador).`,
 };
 
 const SUITE_TEXT: L10n = {
-  en: `A port passes the suite when every category below passes on it. The checks are listed in \`${MANIFEST}\`, and a test holds each name to the tree. A leg that is open says why and who owns it; an open leg is not a pass.`,
-  es: `Un puerto pasa la suite cuando pasa en él cada categoría de abajo. Las pruebas están listadas en \`${MANIFEST}\`, y un test mantiene cada nombre atado al árbol. Una etapa abierta dice por qué y quién es su responsable; una etapa abierta no es un pase.`,
+  en:
+    `A port passes the suite when every category below passes on it. The checks are listed in \`${MANIFEST}\`, and a test holds each ` +
+    `name to the tree. A leg that is open says why and who owns it; an open leg is not a pass.`,
+  es:
+    `Un puerto pasa la suite cuando pasa en él cada categoría de abajo. Las pruebas están listadas en \`${MANIFEST}\`, y un test ` +
+    `mantiene cada nombre atado al árbol. Una etapa abierta dice por qué y quién es su responsable; una etapa abierta no es un pase.`,
 };
 
 const FINDINGS: L10n = {
   en: [
-    'The timing self-test reports the smallest advance of the tick that a sleep of 1 ms makes. On the POSIX host it is 1 ms. On the Zephyr targets of the suite (`native_sim` and QEMU Cortex-M3) the kernel tick is 10 ms (100 ticks per second, the default of the kernel) and a sleep of 1 ms moves the tick by 20 ms, so neither the clock nor the kernel timers of these targets resolve an interval shorter than that. The figure belongs to the build configuration of the suite; it is not a measurement of a board (HIL-010 holds the bench).',
+    'The timing self-test reports the smallest advance of the tick that a sleep of 1 ms makes. On the POSIX host it is 1 ms. On the ' +
+      'Zephyr targets of the suite (`native_sim` and QEMU Cortex-M3) the kernel tick is 10 ms (100 ticks per second, the default of the ' +
+      'kernel) and a sleep of 1 ms moves the tick by 20 ms, so neither the clock nor the kernel timers of these targets resolve an ' +
+      'interval shorter than that. The figure belongs to the build configuration of the suite; it is not a measurement of a board ' +
+      '(HIL-010 holds the bench).',
     '',
-    'The WebAssembly port runs every category. Its C suites are the files that ctest runs on the POSIX host, built by `tools/wasm-core/suites.ts` with the HAL port of the runtime that the ZPLC application ships, and they give the same counts (164 checks of the scheduler core, 2796 of the sandbox). They run under Bun, not in a browser engine: the clock of the timing self-test is the host\'s `performance.now()`, with a resolution of 1 ms there, and in a browser that clock has the resolution, the jitter and the throttling of a background tab that the browser gives it (IDE-025 owns the browser-engine test of the adapter). A module cannot hand its one thread back to the host, so the sleep of the port spins on the host\'s clock; the runtime itself never sleeps, because the host polls it. Its storage is the record store of the host: the ZPLC application keeps the retentive memory with the open project and the stored program in the memory of the page. The port has no device link and no network, so it has no configuration and no credentials to store.',
+    'The WebAssembly port runs every category. Its C suites are the files that ctest runs on the POSIX host, built by ' +
+      '`tools/wasm-core/suites.ts` with the HAL port of the runtime that the ZPLC application ships, and they give the same counts (164 ' +
+      'checks of the scheduler core, 2796 of the sandbox). They run under Bun, not in a browser engine: the clock of the timing ' +
+      "self-test is the host's `performance.now()`, with a resolution of 1 ms there, and in a browser that clock has the resolution, " +
+      'the jitter and the throttling of a background tab that the browser gives it (IDE-025 owns the browser-engine test of the ' +
+      "adapter). A module cannot hand its one thread back to the host, so the sleep of the port spins on the host's clock; the " +
+      'runtime itself never sleeps, because the host polls it. Its storage is the record store of the host: the ZPLC ' +
+      'application keeps the retentive memory with the open project and the stored program in the memory of the page. The ' +
+      'port has no device link and no network, so it has no configuration and no credentials to store.',
     '',
-    'The FreeRTOS port runs every category on the FreeRTOS POSIX/GCC simulator (FreeRTOS-Kernel V11.3.2, MIT, fetched at a pinned commit and not kept in the repository; the `freertos-port` job of CI builds and runs it on Ubuntu). Its C suites are the files that ctest runs on the POSIX host, built by `firmware/lib/zplc_core/src/hal/freertos/freertos.cmake` against the FreeRTOS HAL and called from a kernel task, plus suites of its own: the scheduler adapter (the golden traces of the other runtimes, releases on kernel timers, the fault latch and the safe pins), the simulated board behind the I/O table, and the clock, the locks and the storage codes of the HAL. The simulator is not a real-time system: each task is a thread of the host and the kernel tick is a loop that sleeps for 1 ms, so under load the tick runs slower than the wall clock (300 ticks took 390 to 470 ms on a host with a load average of 24). The checks therefore bound what the port can promise, not what a board does. The timing self-test reports a resolution of 1 ms, the tick, against its own limits (a floor of 50 ms of resolution and at most a second of oversleep). The release test counts scans in kernel time: never more than the ticks allow, and at least a third of the ideal count, with the wall time printed and not asserted. The microsecond clock of the scheduler adapter reads the monotonic clock of the host, where a board reads its cycle counter. Storage is one file for each key, written to a temporary name, flushed and renamed, so the suites of the program store and the retentive memory cut the power at every operation; a board port replaces that file with its flash driver. The core drives digital outputs only when it settles the safe state, so a simulated analog output keeps its last word. None of these figures is a measurement of a board (HIL-010 holds the bench).',
+    'The FreeRTOS port runs every category on the FreeRTOS POSIX/GCC simulator (FreeRTOS-Kernel V11.3.2, MIT, fetched at a pinned commit ' +
+      'and not kept in the repository; the `freertos-port` job of CI builds and runs it on Ubuntu). Its C suites are the files that ' +
+      'ctest runs on the POSIX host, built by `firmware/lib/zplc_core/src/hal/freertos/freertos.cmake` against the FreeRTOS HAL and ' +
+      'called from a kernel task, plus suites of its own: the scheduler adapter (the golden traces of the other runtimes, releases ' +
+      'on kernel timers, the fault latch and the safe pins), the simulated board behind the I/O table, and the clock, the locks ' +
+      'and the storage codes of the HAL. The simulator is not a real-time system: each task is a thread of the host and the ' +
+      'kernel tick is a loop that sleeps for 1 ms, so under load the tick runs slower than the wall clock (300 ticks took 390 ' +
+      'to 470 ms on a host with a load average of 24). The checks therefore bound what the port can promise, not what a ' +
+      'board does. The timing self-test reports a resolution of 1 ms, the tick, against its own limits (a floor of 50 ms of resolution ' +
+      'and at most a second of oversleep). The release test counts scans in kernel time: never more than the ticks allow, and at least ' +
+      'a third of the ideal count, with the wall time printed and not asserted. The microsecond clock of the scheduler adapter reads ' +
+      'the monotonic clock of the host, where a board reads its cycle counter. Storage is one file for each key, written to a ' +
+      'temporary name, flushed and renamed, so the suites of the program store and the retentive memory cut the power at every ' +
+      'operation; a board port replaces that file with its flash driver. The core drives digital outputs only when it settles ' +
+      'the safe state, so a simulated analog output keeps its last word. None of these figures is a measurement of a board ' +
+      '(HIL-010 holds the bench).',
   ].join('\n'),
   es: [
-    'La autoprueba de tiempos informa el menor avance del tick que produce una espera de 1 ms. En el host POSIX es de 1 ms. En los destinos Zephyr de la suite (`native_sim` y QEMU Cortex-M3) el tick del kernel es de 10 ms (100 ticks por segundo, el valor por defecto del kernel) y una espera de 1 ms mueve el tick 20 ms, de modo que ni el reloj ni los temporizadores del kernel de estos destinos resuelven un intervalo menor que ese. La cifra pertenece a la configuración de compilación de la suite; no es una medición de una placa (HIL-010 es el banco).',
+    'La autoprueba de tiempos informa el menor avance del tick que produce una espera de 1 ms. En el host POSIX es de 1 ms. En los ' +
+      'destinos Zephyr de la suite (`native_sim` y QEMU Cortex-M3) el tick del kernel es de 10 ms (100 ticks por segundo, el valor por ' +
+      'defecto del kernel) y una espera de 1 ms mueve el tick 20 ms, de modo que ni el reloj ni los temporizadores del kernel de estos ' +
+      'destinos resuelven un intervalo menor que ese. La cifra pertenece a la configuración de compilación de la suite; no es una ' +
+      'medición de una placa (HIL-010 es el banco).',
     '',
-    'El puerto WebAssembly ejecuta todas las categorías. Sus suites C son los archivos que ctest ejecuta en el host POSIX, compilados por `tools/wasm-core/suites.ts` con el puerto de la HAL del runtime que la aplicación ZPLC entrega, y dan los mismos conteos (164 comprobaciones del núcleo del planificador, 2796 del sandbox). Se ejecutan en Bun, no en un motor de navegador: el reloj de la autoprueba de tiempos es `performance.now()` del anfitrión, con una resolución de 1 ms allí, y en un navegador ese reloj tiene la resolución, la fluctuación y la limitación de una pestaña en segundo plano que el navegador le da (IDE-025 es responsable de la prueba del adaptador en un motor de navegador). Un módulo no puede devolver su único hilo al anfitrión, de modo que la espera del puerto es una espera activa que lee el reloj del anfitrión; el runtime mismo nunca espera, porque el anfitrión lo consulta periódicamente. Su almacenamiento es el almacén de registros del anfitrión: la aplicación ZPLC guarda la memoria retentiva con el proyecto abierto y el programa guardado en la memoria de la página. El puerto no tiene enlace con un dispositivo ni red, de modo que no tiene configuración ni credenciales que guardar.',
+    'El puerto WebAssembly ejecuta todas las categorías. Sus suites C son los archivos que ctest ejecuta en el host POSIX, compilados ' +
+      'por `tools/wasm-core/suites.ts` con el puerto de la HAL del runtime que la aplicación ZPLC entrega, y dan los mismos conteos (164 ' +
+      'comprobaciones del núcleo del planificador, 2796 del sandbox). Se ejecutan en Bun, no en un motor de navegador: el reloj de la ' +
+      'autoprueba de tiempos es `performance.now()` del anfitrión, con una resolución de 1 ms allí, y en un navegador ese reloj ' +
+      'tiene la resolución, la fluctuación y la limitación de una pestaña en segundo plano que el navegador le da (IDE-025 es ' +
+      'responsable de la prueba del adaptador en un motor de navegador). Un módulo no puede devolver su único hilo al anfitrión, ' +
+      'de modo que la espera del puerto es una espera activa que lee el reloj del anfitrión; el runtime mismo nunca espera, ' +
+      'porque el anfitrión lo consulta periódicamente. Su almacenamiento es el almacén de registros del anfitrión: la ' +
+      'aplicación ZPLC guarda la memoria retentiva con el proyecto abierto y el programa guardado en la memoria de la página. El puerto ' +
+      'no tiene enlace con un dispositivo ni red, de modo que no tiene configuración ni credenciales que guardar.',
     '',
-    'El puerto FreeRTOS ejecuta todas las categorías en el simulador POSIX/GCC de FreeRTOS (FreeRTOS-Kernel V11.3.2, MIT, descargado en un commit fijado y no guardado en el repositorio; el job `freertos-port` de CI lo compila y lo ejecuta en Ubuntu). Sus suites C son los archivos que ctest ejecuta en el host POSIX, compilados por `firmware/lib/zplc_core/src/hal/freertos/freertos.cmake` contra la HAL de FreeRTOS y llamados desde una tarea del kernel, más suites propias: el adaptador del planificador (las trazas de referencia de los demás runtimes, liberaciones con temporizadores del kernel, la retención de la falla y los pines seguros), la placa simulada detrás de la tabla de E/S, y el reloj, los cerrojos y los códigos de almacenamiento de la HAL. El simulador no es de tiempo real: cada tarea es un hilo del anfitrión y el tick del kernel es un ciclo que espera 1 ms, de modo que con carga el tick corre más lento que el reloj de pared (300 ticks tardaron entre 390 y 470 ms en un anfitrión con una carga promedio de 24). Por eso las pruebas acotan lo que el puerto puede prometer, no lo que hace una placa. La autoprueba de tiempos informa una resolución de 1 ms, el tick, contra sus propios límites (un piso de 50 ms de resolución y a lo sumo un segundo de exceso de espera). La prueba de liberaciones cuenta los ciclos en tiempo del kernel: nunca más de los que permiten los ticks, y al menos un tercio de la cuenta ideal, con el tiempo de pared impreso y no verificado. El reloj de microsegundos del adaptador del planificador lee el reloj monotónico del anfitrión, donde una placa lee su contador de ciclos. El almacenamiento es un archivo por clave, escrito con un nombre temporal, vaciado y renombrado, de modo que las suites del almacén de programas y de la memoria retentiva cortan la energía en cada operación; un puerto para una placa reemplaza ese archivo por su controlador de flash. El núcleo maneja solo las salidas digitales cuando fija el estado seguro, así que una salida analógica simulada conserva su última palabra. Ninguna de estas cifras es una medición de una placa (HIL-010 es el banco).',
+    'El puerto FreeRTOS ejecuta todas las categorías en el simulador POSIX/GCC de FreeRTOS (FreeRTOS-Kernel V11.3.2, MIT, descargado en ' +
+      'un commit fijado y no guardado en el repositorio; el job `freertos-port` de CI lo compila y lo ejecuta en Ubuntu). Sus suites C ' +
+      'son los archivos que ctest ejecuta en el host POSIX, compilados por `firmware/lib/zplc_core/src/hal/freertos/freertos.cmake` ' +
+      'contra la HAL de FreeRTOS y llamados desde una tarea del kernel, más suites propias: el adaptador del planificador (las ' +
+      'trazas de referencia de los demás runtimes, liberaciones con temporizadores del kernel, la retención de la falla y los ' +
+      'pines seguros), la placa simulada detrás de la tabla de E/S, y el reloj, los cerrojos y los códigos de almacenamiento de ' +
+      'la HAL. El simulador no es de tiempo real: cada tarea es un hilo del anfitrión y el tick del kernel es un ciclo que ' +
+      'espera 1 ms, de modo que con carga el tick corre más lento que el reloj de pared (300 ticks tardaron entre 390 y 470 ' +
+      'ms en un anfitrión con una carga promedio de 24). Por eso las pruebas acotan lo que el puerto puede prometer, no lo que hace una ' +
+      'placa. La autoprueba de tiempos informa una resolución de 1 ms, el tick, contra sus propios límites (un piso de 50 ms de ' +
+      'resolución y a lo sumo un segundo de exceso de espera). La prueba de liberaciones cuenta los ciclos en tiempo del kernel: ' +
+      'nunca más de los que permiten los ticks, y al menos un tercio de la cuenta ideal, con el tiempo de pared impreso y no ' +
+      'verificado. El reloj de microsegundos del adaptador del planificador lee el reloj monotónico del anfitrión, donde una ' +
+      'placa lee su contador de ciclos. El almacenamiento es un archivo por clave, escrito con un nombre temporal, vaciado y ' +
+      'renombrado, de modo que las suites del almacén de programas y de la memoria retentiva cortan la energía en cada ' +
+      'operación; un puerto para una placa reemplaza ese archivo por su controlador de flash. El núcleo maneja solo las ' +
+      'salidas digitales cuando fija el estado seguro, así que una salida analógica simulada conserva su última palabra. Ninguna de ' +
+      'estas cifras es una medición de una placa (HIL-010 es el banco).',
   ].join('\n'),
 };
 
 interface Manifest {
   ports: Array<{ id: string; name: L10n; how: L10n }>;
-  categories: Array<{ id: string; title: L10n; what: L10n; legs: Record<string, { ctest?: string[]; twister?: string[]; wasm?: string[]; freertos?: string[]; bun?: Array<{ file: string; test: string }>; open?: L10n & { owner: string } }> }>;
+  categories: Array<{
+    id: string;
+    title: L10n;
+    what: L10n;
+    legs: Record<
+      string,
+      {
+        ctest?: string[];
+        twister?: string[];
+        wasm?: string[];
+        freertos?: string[];
+        bun?: Array<{ file: string; test: string }>;
+        open?: L10n & { owner: string };
+      }
+    >;
+  }>;
 }
 
 const COLUMNS = {
@@ -187,8 +329,13 @@ const COLUMNS = {
 /** The groups of the HAL page; throws for a declared function that no group owns. */
 export function groupedFunctions(functions: Declaration[]): Array<{ group: Group; functions: Declaration[] }> {
   const orphans = functions.filter((entry) => !GROUPS.some((group) => group.owns(entry.name)));
-  if (orphans.length > 0) throw new Error(`the port interface page has no group for ${orphans.map((entry) => entry.name).join(', ')}: add it to a group of ${GENERATOR}`);
-  return GROUPS.map((group) => ({ group, functions: functions.filter((entry) => group.owns(entry.name)) })).filter((entry) => entry.functions.length > 0);
+  if (orphans.length > 0)
+    throw new Error(
+      `the port interface page has no group for ${orphans.map((entry) => entry.name).join(', ')}: add it to a group of ${GENERATOR}`,
+    );
+  return GROUPS.map((group) => ({ group, functions: functions.filter((entry) => group.owns(entry.name)) })).filter(
+    (entry) => entry.functions.length > 0,
+  );
 }
 
 export function portInterfaceBody(lang: Lang): string {
@@ -202,14 +349,20 @@ export function portInterfaceBody(lang: Lang): string {
     sections.push(
       `### ${group.title[lang]}`,
       group.what[lang],
-      table([...COLUMNS.hal[lang]], own.map((entry) => [code(`${entry.name}()`), prose(entry.brief)])),
+      table(
+        [...COLUMNS.hal[lang]],
+        own.map((entry) => [code(`${entry.name}()`), prose(entry.brief)]),
+      ),
     );
   }
 
   sections.push(
     `## ${HEADINGS.sched[lang]}`,
     SCHED_TEXT[lang],
-    table([...COLUMNS.sched[lang]], callbacks.map((entry) => [code(entry.name), prose(entry.brief)])),
+    table(
+      [...COLUMNS.sched[lang]],
+      callbacks.map((entry) => [code(entry.name), prose(entry.brief)]),
+    ),
   );
 
   sections.push(`## ${HEADINGS.suite[lang]}`, SUITE_TEXT[lang]);
@@ -219,7 +372,17 @@ export function portInterfaceBody(lang: Lang): string {
       const open = leg.open;
       const checks = open
         ? `${lang === 'en' ? 'Open' : 'Abierta'}: ${prose(open[lang])} ${lang === 'en' ? 'Owner' : 'Responsable'}: ${prose(open.owner)}.`
-        : [...new Set([...(leg.ctest ?? []), ...(leg.twister ?? []), ...(leg.wasm ?? []), ...(leg.freertos ?? []), ...(leg.bun ?? []).map((entry) => entry.file)])].map((name) => code(name)).join(', ');
+        : [
+            ...new Set([
+              ...(leg.ctest ?? []),
+              ...(leg.twister ?? []),
+              ...(leg.wasm ?? []),
+              ...(leg.freertos ?? []),
+              ...(leg.bun ?? []).map((entry) => entry.file),
+            ]),
+          ]
+            .map((name) => code(name))
+            .join(', ');
       return [port.name[lang], checks, open ? '-' : port.how[lang]];
     });
     sections.push(`### ${category.title[lang]}`, prose(category.what[lang]), table([...COLUMNS.suite[lang]], rows));
@@ -235,8 +398,12 @@ export const PAGES: ReferencePage[] = [
     title: { en: 'Port interface and conformance suite', es: 'Interfaz de puerto y suite de conformidad' },
     label: { en: 'Port interface', es: 'Interfaz de puerto' },
     description: {
-      en: 'What a port of the ZPLC runtime provides, and the conformance suite that every port passes, generated from the headers and the manifest of checks.',
-      es: 'Qué provee un puerto del runtime ZPLC y la suite de conformidad que pasa cada puerto, generadas de los encabezados y del manifiesto de pruebas.',
+      en:
+        'What a port of the ZPLC runtime provides, and the conformance suite that every port passes, generated from the headers and ' +
+        'the manifest of checks.',
+      es:
+        'Qué provee un puerto del runtime ZPLC y la suite de conformidad que pasa cada puerto, generadas de los encabezados y del ' +
+        'manifiesto de pruebas.',
     },
     body: portInterfaceBody,
   },

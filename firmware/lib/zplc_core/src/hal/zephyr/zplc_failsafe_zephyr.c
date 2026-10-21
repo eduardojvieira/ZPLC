@@ -57,9 +57,7 @@ static void (*test_reboot)(void);
  * still reads as a watchdog reset until the next power-on or RUN-pin reset; a fault reboot is named by its record
  * first. Upgrade: a scratch-register marker set by the reboot command, if a bench ever shows it matters. */
 #define ZPLC_RP2040_WATCHDOG_REASON 0x40058008UL
-static uint32_t rp2040_watchdog_bits(void) {
-  return zplc_reset_bits_from_rp2040_watchdog_reason(sys_read32(ZPLC_RP2040_WATCHDOG_REASON));
-}
+static uint32_t rp2040_watchdog_bits(void) { return zplc_reset_bits_from_rp2040_watchdog_reason(sys_read32(ZPLC_RP2040_WATCHDOG_REASON)); }
 #else
 static uint32_t rp2040_watchdog_bits(void) { return 0U; }
 #endif

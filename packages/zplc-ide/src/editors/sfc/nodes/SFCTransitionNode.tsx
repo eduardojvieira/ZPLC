@@ -1,6 +1,6 @@
 /**
  * SFCTransitionNode - Custom ReactFlow node for SFC Transitions
- * 
+ *
  * Renders a Transition bar per IEC 61131-3 SFC specification:
  * - Heavy horizontal bar connecting steps
  * - Small condition text attached to the bar
@@ -31,8 +31,8 @@ interface TransitionData {
 }
 
 const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
-  const { 
-    condition, 
+  const {
+    condition,
     comment,
     debugActive = false,
     conditionResult,
@@ -43,7 +43,7 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
     readOnly = false,
     onChangeData,
   } = data as unknown as TransitionData;
-  
+
   const { t } = useT();
   const [isEditing, setIsEditing] = useState(false);
   const [editCondition, setEditCondition] = useState(condition || 'TRUE');
@@ -71,28 +71,36 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
     setIsEditing(false);
   }, [id, editCondition, condition, onChangeData]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleSave();
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      setEditCondition(condition || 'TRUE');
-      setIsEditing(false);
-    }
-    e.stopPropagation();
-  }, [handleSave, condition]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSave();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setEditCondition(condition || 'TRUE');
+        setIsEditing(false);
+      }
+      e.stopPropagation();
+    },
+    [handleSave, condition],
+  );
 
   // Determine visual state: the condition in the signal vocabulary (a result that was not read is unknown, never FALSE)
   const tone = signalTone({ forced, fault, type: 'BOOL', value: conditionResult ?? null });
   const isConditionTrue = debugActive && tone === 'true';
   const showFired = debugActive && wasFired;
-  const resultWord = tone === 'forced' || tone === 'fault' ? SIGNAL_CUES[tone].label : conditionResult === undefined ? 'unavailable' : conditionResult ? 'TRUE' : 'FALSE';
+  const resultWord =
+    tone === 'forced' || tone === 'fault'
+      ? SIGNAL_CUES[tone].label
+      : conditionResult === undefined
+        ? 'unavailable'
+        : conditionResult
+          ? 'TRUE'
+          : 'FALSE';
 
   // The bar is the TRUE token when the transition fired or is armed with a TRUE condition; the Zap mark and the text say it too
-  const barColorClass = showFired || (isArmed && isConditionTrue)
-    ? 'bg-[var(--signal-true-border)]'
-    : 'bg-[var(--visual-wire)]';
+  const barColorClass = showFired || (isArmed && isConditionTrue) ? 'bg-[var(--signal-true-border)]' : 'bg-[var(--visual-wire)]';
 
   return (
     <div className="zplc-visual-node sfc-transition-node relative h-[80px] w-[120px]">
@@ -101,9 +109,12 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
         type="target"
         position={Position.Top}
         id="in"
-        className="!h-3 !w-3 !-top-1.5 !left-[60px] !border-2 !border-[var(--color-accent-blue)] !bg-[var(--color-accent-blue)] transition-colors"
+        className={
+          '!h-3 !w-3 !-top-1.5 !left-[60px] !border-2 !border-[var(--color-accent-blue)] !bg-[var(--color-accent-blue)] ' +
+          'transition-colors'
+        }
       />
-      
+
       <div className="sfc-transition-axis absolute left-[60px] top-0 h-full border-l-2 border-[var(--visual-wire)]" aria-hidden="true" />
       {/* Transition bar is the IEC flow center; condition is an annotation to its right. */}
       <div className="absolute left-[28px] top-[38px] h-[3px] w-16">
@@ -118,11 +129,15 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
           >
             {/* Fired indicator */}
             {showFired && (
-              <Zap size={10} className="absolute -top-2 left-1/2 -translate-x-1/2 text-[var(--signal-true-fg)]" aria-label={t('sfc.transition.fired')} />
+              <Zap
+                size={10}
+                className="absolute -top-2 left-1/2 -translate-x-1/2 text-[var(--signal-true-fg)]"
+                aria-label={t('sfc.transition.fired')}
+              />
             )}
           </div>
         </Tooltip>
-        
+
         {/* Condition text/editor with debug value */}
         <div
           data-sfc-guard
@@ -130,7 +145,8 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
           onDoubleClick={() => !debugActive && !readOnly && setIsEditing(true)}
         >
           {isEditing ? (
-            <TextField bare
+            <TextField
+              bare
               aria-label={t('a11y.sfc.transitionCondition')}
               ref={inputRef}
               type="text"
@@ -138,15 +154,15 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
               onChange={(e) => setEditCondition(e.target.value)}
               onBlur={handleSave}
               onKeyDown={handleKeyDown}
-              className="w-full border-b border-[var(--border-color)] bg-transparent px-1 py-0.5 font-mono text-xs text-[var(--text-primary)]"
+              className={
+                'w-full border-b border-[var(--border-color)] bg-transparent px-1 py-0.5 font-mono text-xs ' + 'text-[var(--text-primary)]'
+              }
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
-            <div className={`flex items-center gap-1 px-1 py-0.5 font-mono text-xs transition-colors
-              ${debugActive
-                ? SIGNAL_TEXT_CLASS[tone]
-                : 'text-[var(--text-primary)] hover:text-[var(--color-accent-blue)]'
-              }`}
+            <div
+              className={`flex items-center gap-1 px-1 py-0.5 font-mono text-xs transition-colors
+              ${debugActive ? SIGNAL_TEXT_CLASS[tone] : 'text-[var(--text-primary)] hover:text-[var(--color-accent-blue)]'}`}
             >
               <span className="max-h-[30px] overflow-hidden break-words">{condition || t('editors.sfc.true')}</span>
             </div>
@@ -167,12 +183,21 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
         type="source"
         position={Position.Bottom}
         id="out"
-        className="!h-3 !w-3 !-bottom-1.5 !left-[60px] !border-2 !border-[var(--color-accent-blue)] !bg-[var(--color-accent-blue)] transition-colors"
+        className={
+          '!h-3 !w-3 !-bottom-1.5 !left-[60px] !border-2 !border-[var(--color-accent-blue)] !bg-[var(--color-accent-blue)] ' +
+          'transition-colors'
+        }
       />
 
       {/* Comment (if present and not debugging) */}
       {comment && !debugActive && (
-        <div data-sfc-transition-comment className="absolute left-[132px] top-[54px] w-[150px] px-1 text-left text-[length:var(--font-size-caption)] italic text-[var(--text-tertiary)] line-clamp-2">
+        <div
+          data-sfc-transition-comment
+          className={
+            'absolute left-[132px] top-[54px] w-[150px] px-1 text-left text-[length:var(--font-size-caption)] italic ' +
+            'text-[var(--text-tertiary)] line-clamp-2'
+          }
+        >
           {comment}
         </div>
       )}

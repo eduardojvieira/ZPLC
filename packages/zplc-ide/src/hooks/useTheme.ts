@@ -1,6 +1,6 @@
 /**
  * useTheme Hook
- * 
+ *
  * React hook to synchronize theme state with DOM and system preferences
  */
 
@@ -26,7 +26,7 @@ export function useTheme() {
     if (theme !== 'system') return;
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
+
     const handleChange = (e: MediaQueryListEvent) => {
       // Update data attribute for JS consumers
       document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');

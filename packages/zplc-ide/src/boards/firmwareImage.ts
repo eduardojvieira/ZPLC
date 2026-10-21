@@ -42,24 +42,24 @@ export type FirmwareImagePresentation =
   | { kind: 'unavailable'; message: string }
   | { kind: 'no-image'; message: string }
   | {
-    kind: 'ready';
-    board: string;
-    displayName: string;
-    learner: boolean;
-    version: string;
-    commit: string;
-    /** A different version from this Studio's: the image and the application are not from the same release. */
-    versionNote: string | null;
-    evidenceLevel: FirmwareEvidenceLevel;
-    evidence: string;
-    image: FirmwareFileView;
-    /** The ELF with symbols that some boards also have: for a debugger, never flashed. */
-    debug: FirmwareFileView | null;
-    steps: string[];
-    /** Every board of the release, the two learner boards first. */
-    boards: FirmwareBoardListEntry[];
-    notice: string;
-  };
+      kind: 'ready';
+      board: string;
+      displayName: string;
+      learner: boolean;
+      version: string;
+      commit: string;
+      /** A different version from this Studio's: the image and the application are not from the same release. */
+      versionNote: string | null;
+      evidenceLevel: FirmwareEvidenceLevel;
+      evidence: string;
+      image: FirmwareFileView;
+      /** The ELF with symbols that some boards also have: for a debugger, never flashed. */
+      debug: FirmwareFileView | null;
+      steps: string[];
+      /** Every board of the release, the two learner boards first. */
+      boards: FirmwareBoardListEntry[];
+      notice: string;
+    };
 
 function separator(folder: string): string {
   return folder.includes('\\') && !folder.includes('/') ? '\\' : '/';
@@ -96,7 +96,9 @@ function checksumCommand(file: string, platform: string): string {
 export function flashSteps(image: FirmwareImage, platform: string, offline: boolean): string[] {
   const flash = image.flash;
   const steps: string[] = [];
-  steps.push(offline ? t('boards.firmware.step.openFolder', { file: image.file }) : t('boards.firmware.step.download', { file: image.file }));
+  steps.push(
+    offline ? t('boards.firmware.step.openFolder', { file: image.file }) : t('boards.firmware.step.download', { file: image.file }),
+  );
   steps.push(t('boards.firmware.step.checksum', { command: checksumCommand(image.file, platform), sha256: image.sha256 }));
   if (flash === null) return steps;
   const arg = (name: string): string | undefined => flash.args[name];
@@ -122,7 +124,12 @@ export function flashSteps(image: FirmwareImage, platform: string, offline: bool
     case 'dfu-util':
       steps.push(
         t('boards.firmware.step.dfu.bootMode'),
-        t('boards.firmware.step.dfu.write', { address: flash.address ?? '0x08040000', device: arg('pid') ?? '<vendor:product>', alt: arg('alt') ?? '0', file }),
+        t('boards.firmware.step.dfu.write', {
+          address: flash.address ?? '0x08040000',
+          device: arg('pid') ?? '<vendor:product>',
+          alt: arg('alt') ?? '0',
+          file,
+        }),
       );
       break;
     case 'stm32cubeprogrammer':
@@ -132,7 +139,9 @@ export function flashSteps(image: FirmwareImage, platform: string, offline: bool
       );
       break;
     default:
-      steps.push(t('boards.firmware.step.other.write', { address: flash.address ?? t('boards.firmware.step.other.address'), runner: flash.runner }));
+      steps.push(
+        t('boards.firmware.step.other.write', { address: flash.address ?? t('boards.firmware.step.other.address'), runner: flash.runner }),
+      );
   }
   steps.push(t('boards.firmware.step.connect'));
   return steps;
@@ -159,13 +168,20 @@ export function presentFirmwareImage(
     learner: image.learner,
     version: result.version,
     commit: result.commit,
-    versionNote: result.version === studio.version ? null : t('boards.firmware.versionNote', { version: result.version, studio: studio.version }),
+    versionNote:
+      result.version === studio.version ? null : t('boards.firmware.versionNote', { version: result.version, studio: studio.version }),
     evidenceLevel: image.evidenceLevel,
     evidence: t(LEVEL_KEY[image.evidenceLevel]),
     image: main,
     debug: debug ? fileView(debug, result.folder, result.version) : null,
     steps: flashSteps(image, studio.platform, main.offline),
-    boards: flash.map((candidate) => ({ board: candidate.board, displayName: candidate.displayName, learner: candidate.learner, file: candidate.file, offline: candidate.bundled === 'verified' })),
+    boards: flash.map((candidate) => ({
+      board: candidate.board,
+      displayName: candidate.displayName,
+      learner: candidate.learner,
+      file: candidate.file,
+      offline: candidate.bundled === 'verified',
+    })),
     notice: noFlashNotice(),
   };
 }

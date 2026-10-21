@@ -6,8 +6,16 @@ import { fileURLToPath } from 'node:url';
 import { resolveProgramSource } from '../utils/programSourceResolution';
 
 // Toolbar.tsx and the modules split out of it (IDE-014): the pins below read the text of all of them, as they did of the one file.
-const TOOLBAR_MODULES = ['./Toolbar.tsx', './ToolbarBuildMenu.tsx', './ToolbarThemeMenu.tsx', './ToolbarRunControls.tsx', './useDropdownMenu.ts'];
-const toolbarSource = withEnglishMessages(TOOLBAR_MODULES.map((file) => readFileSync(fileURLToPath(new URL(file, import.meta.url)), 'utf8')).join('\n'));
+const TOOLBAR_MODULES = [
+  './Toolbar.tsx',
+  './ToolbarBuildMenu.tsx',
+  './ToolbarThemeMenu.tsx',
+  './ToolbarRunControls.tsx',
+  './useDropdownMenu.ts',
+];
+const toolbarSource = withEnglishMessages(
+  TOOLBAR_MODULES.map((file) => readFileSync(fileURLToPath(new URL(file, import.meta.url)), 'utf8')).join('\n'),
+);
 
 describe('resolveProgramSource', () => {
   it('resolves LD task references to visual editor json files', () => {
@@ -79,7 +87,6 @@ describe('resolveProgramSource', () => {
 
     expect(result).toBeNull();
   });
-
 });
 
 describe('canonical workspace build failures', () => {
@@ -97,7 +104,7 @@ describe('canonical workspace build failures', () => {
     expect(toolbarSource).toContain('uploadInFlightRef.current = false;');
   });
   it('reveals Problems for real build failures without changing canonical precondition guidance', () => {
-    expect(toolbarSource).toContain("const revealCompileProblems = () => {");
+    expect(toolbarSource).toContain('const revealCompileProblems = () => {');
     expect(toolbarSource).toContain("current.setActiveConsoleTab('problems');");
     expect(toolbarSource.match(/revealCompileProblems\(\);/g)?.length).toBeGreaterThanOrEqual(2);
     expect(toolbarSource).toContain("current.setActiveConsoleTab('tests');");
@@ -118,15 +125,15 @@ describe('canonical workspace build failures', () => {
   });
 
   it('retains keyboard execution focus across Run, Pause, and Resume control replacement only', () => {
-    expect(toolbarSource).toContain("const executionButtonRef = useRef<HTMLButtonElement>(null);");
+    expect(toolbarSource).toContain('const executionButtonRef = useRef<HTMLButtonElement>(null);');
     expect(toolbarSource).toContain("const pendingExecutionFocusRef = useRef<'running' | 'paused' | null>(null);");
     expect(toolbarSource).toContain("pendingExecutionFocusRef.current = keyboardInitiated ? 'running' : null;");
     expect(toolbarSource).toContain("pendingExecutionFocusRef.current = keyboardInitiated ? 'paused' : null;");
-    expect(toolbarSource).toContain("handleResume(true);");
-    expect(toolbarSource).toContain("handleStart(true);");
-    expect(toolbarSource).toContain("handlePause(true);");
+    expect(toolbarSource).toContain('handleResume(true);');
+    expect(toolbarSource).toContain('handleStart(true);');
+    expect(toolbarSource).toContain('handlePause(true);');
     expect(toolbarSource.match(/ref=\{executionButtonRef\}/g)?.length).toBe(3);
     expect(toolbarSource.match(/event\.detail === 0/g)?.length).toBe(3);
-    expect(toolbarSource).toContain("requestAnimationFrame(() => executionButtonRef.current?.focus());");
+    expect(toolbarSource).toContain('requestAnimationFrame(() => executionButtonRef.current?.focus());');
   });
 });

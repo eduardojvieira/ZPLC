@@ -47,19 +47,30 @@ export function code(text: string): string {
 
 /**
  * A sentence for the page: the characters that the site would read as markup or as a JSX expression (`<`, `{`, `}`),
- * a pipe, and a colon that starts a directive (`addr:len`), are escaped outside code spans. A text that was written for the site's own syntax never goes through this.
+ * a pipe, and a colon that starts a directive (`addr:len`), are escaped outside code spans. A text that was written for the site's own
+ * syntax never goes through this.
  */
 export function prose(text: string): string {
   return text
     .split(/(`[^`]*`)/)
-    .map((part, index) => (index % 2 === 1 ? part.replace(/\|/g, '\\|') : part.replace(/</g, '&lt;').replace(/\{/g, '&#123;').replace(/\}/g, '&#125;').replace(/\|/g, '\\|').replace(/:(?=[A-Za-z])/g, '\\:')))
+    .map((part, index) =>
+      index % 2 === 1
+        ? part.replace(/\|/g, '\\|')
+        : part
+            .replace(/</g, '&lt;')
+            .replace(/\{/g, '&#123;')
+            .replace(/\}/g, '&#125;')
+            .replace(/\|/g, '\\|')
+            .replace(/:(?=[A-Za-z])/g, '\\:'),
+    )
     .join('');
 }
 
 /** A table; every cell is taken as it is, so a cell that holds a sentence goes through `prose` first. */
 export function table(head: string[], rows: string[][]): string {
   const width = head.length;
-  for (const row of rows) if (row.length !== width) throw new Error(`table row has ${row.length} cells, the head has ${width}: ${row.join(' | ')}`);
+  for (const row of rows)
+    if (row.length !== width) throw new Error(`table row has ${row.length} cells, the head has ${width}: ${row.join(' | ')}`);
   const line = (cells: string[]) => `| ${cells.map((cell) => (cell === '' ? ' ' : cell)).join(' | ')} |`;
   return [line(head), line(head.map(() => '---')), ...rows.map(line)].join('\n');
 }
@@ -106,10 +117,15 @@ export function renderPage(generator: string, page: ReferencePage, lang: Lang): 
   ].join('\n');
 }
 
-export interface Output { file: string; content: string }
+export interface Output {
+  file: string;
+  content: string;
+}
 
 export function outputsOf(generator: string, pages: ReferencePage[]): Output[] {
-  return pages.flatMap((page) => LANGS.map((lang) => ({ file: join(LANG_DIR[lang], page.path), content: renderPage(generator, page, lang) })));
+  return pages.flatMap((page) =>
+    LANGS.map((lang) => ({ file: join(LANG_DIR[lang], page.path), content: renderPage(generator, page, lang) })),
+  );
 }
 
 /** The files that differ from what the generator would write, as messages. */

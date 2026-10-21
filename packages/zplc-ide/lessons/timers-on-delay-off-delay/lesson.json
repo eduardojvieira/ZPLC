@@ -5,16 +5,9 @@
   "order": 13,
   "module": 3,
   "level": "foundation",
-  "prerequisites": [
-    "motor-start-stop-safe"
-  ],
-  "languages": [
-    "ST"
-  ],
-  "tracks": [
-    "simulation",
-    "hardware"
-  ],
+  "prerequisites": ["motor-start-stop-safe"],
+  "languages": ["ST"],
+  "tracks": ["simulation", "hardware"],
   "unsupported": {},
   "plant": null,
   "estimatedMinutes": 15,

@@ -22,5 +22,8 @@ export const useDeployedProgram = create<DeployedProgramState>((set) => ({
     // A later clear or publish wins over this one.
     if (mine === generation) set({ sha256: [...digest].map((byte) => byte.toString(16).padStart(2, '0')).join('') });
   },
-  clear: () => { generation += 1; set({ sha256: null }); },
+  clear: () => {
+    generation += 1;
+    set({ sha256: null });
+  },
 }));

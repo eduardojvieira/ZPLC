@@ -29,20 +29,20 @@ reference pages already say.
 
 ## Parts
 
-| Part | Where | What it is |
-|---|---|---|
-| Core | `firmware/lib/zplc_core/` | Strict ANSI C99, no hardware calls. `src/core/` holds the VM (`zplc_core.c`), the loader (`zplc_loader.c`), the communication-block dispatch (`zplc_comm_dispatch.c`) and the debug output (`zplc_debug.c`). Public headers are in `include/`. |
-| HAL implementations | `firmware/lib/zplc_core/src/hal/` | `posix/` (also built for Windows), `zephyr/` (the HAL and the multitask scheduler) and `wasm/`. The core calls only `zplc_hal_*`. |
-| Zephyr application | `firmware/app/` | The firmware image: the `zplc` shell, program upload and admission, the persistent program store with boot restore, GPIO mapping from the device tree, Modbus RTU and TCP, MQTT with Sparkplug B, and the Azure and AWS cloud handlers. Board overlays and configuration are in `boards/`. |
-| Zephyr module | `firmware/zephyr/`, `firmware/CMakeLists.txt`, `west.yml` | Declares the core and the application as a Zephyr module; `west.yml` pins the Zephyr revision. |
-| Native runtime | `firmware/apps/posix_host/` | The `zplc_runtime` executable that Studio uses as its simulator. It reads one JSON request per line on stdin and writes one JSON response per line, plus asynchronous events, on stdout. It is built from the same core and the POSIX HAL. |
-| Compiler | `packages/zplc-compiler/` | Structured Text to `.zplc`: `compiler/` (lexer, parser, AST, symbol table, code generator, standard library, debug map) and `assembler/`. It also compiles several programs and tasks into one artifact. |
-| Studio | `packages/zplc-ide/` | The Electron desktop application. `electron/` is the main process (project files, native simulator supervision, serial, firmware build, security), `src/` the renderer, `src/runtime/` the adapters that talk to the native simulator or to a serial device, `src/cli/` the command line and Tool API, `src/mcp/` the MCP server, `src/test-engine/` the scenario engine. |
-| Hardware-in-the-loop | `tools/hil/`, `packages/zplc-hil/` | Python and TypeScript tools that drive a board on a bench. They need hardware and do not run in CI. |
-| Binary contract | `tools/contract/` | `contract.json` is the one source of the opcodes, the container layout, sizes, error codes and communication-block identifiers. |
-| Conformance | `conformance/` | Structured Text programs with expected results, run through the compiler and the real VM. |
-| Firmware test method | `tools/firmware-test/` | Runs the firmware suites on Linux: `native_sim` in 64 and 32 bits, QEMU Cortex-M3 and M0, and the flash and RAM budget of each board. |
-| Documentation | `docs/`, `tools/docs/` | The Docusaurus site in English and Spanish, and the generators and validators for it. |
+| Part                 | Where                                                     | What it is                                                                                                                                                                                                                                                                                                                                                                |
+| -------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Core                 | `firmware/lib/zplc_core/`                                 | Strict ANSI C99, no hardware calls. `src/core/` holds the VM (`zplc_core.c`), the loader (`zplc_loader.c`), the communication-block dispatch (`zplc_comm_dispatch.c`) and the debug output (`zplc_debug.c`). Public headers are in `include/`.                                                                                                                            |
+| HAL implementations  | `firmware/lib/zplc_core/src/hal/`                         | `posix/` (also built for Windows), `zephyr/` (the HAL and the multitask scheduler) and `wasm/`. The core calls only `zplc_hal_*`.                                                                                                                                                                                                                                         |
+| Zephyr application   | `firmware/app/`                                           | The firmware image: the `zplc` shell, program upload and admission, the persistent program store with boot restore, GPIO mapping from the device tree, Modbus RTU and TCP, MQTT with Sparkplug B, and the Azure and AWS cloud handlers. Board overlays and configuration are in `boards/`.                                                                                |
+| Zephyr module        | `firmware/zephyr/`, `firmware/CMakeLists.txt`, `west.yml` | Declares the core and the application as a Zephyr module; `west.yml` pins the Zephyr revision.                                                                                                                                                                                                                                                                            |
+| Native runtime       | `firmware/apps/posix_host/`                               | The `zplc_runtime` executable that Studio uses as its simulator. It reads one JSON request per line on stdin and writes one JSON response per line, plus asynchronous events, on stdout. It is built from the same core and the POSIX HAL.                                                                                                                                |
+| Compiler             | `packages/zplc-compiler/`                                 | Structured Text to `.zplc`: `compiler/` (lexer, parser, AST, symbol table, code generator, standard library, debug map) and `assembler/`. It also compiles several programs and tasks into one artifact.                                                                                                                                                                  |
+| Studio               | `packages/zplc-ide/`                                      | The Electron desktop application. `electron/` is the main process (project files, native simulator supervision, serial, firmware build, security), `src/` the renderer, `src/runtime/` the adapters that talk to the native simulator or to a serial device, `src/cli/` the command line and Tool API, `src/mcp/` the MCP server, `src/test-engine/` the scenario engine. |
+| Hardware-in-the-loop | `tools/hil/`, `packages/zplc-hil/`                        | Python and TypeScript tools that drive a board on a bench. They need hardware and do not run in CI.                                                                                                                                                                                                                                                                       |
+| Binary contract      | `tools/contract/`                                         | `contract.json` is the one source of the opcodes, the container layout, sizes, error codes and communication-block identifiers.                                                                                                                                                                                                                                           |
+| Conformance          | `conformance/`                                            | Structured Text programs with expected results, run through the compiler and the real VM.                                                                                                                                                                                                                                                                                 |
+| Firmware test method | `tools/firmware-test/`                                    | Runs the firmware suites on Linux: `native_sim` in 64 and 32 bits, QEMU Cortex-M3 and M0, and the flash and RAM budget of each board.                                                                                                                                                                                                                                     |
+| Documentation        | `docs/`, `tools/docs/`                                    | The Docusaurus site in English and Spanish, and the generators and validators for it.                                                                                                                                                                                                                                                                                     |
 
 ## The binary contract
 
@@ -95,16 +95,16 @@ assistant and MCP start none of them (see the
 
 ## Where each layer is tested
 
-| Layer | Suite | Command |
-|---|---|---|
-| Core, loader, host runtime (C) | `firmware/lib/zplc_core/tests/`, run by ctest | `bun run test:core` |
-| Compiler and assembler | `packages/zplc-compiler/src/**/*.test.ts` | `bun run test:compiler` |
-| Language conformance | `conformance/`, runner `packages/zplc-ide/src/conformance/conformance.test.ts` | `bun run test:ide` |
-| Studio, CLI, MCP, scenario engine | `packages/zplc-ide/**/*.test.ts` | `bun run test:ide` |
-| Studio on the real application | `packages/zplc-ide/scripts/journeys.ts` | `bun run test:journeys` |
-| Firmware on Linux (Zephyr) | `firmware/tests/` | `bun run test:firmware` |
-| Binary contract | `tools/contract/` | `bun run contract:check` |
-| Documentation | `tools/docs/`, `tools/hil/validate_docs_parity.py` | `bun run check:docs` |
+| Layer                             | Suite                                                                          | Command                  |
+| --------------------------------- | ------------------------------------------------------------------------------ | ------------------------ |
+| Core, loader, host runtime (C)    | `firmware/lib/zplc_core/tests/`, run by ctest                                  | `bun run test:core`      |
+| Compiler and assembler            | `packages/zplc-compiler/src/**/*.test.ts`                                      | `bun run test:compiler`  |
+| Language conformance              | `conformance/`, runner `packages/zplc-ide/src/conformance/conformance.test.ts` | `bun run test:ide`       |
+| Studio, CLI, MCP, scenario engine | `packages/zplc-ide/**/*.test.ts`                                               | `bun run test:ide`       |
+| Studio on the real application    | `packages/zplc-ide/scripts/journeys.ts`                                        | `bun run test:journeys`  |
+| Firmware on Linux (Zephyr)        | `firmware/tests/`                                                              | `bun run test:firmware`  |
+| Binary contract                   | `tools/contract/`                                                              | `bun run contract:check` |
+| Documentation                     | `tools/docs/`, `tools/hil/validate_docs_parity.py`                             | `bun run check:docs`     |
 
 [CONTRIBUTING.md](CONTRIBUTING.md) lists the durations and what a pass proves.
 Host, QEMU, target-build, bench and manual results are different evidence

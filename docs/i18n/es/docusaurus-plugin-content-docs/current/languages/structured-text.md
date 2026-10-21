@@ -39,20 +39,20 @@ ciclos y comprueba ambos valores.
 
 ZPLC soporta estos tipos elementales. [Texto estructurado (ST)](./st.md#tipos-numéricos) da el ancho, el rango y el comportamiento en los límites de cada uno.
 
-*   `BOOL`
-*   `SINT`, `INT`, `DINT`, `LINT` (enteros con signo de 8, 16, 32 y 64 bits)
-*   `USINT`, `UINT`, `UDINT`, `ULINT` (enteros sin signo de 8, 16, 32 y 64 bits)
-*   `BYTE`, `WORD`, `DWORD`, `LWORD` (cadenas de bits de 8, 16, 32 y 64 bits)
-*   `REAL` (punto flotante de 32 bits) y `LREAL` (punto flotante de 64 bits, doble precisión IEEE 754; requisito CMP-015)
-*   `TIME`, `DATE`, `TOD`, `DT`: ver [Tipos de tiempo y fecha](./st.md#tipos-de-tiempo-y-fecha).
-*   `STRING`, `WSTRING`
+- `BOOL`
+- `SINT`, `INT`, `DINT`, `LINT` (enteros con signo de 8, 16, 32 y 64 bits)
+- `USINT`, `UINT`, `UDINT`, `ULINT` (enteros sin signo de 8, 16, 32 y 64 bits)
+- `BYTE`, `WORD`, `DWORD`, `LWORD` (cadenas de bits de 8, 16, 32 y 64 bits)
+- `REAL` (punto flotante de 32 bits) y `LREAL` (punto flotante de 64 bits, doble precisión IEEE 754; requisito CMP-015)
+- `TIME`, `DATE`, `TOD`, `DT`: ver [Tipos de tiempo y fecha](./st.md#tipos-de-tiempo-y-fecha).
+- `STRING`, `WSTRING`
 
 `LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` y `WCHAR` no están soportados: la declaración de uno de ellos es un error de compilación que nombra el tipo (requisito CMP-003).
 
 ## Estructuras de control
 
-*   `IF ... THEN ... ELSIF ... ELSE ... END_IF`
-*   `CASE ... OF ... ELSE ... END_CASE`
-*   `FOR ... TO ... BY ... DO ... END_FOR`
-*   `WHILE ... DO ... END_WHILE`
-*   `REPEAT ... UNTIL ... END_REPEAT`
+- `IF ... THEN ... ELSIF ... ELSE ... END_IF`
+- `CASE ... OF ... ELSE ... END_CASE`
+- `FOR ... TO ... BY ... DO ... END_FOR`
+- `WHILE ... DO ... END_WHILE`
+- `REPEAT ... UNTIL ... END_REPEAT`

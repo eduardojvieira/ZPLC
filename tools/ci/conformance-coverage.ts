@@ -22,8 +22,19 @@ import { CASE_TAGS, loadCases, type ConformanceCase } from '../../packages/zplc-
 import { ID_PATTERN, type Requirement } from './generate-requirement-index';
 import { MATRIX_FILE, serialize, validateMatrix, type Matrix, type MatrixRow } from './generate-conformance-matrix';
 
-export interface Gap { row: string; requirement: string; reason: string; added: string }
-export interface CaseFacts { id: string; name: string; build: 'succeeds' | 'fails'; matrix: string[]; tags: string[] }
+export interface Gap {
+  row: string;
+  requirement: string;
+  reason: string;
+  added: string;
+}
+export interface CaseFacts {
+  id: string;
+  name: string;
+  build: 'succeeds' | 'fails';
+  matrix: string[];
+  tags: string[];
+}
 /** What a row needs: a case that builds and runs, or a case that must not build. */
 export type Need = 'passing' | 'negative';
 
@@ -46,7 +57,13 @@ const isListed = (name: string, listed: string[]) => listed.includes(`${RUNNER} 
 export function evidenceOf(row: MatrixRow, cases: CaseFacts[], listed: string[]): { all: string[]; counting: string[] } {
   const own = cases.filter((found) => found.matrix.includes(row.id));
   const kind = needOf(row) === 'passing' ? 'succeeds' : 'fails';
-  return { all: own.map((found) => found.id).sort(), counting: own.filter((found) => found.build === kind && !isListed(found.name, listed)).map((found) => found.id).sort() };
+  return {
+    all: own.map((found) => found.id).sort(),
+    counting: own
+      .filter((found) => found.build === kind && !isListed(found.name, listed))
+      .map((found) => found.id)
+      .sort(),
+  };
 }
 
 export interface Report {
@@ -58,11 +75,18 @@ export function report(matrix: Matrix, cases: CaseFacts[], listed: string[], gap
   const errors: string[] = [];
   const known = new Set(matrix.rows.map((row) => row.id));
   const byId = new Map(gaps.map((gap) => [gap.row, gap]));
-  for (const found of cases) for (const id of found.matrix) if (!known.has(id)) errors.push(`${found.id} names the row ${id}, which is not in conformance/matrix.json`);
+  for (const found of cases)
+    for (const id of found.matrix)
+      if (!known.has(id)) errors.push(`${found.id} names the row ${id}, which is not in conformance/matrix.json`);
   gaps.forEach((gap, index) => {
     if (!known.has(gap.row)) errors.push(`matrix-gaps.json names the row ${gap.row}, which is not in conformance/matrix.json`);
-    if (!ID_PATTERN.test(gap.requirement ?? '') || !requirements.has(gap.requirement)) errors.push(`matrix-gaps.json: ${gap.row} must name the requirement that will close it, one of tools/ci/requirements-index.json (found ${JSON.stringify(gap.requirement)})`);
-    if (typeof gap.reason !== 'string' || gap.reason.trim() === '' || !/^\d{4}-\d{2}-\d{2}$/.test(gap.added ?? '')) errors.push(`matrix-gaps.json: ${gap.row} needs a reason and the date it was added (YYYY-MM-DD)`);
+    if (!ID_PATTERN.test(gap.requirement ?? '') || !requirements.has(gap.requirement))
+      errors.push(
+        `matrix-gaps.json: ${gap.row} must name the requirement that will close it, one of tools/ci/requirements-index.json ` +
+          `(found ${JSON.stringify(gap.requirement)})`,
+      );
+    if (typeof gap.reason !== 'string' || gap.reason.trim() === '' || !/^\d{4}-\d{2}-\d{2}$/.test(gap.added ?? ''))
+      errors.push(`matrix-gaps.json: ${gap.row} needs a reason and the date it was added (YYYY-MM-DD)`);
     if (gaps.findIndex((other) => other.row === gap.row) !== index) errors.push(`matrix-gaps.json lists ${gap.row} twice`);
   });
   const rows = matrix.rows.map((row) => {
@@ -70,8 +94,13 @@ export function report(matrix: Matrix, cases: CaseFacts[], listed: string[], gap
     const gap = byId.get(row.id);
     const need = needOf(row);
     const noun = need === 'passing' ? 'passing case' : 'negative case';
-    if (counting.length === 0 && gap === undefined) errors.push(`${row.id} (${row.title}; target ${row.target}) has no ${noun}: add one under conformance/ naming "${row.id}" in its "matrix" list, or list the row in conformance/matrix-gaps.json with the requirement that will close it`);
-    if (counting.length > 0 && gap !== undefined) errors.push(`matrix-gaps.json lists ${row.id}, which now has a ${noun} (${counting[0]}): remove the entry`);
+    if (counting.length === 0 && gap === undefined)
+      errors.push(
+        `${row.id} (${row.title}; target ${row.target}) has no ${noun}: add one under conformance/ naming "${row.id}" in its "matrix" ` +
+          `list, or list the row in conformance/matrix-gaps.json with the requirement that will close it`,
+      );
+    if (counting.length > 0 && gap !== undefined)
+      errors.push(`matrix-gaps.json lists ${row.id}, which now has a ${noun} (${counting[0]}): remove the entry`);
     return { row, need, cases: all, counting, gap };
   });
   return { rows, errors };
@@ -79,18 +108,34 @@ export function report(matrix: Matrix, cases: CaseFacts[], listed: string[], gap
 
 /** What `--write` stores in the matrix: each row with the cases that name it. */
 export function withCases(matrix: Matrix, cases: CaseFacts[]): Matrix {
-  return { ...matrix, rows: matrix.rows.map((row) => ({ ...row, cases: cases.filter((found) => found.matrix.includes(row.id)).map((found) => found.id).sort() })) };
+  return {
+    ...matrix,
+    rows: matrix.rows.map((row) => ({
+      ...row,
+      cases: cases
+        .filter((found) => found.matrix.includes(row.id))
+        .map((found) => found.id)
+        .sort(),
+    })),
+  };
 }
 
 /** Rows tagged as architecture-sensitive (VF-005) that no case carries the tag for: a note, not an error. */
 export function untaggedRows(matrix: Matrix, cases: CaseFacts[], tag: string): string[] {
-  return matrix.rows.filter((row) => row.tags.includes(tag) && !cases.some((found) => found.matrix.includes(row.id) && found.tags.includes(tag))).map((row) => row.id);
+  return matrix.rows
+    .filter((row) => row.tags.includes(tag) && !cases.some((found) => found.matrix.includes(row.id) && found.tags.includes(tag)))
+    .map((row) => row.id);
 }
 
 if (import.meta.main) {
   const { values } = parseArgs({
     args: Bun.argv.slice(2),
-    options: { list: { type: 'boolean', default: false }, tag: { type: 'string' }, write: { type: 'boolean', default: false }, check: { type: 'boolean', default: false } },
+    options: {
+      list: { type: 'boolean', default: false },
+      tag: { type: 'string' },
+      write: { type: 'boolean', default: false },
+      check: { type: 'boolean', default: false },
+    },
   });
   const matrix = JSON.parse(readFileSync(MATRIX_FILE, 'utf8')) as Matrix;
   const matrixErrors = validateMatrix(matrix);
@@ -108,7 +153,9 @@ if (import.meta.main) {
     for (const entry of found.filter((candidate) => candidate.expectation.tags.includes(values.tag as never))) console.log(entry.id);
     process.exit(0);
   }
-  const listed = (JSON.parse(readFileSync(new URL('tools/ci/expected-failures.json', ROOT), 'utf8')) as Array<{ test: string }>).map((entry) => entry.test);
+  const listed = (JSON.parse(readFileSync(new URL('tools/ci/expected-failures.json', ROOT), 'utf8')) as Array<{ test: string }>).map(
+    (entry) => entry.test,
+  );
   const gaps = JSON.parse(readFileSync(GAPS_FILE, 'utf8')) as Gap[];
   const index = JSON.parse(readFileSync(new URL('tools/ci/requirements-index.json', ROOT), 'utf8')) as Requirement[];
   const { rows, errors } = report(matrix, cases, listed, gaps, new Set(index.map((entry) => entry.id)));
@@ -119,21 +166,41 @@ if (import.meta.main) {
     writeFileSync(MATRIX_FILE, wanted);
     console.log(`conformance-coverage: wrote the cases of ${matrix.rows.length} rows to conformance/matrix.json`);
   } else if (values.check) {
-    if (behind) errors.push('conformance/matrix.json does not list the cases the tree has; regenerate it with: bun tools/ci/conformance-coverage.ts --write');
+    if (behind)
+      errors.push(
+        'conformance/matrix.json does not list the cases the tree has; regenerate it with: bun tools/ci/conformance-coverage.ts --write',
+      );
     if (errors.length === 0) {
       const works = rows.filter((entry) => entry.row.target === 'works');
-      console.log(`conformance-coverage: ${works.filter((entry) => entry.counting.length > 0).length} of ${works.length} rows that must work have a passing case, ${rows.filter((entry) => entry.gap !== undefined).length} rows listed as gaps`);
+      console.log(
+        `conformance-coverage: ${works.filter((entry) => entry.counting.length > 0).length} of ${works.length} rows that must work have ` +
+          `a passing case, ${rows.filter((entry) => entry.gap !== undefined).length} rows listed as gaps`,
+      );
     }
   } else {
-    const count = (target: string, satisfied: boolean) => rows.filter((entry) => entry.row.target === target && (entry.counting.length > 0) === satisfied).length;
+    const count = (target: string, satisfied: boolean) =>
+      rows.filter((entry) => entry.row.target === target && entry.counting.length > 0 === satisfied).length;
     const total = (target: string) => rows.filter((entry) => entry.row.target === target).length;
     console.log('target        rows  with a case that counts  gaps');
     for (const target of ['works', 'rejects', 'decision']) {
-      console.log(`${target.padEnd(12)}${String(total(target)).padStart(5)}${String(count(target, true)).padStart(24)}${String(count(target, false)).padStart(7)}`);
+      console.log(
+        `${target.padEnd(12)}${String(total(target)).padStart(5)}${String(count(target, true)).padStart(
+          24,
+        )}${String(count(target, false)).padStart(7)}`,
+      );
     }
-    const by = (key: 'status') => [...new Set(rows.map((entry) => entry.row[key]))].map((state) => `${state} ${rows.filter((entry) => entry.row[key] === state).length}`).join(', ');
+    const by = (key: 'status') =>
+      [...new Set(rows.map((entry) => entry.row[key]))]
+        .map((state) => `${state} ${rows.filter((entry) => entry.row[key] === state).length}`)
+        .join(', ');
     console.log(`\nstate today: ${by('status')}`);
-    console.log(`cases: ${cases.length} (${cases.filter((entry) => entry.build === 'succeeds').length} run a program, ${cases.filter((entry) => entry.build === 'fails').length} must not build), ${cases.filter((entry) => entry.matrix.length > 0).length} name a row, ${cases.filter((entry) => entry.tags.includes('arch-sensitive')).length} architecture-sensitive, ${cases.filter((entry) => entry.tags.includes('alignment')).length} alignment-sensitive`);
+    console.log(
+      `cases: ${cases.length} (${cases.filter((entry) => entry.build === 'succeeds').length} run a program, ${
+        cases.filter((entry) => entry.build === 'fails').length
+      } must not build), ${cases.filter((entry) => entry.matrix.length > 0).length} name a row, ${
+        cases.filter((entry) => entry.tags.includes('arch-sensitive')).length
+      } architecture-sensitive, ${cases.filter((entry) => entry.tags.includes('alignment')).length} alignment-sensitive`,
+    );
     for (const tag of ['arch-sensitive', 'alignment']) {
       const missing = untaggedRows(matrix, cases, tag);
       if (missing.length > 0) console.log(`note: rows tagged ${tag} with no case that carries the tag: ${missing.join(', ')}`);
@@ -141,7 +208,11 @@ if (import.meta.main) {
     if (values.list) {
       console.log('');
       for (const entry of rows.filter((candidate) => candidate.counting.length === 0)) {
-        console.log(`${entry.row.id.padEnd(62)} ${entry.row.target.padEnd(8)} ${entry.gap?.requirement ?? '??'}  ${entry.gap?.reason ?? 'NOT LISTED'}`);
+        console.log(
+          `${entry.row.id.padEnd(62)} ${entry.row.target.padEnd(8)} ${entry.gap?.requirement ?? '??'}  ${
+            entry.gap?.reason ?? 'NOT LISTED'
+          }`,
+        );
       }
     }
     if (behind) console.log('\nnote: conformance/matrix.json is behind the cases; regenerate it with --write');

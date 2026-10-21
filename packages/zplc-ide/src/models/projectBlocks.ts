@@ -109,5 +109,7 @@ export function projectPalette(blocks: readonly ProjectBlock[]): { name: string;
 /** What a palette shows when the pointer rests on a block of the project: its kind, inputs and outputs. */
 export function describeProjectBlock(block: ProjectBlock): string {
   const ports = (list: ProjectBlockPort[]) => list.map((port) => `${port.name}: ${port.type}`).join(', ') || '-';
-  return `${block.kind === 'FUNCTION' ? 'FUNCTION' : 'FUNCTION_BLOCK'} ${block.name} (${block.source})\nIN: ${ports(block.inputs)}\nOUT: ${ports(block.outputs)}`;
+  return `${
+    block.kind === 'FUNCTION' ? 'FUNCTION' : 'FUNCTION_BLOCK'
+  } ${block.name} (${block.source})\nIN: ${ports(block.inputs)}\nOUT: ${ports(block.outputs)}`;
 }

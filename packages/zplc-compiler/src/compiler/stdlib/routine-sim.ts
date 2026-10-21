@@ -9,7 +9,8 @@
  * uses in firmware/lib/zplc_core/src/core/zplc_core.c: 32-bit cells, REAL results rounded to single
  * precision after every operation, F2I that truncates and saturates, DIVF that faults on a divisor of
  * 0.0. The double-precision opcodes (LREAL, two cells with the low word deeper) use the host's double,
- * which is IEEE 754 binary64 as the VM's integer implementation is. The tests that use it check the same routines on the real VM at chosen points
+ * which is IEEE 754 binary64 as the VM's integer implementation is. The tests that use it check the same routines on the real VM at chosen
+ * points
  * (conformance/cmp/cmp-058-*), so a difference between the two would be seen there.
  *
  * Not part of the compiler: only tests import it.
@@ -171,36 +172,197 @@ export function simulate(label: string, args: number[]): SimResult {
         pc += 1;
         const { op } = instruction;
         switch (op) {
-            case 'NOP': break;
-            case 'PUSH8': case 'PUSH16': case 'PUSH32': push(instruction.arg!); break;
-            case 'DUP': need(1, op); push(stack[stack.length - 1]!); break;
-            case 'DROP': need(1, op); pop(); break;
-            case 'SWAP': { need(2, op); const b = pop(); const a = pop(); push(b); push(a); break; }
-            case 'OVER': need(2, op); push(stack[stack.length - 2]!); break;
-            case 'ROT': { need(3, op); const c = pop(); const b = pop(); const a = pop(); push(b); push(c); push(a); break; }
-            case 'PICK': need(instruction.arg! + 1, op); push(stack[stack.length - 1 - instruction.arg!]!); break;
-            case 'ADD': { need(2, op); const b = pop(); const a = pop(); push(a + b); break; }
-            case 'SUB': { need(2, op); const b = pop(); const a = pop(); push(a - b); break; }
-            case 'MUL': { need(2, op); const b = pop(); const a = pop(); push(Math.imul(a, b)); break; }
-            case 'NEG': { need(1, op); push(-pop()); break; }
-            case 'AND': { need(2, op); const b = pop(); const a = pop(); push(a & b); break; }
-            case 'OR': { need(2, op); const b = pop(); const a = pop(); push(a | b); break; }
-            case 'XOR': { need(2, op); const b = pop(); const a = pop(); push(a ^ b); break; }
-            case 'NOT': { need(1, op); push(~pop()); break; }
-            case 'SHL': { need(2, op); const b = pop(); const a = pop(); push(b >= 32 ? 0 : a << b); break; }
-            case 'SHR': { need(2, op); const b = pop(); const a = pop(); push(b >= 32 ? 0 : a >>> b); break; }
-            case 'SAR': { need(2, op); const b = pop(); const a = pop(); push((a | 0) >> Math.min(b, 31)); break; }
-            case 'EQ': { need(2, op); const b = pop(); const a = pop(); push(flag(a === b)); break; }
-            case 'NE': { need(2, op); const b = pop(); const a = pop(); push(flag(a !== b)); break; }
-            case 'LT': { need(2, op); const b = pop(); const a = pop(); push(flag((a | 0) < (b | 0))); break; }
-            case 'LE': { need(2, op); const b = pop(); const a = pop(); push(flag((a | 0) <= (b | 0))); break; }
-            case 'GT': { need(2, op); const b = pop(); const a = pop(); push(flag((a | 0) > (b | 0))); break; }
-            case 'GE': { need(2, op); const b = pop(); const a = pop(); push(flag((a | 0) >= (b | 0))); break; }
-            case 'LTU': { need(2, op); const b = pop(); const a = pop(); push(flag(a < b)); break; }
-            case 'GTU': { need(2, op); const b = pop(); const a = pop(); push(flag(a > b)); break; }
-            case 'ADDF': { need(2, op); const b = asReal(pop()); const a = asReal(pop()); push(bitsOf(a + b)); break; }
-            case 'SUBF': { need(2, op); const b = asReal(pop()); const a = asReal(pop()); push(bitsOf(a - b)); break; }
-            case 'MULF': { need(2, op); const b = asReal(pop()); const a = asReal(pop()); push(bitsOf(a * b)); break; }
+            case 'NOP':
+                break;
+            case 'PUSH8':
+            case 'PUSH16':
+            case 'PUSH32':
+                push(instruction.arg!);
+                break;
+            case 'DUP':
+                need(1, op);
+                push(stack[stack.length - 1]!);
+                break;
+            case 'DROP':
+                need(1, op);
+                pop();
+                break;
+            case 'SWAP': {
+                need(2, op);
+                const b = pop();
+                const a = pop();
+                push(b);
+                push(a);
+                break;
+            }
+            case 'OVER':
+                need(2, op);
+                push(stack[stack.length - 2]!);
+                break;
+            case 'ROT': {
+                need(3, op);
+                const c = pop();
+                const b = pop();
+                const a = pop();
+                push(b);
+                push(c);
+                push(a);
+                break;
+            }
+            case 'PICK':
+                need(instruction.arg! + 1, op);
+                push(stack[stack.length - 1 - instruction.arg!]!);
+                break;
+            case 'ADD': {
+                need(2, op);
+                const b = pop();
+                const a = pop();
+                push(a + b);
+                break;
+            }
+            case 'SUB': {
+                need(2, op);
+                const b = pop();
+                const a = pop();
+                push(a - b);
+                break;
+            }
+            case 'MUL': {
+                need(2, op);
+                const b = pop();
+                const a = pop();
+                push(Math.imul(a, b));
+                break;
+            }
+            case 'NEG': {
+                need(1, op);
+                push(-pop());
+                break;
+            }
+            case 'AND': {
+                need(2, op);
+                const b = pop();
+                const a = pop();
+                push(a & b);
+                break;
+            }
+            case 'OR': {
+                need(2, op);
+                const b = pop();
+                const a = pop();
+                push(a | b);
+                break;
+            }
+            case 'XOR': {
+                need(2, op);
+                const b = pop();
+                const a = pop();
+                push(a ^ b);
+                break;
+            }
+            case 'NOT': {
+                need(1, op);
+                push(~pop());
+                break;
+            }
+            case 'SHL': {
+                need(2, op);
+                const b = pop();
+                const a = pop();
+                push(b >= 32 ? 0 : a << b);
+                break;
+            }
+            case 'SHR': {
+                need(2, op);
+                const b = pop();
+                const a = pop();
+                push(b >= 32 ? 0 : a >>> b);
+                break;
+            }
+            case 'SAR': {
+                need(2, op);
+                const b = pop();
+                const a = pop();
+                push((a | 0) >> Math.min(b, 31));
+                break;
+            }
+            case 'EQ': {
+                need(2, op);
+                const b = pop();
+                const a = pop();
+                push(flag(a === b));
+                break;
+            }
+            case 'NE': {
+                need(2, op);
+                const b = pop();
+                const a = pop();
+                push(flag(a !== b));
+                break;
+            }
+            case 'LT': {
+                need(2, op);
+                const b = pop();
+                const a = pop();
+                push(flag((a | 0) < (b | 0)));
+                break;
+            }
+            case 'LE': {
+                need(2, op);
+                const b = pop();
+                const a = pop();
+                push(flag((a | 0) <= (b | 0)));
+                break;
+            }
+            case 'GT': {
+                need(2, op);
+                const b = pop();
+                const a = pop();
+                push(flag((a | 0) > (b | 0)));
+                break;
+            }
+            case 'GE': {
+                need(2, op);
+                const b = pop();
+                const a = pop();
+                push(flag((a | 0) >= (b | 0)));
+                break;
+            }
+            case 'LTU': {
+                need(2, op);
+                const b = pop();
+                const a = pop();
+                push(flag(a < b));
+                break;
+            }
+            case 'GTU': {
+                need(2, op);
+                const b = pop();
+                const a = pop();
+                push(flag(a > b));
+                break;
+            }
+            case 'ADDF': {
+                need(2, op);
+                const b = asReal(pop());
+                const a = asReal(pop());
+                push(bitsOf(a + b));
+                break;
+            }
+            case 'SUBF': {
+                need(2, op);
+                const b = asReal(pop());
+                const a = asReal(pop());
+                push(bitsOf(a - b));
+                break;
+            }
+            case 'MULF': {
+                need(2, op);
+                const b = asReal(pop());
+                const a = asReal(pop());
+                push(bitsOf(a * b));
+                break;
+            }
             case 'DIVF': {
                 need(2, op);
                 const b = asReal(pop());
@@ -209,9 +371,21 @@ export function simulate(label: string, args: number[]): SimResult {
                 push(bitsOf(a / b));
                 break;
             }
-            case 'NEGF': { need(1, op); push(bitsOf(-asReal(pop()))); break; }
-            case 'ABSF': { need(1, op); push(bitsOf(Math.abs(asReal(pop())))); break; }
-            case 'I2F': { need(1, op); push(bitsOf(pop() | 0)); break; }
+            case 'NEGF': {
+                need(1, op);
+                push(bitsOf(-asReal(pop())));
+                break;
+            }
+            case 'ABSF': {
+                need(1, op);
+                push(bitsOf(Math.abs(asReal(pop()))));
+                break;
+            }
+            case 'I2F': {
+                need(1, op);
+                push(bitsOf(pop() | 0));
+                break;
+            }
             case 'F2I': {
                 need(1, op);
                 const value = asReal(pop());
@@ -219,58 +393,147 @@ export function simulate(label: string, args: number[]): SimResult {
                 break;
             }
             // double precision (CMP-015): two cells, the low word deeper
-            case 'ADDD': case 'SUBD': case 'MULD': {
+            case 'ADDD':
+            case 'SUBD':
+            case 'MULD': {
                 need(4, op);
-                const bh = pop(); const bl = pop(); const ah = pop(); const al = pop();
+                const bh = pop();
+                const bl = pop();
+                const ah = pop();
+                const al = pop();
                 const a = asDouble(al, ah);
                 const b = asDouble(bl, bh);
                 const [low, high] = wordsOf(op === 'ADDD' ? a + b : op === 'SUBD' ? a - b : a * b);
-                push(low); push(high);
+                push(low);
+                push(high);
                 break;
             }
-            case 'ABSD': case 'NEGD': case 'RNDD': {
+            case 'ABSD':
+            case 'NEGD':
+            case 'RNDD': {
                 need(2, op);
-                const high = pop(); const low = pop();
+                const high = pop();
+                const low = pop();
                 const value = asDouble(low, high);
                 const [l, h] = wordsOf(op === 'ABSD' ? Math.abs(value) : op === 'NEGD' ? -value : rint(value));
-                push(l); push(h);
+                push(l);
+                push(h);
                 break;
             }
-            case 'EQD': case 'NED': case 'LTD': case 'LED': case 'GTD': case 'GED': {
+            case 'EQD':
+            case 'NED':
+            case 'LTD':
+            case 'LED':
+            case 'GTD':
+            case 'GED': {
                 need(4, op);
-                const bh = pop(); const bl = pop(); const ah = pop(); const al = pop();
+                const bh = pop();
+                const bl = pop();
+                const ah = pop();
+                const al = pop();
                 const a = asDouble(al, ah);
                 const b = asDouble(bl, bh);
-                push(flag(op === 'EQD' ? a === b : op === 'NED' ? a !== b : op === 'LTD' ? a < b : op === 'LED' ? a <= b : op === 'GTD' ? a > b : a >= b));
+                push(
+                    flag(
+                        op === 'EQD'
+                            ? a === b
+                            : op === 'NED'
+                              ? a !== b
+                              : op === 'LTD'
+                                ? a < b
+                                : op === 'LED'
+                                  ? a <= b
+                                  : op === 'GTD'
+                                    ? a > b
+                                    : a >= b,
+                    ),
+                );
                 break;
             }
-            case 'D2L': case 'D2U': {
+            case 'D2L':
+            case 'D2U': {
                 need(2, op);
-                const high = pop(); const low = pop();
+                const high = pop();
+                const low = pop();
                 const bits = toInteger64(asDouble(low, high), op === 'D2L');
-                push(Number(bits & 0xffffffffn)); push(Number(bits >> 32n));
+                push(Number(bits & 0xffffffffn));
+                push(Number(bits >> 32n));
                 break;
             }
-            case 'L2D': case 'U2D': {
+            case 'L2D':
+            case 'U2D': {
                 need(2, op);
-                const high = pop(); const low = pop();
+                const high = pop();
+                const low = pop();
                 const bits = (BigInt(high >>> 0) << 32n) | BigInt(low >>> 0);
                 const [l, h] = wordsOf(Number(op === 'L2D' ? BigInt.asIntN(64, bits) : bits));
-                push(l); push(h);
+                push(l);
+                push(h);
                 break;
             }
-            case 'F2D': { need(1, op); const [l, h] = wordsOf(asReal(pop())); push(l); push(h); break; }
-            case 'D2F': { need(2, op); const high = pop(); const low = pop(); push(bitsOf(asDouble(low, high))); break; }
-            case 'I2D': { need(1, op); const [l, h] = wordsOf(pop() | 0); push(l); push(h); break; }
-            case 'I2B': { need(1, op); push(flag(pop() !== 0)); break; }
-            case 'EXT8': { need(1, op); push((pop() << 24) >> 24); break; }
-            case 'EXT16': { need(1, op); push((pop() << 16) >> 16); break; }
-            case 'ZEXT8': { need(1, op); push(pop() & 0xff); break; }
-            case 'ZEXT16': { need(1, op); push(pop() & 0xffff); break; }
-            case 'JMP': pc = target(instruction); break;
-            case 'JZ': { need(1, op); if (pop() === 0) pc = target(instruction); break; }
-            case 'JNZ': { need(1, op); if (pop() !== 0) pc = target(instruction); break; }
-            case 'CALL': calls.push(pc); pc = target(instruction); break;
+            case 'F2D': {
+                need(1, op);
+                const [l, h] = wordsOf(asReal(pop()));
+                push(l);
+                push(h);
+                break;
+            }
+            case 'D2F': {
+                need(2, op);
+                const high = pop();
+                const low = pop();
+                push(bitsOf(asDouble(low, high)));
+                break;
+            }
+            case 'I2D': {
+                need(1, op);
+                const [l, h] = wordsOf(pop() | 0);
+                push(l);
+                push(h);
+                break;
+            }
+            case 'I2B': {
+                need(1, op);
+                push(flag(pop() !== 0));
+                break;
+            }
+            case 'EXT8': {
+                need(1, op);
+                push((pop() << 24) >> 24);
+                break;
+            }
+            case 'EXT16': {
+                need(1, op);
+                push((pop() << 16) >> 16);
+                break;
+            }
+            case 'ZEXT8': {
+                need(1, op);
+                push(pop() & 0xff);
+                break;
+            }
+            case 'ZEXT16': {
+                need(1, op);
+                push(pop() & 0xffff);
+                break;
+            }
+            case 'JMP':
+                pc = target(instruction);
+                break;
+            case 'JZ': {
+                need(1, op);
+                if (pop() === 0) pc = target(instruction);
+                break;
+            }
+            case 'JNZ': {
+                need(1, op);
+                if (pop() !== 0) pc = target(instruction);
+                break;
+            }
+            case 'CALL':
+                calls.push(pc);
+                pc = target(instruction);
+                break;
             case 'RET': {
                 const back = calls.pop();
                 if (back === undefined) return { stack, steps, peak };

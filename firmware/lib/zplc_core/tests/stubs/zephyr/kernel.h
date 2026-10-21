@@ -53,11 +53,9 @@ uint32_t k_uptime_get_32(void);
 
 int k_msgq_get(struct k_msgq *queue, void *data, int timeout);
 int k_msgq_put(struct k_msgq *queue, const void *data, int timeout);
-void k_msgq_init(struct k_msgq *queue, char *buffer, size_t size,
-                 uint32_t count);
-int k_thread_create(struct k_thread *thread, char *stack, size_t size,
-                    k_thread_entry_t entry, void *a, void *b, void *c,
-                    int priority, uint32_t options, int delay);
+void k_msgq_init(struct k_msgq *queue, char *buffer, size_t size, uint32_t count);
+int k_thread_create(struct k_thread *thread, char *stack, size_t size, k_thread_entry_t entry, void *a, void *b, void *c, int priority,
+                    uint32_t options, int delay);
 int k_thread_name_set(struct k_thread *thread, const char *name);
 
 #endif

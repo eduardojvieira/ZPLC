@@ -41,14 +41,12 @@ static int hal_initialized = 0;
 static int tick_override_active = 0;
 static uint32_t tick_override_ms = 0U;
 
-void zplc_hal_posix_set_tick_override(uint32_t tick_ms)
-{
+void zplc_hal_posix_set_tick_override(uint32_t tick_ms) {
   tick_override_ms = tick_ms;
   tick_override_active = 1;
 }
 
-void zplc_hal_posix_clear_tick_override(void)
-{
+void zplc_hal_posix_clear_tick_override(void) {
   tick_override_active = 0;
   tick_override_ms = 0U;
 }
@@ -68,8 +66,7 @@ static int persist_power_is_cut = 0;
 static unsigned long persist_tear_at = 0UL;
 static size_t persist_tear_bytes = 0U;
 
-void zplc_hal_persist_test_fail_at(unsigned long operation)
-{
+void zplc_hal_persist_test_fail_at(unsigned long operation) {
   persist_operation_count = 0UL;
   persist_fail_at = operation;
   persist_failure_triggered = 0;
@@ -80,56 +77,38 @@ void zplc_hal_persist_test_fail_at(unsigned long operation)
   persist_tear_bytes = 0U;
 }
 
-void zplc_hal_persist_test_power_cut_at(unsigned long operation)
-{
+void zplc_hal_persist_test_power_cut_at(unsigned long operation) {
   zplc_hal_persist_test_fail_at(0UL);
   persist_power_cut_at = operation;
 }
 
-void zplc_hal_persist_test_tear_at(unsigned long operation, size_t bytes)
-{
+void zplc_hal_persist_test_tear_at(unsigned long operation, size_t bytes) {
   zplc_hal_persist_test_fail_at(0UL);
   persist_tear_at = operation;
   persist_tear_bytes = bytes;
 }
 
-void zplc_hal_persist_test_fail_result(zplc_hal_result_t result)
-{
-  persist_failure_result = result;
-}
+void zplc_hal_persist_test_fail_result(zplc_hal_result_t result) { persist_failure_result = result; }
 
-unsigned long zplc_hal_persist_test_operation_count(void)
-{
-  return persist_operation_count;
-}
+unsigned long zplc_hal_persist_test_operation_count(void) { return persist_operation_count; }
 
-int zplc_hal_persist_test_failure_triggered(void)
-{
-  return persist_failure_triggered;
-}
+int zplc_hal_persist_test_failure_triggered(void) { return persist_failure_triggered; }
 
-void zplc_hal_persist_test_parent_sync_fail(int enabled)
-{
+void zplc_hal_persist_test_parent_sync_fail(int enabled) {
   persist_parent_sync_attempt_count = 0UL;
   persist_parent_sync_fail_at = enabled != 0 ? 1UL : 0UL;
 }
 
-void zplc_hal_persist_test_parent_sync_fail_at(unsigned long attempt)
-{
+void zplc_hal_persist_test_parent_sync_fail_at(unsigned long attempt) {
   persist_parent_sync_attempt_count = 0UL;
   persist_parent_sync_fail_at = attempt;
 }
 
-unsigned long zplc_hal_persist_test_parent_sync_attempts(void)
-{
-  return persist_parent_sync_attempt_count;
-}
+unsigned long zplc_hal_persist_test_parent_sync_attempts(void) { return persist_parent_sync_attempt_count; }
 
-static zplc_hal_result_t persist_test_result(void)
-{
+static zplc_hal_result_t persist_test_result(void) {
   persist_operation_count++;
-  if (persist_power_is_cut != 0 ||
-      (persist_power_cut_at != 0UL && persist_operation_count >= persist_power_cut_at)) {
+  if (persist_power_is_cut != 0 || (persist_power_cut_at != 0UL && persist_operation_count >= persist_power_cut_at)) {
     persist_power_is_cut = 1;
     persist_failure_triggered = 1;
     return ZPLC_HAL_ERROR;
@@ -141,10 +120,7 @@ static zplc_hal_result_t persist_test_result(void)
   return ZPLC_HAL_OK;
 }
 #else
-static zplc_hal_result_t persist_test_result(void)
-{
-  return ZPLC_HAL_OK;
-}
+static zplc_hal_result_t persist_test_result(void) { return ZPLC_HAL_OK; }
 #endif
 
 #ifdef _WIN32
@@ -324,12 +300,9 @@ static int persist_build_path(const char *key, char *path, size_t path_len) {
 #endif
     }
 
-    ret = snprintf(path, path_len, "%s%c%s%c%s.bin", persist_root,
-                   ZPLC_PATH_SEP, ZPLC_PERSIST_DIR, ZPLC_PATH_SEP,
-                   sanitized_key);
+    ret = snprintf(path, path_len, "%s%c%s%c%s.bin", persist_root, ZPLC_PATH_SEP, ZPLC_PERSIST_DIR, ZPLC_PATH_SEP, sanitized_key);
   } else {
-    ret = snprintf(path, path_len, "%s%c%s.bin", persist_root,
-                   ZPLC_PATH_SEP, sanitized_key);
+    ret = snprintf(path, path_len, "%s%c%s.bin", persist_root, ZPLC_PATH_SEP, sanitized_key);
   }
 
   if (ret < 0 || (size_t)ret >= path_len) {
@@ -369,8 +342,7 @@ static int persist_ensure_dir(void) {
 #endif
   }
 
-  ret = snprintf(dir_path, sizeof(dir_path), "%s%c%s", persist_root,
-                 ZPLC_PATH_SEP, ZPLC_PERSIST_DIR);
+  ret = snprintf(dir_path, sizeof(dir_path), "%s%c%s", persist_root, ZPLC_PATH_SEP, ZPLC_PERSIST_DIR);
   if (ret < 0 || (size_t)ret >= sizeof(dir_path)) {
     return -1;
   }
@@ -387,8 +359,7 @@ static int persist_ensure_dir(void) {
 /* Linux fsync() provides the directory-entry durability contract required
  * after rename().  Other host platforms retain the pre-existing semantics
  * until their corresponding directory-sync contract is verified. */
-static int persist_sync_parent_dir(const char *path)
-{
+static int persist_sync_parent_dir(const char *path) {
 #if !defined(__linux__)
   (void)path;
   return 0;
@@ -416,8 +387,7 @@ static int persist_sync_parent_dir(const char *path)
 
 #ifdef ZPLC_HAL_PERSIST_TESTING
   persist_parent_sync_attempt_count++;
-  if (persist_parent_sync_fail_at != 0UL &&
-      persist_parent_sync_attempt_count == persist_parent_sync_fail_at) {
+  if (persist_parent_sync_fail_at != 0UL && persist_parent_sync_attempt_count == persist_parent_sync_fail_at) {
     errno = EIO;
     return -1;
   }
@@ -438,8 +408,7 @@ static int persist_sync_parent_dir(const char *path)
 #endif
 }
 
-zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data,
-                                        size_t len) {
+zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data, size_t len) {
   char path[ZPLC_PATH_MAX];
   char tmp_path[ZPLC_PATH_MAX];
   FILE *fp;
@@ -450,7 +419,11 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data,
   if (key == NULL || data == NULL || len == 0) {
     return ZPLC_HAL_ERROR;
   }
-  { zplc_hal_result_t injected = persist_test_result(); if (injected != ZPLC_HAL_OK) return injected; }
+  {
+    zplc_hal_result_t injected = persist_test_result();
+    if (injected != ZPLC_HAL_OK)
+      return injected;
+  }
 
   /* Ensure directory exists */
   if (persist_ensure_dir() != 0) {
@@ -496,9 +469,8 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data,
 
   written = fwrite(data, 1, len, fp);
   if (written != len) {
-    zplc_hal_log("[HAL] Failed to write data: wrote %zu of %zu bytes\n",
-                 written, len);
-    (void)fclose(fp); /* the write already failed; its error is the one reported */
+    zplc_hal_log("[HAL] Failed to write data: wrote %zu of %zu bytes\n", written, len);
+    (void)fclose(fp);      /* the write already failed; its error is the one reported */
     zplc_unlink(tmp_path); /* Clean up failed write */
     return ZPLC_HAL_ERROR;
   }
@@ -519,15 +491,13 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data,
 
   /* Atomic rename: tmp -> final */
   if (rename(tmp_path, path) != 0) {
-    zplc_hal_log("[HAL] Failed to rename %s -> %s: %s\n", tmp_path, path,
-                 strerror(errno));
+    zplc_hal_log("[HAL] Failed to rename %s -> %s: %s\n", tmp_path, path, strerror(errno));
     zplc_unlink(tmp_path);
     return ZPLC_HAL_ERROR;
   }
   if (persist_sync_parent_dir(path) != 0) {
     int sync_errno = errno;
-    zplc_hal_log("[HAL] Failed to sync parent directory for %s: %s\n", path,
-                 strerror(sync_errno));
+    zplc_hal_log("[HAL] Failed to sync parent directory for %s: %s\n", path, strerror(sync_errno));
     errno = sync_errno;
     return ZPLC_HAL_COMMIT_UNKNOWN;
   }
@@ -536,8 +506,7 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data,
   return ZPLC_HAL_OK;
 }
 
-zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data,
-                                        size_t len) {
+zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data, size_t len) {
   char path[ZPLC_PATH_MAX];
   FILE *fp;
   size_t bytes_read;
@@ -548,7 +517,11 @@ zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data,
   if (key == NULL || data == NULL || len == 0) {
     return ZPLC_HAL_ERROR;
   }
-  { zplc_hal_result_t injected = persist_test_result(); if (injected != ZPLC_HAL_OK) return injected; }
+  {
+    zplc_hal_result_t injected = persist_test_result();
+    if (injected != ZPLC_HAL_OK)
+      return injected;
+  }
 
   /* Build the file path */
   if (persist_build_path(key, path, sizeof(path)) != 0) {
@@ -610,7 +583,11 @@ zplc_hal_result_t zplc_hal_persist_delete(const char *key) {
   if (key == NULL) {
     return ZPLC_HAL_ERROR;
   }
-  { zplc_hal_result_t injected = persist_test_result(); if (injected != ZPLC_HAL_OK) return injected; }
+  {
+    zplc_hal_result_t injected = persist_test_result();
+    if (injected != ZPLC_HAL_OK)
+      return injected;
+  }
 
   /* Build the file path */
   if (persist_build_path(key, path, sizeof(path)) != 0) {
@@ -647,8 +624,7 @@ typedef struct {
 } zplc_posix_mutex_t;
 
 zplc_hal_mutex_t zplc_hal_mutex_create(void) {
-  zplc_posix_mutex_t *wrapper =
-      (zplc_posix_mutex_t *)malloc(sizeof(zplc_posix_mutex_t));
+  zplc_posix_mutex_t *wrapper = (zplc_posix_mutex_t *)malloc(sizeof(zplc_posix_mutex_t));
   if (wrapper == NULL) {
     return NULL;
   }
@@ -705,8 +681,7 @@ typedef struct {
 } zplc_win32_mutex_t;
 
 zplc_hal_mutex_t zplc_hal_mutex_create(void) {
-  zplc_win32_mutex_t *wrapper =
-      (zplc_win32_mutex_t *)malloc(sizeof(zplc_win32_mutex_t));
+  zplc_win32_mutex_t *wrapper = (zplc_win32_mutex_t *)malloc(sizeof(zplc_win32_mutex_t));
   if (wrapper == NULL) {
     return NULL;
   }
@@ -853,11 +828,8 @@ zplc_hal_result_t zplc_hal_shutdown(void) {
  * same on every port.
  */
 
-static const zplc_io_table_t zplc_io_empty_description = {
-    "posix", 0U, 0U, 0U, 0U, NULL};
+static const zplc_io_table_t zplc_io_empty_description = {"posix", 0U, 0U, 0U, 0U, NULL};
 
-const zplc_io_table_t *zplc_io_table(void) {
-  return &zplc_io_empty_description;
-}
+const zplc_io_table_t *zplc_io_table(void) { return &zplc_io_empty_description; }
 
 #include "../common/zplc_io_common.inc"

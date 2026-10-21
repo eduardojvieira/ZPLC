@@ -42,12 +42,15 @@ export function declaredSafeOutputs(io: IOConfig | undefined, board: string | un
   const boardLabel = getBoardIoIdentity(board)?.displayName ?? board ?? 'the target';
   const seen = new Map<string, string>();
 
-  for (const [section, rows] of [['inputs', io?.inputs], ['virtual', io?.virtual]] as const) {
+  for (const [section, rows] of [
+    ['inputs', io?.inputs],
+    ['virtual', io?.virtual],
+  ] as const) {
     for (const row of rows ?? []) {
       if (row.safe !== undefined) {
         problems.push(
-          `${section === 'inputs' ? 'Input' : 'Image address'} '${row.name}' (${row.address}) declares a safe value: `
-          + 'only an output the board drives has a safe state',
+          `${section === 'inputs' ? 'Input' : 'Image address'} '${row.name}' (${row.address}) declares a safe value: ` +
+            'only an output the board drives has a safe state',
         );
       }
     }
@@ -64,8 +67,8 @@ export function declaredSafeOutputs(io: IOConfig | undefined, board: string | un
     const bit = normal === undefined ? null : BIT_ADDRESS.exec(normal);
     if (normal === undefined || bit === null) {
       problems.push(
-        `Output '${row.name}' (${row.address}) declares a safe value, which is declared for one bit of the output image, `
-        + 'a digital output such as %QX0.0',
+        `Output '${row.name}' (${row.address}) declares a safe value, which is declared for one bit of the output image, ` +
+          'a digital output such as %QX0.0',
       );
       continue;
     }
@@ -74,8 +77,8 @@ export function declaredSafeOutputs(io: IOConfig | undefined, board: string | un
       const channel = channelAt(description, 'outputs', normal);
       if (why !== undefined || channel === undefined || channel.kind !== 'digital') {
         problems.push(
-          `Output '${row.name}' declares a safe value for ${normal}, and board ${boardLabel} has no digital output channel there`
-          + (why === undefined ? '' : `: ${why}`),
+          `Output '${row.name}' declares a safe value for ${normal}, and board ${boardLabel} has no digital output channel there` +
+            (why === undefined ? '' : `: ${why}`),
         );
         continue;
       }

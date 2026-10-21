@@ -106,7 +106,13 @@ describe('an operand that does not fit its field is an error, not a truncation (
     });
 
     test('emitBytecode refuses an instruction that was built by hand with an operand that does not fit', () => {
-        const instruction = (opcode: number, operand: number): Instruction => ({ opcode, operand, operandLabel: null, lineNum: 1, address: 0 });
+        const instruction = (opcode: number, operand: number): Instruction => ({
+            opcode,
+            operand,
+            operandLabel: null,
+            lineNum: 1,
+            address: 0,
+        });
         expect(() => emitBytecode([instruction(Opcode.PUSH8, 300)])).toThrow(AssemblerError);
         expect(() => emitBytecode([instruction(Opcode.LOAD16, 0x10000)])).toThrow(AssemblerError);
         expect(() => emitBytecode([instruction(Opcode.PUSH32, 2 ** 32)])).toThrow(AssemblerError);
@@ -163,7 +169,7 @@ describe('the container fields are checked, not masked (CMP-049)', () => {
 describe('every directive has its documented effect (CMP-060)', () => {
     test('.DB and .BYTE emit their values, in order, at the place they stand', () => {
         expect(Array.from(assembleRaw('NOP\n.DB 1, 2, 0x7F\nHALT'))).toEqual([0, 1, 2, 0x7f, 1]);
-        expect(Array.from(assembleRaw('.BYTE 0xFF, -1, \'A\''))).toEqual([0xff, 0xff, 65]);
+        expect(Array.from(assembleRaw(".BYTE 0xFF, -1, 'A'"))).toEqual([0xff, 0xff, 65]);
     });
 
     test('a label after .DB points past its bytes', () => {

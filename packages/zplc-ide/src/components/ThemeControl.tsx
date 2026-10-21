@@ -11,8 +11,18 @@ export function ThemeControl() {
   const { t } = useT();
   const { effectiveTheme, setTheme } = useTheme();
   return (
-    <Select label={t('theme.label')} layout="inline" value={effectiveTheme} onChange={(event) => chooseTheme(event.target.value, setTheme)} data-theme-control>
-      {THEME_CHOICES.map((choice) => <option key={choice.id} value={choice.id}>{t(choice.label)}</option>)}
+    <Select
+      label={t('theme.label')}
+      layout="inline"
+      value={effectiveTheme}
+      onChange={(event) => chooseTheme(event.target.value, setTheme)}
+      data-theme-control
+    >
+      {THEME_CHOICES.map((choice) => (
+        <option key={choice.id} value={choice.id}>
+          {t(choice.label)}
+        </option>
+      ))}
     </Select>
   );
 }

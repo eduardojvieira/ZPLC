@@ -1,1 +1,7 @@
-{"schemaVersion":2,"name":"typed_steps_starter","version":"1.0.0","target":{"board":"posix"},"tasks":[{"name":"MainTask","trigger":"cyclic","interval_ms":10,"priority":1,"programs":["TypedSteps.st"]}]}
+{
+  "schemaVersion": 2,
+  "name": "typed_steps_starter",
+  "version": "1.0.0",
+  "target": { "board": "posix" },
+  "tasks": [{ "name": "MainTask", "trigger": "cyclic", "interval_ms": 10, "priority": 1, "programs": ["TypedSteps.st"] }]
+}

@@ -13,58 +13,138 @@ import type { ScenarioFile } from './lessonPackage';
 
 const variable = (addr: number, bitOffset: number, region: 'IPI' | 'OPI') => ({ addr, bitOffset, type: 'BOOL', region, size: 1 });
 const DEBUG_MAP = {
-  version: '1', programName: 'VerifyBoard', compilerVersion: 'test',
-  pou: { VerifyBoard: { type: 'PROGRAM', vars: { Button: variable(0x0000, 0, 'IPI'), Led: variable(0x1000, 0, 'OPI') }, sourceMap: [], breakpoints: [] } },
-  memoryLayout: { ipiBase: 0, ipiSize: 4096, opiBase: 4096, opiSize: 4096, workBase: 8192, workSize: 8192, retainBase: 16384, retainSize: 4096, codeBase: 20480, codeSize: 0 },
+  version: '1',
+  programName: 'VerifyBoard',
+  compilerVersion: 'test',
+  pou: {
+    VerifyBoard: {
+      type: 'PROGRAM',
+      vars: { Button: variable(0x0000, 0, 'IPI'), Led: variable(0x1000, 0, 'OPI') },
+      sourceMap: [],
+      breakpoints: [],
+    },
+  },
+  memoryLayout: {
+    ipiBase: 0,
+    ipiSize: 4096,
+    opiBase: 4096,
+    opiSize: 4096,
+    workBase: 8192,
+    workSize: 8192,
+    retainBase: 16384,
+    retainSize: 4096,
+    codeBase: 20480,
+    codeSize: 0,
+  },
 } as unknown as DebugMap;
-const WIRING = { schemaVersion: 1 as const, parts: [
-  { id: 'led', kind: 'led', channel: 'DO0', color: 'red', resistorOhms: 330, label: { en: 'LED', es: 'LED' } },
-  { id: 'button', kind: 'button', channel: 'DI0', label: { en: 'Test button', es: 'Pulsador de prueba' } },
-] };
+const WIRING = {
+  schemaVersion: 1 as const,
+  parts: [
+    { id: 'led', kind: 'led', channel: 'DO0', color: 'red', resistorOhms: 330, label: { en: 'LED', es: 'LED' } },
+    { id: 'button', kind: 'button', channel: 'DI0', label: { en: 'Test button', es: 'Pulsador de prueba' } },
+  ],
+};
 const SCENARIO: ScenarioFile = {
-  schemaVersion: 1, id: 'Press', tickMs: 10, durationMs: 600,
-  events: [{ atMs: 0, set: { 'VerifyBoard.Button': false } }, { atMs: 200, set: { 'VerifyBoard.Button': true } }, { atMs: 400, set: { 'VerifyBoard.Button': false } }],
-  expectations: [{ kind: 'WITHIN', fromMs: 200, withinMs: 50, condition: { 'VerifyBoard.Led': true } }, { kind: 'WITHIN', fromMs: 400, withinMs: 50, condition: { 'VerifyBoard.Led': false } }],
+  schemaVersion: 1,
+  id: 'Press',
+  tickMs: 10,
+  durationMs: 600,
+  events: [
+    { atMs: 0, set: { 'VerifyBoard.Button': false } },
+    { atMs: 200, set: { 'VerifyBoard.Button': true } },
+    { atMs: 400, set: { 'VerifyBoard.Button': false } },
+  ],
+  expectations: [
+    { kind: 'WITHIN', fromMs: 200, withinMs: 50, condition: { 'VerifyBoard.Led': true } },
+    { kind: 'WITHIN', fromMs: 400, withinMs: 50, condition: { 'VerifyBoard.Led': false } },
+  ],
 };
 
 function fakeView(state: VMState, boardId: string | null, button: (atMs: number) => boolean, now: () => number) {
   const calls: string[] = [];
   const session = new Proxy({ connected: true, state } as Record<string, unknown>, {
-    get: (target, key) => (key === 'connected' || key === 'state' ? target[key]
-      : key === 'readWatchVariables' ? async (variables: WatchVariable[]) => {
-        calls.push('readWatchVariables');
-        const pressed = button(now());
-        return variables.map((item) => ({ ...item, value: item.name === 'VerifyBoard.Button' ? pressed : pressed }));
-      }
-        : typeof key === 'string' ? async () => { calls.push(key); } : undefined),
+    get: (target, key) =>
+      key === 'connected' || key === 'state'
+        ? target[key]
+        : key === 'readWatchVariables'
+          ? async (variables: WatchVariable[]) => {
+              calls.push('readWatchVariables');
+              const pressed = button(now());
+              return variables.map((item) => ({ ...item, value: item.name === 'VerifyBoard.Button' ? pressed : pressed }));
+            }
+          : typeof key === 'string'
+            ? async () => {
+                calls.push(key);
+              }
+            : undefined,
   });
   return { view: { session, boardId, runtimeVersion: '2.0.0' } as unknown as BoardSessionView & { session: { state: VMState } }, calls };
 }
 
 describe('when the check on the board may run (LRN-013, LRN-015)', () => {
-  const view = (state: VMState, boardId: string | null) => fakeView(state, boardId, () => false, () => 0).view;
+  const view = (state: VMState, boardId: string | null) =>
+    fakeView(
+      state,
+      boardId,
+      () => false,
+      () => 0,
+    ).view;
   it('LRN-015 waits for the learner: a chosen board, a connected session, a running or stopped program and a build', () => {
-    expect(boardCheckReadiness(null, view('running', 'rpi-pico-rp2040'), DEBUG_MAP)).toEqual({ ready: false, block: 'no-board', reported: null });
+    expect(boardCheckReadiness(null, view('running', 'rpi-pico-rp2040'), DEBUG_MAP)).toEqual({
+      ready: false,
+      block: 'no-board',
+      reported: null,
+    });
     expect(boardCheckReadiness('rpi-pico-rp2040', null, DEBUG_MAP)).toEqual({ ready: false, block: 'not-connected', reported: null });
-    expect(boardCheckReadiness('rpi-pico-rp2040', view('paused', 'rpi-pico-rp2040'), DEBUG_MAP)).toEqual({ ready: false, block: 'not-running', reported: null });
+    expect(boardCheckReadiness('rpi-pico-rp2040', view('paused', 'rpi-pico-rp2040'), DEBUG_MAP)).toEqual({
+      ready: false,
+      block: 'not-running',
+      reported: null,
+    });
     expect(boardCheckReadiness('rpi-pico-rp2040', view('idle', 'rpi-pico-rp2040'), DEBUG_MAP)).toEqual({ ready: true });
-    expect(boardCheckReadiness('rpi-pico-rp2040', view('running', 'rpi-pico-rp2040'), null)).toEqual({ ready: false, block: 'no-build', reported: null });
+    expect(boardCheckReadiness('rpi-pico-rp2040', view('running', 'rpi-pico-rp2040'), null)).toEqual({
+      ready: false,
+      block: 'no-build',
+      reported: null,
+    });
     expect(boardCheckReadiness('rpi-pico-rp2040', view('running', 'rpi-pico-rp2040'), DEBUG_MAP)).toEqual({ ready: true });
   });
 
   it('LRN-013 names a board that is not the one the learner chose, and one that does not say which it is', () => {
-    expect(boardCheckReadiness('rpi-pico-rp2040', view('running', 'esp32-s3-devkitc'), DEBUG_MAP)).toEqual({ ready: false, block: 'wrong-board', reported: 'esp32-s3-devkitc' });
-    expect(boardCheckReadiness('rpi-pico-rp2040', view('running', null), DEBUG_MAP)).toEqual({ ready: false, block: 'board-unreported', reported: null });
+    expect(boardCheckReadiness('rpi-pico-rp2040', view('running', 'esp32-s3-devkitc'), DEBUG_MAP)).toEqual({
+      ready: false,
+      block: 'wrong-board',
+      reported: 'esp32-s3-devkitc',
+    });
+    expect(boardCheckReadiness('rpi-pico-rp2040', view('running', null), DEBUG_MAP)).toEqual({
+      ready: false,
+      block: 'board-unreported',
+      reported: null,
+    });
   });
 });
 
 describe('a lesson whose result depends on when the program started (LRN-024)', () => {
-  const view = (state: VMState) => fakeView(state, 'rpi-pico-rp2040', () => false, () => 0).view;
-  const BLINK: ScenarioFile = { ...SCENARIO, events: [], expectations: [{ kind: 'AT', atMs: 750, condition: { 'VerifyBoard.Led': true } }] };
+  const view = (state: VMState) =>
+    fakeView(
+      state,
+      'rpi-pico-rp2040',
+      () => false,
+      () => 0,
+    ).view;
+  const BLINK: ScenarioFile = {
+    ...SCENARIO,
+    events: [],
+    expectations: [{ kind: 'AT', atMs: 750, condition: { 'VerifyBoard.Led': true } }],
+  };
   it('LRN-024 asks the learner to stop a running program first, and runs the check of a stopped one', () => {
     expect(needsRunStart(BLINK)).toBe(true);
     expect(needsRunStart(SCENARIO)).toBe(false);
-    expect(boardCheckReadiness('rpi-pico-rp2040', view('running'), DEBUG_MAP, BLINK)).toEqual({ ready: false, block: 'stop-first', reported: null });
+    expect(boardCheckReadiness('rpi-pico-rp2040', view('running'), DEBUG_MAP, BLINK)).toEqual({
+      ready: false,
+      block: 'stop-first',
+      reported: null,
+    });
     expect(boardCheckReadiness('rpi-pico-rp2040', view('idle'), DEBUG_MAP, BLINK)).toEqual({ ready: true });
     expect(boardCheckReadiness('rpi-pico-rp2040', view('running'), DEBUG_MAP, SCENARIO)).toEqual({ ready: true });
   });
@@ -78,7 +158,9 @@ describe('what the check asks the learner to do (LRN-013)', () => {
       { atMs: 200, signals: [{ signal: 'VerifyBoard.Button', value: true, channel: 'DI0', part: 'Test button', kind: 'button' }] },
       { atMs: 400, signals: [{ signal: 'VerifyBoard.Button', value: false, channel: 'DI0', part: 'Test button', kind: 'button' }] },
     ]);
-    expect(boardCheckSteps(SCENARIO, DEBUG_MAP, learnerBoardOf('rpi-pico-rp2040')!, WIRING, 'es')[1]!.signals[0]!.part).toBe('Pulsador de prueba');
+    expect(boardCheckSteps(SCENARIO, DEBUG_MAP, learnerBoardOf('rpi-pico-rp2040')!, WIRING, 'es')[1]!.signals[0]!.part).toBe(
+      'Pulsador de prueba',
+    );
   });
 
   it('LRN-024 reads every signal of the scenario as a BOOL of the Watch read, and names one the build does not have', () => {
@@ -89,21 +171,42 @@ describe('what the check asks the learner to do (LRN-013)', () => {
       ],
       missing: [],
     });
-    expect(lessonWatchVariables({ ...SCENARIO, expectations: [{ kind: 'AT', atMs: 0, condition: { 'VerifyBoard.Gone': true } }] }, DEBUG_MAP).missing).toEqual(['VerifyBoard.Gone']);
+    expect(
+      lessonWatchVariables({ ...SCENARIO, expectations: [{ kind: 'AT', atMs: 0, condition: { 'VerifyBoard.Gone': true } }] }, DEBUG_MAP)
+        .missing,
+    ).toEqual(['VerifyBoard.Gone']);
   });
 });
 
 describe('a check on the board grades a run on hardware (LRN-024, LRN-015)', () => {
   const run = async (button: (atMs: number) => boolean, options: { cancelAt?: number; stopAt?: number } = {}) => {
     let now = 0;
-    const { view, calls } = fakeView('running', 'rpi-pico-rp2040', (at) => button(at), () => now);
+    const { view, calls } = fakeView(
+      'running',
+      'rpi-pico-rp2040',
+      (at) => button(at),
+      () => now,
+    );
     const cancel = new AbortController();
     const steps: number[] = [];
     const outcome = await runBoardCheck({
-      lessonId: 'verify-my-board', lessonVersion: 1, scenario: SCENARIO, scenarioSha256: 'a'.repeat(64), tolerances: { timeMs: 130, analogPercent: 5 },
-      debugMap: DEBUG_MAP, view, variables: lessonWatchVariables(SCENARIO, DEBUG_MAP).variables, now: () => now,
-      wait: async (ms) => { now += ms; if (options.cancelAt !== undefined && now >= options.cancelAt) cancel.abort(); if (options.stopAt !== undefined && now >= options.stopAt) view.session.state = 'idle'; },
-      cancel: cancel.signal, onStep: (step) => steps.push(step), time: () => new Date('2026-10-20T10:00:00.000Z'),
+      lessonId: 'verify-my-board',
+      lessonVersion: 1,
+      scenario: SCENARIO,
+      scenarioSha256: 'a'.repeat(64),
+      tolerances: { timeMs: 130, analogPercent: 5 },
+      debugMap: DEBUG_MAP,
+      view,
+      variables: lessonWatchVariables(SCENARIO, DEBUG_MAP).variables,
+      now: () => now,
+      wait: async (ms) => {
+        now += ms;
+        if (options.cancelAt !== undefined && now >= options.cancelAt) cancel.abort();
+        if (options.stopAt !== undefined && now >= options.stopAt) view.session.state = 'idle';
+      },
+      cancel: cancel.signal,
+      onStep: (step) => steps.push(step),
+      time: () => new Date('2026-10-20T10:00:00.000Z'),
     });
     return { outcome, calls, steps };
   };
@@ -115,7 +218,13 @@ describe('a check on the board grades a run on hardware (LRN-024, LRN-015)', () 
     expect(steps).toEqual([1, 2, -1]);
     expect(outcome.kind).toBe('graded');
     if (outcome.kind !== 'graded') return;
-    expect(outcome.record).toMatchObject({ track: 'hardware', lessonId: 'verify-my-board', result: 'passed', runtimeVersion: '2.0.0', scenarioSha256: 'a'.repeat(64) });
+    expect(outcome.record).toMatchObject({
+      track: 'hardware',
+      lessonId: 'verify-my-board',
+      result: 'passed',
+      runtimeVersion: '2.0.0',
+      scenarioSha256: 'a'.repeat(64),
+    });
     expect(outcome.record.programSha256).toMatch(/^[0-9a-f]{64}$/);
     expect(new Set(calls)).toEqual(new Set(['readWatchVariables']));
   });
@@ -130,42 +239,78 @@ describe('a check on the board grades a run on hardware (LRN-024, LRN-015)', () 
 });
 
 describe('a check on a board that keeps a device trace: arm, then the learner presses Run (LRN-024, LRN-015)', () => {
-  it('LRN-024 arms in STOP, waits for Run, grades from the first scan of the run at the declared tolerance, and keeps the deployed hash', async () => {
-    // SYNTHETIC device: once the learner presses Run (at 250 ms of the check), it scans every 10 ms; the button is held from
-    // 220 ms to 420 ms of the run and the LED follows it a scan later.
-    let now = 0;
-    const scans: DeviceTraceSample[] = [];
-    const calls: string[] = [];
-    const session = { connected: true, state: 'idle' as VMState, readWatchVariables: async (variables: WatchVariable[]) => variables.map((variable) => ({ ...variable, value: false })) };
-    const trace: DeviceTrace = {
-      status: async () => { calls.push('status'); return { available: true, armed: false, capacity: 200, inBytes: 1, outBytes: 1, written: 0, first: 0, maxIoBytes: 32 }; },
-      arm: async () => { calls.push('arm'); return { available: true, armed: true, capacity: 200, inBytes: 1, outBytes: 1, written: 0, first: 0, maxIoBytes: 32 }; },
-      read: async (from, count) => { calls.push('read'); const chunk = scans.slice(from, from + count); return { from, next: from + chunk.length, samples: chunk }; },
-      clear: async () => { calls.push('clear'); return { available: true, armed: false, capacity: 0, inBytes: 0, outBytes: 0, written: 0, first: 0, maxIoBytes: 32 }; },
-    };
-    const run = (at: number) => at - 250; // Run is pressed between two reads: the first read finds several scans
-    const waiting: boolean[] = [];
-    const outcome = await runBoardCheck({
-      lessonId: 'verify-my-board', lessonVersion: 1, scenario: SCENARIO, scenarioSha256: 'a'.repeat(64), tolerances: { timeMs: 20, analogPercent: 5 },
-      debugMap: DEBUG_MAP, view: { session, trace, boardId: 'rpi-pico-rp2040', runtimeVersion: '2.0.0' }, variables: lessonWatchVariables(SCENARIO, DEBUG_MAP).variables,
-      now: () => now, programSha256: 'd'.repeat(64), onWaitingForRun: (value) => waiting.push(value), time: () => new Date('2026-10-20T10:00:00.000Z'),
-      wait: async (ms) => {
-        for (let step = 0; step < ms; step += 10) {
-          now += 10;
-          if (now === 250) session.state = 'running'; // the learner presses Run in the toolbar
-          if (run(now) >= 0) {
-            const t = run(now);
-            const pressed = t >= 220 && t < 420;
-            const led = t - 10 >= 220 && t - 10 < 420;
-            scans.push({ seq: scans.length, tUs: 5_000_000 + t * 1000, batch: scans.length + 1, inputs: Uint8Array.of(pressed ? 1 : 0), outputs: Uint8Array.of(led ? 1 : 0) });
+  it(
+    'LRN-024 arms in STOP, waits for Run, grades from the first scan of the run at the declared tolerance, and keeps the deployed ' +
+      'hash',
+    async () => {
+      // SYNTHETIC device: once the learner presses Run (at 250 ms of the check), it scans every 10 ms; the button is held from
+      // 220 ms to 420 ms of the run and the LED follows it a scan later.
+      let now = 0;
+      const scans: DeviceTraceSample[] = [];
+      const calls: string[] = [];
+      const session = {
+        connected: true,
+        state: 'idle' as VMState,
+        readWatchVariables: async (variables: WatchVariable[]) => variables.map((variable) => ({ ...variable, value: false })),
+      };
+      const trace: DeviceTrace = {
+        status: async () => {
+          calls.push('status');
+          return { available: true, armed: false, capacity: 200, inBytes: 1, outBytes: 1, written: 0, first: 0, maxIoBytes: 32 };
+        },
+        arm: async () => {
+          calls.push('arm');
+          return { available: true, armed: true, capacity: 200, inBytes: 1, outBytes: 1, written: 0, first: 0, maxIoBytes: 32 };
+        },
+        read: async (from, count) => {
+          calls.push('read');
+          const chunk = scans.slice(from, from + count);
+          return { from, next: from + chunk.length, samples: chunk };
+        },
+        clear: async () => {
+          calls.push('clear');
+          return { available: true, armed: false, capacity: 0, inBytes: 0, outBytes: 0, written: 0, first: 0, maxIoBytes: 32 };
+        },
+      };
+      const run = (at: number) => at - 250; // Run is pressed between two reads: the first read finds several scans
+      const waiting: boolean[] = [];
+      const outcome = await runBoardCheck({
+        lessonId: 'verify-my-board',
+        lessonVersion: 1,
+        scenario: SCENARIO,
+        scenarioSha256: 'a'.repeat(64),
+        tolerances: { timeMs: 20, analogPercent: 5 },
+        debugMap: DEBUG_MAP,
+        view: { session, trace, boardId: 'rpi-pico-rp2040', runtimeVersion: '2.0.0' },
+        variables: lessonWatchVariables(SCENARIO, DEBUG_MAP).variables,
+        now: () => now,
+        programSha256: 'd'.repeat(64),
+        onWaitingForRun: (value) => waiting.push(value),
+        time: () => new Date('2026-10-20T10:00:00.000Z'),
+        wait: async (ms) => {
+          for (let step = 0; step < ms; step += 10) {
+            now += 10;
+            if (now === 250) session.state = 'running'; // the learner presses Run in the toolbar
+            if (run(now) >= 0) {
+              const t = run(now);
+              const pressed = t >= 220 && t < 420;
+              const led = t - 10 >= 220 && t - 10 < 420;
+              scans.push({
+                seq: scans.length,
+                tUs: 5_000_000 + t * 1000,
+                batch: scans.length + 1,
+                inputs: Uint8Array.of(pressed ? 1 : 0),
+                outputs: Uint8Array.of(led ? 1 : 0),
+              });
+            }
           }
-        }
-      },
-    });
-    expect(waiting).toEqual([true, false]);
-    expect(outcome.kind).toBe('graded');
-    if (outcome.kind !== 'graded') return;
-    expect(outcome.record).toMatchObject({ track: 'hardware', result: 'passed', programSha256: 'd'.repeat(64) });
-    expect(new Set(calls)).toEqual(new Set(['status', 'arm', 'read', 'clear']));
-  });
+        },
+      });
+      expect(waiting).toEqual([true, false]);
+      expect(outcome.kind).toBe('graded');
+      if (outcome.kind !== 'graded') return;
+      expect(outcome.record).toMatchObject({ track: 'hardware', result: 'passed', programSha256: 'd'.repeat(64) });
+      expect(new Set(calls)).toEqual(new Set(['status', 'arm', 'read', 'clear']));
+    },
+  );
 });

@@ -27,9 +27,11 @@ export const webBuildEn = {
   'web.store.keep': 'Keep in this browser',
   'web.store.keepHint': 'Stored by the browser, not in a folder you can see. Clearing site data removes it.',
   'web.feature.nativeSimulation.title': 'Native simulation',
-  'web.feature.nativeSimulation.reason': 'The simulator runs on the WASM runtime: each scan gives the same result, but the timing is the browser\'s and there is no network or serial. The desktop app runs the native runtime.',
+  'web.feature.nativeSimulation.reason':
+    "The simulator runs on the WASM runtime: each scan gives the same result, but the timing is the browser's and there is no network or serial. The desktop app runs the native runtime.",
   'web.feature.deviceLink.title': 'Device connection and deploy',
-  'web.feature.deviceLink.reason': 'Connecting to a controller over serial or USB, deploying a program, and run, stop and force on a device are off. Use the desktop app.',
+  'web.feature.deviceLink.reason':
+    'Connecting to a controller over serial or USB, deploying a program, and run, stop and force on a device are off. Use the desktop app.',
   'web.feature.firmwareBuilds.title': 'Firmware builds',
   'web.feature.firmwareBuilds.reason': 'Building board firmware needs the toolchain on your computer. Use the desktop app.',
   'web.feature.hostTests.title': 'Host scenario tests',
@@ -39,7 +41,8 @@ export const webBuildEn = {
   'web.feature.updateCheck.title': 'Update check',
   'web.feature.updateCheck.reason': 'A page is always the current version, so there is nothing to update.',
   'web.feature.profileStore.title': 'Settings migration, crash recovery and session restore',
-  'web.feature.profileStore.reason': 'The desktop app keeps these in its user data folder. In the browser, a project lives in a folder you choose or in this browser\'s storage.',
+  'web.feature.profileStore.reason':
+    "The desktop app keeps these in its user data folder. In the browser, a project lives in a folder you choose or in this browser's storage.",
   'web.feature.aiAssistant.title': 'AI assistant',
   'web.feature.aiAssistant.reason': 'The assistant keeps its key in the desktop app and there is no server behind this page, so it is off.',
 } as const;
@@ -47,7 +50,8 @@ export const webBuildEn = {
 export const webBuildEs: Record<keyof typeof webBuildEn, string> = {
   'web.notice.label': 'ZPLC en el navegador',
   'web.notice.title': 'Está usando ZPLC en el navegador.',
-  'web.notice.body': 'Los proyectos viven en una carpeta que usted elige o en este navegador. Algunas funciones necesitan la aplicación de escritorio.',
+  'web.notice.body':
+    'Los proyectos viven en una carpeta que usted elige o en este navegador. Algunas funciones necesitan la aplicación de escritorio.',
   'web.notice.show': 'Ver qué falta',
   'web.notice.hide': 'Ocultar la lista',
   'web.notice.install': 'Instalar la aplicación de escritorio',
@@ -57,14 +61,16 @@ export const webBuildEs: Record<keyof typeof webBuildEn, string> = {
   'web.notice.list': 'No disponible en el navegador',
   'web.disabled.reason': 'No disponible en el navegador. Use la aplicación de escritorio.',
   'web.hardware.refused': 'La conexión con un dispositivo no está disponible en el navegador. Use la aplicación de escritorio.',
-  'web.examples.hint': 'Un ejemplo se abre como una copia guardada en este navegador, que usted puede editar y volver a abrir desde los proyectos recientes.',
+  'web.examples.hint':
+    'Un ejemplo se abre como una copia guardada en este navegador, que usted puede editar y volver a abrir desde los proyectos recientes.',
   'web.build.noFolder': 'No hay una carpeta de proyecto abierta.',
   'web.build.noManifest': 'La carpeta no tiene un zplc.json legible.',
   'web.build.notJson': 'zplc.json no es un JSON válido.',
   'web.build.noSource': 'La carpeta src no está disponible.',
   'web.build.noLibrary': 'Una carpeta de bibliotecas de zplc.json no está disponible.',
   'web.build.tooMany': 'El proyecto tiene demasiados archivos de código.',
-  'web.build.duplicate': 'Los nombres de los archivos de código deben ser únicos sin distinguir mayúsculas, y main.ld y main.ld.json son el mismo nombre.',
+  'web.build.duplicate':
+    'Los nombres de los archivos de código deben ser únicos sin distinguir mayúsculas, y main.ld y main.ld.json son el mismo nombre.',
   'web.build.unreadable': 'No se pudo leer un archivo de código.',
   'web.build.tooLarge': 'Los archivos de código superan el límite de tamaño.',
   'web.build.noProgram': 'El programa de una tarea no está en la carpeta src.',
@@ -72,11 +78,14 @@ export const webBuildEs: Record<keyof typeof webBuildEn, string> = {
   'web.store.keep': 'Conservar en este navegador',
   'web.store.keepHint': 'Lo guarda el navegador, no una carpeta que usted pueda ver. Borrar los datos del sitio lo elimina.',
   'web.feature.nativeSimulation.title': 'Simulación nativa',
-  'web.feature.nativeSimulation.reason': 'El simulador usa el runtime WASM: cada ciclo da el mismo resultado, pero los tiempos son los del navegador y no hay red ni puerto serie. La aplicación de escritorio usa el runtime nativo.',
+  'web.feature.nativeSimulation.reason':
+    'El simulador usa el runtime WASM: cada ciclo da el mismo resultado, pero los tiempos son los del navegador y no hay red ni puerto serie. La aplicación de escritorio usa el runtime nativo.',
   'web.feature.deviceLink.title': 'Conexión con dispositivos y despliegue',
-  'web.feature.deviceLink.reason': 'La conexión con un controlador por serie o USB, el despliegue de un programa y las acciones de ejecutar, detener y forzar en un dispositivo están desactivadas. Use la aplicación de escritorio.',
+  'web.feature.deviceLink.reason':
+    'La conexión con un controlador por serie o USB, el despliegue de un programa y las acciones de ejecutar, detener y forzar en un dispositivo están desactivadas. Use la aplicación de escritorio.',
   'web.feature.firmwareBuilds.title': 'Compilación de firmware',
-  'web.feature.firmwareBuilds.reason': 'Compilar el firmware de una placa necesita la cadena de herramientas en su equipo. Use la aplicación de escritorio.',
+  'web.feature.firmwareBuilds.reason':
+    'Compilar el firmware de una placa necesita la cadena de herramientas en su equipo. Use la aplicación de escritorio.',
   'web.feature.hostTests.title': 'Pruebas de escenarios en el equipo anfitrión',
   'web.feature.hostTests.reason': 'Las pruebas de escenarios se ejecutan en el runtime nativo de la aplicación de escritorio.',
   'web.feature.mcpCli.title': 'Servidor MCP y línea de comandos',
@@ -84,7 +93,9 @@ export const webBuildEs: Record<keyof typeof webBuildEn, string> = {
   'web.feature.updateCheck.title': 'Búsqueda de actualizaciones',
   'web.feature.updateCheck.reason': 'Una página siempre es la versión actual, así que no hay nada que actualizar.',
   'web.feature.profileStore.title': 'Migración de ajustes, recuperación tras un cierre inesperado y restauración de la sesión',
-  'web.feature.profileStore.reason': 'La aplicación de escritorio los guarda en su carpeta de datos de usuario. En el navegador, un proyecto vive en una carpeta que usted elige o en el almacenamiento de este navegador.',
+  'web.feature.profileStore.reason':
+    'La aplicación de escritorio los guarda en su carpeta de datos de usuario. En el navegador, un proyecto vive en una carpeta que usted elige o en el almacenamiento de este navegador.',
   'web.feature.aiAssistant.title': 'Asistente de IA',
-  'web.feature.aiAssistant.reason': 'El asistente guarda su clave en la aplicación de escritorio y esta página no tiene un servidor detrás, así que está desactivado.',
+  'web.feature.aiAssistant.reason':
+    'El asistente guarda su clave en la aplicación de escritorio y esta página no tiene un servidor detrás, así que está desactivado.',
 };

@@ -54,12 +54,23 @@ export function installerName(version: string, format: InstallerFormat, arch: In
   return `${INSTALLER_PRODUCT}-${version}-${os}-${ARCH_NAME[format][arch]}${suffix}.${ext}`;
 }
 
-export interface Installer { name: string; os: InstallerOs; format: InstallerFormat; arch: InstallerArch }
+export interface Installer {
+  name: string;
+  os: InstallerOs;
+  format: InstallerFormat;
+  arch: InstallerArch;
+}
 
 /** The fourteen installers of a version: seven formats, two architectures. */
 export function installerNames(version: string, options: NameOptions = {}): Installer[] {
   return (Object.keys(FORMATS) as InstallerFormat[]).flatMap((format) =>
-    (['x64', 'arm64'] as const).map((arch) => ({ name: installerName(version, format, arch, options), os: FORMATS[format].os, format, arch })));
+    (['x64', 'arm64'] as const).map((arch) => ({
+      name: installerName(version, format, arch, options),
+      os: FORMATS[format].os,
+      format,
+      arch,
+    })),
+  );
 }
 
 const INSTALLER_EXTENSION = /\.(dmg|zip|exe|appimage|deb|rpm)$/i;
@@ -68,7 +79,12 @@ const STANDALONE_TOOL = /^zplc-(?:cli|mcp)-/;
 
 function walk(directory: string): Array<{ name: string; path: string }> {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) =>
-    entry.isDirectory() ? walk(join(directory, entry.name)) : entry.isFile() ? [{ name: entry.name, path: join(directory, entry.name) }] : []);
+    entry.isDirectory()
+      ? walk(join(directory, entry.name))
+      : entry.isFile()
+        ? [{ name: entry.name, path: join(directory, entry.name) }]
+        : [],
+  );
 }
 
 function head(path: string, length: number, position = 0): Buffer {
@@ -77,20 +93,34 @@ function head(path: string, length: number, position = 0): Buffer {
     const bytes = Buffer.alloc(length);
     const read = readSync(file, bytes, 0, length, position);
     return bytes.subarray(0, read);
-  } finally { closeSync(file); }
+  } finally {
+    closeSync(file);
+  }
 }
 
 /** What is wrong with the contents of one installer; undefined when its bytes are the format it claims. */
 function containerProblem(installer: Installer, path: string): string | undefined {
-  const size = (() => { const file = openSync(path, 'r'); try { return fstatSync(file).size; } finally { closeSync(file); } })();
+  const size = (() => {
+    const file = openSync(path, 'r');
+    try {
+      return fstatSync(file).size;
+    } finally {
+      closeSync(file);
+    }
+  })();
   const first = head(path, 64);
   switch (installer.format) {
-    case 'dmg': return size >= 512 && head(path, 4, size - 512).toString('latin1') === 'koly' ? undefined : 'is not a disk image (no UDIF trailer)';
-    case 'zip': return first.subarray(0, 4).equals(Buffer.from('PK\x03\x04', 'latin1')) ? undefined : 'is not a ZIP archive';
+    case 'dmg':
+      return size >= 512 && head(path, 4, size - 512).toString('latin1') === 'koly' ? undefined : 'is not a disk image (no UDIF trailer)';
+    case 'zip':
+      return first.subarray(0, 4).equals(Buffer.from('PK\x03\x04', 'latin1')) ? undefined : 'is not a ZIP archive';
     case 'setup':
-    case 'portable': return first.subarray(0, 2).toString('latin1') === 'MZ' ? undefined : 'is not a Windows executable';
-    case 'deb': return first.toString('latin1').startsWith('!<arch>\ndebian-binary') ? undefined : 'is not a Debian package';
-    case 'rpm': return first.subarray(0, 4).equals(Buffer.from([0xed, 0xab, 0xee, 0xdb])) ? undefined : 'is not an RPM package';
+    case 'portable':
+      return first.subarray(0, 2).toString('latin1') === 'MZ' ? undefined : 'is not a Windows executable';
+    case 'deb':
+      return first.toString('latin1').startsWith('!<arch>\ndebian-binary') ? undefined : 'is not a Debian package';
+    case 'rpm':
+      return first.subarray(0, 4).equals(Buffer.from([0xed, 0xab, 0xee, 0xdb])) ? undefined : 'is not an RPM package';
     case 'appimage': {
       if (first.subarray(0, 4).toString('latin1') !== '\x7fELF') return 'is not an ELF program';
       const machine = first.readUInt16LE(18);
@@ -100,7 +130,10 @@ function containerProblem(installer: Installer, path: string): string | undefine
   }
 }
 
-/** What is wrong with the installers under `directory`; an empty list means the fourteen (or the system's share) are there and are what they say. */
+/**
+ * What is wrong with the installers under `directory`; an empty list means the fourteen (or the system's share) are there and are what they
+ * say.
+ */
 export function verifyInstallers(directory: string, version: string, options: NameOptions & { os?: InstallerOs } = {}): string[] {
   const expected = installerNames(version, options).filter((installer) => options.os === undefined || installer.os === options.os);
   const byName = new Map(expected.map((installer) => [installer.name, installer]));
@@ -111,10 +144,14 @@ export function verifyInstallers(directory: string, version: string, options: Na
     const installer = byName.get(file.name);
     if (installer === undefined) {
       // another system's file in a folder of one system is not this check's concern
-      if (options.os === undefined || !installerNames(version, options).some((other) => other.name === file.name)) problems.push(`${file.name} is not named by ${SCHEME}`);
+      if (options.os === undefined || !installerNames(version, options).some((other) => other.name === file.name))
+        problems.push(`${file.name} is not named by ${SCHEME}`);
       continue;
     }
-    if (seen.has(file.name)) { problems.push(`${file.name} is produced twice`); continue; }
+    if (seen.has(file.name)) {
+      problems.push(`${file.name} is produced twice`);
+      continue;
+    }
     seen.add(file.name);
     const wrong = containerProblem(installer, file.path);
     if (wrong !== undefined) problems.push(`${file.name} ${wrong}`);
@@ -124,7 +161,11 @@ export function verifyInstallers(directory: string, version: string, options: Na
 }
 
 if (import.meta.main) {
-  const { values, positionals } = parseArgs({ args: Bun.argv.slice(2), allowPositionals: true, options: { version: { type: 'string' }, os: { type: 'string' }, 'windows-signed': { type: 'boolean' } } });
+  const { values, positionals } = parseArgs({
+    args: Bun.argv.slice(2),
+    allowPositionals: true,
+    options: { version: { type: 'string' }, os: { type: 'string' }, 'windows-signed': { type: 'boolean' } },
+  });
   const os = values.os as InstallerOs | undefined;
   if (!positionals[0] || !values.version || (os !== undefined && !['mac', 'win', 'linux'].includes(os))) {
     console.error('usage: verify-installers.ts <folder> --version <v> [--os mac|win|linux] [--windows-signed]');

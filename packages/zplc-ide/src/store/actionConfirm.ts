@@ -19,7 +19,10 @@ export interface ActionConfirmRequest {
   body?: ReactNode;
 }
 
-interface Pending { request: ActionConfirmRequest; settle: (answer: boolean) => void }
+interface Pending {
+  request: ActionConfirmRequest;
+  settle: (answer: boolean) => void;
+}
 
 let pending: Pending | null = null;
 let hosts = 0;
@@ -56,5 +59,12 @@ export function mountConfirmHost(): () => void {
 }
 
 export function useConfirmation(): ActionConfirmRequest | null {
-  return useSyncExternalStore((listener) => { listeners.add(listener); return () => listeners.delete(listener); }, currentConfirmation, () => null);
+  return useSyncExternalStore(
+    (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    currentConfirmation,
+    () => null,
+  );
 }

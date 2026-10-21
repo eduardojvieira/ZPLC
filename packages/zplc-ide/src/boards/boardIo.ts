@@ -114,7 +114,14 @@ function readChannel(value: unknown): BoardChannel | undefined {
   const es = readTwins(value);
   if (!es) return undefined;
   const base: Omit<BoardChannel, 'safe' | 'resolutionBits' | 'range'> = {
-    id, direction, kind, address: address as string, pin, electrical, source, pinStatus: value.pin_status as 'devicetree' | 'profile',
+    id,
+    direction,
+    kind,
+    address: address as string,
+    pin,
+    electrical,
+    source,
+    pinStatus: value.pin_status as 'devicetree' | 'profile',
     ...(isText(value.location) ? { location: value.location } : {}),
     ...(isText(value.scaling, NOTE_MAX) ? { scaling: value.scaling } : {}),
     ...(Object.keys(es).length > 0 ? { es } : {}),
@@ -133,7 +140,8 @@ function readChannel(value: unknown): BoardChannel | undefined {
 }
 
 /** A channel with its human text in a language: the Spanish twins where the description has them, else English. */
-export const channelIn = (channel: BoardChannel, lang: 'en' | 'es'): BoardChannel => (lang === 'es' && channel.es ? { ...channel, ...channel.es } : channel);
+export const channelIn = (channel: BoardChannel, lang: 'en' | 'es'): BoardChannel =>
+  lang === 'es' && channel.es ? { ...channel, ...channel.es } : channel;
 
 /** The Spanish twins of a channel; undefined when one is empty or translates a text the channel does not have. */
 function readTwins(value: Record<string, unknown>): BoardChannel['es'] | undefined {
@@ -218,5 +226,7 @@ export function fnv1a32(value: string): number {
  */
 export function descriptionHash(boardId: string, io: BoardIoDescription): string {
   const lines = [boardId, ...sortedChannels(io).map((channel) => `${channel.id}|${channel.direction}|${channel.kind}|${channel.address}`)];
-  return fnv1a32(`${lines.join('\n')}\n`).toString(16).padStart(8, '0');
+  return fnv1a32(`${lines.join('\n')}\n`)
+    .toString(16)
+    .padStart(8, '0');
 }

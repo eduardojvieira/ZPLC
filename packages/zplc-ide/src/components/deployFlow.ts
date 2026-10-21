@@ -10,11 +10,7 @@ import { DEVICE_ADMISSION_CODE, DeviceAdmissionError } from '../runtime/deviceHa
 import { useDeployedProgram } from '../store/deployedProgram';
 import { useNotifications } from '../store/notifications';
 import { confirmDeploy, showDeployRefusal } from './deployConfirm';
-import {
-  nextProgramLoadStateAfterDeploy,
-  PROGRAM_LOAD_STATE,
-  type LastCompileResult,
-} from './debugSessionState';
+import { nextProgramLoadStateAfterDeploy, PROGRAM_LOAD_STATE, type LastCompileResult } from './debugSessionState';
 import { createHardwareDeployConfirmation, gatherDeployFacts } from './hardwareDeployConfirmation';
 import { selectRuntimeArtifact } from './runtimeArtifactSelection';
 
@@ -47,7 +43,13 @@ export async function performHardwareDeploy(deps: DeployDeps): Promise<void> {
     const deployedRevision = result.revision;
     const deployedCompilerRunId = result.compilerRunId;
     const dataToUpload = selectRuntimeArtifact({ bytecode: result.bytecode, zplcFile: result.zplcFile });
-    const input = { bytecode: dataToUpload, projectBoard: started.board, projectName: started.name, systemInfo: deps.systemInfo(), taskCount: result.taskCount };
+    const input = {
+      bytecode: dataToUpload,
+      projectBoard: started.board,
+      projectName: started.name,
+      systemInfo: deps.systemInfo(),
+      taskCount: result.taskCount,
+    };
     let confirmation;
     try {
       confirmation = await createHardwareDeployConfirmation(input);
@@ -56,15 +58,27 @@ export async function performHardwareDeploy(deps: DeployDeps): Promise<void> {
       if (refusal instanceof DeviceAdmissionError) await showDeployRefusal(await gatherDeployFacts(input), refusal.detail);
       throw refusal;
     }
-    if (!await confirmDeploy(confirmation, deps.running)) {
+    if (!(await confirmDeploy(confirmation, deps.running))) {
       log({ type: 'info', message: t('deploy.log.cancelled'), source: 'runtime' });
-      notices.report({ kind: 'deploy', status: 'cancelled', title: t('notices.deploy.cancelled'), detail: t('notices.deploy.cancelledDetail'), details: 'output' });
+      notices.report({
+        kind: 'deploy',
+        status: 'cancelled',
+        title: t('notices.deploy.cancelled'),
+        detail: t('notices.deploy.cancelledDetail'),
+        details: 'output',
+      });
       return;
     }
     const now = deps.project();
     if (deps.currentResult() !== result || now.session !== started.session || now.board !== started.board) {
       log({ type: 'warning', message: t('deploy.log.projectChanged'), source: 'runtime' });
-      notices.report({ kind: 'deploy', status: 'warning', title: t('notices.deploy.refused'), detail: t('notices.deploy.refusedDetail'), details: 'output' });
+      notices.report({
+        kind: 'deploy',
+        status: 'warning',
+        title: t('notices.deploy.refused'),
+        detail: t('notices.deploy.refusedDetail'),
+        details: 'output',
+      });
       return;
     }
 
@@ -75,25 +89,41 @@ export async function performHardwareDeploy(deps: DeployDeps): Promise<void> {
     useDeployedProgram.getState().clear(); // LRN-023: the board may no longer hold the program a hash names
     await deps.loadProgram(dataToUpload, result.debugMap, started.board);
     void useDeployedProgram.getState().publish(dataToUpload);
-    if (nextProgramLoadStateAfterDeploy(deployedRevision, deps.compileRevision(), deployedCompilerRunId, deps.compilerRunId()) === PROGRAM_LOAD_STATE.LOADED) {
+    if (
+      nextProgramLoadStateAfterDeploy(deployedRevision, deps.compileRevision(), deployedCompilerRunId, deps.compilerRunId()) ===
+      PROGRAM_LOAD_STATE.LOADED
+    ) {
       deps.setProgramLoadState(PROGRAM_LOAD_STATE.LOADED);
       log({ type: 'success', message: t('deploy.log.deployed'), source: 'runtime' });
       notices.finish(deployOperation, { kind: 'deploy', status: 'success', title: t('notices.deploy.done'), details: 'output' });
     } else {
       deps.setProgramLoadState(PROGRAM_LOAD_STATE.EMPTY);
       log({ type: 'warning', message: t('deploy.log.earlierBuild'), source: 'runtime' });
-      notices.finish(deployOperation, { kind: 'deploy', status: 'warning', title: t('notices.deploy.earlier'), detail: t('notices.deploy.earlierDetail'), details: 'output' });
+      notices.finish(deployOperation, {
+        kind: 'deploy',
+        status: 'warning',
+        title: t('notices.deploy.earlier'),
+        detail: t('notices.deploy.earlierDetail'),
+        details: 'output',
+      });
     }
   } catch (error) {
     const preflightDenied = error instanceof DeviceAdmissionError && error.code !== DEVICE_ADMISSION_CODE.RESULT_UNKNOWN;
     deps.setProgramLoadState(PROGRAM_LOAD_STATE.EMPTY);
-    const failure = programSendStarted && !preflightDenied
-      ? t('deploy.unconfirmed')
-      : error instanceof DeviceAdmissionError && error.detail
-        ? t('deploy.refused', { detail: error.detail })
-        : t('deploy.preflightFailed');
+    const failure =
+      programSendStarted && !preflightDenied
+        ? t('deploy.unconfirmed')
+        : error instanceof DeviceAdmissionError && error.detail
+          ? t('deploy.refused', { detail: error.detail })
+          : t('deploy.preflightFailed');
     log({ type: 'error', message: failure, source: 'runtime' });
-    const refusal = { kind: 'deploy' as const, status: 'error' as const, title: t('notices.deploy.failed'), detail: failure, details: 'output' as const };
+    const refusal = {
+      kind: 'deploy' as const,
+      status: 'error' as const,
+      title: t('notices.deploy.failed'),
+      detail: failure,
+      details: 'output' as const,
+    };
     if (deployOperation) notices.finish(deployOperation, refusal);
     else notices.report(refusal);
   }

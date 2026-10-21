@@ -8,7 +8,9 @@ import { flashInfo, imageName, parseConfig, plannedFormats } from '../../scripts
 const ROOT = new URL('../../', import.meta.url).pathname;
 const flasher = await import(join(ROOT, 'docs/src/components/FirmwareFlasher/flasher'));
 
-const esp32 = (JSON.parse(await Bun.file(join(ROOT, 'firmware/app/boards/boards.json')).text()) as { board_id: string; zephyr_board: string }[]).find((board) => board.zephyr_board.split('/')[1] === 'esp32s3')!;
+const esp32 = (
+  JSON.parse(await Bun.file(join(ROOT, 'firmware/app/boards/boards.json')).text()) as { board_id: string; zephyr_board: string }[]
+).find((board) => board.zephyr_board.split('/')[1] === 'esp32s3')!;
 const RUNNERS = 'flash-runner: esp32\nargs:\n  esp32:\n    - --esp-app-address=0x0\n    - --esp-flash-size=8MB\n';
 
 describe('browser flasher for the ESP32-S3 (REL-024): the manifest it builds', () => {
@@ -27,7 +29,11 @@ describe('browser flasher for the ESP32-S3 (REL-024): the manifest it builds', (
 
   it('asks for no erase of the flash unless the person chooses it, and names the image and its version', () => {
     const manifest = flasher.buildFlashManifest({ version: '2.0.0-rc.4', imageUrl: 'blob:x' });
-    expect(manifest).toMatchObject({ name: 'ZPLC runtime for the ESP32-S3-DevKitC-1', version: '2.0.0-rc.4', new_install_prompt_erase: false });
+    expect(manifest).toMatchObject({
+      name: 'ZPLC runtime for the ESP32-S3-DevKitC-1',
+      version: '2.0.0-rc.4',
+      new_install_prompt_erase: false,
+    });
   });
 
   it('reads the version out of a downloaded image name, and refuses a file that is not the ESP32-S3 image', () => {
@@ -38,7 +44,9 @@ describe('browser flasher for the ESP32-S3 (REL-024): the manifest it builds', (
   });
 
   it('computes the SHA-256 that the person compares with SHA256SUMS', async () => {
-    expect(await flasher.sha256Hex(new TextEncoder().encode('abc').buffer)).toBe('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+    expect(await flasher.sha256Hex(new TextEncoder().encode('abc').buffer)).toBe(
+      'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad',
+    );
   });
 });
 
@@ -51,15 +59,19 @@ describe('browser flasher for the ESP32-S3 (REL-024): the browsers', () => {
 });
 
 describe('browser flasher for the ESP32-S3 (REL-024): the component', () => {
-  it('renders, before the browser is known, the safety text and the fallback for browsers without Web Serial, and offers no flash button', async () => {
-    const React = await import(join(ROOT, 'docs/node_modules/react'));
-    const { renderToStaticMarkup } = await import(join(ROOT, 'docs/node_modules/react-dom/server'));
-    const { default: FirmwareFlasher } = await import(join(ROOT, 'docs/src/components/FirmwareFlasher/index'));
-    const html: string = renderToStaticMarkup(React.createElement(FirmwareFlasher, { lang: 'en' }));
-    expect(html).toContain('AI never flashes');
-    expect(html).toContain('Chrome and Edge');
-    expect(html).not.toContain('esp-web-install-button');
-  });
+  it(
+    'renders, before the browser is known, the safety text and the fallback for browsers without Web Serial, and offers no flash ' +
+      'button',
+    async () => {
+      const React = await import(join(ROOT, 'docs/node_modules/react'));
+      const { renderToStaticMarkup } = await import(join(ROOT, 'docs/node_modules/react-dom/server'));
+      const { default: FirmwareFlasher } = await import(join(ROOT, 'docs/src/components/FirmwareFlasher/index'));
+      const html: string = renderToStaticMarkup(React.createElement(FirmwareFlasher, { lang: 'en' }));
+      expect(html).toContain('AI never flashes');
+      expect(html).toContain('Chrome and Edge');
+      expect(html).not.toContain('esp-web-install-button');
+    },
+  );
 
   it('says in Spanish, with usted, that a person starts every step', () => {
     expect(flasher.TEXT.es.safety).toMatch(/Usted/);

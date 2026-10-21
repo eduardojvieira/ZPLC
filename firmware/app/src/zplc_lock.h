@@ -16,14 +16,13 @@
 #include <zplc_hal.h>
 
 /** @return 0 when the mutex is held by the caller, a negative errno otherwise. */
-static inline int zplc_lock_take(struct k_mutex *mutex, const char *name)
-{
-    int rc = k_mutex_lock(mutex, K_FOREVER);
+static inline int zplc_lock_take(struct k_mutex *mutex, const char *name) {
+  int rc = k_mutex_lock(mutex, K_FOREVER);
 
-    if (rc != 0) {
-        zplc_hal_log("[LOCK] %s could not be taken: %d\n", name, rc);
-    }
-    return rc;
+  if (rc != 0) {
+    zplc_hal_log("[LOCK] %s could not be taken: %d\n", name, rc);
+  }
+  return rc;
 }
 
 #endif /* ZPLC_LOCK_H */

@@ -27,7 +27,10 @@ import { markdownFiles } from './check_doc_claims';
 const ROOT = new URL('../../', import.meta.url).pathname;
 export const IMAGE_DIR = 'docs/static/img';
 export const PICTURE_DIR = `${IMAGE_DIR}/tutorials`;
-/** The editor pictures of the language reference (DOC-006): `<language>-<locale>.png`, taken by packages/zplc-ide/scripts/capture-editor-shots.ts. */
+/**
+ * The editor pictures of the language reference (DOC-006): `<language>-<locale>.png`, taken by
+ * packages/zplc-ide/scripts/capture-editor-shots.ts.
+ */
 export const EDITOR_DIR = `${IMAGE_DIR}/editors`;
 export const EDITOR_LANGUAGES = ['st', 'il', 'ld', 'fbd', 'sfc'] as const;
 export const EDITOR_LOCALES = ['en', 'es'] as const;
@@ -45,7 +48,12 @@ export const DIAGRAM_DIR = `${IMAGE_DIR}/wiring`;
  */
 export const RECORDED_DIR = `${IMAGE_DIR}/screen-reader-check`;
 /** A picture of a recorded run, as its results.json lists it, with the path below the repository. */
-export interface RecordedImage { path: string; sha256: string; width: number; height: number }
+export interface RecordedImage {
+  path: string;
+  sha256: string;
+  width: number;
+  height: number;
+}
 const PAGE_DIRS = ['docs/docs', 'docs/i18n/es/docusaurus-plugin-content-docs/current'];
 
 /** The pictures the journey takes, in the order of the steps. The journey and this list are checked against each other by a capture. */
@@ -59,7 +67,15 @@ export const PICTURES = [
 ] as const;
 export const JOURNEY = '56 Blink without hardware (the tutorial)';
 
-export interface ManifestImage { file: string; step: string; sha256: string; bytes: number; width: number; height: number; /** The commit of an image that was not captured with the rest (the editor pictures). */ commit?: string }
+export interface ManifestImage {
+  file: string;
+  step: string;
+  sha256: string;
+  bytes: number;
+  width: number;
+  height: number;
+  /** The commit of an image that was not captured with the rest (the editor pictures). */ commit?: string;
+}
 export interface Manifest {
   schemaVersion: 1;
   command: string;
@@ -88,8 +104,14 @@ export function imagesOf(text: string): string[] {
   let fence = '';
   for (const line of text.split('\n')) {
     const marker = /^\s*(`{3,}|~{3,})/.exec(line);
-    if (fence) { if (marker && marker[1]![0] === fence[0]) fence = ''; continue; }
-    if (marker) { fence = marker[1]!; continue; }
+    if (fence) {
+      if (marker && marker[1]![0] === fence[0]) fence = '';
+      continue;
+    }
+    if (marker) {
+      fence = marker[1]!;
+      continue;
+    }
     for (const match of line.replace(/`[^`]*`/g, ' ').matchAll(/!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)) found.push(match[1]!);
   }
   return found;
@@ -100,44 +122,97 @@ export function staticPathOf(reference: string): string | undefined {
   return reference.startsWith('/img/') ? `docs/static${reference}` : undefined;
 }
 
-export interface Problem { where: string; message: string }
+export interface Problem {
+  where: string;
+  message: string;
+}
 
-export function checkManifest(manifest: Manifest, pages: Array<{ page: string; text: string }>, readImage: (path: string) => Uint8Array | undefined, listed: string[], recorded: RecordedImage[] = []): Problem[] {
+export function checkManifest(
+  manifest: Manifest,
+  pages: Array<{ page: string; text: string }>,
+  readImage: (path: string) => Uint8Array | undefined,
+  listed: string[],
+  recorded: RecordedImage[] = [],
+): Problem[] {
   const problems: Problem[] = [];
   const recordedByPath = new Map(recorded.map((image) => [image.path, image]));
   if (manifest.schemaVersion !== 1) problems.push({ where: MANIFEST, message: 'schemaVersion must be 1' });
-  if (!/^[0-9a-f]{40}$/.test(manifest.commit)) problems.push({ where: MANIFEST, message: 'commit must be the 40 hexadecimal digits of the commit the application was built from' });
+  if (!/^[0-9a-f]{40}$/.test(manifest.commit))
+    problems.push({ where: MANIFEST, message: 'commit must be the 40 hexadecimal digits of the commit the application was built from' });
   const known = new Map(manifest.images.map((image) => [`${IMAGE_DIR}/${image.file}`, image]));
   for (const [path, image] of known) {
     const bytes = readImage(path);
-    if (!bytes) { problems.push({ where: MANIFEST, message: `${image.file} is listed and is not in ${IMAGE_DIR}` }); continue; }
-    if (sha256(bytes) !== image.sha256) problems.push({ where: path, message: 'the picture differs from the one the manifest recorded: capture it again with `bun run docs:screenshots`' });
+    if (!bytes) {
+      problems.push({ where: MANIFEST, message: `${image.file} is listed and is not in ${IMAGE_DIR}` });
+      continue;
+    }
+    if (sha256(bytes) !== image.sha256)
+      problems.push({
+        where: path,
+        message: 'the picture differs from the one the manifest recorded: capture it again with `bun run docs:screenshots`',
+      });
     try {
       const size = pngSize(bytes);
-      if (size.width !== image.width || size.height !== image.height) problems.push({ where: path, message: `the picture is ${size.width}x${size.height}, the manifest says ${image.width}x${image.height}` });
-    } catch { problems.push({ where: path, message: 'is not a PNG file' }); }
+      if (size.width !== image.width || size.height !== image.height)
+        problems.push({
+          where: path,
+          message: `the picture is ${size.width}x${size.height}, the manifest says ${image.width}x${image.height}`,
+        });
+    } catch {
+      problems.push({ where: path, message: 'is not a PNG file' });
+    }
   }
   for (const image of recorded) {
     const bytes = readImage(image.path);
-    if (!bytes) { problems.push({ where: image.path, message: 'is listed by a results.json and is not in the folder' }); continue; }
-    if (sha256(bytes) !== image.sha256) problems.push({ where: image.path, message: 'differs from the picture its results.json recorded: run the capture again' });
+    if (!bytes) {
+      problems.push({ where: image.path, message: 'is listed by a results.json and is not in the folder' });
+      continue;
+    }
+    if (sha256(bytes) !== image.sha256)
+      problems.push({ where: image.path, message: 'differs from the picture its results.json recorded: run the capture again' });
     try {
       const size = pngSize(bytes);
-      if (size.width !== image.width || size.height !== image.height) problems.push({ where: image.path, message: `is ${size.width}x${size.height}, its results.json says ${image.width}x${image.height}` });
-    } catch { problems.push({ where: image.path, message: 'is not a PNG file' }); }
+      if (size.width !== image.width || size.height !== image.height)
+        problems.push({
+          where: image.path,
+          message: `is ${size.width}x${size.height}, its results.json says ${image.width}x${image.height}`,
+        });
+    } catch {
+      problems.push({ where: image.path, message: 'is not a PNG file' });
+    }
   }
-  for (const path of listed) if (path.startsWith(`${RECORDED_DIR}/`) && path.endsWith('.png') && !recordedByPath.has(path)) problems.push({ where: path, message: 'is a picture that no results.json of the recorded check lists: a published image is a captured one' });
-  for (const path of listed) if ((path.startsWith(`${PICTURE_DIR}/`) || path.startsWith(`${EDITOR_DIR}/`)) && !known.has(path)) problems.push({ where: path, message: 'is a picture that the manifest does not list: a published image is a captured one' });
+  for (const path of listed)
+    if (path.startsWith(`${RECORDED_DIR}/`) && path.endsWith('.png') && !recordedByPath.has(path))
+      problems.push({
+        where: path,
+        message: 'is a picture that no results.json of the recorded check lists: a published image is a captured one',
+      });
+  for (const path of listed)
+    if ((path.startsWith(`${PICTURE_DIR}/`) || path.startsWith(`${EDITOR_DIR}/`)) && !known.has(path))
+      problems.push({ where: path, message: 'is a picture that the manifest does not list: a published image is a captured one' });
   for (const { page, text } of pages) {
     for (const reference of imagesOf(text)) {
       const path = staticPathOf(reference);
-      if (path === undefined) { problems.push({ where: page, message: `shows ${reference}, which is not an image of ${IMAGE_DIR}: product images are captured by automation and listed in ${MANIFEST}` }); continue; }
+      if (path === undefined) {
+        problems.push({
+          where: page,
+          message:
+            `shows ${reference}, which is not an image of ${IMAGE_DIR}: product images are captured by automation and listed ` +
+            `in ${MANIFEST}`,
+        });
+        continue;
+      }
       if (path.startsWith(`${RECORDED_DIR}/`)) {
-        if (!recordedByPath.has(path)) problems.push({ where: page, message: `shows ${reference}, which no results.json of ${RECORDED_DIR} lists` });
+        if (!recordedByPath.has(path))
+          problems.push({ where: page, message: `shows ${reference}, which no results.json of ${RECORDED_DIR} lists` });
         continue;
       }
       if (path.startsWith(`${DIAGRAM_DIR}/`)) {
-        if (!readImage(path)) problems.push({ where: page, message: `shows ${reference}, a wiring diagram that is not in ${DIAGRAM_DIR}: run bun tools/docs/generate_hardware_pages.ts` });
+        if (!readImage(path))
+          problems.push({
+            where: page,
+            message: `shows ${reference}, a wiring diagram that is not in ${DIAGRAM_DIR}: run bun tools/docs/generate_hardware_pages.ts`,
+          });
         continue;
       }
       if (!known.has(path)) problems.push({ where: page, message: `shows ${reference}, which the manifest does not list` });
@@ -165,9 +240,12 @@ function capture(): void {
       process.stderr.write(`${run.stdout}\n${run.stderr}\n`);
       throw new Error(`the journey "${JOURNEY}" did not pass, so no picture is written`);
     }
-    const taken = readdirSync(scratch).filter((name) => name.endsWith('.png')).sort();
+    const taken = readdirSync(scratch)
+      .filter((name) => name.endsWith('.png'))
+      .sort();
     const wanted = PICTURES.map((picture) => picture.file).sort();
-    if (taken.join() !== wanted.join()) throw new Error(`the journey took ${taken.join(', ') || 'no picture'}; this script expects ${wanted.join(', ')}`);
+    if (taken.join() !== wanted.join())
+      throw new Error(`the journey took ${taken.join(', ') || 'no picture'}; this script expects ${wanted.join(', ')}`);
     mkdirSync(join(ROOT, PICTURE_DIR), { recursive: true });
     const images: ManifestImage[] = PICTURES.map(({ file, step }) => {
       copyFileSync(join(scratch, file), join(ROOT, PICTURE_DIR, file));
@@ -185,8 +263,14 @@ function capture(): void {
       images,
     };
     writeFileSync(join(ROOT, MANIFEST), `${JSON.stringify(manifest, null, 2)}\n`);
-    console.log(`docs-screenshots: ${images.length} pictures of ${manifest.commit.slice(0, 8)}${dirty ? ' (tracked files differed from it)' : ''} written to ${PICTURE_DIR}`);
-  } finally { rmSync(scratch, { recursive: true, force: true }); }
+    console.log(
+      `docs-screenshots: ${images.length} pictures of ${manifest.commit.slice(0, 8)}${
+        dirty ? ' (tracked files differed from it)' : ''
+      } written to ${PICTURE_DIR}`,
+    );
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
 }
 
 /** The editor pictures: the helper of the IDE package takes them, this script hashes them into the manifest. */
@@ -196,39 +280,71 @@ function captureEditors(): void {
   const scratch = mkdtempSync(join(cache, 'docs-editor-shots-'));
   try {
     const run = spawnSync('bun', ['run', 'scripts/capture-editor-shots.ts', scratch], {
-      cwd: join(ROOT, 'packages/zplc-ide'), env: { ...process.env, TMPDIR: cache }, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8',
+      cwd: join(ROOT, 'packages/zplc-ide'),
+      env: { ...process.env, TMPDIR: cache },
+      stdio: ['ignore', 'pipe', 'pipe'],
+      encoding: 'utf8',
     });
-    if (run.status !== 0) { process.stderr.write(`${run.stdout}\n${run.stderr}\n`); throw new Error('the editor capture failed, so no picture is written'); }
-    const wanted = EDITOR_LANGUAGES.flatMap((language) => EDITOR_LOCALES.map((locale) => ({ language, locale, file: `${language}-${locale}.png` })));
-    const taken = readdirSync(scratch).filter((name) => name.endsWith('.png')).sort();
-    if (taken.join() !== wanted.map(({ file }) => file).sort().join()) throw new Error(`the capture took ${taken.join(', ') || 'no picture'}; this script expects ${wanted.map(({ file }) => file).join(', ')}`);
+    if (run.status !== 0) {
+      process.stderr.write(`${run.stdout}\n${run.stderr}\n`);
+      throw new Error('the editor capture failed, so no picture is written');
+    }
+    const wanted = EDITOR_LANGUAGES.flatMap((language) =>
+      EDITOR_LOCALES.map((locale) => ({ language, locale, file: `${language}-${locale}.png` })),
+    );
+    const taken = readdirSync(scratch)
+      .filter((name) => name.endsWith('.png'))
+      .sort();
+    if (
+      taken.join() !==
+      wanted
+        .map(({ file }) => file)
+        .sort()
+        .join()
+    )
+      throw new Error(
+        `the capture took ${taken.join(', ') || 'no picture'}; this script expects ${wanted.map(({ file }) => file).join(', ')}`,
+      );
     mkdirSync(join(ROOT, EDITOR_DIR), { recursive: true });
     const commit = git(['rev-parse', 'HEAD']);
     const images: ManifestImage[] = wanted.map(({ language, locale, file }) => {
       copyFileSync(join(scratch, file), join(ROOT, EDITOR_DIR, file));
       const bytes = readFileSync(join(ROOT, EDITOR_DIR, file));
-      return { file: `editors/${file}`, step: `The ${language.toUpperCase()} editor with the Blinky example, interface in ${locale === 'en' ? 'English' : 'Spanish'}`, sha256: sha256(bytes), bytes: bytes.length, ...pngSize(bytes), commit };
+      return {
+        file: `editors/${file}`,
+        step: `The ${language.toUpperCase()} editor with the Blinky example, interface in ${locale === 'en' ? 'English' : 'Spanish'}`,
+        sha256: sha256(bytes),
+        bytes: bytes.length,
+        ...pngSize(bytes),
+        commit,
+      };
     });
     const manifest = JSON.parse(readFileSync(join(ROOT, MANIFEST), 'utf8')) as Manifest;
     manifest.images = [...manifest.images.filter((image) => !image.file.startsWith('editors/')), ...images];
     writeFileSync(join(ROOT, MANIFEST), `${JSON.stringify(manifest, null, 2)}\n`);
     console.log(`docs-screenshots: ${images.length} editor pictures of ${commit.slice(0, 8)} written to ${EDITOR_DIR}`);
-  } finally { rmSync(scratch, { recursive: true, force: true }); }
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
 }
 
 /** The pictures that the dated folders of the recorded screen-reader check list in their results.json. */
 function recordedImages(): { folders: string[]; images: RecordedImage[] } {
   const base = join(ROOT, RECORDED_DIR);
   if (!existsSync(base)) return { folders: [], images: [] };
-  const folders: string[] = []; const images: RecordedImage[] = [];
+  const folders: string[] = [];
+  const images: RecordedImage[] = [];
   for (const entry of readdirSync(base, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
     const folder = `${RECORDED_DIR}/${entry.name}`;
     folders.push(folder);
     const file = join(ROOT, folder, 'results.json');
     if (!existsSync(file)) continue;
-    const listedImages = (JSON.parse(readFileSync(file, 'utf8')) as { images?: Array<{ file: string; sha256: string; width: number; height: number }> }).images ?? [];
-    for (const image of listedImages) images.push({ path: `${folder}/${image.file}`, sha256: image.sha256, width: image.width, height: image.height });
+    const listedImages =
+      (JSON.parse(readFileSync(file, 'utf8')) as { images?: Array<{ file: string; sha256: string; width: number; height: number }> })
+        .images ?? [];
+    for (const image of listedImages)
+      images.push({ path: `${folder}/${image.file}`, sha256: image.sha256, width: image.width, height: image.height });
   }
   return { folders, images };
 }
@@ -236,32 +352,53 @@ function recordedImages(): { folders: string[]; images: RecordedImage[] } {
 function check(): number {
   // With no manifest nothing is published: no page may show an image and no picture may be in the folder.
   const manifest: Manifest = existsSync(join(ROOT, MANIFEST))
-    ? JSON.parse(readFileSync(join(ROOT, MANIFEST), 'utf8')) as Manifest
+    ? (JSON.parse(readFileSync(join(ROOT, MANIFEST), 'utf8')) as Manifest)
     : { schemaVersion: 1, command: '', journey: '', commit: '', worktreeClean: true, productVersion: '', images: [] };
   const hasManifest = manifest.commit !== '';
-  const pages = PAGE_DIRS.flatMap((directory) => markdownFiles(ROOT, directory)).map((page) => ({ page, text: readFileSync(join(ROOT, page), 'utf8') }));
-  const listed = [PICTURE_DIR, EDITOR_DIR].flatMap((directory) => (existsSync(join(ROOT, directory)) ? readdirSync(join(ROOT, directory)).map((name) => `${directory}/${name}`) : []));
+  const pages = PAGE_DIRS.flatMap((directory) => markdownFiles(ROOT, directory)).map((page) => ({
+    page,
+    text: readFileSync(join(ROOT, page), 'utf8'),
+  }));
+  const listed = [PICTURE_DIR, EDITOR_DIR].flatMap((directory) =>
+    existsSync(join(ROOT, directory)) ? readdirSync(join(ROOT, directory)).map((name) => `${directory}/${name}`) : [],
+  );
   const recorded = recordedImages();
   const recordedFiles = recorded.folders.flatMap((folder) => readdirSync(join(ROOT, folder)).map((name) => `${folder}/${name}`));
-  const problems = checkManifest(manifest, pages, (path) => (existsSync(join(ROOT, path)) ? new Uint8Array(readFileSync(join(ROOT, path))) : undefined), [...listed, ...recordedFiles], recorded.images)
-    .filter((problem) => hasManifest || !problem.message.includes('commit must be'));
+  const problems = checkManifest(
+    manifest,
+    pages,
+    (path) => (existsSync(join(ROOT, path)) ? new Uint8Array(readFileSync(join(ROOT, path))) : undefined),
+    [...listed, ...recordedFiles],
+    recorded.images,
+  ).filter((problem) => hasManifest || !problem.message.includes('commit must be'));
   if (hasManifest && git(['rev-parse', '--is-shallow-repository']) === 'false') {
     const known = spawnSync('git', ['cat-file', '-e', `${manifest.commit}^{commit}`], { cwd: ROOT });
-    if (known.status !== 0) problems.push({ where: MANIFEST, message: `commit ${manifest.commit} is not in the history of this repository` });
+    if (known.status !== 0)
+      problems.push({ where: MANIFEST, message: `commit ${manifest.commit} is not in the history of this repository` });
     for (const image of manifest.images) {
-      if (image.commit && spawnSync('git', ['cat-file', '-e', `${image.commit}^{commit}`], { cwd: ROOT }).status !== 0) problems.push({ where: MANIFEST, message: `${image.file} was captured from commit ${image.commit}, which is not in the history of this repository` });
+      if (image.commit && spawnSync('git', ['cat-file', '-e', `${image.commit}^{commit}`], { cwd: ROOT }).status !== 0)
+        problems.push({
+          where: MANIFEST,
+          message: `${image.file} was captured from commit ${image.commit}, which is not in the history of this repository`,
+        });
     }
   }
   for (const problem of problems) console.error(`docs-screenshots: ${problem.where}: ${problem.message}`);
   if (problems.length === 0) {
-    console.log(hasManifest
-      ? `docs-screenshots: ${manifest.images.length} pictures, all captured from ${manifest.commit.slice(0, 8)}; every image of a page is listed`
-      : 'docs-screenshots: no picture is published and no page shows an image');
+    console.log(
+      hasManifest
+        ? `docs-screenshots: ${manifest.images.length} pictures, all captured from ${manifest.commit.slice(
+            0,
+            8,
+          )}; every image of a page is listed`
+        : 'docs-screenshots: no picture is published and no page shows an image',
+    );
   }
   return problems.length === 0 ? 0 : 1;
 }
 
 if (import.meta.main) {
   if (process.argv.includes('--check')) process.exit(check());
-  if (process.argv.includes('--editors')) captureEditors(); else capture();
+  if (process.argv.includes('--editors')) captureEditors();
+  else capture();
 }

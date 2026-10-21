@@ -15,8 +15,12 @@ import {
 
 export type ProgressBridge = NonNullable<NonNullable<Window['electronAPI']>['learnProgress']>;
 
-const attempt = async <T,>(call: () => Promise<T>): Promise<T | undefined> => {
-  try { return await call(); } catch { return undefined; }
+const attempt = async <T>(call: () => Promise<T>): Promise<T | undefined> => {
+  try {
+    return await call();
+  } catch {
+    return undefined;
+  }
 };
 
 /** The whole stored document: passed lessons with their grades, lessons in progress, the last lesson, hints and solutions. */
@@ -43,7 +47,10 @@ export async function exportProgress(bridge: ProgressBridge): Promise<string | u
 }
 
 /** Merges a file the learner chose. A file that is not a progress export, or the first release's progress file, is not sent. */
-export async function importProgress(bridge: ProgressBridge, text: string): Promise<{ progress: LearnProgress; lessons: number } | undefined> {
+export async function importProgress(
+  bridge: ProgressBridge,
+  text: string,
+): Promise<{ progress: LearnProgress; lessons: number } | undefined> {
   if (!parseImport(text).ok) return undefined;
   const answer = await attempt(() => bridge.importProgress(text));
   if (typeof answer !== 'object' || answer === null) return undefined;

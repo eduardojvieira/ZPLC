@@ -56,7 +56,5 @@
       "text": "Escriba Led := Blink OR Button; y conserve OnBoardLed := Led;"
     }
   ],
-  "faultCases": [
-    "El programa inicial ignora el pulsador: mientras está presionado, el LED sigue parpadeando."
-  ]
+  "faultCases": ["El programa inicial ignora el pulsador: mientras está presionado, el LED sigue parpadeando."]
 }

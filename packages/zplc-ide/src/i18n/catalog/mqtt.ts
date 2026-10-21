@@ -18,7 +18,8 @@ export const mqttEn = {
   'mqtt.broker': 'Broker',
   'mqtt.port': 'Port',
   'mqtt.intervalMs': 'Interval ms',
-  'mqtt.thisBoardProfileDoes': 'This board profile does not advertise a network-capable workflow. Keep MQTT disabled or move to a supported network-capable board before treating the configuration as release-ready.',
+  'mqtt.thisBoardProfileDoes':
+    'This board profile does not advertise a network-capable workflow. Keep MQTT disabled or move to a supported network-capable board before treating the configuration as release-ready.',
   'mqtt.clientId': 'Client ID',
   'mqtt.topicNamespace': 'Topic namespace',
   'mqtt.sparkplugGroupId': 'Sparkplug group ID',
@@ -59,7 +60,8 @@ export const mqttEn = {
   'mqtt.cleanSession': 'Clean session',
   'mqtt.username': 'Username',
   'mqtt.password': 'Password',
-  'mqtt.credentialsAndPrivateKey': 'Credentials and private-key references are excluded from zplc.json; local secret storage is not available in this build.',
+  'mqtt.credentialsAndPrivateKey':
+    'Credentials and private-key references are excluded from zplc.json; local secret storage is not available in this build.',
   'mqtt.websocketPath': 'WebSocket path',
   'mqtt.alpnProtocol': 'ALPN protocol',
   'mqtt.caCertPathPem': 'CA cert path (PEM/DER)',
@@ -93,7 +95,8 @@ export const mqttEs: Record<keyof typeof mqttEn, string> = {
   'mqtt.broker': 'Broker',
   'mqtt.port': 'Puerto',
   'mqtt.intervalMs': 'Intervalo (ms)',
-  'mqtt.thisBoardProfileDoes': 'Este perfil de placa no indica compatibilidad con red. Mantenga MQTT deshabilitado o cambie a una placa compatible con red antes de considerar la configuración lista para su publicación.',
+  'mqtt.thisBoardProfileDoes':
+    'Este perfil de placa no indica compatibilidad con red. Mantenga MQTT deshabilitado o cambie a una placa compatible con red antes de considerar la configuración lista para su publicación.',
   'mqtt.clientId': 'ID de cliente',
   'mqtt.topicNamespace': 'Espacio de nombres de los temas',
   'mqtt.sparkplugGroupId': 'ID de grupo de Sparkplug',
@@ -134,7 +137,8 @@ export const mqttEs: Record<keyof typeof mqttEn, string> = {
   'mqtt.cleanSession': 'Sesión limpia',
   'mqtt.username': 'Nombre de usuario',
   'mqtt.password': 'Contraseña',
-  'mqtt.credentialsAndPrivateKey': 'Las credenciales y las referencias a claves privadas no se incluyen en zplc.json; el almacenamiento local de secretos no está disponible en esta compilación.',
+  'mqtt.credentialsAndPrivateKey':
+    'Las credenciales y las referencias a claves privadas no se incluyen en zplc.json; el almacenamiento local de secretos no está disponible en esta compilación.',
   'mqtt.websocketPath': 'Ruta de WebSocket',
   'mqtt.alpnProtocol': 'Protocolo ALPN',
   'mqtt.caCertPathPem': 'Ruta del certificado de la CA (PEM/DER)',

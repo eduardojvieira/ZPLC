@@ -20,20 +20,33 @@ function sources(dir: string): string[] {
 describe('bundled typefaces (UX-006)', () => {
   const files = readdirSync(join(SRC, 'assets/fonts')).filter((name) => name.endsWith('.woff2'));
 
-  it('UX-006 ships Inter and JetBrains Mono as valid WOFF2 files inside the application, so no operating system font decides the typeface', () => {
-    expect(files.length).toBeGreaterThanOrEqual(3);
-    for (const file of files) {
-      const path = join(SRC, 'assets/fonts', file);
-      expect({ file, exists: existsSync(path) }).toEqual({ file, exists: true });
-      expect({ file, magic: readFileSync(path).subarray(0, 4).toString('latin1') }).toEqual({ file, magic: 'wOF2' });
-    }
-  });
+  it(
+    'UX-006 ships Inter and JetBrains Mono as valid WOFF2 files inside the application, so no operating system font decides the ' +
+      'typeface',
+    () => {
+      expect(files.length).toBeGreaterThanOrEqual(3);
+      for (const file of files) {
+        const path = join(SRC, 'assets/fonts', file);
+        expect({ file, exists: existsSync(path) }).toEqual({ file, exists: true });
+        expect({ file, magic: readFileSync(path).subarray(0, 4).toString('latin1') }).toEqual({ file, magic: 'wOF2' });
+      }
+    },
+  );
 
   it('UX-006 ships the licence text of each family with the application and names it in the third-party notices', () => {
-    const notices = JSON.parse(readFileSync(join(REPO, 'scripts/release/font-licences.json'), 'utf8')) as { fonts: Array<{ pattern: string; licence: string }> };
-    for (const [family, licence] of [['Inter', 'Inter-OFL.txt'], ['JetBrainsMono', 'JetBrainsMono-OFL.txt']] as const) {
+    const notices = JSON.parse(readFileSync(join(REPO, 'scripts/release/font-licences.json'), 'utf8')) as {
+      fonts: Array<{ pattern: string; licence: string }>;
+    };
+    for (const [family, licence] of [
+      ['Inter', 'Inter-OFL.txt'],
+      ['JetBrainsMono', 'JetBrainsMono-OFL.txt'],
+    ] as const) {
       expect(readFileSync(join(IDE, 'public/licenses', licence), 'utf8')).toContain('SIL OPEN FONT LICENSE Version 1.1');
-      expect(files.filter((file) => file.startsWith(family)).every((file) => notices.fonts.some((entry) => new RegExp(entry.pattern).test(file) && entry.licence === 'OFL-1.1'))).toBe(true);
+      expect(
+        files
+          .filter((file) => file.startsWith(family))
+          .every((file) => notices.fonts.some((entry) => new RegExp(entry.pattern).test(file) && entry.licence === 'OFL-1.1')),
+      ).toBe(true);
     }
   });
 
@@ -41,7 +54,8 @@ describe('bundled typefaces (UX-006)', () => {
     const small: string[] = [];
     for (const path of sources(SRC)) {
       const text = readFileSync(path, 'utf8');
-      for (const match of text.matchAll(/(?:text-\[|font-size:\s*)(\d+(?:\.\d+)?)px/g)) if (Number.parseFloat(match[1]!) < 11) small.push(`${path.slice(SRC.length)}: ${match[0]}`);
+      for (const match of text.matchAll(/(?:text-\[|font-size:\s*)(\d+(?:\.\d+)?)px/g))
+        if (Number.parseFloat(match[1]!) < 11) small.push(`${path.slice(SRC.length)}: ${match[0]}`);
     }
     expect(small).toEqual([]);
     expect(resolveTokens('light')['--font-size-caption']).toBe('11px');
@@ -59,7 +73,9 @@ describe('shape, elevation and icon tokens (UX-007)', () => {
 
   it('UX-007 casts a shadow only from the transient overlays of the kit: dialog, menu, popover, list box, tooltip and toast', () => {
     const allowed = /^\.ui-(dialog|menu|popover|listbox|tooltip|toast)\b/;
-    for (const selector of shadowed) for (const part of selector.split(',')) expect({ part: part.trim(), overlay: allowed.test(part.trim()) }).toEqual({ part: part.trim(), overlay: true });
+    for (const selector of shadowed)
+      for (const part of selector.split(','))
+        expect({ part: part.trim(), overlay: allowed.test(part.trim()) }).toEqual({ part: part.trim(), overlay: true });
     expect(shadowed.length).toBeGreaterThanOrEqual(4);
   });
 
@@ -81,14 +97,18 @@ describe('density applies to the whole application (UX-008)', () => {
   it('UX-008 declares the compact value of every density token in one block that the root element selects', () => {
     const css = renderTokensCss();
     const compact = css.match(/html\[data-density="compact"\] \{([^}]*)\}/)![1]!;
-    for (const name of ['--spacing', '--control-height', '--control-height-sm', '--row-height', '--control-padding-x', '--gap-control']) expect(compact).toContain(`${name}:`);
+    for (const name of ['--spacing', '--control-height', '--control-height-sm', '--row-height', '--control-padding-x', '--gap-control'])
+      expect(compact).toContain(`${name}:`);
   });
 
   it('UX-008 sizes the kit controls, rows and tree rows from the density tokens, with no fixed pixel height of its own', () => {
     const kit = readFileSync(join(SRC, 'ui/kit.css'), 'utf8');
     for (const selector of ['\\.ui-button', '\\.ui-input', '\\.ui-menu-item', '\\.ui-treeitem', '\\.ui-grid th,\\s*\\.ui-grid td']) {
       const rule = kit.match(new RegExp(`${selector}\\s*\\{([^}]*)\\}`))?.[1] ?? '';
-      expect({ selector, tokenHeight: /(?:min-)?height:\s*var\(--(?:control-height|row-height)/.test(rule) }).toEqual({ selector, tokenHeight: true });
+      expect({ selector, tokenHeight: /(?:min-)?height:\s*var\(--(?:control-height|row-height)/.test(rule) }).toEqual({
+        selector,
+        tokenHeight: true,
+      });
     }
   });
 });

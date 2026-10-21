@@ -46,8 +46,7 @@ typedef struct {
  * @param registers  registers a variable of its type takes in a register area (1 or 2)
  * @return false when the tag does not name a place: a prefixed number whose address does not fit the area
  */
-static inline bool zplc_modbus_locate(uint32_t number, bool is_bool, uint16_t registers,
-                                      zplc_modbus_location_t *where) {
+static inline bool zplc_modbus_locate(uint32_t number, bool is_bool, uint16_t registers, zplc_modbus_location_t *where) {
   if (number > 0xFFFFU || where == NULL) {
     return false;
   }
@@ -64,9 +63,8 @@ static inline bool zplc_modbus_locate(uint32_t number, bool is_bool, uint16_t re
     where->area = is_bool ? ZPLC_MODBUS_AREA_COIL : ZPLC_MODBUS_AREA_HOLDING_REGISTER;
     where->address = (uint16_t)number;
   }
-  where->width = (where->area == ZPLC_MODBUS_AREA_COIL || where->area == ZPLC_MODBUS_AREA_DISCRETE_INPUT)
-                     ? 1U
-                     : (registers == 2U ? 2U : 1U);
+  where->width =
+      (where->area == ZPLC_MODBUS_AREA_COIL || where->area == ZPLC_MODBUS_AREA_DISCRETE_INPUT) ? 1U : (registers == 2U ? 2U : 1U);
   return true;
 }
 
@@ -76,11 +74,9 @@ static inline bool zplc_modbus_area_is_writable(zplc_modbus_area_t area) {
 }
 
 /** True when the item at `request` of `area` is served by a variable located at `where`. */
-static inline bool zplc_modbus_location_covers(const zplc_modbus_location_t *where,
-                                               zplc_modbus_area_t area, uint16_t request,
+static inline bool zplc_modbus_location_covers(const zplc_modbus_location_t *where, zplc_modbus_area_t area, uint16_t request,
                                                uint16_t *item) {
-  if (where->area != area || request < where->address ||
-      (uint32_t)request >= (uint32_t)where->address + where->width) {
+  if (where->area != area || request < where->address || (uint32_t)request >= (uint32_t)where->address + where->width) {
     return false;
   }
   if (item != NULL) {

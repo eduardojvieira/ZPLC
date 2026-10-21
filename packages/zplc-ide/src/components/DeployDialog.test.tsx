@@ -10,8 +10,25 @@ import { DeployDialogBody } from './DeployDialog';
 import type { HardwareDeployConfirmation } from './hardwareDeployConfirmation';
 
 const facts: DeployFacts = {
-  project: { name: 'Pump station', board: 'STM32F746G Discovery', boardProfile: 'stm32f746g_disco/stm32f746xx', abi: { major: ZPLC_CONSTANTS.VERSION_MAJOR, minor: ZPLC_CONSTANTS.VERSION_MINOR, draft: ZPLC_CONSTANTS.DRAFT_COUNTER }, sha256: 'a1b2c3d4e5f6a7b8c9d0', byteLength: 512, taskCount: 2 },
-  device: { board: 'stm32f746g_disco', boardProfile: 'stm32f746g_disco/stm32f746xx', zplcVersion: '1.0.0', zephyrVersion: '4.0.0', abi: { major: ZPLC_CONSTANTS.VERSION_MAJOR, minor: ZPLC_CONSTANTS.VERSION_MINOR }, draft: ZPLC_CONSTANTS.DRAFT_COUNTER, maxArtifactBytes: 4096, maxTasks: 4 },
+  project: {
+    name: 'Pump station',
+    board: 'STM32F746G Discovery',
+    boardProfile: 'stm32f746g_disco/stm32f746xx',
+    abi: { major: ZPLC_CONSTANTS.VERSION_MAJOR, minor: ZPLC_CONSTANTS.VERSION_MINOR, draft: ZPLC_CONSTANTS.DRAFT_COUNTER },
+    sha256: 'a1b2c3d4e5f6a7b8c9d0',
+    byteLength: 512,
+    taskCount: 2,
+  },
+  device: {
+    board: 'stm32f746g_disco',
+    boardProfile: 'stm32f746g_disco/stm32f746xx',
+    zplcVersion: '1.0.0',
+    zephyrVersion: '4.0.0',
+    abi: { major: ZPLC_CONSTANTS.VERSION_MAJOR, minor: ZPLC_CONSTANTS.VERSION_MINOR },
+    draft: ZPLC_CONSTANTS.DRAFT_COUNTER,
+    maxArtifactBytes: 4096,
+    maxTasks: 4,
+  },
   declaredSafe: [],
   transfer: 'framed',
 };
@@ -21,7 +38,12 @@ const body = (request: ReturnType<typeof deployRequest>) => renderToStaticMarkup
 describe('UX-019 deploy dialog', () => {
   it('UX-019 names the action by its effect: Stop PLC and deploy when the PLC runs, Deploy otherwise, with Cancel beside it', () => {
     const running = deployRequest(facts, { running: true });
-    expect(running).toMatchObject({ actionLabel: 'Stop PLC and deploy', cancelLabel: 'Cancel', destructive: true, title: 'Deploy to the device?' });
+    expect(running).toMatchObject({
+      actionLabel: 'Stop PLC and deploy',
+      cancelLabel: 'Cancel',
+      destructive: true,
+      title: 'Deploy to the device?',
+    });
     expect(running.description).toContain('Deploy stops it');
     const stopped = deployRequest(facts, { running: false });
     expect(stopped).toMatchObject({ actionLabel: 'Deploy', cancelLabel: 'Cancel', destructive: false });
@@ -31,7 +53,8 @@ describe('UX-019 deploy dialog', () => {
   it('UX-019 compares the project and the device in a table with a header, row headers and a verdict in words and icon', () => {
     const out = body(deployRequest(facts, { running: false }));
     expect(out).toContain('<caption class="ui-visually-hidden">The project compared with the device</caption>');
-    for (const label of ['Board', 'Board profile', 'Firmware version', 'ABI version', 'Program', 'Size', 'Tasks']) expect(out).toContain(`>${label}</th>`);
+    for (const label of ['Board', 'Board profile', 'Firmware version', 'ABI version', 'Program', 'Size', 'Tasks'])
+      expect(out).toContain(`>${label}</th>`);
     expect(out).toContain('scope="col"');
     expect(out).toContain('1.0.0 (Zephyr 4.0.0)');
     expect(out).toContain('Pump station, SHA-256 a1b2c3d4e5f6');
@@ -76,7 +99,10 @@ describe('UX-019 deploy dialog', () => {
     const no = confirmDeploy(confirmation, false);
     answerConfirmation(false);
     expect(await no).toBe(false);
-    const tooManyTasks = confirmDeploy({ facts: { ...facts, device: { ...facts.device!, maxTasks: 1 } } } as HardwareDeployConfirmation, false);
+    const tooManyTasks = confirmDeploy(
+      { facts: { ...facts, device: { ...facts.device!, maxTasks: 1 } } } as HardwareDeployConfirmation,
+      false,
+    );
     answerConfirmation(true);
     expect(await tooManyTasks).toBe(false);
     const refused = showDeployRefusal({ ...facts, device: null }, undefined);

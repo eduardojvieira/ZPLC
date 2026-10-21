@@ -1,23 +1,15 @@
 {
   "requirement": "CMP-042",
   "title": "a function block declared in two files is an error at both declarations",
-  "matrix": [
-    "pous.shared-pous-and-libraries"
-  ],
+  "matrix": ["pous.shared-pous-and-libraries"],
   "note": "CMP-042: a declaration made twice in a project is reported at every place it is made, and the message names both files and lines",
   "build": "fails",
   "files": [
     "cmp-042-function-block-declared-in-two-files-is-rejected-a.st",
     "cmp-042-function-block-declared-in-two-files-is-rejected-b.st"
   ],
-  "lines": [
-    2,
-    1
-  ],
-  "codes": [
-    "DUPLICATE_DECLARATION",
-    "DUPLICATE_DECLARATION"
-  ],
+  "lines": [2, 1],
+  "codes": ["DUPLICATE_DECLARATION", "DUPLICATE_DECLARATION"],
   "messageIncludes": [
     "declared twice",
     "cmp-042-function-block-declared-in-two-files-is-rejected-a.st (line 2)",

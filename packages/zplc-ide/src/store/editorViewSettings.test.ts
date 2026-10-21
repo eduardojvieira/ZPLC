@@ -3,7 +3,13 @@ import { MINIMAP_STORAGE_KEY, loadMinimap, saveMinimap } from './editorViewSetti
 
 const memory = (initial?: string) => {
   const data = new Map<string, string>(initial === undefined ? [] : [[MINIMAP_STORAGE_KEY, initial]]);
-  return { getItem: (key: string) => data.get(key) ?? null, setItem: (key: string, value: string) => { data.set(key, value); }, data };
+  return {
+    getItem: (key: string) => data.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      data.set(key, value);
+    },
+    data,
+  };
 };
 
 describe('minimap preference (UX-034)', () => {
@@ -23,7 +29,14 @@ describe('minimap preference (UX-034)', () => {
   });
 
   it('UX-034 reads as off and does not fail when the storage throws', () => {
-    const broken = { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('full'); } };
+    const broken = {
+      getItem: () => {
+        throw new Error('blocked');
+      },
+      setItem: () => {
+        throw new Error('full');
+      },
+    };
     expect(loadMinimap(broken)).toBe(false);
     expect(() => saveMinimap(broken, true)).not.toThrow();
   });

@@ -5,7 +5,5 @@
   "note": "IEC 61131-3, initial values of variables: a variable of type WSTRING takes its declared initial value, and LEN of it is the number of characters",
   "scans": 1,
   "scanMs": 10,
-  "expect": [
-    {"at": "%QW0", "type": "INT", "value": 4}
-  ]
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 4 }]
 }

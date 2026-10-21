@@ -20,23 +20,34 @@ describe('the sources of the compiler that are not tests (CMP-061)', () => {
     const eslint = new ESLint({
       cwd: compilerRoot,
       overrideConfigFile: true,
-      overrideConfig: [{
-        files: ['src/**/*.ts'],
-        ignores: ['**/*.test.ts'],
-        languageOptions: { parser: tseslint.parser },
-        plugins: { '@typescript-eslint': tseslint.plugin },
-        rules: {
-          '@typescript-eslint/no-explicit-any': 'error',
-          'no-warning-comments': ['error', {
-            terms: ['todo', 'fixme', 'xxx', 'hmm', 'for now', 'actually,', 'wait,', 'let me', "let's"],
-            location: 'anywhere',
-          }],
+      overrideConfig: [
+        {
+          files: ['src/**/*.ts'],
+          ignores: ['**/*.test.ts'],
+          languageOptions: { parser: tseslint.parser },
+          plugins: { '@typescript-eslint': tseslint.plugin },
+          rules: {
+            '@typescript-eslint/no-explicit-any': 'error',
+            'no-warning-comments': [
+              'error',
+              {
+                terms: ['todo', 'fixme', 'xxx', 'hmm', 'for now', 'actually,', 'wait,', 'let me', "let's"],
+                location: 'anywhere',
+              },
+            ],
+          },
         },
-      }],
+      ],
     });
     const results = await eslint.lintFiles(['src/**/*.ts']);
-    const findings = results.flatMap((result) => result.messages.map((message) =>
-      `${result.filePath.slice(compilerRoot.length + 1)}:${message.line}:${message.column} ${message.ruleId ?? 'parse'}: ${message.message}`));
+    const findings = results.flatMap((result) =>
+      result.messages.map(
+        (message) =>
+          `${result.filePath.slice(
+            compilerRoot.length + 1,
+          )}:${message.line}:${message.column} ${message.ruleId ?? 'parse'}: ${message.message}`,
+      ),
+    );
     expect(results.length).toBeGreaterThan(30);
     expect(findings).toEqual([]);
   });

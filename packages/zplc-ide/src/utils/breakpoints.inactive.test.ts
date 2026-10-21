@@ -8,7 +8,11 @@ import { breakpointDecorationClasses, breakpointHoverMessage } from './breakpoin
 const raw = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
 const css = raw.replace(/\/\*[\s\S]*?\*\//g, '');
 const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, selector, body]) => ({ selector: selector.trim(), body }));
-const rule = (selector: string) => rules.filter((item) => item.selector === selector).map((item) => item.body).join('\n');
+const rule = (selector: string) =>
+  rules
+    .filter((item) => item.selector === selector)
+    .map((item) => item.body)
+    .join('\n');
 const REASON = 'the runtime cannot stop at a breakpoint right now';
 
 /** LX-2b: a breakpoint the runtime will not stop at has to look inactive, not only say so in its hover text. */
@@ -40,7 +44,11 @@ describe('breakpoint dots the runtime will not stop at', () => {
       const tokens = resolveTokens(theme);
       const margin = tokens['--color-surface-800'];
       const ring = contrastRatio(tokens['--color-surface-400'], margin);
-      expect({ theme, atLeast3: ring >= 3, differsFromArmed: tokens['--color-surface-400'] !== tokens['--debug-breakpoint'] }).toEqual({ theme, atLeast3: true, differsFromArmed: true });
+      expect({ theme, atLeast3: ring >= 3, differsFromArmed: tokens['--color-surface-400'] !== tokens['--debug-breakpoint'] }).toEqual({
+        theme,
+        atLeast3: true,
+        differsFromArmed: true,
+      });
     }
   });
 });

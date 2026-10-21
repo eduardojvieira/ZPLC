@@ -32,14 +32,22 @@ function copyPath(source, destination, cwd, isDirectory = false) {
       [
         '-a',
         '--delete',
-        '--exclude', 'node_modules',
-        '--exclude', 'dist',
-        '--exclude', 'dist-electron',
-        '--exclude', 'electron-dist',
-        '--exclude', 'dist-native',
-        '--exclude', 'build',
-        '--exclude', '.DS_Store',
-        '--exclude', '*.tsbuildinfo',
+        '--exclude',
+        'node_modules',
+        '--exclude',
+        'dist',
+        '--exclude',
+        'dist-electron',
+        '--exclude',
+        'electron-dist',
+        '--exclude',
+        'dist-native',
+        '--exclude',
+        'build',
+        '--exclude',
+        '.DS_Store',
+        '--exclude',
+        '*.tsbuildinfo',
         `${source}/`,
         `${destination}/`,
       ],
@@ -58,9 +66,7 @@ function main() {
   }
 
   const packageDir = process.cwd();
-  const repoRoot = packageDir.endsWith(path.join('packages', 'zplc-ide'))
-    ? path.resolve(packageDir, '../..')
-    : packageDir;
+  const repoRoot = packageDir.endsWith(path.join('packages', 'zplc-ide')) ? path.resolve(packageDir, '../..') : packageDir;
   const outputDir = packageDir.endsWith(path.join('packages', 'zplc-ide'))
     ? path.join(packageDir, 'dist-electron')
     : path.join(repoRoot, 'packages', 'zplc-ide', 'dist-electron');
@@ -100,28 +106,26 @@ function main() {
 
     run('bun', ['run', 'build'], path.join(stagedRepo, 'packages/zplc-compiler'));
     const cmakeArch = arch === 'x64' ? 'x86_64' : 'arm64';
-    run('cmake', [
-      '-S', 'firmware/lib/zplc_core',
-      '-B', 'firmware/lib/zplc_core/build',
-      '-DCMAKE_BUILD_TYPE=Release',
-      `-DCMAKE_OSX_ARCHITECTURES=${cmakeArch}`,
-    ], stagedRepo);
-    run('cmake', ['--build', 'firmware/lib/zplc_core/build', '--target', 'zplc_runtime', '--config', 'Release'], stagedRepo);
-    mkdirSync(path.join(stagedIde, 'dist-native'), { recursive: true });
     run(
-      'cp',
-      ['firmware/lib/zplc_core/build/zplc_runtime', 'packages/zplc-ide/dist-native/'],
+      'cmake',
+      [
+        '-S',
+        'firmware/lib/zplc_core',
+        '-B',
+        'firmware/lib/zplc_core/build',
+        '-DCMAKE_BUILD_TYPE=Release',
+        `-DCMAKE_OSX_ARCHITECTURES=${cmakeArch}`,
+      ],
       stagedRepo,
     );
+    run('cmake', ['--build', 'firmware/lib/zplc_core/build', '--target', 'zplc_runtime', '--config', 'Release'], stagedRepo);
+    mkdirSync(path.join(stagedIde, 'dist-native'), { recursive: true });
+    run('cp', ['firmware/lib/zplc_core/build/zplc_runtime', 'packages/zplc-ide/dist-native/'], stagedRepo);
     run('bun', ['run', 'build:assets'], path.join(stagedRepo, 'packages/zplc-ide'));
     run('bun', ['run', 'build'], path.join(stagedRepo, 'packages/zplc-ide'));
     run('bun', ['run', 'electron:compile'], path.join(stagedRepo, 'packages/zplc-ide'));
     // The signing settings (explicit ad-hoc identity, hardened runtime) live in electron-builder.yml.
-    run(
-      'bun',
-      ['x', 'electron-builder', '--mac', `--${arch}`, '--publish', 'never'],
-      path.join(stagedRepo, 'packages/zplc-ide'),
-    );
+    run('bun', ['x', 'electron-builder', '--mac', `--${arch}`, '--publish', 'never'], path.join(stagedRepo, 'packages/zplc-ide'));
 
     const stagedAppCandidates = [
       path.join(stagedDistElectron, `mac-${arch}`, 'ZPLC.app'),

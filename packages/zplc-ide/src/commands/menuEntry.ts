@@ -16,9 +16,15 @@ export const menuCommands = COMMAND_LIST.map((command) => ({
   accelerator: command.shortcut ? toAccelerator(command.shortcut) : null,
 }));
 
-export const menuCategories = COMMAND_CATEGORIES.map((category) => ({ id: category as string, titleKey: MENU_TITLE_KEYS[category] as string }));
+export const menuCategories = COMMAND_CATEGORIES.map((category) => ({
+  id: category as string,
+  titleKey: MENU_TITLE_KEYS[category] as string,
+}));
 
 /** The closed list of command ids: a menu click for any other id is not sent. */
 export const isRegisteredCommandId = (value: unknown): boolean => isCommandId(value);
 
-export const menuTranslator = (locale: Locale) => (key: string): string => translate(locale, key);
+export const menuTranslator =
+  (locale: Locale) =>
+  (key: string): string =>
+    translate(locale, key);

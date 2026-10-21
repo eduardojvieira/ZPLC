@@ -19,8 +19,7 @@
 #include <zplc_isa.h>
 
 /** @brief One SAFE entry as the bytes the loader reads: output image offset, bit, value. */
-#define ZPLC_TEST_SAFE(offset, bit, value) \
-  (uint8_t)((offset) & 0xFFU), (uint8_t)(((offset) >> 8) & 0xFFU), (uint8_t)(bit), (uint8_t)(value)
+#define ZPLC_TEST_SAFE(offset, bit, value) (uint8_t)((offset) & 0xFFU), (uint8_t)(((offset) >> 8) & 0xFFU), (uint8_t)(bit), (uint8_t)(value)
 
 static inline uint32_t zplc_test_safe_crc(const uint8_t *data, size_t length, uint32_t crc) {
   size_t index;
@@ -82,8 +81,7 @@ static inline size_t zplc_test_minimal_program(uint8_t *file) {
  * @brief Append a SAFE segment of @p entries_size bytes to the whole artifact in @p file.
  * @return the new length, or 0 when the artifact is not whole or the result does not fit @p capacity
  */
-static inline size_t zplc_test_append_safe(uint8_t *file, size_t length, size_t capacity, const uint8_t *entries,
-                                           size_t entries_size) {
+static inline size_t zplc_test_append_safe(uint8_t *file, size_t length, size_t capacity, const uint8_t *entries, size_t entries_size) {
   const size_t grown = length + ZPLC_SEGMENT_ENTRY_SIZE + entries_size;
   uint16_t count;
   size_t table_end;

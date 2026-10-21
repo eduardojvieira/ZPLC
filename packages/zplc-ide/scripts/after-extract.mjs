@@ -11,8 +11,5 @@ export default async function afterExtract(context) {
     return;
   }
 
-  cleanupMacExtendedAttributes(
-    [context.appOutDir, context.packager?.projectDir],
-    'afterExtract',
-  );
+  cleanupMacExtendedAttributes([context.appOutDir, context.packager?.projectDir], 'afterExtract');
 }

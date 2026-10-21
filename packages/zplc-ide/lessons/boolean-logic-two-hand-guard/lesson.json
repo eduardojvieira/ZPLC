@@ -5,16 +5,9 @@
   "order": 12,
   "module": 2,
   "level": "foundation",
-  "prerequisites": [
-    "blinky-ladder-timer-feedback"
-  ],
-  "languages": [
-    "ST"
-  ],
-  "tracks": [
-    "simulation",
-    "hardware"
-  ],
+  "prerequisites": ["blinky-ladder-timer-feedback"],
+  "languages": ["ST"],
+  "tracks": ["simulation", "hardware"],
   "unsupported": {},
   "plant": null,
   "estimatedMinutes": 15,

@@ -19,11 +19,11 @@ issue `zplc start`.
 
 The ZPLC runtime core relies on an abstract Hardware Abstraction Layer (HAL) for persistence operations. This allows the system to seamlessly adapt to the storage capabilities of different environments:
 
-| Platform | Storage Backend |
-|---|---|
-| **Zephyr profile** | Program-store backend when enabled and operational: NVS, or ZMS on a board whose flash sectors are above the 64 KB that NVS accepts (the Nucleo-H743ZI). The `RETAIN` records, the settings keys and the credentials use the same HAL calls. |
-| **Native Sim (Desktop)** | Files in the persistence directory (`ZPLC_PERSIST_ROOT`, default `~/.zplc`): the program store and the `RETAIN` records. |
-| **WASM simulator** | The records of the retain module (`retain_a0` to `retain_b7`) go through the HAL calls of the module to the host page, which keeps them in the `build/retain` folder of the open project, and in the memory of the page when no project is open. The program store of the session is in memory. See [Browser runtime](./browser-runtime.md). |
+| Platform                 | Storage Backend                                                                                                                                                                                                                                                                                                                              |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Zephyr profile**       | Program-store backend when enabled and operational: NVS, or ZMS on a board whose flash sectors are above the 64 KB that NVS accepts (the Nucleo-H743ZI). The `RETAIN` records, the settings keys and the credentials use the same HAL calls.                                                                                                 |
+| **Native Sim (Desktop)** | Files in the persistence directory (`ZPLC_PERSIST_ROOT`, default `~/.zplc`): the program store and the `RETAIN` records.                                                                                                                                                                                                                     |
+| **WASM simulator**       | The records of the retain module (`retain_a0` to `retain_b7`) go through the HAL calls of the module to the host page, which keeps them in the `build/retain` folder of the open project, and in the memory of the page when no project is open. The program store of the session is in memory. See [Browser runtime](./browser-runtime.md). |
 
 ## Program Persistence on Hardware
 
@@ -57,12 +57,12 @@ A deploy writes the slot that is not active, reads it back and verifies it, writ
 reads it back, and only then writes the active record: that write is the single point at which the new program
 becomes the one to restore. The metadata is then rewritten as committed.
 
-| A power cut ... | What the next restore finds |
-|---|---|
-| before the active record is written | The previous program. A store that never held one is empty. |
-| in the middle of the new payload | The previous program: a slot that is half old and half new fails the CRC-32 of its artifact and is never accepted. |
-| after the active record, before the metadata is rewritten | The new program: the slot was read back before the pointer moved. |
-| that damages the active record | The newest complete committed slot. |
+| A power cut ...                                           | What the next restore finds                                                                                        |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| before the active record is written                       | The previous program. A store that never held one is empty.                                                        |
+| in the middle of the new payload                          | The previous program: a slot that is half old and half new fails the CRC-32 of its artifact and is never accepted. |
+| after the active record, before the metadata is rewritten | The new program: the slot was read back before the pointer moved.                                                  |
+| that damages the active record                            | The newest complete committed slot.                                                                                |
 
 Records that exist and verify as nothing are never read as an empty store: restore reports them as unverifiable and a
 deploy refuses to write over them. A store written by the first firmware (one key, `code_len` and `code`) is
@@ -106,13 +106,13 @@ a power cut under test.
 
 ### What is saved, and when
 
-| Moment | What happens |
-|---|---|
-| Program load, and restore at boot | The region is restored from the stored records before the first scan, or initialised to zero when no record matches. The status says which. |
-| `STOP` (commanded) | The region is stored with the values of the last complete scan. A stop of a faulted runtime stores nothing. |
-| While running | The region is stored at most once per interval, at a scan boundary, and only when it changed since the last stored record. |
-| Clean shutdown of the host runtime | Stored like a `STOP`. |
-| Reset (`execution.reset`) | A cold restart: the region is initialised and that initialised region is stored, so the old values do not come back. |
+| Moment                             | What happens                                                                                                                                |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Program load, and restore at boot  | The region is restored from the stored records before the first scan, or initialised to zero when no record matches. The status says which. |
+| `STOP` (commanded)                 | The region is stored with the values of the last complete scan. A stop of a faulted runtime stores nothing.                                 |
+| While running                      | The region is stored at most once per interval, at a scan boundary, and only when it changed since the last stored record.                  |
+| Clean shutdown of the host runtime | Stored like a `STOP`.                                                                                                                       |
+| Reset (`execution.reset`)          | A cold restart: the region is initialised and that initialised region is stored, so the old values do not come back.                        |
 
 On the firmware a periodic save runs on its own work queue, outside the scan, and
 holds the memory lock only for the copy of the region, never during the write to
@@ -129,18 +129,18 @@ Every record is cut into chunks of at most `CONFIG_ZPLC_RETAIN_CHUNK_SIZE` bytes
 `retain_b0`, ..., because a storage entry can be smaller than the region (NVS on
 a 4 KB sector).
 
-| Offset | Size | Field |
-|---|---|---|
-| 0 | 4 | magic `ZRTN` |
-| 4 | 2 | format version, 1 |
-| 6 | 2 | reserved, zero |
-| 8 | 4 | sequence number, never 0 |
-| 12 | 4 | program identity: the CRC32 word of the artifact header |
-| 16 | 4 | program identity: the code-size word of the artifact header |
-| 20 | 4 | layout hash |
-| 24 | 4 | payload length, the size of the `RETAIN` region |
-| 28 | n | payload, the region bytes |
-| 28+n | 4 | CRC-32 of every byte before it |
+| Offset | Size | Field                                                       |
+| ------ | ---- | ----------------------------------------------------------- |
+| 0      | 4    | magic `ZRTN`                                                |
+| 4      | 2    | format version, 1                                           |
+| 6      | 2    | reserved, zero                                              |
+| 8      | 4    | sequence number, never 0                                    |
+| 12     | 4    | program identity: the CRC32 word of the artifact header     |
+| 16     | 4    | program identity: the code-size word of the artifact header |
+| 20     | 4    | layout hash                                                 |
+| 24     | 4    | payload length, the size of the `RETAIN` region             |
+| 28     | n    | payload, the region bytes                                   |
+| 28+n   | 4    | CRC-32 of every byte before it                              |
 
 The layout hash is a CRC-32 over the region size, the region address, the ISA
 version, the contract draft counter and the program identity. A program that
@@ -153,16 +153,16 @@ The restore takes the valid record with the highest sequence whose identity and
 layout match. If a record fails its checksum, the other one is tried. If none
 matches, the region is set to zero and the status says why:
 
-| `reason` | Meaning |
-|---|---|
-| `restored` | A valid record of this program and layout was restored. |
-| `none` | No record in either slot: first start, erased storage, or no storage backend. |
-| `identity_mismatch` | Valid records exist, written by another program. |
-| `layout_mismatch` | The same program, but another region size, address or runtime layout. |
-| `corrupt` | Records exist and none passes the format and checksum checks. |
-| `io_error` | The storage backend failed on both slots. Saves are refused until a restore reads the backend again. |
-| `reset` | A reset command initialised the region. |
-| `not_restored` | No program is loaded. |
+| `reason`            | Meaning                                                                                              |
+| ------------------- | ---------------------------------------------------------------------------------------------------- |
+| `restored`          | A valid record of this program and layout was restored.                                              |
+| `none`              | No record in either slot: first start, erased storage, or no storage backend.                        |
+| `identity_mismatch` | Valid records exist, written by another program.                                                     |
+| `layout_mismatch`   | The same program, but another region size, address or runtime layout.                                |
+| `corrupt`           | Records exist and none passes the format and checksum checks.                                        |
+| `io_error`          | The storage backend failed on both slots. Saves are refused until a restore reads the backend again. |
+| `reset`             | A reset command initialised the region.                                                              |
+| `not_restored`      | No program is loaded.                                                                                |
 
 The status of the native runtime carries this next to the existing fields:
 
@@ -230,15 +230,15 @@ interval its own numbers do not support.
 Every number below is an engineering estimate from the datasheet class of the
 part and from the partition layout of the board file. No board was measured.
 
-| Board | Storage partition | RETAIN | Rated cycles | Wear bytes | Interval | Estimated worst-case life |
-|---|---|---|---|---|---|---|
-| Raspberry Pi Pico (RP2040) | 128 KB of the on-board QSPI NOR, 32 sectors of 4 KB | 4 KB | 100,000 | 67,000 | 300 s | 14.3 years |
-| Arduino GIGA R1 (STM32H747 M7) | `zplc_nvs_partition`: 7 MB of the external QSPI NOR, 4 KB sectors assumed | 4 KB | 100,000 | 7,300,000 | 60 s | more than 100 years |
-| Arduino Opta WiFi (STM32H747 M7) | `zplc_nvs_partition`: 7 MB of the external QSPI NOR, 4 KB sectors assumed | 4 KB | 100,000 | 7,300,000 | 60 s | more than 100 years |
-| STM32F746G Discovery | `zplc_nvs_partition`: 15 MB of the external QSPI NOR, 4 KB sub-sectors assumed | 4 KB | 100,000 | 15,700,000 | 60 s | more than 100 years |
-| ESP32-S3-DevKitC-1 (N8R8) | `zplc_nvs_partition`: 192 KB of the module SPI NOR at 4 MB, 48 sectors of 4 KB | 1 KB | 100,000 | 184,000 | 60 s | 29.5 years |
-| STM32 Nucleo-H743ZI | `zplc_nvs_partition`: 384 KB of the internal flash, 3 sectors of 128 KB, kept by ZMS | 4 KB | 10,000 | 253,000 | 600 s | 10.8 years |
-| A board with no numbers | any | any | 10,000 | 40,000 | 3600 s | 10.3 years for 4 KB |
+| Board                            | Storage partition                                                                    | RETAIN | Rated cycles | Wear bytes | Interval | Estimated worst-case life |
+| -------------------------------- | ------------------------------------------------------------------------------------ | ------ | ------------ | ---------- | -------- | ------------------------- |
+| Raspberry Pi Pico (RP2040)       | 128 KB of the on-board QSPI NOR, 32 sectors of 4 KB                                  | 4 KB   | 100,000      | 67,000     | 300 s    | 14.3 years                |
+| Arduino GIGA R1 (STM32H747 M7)   | `zplc_nvs_partition`: 7 MB of the external QSPI NOR, 4 KB sectors assumed            | 4 KB   | 100,000      | 7,300,000  | 60 s     | more than 100 years       |
+| Arduino Opta WiFi (STM32H747 M7) | `zplc_nvs_partition`: 7 MB of the external QSPI NOR, 4 KB sectors assumed            | 4 KB   | 100,000      | 7,300,000  | 60 s     | more than 100 years       |
+| STM32F746G Discovery             | `zplc_nvs_partition`: 15 MB of the external QSPI NOR, 4 KB sub-sectors assumed       | 4 KB   | 100,000      | 15,700,000 | 60 s     | more than 100 years       |
+| ESP32-S3-DevKitC-1 (N8R8)        | `zplc_nvs_partition`: 192 KB of the module SPI NOR at 4 MB, 48 sectors of 4 KB       | 1 KB   | 100,000      | 184,000    | 60 s     | 29.5 years                |
+| STM32 Nucleo-H743ZI              | `zplc_nvs_partition`: 384 KB of the internal flash, 3 sectors of 128 KB, kept by ZMS | 4 KB   | 10,000       | 253,000    | 600 s    | 10.8 years                |
+| A board with no numbers          | any                                                                                  | any    | 10,000       | 40,000     | 3600 s   | 10.3 years for 4 KB       |
 
 The Pico row is the one to read twice: at 30 seconds, the host default, the same
 board would wear its storage out in about 1.4 years. The interval is a minimum:
@@ -264,15 +264,15 @@ A certificate or key setting (`mqtt_ca_cert_path`, `mqtt_client_cert_path`, `mqt
 not applied when a stored value holds it, and is never read: no setting can hand the program or a key of the device
 link to the TLS stack.
 
-| Board | Records of the HAL | Settings file system | Image slot |
-|---|---|---|---|
-| Raspberry Pi Pico (RP2040) | NVS, `storage_partition`, 128 KB at 0x1e0000 of the on-board QSPI NOR | not built in | `code_partition`, 0x100 to 0x1e0000 |
-| Waveshare RP2040-Zero | NVS, `storage_partition`, 128 KB at 0x1e0000 of the on-board QSPI NOR | not built in | `code_partition`, 0x100 to 0x1e0000 |
-| ESP32-S3-DevKitC-1 (N8R8) | NVS, `zplc_nvs_partition`, 192 KB at 0x400000 of the module SPI NOR | `storage_partition`, 192 KB at 0x3b0000 | 0 to 0x101c00, the flash budget of the board |
-| Arduino GIGA R1 (STM32H747 M7) | NVS, `zplc_nvs_partition`, 7 MB at 0x700000 of the external QSPI NOR | `storage_partition`, 1 MB at 0x600000 of the QSPI NOR | `slot0_partition`, 0x40000 to 0x100000 of the internal flash |
-| Arduino Opta WiFi (STM32H747 M7) | NVS, `zplc_nvs_partition`, 7 MB at 0x700000 of the external QSPI NOR | `storage_partition`, 1 MB at 0x600000 of the QSPI NOR | `slot0_partition`, 0x40000 to 0x100000 of the internal flash |
-| STM32F746G Discovery | NVS, `zplc_nvs_partition`, 15 MB at 0xa0000 of the external QSPI NOR | `storage_partition`, 640 KB at 0 of the QSPI NOR | 0 to 1 MB, the internal flash |
-| STM32 Nucleo-H743ZI | ZMS, `zplc_nvs_partition`, 384 KB at 0x1a0000 of the internal flash (3 sectors of 128 KB) | `storage_partition`, 1152 KB at 0x80000 of the internal flash | `slot0_partition`, 0 to 512 KB |
+| Board                            | Records of the HAL                                                                        | Settings file system                                          | Image slot                                                   |
+| -------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------ |
+| Raspberry Pi Pico (RP2040)       | NVS, `storage_partition`, 128 KB at 0x1e0000 of the on-board QSPI NOR                     | not built in                                                  | `code_partition`, 0x100 to 0x1e0000                          |
+| Waveshare RP2040-Zero            | NVS, `storage_partition`, 128 KB at 0x1e0000 of the on-board QSPI NOR                     | not built in                                                  | `code_partition`, 0x100 to 0x1e0000                          |
+| ESP32-S3-DevKitC-1 (N8R8)        | NVS, `zplc_nvs_partition`, 192 KB at 0x400000 of the module SPI NOR                       | `storage_partition`, 192 KB at 0x3b0000                       | 0 to 0x101c00, the flash budget of the board                 |
+| Arduino GIGA R1 (STM32H747 M7)   | NVS, `zplc_nvs_partition`, 7 MB at 0x700000 of the external QSPI NOR                      | `storage_partition`, 1 MB at 0x600000 of the QSPI NOR         | `slot0_partition`, 0x40000 to 0x100000 of the internal flash |
+| Arduino Opta WiFi (STM32H747 M7) | NVS, `zplc_nvs_partition`, 7 MB at 0x700000 of the external QSPI NOR                      | `storage_partition`, 1 MB at 0x600000 of the QSPI NOR         | `slot0_partition`, 0x40000 to 0x100000 of the internal flash |
+| STM32F746G Discovery             | NVS, `zplc_nvs_partition`, 15 MB at 0xa0000 of the external QSPI NOR                      | `storage_partition`, 640 KB at 0 of the QSPI NOR              | 0 to 1 MB, the internal flash                                |
+| STM32 Nucleo-H743ZI              | ZMS, `zplc_nvs_partition`, 384 KB at 0x1a0000 of the internal flash (3 sectors of 128 KB) | `storage_partition`, 1152 KB at 0x80000 of the internal flash | `slot0_partition`, 0 to 512 KB                               |
 
 The addresses are those of the devicetree of each build. `tools/hil/check_storage_partitions.py` reads them from the
 `zephyr.dts` and `.config` that `run.sh size` keeps for every board, and fails when two stores share or overlap a

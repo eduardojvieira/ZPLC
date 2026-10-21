@@ -10,12 +10,29 @@ function harness(over: Partial<WorkspaceDeps> = {}, recents: RecentEntry[] = [])
   const calls: string[] = [];
   let clock = 1_000;
   const deps: WorkspaceDeps = {
-    memory: { get: (id) => remembered.get(id), set: (id, recent) => { remembered.set(id, recent); }, forget: (id) => { remembered.delete(id); } },
+    memory: {
+      get: (id) => remembered.get(id),
+      set: (id, recent) => {
+        remembered.set(id, recent);
+      },
+      forget: (id) => {
+        remembered.delete(id);
+      },
+    },
     recents: async () => recents,
-    openRecent: async (id) => { calls.push(`open:${id}`); return true; },
-    createWorkspace: async (project) => { calls.push(`create:${project}`); recents.unshift({ recentId: 'r-new', lastOpenedAt: clock + 5, available: true }); return true; },
+    openRecent: async (id) => {
+      calls.push(`open:${id}`);
+      return true;
+    },
+    createWorkspace: async (project) => {
+      calls.push(`create:${project}`);
+      recents.unshift({ recentId: 'r-new', lastOpenedAt: clock + 5, available: true });
+      return true;
+    },
     now: () => clock,
-    wait: async (ms) => { clock += ms; },
+    wait: async (ms) => {
+      clock += ms;
+    },
     ...over,
   };
   return { deps, remembered, calls, recents };
@@ -23,14 +40,21 @@ function harness(over: Partial<WorkspaceDeps> = {}, recents: RecentEntry[] = [])
 
 describe('opening the app-owned workspace of a lesson (LRN-003)', () => {
   it('opens it with no folder dialog and no remembered folder when the main process owns the workspaces', async () => {
-    const { deps, remembered, calls } = harness({ openManaged: async (id, project) => { calls.push(`managed:${id}:${project}`); return 'created'; } });
+    const { deps, remembered, calls } = harness({
+      openManaged: async (id, project) => {
+        calls.push(`managed:${id}:${project}`);
+        return 'created';
+      },
+    });
     expect(await openLessonWorkspace(deps, LESSON, 'scan_snapshot_starter')).toBe('created');
     expect(calls).toEqual([`managed:${LESSON}:scan_snapshot_starter`]);
     expect(remembered.size).toBe(0);
   });
 
-  it('says reopened for a workspace that already held the learner\'s work, and cancelled when it could not be opened', async () => {
-    expect(await openLessonWorkspace(harness({ openManaged: async () => 'reopened' }).deps, LESSON, 'scan_snapshot_starter')).toBe('reopened');
+  it("says reopened for a workspace that already held the learner's work, and cancelled when it could not be opened", async () => {
+    expect(await openLessonWorkspace(harness({ openManaged: async () => 'reopened' }).deps, LESSON, 'scan_snapshot_starter')).toBe(
+      'reopened',
+    );
     expect(await openLessonWorkspace(harness({ openManaged: async () => false }).deps, LESSON, 'scan_snapshot_starter')).toBe('cancelled');
   });
 });
@@ -65,7 +89,9 @@ describe('opening the workspace of a lesson', () => {
   });
 
   it('does not make a second workspace when reopening the remembered one fails (the reason is shown where it happened)', async () => {
-    const { deps, remembered, calls } = harness({ openRecent: async () => false }, [{ recentId: 'r-old', lastOpenedAt: 10, available: true }]);
+    const { deps, remembered, calls } = harness({ openRecent: async () => false }, [
+      { recentId: 'r-old', lastOpenedAt: 10, available: true },
+    ]);
     remembered.set(LESSON, 'r-old');
     expect(await openLessonWorkspace(deps, LESSON, 'scan_snapshot_starter')).toBe('cancelled');
     expect(calls).toEqual([]);
@@ -75,10 +101,17 @@ describe('opening the workspace of a lesson', () => {
   it('waits for the main process to list the new folder before it gives up remembering it', async () => {
     const recents: RecentEntry[] = [];
     let listed = 0;
-    const { deps, remembered } = harness({
-      recents: async () => { listed += 1; if (listed === 3) recents.push({ recentId: 'r-late', lastOpenedAt: 2_000, available: true }); return recents; },
-      createWorkspace: async () => true,
-    }, recents);
+    const { deps, remembered } = harness(
+      {
+        recents: async () => {
+          listed += 1;
+          if (listed === 3) recents.push({ recentId: 'r-late', lastOpenedAt: 2_000, available: true });
+          return recents;
+        },
+        createWorkspace: async () => true,
+      },
+      recents,
+    );
     expect(await openLessonWorkspace(deps, LESSON, 'scan_snapshot_starter')).toBe('created');
     expect(remembered.get(LESSON)).toBe('r-late');
   });
@@ -87,7 +120,12 @@ describe('opening the workspace of a lesson', () => {
 describe('what is remembered between runs', () => {
   it('keeps a lesson to folder map in storage, and reads a damaged value as empty', () => {
     const store = new Map<string, string>();
-    const storage = { getItem: (key: string) => store.get(key) ?? null, setItem: (key: string, value: string) => { store.set(key, value); } };
+    const storage = {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        store.set(key, value);
+      },
+    };
     const memory = createWorkspaceMemory(storage);
     memory.set(LESSON, 'r-1');
     expect(createWorkspaceMemory(storage).get(LESSON)).toBe('r-1');

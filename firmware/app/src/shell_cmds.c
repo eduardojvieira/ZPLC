@@ -82,10 +82,8 @@ static int dbg_read(uint16_t addr, uint8_t *out, uint16_t size) {
 #ifdef CONFIG_ZPLC_SCHEDULER
   return zplc_exchange_read(addr, out, size) == 0 ? 0 : -ERANGE;
 #else
-  static const uint16_t bases[4] = {ZPLC_MEM_IPI_BASE, ZPLC_MEM_OPI_BASE, ZPLC_MEM_WORK_BASE,
-                                    ZPLC_MEM_RETAIN_BASE};
-  static const uint32_t sizes[4] = {ZPLC_MEM_IPI_SIZE, ZPLC_MEM_OPI_SIZE, ZPLC_MEM_WORK_SIZE,
-                                    ZPLC_MEM_RETAIN_SIZE};
+  static const uint16_t bases[4] = {ZPLC_MEM_IPI_BASE, ZPLC_MEM_OPI_BASE, ZPLC_MEM_WORK_BASE, ZPLC_MEM_RETAIN_BASE};
+  static const uint32_t sizes[4] = {ZPLC_MEM_IPI_SIZE, ZPLC_MEM_OPI_SIZE, ZPLC_MEM_WORK_SIZE, ZPLC_MEM_RETAIN_SIZE};
 
   for (unsigned region = 0U; region < 4U; region++) {
     if (addr >= bases[region] && (uint32_t)(addr - bases[region]) + size <= sizes[region]) {
@@ -194,8 +192,7 @@ typedef struct {
   float f32_val;
 } hil_watch_value_t;
 
-static int hil_parse_watch_type(const char *type, hil_watch_type_t *out_type,
-                                size_t *out_size) {
+static int hil_parse_watch_type(const char *type, hil_watch_type_t *out_type, size_t *out_size) {
   if (strcmp(type, "bool") == 0) {
     *out_type = HIL_WATCH_BOOL;
     *out_size = 1;
@@ -227,8 +224,7 @@ static int hil_parse_watch_type(const char *type, hil_watch_type_t *out_type,
   return 0;
 }
 
-static int hil_read_watch_value(uint16_t addr, hil_watch_type_t type,
-                                hil_watch_value_t *value) {
+static int hil_read_watch_value(uint16_t addr, hil_watch_type_t type, hil_watch_value_t *value) {
   uint8_t raw_bytes[4] = {0U, 0U, 0U, 0U};
   const uint8_t *ptr = raw_bytes;
   size_t width = 0;
@@ -308,7 +304,6 @@ static int hil_read_watch_value(uint16_t addr, hil_watch_type_t type,
 #define HIL_MAX_WATCHES 8
 #define HIL_WATCH_POLL_MS 100
 
-
 typedef struct {
   bool active;
   uint16_t addr;
@@ -317,7 +312,6 @@ typedef struct {
   uint32_t last_raw;
   bool has_last;
 } hil_watch_entry_t;
-
 
 static hil_watch_entry_t s_hil_watches[HIL_MAX_WATCHES];
 static const struct shell *s_hil_shell;
@@ -407,34 +401,27 @@ static const char *hil_mode_name(hil_mode_t mode) {
   }
 }
 
-static void hil_emit_watch_json(const struct shell *sh, uint16_t addr,
-                                const char *type_name,
-                                const hil_watch_value_t *value,
+static void hil_emit_watch_json(const struct shell *sh, uint16_t addr, const char *type_name, const hil_watch_value_t *value,
                                 hil_watch_type_t type) {
   switch (type) {
   case HIL_WATCH_BOOL:
-    shell_fprintf(sh, SHELL_NORMAL,
-                  "{\"t\":\"watch\",\"addr\":%u,\"type\":\"%s\",\"val\":%s}\n",
-                  addr, type_name, value->bool_val ? "true" : "false");
+    shell_fprintf(sh, SHELL_NORMAL, "{\"t\":\"watch\",\"addr\":%u,\"type\":\"%s\",\"val\":%s}\n", addr, type_name,
+                  value->bool_val ? "true" : "false");
     break;
   case HIL_WATCH_I8:
   case HIL_WATCH_I16:
   case HIL_WATCH_I32:
-    shell_fprintf(sh, SHELL_NORMAL,
-                  "{\"t\":\"watch\",\"addr\":%u,\"type\":\"%s\",\"val\":%d}\n",
-                  addr, type_name, value->i32_val);
+    shell_fprintf(sh, SHELL_NORMAL, "{\"t\":\"watch\",\"addr\":%u,\"type\":\"%s\",\"val\":%d}\n", addr, type_name, value->i32_val);
     break;
   case HIL_WATCH_U8:
   case HIL_WATCH_U16:
   case HIL_WATCH_U32:
-    shell_fprintf(sh, SHELL_NORMAL,
-                  "{\"t\":\"watch\",\"addr\":%u,\"type\":\"%s\",\"val\":%u}\n",
-                  addr, type_name, (unsigned int)value->u32_val);
+    shell_fprintf(sh, SHELL_NORMAL, "{\"t\":\"watch\",\"addr\":%u,\"type\":\"%s\",\"val\":%u}\n", addr, type_name,
+                  (unsigned int)value->u32_val);
     break;
   case HIL_WATCH_F32:
-    shell_fprintf(sh, SHELL_NORMAL,
-                  "{\"t\":\"watch\",\"addr\":%u,\"type\":\"%s\",\"val\":%.6g}\n",
-                  addr, type_name, (double)value->f32_val);
+    shell_fprintf(sh, SHELL_NORMAL, "{\"t\":\"watch\",\"addr\":%u,\"type\":\"%s\",\"val\":%.6g}\n", addr, type_name,
+                  (double)value->f32_val);
     break;
   }
 }
@@ -471,13 +458,11 @@ static void hil_watch_poll_once(bool force_emit) {
     }
 
     if (force_emit || !watch->has_last || watch->last_raw != value.raw) {
-      hil_emit_watch_json(s_hil_shell, watch->addr, watch->type_name, &value,
-                          watch->type);
+      hil_emit_watch_json(s_hil_shell, watch->addr, watch->type_name, &value, watch->type);
       watch->last_raw = value.raw;
       watch->has_last = true;
     }
   }
-
 }
 
 static void hil_watch_work_handler(struct k_work *work) {
@@ -544,18 +529,10 @@ static int cmd_zplc_version(const struct shell *sh, size_t argc, char **argv) {
 #define JSON_OBJ_START(sh) shell_fprintf(sh, SHELL_NORMAL, "{")
 #define JSON_OBJ_END(sh) shell_fprintf(sh, SHELL_NORMAL, "}")
 #define JSON_KEY(sh, key) shell_fprintf(sh, SHELL_NORMAL, "\"%s\":", key)
-#define JSON_STR(sh, key, val, comma)                                          \
-  shell_fprintf(sh, SHELL_NORMAL, "\"%s\":\"%s\"%s", key, val,                 \
-                (comma) ? "," : "")
-#define JSON_INT(sh, key, val, comma)                                          \
-  shell_fprintf(sh, SHELL_NORMAL, "\"%s\":%d%s", key, (int)(val),              \
-                (comma) ? "," : "")
-#define JSON_UINT(sh, key, val, comma)                                         \
-  shell_fprintf(sh, SHELL_NORMAL, "\"%s\":%u%s", key, (unsigned int)(val),     \
-                (comma) ? "," : "")
-#define JSON_BOOL(sh, key, val, comma)                                         \
-  shell_fprintf(sh, SHELL_NORMAL, "\"%s\":%s%s", key,                          \
-                (val) ? "true" : "false", (comma) ? "," : "")
+#define JSON_STR(sh, key, val, comma) shell_fprintf(sh, SHELL_NORMAL, "\"%s\":\"%s\"%s", key, val, (comma) ? "," : "")
+#define JSON_INT(sh, key, val, comma) shell_fprintf(sh, SHELL_NORMAL, "\"%s\":%d%s", key, (int)(val), (comma) ? "," : "")
+#define JSON_UINT(sh, key, val, comma) shell_fprintf(sh, SHELL_NORMAL, "\"%s\":%u%s", key, (unsigned int)(val), (comma) ? "," : "")
+#define JSON_BOOL(sh, key, val, comma) shell_fprintf(sh, SHELL_NORMAL, "\"%s\":%s%s", key, (val) ? "true" : "false", (comma) ? "," : "")
 #define JSON_NEWLINE(sh) shell_fprintf(sh, SHELL_NORMAL, "\n")
 
 /* ============================================================================
@@ -581,8 +558,7 @@ static int cmd_dbg_ticks(const struct shell *sh, size_t argc, char **argv);
 static int cmd_dbg_mem(const struct shell *sh, size_t argc, char **argv);
 static int cmd_dbg_force_set(const struct shell *sh, size_t argc, char **argv);
 static int cmd_dbg_force_clear(const struct shell *sh, size_t argc, char **argv);
-static int cmd_dbg_force_clear_all(const struct shell *sh, size_t argc,
-                                   char **argv);
+static int cmd_dbg_force_clear_all(const struct shell *sh, size_t argc, char **argv);
 static int cmd_dbg_force_list(const struct shell *sh, size_t argc, char **argv);
 #endif
 static int cmd_dbg_info(const struct shell *sh, size_t argc, char **argv);
@@ -630,8 +606,7 @@ static int cmd_sys_reboot(const struct shell *sh, size_t argc, char **argv);
 
 /* CMP-052: a refused upload names both draft numbers; 0 is an artifact built
  * before the counter. Studio shows this text with the upload failure. */
-static void print_program_refusal(const struct shell *sh, int code,
-                                  const uint8_t *binary, size_t size) {
+static void print_program_refusal(const struct shell *sh, int code, const uint8_t *binary, size_t size) {
   if (code == ZPLC_LOADER_ERR_DRAFT) {
     uint32_t built = zplc_loader_artifact_draft_counter(binary, size);
 
@@ -700,17 +675,14 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
                   "\"deadline\":{\"warning\":%s,\"misses\":%u,\"consecutive_misses\":%u,\"miss_limit\":%u,"
                   "\"last_overrun_us\":%u},",
                   stats.consecutive_misses != 0U ? "true" : "false", (unsigned int)stats.total_overruns,
-                  (unsigned int)stats.consecutive_misses, (unsigned int)stats.miss_limit,
-                  (unsigned int)stats.last_overrun_us);
+                  (unsigned int)stats.consecutive_misses, (unsigned int)stats.miss_limit, (unsigned int)stats.last_overrun_us);
     if (stats.fault_reason == (uint8_t)ZPLC_SCHED_FAULT_NONE) {
       shell_fprintf(sh, SHELL_NORMAL, "\"fault\":{\"reason\":\"none\",\"task_id\":null},");
     } else {
       shell_fprintf(sh, SHELL_NORMAL, "\"fault\":{\"reason\":\"%s\",\"task_id\":%u},",
-                    zplc_sched_fault_reason_name((zplc_sched_fault_reason_t)stats.fault_reason),
-                    (unsigned int)stats.fault_task_id);
+                    zplc_sched_fault_reason_name((zplc_sched_fault_reason_t)stats.fault_reason), (unsigned int)stats.fault_task_id);
     }
-    shell_fprintf(sh, SHELL_NORMAL, "\"reset_cause\":\"%s\",",
-                  zplc_reset_cause_name(zplc_failsafe_report()->cause));
+    shell_fprintf(sh, SHELL_NORMAL, "\"reset_cause\":\"%s\",", zplc_reset_cause_name(zplc_failsafe_report()->cause));
     /* HIL-010.32: the Wi-Fi link the firmware keeps up by itself, and the address it got. */
     {
       char ip[16] = {0};
@@ -724,13 +696,12 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
     /* COM-014: a standing warning, not an event: present for as long as
      * the session is configured to skip the certificate check. */
     zplc_io_unsupported_get(&io_unsupported);
-    shell_fprintf(sh, SHELL_NORMAL, "\"warnings\":[%s%s%s],",
-                  zplc_config_mqtt_tls_verify_off() ? "\"mqtt_tls_verify_off\"" : "",
+    shell_fprintf(sh, SHELL_NORMAL, "\"warnings\":[%s%s%s],", zplc_config_mqtt_tls_verify_off() ? "\"mqtt_tls_verify_off\"" : "",
                   (zplc_config_mqtt_tls_verify_off() && io_unsupported_any(&io_unsupported)) ? "," : "",
                   io_unsupported_any(&io_unsupported) ? "\"io_unsupported\"" : "");
     /* IO-007: how many channels, next to the warning that names them */
-    shell_fprintf(sh, SHELL_NORMAL, "\"io_unsupported\":{\"inputs\":%u,\"outputs\":%u},",
-                  (unsigned int)io_unsupported.inputs, (unsigned int)io_unsupported.outputs);
+    shell_fprintf(sh, SHELL_NORMAL, "\"io_unsupported\":{\"inputs\":%u,\"outputs\":%u},", (unsigned int)io_unsupported.inputs,
+                  (unsigned int)io_unsupported.outputs);
     shell_fprintf(sh, SHELL_NORMAL, "\"stats\":");
     JSON_OBJ_START(sh);
     JSON_UINT(sh, "cycles", stats.total_cycles, true);
@@ -750,10 +721,8 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
                     "%s{\"id\":%u,\"interval_us\":%u,\"cycles\":%u,\"period_min_us\":%u,\"period_max_us\":%u,"
                     "\"jitter_us\":%u,\"exec_max_us\":%u}",
                     listed++ != 0 ? "," : "", (unsigned int)task.config.id, (unsigned int)task.config.interval_us,
-                    (unsigned int)task.stats.cycle_count, (unsigned int)task.stats.min_period_us,
-                    (unsigned int)task.stats.max_period_us,
-                    (unsigned int)(task.stats.max_period_us - task.stats.min_period_us),
-                    (unsigned int)task.stats.max_exec_time_us);
+                    (unsigned int)task.stats.cycle_count, (unsigned int)task.stats.min_period_us, (unsigned int)task.stats.max_period_us,
+                    (unsigned int)(task.stats.max_period_us - task.stats.min_period_us), (unsigned int)task.stats.max_exec_time_us);
     }
     shell_fprintf(sh, SHELL_NORMAL, "]");
 
@@ -796,8 +765,7 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  Tot Cycles: %u", stats.total_cycles);
   shell_print(sh, "  Tot Ovr:    %u", stats.total_overruns);
   shell_print(sh, "  Deadline:   %s, run %u of %u, last overrun %u us", stats.consecutive_misses != 0U ? "WARNING" : "ok",
-              (unsigned int)stats.consecutive_misses, (unsigned int)stats.miss_limit,
-              (unsigned int)stats.last_overrun_us);
+              (unsigned int)stats.consecutive_misses, (unsigned int)stats.miss_limit, (unsigned int)stats.last_overrun_us);
   shell_print(sh, "  Fault:      %s", zplc_sched_fault_reason_name((zplc_sched_fault_reason_t)stats.fault_reason));
   shell_print(sh, "  Reset:      %s", zplc_reset_cause_name(zplc_failsafe_report()->cause));
   if (zplc_config_mqtt_tls_verify_off()) {
@@ -806,18 +774,16 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
   }
   zplc_io_unsupported_get(&io_unsupported);
   if (io_unsupported_any(&io_unsupported)) {
-    shell_warn(sh, "  WARNING: I/O not supported by this board, skipped: %u input(s), %u output(s)",
-               (unsigned int)io_unsupported.inputs, (unsigned int)io_unsupported.outputs);
+    shell_warn(sh, "  WARNING: I/O not supported by this board, skipped: %u input(s), %u output(s)", (unsigned int)io_unsupported.inputs,
+               (unsigned int)io_unsupported.outputs);
   }
 #ifdef CONFIG_ZPLC_RETAIN_PERSIST
   {
     zplc_retain_status_t retain;
 
     zplc_retain_last_status(&retain);
-    shell_print(sh, "  Retain:     %s (sequence %u, %u saves, %u errors)",
-                zplc_retain_reason_string(retain.reason),
-                (unsigned int)retain.sequence, (unsigned int)retain.saves,
-                (unsigned int)retain.save_errors);
+    shell_print(sh, "  Retain:     %s (sequence %u, %u saves, %u errors)", zplc_retain_reason_string(retain.reason),
+                (unsigned int)retain.sequence, (unsigned int)retain.saves, (unsigned int)retain.save_errors);
   }
 #endif
 
@@ -836,10 +802,8 @@ static int cmd_sched_tasks(const struct shell *sh, size_t argc, char **argv) {
   for (int i = 0; i < 8; i++) {
     zplc_task_t task;
     if (zplc_sched_get_task(i, &task) == 0) {
-      shell_print(sh, " %2d | %4d | %6u us | %6u | %8u | %s", task.config.id,
-                  task.config.priority, task.config.interval_us,
-                  task.stats.cycle_count, task.stats.overrun_count,
-                  task_state_name(task.state));
+      shell_print(sh, " %2d | %4d | %6u us | %6u | %8u | %s", task.config.id, task.config.priority, task.config.interval_us,
+                  task.stats.cycle_count, task.stats.overrun_count, task_state_name(task.state));
     }
   }
 
@@ -869,8 +833,7 @@ static int cmd_sched_load(const struct shell *sh, size_t argc, char **argv) {
     return -EINVAL;
   }
   if (size > program_buffer_size) {
-    shell_error(sh, "ERROR: Size %lu exceeds buffer (%zu bytes)", size,
-                program_buffer_size);
+    shell_error(sh, "ERROR: Size %lu exceeds buffer (%zu bytes)", size, program_buffer_size);
     return -ENOMEM;
   }
   /* RT-023: a deploy stops the program that is running before it transfers a byte, and the outputs are at their
@@ -903,8 +866,7 @@ static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv) {
   }
   const char *hex = argv[1];
   size_t remaining = program_expected_size - program_staging_received_size;
-  int decoded = hex_decode(hex, program_staging_buffer + program_staging_received_size,
-                           remaining);
+  int decoded = hex_decode(hex, program_staging_buffer + program_staging_received_size, remaining);
   if (decoded < 0) {
     shell_error(sh, "ERROR: Hex decode failed");
     return -EINVAL;
@@ -925,25 +887,20 @@ static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv) {
       }
     }
 #endif
-    int validation = zplc_sched_validate_program(program_staging_buffer,
-                                                 program_staging_received_size);
+    int validation = zplc_sched_validate_program(program_staging_buffer, program_staging_received_size);
     if (validation != ZPLC_LOADER_OK) {
-      print_program_refusal(sh, validation, program_staging_buffer,
-                            program_staging_received_size);
+      print_program_refusal(sh, validation, program_staging_buffer, program_staging_received_size);
       program_expected_size = 0;
       program_staging_received_size = 0;
       memset(program_staging_buffer, 0, program_buffer_size);
       return validation;
     }
-    int store_result = zplc_program_store_commit(
-        program_staging_buffer, program_staging_received_size,
-        program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
+    int store_result = zplc_program_store_commit(program_staging_buffer, program_staging_received_size,
+                                                 program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
     if (store_result != ZPLC_PROGRAM_STORE_COMMIT_OK) {
       if (store_result == ZPLC_PROGRAM_STORE_COMMIT_UNKNOWN) {
         int safe_result = sched_latch_ambiguous_program_publication();
-        shell_error(sh,
-                    "ERROR: Active publication outcome unknown; scheduler latched safe (%d)",
-                    safe_result);
+        shell_error(sh, "ERROR: Active publication outcome unknown; scheduler latched safe (%d)", safe_result);
         return -EIO;
       }
       shell_error(sh, "ERROR: Transactional persistence failed");
@@ -952,8 +909,7 @@ static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv) {
       memset(program_staging_buffer, 0, program_buffer_size);
       return -EIO;
     }
-    int ret = sched_reset_runtime(program_staging_buffer,
-                                  program_staging_received_size);
+    int ret = sched_reset_runtime(program_staging_buffer, program_staging_received_size);
     if (ret < 0) {
       shell_error(sh, "ERROR: Scheduler load failed after persistence (%d)", ret);
       program_expected_size = 0;
@@ -962,13 +918,11 @@ static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv) {
     }
     /* The staging buffer now holds the loaded artifact and the store holds the same program: the one copy. */
     program_received_size = program_staging_received_size;
-    shell_print(sh, "OK: Program loaded (%zu bytes); use 'zplc start' to execute",
-                program_received_size);
+    shell_print(sh, "OK: Program loaded (%zu bytes); use 'zplc start' to execute", program_received_size);
     program_expected_size = 0;
     program_staging_received_size = 0;
   } else {
-    shell_print(sh, "OK: Received %d bytes (%zu/%zu)", decoded,
-                program_staging_received_size, program_expected_size);
+    shell_print(sh, "OK: Received %d bytes (%zu/%zu)", decoded, program_staging_received_size, program_expected_size);
   }
   return 0;
 }
@@ -1017,21 +971,16 @@ static int sched_reset_runtime(const uint8_t *binary, size_t size) {
 static int sched_latch_ambiguous_program_publication(void) {
   int safe_result = zplc_sched_enter_safe_error();
 
-  memset(program_staging_buffer, 0,
-         program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
+  memset(program_staging_buffer, 0, program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
   program_expected_size = 0U;
   program_received_size = 0U;
   program_staging_received_size = 0U;
   return safe_result;
 }
 
-static int cmd_zplc_load(const struct shell *sh, size_t argc, char **argv) {
-  return cmd_sched_load(sh, argc, argv);
-}
+static int cmd_zplc_load(const struct shell *sh, size_t argc, char **argv) { return cmd_sched_load(sh, argc, argv); }
 
-static int cmd_zplc_data(const struct shell *sh, size_t argc, char **argv) {
-  return cmd_sched_data(sh, argc, argv);
-}
+static int cmd_zplc_data(const struct shell *sh, size_t argc, char **argv) { return cmd_sched_data(sh, argc, argv); }
 
 static int cmd_zplc_start(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
@@ -1073,9 +1022,7 @@ static int sched_reset_loaded_program(void) {
   if (program_received_size == 0U) {
     return sched_reset_runtime(NULL, 0U);
   }
-  rc = zplc_program_reload_scheduler(program_staging_buffer,
-                                     program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE,
-                                     &size);
+  rc = zplc_program_reload_scheduler(program_staging_buffer, program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE, &size);
   program_received_size = rc > 0 ? size : 0U;
   return rc < 0 ? rc : 0;
 }
@@ -1094,9 +1041,7 @@ static int cmd_zplc_reset(const struct shell *sh, size_t argc, char **argv) {
   return 0;
 }
 
-static int cmd_zplc_status(const struct shell *sh, size_t argc, char **argv) {
-  return cmd_sched_status(sh, argc, argv);
-}
+static int cmd_zplc_status(const struct shell *sh, size_t argc, char **argv) { return cmd_sched_status(sh, argc, argv); }
 
 static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
@@ -1145,23 +1090,18 @@ static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  Board:          %s", CONFIG_BOARD);
   shell_print(sh, "  ZPLC Version:   %s", zplc_core_version());
   shell_print(sh, "  Contract Draft: %u", (unsigned int)ZPLC_DRAFT_COUNTER);
-  shell_print(sh, "  Commit:         %s%s", ZPLC_FW_COMMIT,
-              ZPLC_FW_DIRTY != 0 ? " (dirty)" : "");
+  shell_print(sh, "  Commit:         %s%s", ZPLC_FW_COMMIT, ZPLC_FW_DIRTY != 0 ? " (dirty)" : "");
   shell_print(sh, "  Options Hash:   %s", ZPLC_FW_OPTIONS_HASH);
   shell_print(sh, "  Zephyr Version: %s", KERNEL_VERSION_STRING);
   shell_print(sh, "  Uptime:         %u ms", k_uptime_get_32());
   shell_print(sh, "  CPU Freq:       %u MHz", (unsigned int)CPU_FREQ_MHZ);
-  shell_print(sh, "  Memory Sizes:   WORK=%d, RETAIN=%d, IPI=%d, OPI=%d",
-              ZPLC_MEM_WORK_SIZE, ZPLC_MEM_RETAIN_SIZE, ZPLC_MEM_IPI_SIZE,
+  shell_print(sh, "  Memory Sizes:   WORK=%d, RETAIN=%d, IPI=%d, OPI=%d", ZPLC_MEM_WORK_SIZE, ZPLC_MEM_RETAIN_SIZE, ZPLC_MEM_IPI_SIZE,
               ZPLC_MEM_OPI_SIZE);
-  shell_print(sh, "  Program Size:   CODE=%d, largest artifact=%u bytes",
-              ZPLC_MEM_CODE_SIZE, (unsigned int)ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE);
-  shell_print(sh, "  I/O table:      %s, %u channels, hash %08x, %u B in, %u B out",
-              zplc_io_table()->board_id,
-              (unsigned int)zplc_io_table()->channel_count,
-              (unsigned int)zplc_io_table()->description_hash,
-              (unsigned int)zplc_io_table()->input_bytes,
-              (unsigned int)zplc_io_table()->output_bytes);
+  shell_print(sh, "  Program Size:   CODE=%d, largest artifact=%u bytes", ZPLC_MEM_CODE_SIZE,
+              (unsigned int)ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE);
+  shell_print(sh, "  I/O table:      %s, %u channels, hash %08x, %u B in, %u B out", zplc_io_table()->board_id,
+              (unsigned int)zplc_io_table()->channel_count, (unsigned int)zplc_io_table()->description_hash,
+              (unsigned int)zplc_io_table()->input_bytes, (unsigned int)zplc_io_table()->output_bytes);
 
   return 0;
 }
@@ -1209,9 +1149,8 @@ static int cmd_sys_io(const struct shell *sh, size_t argc, char **argv) {
     JSON_NEWLINE(sh);
     return 0;
   }
-  shell_print(sh, "I/O description: %s, %u channels, hash %s, %u B in, %u B out", table->board_id,
-              (unsigned int)table->channel_count, io_hash, (unsigned int)table->input_bytes,
-              (unsigned int)table->output_bytes);
+  shell_print(sh, "I/O description: %s, %u channels, hash %s, %u B in, %u B out", table->board_id, (unsigned int)table->channel_count,
+              io_hash, (unsigned int)table->input_bytes, (unsigned int)table->output_bytes);
   return 0;
 }
 
@@ -1258,8 +1197,8 @@ static int cmd_sys_reset(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "Reset cause:  %s%s", cause, report->reported != 0U ? "" : " (this part does not report one)");
   if (report->has_fault != 0U) {
     shell_print(sh, "Last fault:   %s (%s, task %u, pc 0x%08x)", reason,
-                report->fault.kind == (uint8_t)ZPLC_FAULT_SCHEDULER ? "scheduler" : "processor",
-                (unsigned int)report->fault.task_id, (unsigned int)report->fault.pc);
+                report->fault.kind == (uint8_t)ZPLC_FAULT_SCHEDULER ? "scheduler" : "processor", (unsigned int)report->fault.task_id,
+                (unsigned int)report->fault.pc);
   } else {
     shell_print(sh, "Last fault:   none recorded");
   }
@@ -1339,7 +1278,7 @@ static int cmd_dbg_peek(const struct shell *sh, size_t argc, char **argv) {
  *   - Addresses must be in a valid ZPLC memory region
  */
 #define MPEEK_MAX_ENTRIES 16
-#define MPEEK_MAX_BYTES   256
+#define MPEEK_MAX_BYTES 256
 
 static int cmd_dbg_mpeek(const struct shell *sh, size_t argc, char **argv) {
   if (argc < 2) {
@@ -1396,7 +1335,7 @@ static int cmd_dbg_mpeek(const struct shell *sh, size_t argc, char **argv) {
     }
 
     entries[entry_count].addr = addr;
-    entries[entry_count].len  = len;
+    entries[entry_count].len = len;
     entry_count++;
 
     token = strtok_r(NULL, ",", &saveptr);
@@ -1416,8 +1355,7 @@ static int cmd_dbg_mpeek(const struct shell *sh, size_t argc, char **argv) {
     unsigned long addr = entries[i].addr;
     unsigned long len = entries[i].len;
 
-    if (addr > 0xFFFFU || mpeek_used + len > sizeof(mpeek_data) ||
-        dbg_read((uint16_t)addr, &mpeek_data[mpeek_used], (uint16_t)len) != 0) {
+    if (addr > 0xFFFFU || mpeek_used + len > sizeof(mpeek_data) || dbg_read((uint16_t)addr, &mpeek_data[mpeek_used], (uint16_t)len) != 0) {
       shell_error(sh, "ERROR: Invalid address or out-of-bounds at 0x%lX", addr);
       return -EINVAL;
     }
@@ -1430,20 +1368,18 @@ static int cmd_dbg_mpeek(const struct shell *sh, size_t argc, char **argv) {
 
   for (int i = 0; i < entry_count; i++) {
     unsigned long addr = entries[i].addr;
-    unsigned long len  = entries[i].len;
+    unsigned long len = entries[i].len;
 
     /* Build hex string for the bytes */
     char hex[513]; /* max 256 bytes × 2 hex chars + NUL */
     unsigned int hex_pos = 0;
     for (unsigned long b = 0; b < len; b++) {
-      hex_pos += (unsigned int)snprintf(hex + hex_pos, sizeof(hex) - hex_pos,
-                                        "%02X", mpeek_data[mpeek_offset[i] + b]);
+      hex_pos += (unsigned int)snprintf(hex + hex_pos, sizeof(hex) - hex_pos, "%02X", mpeek_data[mpeek_offset[i] + b]);
     }
     hex[hex_pos] = '\0';
 
     bool last = (i == entry_count - 1);
-    shell_print(sh, "{\"addr\":%lu,\"bytes\":\"%s\"}%s",
-                addr, hex, last ? "" : ",");
+    shell_print(sh, "{\"addr\":%lu,\"bytes\":\"%s\"}%s", addr, hex, last ? "" : ",");
   }
 
   shell_print(sh, "]}");
@@ -1613,8 +1549,7 @@ static int cmd_dbg_force_clear(const struct shell *sh, size_t argc, char **argv)
   return 0;
 }
 
-static int cmd_dbg_force_clear_all(const struct shell *sh, size_t argc,
-                                   char **argv) {
+static int cmd_dbg_force_clear_all(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
 
@@ -1714,8 +1649,7 @@ static int cmd_dbg_force_list(const struct shell *sh, size_t argc, char **argv) 
       continue;
     }
 
-    shell_fprintf(sh, SHELL_NORMAL, "  [%u] 0x%04X (%u byte%s): ", i, addr,
-                  size, (size == 1U) ? "" : "s");
+    shell_fprintf(sh, SHELL_NORMAL, "  [%u] 0x%04X (%u byte%s): ", i, addr, size, (size == 1U) ? "" : "s");
     for (uint16_t j = 0; j < size; j++) {
       shell_fprintf(sh, SHELL_NORMAL, "%02X", bytes[j]);
     }
@@ -1773,8 +1707,7 @@ static int cmd_dbg_mem(const struct shell *sh, size_t argc, char **argv) {
     region_base_addr = ZPLC_MEM_RETAIN_BASE;
     region_size = ZPLC_MEM_RETAIN_SIZE;
   } else {
-    shell_error(sh, "ERROR: Invalid region '%s' (use ipi, opi, work, or retain)",
-                region_name);
+    shell_error(sh, "ERROR: Invalid region '%s' (use ipi, opi, work, or retain)", region_name);
     return -EINVAL;
   }
 
@@ -1794,23 +1727,20 @@ static int cmd_dbg_mem(const struct shell *sh, size_t argc, char **argv) {
   }
 
   if (offset >= region_size) {
-    shell_error(sh, "ERROR: Offset out of bounds (0x%04lX >= 0x%04X)", offset,
-                region_size);
+    shell_error(sh, "ERROR: Offset out of bounds (0x%04lX >= 0x%04X)", offset, region_size);
     return -EINVAL;
   }
 
   /* The 64 bytes come from the snapshot of the last commit, read once (RT-010). */
   uint8_t window[64];
-  size_t window_size = (size_t)(region_size - offset) < sizeof(window) ? (size_t)(region_size - offset)
-                                                                       : sizeof(window);
+  size_t window_size = (size_t)(region_size - offset) < sizeof(window) ? (size_t)(region_size - offset) : sizeof(window);
 
   if (dbg_read((uint16_t)(region_base_addr + offset), window, (uint16_t)window_size) != 0) {
     shell_error(sh, "ERROR: Offset out of bounds (0x%04lX)", offset);
     return -EINVAL;
   }
 
-  shell_print(sh, "--- %s Memory Dump (offset 0x%04lX) ---", region_name,
-              offset);
+  shell_print(sh, "--- %s Memory Dump (offset 0x%04lX) ---", region_name, offset);
 
   /* Print 64 bytes in rows of 16 */
   for (int i = 0; i < 64; i += 16) {
@@ -1819,14 +1749,12 @@ static int cmd_dbg_mem(const struct shell *sh, size_t argc, char **argv) {
     char line[128];
     int pos = 0;
 
-    pos += snprintf(line + pos, sizeof(line) - pos, "%04lX: ",
-                    (unsigned long)region_base_addr + offset + i);
+    pos += snprintf(line + pos, sizeof(line) - pos, "%04lX: ", (unsigned long)region_base_addr + offset + i);
 
     for (int j = 0; j < 16; j++) {
       if (offset + i + j >= region_size)
         break;
-      pos += snprintf(line + pos, sizeof(line) - pos, "%02X ",
-                      window[i + j]);
+      pos += snprintf(line + pos, sizeof(line) - pos, "%02X ", window[i + j]);
     }
 
     pos += snprintf(line + pos, sizeof(line) - pos, " | ");
@@ -1835,8 +1763,7 @@ static int cmd_dbg_mem(const struct shell *sh, size_t argc, char **argv) {
       if (offset + i + j >= region_size)
         break;
       uint8_t c = window[i + j];
-      pos += snprintf(line + pos, sizeof(line) - pos, "%c",
-                      isprint(c) ? c : '.');
+      pos += snprintf(line + pos, sizeof(line) - pos, "%c", isprint(c) ? c : '.');
     }
 
     shell_print(sh, "%s", line);
@@ -1851,8 +1778,7 @@ static int cmd_dbg_pause(const struct shell *sh, size_t argc, char **argv) {
 
   const int rc = zplc_sched_pause();
   if (rc < 0) {
-    shell_warn(sh, "WARN: Not running (state=%s)",
-               sched_state_name(zplc_sched_get_state()));
+    shell_warn(sh, "WARN: Not running (state=%s)", sched_state_name(zplc_sched_get_state()));
     return 0;
   }
 
@@ -1866,8 +1792,7 @@ static int cmd_dbg_resume(const struct shell *sh, size_t argc, char **argv) {
 
   const int rc = zplc_sched_resume();
   if (rc < 0) {
-    shell_warn(sh, "WARN: Not paused (state=%s)",
-               sched_state_name(zplc_sched_get_state()));
+    shell_warn(sh, "WARN: Not paused (state=%s)", sched_state_name(zplc_sched_get_state()));
     return 0;
   }
 
@@ -1881,8 +1806,7 @@ static int cmd_dbg_step(const struct shell *sh, size_t argc, char **argv) {
 
   const int rc = zplc_sched_step();
   if (rc == -1) {
-    shell_error(sh, "ERROR: Cannot step (state=%s)",
-                sched_state_name(zplc_sched_get_state()));
+    shell_error(sh, "ERROR: Cannot step (state=%s)", sched_state_name(zplc_sched_get_state()));
     return rc;
   }
   if (rc == -2) {
@@ -1924,8 +1848,7 @@ static int cmd_zplc_load(const struct shell *sh, size_t argc, char **argv) {
     return -EINVAL;
   }
   if (size > program_buffer_size) {
-    shell_error(sh, "ERROR: Size %lu exceeds buffer (%zu bytes)", size,
-                program_buffer_size);
+    shell_error(sh, "ERROR: Size %lu exceeds buffer (%zu bytes)", size, program_buffer_size);
     return -ENOMEM;
   }
   begin_upload_rollback();
@@ -1936,11 +1859,8 @@ static int cmd_zplc_load(const struct shell *sh, size_t argc, char **argv) {
   return 0;
 }
 
-static int legacy_validate_program(const uint8_t *binary, size_t size,
-                                   uint32_t *scan_interval_ms) {
-  return zplc_program_admit_legacy(binary, size, program_admission_workspace,
-                                   sizeof(program_admission_workspace),
-                                   scan_interval_ms);
+static int legacy_validate_program(const uint8_t *binary, size_t size, uint32_t *scan_interval_ms) {
+  return zplc_program_admit_legacy(binary, size, program_admission_workspace, sizeof(program_admission_workspace), scan_interval_ms);
 }
 
 /* Once active publication is ambiguous, a reset must not revive either
@@ -1961,8 +1881,7 @@ static int legacy_latch_ambiguous_program_publication(void) {
   }
   runtime_state = ZPLC_STATE_ERROR;
   memset(program_buffer, 0, program_buffer_size);
-  memset(program_staging_buffer, 0,
-         program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
+  memset(program_staging_buffer, 0, program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
   program_expected_size = 0U;
   program_received_size = 0U;
   program_staging_received_size = 0U;
@@ -1982,8 +1901,7 @@ static int cmd_zplc_data(const struct shell *sh, size_t argc, char **argv) {
   }
   const char *hex = argv[1];
   size_t remaining = program_expected_size - program_staging_received_size;
-  int decoded = hex_decode(hex, program_staging_buffer + program_staging_received_size,
-                           remaining);
+  int decoded = hex_decode(hex, program_staging_buffer + program_staging_received_size, remaining);
   if (decoded < 0) {
     shell_error(sh, "ERROR: Hex decode failed");
     return -EINVAL;
@@ -1991,26 +1909,20 @@ static int cmd_zplc_data(const struct shell *sh, size_t argc, char **argv) {
   program_staging_received_size += decoded;
   if (program_staging_received_size >= program_expected_size) {
     uint32_t new_scan_interval_ms;
-    int ret = legacy_validate_program(program_staging_buffer,
-                                      program_staging_received_size,
-                                      &new_scan_interval_ms);
+    int ret = legacy_validate_program(program_staging_buffer, program_staging_received_size, &new_scan_interval_ms);
     if (ret != 0) {
-      print_program_refusal(sh, ret, program_staging_buffer,
-                            program_staging_received_size);
+      print_program_refusal(sh, ret, program_staging_buffer, program_staging_received_size);
       program_expected_size = 0;
       program_staging_received_size = 0;
       memset(program_staging_buffer, 0, program_buffer_size);
       return ret;
     }
-    int store_result = zplc_program_store_commit(
-        program_staging_buffer, program_staging_received_size,
-        program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
+    int store_result = zplc_program_store_commit(program_staging_buffer, program_staging_received_size,
+                                                 program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
     if (store_result != ZPLC_PROGRAM_STORE_COMMIT_OK) {
       if (store_result == ZPLC_PROGRAM_STORE_COMMIT_UNKNOWN) {
         int safe_result = legacy_latch_ambiguous_program_publication();
-        shell_error(sh,
-                    "ERROR: Active publication outcome unknown; runtime latched safe (%d)",
-                    safe_result);
+        shell_error(sh, "ERROR: Active publication outcome unknown; runtime latched safe (%d)", safe_result);
         return -EIO;
       }
       shell_error(sh, "ERROR: Transactional persistence failed");
@@ -2026,8 +1938,7 @@ static int cmd_zplc_data(const struct shell *sh, size_t argc, char **argv) {
     }
     zplc_state_t old_state = runtime_state;
     runtime_state = ZPLC_STATE_IDLE;
-    ret = zplc_core_load(program_staging_buffer, program_staging_received_size,
-                         program_admission_workspace,
+    ret = zplc_core_load(program_staging_buffer, program_staging_received_size, program_admission_workspace,
                          sizeof(program_admission_workspace));
     if (ret != ZPLC_LOADER_OK) {
       runtime_state = old_state;
@@ -2056,8 +1967,7 @@ static int cmd_zplc_data(const struct shell *sh, size_t argc, char **argv) {
     program_expected_size = 0;
     program_staging_received_size = 0;
   } else {
-    shell_print(sh, "OK: Received %d bytes (%zu/%zu)", decoded,
-                program_staging_received_size, program_expected_size);
+    shell_print(sh, "OK: Received %d bytes (%zu/%zu)", decoded, program_staging_received_size, program_expected_size);
   }
   return 0;
 }
@@ -2138,8 +2048,7 @@ static int cmd_zplc_reset(const struct shell *sh, size_t argc, char **argv) {
   }
 
   if (program_received_size > 0) {
-    rc = legacy_validate_program(program_buffer, program_received_size,
-                                 &restored_scan_interval_ms);
+    rc = legacy_validate_program(program_buffer, program_received_size, &restored_scan_interval_ms);
     if (rc != ZPLC_LOADER_OK) {
       runtime_state = ZPLC_STATE_ERROR;
       k_mutex_unlock(&legacy_runtime_lock);
@@ -2147,9 +2056,7 @@ static int cmd_zplc_reset(const struct shell *sh, size_t argc, char **argv) {
       shell_error(sh, "ERROR: Active program validation failed (%d)", rc);
       return rc;
     }
-    rc = zplc_core_load(program_buffer, program_received_size,
-                        program_admission_workspace,
-                        sizeof(program_admission_workspace));
+    rc = zplc_core_load(program_buffer, program_received_size, program_admission_workspace, sizeof(program_admission_workspace));
     if (rc != ZPLC_LOADER_OK) {
       runtime_state = ZPLC_STATE_ERROR;
       k_mutex_unlock(&legacy_runtime_lock);
@@ -2216,8 +2123,7 @@ static int cmd_zplc_status(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  Cycles:  %u", cycle_count);
   shell_print(sh, "  Program: %zu bytes", program_received_size);
   if (vm) {
-    shell_print(sh, "  VM:      PC=%04X, SP=%d, Halted=%s, Error=%d", vm->pc,
-                vm->sp, vm->halted ? "YES" : "NO", vm->error);
+    shell_print(sh, "  VM:      PC=%04X, SP=%d, Halted=%s, Error=%d", vm->pc, vm->sp, vm->halted ? "YES" : "NO", vm->error);
   }
   return 0;
 }
@@ -2531,9 +2437,8 @@ static int cmd_dbg_info(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  Cycles: %u", stats.total_cycles);
   shell_print(sh, "  Tasks:  %u", stats.active_tasks);
   if (have_vm) {
-    shell_print(sh, "  VM:     PC=%04X, SP=%d, Halted=%s, Error=%d, Task=%d",
-                vm.pc, vm.sp, vm.paused != 0U ? "YES" : "NO",
-                vm.error, paused_task_id);
+    shell_print(sh, "  VM:     PC=%04X, SP=%d, Halted=%s, Error=%d, Task=%d", vm.pc, vm.sp, vm.paused != 0U ? "YES" : "NO", vm.error,
+                paused_task_id);
   }
 #else
   zplc_vm_t *vm = zplc_core_get_default_vm();
@@ -2642,8 +2547,7 @@ static int cmd_dbg_watch(const struct shell *sh, size_t argc, char **argv) {
   /* From the snapshot of the exchange: whole values, no lock held while the text is printed (RT-010). */
   rc = hil_read_watch_value((uint16_t)addr, type, &value);
   if (rc != 0) {
-    shell_error(sh, "ERROR: 0x%04lX (%u bytes) is not inside a PLC memory region",
-                addr, (unsigned)width);
+    shell_error(sh, "ERROR: 0x%04lX (%u bytes) is not inside a PLC memory region", addr, (unsigned)width);
     return -ERANGE;
   }
 
@@ -2660,8 +2564,7 @@ static int cmd_dbg_watch(const struct shell *sh, size_t argc, char **argv) {
     shell_print(sh, "0x%04lX f32 = %.6g", addr, (double)value.f32_val);
     break;
   default:
-    shell_print(sh, "0x%04lX %s = %u", addr, type_name,
-                (unsigned int)value.u32_val);
+    shell_print(sh, "0x%04lX %s = %u", addr, type_name, (unsigned int)value.u32_val);
     break;
   }
   return 0;
@@ -2705,13 +2608,11 @@ static int cmd_dbg_timer(const struct shell *sh, size_t argc, char **argv) {
     running = raw[14];
   }
   if (rc != 0) {
-    shell_error(sh, "ERROR: 0x%04lX (%u bytes) is not inside a PLC memory region",
-                addr, (unsigned)TIMER_INSTANCE_BYTES);
+    shell_error(sh, "ERROR: 0x%04lX (%u bytes) is not inside a PLC memory region", addr, (unsigned)TIMER_INSTANCE_BYTES);
     return -ERANGE;
   }
 
-  shell_print(sh, "Timer at 0x%04lX: IN=%u Q=%u PT=%u ms ET=%u ms running=%u",
-              addr, (unsigned)(in != 0U), (unsigned)(q != 0U),
+  shell_print(sh, "Timer at 0x%04lX: IN=%u Q=%u PT=%u ms ET=%u ms running=%u", addr, (unsigned)(in != 0U), (unsigned)(q != 0U),
               (unsigned)pt, (unsigned)et, (unsigned)(running != 0U));
   return 0;
 }
@@ -2827,16 +2728,14 @@ static int cmd_hil_status(const struct shell *sh, size_t argc, char **argv) {
 
   shell_fprintf(sh, SHELL_NORMAL,
                 "{\"t\":\"status\",\"mode\":\"%s\",\"state\":\"%s\",\"pc\":%u,\"sp\":%u,\"cycle\":%u,\"uptime\":%u,\"tasks\":%u}\n",
-                hil_mode_name(hil_get_mode()), sched_state_name(zplc_sched_get_state()),
-                pc, sp, stats.total_cycles, stats.uptime_ms, stats.active_tasks);
+                hil_mode_name(hil_get_mode()), sched_state_name(zplc_sched_get_state()), pc, sp, stats.total_cycles, stats.uptime_ms,
+                stats.active_tasks);
 #else
   zplc_vm_t *vm = zplc_core_get_default_vm();
   uint16_t pc = vm ? zplc_vm_get_pc(vm) : 0;
   uint16_t sp = vm ? zplc_vm_get_sp(vm) : 0;
-  shell_fprintf(sh, SHELL_NORMAL,
-                "{\"t\":\"status\",\"mode\":\"%s\",\"state\":\"%s\",\"pc\":%u,\"sp\":%u,\"cycle\":%u,\"uptime\":%u}\n",
-                hil_mode_name(hil_get_mode()), state_name(runtime_state), pc, sp,
-                cycle_count, k_uptime_get_32());
+  shell_fprintf(sh, SHELL_NORMAL, "{\"t\":\"status\",\"mode\":\"%s\",\"state\":\"%s\",\"pc\":%u,\"sp\":%u,\"cycle\":%u,\"uptime\":%u}\n",
+                hil_mode_name(hil_get_mode()), state_name(runtime_state), pc, sp, cycle_count, k_uptime_get_32());
 #endif
 
   return 0;
@@ -2860,14 +2759,12 @@ static int cmd_hil_watch(const struct shell *sh, size_t argc, char **argv) {
 
   if (strcmp(argv[1], "list") == 0) {
     bool first = true;
-    shell_fprintf(sh, SHELL_NORMAL,
-                  "{\"t\":\"ack\",\"cmd\":\"watch\",\"val\":\"list\",\"ok\":true,\"items\":[");
+    shell_fprintf(sh, SHELL_NORMAL, "{\"t\":\"ack\",\"cmd\":\"watch\",\"val\":\"list\",\"ok\":true,\"items\":[");
     for (int i = 0; i < HIL_MAX_WATCHES; i++) {
       if (!s_hil_watches[i].active) {
         continue;
       }
-      shell_fprintf(sh, SHELL_NORMAL, "%s{\"addr\":%u,\"type\":\"%s\"}",
-                    first ? "" : ",", s_hil_watches[i].addr,
+      shell_fprintf(sh, SHELL_NORMAL, "%s{\"addr\":%u,\"type\":\"%s\"}", first ? "" : ",", s_hil_watches[i].addr,
                     s_hil_watches[i].type_name);
       first = false;
     }
@@ -2890,8 +2787,7 @@ static int cmd_hil_watch(const struct shell *sh, size_t argc, char **argv) {
     uint8_t probe[8];
 
     if (argc < 4) {
-      hil_send_ack("watch", "add", false,
-                   "usage: hil watch add <addr> <type>");
+      hil_send_ack("watch", "add", false, "usage: hil watch add <addr> <type>");
       return -EINVAL;
     }
 
@@ -2907,8 +2803,7 @@ static int cmd_hil_watch(const struct shell *sh, size_t argc, char **argv) {
     }
 
     /* The extent has to lie inside PLC memory; the watch itself reads the snapshot (RT-010). */
-    if (width > sizeof(probe) ||
-        dbg_read((uint16_t)parsed_addr, probe, (uint16_t)width) != 0) {
+    if (width > sizeof(probe) || dbg_read((uint16_t)parsed_addr, probe, (uint16_t)width) != 0) {
       hil_send_ack("watch", argv[2], false, "address out of range");
       return -ERANGE;
     }
@@ -2931,8 +2826,7 @@ static int cmd_hil_watch(const struct shell *sh, size_t argc, char **argv) {
     s_hil_watches[slot].active = true;
     s_hil_watches[slot].addr = (uint16_t)parsed_addr;
     s_hil_watches[slot].type = type;
-    strncpy(s_hil_watches[slot].type_name, argv[3],
-            sizeof(s_hil_watches[slot].type_name) - 1U);
+    strncpy(s_hil_watches[slot].type_name, argv[3], sizeof(s_hil_watches[slot].type_name) - 1U);
     s_hil_watches[slot].type_name[sizeof(s_hil_watches[slot].type_name) - 1U] = '\0';
     s_hil_watches[slot].has_last = false;
 
@@ -2947,8 +2841,7 @@ static int cmd_hil_watch(const struct shell *sh, size_t argc, char **argv) {
     char *endptr = NULL;
 
     if (argc < 3) {
-      hil_send_ack("watch", "del", false,
-                   "usage: hil watch del <addr>");
+      hil_send_ack("watch", "del", false, "usage: hil watch del <addr>");
       return -EINVAL;
     }
 
@@ -3006,8 +2899,7 @@ static int cmd_hil_reset(const struct shell *sh, size_t argc, char **argv) {
  * ============================================================================
  */
 
-static int cmd_ntp_status(const struct shell *sh, size_t argc, char **argv)
-{
+static int cmd_ntp_status(const struct shell *sh, size_t argc, char **argv) {
   bool json = (argc > 1 && strcmp(argv[1], "--json") == 0);
   bool synced = zplc_time_is_synced();
   int64_t unix_ms = zplc_time_get_unix_ms();
@@ -3041,8 +2933,7 @@ static int cmd_ntp_status(const struct shell *sh, size_t argc, char **argv)
   return 0;
 }
 
-static int cmd_ntp_enable(const struct shell *sh, size_t argc, char **argv)
-{
+static int cmd_ntp_enable(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
   zplc_config_set_ntp_enabled(true);
@@ -3050,8 +2941,7 @@ static int cmd_ntp_enable(const struct shell *sh, size_t argc, char **argv)
   return 0;
 }
 
-static int cmd_ntp_disable(const struct shell *sh, size_t argc, char **argv)
-{
+static int cmd_ntp_disable(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
   zplc_config_set_ntp_enabled(false);
@@ -3059,8 +2949,7 @@ static int cmd_ntp_disable(const struct shell *sh, size_t argc, char **argv)
   return 0;
 }
 
-static int cmd_ntp_server(const struct shell *sh, size_t argc, char **argv)
-{
+static int cmd_ntp_server(const struct shell *sh, size_t argc, char **argv) {
   if (argc < 2) {
     shell_error(sh, "Usage: zplc ntp server <hostname>");
     return -EINVAL;
@@ -3070,8 +2959,7 @@ static int cmd_ntp_server(const struct shell *sh, size_t argc, char **argv)
   return 0;
 }
 
-static int cmd_ntp_sync(const struct shell *sh, size_t argc, char **argv)
-{
+static int cmd_ntp_sync(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
   shell_print(sh, "Triggering NTP re-sync...");
@@ -3091,9 +2979,7 @@ static int cmd_ntp_sync(const struct shell *sh, size_t argc, char **argv)
  */
 
 /** What `config get` shows for a credential: that it is set, never what it is. */
-static const char *secret_state(const char *value) {
-  return (value[0] != '\0') ? "(set)" : "(not set)";
-}
+static const char *secret_state(const char *value) { return (value[0] != '\0') ? "(set)" : "(not set)"; }
 
 static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
@@ -3101,7 +2987,7 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
   char buf[96];
 
   shell_print(sh, "ZPLC Configuration:");
-  
+
   zplc_config_get_hostname(buf, sizeof(buf));
   shell_print(sh, "  Hostname:     %s", buf);
 
@@ -3110,7 +2996,7 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  NTP Enabled:  %s", zplc_config_get_ntp_enabled() ? "Yes" : "No");
   zplc_config_get_ntp_server(buf, sizeof(buf));
   shell_print(sh, "  NTP Server:   %s", buf);
-  
+
   zplc_config_get_ip(buf, sizeof(buf));
   shell_print(sh, "  Static IP:    %s", buf);
 
@@ -3120,7 +3006,7 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
   /* COM-015: a credential is reported as set or not set, never printed. */
   zplc_config_get_wifi_pass(buf, sizeof(buf));
   shell_print(sh, "  WiFi Password: %s", secret_state(buf));
-  
+
   shell_print(sh, "  Modbus ID:    %u", zplc_config_get_modbus_id());
   shell_print(sh, "  Modbus TCP:   %s", zplc_config_get_modbus_tcp_enabled() ? "Enabled" : "Disabled");
   shell_print(sh, "  Modbus TCP Port: %u", zplc_config_get_modbus_tcp_port());
@@ -3137,7 +3023,7 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  Modbus TCP Client Unit: %u", (unsigned)zplc_config_get_modbus_tcp_client_unit_id());
   shell_print(sh, "  Modbus TCP Client Poll: %u ms", (unsigned)zplc_config_get_modbus_tcp_client_poll_ms());
   shell_print(sh, "  Modbus TCP Client Timeout: %u ms", (unsigned)zplc_config_get_modbus_tcp_client_timeout_ms());
-  
+
   zplc_config_get_mqtt_broker(buf, sizeof(buf));
   shell_print(sh, "  MQTT Broker:  %s", buf);
 
@@ -3151,7 +3037,7 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  MQTT Group ID: %s", buf);
   shell_print(sh, "  MQTT Protocol: %u", (unsigned)zplc_config_get_mqtt_protocol());
   shell_print(sh, "  MQTT Transport: %u", (unsigned)zplc_config_get_mqtt_transport());
-  
+
   shell_print(sh, "  MQTT Port:    %u", zplc_config_get_mqtt_port());
   shell_print(sh, "  MQTT Enabled: %s", zplc_config_get_mqtt_enabled() ? "Yes" : "No");
   shell_print(sh, "  MQTT Keepalive: %u s", zplc_config_get_mqtt_keepalive_sec());
@@ -3219,7 +3105,7 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  AWS Claim Cert: %s", buf);
   zplc_config_get_aws_claim_key_path(buf, sizeof(buf));
   shell_print(sh, "  AWS Claim Key: %s", buf);
-  
+
   return 0;
 }
 
@@ -3260,76 +3146,76 @@ union config_setter {
 
 /* name, how the value is read, the member of the union and the setter. Three parallel arrays are made from it: one
  * row of a structure would take twelve bytes for nine of data. */
-#define CONFIG_KEYS(X) \
-  X("hostname", CONFIG_KEY_TEXT, text, zplc_config_set_hostname) \
-  X("dhcp", CONFIG_KEY_FLAG, flag, zplc_config_set_dhcp) \
-  X("ip", CONFIG_KEY_TEXT, text, zplc_config_set_ip) \
-  X("wifi_ssid", CONFIG_KEY_TEXT, text, zplc_config_set_wifi_ssid) \
-  X("wifi_pass", CONFIG_KEY_TEXT, text, zplc_config_set_wifi_pass) \
-  X("wifi_security", CONFIG_KEY_U8, u8, zplc_config_set_wifi_security) \
-  X("ntp_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_ntp_enabled) \
-  X("ntp_server", CONFIG_KEY_TEXT, text, zplc_config_set_ntp_server) \
-  X("modbus_id", CONFIG_KEY_U16, u16, zplc_config_set_modbus_id) \
-  X("modbus_tcp_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_modbus_tcp_enabled) \
-  X("modbus_tcp_port", CONFIG_KEY_U16, u16, zplc_config_set_modbus_tcp_port) \
-  X("modbus_rtu_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_modbus_rtu_enabled) \
-  X("modbus_rtu_baud", CONFIG_KEY_U32, u32, zplc_config_set_modbus_rtu_baud) \
-  X("modbus_rtu_parity", CONFIG_KEY_PARITY, parity, zplc_config_set_modbus_rtu_parity) \
-  X("modbus_rtu_client_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_modbus_rtu_client_enabled) \
-  X("modbus_rtu_client_slave_id", CONFIG_KEY_U8, u8, zplc_config_set_modbus_rtu_client_slave_id) \
-  X("modbus_rtu_client_poll_ms", CONFIG_KEY_U32, u32, zplc_config_set_modbus_rtu_client_poll_ms) \
-  X("modbus_tcp_client_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_modbus_tcp_client_enabled) \
-  X("modbus_tcp_client_host", CONFIG_KEY_TEXT, text, zplc_config_set_modbus_tcp_client_host) \
-  X("modbus_tcp_client_port", CONFIG_KEY_U16, u16, zplc_config_set_modbus_tcp_client_port) \
-  X("modbus_tcp_client_unit_id", CONFIG_KEY_U8, u8, zplc_config_set_modbus_tcp_client_unit_id) \
-  X("modbus_tcp_client_poll_ms", CONFIG_KEY_U32, u32, zplc_config_set_modbus_tcp_client_poll_ms) \
-  X("modbus_tcp_client_timeout_ms", CONFIG_KEY_U32, u32, zplc_config_set_modbus_tcp_client_timeout_ms) \
-  X("mqtt_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_mqtt_enabled) \
-  X("mqtt_broker", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_broker) \
-  X("mqtt_client_id", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_client_id) \
-  X("mqtt_group_id", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_group_id) \
-  X("mqtt_topic_namespace", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_topic_namespace) \
-  X("mqtt_profile", CONFIG_KEY_PROFILE, profile, zplc_config_set_mqtt_profile) \
-  X("mqtt_protocol", CONFIG_KEY_PROTOCOL, protocol, zplc_config_set_mqtt_protocol) \
-  X("mqtt_transport", CONFIG_KEY_TRANSPORT, transport, zplc_config_set_mqtt_transport) \
-  X("mqtt_port", CONFIG_KEY_U16, u16, zplc_config_set_mqtt_port) \
-  X("mqtt_username", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_username) \
-  X("mqtt_password", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_password) \
-  X("mqtt_keepalive", CONFIG_KEY_U16, u16, zplc_config_set_mqtt_keepalive_sec) \
-  X("mqtt_publish_interval", CONFIG_KEY_U32, u32, zplc_config_set_mqtt_publish_interval_ms) \
-  X("mqtt_publish_qos", CONFIG_KEY_QOS, qos, zplc_config_set_mqtt_publish_qos) \
-  X("mqtt_subscribe_qos", CONFIG_KEY_QOS, qos, zplc_config_set_mqtt_subscribe_qos) \
-  X("mqtt_publish_retain", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_mqtt_publish_retain) \
-  X("mqtt_clean_session", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_mqtt_clean_session) \
-  X("mqtt_session_expiry", CONFIG_KEY_U32, u32, zplc_config_set_mqtt_session_expiry_sec) \
-  X("mqtt_security", CONFIG_KEY_SECURITY, security, zplc_config_set_mqtt_security) \
-  X("mqtt_websocket_path", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_websocket_path) \
-  X("mqtt_alpn", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_alpn) \
-  X("mqtt_lwt_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_mqtt_lwt_enabled) \
-  X("mqtt_lwt_topic", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_lwt_topic) \
-  X("mqtt_lwt_payload", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_lwt_payload) \
-  X("mqtt_lwt_qos", CONFIG_KEY_QOS, qos, zplc_config_set_mqtt_lwt_qos) \
-  X("mqtt_lwt_retain", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_mqtt_lwt_retain) \
-  X("mqtt_ca_cert_path", CONFIG_KEY_CREDENTIAL_PATH, credential, zplc_config_set_mqtt_ca_cert_path) \
+#define CONFIG_KEYS(X)                                                                                      \
+  X("hostname", CONFIG_KEY_TEXT, text, zplc_config_set_hostname)                                            \
+  X("dhcp", CONFIG_KEY_FLAG, flag, zplc_config_set_dhcp)                                                    \
+  X("ip", CONFIG_KEY_TEXT, text, zplc_config_set_ip)                                                        \
+  X("wifi_ssid", CONFIG_KEY_TEXT, text, zplc_config_set_wifi_ssid)                                          \
+  X("wifi_pass", CONFIG_KEY_TEXT, text, zplc_config_set_wifi_pass)                                          \
+  X("wifi_security", CONFIG_KEY_U8, u8, zplc_config_set_wifi_security)                                      \
+  X("ntp_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_ntp_enabled)                                   \
+  X("ntp_server", CONFIG_KEY_TEXT, text, zplc_config_set_ntp_server)                                        \
+  X("modbus_id", CONFIG_KEY_U16, u16, zplc_config_set_modbus_id)                                            \
+  X("modbus_tcp_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_modbus_tcp_enabled)                     \
+  X("modbus_tcp_port", CONFIG_KEY_U16, u16, zplc_config_set_modbus_tcp_port)                                \
+  X("modbus_rtu_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_modbus_rtu_enabled)                     \
+  X("modbus_rtu_baud", CONFIG_KEY_U32, u32, zplc_config_set_modbus_rtu_baud)                                \
+  X("modbus_rtu_parity", CONFIG_KEY_PARITY, parity, zplc_config_set_modbus_rtu_parity)                      \
+  X("modbus_rtu_client_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_modbus_rtu_client_enabled)       \
+  X("modbus_rtu_client_slave_id", CONFIG_KEY_U8, u8, zplc_config_set_modbus_rtu_client_slave_id)            \
+  X("modbus_rtu_client_poll_ms", CONFIG_KEY_U32, u32, zplc_config_set_modbus_rtu_client_poll_ms)            \
+  X("modbus_tcp_client_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_modbus_tcp_client_enabled)       \
+  X("modbus_tcp_client_host", CONFIG_KEY_TEXT, text, zplc_config_set_modbus_tcp_client_host)                \
+  X("modbus_tcp_client_port", CONFIG_KEY_U16, u16, zplc_config_set_modbus_tcp_client_port)                  \
+  X("modbus_tcp_client_unit_id", CONFIG_KEY_U8, u8, zplc_config_set_modbus_tcp_client_unit_id)              \
+  X("modbus_tcp_client_poll_ms", CONFIG_KEY_U32, u32, zplc_config_set_modbus_tcp_client_poll_ms)            \
+  X("modbus_tcp_client_timeout_ms", CONFIG_KEY_U32, u32, zplc_config_set_modbus_tcp_client_timeout_ms)      \
+  X("mqtt_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_mqtt_enabled)                                 \
+  X("mqtt_broker", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_broker)                                      \
+  X("mqtt_client_id", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_client_id)                                \
+  X("mqtt_group_id", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_group_id)                                  \
+  X("mqtt_topic_namespace", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_topic_namespace)                    \
+  X("mqtt_profile", CONFIG_KEY_PROFILE, profile, zplc_config_set_mqtt_profile)                              \
+  X("mqtt_protocol", CONFIG_KEY_PROTOCOL, protocol, zplc_config_set_mqtt_protocol)                          \
+  X("mqtt_transport", CONFIG_KEY_TRANSPORT, transport, zplc_config_set_mqtt_transport)                      \
+  X("mqtt_port", CONFIG_KEY_U16, u16, zplc_config_set_mqtt_port)                                            \
+  X("mqtt_username", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_username)                                  \
+  X("mqtt_password", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_password)                                  \
+  X("mqtt_keepalive", CONFIG_KEY_U16, u16, zplc_config_set_mqtt_keepalive_sec)                              \
+  X("mqtt_publish_interval", CONFIG_KEY_U32, u32, zplc_config_set_mqtt_publish_interval_ms)                 \
+  X("mqtt_publish_qos", CONFIG_KEY_QOS, qos, zplc_config_set_mqtt_publish_qos)                              \
+  X("mqtt_subscribe_qos", CONFIG_KEY_QOS, qos, zplc_config_set_mqtt_subscribe_qos)                          \
+  X("mqtt_publish_retain", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_mqtt_publish_retain)                   \
+  X("mqtt_clean_session", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_mqtt_clean_session)                     \
+  X("mqtt_session_expiry", CONFIG_KEY_U32, u32, zplc_config_set_mqtt_session_expiry_sec)                    \
+  X("mqtt_security", CONFIG_KEY_SECURITY, security, zplc_config_set_mqtt_security)                          \
+  X("mqtt_websocket_path", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_websocket_path)                      \
+  X("mqtt_alpn", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_alpn)                                          \
+  X("mqtt_lwt_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_mqtt_lwt_enabled)                         \
+  X("mqtt_lwt_topic", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_lwt_topic)                                \
+  X("mqtt_lwt_payload", CONFIG_KEY_TEXT, text, zplc_config_set_mqtt_lwt_payload)                            \
+  X("mqtt_lwt_qos", CONFIG_KEY_QOS, qos, zplc_config_set_mqtt_lwt_qos)                                      \
+  X("mqtt_lwt_retain", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_mqtt_lwt_retain)                           \
+  X("mqtt_ca_cert_path", CONFIG_KEY_CREDENTIAL_PATH, credential, zplc_config_set_mqtt_ca_cert_path)         \
   X("mqtt_client_cert_path", CONFIG_KEY_CREDENTIAL_PATH, credential, zplc_config_set_mqtt_client_cert_path) \
-  X("mqtt_client_key_path", CONFIG_KEY_CREDENTIAL_PATH, credential, zplc_config_set_mqtt_client_key_path) \
-  X("azure_sas_key", CONFIG_KEY_TEXT, text, zplc_config_set_azure_sas_key) \
-  X("azure_sas_expiry_s", CONFIG_KEY_U32, u32, zplc_config_set_azure_sas_expiry_s) \
-  X("azure_twin_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_azure_twin_enabled) \
+  X("mqtt_client_key_path", CONFIG_KEY_CREDENTIAL_PATH, credential, zplc_config_set_mqtt_client_key_path)   \
+  X("azure_sas_key", CONFIG_KEY_TEXT, text, zplc_config_set_azure_sas_key)                                  \
+  X("azure_sas_expiry_s", CONFIG_KEY_U32, u32, zplc_config_set_azure_sas_expiry_s)                          \
+  X("azure_twin_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_azure_twin_enabled)                     \
   X("azure_direct_methods_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_azure_direct_methods_enabled) \
-  X("azure_c2d_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_azure_c2d_enabled) \
-  X("azure_dps_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_azure_dps_enabled) \
-  X("azure_dps_id_scope", CONFIG_KEY_TEXT, text, zplc_config_set_azure_dps_id_scope) \
-  X("azure_dps_registration_id", CONFIG_KEY_TEXT, text, zplc_config_set_azure_dps_registration_id) \
-  X("azure_dps_endpoint", CONFIG_KEY_TEXT, text, zplc_config_set_azure_dps_endpoint) \
-  X("azure_event_grid_topic", CONFIG_KEY_TEXT, text, zplc_config_set_azure_event_grid_topic) \
-  X("azure_event_grid_source", CONFIG_KEY_TEXT, text, zplc_config_set_azure_event_grid_source) \
-  X("azure_event_grid_event_type", CONFIG_KEY_TEXT, text, zplc_config_set_azure_event_grid_event_type) \
-  X("aws_shadow_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_aws_shadow_enabled) \
-  X("aws_jobs_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_aws_jobs_enabled) \
-  X("aws_fleet_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_aws_fleet_enabled) \
-  X("aws_fleet_template_name", CONFIG_KEY_TEXT, text, zplc_config_set_aws_fleet_template_name) \
-  X("aws_claim_cert_path", CONFIG_KEY_CREDENTIAL_PATH, credential, zplc_config_set_aws_claim_cert_path) \
+  X("azure_c2d_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_azure_c2d_enabled)                       \
+  X("azure_dps_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_azure_dps_enabled)                       \
+  X("azure_dps_id_scope", CONFIG_KEY_TEXT, text, zplc_config_set_azure_dps_id_scope)                        \
+  X("azure_dps_registration_id", CONFIG_KEY_TEXT, text, zplc_config_set_azure_dps_registration_id)          \
+  X("azure_dps_endpoint", CONFIG_KEY_TEXT, text, zplc_config_set_azure_dps_endpoint)                        \
+  X("azure_event_grid_topic", CONFIG_KEY_TEXT, text, zplc_config_set_azure_event_grid_topic)                \
+  X("azure_event_grid_source", CONFIG_KEY_TEXT, text, zplc_config_set_azure_event_grid_source)              \
+  X("azure_event_grid_event_type", CONFIG_KEY_TEXT, text, zplc_config_set_azure_event_grid_event_type)      \
+  X("aws_shadow_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_aws_shadow_enabled)                     \
+  X("aws_jobs_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_aws_jobs_enabled)                         \
+  X("aws_fleet_enabled", CONFIG_KEY_FLAG_ON, flag, zplc_config_set_aws_fleet_enabled)                       \
+  X("aws_fleet_template_name", CONFIG_KEY_TEXT, text, zplc_config_set_aws_fleet_template_name)              \
+  X("aws_claim_cert_path", CONFIG_KEY_CREDENTIAL_PATH, credential, zplc_config_set_aws_claim_cert_path)     \
   X("aws_claim_key_path", CONFIG_KEY_CREDENTIAL_PATH, credential, zplc_config_set_aws_claim_key_path)
 
 #define CONFIG_KEY_NAME(name, kind, member, setter) name,
@@ -3383,8 +3269,7 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
   case CONFIG_KEY_CREDENTIAL_PATH:
     /* IO-008: a certificate or key path is a file, or a credential record of the store; no other record. */
     if (set->credential(val) != 0) {
-      shell_error(sh, "ERROR: %s must be a file path, persist://aws_cert_pem or persist://aws_key_pem, got '%s'",
-                  key, val);
+      shell_error(sh, "ERROR: %s must be a file path, persist://aws_cert_pem or persist://aws_key_pem, got '%s'", key, val);
       return -EINVAL;
     }
     break;
@@ -3523,9 +3408,12 @@ static int cmd_net_status(const struct shell *sh, size_t argc, char **argv) {
 
 #if defined(CONFIG_FILE_SYSTEM)
 static const char *cert_path_from_kind(const char *kind) {
-  if (strcmp(kind, "ca") == 0) return "/lfs/certs/ca.pem";
-  if (strcmp(kind, "client") == 0) return "/lfs/certs/client.pem";
-  if (strcmp(kind, "key") == 0) return "/lfs/certs/client.key";
+  if (strcmp(kind, "ca") == 0)
+    return "/lfs/certs/ca.pem";
+  if (strcmp(kind, "client") == 0)
+    return "/lfs/certs/client.pem";
+  if (strcmp(kind, "key") == 0)
+    return "/lfs/certs/client.key";
   return NULL;
 }
 
@@ -3588,14 +3476,12 @@ static int cmd_cert_chunk(const struct shell *sh, size_t argc, char **argv) {
 
   cert_staging.received += (size_t)decoded;
   if (cert_staging.received > cert_staging.expected) {
-    shell_error(sh, "ERROR: Too much data (%u > %u)", (unsigned)cert_staging.received,
-                (unsigned)cert_staging.expected);
+    shell_error(sh, "ERROR: Too much data (%u > %u)", (unsigned)cert_staging.received, (unsigned)cert_staging.expected);
     cert_staging.active = false;
     return -EOVERFLOW;
   }
 
-  shell_print(sh, "OK: Cert chunk accepted (%u/%u)", (unsigned)cert_staging.received,
-              (unsigned)cert_staging.expected);
+  shell_print(sh, "OK: Cert chunk accepted (%u/%u)", (unsigned)cert_staging.received, (unsigned)cert_staging.expected);
   return 0;
 }
 
@@ -3608,8 +3494,7 @@ static int cmd_cert_commit(const struct shell *sh, size_t argc, char **argv) {
     return -EINVAL;
   }
   if (cert_staging.received != cert_staging.expected) {
-    shell_error(sh, "ERROR: Incomplete data (%u/%u)", (unsigned)cert_staging.received,
-                (unsigned)cert_staging.expected);
+    shell_error(sh, "ERROR: Incomplete data (%u/%u)", (unsigned)cert_staging.received, (unsigned)cert_staging.expected);
     return -EINVAL;
   }
 
@@ -3638,8 +3523,7 @@ static int cmd_cert_commit(const struct shell *sh, size_t argc, char **argv) {
     return -EIO;
   }
 
-  shell_print(sh, "OK: Certificate committed to %s (%u bytes)", cert_staging.path,
-              (unsigned)cert_staging.received);
+  shell_print(sh, "OK: Certificate committed to %s (%u bytes)", cert_staging.path, (unsigned)cert_staging.received);
   cert_staging.active = false;
   return 0;
 }
@@ -3726,8 +3610,7 @@ static int cmd_cert_status(const struct shell *sh, size_t argc, char **argv) {
 }
 #endif
 
-static const char *comm_tag_name(uint8_t tag_id)
-{
+static const char *comm_tag_name(uint8_t tag_id) {
   switch (tag_id) {
   case ZPLC_TAG_PUBLISH:
     return "publish";
@@ -3740,8 +3623,7 @@ static const char *comm_tag_name(uint8_t tag_id)
   }
 }
 
-static const char *comm_type_name(uint8_t var_type)
-{
+static const char *comm_type_name(uint8_t var_type) {
   switch (var_type) {
   case ZPLC_TYPE_BOOL:
     return "BOOL";
@@ -3764,8 +3646,7 @@ static const char *comm_type_name(uint8_t var_type)
   }
 }
 
-static uint16_t comm_modbus_width(uint8_t var_type)
-{
+static uint16_t comm_modbus_width(uint8_t var_type) {
   switch (var_type) {
   case ZPLC_TYPE_REAL:
   case ZPLC_TYPE_DINT:
@@ -3777,20 +3658,16 @@ static uint16_t comm_modbus_width(uint8_t var_type)
   }
 }
 
-static uint32_t comm_effective_modbus_addr(uint16_t index,
-                                           const zplc_tag_entry_t *tag)
-{
+static uint32_t comm_effective_modbus_addr(uint16_t index, const zplc_tag_entry_t *tag) {
   uint32_t addr = 0U;
-  if (tag != NULL && zplc_config_get_modbus_tag_override(
-                         index, comm_modbus_width(tag->var_type), &addr)) {
+  if (tag != NULL && zplc_config_get_modbus_tag_override(index, comm_modbus_width(tag->var_type), &addr)) {
     return addr;
   }
 
   return tag ? tag->value : 0U;
 }
 
-static int cmd_comm_map(const struct shell *sh, size_t argc, char **argv)
-{
+static int cmd_comm_map(const struct shell *sh, size_t argc, char **argv) {
   bool json = (argc > 1 && strcmp(argv[1], "--json") == 0);
   uint16_t count = zplc_core_get_tag_count();
 
@@ -3800,9 +3677,7 @@ static int cmd_comm_map(const struct shell *sh, size_t argc, char **argv)
     shell_fprintf(sh, SHELL_NORMAL, "\"entries\":[");
     for (uint16_t i = 0U; i < count; i++) {
       const zplc_tag_entry_t *tag = zplc_core_get_tag(i);
-      uint32_t effective = (tag && tag->tag_id == ZPLC_TAG_MODBUS)
-                               ? comm_effective_modbus_addr(i, tag)
-                               : (tag ? tag->value : 0U);
+      uint32_t effective = (tag && tag->tag_id == ZPLC_TAG_MODBUS) ? comm_effective_modbus_addr(i, tag) : (tag ? tag->value : 0U);
       if (i > 0U) {
         shell_fprintf(sh, SHELL_NORMAL, ",");
       }
@@ -3814,8 +3689,7 @@ static int cmd_comm_map(const struct shell *sh, size_t argc, char **argv)
       JSON_UINT(sh, "width", tag ? comm_modbus_width(tag->var_type) : 0U, true);
       JSON_UINT(sh, "value", tag ? tag->value : 0U, true);
       JSON_UINT(sh, "effective_value", effective, true);
-      JSON_BOOL(sh, "override", tag ? zplc_config_get_modbus_tag_override(
-          i, comm_modbus_width(tag->var_type), NULL) : false, false);
+      JSON_BOOL(sh, "override", tag ? zplc_config_get_modbus_tag_override(i, comm_modbus_width(tag->var_type), NULL) : false, false);
       JSON_OBJ_END(sh);
     }
     shell_fprintf(sh, SHELL_NORMAL, "]");
@@ -3832,33 +3706,21 @@ static int cmd_comm_map(const struct shell *sh, size_t argc, char **argv)
     }
 
     if (tag->tag_id == ZPLC_TAG_MODBUS) {
-      bool has_override = zplc_config_get_modbus_tag_override(
-          i, comm_modbus_width(tag->var_type), NULL);
-      shell_print(sh,
-                  "  [%u] %-9s addr=%lu%s var=0x%04x type=%s",
-                  i,
-                  comm_tag_name(tag->tag_id),
-                  (unsigned long)comm_effective_modbus_addr(i, tag),
-                  has_override ? " (override)" : "",
-                  tag->var_addr,
+      bool has_override = zplc_config_get_modbus_tag_override(i, comm_modbus_width(tag->var_type), NULL);
+      shell_print(sh, "  [%u] %-9s addr=%lu%s var=0x%04x type=%s", i, comm_tag_name(tag->tag_id),
+                  (unsigned long)comm_effective_modbus_addr(i, tag), has_override ? " (override)" : "", tag->var_addr,
                   comm_type_name(tag->var_type));
       continue;
     }
 
-    shell_print(sh,
-                "  [%u] %-9s value=%lu var=0x%04x type=%s",
-                i,
-                comm_tag_name(tag->tag_id),
-                (unsigned long)tag->value,
-                tag->var_addr,
+    shell_print(sh, "  [%u] %-9s value=%lu var=0x%04x type=%s", i, comm_tag_name(tag->tag_id), (unsigned long)tag->value, tag->var_addr,
                 comm_type_name(tag->var_type));
   }
 
   return 0;
 }
 
-static int comm_parse_u32(const char *text, uint32_t *out)
-{
+static int comm_parse_u32(const char *text, uint32_t *out) {
   char *end = NULL;
   unsigned long value;
 
@@ -3874,14 +3736,11 @@ static int comm_parse_u32(const char *text, uint32_t *out)
   return 0;
 }
 
-static bool comm_modbus_endpoint_valid(uint32_t address, uint16_t width)
-{
-  return width != 0U && address <= UINT16_MAX &&
-         width - 1U <= UINT16_MAX - address;
+static bool comm_modbus_endpoint_valid(uint32_t address, uint16_t width) {
+  return width != 0U && address <= UINT16_MAX && width - 1U <= UINT16_MAX - address;
 }
 
-static int cmd_comm_set(const struct shell *sh, size_t argc, char **argv)
-{
+static int cmd_comm_set(const struct shell *sh, size_t argc, char **argv) {
   if (argc != 4) {
     shell_error(sh, "ERROR: Usage: zplc comm set modbus <index> <address>");
     return -EINVAL;
@@ -3936,12 +3795,8 @@ static int cmd_comm_set(const struct shell *sh, size_t argc, char **argv)
     uint32_t other_end = other_start + other_width - 1U;
     uint32_t new_end = address + width - 1U;
     if (!(new_end < other_start || address > other_end)) {
-      shell_error(sh, "ERROR: Modbus range %lu-%lu overlaps tag %u (%lu-%lu)",
-                  (unsigned long)address,
-                  (unsigned long)new_end,
-                  i,
-                  (unsigned long)other_start,
-                  (unsigned long)other_end);
+      shell_error(sh, "ERROR: Modbus range %lu-%lu overlaps tag %u (%lu-%lu)", (unsigned long)address, (unsigned long)new_end, i,
+                  (unsigned long)other_start, (unsigned long)other_end);
       return -EEXIST;
     }
   }
@@ -3952,13 +3807,11 @@ static int cmd_comm_set(const struct shell *sh, size_t argc, char **argv)
     return err;
   }
 
-  shell_print(sh, "OK: Modbus server mapping for tag %u remapped to %lu",
-              index, (unsigned long)address);
+  shell_print(sh, "OK: Modbus server mapping for tag %u remapped to %lu", index, (unsigned long)address);
   return 0;
 }
 
-static int cmd_comm_clear(const struct shell *sh, size_t argc, char **argv)
-{
+static int cmd_comm_clear(const struct shell *sh, size_t argc, char **argv) {
   if (argc != 3) {
     shell_error(sh, "ERROR: Usage: zplc comm clear modbus <index>");
     return -EINVAL;
@@ -3995,8 +3848,7 @@ static int cmd_comm_clear(const struct shell *sh, size_t argc, char **argv)
  * ============================================================================
  */
 
-static int cmd_wifi_connect(const struct shell *sh, size_t argc, char **argv)
-{
+static int cmd_wifi_connect(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
 
@@ -4091,9 +3943,7 @@ static int lk_key_load(void *context, uint8_t key[ZPLC_PROTO_KEY_BYTES]) {
 
 static int lk_key_store(void *context, const uint8_t key[ZPLC_PROTO_KEY_BYTES]) {
   ARG_UNUSED(context);
-  return zplc_hal_persist_save(LINK_KEY_NAME, key, ZPLC_PROTO_KEY_BYTES) == ZPLC_HAL_OK
-             ? 0
-             : (int)ZPLC_PROTO_ERR_FAILED;
+  return zplc_hal_persist_save(LINK_KEY_NAME, key, ZPLC_PROTO_KEY_BYTES) == ZPLC_HAL_OK ? 0 : (int)ZPLC_PROTO_ERR_FAILED;
 }
 
 static int lk_key_erase(void *context) {
@@ -4110,9 +3960,7 @@ static int lk_signing_key_load(void *context, uint8_t key[ZPLC_PROTO_KEY_BYTES])
 
 static int lk_signing_key_store(void *context, const uint8_t key[ZPLC_PROTO_KEY_BYTES]) {
   ARG_UNUSED(context);
-  return zplc_hal_persist_save(LINK_SIGNING_KEY_NAME, key, ZPLC_PROTO_KEY_BYTES) == ZPLC_HAL_OK
-             ? 0
-             : (int)ZPLC_PROTO_ERR_FAILED;
+  return zplc_hal_persist_save(LINK_SIGNING_KEY_NAME, key, ZPLC_PROTO_KEY_BYTES) == ZPLC_HAL_OK ? 0 : (int)ZPLC_PROTO_ERR_FAILED;
 }
 
 static int lk_signing_key_erase(void *context) {
@@ -4213,8 +4061,7 @@ static int lk_mem_read(void *context, uint16_t address, uint8_t *out, uint16_t l
   return zplc_exchange_read(address, out, length) == 0 ? 0 : (int)ZPLC_PROTO_ERR_RANGE;
 }
 
-static int lk_mem_read_many(void *context, const zplc_proto_extent_t *extents, size_t count, uint8_t *out,
-                            uint32_t *scan) {
+static int lk_mem_read_many(void *context, const zplc_proto_extent_t *extents, size_t count, uint8_t *out, uint32_t *scan) {
   zplc_sched_stats_t stats;
   size_t i;
   int result = 0;
@@ -4242,7 +4089,7 @@ static int lk_mem_write(void *context, uint16_t address, const uint8_t *data, ui
   if (rc == 0) {
     return 0;
   }
-  return rc == ZPLC_EXCHANGE_ERR_FULL ? (int)ZPLC_PROTO_ERR_FULL
+  return rc == ZPLC_EXCHANGE_ERR_FULL   ? (int)ZPLC_PROTO_ERR_FULL
          : rc == ZPLC_EXCHANGE_ERR_LOCK ? (int)ZPLC_PROTO_ERR_BUSY
                                         : (int)ZPLC_PROTO_ERR_RANGE;
 }
@@ -4739,10 +4586,9 @@ static void trace_print_status(const struct shell *sh) {
   shell_print(sh,
               "{\"t\":\"trace\",\"available\":%s,\"armed\":%s,\"capacity\":%u,\"in_bytes\":%u,\"out_bytes\":%u,"
               "\"written\":%u,\"first\":%u,\"max_io_bytes\":%u,\"buffer_bytes\":%u}",
-              status.fed != 0U ? "true" : "false", status.armed != 0U ? "true" : "false",
-              (unsigned int)status.capacity, (unsigned int)status.in_bytes, (unsigned int)status.out_bytes,
-              (unsigned int)status.written, (unsigned int)status.first, (unsigned int)ZPLC_IO_TRACE_MAX_IO_BYTES,
-              (unsigned int)status.storage_size);
+              status.fed != 0U ? "true" : "false", status.armed != 0U ? "true" : "false", (unsigned int)status.capacity,
+              (unsigned int)status.in_bytes, (unsigned int)status.out_bytes, (unsigned int)status.written, (unsigned int)status.first,
+              (unsigned int)ZPLC_IO_TRACE_MAX_IO_BYTES, (unsigned int)status.storage_size);
 }
 
 static int cmd_dbg_trace_status(const struct shell *sh, size_t argc, char **argv) {
@@ -4759,9 +4605,8 @@ static int cmd_dbg_trace_arm(const struct shell *sh, size_t argc, char **argv) {
   int rc;
 
   ARG_UNUSED(argc);
-  if (trace_arg_u32(argv[1], &capacity) != 0 || trace_arg_u32(argv[2], &in_bytes) != 0 ||
-      trace_arg_u32(argv[3], &out_bytes) != 0 || in_bytes > ZPLC_IO_TRACE_MAX_IO_BYTES ||
-      out_bytes > ZPLC_IO_TRACE_MAX_IO_BYTES) {
+  if (trace_arg_u32(argv[1], &capacity) != 0 || trace_arg_u32(argv[2], &in_bytes) != 0 || trace_arg_u32(argv[3], &out_bytes) != 0 ||
+      in_bytes > ZPLC_IO_TRACE_MAX_IO_BYTES || out_bytes > ZPLC_IO_TRACE_MAX_IO_BYTES) {
     shell_error(sh, "ERROR: usage: dbg trace arm <capacity> <in_bytes> <out_bytes>, at most %u bytes each",
                 (unsigned int)ZPLC_IO_TRACE_MAX_IO_BYTES);
     return -EINVAL;
@@ -4792,8 +4637,7 @@ static int cmd_dbg_trace_dump(const struct shell *sh, size_t argc, char **argv) 
   uint32_t seq;
 
   ARG_UNUSED(argc);
-  if (trace_arg_u32(argv[1], &from) != 0 || trace_arg_u32(argv[2], &count) != 0 || count == 0U ||
-      count > TRACE_DUMP_MAX) {
+  if (trace_arg_u32(argv[1], &from) != 0 || trace_arg_u32(argv[2], &count) != 0 || count == 0U || count > TRACE_DUMP_MAX) {
     shell_error(sh, "ERROR: usage: dbg trace dump <from> <count>, count 1 to %u", (unsigned int)TRACE_DUMP_MAX);
     return -EINVAL;
   }
@@ -4811,8 +4655,7 @@ static int cmd_dbg_trace_dump(const struct shell *sh, size_t argc, char **argv) 
     if (zplc_io_trace_get(trace, seq, &sample) != 0) {
       break; /* overwritten while it was read: the next dump starts at the oldest sample held */
     }
-    shell_fprintf(sh, SHELL_NORMAL, "%s[%u,%u,\"", seq == from ? "" : ",", (unsigned int)sample.t_us,
-                  (unsigned int)sample.batch);
+    shell_fprintf(sh, SHELL_NORMAL, "%s[%u,%u,\"", seq == from ? "" : ",", (unsigned int)sample.t_us, (unsigned int)sample.batch);
     for (uint32_t b = 0U; b < status.in_bytes; ++b) {
       shell_fprintf(sh, SHELL_NORMAL, "%02X", sample.in[b]);
     }
@@ -4972,77 +4815,74 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_SUBCMD_SET_END);
 /* clang-format on */
 
-static int cmd_mqtt_reset_backoff(const struct shell *sh, size_t argc, char **argv)
-{
-    ARG_UNUSED(argc);
-    ARG_UNUSED(argv);
-    zplc_mqtt_request_backoff_reset();
-    shell_print(sh, "OK: MQTT backoff reset");
-    return 0;
+static int cmd_mqtt_reset_backoff(const struct shell *sh, size_t argc, char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+  zplc_mqtt_request_backoff_reset();
+  shell_print(sh, "OK: MQTT backoff reset");
+  return 0;
 }
 
-static const char *tls_verify_name(uint8_t state)
-{
-    switch (state) {
-    case ZPLC_MQTT_TLS_VERIFY_ON:
-        return "on";
-    case ZPLC_MQTT_TLS_VERIFY_OFF:
-        return "OFF";
-    default:
-        return "n/a";
-    }
+static const char *tls_verify_name(uint8_t state) {
+  switch (state) {
+  case ZPLC_MQTT_TLS_VERIFY_ON:
+    return "on";
+  case ZPLC_MQTT_TLS_VERIFY_OFF:
+    return "OFF";
+  default:
+    return "n/a";
+  }
 }
 
-static int cmd_mqtt_status(const struct shell *sh, size_t argc, char **argv)
-{
-    bool json = (argc > 1 && strcmp(argv[1], "--json") == 0);
-    zplc_mqtt_status_t status;
-    zplc_mqtt_get_status(&status);
+static int cmd_mqtt_status(const struct shell *sh, size_t argc, char **argv) {
+  bool json = (argc > 1 && strcmp(argv[1], "--json") == 0);
+  zplc_mqtt_status_t status;
+  zplc_mqtt_get_status(&status);
 
-    if (json) {
-        JSON_OBJ_START(sh);
-        JSON_BOOL(sh, "connected", status.connected, true);
-        JSON_BOOL(sh, "subscribed", status.subscribed, true);
-        JSON_BOOL(sh, "session_present", status.session_present, true);
-        JSON_UINT(sh, "profile", status.profile, true);
-        JSON_UINT(sh, "protocol", status.protocol, true);
-        JSON_UINT(sh, "transport", status.transport, true);
-        JSON_STR(sh, "tls_verify", tls_verify_name(status.tls_verify), true);
-        JSON_UINT(sh, "publish_qos", status.publish_qos, true);
-        JSON_UINT(sh, "subscribe_qos", status.subscribe_qos, true);
-        JSON_BOOL(sh, "retain_enabled", status.retain_enabled, true);
-        JSON_BOOL(sh, "lwt_enabled", status.lwt_enabled, true);
-        JSON_INT(sh, "last_error", status.last_error, true);
-        JSON_UINT(sh, "last_publish_ms", status.last_publish_ms, true);
-        JSON_UINT(sh, "reconnect_backoff_s", status.reconnect_backoff_s, true);
-        JSON_STR(sh, "broker", status.broker, true);
-        JSON_STR(sh, "client_id", status.client_id, false);
-        JSON_OBJ_END(sh);
-        JSON_NEWLINE(sh);
-        return 0;
-    }
-
-    shell_print(sh, "MQTT Status:");
-    shell_print(sh, "  Connected: %s", status.connected ? "Yes" : "No");
-    shell_print(sh, "  Subscribed: %s", status.subscribed ? "Yes" : "No");
-    shell_print(sh, "  Session Present: %s", status.session_present ? "Yes" : "No");
-    shell_print(sh, "  Profile: %u", status.profile);
-    shell_print(sh, "  Protocol: %u", status.protocol);
-    shell_print(sh, "  Transport: %u", status.transport);
-    shell_print(sh, "  tls-verify: %s", tls_verify_name(status.tls_verify));
-    if (status.tls_verify == ZPLC_MQTT_TLS_VERIFY_OFF) {
-      shell_warn(sh, "  WARNING: the broker certificate is not checked");
-    }
-    shell_print(sh, "  Publish QoS: %u", status.publish_qos);
-    shell_print(sh, "  Subscribe QoS: %u", status.subscribe_qos);
-    shell_print(sh, "  Retain Enabled: %s", status.retain_enabled ? "Yes" : "No");
-    shell_print(sh, "  LWT Enabled: %s", status.lwt_enabled ? "Yes" : "No");
-    shell_print(sh, "  Last Error: %d", status.last_error);
-    shell_print(sh, "  Last Publish: %u ms", (unsigned)status.last_publish_ms);
-    shell_print(sh, "  Reconnect Backoff: %u s", (unsigned)status.reconnect_backoff_s);
-    shell_print(sh, "  Broker: %s", status.broker);
-    shell_print(sh, "  Client ID: %s", status.client_id);
+  if (json) {
+    JSON_OBJ_START(sh);
+    JSON_BOOL(sh, "connected", status.connected, true);
+    JSON_BOOL(sh, "subscribed", status.subscribed, true);
+    JSON_BOOL(sh, "session_present", status.session_present, true);
+    JSON_UINT(sh, "profile", status.profile, true);
+    JSON_UINT(sh, "protocol", status.protocol, true);
+    JSON_UINT(sh, "transport", status.transport, true);
+    JSON_STR(sh, "tls_verify", tls_verify_name(status.tls_verify), true);
+    JSON_UINT(sh, "publish_qos", status.publish_qos, true);
+    JSON_UINT(sh, "subscribe_qos", status.subscribe_qos, true);
+    JSON_BOOL(sh, "retain_enabled", status.retain_enabled, true);
+    JSON_BOOL(sh, "lwt_enabled", status.lwt_enabled, true);
+    JSON_INT(sh, "last_error", status.last_error, true);
+    JSON_UINT(sh, "last_publish_ms", status.last_publish_ms, true);
+    JSON_UINT(sh, "reconnect_backoff_s", status.reconnect_backoff_s, true);
+    JSON_STR(sh, "broker", status.broker, true);
+    JSON_STR(sh, "client_id", status.client_id, false);
+    JSON_OBJ_END(sh);
+    JSON_NEWLINE(sh);
     return 0;
+  }
+
+  shell_print(sh, "MQTT Status:");
+  shell_print(sh, "  Connected: %s", status.connected ? "Yes" : "No");
+  shell_print(sh, "  Subscribed: %s", status.subscribed ? "Yes" : "No");
+  shell_print(sh, "  Session Present: %s", status.session_present ? "Yes" : "No");
+  shell_print(sh, "  Profile: %u", status.profile);
+  shell_print(sh, "  Protocol: %u", status.protocol);
+  shell_print(sh, "  Transport: %u", status.transport);
+  shell_print(sh, "  tls-verify: %s", tls_verify_name(status.tls_verify));
+  if (status.tls_verify == ZPLC_MQTT_TLS_VERIFY_OFF) {
+    shell_warn(sh, "  WARNING: the broker certificate is not checked");
+  }
+  shell_print(sh, "  Publish QoS: %u", status.publish_qos);
+  shell_print(sh, "  Subscribe QoS: %u", status.subscribe_qos);
+  shell_print(sh, "  Retain Enabled: %s", status.retain_enabled ? "Yes" : "No");
+  shell_print(sh, "  LWT Enabled: %s", status.lwt_enabled ? "Yes" : "No");
+  shell_print(sh, "  Last Error: %d", status.last_error);
+  shell_print(sh, "  Last Publish: %u ms", (unsigned)status.last_publish_ms);
+  shell_print(sh, "  Reconnect Backoff: %u s", (unsigned)status.reconnect_backoff_s);
+  shell_print(sh, "  Broker: %s", status.broker);
+  shell_print(sh, "  Client ID: %s", status.client_id);
+  return 0;
 }
 
 /* tools/docs/source-parsers.ts reads this table line by line: the formatter leaves it as it is */

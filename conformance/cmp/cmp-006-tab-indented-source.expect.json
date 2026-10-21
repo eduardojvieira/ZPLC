@@ -2,13 +2,7 @@
   "requirement": "CMP-006",
   "title": "an error in a source indented with tabs is reported at its line",
   "build": "fails",
-  "lines": [
-    5
-  ],
-  "codes": [
-    "UNEXPECTED_TOKEN"
-  ],
-  "messageIncludes": [
-    "Expected expression"
-  ]
+  "lines": [5],
+  "codes": ["UNEXPECTED_TOKEN"],
+  "messageIncludes": ["Expected expression"]
 }

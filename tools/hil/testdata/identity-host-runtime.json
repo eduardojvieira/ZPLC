@@ -1,1 +1,11 @@
-{"version":"2.0.0-rc.3","commit":"5ebf45775faaccf2730e543b27b1eee391742abc","dirty":false,"board":"posix","abi_major":1,"abi_minor":0,"draft_counter":4,"options_hash":"2e02dd07","options":"build_type=Release"}
+{
+  "version": "2.0.0-rc.3",
+  "commit": "5ebf45775faaccf2730e543b27b1eee391742abc",
+  "dirty": false,
+  "board": "posix",
+  "abi_major": 1,
+  "abi_minor": 0,
+  "draft_counter": 4,
+  "options_hash": "2e02dd07",
+  "options": "build_type=Release"
+}

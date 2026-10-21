@@ -7,7 +7,15 @@
 import type { IDEState } from './useIDEStore';
 import { createProjectFolder, readProjectFile, removeProjectEntry, renameProjectEntry, writeProjectFile } from '../ipc/projectOps';
 import {
-  copyName, entryNameProblem, expandPath, joinPath, nameClash, parentPath, remapOpenFiles, remapPath, removeOpenFiles,
+  copyName,
+  entryNameProblem,
+  expandPath,
+  joinPath,
+  nameClash,
+  parentPath,
+  remapOpenFiles,
+  remapPath,
+  removeOpenFiles,
   renameTaskPrograms,
 } from '../project/treeOperations';
 import { fileTreeFileId, findFileInTree, isProgramSourceFile } from '../utils/fileSystem';
@@ -18,7 +26,9 @@ export interface TreeActionsHost {
   set(partial: Partial<IDEState>): void;
 }
 
-const refuse = (message: string): never => { throw new Error(message); };
+const refuse = (message: string): never => {
+  throw new Error(message);
+};
 
 function open(host: TreeActionsHost): { tree: FileTreeNode; handle: FileSystemDirectoryHandle; session: number } {
   const state = host.get();
@@ -37,26 +47,42 @@ function entryAt(tree: FileTreeNode, path: string): FileTreeNode {
 }
 
 /** Reads the tree again with the folders as they were open, plus `reveal`, and keeps the open files under their new paths. */
-async function settle(host: TreeActionsHost, session: number, change: { from: string; to: string } | { removed: string } | null, reveal: string | null): Promise<void> {
+async function settle(
+  host: TreeActionsHost,
+  session: number,
+  change: { from: string; to: string } | { removed: string } | null,
+  reveal: string | null,
+): Promise<void> {
   await host.get().refreshFileTree();
   const state = host.get();
   if (state.projectSession !== session || !state.fileTree) return;
   const tree = reveal !== null ? expandPath(state.fileTree, reveal) : state.fileTree;
-  const open = { loadedFiles: state.loadedFiles, openTabs: state.openTabs, activeFileId: state.activeFileId, breakpoints: state.debug.breakpoints };
-  const next = change === null ? open
-    : 'removed' in change ? removeOpenFiles(open, change.removed)
-      : remapOpenFiles(open, change.from, change.to, (path) => findFileInTree(tree, path));
+  const open = {
+    loadedFiles: state.loadedFiles,
+    openTabs: state.openTabs,
+    activeFileId: state.activeFileId,
+    breakpoints: state.debug.breakpoints,
+  };
+  const next =
+    change === null
+      ? open
+      : 'removed' in change
+        ? removeOpenFiles(open, change.removed)
+        : remapOpenFiles(open, change.from, change.to, (path) => findFileInTree(tree, path));
   host.set({
     fileTree: tree,
     loadedFiles: next.loadedFiles,
     openTabs: next.openTabs,
     activeFileId: next.activeFileId,
     debug: { ...state.debug, breakpoints: next.breakpoints },
-    ...(change === null ? {} : { compilerMessages: [], compilerMessagesChecked: false, compilerNavigationTarget: null, compilerRunId: state.compilerRunId + 1 }),
+    ...(change === null
+      ? {}
+      : { compilerMessages: [], compilerMessagesChecked: false, compilerNavigationTarget: null, compilerRunId: state.compilerRunId + 1 }),
   });
 }
 
-const report = (host: TreeActionsHost, type: 'success' | 'warning', message: string) => host.get().addConsoleEntry({ type, message, source: 'system' });
+const report = (host: TreeActionsHost, type: 'success' | 'warning', message: string) =>
+  host.get().addConsoleEntry({ type, message, source: 'system' });
 
 export async function createFolder(host: TreeActionsHost, parent: string, rawName: string): Promise<void> {
   const name = rawName.trim();
@@ -83,7 +109,10 @@ export async function renameEntry(host: TreeActionsHost, path: string, rawName: 
   const siblings = nodeAt(tree, parent)?.children ?? [];
   if (siblings.some((sibling) => sibling.path !== path && sameName(sibling.name, name))) refuse(`${name} already exists.`);
   const clash = node.type === 'file' ? nameClash(tree, name, path) : null;
-  if (clash) refuse(`${clash.name} already exists in ${parentPath(clash.path) || 'the project'}, and the build reads it as the same name as ${name}.`);
+  if (clash)
+    refuse(
+      `${clash.name} already exists in ${parentPath(clash.path) || 'the project'}, and the build reads it as the same name as ${name}.`,
+    );
   const to = joinPath(parent, name);
   await renameProjectEntry(handle, path, to);
   await settle(host, session, { from: path, to }, parent);
@@ -100,7 +129,13 @@ async function followTasks(host: TreeActionsHost, session: number, oldName: stri
   const wasDirty = state.projectConfigDirty;
   state.updateProjectConfig({ tasks });
   if (wasDirty) {
-    report(host, 'warning', `${changed === 1 ? 'A task' : `${changed} tasks`} now run${changed === 1 ? 's' : ''} ${newName}. Save the project settings to keep it.`);
+    report(
+      host,
+      'warning',
+      `${
+        changed === 1 ? 'A task' : `${changed} tasks`
+      } now run${changed === 1 ? 's' : ''} ${newName}. Save the project settings to keep it.`,
+    );
     return;
   }
   await host.get().saveProjectConfig();
@@ -119,7 +154,8 @@ export async function moveEntry(host: TreeActionsHost, path: string, targetFolde
   await renameProjectEntry(handle, path, to);
   await settle(host, session, { from: path, to }, folder);
   report(host, 'success', `Moved ${node.name} to ${folder || 'the project folder'}`);
-  if (isProgramSourceFile(node.name) && folder !== 'src') report(host, 'warning', `${node.name} is outside src: the build reads only the files directly in src.`);
+  if (isProgramSourceFile(node.name) && folder !== 'src')
+    report(host, 'warning', `${node.name} is outside src: the build reads only the files directly in src.`);
 }
 
 /** Copies the file under a free name next to it, from what the editor shows when it is open. Returns the path of the copy. */
@@ -129,7 +165,10 @@ export async function duplicateEntry(host: TreeActionsHost, path: string): Promi
   if (node.type !== 'file') refuse('Only files can be duplicated.');
   const parent = parentPath(path);
   const siblings = nodeAt(tree, parent)?.children ?? [];
-  const name = copyName(node.name, (candidate) => !siblings.some((sibling) => sameName(sibling.name, candidate)) && !nameClash(tree, candidate, null));
+  const name = copyName(
+    node.name,
+    (candidate) => !siblings.some((sibling) => sameName(sibling.name, candidate)) && !nameClash(tree, candidate, null),
+  );
   const loaded = host.get().loadedFiles.get(fileTreeFileId(path));
   const bytes = loaded ? new TextEncoder().encode(loaded.content) : await readProjectFile(handle, path);
   const to = joinPath(parent, name);

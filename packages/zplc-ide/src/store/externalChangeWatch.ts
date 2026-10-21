@@ -12,7 +12,11 @@ import { debugLog } from '../utils/debugLog';
 import { planExternalChanges } from './externalChanges';
 import { useIDEStore } from './useIDEStore';
 
-export interface ExternalConflict { path: string; name: string; /** The text on disk, or null when the file was deleted. */ disk: string | null }
+export interface ExternalConflict {
+  path: string;
+  name: string;
+  /** The text on disk, or null when the file was deleted. */ disk: string | null;
+}
 
 export const useExternalConflicts = create<{ conflicts: ExternalConflict[] }>(() => ({ conflicts: [] }));
 
@@ -35,7 +39,11 @@ export async function checkOpenFiles(): Promise<void> {
   const session = before.projectSession;
   const checked = [...before.loadedFiles.values()].filter((file) => file.handle);
   const disk = new Map<string, string | null | undefined>();
-  await Promise.all(checked.map(async (file) => { disk.set(file.path, await readDisk(file.handle!)); }));
+  await Promise.all(
+    checked.map(async (file) => {
+      disk.set(file.path, await readDisk(file.handle!));
+    }),
+  );
   const state = useIDEStore.getState();
   if (state.projectSession !== session) return;
 
@@ -48,7 +56,10 @@ export async function checkOpenFiles(): Promise<void> {
   for (const [path, onDisk] of disk) {
     const file = byPath.get(path);
     if (!file || typeof onDisk !== 'string' || file.diskContent === onDisk) continue;
-    if (!file.isModified || file.content === onDisk) { loadedFiles.set(file.id, { ...file, diskContent: onDisk }); changed = true; }
+    if (!file.isModified || file.content === onDisk) {
+      loadedFiles.set(file.id, { ...file, diskContent: onDisk });
+      changed = true;
+    }
   }
   for (const reload of plan.reload) {
     const file = byPath.get(reload.path)!;
@@ -82,7 +93,14 @@ export function resolveConflict(path: string, choice: 'mine' | 'disk'): void {
   } else if (conflict.disk === null) {
     state.discardFile(file.id);
   } else {
-    useIDEStore.setState({ loadedFiles: new Map(state.loadedFiles).set(file.id, { ...file, content: conflict.disk, isModified: false, diskContent: conflict.disk }) });
+    useIDEStore.setState({
+      loadedFiles: new Map(state.loadedFiles).set(file.id, {
+        ...file,
+        content: conflict.disk,
+        isModified: false,
+        diskContent: conflict.disk,
+      }),
+    });
   }
 }
 
@@ -100,7 +118,10 @@ export function startExternalChangeWatch(): () => void {
   let again = false;
 
   const run = async () => {
-    if (running) { again = true; return; }
+    if (running) {
+      again = true;
+      return;
+    }
     running = true;
     try {
       do {
@@ -121,7 +142,8 @@ export function startExternalChangeWatch(): () => void {
     if (rootId === watched) return;
     watched = rootId;
     useExternalConflicts.setState({ conflicts: [] });
-    if (rootId !== null) void Promise.resolve(watch({ rootId })).catch((error: unknown) => debugLog('[ExternalChanges] watch failed', error));
+    if (rootId !== null)
+      void Promise.resolve(watch({ rootId })).catch((error: unknown) => debugLog('[ExternalChanges] watch failed', error));
   };
 
   follow();
@@ -132,5 +154,8 @@ export function startExternalChangeWatch(): () => void {
     const change = parseProjectChange(raw);
     if (change && change.rootId === watched) void run();
   });
-  return () => { unsubscribe(); stopListening(); };
+  return () => {
+    unsubscribe();
+    stopListening();
+  };
 }

@@ -4,7 +4,10 @@ import { CompilerError, compileMultiTaskProject } from '../compiler';
 function build(board: string | undefined, declarations: string, io?: { virtual: Array<{ name: string; address: string }> }) {
   return compileMultiTaskProject(
     {
-      name: 'IoBoard', version: '1.0.0', ...(board ? { target: { board } } : {}), ...(io ? { io } : {}),
+      name: 'IoBoard',
+      version: '1.0.0',
+      ...(board ? { target: { board } } : {}),
+      ...(io ? { io } : {}),
       tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main'] }],
     },
     [{ name: 'Main', sourceRef: 'src/Main.st', language: 'ST', content: `PROGRAM Main\nVAR\n${declarations}\nEND_VAR\nEND_PROGRAM` }],

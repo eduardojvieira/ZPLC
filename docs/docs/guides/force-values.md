@@ -3,7 +3,7 @@ slug: /guides/force-values
 id: force-values
 title: Force a value
 sidebar_label: Force values
-description: "Hold an input or a variable at a value while a program runs, see what a force does and what clears it."
+description: 'Hold an input or a variable at a value while a program runs, see what a force does and what clears it.'
 tags: [how-to, debugging, force, simulation]
 ---
 
@@ -38,14 +38,14 @@ last forced value when you release the force, until you set it again.
 
 ## What a force does
 
-| Action | Forces |
-| --- | --- |
-| The program assigns the variable | The forced value wins |
-| A Modbus, MQTT or cloud message writes the variable | The forced value stays |
-| Pause, step and resume | Kept |
-| Stop | Cleared, and the output image is zeroed |
-| A fault of the runtime | Cleared, as with Stop |
-| Load of a new program | Cleared: a load is a cold start |
+| Action                                              | Forces                                  |
+| --------------------------------------------------- | --------------------------------------- |
+| The program assigns the variable                    | The forced value wins                   |
+| A Modbus, MQTT or cloud message writes the variable | The forced value stays                  |
+| Pause, step and resume                              | Kept                                    |
+| Stop                                                | Cleared, and the output image is zeroed |
+| A fault of the runtime                              | Cleared, as with Stop                   |
+| Load of a new program                               | Cleared: a load is a cold start         |
 
 A force carries the types of up to 32 bits. Releasing it hands the variable back to
 the program. [Pause, resume, step and stop](../runtime/scheduler.md#pause-resume-step-and-stop)
@@ -83,14 +83,14 @@ program.
 
 ## What is verified, and what is not
 
-| Part | Verified | Level |
-| --- | --- | --- |
-| A force holds a value against the program and against an outside write | C and Zephyr tests, and a journey in the real application | Host and `native_sim` |
-| Forces are kept by pause and step, and cleared by stop and by a fault | Tests of the scheduler | Host and `native_sim`, QEMU |
-| A console force ends with its session: close, takeover, idle time, a falling line; the output follows the program | Engine and core tests; the device-link test of the real image (DTR cannot be lowered there) | Host and `native_sim` |
-| DTR on the Pico's USB port ends the session | Not run on a board | None |
-| An input of a program can be set or forced by its own name | Journey 37 in the real application | Host |
-| The effect of a force on a physical pin | Not tested | None |
+| Part                                                                                                              | Verified                                                                                    | Level                       |
+| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | --------------------------- |
+| A force holds a value against the program and against an outside write                                            | C and Zephyr tests, and a journey in the real application                                   | Host and `native_sim`       |
+| Forces are kept by pause and step, and cleared by stop and by a fault                                             | Tests of the scheduler                                                                      | Host and `native_sim`, QEMU |
+| A console force ends with its session: close, takeover, idle time, a falling line; the output follows the program | Engine and core tests; the device-link test of the real image (DTR cannot be lowered there) | Host and `native_sim`       |
+| DTR on the Pico's USB port ends the session                                                                       | Not run on a board                                                                          | None                        |
+| An input of a program can be set or forced by its own name                                                        | Journey 37 in the real application                                                          | Host                        |
+| The effect of a force on a physical pin                                                                           | Not tested                                                                                  | None                        |
 
 ## See also
 

@@ -29,8 +29,7 @@ LOG_MODULE_REGISTER(zplc_comm_mqtt, LOG_LEVEL_INF);
 #define FB_STRING_BYTES ((uint16_t)(ZPLC_STRING_DATA_OFFSET + ZPLC_STRING_DEFAULT_SIZE + 1))
 
 /* The shortest block of each kind the handler accepts: the table size. */
-static bool block_ok(zplc_comm_fb_kind_t kind, const uint8_t *fb_mem,
-                     uint16_t fb_len) {
+static bool block_ok(zplc_comm_fb_kind_t kind, const uint8_t *fb_mem, uint16_t fb_len) {
   const uint16_t needed = zplc_comm_fb_size((uint32_t)kind);
 
   return fb_mem != NULL && needed != 0U && fb_len >= needed;
@@ -50,9 +49,7 @@ static int session_result(void) {
     /* The reason the session is down, when the client knows it, else "not connected". */
     const int status = zplc_comm_status_from_errno(last_error);
 
-    return ZPLC_COMM_HANDLER_FAIL(status == ZPLC_COMM_UNKNOWN || status == ZPLC_COMM_OK
-                                      ? ZPLC_COMM_NOT_CONNECTED
-                                      : status);
+    return ZPLC_COMM_HANDLER_FAIL(status == ZPLC_COMM_UNKNOWN || status == ZPLC_COMM_OK ? ZPLC_COMM_NOT_CONNECTED : status);
   }
   }
 }
@@ -61,8 +58,7 @@ static int session_result(void) {
 static int mqtt_connect_poll(uint8_t *fb_mem) {
   const int result = session_result();
 
-  fb_mem[ZPLC_COMM_MQTT_CONNECT_CONNECTED_OFFSET] =
-      result == ZPLC_COMM_HANDLER_DONE ? 1U : 0U;
+  fb_mem[ZPLC_COMM_MQTT_CONNECT_CONNECTED_OFFSET] = result == ZPLC_COMM_HANDLER_DONE ? 1U : 0U;
   return result;
 }
 
@@ -76,19 +72,14 @@ static int mqtt_publish_start(uint8_t *fb_mem, uint16_t fb_len) {
   if (qos > 2U) {
     return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_INVALID_ADDR);
   }
-  (void)zplc_fb_string_copy(topic, sizeof(topic), fb_mem, fb_len,
-                            ZPLC_COMM_MQTT_PUBLISH_TOPIC_OFFSET, FB_STRING_BYTES);
+  (void)zplc_fb_string_copy(topic, sizeof(topic), fb_mem, fb_len, ZPLC_COMM_MQTT_PUBLISH_TOPIC_OFFSET, FB_STRING_BYTES);
   if (topic[0] == '\0') {
     return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_INVALID_ADDR);
   }
   /* at most the characters of the member, and what the block holds */
-  payload_len = zplc_fb_string_chars(fb_mem, fb_len,
-                                     ZPLC_COMM_MQTT_PUBLISH_PAYLOAD_OFFSET,
-                                     FB_STRING_BYTES);
+  payload_len = zplc_fb_string_chars(fb_mem, fb_len, ZPLC_COMM_MQTT_PUBLISH_PAYLOAD_OFFSET, FB_STRING_BYTES);
   if (payload_len != 0U) {
-    memcpy(payload,
-           &fb_mem[ZPLC_COMM_MQTT_PUBLISH_PAYLOAD_OFFSET + ZPLC_FB_STR_DATA],
-           payload_len);
+    memcpy(payload, &fb_mem[ZPLC_COMM_MQTT_PUBLISH_PAYLOAD_OFFSET + ZPLC_FB_STR_DATA], payload_len);
   }
   return zplc_mqtt_fb_publish(fb_mem, topic, payload, payload_len, qos, retain);
 }
@@ -102,8 +93,7 @@ static int mqtt_subscribe_poll(uint8_t *fb_mem, uint16_t fb_len) {
   int length;
 
   fb_mem[ZPLC_COMM_MQTT_SUBSCRIBE_VALID_OFFSET] = 0U;
-  (void)zplc_fb_string_copy(topic, sizeof(topic), fb_mem, fb_len,
-                            ZPLC_COMM_MQTT_SUBSCRIBE_TOPIC_OFFSET, FB_STRING_BYTES);
+  (void)zplc_fb_string_copy(topic, sizeof(topic), fb_mem, fb_len, ZPLC_COMM_MQTT_SUBSCRIBE_TOPIC_OFFSET, FB_STRING_BYTES);
   if (topic[0] == '\0' || qos > 2U) {
     return ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_INVALID_ADDR);
   }
@@ -112,8 +102,7 @@ static int mqtt_subscribe_poll(uint8_t *fb_mem, uint16_t fb_len) {
   length = zplc_mqtt_fb_take_message(fb_mem, message, ZPLC_STRING_DEFAULT_SIZE);
   if (length >= 0) {
     /* VALID is TRUE for the one scan the message is new in; PAYLOAD keeps the last one. */
-    (void)zplc_fb_string_set(fb_mem, fb_len, ZPLC_COMM_MQTT_SUBSCRIBE_PAYLOAD_OFFSET,
-                             FB_STRING_BYTES, message, (size_t)length);
+    (void)zplc_fb_string_set(fb_mem, fb_len, ZPLC_COMM_MQTT_SUBSCRIBE_PAYLOAD_OFFSET, FB_STRING_BYTES, message, (size_t)length);
     fb_mem[ZPLC_COMM_MQTT_SUBSCRIBE_VALID_OFFSET] = 1U;
   }
   return result;
@@ -124,8 +113,7 @@ static int mqtt_subscribe_poll(uint8_t *fb_mem, uint16_t fb_len) {
  * ============================================================================
  */
 
-static int zplc_comm_mqtt_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
-                                  uint16_t fb_len, zplc_comm_call_t call) {
+static int zplc_comm_mqtt_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len, zplc_comm_call_t call) {
   if (!block_ok(kind, fb_mem, fb_len)) {
     return -EINVAL;
   }
@@ -141,8 +129,7 @@ static int zplc_comm_mqtt_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
     case ZPLC_COMM_FB_MQTT_SUBSCRIBE:
       zplc_mqtt_fb_unsubscribe(fb_mem);
       fb_mem[ZPLC_COMM_MQTT_SUBSCRIBE_VALID_OFFSET] = 0U;
-      (void)zplc_fb_string_set(fb_mem, fb_len, ZPLC_COMM_MQTT_SUBSCRIBE_PAYLOAD_OFFSET,
-                               FB_STRING_BYTES, (const uint8_t *)"", 0U);
+      (void)zplc_fb_string_set(fb_mem, fb_len, ZPLC_COMM_MQTT_SUBSCRIBE_PAYLOAD_OFFSET, FB_STRING_BYTES, (const uint8_t *)"", 0U);
       break;
     default:
       break;
@@ -154,8 +141,7 @@ static int zplc_comm_mqtt_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
   case ZPLC_COMM_FB_MQTT_CONNECT:
     return mqtt_connect_poll(fb_mem);
   case ZPLC_COMM_FB_MQTT_PUBLISH:
-    return call == ZPLC_COMM_CALL_START ? mqtt_publish_start(fb_mem, fb_len)
-                                        : zplc_mqtt_fb_poll(fb_mem);
+    return call == ZPLC_COMM_CALL_START ? mqtt_publish_start(fb_mem, fb_len) : zplc_mqtt_fb_poll(fb_mem);
   case ZPLC_COMM_FB_MQTT_SUBSCRIBE:
     return mqtt_subscribe_poll(fb_mem, fb_len);
   default:
@@ -166,18 +152,15 @@ static int zplc_comm_mqtt_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
 int zplc_comm_mqtt_handler_init(void) {
   int rc;
 
-  rc = zplc_comm_register_handler(ZPLC_COMM_FB_MQTT_CONNECT,
-                                  zplc_comm_mqtt_handler);
+  rc = zplc_comm_register_handler(ZPLC_COMM_FB_MQTT_CONNECT, zplc_comm_mqtt_handler);
   if (rc != 0)
     return rc;
 
-  rc = zplc_comm_register_handler(ZPLC_COMM_FB_MQTT_PUBLISH,
-                                  zplc_comm_mqtt_handler);
+  rc = zplc_comm_register_handler(ZPLC_COMM_FB_MQTT_PUBLISH, zplc_comm_mqtt_handler);
   if (rc != 0)
     return rc;
 
-  rc = zplc_comm_register_handler(ZPLC_COMM_FB_MQTT_SUBSCRIBE,
-                                  zplc_comm_mqtt_handler);
+  rc = zplc_comm_register_handler(ZPLC_COMM_FB_MQTT_SUBSCRIBE, zplc_comm_mqtt_handler);
   if (rc != 0)
     return rc;
 

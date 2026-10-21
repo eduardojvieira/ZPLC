@@ -3,7 +3,7 @@ slug: /learn/faceplate
 id: faceplate
 title: Live I/O faceplate
 sidebar_label: Live I/O faceplate
-description: "The Live I/O faceplate of a simulation: what it lists, how to operate the inputs of the running program, and when a change reaches the program."
+description: 'The Live I/O faceplate of a simulation: what it lists, how to operate the inputs of the running program, and when a change reaches the program.'
 tags: [learn, simulation, faceplate]
 unlisted: true
 ---
@@ -35,12 +35,12 @@ lesson; see [Lesson plants](./plants.md).
 
 ## How to operate an input
 
-| Type of the input | Control | With the keyboard |
-|---|---|---|
-| `BOOL` | A switch whose text says what pressing it does, **Set TRUE** or **Set FALSE**; a screen reader reads its name and value, for example `Gate: FALSE`. | Tab to it and press Space. |
-| `BOOL` | A **Hold** button: `TRUE` while it is held, `FALSE` when it is released. | Hold Space or Enter. |
-| A number of 8 or 16 bits (`SINT`, `INT`, `BYTE`, `WORD` ...) | A slider over the range of the type, and a number box with **Set**. | Arrow keys step by one, Home and End go to the ends of the range; type a value in the box and press Enter. |
-| A wider number (`DINT`, `REAL` ...) | A number box with **Set**. Its type gives no range to slide over. | Type a value and press Enter. |
+| Type of the input                                            | Control                                                                                                                                             | With the keyboard                                                                                          |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `BOOL`                                                       | A switch whose text says what pressing it does, **Set TRUE** or **Set FALSE**; a screen reader reads its name and value, for example `Gate: FALSE`. | Tab to it and press Space.                                                                                 |
+| `BOOL`                                                       | A **Hold** button: `TRUE` while it is held, `FALSE` when it is released.                                                                            | Hold Space or Enter.                                                                                       |
+| A number of 8 or 16 bits (`SINT`, `INT`, `BYTE`, `WORD` ...) | A slider over the range of the type, and a number box with **Set**.                                                                                 | Arrow keys step by one, Home and End go to the ends of the range; type a value in the box and press Enter. |
+| A wider number (`DINT`, `REAL` ...)                          | A number box with **Set**. Its type gives no range to slide over.                                                                                   | Type a value and press Enter.                                                                              |
 
 **Force** holds an input at its value until you release it. A force carries up
 to 32 bits, so a wider input can be set but not forced.

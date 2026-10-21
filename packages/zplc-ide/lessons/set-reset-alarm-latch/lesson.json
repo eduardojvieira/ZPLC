@@ -5,16 +5,9 @@
   "order": 15,
   "module": 2,
   "level": "foundation",
-  "prerequisites": [
-    "seal-in-ladder"
-  ],
-  "languages": [
-    "ST"
-  ],
-  "tracks": [
-    "simulation",
-    "hardware"
-  ],
+  "prerequisites": ["seal-in-ladder"],
+  "languages": ["ST"],
+  "tracks": ["simulation", "hardware"],
   "unsupported": {},
   "plant": null,
   "estimatedMinutes": 15,

@@ -1,6 +1,6 @@
 /**
  * MathNode - Custom ReactFlow node for math operators
- * 
+ *
  * Renders ADD, SUB, MUL, DIV, MOD, ABS blocks.
  */
 
@@ -22,24 +22,35 @@ const MathNode = memo(({ id, data, selected }: NodeProps) => {
   // Get operator symbol
   const getSymbol = () => {
     switch (type) {
-      case 'ADD': return '+';
-      case 'SUB': return '−';
-      case 'MUL': return '×';
-      case 'DIV': return '÷';
-      case 'MOD': return '%';
-      case 'ABS': return '|x|';
-      case 'MAX': return 'MAX';
-      case 'MIN': return 'MIN';
-      case 'LIMIT': return 'LIM';
-      case 'SEL': return 'SEL';
-      default: return '?';
+      case 'ADD':
+        return '+';
+      case 'SUB':
+        return '−';
+      case 'MUL':
+        return '×';
+      case 'DIV':
+        return '÷';
+      case 'MOD':
+        return '%';
+      case 'ABS':
+        return '|x|';
+      case 'MAX':
+        return 'MAX';
+      case 'MIN':
+        return 'MIN';
+      case 'LIMIT':
+        return 'LIM';
+      case 'SEL':
+        return 'SEL';
+      default:
+        return '?';
     }
   };
 
   const isSingleInput = type === 'ABS';
   const isThreeInput = type === 'LIMIT';
-  
-  const inputCount = isThreeInput ? 3 : (isSingleInput ? 1 : 2);
+
+  const inputCount = isThreeInput ? 3 : isSingleInput ? 1 : 2;
   const portHeight = 20;
   const bodyHeight = Math.max(inputCount * portHeight + 16, 50);
 
@@ -64,10 +75,7 @@ const MathNode = memo(({ id, data, selected }: NodeProps) => {
           `}
         >
           {/* Math body */}
-          <div 
-            className="relative flex items-center justify-center"
-            style={{ height: bodyHeight }}
-          >
+          <div className="relative flex items-center justify-center" style={{ height: bodyHeight }}>
             {/* Input handles */}
             {inputLabels.map((label, idx) => (
               <Handle
@@ -76,17 +84,15 @@ const MathNode = memo(({ id, data, selected }: NodeProps) => {
                 position={Position.Left}
                 id={label}
                 className="!w-3 !h-3 !rounded-[2px] !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
-                style={{ 
-                  top: 12 + idx * portHeight + (bodyHeight - inputCount * portHeight) / 2
+                style={{
+                  top: 12 + idx * portHeight + (bodyHeight - inputCount * portHeight) / 2,
                 }}
               />
             ))}
-  
+
             {/* Symbol */}
-            <span className={`font-bold text-[var(--text-primary)] ${type.length > 1 ? 'text-xs' : 'text-2xl'}`}>
-              {getSymbol()}
-            </span>
-  
+            <span className={`font-bold text-[var(--text-primary)] ${type.length > 1 ? 'text-xs' : 'text-2xl'}`}>{getSymbol()}</span>
+
             {/* Output handle */}
             <Handle
               type="source"
@@ -95,12 +101,10 @@ const MathNode = memo(({ id, data, selected }: NodeProps) => {
               className="!w-3 !h-3 !rounded-full !bg-[var(--visual-wire)] !border-2 !border-[var(--color-surface-300)]"
             />
           </div>
-  
+
           {/* Type label */}
           <div className="bg-[var(--color-surface-700)] px-1 py-0.5 text-center rounded-b border-t border-[var(--border-color)]">
-            <span className="text-[length:var(--font-size-caption)] text-[var(--text-tertiary)] font-mono">
-              {type}
-            </span>
+            <span className="text-[length:var(--font-size-caption)] text-[var(--text-tertiary)] font-mono">{type}</span>
           </div>
         </div>
       </Tooltip>

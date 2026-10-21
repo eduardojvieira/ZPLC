@@ -10,7 +10,16 @@
  *       passthrough mode for terminal, and system info.
  */
 
-import type { IDebugAdapter, VMInfo, RuntimeSnapshot, WatchVariable, WatchForceEntry, DebugAdapterEvents, LoadProgramOptions, ReadWatchOptions } from './debugAdapter';
+import type {
+  IDebugAdapter,
+  VMInfo,
+  RuntimeSnapshot,
+  WatchVariable,
+  WatchForceEntry,
+  DebugAdapterEvents,
+  LoadProgramOptions,
+  ReadWatchOptions,
+} from './debugAdapter';
 import { bytesToHex, bytesToValue, getTypeSize, MEMORY_MAP } from './debugAdapter';
 import { assertMemoryAccess, CONTRACT_REGION_SIZES, type RegionSizes } from './memoryAccess';
 
@@ -188,14 +197,16 @@ export class SerialAdapter extends SerialDeviceLink implements IDebugAdapter {
         // Fast-path terminator for mpeek JSON output
         if (cleanBuffer.includes('{"t":"mpeek"') && cleanBuffer.includes(']}')) {
           this.connection._rxBuffer = '';
-          const lines = buffer.split(/\r?\n/)
+          const lines = buffer
+            .split(/\r?\n/)
             .map((line) => line.replace(ansiRegex, '').trim())
             .filter((line) => line && !line.startsWith('uart:~$'));
           return lines.filter((line) => line !== command);
         }
       }
 
-      const lines = buffer.split(/\r?\n/)
+      const lines = buffer
+        .split(/\r?\n/)
         .map((line) => line.replace(ansiRegex, '').trim())
         .filter((line) => line && !line.startsWith('uart:~$'));
 
@@ -303,9 +314,7 @@ export class SerialAdapter extends SerialDeviceLink implements IDebugAdapter {
     assertMemoryAccess(address, bytes.length, 'force', this.regionSizes());
 
     try {
-      requireForceCommandConfirmation(await this.sendDebugCommand(
-        `force set 0x${address.toString(16)} ${bytesToHex(bytes)}`,
-      ));
+      requireForceCommandConfirmation(await this.sendDebugCommand(`force set 0x${address.toString(16)} ${bytesToHex(bytes)}`));
     } catch {
       throw new Error('Force command confirmation failed');
     }
@@ -449,14 +458,11 @@ export class SerialAdapter extends SerialDeviceLink implements IDebugAdapter {
    * Get extended info using JSON format
    */
   async getExtendedInfo(): Promise<ExtendedVMInfo> {
-    const result = await this.sendJsonCommand('zplc dbg info') as ExtendedVMInfo;
+    const result = (await this.sendJsonCommand('zplc dbg info')) as ExtendedVMInfo;
     return result;
   }
 
-  async readWatchVariables(
-    variables: WatchVariable[],
-    options?: ReadWatchOptions,
-  ): Promise<WatchVariable[]> {
+  async readWatchVariables(variables: WatchVariable[], options?: ReadWatchOptions): Promise<WatchVariable[]> {
     if (!this._connected) {
       throw new Error('Not connected');
     }
@@ -498,8 +504,8 @@ export class SerialAdapter extends SerialDeviceLink implements IDebugAdapter {
         return variables.map((v) => {
           const bytes = addrMap.get(v.address);
           if (bytes === undefined) {
-             console.warn(`[mpeek map] Missing bytes for ${v.name} at addr ${v.address}`);
-             return v;
+            console.warn(`[mpeek map] Missing bytes for ${v.name} at addr ${v.address}`);
+            return v;
           }
           const value = bytesToValue(bytes, v.type, v.bitOffset);
           debugLog(`[mpeek map] var ${v.name} at ${v.address} -> bytes:`, bytes, `value:`, value);
@@ -507,7 +513,11 @@ export class SerialAdapter extends SerialDeviceLink implements IDebugAdapter {
         });
       }
 
-      console.warn(`[mpeek] Capacity exceeded (entries=${requests.length}/${MPEEK_MAX_ENTRIES}, bytes=${totalBytes}/${MPEEK_MAX_BYTES}). Falling back to standard peek.`);
+      console.warn(
+        `[mpeek] Capacity exceeded (entries=${requests.length}/${
+          MPEEK_MAX_ENTRIES
+        }, bytes=${totalBytes}/${MPEEK_MAX_BYTES}). Falling back to standard peek.`,
+      );
       // Falls through to the slow path if mpeek limits are exceeded.
     }
 
@@ -637,7 +647,7 @@ export class SerialAdapter extends SerialDeviceLink implements IDebugAdapter {
     }
 
     try {
-      const response = await this.sendJsonCommand('zplc dbg bp list') as {
+      const response = (await this.sendJsonCommand('zplc dbg bp list')) as {
         bps?: number[];
         ok?: boolean;
       };

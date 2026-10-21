@@ -17,7 +17,10 @@ export const PACKAGE_JSON_PATHS = [
 export const COMPILER_VERSION_SOURCE = 'packages/zplc-compiler/src/compiler/debug-map.ts';
 const COMPILER_VERSION_DECLARATION = /(export const COMPILER_VERSION = ')([^']*)(';)/;
 
-const SEMVER_WITH_PRERELEASE = new RegExp(String.raw`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|` + String.raw`[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*))?$`);
+const SEMVER_WITH_PRERELEASE = new RegExp(
+  String.raw`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|` +
+    String.raw`[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*))?$`,
+);
 
 export function isValidReleaseVersion(version: string): boolean {
   return SEMVER_WITH_PRERELEASE.test(version);
@@ -42,15 +45,10 @@ export function updateCompilerVersionSource(sourceContent: string, version: stri
 
 export function findCompilerVersionDrift(canonicalVersion: string, sourceContent: string): string[] {
   const found = COMPILER_VERSION_DECLARATION.exec(sourceContent)?.[2];
-  return found === canonicalVersion
-    ? []
-    : [`${COMPILER_VERSION_SOURCE}: expected ${canonicalVersion}, found ${found ?? 'missing'}`];
+  return found === canonicalVersion ? [] : [`${COMPILER_VERSION_SOURCE}: expected ${canonicalVersion}, found ${found ?? 'missing'}`];
 }
 
-export function findPackageVersionDrift(
-  canonicalVersion: string,
-  manifests: Record<string, string>,
-): string[] {
+export function findPackageVersionDrift(canonicalVersion: string, manifests: Record<string, string>): string[] {
   return Object.entries(manifests).flatMap(([relativePath, content]) => {
     const version = (JSON.parse(content) as { version?: unknown }).version;
     return version === canonicalVersion
@@ -79,7 +77,10 @@ function checkVersions(repoRoot: string): void {
     throw new Error(`Product version drift detected:\n${drift.join('\n')}`);
   }
 
-  console.log(`Validated canonical product version ${rootVersion} in ${PACKAGE_JSON_PATHS.length} package manifests and the compiler version of the debug map`);
+  console.log(
+    `Validated canonical product version ${rootVersion} in ${PACKAGE_JSON_PATHS.length} package manifests and the compiler version of ` +
+      `the debug map`,
+  );
 }
 
 function main(): void {
@@ -94,9 +95,7 @@ function main(): void {
   const version = argument;
 
   if (!version || !isValidReleaseVersion(version)) {
-    throw new Error(
-      `Invalid or missing release version '${version ?? ''}'. Expected semver like 1.5.0 or 1.5.1-rc.1`
-    );
+    throw new Error(`Invalid or missing release version '${version ?? ''}'. Expected semver like 1.5.0 or 1.5.1-rc.1`);
   }
 
   for (const relativePath of PACKAGE_JSON_PATHS) {
@@ -108,7 +107,9 @@ function main(): void {
   const sourcePath = join(repoRoot, COMPILER_VERSION_SOURCE);
   writeFileSync(sourcePath, updateCompilerVersionSource(readFileSync(sourcePath, 'utf8'), version));
 
-  console.log(`Applied release version ${version} to ${PACKAGE_JSON_PATHS.length} package manifests and the compiler version of the debug map`);
+  console.log(
+    `Applied release version ${version} to ${PACKAGE_JSON_PATHS.length} package manifests and the compiler version of the debug map`,
+  );
 }
 
 if (import.meta.main) {

@@ -46,7 +46,15 @@ export default function LDPrompts({ ask, model, element, projectBlocks, onInsert
     );
   }
   if (ask.kind === 'commands') {
-    return <SearchList title={t('editors.ld.commands')} items={commands} placeholder={t('editors.ld.searchCommands')} onChoose={(item) => onCommand(item.id)} onCancel={onClose} />;
+    return (
+      <SearchList
+        title={t('editors.ld.commands')}
+        items={commands}
+        placeholder={t('editors.ld.searchCommands')}
+        onChoose={(item) => onCommand(item.id)}
+        onCancel={onClose}
+      />
+    );
   }
   if (!element) return null;
   const choices = bindingChoices(model, element, projectBlocks);

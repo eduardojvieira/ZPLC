@@ -9,7 +9,8 @@ type Step = { name?: string; run?: string; if?: string; 'continue-on-error'?: bo
 type Job = { needs?: string | string[]; if?: string; uses?: string; 'continue-on-error'?: boolean | string; steps?: Step[] };
 type Workflow = { on: Record<string, unknown>; jobs: Record<string, Job> };
 
-const parse = (name: string) => Bun.YAML.parse(readFileSync(new URL(`../../.github/workflows/${name}`, import.meta.url), 'utf8')) as Workflow;
+const parse = (name: string) =>
+  Bun.YAML.parse(readFileSync(new URL(`../../.github/workflows/${name}`, import.meta.url), 'utf8')) as Workflow;
 const ci = parse('ci.yml');
 const release = parse('release.yml');
 
@@ -57,8 +58,14 @@ describe('the release is gated on the Linux journeys (VF-009)', () => {
   });
 
   it('allows a job in the release to continue on error only for the reproducibility check, whose result never blocks the release', () => {
-    const lenient = Object.entries(release.jobs).filter(([, job]) => job['continue-on-error'] !== undefined).map(([name]) => name);
+    const lenient = Object.entries(release.jobs)
+      .filter(([, job]) => job['continue-on-error'] !== undefined)
+      .map(([name]) => name);
     expect(lenient).toEqual([NEVER_BLOCKS]);
-    expect(Object.values(release.jobs).some((job) => needsOf(job).includes(NEVER_BLOCKS) && job.if?.includes(`needs.${NEVER_BLOCKS}.result == 'success'`))).toBe(false);
+    expect(
+      Object.values(release.jobs).some(
+        (job) => needsOf(job).includes(NEVER_BLOCKS) && job.if?.includes(`needs.${NEVER_BLOCKS}.result == 'success'`),
+      ),
+    ).toBe(false);
   });
 });

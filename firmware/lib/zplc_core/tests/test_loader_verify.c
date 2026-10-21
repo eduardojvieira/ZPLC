@@ -12,12 +12,12 @@ static int failures;
 static uint8_t workspace[ZPLC_LOADER_VERIFY_WORKSPACE_SIZE];
 static uint8_t original[1024];
 
-#define CHECK(condition, message)                                              \
-  do {                                                                         \
-    if (!(condition)) {                                                        \
-      fprintf(stderr, "FAIL: %s (line %d)\n", message, __LINE__);              \
-      failures++;                                                              \
-    }                                                                          \
+#define CHECK(condition, message)                                 \
+  do {                                                            \
+    if (!(condition)) {                                           \
+      fprintf(stderr, "FAIL: %s (line %d)\n", message, __LINE__); \
+      failures++;                                                 \
+    }                                                             \
   } while (0)
 
 static int hex_value(int character) {
@@ -118,8 +118,7 @@ static void write_u32_le(uint8_t *data, uint32_t value) {
   data[3] = (uint8_t)(value >> 24);
 }
 
-static size_t make_program(uint8_t *file, const uint8_t *code,
-                           size_t code_size) {
+static size_t make_program(uint8_t *file, const uint8_t *code, size_t code_size) {
   size_t code_offset = ZPLC_FILE_HEADER_SIZE + 2U * ZPLC_SEGMENT_ENTRY_SIZE;
   size_t task_offset = code_offset + code_size;
   size_t length = task_offset + ZPLC_TASK_DEF_SIZE;
@@ -142,10 +141,8 @@ static size_t make_program(uint8_t *file, const uint8_t *code,
   return length;
 }
 
-static size_t make_tag_program(uint8_t *file, uint16_t address, uint8_t type,
-                               uint8_t tag_id, uint32_t value) {
-  const size_t code_offset =
-      ZPLC_FILE_HEADER_SIZE + 3U * ZPLC_SEGMENT_ENTRY_SIZE;
+static size_t make_tag_program(uint8_t *file, uint16_t address, uint8_t type, uint8_t tag_id, uint32_t value) {
+  const size_t code_offset = ZPLC_FILE_HEADER_SIZE + 3U * ZPLC_SEGMENT_ENTRY_SIZE;
   const size_t task_offset = code_offset + 1U;
   const size_t tags_offset = task_offset + ZPLC_TASK_DEF_SIZE;
   const size_t length = tags_offset + ZPLC_TAG_ENTRY_SIZE;
@@ -175,8 +172,7 @@ static size_t make_tag_program(uint8_t *file, uint16_t address, uint8_t type,
   return length;
 }
 
-static void expect_rejection(const uint8_t *file, size_t length, int expected,
-                             const char *message) {
+static void expect_rejection(const uint8_t *file, size_t length, int expected, const char *message) {
   zplc_program_view_t view;
   zplc_program_view_t sentinel;
 
@@ -184,28 +180,19 @@ static void expect_rejection(const uint8_t *file, size_t length, int expected,
   memcpy(original, file, length);
   memset(&sentinel, 0xA5, sizeof(sentinel));
   view = sentinel;
-  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) ==
-            expected,
-        message);
-  CHECK(memcmp(file, original, length) == 0,
-        "rejected input remains unchanged");
-  CHECK(memcmp(&view, &sentinel, sizeof(view)) == 0,
-        "rejected verification leaves output unchanged");
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == expected, message);
+  CHECK(memcmp(file, original, length) == 0, "rejected input remains unchanged");
+  CHECK(memcmp(&view, &sentinel, sizeof(view)) == 0, "rejected verification leaves output unchanged");
 }
 
-static void expect_rejection_with_workspace(const uint8_t *file, size_t length,
-                                            size_t workspace_size, int expected,
-                                            const char *message) {
+static void expect_rejection_with_workspace(const uint8_t *file, size_t length, size_t workspace_size, int expected, const char *message) {
   zplc_program_view_t view;
   zplc_program_view_t sentinel;
 
   memset(&sentinel, 0xA5, sizeof(sentinel));
   view = sentinel;
-  CHECK(zplc_loader_verify(file, length, workspace, workspace_size, &view) ==
-            expected,
-        message);
-  CHECK(memcmp(&view, &sentinel, sizeof(view)) == 0,
-        "rejected verification leaves output unchanged");
+  CHECK(zplc_loader_verify(file, length, workspace, workspace_size, &view) == expected, message);
+  CHECK(memcmp(&view, &sentinel, sizeof(view)) == 0, "rejected verification leaves output unchanged");
 }
 
 static void test_valid_fixture_and_purity(void) {
@@ -219,334 +206,266 @@ static void test_valid_fixture_and_purity(void) {
   memcpy(original, file, length);
   memset(&sentinel, 0xA5, sizeof(sentinel));
   view = sentinel;
-  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) ==
-            ZPLC_LOADER_OK,
-        "valid CODE+TASK+TAGS fixture verifies");
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK, "valid CODE+TASK+TAGS fixture verifies");
   CHECK(memcmp(file, original, length) == 0, "verifier does not mutate input");
-  CHECK(view.binary == file && view.code_size == 2U && view.code[0] == 0U,
-        "view exposes code");
-  CHECK(view.task_count == 1U && view.tag_count == 1U,
-        "view exposes task and tag counts");
-  CHECK(view.segment_count == 4U && view.segments[2].type == 0x30U,
-        "view exposes segments");
-  CHECK(view.segments[3].type == ZPLC_SEG_BUILD && view.build_id != 0U,
-        "view exposes the build identity");
+  CHECK(view.binary == file && view.code_size == 2U && view.code[0] == 0U, "view exposes code");
+  CHECK(view.task_count == 1U && view.tag_count == 1U, "view exposes task and tag counts");
+  CHECK(view.segment_count == 4U && view.segments[2].type == 0x30U, "view exposes segments");
+  CHECK(view.segments[3].type == ZPLC_SEG_BUILD && view.build_id != 0U, "view exposes the build identity");
 
   file[0] ^= 1U;
   view = sentinel;
-  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) ==
-            ZPLC_LOADER_ERR_MAGIC,
-        "invalid binary is rejected");
-  CHECK(memcmp(&view, &sentinel, sizeof(view)) == 0,
-        "failed verification does not mutate output");
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_ERR_MAGIC, "invalid binary is rejected");
+  CHECK(memcmp(&view, &sentinel, sizeof(view)) == 0, "failed verification does not mutate output");
 }
 
 static void test_structural_rejections(void) {
   uint8_t file[128];
   const size_t length = read_fixture(file, sizeof(file));
 
-  CHECK(zplc_loader_verify(NULL, length, workspace, sizeof(workspace), NULL) ==
-            ZPLC_LOADER_ERR_SIZE,
-        "null input is rejected");
-  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), NULL) ==
-            ZPLC_LOADER_ERR_SIZE,
-        "null output is rejected");
+  CHECK(zplc_loader_verify(NULL, length, workspace, sizeof(workspace), NULL) == ZPLC_LOADER_ERR_SIZE, "null input is rejected");
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), NULL) == ZPLC_LOADER_ERR_SIZE, "null output is rejected");
   expect_rejection(file, 31U, ZPLC_LOADER_ERR_SIZE, "short header is rejected");
   file[4] = 2U;
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_VERSION,
-                   "unknown ABI version is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_VERSION, "unknown ABI version is rejected");
   (void)read_fixture(file, sizeof(file));
   file[8] = 0x08U;
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_FLAGS,
-                   "signed flag is unsupported without signature verification");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_FLAGS, "signed flag is unsupported without signature verification");
   (void)read_fixture(file, sizeof(file));
   file[28] = (uint8_t)(ZPLC_DRAFT_COUNTER + 1U);
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_DRAFT,
-                   "header word 28 is the draft counter, not a reserved word");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_DRAFT, "header word 28 is the draft counter, not a reserved word");
   (void)read_fixture(file, sizeof(file));
   file[16] = 3U;
-  expect_rejection(file, length, ZPLC_LOADER_ERR_CRC32,
-                   "CRC covers bytes after the CRC field");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_CRC32, "CRC covers bytes after the CRC field");
   (void)read_fixture(file, sizeof(file));
   file[36] = 1U;
-  expect_rejection(file, length, ZPLC_LOADER_ERR_CRC32,
-                   "CRC covers segment table");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_CRC32, "CRC covers segment table");
   (void)read_fixture(file, sizeof(file));
   file[34] = 1U;
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT,
-                   "segment flags are unsupported");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT, "segment flags are unsupported");
   (void)read_fixture(file, sizeof(file));
   file[40] = 0x7FU;
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT,
-                   "unknown ABI v1 segment type is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT, "unknown ABI v1 segment type is rejected");
   (void)read_fixture(file, sizeof(file));
   file[16] = 1U;
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_NO_CODE,
-                   "header code size must match CODE segment");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_NO_CODE, "header code size must match CODE segment");
   (void)read_fixture(file, sizeof(file));
   file[20] = 0U;
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT,
-                   "header data size must match metadata segments");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT, "header data size must match metadata segments");
   (void)read_fixture(file, sizeof(file));
   file[24] = 2U;
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_ENTRY_POINT,
-                   "entry point must lie in CODE");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_ENTRY_POINT, "entry point must lie in CODE");
   (void)read_fixture(file, sizeof(file));
   file[length] = 0U;
   refresh_crc(file, length + 1U);
-  expect_rejection(file, length + 1U, ZPLC_LOADER_ERR_SIZE,
-                   "trailing bytes are rejected");
+  expect_rejection(file, length + 1U, ZPLC_LOADER_ERR_SIZE, "trailing bytes are rejected");
   (void)read_fixture(file, sizeof(file));
   file[26] = (uint8_t)((length - ZPLC_FILE_HEADER_SIZE) / ZPLC_SEGMENT_ENTRY_SIZE + 1U);
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_SIZE,
-                   "truncated segment table is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_SIZE, "truncated segment table is rejected");
   (void)read_fixture(file, sizeof(file));
   file[36] = 0xFFU;
   file[37] = 0xFFU;
   file[38] = 0xFFU;
   file[39] = 0xFFU;
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT,
-                   "oversized segment payload is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT, "oversized segment payload is rejected");
   (void)read_fixture(file, sizeof(file));
   file[36] = 3U;
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT,
-                   "truncated segment payload is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT, "truncated segment payload is rejected");
   (void)read_fixture(file, sizeof(file));
   file[40] = 1U;
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT,
-                   "duplicate CODE segment is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT, "duplicate CODE segment is rejected");
   (void)read_fixture(file, sizeof(file));
   file[16] = 0U;
   file[36] = 0U;
   refresh_crc(file, length - 2U);
-  expect_rejection(file, length - 2U, ZPLC_LOADER_ERR_NO_CODE,
-                   "empty CODE segment is rejected");
+  expect_rejection(file, length - 2U, ZPLC_LOADER_ERR_NO_CODE, "empty CODE segment is rejected");
   (void)read_fixture(file, sizeof(file));
   file[20] = 23U;
   file[44] = 15U;
   refresh_crc(file, length - 1U);
-  expect_rejection(file, length - 1U, ZPLC_LOADER_ERR_SEGMENT,
-                   "TASK size must be a multiple of 16");
+  expect_rejection(file, length - 1U, ZPLC_LOADER_ERR_SEGMENT, "TASK size must be a multiple of 16");
   (void)read_fixture(file, sizeof(file));
   file[20] = 23U;
   file[52] = 7U;
   refresh_crc(file, length - 1U);
-  expect_rejection(file, length - 1U, ZPLC_LOADER_ERR_SEGMENT,
-                   "TAGS size must be a multiple of 8");
+  expect_rejection(file, length - 1U, ZPLC_LOADER_ERR_SEGMENT, "TAGS size must be a multiple of 8");
   (void)read_fixture(file, sizeof(file));
   file[40] = 2U;
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT,
-                   "known but unsupported DATA segment is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT, "known but unsupported DATA segment is rejected");
   (void)read_fixture(file, sizeof(file));
   file[16] = (uint8_t)(ZPLC_MEM_CODE_SIZE + 1U);
   file[17] = (uint8_t)((ZPLC_MEM_CODE_SIZE + 1U) >> 8);
   file[36] = file[16];
   file[37] = file[17];
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_SIZE,
-                   "CODE larger than the configured memory limit is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_SIZE, "CODE larger than the configured memory limit is rejected");
   (void)read_fixture(file, sizeof(file));
   file[16] = (uint8_t)ZPLC_MEM_CODE_SIZE;
   file[17] = (uint8_t)(ZPLC_MEM_CODE_SIZE >> 8);
   file[36] = file[16];
   file[37] = file[17];
   refresh_crc(file, length);
-  expect_rejection(
-      file, length, ZPLC_LOADER_ERR_SEGMENT,
-      "CODE at the configured memory limit reaches payload validation");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT, "CODE at the configured memory limit reaches payload validation");
   (void)read_fixture(file, sizeof(file));
   file[44] = 0U;
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT,
-                   "empty TASK segment is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT, "empty TASK segment is rejected");
   (void)read_fixture(file, sizeof(file));
   file[52] = 0U;
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT,
-                   "empty TAGS segment is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT, "empty TAGS segment is rejected");
 }
 
 static void test_semantic_rejections_and_acceptance(void) {
   uint8_t file[512];
   /* the address value is pushed first: RT-003 refuses a path that takes more
    * values from the stack than it has put there */
-  uint8_t code[] = {OP_PUSH16, 0U,  0x20U, OP_I2F, OP_EXT8, OP_COMM_EXEC,
-                    1U,        0U,  0U,    0U,     OP_RET};
+  uint8_t code[] = {OP_PUSH16, 0U, 0x20U, OP_I2F, OP_EXT8, OP_COMM_EXEC, 1U, 0U, 0U, 0U, OP_RET};
   size_t length = make_program(file, code, sizeof(code));
   size_t task_offset = 32U + 16U + sizeof(code);
 
   {
     zplc_program_view_t view;
-    CHECK(zplc_loader_verify(file, length, NULL, 0U, &view) ==
-              ZPLC_LOADER_ERR_WORKSPACE,
-          "null workspace is rejected");
-    CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace) - 1U,
-                             &view) == ZPLC_LOADER_ERR_WORKSPACE,
+    CHECK(zplc_loader_verify(file, length, NULL, 0U, &view) == ZPLC_LOADER_ERR_WORKSPACE, "null workspace is rejected");
+    CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace) - 1U, &view) == ZPLC_LOADER_ERR_WORKSPACE,
           "small workspace is rejected");
-    CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace),
-                             &view) == ZPLC_LOADER_OK,
-          "RET conversions and COMM are valid");
+    CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK, "RET conversions and COMM are valid");
   }
 
   {
     const uint8_t ending[] = {OP_NOP};
     length = make_program(file, ending, sizeof(ending));
   }
-  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW,
-                   "final NOP cannot fall through past CODE");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW, "final NOP cannot fall through past CODE");
   {
     const uint8_t ending[] = {OP_PUSH8, 0U};
     length = make_program(file, ending, sizeof(ending));
   }
-  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW,
-                   "final PUSH cannot fall through past CODE");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW, "final PUSH cannot fall through past CODE");
   {
     const uint8_t ending[] = {OP_JRZ, 0xFEU};
     length = make_program(file, ending, sizeof(ending));
   }
-  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW,
-                   "final conditional jump cannot fall through past CODE");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW, "final conditional jump cannot fall through past CODE");
   {
     const uint8_t ending[] = {OP_CALL, 0U, 0U};
     length = make_program(file, ending, sizeof(ending));
   }
-  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW,
-                   "final CALL cannot fall through past CODE");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW, "final CALL cannot fall through past CODE");
   {
     const uint8_t ending[] = {OP_HALT};
     length = make_program(file, ending, sizeof(ending));
   }
-  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace),
-                           &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
         "final HALT is accepted");
   {
     const uint8_t ending[] = {OP_RET};
     length = make_program(file, ending, sizeof(ending));
   }
-  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace),
-                           &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
         "final RET is accepted");
   {
     const uint8_t ending[] = {OP_JMP, 0U, 0U};
     length = make_program(file, ending, sizeof(ending));
   }
-  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace),
-                           &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
         "final unconditional JMP is accepted");
   {
     const uint8_t ending[] = {OP_JR, 0xFEU};
     length = make_program(file, ending, sizeof(ending));
   }
-  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace),
-                           &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
         "final unconditional JR is accepted");
   {
     const uint8_t ending[] = {OP_RET};
     length = make_program(file, ending, sizeof(ending));
   }
-  expect_rejection_with_workspace(file, length, sizeof(workspace) - 1U,
-                                  ZPLC_LOADER_ERR_WORKSPACE,
+  expect_rejection_with_workspace(file, length, sizeof(workspace) - 1U, ZPLC_LOADER_ERR_WORKSPACE,
                                   "one byte below exact workspace is rejected");
 
   code[0] = 0x0EU;
   length = make_program(file, code, sizeof(code));
-  expect_rejection(file, length, ZPLC_LOADER_ERR_OPCODE,
-                   "unknown opcode with valid CRC is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_OPCODE, "unknown opcode with valid CRC is rejected");
   code[0] = OP_PUSH32;
   length = make_program(file, code, 2U);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_OPCODE,
-                   "truncated operand is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_OPCODE, "truncated operand is rejected");
 
   {
     const uint8_t jump[] = {OP_JMP, 9U, 0U, OP_RET};
     length = make_program(file, jump, sizeof(jump));
   }
-  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW,
-                   "absolute jump outside CODE is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW, "absolute jump outside CODE is rejected");
   {
     const uint8_t jump[] = {OP_JR, 0x7FU, OP_RET};
     length = make_program(file, jump, sizeof(jump));
   }
-  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW,
-                   "relative jump outside CODE is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW, "relative jump outside CODE is rejected");
   {
     const uint8_t jump[] = {OP_JR, 0x80U, OP_RET};
     length = make_program(file, jump, sizeof(jump));
   }
-  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW,
-                   "relative jump underflow is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW, "relative jump underflow is rejected");
   {
     const uint8_t jump[] = {OP_PUSH16, 0U, 0U, OP_JMP, 1U, 0U, OP_RET};
     length = make_program(file, jump, sizeof(jump));
   }
-  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW,
-                   "jump into operand is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW, "jump into operand is rejected");
   {
     const uint8_t jump[] = {OP_PUSH16, 0U, 0U, OP_RET};
     length = make_program(file, jump, sizeof(jump));
   }
   write_u16_le(file + 24U, 1U);
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW,
-                   "header entry inside operand is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW, "header entry inside operand is rejected");
   {
     const uint8_t jump[] = {OP_PUSH16, 0U, 0U, OP_RET};
     length = make_program(file, jump, sizeof(jump));
   }
-  write_u16_le(file + 32U + 16U +
-                   sizeof((uint8_t[]){OP_PUSH16, 0U, 0U, OP_RET}) + 8U,
-               1U);
+  write_u16_le(file + 32U + 16U + sizeof((uint8_t[]){OP_PUSH16, 0U, 0U, OP_RET}) + 8U, 1U);
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW,
-                   "task entry inside operand is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW, "task entry inside operand is rejected");
   {
     const uint8_t jump[] = {OP_RET};
     length = make_program(file, jump, sizeof(jump));
   }
   write_u16_le(file + 49U + 8U, 1U);
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW,
-                   "task entry outside CODE is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_CONTROL_FLOW, "task entry outside CODE is rejected");
   {
     const uint8_t jump[] = {OP_JR, 0xFEU, OP_RET};
     length = make_program(file, jump, sizeof(jump));
   }
-  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace),
-                           &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
         "backward relative jump to instruction boundary is valid");
 
   {
     const uint8_t load[] = {OP_LOAD16, 0xFFU, 0x0FU, OP_RET};
     length = make_program(file, load, sizeof(load));
   }
-  expect_rejection(file, length, ZPLC_LOADER_ERR_MEMORY,
-                   "direct read across IPI boundary is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_MEMORY, "direct read across IPI boundary is rejected");
   {
     const uint8_t store[] = {OP_STORE8, 0U, 0U, OP_RET};
     length = make_program(file, store, sizeof(store));
   }
-  expect_rejection(file, length, ZPLC_LOADER_ERR_MEMORY,
-                   "direct store to IPI is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_MEMORY, "direct store to IPI is rejected");
   {
-    const uint8_t load[] = {OP_LOAD32, 0U,    0x20U, OP_STORE16,
-                            0U,        0x10U, OP_RET};
+    const uint8_t load[] = {OP_LOAD32, 0U, 0x20U, OP_STORE16, 0U, 0x10U, OP_RET};
     length = make_program(file, load, sizeof(load));
   }
-  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace),
-                           &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
         "direct accesses in valid regions are accepted");
 
   code[0] = OP_COMM_EXEC;
@@ -555,12 +474,10 @@ static void test_semantic_rejections_and_acceptance(void) {
   code[3] = 0U;
   code[4] = 0U;
   length = make_program(file, code, 5U);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_COMM,
-                   "zero COMM kind is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_COMM, "zero COMM kind is rejected");
   code[1] = 0xFFU;
   length = make_program(file, code, 5U);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_COMM,
-                   "out-of-range COMM kind is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_COMM, "out-of-range COMM kind is rejected");
 
   code[0] = OP_RET;
   length = make_program(file, code, 1U);
@@ -568,14 +485,12 @@ static void test_semantic_rejections_and_acceptance(void) {
   write_u16_le(file + task_offset, 1U);
   write_u16_le(file + task_offset + ZPLC_TASK_DEF_SIZE, 1U);
   /* A second task is appended only for duplicate-id validation. */
-  memcpy(file + task_offset + ZPLC_TASK_DEF_SIZE, file + task_offset,
-         ZPLC_TASK_DEF_SIZE);
+  memcpy(file + task_offset + ZPLC_TASK_DEF_SIZE, file + task_offset, ZPLC_TASK_DEF_SIZE);
   write_u32_le(file + 20U, 2U * ZPLC_TASK_DEF_SIZE);
   write_u32_le(file + 44U, 2U * ZPLC_TASK_DEF_SIZE);
   length += ZPLC_TASK_DEF_SIZE;
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_TASK,
-                   "duplicate task id is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TASK, "duplicate task id is rejected");
 
   {
     const uint8_t task_code[] = {OP_RET};
@@ -584,55 +499,45 @@ static void test_semantic_rejections_and_acceptance(void) {
 
     length = make_program(file, task_code, sizeof(task_code));
     for (index = 1U; index < ZPLC_LOADER_MAX_TASKS; index++) {
-      memcpy(file + task_offset + index * ZPLC_TASK_DEF_SIZE,
-             file + task_offset, ZPLC_TASK_DEF_SIZE);
-      write_u16_le(file + task_offset + index * ZPLC_TASK_DEF_SIZE,
-                   (uint16_t)(UINT16_MAX - index));
+      memcpy(file + task_offset + index * ZPLC_TASK_DEF_SIZE, file + task_offset, ZPLC_TASK_DEF_SIZE);
+      write_u16_le(file + task_offset + index * ZPLC_TASK_DEF_SIZE, (uint16_t)(UINT16_MAX - index));
     }
     write_u32_le(file + 20U, ZPLC_LOADER_MAX_TASKS * ZPLC_TASK_DEF_SIZE);
     write_u32_le(file + 44U, ZPLC_LOADER_MAX_TASKS * ZPLC_TASK_DEF_SIZE);
     length += (ZPLC_LOADER_MAX_TASKS - 1U) * ZPLC_TASK_DEF_SIZE;
     refresh_crc(file, length);
-    CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace),
-                             &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
+    CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
           "16 unique far-apart task ids are accepted");
 
-    memcpy(file + task_offset + ZPLC_LOADER_MAX_TASKS * ZPLC_TASK_DEF_SIZE,
-           file + task_offset, ZPLC_TASK_DEF_SIZE);
+    memcpy(file + task_offset + ZPLC_LOADER_MAX_TASKS * ZPLC_TASK_DEF_SIZE, file + task_offset, ZPLC_TASK_DEF_SIZE);
     write_u32_le(file + 20U, (ZPLC_LOADER_MAX_TASKS + 1U) * ZPLC_TASK_DEF_SIZE);
     write_u32_le(file + 44U, (ZPLC_LOADER_MAX_TASKS + 1U) * ZPLC_TASK_DEF_SIZE);
     length += ZPLC_TASK_DEF_SIZE;
     refresh_crc(file, length);
-    expect_rejection(file, length, ZPLC_LOADER_ERR_TASK,
-                     "more than the loader task maximum is rejected");
+    expect_rejection(file, length, ZPLC_LOADER_ERR_TASK, "more than the loader task maximum is rejected");
   }
 
   length = make_program(file, code, 1U);
   task_offset = 49U;
   file[task_offset + 2U] = 3U;
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_TASK,
-                   "invalid task type is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TASK, "invalid task type is rejected");
   length = make_program(file, code, 1U);
   write_u32_le(file + 49U + 4U, 0U);
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_TASK,
-                   "zero task interval is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TASK, "zero task interval is rejected");
   length = make_program(file, code, 1U);
   write_u16_le(file + 49U + 10U, 0U);
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_TASK,
-                   "zero task stack is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TASK, "zero task stack is rejected");
   length = make_program(file, code, 1U);
   write_u16_le(file + 49U + 10U, (uint16_t)(ZPLC_STACK_MAX_DEPTH + 1U));
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_TASK,
-                   "oversized task stack is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TASK, "oversized task stack is rejected");
   length = make_program(file, code, 1U);
   file[49U + 14U] = 1U;
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_TASK,
-                   "reserved task bytes are rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TASK, "reserved task bytes are rejected");
 
   {
     uint8_t tags_file[1024];
@@ -659,8 +564,7 @@ static void test_semantic_rejections_and_acceptance(void) {
     write_u32_le(tags_file + task_offset + 4U, 10000U);
     write_u16_le(tags_file + task_offset + 10U, 64U);
     refresh_crc(tags_file, tags_length);
-    expect_rejection(tags_file, tags_length, ZPLC_LOADER_ERR_TAGS,
-                     "too many tags are rejected");
+    expect_rejection(tags_file, tags_length, ZPLC_LOADER_ERR_TAGS, "too many tags are rejected");
   }
 }
 
@@ -668,91 +572,60 @@ static void test_tag_semantics(void) {
   uint8_t file[128];
   size_t length;
 
-  length = make_tag_program(file, ZPLC_MEM_IPI_BASE + ZPLC_MEM_IPI_SIZE - 1U,
-                            ZPLC_TYPE_BOOL, ZPLC_TAG_PUBLISH, 0U);
-  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace),
-                           &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
+  length = make_tag_program(file, ZPLC_MEM_IPI_BASE + ZPLC_MEM_IPI_SIZE - 1U, ZPLC_TYPE_BOOL, ZPLC_TAG_PUBLISH, 0U);
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
         "PUBLISH BOOL at the IPI boundary is valid");
-  length = make_tag_program(file, ZPLC_MEM_OPI_BASE, ZPLC_TYPE_BOOL,
-                            ZPLC_TAG_PUBLISH, 0U);
-  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace),
-                           &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
+  length = make_tag_program(file, ZPLC_MEM_OPI_BASE, ZPLC_TYPE_BOOL, ZPLC_TAG_PUBLISH, 0U);
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
         "PUBLISH can read OPI");
-  length = make_tag_program(file, ZPLC_MEM_WORK_BASE,
-                            ZPLC_TYPE_DINT, ZPLC_TAG_MODBUS, 40001U);
-  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace),
-                           &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
+  length = make_tag_program(file, ZPLC_MEM_WORK_BASE, ZPLC_TYPE_DINT, ZPLC_TAG_MODBUS, 40001U);
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
         "MODBUS 32-bit value in WORK is valid");
-  length =
-      make_tag_program(file, ZPLC_MEM_RETAIN_BASE + ZPLC_MEM_RETAIN_SIZE - 4U,
-                       ZPLC_TYPE_REAL, ZPLC_TAG_SUBSCRIBE, 0U);
-  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace),
-                           &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
+  length = make_tag_program(file, ZPLC_MEM_RETAIN_BASE + ZPLC_MEM_RETAIN_SIZE - 4U, ZPLC_TYPE_REAL, ZPLC_TAG_SUBSCRIBE, 0U);
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
         "SUBSCRIBE REAL at the retain boundary is valid");
-  length =
-      make_tag_program(file, 0x2FFCU, ZPLC_TYPE_REAL, ZPLC_TAG_PUBLISH, 0U);
-  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace),
-                           &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
+  length = make_tag_program(file, 0x2FFCU, ZPLC_TYPE_REAL, ZPLC_TAG_PUBLISH, 0U);
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &(zplc_program_view_t){0}) == ZPLC_LOADER_OK,
         "WORK boundary-crossing PUBLISH address resolved by current adapters "
         "is valid");
 
-  length = make_tag_program(file, ZPLC_MEM_WORK_BASE, ZPLC_TYPE_BOOL,
-                            ZPLC_TAG_NONE, 0U);
+  length = make_tag_program(file, ZPLC_MEM_WORK_BASE, ZPLC_TYPE_BOOL, ZPLC_TAG_NONE, 0U);
   expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS, "TAG_NONE is rejected");
-  length =
-      make_tag_program(file, ZPLC_MEM_WORK_BASE, ZPLC_TYPE_BOOL, 0xFFU, 0U);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS,
-                   "unknown tag id is rejected");
-  length = make_tag_program(file, ZPLC_MEM_WORK_BASE, ZPLC_TYPE_SINT,
-                            ZPLC_TAG_PUBLISH, 0U);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS,
-                   "PUBLISH type without an encoder is rejected");
-  length = make_tag_program(file, ZPLC_MEM_WORK_BASE, ZPLC_TYPE_DINT,
-                            ZPLC_TAG_SUBSCRIBE, 0U);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS,
-                   "SUBSCRIBE type without a decoder is rejected");
-  length = make_tag_program(file, ZPLC_MEM_WORK_BASE, ZPLC_TYPE_LINT,
-                            ZPLC_TAG_MODBUS, 40001U);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS,
-                   "MODBUS type without a memory operation is rejected");
-  length = make_tag_program(file, ZPLC_MEM_WORK_BASE, ZPLC_TYPE_STRING,
-                            ZPLC_TAG_MODBUS, 40001U);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS,
-                   "variable-length MODBUS STRING is rejected");
-  length = make_tag_program(file, ZPLC_MEM_CODE_BASE, ZPLC_TYPE_BOOL,
-                            ZPLC_TAG_PUBLISH, 0U);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS,
-                   "CODE address is rejected for tags");
-  length = make_tag_program(file, ZPLC_MEM_IPI_BASE + ZPLC_MEM_IPI_SIZE - 1U,
-                            ZPLC_TYPE_INT, ZPLC_TAG_PUBLISH, 0U);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS,
-                   "16-bit tag crossing an IPI boundary is rejected");
-  length = make_tag_program(file, ZPLC_MEM_OPI_BASE + ZPLC_MEM_OPI_SIZE - 3U,
-                            ZPLC_TYPE_DINT, ZPLC_TAG_MODBUS, 40001U);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS,
-                   "32-bit tag crossing an OPI boundary is rejected");
-  length = make_tag_program(file, ZPLC_MEM_IPI_BASE, ZPLC_TYPE_BOOL,
-                            ZPLC_TAG_MODBUS, 40001U);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS,
-                   "MODBUS write-capable tag cannot target IPI");
-  length = make_tag_program(file, ZPLC_MEM_IPI_BASE, ZPLC_TYPE_BOOL,
-                            ZPLC_TAG_SUBSCRIBE, 0U);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS,
-                   "SUBSCRIBE write-capable tag cannot target IPI");
-  length = make_tag_program(file, ZPLC_MEM_OPI_BASE, ZPLC_TYPE_BOOL,
-                            ZPLC_TAG_MODBUS, 40001U);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS,
-                   "MODBUS write-capable tag cannot target OPI");
-  length = make_tag_program(file, ZPLC_MEM_OPI_BASE, ZPLC_TYPE_BOOL,
-                            ZPLC_TAG_SUBSCRIBE, 0U);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS,
-                   "SUBSCRIBE write-capable tag cannot target OPI");
+  length = make_tag_program(file, ZPLC_MEM_WORK_BASE, ZPLC_TYPE_BOOL, 0xFFU, 0U);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS, "unknown tag id is rejected");
+  length = make_tag_program(file, ZPLC_MEM_WORK_BASE, ZPLC_TYPE_SINT, ZPLC_TAG_PUBLISH, 0U);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS, "PUBLISH type without an encoder is rejected");
+  length = make_tag_program(file, ZPLC_MEM_WORK_BASE, ZPLC_TYPE_DINT, ZPLC_TAG_SUBSCRIBE, 0U);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS, "SUBSCRIBE type without a decoder is rejected");
+  length = make_tag_program(file, ZPLC_MEM_WORK_BASE, ZPLC_TYPE_LINT, ZPLC_TAG_MODBUS, 40001U);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS, "MODBUS type without a memory operation is rejected");
+  length = make_tag_program(file, ZPLC_MEM_WORK_BASE, ZPLC_TYPE_STRING, ZPLC_TAG_MODBUS, 40001U);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS, "variable-length MODBUS STRING is rejected");
+  length = make_tag_program(file, ZPLC_MEM_CODE_BASE, ZPLC_TYPE_BOOL, ZPLC_TAG_PUBLISH, 0U);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS, "CODE address is rejected for tags");
+  length = make_tag_program(file, ZPLC_MEM_IPI_BASE + ZPLC_MEM_IPI_SIZE - 1U, ZPLC_TYPE_INT, ZPLC_TAG_PUBLISH, 0U);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS, "16-bit tag crossing an IPI boundary is rejected");
+  length = make_tag_program(file, ZPLC_MEM_OPI_BASE + ZPLC_MEM_OPI_SIZE - 3U, ZPLC_TYPE_DINT, ZPLC_TAG_MODBUS, 40001U);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS, "32-bit tag crossing an OPI boundary is rejected");
+  length = make_tag_program(file, ZPLC_MEM_IPI_BASE, ZPLC_TYPE_BOOL, ZPLC_TAG_MODBUS, 40001U);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS, "MODBUS write-capable tag cannot target IPI");
+  length = make_tag_program(file, ZPLC_MEM_IPI_BASE, ZPLC_TYPE_BOOL, ZPLC_TAG_SUBSCRIBE, 0U);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS, "SUBSCRIBE write-capable tag cannot target IPI");
+  length = make_tag_program(file, ZPLC_MEM_OPI_BASE, ZPLC_TYPE_BOOL, ZPLC_TAG_MODBUS, 40001U);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS, "MODBUS write-capable tag cannot target OPI");
+  length = make_tag_program(file, ZPLC_MEM_OPI_BASE, ZPLC_TYPE_BOOL, ZPLC_TAG_SUBSCRIBE, 0U);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS, "SUBSCRIBE write-capable tag cannot target OPI");
   /* COM-013: the whole of WORK and of RETAIN can be bound. The upper half of WORK was refused "until the
    * adapters preserve its offset"; every adapter reaches memory through the exchange with its whole address. */
   {
-    static const uint16_t addresses[] = {
-        0x2000U, 0x2FFEU, 0x3000U, 0x3001U, 0x3FFCU, 0x3FFEU, ZPLC_MEM_RETAIN_BASE,
-        (uint16_t)(ZPLC_MEM_RETAIN_BASE + ZPLC_MEM_RETAIN_SIZE - 4U)};
+    static const uint16_t addresses[] = {0x2000U,
+                                         0x2FFEU,
+                                         0x3000U,
+                                         0x3001U,
+                                         0x3FFCU,
+                                         0x3FFEU,
+                                         ZPLC_MEM_RETAIN_BASE,
+                                         (uint16_t)(ZPLC_MEM_RETAIN_BASE + ZPLC_MEM_RETAIN_SIZE - 4U)};
     static const uint8_t kinds[] = {ZPLC_TAG_PUBLISH, ZPLC_TAG_MODBUS, ZPLC_TAG_SUBSCRIBE};
     size_t a, k;
 
@@ -765,15 +638,11 @@ static void test_tag_semantics(void) {
               "a tag anywhere in WORK or RETAIN is accepted");
       }
     }
-    length = make_tag_program(file, (uint16_t)(ZPLC_MEM_WORK_BASE + ZPLC_MEM_WORK_SIZE - 1U), ZPLC_TYPE_UINT,
-                              ZPLC_TAG_MODBUS, 40001U);
+    length = make_tag_program(file, (uint16_t)(ZPLC_MEM_WORK_BASE + ZPLC_MEM_WORK_SIZE - 1U), ZPLC_TYPE_UINT, ZPLC_TAG_MODBUS, 40001U);
     expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS, "a 16-bit tag that ends past WORK is rejected");
   }
-  length = make_tag_program(file, ZPLC_MEM_WORK_BASE, ZPLC_TYPE_BOOL,
-                            ZPLC_TAG_MODBUS, UINT16_MAX + 1U);
-  expect_rejection(
-      file, length, ZPLC_LOADER_ERR_TAGS,
-      "MODBUS address outside the consumer's uint16 range is rejected");
+  length = make_tag_program(file, ZPLC_MEM_WORK_BASE, ZPLC_TYPE_BOOL, ZPLC_TAG_MODBUS, UINT16_MAX + 1U);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TAGS, "MODBUS address outside the consumer's uint16 range is rejected");
 }
 
 /* CMP-052: the loader refuses an artifact built for another draft of the contract or without a counter.
@@ -800,31 +669,26 @@ static void test_declared_call_depth(void) {
         "a declared call depth above the frames is accepted");
   write_u16_le(file + task_offset + 12U, 1U);
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_STACK,
-                   "a declared call depth below the frames is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_STACK, "a declared call depth below the frames is rejected");
   write_u16_le(file + task_offset + 12U, (uint16_t)(ZPLC_CALL_STACK_MAX + 1U));
   refresh_crc(file, length);
   CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK,
         "the call stack of the target and its body are the most a task may declare");
   write_u16_le(file + task_offset + 12U, (uint16_t)(ZPLC_CALL_STACK_MAX + 2U));
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_TASK,
-                   "a declared call depth beyond the call stack of the target is rejected");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TASK, "a declared call depth beyond the call stack of the target is rejected");
 
   length = make_program(file, calls, sizeof(calls));
   write_u16_le(file + task_offset + 14U, 1U);
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_TASK,
-                   "the reserved half of the call depth word must be zero");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TASK, "the reserved half of the call depth word must be zero");
 }
 
 /* CMP-056: the build identity is one 32-bit value in a BUILD segment, once,
  * never 0. `segments` BUILD segments of `build_size` bytes are written. */
-static size_t make_identified_program(uint8_t *file, uint32_t build_id,
-                                      uint32_t build_size, uint32_t segments) {
+static size_t make_identified_program(uint8_t *file, uint32_t build_id, uint32_t build_size, uint32_t segments) {
   const uint8_t code[] = {OP_HALT};
-  const size_t code_offset =
-      ZPLC_FILE_HEADER_SIZE + (2U + segments) * ZPLC_SEGMENT_ENTRY_SIZE;
+  const size_t code_offset = ZPLC_FILE_HEADER_SIZE + (2U + segments) * ZPLC_SEGMENT_ENTRY_SIZE;
   const size_t task_offset = code_offset + sizeof(code);
   const size_t build_offset = task_offset + ZPLC_TASK_DEF_SIZE;
   const size_t length = build_offset + segments * build_size;
@@ -864,14 +728,12 @@ static void test_build_identity(void) {
   CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK,
         "an artifact with a build identity is accepted");
   CHECK(view.build_id == 0xC0FFEE11U, "the view exposes the build identity");
-  CHECK(view.segment_count == 3U && view.segments[3].size == ZPLC_BUILD_ENTRY_SIZE &&
-            view.segments[3].type == ZPLC_SEG_BUILD,
+  CHECK(view.segment_count == 3U && view.segments[3].size == ZPLC_BUILD_ENTRY_SIZE && view.segments[3].type == ZPLC_SEG_BUILD,
         "the view lists the BUILD segment");
 
   length = make_program(file, (const uint8_t[]){OP_HALT}, 1U);
   memset(&view, 0xA5, sizeof(view));
-  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK &&
-            view.build_id == 0U,
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK && view.build_id == 0U,
         "an artifact without one reads as 0, not identified");
 
   length = make_identified_program(file, 0U, ZPLC_BUILD_ENTRY_SIZE, 1U);
@@ -885,11 +747,9 @@ static void test_build_identity(void) {
 /* RT-023: the declared safe values travel in a SAFE segment of entries
  * {offset u16, bit u8, value u8}. `entries` are written once per segment,
  * `segments` times. */
-static size_t make_safe_program(uint8_t *file, const uint8_t *entries,
-                                uint32_t entries_size, uint32_t segments) {
+static size_t make_safe_program(uint8_t *file, const uint8_t *entries, uint32_t entries_size, uint32_t segments) {
   const uint8_t code[] = {OP_HALT};
-  const size_t code_offset =
-      ZPLC_FILE_HEADER_SIZE + (2U + segments) * ZPLC_SEGMENT_ENTRY_SIZE;
+  const size_t code_offset = ZPLC_FILE_HEADER_SIZE + (2U + segments) * ZPLC_SEGMENT_ENTRY_SIZE;
   const size_t task_offset = code_offset + sizeof(code);
   const size_t safe_offset = task_offset + ZPLC_TASK_DEF_SIZE;
   const size_t length = safe_offset + segments * entries_size;
@@ -929,16 +789,15 @@ static void test_declared_safe_values(void) {
 
   memset(&view, 0xA5, sizeof(view));
   length = make_program(file, (const uint8_t[]){OP_HALT}, 1U);
-  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK &&
-            view.safe == NULL && view.safe_count == 0U,
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK && view.safe == NULL &&
+            view.safe_count == 0U,
         "an artifact that declares nothing reads as no declaration: every output is off");
 
   length = make_safe_program(file, two, sizeof(two), 1U);
   memset(&view, 0, sizeof(view));
   CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK,
         "an artifact with a SAFE segment is accepted");
-  CHECK(view.safe_count == 2U && view.safe != NULL && view.safe[3U] == 1U && view.safe[7U] == 0U &&
-            view.segments[4].type == ZPLC_SEG_SAFE,
+  CHECK(view.safe_count == 2U && view.safe != NULL && view.safe[3U] == 1U && view.safe[7U] == 0U && view.segments[4].type == ZPLC_SEG_SAFE,
         "the view exposes the declared entries and lists the SAFE segment");
 
   length = make_safe_program(file, two, sizeof(two), 2U);
@@ -968,8 +827,7 @@ static void test_declared_safe_values(void) {
     length = make_safe_program(file, twice, sizeof(twice), 1U);
     expect_rejection(file, length, ZPLC_LOADER_ERR_SAFE, "an output declared twice is rejected, whatever its values");
     length = make_safe_program(file, same_byte, sizeof(same_byte), 1U);
-    CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK,
-          "two bits of one byte are two outputs");
+    CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK, "two bits of one byte are two outputs");
   }
 
   for (index = 0U; index <= ZPLC_LOADER_MAX_SAFE; index++) {
@@ -978,8 +836,7 @@ static void test_declared_safe_values(void) {
     entries[index * ZPLC_SAFE_ENTRY_SIZE + 3U] = (uint8_t)(index & 1U);
   }
   length = make_safe_program(file, entries, ZPLC_LOADER_MAX_SAFE * ZPLC_SAFE_ENTRY_SIZE, 1U);
-  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK &&
-            view.safe_count == ZPLC_LOADER_MAX_SAFE,
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK && view.safe_count == ZPLC_LOADER_MAX_SAFE,
         "the most an artifact may declare is accepted");
   length = make_safe_program(file, entries, (ZPLC_LOADER_MAX_SAFE + 1U) * ZPLC_SAFE_ENTRY_SIZE, 1U);
   expect_rejection(file, length, ZPLC_LOADER_ERR_SAFE, "one declaration more than the most is rejected");
@@ -993,49 +850,37 @@ static void test_draft_counter(void) {
   const uint32_t foreign = ZPLC_DRAFT_COUNTER + 7U;
 
   CHECK(ZPLC_DRAFT_COUNTER >= 1U, "the runtime's own counter is never 0");
-  CHECK(zplc_loader_artifact_draft_counter(file, length) == ZPLC_DRAFT_COUNTER,
-        "a matching artifact reports the runtime's counter");
-  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) ==
-            ZPLC_LOADER_OK,
+  CHECK(zplc_loader_artifact_draft_counter(file, length) == ZPLC_DRAFT_COUNTER, "a matching artifact reports the runtime's counter");
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK,
         "an artifact built for this draft verifies");
 
   write_u32_le(file + 28U, foreign);
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_DRAFT,
-                   "an artifact built for another draft is refused");
-  CHECK(zplc_loader_artifact_draft_counter(file, length) == foreign &&
-            foreign != ZPLC_DRAFT_COUNTER,
+  expect_rejection(file, length, ZPLC_LOADER_ERR_DRAFT, "an artifact built for another draft is refused");
+  CHECK(zplc_loader_artifact_draft_counter(file, length) == foreign && foreign != ZPLC_DRAFT_COUNTER,
         "the refusal carries both numbers: the artifact's and the runtime's");
 
   write_u32_le(file + 28U, 0U);
   refresh_crc(file, length);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_DRAFT,
-                   "an artifact without a counter is refused");
-  CHECK(zplc_loader_artifact_draft_counter(file, length) == 0U,
-        "an artifact without a counter reports 0");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_DRAFT, "an artifact without a counter is refused");
+  CHECK(zplc_loader_artifact_draft_counter(file, length) == 0U, "an artifact without a counter reports 0");
 
   /* The counter is read before anything else is trusted. */
   (void)make_program(file, code, 1U);
   write_u32_le(file + 28U, foreign);
-  expect_rejection(file, length, ZPLC_LOADER_ERR_DRAFT,
-                   "a foreign counter wins over a stale CRC");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_DRAFT, "a foreign counter wins over a stale CRC");
   file[4] = 2U;
   file[8] = 0x08U;
-  expect_rejection(file, length, ZPLC_LOADER_ERR_DRAFT,
-                   "a foreign counter wins over version and flags");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_DRAFT, "a foreign counter wins over version and flags");
   file[0] ^= 1U;
-  expect_rejection(file, length, ZPLC_LOADER_ERR_MAGIC,
-                   "a file that is not a ZPLC artifact is reported as such first");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_MAGIC, "a file that is not a ZPLC artifact is reported as such first");
 
   (void)make_program(file, code, 1U);
   file[16] = 3U;
-  expect_rejection(file, length, ZPLC_LOADER_ERR_CRC32,
-                   "the matching counter does not excuse a bad CRC");
+  expect_rejection(file, length, ZPLC_LOADER_ERR_CRC32, "the matching counter does not excuse a bad CRC");
 
-  CHECK(zplc_loader_artifact_draft_counter(NULL, length) == 0U,
-        "NULL has no counter");
-  CHECK(zplc_loader_artifact_draft_counter(file, 31U) == 0U,
-        "a buffer shorter than a header has no counter");
+  CHECK(zplc_loader_artifact_draft_counter(NULL, length) == 0U, "NULL has no counter");
+  CHECK(zplc_loader_artifact_draft_counter(file, 31U) == 0U, "a buffer shorter than a header has no counter");
 }
 
 int main(void) {

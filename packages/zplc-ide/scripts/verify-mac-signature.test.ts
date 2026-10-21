@@ -87,7 +87,10 @@ describe('parseCodesignDisplay', () => {
 function fakeCodesign(display: Record<string, string>, failing: string[] = []): Exec {
   return (args) => {
     const path = args.at(-1)!;
-    if (args[0] === '--verify') return failing.includes(path) ? { status: 1, output: `${path}: invalid signature` } : { status: 0, output: `${path}: valid on disk\n` };
+    if (args[0] === '--verify')
+      return failing.includes(path)
+        ? { status: 1, output: `${path}: invalid signature` }
+        : { status: 0, output: `${path}: valid on disk\n` };
     return display[path] === undefined ? { status: 1, output: notSigned } : { status: 0, output: display[path] };
   };
 }
@@ -103,7 +106,13 @@ describe('verifyMacBundle', () => {
   it('accepts an Intel bundle for x64', () => {
     const intel = '/dist/mac/ZPLC.app';
     const nested = `${intel}/Contents/Resources/native-runtime/zplc_runtime`;
-    expect(verifyMacBundle(intel, 'x64', fakeCodesign({ [intel]: sealedAdHocApp('x86_64'), [nested]: resignedRuntime.replace('arm64', 'x86_64') }))).toEqual([]);
+    expect(
+      verifyMacBundle(
+        intel,
+        'x64',
+        fakeCodesign({ [intel]: sealedAdHocApp('x86_64'), [nested]: resignedRuntime.replace('arm64', 'x86_64') }),
+      ),
+    ).toEqual([]);
   });
 
   it('rejects the unsealed bundle that rc.3 shipped', () => {
@@ -119,7 +128,9 @@ describe('verifyMacBundle', () => {
   });
 
   it('rejects a certificate signature, because the pipeline has none to use', () => {
-    expect(verifyMacBundle(app, 'arm64', fakeCodesign({ [app]: developerIdApp, [runtime]: resignedRuntime }))).toContain('bundle: Signature=adhoc is missing');
+    expect(verifyMacBundle(app, 'arm64', fakeCodesign({ [app]: developerIdApp, [runtime]: resignedRuntime }))).toContain(
+      'bundle: Signature=adhoc is missing',
+    );
   });
 
   it('rejects an unsigned bundle and an unsigned runtime', () => {

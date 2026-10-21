@@ -17,9 +17,7 @@
       "trigger": "cyclic",
       "interval_ms": 10,
       "priority": 1,
-      "programs": [
-        "led_chaser.ld"
-      ]
+      "programs": ["led_chaser.ld"]
     }
   ],
   "build": {

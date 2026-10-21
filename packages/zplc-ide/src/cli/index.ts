@@ -7,15 +7,57 @@ import productManifest from '../../../../package.json';
 import { ZPLC_CONSTANTS, serializeDebugMap } from '@zplc/compiler';
 import { compileSingleFileWithTask, type PLCLanguage } from '../compiler';
 import { getLanguageFromFilename } from '../types';
-import { artifactEvidence, compilerCheck, compilerCompile, compilerWarningDiagnostics, executionPermission, finishToolExecution, firmwareBuild, projectInspect, projectMigrationExport, projectMigrationPreview, projectValidate, safeCompilerDiagnostics, safetyCheck, scenarioRun, startToolExecution, symbolsList, testsRun, toolchainInspect, withToolExecution, type FirmwareBuildSummary, type CompilerCompileResult, type ProjectMigrationExportResult, type SafetyCheckResult, type TestRunResult, type ToolEvidence, type ToolExecutionStart, type ToolResult } from './toolApi';
+import {
+  artifactEvidence,
+  compilerCheck,
+  compilerCompile,
+  compilerWarningDiagnostics,
+  executionPermission,
+  finishToolExecution,
+  firmwareBuild,
+  projectInspect,
+  projectMigrationExport,
+  projectMigrationPreview,
+  projectValidate,
+  safeCompilerDiagnostics,
+  safetyCheck,
+  scenarioRun,
+  startToolExecution,
+  symbolsList,
+  testsRun,
+  toolchainInspect,
+  withToolExecution,
+  type FirmwareBuildSummary,
+  type CompilerCompileResult,
+  type ProjectMigrationExportResult,
+  type SafetyCheckResult,
+  type TestRunResult,
+  type ToolEvidence,
+  type ToolExecutionStart,
+  type ToolResult,
+} from './toolApi';
 
 type Values = { help?: boolean; version?: boolean; json?: boolean; output?: string; language?: string; emit?: string };
 type Output = Pick<typeof console, 'log' | 'error'>;
 type ParsedArgs = { values: Values; positionals: string[] };
 
 function parseCliArgs(args: string[]): ParsedArgs | undefined {
-  try { return parseArgs({ args, options: { help: { type: 'boolean', short: 'h' }, version: { type: 'boolean', short: 'v' }, json: { type: 'boolean', short: 'j' }, output: { type: 'string', short: 'o' }, language: { type: 'string', short: 'l' }, emit: { type: 'string' } }, allowPositionals: true }) as ParsedArgs; }
-  catch { return undefined; }
+  try {
+    return parseArgs({
+      args,
+      options: {
+        help: { type: 'boolean', short: 'h' },
+        version: { type: 'boolean', short: 'v' },
+        json: { type: 'boolean', short: 'j' },
+        output: { type: 'string', short: 'o' },
+        language: { type: 'string', short: 'l' },
+        emit: { type: 'string' },
+      },
+      allowPositionals: true,
+    }) as ParsedArgs;
+  } catch {
+    return undefined;
+  }
 }
 
 export function isInterruptibleInvocation(args: string[]): boolean {
@@ -25,38 +67,94 @@ export function isInterruptibleInvocation(args: string[]): boolean {
   return command === 'firmware-build' || command === 'test' || command === 'scenario-run';
 }
 
-export function isFirmwareBuildInvocation(args: string[]): boolean { return parseCliArgs(args)?.positionals[0] === 'firmware-build'; }
+export function isFirmwareBuildInvocation(args: string[]): boolean {
+  return parseCliArgs(args)?.positionals[0] === 'firmware-build';
+}
 
 function operationForCommand(command: string): ToolEvidence['operation'] {
-  return command === 'symbols' ? 'symbols-list' : command === 'scenario-run' ? 'scenario-run' : command === 'migrate-preview' ? 'migrate-preview' : command as ToolEvidence['operation'];
+  return command === 'symbols'
+    ? 'symbols-list'
+    : command === 'scenario-run'
+      ? 'scenario-run'
+      : command === 'migrate-preview'
+        ? 'migrate-preview'
+        : (command as ToolEvidence['operation']);
 }
 
 function printHelp(output: Output): void {
-  output.log(`ZPLC CLI\n\nUsage:\n  zplc-cli inspect <workspace> --json\n  zplc-cli validate <workspace> --json\n  zplc-cli check <workspace> --json\n  zplc-cli safety-check <workspace> [--json]\n  zplc-cli symbols <workspace> [--json]\n  zplc-cli migrate-preview <workspace> [--json]\n  zplc-cli migrate <workspace> --output <manifest-v2.json> [--json]\n  zplc-cli test <workspace> [--json] [--output <trace.json>]\n  zplc-cli scenario-run <workspace> <scenario-id> [--json] [--output <trace.json>]\n  zplc-cli toolchain-inspect <zplc-repository-root> [--json]\n  zplc-cli firmware-build <zplc-repository-root> <ide_id> [--json]\n  zplc-cli compile <workspace|source-file> [--json] [--output <file>] [--language ST|IL|LD|FBD|SFC]\n  zplc-cli compile <workspace|source-file> --emit asm [--output <file>]\n\nFirmware builds are local POSIX ephemeral cross-builds only: they do not flash, deploy, or qualify hardware.\n\nOptions:\n  -h, --help        Show this help\n  -v, --version     Show version\n  -j, --json        Output one JSON result line\n  -o, --output <f>  Write the requested artifact\n  -l, --language <l> Source language (ST, IL, LD, FBD, SFC)\n      --emit asm    Print the assembly listing of the build, or write it to --output, instead of the artifact`);
+  output.log(
+    `ZPLC CLI\n\nUsage:\n  zplc-cli inspect <workspace> --json\n  zplc-cli validate <workspace> --json\n  zplc-cli check <workspace> ` +
+      `--json\n  zplc-cli safety-check <workspace> [--json]\n  zplc-cli symbols <workspace> [--json]\n  zplc-cli migrate-preview ` +
+      `<workspace> [--json]\n  zplc-cli migrate <workspace> --output <manifest-v2.json> [--json]\n  zplc-cli test <workspace> [--json] ` +
+      `[--output <trace.json>]\n  zplc-cli scenario-run <workspace> <scenario-id> [--json] [--output <trace.json>]\n  zplc-cli ` +
+      `toolchain-inspect <zplc-repository-root> [--json]\n  zplc-cli firmware-build <zplc-repository-root> <ide_id> [--json]\n ` +
+      ` zplc-cli compile <workspace|source-file> [--json] [--output <file>] [--language ST|IL|LD|FBD|SFC]\n  zplc-cli compile ` +
+      `<workspace|source-file> --emit asm [--output <file>]\n\nFirmware builds are local POSIX ephemeral cross-builds only: ` +
+      `they do not flash, deploy, or qualify hardware.\n\nOptions:\n  -h, --help        Show this help\n  -v, --version ` +
+      `    Show version\n  -j, --json        Output one JSON result line\n  -o, --output <f>  Write the requested artifact\n  -l, ` +
+      `--language <l> Source language (ST, IL, LD, FBD, SFC)\n      --emit asm    Print the assembly listing of the build, or write it ` +
+      `to --output, instead of the artifact`,
+  );
 }
-function failure(operation: ToolEvidence['operation'], message: string): ToolEvidence { return { schemaVersion: 1, operation, outcome: 'failed', diagnostics: [{ code: 'CLI_INVALID', message }], artifacts: [] }; }
-function emitJson(output: Output, value: unknown): void { output.log(JSON.stringify(value)); }
-function cliExecution(operation: ToolEvidence['operation'], value: unknown, start = startToolExecution('cli', executionPermission(operation), operation)) {
+function failure(operation: ToolEvidence['operation'], message: string): ToolEvidence {
+  return { schemaVersion: 1, operation, outcome: 'failed', diagnostics: [{ code: 'CLI_INVALID', message }], artifacts: [] };
+}
+function emitJson(output: Output, value: unknown): void {
+  output.log(JSON.stringify(value));
+}
+function cliExecution(
+  operation: ToolEvidence['operation'],
+  value: unknown,
+  start = startToolExecution('cli', executionPermission(operation), operation),
+) {
   return withToolExecution(value as object, finishToolExecution(start, value));
 }
-function emitFailure(output: Output, json: boolean, operation: ToolEvidence['operation'], message: string, start?: ToolExecutionStart): number {
+function emitFailure(
+  output: Output,
+  json: boolean,
+  operation: ToolEvidence['operation'],
+  message: string,
+  start?: ToolExecutionStart,
+): number {
   const value = { ok: false, evidence: failure(operation, message) };
-  if (json) emitJson(output, cliExecution(operation, value, start)); else output.error(`Error: ${message}`); return 1;
+  if (json) emitJson(output, cliExecution(operation, value, start));
+  else output.error(`Error: ${message}`);
+  return 1;
 }
 /** `path:line:column: message`; the position is left out when the diagnostic has none (line 0 is "unknown"). */
-function describeDiagnostic(diagnostic: { message: string; code?: string; path?: string; line?: number; column?: number }, file?: string): string {
+function describeDiagnostic(
+  diagnostic: { message: string; code?: string; path?: string; line?: number; column?: number },
+  file?: string,
+): string {
   // the stable code ends the line, so that a person can search the reference for it and a script can match on it (CMP-006)
   const code = diagnostic.code ? ` [${diagnostic.code}]` : '';
   if (!diagnostic.line) return `${diagnostic.message}${code}`;
-  return `${[diagnostic.path ?? file, diagnostic.line, diagnostic.column ?? 0].filter((part) => part !== undefined).join(':')}: ${diagnostic.message}${code}`;
+  return `${[diagnostic.path ?? file, diagnostic.line, diagnostic.column ?? 0].filter((part) => part !== undefined).join(':')}: ${
+    diagnostic.message
+  }${code}`;
 }
 /** A single-file build failure with the compiler's own message, line and column (CMP-010 stopgap). */
-function emitCompilerFailure(output: Output, json: boolean, operation: ToolEvidence['operation'], error: unknown, file: string, start: ToolExecutionStart): number {
+function emitCompilerFailure(
+  output: Output,
+  json: boolean,
+  operation: ToolEvidence['operation'],
+  error: unknown,
+  file: string,
+  start: ToolExecutionStart,
+): number {
   // every independent error of the source (CMP-007)
   const diagnostics = safeCompilerDiagnostics(error);
   // the compiler names the program here, not a file; the human line names the file
   for (const diagnostic of diagnostics) delete diagnostic.path;
-  if (json) emitJson(output, cliExecution(operation, { ok: false, evidence: { schemaVersion: 1, operation, outcome: 'failed', diagnostics, artifacts: [] } }, start));
+  if (json)
+    emitJson(
+      output,
+      cliExecution(
+        operation,
+        { ok: false, evidence: { schemaVersion: 1, operation, outcome: 'failed', diagnostics, artifacts: [] } },
+        start,
+      ),
+    );
   else diagnostics.forEach((diagnostic) => output.error(`Error: ${describeDiagnostic(diagnostic, file)}`));
   return 1;
 }
@@ -77,21 +175,36 @@ function cliTestResult(result: TestRunResult): TestRunResult {
 function languageFor(file: string, requested?: string): PLCLanguage | null {
   if (!requested && !/\.(st|il|ld\.json|fbd\.json|sfc\.json)$/i.test(file)) return null;
   const language = (requested ?? getLanguageFromFilename(file)).toUpperCase();
-  return language && ['ST', 'IL', 'LD', 'FBD', 'SFC'].includes(language) ? language as PLCLanguage : null;
+  return language && ['ST', 'IL', 'LD', 'FBD', 'SFC'].includes(language) ? (language as PLCLanguage) : null;
 }
 async function writeArtifact(path: string, bytes: Uint8Array): Promise<boolean> {
   const temporary = join(dirname(path), `.${basename(path)}.${randomUUID()}.tmp`);
-  try { await writeFile(temporary, bytes); await rename(temporary, path); return true; }
-  catch { await rm(temporary, { force: true }).catch(() => undefined); return false; }
+  try {
+    await writeFile(temporary, bytes);
+    await rename(temporary, path);
+    return true;
+  } catch {
+    await rm(temporary, { force: true }).catch(() => undefined);
+    return false;
+  }
 }
-function samePath(left: string, right: string): boolean { return process.platform === 'win32' ? left.toLowerCase() === right.toLowerCase() : left === right; }
-function within(root: string, path: string): boolean { const value = relative(root, path); return value !== '' && value !== '..' && !value.startsWith(`..${sep}`) && !isAbsolute(value); }
+function samePath(left: string, right: string): boolean {
+  return process.platform === 'win32' ? left.toLowerCase() === right.toLowerCase() : left === right;
+}
+function within(root: string, path: string): boolean {
+  const value = relative(root, path);
+  return value !== '' && value !== '..' && !value.startsWith(`..${sep}`) && !isAbsolute(value);
+}
 async function canonicalOrResolved(path: string): Promise<string> {
-  try { return await realpath(path); }
-  catch {
+  try {
+    return await realpath(path);
+  } catch {
     const parent = dirname(path);
-    try { return join(await realpath(parent), basename(path)); }
-    catch { return resolve(path); }
+    try {
+      return join(await realpath(parent), basename(path));
+    } catch {
+      return resolve(path);
+    }
   }
 }
 async function isProtectedOutput(outputPath: string, input: string, workspace: boolean): Promise<boolean> {
@@ -103,7 +216,13 @@ async function isProtectedOutput(outputPath: string, input: string, workspace: b
   for (const directory of ['src', 'tests']) {
     const rawDirectory = resolve(input, directory);
     const canonicalDirectory = await canonicalOrResolved(join(input, directory));
-    if (samePath(rawOutput, rawDirectory) || samePath(output, canonicalDirectory) || within(rawDirectory, rawOutput) || within(canonicalDirectory, output)) return true;
+    if (
+      samePath(rawOutput, rawDirectory) ||
+      samePath(output, canonicalDirectory) ||
+      within(rawDirectory, rawOutput) ||
+      within(canonicalDirectory, output)
+    )
+      return true;
   }
   return false;
 }
@@ -111,35 +230,70 @@ async function singleFileCompile(file: string, values: Values, output: Output): 
   const json = values.json === true;
   const start = startToolExecution('cli', 'compiler:check', 'compile');
   let status;
-  try { status = await lstat(file); } catch { return emitFailure(output, json, 'compile', 'Input file is unavailable', start); }
-  if (status.isSymbolicLink() || !status.isFile()) return emitFailure(output, json, 'compile', 'Input must be a regular source file', start);
-  if (values.output && await isProtectedOutput(values.output, file, false)) return emitFailure(output, json, 'compile', 'Output path is protected', start);
+  try {
+    status = await lstat(file);
+  } catch {
+    return emitFailure(output, json, 'compile', 'Input file is unavailable', start);
+  }
+  if (status.isSymbolicLink() || !status.isFile())
+    return emitFailure(output, json, 'compile', 'Input must be a regular source file', start);
+  if (values.output && (await isProtectedOutput(values.output, file, false)))
+    return emitFailure(output, json, 'compile', 'Output path is protected', start);
   const language = languageFor(file, values.language);
   if (!language) return emitFailure(output, json, 'compile', 'Unsupported source language', start);
   try {
-    const result = compileSingleFileWithTask(await readFile(file, 'utf8'), language, { taskName: 'Main', intervalMs: 50, priority: 3, programName: 'Main' });
+    const result = compileSingleFileWithTask(await readFile(file, 'utf8'), language, {
+      taskName: 'Main',
+      intervalMs: 50,
+      priority: 3,
+      programName: 'Main',
+    });
     if (values.emit === 'asm') return emitListing(output, result.assembly, values.output, result.warnings, file, start);
     const artifact = values.output?.toLowerCase().endsWith('.bin') ? result.bytecode : result.zplcFile;
-    if (values.output && !await writeArtifact(values.output, artifact)) return emitFailure(output, json, 'compile', 'Unable to write output artifact', start);
+    if (values.output && !(await writeArtifact(values.output, artifact)))
+      return emitFailure(output, json, 'compile', 'Unable to write output artifact', start);
     const warnings = compilerWarningDiagnostics(result.warnings);
     for (const warning of warnings) delete warning.path; // the compiler names the program here, not a file
-    const value = { ok: true as const, summary: { codeSize: result.codeSize, language, draftCounter: ZPLC_CONSTANTS.DRAFT_COUNTER }, evidence: { schemaVersion: 1 as const, operation: 'compile' as const, outcome: 'passed' as const, diagnostics: warnings, artifacts: [artifactEvidence(values.output?.toLowerCase().endsWith('.bin') ? 'bytecode' : 'zplc', artifact)] } };
+    const value = {
+      ok: true as const,
+      summary: { codeSize: result.codeSize, language, draftCounter: ZPLC_CONSTANTS.DRAFT_COUNTER },
+      evidence: {
+        schemaVersion: 1 as const,
+        operation: 'compile' as const,
+        outcome: 'passed' as const,
+        diagnostics: warnings,
+        artifacts: [artifactEvidence(values.output?.toLowerCase().endsWith('.bin') ? 'bytecode' : 'zplc', artifact)],
+      },
+    };
     if (!json) value.evidence.diagnostics.forEach((warning) => output.error(`Warning: ${describeDiagnostic(warning, file)}`));
     if (json) emitJson(output, cliExecution('compile', value, start));
     else if (values.output) output.log(`Compiled ${file} (${result.codeSize} bytes, contract draft ${ZPLC_CONSTANTS.DRAFT_COUNTER})`);
     else output.log(result.assembly);
     return 0;
-  } catch (error) { return emitCompilerFailure(output, json, 'compile', error, file, start); }
+  } catch (error) {
+    return emitCompilerFailure(output, json, 'compile', error, file, start);
+  }
 }
 
 /** `--emit asm`: the assembly listing of a build, printed or written to the output file; warnings go to stderr as ever (CMP-060). */
-async function emitListing(output: Output, listing: string, target: string | undefined, warnings: Parameters<typeof compilerWarningDiagnostics>[0], file: string | undefined, start: ToolExecutionStart): Promise<number> {
+async function emitListing(
+  output: Output,
+  listing: string,
+  target: string | undefined,
+  warnings: Parameters<typeof compilerWarningDiagnostics>[0],
+  file: string | undefined,
+  start: ToolExecutionStart,
+): Promise<number> {
   for (const warning of compilerWarningDiagnostics(warnings)) {
     if (file !== undefined) delete warning.path; // the compiler names the program here, not a file
     output.error(`Warning: ${describeDiagnostic(warning, file)}`);
   }
-  if (target === undefined) { output.log(listing); return 0; }
-  if (!await writeArtifact(target, Buffer.from(listing.endsWith('\n') ? listing : `${listing}\n`, 'utf8'))) return emitFailure(output, false, 'compile', 'Unable to write output artifact', start);
+  if (target === undefined) {
+    output.log(listing);
+    return 0;
+  }
+  if (!(await writeArtifact(target, Buffer.from(listing.endsWith('\n') ? listing : `${listing}\n`, 'utf8'))))
+    return emitFailure(output, false, 'compile', 'Unable to write output artifact', start);
   return 0;
 }
 
@@ -148,65 +302,201 @@ export async function main(args = Bun.argv.slice(2), output: Output = console, o
   const parsed = parseCliArgs(args);
   if (!parsed) return emitFailure(output, jsonRequested, 'cli', 'Invalid command arguments');
   const { values, positionals } = parsed;
-  if ((values.help || values.version) && values.json) return emitFailure(output, true, 'cli', 'JSON cannot be combined with help or version');
-  if (values.help) { printHelp(output); return 0; }
-  if (values.version) { output.log(`zplc-cli ${productManifest.version}`); return 0; }
+  if ((values.help || values.version) && values.json)
+    return emitFailure(output, true, 'cli', 'JSON cannot be combined with help or version');
+  if (values.help) {
+    printHelp(output);
+    return 0;
+  }
+  if (values.version) {
+    output.log(`zplc-cli ${productManifest.version}`);
+    return 0;
+  }
   const [command, input, ideId] = positionals;
-  if (!command || !['inspect', 'validate', 'check', 'safety-check', 'compile', 'symbols', 'test', 'scenario-run', 'migrate-preview', 'migrate', 'toolchain-inspect', 'firmware-build'].includes(command)) return emitFailure(output, values.json === true, 'cli', 'Unknown command');
+  if (
+    !command ||
+    ![
+      'inspect',
+      'validate',
+      'check',
+      'safety-check',
+      'compile',
+      'symbols',
+      'test',
+      'scenario-run',
+      'migrate-preview',
+      'migrate',
+      'toolchain-inspect',
+      'firmware-build',
+    ].includes(command)
+  )
+    return emitFailure(output, values.json === true, 'cli', 'Unknown command');
   const operation = operationForCommand(command);
   const executionStart = startToolExecution('cli', executionPermission(operation), operation);
   if (values.emit !== undefined && (values.emit !== 'asm' || command !== 'compile' || values.json === true)) {
-    return emitFailure(output, values.json === true, operation, 'The --emit option takes asm, belongs to compile and cannot be combined with --json', executionStart);
+    return emitFailure(
+      output,
+      values.json === true,
+      operation,
+      'The --emit option takes asm, belongs to compile and cannot be combined with --json',
+      executionStart,
+    );
   }
   if (command === 'firmware-build') {
-    if (!input || !ideId || !/^[a-z0-9][a-z0-9_]{0,63}$/.test(ideId) || positionals.length !== 3 || values.output !== undefined || values.language !== undefined) return emitFailure(output, values.json === true, 'firmware-build', 'Firmware build requires a repository root and exact ide_id without output or language options');
+    if (
+      !input ||
+      !ideId ||
+      !/^[a-z0-9][a-z0-9_]{0,63}$/.test(ideId) ||
+      positionals.length !== 3 ||
+      values.output !== undefined ||
+      values.language !== undefined
+    )
+      return emitFailure(
+        output,
+        values.json === true,
+        'firmware-build',
+        'Firmware build requires a repository root and exact ide_id without output or language options',
+      );
     let rootStatus;
-    try { rootStatus = await lstat(input); } catch { return emitFailure(output, values.json === true, 'firmware-build', 'Firmware build requires a real repository directory'); }
-    if (rootStatus.isSymbolicLink() || !rootStatus.isDirectory()) return emitFailure(output, values.json === true, 'firmware-build', 'Firmware build requires a real repository directory');
+    try {
+      rootStatus = await lstat(input);
+    } catch {
+      return emitFailure(output, values.json === true, 'firmware-build', 'Firmware build requires a real repository directory');
+    }
+    if (rootStatus.isSymbolicLink() || !rootStatus.isDirectory())
+      return emitFailure(output, values.json === true, 'firmware-build', 'Firmware build requires a real repository directory');
     const result = await firmwareBuild(input, ideId, { signal: options.signal });
     if (values.json) emitJson(output, cliExecution('firmware-build', result, executionStart));
     else if (result.ok) output.log('Local ephemeral cross-build passed');
     else output.error(`Firmware build failed (${result.evidence.diagnostics[0]?.code ?? 'FIRMWARE_BUILD_UNAVAILABLE'})`);
     return firmwareBuildExitCode(result);
   }
-  if (command === 'scenario-run' && (!input || !ideId || ideId.length > 128 || ideId.includes('\0') || positionals.length !== 3 || values.language !== undefined || values.output === '')) return emitFailure(output, values.json === true, 'scenario-run', 'Scenario run requires a workspace and valid scenario id without a language option');
-  if (command !== 'scenario-run' && (!input || positionals.length !== 2)) return emitFailure(output, values.json === true, 'cli', 'Expected one command and one input');
-  if ((command === 'inspect' || command === 'validate' || command === 'check' || command === 'safety-check' || command === 'symbols' || command === 'migrate-preview' || command === 'toolchain-inspect') && (values.output !== undefined || values.language !== undefined)) return emitFailure(output, values.json === true, operation, 'This command does not accept output or language options');
-  if (command === 'migrate' && (values.output === undefined || values.output === '' || values.language !== undefined)) return emitFailure(output, values.json === true, operation, 'Migration requires a non-empty output path without a language option');
-  if (command === 'test' && values.language !== undefined) return emitFailure(output, values.json === true, operation, 'Test does not accept a language option');
+  if (
+    command === 'scenario-run' &&
+    (!input ||
+      !ideId ||
+      ideId.length > 128 ||
+      ideId.includes('\0') ||
+      positionals.length !== 3 ||
+      values.language !== undefined ||
+      values.output === '')
+  )
+    return emitFailure(
+      output,
+      values.json === true,
+      'scenario-run',
+      'Scenario run requires a workspace and valid scenario id without a language option',
+    );
+  if (command !== 'scenario-run' && (!input || positionals.length !== 2))
+    return emitFailure(output, values.json === true, 'cli', 'Expected one command and one input');
+  if (
+    (command === 'inspect' ||
+      command === 'validate' ||
+      command === 'check' ||
+      command === 'safety-check' ||
+      command === 'symbols' ||
+      command === 'migrate-preview' ||
+      command === 'toolchain-inspect') &&
+    (values.output !== undefined || values.language !== undefined)
+  )
+    return emitFailure(output, values.json === true, operation, 'This command does not accept output or language options');
+  if (command === 'migrate' && (values.output === undefined || values.output === '' || values.language !== undefined))
+    return emitFailure(output, values.json === true, operation, 'Migration requires a non-empty output path without a language option');
+  if (command === 'test' && values.language !== undefined)
+    return emitFailure(output, values.json === true, operation, 'Test does not accept a language option');
   let status;
-  try { status = await lstat(input); } catch { return emitFailure(output, values.json === true, operation, 'Input is unavailable'); }
-  if (command === 'toolchain-inspect' && (status.isSymbolicLink() || !status.isDirectory())) return emitFailure(output, values.json === true, operation, 'This command requires a real repository directory');
-  if ((command === 'compile' || command === 'test' || command === 'scenario-run') && values.output === '') return emitFailure(output, values.json === true, operation, `${command === 'compile' ? 'Compile' : 'Test'} output must not be empty`);
-  if (command === 'compile' && values.language !== undefined && status.isDirectory()) return emitFailure(output, values.json === true, operation, 'Workspace compilation does not accept a language option');
-  if (command !== 'compile' && !status.isDirectory()) return emitFailure(output, values.json === true, operation, 'This command requires a workspace directory');
+  try {
+    status = await lstat(input);
+  } catch {
+    return emitFailure(output, values.json === true, operation, 'Input is unavailable');
+  }
+  if (command === 'toolchain-inspect' && (status.isSymbolicLink() || !status.isDirectory()))
+    return emitFailure(output, values.json === true, operation, 'This command requires a real repository directory');
+  if ((command === 'compile' || command === 'test' || command === 'scenario-run') && values.output === '')
+    return emitFailure(output, values.json === true, operation, `${command === 'compile' ? 'Compile' : 'Test'} output must not be empty`);
+  if (command === 'compile' && values.language !== undefined && status.isDirectory())
+    return emitFailure(output, values.json === true, operation, 'Workspace compilation does not accept a language option');
+  if (command !== 'compile' && !status.isDirectory())
+    return emitFailure(output, values.json === true, operation, 'This command requires a workspace directory');
   if (command === 'compile' && status.isFile()) return singleFileCompile(input, values, output);
-  if (command === 'compile' && !status.isDirectory()) return emitFailure(output, values.json === true, operation, 'Input must be a workspace directory or regular source file');
-  if ((command === 'compile' || command === 'test' || command === 'scenario-run' || command === 'migrate') && values.output && await isProtectedOutput(values.output, input, true)) return emitFailure(output, values.json === true, operation, 'Output path is protected');
-  const result = command === 'inspect' ? await projectInspect(input) : command === 'validate' ? await projectValidate(input) : command === 'migrate-preview' ? await projectMigrationPreview(input) : command === 'migrate' ? await projectMigrationExport(input) : command === 'check' ? await compilerCheck(input) : command === 'safety-check' ? await safetyCheck(input) : command === 'symbols' ? await symbolsList(input) : command === 'test' ? cliTestResult(await testsRun(input, { signal: options.signal })) : command === 'scenario-run' ? cliTestResult(await scenarioRun(input, ideId!, { signal: options.signal })) : command === 'toolchain-inspect' ? await toolchainInspect(input) : await compilerCompile(input);
-  if (result.ok && command === 'migrate' && !await writeArtifact(values.output!, (result as ProjectMigrationExportResult).manifest!)) return emitFailure(output, values.json === true, operation, 'Unable to write output artifact');
+  if (command === 'compile' && !status.isDirectory())
+    return emitFailure(output, values.json === true, operation, 'Input must be a workspace directory or regular source file');
+  if (
+    (command === 'compile' || command === 'test' || command === 'scenario-run' || command === 'migrate') &&
+    values.output &&
+    (await isProtectedOutput(values.output, input, true))
+  )
+    return emitFailure(output, values.json === true, operation, 'Output path is protected');
+  const result =
+    command === 'inspect'
+      ? await projectInspect(input)
+      : command === 'validate'
+        ? await projectValidate(input)
+        : command === 'migrate-preview'
+          ? await projectMigrationPreview(input)
+          : command === 'migrate'
+            ? await projectMigrationExport(input)
+            : command === 'check'
+              ? await compilerCheck(input)
+              : command === 'safety-check'
+                ? await safetyCheck(input)
+                : command === 'symbols'
+                  ? await symbolsList(input)
+                  : command === 'test'
+                    ? cliTestResult(await testsRun(input, { signal: options.signal }))
+                    : command === 'scenario-run'
+                      ? cliTestResult(await scenarioRun(input, ideId!, { signal: options.signal }))
+                      : command === 'toolchain-inspect'
+                        ? await toolchainInspect(input)
+                        : await compilerCompile(input);
+  if (result.ok && command === 'migrate' && !(await writeArtifact(values.output!, (result as ProjectMigrationExportResult).manifest!)))
+    return emitFailure(output, values.json === true, operation, 'Unable to write output artifact');
   if (result.ok && command === 'compile' && values.emit === 'asm') {
     // the listing of every program of the build, in the order of its code: assembling it gives the bytecode (CMP-060)
-    const status = await emitListing(output, (result as CompilerCompileResult).assembly ?? '', values.output, [], undefined, executionStart);
+    const status = await emitListing(
+      output,
+      (result as CompilerCompileResult).assembly ?? '',
+      values.output,
+      [],
+      undefined,
+      executionStart,
+    );
     if (status === 0) result.evidence.diagnostics.forEach((warning) => output.error(`Warning: ${describeDiagnostic(warning)}`));
     return status;
   }
-  if (result.ok && command === 'compile' && values.output && !await writeArtifact(values.output, (result as CompilerCompileResult).bytes!)) return emitFailure(output, values.json === true, operation, 'Unable to write output artifact');
+  if (
+    result.ok &&
+    command === 'compile' &&
+    values.output &&
+    !(await writeArtifact(values.output, (result as CompilerCompileResult).bytes!))
+  )
+    return emitFailure(output, values.json === true, operation, 'Unable to write output artifact');
   // build.generateDebugInfo: the debug map goes beside the artifact, as <output>.map.json (CMP-059)
   const compiled = result as CompilerCompileResult;
   if (result.ok && command === 'compile' && values.output && compiled.writeDebugMap && compiled.debugMap) {
     const mapPath = `${values.output}.map.json`;
-    if (await isProtectedOutput(mapPath, input, true)) return emitFailure(output, values.json === true, operation, 'Output path is protected');
-    if (!await writeArtifact(mapPath, Buffer.from(serializeDebugMap(compiled.debugMap), 'utf8'))) return emitFailure(output, values.json === true, operation, 'Unable to write output artifact');
+    if (await isProtectedOutput(mapPath, input, true))
+      return emitFailure(output, values.json === true, operation, 'Output path is protected');
+    if (!(await writeArtifact(mapPath, Buffer.from(serializeDebugMap(compiled.debugMap), 'utf8'))))
+      return emitFailure(output, values.json === true, operation, 'Unable to write output artifact');
   }
-  if ((command === 'test' || command === 'scenario-run') && values.output && (result as TestRunResult).traceFile && !await writeArtifact(values.output, (result as TestRunResult).traceFile!)) return emitFailure(output, values.json === true, operation, 'Unable to write output artifact');
+  if (
+    (command === 'test' || command === 'scenario-run') &&
+    values.output &&
+    (result as TestRunResult).traceFile &&
+    !(await writeArtifact(values.output, (result as TestRunResult).traceFile!))
+  )
+    return emitFailure(output, values.json === true, operation, 'Unable to write output artifact');
   if (values.json) emitJson(output, cliExecution(operation, result, executionStart));
-  else if (result.ok && command === 'safety-check' && !(result as Extract<SafetyCheckResult, { ok: true }>).summary.configured) output.log('safety-check: no incompatible outputs declared');
+  else if (result.ok && command === 'safety-check' && !(result as Extract<SafetyCheckResult, { ok: true }>).summary.configured)
+    output.log('safety-check: no incompatible outputs declared');
   else if (result.ok && command === 'safety-check') output.log('safety-check coverage checked');
   else if (result.ok && command === 'compile') output.log(`compile passed (contract draft ${ZPLC_CONSTANTS.DRAFT_COUNTER})`);
-  else if (result.ok) output.log(`${command} passed`); else result.evidence.diagnostics.forEach((diagnostic) => output.error(`Error: ${describeDiagnostic(diagnostic)}`));
+  else if (result.ok) output.log(`${command} passed`);
+  else result.evidence.diagnostics.forEach((diagnostic) => output.error(`Error: ${describeDiagnostic(diagnostic)}`));
   // a build that passed can still say what it accepted that the language reference does not define (CMP-031)
-  if (result.ok && !values.json && (command === 'compile' || command === 'check')) result.evidence.diagnostics.forEach((warning) => output.error(`Warning: ${describeDiagnostic(warning)}`));
+  if (result.ok && !values.json && (command === 'compile' || command === 'check'))
+    result.evidence.diagnostics.forEach((warning) => output.error(`Warning: ${describeDiagnostic(warning)}`));
   return command === 'test' || command === 'scenario-run' ? testExitCode(result as TestRunResult) : result.ok ? 0 : 1;
 }
 
@@ -215,8 +505,11 @@ async function runEntrypoint(args = Bun.argv.slice(2)): Promise<number> {
   const controller = new AbortController();
   const abort = () => controller.abort();
   process.on('SIGINT', abort);
-  try { return await main(args, console, { signal: controller.signal }); }
-  finally { process.off('SIGINT', abort); }
+  try {
+    return await main(args, console, { signal: controller.signal });
+  } finally {
+    process.off('SIGINT', abort);
+  }
 }
 
 if (import.meta.main) process.exitCode = await runEntrypoint();

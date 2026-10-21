@@ -51,14 +51,14 @@ west build -t run
 
 ### Program Management
 
-| Command                 | Description                                            |
-| ----------------------- | ------------------------------------------------------ |
-| `zplc version`          | Show Core and ISA version.                             |
-| `zplc load <size>`      | Prepare to receive `<size>` bytes of bytecode.         |
-| `zplc data <hex_bytes>` | Send a chunk of bytecode (64 chars max).               |
-| `zplc start`            | Explicitly start a verified, loaded program.            |
-| `zplc stop`             | Stop VM execution.                                     |
-| `zplc status`           | Show current VM state (Running/Halted/Error).          |
+| Command                 | Description                                                                                             |
+| ----------------------- | ------------------------------------------------------------------------------------------------------- |
+| `zplc version`          | Show Core and ISA version.                                                                              |
+| `zplc load <size>`      | Prepare to receive `<size>` bytes of bytecode.                                                          |
+| `zplc data <hex_bytes>` | Send a chunk of bytecode (64 chars max).                                                                |
+| `zplc start`            | Explicitly start a verified, loaded program.                                                            |
+| `zplc stop`             | Stop VM execution.                                                                                      |
+| `zplc status`           | Show current VM state (Running/Halted/Error).                                                           |
 | `zplc reset`            | Requests logical safe outputs and reloads the active in-memory artifact in READY state when successful. |
 
 ### Debugging
@@ -86,9 +86,9 @@ west build -t run
 
 ### Networking Diagnostics
 
-| Command            | Description                                   |
-| ------------------ | --------------------------------------------- |
-| `zplc net status`  | Show IP/default interface and Wi-Fi telemetry |
+| Command           | Description                                   |
+| ----------------- | --------------------------------------------- |
+| `zplc net status` | Show IP/default interface and Wi-Fi telemetry |
 
 ## 📤 Uploading Programs
 

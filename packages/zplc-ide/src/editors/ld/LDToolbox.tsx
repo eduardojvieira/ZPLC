@@ -1,9 +1,9 @@
 /**
  * LDToolbox - Element Palette for Ladder Diagram Editor
- * 
+ *
  * Every item is a button: dragging it onto the grid places it, and pressing it (Enter, Space or a click) inserts it at
  * the cursor of the keyboard editing (LNG-012). The search box above filters the items by name, type and symbol.
- * 
+ *
  * Provides items for:
  * - Contacts (NO, NC, P, N)
  * - Coils (Standard, Negated, Set, Reset)
@@ -55,7 +55,10 @@ function ToolboxItem({ item, onInsert }: ToolboxItemProps) {
       case 'function_block':
         return 'border-[var(--color-accent-yellow)] hover:bg-[var(--color-accent-yellow)]/10 text-[var(--color-accent-yellow)]';
       default:
-        return 'border-[var(--color-surface-500)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] text-[var(--color-surface-200)]';
+        return (
+          'border-[var(--color-surface-500)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] ' +
+          'text-[var(--color-surface-200)]'
+        );
     }
   };
 
@@ -67,10 +70,14 @@ function ToolboxItem({ item, onInsert }: ToolboxItemProps) {
       data-ld-toolbox-item={`${item.type}${item.fbType ? `:${item.fbType}` : ''}`}
       aria-label={t('editors.insert', { name: item.label })}
       tooltip={t('editors.ld.insertTooltip', { name: item.label })}
-      className={`flex-col whitespace-normal border-2 bg-transparent p-2 cursor-grab active:cursor-grabbing select-none ${getCategoryStyles()}`}
+      className={
+        `flex-col whitespace-normal border-2 bg-transparent p-2 cursor-grab active:cursor-grabbing ` + `select-none ${getCategoryStyles()}`
+      }
     >
       <span className="max-w-full break-all text-center font-mono text-xs font-bold leading-tight">{item.symbol}</span>
-      <span className={`mt-0.5 max-w-full break-words text-center ${CAPTION} leading-tight text-[var(--color-surface-200)]`}>{item.label}</span>
+      <span className={`mt-0.5 max-w-full break-words text-center ${CAPTION} leading-tight text-[var(--color-surface-200)]`}>
+        {item.label}
+      </span>
     </Button>
   );
 }
@@ -87,12 +94,10 @@ interface ToolboxSectionProps {
 
 function ToolboxSection({ title, items, onInsert }: ToolboxSectionProps) {
   if (items.length === 0) return null;
-  
+
   return (
     <div className="mb-3">
-      <h3 className={`${CAPTION} font-semibold text-[var(--color-surface-300)] uppercase tracking-wider mb-1.5 px-1`}>
-        {title}
-      </h3>
+      <h3 className={`${CAPTION} font-semibold text-[var(--color-surface-300)] uppercase tracking-wider mb-1.5 px-1`}>{title}</h3>
       <div className="grid grid-cols-2 gap-1.5">
         {items.map((item, idx) => (
           <ToolboxItem key={`${item.type}-${item.fbType || idx}`} item={item} onInsert={onInsert} />
@@ -115,19 +120,29 @@ export default function LDToolbox({ onInsert }: LDToolboxProps) {
   // the function blocks of the project are placeable like the standard ones (LNG-008)
   const projectItems = getToolboxItems(useProjectBlocks());
   const [query, setQuery] = useState('');
-  const found = new Set(filterItems(
-    projectItems.map((item) => ({ id: `${item.type}:${item.fbType ?? ''}`, label: item.label, detail: item.category, keywords: [item.type, item.symbol, item.fbType ?? ''] })),
-    query,
-  ).map((item) => item.id));
+  const found = new Set(
+    filterItems(
+      projectItems.map((item) => ({
+        id: `${item.type}:${item.fbType ?? ''}`,
+        label: item.label,
+        detail: item.category,
+        keywords: [item.type, item.symbol, item.fbType ?? ''],
+      })),
+      query,
+    ).map((item) => item.id),
+  );
   const allItems = projectItems.filter((item) => found.has(`${item.type}:${item.fbType ?? ''}`));
 
-  const contacts = allItems.filter(i => i.category === 'contact');
-  const coils = allItems.filter(i => i.category === 'coil');
-  const structure = allItems.filter(i => i.category === 'structure');
-  const functionBlocks = allItems.filter(i => i.category === 'function_block');
+  const contacts = allItems.filter((i) => i.category === 'contact');
+  const coils = allItems.filter((i) => i.category === 'coil');
+  const structure = allItems.filter((i) => i.category === 'structure');
+  const functionBlocks = allItems.filter((i) => i.category === 'function_block');
 
   return (
-    <div className="w-40 h-full bg-[var(--color-surface-800)] border-r border-[var(--color-surface-600)] p-2 overflow-y-auto flex-shrink-0" data-ld-toolbox>
+    <div
+      className="w-40 h-full bg-[var(--color-surface-800)] border-r border-[var(--color-surface-600)] p-2 overflow-y-auto flex-shrink-0"
+      data-ld-toolbox
+    >
       <h2 className="text-xs font-bold text-[var(--color-surface-100)] mb-2 px-1">{t('editors.ld.toolbox')}</h2>
       <TextField
         type="search"
@@ -146,9 +161,7 @@ export default function LDToolbox({ onInsert }: LDToolboxProps) {
 
       {/* Instructions */}
       <div className="mt-4 pt-3 border-t border-[var(--color-surface-700)]">
-        <p className={`${CAPTION} text-[var(--color-surface-300)] leading-relaxed`}>
-          {t('editors.ld.help')}
-        </p>
+        <p className={`${CAPTION} text-[var(--color-surface-300)] leading-relaxed`}>{t('editors.ld.help')}</p>
       </div>
     </div>
   );

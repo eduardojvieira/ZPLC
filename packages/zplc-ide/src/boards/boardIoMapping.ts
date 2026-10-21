@@ -60,7 +60,10 @@ export function mappingProblem(
   const normal = normalizeAddress(row.address);
   const direction = section === 'inputs' ? 'input' : 'output';
   if (normal === undefined) {
-    return `'${row.address}' is not an ${direction} address of the process image (for example ${channelsFor(io, section)[0]?.address ?? '%IX0.0'})`;
+    return (
+      `'${row.address}' is not an ${direction} address of the process image (for ` +
+      `example ${channelsFor(io, section)[0]?.address ?? '%IX0.0'})`
+    );
   }
   if (normal.charAt(1) !== SECTION_REGION[section]) {
     return `${normal} is not an ${direction} address: it belongs in the ${section === 'inputs' ? 'outputs' : 'inputs'} section`;

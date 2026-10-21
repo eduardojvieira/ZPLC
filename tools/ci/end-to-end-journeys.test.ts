@@ -27,5 +27,4 @@ describe('the end-to-end suite and the journeys of the requirement (VF-008)', ()
     expect(names).toContain(journey);
     expect(typeof JOURNEYS.find((candidate) => candidate.name === journey)?.run).toBe('function');
   });
-
 });

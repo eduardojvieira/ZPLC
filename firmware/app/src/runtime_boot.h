@@ -29,10 +29,10 @@ typedef struct {
 } zplc_boot_step_t;
 
 typedef struct {
-  size_t executed;          /**< steps that ran */
-  size_t service_failures;  /**< service steps that returned an error */
-  int first_service_error;  /**< the error of the first of them; 0 when none */
-  size_t failed_step;       /**< index of the runtime step that stopped the sequence; valid on a non-zero return */
+  size_t executed;         /**< steps that ran */
+  size_t service_failures; /**< service steps that returned an error */
+  int first_service_error; /**< the error of the first of them; 0 when none */
+  size_t failed_step;      /**< index of the runtime step that stopped the sequence; valid on a non-zero return */
 } zplc_boot_report_t;
 
 /**
@@ -44,7 +44,6 @@ typedef struct {
  * @return 0 when every runtime step succeeded (service failures do not count), the error of the runtime step that
  *         failed, or -EINVAL for a missing plan, a step without a function, or a runtime step after a service.
  */
-int zplc_boot_run(const zplc_boot_step_t *steps, size_t count,
-                  zplc_boot_report_t *report);
+int zplc_boot_run(const zplc_boot_step_t *steps, size_t count, zplc_boot_report_t *report);
 
 #endif /* ZPLC_RUNTIME_BOOT_H */

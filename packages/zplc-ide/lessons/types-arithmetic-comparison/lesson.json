@@ -5,16 +5,9 @@
   "order": 19,
   "module": 4,
   "level": "intermediate",
-  "prerequisites": [
-    "edge-counter-pulses"
-  ],
-  "languages": [
-    "ST"
-  ],
-  "tracks": [
-    "simulation",
-    "hardware"
-  ],
+  "prerequisites": ["edge-counter-pulses"],
+  "languages": ["ST"],
+  "tracks": ["simulation", "hardware"],
   "unsupported": {},
   "plant": null,
   "estimatedMinutes": 20,

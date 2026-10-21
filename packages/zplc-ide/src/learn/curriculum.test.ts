@@ -16,18 +16,95 @@ const ALL = ['ST', 'LD', 'FBD', 'SFC', 'IL'];
  * where the learner chooses.
  */
 const TABLE = [
-  { id: 0, title: [/tour of ZPLC/i, /simulation/i, /board/i], level: 'foundation', requires: null, languages: [], tracks: ['simulation', 'hardware'] },
-  { id: 1, title: [/scan cycle/i, /first blink/i], level: 'foundation', requires: 0, languages: ['LD', 'ST'], tracks: ['simulation', 'hardware'] },
-  { id: 2, title: [/Boolean logic/i, /contacts/i, /coils/i, /seal-in/i, /set and reset/i, /safe stop/i], level: 'foundation', requires: 1, languages: ['LD', 'ST'], tracks: ['simulation', 'hardware'] },
-  { id: 3, title: [/timers/i, /edges/i, /counters/i], level: 'foundation', requires: 2, languages: ['LD', 'FBD', 'ST'], tracks: ['simulation', 'hardware'] },
-  { id: 4, title: [/types/i, /arithmetic/i, /comparison/i, /analog scaling/i], level: 'intermediate', requires: 3, languages: ['ST', 'FBD'], tracks: ['simulation', 'hardware'] },
-  { id: 5, title: [/state machines/i, /sequences/i], level: 'intermediate', requires: 3, languages: ['ST', 'SFC'], tracks: ['simulation', 'hardware'] },
-  { id: 6, title: [/feedback/i, /faults/i, /interlocks/i], level: 'intermediate', requires: 5, languages: ['ST', 'LD'], tracks: ['simulation', 'hardware'] },
-  { id: 7, title: [/functions/i, /function blocks/i, /structures/i, /arrays/i, /tasks/i], level: 'intermediate', requires: 4, languages: ['ST', 'FBD'], tracks: ['simulation', 'hardware'] },
-  { id: 8, title: [/scenario tests/i, /temporal assertions/i, /trace/i, /breakpoints/i], level: 'advanced', requires: 6, languages: ['ST'], tracks: ['simulation'] },
-  { id: 9, title: [/Instruction List/i, /five languages/i], level: 'advanced', requires: 7, languages: ALL, tracks: ['simulation', 'hardware'] },
+  {
+    id: 0,
+    title: [/tour of ZPLC/i, /simulation/i, /board/i],
+    level: 'foundation',
+    requires: null,
+    languages: [],
+    tracks: ['simulation', 'hardware'],
+  },
+  {
+    id: 1,
+    title: [/scan cycle/i, /first blink/i],
+    level: 'foundation',
+    requires: 0,
+    languages: ['LD', 'ST'],
+    tracks: ['simulation', 'hardware'],
+  },
+  {
+    id: 2,
+    title: [/Boolean logic/i, /contacts/i, /coils/i, /seal-in/i, /set and reset/i, /safe stop/i],
+    level: 'foundation',
+    requires: 1,
+    languages: ['LD', 'ST'],
+    tracks: ['simulation', 'hardware'],
+  },
+  {
+    id: 3,
+    title: [/timers/i, /edges/i, /counters/i],
+    level: 'foundation',
+    requires: 2,
+    languages: ['LD', 'FBD', 'ST'],
+    tracks: ['simulation', 'hardware'],
+  },
+  {
+    id: 4,
+    title: [/types/i, /arithmetic/i, /comparison/i, /analog scaling/i],
+    level: 'intermediate',
+    requires: 3,
+    languages: ['ST', 'FBD'],
+    tracks: ['simulation', 'hardware'],
+  },
+  {
+    id: 5,
+    title: [/state machines/i, /sequences/i],
+    level: 'intermediate',
+    requires: 3,
+    languages: ['ST', 'SFC'],
+    tracks: ['simulation', 'hardware'],
+  },
+  {
+    id: 6,
+    title: [/feedback/i, /faults/i, /interlocks/i],
+    level: 'intermediate',
+    requires: 5,
+    languages: ['ST', 'LD'],
+    tracks: ['simulation', 'hardware'],
+  },
+  {
+    id: 7,
+    title: [/functions/i, /function blocks/i, /structures/i, /arrays/i, /tasks/i],
+    level: 'intermediate',
+    requires: 4,
+    languages: ['ST', 'FBD'],
+    tracks: ['simulation', 'hardware'],
+  },
+  {
+    id: 8,
+    title: [/scenario tests/i, /temporal assertions/i, /trace/i, /breakpoints/i],
+    level: 'advanced',
+    requires: 6,
+    languages: ['ST'],
+    tracks: ['simulation'],
+  },
+  {
+    id: 9,
+    title: [/Instruction List/i, /five languages/i],
+    level: 'advanced',
+    requires: 7,
+    languages: ALL,
+    tracks: ['simulation', 'hardware'],
+  },
   { id: 10, title: [/Modbus/i, /MQTT/i], level: 'advanced', requires: 7, languages: ['ST', 'FBD'], tracks: ['simulation', 'hardware'] },
-  { id: 11, title: [/capstone/i, /description/i, /tested program/i], level: 'advanced', requires: 8, languages: ALL, tracks: ['simulation', 'hardware'] },
+  {
+    id: 11,
+    title: [/capstone/i, /description/i, /tested program/i],
+    level: 'advanced',
+    requires: 8,
+    languages: ALL,
+    tracks: ['simulation', 'hardware'],
+  },
 ] as const;
 
 const order = courseOrder(LESSON_INDEX);
@@ -39,24 +116,37 @@ describe('LRN-006 the course follows the curriculum table of the spec, in its or
     for (const row of TABLE) {
       const module = modules[row.id]!;
       for (const word of row.title) expect([row.id, module.title.en]).toEqual([row.id, expect.stringMatching(word)]);
-      expect([row.id, module.level, module.requires, [...module.tracks].sort()]).toEqual([row.id, row.level, row.requires, [...row.tracks].sort()]);
+      expect([row.id, module.level, module.requires, [...module.tracks].sort()]).toEqual([
+        row.id,
+        row.level,
+        row.requires,
+        [...row.tracks].sort(),
+      ]);
     }
   });
 
-  it('LRN-006 places in each module only lessons whose edited program is in a language the table gives it (module 0 is a tour and teaches none)', () => {
-    for (const lesson of LESSON_INDEX.lessons) {
-      const row = TABLE[lesson.module]!;
-      if (row.languages.length === 0) continue;
-      expect([lesson.id, (row.languages as readonly string[]).includes(editedLanguageOf(lesson))]).toEqual([lesson.id, true]);
-    }
-  });
+  it(
+    'LRN-006 places in each module only lessons whose edited program is in a language the table gives it (module 0 is a tour and ' +
+      'teaches none)',
+    () => {
+      for (const lesson of LESSON_INDEX.lessons) {
+        const row = TABLE[lesson.module]!;
+        if (row.languages.length === 0) continue;
+        expect([lesson.id, (row.languages as readonly string[]).includes(editedLanguageOf(lesson))]).toEqual([lesson.id, true]);
+      }
+    },
+  );
 
   it('LRN-006 begins with the tour of module 0, then the scan cycle, then the first blink in Ladder and in Structured Text', () => {
     const ids = order.map((lesson) => lesson.id);
     const tour = order.filter((lesson) => lesson.module === 0).map((lesson) => lesson.id);
     expect(tour[0]).toBe('first-blink-simulation');
     expect(ids.slice(0, tour.length)).toEqual(tour);
-    expect(ids.slice(tour.length, tour.length + 3)).toEqual(['scan-cycle-one-scan-memory', 'blinky-ladder-timer-feedback', 'blink-structured-text']);
+    expect(ids.slice(tour.length, tour.length + 3)).toEqual([
+      'scan-cycle-one-scan-memory',
+      'blinky-ladder-timer-feedback',
+      'blink-structured-text',
+    ]);
     // Kahn's order never takes a later module first: the module numbers only grow along the course.
     expect(order.map((lesson) => lesson.module)).toEqual([...order.map((lesson) => lesson.module)].sort((a, b) => a - b));
   });
@@ -65,7 +155,9 @@ describe('LRN-006 the course follows the curriculum table of the spec, in its or
     const { course } = LESSON_INDEX;
     expect(course.rationale.en).toContain('scan cycle');
     expect(course.rationale.es).toContain('ciclo de escaneo');
-    for (const module of course.modules) for (const locale of ['en', 'es'] as const) expect([module.id, locale, module.why[locale].trim().length > 20]).toEqual([module.id, locale, true]);
+    for (const module of course.modules)
+      for (const locale of ['en', 'es'] as const)
+        expect([module.id, locale, module.why[locale].trim().length > 20]).toEqual([module.id, locale, true]);
     expect(course.modules[1]!.why.en).toMatch(/seal-in, edges and timers cannot be understood without/i);
     expect(course.modules[2]!.why.en).toMatch(/Ladder beside Structured Text/);
     expect(course.modules[3]!.why.en).toMatch(/Function Block Diagram/);
@@ -84,29 +176,42 @@ const NAMES: Record<string, { en: RegExp; es: RegExp }> = {
   ST: { en: /Structured Text/, es: /texto estructurado|Structured Text/i },
   LD: { en: /Ladder/, es: /Ladder|diagrama de escalera/i },
   FBD: { en: /Function Block Diagram/, es: /diagrama de bloques de funci[oó]n|Function Block Diagram/i },
-  SFC: { en: /Sequential Function Chart/, es: /diagrama funcional secuencial|diagrama de funciones secuenciales|diagrama funcional de secuencias|Sequential Function Chart/i },
+  SFC: {
+    en: /Sequential Function Chart/,
+    es: /diagrama funcional secuencial|diagrama de funciones secuenciales|diagrama funcional de secuencias|Sequential Function Chart/i,
+  },
   IL: { en: /Instruction List/, es: /lista de instrucciones|Instruction List/i },
 };
 
-describe('LRN-008 the course introduces each of ST, LD, FBD, SFC and IL and grades an edit in it, and offers the first blink in LD and in ST', () => {
-  for (const language of ALL) {
-    it(`LRN-008 ${language}: a graded lesson has the learner edit a program in ${language}, and the first one in course order names ${language} in an objective`, () => {
-      // The edited program is the starter file the reference scenario grades: the reference solution replaces exactly that file.
-      const editing = order.filter((lesson) => editedLanguageOf(lesson) === language);
-      expect([language, editing.length > 0]).toEqual([language, true]);
-      const introducing = editing[0]!;
-      for (const locale of ['en', 'es'] as const) {
-        const named = introducing.text[locale].objectives.some((objective) => NAMES[language]![locale].test(objective));
-        expect([introducing.id, locale, named]).toEqual([introducing.id, locale, true]);
-      }
-    });
-  }
+describe(
+  'LRN-008 the course introduces each of ST, LD, FBD, SFC and IL and grades an edit in it, and offers the first blink in LD and ' + 'in ST',
+  () => {
+    for (const language of ALL) {
+      it(
+        `LRN-008 ${language}: a graded lesson has the learner edit a program ` +
+          `in ${language}, and the first one in course order names ${language} in an objective`,
+        () => {
+          // The edited program is the starter file the reference scenario grades: the reference solution replaces exactly that file.
+          const editing = order.filter((lesson) => editedLanguageOf(lesson) === language);
+          expect([language, editing.length > 0]).toEqual([language, true]);
+          const introducing = editing[0]!;
+          for (const locale of ['en', 'es'] as const) {
+            const named = introducing.text[locale].objectives.some((objective) => NAMES[language]![locale].test(objective));
+            expect([introducing.id, locale, named]).toEqual([introducing.id, locale, true]);
+          }
+        },
+      );
+    }
 
-  it('LRN-008 offers the first blink in module 1 in Ladder and in Structured Text, each as the program the learner edits', () => {
-    const blinks = order.filter((lesson) => lesson.module === 1 && lesson.id !== 'scan-cycle-one-scan-memory');
-    expect(blinks.map((lesson) => [lesson.id, editedLanguageOf(lesson)])).toEqual([['blinky-ladder-timer-feedback', 'LD'], ['blink-structured-text', 'ST']]);
-  });
-});
+    it('LRN-008 offers the first blink in module 1 in Ladder and in Structured Text, each as the program the learner edits', () => {
+      const blinks = order.filter((lesson) => lesson.module === 1 && lesson.id !== 'scan-cycle-one-scan-memory');
+      expect(blinks.map((lesson) => [lesson.id, editedLanguageOf(lesson)])).toEqual([
+        ['blinky-ladder-timer-feedback', 'LD'],
+        ['blink-structured-text', 'ST'],
+      ]);
+    });
+  },
+);
 
 describe('LRN-012 every Foundation and Intermediate lesson can be completed in simulation, with no hardware', () => {
   it('LRN-012 lists the simulation track for every Foundation and Intermediate lesson, apart from a board check of module 0', () => {
@@ -118,11 +223,15 @@ describe('LRN-012 every Foundation and Intermediate lesson can be completed in s
     }
   });
 
-  it('LRN-012 reaches a blink within ten minutes of lesson time: the lessons Continue starts with, up to the first blink, add up to at most ten minutes', () => {
-    // A first-time learner presses Continue on the Learn home: the first lesson of the course, the tour that ends in a blinking output.
-    const first = order.find((lesson) => lesson.tracks.includes('simulation'))!;
-    expect(first.id).toBe('first-blink-simulation');
-    const path = order.slice(0, order.indexOf(first) + 1).filter((lesson) => lesson.tracks.includes('simulation'));
-    expect(path.reduce((sum, lesson) => sum + lesson.estimatedMinutes, 0)).toBeLessThanOrEqual(10);
-  });
+  it(
+    'LRN-012 reaches a blink within ten minutes of lesson time: the lessons Continue starts with, up to the first blink, add up to at ' +
+      'most ten minutes',
+    () => {
+      // A first-time learner presses Continue on the Learn home: the first lesson of the course, the tour that ends in a blinking output.
+      const first = order.find((lesson) => lesson.tracks.includes('simulation'))!;
+      expect(first.id).toBe('first-blink-simulation');
+      const path = order.slice(0, order.indexOf(first) + 1).filter((lesson) => lesson.tracks.includes('simulation'));
+      expect(path.reduce((sum, lesson) => sum + lesson.estimatedMinutes, 0)).toBeLessThanOrEqual(10);
+    },
+  );
 });

@@ -30,7 +30,11 @@ export function createUpdateNoticeStore(storage: NoticeStorage | undefined) {
 }
 
 function browserStorage(): NoticeStorage | undefined {
-  try { return typeof window === 'undefined' ? undefined : window.localStorage; } catch { return undefined; }
+  try {
+    return typeof window === 'undefined' ? undefined : window.localStorage;
+  } catch {
+    return undefined;
+  }
 }
 
 export const useUpdateNotice = createUpdateNoticeStore(browserStorage());

@@ -2,12 +2,7 @@ import { chmodSync, mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, w
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'bun:test';
-import {
-  REQUIRED_TOOL_API_EXPORTS,
-  assertPackagedAppAsar,
-  assertPackagedRuntime,
-  discoverUnpackedResources,
-} from './smoke-desktop-builds';
+import { REQUIRED_TOOL_API_EXPORTS, assertPackagedAppAsar, assertPackagedRuntime, discoverUnpackedResources } from './smoke-desktop-builds';
 
 const script = join(import.meta.dir, 'smoke-desktop-builds.ts');
 

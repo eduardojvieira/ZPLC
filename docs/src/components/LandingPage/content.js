@@ -6,15 +6,15 @@ const landingPageContent = {
   en: {
     home: {
       metaTitle: 'ZPLC - Open-source PLC runtime and IDE',
-      metaDescription:
-        'An open-source IEC 61131-3 PLC runtime in portable C99 and a desktop IDE to write, test and simulate programs.',
+      metaDescription: 'An open-source IEC 61131-3 PLC runtime in portable C99 and a desktop IDE to write, test and simulate programs.',
     },
     hero: {
       badge: 'ZPLC',
       titleLead: 'Open-source',
       titleAccent: 'PLC runtime and IDE.',
       subtitle:
-        'Write IEC 61131-3 programs, test them with scenarios and run them in a simulator on your computer. The same C99 runtime builds for Zephyr boards. Version 2.0 is a preview: no board has been tested on hardware yet.',
+        'Write IEC 61131-3 programs, test them with scenarios and run them in a simulator on your computer. The same C99 runtime builds ' +
+        'for Zephyr boards. Version 2.0 is a preview: no board has been tested on hardware yet.',
       primaryCta: 'Download the prerelease',
       primaryTo: releasesUrl,
       secondaryCta: 'Get started',
@@ -29,20 +29,17 @@ const landingPageContent = {
         {
           icon: '🛡️',
           title: 'Fixed memory regions',
-          description:
-            'Programs work in five fixed regions: inputs, outputs, work, retain and code. Their sizes are set at build time.',
+          description: 'Programs work in five fixed regions: inputs, outputs, work, retain and code. Their sizes are set at build time.',
         },
         {
           icon: '⏱️',
           title: 'Tasks and priorities',
-          description:
-            'Programs run in tasks with a priority and a cycle time. Timing on a board has not been measured yet.',
+          description: 'Programs run in tasks with a priority and a cycle time. Timing on a board has not been measured yet.',
         },
         {
           icon: '⚡',
           title: 'Portable core',
-          description:
-            'The core reaches the platform only through a HAL. The Zephyr and POSIX ports are included in this release.',
+          description: 'The core reaches the platform only through a HAL. The Zephyr and POSIX ports are included in this release.',
         },
         {
           icon: '💻',
@@ -100,12 +97,25 @@ const landingPageContent = {
       subtitle: 'Edit in text or in diagrams, then run and inspect the program.',
       languageBlock: {
         title: 'IEC 61131-3 languages',
-        description: 'Structured Text is the main path. Instruction List is a text path. Ladder, Function Block Diagram and Sequential Function Chart have visual editors.',
-        items: ['Structured Text (ST)', 'Instruction List (IL)', 'Ladder Diagram (LD)', 'Function Block Diagram (FBD)', 'Sequential Function Chart (SFC)'],
+        description:
+          'Structured Text is the main path. Instruction List is a text path. Ladder, Function Block Diagram and Sequential Function ' +
+          'Chart have visual editors.',
+        items: [
+          'Structured Text (ST)',
+          'Instruction List (IL)',
+          'Ladder Diagram (LD)',
+          'Function Block Diagram (FBD)',
+          'Sequential Function Chart (SFC)',
+        ],
       },
       referenceBlock: {
         title: 'Run and inspect',
-        items: ['Watch variables while a program runs', 'Step one cycle at a time', 'Scenario tests on the simulator', 'Trace of recorded values'],
+        items: [
+          'Watch variables while a program runs',
+          'Step one cycle at a time',
+          'Scenario tests on the simulator',
+          'Trace of recorded values',
+        ],
       },
     },
     roadmapSection: {
@@ -146,7 +156,9 @@ const landingPageContent = {
         { icon: '📦', title: 'Compile', description: 'Compile a project to `.zplc` bytecode and read the diagnostics.' },
         { icon: '🛠️', title: 'Test', description: 'Run scenario tests and look at the trace they record.' },
       ],
-      snippet: `PROGRAM Main\nVAR\n  PumpEnabled : BOOL := FALSE;\n  TankLevel : INT := 42;\nEND_VAR\n\nIF TankLevel < 30 THEN\n  PumpEnabled := TRUE;\nEND_IF;\nEND_PROGRAM`,
+      snippet:
+        `PROGRAM Main\nVAR\n  PumpEnabled : BOOL := FALSE;\n  TankLevel : INT := 42;\nEND_VAR\n\nIF TankLevel < 30 THEN\n ` +
+        ` PumpEnabled := TRUE;\nEND_IF;\nEND_PROGRAM`,
     },
     ctaSection: {
       title: 'Try ZPLC',
@@ -167,7 +179,8 @@ const landingPageContent = {
       titleLead: 'Runtime e IDE para PLC',
       titleAccent: 'de código abierto.',
       subtitle:
-        'Escriba programas IEC 61131-3, pruébelos con escenarios y ejecútelos en un simulador en su equipo. El mismo runtime en C99 se compila para placas Zephyr. La versión 2.0 es preliminar: todavía no se ha probado ninguna placa con hardware.',
+        'Escriba programas IEC 61131-3, pruébelos con escenarios y ejecútelos en un simulador en su equipo. El mismo runtime en C99 se ' +
+        'compila para placas Zephyr. La versión 2.0 es preliminar: todavía no se ha probado ninguna placa con hardware.',
       primaryCta: 'Descargar la versión preliminar',
       primaryTo: releasesUrl,
       secondaryCta: 'Primeros pasos',
@@ -183,7 +196,8 @@ const landingPageContent = {
           icon: '🛡️',
           title: 'Regiones de memoria fijas',
           description:
-            'Los programas trabajan en cinco regiones fijas: entradas, salidas, trabajo, retain y código. Sus tamaños se definen al compilar.',
+            'Los programas trabajan en cinco regiones fijas: entradas, salidas, trabajo, retain y código. Sus tamaños se definen al ' +
+            'compilar.',
         },
         {
           icon: '⏱️',
@@ -194,8 +208,7 @@ const landingPageContent = {
         {
           icon: '⚡',
           title: 'Núcleo portable',
-          description:
-            'El núcleo accede a la plataforma solo mediante una HAL. Esta versión incluye los ports de Zephyr y POSIX.',
+          description: 'El núcleo accede a la plataforma solo mediante una HAL. Esta versión incluye los ports de Zephyr y POSIX.',
         },
         {
           icon: '💻',
@@ -253,12 +266,25 @@ const landingPageContent = {
       subtitle: 'Edite en texto o en diagramas, y luego ejecute e inspeccione el programa.',
       languageBlock: {
         title: 'Lenguajes IEC 61131-3',
-        description: 'Structured Text es la vía principal. Instruction List es una vía de texto. Ladder, Function Block Diagram y Sequential Function Chart tienen editores visuales.',
-        items: ['Structured Text (ST)', 'Instruction List (IL)', 'Ladder Diagram (LD)', 'Function Block Diagram (FBD)', 'Sequential Function Chart (SFC)'],
+        description:
+          'Structured Text es la vía principal. Instruction List es una vía de texto. Ladder, Function Block Diagram y Sequential ' +
+          'Function Chart tienen editores visuales.',
+        items: [
+          'Structured Text (ST)',
+          'Instruction List (IL)',
+          'Ladder Diagram (LD)',
+          'Function Block Diagram (FBD)',
+          'Sequential Function Chart (SFC)',
+        ],
       },
       referenceBlock: {
         title: 'Ejecutar e inspeccionar',
-        items: ['Observar variables mientras el programa se ejecuta', 'Avanzar un ciclo a la vez', 'Pruebas de escenario en el simulador', 'Trace de los valores registrados'],
+        items: [
+          'Observar variables mientras el programa se ejecuta',
+          'Avanzar un ciclo a la vez',
+          'Pruebas de escenario en el simulador',
+          'Trace de los valores registrados',
+        ],
       },
     },
     roadmapSection: {
@@ -299,7 +325,9 @@ const landingPageContent = {
         { icon: '📦', title: 'Compilar', description: 'Compile un proyecto a bytecode `.zplc` y lea los diagnósticos.' },
         { icon: '🛠️', title: 'Probar', description: 'Ejecute pruebas de escenario y revise el trace que registran.' },
       ],
-      snippet: `PROGRAM Main\nVAR\n  PumpEnabled : BOOL := FALSE;\n  TankLevel : INT := 42;\nEND_VAR\n\nIF TankLevel < 30 THEN\n  PumpEnabled := TRUE;\nEND_IF;\nEND_PROGRAM`,
+      snippet:
+        `PROGRAM Main\nVAR\n  PumpEnabled : BOOL := FALSE;\n  TankLevel : INT := 42;\nEND_VAR\n\nIF TankLevel < 30 THEN\n ` +
+        ` PumpEnabled := TRUE;\nEND_IF;\nEND_PROGRAM`,
     },
     ctaSection: {
       title: 'Pruebe ZPLC',

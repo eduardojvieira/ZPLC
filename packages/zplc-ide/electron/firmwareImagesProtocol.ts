@@ -99,7 +99,14 @@ export function parseFirmwareImagesResult(value: unknown): FirmwareImagesResult 
   if (!isRecord(value)) return null;
   if (value.status === 'absent' || value.status === 'invalid') return Object.keys(value).length === 1 ? { status: value.status } : null;
   if (value.status !== 'available' || !text(value.version, VERSION) || !text(value.commit, COMMIT)) return null;
-  if (typeof value.folder !== 'string' || value.folder.length === 0 || value.folder.length > 1024 || !Array.isArray(value.images) || value.images.length > 64) return null;
+  if (
+    typeof value.folder !== 'string' ||
+    value.folder.length === 0 ||
+    value.folder.length > 1024 ||
+    !Array.isArray(value.images) ||
+    value.images.length > 64
+  )
+    return null;
   const images: FirmwareImage[] = [];
   for (const entry of value.images) {
     const bundled = isRecord(entry) ? entry.bundled : undefined;

@@ -30,9 +30,8 @@ extern "C" {
  * @brief Verify the signature of a message.
  * @return 0 when it is valid under the key, a negative number when it is not (or the key is not a point)
  */
-int zplc_ed25519_verify(const uint8_t signature[ZPLC_ED25519_SIGNATURE_BYTES],
-                        const uint8_t public_key[ZPLC_ED25519_PUBLIC_BYTES], const uint8_t *message,
-                        size_t length);
+int zplc_ed25519_verify(const uint8_t signature[ZPLC_ED25519_SIGNATURE_BYTES], const uint8_t public_key[ZPLC_ED25519_PUBLIC_BYTES],
+                        const uint8_t *message, size_t length);
 
 #ifdef __cplusplus
 }

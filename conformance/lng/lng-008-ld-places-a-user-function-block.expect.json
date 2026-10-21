@@ -1,9 +1,7 @@
 {
   "requirement": "LNG-008",
   "title": "an LD rung places a function block of the project and takes its output",
-  "matrix": [
-    "ld-fbd.user-blocks-and-functions"
-  ],
+  "matrix": ["ld-fbd.user-blocks-and-functions"],
   "note": "LNG-008: a function block declared in a Structured Text file of the project is a block of the LD palette: the contact powers its input Trigger, and its output Active is the variable it is wired to; Hold keeps Active TRUE after the contact opens",
   "scans": 3,
   "scanMs": 10,
@@ -21,9 +19,7 @@
       "beforeScan": 3
     }
   ],
-  "files": [
-    "lng-008-ld-places-a-user-function-block-hold.st"
-  ],
+  "files": ["lng-008-ld-places-a-user-function-block-hold.st"],
   "expect": [
     {
       "at": "%QX0.0",

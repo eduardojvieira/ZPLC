@@ -17,9 +17,25 @@ function render(progress: LearnProgress | null, over: Partial<LearnHomeViewProps
   const continueId = continueTarget(view, progress);
   return renderToStaticMarkup(
     <LearnHomeView
-      view={view} index={LESSON_INDEX} locale="en" continueId={continueId} fresh={!progress?.last} loaded failed={false} unlockAll={unlockAll} hideSolutions={false} onHideSolutions={() => undefined}
-      folderAccess busy={false} transfer="idle" onUnlockAll={() => undefined} onStart={() => undefined} onClose={() => undefined}
-      onExport={() => undefined} onImportFile={() => undefined} {...over}
+      view={view}
+      index={LESSON_INDEX}
+      locale="en"
+      continueId={continueId}
+      fresh={!progress?.last}
+      loaded
+      failed={false}
+      unlockAll={unlockAll}
+      hideSolutions={false}
+      onHideSolutions={() => undefined}
+      folderAccess
+      busy={false}
+      transfer="idle"
+      onUnlockAll={() => undefined}
+      onStart={() => undefined}
+      onClose={() => undefined}
+      onExport={() => undefined}
+      onImportFile={() => undefined}
+      {...over}
     />,
   );
 }
@@ -32,7 +48,9 @@ describe('the classroom setting of the Learn home (LRN-033)', () => {
     expect(off).toContain('data-learn-hide-solutions');
     expect(off).toContain('Classroom: hide reference solutions');
     expect(off).not.toMatch(/<input[^>]*data-learn-hide-solutions[^>]*checked=""|<input[^>]*checked=""[^>]*data-learn-hide-solutions/);
-    expect(render(emptyProgress(), { hideSolutions: true })).toMatch(/<input[^>]*data-learn-hide-solutions[^>]*checked=""|<input[^>]*checked=""[^>]*data-learn-hide-solutions/);
+    expect(render(emptyProgress(), { hideSolutions: true })).toMatch(
+      /<input[^>]*data-learn-hide-solutions[^>]*checked=""|<input[^>]*checked=""[^>]*data-learn-hide-solutions/,
+    );
     expect(auditMarkup(render(emptyProgress(), { hideSolutions: true }))).toEqual([]);
   });
 });
@@ -45,7 +63,9 @@ describe('the Learn home', () => {
     expect(out).toContain('Simulation');
     expect(out).toContain('Foundation. Requires module 0. About 45 min.');
     expect(out).toContain('Intermediate. Requires module 3.');
-    expect((out.match(/No lessons yet\./g) ?? []).length).toBe(LESSON_INDEX.course.modules.filter((module) => !LESSON_INDEX.lessons.some((lesson) => lesson.module === module.id)).length);
+    expect((out.match(/No lessons yet\./g) ?? []).length).toBe(
+      LESSON_INDEX.course.modules.filter((module) => !LESSON_INDEX.lessons.some((lesson) => lesson.module === module.id)).length,
+    );
   });
 
   it('says the state of each lesson in words, and why a locked lesson is locked', () => {
@@ -57,7 +77,9 @@ describe('the Learn home', () => {
     expect(locked).toContain('data-state="locked"');
     expect(locked).toContain('Locked');
     expect(locked).toContain('Pass first:');
-    expect(locked).toMatch(/<button[^>]*disabled[^>]*data-learn-start="motor-start-stop-safe"|<button[^>]*data-learn-start="motor-start-stop-safe"[^>]*disabled/);
+    expect(locked).toMatch(
+      /<button[^>]*disabled[^>]*data-learn-start="motor-start-stop-safe"|<button[^>]*data-learn-start="motor-start-stop-safe"[^>]*disabled/,
+    );
     expect(lessonRow(render(emptyProgress()), FIRST)).toContain('Available');
   });
 
@@ -67,7 +89,12 @@ describe('the Learn home', () => {
     const out = render(progress);
     expect(out).toContain('Continue: ');
     expect(out).toContain(LESSON_INDEX.lessons.find((lesson) => lesson.id === SECOND)!.text.en.title);
-    const done = render(withPassedIds(emptyProgress(), LESSON_INDEX.lessons.map((lesson) => lesson.id)));
+    const done = render(
+      withPassedIds(
+        emptyProgress(),
+        LESSON_INDEX.lessons.map((lesson) => lesson.id),
+      ),
+    );
     expect(done).toContain('Every lesson is passed');
     expect(done).not.toContain('data-learn-continue');
   });
@@ -79,11 +106,32 @@ describe('the Learn home', () => {
     expect(out).toContain(course.rationale.en);
     for (const module of course.modules) {
       const block = out.split('<li ').find((chunk) => chunk.startsWith(`data-learn-module="${module.id}"`)) ?? '';
-      expect([module.id, block.includes(`data-learn-module-why="${module.id}"`) && block.includes(module.why.en)]).toEqual([module.id, true]);
+      expect([module.id, block.includes(`data-learn-module-why="${module.id}"`) && block.includes(module.why.en)]).toEqual([
+        module.id,
+        true,
+      ]);
     }
     const spanish = renderToStaticMarkup(
-      <LearnHomeView view={buildCourseView(LESSON_INDEX, emptyProgress(), { locale: 'es', unlockAll: false })} index={LESSON_INDEX} locale="es" continueId={null} fresh loaded failed={false} unlockAll={false} hideSolutions={false} onHideSolutions={() => undefined}
-        folderAccess busy={false} transfer="idle" onUnlockAll={() => undefined} onStart={() => undefined} onClose={() => undefined} onExport={() => undefined} onImportFile={() => undefined} />,
+      <LearnHomeView
+        view={buildCourseView(LESSON_INDEX, emptyProgress(), { locale: 'es', unlockAll: false })}
+        index={LESSON_INDEX}
+        locale="es"
+        continueId={null}
+        fresh
+        loaded
+        failed={false}
+        unlockAll={false}
+        hideSolutions={false}
+        onHideSolutions={() => undefined}
+        folderAccess
+        busy={false}
+        transfer="idle"
+        onUnlockAll={() => undefined}
+        onStart={() => undefined}
+        onClose={() => undefined}
+        onExport={() => undefined}
+        onImportFile={() => undefined}
+      />,
     );
     expect(spanish).toContain(course.rationale.es);
     expect(spanish).toContain(course.modules[1]!.why.es);

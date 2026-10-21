@@ -44,7 +44,8 @@ export function walkRung<T>(grid: LDCell[][], branches: LDBranch[], cols: number
     const starting = branches.filter((branch) => branch.startCol === col).sort(byDepth);
     for (const branch of starting) {
       const source = power[branch.rows[0]];
-      if (source === undefined) hooks.unpowered(`branch '${branch.id}' starts on row ${branch.rows[0]}, which no power reaches at column ${col}`);
+      if (source === undefined)
+        hooks.unpowered(`branch '${branch.id}' starts on row ${branch.rows[0]}, which no power reaches at column ${col}`);
       for (const row of branch.rows.slice(1)) power[row] = source;
     }
     for (let row = 0; row < grid.length; row++) {
@@ -72,11 +73,7 @@ export function walkRung<T>(grid: LDCell[][], branches: LDBranch[], cols: number
 // =============================================================================
 
 /** A boolean power expression: AND of series elements, OR of parallel paths. */
-export type Power =
-  | { kind: 'true' }
-  | { kind: 'atom'; text: string }
-  | { kind: 'and'; terms: Power[] }
-  | { kind: 'or'; terms: Power[] };
+export type Power = { kind: 'true' } | { kind: 'atom'; text: string } | { kind: 'and'; terms: Power[] } | { kind: 'or'; terms: Power[] };
 
 export const TRUE_POWER: Power = { kind: 'true' };
 export const atom = (text: string): Power => ({ kind: 'atom', text });
@@ -95,19 +92,27 @@ export function and(...parts: Power[]): Power {
 /** The power as an expression of variables, for the debug map (LNG-006): an atom is a variable, or `NOT` a variable. */
 export function powerExpr(power: Power): PowerExpr {
   switch (power.kind) {
-    case 'true': return { op: 'true' };
-    case 'atom': return power.text.startsWith('NOT ') ? { op: 'var', variable: power.text.slice(4), not: true } : { op: 'var', variable: power.text };
-    case 'and': return { op: 'and', terms: power.terms.map(powerExpr) };
-    case 'or': return { op: 'or', terms: power.terms.map(powerExpr) };
+    case 'true':
+      return { op: 'true' };
+    case 'atom':
+      return power.text.startsWith('NOT ') ? { op: 'var', variable: power.text.slice(4), not: true } : { op: 'var', variable: power.text };
+    case 'and':
+      return { op: 'and', terms: power.terms.map(powerExpr) };
+    case 'or':
+      return { op: 'or', terms: power.terms.map(powerExpr) };
   }
 }
 
 export function printPower(power: Power): string {
   switch (power.kind) {
-    case 'true': return 'TRUE';
-    case 'atom': return power.text;
-    case 'and': return power.terms.map((term) => term.kind === 'or' ? `(${printPower(term)})` : printPower(term)).join(' AND ');
-    case 'or': return power.terms.map((term) => term.kind === 'and' ? `(${printPower(term)})` : printPower(term)).join(' OR ');
+    case 'true':
+      return 'TRUE';
+    case 'atom':
+      return power.text;
+    case 'and':
+      return power.terms.map((term) => (term.kind === 'or' ? `(${printPower(term)})` : printPower(term))).join(' AND ');
+    case 'or':
+      return power.terms.map((term) => (term.kind === 'and' ? `(${printPower(term)})` : printPower(term))).join(' OR ');
   }
 }
 
@@ -115,17 +120,19 @@ export function printPower(power: Power): string {
 export function or(values: Power[]): Power {
   const terms: Power[] = [];
   const printed = new Set<string>();
-  for (const value of values.flatMap((entry) => entry.kind === 'or' ? entry.terms : [entry])) {
+  for (const value of values.flatMap((entry) => (entry.kind === 'or' ? entry.terms : [entry]))) {
     const text = printPower(value);
-    if (!printed.has(text)) { printed.add(text); terms.push(value); }
+    if (!printed.has(text)) {
+      printed.add(text);
+      terms.push(value);
+    }
   }
   if (terms.some((term) => term.kind === 'true')) return TRUE_POWER;
   if (terms.length === 1) return terms[0];
-  const chains = terms.map((term) => term.kind === 'and' ? term.terms : [term]);
+  const chains = terms.map((term) => (term.kind === 'and' ? term.terms : [term]));
   let shared = 0;
   while (chains.every((chain) => shared < chain.length && printPower(chain[shared]) === printPower(chains[0][shared]))) shared++;
   if (shared === 0) return { kind: 'or', terms };
   const rests = chains.map((chain) => and(...chain.slice(shared)));
   return and(...chains[0].slice(0, shared), or(rests));
 }
-

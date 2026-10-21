@@ -36,7 +36,7 @@ export const UPTIME_FN: FunctionDef = {
     generateInline(ctx: CodeGenContext, _args: Expression[]): void {
         ctx.emit(`    ; UPTIME() - Get system uptime in ms`);
         ctx.emit(`    GET_TICKS`);
-    }
+    },
 };
 
 // ============================================================================
@@ -299,7 +299,7 @@ export const FIFO_FB: FunctionBlockDef = {
 
         ctx.emit(`${lblEnd}:`);
         ctx.emit(`    ; --- End FIFO ---`);
-    }
+    },
 };
 
 // ============================================================================
@@ -500,7 +500,7 @@ export const LIFO_FB: FunctionBlockDef = {
 
         ctx.emit(`${lblEnd}:`);
         ctx.emit(`    ; --- End LIFO ---`);
-    }
+    },
 };
 
 // ============================================================================
@@ -529,8 +529,9 @@ export const CYCLE_TIME_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, _args: Expression[]): void {
         ctx.emit(`    ; CYCLE_TIME() - Read last cycle execution time from system registers`);
-        ctx.emit(`    LOAD32 0x${SYSTEM_REGISTER.CYCLE_TIME.address.toString(16).toUpperCase().padStart(4, '0')}`);  // ZPLC_SYS_CYCLE_TIME in IPI
-    }
+        // ZPLC_SYS_CYCLE_TIME in IPI
+        ctx.emit(`    LOAD32 0x${SYSTEM_REGISTER.CYCLE_TIME.address.toString(16).toUpperCase().padStart(4, '0')}`);
+    },
 };
 
 // ============================================================================
@@ -552,5 +553,5 @@ export const WATCHDOG_RESET_FN: FunctionDef = {
     generateInline(ctx: CodeGenContext, _args: Expression[]): void {
         ctx.emit(`    ; WATCHDOG_RESET() - compatibility NOP; no watchdog effect`);
         ctx.emit(`    NOP`);
-    }
+    },
 };

@@ -1,6 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { spawnSync } from 'node:child_process';
-import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, truncateSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  truncateSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -87,7 +99,9 @@ describe('choosing the project folder', () => {
     const { files, rootId, call } = await open();
     expect(refused(await files.handle(99, PROJECT_FILES_CHANNEL.list, [{ rootId, path: '' }]))).toBe('no-folder');
     expect(refused(await call('list', { rootId: 'guess', path: '' }))).toBe('no-folder');
-    expect(refused(await createProjectFiles(async () => root).handle(OWNER, PROJECT_FILES_CHANNEL.list, [{ rootId, path: '' }]))).toBe('no-folder');
+    expect(refused(await createProjectFiles(async () => root).handle(OWNER, PROJECT_FILES_CHANNEL.list, [{ rootId, path: '' }]))).toBe(
+      'no-folder',
+    );
     await files.handle(OWNER, PROJECT_FILES_CHANNEL.chooseFolder, []);
     expect(refused(await call('list', { path: '' }))).toBe('no-folder');
     files.revokeOwner(OWNER);
@@ -96,7 +110,11 @@ describe('choosing the project folder', () => {
 
   it('shares one dialog between concurrent requests of a window', async () => {
     let calls = 0;
-    const files = createProjectFiles(async () => { calls += 1; await Bun.sleep(10); return root; });
+    const files = createProjectFiles(async () => {
+      calls += 1;
+      await Bun.sleep(10);
+      return root;
+    });
     const [first, second] = await Promise.all([
       files.handle(OWNER, PROJECT_FILES_CHANNEL.chooseFolder, []),
       files.handle(OWNER, PROJECT_FILES_CHANNEL.chooseFolder, []),
@@ -145,7 +163,7 @@ describe('operations inside the project root', () => {
     expect(await call('list', { path: 'src' })).toEqual({ ok: true, value: [{ name: 'main.st', kind: 'file' }] });
     expect(await call('stat', { path: 'src/main.st' })).toEqual({ ok: true, value: { kind: 'file', size: 25 } });
     expect(await call('stat', { path: 'src' })).toEqual({ ok: true, value: { kind: 'directory', size: 0 } });
-    expect(text((await call('read', { path: 'src/main.st' }) as { value: unknown }).value)).toBe('PROGRAM Main\nEND_PROGRAM\n');
+    expect(text(((await call('read', { path: 'src/main.st' })) as { value: unknown }).value)).toBe('PROGRAM Main\nEND_PROGRAM\n');
 
     expect((await call('mkdir', { path: 'tests/nested' })).ok).toBe(true);
     expect((await call('mkdir', { path: 'tests/nested' })).ok).toBe(true);
@@ -168,7 +186,7 @@ describe('operations inside the project root', () => {
     for (const bytes of samples) {
       expect((await call('write', { path: 'blob.bin', bytes })).ok).toBe(true);
       expect(Buffer.from(readFileSync(path.join(root, 'blob.bin'))).equals(Buffer.from(bytes))).toBe(true);
-      const read = await call('read', { path: 'blob.bin' }) as { value: Uint8Array };
+      const read = (await call('read', { path: 'blob.bin' })) as { value: Uint8Array };
       expect(Buffer.from(read.value).equals(Buffer.from(bytes))).toBe(true);
       // A copy with its own buffer: the structured clone of a pooled Buffer would carry its neighbours.
       expect(read.value.buffer.byteLength).toBe(bytes.byteLength);
@@ -237,8 +255,26 @@ describe('operations inside the project root', () => {
 });
 
 describe('containment', () => {
-  const traversal = ['..', '../outside/secret.txt', 'src/../../outside/secret.txt', 'src/..', '..\\outside', 'src/../main.st', 'a/./../b', '.../x', 'src/..../x'];
-  const absolute = (): string[] => [path.join(outside, 'secret.txt'), '/etc/passwd', '\\\\server\\share\\x', 'C:\\Windows\\win.ini', 'C:/Windows/win.ini', 'c:x', '/'];
+  const traversal = [
+    '..',
+    '../outside/secret.txt',
+    'src/../../outside/secret.txt',
+    'src/..',
+    '..\\outside',
+    'src/../main.st',
+    'a/./../b',
+    '.../x',
+    'src/..../x',
+  ];
+  const absolute = (): string[] => [
+    path.join(outside, 'secret.txt'),
+    '/etc/passwd',
+    '\\\\server\\share\\x',
+    'C:\\Windows\\win.ini',
+    'C:/Windows/win.ini',
+    'c:x',
+    '/',
+  ];
   const malformed = ['src\\main.st', 'src/main.st\0', 'bad\0name', 'stream:name', 'name ', 'name.'];
 
   for (const op of ['list', 'stat', 'read', 'mkdir'] as const) {
@@ -358,8 +394,11 @@ describe('containment', () => {
     const { call } = await open();
     symlinkSync(outside, path.join(root, 'dir-link'));
     const failures = [
-      await call('read', { path: 'nothing.st' }), await call('read', { path: '../x' }), await call('read', { path: 'dir-link/secret.txt' }),
-      await call('list', { path: 'src/main.st' }), await call('remove', { path: 'src', recursive: false }),
+      await call('read', { path: 'nothing.st' }),
+      await call('read', { path: '../x' }),
+      await call('read', { path: 'dir-link/secret.txt' }),
+      await call('list', { path: 'src/main.st' }),
+      await call('remove', { path: 'src', recursive: false }),
     ];
     for (const failure of failures) {
       expect(Object.keys(failure).sort()).toEqual(['code', 'ok']);
@@ -387,12 +426,24 @@ describe('request validation at the handler', () => {
 
 describe('recent projects (IDE-008)', () => {
   let userData: string;
-  beforeEach(() => { userData = path.join(sandbox, 'user-data'); });
+  beforeEach(() => {
+    userData = path.join(sandbox, 'user-data');
+  });
 
   /** A window whose dialog counts its calls, over a recent store in the private user-data directory. */
-  function windowWithRecent(chosen: string | null = root, owner = OWNER, recent: ReturnType<typeof createRecentProjects> | null = createRecentProjects(userData)) {
+  function windowWithRecent(
+    chosen: string | null = root,
+    owner = OWNER,
+    recent: ReturnType<typeof createRecentProjects> | null = createRecentProjects(userData),
+  ) {
     const dialogCalls = { count: 0 };
-    const files = createProjectFiles(async () => { dialogCalls.count += 1; return chosen; }, () => recent);
+    const files = createProjectFiles(
+      async () => {
+        dialogCalls.count += 1;
+        return chosen;
+      },
+      () => recent,
+    );
     const send = (channel: string, args: unknown[] = []) => files.handle(owner, channel, args);
     return { files, send, dialogCalls, recent };
   }
@@ -415,7 +466,9 @@ describe('recent projects (IDE-008)', () => {
     expect(await listed(send)).toEqual([]); // chosen is not yet opened: a folder with no zplc.json must not become a recent project
     await send(PROJECT_FILES_CHANNEL.markOpened, [{ rootId: folder.rootId }]);
     const entries = await listed(send);
-    expect(entries).toEqual([{ recentId: expect.stringMatching(/^[0-9a-f]{64}$/), displayName: 'project', lastOpenedAt: expect.any(Number), available: true }]);
+    expect(entries).toEqual([
+      { recentId: expect.stringMatching(/^[0-9a-f]{64}$/), displayName: 'project', lastOpenedAt: expect.any(Number), available: true },
+    ]);
     expect(JSON.stringify(entries)).not.toContain(sandbox);
   });
 
@@ -423,7 +476,9 @@ describe('recent projects (IDE-008)', () => {
     const { send } = windowWithRecent();
     await send(PROJECT_FILES_CHANNEL.chooseFolder);
     expect(refused(await send(PROJECT_FILES_CHANNEL.markOpened, [{ rootId: 'guess' }]))).toBe('no-folder');
-    expect(refused(await windowWithRecent(root, OWNER + 1).send(PROJECT_FILES_CHANNEL.markOpened, [{ rootId: 'guess' }]))).toBe('no-folder');
+    expect(refused(await windowWithRecent(root, OWNER + 1).send(PROJECT_FILES_CHANNEL.markOpened, [{ rootId: 'guess' }]))).toBe(
+      'no-folder',
+    );
     expect(refused(await send(PROJECT_FILES_CHANNEL.markOpened, [{ rootId: 'x', path: root }]))).toBe('invalid-request');
     expect(await listed(send)).toEqual([]);
   });
@@ -523,10 +578,18 @@ describe('recent projects (IDE-008)', () => {
 describe('watching the window folder (IDE-004)', () => {
   const started = () => {
     const calls: string[] = [];
-    const files = createProjectFiles(async () => root, () => null, {
-      start: (ownerId, rootId, real) => { calls.push(`start ${ownerId} ${rootId.length > 0} ${real}`); },
-      stop: (ownerId) => { calls.push(`stop ${ownerId}`); },
-    });
+    const files = createProjectFiles(
+      async () => root,
+      () => null,
+      {
+        start: (ownerId, rootId, real) => {
+          calls.push(`start ${ownerId} ${rootId.length > 0} ${real}`);
+        },
+        stop: (ownerId) => {
+          calls.push(`stop ${ownerId}`);
+        },
+      },
+    );
     return { files, calls };
   };
 
@@ -534,8 +597,14 @@ describe('watching the window folder (IDE-004)', () => {
     const { files, calls } = started();
     const opened = await files.handle(OWNER, PROJECT_FILES_CHANNEL.chooseFolder, []);
     const folder = (opened as { ok: true; value: ProjectFolder }).value;
-    await expect(files.handle(OWNER, PROJECT_FILES_CHANNEL.watch, [{ rootId: 'someone-elses' }])).resolves.toEqual({ ok: false, code: 'no-folder' });
-    await expect(files.handle(OWNER, PROJECT_FILES_CHANNEL.watch, [{ rootId: folder.rootId, path: '/' }])).resolves.toEqual({ ok: false, code: 'invalid-request' });
+    await expect(files.handle(OWNER, PROJECT_FILES_CHANNEL.watch, [{ rootId: 'someone-elses' }])).resolves.toEqual({
+      ok: false,
+      code: 'no-folder',
+    });
+    await expect(files.handle(OWNER, PROJECT_FILES_CHANNEL.watch, [{ rootId: folder.rootId, path: '/' }])).resolves.toEqual({
+      ok: false,
+      code: 'invalid-request',
+    });
     expect(calls.filter((call) => call.startsWith('start'))).toEqual([]);
     await expect(files.handle(OWNER, PROJECT_FILES_CHANNEL.watch, [{ rootId: folder.rootId }])).resolves.toEqual({ ok: true, value: null });
     expect(calls.at(-1)).toBe(`start ${OWNER} true ${root}`);

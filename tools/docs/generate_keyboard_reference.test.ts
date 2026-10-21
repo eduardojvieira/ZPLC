@@ -10,7 +10,12 @@ describe('LNG-012 keyboard reference: generated from the key table of the editor
       const body = keyboardBody(lang);
       for (const action of KEYMAP) {
         const keys = action.keys.map((key) => `\`${key.replace(/\|/g, '\\|')}\``).join(lang === 'en' ? ' or ' : ' o ');
-        expect([lang, action.editor, action.id, body.includes(`| ${keys} | ${prose(action.description[lang])} |`)]).toEqual([lang, action.editor, action.id, true]);
+        expect([lang, action.editor, action.id, body.includes(`| ${keys} | ${prose(action.description[lang])} |`)]).toEqual([
+          lang,
+          action.editor,
+          action.id,
+          true,
+        ]);
       }
     }
   });

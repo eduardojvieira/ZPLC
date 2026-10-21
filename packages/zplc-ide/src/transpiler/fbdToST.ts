@@ -18,8 +18,13 @@ import type { FBDModel, FBDBlock, FBDConnection } from '../models/fbd';
 import { isFunctionBlock, isLogicGate, isComparison, isMathOperator, validateFBDModel } from '../models/fbd';
 import { findProjectBlock, type ProjectBlock } from '../models/projectBlocks';
 import {
-  ElementError, Listing, Problems, blockElement,
-  type ElementDiagnostic, type MonitorEntry, type SourceMapRange,
+  ElementError,
+  Listing,
+  Problems,
+  blockElement,
+  type ElementDiagnostic,
+  type MonitorEntry,
+  type SourceMapRange,
 } from '../models/sourceElements';
 
 // =============================================================================
@@ -61,18 +66,39 @@ interface Source {
   origin: string;
 }
 
-type Kind = 'constant' | 'read' | 'variable' | 'output' | 'gate' | 'compare' | 'math' | 'function' | 'standard' | 'comm' | 'modbus' | 'registry'
-  | 'userblock' | 'userfunction';
+type Kind =
+  | 'constant'
+  | 'read'
+  | 'variable'
+  | 'output'
+  | 'gate'
+  | 'compare'
+  | 'math'
+  | 'function'
+  | 'standard'
+  | 'comm'
+  | 'modbus'
+  | 'registry'
+  | 'userblock'
+  | 'userfunction';
 
 function endpointKey(block: string, port: string): string {
   return JSON.stringify([block, port]);
 }
 
 const VM_COMM_BLOCKS = new Set([
-  'MB_READ_HREG', 'MB_WRITE_HREG', 'MB_READ_COIL', 'MB_WRITE_COIL',
-  'MQTT_CONNECT', 'MQTT_PUBLISH', 'MQTT_SUBSCRIBE',
-  'AZURE_C2D_RECV', 'AZURE_DPS_PROV', 'AZURE_EG_PUB',
-  'AWS_FLEET_PROV', 'SPB_REBIRTH',
+  'MB_READ_HREG',
+  'MB_WRITE_HREG',
+  'MB_READ_COIL',
+  'MB_WRITE_COIL',
+  'MQTT_CONNECT',
+  'MQTT_PUBLISH',
+  'MQTT_SUBSCRIBE',
+  'AZURE_C2D_RECV',
+  'AZURE_DPS_PROV',
+  'AZURE_EG_PUB',
+  'AWS_FLEET_PROV',
+  'SPB_REBIRTH',
 ]);
 
 /** Compile-time Modbus server tag-binding helpers (legacy, additive per FR-016): not function block instances. */
@@ -181,19 +207,29 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
         case 'constant': {
           const dataType = String(source.dataType ?? inferConstantType(source.value)).toUpperCase();
           return {
-            expr: '', origin, constant: { value: source.value, dataType }, type: dataType,
+            expr: '',
+            origin,
+            constant: { value: source.value, dataType },
+            type: dataType,
             adaptable: [...SIGNED, ...UNSIGNED].includes(dataType) && Number.isInteger(source.value),
           };
         }
         case 'read':
         case 'variable': {
           const name = source.variableName;
-          if (!name) { fail(source, 'it has no variable name'); return { expr: '0', origin }; }
+          if (!name) {
+            fail(source, 'it has no variable name');
+            return { expr: '0', origin };
+          }
           return { expr: name, origin, type: varTypes.get(name.toUpperCase()) };
         }
         default: {
           const temp = (outputMap.get(source.id) ?? []).find((o) => o.port === input.sourcePort);
-          return { expr: temp?.tempVar ?? `${source.instanceName}.${input.sourcePort}`, origin, type: outTypes.get(endpointKey(source.id, input.sourcePort)) };
+          return {
+            expr: temp?.tempVar ?? `${source.instanceName}.${input.sourcePort}`,
+            origin,
+            type: outTypes.get(endpointKey(source.id, input.sourcePort)),
+          };
         }
       }
     };
@@ -222,7 +258,10 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
         if (concrete.every((t) => classOf.includes(t))) return widest(concrete);
       }
       if (concrete.length === 1) return concrete[0];
-      fail(block, `its inputs have different types (${concrete.join(', ')}); the block keeps the type of its inputs, so convert one of them`);
+      fail(
+        block,
+        `its inputs have different types (${concrete.join(', ')}); the block keeps the type of its inputs, so convert one of them`,
+      );
       return undefined;
     };
 
@@ -233,7 +272,8 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
         if (connection.from.block !== block.id || connection.from.port !== port) continue;
         const target = blockMap.get(connection.to.block)!;
         const kind = kinds.get(target.id);
-        const declared = (kind === 'output' || kind === 'variable') && target.variableName ? varTypes.get(target.variableName.toUpperCase()) : undefined;
+        const declared =
+          (kind === 'output' || kind === 'variable') && target.variableName ? varTypes.get(target.variableName.toUpperCase()) : undefined;
         if (!declared) return undefined;
         types.add(declared);
       }
@@ -257,41 +297,60 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
 
         case 'variable': {
           // Variable write: the block is also a read of the variable for what is wired to its OUT
-          if (!block.variableName) { fail(block, 'it has no variable name'); return ''; }
+          if (!block.variableName) {
+            fail(block, 'it has no variable name');
+            return '';
+          }
           const source = sourceOf(block, 'IN');
           return source ? `${block.variableName} := ${render(source, varTypes.get(block.variableName.toUpperCase()))};` : '';
         }
 
         case 'output': {
-          if (!block.variableName) { fail(block, 'it has no variable name'); return ''; }
+          if (!block.variableName) {
+            fail(block, 'it has no variable name');
+            return '';
+          }
           const source = required(block, 'IN');
           return source ? `${block.variableName} := ${render(source, varTypes.get(block.variableName.toUpperCase()))};` : '';
         }
 
         case 'gate': {
-          if (ports.length === 0) { fail(block, 'it has no inputs'); return ''; }
+          if (ports.length === 0) {
+            fail(block, 'it has no inputs');
+            return '';
+          }
           const sources = ports.map((port) => required(block, port));
           if (sources.some((s) => !s)) return '';
           const operands = sources as Source[];
           const known = operands.filter((s) => s.type).map((s) => s.type!);
           const odd = known.find((t) => NOT_BOOLEAN.includes(t));
           if (odd) fail(block, `a logic gate does not take ${odd} inputs`);
-          if (known.includes('BOOL') && known.some((t) => t !== 'BOOL')) fail(block, `its inputs mix BOOL with ${known.find((t) => t !== 'BOOL')}`);
+          if (known.includes('BOOL') && known.some((t) => t !== 'BOOL'))
+            fail(block, `its inputs mix BOOL with ${known.find((t) => t !== 'BOOL')}`);
           typed('OUT', known.length > 0 && known.every((t) => t === known[0]) ? known[0] : 'BOOL');
           if (!out) return '';
           const texts = operands.map((s) => render(s));
           switch (block.type) {
-            case 'NOT': return `${out} := NOT ${texts[0]};`;
-            case 'AND': return `${out} := ${texts.join(' AND ')};`;
-            case 'OR': return `${out} := ${texts.join(' OR ')};`;
-            case 'XOR': return `${out} := ${texts.join(' XOR ')};`;
-            case 'NAND': return `${out} := NOT (${texts.join(' AND ')});`;
-            default: return `${out} := NOT (${texts.join(' OR ')});`;
+            case 'NOT':
+              return `${out} := NOT ${texts[0]};`;
+            case 'AND':
+              return `${out} := ${texts.join(' AND ')};`;
+            case 'OR':
+              return `${out} := ${texts.join(' OR ')};`;
+            case 'XOR':
+              return `${out} := ${texts.join(' XOR ')};`;
+            case 'NAND':
+              return `${out} := NOT (${texts.join(' AND ')});`;
+            default:
+              return `${out} := NOT (${texts.join(' OR ')});`;
           }
         }
 
         case 'compare': {
-          if (ports.length !== 2) { fail(block, `it has ${ports.length} inputs, a comparison takes two`); return ''; }
+          if (ports.length !== 2) {
+            fail(block, `it has ${ports.length} inputs, a comparison takes two`);
+            return '';
+          }
           typed('OUT', 'BOOL');
           const sources = ports.map((port) => required(block, port));
           if (sources.some((s) => !s)) return '';
@@ -344,7 +403,10 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
         }
 
         case 'modbus': {
-          if (!block.variableName) { fail(block, 'it has no variable name to bind to the Modbus address'); return ''; }
+          if (!block.variableName) {
+            fail(block, 'it has no variable name to bind to the Modbus address');
+            return '';
+          }
           const target = block.variableName;
           const en = required(block, 'EN');
           const inputSource = required(block, 'IN');
@@ -376,7 +438,10 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
         case 'standard':
         case 'userblock':
         case 'registry': {
-          if (!block.instanceName) { fail(block, 'it has no instance name'); return ''; }
+          if (!block.instanceName) {
+            fail(block, 'it has no instance name');
+            return '';
+          }
           // Only the inputs that are wired are passed: an input left open keeps the block's default
           const order = FB_INPUT_ORDER[block.type];
           const wired = (inputMap.get(block.id) ?? []).map((i) => i.port);
@@ -442,7 +507,11 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
     const declared = new Set(validatedModel.variables.local.map((v) => v.name.toUpperCase()));
     for (const block of validatedModel.blocks) {
       const kind = kinds.get(block.id);
-      if (block.instanceName && (kind === 'standard' || ((kind === 'registry' || kind === 'userblock' || kind === 'comm') && !declared.has(block.instanceName.toUpperCase())))) {
+      if (
+        block.instanceName &&
+        (kind === 'standard' ||
+          ((kind === 'registry' || kind === 'userblock' || kind === 'comm') && !declared.has(block.instanceName.toUpperCase())))
+      ) {
         const comment = block.comment ? ` (* ${block.comment} *)` : '';
         lines.push(`    ${block.instanceName} : ${block.type};${comment}`, blockElement(block.id));
       }
@@ -500,7 +569,10 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
         if (kind !== 'output') monitor.push({ element, role: 'output', port: 'OUT', variable: block.variableName });
         continue;
       }
-      const instance = block.instanceName && (kind === 'standard' || kind === 'comm' || kind === 'registry' || kind === 'userblock') ? block.instanceName : undefined;
+      const instance =
+        block.instanceName && (kind === 'standard' || kind === 'comm' || kind === 'registry' || kind === 'userblock')
+          ? block.instanceName
+          : undefined;
       for (const port of block.outputs ?? []) {
         const temporary = (outputMap.get(block.id) ?? []).find((output) => output.port === port.name)?.tempVar;
         const variable = temporary ?? (instance ? `${instance}.${port.name}` : undefined);
@@ -521,7 +593,10 @@ export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock
       success: false,
       source: '',
       errors: [...errors.messages, message],
-      diagnostics: [...errors.diagnostics, e instanceof ElementError && e.element !== undefined ? { message, element: e.element } : { message }],
+      diagnostics: [
+        ...errors.diagnostics,
+        e instanceof ElementError && e.element !== undefined ? { message, element: e.element } : { message },
+      ],
     };
   }
 }
@@ -550,10 +625,14 @@ export function fbdNeedsInstance(type: string, blocks?: readonly ProjectBlock[])
 function classify(block: FBDBlock, blocks?: readonly ProjectBlock[]): Kind | undefined {
   const type = block.type;
   switch (type) {
-    case 'constant': return 'constant';
-    case 'input': return 'read';
-    case 'variable': return 'variable';
-    case 'output': return 'output';
+    case 'constant':
+      return 'constant';
+    case 'input':
+      return 'read';
+    case 'variable':
+      return 'variable';
+    case 'output':
+      return 'output';
   }
   // what the project declares is what the name means, as it is in the compiler (LNG-008)
   const declared = findProjectBlock(blocks, type);
@@ -595,11 +674,7 @@ function buildInputMap(connections: FBDConnection[]): Map<string, BlockInput[]> 
 /**
  * Build a map of block outputs that need temp variables
  */
-function buildOutputMap(
-  blocks: FBDBlock[],
-  inputMap: Map<string, BlockInput[]>,
-  kinds: Map<string, Kind>,
-): Map<string, BlockOutput[]> {
+function buildOutputMap(blocks: FBDBlock[], inputMap: Map<string, BlockInput[]>, kinds: Map<string, Kind>): Map<string, BlockOutput[]> {
   const map = new Map<string, BlockOutput[]>();
   const temporaryOwners = new Map<string, { key: string; label: string }>();
 
@@ -625,7 +700,10 @@ function buildOutputMap(
         const tempVar = `_${block.id}_${port.name}`.replace(/[^a-zA-Z0-9_]/g, '_');
         const owner = temporaryOwners.get(tempVar);
         if (owner && owner.key !== key) {
-          throw new ElementError(`FBD temporary name collision: '${owner.label}' and '${block.id}.${port.name}' both map to '${tempVar}'`, blockElement(block.id));
+          throw new ElementError(
+            `FBD temporary name collision: '${owner.label}' and '${block.id}.${port.name}' both map to '${tempVar}'`,
+            blockElement(block.id),
+          );
         }
         temporaryOwners.set(tempVar, { key, label: `${block.id}.${port.name}` });
         outputs.push({
@@ -647,14 +725,11 @@ function buildOutputMap(
 // Topological Sort
 // =============================================================================
 
-function topologicalSort(
-  blocks: FBDBlock[],
-  inputMap: Map<string, BlockInput[]>
-): FBDBlock[] {
+function topologicalSort(blocks: FBDBlock[], inputMap: Map<string, BlockInput[]>): FBDBlock[] {
   const result: FBDBlock[] = [];
   const visited = new Set<string>();
   const visiting = new Set<string>();
-  const blockMap = new Map(blocks.map(b => [b.id, b]));
+  const blockMap = new Map(blocks.map((b) => [b.id, b]));
 
   function visit(blockId: string) {
     if (visited.has(blockId)) return;
@@ -746,26 +821,38 @@ const COMMENT_DELIMITER = /\(\*|\*\)/;
 /** The model's names, types, comments and constants, as the problems that would make the source wrong. */
 function validateText(model: FBDModel, problems: Problems): void {
   const sections: Array<[string, FBDModel['variables']['local']]> = [
-    ['local', model.variables.local], ['input', model.variables.inputs ?? []], ['output', model.variables.outputs],
+    ['local', model.variables.local],
+    ['input', model.variables.inputs ?? []],
+    ['output', model.variables.outputs],
   ];
   for (const [section, variables] of sections) {
     for (const v of variables) {
       const label = `FBD ${section} variable '${String(v.name)}'`;
       if (typeof v.name !== 'string' || !IDENTIFIER.test(v.name)) problems.push(`${label}: the name is not an identifier`);
-      if (typeof v.type !== 'string' || !TYPE_TEXT.test(v.type) || COMMENT_DELIMITER.test(v.type)) problems.push(`${label}: the type '${String(v.type)}' is not a type name`);
-      if (v.comment !== undefined && (typeof v.comment !== 'string' || COMMENT_DELIMITER.test(v.comment))) problems.push(`${label}: the comment must not contain ST comment delimiters`);
+      if (typeof v.type !== 'string' || !TYPE_TEXT.test(v.type) || COMMENT_DELIMITER.test(v.type))
+        problems.push(`${label}: the type '${String(v.type)}' is not a type name`);
+      if (v.comment !== undefined && (typeof v.comment !== 'string' || COMMENT_DELIMITER.test(v.comment)))
+        problems.push(`${label}: the comment must not contain ST comment delimiters`);
       if (v.address !== undefined) {
-        try { parseIOAddress(String(v.address)); } catch (error) { problems.push(`${label}: ${error instanceof Error ? error.message : String(error)}`); }
+        try {
+          parseIOAddress(String(v.address));
+        } catch (error) {
+          problems.push(`${label}: ${error instanceof Error ? error.message : String(error)}`);
+        }
       }
     }
   }
   for (const block of model.blocks) {
     const label = `FBD block '${block.id}' (${block.type})`;
     const at = blockElement(block.id);
-    if (block.comment !== undefined && (typeof block.comment !== 'string' || COMMENT_DELIMITER.test(block.comment))) problems.push(`${label}: the comment must not contain ST comment delimiters`, at);
-    if (block.instanceName !== undefined && (typeof block.instanceName !== 'string' || !IDENTIFIER.test(block.instanceName))) problems.push(`${label}: the instance name '${String(block.instanceName)}' is not an identifier`, at);
-    if (block.variableName !== undefined && (typeof block.variableName !== 'string' || !REFERENCE.test(block.variableName))) problems.push(`${label}: the variable name '${String(block.variableName)}' is not a variable`, at);
-    if (block.type === 'constant' && (block.value === undefined || block.value === null || typeof block.value === 'object')) problems.push(`${label}: it has no value`, at);
+    if (block.comment !== undefined && (typeof block.comment !== 'string' || COMMENT_DELIMITER.test(block.comment)))
+      problems.push(`${label}: the comment must not contain ST comment delimiters`, at);
+    if (block.instanceName !== undefined && (typeof block.instanceName !== 'string' || !IDENTIFIER.test(block.instanceName)))
+      problems.push(`${label}: the instance name '${String(block.instanceName)}' is not an identifier`, at);
+    if (block.variableName !== undefined && (typeof block.variableName !== 'string' || !REFERENCE.test(block.variableName)))
+      problems.push(`${label}: the variable name '${String(block.variableName)}' is not a variable`, at);
+    if (block.type === 'constant' && (block.value === undefined || block.value === null || typeof block.value === 'object'))
+      problems.push(`${label}: it has no value`, at);
   }
 }
 

@@ -1,742 +1,660 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "https://zplc.dev/schemas/zplc.schema.json",
-    "title": "ZPLC Project Configuration",
-    "description": "Configuration file for ZPLC projects (v2-compatible; legacy files without schemaVersion remain supported)",
-    "type": "object",
-    "required": [
-        "name",
-        "version",
-        "tasks"
-    ],
-    "properties": {
-        "$schema": {
-            "type": "string",
-            "description": "JSON Schema reference"
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://zplc.dev/schemas/zplc.schema.json",
+  "title": "ZPLC Project Configuration",
+  "description": "Configuration file for ZPLC projects (v2-compatible; legacy files without schemaVersion remain supported)",
+  "type": "object",
+  "required": ["name", "version", "tasks"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference"
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "enum": [1, 2],
+      "description": "Project schema version; legacy v1 can be previewed, diffed, and explicitly saved as a canonical v2 project"
+    },
+    "name": {
+      "type": "string",
+      "description": "Project name",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "description": "Project version (semver)",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.-]+)?(\\+[a-zA-Z0-9.-]+)?$"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional project description"
+    },
+    "author": {
+      "type": "string",
+      "description": "Project author"
+    },
+    "target": {
+      "type": "object",
+      "description": "Target hardware configuration",
+      "properties": {
+        "board": {
+          "type": "string",
+          "description": "Target board (e.g., rpi_pico, posix)",
+          "enum": [
+            "rpi_pico",
+            "arduino_giga_r1",
+            "arduino_opta_wifi",
+            "stm32f746g_disco",
+            "esp32s3_devkitc",
+            "nucleo_h743zi",
+            "waveshare_rp2040_zero",
+            "posix"
+          ]
         },
-        "schemaVersion": {
-            "type": "integer",
-            "enum": [1, 2],
-            "description": "Project schema version; legacy v1 can be previewed, diffed, and explicitly saved as a canonical v2 project"
+        "cpu": {
+          "type": "string",
+          "description": "CPU identifier"
         },
-        "name": {
+        "clock_mhz": {
+          "type": "integer",
+          "description": "CPU clock frequency in MHz",
+          "minimum": 1
+        }
+      }
+    },
+    "compiler": {
+      "type": "object",
+      "description": "Compiler settings",
+      "properties": {
+        "optimization": {
+          "type": "string",
+          "enum": ["none", "size", "speed"],
+          "default": "none",
+          "description": "Optimization level. The compiler has one code generator: every value produces the same artifact, and size or speed report an OPTION_IGNORED warning."
+        },
+        "debug": {
+          "type": "boolean",
+          "default": true,
+          "description": "Statement ranges and line mappings of the debug map. false keeps only variables and memory."
+        },
+        "warnings": {
+          "type": "string",
+          "enum": ["none", "default", "all"],
+          "default": "default",
+          "description": "Which compiler warnings are reported: none, default (unused variables, unreachable statements, non-IEC spellings, implicit narrowing) or all (adds write-only variables)."
+        },
+        "strictTypes": {
+          "type": "boolean",
+          "default": false,
+          "description": "An implicit narrowing between integer types is an error naming both types instead of the IMPLICIT_NARROWING warning."
+        }
+      }
+    },
+    "io": {
+      "type": "object",
+      "description": "I/O configuration",
+      "properties": {
+        "inputs": {
+          "type": "array",
+          "description": "Digital input definitions",
+          "items": {
+            "$ref": "#/definitions/digitalIOPoint"
+          }
+        },
+        "outputs": {
+          "type": "array",
+          "description": "Digital output definitions",
+          "items": {
+            "$ref": "#/definitions/digitalIOPoint"
+          }
+        },
+        "virtual": {
+          "type": "array",
+          "description": "Words or bits of the process image that no pin of the board drives, read in the debugger or by a test. A variable located where the selected board has no channel is a build error that names the board unless its address is listed here.",
+          "items": {
+            "$ref": "#/definitions/digitalIOPoint"
+          }
+        },
+        "analog": {
+          "type": "object",
+          "description": "Analog I/O configuration",
+          "properties": {
+            "adc": {
+              "type": "array",
+              "description": "ADC channel definitions",
+              "items": {
+                "$ref": "#/definitions/analogIOPoint"
+              }
+            },
+            "dac": {
+              "type": "array",
+              "description": "DAC channel definitions",
+              "items": {
+                "$ref": "#/definitions/analogIOPoint"
+              }
+            }
+          }
+        }
+      }
+    },
+    "communication": {
+      "type": "object",
+      "description": "Industrial communication configuration",
+      "properties": {
+        "mqtt": {
+          "$ref": "#/definitions/mqttConfig"
+        },
+        "modbus": {
+          "$ref": "#/definitions/modbusConfig"
+        },
+        "bindings": {
+          "type": "array",
+          "description": "Canonical communication bindings used by compiler and runtime communication modules",
+          "items": {
+            "$ref": "#/definitions/communicationTag"
+          }
+        },
+        "tags": {
+          "type": "array",
+          "description": "Legacy alias for communication bindings",
+          "items": {
+            "$ref": "#/definitions/communicationTag"
+          }
+        }
+      }
+    },
+    "network": {
+      "type": "object",
+      "description": "Board-specific network configuration",
+      "properties": {
+        "hostname": {
+          "type": "string"
+        },
+        "wifi": {
+          "$ref": "#/definitions/wifiNetworkConfig"
+        },
+        "ethernet": {
+          "$ref": "#/definitions/ethernetNetworkConfig"
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["incompatibleOutputs"],
+      "properties": {
+        "incompatibleOutputs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z_][A-Za-z0-9_]*\\.[A-Za-z_][A-Za-z0-9_]*$" }
+          }
+        }
+      }
+    },
+    "libraries": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^(?!/)(?!.*\\.\\.)[^\\\\:]+$" },
+      "description": "Folders of source files, relative to the project, compiled with the project in addition to src/. Their function blocks, functions and types are visible to every program."
+    },
+    "tasks": {
+      "type": "array",
+      "description": "Task definitions",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "anyOf": [{ "required": ["programs"] }, { "required": ["file"] }],
+        "properties": {
+          "name": {
             "type": "string",
-            "description": "Project name",
+            "description": "Task name",
             "minLength": 1
-        },
-        "version": {
+          },
+          "trigger": {
             "type": "string",
-            "description": "Project version (semver)",
-            "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.-]+)?(\\+[a-zA-Z0-9.-]+)?$"
+            "enum": ["cyclic", "event", "freewheeling"],
+            "default": "cyclic",
+            "description": "Task trigger type"
+          },
+          "interval_ms": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 100,
+            "description": "Task interval in milliseconds (for cyclic tasks)"
+          },
+          "interval": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Legacy alias for interval_ms"
+          },
+          "type": {
+            "type": "string",
+            "description": "Legacy alias for trigger"
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255,
+            "default": 1,
+            "description": "Task priority (0 = highest)"
+          },
+          "programs": {
+            "type": "array",
+            "description": "List of program files to execute in this task",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "file": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Legacy alias for a single programs entry"
+          }
+        }
+      }
+    },
+    "build": {
+      "type": "object",
+      "description": "Build configuration",
+      "properties": {
+        "outDir": {
+          "type": "string",
+          "default": "build",
+          "description": "Output directory for compiled files"
+        },
+        "generateDebugInfo": {
+          "type": "boolean",
+          "default": false,
+          "description": "The command line writes the debug map beside the artifact as <output>.map.json."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "digitalIOPoint": {
+      "type": "object",
+      "required": ["name", "address"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Variable name",
+          "minLength": 1
+        },
+        "address": {
+          "type": "string",
+          "description": "IEC 61131-3 address (e.g., %I0.0, %Q0.1, %MW0)",
+          "pattern": "^%[IQM][XBWD]?\\d+(\\.\\d+)?$"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["BOOL", "BYTE", "WORD", "DWORD"],
+          "default": "BOOL",
+          "description": "Data type"
+        },
+        "pin": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "GPIO pin number (hardware-specific)"
+        },
+        "safe": {
+          "type": "boolean",
+          "description": "Digital outputs only: the value the output takes whenever the program does not control it (STOP, a pause, a latched fault, the boot, a deploy in progress). Absent is off, unless the board description says otherwise. The build refuses a value for an output the selected board does not have, and the value travels in the artifact with the program."
         },
         "description": {
-            "type": "string",
-            "description": "Optional project description"
-        },
-        "author": {
-            "type": "string",
-            "description": "Project author"
-        },
-        "target": {
-            "type": "object",
-            "description": "Target hardware configuration",
-            "properties": {
-                "board": {
-                    "type": "string",
-                    "description": "Target board (e.g., rpi_pico, posix)",
-                    "enum": [
-                        "rpi_pico",
-                        "arduino_giga_r1",
-                        "arduino_opta_wifi",
-                        "stm32f746g_disco",
-                        "esp32s3_devkitc",
-                        "nucleo_h743zi",
-                        "waveshare_rp2040_zero",
-                        "posix"
-                    ]
-                },
-                "cpu": {
-                    "type": "string",
-                    "description": "CPU identifier"
-                },
-                "clock_mhz": {
-                    "type": "integer",
-                    "description": "CPU clock frequency in MHz",
-                    "minimum": 1
-                }
-            }
-        },
-        "compiler": {
-            "type": "object",
-            "description": "Compiler settings",
-            "properties": {
-                "optimization": {
-                    "type": "string",
-                    "enum": [
-                        "none",
-                        "size",
-                        "speed"
-                    ],
-                    "default": "none",
-                    "description": "Optimization level. The compiler has one code generator: every value produces the same artifact, and size or speed report an OPTION_IGNORED warning."
-                },
-                "debug": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Statement ranges and line mappings of the debug map. false keeps only variables and memory."
-                },
-                "warnings": {
-                    "type": "string",
-                    "enum": [
-                        "none",
-                        "default",
-                        "all"
-                    ],
-                    "default": "default",
-                    "description": "Which compiler warnings are reported: none, default (unused variables, unreachable statements, non-IEC spellings, implicit narrowing) or all (adds write-only variables)."
-                },
-                "strictTypes": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "An implicit narrowing between integer types is an error naming both types instead of the IMPLICIT_NARROWING warning."
-                }
-            }
-        },
-        "io": {
-            "type": "object",
-            "description": "I/O configuration",
-            "properties": {
-                "inputs": {
-                    "type": "array",
-                    "description": "Digital input definitions",
-                    "items": {
-                        "$ref": "#/definitions/digitalIOPoint"
-                    }
-                },
-                "outputs": {
-                    "type": "array",
-                    "description": "Digital output definitions",
-                    "items": {
-                        "$ref": "#/definitions/digitalIOPoint"
-                    }
-                },
-                "virtual": {
-                    "type": "array",
-                    "description": "Words or bits of the process image that no pin of the board drives, read in the debugger or by a test. A variable located where the selected board has no channel is a build error that names the board unless its address is listed here.",
-                    "items": {
-                        "$ref": "#/definitions/digitalIOPoint"
-                    }
-                },
-                "analog": {
-                    "type": "object",
-                    "description": "Analog I/O configuration",
-                    "properties": {
-                        "adc": {
-                            "type": "array",
-                            "description": "ADC channel definitions",
-                            "items": {
-                                "$ref": "#/definitions/analogIOPoint"
-                            }
-                        },
-                        "dac": {
-                            "type": "array",
-                            "description": "DAC channel definitions",
-                            "items": {
-                                "$ref": "#/definitions/analogIOPoint"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "communication": {
-            "type": "object",
-            "description": "Industrial communication configuration",
-            "properties": {
-                "mqtt": {
-                    "$ref": "#/definitions/mqttConfig"
-                },
-                "modbus": {
-                    "$ref": "#/definitions/modbusConfig"
-                },
-                "bindings": {
-                    "type": "array",
-                    "description": "Canonical communication bindings used by compiler and runtime communication modules",
-                    "items": {
-                        "$ref": "#/definitions/communicationTag"
-                    }
-                },
-                "tags": {
-                    "type": "array",
-                    "description": "Legacy alias for communication bindings",
-                    "items": {
-                        "$ref": "#/definitions/communicationTag"
-                    }
-                }
-            }
-        },
-        "network": {
-            "type": "object",
-            "description": "Board-specific network configuration",
-            "properties": {
-                "hostname": {
-                    "type": "string"
-                },
-                "wifi": {
-                    "$ref": "#/definitions/wifiNetworkConfig"
-                },
-                "ethernet": {
-                    "$ref": "#/definitions/ethernetNetworkConfig"
-                }
-            }
-        },
-        "safety": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["incompatibleOutputs"],
-            "properties": {
-                "incompatibleOutputs": {
-                    "type": "array",
-                    "minItems": 1,
-                    "maxItems": 64,
-                    "items": {
-                        "type": "array",
-                        "minItems": 2,
-                        "maxItems": 2,
-                        "items": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z_][A-Za-z0-9_]*\\.[A-Za-z_][A-Za-z0-9_]*$" }
-                    }
-                }
-            }
-        },
-        "libraries": {
-            "type": "array",
-            "items": { "type": "string", "pattern": "^(?!/)(?!.*\\.\\.)[^\\\\:]+$" },
-            "description": "Folders of source files, relative to the project, compiled with the project in addition to src/. Their function blocks, functions and types are visible to every program."
-        },
-        "tasks": {
-            "type": "array",
-            "description": "Task definitions",
-            "minItems": 1,
-            "maxItems": 16,
-            "items": {
-                "type": "object",
-                "required": ["name"],
-                "anyOf": [
-                    { "required": ["programs"] },
-                    { "required": ["file"] }
-                ],
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "description": "Task name",
-                        "minLength": 1
-                    },
-                    "trigger": {
-                        "type": "string",
-                        "enum": [
-                            "cyclic",
-                            "event",
-                            "freewheeling"
-                        ],
-                        "default": "cyclic",
-                        "description": "Task trigger type"
-                    },
-                    "interval_ms": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "default": 100,
-                        "description": "Task interval in milliseconds (for cyclic tasks)"
-                    },
-                    "interval": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "description": "Legacy alias for interval_ms"
-                    },
-                    "type": {
-                        "type": "string",
-                        "description": "Legacy alias for trigger"
-                    },
-                    "priority": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "maximum": 255,
-                        "default": 1,
-                        "description": "Task priority (0 = highest)"
-                    },
-                    "programs": {
-                        "type": "array",
-                        "description": "List of program files to execute in this task",
-                        "minItems": 1,
-                    "items": {
-                        "type": "string",
-                        "minLength": 1
-                        }
-                    },
-                    "file": {
-                        "type": "string",
-                        "minLength": 1,
-                        "description": "Legacy alias for a single programs entry"
-                    }
-                }
-            }
-        },
-        "build": {
-            "type": "object",
-            "description": "Build configuration",
-            "properties": {
-                "outDir": {
-                    "type": "string",
-                    "default": "build",
-                    "description": "Output directory for compiled files"
-                },
-                "generateDebugInfo": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "The command line writes the debug map beside the artifact as <output>.map.json."
-                }
-            }
+          "type": "string",
+          "description": "Optional description"
         }
+      }
     },
-    "definitions": {
-        "digitalIOPoint": {
-            "type": "object",
-            "required": [
-                "name",
-                "address"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "description": "Variable name",
-                    "minLength": 1
-                },
-                "address": {
-                    "type": "string",
-                    "description": "IEC 61131-3 address (e.g., %I0.0, %Q0.1, %MW0)",
-                    "pattern": "^%[IQM][XBWD]?\\d+(\\.\\d+)?$"
-                },
-                "type": {
-                    "type": "string",
-                    "enum": [
-                        "BOOL",
-                        "BYTE",
-                        "WORD",
-                        "DWORD"
-                    ],
-                    "default": "BOOL",
-                    "description": "Data type"
-                },
-                "pin": {
-                    "type": "integer",
-                    "minimum": 0,
-                    "description": "GPIO pin number (hardware-specific)"
-                },
-                "safe": {
-                    "type": "boolean",
-                    "description": "Digital outputs only: the value the output takes whenever the program does not control it (STOP, a pause, a latched fault, the boot, a deploy in progress). Absent is off, unless the board description says otherwise. The build refuses a value for an output the selected board does not have, and the value travels in the artifact with the program."
-                },
-                "description": {
-                    "type": "string",
-                    "description": "Optional description"
-                }
-            }
+    "analogIOPoint": {
+      "type": "object",
+      "required": ["name", "address", "channel"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Variable name",
+          "minLength": 1
         },
-        "analogIOPoint": {
-            "type": "object",
-            "required": [
-                "name",
-                "address",
-                "channel"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "description": "Variable name",
-                    "minLength": 1
-                },
-                "address": {
-                    "type": "string",
-                    "description": "IEC 61131-3 word address (e.g., %IW0, %QW0)",
-                    "pattern": "^%[IQ]W\\d+$"
-                },
-                "channel": {
-                    "type": "integer",
-                    "minimum": 0,
-                    "description": "ADC/DAC channel number"
-                },
-                "bits": {
-                    "type": "integer",
-                    "enum": [
-                        8,
-                        10,
-                        12,
-                        14,
-                        16
-                    ],
-                    "default": 12,
-                    "description": "Resolution in bits"
-                },
-                "description": {
-                    "type": "string",
-                    "description": "Optional description"
-                }
-            }
+        "address": {
+          "type": "string",
+          "description": "IEC 61131-3 word address (e.g., %IW0, %QW0)",
+          "pattern": "^%[IQ]W\\d+$"
         },
-        "mqttConfig": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-                "enabled",
-                "profile",
-                "protocolVersion",
-                "transport",
-                "broker",
-                "port",
-                "clientId",
-                "keepAliveSec",
-                "cleanSession",
-                "sessionExpirySec",
-                "topicNamespace",
-                "publishIntervalMs",
-                "publishQos",
-                "subscribeQos",
-                "publishRetain",
-                "lwtEnabled",
-                "lwtQos",
-                "lwtRetain",
-                "securityLevel"
-            ],
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                },
-                "profile": {
-                    "type": "string",
-                    "enum": ["sparkplug-b", "generic-broker", "aws-iot-core", "azure-iot-hub", "azure-event-grid-mqtt"]
-                },
-                "protocolVersion": {
-                    "type": "string",
-                    "enum": ["3.1.1", "5.0"]
-                },
-                "transport": {
-                    "type": "string",
-                    "enum": ["tcp", "tls", "ws", "wss"]
-                },
-                "broker": {
-                    "type": "string",
-                    "description": "Host name or address of the broker. Empty means none: a controller connects nowhere until one is named (COM-014)."
-                },
-                "port": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 65535
-                },
-                "clientId": {
-                    "type": "string",
-                    "minLength": 1
-                },
-                "keepAliveSec": {
-                    "type": "integer",
-                    "minimum": 5,
-                    "maximum": 3600
-                },
-                "cleanSession": {
-                    "type": "boolean"
-                },
-                "sessionExpirySec": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "username": {
-                    "type": "string"
-                },
-                "groupId": {
-                    "type": "string"
-                },
-                "topicNamespace": {
-                    "type": "string",
-                    "minLength": 1
-                },
-                "publishIntervalMs": {
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "publishQos": {
-                    "type": "integer",
-                    "enum": [0, 1]
-                },
-                "subscribeQos": {
-                    "type": "integer",
-                    "enum": [0, 1]
-                },
-                "publishRetain": {
-                    "type": "boolean"
-                },
-                "securityLevel": {
-                    "type": "string",
-                    "enum": [
-                        "none",
-                        "tls-no-verify",
-                        "tls-server-verify",
-                        "tls-mutual"
-                    ]
-                },
-                "websocketPath": {
-                    "type": "string"
-                },
-                "alpnProtocols": {
-                    "type": "string"
-                },
-                "caCertPath": {
-                    "type": "string"
-                },
-                "clientCertPath": {
-                    "type": "string"
-                },
-                "azureSasExpirySec": {
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "azureTwinEnabled": {
-                    "type": "boolean"
-                },
-                "azureDirectMethodsEnabled": {
-                    "type": "boolean"
-                },
-                "azureC2dEnabled": {
-                    "type": "boolean"
-                },
-                "azureDpsEnabled": {
-                    "type": "boolean"
-                },
-                "azureDpsIdScope": {
-                    "type": "string"
-                },
-                "azureDpsRegistrationId": {
-                    "type": "string"
-                },
-                "azureDpsEndpoint": {
-                    "type": "string"
-                },
-                "azureEventGridTopic": {
-                    "type": "string"
-                },
-                "azureEventGridSource": {
-                    "type": "string"
-                },
-                "azureEventGridEventType": {
-                    "type": "string"
-                },
-                "awsShadowEnabled": {
-                    "type": "boolean"
-                },
-                "awsJobsEnabled": {
-                    "type": "boolean"
-                },
-                "awsFleetEnabled": {
-                    "type": "boolean"
-                },
-                "awsFleetTemplateName": {
-                    "type": "string"
-                },
-                "awsClaimCertPath": {
-                    "type": "string"
-                },
-                "lwtEnabled": {
-                    "type": "boolean"
-                },
-                "lwtTopic": {
-                    "type": "string"
-                },
-                "lwtPayload": {
-                    "type": "string"
-                },
-                "lwtQos": {
-                    "type": "integer",
-                    "enum": [0, 1]
-                },
-                "lwtRetain": {
-                    "type": "boolean"
-                }
-            }
+        "channel": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "ADC/DAC channel number"
         },
-        "modbusConfig": {
-            "type": "object",
-            "required": [
-                "enabled",
-                "unitId",
-                "tcpEnabled",
-                "tcpPort",
-                "rtuEnabled",
-                "rtuBaud",
-                "rtuParity",
-                "pollIntervalMs"
-            ],
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                },
-                "unitId": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 247
-                },
-                "tcpEnabled": {
-                    "type": "boolean"
-                },
-                "tcpPort": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 65535
-                },
-                "rtuEnabled": {
-                    "type": "boolean"
-                },
-                "rtuBaud": {
-                    "type": "integer",
-                    "minimum": 1200,
-                    "maximum": 1000000
-                },
-                "rtuParity": {
-                    "type": "string",
-                    "enum": [
-                        "none",
-                        "even",
-                        "odd"
-                    ]
-                },
-                "pollIntervalMs": {
-                    "type": "integer",
-                    "minimum": 1
-                }
-            }
+        "bits": {
+          "type": "integer",
+          "enum": [8, 10, 12, 14, 16],
+          "default": 12,
+          "description": "Resolution in bits"
         },
-        "communicationTag": {
-            "type": "object",
-            "required": [
-                "name",
-                "symbol",
-                "type"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "minLength": 1
-                },
-                "symbol": {
-                    "type": "string",
-                    "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
-                },
-                "type": {
-                    "type": "string",
-                    "enum": [
-                        "BOOL",
-                        "INT",
-                        "UINT",
-                        "REAL"
-                    ]
-                },
-                "mode": {
-                    "type": "string",
-                    "enum": [
-                        "publish",
-                        "subscribe",
-                        "modbus"
-                    ]
-                },
-                "publish": {
-                    "type": "boolean"
-                },
-                "subscribe": {
-                    "type": "boolean"
-                },
-                "modbusAddress": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 65535
-                },
-                "description": {
-                    "type": "string"
-                }
-            }
-        },
-        "networkIPv4Config": {
-            "type": "object",
-            "required": [
-                "dhcp"
-            ],
-            "properties": {
-                "dhcp": {
-                    "type": "boolean"
-                },
-                "ip": {
-                    "type": "string",
-                    "pattern": "^(25[0-5]|2[0-4]\\d|1?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|1?\\d?\\d)){3}$"
-                },
-                "netmask": {
-                    "type": "string",
-                    "pattern": "^(25[0-5]|2[0-4]\\d|1?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|1?\\d?\\d)){3}$"
-                },
-                "gateway": {
-                    "type": "string",
-                    "pattern": "^(25[0-5]|2[0-4]\\d|1?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|1?\\d?\\d)){3}$"
-                },
-                "dns": {
-                    "type": "string",
-                    "pattern": "^(25[0-5]|2[0-4]\\d|1?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|1?\\d?\\d)){3}$"
-                }
-            }
-        },
-        "wifiNetworkConfig": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-                "enabled",
-                "security",
-                "hiddenSsid",
-                "ipv4"
-            ],
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                },
-                "ssid": {
-                    "type": "string"
-                },
-                "security": {
-                    "type": "string",
-                    "enum": [
-                        "open",
-                        "wpa2-psk",
-                        "wpa3-sae"
-                    ]
-                },
-                "hiddenSsid": {
-                    "type": "boolean"
-                },
-                "ipv4": {
-                    "$ref": "#/definitions/networkIPv4Config"
-                }
-            }
-        },
-        "ethernetNetworkConfig": {
-            "type": "object",
-            "required": [
-                "enabled",
-                "ipv4"
-            ],
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                },
-                "macAddress": {
-                    "type": "string",
-                    "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"
-                },
-                "ipv4": {
-                    "$ref": "#/definitions/networkIPv4Config"
-                }
-            }
+        "description": {
+          "type": "string",
+          "description": "Optional description"
         }
+      }
+    },
+    "mqttConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "profile",
+        "protocolVersion",
+        "transport",
+        "broker",
+        "port",
+        "clientId",
+        "keepAliveSec",
+        "cleanSession",
+        "sessionExpirySec",
+        "topicNamespace",
+        "publishIntervalMs",
+        "publishQos",
+        "subscribeQos",
+        "publishRetain",
+        "lwtEnabled",
+        "lwtQos",
+        "lwtRetain",
+        "securityLevel"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "profile": {
+          "type": "string",
+          "enum": ["sparkplug-b", "generic-broker", "aws-iot-core", "azure-iot-hub", "azure-event-grid-mqtt"]
+        },
+        "protocolVersion": {
+          "type": "string",
+          "enum": ["3.1.1", "5.0"]
+        },
+        "transport": {
+          "type": "string",
+          "enum": ["tcp", "tls", "ws", "wss"]
+        },
+        "broker": {
+          "type": "string",
+          "description": "Host name or address of the broker. Empty means none: a controller connects nowhere until one is named (COM-014)."
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "clientId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "keepAliveSec": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 3600
+        },
+        "cleanSession": {
+          "type": "boolean"
+        },
+        "sessionExpirySec": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "username": {
+          "type": "string"
+        },
+        "groupId": {
+          "type": "string"
+        },
+        "topicNamespace": {
+          "type": "string",
+          "minLength": 1
+        },
+        "publishIntervalMs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "publishQos": {
+          "type": "integer",
+          "enum": [0, 1]
+        },
+        "subscribeQos": {
+          "type": "integer",
+          "enum": [0, 1]
+        },
+        "publishRetain": {
+          "type": "boolean"
+        },
+        "securityLevel": {
+          "type": "string",
+          "enum": ["none", "tls-no-verify", "tls-server-verify", "tls-mutual"]
+        },
+        "websocketPath": {
+          "type": "string"
+        },
+        "alpnProtocols": {
+          "type": "string"
+        },
+        "caCertPath": {
+          "type": "string"
+        },
+        "clientCertPath": {
+          "type": "string"
+        },
+        "azureSasExpirySec": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "azureTwinEnabled": {
+          "type": "boolean"
+        },
+        "azureDirectMethodsEnabled": {
+          "type": "boolean"
+        },
+        "azureC2dEnabled": {
+          "type": "boolean"
+        },
+        "azureDpsEnabled": {
+          "type": "boolean"
+        },
+        "azureDpsIdScope": {
+          "type": "string"
+        },
+        "azureDpsRegistrationId": {
+          "type": "string"
+        },
+        "azureDpsEndpoint": {
+          "type": "string"
+        },
+        "azureEventGridTopic": {
+          "type": "string"
+        },
+        "azureEventGridSource": {
+          "type": "string"
+        },
+        "azureEventGridEventType": {
+          "type": "string"
+        },
+        "awsShadowEnabled": {
+          "type": "boolean"
+        },
+        "awsJobsEnabled": {
+          "type": "boolean"
+        },
+        "awsFleetEnabled": {
+          "type": "boolean"
+        },
+        "awsFleetTemplateName": {
+          "type": "string"
+        },
+        "awsClaimCertPath": {
+          "type": "string"
+        },
+        "lwtEnabled": {
+          "type": "boolean"
+        },
+        "lwtTopic": {
+          "type": "string"
+        },
+        "lwtPayload": {
+          "type": "string"
+        },
+        "lwtQos": {
+          "type": "integer",
+          "enum": [0, 1]
+        },
+        "lwtRetain": {
+          "type": "boolean"
+        }
+      }
+    },
+    "modbusConfig": {
+      "type": "object",
+      "required": ["enabled", "unitId", "tcpEnabled", "tcpPort", "rtuEnabled", "rtuBaud", "rtuParity", "pollIntervalMs"],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "unitId": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 247
+        },
+        "tcpEnabled": {
+          "type": "boolean"
+        },
+        "tcpPort": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "rtuEnabled": {
+          "type": "boolean"
+        },
+        "rtuBaud": {
+          "type": "integer",
+          "minimum": 1200,
+          "maximum": 1000000
+        },
+        "rtuParity": {
+          "type": "string",
+          "enum": ["none", "even", "odd"]
+        },
+        "pollIntervalMs": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "communicationTag": {
+      "type": "object",
+      "required": ["name", "symbol", "type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "symbol": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["BOOL", "INT", "UINT", "REAL"]
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["publish", "subscribe", "modbus"]
+        },
+        "publish": {
+          "type": "boolean"
+        },
+        "subscribe": {
+          "type": "boolean"
+        },
+        "modbusAddress": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "networkIPv4Config": {
+      "type": "object",
+      "required": ["dhcp"],
+      "properties": {
+        "dhcp": {
+          "type": "boolean"
+        },
+        "ip": {
+          "type": "string",
+          "pattern": "^(25[0-5]|2[0-4]\\d|1?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|1?\\d?\\d)){3}$"
+        },
+        "netmask": {
+          "type": "string",
+          "pattern": "^(25[0-5]|2[0-4]\\d|1?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|1?\\d?\\d)){3}$"
+        },
+        "gateway": {
+          "type": "string",
+          "pattern": "^(25[0-5]|2[0-4]\\d|1?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|1?\\d?\\d)){3}$"
+        },
+        "dns": {
+          "type": "string",
+          "pattern": "^(25[0-5]|2[0-4]\\d|1?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|1?\\d?\\d)){3}$"
+        }
+      }
+    },
+    "wifiNetworkConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "security", "hiddenSsid", "ipv4"],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "ssid": {
+          "type": "string"
+        },
+        "security": {
+          "type": "string",
+          "enum": ["open", "wpa2-psk", "wpa3-sae"]
+        },
+        "hiddenSsid": {
+          "type": "boolean"
+        },
+        "ipv4": {
+          "$ref": "#/definitions/networkIPv4Config"
+        }
+      }
+    },
+    "ethernetNetworkConfig": {
+      "type": "object",
+      "required": ["enabled", "ipv4"],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "macAddress": {
+          "type": "string",
+          "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"
+        },
+        "ipv4": {
+          "$ref": "#/definitions/networkIPv4Config"
+        }
+      }
     }
+  }
 }

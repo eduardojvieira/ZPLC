@@ -15,9 +15,18 @@ export const RECOVERY_WRITE_DELAY_MS = 1000;
 /** The longest a change waits, so that a user who never pauses is still written. */
 export const RECOVERY_MAX_WAIT_MS = 4000;
 
-export interface ModifiedFile { path: string; content: string }
-export interface RecoverySnapshot { rootId: string; modified: readonly ModifiedFile[] }
-export interface RecoveryPlan { write: ModifiedFile[]; discard: string[] }
+export interface ModifiedFile {
+  path: string;
+  content: string;
+}
+export interface RecoverySnapshot {
+  rootId: string;
+  modified: readonly ModifiedFile[];
+}
+export interface RecoveryPlan {
+  write: ModifiedFile[];
+  discard: string[];
+}
 
 /** What to send: the modified files whose kept content is missing or older, and the kept files that are no longer modified. */
 export function planRecovery(kept: ReadonlyMap<string, string>, modified: readonly ModifiedFile[]): RecoveryPlan {
@@ -47,8 +56,13 @@ export interface RecoverySaverOptions {
 }
 
 export function createRecoverySaver({
-  target, take, delayMs = RECOVERY_WRITE_DELAY_MS, maxWaitMs = RECOVERY_MAX_WAIT_MS,
-  schedule = setTimeout, cancel = clearTimeout, now = Date.now,
+  target,
+  take,
+  delayMs = RECOVERY_WRITE_DELAY_MS,
+  maxWaitMs = RECOVERY_MAX_WAIT_MS,
+  schedule = setTimeout,
+  cancel = clearTimeout,
+  now = Date.now,
 }: RecoverySaverOptions) {
   /** The project the entries below were sent for, and the content last kept for each of its files. */
   let rootId: string | null = null;
@@ -57,7 +71,12 @@ export function createRecoverySaver({
   let firstQueuedAt = 0;
   let chain: Promise<void> = Promise.resolve();
 
-  const stop = () => { if (timer !== null) { cancel(timer); timer = null; } };
+  const stop = () => {
+    if (timer !== null) {
+      cancel(timer);
+      timer = null;
+    }
+  };
 
   async function run(): Promise<void> {
     const snapshot = take();
@@ -72,8 +91,12 @@ export function createRecoverySaver({
     rootId = snapshot.rootId;
     const plan = planRecovery(kept, snapshot.modified);
     await Promise.all([
-      ...plan.write.map(async (file) => { if (await target.write(snapshot.rootId, file.path, file.content)) kept.set(file.path, file.content); }),
-      ...plan.discard.map(async (path) => { if (await target.discard(snapshot.rootId, path)) kept.delete(path); }),
+      ...plan.write.map(async (file) => {
+        if (await target.write(snapshot.rootId, file.path, file.content)) kept.set(file.path, file.content);
+      }),
+      ...plan.discard.map(async (path) => {
+        if (await target.discard(snapshot.rootId, path)) kept.delete(path);
+      }),
     ]);
   }
 
@@ -91,7 +114,12 @@ export function createRecoverySaver({
       const at = now();
       if (timer === null) firstQueuedAt = at;
       stop();
-      timer = schedule(() => { void flush(); }, Math.max(0, Math.min(delayMs, maxWaitMs - (at - firstQueuedAt))));
+      timer = schedule(
+        () => {
+          void flush();
+        },
+        Math.max(0, Math.min(delayMs, maxWaitMs - (at - firstQueuedAt))),
+      );
     },
     flush,
     /** The main process already holds this content for the file (an entry the user restored): nothing to send until it changes. */
@@ -100,7 +128,9 @@ export function createRecoverySaver({
       rootId = project;
       kept.set(path, content);
     },
-    dispose(): void { stop(); },
+    dispose(): void {
+      stop();
+    },
   };
 }
 
@@ -133,11 +163,20 @@ let active: { flush(): Promise<void>; adopt(rootId: string, path: string, conten
  * Starts keeping the modified files of whatever project the store has open. Returns a function that stops it. Only the
  * desktop app has a recovery bridge; elsewhere nothing is queued and nothing is sent.
  */
-export function startRecoveryPersistence<S extends RecoveryStoreState>(store: RecoveryStoreLike<S>, wiring: RecoveryWiring = {}): () => void {
+export function startRecoveryPersistence<S extends RecoveryStoreState>(
+  store: RecoveryStoreLike<S>,
+  wiring: RecoveryWiring = {},
+): () => void {
   const bridge = () => (typeof window === 'undefined' ? undefined : window.electronAPI?.recovery);
   const target: RecoveryTarget = wiring.target ?? {
-    write: async (rootId, path, content) => { const current = bridge(); return current ? writeRecovery(current, rootId, path, content) : false; },
-    discard: async (rootId, path) => { const current = bridge(); return current ? discardRecovery(current, rootId, path) : false; },
+    write: async (rootId, path, content) => {
+      const current = bridge();
+      return current ? writeRecovery(current, rootId, path, content) : false;
+    },
+    discard: async (rootId, path) => {
+      const current = bridge();
+      return current ? discardRecovery(current, rootId, path) : false;
+    },
   };
   const rootIdOf = wiring.rootIdOf ?? ((state: RecoveryStoreState) => projectRootId(state.directoryHandle));
   const saver = createRecoverySaver({
@@ -157,13 +196,19 @@ export function startRecoveryPersistence<S extends RecoveryStoreState>(store: Re
   const enabled = () => wiring.target !== undefined || bridge() !== undefined;
   const unsubscribe = store.subscribe((state, previous) => {
     if (!enabled()) return;
-    if (state.projectSession !== previous.projectSession || state.isProjectOpen !== previous.isProjectOpen || state.directoryHandle !== previous.directoryHandle) {
+    if (
+      state.projectSession !== previous.projectSession ||
+      state.isProjectOpen !== previous.isProjectOpen ||
+      state.directoryHandle !== previous.directoryHandle
+    ) {
       void saver.flush(); // a project went away or came: what it had kept is settled now, not after a delay
     } else if (state.loadedFiles !== previous.loadedFiles) {
       saver.queue();
     }
   });
-  const flush = () => { void saver.flush(); };
+  const flush = () => {
+    void saver.flush();
+  };
   // The window going away: the renderer is unloaded, and what is still queued goes out now.
   if (typeof window !== 'undefined') window.addEventListener('pagehide', flush);
   const handle = { flush: saver.flush, adopt: saver.adopt };
@@ -176,7 +221,9 @@ export function startRecoveryPersistence<S extends RecoveryStoreState>(store: Re
   };
 }
 
-/** Tells the saver that the main process already holds `content` for `path`: the user restored it, so only a later change or a save matters. */
+/**
+ * Tells the saver that the main process already holds `content` for `path`: the user restored it, so only a later change or a save matters.
+ */
 export function adoptRecovered(rootId: string, path: string, content: string): void {
   active?.adopt(rootId, path, content);
 }
@@ -185,4 +232,3 @@ export function adoptRecovered(rootId: string, path: string, content: string): v
 export function flushRecovery(): Promise<void> {
   return active?.flush() ?? Promise.resolve();
 }
-

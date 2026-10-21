@@ -13,7 +13,10 @@ export const SHELL_LANGUAGES = ['en', 'es'] as const;
 export const SHELL_THEMES = ['light', 'dark', 'high-contrast', 'system'] as const;
 export type ShellLanguage = (typeof SHELL_LANGUAGES)[number];
 export type ShellTheme = (typeof SHELL_THEMES)[number];
-export interface ShellPreferences { language: ShellLanguage; theme: ShellTheme }
+export interface ShellPreferences {
+  language: ShellLanguage;
+  theme: ShellTheme;
+}
 
 export const SHELL_PREFERENCES_FILENAME = 'zplc-shell-preferences.v1.json';
 const MAX_BYTES = 1024;
@@ -42,7 +45,11 @@ export function parseShellPreferences(value: unknown): ShellPreferences | null {
 /** The preferences in a file's text; the default for anything else. */
 export function readShellPreferences(raw: string): ShellPreferences {
   if (raw.length > MAX_BYTES) return DEFAULT_SHELL_PREFERENCES;
-  try { return parseShellPreferences(JSON.parse(raw)) ?? DEFAULT_SHELL_PREFERENCES; } catch { return DEFAULT_SHELL_PREFERENCES; }
+  try {
+    return parseShellPreferences(JSON.parse(raw)) ?? DEFAULT_SHELL_PREFERENCES;
+  } catch {
+    return DEFAULT_SHELL_PREFERENCES;
+  }
 }
 
 export function createShellPreferencesStore(userDataPath: string) {
@@ -51,10 +58,16 @@ export function createShellPreferencesStore(userDataPath: string) {
   let writing: Promise<void> = Promise.resolve();
   return {
     async load(): Promise<ShellPreferences> {
-      try { current = readShellPreferences(await readFile(file, 'utf8')); } catch { current = DEFAULT_SHELL_PREFERENCES; }
+      try {
+        current = readShellPreferences(await readFile(file, 'utf8'));
+      } catch {
+        current = DEFAULT_SHELL_PREFERENCES;
+      }
       return current;
     },
-    get(): ShellPreferences { return current; },
+    get(): ShellPreferences {
+      return current;
+    },
     /** Remembers a report; true when it differs from what was held. A write that fails leaves the old file in place. */
     save(next: ShellPreferences): boolean {
       if (next.language === current.language && next.theme === current.theme) return false;
@@ -65,10 +78,14 @@ export function createShellPreferencesStore(userDataPath: string) {
           await mkdir(path.dirname(file), { recursive: true });
           await writeFile(temporary, JSON.stringify(next), { mode: 0o600 });
           await rename(temporary, file);
-        } catch { await unlink(temporary).catch(() => undefined); }
+        } catch {
+          await unlink(temporary).catch(() => undefined);
+        }
       });
       return true;
     },
-    settled(): Promise<void> { return writing; },
+    settled(): Promise<void> {
+      return writing;
+    },
   };
 }

@@ -5,16 +5,7 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import {
-    TASK_TYPE,
-    ZPLC_CONSTANTS,
-    assemble,
-    buildIdOf,
-    createMultiTaskZplcFile,
-    createZplcFile,
-    crc32,
-    readArtifact,
-} from './index';
+import { TASK_TYPE, ZPLC_CONSTANTS, assemble, buildIdOf, createMultiTaskZplcFile, createZplcFile, crc32, readArtifact } from './index';
 import type { TaskDef } from './index';
 
 const code = assemble('PUSH8 1\nPUSH8 2\nADD\nDROP\nHALT\nsecond:\nNOP\nHALT').bytecode;
@@ -36,7 +27,10 @@ describe('the call depth of a task is a field of its definition (CMP-050)', () =
     test('is read back with the rest of the task table', () => {
         const file = createMultiTaskZplcFile(code, [task({ callDepth: 4 }), task({ id: 1, entryPoint: 5, stackSize: 1, callDepth: 2 })]);
         const artifact = readArtifact(file);
-        expect(artifact.tasks.map((each) => [each.id, each.entryPoint, each.stackSize, each.callDepth])).toEqual([[0, 0, 2, 4], [1, 5, 1, 2]]);
+        expect(artifact.tasks.map((each) => [each.id, each.entryPoint, each.stackSize, each.callDepth])).toEqual([
+            [0, 0, 2, 4],
+            [1, 5, 1, 2],
+        ]);
     });
 
     test('an artifact without the field declares 0, not declared', () => {
@@ -55,15 +49,19 @@ describe('the build identity of an artifact (CMP-056)', () => {
     test('is the CRC-32 of the code and the task segment, in a BUILD segment after the others', () => {
         const file = createMultiTaskZplcFile(code, [task()]);
         const artifact = readArtifact(file);
-        const taskSegment = file.subarray(ZPLC_CONSTANTS.HEADER_SIZE + 3 * ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE + code.length,
-            ZPLC_CONSTANTS.HEADER_SIZE + 3 * ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE + code.length + ZPLC_CONSTANTS.TASK_DEF_SIZE);
+        const taskSegment = file.subarray(
+            ZPLC_CONSTANTS.HEADER_SIZE + 3 * ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE + code.length,
+            ZPLC_CONSTANTS.HEADER_SIZE + 3 * ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE + code.length + ZPLC_CONSTANTS.TASK_DEF_SIZE,
+        );
         const joined = new Uint8Array(code.length + taskSegment.length);
         joined.set(code, 0);
         joined.set(taskSegment, code.length);
         expect(artifact.buildId).toBe(crc32(joined));
         expect(artifact.buildId).toBe(buildIdOf(code, taskSegment));
         expect(artifact.segments.map((segment) => segment.type)).toEqual([
-            ZPLC_CONSTANTS.SEGMENT_TYPE_CODE, ZPLC_CONSTANTS.SEGMENT_TYPE_TASK, ZPLC_CONSTANTS.SEGMENT_TYPE_BUILD,
+            ZPLC_CONSTANTS.SEGMENT_TYPE_CODE,
+            ZPLC_CONSTANTS.SEGMENT_TYPE_TASK,
+            ZPLC_CONSTANTS.SEGMENT_TYPE_BUILD,
         ]);
         // the header counts it as data, like the other segments that are not code
         expect(new DataView(file.buffer).getUint32(20, true)).toBe(ZPLC_CONSTANTS.TASK_DEF_SIZE + ZPLC_CONSTANTS.BUILD_ENTRY_SIZE);
@@ -81,7 +79,9 @@ describe('the build identity of an artifact (CMP-056)', () => {
 
     test('is not changed by the tags of the artifact, which are not the program', () => {
         const without = readArtifact(createMultiTaskZplcFile(code, [task()])).buildId;
-        const withTag = readArtifact(createMultiTaskZplcFile(code, [task()], [{ varAddr: 0x2000, varType: 4, tagId: 2, value: 1 }])).buildId;
+        const withTag = readArtifact(
+            createMultiTaskZplcFile(code, [task()], [{ varAddr: 0x2000, varType: 4, tagId: 2, value: 1 }]),
+        ).buildId;
         expect(withTag).toBe(without);
     });
 
@@ -96,7 +96,10 @@ describe('the build identity of an artifact (CMP-056)', () => {
         const file = createZplcFile(code, 0);
         const artifact = readArtifact(file);
         expect(artifact.buildId).toBe(buildIdOf(code));
-        expect(artifact.segments.map((segment) => segment.type)).toEqual([ZPLC_CONSTANTS.SEGMENT_TYPE_CODE, ZPLC_CONSTANTS.SEGMENT_TYPE_BUILD]);
+        expect(artifact.segments.map((segment) => segment.type)).toEqual([
+            ZPLC_CONSTANTS.SEGMENT_TYPE_CODE,
+            ZPLC_CONSTANTS.SEGMENT_TYPE_BUILD,
+        ]);
     });
 
     test('an artifact that is not a ZPLC file, or has no BUILD segment, reads as having none', () => {

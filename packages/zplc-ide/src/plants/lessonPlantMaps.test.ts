@@ -24,8 +24,14 @@ describe('every lesson that names a plant ships its mapping (LRN-021)', () => {
       expect((map as { plant: string }).plant).toBe(lesson.plant as string);
       const source = readFileSync(join(PROJECTS, lesson.starter.project, lesson.starter.program), 'utf8');
       const program = /PROGRAM\s+(\w+)/.exec(source)![1]!;
-      const project = { name: 't', version: '1', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: [program] }] } as never;
-      const debugMap = compileMultiTaskProject(project, [{ name: program, content: source, language: 'ST', sourceRef: lesson.starter.program } as never]).debugMap as unknown as DebugMap;
+      const project = {
+        name: 't',
+        version: '1',
+        tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: [program] }],
+      } as never;
+      const debugMap = compileMultiTaskProject(project, [
+        { name: program, content: source, language: 'ST', sourceRef: lesson.starter.program } as never,
+      ]).debugMap as unknown as DebugMap;
       expect(resolvePlantMap(map as never, listIoMap(debugMap)).problems).toEqual([]);
     });
   }

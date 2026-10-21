@@ -12,7 +12,11 @@ export function useGiveFocusBack(busy: boolean, control: RefObject<HTMLElement |
     if (busy || !started.current) return;
     started.current = false;
     // after the paint in which the control is enabled again
-    requestAnimationFrame(() => { claimLostFocus(control.current, document.activeElement, document.body); });
+    requestAnimationFrame(() => {
+      claimLostFocus(control.current, document.activeElement, document.body);
+    });
   }, [busy, control]);
-  return () => { started.current = true; };
+  return () => {
+    started.current = true;
+  };
 }

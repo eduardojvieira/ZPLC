@@ -153,7 +153,11 @@ export class ShellLink implements DeviceLink {
   }
 
   onTrace(listener: TraceListener): () => void {
-    return this.transport.onLine?.((line) => { if (line.trimStart().startsWith('{')) listener(line); }) ?? (() => undefined);
+    return (
+      this.transport.onLine?.((line) => {
+        if (line.trimStart().startsWith('{')) listener(line);
+      }) ?? (() => undefined)
+    );
   }
 
   async close(): Promise<void> {

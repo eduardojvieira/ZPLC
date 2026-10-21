@@ -3,7 +3,7 @@ slug: /learn
 id: index
 title: Aprender
 sidebar_label: Aprender
-description: "Dónde practicar programación de PLC con ZPLC hoy: las lecciones de ZPLC, los proyectos de ejemplo incluidos y las pruebas de escenario."
+description: 'Dónde practicar programación de PLC con ZPLC hoy: las lecciones de ZPLC, los proyectos de ejemplo incluidos y las pruebas de escenario.'
 tags: [learn, lessons, examples]
 ---
 

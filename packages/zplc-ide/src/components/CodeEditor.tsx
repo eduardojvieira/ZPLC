@@ -23,15 +23,23 @@ import { useT } from '../i18n';
 import { ilInlineTargets, inlineValues, stInlineTargets } from '../monitoring/inlineValues';
 import { useMonitoredVariables } from '../monitoring/useMonitor';
 import type { PLCLanguage } from '../types';
-import { breakpointDecorationClasses, breakpointFileKey, breakpointHoverMessage, doesCurrentPOUMatchFile, filterEligibleBreakpointLines, isLineBreakpointEligible } from '../utils/breakpoints';
+import {
+  breakpointDecorationClasses,
+  breakpointFileKey,
+  breakpointHoverMessage,
+  doesCurrentPOUMatchFile,
+  filterEligibleBreakpointLines,
+  isLineBreakpointEligible,
+} from '../utils/breakpoints';
 import { isInlineLivePreviewEnabled } from './codeEditorLivePreview';
+import { ST_LANGUAGE_ID, stLanguage, stConf, IL_LANGUAGE_ID, ilLanguage, ilConf } from '../utils/monaco-languages';
 import {
-  ST_LANGUAGE_ID, stLanguage, stConf,
-  IL_LANGUAGE_ID, ilLanguage, ilConf
-} from '../utils/monaco-languages';
-import {
-  ZPLC_DARK_THEME, ZPLC_DARK_THEME_ID, ZPLC_HIGH_CONTRAST_THEME, ZPLC_HIGH_CONTRAST_THEME_ID,
-  ZPLC_LIGHT_THEME, ZPLC_LIGHT_THEME_ID
+  ZPLC_DARK_THEME,
+  ZPLC_DARK_THEME_ID,
+  ZPLC_HIGH_CONTRAST_THEME,
+  ZPLC_HIGH_CONTRAST_THEME_ID,
+  ZPLC_LIGHT_THEME,
+  ZPLC_LIGHT_THEME_ID,
 } from '../utils/monaco-themes';
 import { debugLog } from '../utils/debugLog';
 import { projectPathFromModelPath } from '../utils/sessionState';
@@ -89,20 +97,15 @@ function reportViewState(editor: MonacoEditor.editor.IStandaloneCodeEditor): voi
   const model = editor.getModel();
   const path = model ? projectPathFromModelPath(model.uri.path) : null;
   const position = editor.getPosition();
-  if (path !== null && position) recordViewState(path, { line: position.lineNumber, column: position.column, scrollTop: editor.getScrollTop() });
+  if (path !== null && position)
+    recordViewState(path, { line: position.lineNumber, column: position.column, scrollTop: editor.getScrollTop() });
 }
 
 // =============================================================================
 // Component
 // =============================================================================
 
-export function CodeEditor({
-  fileId,
-  content,
-  language,
-  onChange,
-  readOnly = false,
-}: CodeEditorProps): React.ReactElement {
+export function CodeEditor({ fileId, content, language, onChange, readOnly = false }: CodeEditorProps): React.ReactElement {
   const { effectiveTheme } = useTheme();
   const { t } = useT();
   const editorRef = useRef<MonacoEditor.editor.IStandaloneCodeEditor | null>(null);
@@ -171,9 +174,11 @@ export function CodeEditor({
       return false;
     }
 
-    return type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN ||
+    return (
+      type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN ||
       type === monaco.editor.MouseTargetType.GUTTER_LINE_NUMBERS ||
-      type === monaco.editor.MouseTargetType.GUTTER_LINE_DECORATIONS;
+      type === monaco.editor.MouseTargetType.GUTTER_LINE_DECORATIONS
+    );
   }, []);
 
   // The variables a line names, as the language service reads the project, and their values as the debug map of the
@@ -186,7 +191,12 @@ export function CodeEditor({
   const inlineVariables = useMemo(() => [...new Set(inlineTargets.map((target) => target.variable))], [inlineTargets]);
   const inlineReadings = useMonitoredVariables(filePath || undefined, inlineVariables, inlinePreviewEnabled);
   const inlineWidgets = useMemo(
-    () => inlineValues(inlineTargets, (variable) => inlineReadings.get(variable), (value, type) => formatDebugValue(value, type as Parameters<typeof formatDebugValue>[1])),
+    () =>
+      inlineValues(
+        inlineTargets,
+        (variable) => inlineReadings.get(variable),
+        (value, type) => formatDebugValue(value, type as Parameters<typeof formatDebugValue>[1]),
+      ),
     [inlineReadings, inlineTargets],
   );
 
@@ -196,83 +206,88 @@ export function CodeEditor({
     for (const model of monacoEditor.getModels()) model.updateOptions({ tabSize: editorTabSize, insertSpaces: true });
   }, [editorTabSize, fileId]);
 
-  const handleEditorDidMount: OnMount = useCallback((editor, monaco) => {
-    editorRef.current = editor;
-    monacoRef.current = monaco;
+  const handleEditorDidMount: OnMount = useCallback(
+    (editor, monaco) => {
+      editorRef.current = editor;
+      monacoRef.current = monaco;
 
-    // Add mouse down listener for gutter clicks (breakpoints)
-    editor.onMouseDown((e) => {
-      const fileId = fileIdRef.current;
-      debugLog('[Breakpoint] Mouse down', {
-        fileId,
-        fileName: fileNameRef.current,
-        targetType: e.target.type,
-        hasPosition: Boolean(e.target.position),
-        lineNumber: e.target.position?.lineNumber ?? null,
-      });
+      // Add mouse down listener for gutter clicks (breakpoints)
+      editor.onMouseDown((e) => {
+        const fileId = fileIdRef.current;
+        debugLog('[Breakpoint] Mouse down', {
+          fileId,
+          fileName: fileNameRef.current,
+          targetType: e.target.type,
+          hasPosition: Boolean(e.target.position),
+          lineNumber: e.target.position?.lineNumber ?? null,
+        });
 
-      if (isBreakpointGutterTarget(e.target.type)) {
-        const lineNumber = e.target.position?.lineNumber;
-        if (lineNumber) {
-          const activeDebugMap = debugMapRef.current;
-          const activeFileName = fileNameRef.current;
+        if (isBreakpointGutterTarget(e.target.type)) {
+          const lineNumber = e.target.position?.lineNumber;
+          if (lineNumber) {
+            const activeDebugMap = debugMapRef.current;
+            const activeFileName = fileNameRef.current;
 
-          debugLog('[Breakpoint] Gutter click detected', {
-            fileId,
-            fileName: activeFileName,
-            lineNumber,
-            hasDebugMap: Boolean(activeDebugMap),
-          });
+            debugLog('[Breakpoint] Gutter click detected', {
+              fileId,
+              fileName: activeFileName,
+              lineNumber,
+              hasDebugMap: Boolean(activeDebugMap),
+            });
 
-          if (activeDebugMap && !isLineBreakpointEligible(activeDebugMap, activeFileName, lineNumber)) {
-            debugLog('[Breakpoint] Rejected non-executable line', {
+            if (activeDebugMap && !isLineBreakpointEligible(activeDebugMap, activeFileName, lineNumber)) {
+              debugLog('[Breakpoint] Rejected non-executable line', {
+                fileId,
+                fileName: activeFileName,
+                lineNumber,
+              });
+              return;
+            }
+
+            debugLog('[Breakpoint] Toggling breakpoint', {
               fileId,
               fileName: activeFileName,
               lineNumber,
             });
-            return;
+            toggleBreakpoint(fileId, lineNumber);
           }
-
-          debugLog('[Breakpoint] Toggling breakpoint', {
-            fileId,
-            fileName: activeFileName,
-            lineNumber,
-          });
-          toggleBreakpoint(fileId, lineNumber);
         }
+      });
+
+      // The session keeps the cursor and the scroll of each open file (IDE-008).
+      editor.onDidChangeCursorPosition(() => reportViewState(editor));
+      editor.onDidScrollChange((change) => {
+        if (change.scrollTopChanged) reportViewState(editor);
+      });
+
+      // Enable glyph margin for breakpoint icons
+      editor.updateOptions({
+        glyphMargin: true,
+      });
+
+      // Register custom languages if not already registered
+      const languages = monaco.languages.getLanguages();
+      if (!languages.some((l: { id: string }) => l.id === ST_LANGUAGE_ID)) {
+        monaco.languages.register({ id: ST_LANGUAGE_ID });
+        monaco.languages.setMonarchTokensProvider(ST_LANGUAGE_ID, stLanguage);
+        monaco.languages.setLanguageConfiguration(ST_LANGUAGE_ID, stConf);
       }
-    });
+      registerSTProviders(monaco, ideBridge);
+      if (!languages.some((l: { id: string }) => l.id === IL_LANGUAGE_ID)) {
+        monaco.languages.register({ id: IL_LANGUAGE_ID });
+        monaco.languages.setMonarchTokensProvider(IL_LANGUAGE_ID, ilLanguage);
+        monaco.languages.setLanguageConfiguration(IL_LANGUAGE_ID, ilConf);
+      }
 
-    // The session keeps the cursor and the scroll of each open file (IDE-008).
-    editor.onDidChangeCursorPosition(() => reportViewState(editor));
-    editor.onDidScrollChange((change) => { if (change.scrollTopChanged) reportViewState(editor); });
+      // Register custom themes
+      monaco.editor.defineTheme(ZPLC_DARK_THEME_ID, ZPLC_DARK_THEME);
+      monaco.editor.defineTheme(ZPLC_LIGHT_THEME_ID, ZPLC_LIGHT_THEME);
+      monaco.editor.defineTheme(ZPLC_HIGH_CONTRAST_THEME_ID, ZPLC_HIGH_CONTRAST_THEME);
 
-    // Enable glyph margin for breakpoint icons
-    editor.updateOptions({
-      glyphMargin: true,
-    });
-
-    // Register custom languages if not already registered
-    const languages = monaco.languages.getLanguages();
-    if (!languages.some((l: { id: string }) => l.id === ST_LANGUAGE_ID)) {
-      monaco.languages.register({ id: ST_LANGUAGE_ID });
-      monaco.languages.setMonarchTokensProvider(ST_LANGUAGE_ID, stLanguage);
-      monaco.languages.setLanguageConfiguration(ST_LANGUAGE_ID, stConf);
-    }
-    registerSTProviders(monaco, ideBridge);
-    if (!languages.some((l: { id: string }) => l.id === IL_LANGUAGE_ID)) {
-      monaco.languages.register({ id: IL_LANGUAGE_ID });
-      monaco.languages.setMonarchTokensProvider(IL_LANGUAGE_ID, ilLanguage);
-      monaco.languages.setLanguageConfiguration(IL_LANGUAGE_ID, ilConf);
-    }
-
-    // Register custom themes
-    monaco.editor.defineTheme(ZPLC_DARK_THEME_ID, ZPLC_DARK_THEME);
-    monaco.editor.defineTheme(ZPLC_LIGHT_THEME_ID, ZPLC_LIGHT_THEME);
-    monaco.editor.defineTheme(ZPLC_HIGH_CONTRAST_THEME_ID, ZPLC_HIGH_CONTRAST_THEME);
-
-    setEditorReady(true);
-  }, [isBreakpointGutterTarget, toggleBreakpoint]);
+      setEditorReady(true);
+    },
+    [isBreakpointGutterTarget, toggleBreakpoint],
+  );
 
   // Update breakpoint and current line decorations
   useEffect(() => {
@@ -346,14 +361,21 @@ export function CodeEditor({
     const monaco = monacoRef.current;
     const model = editor?.getModel();
     if (!editor || !monaco || !model) return;
-    const markers = compilerMarkersForFile(compilerMessages, filePath, model.getLineCount(), (line) => model.getLineMaxColumn(line)).map((marker) => ({
-      message: marker.message,
-      severity: marker.type === 'error' ? monaco.MarkerSeverity.Error : marker.type === 'warning' ? monaco.MarkerSeverity.Warning : monaco.MarkerSeverity.Info,
-      startLineNumber: marker.line,
-      startColumn: marker.column,
-      endLineNumber: marker.line,
-      endColumn: marker.endColumn,
-    }));
+    const markers = compilerMarkersForFile(compilerMessages, filePath, model.getLineCount(), (line) => model.getLineMaxColumn(line)).map(
+      (marker) => ({
+        message: marker.message,
+        severity:
+          marker.type === 'error'
+            ? monaco.MarkerSeverity.Error
+            : marker.type === 'warning'
+              ? monaco.MarkerSeverity.Warning
+              : monaco.MarkerSeverity.Info,
+        startLineNumber: marker.line,
+        startColumn: marker.column,
+        endLineNumber: marker.line,
+        endColumn: marker.endColumn,
+      }),
+    );
     monaco.editor.setModelMarkers(model, 'zplc.compiler', markers);
     return () => monaco.editor.setModelMarkers(model, 'zplc.compiler', []);
   }, [compilerMessages, editorReady, filePath]);
@@ -369,11 +391,14 @@ export function CodeEditor({
     const timer = window.setTimeout(() => {
       const { loadedFiles, projectConfig } = useIDEStore.getState();
       let files = currentProjectFiles();
-      for (const open of loadedFiles.values()) if (open.language === 'ST') files = filesWithBuffer(open.path, open.id === fileId ? content : open.content, files);
+      for (const open of loadedFiles.values())
+        if (open.language === 'ST') files = filesWithBuffer(open.path, open.id === fileId ? content : open.content, files);
       if (!files.some((file) => file.path === filePath)) files = filesWithBuffer(filePath, content, files);
       const diagnostics = liveDiagnostics(files, filePath, {
         strictTypes: buildOptionsOf(projectConfig).strictTypes,
-        ...(getCompilerMemoryProfile(projectConfig?.target?.board) ? { memoryProfile: getCompilerMemoryProfile(projectConfig?.target?.board)! } : {}),
+        ...(getCompilerMemoryProfile(projectConfig?.target?.board)
+          ? { memoryProfile: getCompilerMemoryProfile(projectConfig?.target?.board)! }
+          : {}),
       });
       useIDEStore.getState().setSTBufferDiagnostics({ ...identity, diagnostics }, content);
     }, ST_LIVE_ANALYSIS_DELAY_MS);
@@ -389,8 +414,12 @@ export function CodeEditor({
     const monaco = monacoRef.current;
     if (!editorReady || !monaco) return;
     const current = stBufferDiagnostics;
-    const isCurrent = language === 'ST' && current?.projectSession === projectSession
-      && current.compilerRunId === compilerRunId && current.fileId === fileId && current.file === filePath;
+    const isCurrent =
+      language === 'ST' &&
+      current?.projectSession === projectSession &&
+      current.compilerRunId === compilerRunId &&
+      current.fileId === fileId &&
+      current.file === filePath;
     return applyProjectMarkers(monaco, ST_LIVE_MARKER_OWNER, isCurrent ? current.diagnostics : [], filePath);
   }, [compilerRunId, editorReady, fileId, filePath, language, projectSession, stBufferDiagnostics]);
 
@@ -482,19 +511,17 @@ export function CodeEditor({
       // Create inline decorations for each line
       for (const [lineNum, widgets] of widgetsByLine) {
         // Build combined text for all values on this line
-        const valueParts = widgets.map(w => {
-          const label = w.label.includes('.')
-            ? w.label.split('.').pop()
-            : w.label;
+        const valueParts = widgets.map((w) => {
+          const label = w.label.includes('.') ? w.label.split('.').pop() : w.label;
           return `${label}=${w.text}`;
         });
 
         const combinedText = `  ${valueParts.join('  ·  ')}`;
 
         // Determine CSS class based on bool state
-        const cssClass = widgets.some(w => w.available && w.isBool && w.isTrue)
+        const cssClass = widgets.some((w) => w.available && w.isBool && w.isTrue)
           ? 'inline-debug-value-true'
-          : widgets.some(w => w.available && w.isBool && !w.isTrue)
+          : widgets.some((w) => w.available && w.isBool && !w.isTrue)
             ? 'inline-debug-value-false'
             : 'inline-debug-value';
 
@@ -528,18 +555,20 @@ export function CodeEditor({
   }, [inlinePreviewEnabled, inlineWidgets, editorReady, modelPath]);
 
   // Handle content change
-  const handleChange = useCallback((value: string | undefined) => {
-    if (value !== undefined && onChange && !syncingRef.current) {
-      onChange(value);
-    }
-  }, [onChange]);
+  const handleChange = useCallback(
+    (value: string | undefined) => {
+      if (value !== undefined && onChange && !syncingRef.current) {
+        onChange(value);
+      }
+    },
+    [onChange],
+  );
 
   // NOTE: All debug decoration CSS (breakpoints, inline values) is defined in
   // src/index.css — static stylesheet loaded by Vite. No dynamic injection here.
 
   return (
     <div className="relative w-full h-full">
-
       <Editor
         height="100%"
         path={modelPath}
@@ -548,7 +577,13 @@ export function CodeEditor({
         value={content}
         onChange={handleChange}
         onMount={handleEditorDidMount}
-        theme={effectiveTheme === 'high-contrast' ? ZPLC_HIGH_CONTRAST_THEME_ID : effectiveTheme === 'dark' ? ZPLC_DARK_THEME_ID : ZPLC_LIGHT_THEME_ID}
+        theme={
+          effectiveTheme === 'high-contrast'
+            ? ZPLC_HIGH_CONTRAST_THEME_ID
+            : effectiveTheme === 'dark'
+              ? ZPLC_DARK_THEME_ID
+              : ZPLC_LIGHT_THEME_ID
+        }
         options={{
           // The editor takes Tab as a character; a person who cannot see the screen learns the way out from its name (UX-025, UX-028).
           ariaLabel: t('editors.code.label', { name: fileName }),

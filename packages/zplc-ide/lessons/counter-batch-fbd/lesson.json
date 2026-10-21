@@ -5,16 +5,9 @@
   "order": 17,
   "module": 3,
   "level": "foundation",
-  "prerequisites": [
-    "edge-counter-pulses"
-  ],
-  "languages": [
-    "FBD"
-  ],
-  "tracks": [
-    "simulation",
-    "hardware"
-  ],
+  "prerequisites": ["edge-counter-pulses"],
+  "languages": ["FBD"],
+  "tracks": ["simulation", "hardware"],
   "unsupported": {},
   "plant": null,
   "estimatedMinutes": 20,

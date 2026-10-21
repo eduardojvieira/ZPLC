@@ -16,10 +16,14 @@ import { trapTab } from './logic/focusTrap';
 import { Portal } from './Portal';
 import { registerModal } from './modalStack';
 
-const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), ' +
+  '[tabindex]:not([tabindex="-1"])';
 
 function focusables(container: HTMLElement): HTMLElement[] {
-  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE)).filter((element) => element.getAttribute('aria-hidden') !== 'true' && element.offsetParent !== null);
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+    (element) => element.getAttribute('aria-hidden') !== 'true' && element.offsetParent !== null,
+  );
 }
 
 export type DialogSize = 'sm' | 'md' | 'lg' | 'xl';
@@ -43,12 +47,27 @@ export interface DialogProps {
   children: ReactNode;
 }
 
-export function Dialog({ open, onClose, title, description, size = 'md', className, closeButton = true, dismissOnScrim = true, initialFocus, footer, role = 'dialog', children }: DialogProps) {
+export function Dialog({
+  open,
+  onClose,
+  title,
+  description,
+  size = 'md',
+  className,
+  closeButton = true,
+  dismissOnScrim = true,
+  initialFocus,
+  footer,
+  role = 'dialog',
+  children,
+}: DialogProps) {
   const titleId = useId();
   const descriptionId = useId();
   const surface = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
-  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -66,7 +85,11 @@ export function Dialog({ open, onClose, title, description, size = 'md', classNa
     // On the document, not on the dialog: focus is on the page after a click on the scrim or on non-focusable text.
     const onKeyDown = (event: KeyboardEvent): void => {
       if (!modal.isTop()) return;
-      if (event.key === 'Escape') { event.preventDefault(); onCloseRef.current(); return; }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onCloseRef.current();
+        return;
+      }
       if (event.key !== 'Tab') return;
       const list = focusables(dialog);
       const move = trapTab(list.length, list.indexOf(document.activeElement as HTMLElement), event.shiftKey);
@@ -75,14 +98,23 @@ export function Dialog({ open, onClose, title, description, size = 'md', classNa
       (move.focus < 0 ? dialog : list[move.focus]).focus();
     };
     document.addEventListener('keydown', onKeyDown);
-    return () => { document.removeEventListener('keydown', onKeyDown); modal.release(); opener?.focus?.(); };
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      modal.release();
+      opener?.focus?.();
+    };
   }, [open, initialFocus]);
 
   if (!open) return null;
 
   return (
     <Portal>
-      <div className="ui-scrim" onMouseDown={(event) => { if (dismissOnScrim && event.target === event.currentTarget) onClose(); }}>
+      <div
+        className="ui-scrim"
+        onMouseDown={(event) => {
+          if (dismissOnScrim && event.target === event.currentTarget) onClose();
+        }}
+      >
         <DialogSurface
           surfaceRef={surface}
           role={role}
@@ -120,7 +152,20 @@ export interface DialogSurfaceProps {
 }
 
 /** The markup of a dialog with none of its behaviour, so the gallery can show it in place without taking focus. */
-export function DialogSurface({ surfaceRef, role = 'dialog', titleId, descriptionId, title, description, size = 'md', className, modal = true, onClose, footer, children }: DialogSurfaceProps) {
+export function DialogSurface({
+  surfaceRef,
+  role = 'dialog',
+  titleId,
+  descriptionId,
+  title,
+  description,
+  size = 'md',
+  className,
+  modal = true,
+  onClose,
+  footer,
+  children,
+}: DialogSurfaceProps) {
   const { t } = useT();
   return (
     <div
@@ -134,14 +179,27 @@ export function DialogSurface({ surfaceRef, role = 'dialog', titleId, descriptio
       data-size={size}
     >
       <div className="ui-dialog-header">
-        <h2 id={titleId} className="ui-dialog-title">{title}</h2>
+        <h2 id={titleId} className="ui-dialog-title">
+          {title}
+        </h2>
         {onClose && (
-          <button type="button" className="ui-button ui-icon-button" data-variant="ghost" data-size="sm" aria-label={t('workbench.dialog.close')} onClick={onClose}>
+          <button
+            type="button"
+            className="ui-button ui-icon-button"
+            data-variant="ghost"
+            data-size="sm"
+            aria-label={t('workbench.dialog.close')}
+            onClick={onClose}
+          >
             <X size={ICON_SIZES.md} aria-hidden="true" />
           </button>
         )}
       </div>
-      {description !== undefined && <p id={descriptionId} className="ui-dialog-description">{description}</p>}
+      {description !== undefined && (
+        <p id={descriptionId} className="ui-dialog-description">
+          {description}
+        </p>
+      )}
       <div className="ui-dialog-body">{children}</div>
       {footer !== undefined && <div className="ui-dialog-footer">{footer}</div>}
     </div>
@@ -152,7 +210,10 @@ export interface AlertDialogProps {
   open: boolean;
   title: ReactNode;
   description: ReactNode;
-  /** The name of the action, a verb phrase: "Stop PLC and deploy", never "OK". Null when there is nothing to confirm and the dialog only informs. */
+  /**
+   * The name of the action, a verb phrase: "Stop PLC and deploy", never "OK". Null when there is nothing to confirm and the dialog only
+   * informs.
+   */
   actionLabel: string | null;
   /** Always given by the caller, in the language of the page: the kit has no catalogue of its own. */
   cancelLabel: string;
@@ -168,12 +229,27 @@ export interface AlertDialogProps {
   children?: ReactNode;
 }
 
-export function AlertDialog({ open, title, description, actionLabel, cancelLabel, secondary, destructive = false, size = 'sm', onAction, onCancel, busy = false, children }: AlertDialogProps) {
+export function AlertDialog({
+  open,
+  title,
+  description,
+  actionLabel,
+  cancelLabel,
+  secondary,
+  destructive = false,
+  size = 'sm',
+  onAction,
+  onCancel,
+  busy = false,
+  children,
+}: AlertDialogProps) {
   const cancel = useRef<HTMLButtonElement>(null);
   return (
     <Dialog
       open={open}
-      onClose={() => { if (!busy) onCancel(); }}
+      onClose={() => {
+        if (!busy) onCancel();
+      }}
       title={title}
       description={description}
       size={size}
@@ -181,13 +257,23 @@ export function AlertDialog({ open, title, description, actionLabel, cancelLabel
       closeButton={false}
       dismissOnScrim={false}
       initialFocus={cancel}
-      footer={(
+      footer={
         <>
-          <Button ref={cancel} onClick={onCancel} disabled={busy}>{cancelLabel}</Button>
-          {secondary && <Button variant={secondary.destructive ? 'danger' : 'secondary'} onClick={secondary.onSelect} disabled={busy}>{secondary.label}</Button>}
-          {actionLabel !== null && <Button variant={destructive ? 'danger' : 'primary'} onClick={onAction} disabled={busy}>{actionLabel}</Button>}
+          <Button ref={cancel} onClick={onCancel} disabled={busy}>
+            {cancelLabel}
+          </Button>
+          {secondary && (
+            <Button variant={secondary.destructive ? 'danger' : 'secondary'} onClick={secondary.onSelect} disabled={busy}>
+              {secondary.label}
+            </Button>
+          )}
+          {actionLabel !== null && (
+            <Button variant={destructive ? 'danger' : 'primary'} onClick={onAction} disabled={busy}>
+              {actionLabel}
+            </Button>
+          )}
         </>
-      )}
+      }
     >
       {children}
     </Dialog>

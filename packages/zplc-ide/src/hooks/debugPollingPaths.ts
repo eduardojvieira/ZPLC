@@ -28,10 +28,7 @@ function mapDebugType(type: string): PolledDebugVariableDescriptor['type'] {
   return 'DWORD';
 }
 
-export function describePolledDebugVariable(
-  debugMap: DebugMap | null,
-  varPath: string,
-): PolledDebugVariableDescriptor | null {
+export function describePolledDebugVariable(debugMap: DebugMap | null, varPath: string): PolledDebugVariableDescriptor | null {
   if (!debugMap) {
     return null;
   }
@@ -40,14 +37,16 @@ export function describePolledDebugVariable(
   const monitored = parseMonitorKey(varPath);
   if (monitored) {
     const variable = resolveVariable(debugMap, monitored.sourceRef, monitored.variable);
-    return variable === undefined ? null : {
-      name: varPath,
-      address: variable.address,
-      type: mapDebugType(variable.type),
-      forceable: false,
-      bitOffset: variable.bitOffset,
-      maxLength: variable.type === 'STRING' && variable.size ? Math.max(0, variable.size - 3) : undefined,
-    };
+    return variable === undefined
+      ? null
+      : {
+          name: varPath,
+          address: variable.address,
+          type: mapDebugType(variable.type),
+          forceable: false,
+          bitOffset: variable.bitOffset,
+          maxLength: variable.type === 'STRING' && variable.size ? Math.max(0, variable.size - 3) : undefined,
+        };
   }
 
   const found = findVariable(debugMap, varPath);
@@ -61,10 +60,7 @@ export function describePolledDebugVariable(
     type: mapDebugType(found.varInfo.type),
     forceable: found.varInfo.region === 'IPI',
     bitOffset: found.varInfo.bitOffset,
-    maxLength:
-      found.varInfo.type === 'STRING' && found.varInfo.size
-        ? Math.max(0, found.varInfo.size - 3)
-        : undefined,
+    maxLength: found.varInfo.type === 'STRING' && found.varInfo.size ? Math.max(0, found.varInfo.size - 3) : undefined,
   };
 }
 

@@ -6,10 +6,10 @@
   "scans": 6,
   "scanMs": 30,
   "expect": [
-    {"at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 4},
-    {"at": "%QD1", "type": "DINT", "value": 30, "afterScan": 4},
-    {"at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 5},
-    {"at": "%QD1", "type": "DINT", "value": 50, "afterScan": 5},
-    {"at": "%QD1", "type": "DINT", "value": 50, "afterScan": 6}
+    { "at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 4 },
+    { "at": "%QD1", "type": "DINT", "value": 30, "afterScan": 4 },
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 5 },
+    { "at": "%QD1", "type": "DINT", "value": 50, "afterScan": 5 },
+    { "at": "%QD1", "type": "DINT", "value": 50, "afterScan": 6 }
   ]
 }

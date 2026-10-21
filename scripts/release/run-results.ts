@@ -13,11 +13,19 @@ import { dirname, join, resolve } from 'node:path';
 import { parseJunit } from '../../tools/ci/check-expected-failures';
 import type { AssetResult, CheckState, ChannelStateName, Platform, RunResults, SigningState } from './release-notes';
 
-export interface ClassifiedAsset { platform: Platform; signing: SigningState; arch?: 'x64' | 'arm64' }
+export interface ClassifiedAsset {
+  platform: Platform;
+  signing: SigningState;
+  arch?: 'x64' | 'arm64';
+}
 
 /** What kind of file a release asset is, from its name alone. */
 export function classifyAsset(name: string): ClassifiedAsset {
-  const arch = /(?:^|[-_])(x64|x86_64|amd64)(?=[-_.]|$)/.test(name) ? 'x64' : /(?:^|[-_])(arm64|aarch64)(?=[-_.]|$)/.test(name) ? 'arm64' : undefined;
+  const arch = /(?:^|[-_])(x64|x86_64|amd64)(?=[-_.]|$)/.test(name)
+    ? 'x64'
+    : /(?:^|[-_])(arm64|aarch64)(?=[-_.]|$)/.test(name)
+      ? 'arm64'
+      : undefined;
   const withArch = (asset: ClassifiedAsset): ClassifiedAsset => (arch === undefined ? asset : { ...asset, arch });
   if (/^zplc-(?:cli|mcp)-/.test(name)) return withArch({ platform: 'cli', signing: 'unsigned' });
   if (/^zplc-runtime-/.test(name)) return { platform: 'firmware', signing: 'unsigned' };
@@ -61,9 +69,12 @@ export interface CollectInput {
 function firmwareLevels(directory: string): Map<string, NonNullable<AssetResult['evidenceLevel']>> {
   const levels = new Map<string, NonNullable<AssetResult['evidenceLevel']>>();
   for (const name of readdirSync(directory).filter((candidate) => /^zplc-runtime-.+\.manifest\.json$/.test(candidate))) {
-    const manifest = JSON.parse(readFileSync(join(directory, name), 'utf8')) as { images?: Array<{ file?: string; evidenceLevel?: string }> };
+    const manifest = JSON.parse(readFileSync(join(directory, name), 'utf8')) as {
+      images?: Array<{ file?: string; evidenceLevel?: string }>;
+    };
     for (const image of manifest.images ?? []) {
-      if (typeof image.file === 'string' && (image.evidenceLevel === 'cross-build' || image.evidenceLevel === 'human-hil')) levels.set(image.file, image.evidenceLevel);
+      if (typeof image.file === 'string' && (image.evidenceLevel === 'cross-build' || image.evidenceLevel === 'human-hil'))
+        levels.set(image.file, image.evidenceLevel);
     }
   }
   return levels;
@@ -93,19 +104,40 @@ export function collectRunResults(input: CollectInput): RunResults {
       // the checks that the job of this kind of file runs, and only those
       const checks = ((): AssetResult['checks'] => {
         switch (platform) {
-          case 'macos': return { signature: state('build-macos'), launch: state('build-macos'), install: 'not-run' };
-          case 'windows': return { signature: 'not-run', launch: state('build-windows'), install: 'not-run' };
-          case 'linux': return { signature: 'not-run', launch: state('build-linux'), install: /\.(?:deb|rpm)$/.test(name) ? state('build-linux') : 'not-run' };
-          case 'cli': return { signature: 'not-run', launch: state('build-binaries'), install: 'not-run' };
-          default: return { signature: 'not-run', launch: 'not-run', install: 'not-run' };
+          case 'macos':
+            return { signature: state('build-macos'), launch: state('build-macos'), install: 'not-run' };
+          case 'windows':
+            return { signature: 'not-run', launch: state('build-windows'), install: 'not-run' };
+          case 'linux':
+            return {
+              signature: 'not-run',
+              launch: state('build-linux'),
+              install: /\.(?:deb|rpm)$/.test(name) ? state('build-linux') : 'not-run',
+            };
+          case 'cli':
+            return { signature: 'not-run', launch: state('build-binaries'), install: 'not-run' };
+          default:
+            return { signature: 'not-run', launch: 'not-run', install: 'not-run' };
         }
       })();
-      const job = platform === 'cli' ? `build-binaries${arch ? ` (${/-(linux|mac|win)-/.exec(name)?.[1] ?? '?'}-${arch})` : ''}`
-        : platform === 'firmware' ? 'build-firmware'
-          : platform === 'metadata' ? 'prepare-release-evidence'
-            : `build-${platform}${arch ? ` (${arch})` : ''}`;
+      const job =
+        platform === 'cli'
+          ? `build-binaries${arch ? ` (${/-(linux|mac|win)-/.exec(name)?.[1] ?? '?'}-${arch})` : ''}`
+          : platform === 'firmware'
+            ? 'build-firmware'
+            : platform === 'metadata'
+              ? 'prepare-release-evidence'
+              : `build-${platform}${arch ? ` (${arch})` : ''}`;
       const evidenceLevel = platform === 'firmware' ? levels.get(name) : undefined;
-      assets.set(name, { name, platform, job, runUrl: input.runUrl, signing, ...(evidenceLevel === undefined ? {} : { evidenceLevel }), checks });
+      assets.set(name, {
+        name,
+        platform,
+        job,
+        runUrl: input.runUrl,
+        signing,
+        ...(evidenceLevel === undefined ? {} : { evidenceLevel }),
+        checks,
+      });
     }
   }
 
@@ -119,7 +151,9 @@ export function collectRunResults(input: CollectInput): RunResults {
     commit: input.commit,
     runUrl: input.runUrl,
     ...(status.completeness === undefined ? {} : { completeness: status.completeness }),
-    jobs: Object.entries(input.needs).map(([job, { result }]) => ({ job, result })).sort((a, b) => a.job.localeCompare(b.job)),
+    jobs: Object.entries(input.needs)
+      .map(([job, { result }]) => ({ job, result }))
+      .sort((a, b) => a.job.localeCompare(b.job)),
     assets: [...assets.values()].sort((a, b) => a.name.localeCompare(b.name)),
     suites,
     knownFailures: input.expectedFailures.map((entry) => ({ id: entry.test, summary: entry.reason, tracking: entry.requirement })),
@@ -134,7 +168,10 @@ function main(argv: string[]): number {
   const options = new Map<string, string[]>();
   for (let index = 0; index < argv.length; index += 2) {
     const flag = argv[index];
-    if (!flag?.startsWith('--') || argv[index + 1] === undefined) { console.error(`run-results: bad argument ${flag}`); return 2; }
+    if (!flag?.startsWith('--') || argv[index + 1] === undefined) {
+      console.error(`run-results: bad argument ${flag}`);
+      return 2;
+    }
     options.set(flag, [...(options.get(flag) ?? []), argv[index + 1]!]);
   }
   const one = (flag: string, fallback?: string): string => {

@@ -43,9 +43,9 @@ extern "C" {
  * but consume more serial bandwidth.
  */
 typedef enum {
-    HIL_MODE_OFF = 0,      /**< No debug output (production mode) */
-    HIL_MODE_SUMMARY = 1,  /**< Per-cycle summaries only (~100-500 B/s) */
-    HIL_MODE_VERBOSE = 2   /**< Per-opcode trace (~5-10 KB/s) */
+  HIL_MODE_OFF = 0,     /**< No debug output (production mode) */
+  HIL_MODE_SUMMARY = 1, /**< Per-cycle summaries only (~100-500 B/s) */
+  HIL_MODE_VERBOSE = 2  /**< Per-opcode trace (~5-10 KB/s) */
 } hil_mode_t;
 
 /* ============================================================================
@@ -147,8 +147,7 @@ void hil_trace_fb(const char *name, uint8_t id, bool q, int32_t et_or_cv);
  * @param us        Execution time in microseconds
  * @param overrun   True if task overran its period
  */
-void hil_trace_task(uint8_t id, uint32_t start_ms, uint32_t end_ms,
-                    uint32_t us, bool overrun);
+void hil_trace_task(uint8_t id, uint32_t start_ms, uint32_t end_ms, uint32_t us, bool overrun);
 
 /**
  * @brief Trace a VM cycle completion.
@@ -256,22 +255,22 @@ const char *hil_error_name(uint8_t code);
  * The compiler will optimize these away completely.
  */
 
-#define hil_set_mode(mode)           ((void)0)
-#define hil_get_mode()               (HIL_MODE_OFF)
-#define hil_set_shell(sh)            ((void)0)
+#define hil_set_mode(mode) ((void)0)
+#define hil_get_mode() (HIL_MODE_OFF)
+#define hil_set_shell(sh) ((void)0)
 
-#define hil_trace_opcode(op, pc, sp, tos)                  ((void)0)
-#define hil_trace_fb(name, id, q, et_or_cv)                ((void)0)
-#define hil_trace_task(id, start, end, us, ovr)            ((void)0)
-#define hil_trace_cycle(n, us, tasks)                      ((void)0)
-#define hil_trace_error(code, msg, pc)                     ((void)0)
-#define hil_trace_break(pc)                                ((void)0)
-#define hil_trace_watch(addr, type, val)                   ((void)0)
-#define hil_send_ready(fw, caps)                           ((void)0)
-#define hil_send_ack(cmd, val, ok, err)                    ((void)0)
+#define hil_trace_opcode(op, pc, sp, tos) ((void)0)
+#define hil_trace_fb(name, id, q, et_or_cv) ((void)0)
+#define hil_trace_task(id, start, end, us, ovr) ((void)0)
+#define hil_trace_cycle(n, us, tasks) ((void)0)
+#define hil_trace_error(code, msg, pc) ((void)0)
+#define hil_trace_break(pc) ((void)0)
+#define hil_trace_watch(addr, type, val) ((void)0)
+#define hil_send_ready(fw, caps) ((void)0)
+#define hil_send_ack(cmd, val, ok, err) ((void)0)
 
-#define hil_opcode_name(op)          ("???")
-#define hil_error_name(code)         ("UNKNOWN")
+#define hil_opcode_name(op) ("???")
+#define hil_error_name(code) ("UNKNOWN")
 
 #endif /* CONFIG_ZPLC_HIL_DEBUG */
 

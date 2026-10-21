@@ -2,24 +2,24 @@
    same letters. Provenance and licences: src/assets/fonts/FONTS.md. The families are the `--font-sans` and `--font-mono`
    tokens of tokens.ts. */
 @font-face {
-  font-family: 'Inter';
-  src: url('../assets/fonts/Inter-Variable-latin.woff2') format('woff2');
+  font-family: "Inter";
+  src: url("../assets/fonts/Inter-Variable-latin.woff2") format("woff2");
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'JetBrains Mono';
-  src: url('../assets/fonts/JetBrainsMono-Regular-latin.woff2') format('woff2');
+  font-family: "JetBrains Mono";
+  src: url("../assets/fonts/JetBrainsMono-Regular-latin.woff2") format("woff2");
   font-weight: 400 500;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'JetBrains Mono';
-  src: url('../assets/fonts/JetBrainsMono-Bold-latin.woff2') format('woff2');
+  font-family: "JetBrains Mono";
+  src: url("../assets/fonts/JetBrainsMono-Bold-latin.woff2") format("woff2");
   font-weight: 600 800;
   font-style: normal;
   font-display: swap;

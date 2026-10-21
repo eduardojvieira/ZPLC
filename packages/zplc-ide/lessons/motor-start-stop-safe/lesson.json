@@ -5,16 +5,9 @@
   "order": 1,
   "module": 2,
   "level": "foundation",
-  "prerequisites": [
-    "set-reset-alarm-latch"
-  ],
-  "languages": [
-    "ST"
-  ],
-  "tracks": [
-    "simulation",
-    "hardware"
-  ],
+  "prerequisites": ["set-reset-alarm-latch"],
+  "languages": ["ST"],
+  "tracks": ["simulation", "hardware"],
   "unsupported": {},
   "plant": null,
   "estimatedMinutes": 20,

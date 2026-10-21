@@ -7,10 +7,7 @@ import { NativeSimulationSupervisor } from '../../shared/nativeSimulationSupervi
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import type { ScenarioRuntimePort } from '../test-engine';
 
-type NativeScenarioAdapter = Pick<
-  NativeAdapter,
-  'loadProgram' | 'reset' | 'scenarioStep' | 'listForcedValues' | 'peek' | 'poke'
->;
+type NativeScenarioAdapter = Pick<NativeAdapter, 'loadProgram' | 'reset' | 'scenarioStep' | 'listForcedValues' | 'peek' | 'poke'>;
 
 type NativeScenarioLifecycleAdapter = NativeScenarioAdapter & {
   connect: () => Promise<void>;
@@ -68,7 +65,7 @@ export function createNativeScenarioRuntime(adapter: NativeScenarioAdapter): Sce
     },
     readOutput: async (address, bitOffset) => {
       validateBit(address, bitOffset, OPI_START, OPI_END, 'OPI');
-      return (await readByte(adapter, address) & (1 << bitOffset)) !== 0;
+      return ((await readByte(adapter, address)) & (1 << bitOffset)) !== 0;
     },
   };
 }
@@ -77,7 +74,11 @@ function toError(error: unknown): Error {
   return error instanceof Error ? error : new Error(String(error));
 }
 
-async function cleanupSession(adapter: NativeScenarioLifecycleAdapter, supervisor: Pick<NativeSimulationSupervisor, 'stopSession'>, persistRoot: string): Promise<void> {
+async function cleanupSession(
+  adapter: NativeScenarioLifecycleAdapter,
+  supervisor: Pick<NativeSimulationSupervisor, 'stopSession'>,
+  persistRoot: string,
+): Promise<void> {
   let failure: Error | undefined;
   for (const operation of [
     () => adapter.disconnect(),
@@ -119,24 +120,29 @@ export async function createNativeScenarioSession(
     await rm(persistRoot, { recursive: true, force: true });
     throw cancelled();
   }
-  const lifecycle = options.createLifecycle?.(persistRoot) ?? (() => {
-    const supervisor = new NativeSimulationSupervisor({
-      clientName: 'zplc-cli',
-      clientVersion: productManifest.version,
-      environment: {
-        ...withNativeCommunicationEnvironment(environment),
-        ZPLC_PERSIST_ROOT: persistRoot,
-        ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK: '1',
-      },
-    });
-    return { supervisor, adapter: new NativeAdapter(supervisor) };
-  })();
+  const lifecycle =
+    options.createLifecycle?.(persistRoot) ??
+    (() => {
+      const supervisor = new NativeSimulationSupervisor({
+        clientName: 'zplc-cli',
+        clientVersion: productManifest.version,
+        environment: {
+          ...withNativeCommunicationEnvironment(environment),
+          ZPLC_PERSIST_ROOT: persistRoot,
+          ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK: '1',
+        },
+      });
+      return { supervisor, adapter: new NativeAdapter(supervisor) };
+    })();
   const { supervisor, adapter } = lifecycle;
   let closePromise: Promise<void> | undefined;
-  const closeOnAbort = () => { void close().catch(() => undefined); };
+  const closeOnAbort = () => {
+    void close().catch(() => undefined);
+  };
   const close = () => {
-    closePromise ??= cleanupSession(adapter, supervisor, persistRoot)
-      .finally(() => options.signal?.removeEventListener('abort', closeOnAbort));
+    closePromise ??= cleanupSession(adapter, supervisor, persistRoot).finally(() =>
+      options.signal?.removeEventListener('abort', closeOnAbort),
+    );
     return closePromise;
   };
   options.signal?.addEventListener('abort', closeOnAbort, { once: true });

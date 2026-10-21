@@ -62,7 +62,14 @@ export class MemoryAccessError extends Error {
   /** Every region the device has, for an address outside all of them. */
   readonly validRanges: readonly AllowedRegion[];
 
-  constructor(kind: AccessKind, address: number, length: number, reason: AccessRefusal, region: AllowedRegion | null, regions: readonly AllowedRegion[]) {
+  constructor(
+    kind: AccessKind,
+    address: number,
+    length: number,
+    reason: AccessRefusal,
+    region: AllowedRegion | null,
+    regions: readonly AllowedRegion[],
+  ) {
     super(describe(kind, address, length, reason, region, regions));
     this.name = 'MemoryAccessError';
     this.kind = kind;
@@ -77,8 +84,17 @@ export class MemoryAccessError extends Error {
 const hex = (value: number) => `0x${value.toString(16).toUpperCase().padStart(4, '0')}`;
 const span = (region: AllowedRegion) => `${region.name.toUpperCase()} ${hex(region.start)} to ${hex(region.end - 1)}`;
 
-function describe(kind: AccessKind, address: number, length: number, reason: AccessRefusal, region: AllowedRegion | null, regions: readonly AllowedRegion[]): string {
-  const asked = `${kind === 'read' ? 'Cannot read' : kind === 'write' ? 'Cannot write' : 'Cannot force'} ${length} byte${length === 1 ? '' : 's'} at ${hex(address)}`;
+function describe(
+  kind: AccessKind,
+  address: number,
+  length: number,
+  reason: AccessRefusal,
+  region: AllowedRegion | null,
+  regions: readonly AllowedRegion[],
+): string {
+  const asked = `${kind === 'read' ? 'Cannot read' : kind === 'write' ? 'Cannot write' : 'Cannot force'} ${length} byte${
+    length === 1 ? '' : 's'
+  } at ${hex(address)}`;
   switch (reason) {
     case 'length':
       return `${asked}: the length has to be at least one byte and the access has to end inside the 16-bit address space`;

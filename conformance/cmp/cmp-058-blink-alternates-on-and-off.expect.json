@@ -5,16 +5,14 @@
   "note": "Not an IEC block: the contract is the documented one of stdlib/generators.ts: Q is TRUE for T_ON and FALSE for T_OFF and repeats; with 30 ms and 20 ms Q is TRUE from 0 to 29 ms, FALSE from 30 to 49 ms, TRUE from 50 ms",
   "scans": 11,
   "scanMs": 10,
-  "inputs": [
-    {"at": "%IX0.0", "type": "BOOL", "value": true, "beforeScan": 1}
-  ],
+  "inputs": [{ "at": "%IX0.0", "type": "BOOL", "value": true, "beforeScan": 1 }],
   "expect": [
-    {"at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 1},
-    {"at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 3},
-    {"at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 4},
-    {"at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 5},
-    {"at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 6},
-    {"at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 8},
-    {"at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 9}
+    { "at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 1 },
+    { "at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 3 },
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 4 },
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 5 },
+    { "at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 6 },
+    { "at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 8 },
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 9 }
   ]
 }

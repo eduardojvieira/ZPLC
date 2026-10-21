@@ -21,7 +21,11 @@ type Outcome =
   | { status: 'refused'; reason: string; codes: readonly string[] }
   | { status: 'error' };
 
-interface Check { lessonId: string; projectSession: number; outcome: Outcome }
+interface Check {
+  lessonId: string;
+  projectSession: number;
+  outcome: Outcome;
+}
 
 export function useLessonCheck(onRecord: (record: GradeRecord) => void) {
   const bridge = shownProjectBridge(window.electronAPI?.workspaceTests);
@@ -49,14 +53,21 @@ export function useLessonCheck(onRecord: (record: GradeRecord) => void) {
         if (answer?.ok) outcome = { status: 'done', record: answer.record };
         else if (answer) outcome = { status: 'refused', reason: answer.reason, codes: answer.codes };
       }
-    } catch { /* the outcome stays an error: the run was cancelled, refused or the host is gone */ }
+    } catch {
+      /* the outcome stays an error: the run was cancelled, refused or the host is gone */
+    }
     busy.current = false;
-    if (useIDEStore.getState().projectSession !== session) { setCheck(null); return; }
+    if (useIDEStore.getState().projectSession !== session) {
+      setCheck(null);
+      return;
+    }
     setCheck({ lessonId, projectSession: session, outcome });
     if (typeof outcome === 'object' && outcome.status === 'done') onRecord(outcome.record);
   };
 
-  const cancel = (): void => { void bridge?.cancel().catch(() => undefined); };
+  const cancel = (): void => {
+    void bridge?.cancel().catch(() => undefined);
+  };
 
   /** The grade of the last check of this lesson in this project, in the shape the panel already shows. */
   const gradeOf = (lessonId: string): LearnLessonGrade | undefined => {
@@ -73,8 +84,14 @@ export function useLessonCheck(onRecord: (record: GradeRecord) => void) {
     available,
     running: (lessonId: string) => current(lessonId) === 'running',
     /** Why the last check of this lesson gave no grade, when it gave none. */
-    refusal: (lessonId: string) => { const outcome = current(lessonId); return typeof outcome === 'object' && outcome.status === 'refused' ? outcome : undefined; },
-    failed: (lessonId: string) => { const outcome = current(lessonId); return typeof outcome === 'object' && outcome.status === 'error'; },
+    refusal: (lessonId: string) => {
+      const outcome = current(lessonId);
+      return typeof outcome === 'object' && outcome.status === 'refused' ? outcome : undefined;
+    },
+    failed: (lessonId: string) => {
+      const outcome = current(lessonId);
+      return typeof outcome === 'object' && outcome.status === 'error';
+    },
     gradeOf,
     canRun: isProjectOpen && !unsaved,
     unsaved,

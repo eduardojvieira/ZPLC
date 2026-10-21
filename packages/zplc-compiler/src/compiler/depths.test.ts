@@ -17,7 +17,11 @@ import {
 } from './index.ts';
 import type { ProgramSource } from './index.ts';
 
-const config = { name: 'D', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic' as const, interval: 10, priority: 1, programs: ['P'] }] };
+const config = {
+    name: 'D',
+    version: '1.0.0',
+    tasks: [{ name: 'Main', trigger: 'cyclic' as const, interval: 10, priority: 1, programs: ['P'] }],
+};
 const source = (content: string): ProgramSource[] => [{ name: 'P', content, sourceRef: 'src/p.st' }];
 
 /** `a + (a + (a + ... ))` with `depth` operands: the right operand is evaluated while the left waits. */
@@ -35,7 +39,9 @@ describe('the depth of a task is measured and recorded in the artifact (CMP-050)
         expect(deep.tasks[0]!.stackSize).toBeGreaterThanOrEqual(30);
         for (const result of [shallow, deep]) {
             const recorded = readArtifact(result.zplcFile).tasks;
-            expect(recorded.map((task) => [task.stackSize, task.callDepth])).toEqual(result.tasks.map((task) => [task.stackSize, task.callDepth]));
+            expect(recorded.map((task) => [task.stackSize, task.callDepth])).toEqual(
+                result.tasks.map((task) => [task.stackSize, task.callDepth]),
+            );
         }
     });
 
@@ -68,7 +74,7 @@ describe('a depth over the limit of the target fails the build (CMP-050)', () =>
     });
 
     test('the limit is the one of the target profile', () => {
-        const profile = { workSize: 0x2000, retainSize: 0x1000, codeSizeMax: 0xB000, stackMaxDepth: 8, callStackMax: 32 };
+        const profile = { workSize: 0x2000, retainSize: 0x1000, codeSizeMax: 0xb000, stackMaxDepth: 8, callStackMax: 32 };
         expect(() => compileMultiTaskProject(config, source(nested(4)), { memoryProfile: profile })).not.toThrow();
         expect(() => compileMultiTaskProject(config, source(nested(12)), { memoryProfile: profile })).toThrow(/holds 8/);
     });
@@ -80,9 +86,11 @@ describe('a depth over the limit of the target fails the build (CMP-050)', () =>
             'FUNCTION F3 : DINT\n    F3 := F2() + 1;\nEND_FUNCTION',
             'PROGRAM P\nVAR r AT %QD0 : DINT; END_VAR\n    r := F3();\nEND_PROGRAM',
         ].join('\n');
-        const profile = { workSize: 0x2000, retainSize: 0x1000, codeSizeMax: 0xB000, callStackMax: 2 };
+        const profile = { workSize: 0x2000, retainSize: 0x1000, codeSizeMax: 0xb000, callStackMax: 2 };
         expect(() => compileMultiTaskProject(config, source(chain))).not.toThrow();
-        expect(() => compileMultiTaskProject(config, source(chain), { memoryProfile: profile })).toThrow(/nests calls \d+ deep and the target's call stack holds 2/);
+        expect(() => compileMultiTaskProject(config, source(chain), { memoryProfile: profile })).toThrow(
+            /nests calls \d+ deep and the target's call stack holds 2/,
+        );
     });
 
     test('a file of one program is checked against the same limit', () => {
@@ -90,7 +98,7 @@ describe('a depth over the limit of the target fails the build (CMP-050)', () =>
     });
 
     test('a profile that names a depth the VM cannot have is refused', () => {
-        const profile = { workSize: 0x2000, retainSize: 0x1000, codeSizeMax: 0xB000, stackMaxDepth: 100000 };
+        const profile = { workSize: 0x2000, retainSize: 0x1000, codeSizeMax: 0xb000, stackMaxDepth: 100000 };
         expect(() => compileMultiTaskProject(config, source(nested(2)), { memoryProfile: profile })).toThrow();
     });
 });

@@ -7,9 +7,20 @@
 
 export type Platform = 'darwin' | 'win32' | 'linux';
 
-export interface KeyChord { mod: boolean; shift: boolean; alt: boolean; key: string }
+export interface KeyChord {
+  mod: boolean;
+  shift: boolean;
+  alt: boolean;
+  key: string;
+}
 
-export interface KeyEventLike { key: string; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean; altKey: boolean }
+export interface KeyEventLike {
+  key: string;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  shiftKey: boolean;
+  altKey: boolean;
+}
 
 const MODIFIER_KEYS: ReadonlySet<string> = new Set(['Control', 'Shift', 'Alt', 'Meta', 'AltGraph', 'CapsLock']);
 
@@ -28,7 +39,10 @@ export function parseChord(text: string): KeyChord {
 
 /** The chords of a shortcut, in the order they are pressed. */
 export function parseShortcut(shortcut: string): KeyChord[] {
-  return shortcut.split(' ').filter((part) => part !== '').map(parseChord);
+  return shortcut
+    .split(' ')
+    .filter((part) => part !== '')
+    .map(parseChord);
 }
 
 /**
@@ -42,7 +56,11 @@ export function chordMatches(chord: KeyChord, event: KeyEventLike): boolean {
   return key === chord.key && mod === chord.mod && event.shiftKey === chord.shift && event.altKey === chord.alt;
 }
 
-export interface KeyNames { ctrl: string; shift: string; alt: string }
+export interface KeyNames {
+  ctrl: string;
+  shift: string;
+  alt: string;
+}
 export const ENGLISH_KEY_NAMES: KeyNames = { ctrl: 'Ctrl', shift: 'Shift', alt: 'Alt' };
 
 const MAC_SYMBOLS = { mod: '⌘', shift: '⇧', alt: '⌥' } as const;
@@ -50,12 +68,17 @@ const MAC_SYMBOLS = { mod: '⌘', shift: '⇧', alt: '⌥' } as const;
 /** One chord as the person reads it: `Ctrl+Shift+P`, or `⌘⇧P` on macOS. */
 export function formatChord(chord: KeyChord, platform: Platform, names: KeyNames = ENGLISH_KEY_NAMES): string {
   const key = chord.key.length === 1 ? chord.key.toUpperCase() : chord.key;
-  if (platform === 'darwin') return `${chord.alt ? MAC_SYMBOLS.alt : ''}${chord.shift ? MAC_SYMBOLS.shift : ''}${chord.mod ? MAC_SYMBOLS.mod : ''}${key}`;
-  return [chord.mod ? names.ctrl : '', chord.shift ? names.shift : '', chord.alt ? names.alt : '', key].filter((part) => part !== '').join('+');
+  if (platform === 'darwin')
+    return `${chord.alt ? MAC_SYMBOLS.alt : ''}${chord.shift ? MAC_SYMBOLS.shift : ''}${chord.mod ? MAC_SYMBOLS.mod : ''}${key}`;
+  return [chord.mod ? names.ctrl : '', chord.shift ? names.shift : '', chord.alt ? names.alt : '', key]
+    .filter((part) => part !== '')
+    .join('+');
 }
 
 export function formatShortcut(shortcut: string, platform: Platform, names?: KeyNames): string {
-  return parseShortcut(shortcut).map((chord) => formatChord(chord, platform, names)).join(' ');
+  return parseShortcut(shortcut)
+    .map((chord) => formatChord(chord, platform, names))
+    .join(' ');
 }
 
 /** The Electron accelerator of a single-chord shortcut; a two-step shortcut has none, because a menu cannot hold one. */
@@ -67,7 +90,10 @@ export function toAccelerator(shortcut: string): string | null {
   return [chord.mod ? 'CmdOrCtrl' : '', chord.shift ? 'Shift' : '', chord.alt ? 'Alt' : '', key].filter((part) => part !== '').join('+');
 }
 
-export interface ShortcutBinding<Id extends string = string> { id: Id; chords: readonly KeyChord[] }
+export interface ShortcutBinding<Id extends string = string> {
+  id: Id;
+  chords: readonly KeyChord[];
+}
 
 export interface ShortcutResult<Id extends string = string> {
   /** The command whose last chord this event was. */
@@ -90,14 +116,20 @@ export const CHORD_TIMEOUT_MS = 1500;
  * waits for the next; a different key, or a pause longer than `CHORD_TIMEOUT_MS`, forgets it and the event is read again
  * as the start of a shortcut. Pressing a modifier alone changes nothing.
  */
-export function createShortcutMatcher<Id extends string>(bindings: readonly ShortcutBinding<Id>[], now: () => number = Date.now): ShortcutMatcher<Id> {
+export function createShortcutMatcher<Id extends string>(
+  bindings: readonly ShortcutBinding<Id>[],
+  now: () => number = Date.now,
+): ShortcutMatcher<Id> {
   let pending: { candidates: readonly ShortcutBinding<Id>[]; step: number; at: number } | null = null;
 
   const advance = (candidates: readonly ShortcutBinding<Id>[], step: number, event: KeyEventLike): ShortcutResult<Id> | null => {
     const matching = candidates.filter((binding) => binding.chords[step] !== undefined && chordMatches(binding.chords[step]!, event));
     if (matching.length === 0) return null;
     const finished = matching.find((binding) => binding.chords.length === step + 1);
-    if (finished) { pending = null; return { id: finished.id, consumed: true }; }
+    if (finished) {
+      pending = null;
+      return { id: finished.id, consumed: true };
+    }
     pending = { candidates: matching, step: step + 1, at: now() };
     return { id: null, consumed: true };
   };
@@ -113,6 +145,8 @@ export function createShortcutMatcher<Id extends string>(bindings: readonly Shor
       }
       return advance(bindings, 0, event) ?? { id: null, consumed: false };
     },
-    reset() { pending = null; },
+    reset() {
+      pending = null;
+    },
   };
 }

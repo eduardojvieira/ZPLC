@@ -30,7 +30,11 @@ export class ZipError extends Error {
 }
 
 /** A file, or a folder (its path ends in "/"); paths are relative and separated by "/". */
-export interface ZipEntry { path: string; kind: 'file' | 'directory'; bytes: Uint8Array }
+export interface ZipEntry {
+  path: string;
+  kind: 'file' | 'directory';
+  bytes: Uint8Array;
+}
 
 export const ZIP_LIMITS = {
   maxEntries: 4096,
@@ -67,10 +71,12 @@ const encoder = new TextEncoder();
 /** The archive of these entries, in path order. Paths are written as given; the reader is where they are judged. */
 export function writeZip(entries: readonly ZipEntry[], limits: ZipLimits = ZIP_LIMITS): Uint8Array {
   if (entries.length > limits.maxEntries) throw new ZipError('too-many');
-  const named = entries.map((entry) => {
-    const path = entry.kind === 'directory' && !entry.path.endsWith('/') ? `${entry.path}/` : entry.path;
-    return { entry, name: encoder.encode(path) };
-  }).sort((left, right) => Buffer.compare(left.name, right.name));
+  const named = entries
+    .map((entry) => {
+      const path = entry.kind === 'directory' && !entry.path.endsWith('/') ? `${entry.path}/` : entry.path;
+      return { entry, name: encoder.encode(path) };
+    })
+    .sort((left, right) => Buffer.compare(left.name, right.name));
 
   let total = 22;
   for (const { entry, name } of named) {
@@ -132,9 +138,18 @@ export function writeZip(entries: readonly ZipEntry[], limits: ZipLimits = ZIP_L
 function unsafeName(name: string, directory: boolean): boolean {
   const path = directory ? name.slice(0, -1) : name;
   if (path === '' || path.length > MAX_PATH_CHARS || path.startsWith('/') || /^[A-Za-z]:/.test(path) || path.includes('\\')) return true;
-  return path.split('/').some((segment) =>
-    segment === '' || segment === '.' || segment === '..' || segment.length > MAX_SEGMENT_CHARS
-    || segment.includes(':') || [...segment].some((char) => char.charCodeAt(0) < 0x20) || /[. ]$/.test(segment));
+  return path
+    .split('/')
+    .some(
+      (segment) =>
+        segment === '' ||
+        segment === '.' ||
+        segment === '..' ||
+        segment.length > MAX_SEGMENT_CHARS ||
+        segment.includes(':') ||
+        [...segment].some((char) => char.charCodeAt(0) < 0x20) ||
+        /[. ]$/.test(segment),
+    );
 }
 
 /** Folders and files that macOS adds to an archive of a folder and that are not part of the project. */
@@ -145,7 +160,10 @@ export function readZip(bytes: Uint8Array, limits: ZipLimits = ZIP_LIMITS): ZipE
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   let end = -1;
   for (let at = bytes.length - 22; at >= Math.max(0, bytes.length - 22 - 0xffff); at -= 1) {
-    if (view.getUint32(at, true) === END) { end = at; break; }
+    if (view.getUint32(at, true) === END) {
+      end = at;
+      break;
+    }
   }
   if (end < 0) throw new ZipError('not-a-zip');
   const diskNumber = view.getUint16(end + 4, true);

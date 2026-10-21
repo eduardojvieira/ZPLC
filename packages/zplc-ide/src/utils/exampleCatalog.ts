@@ -37,7 +37,9 @@ export interface ExampleEntry {
   showOnWelcome: boolean;
 }
 
-/** The groups of the Welcome screen; their titles and lines are catalog keys, so they follow the language of the interface (UX-022, UX-029). */
+/**
+ * The groups of the Welcome screen; their titles and lines are catalog keys, so they follow the language of the interface (UX-022, UX-029).
+ */
 export const EXAMPLE_GROUPS: ReadonlyArray<{ id: ExampleGroupId; titleKey: MessageKey; blurbKey: MessageKey | null }> = [
   { id: 'first-steps', titleKey: 'welcome.group.first-steps.title', blurbKey: 'welcome.group.first-steps.blurb' },
   { id: 'motors', titleKey: 'welcome.group.motors.title', blurbKey: 'welcome.group.motors.blurb' },
@@ -63,10 +65,17 @@ const BOARD_KEYS: Readonly<Record<string, MessageKey>> = {
 /** The name of a manifest board id; an id the catalogs do not know is shown as written. */
 export const boardName = (board: string): string => (board in BOARD_KEYS ? t(BOARD_KEYS[board]!) : board);
 
-/** An entry whose title and summary are the catalog keys `examples.<folder>.title` and `.summary` (src/i18n/catalog/examples.ts), read in the language of the moment. */
+/**
+ * An entry whose title and summary are the catalog keys `examples.<folder>.title` and `.summary` (src/i18n/catalog/examples.ts), read in
+ * the language of the moment.
+ */
 const example = (id: string, rest: Omit<ExampleEntry, 'title' | 'summary'>): ExampleEntry => ({
-  get title() { return t(`examples.${id}.title` as MessageKey); },
-  get summary() { return t(`examples.${id}.summary` as MessageKey); },
+  get title() {
+    return t(`examples.${id}.title` as MessageKey);
+  },
+  get summary() {
+    return t(`examples.${id}.summary` as MessageKey);
+  },
   ...rest,
 });
 
@@ -113,24 +122,76 @@ export const EXAMPLE_CATALOG: Readonly<Record<string, ExampleEntry>> = {
   // Boards and hardware
   verify_my_board: example('verify_my_board', { group: 'boards', level: 'beginner', languages: ['ST'], showOnWelcome: true }),
   pico_blinky: example('pico_blinky', { group: 'boards', level: 'beginner', languages: ['ST'], board: 'rpi_pico', showOnWelcome: true }),
-  pico_blinky_ton: example('pico_blinky_ton', { group: 'boards', level: 'beginner', languages: ['ST'], board: 'rpi_pico', showOnWelcome: true }),
-  pico_blinky_blink: example('pico_blinky_blink', { group: 'boards', level: 'beginner', languages: ['ST'], board: 'rpi_pico', showOnWelcome: true }),
-  esp32s3_blinky: example('esp32s3_blinky', { group: 'boards', level: 'beginner', languages: ['ST'], board: 'esp32s3_devkitc', showOnWelcome: true }),
-  opta_led_chaser: example('opta_led_chaser', { group: 'boards', level: 'intermediate', languages: ['ST'], board: 'arduino_opta_wifi', showOnWelcome: true }),
-  opta_led_chaser_ld: example('opta_led_chaser_ld', { group: 'boards', level: 'intermediate', languages: ['LD'], board: 'arduino_opta_wifi', showOnWelcome: true }),
-  multitask_demo: example('multitask_demo', { group: 'boards', level: 'intermediate', languages: ['ST'], board: 'rpi_pico', noScenario: true, showOnWelcome: true }),
-  analog_test: example('analog_test', { group: 'boards', level: 'intermediate', languages: ['ST'], board: 'rpi_pico', showOnWelcome: true }),
+  pico_blinky_ton: example('pico_blinky_ton', {
+    group: 'boards',
+    level: 'beginner',
+    languages: ['ST'],
+    board: 'rpi_pico',
+    showOnWelcome: true,
+  }),
+  pico_blinky_blink: example('pico_blinky_blink', {
+    group: 'boards',
+    level: 'beginner',
+    languages: ['ST'],
+    board: 'rpi_pico',
+    showOnWelcome: true,
+  }),
+  esp32s3_blinky: example('esp32s3_blinky', {
+    group: 'boards',
+    level: 'beginner',
+    languages: ['ST'],
+    board: 'esp32s3_devkitc',
+    showOnWelcome: true,
+  }),
+  opta_led_chaser: example('opta_led_chaser', {
+    group: 'boards',
+    level: 'intermediate',
+    languages: ['ST'],
+    board: 'arduino_opta_wifi',
+    showOnWelcome: true,
+  }),
+  opta_led_chaser_ld: example('opta_led_chaser_ld', {
+    group: 'boards',
+    level: 'intermediate',
+    languages: ['LD'],
+    board: 'arduino_opta_wifi',
+    showOnWelcome: true,
+  }),
+  multitask_demo: example('multitask_demo', {
+    group: 'boards',
+    level: 'intermediate',
+    languages: ['ST'],
+    board: 'rpi_pico',
+    noScenario: true,
+    showOnWelcome: true,
+  }),
+  analog_test: example('analog_test', {
+    group: 'boards',
+    level: 'intermediate',
+    languages: ['ST'],
+    board: 'rpi_pico',
+    showOnWelcome: true,
+  }),
 
   // Test fixtures, kept out of the learner's list
   kitchen_sink: example('kitchen_sink', { group: 'fixtures', level: 'advanced', languages: ['ST'], showOnWelcome: false }),
-  pico_persist_test: example('pico_persist_test', { group: 'fixtures', level: 'intermediate', languages: ['ST'], board: 'rpi_pico', noScenario: true, showOnWelcome: false }),
+  pico_persist_test: example('pico_persist_test', {
+    group: 'fixtures',
+    level: 'intermediate',
+    languages: ['ST'],
+    board: 'rpi_pico',
+    noScenario: true,
+    showOnWelcome: false,
+  }),
 };
 
 /**
  * The folders that the lesson packages use as their starter or their reference solution, read from the generated lesson
  * index (LRN-027): adding a lesson adds its projects here with no change to this file.
  */
-export function lessonProjectIds(lessons: ReadonlyArray<{ starter: { project: string }; solution: { project: string } }> = LESSON_INDEX.lessons): ReadonlySet<string> {
+export function lessonProjectIds(
+  lessons: ReadonlyArray<{ starter: { project: string }; solution: { project: string } }> = LESSON_INDEX.lessons,
+): ReadonlySet<string> {
   return new Set(lessons.flatMap((lesson) => [lesson.starter.project, lesson.solution.project]));
 }
 
@@ -146,34 +207,64 @@ export interface ExampleListing {
   noScenario?: string;
 }
 
-export interface ExampleSection { id: ExampleGroupId; title: string; blurb: string; examples: ExampleListing[] }
+export interface ExampleSection {
+  id: ExampleGroupId;
+  title: string;
+  blurb: string;
+  examples: ExampleListing[];
+}
 
 /**
  * Turns the projects the app bundles into the sections of the Welcome screen: the groups of the catalogue in order, then
  * "More examples" for every project the catalogue does not know and no lesson uses. Sections without an example are left out.
  */
-export function buildExampleSections(projects: ReadonlyArray<Pick<ProjectInfo, 'id' | 'name' | 'description'>>, lessonProjects = lessonProjectIds()): ExampleSection[] {
+export function buildExampleSections(
+  projects: ReadonlyArray<Pick<ProjectInfo, 'id' | 'name' | 'description'>>,
+  lessonProjects = lessonProjectIds(),
+): ExampleSection[] {
   const present = new Map(projects.map((project) => [project.id, project]));
-  const sections: ExampleSection[] = EXAMPLE_GROUPS.map((group) => ({ id: group.id, title: t(group.titleKey), blurb: group.blurbKey ? t(group.blurbKey) : '', examples: [] }));
+  const sections: ExampleSection[] = EXAMPLE_GROUPS.map((group) => ({
+    id: group.id,
+    title: t(group.titleKey),
+    blurb: group.blurbKey ? t(group.blurbKey) : '',
+    examples: [],
+  }));
   const section = (id: ExampleGroupId) => sections.find((candidate) => candidate.id === id)!;
 
   for (const [id, entry] of Object.entries(EXAMPLE_CATALOG)) {
     if (!present.has(id) || !entry.showOnWelcome) continue;
-    section(entry.group).examples.push({ id, title: entry.title, summary: entry.summary, level: entry.level, languages: entry.languages, board: entry.board, ...(entry.noScenario ? { noScenario: t(`examples.${id}.noScenario` as MessageKey) } : {}) });
+    section(entry.group).examples.push({
+      id,
+      title: entry.title,
+      summary: entry.summary,
+      level: entry.level,
+      languages: entry.languages,
+      board: entry.board,
+      ...(entry.noScenario ? { noScenario: t(`examples.${id}.noScenario` as MessageKey) } : {}),
+    });
   }
-  const uncatalogued = projects.filter((project) => !(project.id in EXAMPLE_CATALOG) && !lessonProjects.has(project.id)).sort((a, b) => a.name.localeCompare(b.name));
-  for (const project of uncatalogued) section('more').examples.push({ id: project.id, title: project.name, summary: project.description ?? '', languages: [] });
+  const uncatalogued = projects
+    .filter((project) => !(project.id in EXAMPLE_CATALOG) && !lessonProjects.has(project.id))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  for (const project of uncatalogued)
+    section('more').examples.push({ id: project.id, title: project.name, summary: project.description ?? '', languages: [] });
 
   return sections.filter((candidate) => candidate.examples.length > 0);
 }
 
-export interface ExampleLevelGroup { level: ExampleLevel | null; examples: ExampleListing[] }
+export interface ExampleLevelGroup {
+  level: ExampleLevel | null;
+  examples: ExampleListing[];
+}
 
 /**
  * The examples of one topic split by level, easiest first (UX-022): the Welcome screen groups them by topic and, inside a topic
  * that holds more than one level, by level. An example with no level (a project the catalogue does not know) comes last.
  */
 export function groupByLevel(examples: readonly ExampleListing[]): ExampleLevelGroup[] {
-  const groups: ExampleLevelGroup[] = [...EXAMPLE_LEVELS, null].map((level) => ({ level, examples: examples.filter((example) => (example.level ?? null) === level) }));
+  const groups: ExampleLevelGroup[] = [...EXAMPLE_LEVELS, null].map((level) => ({
+    level,
+    examples: examples.filter((example) => (example.level ?? null) === level),
+  }));
   return groups.filter((group) => group.examples.length > 0);
 }

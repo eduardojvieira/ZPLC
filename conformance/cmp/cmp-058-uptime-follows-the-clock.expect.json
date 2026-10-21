@@ -6,9 +6,9 @@
   "scans": 6,
   "scanMs": 10,
   "expect": [
-    {"at": "%QD0", "type": "DINT", "value": 50},
-    {"at": "%QX4.0", "type": "BOOL", "value": true},
-    {"at": "%QX4.1", "type": "BOOL", "value": true}
+    { "at": "%QD0", "type": "DINT", "value": 50 },
+    { "at": "%QX4.0", "type": "BOOL", "value": true },
+    { "at": "%QX4.1", "type": "BOOL", "value": true }
   ],
-  "warnings": [{"code": "WATCHDOG_RESET_NO_EFFECT", "line": 9}]
+  "warnings": [{ "code": "WATCHDOG_RESET_NO_EFFECT", "line": 9 }]
 }

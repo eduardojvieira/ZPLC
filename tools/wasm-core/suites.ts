@@ -49,26 +49,57 @@ export const SUITES: Suite[] = [
   { name: 'test_loader_verify', category: 'loader', file: 'test_loader_verify.c', sources: [src('zplc_loader'), HAL] },
   { name: 'test_sandbox', category: 'loader', file: 'test_sandbox.c', sources: [...VM, HAL], defines: TESTING },
   {
-    name: 'test_sandbox_regions', category: 'loader', file: 'test_sandbox.c', sources: [...VM, HAL],
+    name: 'test_sandbox_regions',
+    category: 'loader',
+    file: 'test_sandbox.c',
+    sources: [...VM, HAL],
     defines: [...TESTING, 'CONFIG_ZPLC_WORK_MEMORY_SIZE=0x3000U', 'CONFIG_ZPLC_RETAIN_MEMORY_SIZE=0x2000U'],
   },
-  { name: 'test_sched_core', category: 'scheduler', file: 'test_sched_core.c', sources: [src('zplc_sched_core'), ...VM, HAL], defines: TESTING },
   {
-    name: 'test_sched_equivalence', category: 'scheduler', file: 'test_sched_equivalence.c',
+    name: 'test_sched_core',
+    category: 'scheduler',
+    file: 'test_sched_core.c',
+    sources: [src('zplc_sched_core'), ...VM, HAL],
+    defines: TESTING,
+  },
+  {
+    name: 'test_sched_equivalence',
+    category: 'scheduler',
+    file: 'test_sched_equivalence.c',
     sources: [
-      join(session, 'native_runtime_session.c'), join(session, 'native_program_store.c'), ...VM,
-      ...['zplc_retain', 'zplc_program_store', 'zplc_sched_core', 'zplc_exchange', 'zplc_failsafe', 'zplc_io_trace'].map(src), HAL,
+      join(session, 'native_runtime_session.c'),
+      join(session, 'native_program_store.c'),
+      ...VM,
+      ...['zplc_retain', 'zplc_program_store', 'zplc_sched_core', 'zplc_exchange', 'zplc_failsafe', 'zplc_io_trace'].map(src),
+      HAL,
     ],
   },
   {
-    name: 'test_single_task', category: 'scheduler', file: 'test_single_task.c',
-    sources: [src('zplc_single_task'), src('zplc_sched_core'), src('zplc_exchange'), ...VM, HAL], defines: TESTING,
+    name: 'test_single_task',
+    category: 'scheduler',
+    file: 'test_single_task.c',
+    sources: [src('zplc_single_task'), src('zplc_sched_core'), src('zplc_exchange'), ...VM, HAL],
+    defines: TESTING,
   },
-  { name: 'test_failsafe', category: 'scheduler', file: 'test_failsafe.c', sources: [src('zplc_failsafe'), src('zplc_sched_core'), ...VM, HAL] },
-  { name: 'test_port_timing', category: 'timing', file: 'test_port_timing.c', sources: [HAL], defines: ['ZPLC_TEST_PORT_NAME="WebAssembly"'] },
+  {
+    name: 'test_failsafe',
+    category: 'scheduler',
+    file: 'test_failsafe.c',
+    sources: [src('zplc_failsafe'), src('zplc_sched_core'), ...VM, HAL],
+  },
+  {
+    name: 'test_port_timing',
+    category: 'timing',
+    file: 'test_port_timing.c',
+    sources: [HAL],
+    defines: ['ZPLC_TEST_PORT_NAME="WebAssembly"'],
+  },
   { name: 'test_io_table', category: 'io-table', file: 'test_io_table.c', sources: [] },
   {
-    name: 'test_hal_posix_io_table', category: 'io-table', file: 'test_hal_posix_io_table.c', sources: [HAL],
+    name: 'test_hal_posix_io_table',
+    category: 'io-table',
+    file: 'test_hal_posix_io_table.c',
+    sources: [HAL],
     defines: ['ZPLC_TEST_PORT_ID="wasm"'],
   },
 ];
@@ -79,7 +110,12 @@ const STACK_BYTES = 1024 * 1024;
 function spawn(command: string[]): Promise<void> {
   const child = Bun.spawn(command, { stdout: 'pipe', stderr: 'pipe' });
   return child.exited.then(async (code) => {
-    if (code !== 0) throw new Error(`${command.slice(0, 3).join(' ')} ${command.at(-3)} failed:\n${await new Response(child.stdout).text()}${await new Response(child.stderr).text()}`);
+    if (code !== 0)
+      throw new Error(
+        `${command.slice(0, 3).join(' ')} ${command.at(-3)} failed:\n${await new Response(
+          child.stdout,
+        ).text()}${await new Response(child.stderr).text()}`,
+      );
   });
 }
 
@@ -97,7 +133,10 @@ async function inParallel<T>(jobs: Array<() => Promise<T>>, limit: number): Prom
   return results;
 }
 
-export interface BuiltSuite { suite: Suite; bytes: Uint8Array }
+export interface BuiltSuite {
+  suite: Suite;
+  bytes: Uint8Array;
+}
 
 /** Builds the suites (all of them by default) into modules; throws when a tool is missing or a step fails. */
 export async function buildSuites(selected: Suite[] = SUITES): Promise<BuiltSuite[]> {
@@ -120,7 +159,11 @@ export async function buildSuites(selected: Suite[] = SUITES): Promise<BuiltSuit
     };
     const plans = selected.map((suite) => {
       const defines = [`ZPLC_CORE_VERSION_STR="${version}"`, 'ZPLC_TEST_NO_FILE_IO', ...(suite.defines ?? [])];
-      const own = [...defines, 'main=zplc_wasm_suite_main', ...(suite.file === 'test_loader_verify.c' ? [`ZPLC_LOADER_FIXTURE_HEX="${fixture}"`] : [])];
+      const own = [
+        ...defines,
+        'main=zplc_wasm_suite_main',
+        ...(suite.file === 'test_loader_verify.c' ? [`ZPLC_LOADER_FIXTURE_HEX="${fixture}"`] : []),
+      ];
       return {
         suite,
         objects: [
@@ -132,18 +175,54 @@ export async function buildSuites(selected: Suite[] = SUITES): Promise<BuiltSuit
         out: join(work, `${suite.name}.wasm`),
       };
     });
-    const compile = (clang: string, { source, defines, object }: { source: string; defines: string[]; object: string }) => spawn([
-      clang, '--target=wasm32', '-ffreestanding', '-fno-builtin', '-O2', '-std=c99', '-Wall', '-Werror',
-      ...defines.map((define) => `-D${define}`),
-      '-I', join(core, 'include'), '-I', join(tests, 'include'), '-I', join(here, 'shim'), '-I', generated, '-I', session,
-      '-c', source, '-o', object,
-    ]);
+    const compile = (clang: string, { source, defines, object }: { source: string; defines: string[]; object: string }) =>
+      spawn([
+        clang,
+        '--target=wasm32',
+        '-ffreestanding',
+        '-fno-builtin',
+        '-O2',
+        '-std=c99',
+        '-Wall',
+        '-Werror',
+        ...defines.map((define) => `-D${define}`),
+        '-I',
+        join(core, 'include'),
+        '-I',
+        join(tests, 'include'),
+        '-I',
+        join(here, 'shim'),
+        '-I',
+        generated,
+        '-I',
+        session,
+        '-c',
+        source,
+        '-o',
+        object,
+      ]);
     const limit = Math.max(1, cpus().length);
-    await inParallel([...objects.values()].map((entry) => () => compile((tools as Toolchain).clang, entry)), limit);
-    await inParallel(plans.map((plan) => () => spawn([
-      (tools as Toolchain).linker, '--no-entry', '--export=zplc_wasm_suite_main', '--export=zplc_wasm_suite_flush',
-      '-z', `stack-size=${STACK_BYTES}`, '-o', plan.out, ...plan.objects,
-    ])), limit);
+    await inParallel(
+      [...objects.values()].map((entry) => () => compile((tools as Toolchain).clang, entry)),
+      limit,
+    );
+    await inParallel(
+      plans.map(
+        (plan) => () =>
+          spawn([
+            (tools as Toolchain).linker,
+            '--no-entry',
+            '--export=zplc_wasm_suite_main',
+            '--export=zplc_wasm_suite_flush',
+            '-z',
+            `stack-size=${STACK_BYTES}`,
+            '-o',
+            plan.out,
+            ...plan.objects,
+          ]),
+      ),
+      limit,
+    );
     return plans.map((plan) => ({ suite: plan.suite, bytes: new Uint8Array(readFileSync(plan.out)) }));
   } finally {
     rmSync(work, { recursive: true, force: true });
@@ -230,7 +309,13 @@ if (import.meta.main) {
     console.log(`${run.code === 0 ? 'PASS' : 'FAIL'} ${suite.category.padEnd(9)} ${suite.name.padEnd(24)} ${summary.trim()}`);
     if (run.code !== 0) {
       failed += 1;
-      console.log(run.output.filter((line) => /FAIL|trapped/.test(line)).slice(0, 20).map((line) => `    ${line}`).join('\n'));
+      console.log(
+        run.output
+          .filter((line) => /FAIL|trapped/.test(line))
+          .slice(0, 20)
+          .map((line) => `    ${line}`)
+          .join('\n'),
+      );
     }
   }
   console.log(`wasm-core: ${selected.length - failed} of ${selected.length} suites passed on the WebAssembly port`);

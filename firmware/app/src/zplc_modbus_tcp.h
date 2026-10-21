@@ -18,12 +18,9 @@ typedef enum {
 
 typedef struct {
   uint16_t unit_id;
-  int (*read)(uint16_t address, uint16_t count, uint8_t *response,
-              size_t response_capacity, bool bits, zplc_modbus_area_t area,
+  int (*read)(uint16_t address, uint16_t count, uint8_t *response, size_t response_capacity, bool bits, zplc_modbus_area_t area,
               void *context);
-  int (*write)(uint16_t address, uint16_t count, const uint8_t *data,
-               bool bits, bool multiple, zplc_modbus_area_t area,
-               void *context);
+  int (*write)(uint16_t address, uint16_t count, const uint8_t *data, bool bits, bool multiple, zplc_modbus_area_t area, void *context);
   void *context;
 } zplc_modbus_tcp_ops_t;
 
@@ -32,17 +29,13 @@ typedef struct {
   size_t used;
 } zplc_modbus_tcp_stream_t;
 
-typedef int (*zplc_modbus_tcp_adu_cb_t)(const uint8_t *request, size_t request_length,
-                                        void *context);
+typedef int (*zplc_modbus_tcp_adu_cb_t)(const uint8_t *request, size_t request_length, void *context);
 
 void zplc_modbus_tcp_stream_reset(zplc_modbus_tcp_stream_t *stream);
-int zplc_modbus_tcp_stream_feed(zplc_modbus_tcp_stream_t *stream,
-                                const uint8_t *data, size_t data_length,
+int zplc_modbus_tcp_stream_feed(zplc_modbus_tcp_stream_t *stream, const uint8_t *data, size_t data_length,
                                 zplc_modbus_tcp_adu_cb_t callback, void *context);
-int zplc_modbus_tcp_process_adu(const uint8_t *request, size_t request_length,
-                                uint8_t *response, size_t response_capacity,
-                                size_t *response_length,
-                                const zplc_modbus_tcp_ops_t *ops);
+int zplc_modbus_tcp_process_adu(const uint8_t *request, size_t request_length, uint8_t *response, size_t response_capacity,
+                                size_t *response_length, const zplc_modbus_tcp_ops_t *ops);
 
 /*
  * The client side of the same framing (COM-006, COM-012): the request ADU of one function, the check of
@@ -63,12 +56,12 @@ int zplc_modbus_tcp_process_adu(const uint8_t *request, size_t request_length,
 #define ZPLC_MODBUS_FC_WRITE_SINGLE_REGISTER 0x06U
 
 /** The request ADU of a PDU: MBAP header and PDU. Returns its length, or 0 when it does not fit. */
-size_t zplc_modbus_tcp_build_request(uint8_t *adu, size_t capacity, uint16_t transaction,
-                                     uint8_t unit_id, const uint8_t *pdu, size_t pdu_length);
+size_t zplc_modbus_tcp_build_request(uint8_t *adu, size_t capacity, uint16_t transaction, uint8_t unit_id, const uint8_t *pdu,
+                                     size_t pdu_length);
 
 /** The PDU of a response ADU, after the checks of its MBAP header against the request it answers. */
-int zplc_modbus_tcp_response_pdu(const uint8_t *adu, size_t length, uint16_t transaction,
-                                 uint8_t unit_id, const uint8_t **pdu, size_t *pdu_length);
+int zplc_modbus_tcp_response_pdu(const uint8_t *adu, size_t length, uint16_t transaction, uint8_t unit_id, const uint8_t **pdu,
+                                 size_t *pdu_length);
 
 /** PDU of a read of `count` coils or registers (function 1 or 3): 5 bytes. */
 size_t zplc_modbus_pdu_read(uint8_t *pdu, uint8_t function, uint16_t address, uint16_t count);
@@ -77,23 +70,18 @@ size_t zplc_modbus_pdu_read(uint8_t *pdu, uint8_t function, uint16_t address, ui
 size_t zplc_modbus_pdu_write_single(uint8_t *pdu, uint8_t function, uint16_t address, uint16_t value);
 
 /** The answer to a read of `count` holding registers: the registers, in host order. */
-int zplc_modbus_pdu_read_registers_response(const uint8_t *pdu, size_t length, uint16_t count,
-                                            uint16_t *registers);
+int zplc_modbus_pdu_read_registers_response(const uint8_t *pdu, size_t length, uint16_t count, uint16_t *registers);
 
 /** The answer to a read of `count` coils: the bits, as the server packed them (LSB first). */
-int zplc_modbus_pdu_read_coils_response(const uint8_t *pdu, size_t length, uint16_t count,
-                                        uint8_t *bits, size_t bits_capacity);
+int zplc_modbus_pdu_read_coils_response(const uint8_t *pdu, size_t length, uint16_t count, uint8_t *bits, size_t bits_capacity);
 
 /** The answer to a single write is the echo of the request. */
-int zplc_modbus_pdu_write_single_response(const uint8_t *pdu, size_t length, uint8_t function,
-                                          uint16_t address, uint16_t value);
+int zplc_modbus_pdu_write_single_response(const uint8_t *pdu, size_t length, uint8_t function, uint16_t address, uint16_t value);
 
 /* Private app seam shared by TCP/RTU and the native regression suite. */
-int zplc_modbus_write_mapped(uint16_t address, uint16_t count, const uint8_t *data,
-                             bool bits, bool multiple, zplc_modbus_area_t area);
+int zplc_modbus_write_mapped(uint16_t address, uint16_t count, const uint8_t *data, bool bits, bool multiple, zplc_modbus_area_t area);
 /* One pass of the client over the tags that bind a variable to a remote device (COM-011). */
 int zplc_modbus_client_poll_tags(bool use_tcp);
-int zplc_modbus_read_mapped(uint16_t address, uint16_t count, uint8_t *response, size_t capacity,
-                            bool bits, zplc_modbus_area_t area);
+int zplc_modbus_read_mapped(uint16_t address, uint16_t count, uint8_t *response, size_t capacity, bool bits, zplc_modbus_area_t area);
 
 #endif

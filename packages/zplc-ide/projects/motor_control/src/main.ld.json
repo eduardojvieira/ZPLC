@@ -89,7 +89,10 @@
       "comment": "Running lamp follows the contactor",
       "grid": [
         [
-          { "element": { "id": "running_indicator", "type": "contact_no", "variable": "MotorContactor", "row": 0, "col": 0 }, "hasWire": true },
+          {
+            "element": { "id": "running_indicator", "type": "contact_no", "variable": "MotorContactor", "row": 0, "col": 0 },
+            "hasWire": true
+          },
           { "element": null, "hasWire": true },
           { "element": null, "hasWire": true },
           { "element": null, "hasWire": true },

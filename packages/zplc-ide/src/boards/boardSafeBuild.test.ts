@@ -8,7 +8,10 @@ const PROGRAM = 'PROGRAM Main\nVAR\nLed AT %QX0.4 : BOOL;\nValve AT %QX0.0 : BOO
 function build(board: string | undefined, io?: IOConfig) {
   return compileMultiTaskProject(
     {
-      name: 'SafeBoard', version: '1.0.0', ...(board ? { target: { board } } : {}), ...(io ? { io } : {}),
+      name: 'SafeBoard',
+      version: '1.0.0',
+      ...(board ? { target: { board } } : {}),
+      ...(io ? { io } : {}),
       tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main'] }],
     },
     [{ name: 'Main', sourceRef: 'src/Main.st', language: 'ST', content: PROGRAM }],

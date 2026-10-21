@@ -20,15 +20,15 @@
 static int test_count = 0;
 static int fail_count = 0;
 
-#define CHECK(cond, msg)                                                      \
-  do {                                                                        \
-    test_count++;                                                             \
-    if (!(cond)) {                                                            \
-      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__);                 \
-      fail_count++;                                                           \
-    } else {                                                                  \
-      printf("PASS: %s\n", msg);                                              \
-    }                                                                         \
+#define CHECK(cond, msg)                                      \
+  do {                                                        \
+    test_count++;                                             \
+    if (!(cond)) {                                            \
+      fprintf(stderr, "FAIL: %s (line %d)\n", msg, __LINE__); \
+      fail_count++;                                           \
+    } else {                                                  \
+      printf("PASS: %s\n", msg);                              \
+    }                                                         \
   } while (0)
 
 /* The reference: the reflected polynomial 0xEDB88320 one bit at a time, written differently from the product. */
@@ -104,8 +104,7 @@ static void test_little_endian_helpers(void) {
   CHECK(zplc_get_u16_le(odd) == 0x1234U, "get_u16 reads what put_u16 wrote");
 
   zplc_put_u32_le(odd + 2, 0xDEADBEEFU);
-  CHECK(odd[2] == 0xEFU && odd[3] == 0xBEU && odd[4] == 0xADU && odd[5] == 0xDEU,
-        "put_u32 writes the low byte first");
+  CHECK(odd[2] == 0xEFU && odd[3] == 0xBEU && odd[4] == 0xADU && odd[5] == 0xDEU, "put_u32 writes the low byte first");
   CHECK(zplc_get_u32_le(odd + 2) == 0xDEADBEEFU, "get_u32 reads what put_u32 wrote");
 
   zplc_put_u32_le(odd + 6, 0x80000001U);

@@ -47,16 +47,20 @@ interface SupportedBoardManifestEntry {
 
 /** The support level is derived from the records the manifest references; a hand-set field is not read (IO-015). */
 function boardEvidence(board: SupportedBoardManifestEntry): Pick<BoardProfile, 'validationLevel' | 'evidenceCount'> | undefined {
-  if (!Array.isArray(board.evidence_refs)
-    || board.evidence_refs.length > 16
-    || !board.evidence_refs.every((reference) => typeof reference === 'string' && reference.length > 0 && reference.length <= 256)) return undefined;
-  const derived = supportLevelFromRecords(board.board_id, board.evidence_refs.map((reference) => [reference, EVIDENCE_RECORDS[reference] ?? null] as const));
+  if (
+    !Array.isArray(board.evidence_refs) ||
+    board.evidence_refs.length > 16 ||
+    !board.evidence_refs.every((reference) => typeof reference === 'string' && reference.length > 0 && reference.length <= 256)
+  )
+    return undefined;
+  const derived = supportLevelFromRecords(
+    board.board_id,
+    board.evidence_refs.map((reference) => [reference, EVIDENCE_RECORDS[reference] ?? null] as const),
+  );
   return { validationLevel: derived.level, evidenceCount: derived.records.length };
 }
 
-function mapNetworkClassToInterface(
-  networkInterface: SupportedBoardManifestEntry['network_interface']
-): NetworkInterfaceKind {
+function mapNetworkClassToInterface(networkInterface: SupportedBoardManifestEntry['network_interface']): NetworkInterfaceKind {
   if (networkInterface === 'wifi') {
     return NETWORK_INTERFACE.WIFI;
   }
@@ -72,21 +76,28 @@ const BOARD_PROFILES: Record<string, BoardProfile> = Object.fromEntries(
   (boardManifest as unknown as SupportedBoardManifestEntry[]).flatMap((board) => {
     const evidence = boardEvidence(board);
     const io = readBoardIo(board.io);
-    return evidence && io ? [[board.ide_id, {
-      boardId: board.board_id,
-      io,
-      ioHash: descriptionHash(board.board_id, io),
-      label: board.display_name,
-      network: mapNetworkClassToInterface(board.network_interface),
-      zephyrBoard: board.zephyr_board,
-      memory: {
-        workSize: board.memory.work_size,
-        retainSize: board.memory.retain_size,
-        codeSizeMax: board.memory.code_size_max,
-      },
-      ...evidence,
-    }]] : [];
-  })
+    return evidence && io
+      ? [
+          [
+            board.ide_id,
+            {
+              boardId: board.board_id,
+              io,
+              ioHash: descriptionHash(board.board_id, io),
+              label: board.display_name,
+              network: mapNetworkClassToInterface(board.network_interface),
+              zephyrBoard: board.zephyr_board,
+              memory: {
+                workSize: board.memory.work_size,
+                retainSize: board.memory.retain_size,
+                codeSizeMax: board.memory.code_size_max,
+              },
+              ...evidence,
+            },
+          ],
+        ]
+      : [];
+  }),
 );
 
 export const BOARD_OPTIONS: BoardOption[] = [
@@ -109,17 +120,21 @@ export function getZephyrBoardTarget(board: string | undefined): string | undefi
 }
 
 /** Safe public evidence tier for a catalogue board; paths and references stay private. */
-export function getBoardEvidenceSummary(board: string | undefined): Readonly<{
-  zephyrBoard: string;
-  validationLevel: 'cross-build' | 'human-hil';
-  evidenceCount: number;
-}> | undefined {
+export function getBoardEvidenceSummary(board: string | undefined):
+  | Readonly<{
+      zephyrBoard: string;
+      validationLevel: 'cross-build' | 'human-hil';
+      evidenceCount: number;
+    }>
+  | undefined {
   const profile = board ? BOARD_PROFILES[board] : undefined;
-  return profile && {
-    zephyrBoard: profile.zephyrBoard,
-    validationLevel: profile.validationLevel,
-    evidenceCount: profile.evidenceCount,
-  };
+  return (
+    profile && {
+      zephyrBoard: profile.zephyrBoard,
+      validationLevel: profile.validationLevel,
+      evidenceCount: profile.evidenceCount,
+    }
+  );
 }
 
 /** The I/O description of a catalogue board: undefined for host, custom and unknown selectors (IO-003). */
@@ -128,9 +143,15 @@ export function getBoardIo(board: string | undefined): BoardIoDescription | unde
 }
 
 /** What the firmware of the board reports about its I/O description, as Studio expects it (IO-004). */
-export function getBoardIoIdentity(board: string | undefined): Readonly<{
-  boardId: string; displayName: string; hash: string; inputBytes: number; outputBytes: number;
-}> | undefined {
+export function getBoardIoIdentity(board: string | undefined):
+  | Readonly<{
+      boardId: string;
+      displayName: string;
+      hash: string;
+      inputBytes: number;
+      outputBytes: number;
+    }>
+  | undefined {
   const profile = board ? BOARD_PROFILES[board] : undefined;
   return profile && { boardId: profile.boardId, displayName: profile.label, hash: profile.ioHash, ...imageExtent(profile.io) };
 }
@@ -192,10 +213,7 @@ function defaultEthernetConfig(existing: NetworkConfig | undefined): NetworkConf
   };
 }
 
-export function normalizeNetworkConfigForBoard(
-  existing: NetworkConfig | undefined,
-  board: string | undefined
-): NetworkConfig | undefined {
+export function normalizeNetworkConfigForBoard(existing: NetworkConfig | undefined, board: string | undefined): NetworkConfig | undefined {
   const networkType = getBoardNetworkType(board);
 
   if (networkType === NETWORK_INTERFACE.WIFI) {

@@ -8,7 +8,15 @@ import { join } from 'node:path';
 
 import { normalizeAddress } from '../boards/boardIoMapping';
 import { joinLearnerBoards, validateKit, type LearnerKit } from '../boards/wiring/kit';
-import { WIRING_FILE, programWiringProblems, validateWiring, wiringBoardProblems, wiringSafetyProblems, type WiringBoard, type WiringFile } from '../boards/wiring/wiring';
+import {
+  WIRING_FILE,
+  programWiringProblems,
+  validateWiring,
+  wiringBoardProblems,
+  wiringSafetyProblems,
+  type WiringBoard,
+  type WiringFile,
+} from '../boards/wiring/wiring';
 import { validatePlantMap, type PlantMap } from '../plants/plantMap';
 import { validateCourseDefinition, validateCoursePlacement, type CourseDefinition } from './courseDefinition';
 import {
@@ -57,7 +65,10 @@ export interface LessonPackage {
  * The learner boards of the course: the boards `kit.json` beside the lessons names, with the pins of their supply and
  * ground, and their I/O description from boards.json. A broken kit or board entry is reported and leaves no board.
  */
-export function loadLearnerBoards(lessonsDirectory = LESSONS_DIRECTORY, boardsFile = BOARDS_FILE): { kit?: LearnerKit; boards: WiringBoard[]; problems: string[] } {
+export function loadLearnerBoards(
+  lessonsDirectory = LESSONS_DIRECTORY,
+  boardsFile = BOARDS_FILE,
+): { kit?: LearnerKit; boards: WiringBoard[]; problems: string[] } {
   const problems: string[] = [];
   const kit = readJson(join(lessonsDirectory, 'kit.json'), problems);
   const manifest = readJson(boardsFile, problems);
@@ -81,7 +92,9 @@ export function programAddresses(projectDirectory: string): { addresses: string[
     }
   }
   const config = JSON.parse(readFileSync(join(projectDirectory, 'zplc.json'), 'utf8')) as { io?: { virtual?: Array<{ address: string }> } };
-  const virtual = (config.io?.virtual ?? []).map((row) => normalizeAddress(row.address)).filter((address): address is string => address !== undefined);
+  const virtual = (config.io?.virtual ?? [])
+    .map((row) => normalizeAddress(row.address))
+    .filter((address): address is string => address !== undefined);
   return { addresses: [...found].sort(), virtual: virtual.sort() };
 }
 
@@ -96,10 +109,18 @@ export function loadCourse(lessonsDirectory = LESSONS_DIRECTORY): { course: Cour
   return { course: problems.length === 0 ? (raw as CourseDefinition) : undefined, problems };
 }
 
-export interface LoadedPackages { packages: LessonPackage[]; problems: string[] }
+export interface LoadedPackages {
+  packages: LessonPackage[];
+  problems: string[];
+}
 
 function readJson(path: string, problems: string[]): unknown {
-  try { return JSON.parse(readFileSync(path, 'utf8')); } catch (error) { problems.push(`${path}: ${error instanceof Error ? error.message : String(error)}`); return undefined; }
+  try {
+    return JSON.parse(readFileSync(path, 'utf8'));
+  } catch (error) {
+    problems.push(`${path}: ${error instanceof Error ? error.message : String(error)}`);
+    return undefined;
+  }
 }
 
 /** Loads and validates every package. A broken package is reported by its problems and left out. */
@@ -107,14 +128,19 @@ export function loadLessonPackages(lessonsDirectory = LESSONS_DIRECTORY, project
   const problems: string[] = [];
   const packages: LessonPackage[] = [];
   let learnerBoards: ReturnType<typeof loadLearnerBoards> | undefined;
-  const directories = readdirSync(lessonsDirectory).filter((name) => statSync(join(lessonsDirectory, name)).isDirectory()).sort();
+  const directories = readdirSync(lessonsDirectory)
+    .filter((name) => statSync(join(lessonsDirectory, name)).isDirectory())
+    .sort();
   for (const id of directories) {
     const directory = join(lessonsDirectory, id);
     const here: string[] = [];
     const manifest = readJson(join(directory, 'lesson.json'), here);
     const manifestProblems = validateManifest(manifest);
     here.push(...manifestProblems.map((problem) => `${id}/lesson.json: ${problem}`));
-    if (manifestProblems.length > 0 || manifest === undefined) { problems.push(...here); continue; }
+    if (manifestProblems.length > 0 || manifest === undefined) {
+      problems.push(...here);
+      continue;
+    }
     const typed = manifest as LessonManifest;
     if (typed.id !== id) here.push(`${id}/lesson.json: id "${typed.id}" must equal the directory name`);
     const scenarioRaw = readJson(join(directory, typed.scenario.file), here);
@@ -145,7 +171,8 @@ export function loadLessonPackages(lessonsDirectory = LESSONS_DIRECTORY, project
       here.push(...mapProblems.map((problem) => `${id}/plant-map.json: ${problem}`));
       if (mapProblems.length === 0) {
         plantMap = raw as PlantMap;
-        if (plantMap.plant !== typed.plant) here.push(`${id}/plant-map.json: plant "${plantMap.plant}" differs from the manifest plant "${typed.plant}"`);
+        if (plantMap.plant !== typed.plant)
+          here.push(`${id}/plant-map.json: plant "${plantMap.plant}" differs from the manifest plant "${typed.plant}"`);
       }
     }
     // LRN-013, LRN-014: a lesson on the hardware track ships its wiring, which fits both learner boards and its program.
@@ -164,30 +191,52 @@ export function loadLessonPackages(lessonsDirectory = LESSONS_DIRECTORY, project
         const solution = join(projectsDirectory, typed.solution.project);
         const fits = [...wiringBoardProblems(wiring, learnerBoards.boards), ...wiringSafetyProblems(wiring, learnerBoards.boards)];
         const program = existsSync(join(solution, 'zplc.json')) ? programAddresses(solution) : undefined;
-        const used = fits.length === 0 && program ? programWiringProblems(wiring, learnerBoards.boards, program.addresses, program.virtual) : [];
+        const used =
+          fits.length === 0 && program ? programWiringProblems(wiring, learnerBoards.boards, program.addresses, program.virtual) : [];
         here.push(...[...fits, ...used].map((problem) => `${id}/${WIRING_FILE}: ${problem}`));
       }
       // LRN-024: the time tolerance covers a sampling period of the check and a scan of the starter's slowest task.
       const starterConfig = join(projectsDirectory, typed.starter.project, 'zplc.json');
-      const tasks = existsSync(starterConfig) ? (JSON.parse(readFileSync(starterConfig, 'utf8')) as { tasks?: Array<{ interval_ms?: unknown }> }).tasks ?? [] : [];
-      const scans = tasks.map((task) => task.interval_ms).filter((interval): interval is number => typeof interval === 'number' && interval > 0);
-      if (scans.length > 0) here.push(...hardwareToleranceProblems(typed.hardware.tolerances.timeMs, Math.max(...scans)).map((problem) => `${id}: ${problem}`));
+      const tasks = existsSync(starterConfig)
+        ? ((JSON.parse(readFileSync(starterConfig, 'utf8')) as { tasks?: Array<{ interval_ms?: unknown }> }).tasks ?? [])
+        : [];
+      const scans = tasks
+        .map((task) => task.interval_ms)
+        .filter((interval): interval is number => typeof interval === 'number' && interval > 0);
+      if (scans.length > 0)
+        here.push(...hardwareToleranceProblems(typed.hardware.tolerances.timeMs, Math.max(...scans)).map((problem) => `${id}: ${problem}`));
     }
     const scenario = scenarioParsed.scenario;
     if (scenario) {
-      if (scenario.id !== typed.scenario.id) here.push(`${id}: scenario id "${scenario.id}" differs from the manifest "${typed.scenario.id}"`);
-      if ((scenario.plant ?? null) !== typed.plant) here.push(`${id}: manifest plant "${typed.plant}" differs from the scenario plant "${scenario.plant ?? null}"`);
+      if (scenario.id !== typed.scenario.id)
+        here.push(`${id}: scenario id "${scenario.id}" differs from the manifest "${typed.scenario.id}"`);
+      if ((scenario.plant ?? null) !== typed.plant)
+        here.push(`${id}: manifest plant "${typed.plant}" differs from the scenario plant "${scenario.plant ?? null}"`);
       const hash = scenarioHash(scenarioRaw);
-      if (hash !== typed.scenario.sha256) here.push(`${id}: scenario hash is ${hash} but the manifest pins ${typed.scenario.sha256}; bump the lesson version and pin the new hash`);
+      if (hash !== typed.scenario.sha256)
+        here.push(
+          `${id}: scenario hash is ${hash} but the manifest pins ${typed.scenario.sha256}; bump the lesson version and pin the new hash`,
+        );
       for (const part of [typed.starter, typed.solution]) {
         const project = join(projectsDirectory, part.project);
         if (!existsSync(join(project, 'zplc.json'))) here.push(`${id}: example project "${part.project}" does not exist`);
-        else if (!existsSync(join(project, part.program))) here.push(`${id}: "${part.program}" does not exist in example project "${part.project}"`);
+        else if (!existsSync(join(project, part.program)))
+          here.push(`${id}: "${part.program}" does not exist in example project "${part.project}"`);
       }
     }
     problems.push(...here);
     if (here.length === 0 && scenario && texts.en && texts.es) {
-      packages.push({ id, directory, manifest: typed, scenario, scenarioBytes: canonicalJson(scenarioRaw), texts: { en: texts.en, es: texts.es }, checks, plantMap, wiring });
+      packages.push({
+        id,
+        directory,
+        manifest: typed,
+        scenario,
+        scenarioBytes: canonicalJson(scenarioRaw),
+        texts: { en: texts.en, es: texts.es },
+        checks,
+        plantMap,
+        wiring,
+      });
     }
   }
   return { packages, problems };
@@ -195,28 +244,39 @@ export function loadLessonPackages(lessonsDirectory = LESSONS_DIRECTORY, project
 
 /** Cross-package rules: unique ids and order, existing and acyclic prerequisites, the same text structure in every language. */
 export function validateCourse(packages: readonly LessonPackage[], course?: CourseDefinition): string[] {
-  const problems: string[] = course ? validateCoursePlacement(course, packages.map(({ manifest }) => manifest)) : [];
+  const problems: string[] = course
+    ? validateCoursePlacement(
+        course,
+        packages.map(({ manifest }) => manifest),
+      )
+    : [];
   const ids = new Set(packages.map((item) => item.id));
   const orders = new Map<number, string>();
   for (const { id, manifest } of packages) {
     const other = orders.get(manifest.order);
     if (other) problems.push(`${id}: order ${manifest.order} is also used by ${other}`);
     orders.set(manifest.order, id);
-    for (const prerequisite of manifest.prerequisites) if (!ids.has(prerequisite)) problems.push(`${id}: prerequisite "${prerequisite}" is not a lesson`);
+    for (const prerequisite of manifest.prerequisites)
+      if (!ids.has(prerequisite)) problems.push(`${id}: prerequisite "${prerequisite}" is not a lesson`);
   }
   const visiting = new Set<string>();
   const done = new Set<string>();
   const visit = (id: string): void => {
     if (done.has(id)) return;
-    if (visiting.has(id)) { problems.push(`${id}: prerequisites form a cycle`); return; }
+    if (visiting.has(id)) {
+      problems.push(`${id}: prerequisites form a cycle`);
+      return;
+    }
     visiting.add(id);
-    for (const prerequisite of packages.find((item) => item.id === id)?.manifest.prerequisites ?? []) if (ids.has(prerequisite)) visit(prerequisite);
+    for (const prerequisite of packages.find((item) => item.id === id)?.manifest.prerequisites ?? [])
+      if (ids.has(prerequisite)) visit(prerequisite);
     visiting.delete(id);
     done.add(id);
   };
   for (const { id } of packages) visit(id);
   for (const { id, texts } of packages) {
-    if (textShape(texts.en) !== textShape(texts.es)) problems.push(`${id}: English and Spanish do not have the same structure (stage keys, hint levels, quoted facts)`);
+    if (textShape(texts.en) !== textShape(texts.es))
+      problems.push(`${id}: English and Spanish do not have the same structure (stage keys, hint levels, quoted facts)`);
   }
   return problems;
 }
@@ -224,33 +284,45 @@ export function validateCourse(packages: readonly LessonPackage[], course?: Cour
 /** The generated index of the packages, in course order, with the text expanded. Problems of expansion are returned. */
 export function buildIndex(packages: readonly LessonPackage[], course: CourseDefinition): { index: LessonIndex; problems: string[] } {
   const problems: string[] = [];
-  const lessons: LessonIndexEntry[] = [...packages].sort((left, right) => left.manifest.order - right.manifest.order).map(({ id, manifest, scenario, scenarioBytes, texts, plantMap, wiring }) => {
-    const expanded = Object.fromEntries(LOCALES.map((locale) => {
-      const result = expandText(texts[locale], scenario);
-      problems.push(...result.problems.map((problem) => `${id}/text.${locale}.json: ${problem}`));
-      return [locale, result.text];
-    })) as unknown as LessonIndexEntry['text'];
-    return {
-      id: manifest.id,
-      version: manifest.version,
-      order: manifest.order,
-      module: manifest.module,
-      level: manifest.level,
-      prerequisites: manifest.prerequisites,
-      languages: manifest.languages,
-      tracks: manifest.tracks,
-      unsupported: manifest.unsupported,
-      plant: manifest.plant,
-      plantMap,
-      estimatedMinutes: manifest.estimatedMinutes,
-      starter: manifest.starter,
-      solution: manifest.solution,
-      scenario: { id: manifest.scenario.id, path: manifest.scenario.path, sha256: manifest.scenario.sha256, tickMs: scenario.tickMs, durationMs: scenario.durationMs, assertions: scenario.expectations.length, canonical: scenarioBytes },
-      regressionScenarios: manifest.regressionScenarios,
-      hardware: manifest.hardware && wiring ? { wiring, tolerances: manifest.hardware.tolerances } : null,
-      text: expanded,
-    };
-  });
+  const lessons: LessonIndexEntry[] = [...packages]
+    .sort((left, right) => left.manifest.order - right.manifest.order)
+    .map(({ id, manifest, scenario, scenarioBytes, texts, plantMap, wiring }) => {
+      const expanded = Object.fromEntries(
+        LOCALES.map((locale) => {
+          const result = expandText(texts[locale], scenario);
+          problems.push(...result.problems.map((problem) => `${id}/text.${locale}.json: ${problem}`));
+          return [locale, result.text];
+        }),
+      ) as unknown as LessonIndexEntry['text'];
+      return {
+        id: manifest.id,
+        version: manifest.version,
+        order: manifest.order,
+        module: manifest.module,
+        level: manifest.level,
+        prerequisites: manifest.prerequisites,
+        languages: manifest.languages,
+        tracks: manifest.tracks,
+        unsupported: manifest.unsupported,
+        plant: manifest.plant,
+        plantMap,
+        estimatedMinutes: manifest.estimatedMinutes,
+        starter: manifest.starter,
+        solution: manifest.solution,
+        scenario: {
+          id: manifest.scenario.id,
+          path: manifest.scenario.path,
+          sha256: manifest.scenario.sha256,
+          tickMs: scenario.tickMs,
+          durationMs: scenario.durationMs,
+          assertions: scenario.expectations.length,
+          canonical: scenarioBytes,
+        },
+        regressionScenarios: manifest.regressionScenarios,
+        hardware: manifest.hardware && wiring ? { wiring, tolerances: manifest.hardware.tolerances } : null,
+        text: expanded,
+      };
+    });
   return { index: { schemaVersion: 1, lessons, course }, problems };
 }
 
@@ -264,7 +336,11 @@ const HEADER = [
 /** The exact text of `src/generated/lessonIndex.ts`: the id list and the type, over the data of `lessonIndex.json`. */
 export function renderIndexModule(index: LessonIndex): string {
   const ids = index.lessons.map((lesson) => JSON.stringify(lesson.id)).join(',\n  ');
-  return `${HEADER}\nimport type { LessonIndex } from '../learn/lessonPackage';\nimport data from './lessonIndex.json';\n\nexport const LESSON_IDS = [\n  ${ids},\n] as const;\n\nexport type LessonId = typeof LESSON_IDS[number];\n\nexport const LESSON_INDEX = data as unknown as LessonIndex;\n`;
+  return (
+    `${HEADER}\nimport type { LessonIndex } from '../learn/lessonPackage';\nimport data from './lessonIndex.json';\n\nexport const ` +
+    `LESSON_IDS = [\n  ${ids},\n] as const;\n\nexport type LessonId = typeof LESSON_IDS[number];\n\nexport const LESSON_INDEX = data as ` +
+    `unknown as LessonIndex;\n`
+  );
 }
 
 /** The exact text of `src/generated/lessonIndex.json`. */

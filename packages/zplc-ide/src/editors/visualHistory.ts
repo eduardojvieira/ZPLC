@@ -50,11 +50,7 @@ export interface VisualHistoryResult {
   history: VisualSnapshotHistory;
 }
 
-function replaceHistory(
-  histories: VisualHistories,
-  key: string,
-  history: VisualSnapshotHistory,
-): VisualHistoryResult {
+function replaceHistory(histories: VisualHistories, key: string, history: VisualSnapshotHistory): VisualHistoryResult {
   const next = new Map(histories);
   next.set(key, history);
   return { histories: next, history };
@@ -89,12 +85,17 @@ export function recordVisualSnapshot(
   // The same thing edited again at once: the entry that holds the earlier edit takes the new content
   const last = gestures[history.cursor];
   if (
-    gesture?.coalesce !== undefined && last !== undefined && history.cursor > 0 && last.coalesce === gesture.coalesce
-    && at - last.at <= GESTURE_COALESCE_MS && history.cursor === history.snapshots.length - 1
+    gesture?.coalesce !== undefined &&
+    last !== undefined &&
+    history.cursor > 0 &&
+    last.coalesce === gesture.coalesce &&
+    at - last.at <= GESTURE_COALESCE_MS &&
+    history.cursor === history.snapshots.length - 1
   ) {
-    const selection = last.selection && record.selection
-      ? { before: last.selection.before, after: record.selection.after }
-      : last.selection ?? record.selection;
+    const selection =
+      last.selection && record.selection
+        ? { before: last.selection.before, after: record.selection.after }
+        : (last.selection ?? record.selection);
     const merged: GestureRecord = { at, coalesce: gesture.coalesce, ...(selection === undefined ? {} : { selection }) };
     return replaceHistory(synced.histories, key, {
       snapshots: [...history.snapshots.slice(0, history.cursor), nextContent],

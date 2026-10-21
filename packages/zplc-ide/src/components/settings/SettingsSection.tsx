@@ -1,9 +1,6 @@
 /** The collapsible frame of one section of the project settings. */
 
-import {
-  ChevronDown,
-  ChevronRight,
-} from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '../../ui';
 
 export interface SettingsSectionProps {
@@ -23,9 +20,7 @@ export function SettingsSection({ title, icon, isExpanded, onToggle, badge, chil
           <span className="text-[var(--color-accent-blue)]">{icon}</span>
           <span className="text-sm font-medium text-[var(--text-primary)]">{title}</span>
           {badge && (
-            <span className="px-2 py-0.5 text-xs rounded-full bg-[var(--color-surface-600)] text-[var(--color-surface-300)]">
-              {badge}
-            </span>
+            <span className="px-2 py-0.5 text-xs rounded-full bg-[var(--color-surface-600)] text-[var(--color-surface-300)]">{badge}</span>
           )}
         </span>
         {isExpanded ? (
@@ -34,11 +29,7 @@ export function SettingsSection({ title, icon, isExpanded, onToggle, badge, chil
           <ChevronRight size={16} className="text-[var(--color-surface-400)]" />
         )}
       </Button>
-      {isExpanded && (
-        <div className="p-4 pt-0 border-t border-[var(--color-surface-600)]">
-          {children}
-        </div>
-      )}
+      {isExpanded && <div className="p-4 pt-0 border-t border-[var(--color-surface-600)]">{children}</div>}
     </div>
   );
 }

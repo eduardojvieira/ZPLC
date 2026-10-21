@@ -1,8 +1,8 @@
 /**
  * LD to Structured Text Transpiler
- * 
+ *
  * Converts LD (Ladder Diagram) models to IEC 61131-3 Structured Text.
- * 
+ *
  * Strategy: the power flow of a rung is followed column by column, left to right.
  * - Contacts in series AND the power that reaches them; a branch splits the power into its rows and
  *   joins them again with OR (branches nest).
@@ -10,23 +10,32 @@
  *   block uses that block's output (its Q), and a coil on a parallel row follows its own row.
  * - Edge contacts and edge coils keep their previous state in R_TRIG / F_TRIG instances.
  * - An element or connection that cannot be translated is an error that names it (LNG-002).
- * 
+ *
  * Supports both grid-based and legacy linear models.
  */
 
-import type { 
-  LDModel, 
-  LDRung, 
-  LDElement, 
-} from '../models/ld';
+import type { LDModel, LDRung, LDElement } from '../models/ld';
 import { isGridBasedRung, convertToGridRung } from '../models/ld';
 import { getDefaultPorts } from '../models/fbd';
 import type { ProjectBlock } from '../models/projectBlocks';
-import { POWER_OUTPUT, rungKeyOf, setTranspilationBlocks, transpilationBlocks, validateLDForTranspilation, type UnknownRecord } from './ldToSTValidation';
+import {
+  POWER_OUTPUT,
+  rungKeyOf,
+  setTranspilationBlocks,
+  transpilationBlocks,
+  validateLDForTranspilation,
+  type UnknownRecord,
+} from './ldToSTValidation';
 import { TRUE_POWER, and, atom, or, powerExpr, printPower, walkRung, type Power } from './ldPower';
 import {
-  ElementError, Listing, cellElement, rungElement,
-  type ElementDiagnostic, type MonitorEntry, type SourceElementId, type SourceMapRange,
+  ElementError,
+  Listing,
+  cellElement,
+  rungElement,
+  type ElementDiagnostic,
+  type MonitorEntry,
+  type SourceElementId,
+  type SourceMapRange,
 } from '../models/sourceElements';
 
 // =============================================================================
@@ -44,7 +53,6 @@ interface TranspileResult {
   /** Where the state of each element is read online: the variable that holds it, or the power that reaches it (LNG-006). */
   monitor?: MonitorEntry[];
 }
-
 
 // =============================================================================
 // Transpiler
@@ -229,44 +237,61 @@ function generateRungCode(rung: LDRung, rungKey: string): RungCode {
 
   /** The statements of one element of the rung, and the power that leaves it. */
   const emit = (element: LDElement, row: number, col: number, power: Power): Power => {
-      current = cellElement(rungKey, row, col);
-      switch (element.type) {
-        case 'contact_no':
-          return and(power, atom(element.variable!));
-        case 'contact_nc':
-          return and(power, atom(`NOT ${element.variable}`));
-        case 'contact_p':
-          return and(power, atom(edge(element, 'R_TRIG', element.variable!)));
-        case 'contact_n':
-          return and(power, atom(edge(element, 'F_TRIG', element.variable!)));
-        case 'coil':
-        case 'coil_negated':
-        case 'coil_set':
-        case 'coil_reset':
-        case 'coil_p':
-        case 'coil_n': {
-          const flow = stage(power);
-          switch (element.type) {
-            case 'coil': lines.push(`${element.variable} := ${flow};`, current); break;
-            case 'coil_negated': lines.push(`${element.variable} := NOT ${flow};`, current); break;
-            case 'coil_set': lines.push(`IF ${flow} THEN ${element.variable} := TRUE; END_IF;`, current); break;
-            case 'coil_reset': lines.push(`IF ${flow} THEN ${element.variable} := FALSE; END_IF;`, current); break;
-            case 'coil_p': lines.push(`${element.variable} := ${edge(element, 'R_TRIG', flow)};`, current); break;
-            case 'coil_n': lines.push(`${element.variable} := ${edge(element, 'F_TRIG', flow)};`, current); break;
-          }
-          return atom(flow);
+    current = cellElement(rungKey, row, col);
+    switch (element.type) {
+      case 'contact_no':
+        return and(power, atom(element.variable!));
+      case 'contact_nc':
+        return and(power, atom(`NOT ${element.variable}`));
+      case 'contact_p':
+        return and(power, atom(edge(element, 'R_TRIG', element.variable!)));
+      case 'contact_n':
+        return and(power, atom(edge(element, 'F_TRIG', element.variable!)));
+      case 'coil':
+      case 'coil_negated':
+      case 'coil_set':
+      case 'coil_reset':
+      case 'coil_p':
+      case 'coil_n': {
+        const flow = stage(power);
+        switch (element.type) {
+          case 'coil':
+            lines.push(`${element.variable} := ${flow};`, current);
+            break;
+          case 'coil_negated':
+            lines.push(`${element.variable} := NOT ${flow};`, current);
+            break;
+          case 'coil_set':
+            lines.push(`IF ${flow} THEN ${element.variable} := TRUE; END_IF;`, current);
+            break;
+          case 'coil_reset':
+            lines.push(`IF ${flow} THEN ${element.variable} := FALSE; END_IF;`, current);
+            break;
+          case 'coil_p':
+            lines.push(`${element.variable} := ${edge(element, 'R_TRIG', flow)};`, current);
+            break;
+          case 'coil_n':
+            lines.push(`${element.variable} := ${edge(element, 'F_TRIG', flow)};`, current);
+            break;
         }
-        case 'function_block':
-          return functionBlock(element, power);
-        default:
-          throw new ElementError(`Rung '${rung.id}' element '${element.id}' has the unsupported type '${element.type}'`, current);
+        return atom(flow);
       }
+      case 'function_block':
+        return functionBlock(element, power);
+      default:
+        throw new ElementError(`Rung '${rung.id}' element '${element.id}' has the unsupported type '${element.type}'`, current);
+    }
   };
 
   const output = walkRung(grid, gridRung.branches ?? [], cols, {
     rail: TRUE_POWER,
     join: or,
-    unpowered: (what, row, col) => { throw new ElementError(`Rung '${rung.id}' ${what}`, row === undefined || col === undefined ? rungElement(rungKey) : cellElement(rungKey, row, col)); },
+    unpowered: (what, row, col) => {
+      throw new ElementError(
+        `Rung '${rung.id}' ${what}`,
+        row === undefined || col === undefined ? rungElement(rungKey) : cellElement(rungKey, row, col),
+      );
+    },
     element: (element, row, col, power) => {
       const out = emit(element, row, col, power);
       const at = cellElement(rungKey, row, col);
@@ -274,7 +299,10 @@ function generateRungCode(rung: LDRung, rungKey: string): RungCode {
       monitor.push({ element: at, role: 'power', in: powerExpr(power), out: powerExpr(out) });
       if (element.type === 'function_block') {
         if (element.instance) {
-          for (const port of getDefaultPorts(String(element.fbType), transpilationBlocks().filter((block) => block.name === element.fbType)).outputs) {
+          for (const port of getDefaultPorts(
+            String(element.fbType),
+            transpilationBlocks().filter((block) => block.name === element.fbType),
+          ).outputs) {
             monitor.push({ element: at, role: 'output', port: port.name, variable: `${element.instance}.${port.name}` });
           }
         }
@@ -298,11 +326,27 @@ function defaultPowerInput(fbType: string): string | undefined {
   if (fbType === 'R_TRIG' || fbType === 'F_TRIG') return 'CLK';
   if (fbType === 'CTU' || fbType === 'CTUD') return 'CU';
   if (fbType === 'CTD') return 'CD';
-  if (['COMM_PUBLISH', 'COMM_SUBSCRIBE', 'COMM_MODBUS', 'COMM_CONNECT',
-    'MB_READ_HREG', 'MB_WRITE_HREG', 'MB_READ_COIL', 'MB_WRITE_COIL',
-    'MQTT_CONNECT', 'MQTT_PUBLISH', 'MQTT_SUBSCRIBE',
-    'AZURE_C2D_RECV', 'AZURE_DPS_PROV', 'AZURE_EG_PUB',
-    'AWS_FLEET_PROV', 'SPB_REBIRTH'].includes(fbType)) return 'EN';
+  if (
+    [
+      'COMM_PUBLISH',
+      'COMM_SUBSCRIBE',
+      'COMM_MODBUS',
+      'COMM_CONNECT',
+      'MB_READ_HREG',
+      'MB_WRITE_HREG',
+      'MB_READ_COIL',
+      'MB_WRITE_COIL',
+      'MQTT_CONNECT',
+      'MQTT_PUBLISH',
+      'MQTT_SUBSCRIBE',
+      'AZURE_C2D_RECV',
+      'AZURE_DPS_PROV',
+      'AZURE_EG_PUB',
+      'AWS_FLEET_PROV',
+      'SPB_REBIRTH',
+    ].includes(fbType)
+  )
+    return 'EN';
   return undefined;
 }
 
@@ -312,22 +356,22 @@ function defaultPowerInput(fbType: string): string | undefined {
 
 function formatValue(value: unknown, dataType: string): string {
   if (value === undefined || value === null) return '0';
-  
+
   if (typeof value === 'boolean') {
     return value ? 'TRUE' : 'FALSE';
   }
-  
+
   if (typeof value === 'string') {
     if (dataType.toUpperCase() === 'TIME') return value;
     return `'${value.replace(/'/g, "''")}'`;
   }
-  
+
   if (typeof value === 'number') {
     if (dataType === 'REAL' || dataType === 'LREAL') {
       return value.toString().includes('.') ? value.toString() : `${value}.0`;
     }
     return value.toString();
   }
-  
+
   return String(value);
 }

@@ -30,17 +30,17 @@ describe('parseAndMigrateProject', () => {
     expect(result).toMatchObject({ ok: true, changed: true });
     if (!result.ok) throw new Error('expected migration preview');
     expect(result.changes).toEqual([
-        { op: 'add', path: '/communication/bindings' },
-        { op: 'remove', path: '/communication/tags' },
-        { op: 'add', path: '/schemaVersion' },
-        { op: 'remove', path: '/tasks/0/file' },
-        { op: 'remove', path: '/tasks/0/interval' },
-        { op: 'add', path: '/tasks/0/interval_ms' },
-        { op: 'add', path: '/tasks/0/priority' },
-        { op: 'add', path: '/tasks/0/programs' },
-        { op: 'add', path: '/tasks/0/trigger' },
-        { op: 'remove', path: '/tasks/0/type' },
-        { op: 'remove', path: '/tasks/0/watchdog' },
+      { op: 'add', path: '/communication/bindings' },
+      { op: 'remove', path: '/communication/tags' },
+      { op: 'add', path: '/schemaVersion' },
+      { op: 'remove', path: '/tasks/0/file' },
+      { op: 'remove', path: '/tasks/0/interval' },
+      { op: 'add', path: '/tasks/0/interval_ms' },
+      { op: 'add', path: '/tasks/0/priority' },
+      { op: 'add', path: '/tasks/0/programs' },
+      { op: 'add', path: '/tasks/0/trigger' },
+      { op: 'remove', path: '/tasks/0/type' },
+      { op: 'remove', path: '/tasks/0/watchdog' },
     ]);
   });
 
@@ -63,19 +63,27 @@ describe('parseAndMigrateProject', () => {
     const base = fileURLToPath(new URL('../../projects/multitask_demo/', import.meta.url));
     const input = JSON.parse(readFileSync(`${base}zplc.json`, 'utf8'));
     const sources = ['FastBlink', 'SlowBlink'].map((name) => ({
-      name: `${name}.st`, content: readFileSync(`${base}src/${name}.st`, 'utf8'), language: 'ST' as const,
+      name: `${name}.st`,
+      content: readFileSync(`${base}src/${name}.st`, 'utf8'),
+      language: 'ST' as const,
     }));
     const before = compileMultiTaskProject(input, sources);
     const after = compileMultiTaskProject(project(input), sources);
 
     expect(after.zplcFile).toEqual(before.zplcFile);
     expect(after.tasks).toEqual(before.tasks);
-    expect(after.programDetails.map(({ name, entryPoint }) => ({ name, entryPoint })))
-      .toEqual(before.programDetails.map(({ name, entryPoint }) => ({ name, entryPoint })));
+    expect(after.programDetails.map(({ name, entryPoint }) => ({ name, entryPoint }))).toEqual(
+      before.programDetails.map(({ name, entryPoint }) => ({ name, entryPoint })),
+    );
   });
 
   it('rejects unsupported schema versions and malformed task boundaries', () => {
-    for (const input of [null, { ...legacyProject, schemaVersion: 3 }, { ...legacyProject, tasks: [{}] }, { ...legacyProject, tasks: [{ name: 'x', programs: ['Main'], interval_ms: 0, priority: 256 }] }]) {
+    for (const input of [
+      null,
+      { ...legacyProject, schemaVersion: 3 },
+      { ...legacyProject, tasks: [{}] },
+      { ...legacyProject, tasks: [{ name: 'x', programs: ['Main'], interval_ms: 0, priority: 256 }] },
+    ]) {
       const result = parseAndMigrateProject(input);
       expect(result.ok).toBe(false);
       if (!result.ok) expect(result).not.toHaveProperty('project');
@@ -114,15 +122,33 @@ describe('parseAndMigrateProject', () => {
   });
 
   it('does not mistake non-credential identifiers for secrets', () => {
-    expect(parseAndMigrateProject({
-      ...legacyProject,
-      vendor: { security: 'tls', securityLevel: 'mutual', ssid: 'plant', clientId: 'controller', groupId: 'line-a', azureDpsIdScope: 'scope', azureDpsEndpoint: 'endpoint', lwtPayload: 'offline', description: 'public' },
-    })).toMatchObject({ ok: true });
+    expect(
+      parseAndMigrateProject({
+        ...legacyProject,
+        vendor: {
+          security: 'tls',
+          securityLevel: 'mutual',
+          ssid: 'plant',
+          clientId: 'controller',
+          groupId: 'line-a',
+          azureDpsIdScope: 'scope',
+          azureDpsEndpoint: 'endpoint',
+          lwtPayload: 'offline',
+          description: 'public',
+        },
+      }),
+    ).toMatchObject({ ok: true });
   });
 
   it('keeps canonical v2 projects unchanged', () => {
     const canonical = project(legacyProject);
-    expect(parseAndMigrateProject(canonical)).toMatchObject({ ok: true, changed: false, changes: [], sourceSchemaVersion: 2, project: canonical });
+    expect(parseAndMigrateProject(canonical)).toMatchObject({
+      ok: true,
+      changed: false,
+      changes: [],
+      sourceSchemaVersion: 2,
+      project: canonical,
+    });
   });
 
   it('ships every bundled example as canonical v2 without a migration preview', () => {
@@ -162,7 +188,22 @@ describe('parseAndMigrateProject', () => {
   });
 
   it('removes canonical and legacy task fields that no longer belong in v2', () => {
-    const migrated = project({ ...legacyProject, tasks: [{ name: 'main', programs: ['Main'], file: 'Main', interval_ms: 10, interval: 10, trigger: 'cyclic', type: 'CYCLIC', watchdog_ms: 5, watchdog: 5 }] });
+    const migrated = project({
+      ...legacyProject,
+      tasks: [
+        {
+          name: 'main',
+          programs: ['Main'],
+          file: 'Main',
+          interval_ms: 10,
+          interval: 10,
+          trigger: 'cyclic',
+          type: 'CYCLIC',
+          watchdog_ms: 5,
+          watchdog: 5,
+        },
+      ],
+    });
     expect(migrated.tasks[0]).not.toHaveProperty('file');
     expect(migrated.tasks[0]).not.toHaveProperty('interval');
     expect(migrated.tasks[0]).not.toHaveProperty('type');
@@ -172,15 +213,23 @@ describe('parseAndMigrateProject', () => {
 
   it('blocks unequivocal credential names but not public identifiers', () => {
     const secrets = ['accessKey', 'secretKey', 'credential', 'credentials', 'bearer', 'psk'];
-    for (const key of secrets) expect(parseAndMigrateProject({ ...legacyProject, vendor: { [key]: 'secret' } })).toMatchObject({ ok: false });
-    expect(parseAndMigrateProject({ ...legacyProject, vendor: { accessKeyId: 'id', credentialType: 'x', publicCertificatePath: '/public.pem' } })).toMatchObject({ ok: true });
+    for (const key of secrets)
+      expect(parseAndMigrateProject({ ...legacyProject, vendor: { [key]: 'secret' } })).toMatchObject({ ok: false });
+    expect(
+      parseAndMigrateProject({
+        ...legacyProject,
+        vendor: { accessKeyId: 'id', credentialType: 'x', publicCertificatePath: '/public.pem' },
+      }),
+    ).toMatchObject({ ok: true });
   });
 
   it('names in the shipped schema every board of the board manifest, and the simulator, as a target', () => {
     // The schema is written by hand and the manifest is the one list of boards: a board added to the manifest that the
     // schema does not name would be flagged by every editor that reads the schema (the file has no generator).
     const schema = JSON.parse(readFileSync(fileURLToPath(new URL('../../zplc.schema.json', import.meta.url)), 'utf8'));
-    const manifest = JSON.parse(readFileSync(fileURLToPath(new URL('../../../../firmware/app/boards/boards.json', import.meta.url)), 'utf8')) as Array<{ ide_id: string }>;
+    const manifest = JSON.parse(
+      readFileSync(fileURLToPath(new URL('../../../../firmware/app/boards/boards.json', import.meta.url)), 'utf8'),
+    ) as Array<{ ide_id: string }>;
     const named: string[] = schema.properties.target.properties.board.enum;
     expect([...named].sort()).toEqual([...manifest.map((board) => board.ide_id), 'posix'].sort());
   });
@@ -190,7 +239,11 @@ describe('parseAndMigrateProject', () => {
     const task = schema.properties.tasks.items;
     expect(task.required).toEqual(['name']);
     expect(task.anyOf).toEqual([{ required: ['programs'] }, { required: ['file'] }]);
-    expect(task.properties).toMatchObject({ file: { type: 'string' }, interval: { type: 'integer', minimum: 1 }, type: { type: 'string' } });
+    expect(task.properties).toMatchObject({
+      file: { type: 'string' },
+      interval: { type: 'integer', minimum: 1 },
+      type: { type: 'string' },
+    });
     expect(task.properties).not.toHaveProperty('watchdog');
     expect(task.properties).not.toHaveProperty('watchdog_ms');
   });
@@ -243,15 +296,67 @@ describe('parseAndMigrateProject', () => {
         ...legacyProject,
         ...(key === 'password'
           ? { network: { wifi: { enabled: true, security: 'wpa2-psk', hiddenSsid: false, ipv4: { dhcp: true }, [key]: 'secret' } } }
-          : { communication: { mqtt: { enabled: false, profile: 'generic-broker', protocolVersion: '5.0', transport: 'tls', broker: 'broker.example', port: 8883, clientId: 'controller', keepAliveSec: 60, cleanSession: true, sessionExpirySec: 0, topicNamespace: 'plant', publishIntervalMs: 1000, publishQos: 0, subscribeQos: 0, publishRetain: false, lwtEnabled: false, lwtQos: 0, lwtRetain: false, securityLevel: 'tls-server-verify', [key]: 'secret' } } }),
+          : {
+              communication: {
+                mqtt: {
+                  enabled: false,
+                  profile: 'generic-broker',
+                  protocolVersion: '5.0',
+                  transport: 'tls',
+                  broker: 'broker.example',
+                  port: 8883,
+                  clientId: 'controller',
+                  keepAliveSec: 60,
+                  cleanSession: true,
+                  sessionExpirySec: 0,
+                  topicNamespace: 'plant',
+                  publishIntervalMs: 1000,
+                  publishQos: 0,
+                  subscribeQos: 0,
+                  publishRetain: false,
+                  lwtEnabled: false,
+                  lwtQos: 0,
+                  lwtRetain: false,
+                  securityLevel: 'tls-server-verify',
+                  [key]: 'secret',
+                },
+              },
+            }),
       });
       expect(result).toMatchObject({ ok: false });
     }
 
-    expect(parseAndMigrateProject({
-      ...legacyProject,
-      communication: { mqtt: { enabled: false, profile: 'generic-broker', protocolVersion: '5.0', transport: 'tls', broker: 'broker.example', port: 8883, clientId: 'controller', keepAliveSec: 60, cleanSession: true, sessionExpirySec: 0, username: 'operator', topicNamespace: 'plant', publishIntervalMs: 1000, publishQos: 0, subscribeQos: 0, publishRetain: false, lwtEnabled: false, lwtQos: 0, lwtRetain: false, securityLevel: 'tls-server-verify', caCertPath: 'certificates/ca.pem', clientCertPath: 'certificates/public.pem' } },
-    })).toMatchObject({ ok: true });
+    expect(
+      parseAndMigrateProject({
+        ...legacyProject,
+        communication: {
+          mqtt: {
+            enabled: false,
+            profile: 'generic-broker',
+            protocolVersion: '5.0',
+            transport: 'tls',
+            broker: 'broker.example',
+            port: 8883,
+            clientId: 'controller',
+            keepAliveSec: 60,
+            cleanSession: true,
+            sessionExpirySec: 0,
+            username: 'operator',
+            topicNamespace: 'plant',
+            publishIntervalMs: 1000,
+            publishQos: 0,
+            subscribeQos: 0,
+            publishRetain: false,
+            lwtEnabled: false,
+            lwtQos: 0,
+            lwtRetain: false,
+            securityLevel: 'tls-server-verify',
+            caCertPath: 'certificates/ca.pem',
+            clientCertPath: 'certificates/public.pem',
+          },
+        },
+      }),
+    ).toMatchObject({ ok: true });
 
     for (const key of Object.keys(canonicalMqtt)) expect(mqtt.properties).toHaveProperty(key);
   });
@@ -273,9 +378,15 @@ describe('parseAndMigrateProject', () => {
       { incompatibleOutputs: [] },
       { incompatibleOutputs: [['Motor.Forward']] },
       { incompatibleOutputs: [['Motor.Forward', 'Motor.Forward']] },
-      { incompatibleOutputs: [['Motor.Forward', 'Motor.Reverse'], ['Motor.Reverse', 'Motor.Forward']] },
+      {
+        incompatibleOutputs: [
+          ['Motor.Forward', 'Motor.Reverse'],
+          ['Motor.Reverse', 'Motor.Forward'],
+        ],
+      },
       { incompatibleOutputs: [['', 'Motor.Reverse']] },
       { incompatibleOutputs: [['Motor.Forward', 'Motor.Reverse']], extra: true },
-    ]) expect(parseAndMigrateProject({ ...legacyProject, safety })).toMatchObject({ ok: false });
+    ])
+      expect(parseAndMigrateProject({ ...legacyProject, safety })).toMatchObject({ ok: false });
   });
 });

@@ -12,7 +12,11 @@ import { COMMAND_LIST, MENU_TITLE_KEYS, isCommandEnabled, type CommandId } from 
 import { shortcutText } from './shortcutLabels';
 import { closeSurfaces, useCommandSurfaces } from './surfaces';
 
-interface Row extends PaletteEntry { id: CommandId; shortcut: string | null; enabled: boolean }
+interface Row extends PaletteEntry {
+  id: CommandId;
+  shortcut: string | null;
+  enabled: boolean;
+}
 
 function PaletteBody() {
   const { t } = useT();
@@ -21,13 +25,17 @@ function PaletteBody() {
   const [active, setActive] = useState(0);
   const listId = useId();
   const input = useRef<HTMLInputElement>(null);
-  const rows = useMemo((): Row[] => COMMAND_LIST.map((command) => ({
-    id: command.id as CommandId,
-    title: t(command.titleKey),
-    category: t(MENU_TITLE_KEYS[command.category]),
-    shortcut: command.shortcut ? shortcutText(command.id as CommandId) : null,
-    enabled: isCommandEnabled(command, state),
-  })), [t, state]);
+  const rows = useMemo(
+    (): Row[] =>
+      COMMAND_LIST.map((command) => ({
+        id: command.id as CommandId,
+        title: t(command.titleKey),
+        category: t(MENU_TITLE_KEYS[command.category]),
+        shortcut: command.shortcut ? shortcutText(command.id as CommandId) : null,
+        enabled: isCommandEnabled(command, state),
+      })),
+    [t, state],
+  );
   const shown = useMemo(() => filterEntries(query, rows), [query, rows]);
   const current = Math.min(active, Math.max(shown.length - 1, 0));
 
@@ -65,11 +73,16 @@ function PaletteBody() {
         autoComplete="off"
         spellCheck={false}
         value={query}
-        onChange={(event) => { setQuery(event.target.value); setActive(0); }}
+        onChange={(event) => {
+          setQuery(event.target.value);
+          setActive(0);
+        }}
         onKeyDown={onKeyDown}
       />
       {shown.length === 0 ? (
-        <p role="status" className="mt-3 text-sm text-[var(--text-secondary)]">{t('palette.empty', { query })}</p>
+        <p role="status" className="mt-3 text-sm text-[var(--text-secondary)]">
+          {t('palette.empty', { query })}
+        </p>
       ) : (
         <ul id={listId} role="listbox" aria-label={t('palette.list')} className="mt-3 max-h-80 overflow-y-auto">
           {shown.map((row, index) => (
@@ -83,10 +96,16 @@ function PaletteBody() {
               onMouseMove={() => setActive(index)}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => choose(row)}
-              className={cx('flex cursor-pointer items-baseline gap-3 px-3 py-2 text-sm', index === current && 'bg-[var(--color-surface-700)]', !row.enabled && 'cursor-default opacity-60')}
+              className={cx(
+                'flex cursor-pointer items-baseline gap-3 px-3 py-2 text-sm',
+                index === current && 'bg-[var(--color-surface-700)]',
+                !row.enabled && 'cursor-default opacity-60',
+              )}
             >
               <span className="min-w-0 flex-1 truncate">{row.title}</span>
-              <span className="shrink-0 text-[var(--text-secondary)]">{row.enabled ? row.category : `${row.category} · ${t('palette.unavailable')}`}</span>
+              <span className="shrink-0 text-[var(--text-secondary)]">
+                {row.enabled ? row.category : `${row.category} · ${t('palette.unavailable')}`}
+              </span>
               {row.shortcut !== null && <kbd className="shrink-0 font-mono text-[var(--text-secondary)]">{row.shortcut}</kbd>}
             </li>
           ))}

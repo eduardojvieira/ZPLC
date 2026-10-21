@@ -26,8 +26,7 @@ extern "C" {
  * Start from 0xFFFFFFFF and exclusive-or the result with 0xFFFFFFFF when the last byte is in. The state is the
  * register itself, so one value can be carried across several calls.
  */
-static inline uint32_t zplc_crc32_update(uint32_t crc, const uint8_t *data,
-                                         size_t length) {
+static inline uint32_t zplc_crc32_update(uint32_t crc, const uint8_t *data, size_t length) {
   size_t index;
 
   for (index = 0U; index < length; index++) {
@@ -42,9 +41,7 @@ static inline uint32_t zplc_crc32_update(uint32_t crc, const uint8_t *data,
 }
 
 /** @brief CRC-32 of a buffer in one call. */
-static inline uint32_t zplc_crc32(const uint8_t *data, size_t length) {
-  return zplc_crc32_update(0xFFFFFFFFU, data, length) ^ 0xFFFFFFFFU;
-}
+static inline uint32_t zplc_crc32(const uint8_t *data, size_t length) { return zplc_crc32_update(0xFFFFFFFFU, data, length) ^ 0xFFFFFFFFU; }
 
 #ifdef __cplusplus
 }

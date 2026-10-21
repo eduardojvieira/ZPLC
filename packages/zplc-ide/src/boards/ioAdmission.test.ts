@@ -19,14 +19,25 @@ function program(instructions: Array<[number, number?]>): Uint8Array {
 
 function device(board: string): DeviceIoIdentity {
   const identity = getBoardIoIdentity(board)!;
-  return { schema: 1, boardId: identity.boardId, hash: identity.hash, channels: 9, inputBytes: identity.inputBytes, outputBytes: identity.outputBytes };
+  return {
+    schema: 1,
+    boardId: identity.boardId,
+    hash: identity.hash,
+    channels: 9,
+    inputBytes: identity.inputBytes,
+    outputBytes: identity.outputBytes,
+  };
 }
 
 const accessesOf = (instructions: Array<[number, number?]>) => processImageAccesses(program(instructions));
 
 describe('deploy admission by I/O (IO-004)', () => {
   test('a program that stays on the channels of its board is admitted', () => {
-    const accesses = accessesOf([[Op.LOAD8, 0x0000], [Op.STORE8, 0x1000], [Op.LOAD16, 0x0008]]);
+    const accesses = accessesOf([
+      [Op.LOAD8, 0x0000],
+      [Op.STORE8, 0x1000],
+      [Op.LOAD16, 0x0008],
+    ]);
     expect(checkProgramIo({ accesses, board: 'rpi_pico', device: device('rpi_pico') })).toEqual({ ok: true });
   });
 
@@ -49,7 +60,10 @@ describe('deploy admission by I/O (IO-004)', () => {
   });
 
   test('the system registers of the input image are readable on every board', () => {
-    const accesses = accessesOf([[Op.LOAD32, 0x0ff0], [Op.LOAD8, 0x0ff9]]);
+    const accesses = accessesOf([
+      [Op.LOAD32, 0x0ff0],
+      [Op.LOAD8, 0x0ff9],
+    ]);
     expect(checkProgramIo({ accesses, board: 'nucleo_h743zi', device: device('nucleo_h743zi') })).toEqual({ ok: true });
   });
 

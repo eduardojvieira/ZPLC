@@ -66,7 +66,14 @@ describe('parsePlan', () => {
 describe('buildIndex', () => {
   it('joins the spec with the plan and leaves the plan fields out when the plan does not name the requirement', () => {
     const index = buildIndex(spec, plan);
-    expect(index[2]).toEqual({ id: 'CMP-001', workstream: 'CMP', title: 'Compiling MUST fail: it names the identifier.', phase: 2, workPackage: 'WP-24', alsoAdvancedBy: ['WP-04'] });
+    expect(index[2]).toEqual({
+      id: 'CMP-001',
+      workstream: 'CMP',
+      title: 'Compiling MUST fail: it names the identifier.',
+      phase: 2,
+      workPackage: 'WP-24',
+      alsoAdvancedBy: ['WP-04'],
+    });
     expect(index[3]).toEqual({ id: 'CMP-002', workstream: 'CMP', title: expect.any(String) });
   });
 
@@ -87,7 +94,11 @@ describe('validateIndex', () => {
   });
 
   it('rejects an empty title, a bad package or a phase that is not a whole number', () => {
-    const errors = validateIndex([{ ...good[0], title: ' ' }, { ...good[1], workPackage: 'P2' }, { ...good[2], phase: 1.5 }]).join('\n');
+    const errors = validateIndex([
+      { ...good[0], title: ' ' },
+      { ...good[1], workPackage: 'P2' },
+      { ...good[2], phase: 1.5 },
+    ]).join('\n');
     expect(errors).toContain('VF-001: title must not be empty');
     expect(errors).toContain('VF-002: workPackage must look like WP-12');
     expect(errors).toContain('CMP-001: phase must be a whole number');

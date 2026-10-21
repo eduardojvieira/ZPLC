@@ -3,7 +3,7 @@ slug: /tutorials/first-board
 id: first-board
 title: Your first board
 sidebar_label: Your first board
-description: "The steps to build the firmware, flash it, connect ZPLC, deploy a program and observe an output on a Raspberry Pi Pico or an ESP32-S3, not yet executed on a board."
+description: 'The steps to build the firmware, flash it, connect ZPLC, deploy a program and observe an output on a Raspberry Pi Pico or an ESP32-S3, not yet executed on a board.'
 tags: [tutorial, hardware, raspberry-pi-pico, esp32-s3]
 ---
 
@@ -30,14 +30,14 @@ checked.
 
 ## What you need
 
-| | Raspberry Pi Pico | ESP32-S3-DevKitC-1 (N8R8) |
-| --- | --- | --- |
-| Build target | `rpi_pico/rp2040` | `esp32s3_devkitc/esp32s3/procpu` |
-| Board in ZPLC | `rpi_pico` | `esp32s3_devkitc` |
-| Example project | `pico_blinky` | `esp32s3_blinky` |
-| First digital output | `DO0`, `%QX0.0`, pin GP0 (header pin 1) | `DO0`, `%QX0.0`, pin GPIO15 (header J1 pin 8) |
-| What to wire | An LED and a 330 Ω resistor from the pin to GND (header pin 3) | An LED and a 330 Ω resistor from the pin to GND (header J1 pin 22) |
-| Interface to ZPLC | The USB cable of the board | The USB cable, on the port marked USB (not UART) |
+|                      | Raspberry Pi Pico                                              | ESP32-S3-DevKitC-1 (N8R8)                                          |
+| -------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Build target         | `rpi_pico/rp2040`                                              | `esp32s3_devkitc/esp32s3/procpu`                                   |
+| Board in ZPLC        | `rpi_pico`                                                     | `esp32s3_devkitc`                                                  |
+| Example project      | `pico_blinky`                                                  | `esp32s3_blinky`                                                   |
+| First digital output | `DO0`, `%QX0.0`, pin GP0 (header pin 1)                        | `DO0`, `%QX0.0`, pin GPIO15 (header J1 pin 8)                      |
+| What to wire         | An LED and a 330 Ω resistor from the pin to GND (header pin 3) | An LED and a 330 Ω resistor from the pin to GND (header J1 pin 22) |
+| Interface to ZPLC    | The USB cable of the board                                     | The USB cable, on the port marked USB (not UART)                   |
 
 The channels and the safe value of every output, the electrical notes and which
 pins the board's devicetree proves are in [Supported boards](../reference/boards.md).
@@ -125,13 +125,13 @@ safe state, off ([Scheduler](../runtime/scheduler.md#pause-resume-step-and-stop)
 
 ## What is verified
 
-| Step | Evidence today | Status |
-| --- | --- | --- |
-| 1. Get the firmware | Continuous integration runs `west build` and the same flash and RAM budget check as the build script | Builds in CI: `cross-build` |
-| 2. Flash it | None | Not yet verified on hardware |
-| 3. Connect ZPLC | The Blink tutorial exercises connecting in the simulator; no board has been connected | Not yet verified on hardware |
-| 4. Deploy and run | The Blink tutorial exercises running in the simulator; no board has received a program | Not yet verified on hardware |
-| 5. Observe | The Watch table is exercised in the simulator; no physical output has been seen to change | Not yet verified on hardware |
+| Step                | Evidence today                                                                                       | Status                       |
+| ------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------- |
+| 1. Get the firmware | Continuous integration runs `west build` and the same flash and RAM budget check as the build script | Builds in CI: `cross-build`  |
+| 2. Flash it         | None                                                                                                 | Not yet verified on hardware |
+| 3. Connect ZPLC     | The Blink tutorial exercises connecting in the simulator; no board has been connected                | Not yet verified on hardware |
+| 4. Deploy and run   | The Blink tutorial exercises running in the simulator; no board has received a program               | Not yet verified on hardware |
+| 5. Observe          | The Watch table is exercised in the simulator; no physical output has been seen to change            | Not yet verified on hardware |
 
 ## What you can report
 

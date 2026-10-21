@@ -1,11 +1,7 @@
 import { createHash } from 'node:crypto';
 import { createReadStream, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import {
-  assertPackagedAppAsar,
-  assertPackagedRuntime,
-  discoverUnpackedResources,
-} from './smoke-desktop-builds';
+import { assertPackagedAppAsar, assertPackagedRuntime, discoverUnpackedResources } from './smoke-desktop-builds';
 
 type LinuxPayloadHashes = {
   appAsarSha256: string;
@@ -15,7 +11,9 @@ type LinuxPayloadHashes = {
 function singleLinuxResources(workspace: string): string {
   const resources = discoverUnpackedResources(join(workspace, 'dist-electron'));
   if (resources.length !== 1) {
-    throw new Error(`Linux payload reproducibility check requires exactly one unpacked Linux payload in ${workspace}; found ${resources.length}`);
+    throw new Error(
+      `Linux payload reproducibility check requires exactly one unpacked Linux payload in ${workspace}; found ${resources.length}`,
+    );
   }
   return resources[0]!;
 }

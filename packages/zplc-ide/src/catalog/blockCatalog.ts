@@ -27,10 +27,16 @@ const CATEGORY_RULES: Array<{ name: string; blocks: string[] }> = [
   { name: 'Communication', blocks: [...CUSTOM_COMMUNICATION_BLOCKS] },
   { name: 'Logic Gates', blocks: ['AND', 'OR', 'NOT', 'XOR', 'NAND', 'NOR'] },
   { name: 'Comparison', blocks: ['EQ', 'NE', 'LT', 'LE', 'GT', 'GE'] },
-  { name: 'Math', blocks: ['ADD', 'SUB', 'MUL', 'DIV', 'MOD', 'ABS', 'ABSF', 'SQRT', 'EXPT', 'LN', 'LOG', 'EXP', 'NEG', 'NEGF', 'TRUNC', 'ROUND'] },
+  {
+    name: 'Math',
+    blocks: ['ADD', 'SUB', 'MUL', 'DIV', 'MOD', 'ABS', 'ABSF', 'SQRT', 'EXPT', 'LN', 'LOG', 'EXP', 'NEG', 'NEGF', 'TRUNC', 'ROUND'],
+  },
   { name: 'Trigonometry', blocks: ['SIN', 'COS', 'TAN', 'ASIN', 'ACOS', 'ATAN', 'ATAN2'] },
   { name: 'Selection', blocks: ['MAX', 'MIN', 'LIMIT', 'SEL', 'MUX', 'NORM_X', 'SCALE_X'] },
-  { name: 'Bitwise', blocks: ['SHL', 'SHR', 'ROL', 'ROR', 'AND_WORD', 'OR_WORD', 'XOR_WORD', 'NOT_WORD', 'AND_DWORD', 'OR_DWORD', 'XOR_DWORD', 'NOT_DWORD'] },
+  {
+    name: 'Bitwise',
+    blocks: ['SHL', 'SHR', 'ROL', 'ROR', 'AND_WORD', 'OR_WORD', 'XOR_WORD', 'NOT_WORD', 'AND_DWORD', 'OR_DWORD', 'XOR_DWORD', 'NOT_DWORD'],
+  },
   { name: 'Type Conversion', blocks: ['INT_TO_REAL', 'REAL_TO_INT', 'INT_TO_BOOL', 'BOOL_TO_INT'] },
   { name: 'Strings', blocks: ['LEN', 'CONCAT', 'LEFT', 'RIGHT', 'MID', 'FIND', 'INSERT', 'DELETE', 'REPLACE', 'STRCMP'] },
 ];
@@ -40,8 +46,20 @@ function collectKnownBlocks(): Set<string> {
     ...getAllFBNames(),
     ...getAllFnNames(),
     ...CUSTOM_COMMUNICATION_BLOCKS,
-    'AND', 'OR', 'NOT', 'XOR', 'EQ', 'NE', 'LT', 'LE', 'GT', 'GE',
-    'ADD', 'SUB', 'MUL', 'DIV',
+    'AND',
+    'OR',
+    'NOT',
+    'XOR',
+    'EQ',
+    'NE',
+    'LT',
+    'LE',
+    'GT',
+    'GE',
+    'ADD',
+    'SUB',
+    'MUL',
+    'DIV',
   ]);
 }
 
@@ -58,7 +76,9 @@ export function getBlockCategories(): BlockCategoryDefinition[] {
     };
   }).filter((category) => category.blocks.length > 0);
 
-  const uncategorized = Array.from(known).filter((block) => !assigned.has(block)).sort();
+  const uncategorized = Array.from(known)
+    .filter((block) => !assigned.has(block))
+    .sort();
   if (uncategorized.length > 0) {
     categories.push({
       name: 'Other',
@@ -70,9 +90,6 @@ export function getBlockCategories(): BlockCategoryDefinition[] {
 }
 
 export function getFunctionBlockNamesForVisualEditors(): string[] {
-  const names = new Set<string>([
-    ...getAllFBNames(),
-    ...CUSTOM_COMMUNICATION_BLOCKS,
-  ]);
+  const names = new Set<string>([...getAllFBNames(), ...CUSTOM_COMMUNICATION_BLOCKS]);
   return Array.from(names).sort();
 }

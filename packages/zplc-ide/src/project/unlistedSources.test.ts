@@ -7,10 +7,12 @@ import { describe, expect, it } from 'bun:test';
 import { scanUnlistedSources, UNLISTED_SCAN_FILES, UNLISTED_SCAN_FOLDERS, type ScanEntry } from './unlistedSources';
 
 type Folder = Record<string, ScanEntry['kind']>;
-const listing = (disk: Record<string, Folder>) => async (logical: string): Promise<ScanEntry[] | null> => {
-  const folder = disk[logical];
-  return folder === undefined ? null : Object.entries(folder).map(([name, kind]) => ({ name, kind }));
-};
+const listing =
+  (disk: Record<string, Folder>) =>
+  async (logical: string): Promise<ScanEntry[] | null> => {
+    const folder = disk[logical];
+    return folder === undefined ? null : Object.entries(folder).map(([name, kind]) => ({ name, kind }));
+  };
 
 describe('scanUnlistedSources (IDE-023)', () => {
   it('finds Structured Text files outside src and the listed folders, and leaves the others', async () => {
@@ -38,8 +40,20 @@ describe('scanUnlistedSources (IDE-023)', () => {
 
   it('skips the folders of the project at the top, names that start with a dot, and links, and compares names without case', async () => {
     const disk = {
-      '': { tests: 'directory', build: 'directory', node_modules: 'directory', '.git': 'directory', '.Hidden.st': 'file', 'Link.st': 'link', Lib: 'directory', area: 'directory' },
-      tests: { 'S.st': 'file' }, build: { 'B.st': 'file' }, node_modules: { 'N.st': 'file' }, '.git': { 'G.st': 'file' },
+      '': {
+        tests: 'directory',
+        build: 'directory',
+        node_modules: 'directory',
+        '.git': 'directory',
+        '.Hidden.st': 'file',
+        'Link.st': 'link',
+        Lib: 'directory',
+        area: 'directory',
+      },
+      tests: { 'S.st': 'file' },
+      build: { 'B.st': 'file' },
+      node_modules: { 'N.st': 'file' },
+      '.git': { 'G.st': 'file' },
       Lib: { 'L.st': 'file' },
       area: { build: 'directory', 'UPPER.ST': 'file' },
       'area/build': { 'Nested.st': 'file' },
@@ -56,7 +70,10 @@ describe('scanUnlistedSources (IDE-023)', () => {
     for (let index = 0; index < 100; index += 1) wide[`folder${String(index).padStart(3, '0')}`] = 'directory';
     const disk: Record<string, Folder> = { '': wide };
     let listed = 0;
-    const counting = async (logical: string): Promise<ScanEntry[] | null> => { listed += 1; return disk[logical] === undefined ? [] : listing(disk)(logical); };
+    const counting = async (logical: string): Promise<ScanEntry[] | null> => {
+      listed += 1;
+      return disk[logical] === undefined ? [] : listing(disk)(logical);
+    };
     await scanUnlistedSources(counting, ['src']);
     expect(listed).toBeLessThanOrEqual(UNLISTED_SCAN_FOLDERS);
 

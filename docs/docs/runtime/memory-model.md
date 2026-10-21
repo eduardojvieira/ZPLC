@@ -17,13 +17,13 @@ The public memory contract is defined primarily by:
 
 `zplc_isa.h` exposes five logical memory regions:
 
-| Region | Base | Role |
-|---|---:|---|
-| IPI | `0x0000` | input process image |
-| OPI | `0x1000` | output process image |
-| WORK | `0x2000` | working memory |
-| RETAIN | `0x4000` | retentive memory |
-| CODE | `0x5000` | loaded bytecode |
+| Region |     Base | Role                 |
+| ------ | -------: | -------------------- |
+| IPI    | `0x0000` | input process image  |
+| OPI    | `0x1000` | output process image |
+| WORK   | `0x2000` | working memory       |
+| RETAIN | `0x4000` | retentive memory     |
+| CODE   | `0x5000` | loaded bytecode      |
 
 ```mermaid
 flowchart LR

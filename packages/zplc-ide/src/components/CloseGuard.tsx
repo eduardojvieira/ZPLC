@@ -28,20 +28,23 @@ export function CloseGuard() {
 
   useEffect(() => guard?.onCloseRequested(setAction), [guard]);
 
-  const answer = useCallback(async (choice: UnsavedChoice) => {
-    if (choice === 'save') {
-      setSaving(true);
-      await useIDEStore.getState().saveAllFiles();
-      if (useIDEStore.getState().projectConfigDirty) await useIDEStore.getState().saveProjectConfig();
-      setSaving(false);
-    }
-    if (unsavedOutcome(choice, useIDEStore.getState().hasUnsavedChanges()) === 'proceed') {
-      // The main process destroys the window without unloading the page, so nothing else would send the session (IDE-008).
-      await Promise.race([flushSession(), new Promise((resolve) => setTimeout(resolve, SESSION_FLUSH_WAIT_MS))]);
-      await guard?.closeNow();
-    }
-    setAction(null);
-  }, [guard]);
+  const answer = useCallback(
+    async (choice: UnsavedChoice) => {
+      if (choice === 'save') {
+        setSaving(true);
+        await useIDEStore.getState().saveAllFiles();
+        if (useIDEStore.getState().projectConfigDirty) await useIDEStore.getState().saveProjectConfig();
+        setSaving(false);
+      }
+      if (unsavedOutcome(choice, useIDEStore.getState().hasUnsavedChanges()) === 'proceed') {
+        // The main process destroys the window without unloading the page, so nothing else would send the session (IDE-008).
+        await Promise.race([flushSession(), new Promise((resolve) => setTimeout(resolve, SESSION_FLUSH_WAIT_MS))]);
+        await guard?.closeNow();
+      }
+      setAction(null);
+    },
+    [guard],
+  );
 
   if (!action) return null;
   const verb = action === 'reload' ? 'reload' : 'close';

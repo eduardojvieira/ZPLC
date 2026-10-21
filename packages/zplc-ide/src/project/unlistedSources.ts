@@ -14,7 +14,10 @@ export const UNLISTED_SCAN_FOLDERS = 64;
 export const UNLISTED_SCAN_FILES = 256;
 export const UNLISTED_SCAN_SKIP: ReadonlySet<string> = new Set(['src', 'tests', 'build', 'node_modules', 'dist', 'coverage']);
 
-export interface ScanEntry { name: string; kind: 'file' | 'directory' | 'link' | 'other' }
+export interface ScanEntry {
+  name: string;
+  kind: 'file' | 'directory' | 'link' | 'other';
+}
 
 /** The entries of the folder at this "/"-separated path ("" is the project folder), or null when it cannot be listed. */
 export type ListFolder = (logical: string) => Promise<ScanEntry[] | null>;
@@ -35,7 +38,12 @@ export async function scanUnlistedSources(list: ListFolder, listed: readonly str
       if (entry.kind === 'link' || entry.name.startsWith('.')) continue;
       if (entry.kind === 'file' && /\.st$/i.test(entry.name) && !known.has(logical.toLowerCase())) {
         if (found.length < UNLISTED_SCAN_FILES) found.push(path);
-      } else if (entry.kind === 'directory' && depth < 2 && !(depth === 0 && UNLISTED_SCAN_SKIP.has(entry.name.toLowerCase())) && !known.has(path.toLowerCase())) {
+      } else if (
+        entry.kind === 'directory' &&
+        depth < 2 &&
+        !(depth === 0 && UNLISTED_SCAN_SKIP.has(entry.name.toLowerCase())) &&
+        !known.has(path.toLowerCase())
+      ) {
         await scan(path, depth + 1);
       }
     }

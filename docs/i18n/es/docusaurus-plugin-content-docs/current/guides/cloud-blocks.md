@@ -3,7 +3,7 @@ slug: /guides/cloud-blocks
 id: cloud-blocks
 title: Usar los bloques de nube
 sidebar_label: Bloques de nube
-description: "Aprovisione un dispositivo e intercambie mensajes con Azure y AWS desde el programa, y qué es lo que no se ha probado de cada bloque."
+description: 'Aprovisione un dispositivo e intercambie mensajes con Azure y AWS desde el programa, y qué es lo que no se ha probado de cada bloque.'
 tags: [how-to, cloud, azure, aws, sparkplug]
 ---
 
@@ -26,13 +26,13 @@ fila lo diga.
 
 ## Qué hace cada bloque
 
-| Bloque | Qué hace | Configuración que necesita |
-| --- | --- | --- |
+| Bloque           | Qué hace                                                                                   | Configuración que necesita                                     |
+| ---------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
 | `AZURE_DPS_PROV` | Registra el dispositivo en el Azure Device Provisioning Service y devuelve el hub asignado | `azureDpsEnabled`, `azureDpsIdScope`, `azureDpsRegistrationId` |
-| `AZURE_C2D_RECV` | Recibe un mensaje de la nube al dispositivo de Azure IoT Hub | `azureC2dEnabled`, perfil `azure-iot-hub` |
-| `AZURE_EG_PUB` | Publica un evento en un tema de Azure Event Grid | perfil `azure-event-grid-mqtt`, `azureEventGridTopic` |
-| `AWS_FLEET_PROV` | Aprovisiona el dispositivo mediante el aprovisionamiento de flota de AWS IoT | `awsFleetEnabled`, `awsFleetTemplateName`, `awsClaimCertPath` |
-| `SPB_REBIRTH` | Pide a la sesión Sparkplug B que publique de nuevo sus mensajes de nacimiento | perfil `sparkplug-b` |
+| `AZURE_C2D_RECV` | Recibe un mensaje de la nube al dispositivo de Azure IoT Hub                               | `azureC2dEnabled`, perfil `azure-iot-hub`                      |
+| `AZURE_EG_PUB`   | Publica un evento en un tema de Azure Event Grid                                           | perfil `azure-event-grid-mqtt`, `azureEventGridTopic`          |
+| `AWS_FLEET_PROV` | Aprovisiona el dispositivo mediante el aprovisionamiento de flota de AWS IoT               | `awsFleetEnabled`, `awsFleetTemplateName`, `awsClaimCertPath`  |
+| `SPB_REBIRTH`    | Pide a la sesión Sparkplug B que publique de nuevo sus mensajes de nacimiento              | perfil `sparkplug-b`                                           |
 
 Los pines de cada bloque, con sus tipos, están en la
 [referencia de bloques de función](../reference/function-blocks.md#azure_c2d_recv).
@@ -169,13 +169,13 @@ registran en el registro
 
 ## Qué está verificado, bloque por bloque
 
-| Bloque | Un servicio real | Un emulador o un doble local | Un intercambio grabado | Qué se probó en su lugar |
-| --- | --- | --- | --- | --- |
-| `AZURE_C2D_RECV` | No | No | Ninguno registrado | El manejador (pines, handshake, códigos de estado, `VALID` durante un ciclo) y la disposición del bloque con sus límites, contra un sustituto |
-| `AZURE_DPS_PROV` | No | Existe una herramienta manual; ninguna prueba ejecutada la usa | Ninguno registrado | El manejador, con el servicio de aprovisionamiento reemplazado por uno que espera; el generador del token de firma de acceso compartido, contra un vector conocido |
-| `AZURE_EG_PUB` | No | Existe una herramienta manual; ninguna prueba ejecutada la usa | Ninguno registrado | El manejador y la disposición del bloque con los límites de su texto, contra un sustituto |
-| `AWS_FLEET_PROV` | No | Existe una herramienta manual; ninguna prueba ejecutada la usa | Ninguno registrado | El manejador, con el servicio de aprovisionamiento reemplazado por uno que espera |
-| `SPB_REBIRTH` | No | No | Ninguno registrado | El manejador; un comando de renacimiento entregado al cliente no hace más que publicar de nuevo los mensajes de nacimiento |
+| Bloque           | Un servicio real | Un emulador o un doble local                                   | Un intercambio grabado | Qué se probó en su lugar                                                                                                                                           |
+| ---------------- | ---------------- | -------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `AZURE_C2D_RECV` | No               | No                                                             | Ninguno registrado     | El manejador (pines, handshake, códigos de estado, `VALID` durante un ciclo) y la disposición del bloque con sus límites, contra un sustituto                      |
+| `AZURE_DPS_PROV` | No               | Existe una herramienta manual; ninguna prueba ejecutada la usa | Ninguno registrado     | El manejador, con el servicio de aprovisionamiento reemplazado por uno que espera; el generador del token de firma de acceso compartido, contra un vector conocido |
+| `AZURE_EG_PUB`   | No               | Existe una herramienta manual; ninguna prueba ejecutada la usa | Ninguno registrado     | El manejador y la disposición del bloque con los límites de su texto, contra un sustituto                                                                          |
+| `AWS_FLEET_PROV` | No               | Existe una herramienta manual; ninguna prueba ejecutada la usa | Ninguno registrado     | El manejador, con el servicio de aprovisionamiento reemplazado por uno que espera                                                                                  |
+| `SPB_REBIRTH`    | No               | No                                                             | Ninguno registrado     | El manejador; un comando de renacimiento entregado al cliente no hace más que publicar de nuevo los mensajes de nacimiento                                         |
 
 Las herramientas manuales están en `tools/connectivity/`: `fake_azure_dps.py`,
 `fake_aws_fleet.py` e `inspect_event_grid.py` se ejecutan contra un broker local y

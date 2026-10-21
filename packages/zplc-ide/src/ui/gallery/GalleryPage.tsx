@@ -24,7 +24,9 @@ export function GalleryPage() {
   const update = useAppSettings((state) => state.update);
   const headingId = useId();
 
-  useEffect(() => { applyThemeToDOM(theme); }, [theme]);
+  useEffect(() => {
+    applyThemeToDOM(theme);
+  }, [theme]);
 
   return (
     <main className="ui-gallery" aria-labelledby={headingId}>
@@ -34,19 +36,37 @@ export function GalleryPage() {
         <div className="ui-gallery-controls">
           <Select label="Page theme" value={theme} onChange={(event) => useIDEStore.getState().setTheme(event.target.value as Theme)}>
             <option value="system">System</option>
-            {THEME_IDS.map((id) => <option key={id} value={id}>{THEME_NAMES[id]}</option>)}
+            {THEME_IDS.map((id) => (
+              <option key={id} value={id}>
+                {THEME_NAMES[id]}
+              </option>
+            ))}
           </Select>
           <Select label="Page density" value={density} onChange={(event) => update({ density: event.target.value as Density })}>
-            {DENSITY_CHOICES.map((id) => <option key={id} value={id}>{DENSITY_NAMES[id]}</option>)}
+            {DENSITY_CHOICES.map((id) => (
+              <option key={id} value={id}>
+                {DENSITY_NAMES[id]}
+              </option>
+            ))}
           </Select>
         </div>
       </header>
-      {THEME_IDS.flatMap((themeId) => DENSITY_CHOICES.map((densityId) => (
-        <section key={`${themeId}-${densityId}`} className="ui-gallery-panel" data-ui-theme={themeId} data-ui-density={densityId} aria-label={`${THEME_NAMES[themeId]}, ${DENSITY_NAMES[densityId]}`}>
-          <h2 className="ui-gallery-panel-title">{THEME_NAMES[themeId]}, {DENSITY_NAMES[densityId].toLowerCase()}</h2>
-          <Specimens />
-        </section>
-      )))}
+      {THEME_IDS.flatMap((themeId) =>
+        DENSITY_CHOICES.map((densityId) => (
+          <section
+            key={`${themeId}-${densityId}`}
+            className="ui-gallery-panel"
+            data-ui-theme={themeId}
+            data-ui-density={densityId}
+            aria-label={`${THEME_NAMES[themeId]}, ${DENSITY_NAMES[densityId]}`}
+          >
+            <h2 className="ui-gallery-panel-title">
+              {THEME_NAMES[themeId]}, {DENSITY_NAMES[densityId].toLowerCase()}
+            </h2>
+            <Specimens />
+          </section>
+        )),
+      )}
     </main>
   );
 }

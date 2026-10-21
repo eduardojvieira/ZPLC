@@ -21,7 +21,7 @@
 
 /* WORK0 := WORK0 + 1; OPI0 := WORK0 */
 static const uint8_t counter_code[] = {
-    OP_LOAD8,  LOW(COUNTER),           HIGH(COUNTER),           OP_PUSH8, 1U, OP_ADD,
+    OP_LOAD8,  LOW(COUNTER),           HIGH(COUNTER),           OP_PUSH8, 1U,           OP_ADD,
     OP_STORE8, LOW(COUNTER),           HIGH(COUNTER),           OP_LOAD8, LOW(COUNTER), HIGH(COUNTER),
     OP_STORE8, LOW(ZPLC_MEM_OPI_BASE), HIGH(ZPLC_MEM_OPI_BASE), OP_HALT,
 };

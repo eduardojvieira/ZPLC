@@ -15,7 +15,9 @@ const handlers = new Map<CommandId, CommandHandler>();
 export function bindCommands(bound: Partial<Record<CommandId, CommandHandler>>): () => void {
   const entries = Object.entries(bound) as Array<[CommandId, CommandHandler]>;
   for (const [id, handler] of entries) handlers.set(id, handler);
-  return () => { for (const [id, handler] of entries) if (handlers.get(id) === handler) handlers.delete(id); };
+  return () => {
+    for (const [id, handler] of entries) if (handlers.get(id) === handler) handlers.delete(id);
+  };
 }
 
 export type CommandOutcome = 'ran' | 'unavailable' | 'unknown';
@@ -29,7 +31,9 @@ export function runCommand(id: unknown, options: { respectEnabled?: boolean } = 
   const handler = handlers.get(id);
   if (!handler) return 'unavailable';
   if (options.respectEnabled && !isCommandEnabled(commandById(id), commandState)) return 'unavailable';
-  void Promise.resolve(handler()).catch((error: unknown) => { console.error(`Command ${id} failed`, error); });
+  void Promise.resolve(handler()).catch((error: unknown) => {
+    console.error(`Command ${id} failed`, error);
+  });
   return 'ran';
 }
 
@@ -53,7 +57,12 @@ export function resetCommandsForTest(): void {
   commandState = INITIAL_COMMAND_STATE;
 }
 
-const subscribe = (listener: () => void): (() => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; };
+const subscribe = (listener: () => void): (() => void) => {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+};
 
 export function useCommandState(): CommandState {
   return useSyncExternalStore(subscribe, getCommandState, getCommandState);

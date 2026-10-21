@@ -5,15 +5,9 @@
   "order": 3,
   "module": 6,
   "level": "intermediate",
-  "prerequisites": [
-    "motor-plant-feedback"
-  ],
-  "languages": [
-    "ST"
-  ],
-  "tracks": [
-    "simulation"
-  ],
+  "prerequisites": ["motor-plant-feedback"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
   "unsupported": {
     "hardware": {
       "reason": {

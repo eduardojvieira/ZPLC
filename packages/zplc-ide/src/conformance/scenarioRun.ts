@@ -44,20 +44,26 @@ export async function runScenario(
     try {
       await adapter.scenarioStep((scan - 1) * expectation.scanMs);
     } catch (error) {
-      if (!expectation.fault || scan !== expectation.scans) return { loaderRefused: false, failures: [...failures, `scan ${scan}: the VM faulted: ${(error as Error).message}`] };
+      if (!expectation.fault || scan !== expectation.scans)
+        return { loaderRefused: false, failures: [...failures, `scan ${scan}: the VM faulted: ${(error as Error).message}`] };
       faulted = true;
     }
     for (const check of expectation.expect.filter((candidate) => candidate.afterScan === scan)) {
       const where = address(check);
-      if (typeof where === 'string') { failures.push(`after scan ${scan}: ${label(check)}: ${where}`); continue; }
+      if (typeof where === 'string') {
+        failures.push(`after scan ${scan}: ${label(check)}: ${where}`);
+        continue;
+      }
       const bytes = await adapter.peek(where.address, cellSize(check.type));
-      const observed = check.type === 'BOOL'
-        ? (bytes[0]! & (1 << (where.bit ?? 0))) !== 0
-        : ACCESS[check.type][0](new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength));
+      const observed =
+        check.type === 'BOOL'
+          ? (bytes[0]! & (1 << (where.bit ?? 0))) !== 0
+          : ACCESS[check.type][0](new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength));
       const wanted = check.type === 'REAL' ? Math.fround(check.value as number) : check.value;
       if (observed !== wanted) failures.push(`after scan ${scan}: ${label(check)} expected ${check.value}, observed ${observed}`);
     }
   }
-  if (expectation.fault && !faulted) failures.push(`the last scan (${expectation.scans}) was expected to end in a VM fault, and it completed`);
+  if (expectation.fault && !faulted)
+    failures.push(`the last scan (${expectation.scans}) was expected to end in a VM fault, and it completed`);
   return { loaderRefused: false, failures };
 }

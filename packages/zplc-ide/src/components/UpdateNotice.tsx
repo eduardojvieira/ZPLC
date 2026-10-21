@@ -14,12 +14,16 @@ export function UpdateNoticeView({ notice, onDismiss }: { notice: Notice; onDism
       role="status"
       aria-label={t('updateNotice.label')}
       data-update-notice={notice.latest}
-      className="shrink-0 border-b border-[var(--color-surface-600)] bg-[var(--color-surface-800)] px-4 py-2 text-xs leading-5 text-[var(--text-secondary)]"
+      className={
+        'shrink-0 border-b border-[var(--color-surface-600)] bg-[var(--color-surface-800)] px-4 py-2 text-xs leading-5 ' +
+        'text-[var(--text-secondary)]'
+      }
     >
       <div className="flex items-start justify-between gap-4">
         <p>
-          <strong className="text-[var(--text-primary)]">{t('updateNotice.available', { version: notice.latest })}</strong> {t('updateNotice.thisIs', { current: notice.current })}{' '}
-          {t('updateNotice.release')} <span className="font-mono break-all select-text">{notice.releaseUrl}</span>
+          <strong className="text-[var(--text-primary)]">{t('updateNotice.available', { version: notice.latest })}</strong>{' '}
+          {t('updateNotice.thisIs', { current: notice.current })} {t('updateNotice.release')}{' '}
+          <span className="font-mono break-all select-text">{notice.releaseUrl}</span>
         </p>
         <Button size="sm" onClick={onDismiss} aria-label={t('updateNotice.dismissLabel', { version: notice.latest })} className="shrink-0">
           {t('updateNotice.dismiss')}
@@ -28,7 +32,9 @@ export function UpdateNoticeView({ notice, onDismiss }: { notice: Notice; onDism
       <details className="mt-1">
         <summary className="cursor-pointer text-[var(--text-primary)]">{t('updateNotice.howTo')}</summary>
         <ul className="mt-1 list-disc space-y-0.5 pl-5">
-          {notice.steps.map((step) => <li key={step}>{step}</li>)}
+          {notice.steps.map((step) => (
+            <li key={step}>{step}</li>
+          ))}
         </ul>
         <p className="mt-1">{t('updateNotice.untouched')}</p>
       </details>
@@ -42,7 +48,7 @@ export function UpdateNoticeBanner() {
   const result = useUpdateNotice((state) => state.result);
   const dismissed = useUpdateNotice((state) => state.dismissed);
   const dismiss = useUpdateNotice((state) => state.dismiss);
-  const platform = typeof window === 'undefined' ? 'linux' : window.electronAPI?.platform ?? 'linux';
+  const platform = typeof window === 'undefined' ? 'linux' : (window.electronAPI?.platform ?? 'linux');
   const notice = updateNotice(result, platform, dismissed, t);
   return notice ? <UpdateNoticeView notice={notice} onDismiss={dismiss} /> : null;
 }

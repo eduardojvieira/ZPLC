@@ -10,14 +10,21 @@ import { Modal } from './Modal';
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : 'The operation failed. Try again.');
 
-export interface FolderChoice { path: string; label: string }
+export interface FolderChoice {
+  path: string;
+  label: string;
+}
 
 function Actions({ busy, submitLabel, onCancel }: { busy: boolean; submitLabel: string; onCancel: () => void }) {
   const { t } = useT();
   return (
     <div className="flex justify-end gap-2 pt-5">
-      <Button disabled={busy} onClick={onCancel}>{t('common.cancel')}</Button>
-      <Button type="submit" variant="primary" disabled={busy}>{busy ? t('common.working') : submitLabel}</Button>
+      <Button disabled={busy} onClick={onCancel}>
+        {t('common.cancel')}
+      </Button>
+      <Button type="submit" variant="primary" disabled={busy}>
+        {busy ? t('common.working') : submitLabel}
+      </Button>
     </div>
   );
 }
@@ -28,13 +35,27 @@ function useAttempt() {
   const attempt = async (run: () => Promise<void>) => {
     setBusy(true);
     setError(null);
-    try { await run(); } catch (caught) { setError(messageOf(caught)); } finally { setBusy(false); }
+    try {
+      await run();
+    } catch (caught) {
+      setError(messageOf(caught));
+    } finally {
+      setBusy(false);
+    }
   };
   return { busy, error, attempt };
 }
 
 /** A name, and for a new folder the folder to make it in. */
-export function EntryNameDialog({ title, initialName, submitLabel, folders, initialFolder, onSubmit, onCancel }: {
+export function EntryNameDialog({
+  title,
+  initialName,
+  submitLabel,
+  folders,
+  initialFolder,
+  onSubmit,
+  onCancel,
+}: {
   title: string;
   initialName: string;
   submitLabel: string;
@@ -48,13 +69,34 @@ export function EntryNameDialog({ title, initialName, submitLabel, folders, init
   const [name, setName] = useState(initialName);
   const [folder, setFolder] = useState(initialFolder ?? '');
   const { busy, error, attempt } = useAttempt();
-  const submit = (event: FormEvent) => { event.preventDefault(); void attempt(() => onSubmit(name, folder)); };
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    void attempt(() => onSubmit(name, folder));
+  };
   return (
-    <Modal isOpen onClose={() => { if (!busy) onCancel(); }} title={title} widthClass="max-w-md" showCloseButton={!busy}>
+    <Modal
+      isOpen
+      onClose={() => {
+        if (!busy) onCancel();
+      }}
+      title={title}
+      widthClass="max-w-md"
+      showCloseButton={!busy}
+    >
       <form className="p-4" onSubmit={submit} data-entry-dialog>
         {folders && (
-          <Select id="entry-folder" label={t('dialog.folder')} fieldClassName="mb-3" value={folder} onChange={(event) => setFolder(event.target.value)}>
-            {folders.map((choice) => <option key={choice.path} value={choice.path}>{choice.label}</option>)}
+          <Select
+            id="entry-folder"
+            label={t('dialog.folder')}
+            fieldClassName="mb-3"
+            value={folder}
+            onChange={(event) => setFolder(event.target.value)}
+          >
+            {folders.map((choice) => (
+              <option key={choice.path} value={choice.path}>
+                {choice.label}
+              </option>
+            ))}
           </Select>
         )}
         <TextField
@@ -75,7 +117,13 @@ export function EntryNameDialog({ title, initialName, submitLabel, folders, init
 }
 
 /** The folder to move an entry into. */
-export function MoveDialog({ name, folders, initialFolder, onMove, onCancel }: {
+export function MoveDialog({
+  name,
+  folders,
+  initialFolder,
+  onMove,
+  onCancel,
+}: {
   name: string;
   folders: FolderChoice[];
   initialFolder: string;
@@ -85,12 +133,34 @@ export function MoveDialog({ name, folders, initialFolder, onMove, onCancel }: {
   const { t } = useT();
   const [folder, setFolder] = useState(initialFolder);
   const { busy, error, attempt } = useAttempt();
-  const submit = (event: FormEvent) => { event.preventDefault(); void attempt(() => onMove(folder)); };
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    void attempt(() => onMove(folder));
+  };
   return (
-    <Modal isOpen onClose={() => { if (!busy) onCancel(); }} title={t('dialog.moveTitle', { name })} widthClass="max-w-md" showCloseButton={!busy}>
+    <Modal
+      isOpen
+      onClose={() => {
+        if (!busy) onCancel();
+      }}
+      title={t('dialog.moveTitle', { name })}
+      widthClass="max-w-md"
+      showCloseButton={!busy}
+    >
       <form className="p-4" onSubmit={submit} data-entry-dialog>
-        <Select id="entry-folder" label={t('dialog.moveTo')} data-autofocus value={folder} onChange={(event) => setFolder(event.target.value)} error={error ?? undefined}>
-          {folders.map((choice) => <option key={choice.path} value={choice.path}>{choice.label}</option>)}
+        <Select
+          id="entry-folder"
+          label={t('dialog.moveTo')}
+          data-autofocus
+          value={folder}
+          onChange={(event) => setFolder(event.target.value)}
+          error={error ?? undefined}
+        >
+          {folders.map((choice) => (
+            <option key={choice.path} value={choice.path}>
+              {choice.label}
+            </option>
+          ))}
         </Select>
         <Actions busy={busy} submitLabel={t('common.move')} onCancel={onCancel} />
       </form>
@@ -99,7 +169,12 @@ export function MoveDialog({ name, folders, initialFolder, onMove, onCancel }: {
 }
 
 /** Deleting a folder removes everything in it from the disk; modified files that are open in it are named. */
-export function DeleteFolderDialog({ name, modifiedFiles, onConfirm, onCancel }: {
+export function DeleteFolderDialog({
+  name,
+  modifiedFiles,
+  onConfirm,
+  onCancel,
+}: {
   name: string;
   modifiedFiles: string[];
   onConfirm: () => Promise<void>;
@@ -116,16 +191,26 @@ export function DeleteFolderDialog({ name, modifiedFiles, onConfirm, onCancel }:
       actionLabel={t('fileMenu.deleteFolder')}
       destructive
       busy={busy}
-      onAction={() => { void attempt(onConfirm); }}
+      onAction={() => {
+        void attempt(onConfirm);
+      }}
       onCancel={onCancel}
     >
       {modifiedFiles.length > 0 && (
         <div className="text-sm text-[var(--color-accent-yellow)]">
           <p>{t('dialog.deleteFolder.unsaved')}</p>
-          <ul className="mt-1 list-disc pl-5">{modifiedFiles.map((file) => <li key={file}>{file}</li>)}</ul>
+          <ul className="mt-1 list-disc pl-5">
+            {modifiedFiles.map((file) => (
+              <li key={file}>{file}</li>
+            ))}
+          </ul>
         </div>
       )}
-      {error && <p role="alert" className="mt-2 text-sm text-[var(--color-accent-red)]">{error}</p>}
+      {error && (
+        <p role="alert" className="mt-2 text-sm text-[var(--color-accent-red)]">
+          {error}
+        </p>
+      )}
     </AlertDialog>
   );
 }

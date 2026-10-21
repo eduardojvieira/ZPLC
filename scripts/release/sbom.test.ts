@@ -48,7 +48,10 @@ describe('buildSbom (REL-018)', () => {
   test('is a CycloneDX 1.5 document for the product at the given version', () => {
     expect(sbom.bomFormat).toBe('CycloneDX');
     expect(sbom.specVersion).toBe('1.5');
-    expect((sbom.metadata as { component: { name: string; version: string } }).component).toMatchObject({ name: 'zplc', version: '2.0.0-rc.4' });
+    expect((sbom.metadata as { component: { name: string; version: string } }).component).toMatchObject({
+      name: 'zplc',
+      version: '2.0.0-rc.4',
+    });
   });
 
   test('lists each locked package once, even when the lockfile keeps it under two keys', () => {
@@ -127,8 +130,15 @@ describe('the repository bill of materials (REL-018)', () => {
   test('holds every locked package, and the recorded floor is not above it', () => {
     const lock = parseLockfile(read('bun.lock'));
     const floor = (JSON.parse(read('scripts/release/sbom-floor.json')) as { components: number }).components;
-    const manifests = Object.fromEntries([...lock.workspaces.keys()].filter(Boolean).map((path) => [path, JSON.parse(read(`${path}/package.json`))]));
-    const sbom = buildSbom({ lockText: read('bun.lock'), workspaceManifests: manifests, westText: read('west.yml'), productVersion: JSON.parse(read('package.json')).version });
+    const manifests = Object.fromEntries(
+      [...lock.workspaces.keys()].filter(Boolean).map((path) => [path, JSON.parse(read(`${path}/package.json`))]),
+    );
+    const sbom = buildSbom({
+      lockText: read('bun.lock'),
+      workspaceManifests: manifests,
+      westText: read('west.yml'),
+      productVersion: JSON.parse(read('package.json')).version,
+    });
     expect(checkSbom(sbom, { lock, floor })).toEqual([]);
     expect(sbom.components.length).toBeGreaterThanOrEqual(floor);
   });

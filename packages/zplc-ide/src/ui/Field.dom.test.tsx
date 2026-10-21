@@ -23,17 +23,30 @@ describe('Field and its controls (UX-001) in a DOM', () => {
   });
 
   it('describes a control by its hint and its error, marks it invalid and required, and announces the error', () => {
-    dom.render(<Field label="Interval (ms)" hint="Between 1 and 10000" error="Must be at least 1" required><NumberField defaultValue={0} /></Field>);
+    dom.render(
+      <Field label="Interval (ms)" hint="Between 1 and 10000" error="Must be at least 1" required>
+        <NumberField defaultValue={0} />
+      </Field>,
+    );
     const input = dom.screen.getByRole('spinbutton', { name: /Interval \(ms\)/ });
     expect(input.getAttribute('aria-invalid')).toBe('true');
     expect(input.getAttribute('aria-required')).toBe('true');
-    const description = input.getAttribute('aria-describedby')?.split(' ').map((id) => document.getElementById(id)?.textContent) ?? [];
+    const description =
+      input
+        .getAttribute('aria-describedby')
+        ?.split(' ')
+        .map((id) => document.getElementById(id)?.textContent) ?? [];
     expect(description).toEqual(['Between 1 and 10000', 'Must be at least 1']);
     expect(dom.screen.getByRole('alert').textContent).toBe('Must be at least 1');
   });
 
   it('a disabled field disables its control and keeps it out of the tab order', async () => {
-    const { user } = dom.render(<><TextField label="Locked" disabled /><TextField label="Open" /></>);
+    const { user } = dom.render(
+      <>
+        <TextField label="Locked" disabled />
+        <TextField label="Open" />
+      </>,
+    );
     expect((dom.screen.getByRole('textbox', { name: 'Locked' }) as HTMLInputElement).disabled).toBe(true);
     await user.tab();
     expect(isFocused(dom.screen.getByRole('textbox', { name: 'Open' }))).toBe(true);
@@ -61,7 +74,12 @@ describe('Field and its controls (UX-001) in a DOM', () => {
 
   it('a select is named and reports the chosen option', async () => {
     const onChange = mock((value: string) => value);
-    const { user } = dom.render(<Select label="QoS" defaultValue="0" onChange={(event) => onChange(event.target.value)}><option value="0">0</option><option value="1">1</option></Select>);
+    const { user } = dom.render(
+      <Select label="QoS" defaultValue="0" onChange={(event) => onChange(event.target.value)}>
+        <option value="0">0</option>
+        <option value="1">1</option>
+      </Select>,
+    );
     await user.selectOptions(dom.screen.getByRole('combobox', { name: 'QoS' }), '1');
     expect(onChange).toHaveBeenLastCalledWith('1');
   });

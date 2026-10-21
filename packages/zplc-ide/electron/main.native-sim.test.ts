@@ -65,10 +65,7 @@ function writeHelloResponse(childProcess: FakeChildProcess, requestId: string): 
   );
 }
 
-async function startReadySession(
-  supervisor: NativeSimulationSupervisor,
-  childProcess: FakeChildProcess,
-): Promise<void> {
+async function startReadySession(supervisor: NativeSimulationSupervisor, childProcess: FakeChildProcess): Promise<void> {
   const pendingStart = supervisor.startSession();
   const hello = JSON.parse(await waitForStdInLine(childProcess.stdin)) as { id: string };
   writeHelloResponse(childProcess, hello.id);
@@ -193,7 +190,9 @@ describe('NativeSimulationSupervisor', () => {
 
   it('shares one shutdown request between concurrent session stops', async () => {
     const supervisor = new NativeSimulationSupervisor({
-      clientName: 'zplc-ide', clientVersion: '1.4.8', spawnProcess: () => child,
+      clientName: 'zplc-ide',
+      clientVersion: '1.4.8',
+      spawnProcess: () => child,
     });
     await startReadySession(supervisor, child);
     const shutdownLines: string[] = [];
@@ -213,7 +212,9 @@ describe('NativeSimulationSupervisor', () => {
 
   it('rejects public requests while stopping without writing to the child', async () => {
     const supervisor = new NativeSimulationSupervisor({
-      clientName: 'zplc-ide', clientVersion: '1.4.8', spawnProcess: () => child,
+      clientName: 'zplc-ide',
+      clientVersion: '1.4.8',
+      spawnProcess: () => child,
     });
     await startReadySession(supervisor, child);
     const requestLines: string[] = [];
@@ -232,9 +233,15 @@ describe('NativeSimulationSupervisor', () => {
 
   it('terminates a timed-out public request and keeps the child owned until exit', async () => {
     const nextChild = new FakeChildProcess();
-    const spawnProcess = mock().mockImplementationOnce(() => child).mockImplementationOnce(() => nextChild);
+    const spawnProcess = mock()
+      .mockImplementationOnce(() => child)
+      .mockImplementationOnce(() => nextChild);
     const supervisor = new NativeSimulationSupervisor({
-      clientName: 'zplc-ide', clientVersion: '1.4.8', lifecycleTimeoutMs: 5, requestTimeoutMs: 5, spawnProcess,
+      clientName: 'zplc-ide',
+      clientVersion: '1.4.8',
+      lifecycleTimeoutMs: 5,
+      requestTimeoutMs: 5,
+      spawnProcess,
     });
     await startReadySession(supervisor, child);
 
@@ -253,7 +260,9 @@ describe('NativeSimulationSupervisor', () => {
     await expect(pendingStop).resolves.toBeUndefined();
     await expect(pendingRestart).resolves.toMatchObject({ runtime_kind: 'native-posix' });
     expect(spawnProcess).toHaveBeenCalledTimes(2);
-    nextChild.stdin.end(); nextChild.stdout.end(); nextChild.stderr.end();
+    nextChild.stdin.end();
+    nextChild.stdout.end();
+    nextChild.stderr.end();
   });
 
   it('keeps a timed-out hello child owned until it actually exits before retrying', async () => {
@@ -262,7 +271,10 @@ describe('NativeSimulationSupervisor', () => {
       .mockImplementationOnce(() => child)
       .mockImplementationOnce(() => retryChild);
     const supervisor = new NativeSimulationSupervisor({
-      clientName: 'zplc-ide', clientVersion: '1.4.8', lifecycleTimeoutMs: 5, spawnProcess,
+      clientName: 'zplc-ide',
+      clientVersion: '1.4.8',
+      lifecycleTimeoutMs: 5,
+      spawnProcess,
     });
 
     await expect(supervisor.startSession()).rejects.toThrow('session.hello timed out');
@@ -288,7 +300,9 @@ describe('NativeSimulationSupervisor', () => {
       })
       .mockImplementationOnce(() => retryChild);
     const supervisor = new NativeSimulationSupervisor({
-      clientName: 'zplc-ide', clientVersion: '1.4.8', spawnProcess,
+      clientName: 'zplc-ide',
+      clientVersion: '1.4.8',
+      spawnProcess,
     });
 
     await expect(supervisor.startSession()).rejects.toThrow('spawn failed');
@@ -301,7 +315,10 @@ describe('NativeSimulationSupervisor', () => {
 
   it('kills a shutdown that times out only after the child actually exits', async () => {
     const supervisor = new NativeSimulationSupervisor({
-      clientName: 'zplc-ide', clientVersion: '1.4.8', lifecycleTimeoutMs: 5, spawnProcess: () => child,
+      clientName: 'zplc-ide',
+      clientVersion: '1.4.8',
+      lifecycleTimeoutMs: 5,
+      spawnProcess: () => child,
     });
     await startReadySession(supervisor, child);
 
@@ -325,7 +342,9 @@ describe('NativeSimulationSupervisor', () => {
       .mockImplementationOnce(() => child)
       .mockImplementationOnce(() => nextChild);
     const supervisor = new NativeSimulationSupervisor({
-      clientName: 'zplc-ide', clientVersion: '1.4.8', spawnProcess,
+      clientName: 'zplc-ide',
+      clientVersion: '1.4.8',
+      spawnProcess,
     });
     await startReadySession(supervisor, child);
 
@@ -352,7 +371,9 @@ describe('NativeSimulationSupervisor', () => {
       .mockImplementationOnce(() => child)
       .mockImplementationOnce(() => nextChild);
     const supervisor = new NativeSimulationSupervisor({
-      clientName: 'zplc-ide', clientVersion: '1.4.8', spawnProcess,
+      clientName: 'zplc-ide',
+      clientVersion: '1.4.8',
+      spawnProcess,
     });
     const events: string[] = [];
     const unsubscribe = supervisor.onEvent((event) => events.push(event.method));
@@ -385,7 +406,9 @@ describe('NativeSimulationSupervisor', () => {
 
   it('queues a fresh start after stopping a child with a pending hello', async () => {
     const nextChild = new FakeChildProcess();
-    const spawnProcess = mock().mockImplementationOnce(() => child).mockImplementationOnce(() => nextChild);
+    const spawnProcess = mock()
+      .mockImplementationOnce(() => child)
+      .mockImplementationOnce(() => nextChild);
     const supervisor = new NativeSimulationSupervisor({ clientName: 'zplc-ide', clientVersion: '1.4.8', spawnProcess });
     const firstStart = supervisor.startSession();
     const stop = supervisor.stopSession();
@@ -400,12 +423,16 @@ describe('NativeSimulationSupervisor', () => {
     writeHelloResponse(nextChild, nextHello.id);
     await expect(restart).resolves.toMatchObject({ runtime_kind: 'native-posix' });
     expect(spawnProcess).toHaveBeenCalledTimes(2);
-    nextChild.stdin.end(); nextChild.stdout.end(); nextChild.stderr.end();
+    nextChild.stdin.end();
+    nextChild.stdout.end();
+    nextChild.stderr.end();
   });
 
   it('treats an exit during requested shutdown as a completed disconnect and can restart', async () => {
     const nextChild = new FakeChildProcess();
-    const spawnProcess = mock().mockImplementationOnce(() => child).mockImplementationOnce(() => nextChild);
+    const spawnProcess = mock()
+      .mockImplementationOnce(() => child)
+      .mockImplementationOnce(() => nextChild);
     const supervisor = new NativeSimulationSupervisor({ clientName: 'zplc-ide', clientVersion: '1.4.8', spawnProcess });
     await startReadySession(supervisor, child);
 
@@ -414,12 +441,17 @@ describe('NativeSimulationSupervisor', () => {
     await expect(stop).resolves.toBeUndefined();
     await startReadySession(supervisor, nextChild);
     expect(spawnProcess).toHaveBeenCalledTimes(2);
-    nextChild.stdin.end(); nextChild.stdout.end(); nextChild.stderr.end();
+    nextChild.stdin.end();
+    nextChild.stdout.end();
+    nextChild.stderr.end();
   });
 
   it('kills a child that acknowledges shutdown without exiting', async () => {
     const supervisor = new NativeSimulationSupervisor({
-      clientName: 'zplc-ide', clientVersion: '1.4.8', lifecycleTimeoutMs: 5, spawnProcess: () => child,
+      clientName: 'zplc-ide',
+      clientVersion: '1.4.8',
+      lifecycleTimeoutMs: 5,
+      spawnProcess: () => child,
     });
     await startReadySession(supervisor, child);
     const lines: string[] = [];
@@ -440,7 +472,10 @@ describe('NativeSimulationSupervisor', () => {
       .mockImplementationOnce(() => child)
       .mockImplementationOnce(() => nextChild);
     const supervisor = new NativeSimulationSupervisor({
-      clientName: 'zplc-ide', clientVersion: '1.4.8', lifecycleTimeoutMs: 5, spawnProcess,
+      clientName: 'zplc-ide',
+      clientVersion: '1.4.8',
+      lifecycleTimeoutMs: 5,
+      spawnProcess,
     });
     await startReadySession(supervisor, child);
 
@@ -458,7 +493,9 @@ describe('NativeSimulationSupervisor', () => {
     await expect(pendingStop).resolves.toBeUndefined();
     await expect(pendingRestart).resolves.toMatchObject({ runtime_kind: 'native-posix' });
     expect(spawnProcess).toHaveBeenCalledTimes(2);
-    nextChild.stdin.end(); nextChild.stdout.end(); nextChild.stderr.end();
+    nextChild.stdin.end();
+    nextChild.stdout.end();
+    nextChild.stderr.end();
   });
 
   it('keeps a protocol-failed child owned until it exits before retrying', async () => {
@@ -467,7 +504,9 @@ describe('NativeSimulationSupervisor', () => {
       .mockImplementationOnce(() => child)
       .mockImplementationOnce(() => nextChild);
     const supervisor = new NativeSimulationSupervisor({
-      clientName: 'zplc-ide', clientVersion: '1.4.8', spawnProcess,
+      clientName: 'zplc-ide',
+      clientVersion: '1.4.8',
+      spawnProcess,
     });
     await startReadySession(supervisor, child);
 
@@ -482,12 +521,16 @@ describe('NativeSimulationSupervisor', () => {
     writeHelloResponse(nextChild, hello.id);
     await pendingRetry;
     expect(spawnProcess).toHaveBeenCalledTimes(2);
-    nextChild.stdin.end(); nextChild.stdout.end(); nextChild.stderr.end();
+    nextChild.stdin.end();
+    nextChild.stdout.end();
+    nextChild.stderr.end();
   });
 
   it('reuses termination for stops after a protocol failure without writing shutdown', async () => {
     const supervisor = new NativeSimulationSupervisor({
-      clientName: 'zplc-ide', clientVersion: '1.4.8', spawnProcess: () => child,
+      clientName: 'zplc-ide',
+      clientVersion: '1.4.8',
+      spawnProcess: () => child,
     });
     await startReadySession(supervisor, child);
     const lines: string[] = [];
@@ -514,7 +557,10 @@ describe('NativeSimulationSupervisor', () => {
     const lines: string[] = [];
     child.stdin.on('data', (chunk: Buffer) => lines.push(chunk.toString()));
     const first = supervisor.request(createNativeRequest('duplicate', 'status.get', {}));
-    const firstResult = first.then(() => null, (error: unknown) => error);
+    const firstResult = first.then(
+      () => null,
+      (error: unknown) => error,
+    );
     await expect(supervisor.request(createNativeRequest('duplicate', 'status.get', {}))).rejects.toThrow('already pending');
     expect(lines).toHaveLength(1);
     child.emit('exit', 1, null);
@@ -533,7 +579,10 @@ describe('NativeSimulationSupervisor', () => {
       supervisor.onEvent((event) => events.push(event.method));
       await startReadySession(supervisor, child);
       const pending = supervisor.request(createNativeRequest(`bad-${label}`, 'status.get', {}));
-      const result = pending.then(() => null, (error: unknown) => error);
+      const result = pending.then(
+        () => null,
+        (error: unknown) => error,
+      );
       child.stdout.write(output);
       await expect(result).resolves.toThrow('Native simulator session terminated');
       expect(events).toEqual([]);
@@ -549,7 +598,10 @@ describe('NativeSimulationSupervisor', () => {
     supervisor.onEvent((event) => events.push(event.method));
     await startReadySession(supervisor, child);
     const pending = supervisor.request(createNativeRequest('bad-chunk', 'status.get', {}));
-    const result = pending.then(() => null, (error: unknown) => error);
+    const result = pending.then(
+      () => null,
+      (error: unknown) => error,
+    );
     child.stdout.write('{invalid}\n{"type":"event","method":"status.changed","params":{}}\n');
     await expect(result).resolves.toThrow('Native simulator session terminated');
     expect(events).toEqual([]);
@@ -569,7 +621,7 @@ describe('NativeSimulationSupervisor', () => {
     expect(mainSource).toContain("from './ipcHandlers.js'");
     expect(mainSource).toContain("from './ipcRegistry.js'");
     expect(supervisorSource).toContain("from './nativeSimulationIpc.js'");
-    expect(preloadSource).toContain("import type {");
+    expect(preloadSource).toContain('import type {');
     expect(preloadSource).toContain("} from '../shared/nativeSimulationIpc.js'");
     expect(firmwareBuildGatewaySource).toContain("from './security.js'");
     expect(workspaceTestGatewaySource).toContain("from './security.js'");
@@ -603,7 +655,7 @@ describe('NativeSimulationSupervisor', () => {
     expect(mainSource).not.toContain('setDevicePermissionHandler');
     expect(mainSource).not.toContain('knownVendors');
     expect(mainSource).not.toContain('portList[0]');
-    expect(mainSource).toContain("event.preventDefault();");
+    expect(mainSource).toContain('event.preventDefault();');
     // the choice is made in the dialog of the window (IDE-018); the main process never picks a port itself
     expect(mainSource).toContain('serialPorts.open({ ownerId: requestingContents.id, ports: portList, callback });');
     expect(mainSource).toContain("sess.on('serial-port-added'");
@@ -919,12 +971,14 @@ describe('NativeSimulationSupervisor', () => {
     expect(environmentSource).toContain('childEnvironment.ZPLC_NATIVE_SIM_BIN = path.join(');
     expect(environmentSource).toContain("resourcesPath,\n      'native-runtime'");
     expect(environmentSource).toContain("platform === 'win32' ? 'zplc_runtime.exe' : 'zplc_runtime'");
-    expect(resolveDefaultSimulatorBinaryPathForTests({
-      cwd: '/workspace/ZPLC/packages/zplc-ide',
-      resourcesPath: '/tmp/zplc-packaged-app/resources',
-      envPath: bundledRuntime,
-      existingPaths: [repoRuntime],
-    })).toBe(bundledRuntime);
+    expect(
+      resolveDefaultSimulatorBinaryPathForTests({
+        cwd: '/workspace/ZPLC/packages/zplc-ide',
+        resourcesPath: '/tmp/zplc-packaged-app/resources',
+        envPath: bundledRuntime,
+        existingPaths: [repoRuntime],
+      }),
+    ).toBe(bundledRuntime);
   });
 
   it('falls back to repo lookup when Electron resourcesPath is unavailable', () => {

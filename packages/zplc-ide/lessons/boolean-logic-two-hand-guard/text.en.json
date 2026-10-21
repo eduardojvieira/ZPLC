@@ -55,7 +55,5 @@
       "text": "Write PressEnable := LeftHand AND RightHand AND GuardClosed; GuardLamp := NOT GuardClosed; OneHandWarning := LeftHand XOR RightHand;"
     }
   ],
-  "faultCases": [
-    "The starting program enables the press with either hand, so PressEnable is already ON at {{t:10}} ms with one hand."
-  ]
+  "faultCases": ["The starting program enables the press with either hand, so PressEnable is already ON at {{t:10}} ms with one hand."]
 }

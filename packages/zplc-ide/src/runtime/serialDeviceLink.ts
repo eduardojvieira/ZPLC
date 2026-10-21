@@ -7,7 +7,14 @@ import type { VMState, VMInfo, DebugAdapterEvents } from './debugAdapter';
 import { t } from '../i18n';
 
 import type { SerialConnection } from '../uploader/webserial';
-import { isWebSerialSupported, requestPort, connect as serialConnect, disconnect as serialDisconnect, addDataListener, removeDataListener } from '../uploader/webserial';
+import {
+  isWebSerialSupported,
+  requestPort,
+  connect as serialConnect,
+  disconnect as serialDisconnect,
+  addDataListener,
+  removeDataListener,
+} from '../uploader/webserial';
 import type { ZPLCProjectConfig } from '../types';
 import { sanitizeUploadTraceCommand, sanitizeUploadTraceText, type UploadTraceCallback } from './uploadTrace';
 import { consumeSerialConsoleChunk, flushSerialConsoleRemainder } from './serialConsole';
@@ -17,7 +24,15 @@ import { noteUnsupportedIo, parseStatusInfo } from './serialResponses';
 import { joinDeviceIo, parseDeviceSystemInfo } from './deviceHandshake';
 import { takeJsonReply } from './serialJson';
 
-import { COMMAND_TIMEOUT_MS, LINE_ENDING, type CommunicationMapEntry, type CommunicationMapResponse, type MqttRuntimeStatus, type StatusInfo, type SystemInfo } from './serialAdapterTypes';
+import {
+  COMMAND_TIMEOUT_MS,
+  LINE_ENDING,
+  type CommunicationMapEntry,
+  type CommunicationMapResponse,
+  type MqttRuntimeStatus,
+  type StatusInfo,
+  type SystemInfo,
+} from './serialAdapterTypes';
 
 /**
  * WebSerial Debug Adapter
@@ -317,7 +332,9 @@ export abstract class SerialDeviceLink {
         // Ignore polling errors
       }
     };
-    this.pollingInterval = setInterval(() => { void poll(); }, 200);
+    this.pollingInterval = setInterval(() => {
+      void poll();
+    }, 200);
   }
 
   protected stopPolling(): void {
@@ -355,7 +372,7 @@ export abstract class SerialDeviceLink {
     if (!this.connection.isConnected) {
       throw new Error('Connection closed');
     }
-    
+
     // Send command with --json flag
     const fullCommand = `${command} --json`;
     const data = encoder.encode(fullCommand + LINE_ENDING);
@@ -403,7 +420,7 @@ export abstract class SerialDeviceLink {
     if (!this.connection.isConnected) {
       throw new Error('Connection closed');
     }
-    
+
     const data = encoder.encode(command + LINE_ENDING);
     await this.connection.writer.write(data);
 
@@ -416,11 +433,7 @@ export abstract class SerialDeviceLink {
 
       for (let i = 0; i < lines.length; i++) {
         const cleanLine = lines[i].replace(ansiRegex, '').trim();
-        if (
-          cleanLine.startsWith('OK:') ||
-          cleanLine.startsWith('ERROR:') ||
-          cleanLine.startsWith('WARN:')
-        ) {
+        if (cleanLine.startsWith('OK:') || cleanLine.startsWith('ERROR:') || cleanLine.startsWith('WARN:')) {
           // Found a response! Remove processed lines from buffer
           this.connection._rxBuffer = lines.slice(i + 1).join('\n');
           return cleanLine;
@@ -485,7 +498,9 @@ export abstract class SerialDeviceLink {
    */
   async getSystemInfo(): Promise<SystemInfo> {
     try {
-      const result = await joinDeviceIo(parseDeviceSystemInfo(await this.sendJsonCommand('zplc sys info')), () => this.sendJsonCommand('zplc sys io', 2000));
+      const result = await joinDeviceIo(parseDeviceSystemInfo(await this.sendJsonCommand('zplc sys info')), () =>
+        this.sendJsonCommand('zplc sys io', 2000),
+      );
       this.systemInfoCache = result;
       return result;
     } catch {
@@ -502,12 +517,12 @@ export abstract class SerialDeviceLink {
   }
 
   async getCommunicationMap(): Promise<CommunicationMapEntry[]> {
-    const result = await this.sendJsonCommand('zplc comm map') as CommunicationMapResponse;
+    const result = (await this.sendJsonCommand('zplc comm map')) as CommunicationMapResponse;
     return result.entries ?? [];
   }
 
   async getMqttStatus(): Promise<MqttRuntimeStatus> {
-    const result = await this.sendJsonCommand('zplc mqtt status') as MqttRuntimeStatus;
+    const result = (await this.sendJsonCommand('zplc mqtt status')) as MqttRuntimeStatus;
     return result;
   }
 

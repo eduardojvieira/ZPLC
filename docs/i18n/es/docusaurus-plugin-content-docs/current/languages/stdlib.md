@@ -13,16 +13,16 @@ Cada función y bloque de función registrado, con su firma o tabla de pines y u
 
 ## Categorías principales
 
-| Categoría | Fuente | Ejemplos |
-|---|---|---|
-| Temporizadores | `stdlib/timers.ts` | `TON`, `TOF`, `TP` |
-| Contadores | `stdlib/counters.ts` | `CTU`, `CTD`, `CTUD` |
-| Biestables y detectores de flancos | `stdlib/bistables.ts` | `R_TRIG`, `F_TRIG`, `RS`, `SR` |
-| Búferes del sistema | `stdlib/system.ts` | `FIFO`, `LIFO` |
-| Cadenas de texto | `stdlib/strings.ts` | `LEN`, `CONCAT`, `LEFT`, `RIGHT`, `MID`, `FIND`, `INSERT`, `DELETE`, `REPLACE`, `STRCMP` |
-| Matemática y lógica | `stdlib/math.ts`, `stdlib/functions.ts`, `stdlib/bitwise.ts` | `ABS`, `SQRT`, `LIMIT`, `SEL`, `MUX`, `SHL`, `SHR` |
-| Utilidades de proceso | `stdlib/process.ts` | `HYSTERESIS`, `DEADBAND`, `PID_Compact`, `NORM_X`, `SCALE_X` |
-| Bloques de comunicación | `stdlib/communication.ts` | `MB_READ_HREG`, `MB_WRITE_COIL`, `MQTT_CONNECT`, `MQTT_PUBLISH`, `MQTT_SUBSCRIBE` |
+| Categoría                          | Fuente                                                       | Ejemplos                                                                                 |
+| ---------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| Temporizadores                     | `stdlib/timers.ts`                                           | `TON`, `TOF`, `TP`                                                                       |
+| Contadores                         | `stdlib/counters.ts`                                         | `CTU`, `CTD`, `CTUD`                                                                     |
+| Biestables y detectores de flancos | `stdlib/bistables.ts`                                        | `R_TRIG`, `F_TRIG`, `RS`, `SR`                                                           |
+| Búferes del sistema                | `stdlib/system.ts`                                           | `FIFO`, `LIFO`                                                                           |
+| Cadenas de texto                   | `stdlib/strings.ts`                                          | `LEN`, `CONCAT`, `LEFT`, `RIGHT`, `MID`, `FIND`, `INSERT`, `DELETE`, `REPLACE`, `STRCMP` |
+| Matemática y lógica                | `stdlib/math.ts`, `stdlib/functions.ts`, `stdlib/bitwise.ts` | `ABS`, `SQRT`, `LIMIT`, `SEL`, `MUX`, `SHL`, `SHR`                                       |
+| Utilidades de proceso              | `stdlib/process.ts`                                          | `HYSTERESIS`, `DEADBAND`, `PID_Compact`, `NORM_X`, `SCALE_X`                             |
+| Bloques de comunicación            | `stdlib/communication.ts`                                    | `MB_READ_HREG`, `MB_WRITE_COIL`, `MQTT_CONNECT`, `MQTT_PUBLISH`, `MQTT_SUBSCRIBE`        |
 
 ## Temporizadores y contadores
 
@@ -35,10 +35,10 @@ Ejemplos:
 
 Los contadores cuentan flancos de subida y mantienen `CV` y `PV` como `INT`. Lo que hace hoy cada bloque:
 
-| Bloque | Cuenta | Prioridad | Límite de `CV` | Salidas |
-|---|---|---|---|---|
-| `CTU` | +1 en un flanco de subida de `CU` | `R` pone `CV` en 0 | se detiene en 32767 | `Q` es `CV >= PV` |
-| `CTD` | -1 en un flanco de subida de `CD` | `LD` pone `CV` en `PV` | se detiene en -32768 | `Q` es `CV <= 0` |
+| Bloque | Cuenta                                                         | Prioridad                          | Límite de `CV`                  | Salidas                               |
+| ------ | -------------------------------------------------------------- | ---------------------------------- | ------------------------------- | ------------------------------------- |
+| `CTU`  | +1 en un flanco de subida de `CU`                              | `R` pone `CV` en 0                 | se detiene en 32767             | `Q` es `CV >= PV`                     |
+| `CTD`  | -1 en un flanco de subida de `CD`                              | `LD` pone `CV` en `PV`             | se detiene en -32768            | `Q` es `CV <= 0`                      |
 | `CTUD` | +1 con `CU`, -1 con `CD`; dos flancos en una llamada se anulan | `R`, luego `LD`, luego los flancos | se detiene en 32767 y en -32768 | `QU` es `CV >= PV`, `QD` es `CV <= 0` |
 
 El detector de flancos se ejecuta en cada llamada, también mientras `R` o `LD` es TRUE. Las comparaciones son con signo, de modo que un contador cuenta por debajo de cero y acepta un valor preestablecido negativo. Las reglas completas y la evidencia están en la [sección 2 de la referencia del runtime](../runtime/stdlib.md#2-contadores).
@@ -47,17 +47,17 @@ El detector de flancos se ejecuta en cada llamada, también mientras `R` o `LD` 
 
 Las funciones de cadenas de texto de `stdlib/strings.ts` incluyen:
 
-| Función | Descripción | Ejemplo |
-|---|---|---|
-| `LEN(STR)` | devuelve la longitud | `LEN('ABC')` -> 3 |
-| `LEFT(STR, N)` | primeros N caracteres | `LEFT('HELLO', 2)` -> 'HE' |
-| `RIGHT(STR, N)` | últimos N caracteres | `RIGHT('HELLO', 2)` -> 'LO' |
-| `MID(STR, P, N)` | N caracteres desde P | `MID('HELLO', 2, 3)` -> 'ELL' |
-| `CONCAT(S1, S2)` | concatena dos cadenas | `CONCAT('A', 'B')` -> 'AB' |
-| `INSERT(S1, S2, P)` | inserta S2 en S1 después del carácter P | `INSERT('AB', 'X', 1)` -> 'AXB' |
-| `DELETE(S1, P, N)` | elimina N caracteres desde P | `DELETE('HELLO', 2, 2)` -> 'HLO' |
-| `REPLACE(S1, S2, P, N)` | reemplaza N caracteres desde P por S2 | `REPLACE('HELLO', 'AB', 2, 3)` -> 'HABO' |
-| `FIND(S1, S2)` | busca S2 dentro de S1 | `FIND('HELLO', 'L')` -> 3 |
+| Función                 | Descripción                             | Ejemplo                                  |
+| ----------------------- | --------------------------------------- | ---------------------------------------- |
+| `LEN(STR)`              | devuelve la longitud                    | `LEN('ABC')` -> 3                        |
+| `LEFT(STR, N)`          | primeros N caracteres                   | `LEFT('HELLO', 2)` -> 'HE'               |
+| `RIGHT(STR, N)`         | últimos N caracteres                    | `RIGHT('HELLO', 2)` -> 'LO'              |
+| `MID(STR, P, N)`        | N caracteres desde P                    | `MID('HELLO', 2, 3)` -> 'ELL'            |
+| `CONCAT(S1, S2)`        | concatena dos cadenas                   | `CONCAT('A', 'B')` -> 'AB'               |
+| `INSERT(S1, S2, P)`     | inserta S2 en S1 después del carácter P | `INSERT('AB', 'X', 1)` -> 'AXB'          |
+| `DELETE(S1, P, N)`      | elimina N caracteres desde P            | `DELETE('HELLO', 2, 2)` -> 'HLO'         |
+| `REPLACE(S1, S2, P, N)` | reemplaza N caracteres desde P por S2   | `REPLACE('HELLO', 'AB', 2, 3)` -> 'HABO' |
+| `FIND(S1, S2)`          | busca S2 dentro de S1                   | `FIND('HELLO', 'L')` -> 3                |
 
 Ninguna de estas modifica sus argumentos: cada una devuelve una cadena nueva. En `MID`,
 `DELETE` y `REPLACE` la posición va antes de la cantidad; IEC 61131-3 escribe primero el

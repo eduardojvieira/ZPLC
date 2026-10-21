@@ -22,7 +22,10 @@ const UNCHECKED: Record<string, string> = {};
 const SOLUTIONS = ['packages/zplc-ide/tsconfig.json'];
 
 function tracked(pattern: string[]): string[] {
-  const out = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z', '--', ...pattern], { cwd: root, encoding: 'utf8' });
+  const out = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z', '--', ...pattern], {
+    cwd: root,
+    encoding: 'utf8',
+  });
   return out.split('\0').filter(Boolean).sort();
 }
 
@@ -50,7 +53,10 @@ describe('type-check coverage (VF-010)', () => {
 
   test('every tsconfig of the repository is a checked project or a solution file', () => {
     const configs = tracked(['tsconfig*.json', '**/tsconfig*.json']);
-    const known = new Set([...PROGRAMS.map((program) => join(program.cwd, program.project).replaceAll('\\', '/')).map((path) => path.replace(/^\.\//, '')), ...SOLUTIONS]);
+    const known = new Set([
+      ...PROGRAMS.map((program) => join(program.cwd, program.project).replaceAll('\\', '/')).map((path) => path.replace(/^\.\//, '')),
+      ...SOLUTIONS,
+    ]);
     expect(configs.filter((config) => !known.has(config))).toEqual([]);
     for (const config of known) expect(configs).toContain(config);
   });
@@ -73,6 +79,7 @@ describe('type-check coverage (VF-010)', () => {
       'tools/contract/snapshot_ts.ts',
       'tools/fuzz/seed-corpus.ts',
       'scripts/release-version.ts',
-    ]) expect(covered(needle)).toBe(true);
+    ])
+      expect(covered(needle)).toBe(true);
   });
 });

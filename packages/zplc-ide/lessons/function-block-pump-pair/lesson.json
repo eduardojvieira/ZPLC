@@ -5,16 +5,9 @@
   "order": 21,
   "module": 7,
   "level": "intermediate",
-  "prerequisites": [
-    "types-arithmetic-comparison"
-  ],
-  "languages": [
-    "ST"
-  ],
-  "tracks": [
-    "simulation",
-    "hardware"
-  ],
+  "prerequisites": ["types-arithmetic-comparison"],
+  "languages": ["ST"],
+  "tracks": ["simulation", "hardware"],
   "unsupported": {},
   "plant": null,
   "estimatedMinutes": 25,

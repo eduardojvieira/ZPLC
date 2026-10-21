@@ -5,11 +5,25 @@ import { ComboBox } from './index';
 
 const dom = await setupDom();
 
-const OPTIONS = [{ value: 'a', label: 'Alpha' }, { value: 'b', label: 'Bravo' }, { value: 'c', label: 'Charlie' }];
+const OPTIONS = [
+  { value: 'a', label: 'Alpha' },
+  { value: 'b', label: 'Bravo' },
+  { value: 'c', label: 'Charlie' },
+];
 
 function Harness({ onChange = () => undefined }: { onChange?: (value: string) => void }) {
   const [value, setValue] = useState('a');
-  return <ComboBox label="Target" options={OPTIONS} value={value} onChange={(next) => { onChange(next); setValue(next); }} />;
+  return (
+    <ComboBox
+      label="Target"
+      options={OPTIONS}
+      value={value}
+      onChange={(next) => {
+        onChange(next);
+        setValue(next);
+      }}
+    />
+  );
 }
 
 describe('ComboBox (UX-001) in a DOM', () => {

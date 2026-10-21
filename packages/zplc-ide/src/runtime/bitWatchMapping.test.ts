@@ -5,9 +5,7 @@ import { compileMultiTaskProject, findVariable } from '../compiler';
 
 describe('bit-addressed watch mapping', () => {
   it('preserves distinct bit offsets for sibling OPI BOOL outputs', () => {
-    const projectConfig = JSON.parse(
-      readFileSync(new URL('../../projects/pico_blinky/zplc.json', import.meta.url), 'utf8'),
-    );
+    const projectConfig = JSON.parse(readFileSync(new URL('../../projects/pico_blinky/zplc.json', import.meta.url), 'utf8'));
     const programSources = [
       {
         name: 'main.st',

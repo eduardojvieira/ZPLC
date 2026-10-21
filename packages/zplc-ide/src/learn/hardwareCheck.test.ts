@@ -13,7 +13,10 @@ const HASH = 'a'.repeat(64);
 
 /** A motor start/stop lesson: Start pressed at 500 ms and released at 700 ms, Stop pressed at 2000 ms. */
 const SCENARIO: ScenarioFile = {
-  schemaVersion: 1, id: 'motor-hw', tickMs: 100, durationMs: 3000,
+  schemaVersion: 1,
+  id: 'motor-hw',
+  tickMs: 100,
+  durationMs: 3000,
   events: [
     { atMs: 0, set: { Start: false, Stop: false } },
     { atMs: 500, set: { Start: true } },
@@ -29,7 +32,14 @@ const SCENARIO: ScenarioFile = {
   ],
 };
 
-interface Script { pressAt: number; releaseAt: number; stopAt: number | null; motorDelay: number; endAt: number; glitchAt?: number }
+interface Script {
+  pressAt: number;
+  releaseAt: number;
+  stopAt: number | null;
+  motorDelay: number;
+  endAt: number;
+  glitchAt?: number;
+}
 
 /** A SYNTHETIC trace polled every 50 ms: the learner's buttons, and a motor that follows them after `motorDelay`. */
 function syntheticTrace({ pressAt, releaseAt, stopAt, motorDelay, endAt, glitchAt }: Script): HardwareSample[] {
@@ -50,15 +60,26 @@ describe('the hardware check aligns the scenario on the input events the learner
     expect(alignEvents(SCENARIO, syntheticTrace({ ...LATE_LEARNER, stopAt: null }))).toEqual([0, 3200, 3500, null]);
   });
 
-  it('LRN-024 passes a program whose outputs follow the learner\'s presses within the lesson tolerance, however late the presses were', () => {
-    const result = evaluateHardwareTrace(SCENARIO, syntheticTrace(LATE_LEARNER), TOLERANCES, HASH);
-    expect(result).toEqual({ track: 'hardware', passed: true, assertions: { total: 5, passed: 5 }, failures: [] });
-  });
+  it(
+    "LRN-024 passes a program whose outputs follow the learner's presses within the lesson tolerance, however late the presses " + 'were',
+    () => {
+      const result = evaluateHardwareTrace(SCENARIO, syntheticTrace(LATE_LEARNER), TOLERANCES, HASH);
+      expect(result).toEqual({ track: 'hardware', passed: true, assertions: { total: 5, passed: 5 }, failures: [] });
+    },
+  );
 
   it('LRN-024 holds a reaction exactly at the tolerance and refuses one a sample beyond it', () => {
     // WITHIN 500..600 ms on the scenario is 3200..3300 ms in this trace; the tolerance stretches it to 3500 ms.
-    expect(evaluateHardwareTrace(SCENARIO, syntheticTrace({ ...LATE_LEARNER, motorDelay: 300 }), TOLERANCES, HASH).failures.map((failure) => failure.index)).not.toContain(1);
-    expect(evaluateHardwareTrace(SCENARIO, syntheticTrace({ ...LATE_LEARNER, motorDelay: 350 }), TOLERANCES, HASH).failures.map((failure) => failure.index)).toContain(1);
+    expect(
+      evaluateHardwareTrace(SCENARIO, syntheticTrace({ ...LATE_LEARNER, motorDelay: 300 }), TOLERANCES, HASH).failures.map(
+        (failure) => failure.index,
+      ),
+    ).not.toContain(1);
+    expect(
+      evaluateHardwareTrace(SCENARIO, syntheticTrace({ ...LATE_LEARNER, motorDelay: 350 }), TOLERANCES, HASH).failures.map(
+        (failure) => failure.index,
+      ),
+    ).toContain(1);
   });
 
   it('LRN-024 is deterministic: the same trace and tolerances give the same result', () => {
@@ -76,22 +97,31 @@ describe('a failed hardware check says which assertion, when, what was expected 
     // The window closes at 3500 ms (3300 + 200): the last sample in it is the one reported.
     const cursor = trace.findIndex((sample) => sample.atMs === 3500);
     expect(late).toEqual({
-      index: 1, kind: 'WITHIN', atMs: 3500, expected: { Motor: true }, observed: { Motor: false },
+      index: 1,
+      kind: 'WITHIN',
+      atMs: 3500,
+      expected: { Motor: true },
+      observed: { Motor: false },
       trace: { scenarioId: 'motor-hw', traceSha256: HASH, cursor, atMs: 3500, uri: `zplc://runtime/snapshot/motor-hw/${cursor}/${HASH}` },
     });
   });
 
   it('LRN-026 reports the sample at which a FOR assertion stopped holding', () => {
-    // FOR 800..1800 ms on the scenario is 3600..4600 ms in this trace; a sample may sit 200 ms either way, so it must hold over 3800..4400 ms.
+    // FOR 800..1800 ms on the scenario is 3600..4600 ms in this trace; a sample may sit 200 ms either way, so it must hold over 3800..4400
+    // ms.
     const result = evaluateHardwareTrace(SCENARIO, syntheticTrace({ ...LATE_LEARNER, glitchAt: 4000 }), TOLERANCES, HASH);
-    expect(result.failures.map(({ index, kind, atMs, observed }) => ({ index, kind, atMs, observed }))).toEqual([{ index: 2, kind: 'FOR', atMs: 4000, observed: { Motor: false } }]);
+    expect(result.failures.map(({ index, kind, atMs, observed }) => ({ index, kind, atMs, observed }))).toEqual([
+      { index: 2, kind: 'FOR', atMs: 4000, observed: { Motor: false } },
+    ]);
     expect(evaluateHardwareTrace(SCENARIO, syntheticTrace({ ...LATE_LEARNER, glitchAt: 4500 }), TOLERANCES, HASH).passed).toBe(true);
   });
 
   it('LRN-026 fails, with nothing observed, every assertion that depends on an input event the learner never made', () => {
     const result = evaluateHardwareTrace(SCENARIO, syntheticTrace({ ...LATE_LEARNER, stopAt: null }), TOLERANCES, HASH);
     expect(result.assertions).toEqual({ total: 5, passed: 4 });
-    expect(result.failures).toEqual([{ index: 4, kind: 'WITHIN', atMs: null, expected: { Motor: false }, observed: { Motor: null }, trace: null }]);
+    expect(result.failures).toEqual([
+      { index: 4, kind: 'WITHIN', atMs: null, expected: { Motor: false }, observed: { Motor: null }, trace: null },
+    ]);
   });
 
   it('LRN-026 fails a check on an empty trace instead of passing it', () => {
@@ -108,14 +138,36 @@ describe('the grade of a hardware check is labelled a hardware run (LRN-024)', (
     expect(traceSha256).toMatch(/^[0-9a-f]{64}$/);
     expect(await traceSha256Of(syntheticTrace(LATE_LEARNER))).toBe(traceSha256);
     const record = hardwareGradeRecordOf({
-      lessonId: 'motor-start-stop-safe', lessonVersion: 2, scenario: SCENARIO, scenarioSha256: 'b'.repeat(64), programSha256: 'c'.repeat(64),
-      runtimeVersion: '2.0.0', time: new Date('2026-10-20T10:00:00.000Z'), trace, traceSha256, tolerances: TOLERANCES,
+      lessonId: 'motor-start-stop-safe',
+      lessonVersion: 2,
+      scenario: SCENARIO,
+      scenarioSha256: 'b'.repeat(64),
+      programSha256: 'c'.repeat(64),
+      runtimeVersion: '2.0.0',
+      time: new Date('2026-10-20T10:00:00.000Z'),
+      trace,
+      traceSha256,
+      tolerances: TOLERANCES,
     });
-    expect(record).toMatchObject({ track: 'hardware', result: 'passed', scenarioId: 'motor-hw', assertions: { total: 5, passed: 5 }, failedAssertions: [] });
+    expect(record).toMatchObject({
+      track: 'hardware',
+      result: 'passed',
+      scenarioId: 'motor-hw',
+      assertions: { total: 5, passed: 5 },
+      failedAssertions: [],
+    });
     expect(parseGradeRecord(record)).toEqual(record);
     const failed = hardwareGradeRecordOf({
-      lessonId: 'motor-start-stop-safe', lessonVersion: 2, scenario: SCENARIO, scenarioSha256: 'b'.repeat(64), programSha256: 'c'.repeat(64),
-      runtimeVersion: '2.0.0', time: new Date('2026-10-20T10:00:00.000Z'), trace: syntheticTrace({ ...LATE_LEARNER, stopAt: null }), traceSha256, tolerances: TOLERANCES,
+      lessonId: 'motor-start-stop-safe',
+      lessonVersion: 2,
+      scenario: SCENARIO,
+      scenarioSha256: 'b'.repeat(64),
+      programSha256: 'c'.repeat(64),
+      runtimeVersion: '2.0.0',
+      time: new Date('2026-10-20T10:00:00.000Z'),
+      trace: syntheticTrace({ ...LATE_LEARNER, stopAt: null }),
+      traceSha256,
+      tolerances: TOLERANCES,
     });
     expect(failed).toMatchObject({ track: 'hardware', result: 'failed', assertions: { total: 5, passed: 4 } });
     expect(parseGradeRecord(failed)).toEqual(failed);
@@ -138,25 +190,43 @@ const DEVICE_TRACE = { timeMs: 20, analogPercent: 5 };
 /** Scans from `startMs` of program time on, re-zeroed at the first one: what a device trace armed then gives. */
 function deviceTrace(startMs: number, endMs: number, values: (programMs: number) => HardwareSample['values']): HardwareSample[] {
   const samples: HardwareSample[] = [];
-  for (let programMs = startMs; programMs <= endMs; programMs += 10) samples.push({ atMs: programMs - startMs + ((programMs / 10) % 3), values: values(programMs) });
+  for (let programMs = startMs; programMs <= endMs; programMs += 10)
+    samples.push({ atMs: programMs - startMs + ((programMs / 10) % 3), values: values(programMs) });
   return samples;
 }
 
 describe('the hardware check aligns a trace that starts with the run (LRN-024)', () => {
   /** The program of verify-my-board with the button held from `pressMs` to `releaseMs` of program time: the LEDs follow Blink OR Button. */
-  const verifyBoard = (pressMs: number, releaseMs: number, variant: 'solution' | 'starter' | 'led-only-on-button' | 'off-on-button' | 'latched' | 'no-onboard' = 'solution') => (programMs: number) => {
-    const button = programMs >= pressMs && programMs < releaseMs;
-    const blink = blinkAt(programMs);
-    const led = variant === 'starter' ? blink
-      : variant === 'led-only-on-button' ? button
-        : variant === 'off-on-button' ? blink && !button
-          : variant === 'latched' ? blink || programMs >= pressMs
-            : blink || button;
-    return { 'VerifyBoard.Button': button, 'VerifyBoard.Led': led, 'VerifyBoard.OnBoardLed': variant === 'no-onboard' ? false : led };
-  };
+  const verifyBoard =
+    (
+      pressMs: number,
+      releaseMs: number,
+      variant: 'solution' | 'starter' | 'led-only-on-button' | 'off-on-button' | 'latched' | 'no-onboard' = 'solution',
+    ) =>
+    (programMs: number) => {
+      const button = programMs >= pressMs && programMs < releaseMs;
+      const blink = blinkAt(programMs);
+      const led =
+        variant === 'starter'
+          ? blink
+          : variant === 'led-only-on-button'
+            ? button
+            : variant === 'off-on-button'
+              ? blink && !button
+              : variant === 'latched'
+                ? blink || programMs >= pressMs
+                : blink || button;
+      return { 'VerifyBoard.Button': button, 'VerifyBoard.Led': led, 'VerifyBoard.OnBoardLed': variant === 'no-onboard' ? false : led };
+    };
   const blinky = (programMs: number) => ({ 'Blinky.LED_Output': blinkAt(programMs) });
   const verify = (press: number, release: number, variant?: Parameters<typeof verifyBoard>[2], traceEnd = release + 1600) =>
-    evaluateHardwareTrace(lessonScenario('verify-my-board'), deviceTrace(0, traceEnd, verifyBoard(press, release, variant)), DEVICE_TRACE, HASH, true);
+    evaluateHardwareTrace(
+      lessonScenario('verify-my-board'),
+      deviceTrace(0, traceEnd, verifyBoard(press, release, variant)),
+      DEVICE_TRACE,
+      HASH,
+      true,
+    );
 
   it('LRN-024 passes verify-my-board on a trace whose time 0 is the first scan after Run, at the device-trace tolerance', () => {
     const result = verify(1160, 2360);
@@ -167,7 +237,13 @@ describe('the hardware check aligns a trace that starts with the run (LRN-024)',
   it('LRN-024 passes verify-my-board when a person presses and releases the button at times of their own, with scan jitter', () => {
     // The release is not 1.35 s after Run: a person presses once the LED has blinked, in any phase of the blink, and holds
     // the button for a count of two. Each pair is (press, release) in program time.
-    for (const [press, release] of [[1310, 2440], [2437, 4237], [3050, 5100], [1830, 2900], [5270, 7010]] as const) {
+    for (const [press, release] of [
+      [1310, 2440],
+      [2437, 4237],
+      [3050, 5100],
+      [1830, 2900],
+      [5270, 7010],
+    ] as const) {
       const result = verify(press, release);
       expect({ press, release, failures: result.failures.map((failure) => failure.index) }).toEqual({ press, release, failures: [] });
     }
@@ -175,8 +251,13 @@ describe('the hardware check aligns a trace that starts with the run (LRN-024)',
 
   it('LRN-024 fails verify-my-board for a program that does not do what the lesson asks, however the person times the button', () => {
     const wrong = ['starter', 'led-only-on-button', 'off-on-button', 'latched', 'no-onboard'] as const;
-    for (const [press, release] of [[1160, 2360], [2437, 4237], [3050, 5100]] as const) {
-      for (const variant of wrong) expect({ variant, press, passed: verify(press, release, variant).passed }).toEqual({ variant, press, passed: false });
+    for (const [press, release] of [
+      [1160, 2360],
+      [2437, 4237],
+      [3050, 5100],
+    ] as const) {
+      for (const variant of wrong)
+        expect({ variant, press, passed: verify(press, release, variant).passed }).toEqual({ variant, press, passed: false });
     }
   });
 
@@ -185,20 +266,34 @@ describe('the hardware check aligns a trace that starts with the run (LRN-024)',
   });
 
   it('LRN-024 cannot align verify-my-board on a trace of a program that was already running', () => {
-    const result = evaluateHardwareTrace(lessonScenario('verify-my-board'), deviceTrace(330, 3730, verifyBoard(1160, 2360)), DEVICE_TRACE, HASH);
+    const result = evaluateHardwareTrace(
+      lessonScenario('verify-my-board'),
+      deviceTrace(330, 3730, verifyBoard(1160, 2360)),
+      DEVICE_TRACE,
+      HASH,
+    );
     expect(result.passed).toBe(false);
     expect(result.failures.map((failure) => failure.expected['VerifyBoard.Led'])).toContain(true); // AT 750: the blink is out of phase
   });
 
-
   it('LRN-024 passes blinky-ladder-timer-feedback from the start of the run, and not from the middle of it', () => {
-    expect(evaluateHardwareTrace(lessonScenario('blinky-ladder-timer-feedback'), deviceTrace(0, 1900, blinky), DEVICE_TRACE, HASH, true).passed).toBe(true);
-    expect(evaluateHardwareTrace(lessonScenario('blinky-ladder-timer-feedback'), deviceTrace(240, 2140, blinky), DEVICE_TRACE, HASH).passed).toBe(false);
+    expect(
+      evaluateHardwareTrace(lessonScenario('blinky-ladder-timer-feedback'), deviceTrace(0, 1900, blinky), DEVICE_TRACE, HASH, true).passed,
+    ).toBe(true);
+    expect(
+      evaluateHardwareTrace(lessonScenario('blinky-ladder-timer-feedback'), deviceTrace(240, 2140, blinky), DEVICE_TRACE, HASH).passed,
+    ).toBe(false);
   });
 
-  it('LRN-024 takes the inputs at scenario time 0 from the start of an anchored run: a button held at Run does not shift the scenario', () => {
-    const held = (programMs: number) => ({ ...verifyBoard(1160, 2360)(programMs), 'VerifyBoard.Button': programMs < 60 || (programMs >= 1160 && programMs < 2360) });
-    expect(alignEvents(lessonScenario('verify-my-board'), deviceTrace(0, 3000, held), true)[0]).toBe(0);
-    expect(alignEvents(lessonScenario('verify-my-board'), deviceTrace(0, 3000, held))[0]).toBeGreaterThanOrEqual(60);
-  });
+  it(
+    'LRN-024 takes the inputs at scenario time 0 from the start of an anchored run: a button held at Run does not shift the ' + 'scenario',
+    () => {
+      const held = (programMs: number) => ({
+        ...verifyBoard(1160, 2360)(programMs),
+        'VerifyBoard.Button': programMs < 60 || (programMs >= 1160 && programMs < 2360),
+      });
+      expect(alignEvents(lessonScenario('verify-my-board'), deviceTrace(0, 3000, held), true)[0]).toBe(0);
+      expect(alignEvents(lessonScenario('verify-my-board'), deviceTrace(0, 3000, held))[0]).toBeGreaterThanOrEqual(60);
+    },
+  );
 });

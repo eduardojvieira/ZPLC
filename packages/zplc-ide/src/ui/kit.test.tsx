@@ -3,8 +3,34 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { Plus } from 'lucide-react';
 import { auditMarkup } from './audit';
 import {
-  AlertDialog, Badge, Button, Checkbox, ComboBox, DataGrid, Toast, Tree, Dialog, EmptyState, ErrorState, Field, IconButton, MenuButton, NumberField, LoadingState, PropertyList, Select,
-  SignalChip, Spinner, StatusDot, Switch, TabList, TabPanel, TextField, Textarea, ToggleGroup, Tooltip,
+  AlertDialog,
+  Badge,
+  Button,
+  Checkbox,
+  ComboBox,
+  DataGrid,
+  Toast,
+  Tree,
+  Dialog,
+  EmptyState,
+  ErrorState,
+  Field,
+  IconButton,
+  MenuButton,
+  NumberField,
+  LoadingState,
+  PropertyList,
+  Select,
+  SignalChip,
+  Spinner,
+  StatusDot,
+  Switch,
+  TabList,
+  TabPanel,
+  TextField,
+  Textarea,
+  ToggleGroup,
+  Tooltip,
 } from './index';
 
 const html = (node: Parameters<typeof renderToStaticMarkup>[0]): string => renderToStaticMarkup(node);
@@ -12,7 +38,11 @@ const noop = (): void => undefined;
 
 describe('kit buttons (UX-001, UX-026 stopgap)', () => {
   it('renders a button that does not submit a form, with its variant and size, named by its text', () => {
-    const out = html(<Button variant="primary" size="sm">Save</Button>);
+    const out = html(
+      <Button variant="primary" size="sm">
+        Save
+      </Button>,
+    );
     expect(out).toContain('type="button"');
     expect(out).toContain('data-variant="primary"');
     expect(out).toContain('data-size="sm"');
@@ -21,7 +51,11 @@ describe('kit buttons (UX-001, UX-026 stopgap)', () => {
   });
 
   it('keeps a disabled button disabled and an icon out of its name', () => {
-    const out = html(<Button disabled icon={<Plus />}>Add task</Button>);
+    const out = html(
+      <Button disabled icon={<Plus />}>
+        Add task
+      </Button>,
+    );
     expect(out).toContain('disabled=""');
     expect(out).toContain('aria-hidden="true"');
     expect(auditMarkup(out)).toEqual([]);
@@ -46,7 +80,11 @@ describe('kit form fields (UX-001, UX-026 stopgap)', () => {
   });
 
   it('describes a control by its hint and its error, marks it invalid, and announces the error', () => {
-    const out = html(<Field label="Interval (ms)" hint="Between 1 and 10000" error="Must be at least 1" required><NumberField defaultValue={0} /></Field>);
+    const out = html(
+      <Field label="Interval (ms)" hint="Between 1 and 10000" error="Must be at least 1" required>
+        <NumberField defaultValue={0} />
+      </Field>,
+    );
     expect(out).toContain('aria-invalid="true"');
     expect(out).toContain('aria-required="true"');
     expect(out).toContain('role="alert"');
@@ -57,7 +95,16 @@ describe('kit form fields (UX-001, UX-026 stopgap)', () => {
   });
 
   it('keeps two fields of one page apart: their ids are unique', () => {
-    const out = html(<><TextField label="Broker" /><TextField label="Port" /><Select label="QoS"><option>0</option></Select><Textarea label="Notes" /></>);
+    const out = html(
+      <>
+        <TextField label="Broker" />
+        <TextField label="Port" />
+        <Select label="QoS">
+          <option>0</option>
+        </Select>
+        <Textarea label="Notes" />
+      </>,
+    );
     expect(auditMarkup(out)).toEqual([]);
   });
 
@@ -88,7 +135,11 @@ describe('kit form fields (UX-001, UX-026 stopgap)', () => {
 });
 
 describe('kit tabs and toggle group (UX-001, UX-025 stopgap)', () => {
-  const tabs = [{ id: 'output', label: 'Output' }, { id: 'problems', label: 'Problems', badge: '3' }, { id: 'trace', label: 'Trace', disabled: true }];
+  const tabs = [
+    { id: 'output', label: 'Output' },
+    { id: 'problems', label: 'Problems', badge: '3' },
+    { id: 'trace', label: 'Trace', disabled: true },
+  ];
 
   it('renders a tab list whose selected tab is the only one in the tab order', () => {
     const out = html(<TabList label="Panels" tabs={tabs} value="problems" onValueChange={noop} idPrefix="console" />);
@@ -101,20 +152,51 @@ describe('kit tabs and toggle group (UX-001, UX-025 stopgap)', () => {
   });
 
   it('puts the first enabled tab in the tab order when none is selected, never a disabled one', () => {
-    const out = html(<TabList label="Panels" tabs={[{ id: 'a', label: 'A', disabled: true }, { id: 'b', label: 'B' }]} value="zzz" onValueChange={noop} idPrefix="p" />);
+    const out = html(
+      <TabList
+        label="Panels"
+        tabs={[
+          { id: 'a', label: 'A', disabled: true },
+          { id: 'b', label: 'B' },
+        ]}
+        value="zzz"
+        onValueChange={noop}
+        idPrefix="p"
+      />,
+    );
     expect(out).toMatch(/id="p-tab-b"[^>]*tabindex="0"/);
     expect(out).toMatch(/id="p-tab-a"[^>]*tabindex="-1"/);
   });
 
   it('renders only the selected panel, named by its tab', () => {
-    const shown = html(<TabPanel id="problems" idPrefix="console" selected>Body</TabPanel>);
+    const shown = html(
+      <TabPanel id="problems" idPrefix="console" selected>
+        Body
+      </TabPanel>,
+    );
     expect(shown).toContain('role="tabpanel"');
     expect(shown).toContain('aria-labelledby="console-tab-problems"');
-    expect(html(<TabPanel id="output" idPrefix="console" selected={false}>Body</TabPanel>)).toBe('');
+    expect(
+      html(
+        <TabPanel id="output" idPrefix="console" selected={false}>
+          Body
+        </TabPanel>,
+      ),
+    ).toBe('');
   });
 
   it('renders a toggle group with aria-pressed on each button and one in the tab order', () => {
-    const out = html(<ToggleGroup label="Density" value="compact" onValueChange={noop} options={[{ value: 'comfortable', label: 'Comfortable' }, { value: 'compact', label: 'Compact' }]} />);
+    const out = html(
+      <ToggleGroup
+        label="Density"
+        value="compact"
+        onValueChange={noop}
+        options={[
+          { value: 'comfortable', label: 'Comfortable' },
+          { value: 'compact', label: 'Compact' },
+        ]}
+      />,
+    );
     expect(out).toContain('role="group"');
     expect(out).toMatch(/aria-pressed="true"[^>]*tabindex="0"[^>]*>Compact/);
     expect(out).toMatch(/aria-pressed="false"[^>]*tabindex="-1"[^>]*>Comfortable/);
@@ -124,11 +206,21 @@ describe('kit tabs and toggle group (UX-001, UX-025 stopgap)', () => {
 
 describe('kit dialogs (UX-001, UX-025 stopgap)', () => {
   it('renders nothing while closed', () => {
-    expect(html(<Dialog open={false} onClose={noop} title="Settings">x</Dialog>)).toBe('');
+    expect(
+      html(
+        <Dialog open={false} onClose={noop} title="Settings">
+          x
+        </Dialog>,
+      ),
+    ).toBe('');
   });
 
   it('names the dialog by its title, describes it, and gives the close button a name', () => {
-    const out = html(<Dialog open onClose={noop} title="Recover unsaved changes" description="ZPLC did not close properly.">Body</Dialog>);
+    const out = html(
+      <Dialog open onClose={noop} title="Recover unsaved changes" description="ZPLC did not close properly.">
+        Body
+      </Dialog>,
+    );
     expect(out).toContain('role="dialog"');
     expect(out).toContain('aria-modal="true"');
     const labelled = /aria-labelledby="([^"]+)"/.exec(out)?.[1];
@@ -138,7 +230,18 @@ describe('kit dialogs (UX-001, UX-025 stopgap)', () => {
   });
 
   it('renders an alert dialog whose action button names the action and that has no close button', () => {
-    const out = html(<AlertDialog open title="Discard changes?" description="Three files have changes that are not saved." actionLabel="Discard changes" cancelLabel="Keep editing" onAction={noop} onCancel={noop} destructive />);
+    const out = html(
+      <AlertDialog
+        open
+        title="Discard changes?"
+        description="Three files have changes that are not saved."
+        actionLabel="Discard changes"
+        cancelLabel="Keep editing"
+        onAction={noop}
+        onCancel={noop}
+        destructive
+      />,
+    );
     expect(out).toContain('role="alertdialog"');
     expect(out).toContain('>Discard changes</button>');
     expect(out).toContain('>Keep editing</button>');
@@ -158,7 +261,11 @@ describe('kit menu and tooltip (UX-001 stopgap)', () => {
   });
 
   it('renders a tooltip wrapper that shows nothing until hover or focus', () => {
-    const out = html(<Tooltip content="Save (Ctrl+S)"><button type="button">Save</button></Tooltip>);
+    const out = html(
+      <Tooltip content="Save (Ctrl+S)">
+        <button type="button">Save</button>
+      </Tooltip>,
+    );
     expect(out).toContain('<button type="button">Save</button>');
     expect(out).not.toContain('role="tooltip"');
   });
@@ -210,7 +317,14 @@ describe('kit display components (UX-001, UX-009 stopgap)', () => {
   });
 
   it('renders a property list as a definition list, and a spinner that announces itself', () => {
-    const out = html(<PropertyList items={[{ label: 'Board', value: 'native' }, { label: 'Tasks', value: '2' }]} />);
+    const out = html(
+      <PropertyList
+        items={[
+          { label: 'Board', value: 'native' },
+          { label: 'Tasks', value: '2' },
+        ]}
+      />,
+    );
     expect(out).toContain('<dl');
     expect(out).toContain('<dt>Board</dt><dd>native</dd>');
     expect(html(<Spinner label="Building" />)).toContain('role="status"');
@@ -219,7 +333,17 @@ describe('kit display components (UX-001, UX-009 stopgap)', () => {
 
 describe('kit combo box, tree, data grid and toast (UX-001)', () => {
   it('UX-001 renders a combo box as a labelled input that controls a list box and shows the chosen option', () => {
-    const out = html(<ComboBox label="Data type" value="INT" onChange={noop} options={[{ value: 'BOOL', label: 'BOOL' }, { value: 'INT', label: 'INT' }]} />);
+    const out = html(
+      <ComboBox
+        label="Data type"
+        value="INT"
+        onChange={noop}
+        options={[
+          { value: 'BOOL', label: 'BOOL' },
+          { value: 'INT', label: 'INT' },
+        ]}
+      />,
+    );
     expect(out).toContain('role="combobox"');
     expect(out).toContain('aria-expanded="false"');
     expect(out).toContain('value="INT"');
@@ -228,7 +352,16 @@ describe('kit combo box, tree, data grid and toast (UX-001)', () => {
   });
 
   it('UX-001 renders a tree with levels, set sizes, one tab stop and the expanded state', () => {
-    const out = html(<Tree label="Files" defaultExpanded={['p']} nodes={[{ id: 'p', label: 'Project', children: [{ id: 'm', label: 'Main' }] }, { id: 'q', label: 'Boards' }]} />);
+    const out = html(
+      <Tree
+        label="Files"
+        defaultExpanded={['p']}
+        nodes={[
+          { id: 'p', label: 'Project', children: [{ id: 'm', label: 'Main' }] },
+          { id: 'q', label: 'Boards' },
+        ]}
+      />,
+    );
     expect(out).toContain('role="tree"');
     expect(out.match(/role="treeitem"/g)?.length).toBe(3);
     expect(out).toContain('aria-expanded="true"');
@@ -238,7 +371,17 @@ describe('kit combo box, tree, data grid and toast (UX-001)', () => {
   });
 
   it('UX-001 renders a data grid with column headers, sortable columns and tabular numerals for numbers', () => {
-    const out = html(<DataGrid label="Variables" rowId={(r) => r.n} rows={[{ n: 'a', v: 1 }]} columns={[{ id: 'n', header: 'Name', cell: (r) => r.n, sortKey: (r) => r.n }, { id: 'v', header: 'Value', cell: (r) => r.v, numeric: true }]} />);
+    const out = html(
+      <DataGrid
+        label="Variables"
+        rowId={(r) => r.n}
+        rows={[{ n: 'a', v: 1 }]}
+        columns={[
+          { id: 'n', header: 'Name', cell: (r) => r.n, sortKey: (r) => r.n },
+          { id: 'v', header: 'Value', cell: (r) => r.v, numeric: true },
+        ]}
+      />,
+    );
     expect(out).toContain('role="grid"');
     expect(out).toContain('scope="col"');
     expect(out).toContain('aria-sort="none"');
@@ -248,7 +391,11 @@ describe('kit combo box, tree, data grid and toast (UX-001)', () => {
 
   it('UX-001 renders a toast as a status, and a fault as an alert, with a named dismiss button', () => {
     expect(html(<Toast tone="success">Saved</Toast>)).toContain('role="status"');
-    const fault = html(<Toast tone="danger" dismissLabel="Dismiss message" onDismiss={noop}>Failed</Toast>);
+    const fault = html(
+      <Toast tone="danger" dismissLabel="Dismiss message" onDismiss={noop}>
+        Failed
+      </Toast>,
+    );
     expect(fault).toContain('role="alert"');
     expect(fault).toContain('aria-label="Dismiss message"');
     expect(auditMarkup(fault)).toEqual([]);

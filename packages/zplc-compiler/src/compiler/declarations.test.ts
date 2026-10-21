@@ -86,7 +86,10 @@ END_PROGRAM`);
         const [a, b, c] = unit.programs[0].varBlocks[0].variables.map((variable) => variable.dataType as any);
         expect(a.dimensions).toEqual([{ lowerBound: -5, upperBound: 5 }]);
         expect(b.dimensions).toEqual([{ lowerBound: 0, upperBound: 4 }]);
-        expect(c.dimensions).toEqual([{ lowerBound: 1, upperBound: 8 }, { lowerBound: -1, upperBound: 1 }]);
+        expect(c.dimensions).toEqual([
+            { lowerBound: 1, upperBound: 8 },
+            { lowerBound: -1, upperBound: 1 },
+        ]);
     });
 
     it('keeps VAR CONSTANT and VAR_GLOBAL CONSTANT apart from plain variables', () => {
@@ -119,7 +122,10 @@ END_PROGRAM`);
             kind: 'ArrayLiteral',
             elements: [{ kind: 'IntLiteral' }, { kind: 'ArrayRepeat', count: 4 }, { kind: 'IntLiteral' }],
         });
-        expect(variables[2].initialValue).toMatchObject({ kind: 'ArrayLiteral', elements: [{ kind: 'StructInitializer' }, { kind: 'StructInitializer' }] });
+        expect(variables[2].initialValue).toMatchObject({
+            kind: 'ArrayLiteral',
+            elements: [{ kind: 'StructInitializer' }, { kind: 'StructInitializer' }],
+        });
         // a parenthesised expression is still an expression
         expect(variables[3].initialValue).toMatchObject({ kind: 'BinaryExpr' });
         // the default of a structure member is kept in the type
@@ -127,9 +133,10 @@ END_PROGRAM`);
     });
 
     it('lexes Type#Value as one name and keeps the typed literals of the language', () => {
-        const names = tokenize('s := St#RUN; t := T#5s; d := D#2024-01-02;').filter((token) => token.type === TokenType.IDENTIFIER).map((token) => token.value);
+        const names = tokenize('s := St#RUN; t := T#5s; d := D#2024-01-02;')
+            .filter((token) => token.type === TokenType.IDENTIFIER)
+            .map((token) => token.value);
         expect(names).toEqual(['s', 'St#RUN', 't', 'd']);
         expect(tokenize('x := T#5s;').some((token) => token.type === TokenType.TIME_LITERAL)).toBe(true);
     });
 });
-

@@ -41,17 +41,17 @@ on a Linux display; it needs the built application and the native runtime like
 2026-10-20; owner decision 2026-10-20 accepts this in place of NVDA/JAWS on Windows and
 VoiceOver on macOS.
 
-| Step | English | Spanish | What a person who cannot see the screen was given |
-| --- | --- | --- | --- |
-| 1 Open | Pass | Pass | Window title "ZPLC". Tab walks 46 stops on Welcome without a trap: Theme (combo box), **Open project**, **New project**, **Learn**, **Import**, then the examples, each with its name, its role and a short description. After **Open project** the focus is on the editor region ("Editor, main landmark"). |
-| 2 Edit | Pass | Pass | The file row reads "Blinky src/main.st, button"; Enter opens it and puts the focus in the editor, named "Code editor for src/main.st. Press Ctrl+M so that the tab key moves the focus out of the editor.", a multi-line text box; the tab reads "main.st, tab, selected". Saving says "Saved main.st". Ctrl+M says "Pressing Tab will now move focus to the next focusable element" and Tab leaves the editor. |
-| 3 Build | Pass | Pass | "Build succeeded. Blinky (Structured Text): 302 bytes, 1 task" in the polite region. With a broken program, "Build failed. src/main.st: Compilation of 'main.st' failed: …" in the assertive region, and **Problems** reads "Problems, 6 errors · 0 warnings, tab, selected" with each diagnostic as "Error: … src/main.st:61:9". |
-| 4 Simulate | Pass | Pass | Tab reaches "Connect, button" in the toolbar. Connecting says "Starting the simulator", "Simulation · native runtime", "Ready", "Simulator ready". F5 moves the focus to "Pause (F6), button" and the status bar region says "Running". |
-| 5 Watch | Pass | Pass | "Watch, tab, selected"; "Add variable, button"; the field is a combo box named "Variable path…". Enter says "LED_Output added to the watch table." and the focus returns to **Add variable**. The row reads TRUE and FALSE alternately. A changing value is not announced, by design: it is read by moving to its row. |
-| 6 Force | Pass | Pass | "Force LED_Output, checkbox"; Space says "Forced LED_Output" and the box reads "checked. Forced until cleared"; unchecking says "Force released on LED_Output". Ending the connection with a force active says "Force released on LED_Output". |
-| 7 Deploy dialog | Pass, with a limit | Pass, with a limit | The dialog is "Deploy to the device?", an alert dialog. Focus starts on **Cancel**, Tab cycles inside it, the table has the caption "The project compared with the device", and Escape closes it and returns the focus to **Connect**. It was opened by the product's own dialog with fixed device facts, not with a board. |
-| 8 One Learn lesson | Pass | Pass | Learn home: "Learn, heading", then Close, **Start the course**, the two switches (flipping one says "All lessons are unlocked."), Export, Import. The lesson has a heading and one heading per stage (Objective, Predict, Edit, Run, Observe, Reflect) in a list named "Lesson steps". A hint reads "Hint 2, expanded". **Check** says "Scenario verified. FirstBlink passed 10 recorded assertions."; **Restore the starter** opens an alert dialog and then says "The starter was restored." |
-| 9 A plant lesson (LRN-037) | Pass | Pass | The plant is an image with the text equivalent of its state, for example "Plant drawing: Motor stopped. ○ COMMAND OFF, ○ AT SPEED OFF, ○ STALL OFF". The faceplate switch is operated with Space and the change is announced: "Motor at speed, 1000 per mille." Pause reads "Plant paused"; the stall action reads "Stall the motor, button, pressed" and says "Motor stalled at 0 per mille: it does not turn, whatever the command." with the drawing reading "▲ STALL FAULT". |
+| Step                       | English            | Spanish            | What a person who cannot see the screen was given                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| -------------------------- | ------------------ | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 Open                     | Pass               | Pass               | Window title "ZPLC". Tab walks 46 stops on Welcome without a trap: Theme (combo box), **Open project**, **New project**, **Learn**, **Import**, then the examples, each with its name, its role and a short description. After **Open project** the focus is on the editor region ("Editor, main landmark").                                                                                                                                                                                   |
+| 2 Edit                     | Pass               | Pass               | The file row reads "Blinky src/main.st, button"; Enter opens it and puts the focus in the editor, named "Code editor for src/main.st. Press Ctrl+M so that the tab key moves the focus out of the editor.", a multi-line text box; the tab reads "main.st, tab, selected". Saving says "Saved main.st". Ctrl+M says "Pressing Tab will now move focus to the next focusable element" and Tab leaves the editor.                                                                                |
+| 3 Build                    | Pass               | Pass               | "Build succeeded. Blinky (Structured Text): 302 bytes, 1 task" in the polite region. With a broken program, "Build failed. src/main.st: Compilation of 'main.st' failed: …" in the assertive region, and **Problems** reads "Problems, 6 errors · 0 warnings, tab, selected" with each diagnostic as "Error: … src/main.st:61:9".                                                                                                                                                              |
+| 4 Simulate                 | Pass               | Pass               | Tab reaches "Connect, button" in the toolbar. Connecting says "Starting the simulator", "Simulation · native runtime", "Ready", "Simulator ready". F5 moves the focus to "Pause (F6), button" and the status bar region says "Running".                                                                                                                                                                                                                                                        |
+| 5 Watch                    | Pass               | Pass               | "Watch, tab, selected"; "Add variable, button"; the field is a combo box named "Variable path…". Enter says "LED_Output added to the watch table." and the focus returns to **Add variable**. The row reads TRUE and FALSE alternately. A changing value is not announced, by design: it is read by moving to its row.                                                                                                                                                                         |
+| 6 Force                    | Pass               | Pass               | "Force LED_Output, checkbox"; Space says "Forced LED_Output" and the box reads "checked. Forced until cleared"; unchecking says "Force released on LED_Output". Ending the connection with a force active says "Force released on LED_Output".                                                                                                                                                                                                                                                 |
+| 7 Deploy dialog            | Pass, with a limit | Pass, with a limit | The dialog is "Deploy to the device?", an alert dialog. Focus starts on **Cancel**, Tab cycles inside it, the table has the caption "The project compared with the device", and Escape closes it and returns the focus to **Connect**. It was opened by the product's own dialog with fixed device facts, not with a board.                                                                                                                                                                    |
+| 8 One Learn lesson         | Pass               | Pass               | Learn home: "Learn, heading", then Close, **Start the course**, the two switches (flipping one says "All lessons are unlocked."), Export, Import. The lesson has a heading and one heading per stage (Objective, Predict, Edit, Run, Observe, Reflect) in a list named "Lesson steps". A hint reads "Hint 2, expanded". **Check** says "Scenario verified. FirstBlink passed 10 recorded assertions."; **Restore the starter** opens an alert dialog and then says "The starter was restored." |
+| 9 A plant lesson (LRN-037) | Pass               | Pass               | The plant is an image with the text equivalent of its state, for example "Plant drawing: Motor stopped. ○ COMMAND OFF, ○ AT SPEED OFF, ○ STALL OFF". The faceplate switch is operated with Space and the change is announced: "Motor at speed, 1000 per mille." Pause reads "Plant paused"; the stall action reads "Stall the motor, button, pressed" and says "Motor stalled at 0 per mille: it does not turn, whatever the command." with the drawing reading "▲ STALL FAULT".               |
 
 **What was not run, and why.**
 
@@ -64,14 +64,14 @@ VoiceOver on macOS.
 
 **Defects this check found, fixed in the same change.**
 
-| Defect | Fix |
-| --- | --- |
-| After **Open project** the focus fell to the page body, so a keyboard user started again from the top. | The editor region takes the focus when the workbench opens. |
-| The code editor was named "Editor content" and takes Tab as a character: nothing told a person how to leave it. | Its name now says that Ctrl+M makes Tab move the focus out. |
-| Adding a variable to the Watch table dropped the focus to the page body and said nothing. | The focus returns to **Add variable** and the row is announced. |
-| While **Check** ran, the button disabled itself and the focus fell to the page body. | The button stays focused (it is marked unavailable, not disabled). |
-| After **Restore the starter** the focus fell to the page body. | The button gets the focus back when the restore ends. |
-| Each stage of a lesson had a disclosure named just "Show expected checkpoint", six times. | Each carries its stage: "Show expected checkpoint: Predict". |
+| Defect                                                                                                                        | Fix                                                                           |
+| ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| After **Open project** the focus fell to the page body, so a keyboard user started again from the top.                        | The editor region takes the focus when the workbench opens.                   |
+| The code editor was named "Editor content" and takes Tab as a character: nothing told a person how to leave it.               | Its name now says that Ctrl+M makes Tab move the focus out.                   |
+| Adding a variable to the Watch table dropped the focus to the page body and said nothing.                                     | The focus returns to **Add variable** and the row is announced.               |
+| While **Check** ran, the button disabled itself and the focus fell to the page body.                                          | The button stays focused (it is marked unavailable, not disabled).            |
+| After **Restore the starter** the focus fell to the page body.                                                                | The button gets the focus back when the restore ends.                         |
+| Each stage of a lesson had a disclosure named just "Show expected checkpoint", six times.                                     | Each carries its stage: "Show expected checkpoint: Predict".                  |
 | In Spanish the run state said "Running", "Ready" and "Paused" in English, and the status bar refused any text with an accent. | The states are translated and the status bar accepts letters of any language. |
 
 **Left as they are, found by the check.** Monaco's own message about Tab ("Pressing Tab
@@ -110,13 +110,13 @@ above, the record is what the application did on 2026-10-20.
 
 ## What you need
 
-| | Windows | macOS |
-| --- | --- | --- |
-| Screen reader | NVDA (current release) and Narrator | VoiceOver |
-| Start and stop | NVDA: Ctrl+Alt+N. Narrator: Win+Ctrl+Enter | Cmd+F5 |
-| ZPLC | The installer build under test, not the dev server | The installer build under test |
-| Project | The **Blinky** example copied to an empty folder | The same |
-| Device | None: use **Simulate**. A board is not needed for this check | None |
+|                | Windows                                                      | macOS                          |
+| -------------- | ------------------------------------------------------------ | ------------------------------ |
+| Screen reader  | NVDA (current release) and Narrator                          | VoiceOver                      |
+| Start and stop | NVDA: Ctrl+Alt+N. Narrator: Win+Ctrl+Enter                   | Cmd+F5                         |
+| ZPLC           | The installer build under test, not the dev server           | The installer build under test |
+| Project        | The **Blinky** example copied to an empty folder             | The same                       |
+| Device         | None: use **Simulate**. A board is not needed for this check | None                           |
 
 Use the same example and the same steps on both systems. Run it once per screen
 reader: NVDA and Narrator on Windows, VoiceOver on macOS. Close other
@@ -239,16 +239,16 @@ Copy this table into the release checklist, one row per screen reader and step.
 Write what you heard in your own words. Mark a step **Pass**, **Fail**, or **Not
 run**, and say why for the last two.
 
-| Date | Tester | Screen reader and version | System | ZPLC version | Step | Heard | Focus correct | Result | Notes |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| | | | | | 1 Open | | | | |
-| | | | | | 2 Edit | | | | |
-| | | | | | 3 Build | | | | |
-| | | | | | 4 Simulate | | | | |
-| | | | | | 5 Watch | | | | |
-| | | | | | 6 Force | | | | |
-| | | | | | 7 Deploy dialog | | | | |
-| | | | | | 8 Learn lesson | | | | |
+| Date | Tester | Screen reader and version | System | ZPLC version | Step            | Heard | Focus correct | Result | Notes |
+| ---- | ------ | ------------------------- | ------ | ------------ | --------------- | ----- | ------------- | ------ | ----- |
+|      |        |                           |        |              | 1 Open          |       |               |        |       |
+|      |        |                           |        |              | 2 Edit          |       |               |        |       |
+|      |        |                           |        |              | 3 Build         |       |               |        |       |
+|      |        |                           |        |              | 4 Simulate      |       |               |        |       |
+|      |        |                           |        |              | 5 Watch         |       |               |        |       |
+|      |        |                           |        |              | 6 Force         |       |               |        |       |
+|      |        |                           |        |              | 7 Deploy dialog |       |               |        |       |
+|      |        |                           |        |              | 8 Learn lesson  |       |               |        |       |
 
 A failed step is a defect: file it with the step number, what you heard and what
 you expected. The release does not claim screen reader support until every row of

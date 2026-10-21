@@ -16,7 +16,18 @@ describe('Learn starts no physical operation by itself (LRN-015)', () => {
   });
 
   it('LRN-015 finds a call that connects, deploys, runs, stops, forces, writes, opens a port or flashes', () => {
-    for (const call of ['adapter.connect()', 'session.loadProgram(bytes)', 'adapter.start()', 'adapter.stop()', 'adapter.forceValue(0, b)', 'adapter.setValue(0, b)', 'adapter.pokeN(0, b)', 'link.sendRaw("x")', 'navigator.serial.requestPort()', 'tool.flashImage(i)']) {
+    for (const call of [
+      'adapter.connect()',
+      'session.loadProgram(bytes)',
+      'adapter.start()',
+      'adapter.stop()',
+      'adapter.forceValue(0, b)',
+      'adapter.setValue(0, b)',
+      'adapter.pokeN(0, b)',
+      'link.sendRaw("x")',
+      'navigator.serial.requestPort()',
+      'tool.flashImage(i)',
+    ]) {
       expect(rulesOf(`void ${call};`)).toEqual(['physical-call']);
     }
     expect(rulesOf('await useLearnUi.getState().startLesson(id); restoreLesson(id); session.readWatchVariables(v);')).toEqual([]);

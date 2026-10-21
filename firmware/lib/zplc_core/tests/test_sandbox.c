@@ -30,24 +30,23 @@
 static int failures;
 static int checks;
 
-#define CHECK(condition, name)                                                 \
-  do {                                                                         \
-    checks++;                                                                  \
-    if (!(condition)) {                                                        \
-      fprintf(stderr, "FAIL: %s (line %d)\n", name, __LINE__);                 \
-      failures++;                                                              \
-    }                                                                          \
+#define CHECK(condition, name)                                 \
+  do {                                                         \
+    checks++;                                                  \
+    if (!(condition)) {                                        \
+      fprintf(stderr, "FAIL: %s (line %d)\n", name, __LINE__); \
+      failures++;                                              \
+    }                                                          \
   } while (0)
 
-#define CHECK_EQ(actual, expected, name)                                       \
-  do {                                                                         \
-    long a_ = (long)(actual), e_ = (long)(expected);                           \
-    checks++;                                                                  \
-    if (a_ != e_) {                                                            \
-      fprintf(stderr, "FAIL: %s: got %ld, want %ld (line %d)\n", name, a_,     \
-              e_, __LINE__);                                                   \
-      failures++;                                                              \
-    }                                                                          \
+#define CHECK_EQ(actual, expected, name)                                                  \
+  do {                                                                                    \
+    long a_ = (long)(actual), e_ = (long)(expected);                                      \
+    checks++;                                                                             \
+    if (a_ != e_) {                                                                       \
+      fprintf(stderr, "FAIL: %s: got %ld, want %ld (line %d)\n", name, a_, e_, __LINE__); \
+      failures++;                                                                         \
+    }                                                                                     \
   } while (0)
 
 /* ----------------------------------------------------------------------------
@@ -110,8 +109,7 @@ static void put32(uint8_t *p, uint32_t v) {
 }
 
 /** One CODE segment of `code_n` bytes and, when ntasks > 0, one TASK segment. */
-static size_t build_bytes(uint8_t *out, const uint8_t *code, size_t code_n,
-                          uint16_t entry, const task_t *tasks, unsigned ntasks) {
+static size_t build_bytes(uint8_t *out, const uint8_t *code, size_t code_n, uint16_t entry, const task_t *tasks, unsigned ntasks) {
   size_t segments = ntasks != 0U ? 2U : 1U;
   size_t table = ZPLC_FILE_HEADER_SIZE + segments * ZPLC_SEGMENT_ENTRY_SIZE;
   size_t task_bytes = (size_t)ntasks * ZPLC_TASK_DEF_SIZE;
@@ -148,8 +146,7 @@ static size_t build_bytes(uint8_t *out, const uint8_t *code, size_t code_n,
   return length;
 }
 
-static size_t build(uint8_t *out, const code_t *code, uint16_t entry,
-                    const task_t *tasks, unsigned ntasks) {
+static size_t build(uint8_t *out, const code_t *code, uint16_t entry, const task_t *tasks, unsigned ntasks) {
   return build_bytes(out, code->b, code->n, entry, tasks, ntasks);
 }
 
@@ -164,8 +161,7 @@ static int verdict(const code_t *code) {
 }
 
 /** Loader verdict with tasks (entry and declared stack depth each). */
-static int verdict_tasks(const code_t *code, const task_t *tasks,
-                         unsigned ntasks) {
+static int verdict_tasks(const code_t *code, const task_t *tasks, unsigned ntasks) {
   static uint8_t file[2048];
   zplc_program_view_t view;
   size_t length = build(file, code, 0U, tasks, ntasks);
@@ -203,8 +199,7 @@ static int run_raw(const code_t *code) {
  * RT-001: indirect loads and stores
  * ------------------------------------------------------------------------- */
 
-static void indirect_load(const char *name, uint8_t opcode, uint32_t address,
-                          int expected) {
+static void indirect_load(const char *name, uint8_t opcode, uint32_t address, int expected) {
   code_t c = {{0}, 0};
   push_runtime(&c, address);
   op(&c, opcode);
@@ -214,8 +209,7 @@ static void indirect_load(const char *name, uint8_t opcode, uint32_t address,
   CHECK_EQ(run_verified(&c), expected, name);
 }
 
-static void indirect_store(const char *name, uint8_t opcode, uint32_t address,
-                           int expected) {
+static void indirect_store(const char *name, uint8_t opcode, uint32_t address, int expected) {
   code_t c = {{0}, 0};
   push_runtime(&c, address);
   op8(&c, OP_PUSH8, 0x5A);
@@ -306,8 +300,7 @@ static void test_region_windows(void) {
   retain = zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE);
   CHECK_EQ(retain[0], 0x5A, "and it is retentive memory that it writes");
 #if ZPLC_MEM_WORK_SIZE > 0x2000U
-  CHECK_EQ(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0x2000U], 0,
-           "and not the work memory behind the end of its window");
+  CHECK_EQ(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0x2000U], 0, "and not the work memory behind the end of its window");
 #endif
 
   c.n = 0;
@@ -337,8 +330,7 @@ static void test_region_windows(void) {
  * ------------------------------------------------------------------------- */
 
 /** Make a string header: length and capacity, in work memory. */
-static void set_string(code_t *c, uint16_t address, uint16_t length,
-                       uint16_t capacity) {
+static void set_string(code_t *c, uint16_t address, uint16_t length, uint16_t capacity) {
   op16(c, OP_PUSH16, length);
   op16(c, OP_STORE16, address);
   op16(c, OP_PUSH16, capacity);
@@ -469,8 +461,8 @@ static int compare_texts(const char *a, const char *b) {
   if (run_verified(&c) != OK)
     return 100;
   work = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
-  return (int)(int32_t)((uint32_t)work[0x300] | ((uint32_t)work[0x301] << 8) |
-                        ((uint32_t)work[0x302] << 16) | ((uint32_t)work[0x303] << 24));
+  return (int)(int32_t)((uint32_t)work[0x300] | ((uint32_t)work[0x301] << 8) | ((uint32_t)work[0x302] << 16) |
+                        ((uint32_t)work[0x303] << 24));
 }
 
 /** STRCMP of the string at `a` (header written by the program, or by the host
@@ -537,8 +529,7 @@ static void test_strcmp_extents(void) {
  * RT-001: communication opcodes (the PoC shapes, address built at run time)
  * ------------------------------------------------------------------------- */
 
-static void comm_runtime(const char *name, uint8_t opcode, uint32_t kind,
-                         uint32_t address, int expected) {
+static void comm_runtime(const char *name, uint8_t opcode, uint32_t kind, uint32_t address, int expected) {
   code_t c = {{0}, 0};
   push_runtime(&c, address);
   op32(&c, opcode, kind);
@@ -553,46 +544,29 @@ static void test_comm_opcodes(void) {
   printf("=== RT-001 communication opcodes ===\n");
 
   /* Modbus read holding registers: 110 bytes */
-  comm_runtime("COMM_EXEC block ending at the last retentive byte",
-               OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG, 0x4F92U, OK);
-  comm_runtime("COMM_EXEC block one byte past the last retentive byte",
-               OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG, 0x4F93U, OOB);
-  comm_runtime("COMM_EXEC block at the last retentive byte (review PoC)",
-               OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG, 0x4FFFU, OOB);
-  comm_runtime("COMM_STATUS block at the last output-image byte (review PoC)",
-               OP_COMM_STATUS, ZPLC_COMM_FB_MB_READ_HREG, 0x1FFCU, OOB);
-  comm_runtime("COMM_RESET block past the retentive end",
-               OP_COMM_RESET, ZPLC_COMM_FB_MQTT_PUBLISH, 0x4F80U, OOB);
-  comm_runtime("COMM_EXEC block across output image and work memory",
-               OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG, 0x1FF0U, OOB);
-  comm_runtime("COMM_EXEC block that would write the input image",
-               OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG, 0x0000U, OOB);
-  comm_runtime("COMM_RESET block that would write the input image",
-               OP_COMM_RESET, ZPLC_COMM_FB_SPB_REBIRTH, 0x0100U, OOB);
-  comm_runtime("COMM_STATUS may read the input image",
-               OP_COMM_STATUS, ZPLC_COMM_FB_SPB_REBIRTH, 0x0000U, OK);
-  comm_runtime("COMM_EXEC at 0x12000 does not alias work memory",
-               OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG, 0x00012000U, OOB);
-  comm_runtime("COMM_EXEC at 0xFFFFFFFF", OP_COMM_EXEC,
-               ZPLC_COMM_FB_MB_READ_HREG, 0xFFFFFFFFU, OOB);
+  comm_runtime("COMM_EXEC block ending at the last retentive byte", OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG, 0x4F92U, OK);
+  comm_runtime("COMM_EXEC block one byte past the last retentive byte", OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG, 0x4F93U, OOB);
+  comm_runtime("COMM_EXEC block at the last retentive byte (review PoC)", OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG, 0x4FFFU, OOB);
+  comm_runtime("COMM_STATUS block at the last output-image byte (review PoC)", OP_COMM_STATUS, ZPLC_COMM_FB_MB_READ_HREG, 0x1FFCU, OOB);
+  comm_runtime("COMM_RESET block past the retentive end", OP_COMM_RESET, ZPLC_COMM_FB_MQTT_PUBLISH, 0x4F80U, OOB);
+  comm_runtime("COMM_EXEC block across output image and work memory", OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG, 0x1FF0U, OOB);
+  comm_runtime("COMM_EXEC block that would write the input image", OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG, 0x0000U, OOB);
+  comm_runtime("COMM_RESET block that would write the input image", OP_COMM_RESET, ZPLC_COMM_FB_SPB_REBIRTH, 0x0100U, OOB);
+  comm_runtime("COMM_STATUS may read the input image", OP_COMM_STATUS, ZPLC_COMM_FB_SPB_REBIRTH, 0x0000U, OK);
+  comm_runtime("COMM_EXEC at 0x12000 does not alias work memory", OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG, 0x00012000U, OOB);
+  comm_runtime("COMM_EXEC at 0xFFFFFFFF", OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG, 0xFFFFFFFFU, OOB);
 
   /* the smallest block with a layout, the 8-byte handshake and the byte of the dispatcher, at its boundary */
-  comm_runtime("9-byte block at the last 9 retentive bytes", OP_COMM_EXEC,
-               ZPLC_COMM_FB_SPB_REBIRTH,
-               0x5000U - ZPLC_COMM_SPB_REBIRTH_SIZE, OK);
-  comm_runtime("9-byte block one byte too far", OP_COMM_EXEC,
-               ZPLC_COMM_FB_SPB_REBIRTH,
-               0x5000U - ZPLC_COMM_SPB_REBIRTH_SIZE + 1U, OOB);
+  comm_runtime("9-byte block at the last 9 retentive bytes", OP_COMM_EXEC, ZPLC_COMM_FB_SPB_REBIRTH, 0x5000U - ZPLC_COMM_SPB_REBIRTH_SIZE,
+               OK);
+  comm_runtime("9-byte block one byte too far", OP_COMM_EXEC, ZPLC_COMM_FB_SPB_REBIRTH, 0x5000U - ZPLC_COMM_SPB_REBIRTH_SIZE + 1U, OOB);
 
   /* a kind with no layout is the 8-byte handshake only */
-  comm_runtime("kind without layout at the last 8 bytes", OP_COMM_STATUS,
-               ZPLC_COMM_FB_COMM_STATUS, 0x4FF8U, OK);
-  comm_runtime("kind without layout one byte too far", OP_COMM_STATUS,
-               ZPLC_COMM_FB_COMM_STATUS, 0x4FF9U, OOB);
+  comm_runtime("kind without layout at the last 8 bytes", OP_COMM_STATUS, ZPLC_COMM_FB_COMM_STATUS, 0x4FF8U, OK);
+  comm_runtime("kind without layout one byte too far", OP_COMM_STATUS, ZPLC_COMM_FB_COMM_STATUS, 0x4FF9U, OOB);
 }
 
-static void raw_comm(const char *name, uint8_t opcode, uint32_t kind,
-                     uint32_t address, int expected) {
+static void raw_comm(const char *name, uint8_t opcode, uint32_t kind, uint32_t address, int expected) {
   code_t c = {{0}, 0};
   op32(&c, OP_PUSH32, address);
   op32(&c, opcode, kind);
@@ -604,12 +578,9 @@ static void raw_comm(const char *name, uint8_t opcode, uint32_t kind,
 
 static void test_comm_opcodes_raw(void) {
   printf("=== RT-001 communication opcodes, constant address at the VM ===\n");
-  raw_comm("COMM_EXEC at the last retentive byte", OP_COMM_EXEC,
-           ZPLC_COMM_FB_MB_READ_HREG, 0x4FFFU, OOB);
-  raw_comm("COMM_STATUS at 0x1FFC", OP_COMM_STATUS, ZPLC_COMM_FB_MB_READ_HREG,
-           0x1FFCU, OOB);
-  raw_comm("COMM_EXEC block that fits", OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG,
-           0x4F92U, OK);
+  raw_comm("COMM_EXEC at the last retentive byte", OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG, 0x4FFFU, OOB);
+  raw_comm("COMM_STATUS at 0x1FFC", OP_COMM_STATUS, ZPLC_COMM_FB_MB_READ_HREG, 0x1FFCU, OOB);
+  raw_comm("COMM_EXEC block that fits", OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG, 0x4F92U, OK);
 }
 
 /* ----------------------------------------------------------------------------
@@ -620,8 +591,7 @@ static void test_comm_opcodes_raw(void) {
 
 /** One COMM_* on a block at `base`, as a program the loader sees (PUSH32, then
  *  the opcode) and as bytes the VM runs unchecked. */
-static void comm_at(const char *name, uint8_t opcode, uint32_t kind,
-                    uint32_t base, int expect_ok) {
+static void comm_at(const char *name, uint8_t opcode, uint32_t kind, uint32_t base, int expect_ok) {
   code_t c = {{0}, 0};
   static const uint8_t zeros[ZPLC_MEM_IPI_SIZE];
   const uint8_t *input_image;
@@ -643,13 +613,8 @@ static void test_region_ends(void) {
     uint32_t end;
     int writable;
     const char *name;
-  } ends[] = {{0x1000U, 0, "input image"},
-              {0x2000U, 1, "output image"},
-              {0x4000U, 1, "work memory"},
-              {0x5000U, 1, "retentive memory"}};
-  static const uint32_t kinds[] = {ZPLC_COMM_FB_MB_READ_HREG,
-                                   ZPLC_COMM_FB_MQTT_CONNECT,
-                                   ZPLC_COMM_FB_SPB_REBIRTH,
+  } ends[] = {{0x1000U, 0, "input image"}, {0x2000U, 1, "output image"}, {0x4000U, 1, "work memory"}, {0x5000U, 1, "retentive memory"}};
+  static const uint32_t kinds[] = {ZPLC_COMM_FB_MB_READ_HREG, ZPLC_COMM_FB_MQTT_CONNECT, ZPLC_COMM_FB_SPB_REBIRTH,
                                    ZPLC_COMM_FB_COMM_STATUS};
   static const uint8_t opcodes[] = {OP_COMM_EXEC, OP_COMM_STATUS, OP_COMM_RESET};
   size_t e, k, o;
@@ -669,10 +634,9 @@ static void test_region_ends(void) {
           /* sampling a long block: the first sixteen, and the three around its length */
           if (back > 16U && (back + 1U < length || back > length + 1U))
             continue;
-          snprintf(name, sizeof name, "op 0x%02X kind 0x%02X, %u bytes before the end of the %s",
-                   opcodes[o], (unsigned)kinds[k], back, ends[e].name);
-          comm_at(name, opcodes[o], kinds[k], ends[e].end - back,
-                  fits && (!write || ends[e].writable));
+          snprintf(name, sizeof name, "op 0x%02X kind 0x%02X, %u bytes before the end of the %s", opcodes[o], (unsigned)kinds[k], back,
+                   ends[e].name);
+          comm_at(name, opcodes[o], kinds[k], ends[e].end - back, fits && (!write || ends[e].writable));
         }
       }
     }
@@ -691,8 +655,7 @@ static int handler_calls;
 static uint16_t handler_length;
 static uint8_t *handler_block;
 
-static int recording_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
-                             uint16_t fb_len, zplc_comm_call_t call) {
+static int recording_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len, zplc_comm_call_t call) {
   (void)kind;
   (void)call;
   handler_calls++;
@@ -708,8 +671,7 @@ static void test_handler_gets_a_block_that_fits(void) {
   uint8_t *work;
   printf("=== RT-002 a handler is given a block that fits, and its length ===\n");
 
-  CHECK_EQ(zplc_comm_register_handler(ZPLC_COMM_FB_MQTT_CONNECT, recording_handler), 0,
-           "register a handler");
+  CHECK_EQ(zplc_comm_register_handler(ZPLC_COMM_FB_MQTT_CONNECT, recording_handler), 0, "register a handler");
 
   /* D4: the handshake of an MQTT_CONNECT (12 bytes) at 0x3FF8 fits the work
    * memory, the block does not: the handler is not called, nothing is written */
@@ -737,8 +699,7 @@ static void test_handler_gets_a_block_that_fits(void) {
   CHECK_EQ(handler_length, ZPLC_COMM_MQTT_CONNECT_SIZE, "with the length of its kind");
   work = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
   CHECK(handler_block == &work[0x3FF4U - ZPLC_MEM_WORK_BASE], "and a pointer to the block");
-  CHECK_EQ(work[0x3FF4U - ZPLC_MEM_WORK_BASE + ZPLC_COMM_MQTT_CONNECT_CONNECTED_OFFSET], 1,
-           "the handler wrote inside the block");
+  CHECK_EQ(work[0x3FF4U - ZPLC_MEM_WORK_BASE + ZPLC_COMM_MQTT_CONNECT_CONNECTED_OFFSET], 1, "the handler wrote inside the block");
   CHECK_EQ(zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE)[0], 0, "and nothing outside it");
 }
 
@@ -760,24 +721,18 @@ static void test_loader_block_fit(void) {
   code_t c;
   printf("=== RT-002 static function-block fit ===\n");
 
-  CHECK_EQ(comm_verdict(0x4F92U, OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG),
-           ZPLC_LOADER_OK, "block ending at the last retentive byte fits");
-  CHECK_EQ(comm_verdict(0x4F93U, OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG),
-           ZPLC_LOADER_ERR_COMM, "block one byte past the retentive end");
-  CHECK_EQ(comm_verdict(0x4FFFU, OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG),
-           ZPLC_LOADER_ERR_COMM, "block at the last retentive byte");
-  CHECK_EQ(comm_verdict(0x1FF0U, OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG),
-           ZPLC_LOADER_ERR_COMM, "block across output image and work memory");
-  CHECK_EQ(comm_verdict(0x0000U, OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG),
-           ZPLC_LOADER_ERR_COMM, "block the handler would write in the input image");
-  CHECK_EQ(comm_verdict(0x0000U, OP_COMM_STATUS, ZPLC_COMM_FB_MB_READ_HREG),
-           ZPLC_LOADER_OK, "status read of a block in the input image");
-  CHECK_EQ(comm_verdict(0x0FFCU, OP_COMM_STATUS, ZPLC_COMM_FB_MB_READ_HREG),
-           ZPLC_LOADER_ERR_COMM, "status read of a block across two regions");
-  CHECK_EQ(comm_verdict(0x4FF8U, OP_COMM_STATUS, ZPLC_COMM_FB_COMM_STATUS),
-           ZPLC_LOADER_OK, "kind without layout, 8 bytes, fits");
-  CHECK_EQ(comm_verdict(0x4FF9U, OP_COMM_STATUS, ZPLC_COMM_FB_COMM_STATUS),
-           ZPLC_LOADER_ERR_COMM, "kind without layout, one byte too far");
+  CHECK_EQ(comm_verdict(0x4F92U, OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG), ZPLC_LOADER_OK, "block ending at the last retentive byte fits");
+  CHECK_EQ(comm_verdict(0x4F93U, OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG), ZPLC_LOADER_ERR_COMM, "block one byte past the retentive end");
+  CHECK_EQ(comm_verdict(0x4FFFU, OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG), ZPLC_LOADER_ERR_COMM, "block at the last retentive byte");
+  CHECK_EQ(comm_verdict(0x1FF0U, OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG), ZPLC_LOADER_ERR_COMM,
+           "block across output image and work memory");
+  CHECK_EQ(comm_verdict(0x0000U, OP_COMM_EXEC, ZPLC_COMM_FB_MB_READ_HREG), ZPLC_LOADER_ERR_COMM,
+           "block the handler would write in the input image");
+  CHECK_EQ(comm_verdict(0x0000U, OP_COMM_STATUS, ZPLC_COMM_FB_MB_READ_HREG), ZPLC_LOADER_OK, "status read of a block in the input image");
+  CHECK_EQ(comm_verdict(0x0FFCU, OP_COMM_STATUS, ZPLC_COMM_FB_MB_READ_HREG), ZPLC_LOADER_ERR_COMM,
+           "status read of a block across two regions");
+  CHECK_EQ(comm_verdict(0x4FF8U, OP_COMM_STATUS, ZPLC_COMM_FB_COMM_STATUS), ZPLC_LOADER_OK, "kind without layout, 8 bytes, fits");
+  CHECK_EQ(comm_verdict(0x4FF9U, OP_COMM_STATUS, ZPLC_COMM_FB_COMM_STATUS), ZPLC_LOADER_ERR_COMM, "kind without layout, one byte too far");
 
   /* a 32-bit push whose value is no address of PLC memory */
   c.n = 0;
@@ -787,13 +742,12 @@ static void test_loader_block_fit(void) {
   CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_COMM, "block at 0x14F92 is outside PLC memory");
 
   /* every kind of the generated table: exactly fitting, then one byte over */
-#define ZPLC_TEST_KIND_FIT(name, kind, size)                                   \
-  CHECK_EQ(comm_verdict((uint16_t)(0x5000 - (size)), OP_COMM_EXEC, (kind)),    \
-           ZPLC_LOADER_OK, #name " fits at the retentive end");                \
-  CHECK_EQ(comm_verdict((uint16_t)(0x5000 - (size) + 1), OP_COMM_EXEC, (kind)),\
-           ZPLC_LOADER_ERR_COMM, #name " one byte over the retentive end");    \
-  CHECK_EQ(comm_verdict((uint16_t)(0x4000 - (size) + 1), OP_COMM_RESET, (kind)),\
-           ZPLC_LOADER_ERR_COMM, #name " across work and retentive memory");
+#define ZPLC_TEST_KIND_FIT(name, kind, size)                                                                                     \
+  CHECK_EQ(comm_verdict((uint16_t)(0x5000 - (size)), OP_COMM_EXEC, (kind)), ZPLC_LOADER_OK, #name " fits at the retentive end"); \
+  CHECK_EQ(comm_verdict((uint16_t)(0x5000 - (size) + 1), OP_COMM_EXEC, (kind)), ZPLC_LOADER_ERR_COMM,                            \
+           #name " one byte over the retentive end");                                                                            \
+  CHECK_EQ(comm_verdict((uint16_t)(0x4000 - (size) + 1), OP_COMM_RESET, (kind)), ZPLC_LOADER_ERR_COMM,                           \
+           #name " across work and retentive memory");
   ZPLC_COMM_FB_TABLE(ZPLC_TEST_KIND_FIT)
 #undef ZPLC_TEST_KIND_FIT
 }
@@ -933,46 +887,46 @@ static void test_stack_paths(void) {
 
   /* the jump reaches DROP with nothing on the stack, the fallthrough with one */
   c.n = 0;
-  op8(&c, OP_PUSH8, 1);   /* 0 */
-  op16(&c, OP_JNZ, 7U);   /* 2: depth 0 on both edges */
-  op8(&c, OP_PUSH8, 7);   /* 5: fallthrough pushes */
-  op(&c, OP_DROP);        /* 7: reached with depth 0 and with depth 1 */
-  op(&c, OP_HALT);        /* 8 */
+  op8(&c, OP_PUSH8, 1); /* 0 */
+  op16(&c, OP_JNZ, 7U); /* 2: depth 0 on both edges */
+  op8(&c, OP_PUSH8, 7); /* 5: fallthrough pushes */
+  op(&c, OP_DROP);      /* 7: reached with depth 0 and with depth 1 */
+  op(&c, OP_HALT);      /* 8 */
   CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "join with two different depths");
 
   /* a loop that grows the stack on every pass */
   c.n = 0;
-  op8(&c, OP_PUSH8, 1);   /* 0 */
-  op16(&c, OP_JMP, 0U);   /* 2 */
+  op8(&c, OP_PUSH8, 1); /* 0 */
+  op16(&c, OP_JMP, 0U); /* 2 */
   CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "loop that grows the stack");
 
   /* a loop that keeps the stack level */
   c.n = 0;
-  op8(&c, OP_PUSH8, 1);   /* 0: depth 1 */
-  op(&c, OP_DUP);         /* 2: 2 */
-  op(&c, OP_DROP);        /* 3: 1 */
-  op16(&c, OP_JNZ, 0U);   /* 4: pops, back to the entry with depth 0 */
-  op(&c, OP_HALT);        /* 7 */
+  op8(&c, OP_PUSH8, 1); /* 0: depth 1 */
+  op(&c, OP_DUP);       /* 2: 2 */
+  op(&c, OP_DROP);      /* 3: 1 */
+  op16(&c, OP_JNZ, 0U); /* 4: pops, back to the entry with depth 0 */
+  op(&c, OP_HALT);      /* 7 */
   CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "loop that keeps the stack level");
 
   /* the selector of a CASE stays on the stack across the branches */
   c.n = 0;
-  op16(&c, OP_LOAD16, 0x2000U);   /* 0:  1 */
-  op(&c, OP_DUP);                 /* 3:  2 */
-  op8(&c, OP_PUSH8, 1);           /* 4:  3 */
-  op(&c, OP_EQ);                  /* 6:  2 */
-  op16(&c, OP_JNZ, 20U);          /* 7:  1 on both edges */
-  op(&c, OP_DUP);                 /* 10: 2 */
-  op8(&c, OP_PUSH8, 2);           /* 11: 3 */
-  op(&c, OP_EQ);                  /* 13: 2 */
-  op16(&c, OP_JNZ, 20U);          /* 14: 1 */
-  op16(&c, OP_JMP, 29U);          /* 17: else */
-  op(&c, OP_DROP);                /* 20: branch, 0 */
-  op8(&c, OP_PUSH8, 9);           /* 21: 1 */
-  op16(&c, OP_STORE16, 0x2002U);  /* 23: 0 */
-  op16(&c, OP_JMP, 30U);          /* 26: end */
-  op(&c, OP_DROP);                /* 29: else, 0 */
-  op(&c, OP_HALT);                /* 30 */
+  op16(&c, OP_LOAD16, 0x2000U);  /* 0:  1 */
+  op(&c, OP_DUP);                /* 3:  2 */
+  op8(&c, OP_PUSH8, 1);          /* 4:  3 */
+  op(&c, OP_EQ);                 /* 6:  2 */
+  op16(&c, OP_JNZ, 20U);         /* 7:  1 on both edges */
+  op(&c, OP_DUP);                /* 10: 2 */
+  op8(&c, OP_PUSH8, 2);          /* 11: 3 */
+  op(&c, OP_EQ);                 /* 13: 2 */
+  op16(&c, OP_JNZ, 20U);         /* 14: 1 */
+  op16(&c, OP_JMP, 29U);         /* 17: else */
+  op(&c, OP_DROP);               /* 20: branch, 0 */
+  op8(&c, OP_PUSH8, 9);          /* 21: 1 */
+  op16(&c, OP_STORE16, 0x2002U); /* 23: 0 */
+  op16(&c, OP_JMP, 30U);         /* 26: end */
+  op(&c, OP_DROP);               /* 29: else, 0 */
+  op(&c, OP_HALT);               /* 30 */
   CHECK_EQ(c.n, 31U, "CASE shape length");
   CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "CASE selector kept across branches");
 
@@ -990,10 +944,10 @@ static void test_stack_paths(void) {
 
   /* a value left behind on every pass of a loop is not bounded */
   c.n = 0;
-  op16(&c, OP_LOAD16, 0x2000U);   /* 0: one more each time round */
-  op16(&c, OP_LOAD16, 0x2002U);   /* 3 */
-  op16(&c, OP_JNZ, 0U);           /* 6: pops the flag, back to 0 */
-  op(&c, OP_HALT);                /* 9 */
+  op16(&c, OP_LOAD16, 0x2000U); /* 0: one more each time round */
+  op16(&c, OP_LOAD16, 0x2002U); /* 3 */
+  op16(&c, OP_JNZ, 0U);         /* 6: pops the flag, back to 0 */
+  op(&c, OP_HALT);              /* 9 */
   CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "loop that leaves one value per pass");
 }
 
@@ -1060,102 +1014,102 @@ static void test_calls(void) {
   /* the convention of the compiler: the callee takes its arguments from the
    * stack and leaves its result there */
   c.n = 0;
-  op8(&c, OP_PUSH8, 3);            /* 0 */
-  op16(&c, OP_CALL, 9U);           /* 2 */
-  op16(&c, OP_STORE32, 0x2000U);   /* 5 */
-  op(&c, OP_HALT);                 /* 8 */
-  op8(&c, OP_PUSH8, 5);            /* 9: f */
-  op(&c, OP_ADD);                  /* 11 */
-  op(&c, OP_RET);                  /* 12 */
+  op8(&c, OP_PUSH8, 3);          /* 0 */
+  op16(&c, OP_CALL, 9U);         /* 2 */
+  op16(&c, OP_STORE32, 0x2000U); /* 5 */
+  op(&c, OP_HALT);               /* 8 */
+  op8(&c, OP_PUSH8, 5);          /* 9: f */
+  op(&c, OP_ADD);                /* 11 */
+  op(&c, OP_RET);                /* 12 */
   CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "call with an argument and a result");
 
   /* the same callee reached at two different depths */
   c.n = 0;
-  op8(&c, OP_PUSH8, 3);            /* 0:  1 */
-  op16(&c, OP_CALL, 15U);          /* 2:  f */
-  op8(&c, OP_PUSH8, 4);            /* 5:  2 */
-  op16(&c, OP_CALL, 15U);          /* 7:  f, at another depth */
-  op(&c, OP_ADD);                  /* 10: 1 */
-  op16(&c, OP_STORE32, 0x2000U);   /* 11: 0 */
-  op(&c, OP_HALT);                 /* 14 */
-  op8(&c, OP_PUSH8, 5);            /* 15: f */
-  op(&c, OP_ADD);                  /* 17 */
-  op(&c, OP_RET);                  /* 18 */
+  op8(&c, OP_PUSH8, 3);          /* 0:  1 */
+  op16(&c, OP_CALL, 15U);        /* 2:  f */
+  op8(&c, OP_PUSH8, 4);          /* 5:  2 */
+  op16(&c, OP_CALL, 15U);        /* 7:  f, at another depth */
+  op(&c, OP_ADD);                /* 10: 1 */
+  op16(&c, OP_STORE32, 0x2000U); /* 11: 0 */
+  op(&c, OP_HALT);               /* 14 */
+  op8(&c, OP_PUSH8, 5);          /* 15: f */
+  op(&c, OP_ADD);                /* 17 */
+  op(&c, OP_RET);                /* 18 */
   CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "callee reached at two depths");
 
   /* the callee needs more than the caller supplies */
   c.n = 0;
-  op16(&c, OP_CALL, 4U);           /* 0 */
-  op(&c, OP_HALT);                 /* 3 */
-  op(&c, OP_ADD);                  /* 4: f */
-  op(&c, OP_RET);                  /* 5 */
+  op16(&c, OP_CALL, 4U); /* 0 */
+  op(&c, OP_HALT);       /* 3 */
+  op(&c, OP_ADD);        /* 4: f */
+  op(&c, OP_RET);        /* 5 */
   CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "callee underflows the caller's stack");
 
   /* the callee grows the stack in a loop */
   c.n = 0;
-  op16(&c, OP_CALL, 4U);           /* 0 */
-  op(&c, OP_HALT);                 /* 3 */
-  op8(&c, OP_PUSH8, 1);            /* 4: f */
-  op16(&c, OP_JMP, 4U);            /* 6 */
+  op16(&c, OP_CALL, 4U); /* 0 */
+  op(&c, OP_HALT);       /* 3 */
+  op8(&c, OP_PUSH8, 1);  /* 4: f */
+  op16(&c, OP_JMP, 4U);  /* 6 */
   CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "callee that grows the stack in a loop");
 
   /* two returns at different depths: the caller continues with both */
   c.n = 0;
-  op8(&c, OP_PUSH8, 1);            /* 0 */
-  op16(&c, OP_CALL, 6U);           /* 2 */
-  op(&c, OP_HALT);                 /* 5 */
-  op8(&c, OP_PUSH8, 0);            /* 6: f */
-  op16(&c, OP_JZ, 12U);            /* 8 */
-  op(&c, OP_RET);                  /* 11: returns one level above the entry */
-  op(&c, OP_DROP);                 /* 12 */
-  op(&c, OP_RET);                  /* 13: returns one level below the entry */
+  op8(&c, OP_PUSH8, 1);  /* 0 */
+  op16(&c, OP_CALL, 6U); /* 2 */
+  op(&c, OP_HALT);       /* 5 */
+  op8(&c, OP_PUSH8, 0);  /* 6: f */
+  op16(&c, OP_JZ, 12U);  /* 8 */
+  op(&c, OP_RET);        /* 11: returns one level above the entry */
+  op(&c, OP_DROP);       /* 12 */
+  op(&c, OP_RET);        /* 13: returns one level below the entry */
   CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "returns at two different depths are joined");
   /* the caller of that callee cannot count on the lower of the two */
   c.n = 0;
-  op8(&c, OP_PUSH8, 1);            /* 0 */
-  op16(&c, OP_CALL, 7U);           /* 2 */
-  op(&c, OP_DROP);                 /* 5: the second return leaves 0 */
-  op(&c, OP_HALT);                 /* 6 */
-  op8(&c, OP_PUSH8, 0);            /* 7: f */
-  op16(&c, OP_JZ, 13U);            /* 9 */
-  op(&c, OP_RET);                  /* 12 */
-  op(&c, OP_DROP);                 /* 13 */
-  op(&c, OP_RET);                  /* 14 */
+  op8(&c, OP_PUSH8, 1);  /* 0 */
+  op16(&c, OP_CALL, 7U); /* 2 */
+  op(&c, OP_DROP);       /* 5: the second return leaves 0 */
+  op(&c, OP_HALT);       /* 6 */
+  op8(&c, OP_PUSH8, 0);  /* 7: f */
+  op16(&c, OP_JZ, 13U);  /* 9 */
+  op(&c, OP_RET);        /* 12 */
+  op(&c, OP_DROP);       /* 13 */
+  op(&c, OP_RET);        /* 14 */
   CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "drop after a callee that may return one level lower");
 
   /* recursion cannot be proved */
   c.n = 0;
-  op16(&c, OP_CALL, 4U);           /* 0 */
-  op(&c, OP_HALT);                 /* 3 */
-  op16(&c, OP_CALL, 4U);           /* 4: f calls itself */
-  op(&c, OP_RET);                  /* 7 */
+  op16(&c, OP_CALL, 4U); /* 0 */
+  op(&c, OP_HALT);       /* 3 */
+  op16(&c, OP_CALL, 4U); /* 4: f calls itself */
+  op(&c, OP_RET);        /* 7 */
   CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "recursive call");
 
   /* a call chain: main calls f, f calls g */
   c.n = 0;
-  op8(&c, OP_PUSH8, 1);            /* 0 */
-  op16(&c, OP_CALL, 7U);           /* 2: f */
-  op(&c, OP_DROP);                 /* 5 */
-  op(&c, OP_HALT);                 /* 6 */
-  op16(&c, OP_CALL, 11U);          /* 7: f calls g */
-  op(&c, OP_RET);                  /* 10 */
-  op8(&c, OP_PUSH8, 2);            /* 11: g */
-  op(&c, OP_ADD);                  /* 13 */
-  op(&c, OP_RET);                  /* 14 */
+  op8(&c, OP_PUSH8, 1);   /* 0 */
+  op16(&c, OP_CALL, 7U);  /* 2: f */
+  op(&c, OP_DROP);        /* 5 */
+  op(&c, OP_HALT);        /* 6 */
+  op16(&c, OP_CALL, 11U); /* 7: f calls g */
+  op(&c, OP_RET);         /* 10 */
+  op8(&c, OP_PUSH8, 2);   /* 11: g */
+  op(&c, OP_ADD);         /* 13 */
+  op(&c, OP_RET);         /* 14 */
   CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "call chain through two callees");
 
   /* the chain with the callees before their caller, in address order */
   c.n = 0;
-  op16(&c, OP_JMP, 11U);           /* 0 */
-  op8(&c, OP_PUSH8, 2);            /* 3: g */
-  op(&c, OP_ADD);                  /* 5 */
-  op(&c, OP_RET);                  /* 6 */
-  op16(&c, OP_CALL, 3U);           /* 7: f calls g */
-  op(&c, OP_RET);                  /* 10 */
-  op8(&c, OP_PUSH8, 1);            /* 11: main */
-  op16(&c, OP_CALL, 7U);           /* 13: f */
-  op(&c, OP_DROP);                 /* 16 */
-  op(&c, OP_HALT);                 /* 17 */
+  op16(&c, OP_JMP, 11U); /* 0 */
+  op8(&c, OP_PUSH8, 2);  /* 3: g */
+  op(&c, OP_ADD);        /* 5 */
+  op(&c, OP_RET);        /* 6 */
+  op16(&c, OP_CALL, 3U); /* 7: f calls g */
+  op(&c, OP_RET);        /* 10 */
+  op8(&c, OP_PUSH8, 1);  /* 11: main */
+  op16(&c, OP_CALL, 7U); /* 13: f */
+  op(&c, OP_DROP);       /* 16 */
+  op(&c, OP_HALT);       /* 17 */
   CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "callees defined before the main code");
 
   /* The verifier goes past a call whose callee it has not summarised yet, to
@@ -1165,40 +1119,40 @@ static void test_calls(void) {
   /* a callee that never returns ends the path: what follows is not reached,
    * and the subroutine it calls is accepted all the same */
   c.n = 0;
-  op16(&c, OP_CALL, 7U);           /* 0: f never returns */
-  op16(&c, OP_CALL, 10U);          /* 3: not reached */
-  op(&c, OP_HALT);                 /* 6 */
-  op16(&c, OP_JMP, 7U);            /* 7: f loops on itself */
-  op(&c, OP_RET);                  /* 10: g */
+  op16(&c, OP_CALL, 7U);  /* 0: f never returns */
+  op16(&c, OP_CALL, 10U); /* 3: not reached */
+  op(&c, OP_HALT);        /* 6 */
+  op16(&c, OP_JMP, 7U);   /* 7: f loops on itself */
+  op(&c, OP_RET);         /* 10: g */
   CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "code after a callee that never returns");
 
   /* two subroutines that call each other */
   c.n = 0;
-  op16(&c, OP_CALL, 4U);           /* 0 */
-  op(&c, OP_HALT);                 /* 3 */
-  op16(&c, OP_CALL, 8U);           /* 4: f calls g */
-  op(&c, OP_RET);                  /* 7 */
-  op16(&c, OP_CALL, 4U);           /* 8: g calls f */
-  op(&c, OP_RET);                  /* 11 */
+  op16(&c, OP_CALL, 4U); /* 0 */
+  op(&c, OP_HALT);       /* 3 */
+  op16(&c, OP_CALL, 8U); /* 4: f calls g */
+  op(&c, OP_RET);        /* 7 */
+  op16(&c, OP_CALL, 4U); /* 8: g calls f */
+  op(&c, OP_RET);        /* 11 */
   CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "mutual recursion");
 
   /* a loop that grows the stack after a call to a subroutine defined further
    * on: found in the walk that is thrown away, reported by the one that counts */
   c.n = 0;
-  op16(&c, OP_CALL, 8U);           /* 0 */
-  op8(&c, OP_PUSH8, 1);            /* 3 */
-  op16(&c, OP_JMP, 3U);            /* 5 */
-  op(&c, OP_RET);                  /* 8: f */
+  op16(&c, OP_CALL, 8U); /* 0 */
+  op8(&c, OP_PUSH8, 1);  /* 3 */
+  op16(&c, OP_JMP, 3U);  /* 5 */
+  op(&c, OP_RET);        /* 8: f */
   CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "growing loop after a call to a later subroutine");
 
   /* a result that the caller drops, after a callee not summarised yet: the
    * walk that is thrown away sees a drop of nothing and must not refuse it */
   c.n = 0;
-  op16(&c, OP_CALL, 5U);           /* 0 */
-  op(&c, OP_DROP);                 /* 3 */
-  op(&c, OP_HALT);                 /* 4 */
-  op8(&c, OP_PUSH8, 9);            /* 5: f leaves a result */
-  op(&c, OP_RET);                  /* 7 */
+  op16(&c, OP_CALL, 5U); /* 0 */
+  op(&c, OP_DROP);       /* 3 */
+  op(&c, OP_HALT);       /* 4 */
+  op8(&c, OP_PUSH8, 9);  /* 5: f leaves a result */
+  op(&c, OP_RET);        /* 7 */
   CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "a result dropped after a callee summarised later");
 }
 
@@ -1235,8 +1189,7 @@ static void test_call_nesting(void) {
   CHECK_EQ(run_raw(&c), OK, "and run to the end");
   nested_calls(&c, ZPLC_CALL_STACK_MAX + 1U, 1U);
   CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "one call more than the call stack takes is refused");
-  CHECK_EQ(run_raw(&c), ZPLC_VM_CALL_OVERFLOW,
-           "and the VM would fault with CALL_OVERFLOW (the premise of the check)");
+  CHECK_EQ(run_raw(&c), ZPLC_VM_CALL_OVERFLOW, "and the VM would fault with CALL_OVERFLOW (the premise of the check)");
 
   /* the same for the code of a task, which starts with an empty call stack */
   task.entry = 0U;
@@ -1278,8 +1231,7 @@ static int verify_big(const char *name, size_t size, size_t entry) {
   const uint32_t work = zplc_test_verify_work();
   const uint32_t iterations = zplc_test_verify_iterations();
 
-  printf("    %s: %lu units of %lu, %lu iterations\n", name, (unsigned long)work,
-         (unsigned long)limit, (unsigned long)iterations);
+  printf("    %s: %lu units of %lu, %lu iterations\n", name, (unsigned long)work, (unsigned long)limit, (unsigned long)iterations);
   /* what the verifier is charged stays within the bound (it may finish the
    * table pass it is in), and every iteration of every loop was charged */
   CHECK(work < limit + 1024U, name);
@@ -1365,8 +1317,7 @@ static void test_verifier_work_of_wide_programs(void) {
 
 /** Run one instruction at `depth` values on the stack (every one 0x2000, an
  *  address in work memory) with the declared limit `limit`. */
-static int step_at(uint8_t opcode, uint8_t operand, uint32_t depth,
-                   uint16_t limit, uint16_t *sp_after) {
+static int step_at(uint8_t opcode, uint8_t operand, uint32_t depth, uint16_t limit, uint16_t *sp_after) {
   uint8_t code[8];
   zplc_vm_t vm;
   uint32_t i, operands = zplc_opcode_operand_size(opcode);
@@ -1404,8 +1355,7 @@ static void test_stack_effect_table_is_what_the_vm_does(void) {
     uint8_t opcode;
     uint8_t pops, pushes, min_depth;
   } table[] = {
-#define ZPLC_TEST_ROW(name, number, operand, pops, pushes, min)                \
-  {number, pops, pushes, min},
+#define ZPLC_TEST_ROW(name, number, operand, pops, pushes, min) {number, pops, pushes, min},
       ZPLC_OPCODE_TABLE(ZPLC_TEST_ROW)
 #undef ZPLC_TEST_ROW
   };

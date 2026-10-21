@@ -16,15 +16,27 @@ import { main } from './index';
 import { compilerCompile } from './toolApi';
 
 const roots: string[] = [];
-afterAll(async () => { for (const root of roots) await rm(root, { recursive: true, force: true }); });
+afterAll(async () => {
+  for (const root of roots) await rm(root, { recursive: true, force: true });
+});
 
-const PROGRAM = 'PROGRAM Main\nVAR t : TON; run AT %IX0.0 : BOOL; done AT %QX0.0 : BOOL; END_VAR\n    t(IN := run, PT := T#1s);\n    done := t.Q;\nEND_PROGRAM\n';
+const PROGRAM =
+  'PROGRAM Main\nVAR t : TON; run AT %IX0.0 : BOOL; done AT %QX0.0 : BOOL; END_VAR\n    t(IN := run, PT := T#1s);\n    done := ' +
+  't.Q;\nEND_PROGRAM\n';
 
 async function workspace(): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), 'zplc-listing-'));
   roots.push(root);
   await mkdir(join(root, 'src'));
-  await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'Listing', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }] }));
+  await writeFile(
+    join(root, 'zplc.json'),
+    JSON.stringify({
+      schemaVersion: 2,
+      name: 'Listing',
+      version: '1.0.0',
+      tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }],
+    }),
+  );
   await writeFile(join(root, 'src', 'Main.st'), PROGRAM);
   return root;
 }
@@ -69,7 +81,11 @@ describe('zplc-cli compile --emit asm', () => {
 
   it('refuses what it cannot do: another format, a command that builds nothing, JSON', async () => {
     const root = await workspace();
-    for (const args of [['compile', root, '--emit', 'hex'], ['check', root, '--emit', 'asm'], ['compile', root, '--emit', 'asm', '--json']]) {
+    for (const args of [
+      ['compile', root, '--emit', 'hex'],
+      ['check', root, '--emit', 'asm'],
+      ['compile', root, '--emit', 'asm', '--json'],
+    ]) {
       const io = capture();
       expect(await main(args, io)).toBe(1);
       expect([...io.lines, ...io.errors].join('\n')).toContain('emit');

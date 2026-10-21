@@ -8,8 +8,10 @@ export function canCommitVisualEditorChange(
   expectedLanguage: PLCLanguage,
   file: { id: string; language: PLCLanguage } | undefined,
 ): boolean {
-  return currentProjectSession === expectedProjectSession
-    && activeFileId === expectedFileId
-    && file?.id === expectedFileId
-    && file.language === expectedLanguage;
+  return (
+    currentProjectSession === expectedProjectSession &&
+    activeFileId === expectedFileId &&
+    file?.id === expectedFileId &&
+    file.language === expectedLanguage
+  );
 }

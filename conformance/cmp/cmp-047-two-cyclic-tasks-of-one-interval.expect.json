@@ -7,11 +7,17 @@
   "scanMs": 10,
   "files": ["cmp-047-two-cyclic-tasks-of-one-interval-right.st"],
   "tasks": [
-    {"name": "LeftTask", "trigger": "cyclic", "interval_ms": 10, "priority": 1, "programs": ["main.st"]},
-    {"name": "RightTask", "trigger": "cyclic", "interval_ms": 10, "priority": 2, "programs": ["cmp-047-two-cyclic-tasks-of-one-interval-right.st"]}
+    { "name": "LeftTask", "trigger": "cyclic", "interval_ms": 10, "priority": 1, "programs": ["main.st"] },
+    {
+      "name": "RightTask",
+      "trigger": "cyclic",
+      "interval_ms": 10,
+      "priority": 2,
+      "programs": ["cmp-047-two-cyclic-tasks-of-one-interval-right.st"]
+    }
   ],
   "expect": [
-    {"at": "%QW0", "type": "INT", "value": 3},
-    {"at": "%QW1", "type": "INT", "value": 3}
+    { "at": "%QW0", "type": "INT", "value": 3 },
+    { "at": "%QW1", "type": "INT", "value": 3 }
   ]
 }

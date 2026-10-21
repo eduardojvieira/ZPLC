@@ -35,38 +35,60 @@ const registered = new WeakSet<object>();
 
 const pathOf = (model: Model): string => {
   const uri = model.uri as { path?: string } | string | undefined;
-  return (typeof uri === 'object' && uri !== null && typeof uri.path === 'string' ? projectPathFromModelPath(uri.path) : null) ?? '<buffer>';
+  return (
+    (typeof uri === 'object' && uri !== null && typeof uri.path === 'string' ? projectPathFromModelPath(uri.path) : null) ?? '<buffer>'
+  );
 };
 
 function itemKind(monaco: Monaco, kind: AssistKind): MonacoEditor.languages.CompletionItemKind {
   const kinds = monaco.languages.CompletionItemKind;
   switch (kind) {
-    case 'variable': return kinds.Variable;
-    case 'function': return kinds.Function;
-    case 'functionBlock': return kinds.Class;
-    case 'type': return kinds.Struct;
-    case 'field': return kinds.Field;
-    case 'method': return kinds.Method;
-    case 'parameter': return kinds.Property;
-    case 'enumMember': return kinds.EnumMember;
-    default: return kinds.Keyword;
+    case 'variable':
+      return kinds.Variable;
+    case 'function':
+      return kinds.Function;
+    case 'functionBlock':
+      return kinds.Class;
+    case 'type':
+      return kinds.Struct;
+    case 'field':
+      return kinds.Field;
+    case 'method':
+      return kinds.Method;
+    case 'parameter':
+      return kinds.Property;
+    case 'enumMember':
+      return kinds.EnumMember;
+    default:
+      return kinds.Keyword;
   }
 }
 
 function symbolKind(monaco: Monaco, kind: OutlineEntry['kind']): MonacoEditor.languages.SymbolKind {
   const kinds = monaco.languages.SymbolKind;
   switch (kind) {
-    case 'program': return kinds.Object;
-    case 'function': return kinds.Function;
-    case 'functionBlock': return kinds.Class;
-    case 'interface': return kinds.Interface;
-    case 'struct': return kinds.Struct;
-    case 'enum': return kinds.Enum;
-    case 'alias': return kinds.TypeParameter;
-    case 'method': return kinds.Method;
-    case 'field': return kinds.Field;
-    case 'enumValue': return kinds.EnumMember;
-    default: return kinds.Variable;
+    case 'program':
+      return kinds.Object;
+    case 'function':
+      return kinds.Function;
+    case 'functionBlock':
+      return kinds.Class;
+    case 'interface':
+      return kinds.Interface;
+    case 'struct':
+      return kinds.Struct;
+    case 'enum':
+      return kinds.Enum;
+    case 'alias':
+      return kinds.TypeParameter;
+    case 'method':
+      return kinds.Method;
+    case 'field':
+      return kinds.Field;
+    case 'enumValue':
+      return kinds.EnumMember;
+    default:
+      return kinds.Variable;
   }
 }
 
@@ -99,7 +121,12 @@ export function registerSTProviders(monaco: Monaco, bridge: ProjectBridge): void
       if (token.isCancellationRequested) return { suggestions: [] };
       try {
         const word = model.getWordUntilPosition(position);
-        const range = { startLineNumber: position.lineNumber, endLineNumber: position.lineNumber, startColumn: word.startColumn, endColumn: word.endColumn };
+        const range = {
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: word.startColumn,
+          endColumn: word.endColumn,
+        };
         const index = indexWithBuffer(pathOf(model), model.getValue());
         return {
           suggestions: completionsAt(index, pathOf(model), position.lineNumber, position.column, model.getValue()).map((item) => ({
@@ -135,11 +162,22 @@ export function registerSTProviders(monaco: Monaco, bridge: ProjectBridge): void
     provideSignatureHelp(model, position, token) {
       if (token.isCancellationRequested) return null;
       try {
-        const help = signatureAt(indexWithBuffer(pathOf(model), model.getValue()), pathOf(model), position.lineNumber, position.column, model.getValue());
+        const help = signatureAt(
+          indexWithBuffer(pathOf(model), model.getValue()),
+          pathOf(model),
+          position.lineNumber,
+          position.column,
+          model.getValue(),
+        );
         if (!help) return null;
         return {
           value: {
-            signatures: [{ label: help.label, parameters: help.parameters.map((parameter) => ({ label: parameter.label, documentation: parameter.detail })) }],
+            signatures: [
+              {
+                label: help.label,
+                parameters: help.parameters.map((parameter) => ({ label: parameter.label, documentation: parameter.detail })),
+              },
+            ],
             activeSignature: 0,
             activeParameter: help.activeParameter,
           },
@@ -167,7 +205,12 @@ export function registerSTProviders(monaco: Monaco, bridge: ProjectBridge): void
             kind: symbolKind(monaco, entry.kind),
             tags: [],
             range: { startLineNumber, startColumn: entry.range.column, endLineNumber, endColumn: entry.range.endColumn },
-            selectionRange: { startLineNumber: nameLine, startColumn: nameColumn, endLineNumber: nameLine, endColumn: clamp(nameColumn + entry.name.length, nameColumn, model.getLineMaxColumn(nameLine)) },
+            selectionRange: {
+              startLineNumber: nameLine,
+              startColumn: nameColumn,
+              endLineNumber: nameLine,
+              endColumn: clamp(nameColumn + entry.name.length, nameColumn, model.getLineMaxColumn(nameLine)),
+            },
             children: entry.children.map(toSymbol),
           };
         };
@@ -222,17 +265,30 @@ export function registerSTProviders(monaco: Monaco, bridge: ProjectBridge): void
 
   monaco.languages.registerRenameProvider(language, {
     resolveRenameLocation(model, position, token) {
-      const nowhere = { startLineNumber: position.lineNumber, startColumn: position.column, endLineNumber: position.lineNumber, endColumn: position.column };
+      const nowhere = {
+        startLineNumber: position.lineNumber,
+        startColumn: position.column,
+        endLineNumber: position.lineNumber,
+        endColumn: position.column,
+      };
       if (token.isCancellationRequested) return { text: '', range: nowhere, rejectReason: 'Cancelled.' };
       const prepared = prepareRename(indexWithBuffer(pathOf(model), model.getValue()), pathOf(model), position.lineNumber, position.column);
       if (!prepared.ok) return { text: '', range: nowhere, rejectReason: prepared.reason };
       return {
         text: prepared.placeholder,
-        range: { startLineNumber: prepared.line, startColumn: prepared.column, endLineNumber: prepared.line, endColumn: prepared.column + prepared.length },
+        range: {
+          startLineNumber: prepared.line,
+          startColumn: prepared.column,
+          endLineNumber: prepared.line,
+          endColumn: prepared.column + prepared.length,
+        },
       };
     },
     async provideRenameEdits(model, position, newName, token) {
-      const reject = (reason: string): MonacoEditor.languages.WorkspaceEdit & MonacoEditor.languages.Rejection => ({ edits: [], rejectReason: reason });
+      const reject = (reason: string): MonacoEditor.languages.WorkspaceEdit & MonacoEditor.languages.Rejection => ({
+        edits: [],
+        rejectReason: reason,
+      });
       if (token.isCancellationRequested) return reject('Cancelled.');
       const here = pathOf(model);
       const index = indexWithBuffer(here, model.getValue());
@@ -240,26 +296,48 @@ export function registerSTProviders(monaco: Monaco, bridge: ProjectBridge): void
       if (!result.ok) return reject(result.reason);
       const outside = bridge.otherFilesMentioning(result.symbol.name);
       if (outside.length > 0) {
-        return reject(`${outside.slice(0, 3).join(', ')}${outside.length > 3 ? ' and others' : ''} mention${outside.length === 1 ? 's' : ''} ${result.symbol.name} and are not Structured Text: rename it there as well, then here.`);
+        return reject(
+          `${outside.slice(0, 3).join(', ')}${
+            outside.length > 3 ? ' and others' : ''
+          } mention${outside.length === 1 ? 's' : ''} ${result.symbol.name} and are not Structured Text: ` +
+            `rename it there as well, then here.`,
+        );
       }
       // The files other than this one are changed through the editor's store, so that they are modified files with the
       // edit in them; this file's edits go back to Monaco, which applies them to the model.
       const others = result.files.filter((file) => file !== here);
       const planned = new Map<string, string>();
       for (const file of others) {
-        const original = index.files.get(file)?.content ?? await bridge.readFile(file);
+        const original = index.files.get(file)?.content ?? (await bridge.readFile(file));
         if (original === undefined) return reject(`${file} could not be read, so nothing was renamed.`);
-        planned.set(file, applyRenameEdits(original, result.edits.filter((edit) => edit.file === file)));
+        planned.set(
+          file,
+          applyRenameEdits(
+            original,
+            result.edits.filter((edit) => edit.file === file),
+          ),
+        );
       }
       for (const [file, content] of planned) {
-        if (!await bridge.writeFile(file, content)) return reject(`${file} could not be changed, so the rename is incomplete: undo it in the files that changed.`);
+        if (!(await bridge.writeFile(file, content)))
+          return reject(`${file} could not be changed, so the rename is incomplete: undo it in the files that changed.`);
       }
       return {
-        edits: result.edits.filter((edit) => edit.file === here).map((edit) => ({
-          resource: model.uri,
-          versionId: model.getVersionId(),
-          textEdit: { range: { startLineNumber: edit.line, startColumn: edit.column, endLineNumber: edit.line, endColumn: edit.column + edit.length }, text: edit.newText },
-        })),
+        edits: result.edits
+          .filter((edit) => edit.file === here)
+          .map((edit) => ({
+            resource: model.uri,
+            versionId: model.getVersionId(),
+            textEdit: {
+              range: {
+                startLineNumber: edit.line,
+                startColumn: edit.column,
+                endLineNumber: edit.line,
+                endColumn: edit.column + edit.length,
+              },
+              text: edit.newText,
+            },
+          })),
       };
     },
   });
@@ -280,7 +358,9 @@ export function registerSTProviders(monaco: Monaco, bridge: ProjectBridge): void
 
   // Go to a definition or a reference in a file that has no tab: open the file at the place
   const withOpener = monaco.editor as unknown as {
-    registerEditorOpener?: (opener: { openCodeEditor(source: unknown, resource: MonacoEditor.Uri, selection?: unknown): boolean }) => unknown;
+    registerEditorOpener?: (opener: {
+      openCodeEditor(source: unknown, resource: MonacoEditor.Uri, selection?: unknown): boolean;
+    }) => unknown;
   };
   withOpener.registerEditorOpener?.({
     openCodeEditor(_source, resource, selection) {

@@ -3,13 +3,7 @@
   "title": "an IL JMP to an unknown label is rejected with its line",
   "matrix": ["il.jmp-jmpc-jmpcn-labels"],
   "build": "fails",
-  "lines": [
-    7
-  ],
-  "codes": [
-    "TRANSLATION_FAILED"
-  ],
-  "messageIncludes": [
-    "missing"
-  ]
+  "lines": [7],
+  "codes": ["TRANSLATION_FAILED"],
+  "messageIncludes": ["missing"]
 }

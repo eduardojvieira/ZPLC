@@ -25,12 +25,12 @@ operations. A program load never implies an operational start.
 
 ## Runtime surfaces
 
-| Surface | Role | Evidence boundary |
-| --- | --- | --- |
-| Core and loader | C99 VM, ISA, memory model, and `.zplc` verification | Host/unit evidence does not qualify hardware behavior. |
-| POSIX native simulation | Headless/local runtime for compile, test, trace, and replay workflows | Host behavior; not target or HIL timing evidence. |
-| Zephyr profiles | Firmware runtime and HAL adapters for named board revisions | Capability and qualification vary by profile. |
-| WASM | Degraded fallback for simulation when the native runtime cannot start, and in the web build | Host evidence; the session, the scheduler core and the retain rules of the native runtime, with no network blocks, no serial, no pins and the timing of a browser. See [Browser runtime](./browser-runtime.md). |
+| Surface                 | Role                                                                                        | Evidence boundary                                                                                                                                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Core and loader         | C99 VM, ISA, memory model, and `.zplc` verification                                         | Host/unit evidence does not qualify hardware behavior.                                                                                                                                                          |
+| POSIX native simulation | Headless/local runtime for compile, test, trace, and replay workflows                       | Host behavior; not target or HIL timing evidence.                                                                                                                                                               |
+| Zephyr profiles         | Firmware runtime and HAL adapters for named board revisions                                 | Capability and qualification vary by profile.                                                                                                                                                                   |
+| WASM                    | Degraded fallback for simulation when the native runtime cannot start, and in the web build | Host evidence; the session, the scheduler core and the retain rules of the native runtime, with no network blocks, no serial, no pins and the timing of a browser. See [Browser runtime](./browser-runtime.md). |
 
 ## Contracts and references
 

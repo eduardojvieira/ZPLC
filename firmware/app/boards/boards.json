@@ -11,10 +11,7 @@
       "retain_size": 4096,
       "code_size_max": 24576
     },
-    "support_assets": [
-      "firmware/app/boards/rpi_pico_rp2040.conf",
-      "firmware/app/boards/rpi_pico_rp2040.overlay"
-    ],
+    "support_assets": ["firmware/app/boards/rpi_pico_rp2040.conf", "firmware/app/boards/rpi_pico_rp2040.overlay"],
     "build_command": "west build -b rpi_pico/rp2040 firmware/app --pristine",
     "network_class": "serial-focused",
     "network_interface": "none",
@@ -691,10 +688,7 @@
       "retain_size": 4096,
       "code_size_max": 16384
     },
-    "support_assets": [
-      "firmware/app/boards/stm32f746g_disco.conf",
-      "firmware/app/boards/stm32f746g_disco.overlay"
-    ],
+    "support_assets": ["firmware/app/boards/stm32f746g_disco.conf", "firmware/app/boards/stm32f746g_disco.overlay"],
     "build_command": "west build -b stm32f746g_disco/stm32f746xx firmware/app --pristine",
     "network_class": "network-capable",
     "network_interface": "ethernet",
@@ -758,10 +752,7 @@
       "retain_size": 4096,
       "code_size_max": 45056
     },
-    "support_assets": [
-      "firmware/app/boards/nucleo_h743zi.conf",
-      "firmware/app/boards/nucleo_h743zi.overlay"
-    ],
+    "support_assets": ["firmware/app/boards/nucleo_h743zi.conf", "firmware/app/boards/nucleo_h743zi.overlay"],
     "build_command": "west build -b nucleo_h743zi/stm32h743xx firmware/app --pristine",
     "network_class": "network-capable",
     "network_interface": "ethernet",
@@ -841,10 +832,7 @@
       "retain_size": 4096,
       "code_size_max": 32768
     },
-    "support_assets": [
-      "firmware/app/boards/arduino_opta_stm32h747xx_m7.conf",
-      "firmware/app/boards/arduino_opta_stm32h747xx_m7.overlay"
-    ],
+    "support_assets": ["firmware/app/boards/arduino_opta_stm32h747xx_m7.conf", "firmware/app/boards/arduino_opta_stm32h747xx_m7.overlay"],
     "build_command": "west build -b arduino_opta/stm32h747xx/m7 firmware/app --pristine",
     "network_class": "network-capable",
     "network_interface": "wifi",
@@ -1029,10 +1017,7 @@
       "retain_size": 4096,
       "code_size_max": 24576
     },
-    "support_assets": [
-      "firmware/app/boards/rp2040_zero_rp2040.conf",
-      "firmware/app/boards/rp2040_zero_rp2040.overlay"
-    ],
+    "support_assets": ["firmware/app/boards/rp2040_zero_rp2040.conf", "firmware/app/boards/rp2040_zero_rp2040.overlay"],
     "build_command": "west build -b rp2040_zero/rp2040 firmware/app --pristine",
     "network_class": "serial-focused",
     "network_interface": "none",

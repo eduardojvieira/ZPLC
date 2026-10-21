@@ -1,20 +1,10 @@
 {
   "requirement": "CMP-041",
   "title": "an instance of a block that does not implement the interface cannot be assigned to a variable of it",
-  "matrix": [
-    "pous.interfaces-implements"
-  ],
+  "matrix": ["pous.interfaces-implements"],
   "note": "IEC 61131-3 ed. 3, interfaces: only an instance of a block that declares IMPLEMENTS for the interface is assignment compatible with it",
   "build": "fails",
-  "lines": [
-    17
-  ],
-  "codes": [
-    "INTERFACE_NOT_IMPLEMENTED"
-  ],
-  "messageIncludes": [
-    "Plain",
-    "does not implement",
-    "IRun"
-  ]
+  "lines": [17],
+  "codes": ["INTERFACE_NOT_IMPLEMENTED"],
+  "messageIncludes": ["Plain", "does not implement", "IRun"]
 }

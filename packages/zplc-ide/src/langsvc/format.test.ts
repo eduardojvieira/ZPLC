@@ -87,11 +87,15 @@ describe('document formatting (LNG-016)', () => {
   });
 
   it('uses the indentation the editor asks for, and replaces tabs', () => {
-    expect(formatSource('PROGRAM P\nVAR\n\tA : INT;\nEND_VAR\nEND_PROGRAM\n', { indentSize: 4 })).toBe('PROGRAM P\n    VAR\n        A : INT;\n    END_VAR\nEND_PROGRAM\n');
+    expect(formatSource('PROGRAM P\nVAR\n\tA : INT;\nEND_VAR\nEND_PROGRAM\n', { indentSize: 4 })).toBe(
+      'PROGRAM P\n    VAR\n        A : INT;\n    END_VAR\nEND_PROGRAM\n',
+    );
   });
 
   it('keeps the line endings of a file that has CRLF', () => {
-    expect(formatSource('PROGRAM P\r\nVAR\r\nA : INT;\r\nEND_VAR\r\nEND_PROGRAM\r\n')).toBe('PROGRAM P\r\n  VAR\r\n    A : INT;\r\n  END_VAR\r\nEND_PROGRAM\r\n');
+    expect(formatSource('PROGRAM P\r\nVAR\r\nA : INT;\r\nEND_VAR\r\nEND_PROGRAM\r\n')).toBe(
+      'PROGRAM P\r\n  VAR\r\n    A : INT;\r\n  END_VAR\r\nEND_PROGRAM\r\n',
+    );
   });
 
   it('leaves a source the lexer cannot read as it is', () => {

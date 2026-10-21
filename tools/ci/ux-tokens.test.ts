@@ -11,12 +11,19 @@ describe('design token checks (UX-003, UX-032)', () => {
   });
 
   it('accepts a custom property the same file declares, a fallback form and a framework variable', () => {
-    const file = { path: 'src/B.tsx', text: "const style = { '--row-count': n };\nconst c = 'var(--row-count) var(--tw-ring-color) var(--text-primary, #000)';\n.x { --local: 1px; width: var(--local); }" };
+    const file = {
+      path: 'src/B.tsx',
+      text:
+        "const style = { '--row-count': n };\nconst c = 'var(--row-count) var(--tw-ring-color) var(--text-primary, #000)';\n.x { " +
+        '--local: 1px; width: var(--local); }',
+    };
     expect(undefinedTokens(file, known)).toEqual([]);
   });
 
   it('does not take an attribute selector that quotes a prefix for a use', () => {
-    expect(undefinedTokens({ path: 'src/c.css', text: '[class*="bg-[var(--color-accent-"] { color: var(--text-primary); }' }, known)).toEqual([]);
+    expect(
+      undefinedTokens({ path: 'src/c.css', text: '[class*="bg-[var(--color-accent-"] { color: var(--text-primary); }' }, known),
+    ).toEqual([]);
   });
 
   it('finds no declared contrast pair below WCAG 2.2 AA in any theme (UX-024 stopgap)', () => {

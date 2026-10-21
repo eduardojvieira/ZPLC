@@ -25,12 +25,24 @@ export type MemoryRegion = 'IPI' | 'OPI' | 'WORK' | 'RETAIN' | 'CODE';
 /**
  * Data type for debug purposes.
  */
-export type DebugDataType = 
-    | 'BOOL' | 'BYTE' | 'SINT' | 'USINT'
-    | 'INT' | 'UINT' | 'WORD'
-    | 'DINT' | 'UDINT' | 'DWORD' | 'REAL'
-    | 'LINT' | 'ULINT' | 'LWORD' | 'LREAL'
-    | 'TIME' | 'STRING'
+export type DebugDataType =
+    | 'BOOL'
+    | 'BYTE'
+    | 'SINT'
+    | 'USINT'
+    | 'INT'
+    | 'UINT'
+    | 'WORD'
+    | 'DINT'
+    | 'UDINT'
+    | 'DWORD'
+    | 'REAL'
+    | 'LINT'
+    | 'ULINT'
+    | 'LWORD'
+    | 'LREAL'
+    | 'TIME'
+    | 'STRING'
     | string; // FB type names
 
 /**
@@ -130,9 +142,7 @@ export interface BreakpointLocation {
  * reaches an element and not a guess from the name of its variable.
  */
 export type DebugPowerExpr =
-    | { op: 'true' }
-    | { op: 'var'; variable: string; not?: boolean }
-    | { op: 'and' | 'or'; terms: DebugPowerExpr[] };
+    { op: 'true' } | { op: 'var'; variable: string; not?: boolean } | { op: 'and' | 'or'; terms: DebugPowerExpr[] };
 
 /**
  * How an online display reads one element of a source that was translated to Structured Text (LNG-006): which
@@ -249,7 +259,10 @@ export const COMPILER_VERSION = '2.0.0-rc.3';
 /**
  * Creates an empty debug map with default values.
  */
-export function createDebugMap(programName: string, memoryProfile?: { workSize: number; retainSize: number; codeSizeMax: number }): DebugMap {
+export function createDebugMap(
+    programName: string,
+    memoryProfile?: { workSize: number; retainSize: number; codeSizeMax: number },
+): DebugMap {
     return {
         version: '1.0.0',
         programName,
@@ -279,7 +292,7 @@ export function createDebugVarInfo(
     region: MemoryRegion,
     size: number,
     bitOffset?: number,
-    children?: Record<string, DebugMemberInfo>
+    children?: Record<string, DebugMemberInfo>,
 ): DebugVarInfo {
     return {
         addr,
@@ -316,14 +329,11 @@ export function parseDebugMap(json: string): DebugMap {
 /**
  * Find a variable by path (e.g., "MyTimer.ET").
  */
-export function findVariable(
-    map: DebugMap,
-    path: string
-): { varInfo: DebugVarInfo; absoluteAddr: number } | null {
+export function findVariable(map: DebugMap, path: string): { varInfo: DebugVarInfo; absoluteAddr: number } | null {
     const parts = path.split('.');
-    
+
     if (parts.length === 0) return null;
-    
+
     // Search in all POUs
     for (const pouInfo of Object.values(map.pou)) {
         // a variable of a function is declared as `Function.name` (CMP-034): the whole path may be its name
@@ -332,24 +342,24 @@ export function findVariable(
 
         const rootVar = pouInfo.vars[parts[0]];
         if (!rootVar) continue;
-        
+
         // If just the root variable
         if (parts.length === 1) {
             return { varInfo: rootVar, absoluteAddr: rootVar.addr };
         }
-        
+
         // Navigate through children
         let currentAddr = rootVar.addr;
         let currentChildren = rootVar.children;
-        
+
         for (let i = 1; i < parts.length; i++) {
             if (!currentChildren) return null;
-            
+
             const member = currentChildren[parts[i]];
             if (!member) return null;
-            
+
             currentAddr += member.offset;
-            
+
             if (i === parts.length - 1) {
                 // Found the target
                 return {
@@ -365,7 +375,7 @@ export function findVariable(
             }
         }
     }
-    
+
     return null;
 }
 
@@ -389,8 +399,8 @@ export function findSourceLine(map: DebugMap, pc: number): { pou: string; line: 
 export function findPC(map: DebugMap, pouName: string, line: number): number | null {
     const pou = map.pou[pouName];
     if (!pou) return null;
-    
-    const mapping = pou.sourceMap.find(m => m.line === line);
+
+    const mapping = pou.sourceMap.find((m) => m.line === line);
     return mapping?.pc ?? null;
 }
 
@@ -442,9 +452,13 @@ function buildVarInfoFromSymbol(sym: Symbol, typeResolver?: TypeResolver): Debug
     const varInfo: DebugVarInfo = {
         addr: sym.address,
         // a string is STRING or WSTRING with its capacity beside it; a reference is written REF_TO <type>
-        type: (text ? (text.wide ? 'WSTRING' : 'STRING')
-            : typeof sym.dataType === 'object' && (sym.dataType as { kind?: string }).kind === 'PointerType' ? typeToString(sym.dataType)
-                : sym.dataType) as DebugDataType,
+        type: (text
+            ? text.wide
+                ? 'WSTRING'
+                : 'STRING'
+            : typeof sym.dataType === 'object' && (sym.dataType as { kind?: string }).kind === 'PointerType'
+              ? typeToString(sym.dataType)
+              : sym.dataType) as DebugDataType,
         region: getRegionFromAddress(sym.address),
         size: sym.size,
         tags: sym.tags,
@@ -458,16 +472,16 @@ function buildVarInfoFromSymbol(sym: Symbol, typeResolver?: TypeResolver): Debug
     if (sym.ioAddress?.size === 'X') {
         varInfo.bitOffset = sym.ioAddress.bitOffset;
     }
-    
+
     // Add FB member children if present
     if (sym.members && sym.members.size > 0) {
         varInfo.children = {};
         const typeName = sym.dataType as string;
-        
+
         for (const [memberName, offset] of sym.members) {
             // Try to resolve real member type from FB/struct definition
             const memberInfo = typeResolver?.getMemberInfo(typeName, memberName);
-            
+
             varInfo.children[memberName] = {
                 offset,
                 type: (memberInfo?.dataType ?? 'DINT') as DebugDataType,
@@ -475,7 +489,7 @@ function buildVarInfoFromSymbol(sym: Symbol, typeResolver?: TypeResolver): Debug
             };
         }
     }
-    
+
     return varInfo;
 }
 
@@ -564,10 +578,10 @@ export interface BuildDebugMapOptions {
 
 /**
  * Build a complete DebugMap from compilation artifacts.
- * 
+ *
  * @param options - Build options including symbols and mappings
  * @returns Complete debug map for debugging
- * 
+ *
  * @example
  * ```typescript
  * const debugMap = buildDebugMap({
@@ -579,9 +593,9 @@ export interface BuildDebugMapOptions {
  */
 export function buildDebugMap(options: BuildDebugMapOptions): DebugMap {
     const { programName, sourceRef, symbols, instructionMappings = [], stringPool, codeSize = 0, typeResolver, memoryProfile } = options;
-    
+
     const map = createDebugMap(programName, memoryProfile);
-    
+
     // Build POU info
     const pouInfo: DebugPOUInfo = {
         type: 'PROGRAM',
@@ -594,27 +608,27 @@ export function buildDebugMap(options: BuildDebugMapOptions): DebugMap {
     if (sourceRef) {
         pouInfo.sourceRef = sourceRef;
     }
-    
+
     // Add variables from symbol table
     for (const sym of symbols.all()) {
         pouInfo.vars[sym.name] = buildVarInfoFromSymbol(sym, typeResolver);
     }
-    
+
     // Build breakpoint locations from source map
     pouInfo.breakpoints = buildBreakpointLocations(pouInfo.sourceMap);
-    
+
     map.pou[programName] = pouInfo;
-    
+
     // Add string pool if present
     if (stringPool) {
         map.stringPool = stringPool;
     }
-    
+
     // Update code size
     if (codeSize > 0) {
         map.memoryLayout.codeSize = codeSize;
     }
-    
+
     return map;
 }
 
@@ -668,7 +682,10 @@ export function buildUnitDebugMap(options: BuildUnitDebugMapOptions): DebugMap {
         ...(file.sourceRef === undefined ? {} : { sourceRef: file.sourceRef }),
     }));
     const indexOf = new Map(files.map((file, index) => [file.ref, index] as const));
-    const firstProgram = Math.max(0, files.findIndex((file) => file.type === 'PROGRAM'));
+    const firstProgram = Math.max(
+        0,
+        files.findIndex((file) => file.type === 'PROGRAM'),
+    );
 
     for (const sym of symbols.all()) {
         const pou = pous[(sym.sourceRef === undefined ? undefined : indexOf.get(sym.sourceRef)) ?? firstProgram];

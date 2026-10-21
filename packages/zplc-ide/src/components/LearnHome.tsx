@@ -30,11 +30,18 @@ export function LearnHome() {
   const projectOpenError = useIDEStore((state) => state.projectOpenError);
   const busyRef = useRef(false);
   const busy = useLearnUi((state) => state.starting);
-  useEffect(() => { if (!useLearnProgress.getState().loaded) void useLearnProgress.getState().load(); }, []);
+  useEffect(() => {
+    if (!useLearnProgress.getState().loaded) void useLearnProgress.getState().load();
+  }, []);
   // Escape closes the home from wherever the focus is, unless a dialog or a menu has it (they close first).
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
-      if (event.key !== 'Escape' || event.defaultPrevented || window.document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')) return;
+      if (
+        event.key !== 'Escape' ||
+        event.defaultPrevented ||
+        window.document.querySelector('[role="dialog"], [role="alertdialog"], [role="menu"]')
+      )
+        return;
       useLearnUi.getState().hideHome();
     };
     window.addEventListener('keydown', onKey);
@@ -46,29 +53,66 @@ export function LearnHome() {
   const start = (id: string): void => {
     if (busyRef.current) return;
     busyRef.current = true;
-    void useLearnUi.getState().startLesson(id).finally(() => { busyRef.current = false; });
+    void useLearnUi
+      .getState()
+      .startLesson(id)
+      .finally(() => {
+        busyRef.current = false;
+      });
   };
   const exportFile = (): void => {
-    void useLearnProgress.getState().exportText().then((text) => {
-      if (text === undefined) return;
-      const url = URL.createObjectURL(new Blob([text], { type: 'application/json;charset=utf-8' }));
-      const anchor = window.document.createElement('a');
-      anchor.href = url; anchor.download = 'zplc-learn-progress.v2.json'; window.document.body.appendChild(anchor); anchor.click(); window.document.body.removeChild(anchor);
-      URL.revokeObjectURL(url);
-      useLearnProgress.getState().setTransfer('exported');
-    });
+    void useLearnProgress
+      .getState()
+      .exportText()
+      .then((text) => {
+        if (text === undefined) return;
+        const url = URL.createObjectURL(new Blob([text], { type: 'application/json;charset=utf-8' }));
+        const anchor = window.document.createElement('a');
+        anchor.href = url;
+        anchor.download = 'zplc-learn-progress.v2.json';
+        window.document.body.appendChild(anchor);
+        anchor.click();
+        window.document.body.removeChild(anchor);
+        URL.revokeObjectURL(url);
+        useLearnProgress.getState().setTransfer('exported');
+      });
   };
   const importFile = (file: File): void => {
-    if (file.size > LEARN_PROGRESS_MAX_BYTES) { useLearnProgress.getState().setTransfer({ error: 'too-large', version: null }); return; }
+    if (file.size > LEARN_PROGRESS_MAX_BYTES) {
+      useLearnProgress.getState().setTransfer({ error: 'too-large', version: null });
+      return;
+    }
     void file.text().then((text) => useLearnProgress.getState().importText(text));
   };
-  return (<LearnBoardTrack>
-    <LearnHomeView
-      view={view} index={LESSON_INDEX} locale={locale} continueId={continueTarget(view, progress)} fresh={!progress?.last} loaded={loaded} failed={failed}
-      unlockAll={unlockAll} hideSolutions={hideSolutions} folderAccess={isFileSystemAccessSupported()} busy={busy} transfer={transfer} error={projectOpenError}
-      onHideSolutions={(on) => { updateSettings({ hideSolutions: on }); announce(t(on ? 'learn.home.hideSolutions.on' : 'learn.home.hideSolutions.off')); }}
-      onUnlockAll={(on) => { updateSettings({ unlockAllLessons: on }); announce(t(on ? 'learn.home.unlockAll.on' : 'learn.home.unlockAll.off')); }}
-      onStart={start} onClose={() => useLearnUi.getState().hideHome()} onExport={exportFile} onImportFile={importFile}
-    />
-  </LearnBoardTrack>);
+  return (
+    <LearnBoardTrack>
+      <LearnHomeView
+        view={view}
+        index={LESSON_INDEX}
+        locale={locale}
+        continueId={continueTarget(view, progress)}
+        fresh={!progress?.last}
+        loaded={loaded}
+        failed={failed}
+        unlockAll={unlockAll}
+        hideSolutions={hideSolutions}
+        folderAccess={isFileSystemAccessSupported()}
+        busy={busy}
+        transfer={transfer}
+        error={projectOpenError}
+        onHideSolutions={(on) => {
+          updateSettings({ hideSolutions: on });
+          announce(t(on ? 'learn.home.hideSolutions.on' : 'learn.home.hideSolutions.off'));
+        }}
+        onUnlockAll={(on) => {
+          updateSettings({ unlockAllLessons: on });
+          announce(t(on ? 'learn.home.unlockAll.on' : 'learn.home.unlockAll.off'));
+        }}
+        onStart={start}
+        onClose={() => useLearnUi.getState().hideHome()}
+        onExport={exportFile}
+        onImportFile={importFile}
+      />
+    </LearnBoardTrack>
+  );
 }

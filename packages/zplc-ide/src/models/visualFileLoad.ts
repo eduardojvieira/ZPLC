@@ -31,13 +31,15 @@ const variable = z.looseObject({ name: id, type: id });
 
 const LD_ELEMENT_TYPES = ['left_rail', 'right_rail', ...LD_CONTACT_TYPES, ...LD_COIL_TYPES, 'function_block'] as const;
 const ldElement = z.looseObject({ id, type: z.enum(LD_ELEMENT_TYPES), variable: z.string().optional() });
-const ldRung = z.looseObject({
-  id,
-  number: finite,
-  grid: z.array(z.array(z.looseObject({ element: ldElement.nullish() }))).optional(),
-  elements: z.array(ldElement).optional(),
-  gridConfig: z.looseObject({ cols: z.int().min(1), rows: z.int().min(1) }).optional(),
-}).refine((rung) => rung.grid !== undefined || rung.elements !== undefined, { message: 'a rung needs a grid or elements' });
+const ldRung = z
+  .looseObject({
+    id,
+    number: finite,
+    grid: z.array(z.array(z.looseObject({ element: ldElement.nullish() }))).optional(),
+    elements: z.array(ldElement).optional(),
+    gridConfig: z.looseObject({ cols: z.int().min(1), rows: z.int().min(1) }).optional(),
+  })
+  .refine((rung) => rung.grid !== undefined || rung.elements !== undefined, { message: 'a rung needs a grid or elements' });
 const ldFile = z.looseObject({
   name: z.string(),
   variables: z.looseObject({ local: z.array(variable), outputs: z.array(variable), inputs: z.array(variable).optional() }),
@@ -49,28 +51,47 @@ const fbdEndpoint = z.looseObject({ block: id, port: id });
 const fbdFile = z.looseObject({
   name: id,
   variables: z.looseObject({ local: z.array(variable), outputs: z.array(variable), inputs: z.array(variable).optional() }),
-  blocks: z.array(z.looseObject({
-    id, type: id, position, inputs: z.array(fbdPort).optional(), outputs: z.array(fbdPort).optional(),
-  })),
+  blocks: z.array(
+    z.looseObject({
+      id,
+      type: id,
+      position,
+      inputs: z.array(fbdPort).optional(),
+      outputs: z.array(fbdPort).optional(),
+    }),
+  ),
   connections: z.array(z.looseObject({ id, from: fbdEndpoint, to: fbdEndpoint })),
 });
 
 const sfcFile = z.looseObject({
   name: z.string(),
   variables: z.looseObject({ local: z.array(variable), outputs: z.array(variable), inputs: z.array(variable).optional() }).optional(),
-  steps: z.array(z.looseObject({
-    id: z.string(), name: z.string(), position,
-    actions: z.array(z.looseObject({ actionName: id, qualifier: id })).optional(),
-  })),
-  transitions: z.array(z.looseObject({
-    id: z.string(), fromStep: z.string(), toStep: z.string(), condition: z.string(), position: position.optional(),
-  })),
+  steps: z.array(
+    z.looseObject({
+      id: z.string(),
+      name: z.string(),
+      position,
+      actions: z.array(z.looseObject({ actionName: id, qualifier: id })).optional(),
+    }),
+  ),
+  transitions: z.array(
+    z.looseObject({
+      id: z.string(),
+      fromStep: z.string(),
+      toStep: z.string(),
+      condition: z.string(),
+      position: position.optional(),
+    }),
+  ),
   actions: z.array(z.looseObject({ id, name: id, body: z.string() })).optional(),
 });
 
 /** `rungs[0].grid[1]`-style location of a zod issue, followed by its message. */
 function describeIssue(issue: z.core.$ZodIssue): string {
-  const location = issue.path.reduce<string>((text, part) => typeof part === 'number' ? `${text}[${part}]` : text ? `${text}.${String(part)}` : String(part), '');
+  const location = issue.path.reduce<string>(
+    (text, part) => (typeof part === 'number' ? `${text}[${part}]` : text ? `${text}.${String(part)}` : String(part)),
+    '',
+  );
   const message = issue.message.split('\n', 1)[0];
   return location ? `${location}: ${message}` : message;
 }
@@ -108,9 +129,12 @@ export const loadSFCFile = (fileName: string, content: string): VisualFileLoad<S
 export function isUnchangedVisualDocument(language: 'LD' | 'FBD' | 'SFC', current: string, next: string): boolean {
   if (current === next) return true;
   try {
-    const opened = language === 'LD' ? serializeLDModel(parseLDModel(current))
-      : language === 'FBD' ? serializeFBDModel(parseFBDModel(current))
-        : serializeSFCModel(parseSFCModel(current));
+    const opened =
+      language === 'LD'
+        ? serializeLDModel(parseLDModel(current))
+        : language === 'FBD'
+          ? serializeFBDModel(parseFBDModel(current))
+          : serializeSFCModel(parseSFCModel(current));
     // the same document in another order of keys is the same document: an editor writes the fields of a block in its own order
     return opened === next || sortedKeys(JSON.parse(opened)) === sortedKeys(JSON.parse(next));
   } catch {
@@ -120,9 +144,9 @@ export function isUnchangedVisualDocument(language: 'LD' | 'FBD' | 'SFC', curren
 
 /** The JSON of a value with the keys of every object in order, so two documents compare as what they say. */
 function sortedKeys(value: unknown): string {
-  return JSON.stringify(value, (_key, inner: unknown) => (
+  return JSON.stringify(value, (_key, inner: unknown) =>
     inner && typeof inner === 'object' && !Array.isArray(inner)
       ? Object.fromEntries(Object.entries(inner as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
-      : inner
-  ));
+      : inner,
+  );
 }

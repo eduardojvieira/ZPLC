@@ -7,9 +7,7 @@
         "src/LevelScale.st": "PROGRAM LevelScale\nVAR_INPUT Enable AT %I0.0 : BOOL; END_VAR\nVAR_OUTPUT HighLevel AT %Q0.0 : BOOL; END_VAR\nVAR Raw : DINT; Level : DINT; END_VAR\nIF Enable THEN Raw := MIN(Raw + 410, 4095); ELSE Raw := 0; END_IF;\nLevel := LIMIT(0, (Raw * 100) / 4095, 100);\nHighLevel := Level >= 75;\nEND_PROGRAM\n",
         "zplc.json": "{\"schemaVersion\":2,\"name\":\"level_scale_fbd_starter\",\"version\":\"1.0.0\",\"target\":{\"board\":\"posix\"},\"tasks\":[{\"name\":\"MainTask\",\"trigger\":\"cyclic\",\"interval_ms\":10,\"priority\":1,\"programs\":[\"LevelScale.st\"]}]}"
       },
-      "remove": [
-        "src/LevelScale.fbd.json"
-      ]
+      "remove": ["src/LevelScale.fbd.json"]
     },
     {
       "intent": "limits the raw counts to 0..4095 before scaling instead of limiting the level",

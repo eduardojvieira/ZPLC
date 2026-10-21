@@ -32,10 +32,7 @@ K_MUTEX_DEFINE(modbus_tag_override_lock);
 #if defined(CONFIG_ZTEST)
 static void (*modbus_tag_override_publish_hook)(void);
 
-void zplc_config_test_set_modbus_override_publish_hook(void (*hook)(void))
-{
-  modbus_tag_override_publish_hook = hook;
-}
+void zplc_config_test_set_modbus_override_publish_hook(void (*hook)(void)) { modbus_tag_override_publish_hook = hook; }
 #endif
 
 /* The stored mapping overrides are applied only as a complete pair. */
@@ -44,12 +41,9 @@ static uint32_t modbus_tag_override_load_addr[ZPLC_MAX_TAGS];
 static bool modbus_tag_override_load_valid_seen;
 static bool modbus_tag_override_load_addr_seen;
 
-static void zplc_modbus_override_load_reset(void)
-{
-  memset(modbus_tag_override_load_valid, 0,
-         sizeof(modbus_tag_override_load_valid));
-  memset(modbus_tag_override_load_addr, 0,
-         sizeof(modbus_tag_override_load_addr));
+static void zplc_modbus_override_load_reset(void) {
+  memset(modbus_tag_override_load_valid, 0, sizeof(modbus_tag_override_load_valid));
+  memset(modbus_tag_override_load_addr, 0, sizeof(modbus_tag_override_load_addr));
   modbus_tag_override_load_valid_seen = false;
   modbus_tag_override_load_addr_seen = false;
 }
@@ -145,10 +139,9 @@ static struct {
   /* Sparkplug B */
   char mqtt_group_id[64];
   /* Azure IoT Hub — SAS authentication */
-  char azure_sas_key[96]; /* base64-encoded SharedAccessKey (primary/secondary)
+  char azure_sas_key[96];      /* base64-encoded SharedAccessKey (primary/secondary)
                            */
-  uint32_t
-      azure_sas_expiry_s; /* token validity window in seconds (default 3600) */
+  uint32_t azure_sas_expiry_s; /* token validity window in seconds (default 3600) */
   /* Azure IoT Hub — Device Twins & Direct Methods */
   bool azure_twin_enabled;
   bool azure_direct_methods_enabled;
@@ -197,10 +190,8 @@ struct cfg_item {
   bool is_string;
 };
 
-#define CFG_RAW(key, field)                                                    \
-  { #key, &config.field, (uint16_t)sizeof(config.field), false }
-#define CFG_STR(key, field)                                                    \
-  { #key, config.field, (uint16_t)sizeof(config.field), true }
+#define CFG_RAW(key, field) {#key, &config.field, (uint16_t)sizeof(config.field), false}
+#define CFG_STR(key, field) {#key, config.field, (uint16_t)sizeof(config.field), true}
 
 static const struct cfg_item cfg_items[] = {
     CFG_STR(hostname, hostname),
@@ -292,8 +283,7 @@ static size_t cfg_strnlen(const char *text, size_t max) {
 #define CFG_KEY_COUNT (ARRAY_SIZE(cfg_items) + 2U)
 
 BUILD_ASSERT(CFG_KEY_COUNT <= 100U, "cfg_NN keys carry two digits");
-BUILD_ASSERT(sizeof(uint32_t) * ZPLC_MAX_TAGS <= CFG_VALUE_MAX,
-             "the override address array must fit one stored entry");
+BUILD_ASSERT(sizeof(uint32_t) * ZPLC_MAX_TAGS <= CFG_VALUE_MAX, "the override address array must fit one stored entry");
 
 /* The settings subsystem's name of a row of the table or an override array,
  * or NULL. One lookup, so the settings handler and the stored-entry loader
@@ -331,8 +321,7 @@ static bool cfg_is_credential_path(const char *name) {
 
 static int cfg_set_credential_path(char *dest, size_t size, const char *path) {
   if (!zplc_config_credential_path_valid(path)) {
-    LOG_WRN("certificate path '%s' refused: a file path, persist://aws_cert_pem or persist://aws_key_pem",
-            path != NULL ? path : "");
+    LOG_WRN("certificate path '%s' refused: a file path, persist://aws_cert_pem or persist://aws_key_pem", path != NULL ? path : "");
     return -EINVAL;
   }
   strncpy(dest, path, size);
@@ -397,16 +386,12 @@ static int cfg_commit_overrides(void) {
     zplc_modbus_override_load_reset();
     return -EIO;
   }
-  memset(config.modbus_tag_override_valid, 0,
-         sizeof(config.modbus_tag_override_valid));
-  memset(config.modbus_tag_override_addr, 0,
-         sizeof(config.modbus_tag_override_addr));
+  memset(config.modbus_tag_override_valid, 0, sizeof(config.modbus_tag_override_valid));
+  memset(config.modbus_tag_override_addr, 0, sizeof(config.modbus_tag_override_addr));
 
-  if (modbus_tag_override_load_valid_seen &&
-      modbus_tag_override_load_addr_seen) {
+  if (modbus_tag_override_load_valid_seen && modbus_tag_override_load_addr_seen) {
     for (uint16_t i = 0U; i < ZPLC_MAX_TAGS; ++i) {
-      if (modbus_tag_override_load_valid[i] &&
-          modbus_tag_override_load_addr[i] <= UINT16_MAX) {
+      if (modbus_tag_override_load_valid[i] && modbus_tag_override_load_addr[i] <= UINT16_MAX) {
         config.modbus_tag_override_addr[i] = modbus_tag_override_load_addr[i];
         config.modbus_tag_override_valid[i] = true;
       }
@@ -440,16 +425,13 @@ const char *zplc_config_test_row(size_t index, uint8_t *value, size_t *length) {
     return NULL;
   }
   item = &cfg_items[index];
-  *length = item->is_string ? cfg_strnlen((const char *)item->ptr, item->size - 1U)
-                            : item->size;
+  *length = item->is_string ? cfg_strnlen((const char *)item->ptr, item->size - 1U) : item->size;
   memcpy(value, item->ptr, *length);
   return item->name;
 }
 #endif
 
-static void cfg_key(size_t index, char *key, size_t key_size) {
-  (void)snprintf(key, key_size, "cfg_%02u", (unsigned)index);
-}
+static void cfg_key(size_t index, char *key, size_t key_size) { (void)snprintf(key, key_size, "cfg_%02u", (unsigned)index); }
 
 static int hal_to_errno(zplc_hal_result_t result) {
   if (result == ZPLC_HAL_OK) {
@@ -459,8 +441,7 @@ static int hal_to_errno(zplc_hal_result_t result) {
 }
 
 /* One entry of the store: name and value are written together. */
-static int cfg_store_entry(size_t index, const char *name, const void *value,
-                           size_t length) {
+static int cfg_store_entry(size_t index, const char *name, const void *value, size_t length) {
   const size_t name_length = strlen(name);
   char key[8];
 
@@ -483,8 +464,7 @@ static int cfg_store_entry(size_t index, const char *name, const void *value,
    * string, and has no terminator. */
   memcpy(&cfg_record[3U + name_length], value, length); /* NOLINT(bugprone-not-null-terminated-result) */
   cfg_key(index, key, sizeof(key));
-  return hal_to_errno(
-      zplc_hal_persist_save(key, cfg_record, 3U + name_length + length));
+  return hal_to_errno(zplc_hal_persist_save(key, cfg_record, 3U + name_length + length));
 }
 
 /* Reads one entry and applies it when its name is the one expected. */
@@ -500,12 +480,10 @@ static int cfg_load_entry(size_t index, const char *name) {
   if (rc != 0) {
     return rc;
   }
-  if (cfg_record[0] != name_length ||
-      memcmp(&cfg_record[1], name, name_length) != 0) {
+  if (cfg_record[0] != name_length || memcmp(&cfg_record[1], name, name_length) != 0) {
     return -ENOENT; /* another setting lived here: not applied */
   }
-  length = (size_t)cfg_record[1U + name_length] |
-           ((size_t)cfg_record[2U + name_length] << 8);
+  length = (size_t)cfg_record[1U + name_length] | ((size_t)cfg_record[2U + name_length] << 8);
   if (length > CFG_VALUE_MAX) {
     return -EINVAL;
   }
@@ -536,13 +514,11 @@ static int cfg_save_all(void) {
       memcpy(valid, config.modbus_tag_override_valid, sizeof(valid));
       memcpy(addr, config.modbus_tag_override_addr, sizeof(addr));
       k_mutex_unlock(&modbus_tag_override_lock);
-      rc = cfg_store_entry(CFG_KEY_OVERRIDE_VALID, "modbus_tag_override_valid",
-                           valid, sizeof(valid));
+      rc = cfg_store_entry(CFG_KEY_OVERRIDE_VALID, "modbus_tag_override_valid", valid, sizeof(valid));
     }
   }
   if (rc == 0) {
-    rc = cfg_store_entry(CFG_KEY_OVERRIDE_ADDR, "modbus_tag_override_addr",
-                         addr, sizeof(addr));
+    rc = cfg_store_entry(CFG_KEY_OVERRIDE_ADDR, "modbus_tag_override_addr", addr, sizeof(addr));
   }
   k_mutex_unlock(&cfg_store_lock);
   return rc;
@@ -591,15 +567,12 @@ static int cfg_load_all(void) {
  * the settings back ends of the boards sit on a partition the program store
  * already owns.
  */
-static int zplc_settings_set(const char *name, size_t len,
-                             settings_read_cb read_cb, void *cb_arg) {
+static int zplc_settings_set(const char *name, size_t len, settings_read_cb read_cb, void *cb_arg) {
   static uint8_t value[CFG_VALUE_MAX];
   int rc;
 
   ARG_UNUSED(len);
-  if (cfg_find(name) == NULL &&
-      strcmp(name, "modbus_tag_override_valid") != 0 &&
-      strcmp(name, "modbus_tag_override_addr") != 0) {
+  if (cfg_find(name) == NULL && strcmp(name, "modbus_tag_override_valid") != 0 && strcmp(name, "modbus_tag_override_addr") != 0) {
     return -ENOENT;
   }
 
@@ -610,9 +583,7 @@ static int zplc_settings_set(const char *name, size_t len,
   return cfg_apply(name, value, (size_t)rc);
 }
 
-static int zplc_settings_commit(void) {
-  return cfg_commit_overrides();
-}
+static int zplc_settings_commit(void) { return cfg_commit_overrides(); }
 
 static struct settings_handler zplc_conf_handler = {
     .name = "zplc",
@@ -635,8 +606,7 @@ static void zplc_config_set_defaults(void) {
   config.modbus_rtu_client_slave_id = 1U;
   config.modbus_rtu_client_poll_ms = 100U;
   config.modbus_tcp_client_enabled = false;
-  strncpy(config.modbus_tcp_client_host, "192.168.1.100",
-          sizeof(config.modbus_tcp_client_host));
+  strncpy(config.modbus_tcp_client_host, "192.168.1.100", sizeof(config.modbus_tcp_client_host));
   config.modbus_tcp_client_port = 502U;
   config.modbus_tcp_client_unit_id = 1U;
   config.modbus_tcp_client_poll_ms = 100U;
@@ -647,8 +617,7 @@ static void zplc_config_set_defaults(void) {
    * plant's tags to a stranger. */
   config.mqtt_broker[0] = '\0';
   config.mqtt_client_id[0] = '\0';
-  strncpy(config.mqtt_topic_namespace, "spBv1.0/ZPLC",
-          sizeof(config.mqtt_topic_namespace));
+  strncpy(config.mqtt_topic_namespace, "spBv1.0/ZPLC", sizeof(config.mqtt_topic_namespace));
   config.mqtt_profile = ZPLC_MQTT_PROFILE_SPARKPLUG_B;
   config.mqtt_protocol = ZPLC_MQTT_PROTOCOL_5_0;
   /* COM-014: TLS with certificate verification is the default. Plain TCP
@@ -665,25 +634,19 @@ static void zplc_config_set_defaults(void) {
   config.mqtt_clean_session = true;
   config.mqtt_session_expiry_sec = 0U;
   config.mqtt_security = ZPLC_MQTT_SECURITY_TLS_SERVER_VERIFY;
-  strncpy(config.mqtt_websocket_path, "/mqtt",
-          sizeof(config.mqtt_websocket_path));
+  strncpy(config.mqtt_websocket_path, "/mqtt", sizeof(config.mqtt_websocket_path));
   config.mqtt_alpn[0] = '\0';
-  strncpy(config.mqtt_ca_cert_path, "/lfs/certs/ca.pem",
-          sizeof(config.mqtt_ca_cert_path));
-  strncpy(config.mqtt_client_cert_path, "/lfs/certs/client.pem",
-          sizeof(config.mqtt_client_cert_path));
-  strncpy(config.mqtt_client_key_path, "/lfs/certs/client.key",
-          sizeof(config.mqtt_client_key_path));
+  strncpy(config.mqtt_ca_cert_path, "/lfs/certs/ca.pem", sizeof(config.mqtt_ca_cert_path));
+  strncpy(config.mqtt_client_cert_path, "/lfs/certs/client.pem", sizeof(config.mqtt_client_cert_path));
+  strncpy(config.mqtt_client_key_path, "/lfs/certs/client.key", sizeof(config.mqtt_client_key_path));
   config.mqtt_lwt_enabled = false;
   config.mqtt_lwt_topic[0] = '\0';
   strncpy(config.mqtt_lwt_payload, "offline", sizeof(config.mqtt_lwt_payload));
   config.mqtt_lwt_qos = ZPLC_MQTT_QOS0;
   config.mqtt_lwt_retain = false;
   if (zplc_lock_take(&modbus_tag_override_lock, "modbus override lock") == 0) {
-    memset(config.modbus_tag_override_valid, 0,
-           sizeof(config.modbus_tag_override_valid));
-    memset(config.modbus_tag_override_addr, 0,
-           sizeof(config.modbus_tag_override_addr));
+    memset(config.modbus_tag_override_valid, 0, sizeof(config.modbus_tag_override_valid));
+    memset(config.modbus_tag_override_addr, 0, sizeof(config.modbus_tag_override_addr));
     k_mutex_unlock(&modbus_tag_override_lock);
   }
   config.ntp_enabled = false;
@@ -697,8 +660,7 @@ static void zplc_config_set_defaults(void) {
   config.azure_dps_enabled = false;
   config.azure_dps_id_scope[0] = '\0';
   config.azure_dps_registration_id[0] = '\0';
-  strncpy(config.azure_dps_endpoint, "global.azure-devices-provisioning.net",
-          sizeof(config.azure_dps_endpoint));
+  strncpy(config.azure_dps_endpoint, "global.azure-devices-provisioning.net", sizeof(config.azure_dps_endpoint));
   config.azure_event_grid_topic[0] = '\0';
   config.azure_event_grid_source[0] = '\0';
   config.azure_event_grid_event_type[0] = '\0';
@@ -781,9 +743,7 @@ void zplc_config_set_hostname(const char *name) {
 }
 
 bool zplc_config_get_dhcp(void) { return config.dhcp; }
-void zplc_config_set_dhcp(bool enabled) {
-  config.dhcp = enabled;
-}
+void zplc_config_set_dhcp(bool enabled) { config.dhcp = enabled; }
 
 void zplc_config_get_ip(char *buf, size_t len) {
   strncpy(buf, config.ip, len);
@@ -817,9 +777,7 @@ void zplc_config_set_wifi_pass(const char *pass) {
 
 uint8_t zplc_config_get_wifi_security(void) { return config.wifi_security; }
 
-void zplc_config_set_wifi_security(uint8_t security) {
-  config.wifi_security = security;
-}
+void zplc_config_set_wifi_security(uint8_t security) { config.wifi_security = security; }
 
 /* ============================================================================
  * Modbus — Server
@@ -827,73 +785,35 @@ void zplc_config_set_wifi_security(uint8_t security) {
  */
 
 uint16_t zplc_config_get_modbus_id(void) { return config.modbus_id; }
-void zplc_config_set_modbus_id(uint16_t id) {
-  config.modbus_id = id;
-}
+void zplc_config_set_modbus_id(uint16_t id) { config.modbus_id = id; }
 
-bool zplc_config_get_modbus_tcp_enabled(void) {
-  return config.modbus_tcp_enabled;
-}
-void zplc_config_set_modbus_tcp_enabled(bool enabled) {
-  config.modbus_tcp_enabled = enabled;
-}
+bool zplc_config_get_modbus_tcp_enabled(void) { return config.modbus_tcp_enabled; }
+void zplc_config_set_modbus_tcp_enabled(bool enabled) { config.modbus_tcp_enabled = enabled; }
 
-uint16_t zplc_config_get_modbus_tcp_port(void) {
-  return config.modbus_tcp_port;
-}
-void zplc_config_set_modbus_tcp_port(uint16_t port) {
-  config.modbus_tcp_port = port;
-}
+uint16_t zplc_config_get_modbus_tcp_port(void) { return config.modbus_tcp_port; }
+void zplc_config_set_modbus_tcp_port(uint16_t port) { config.modbus_tcp_port = port; }
 
-bool zplc_config_get_modbus_rtu_enabled(void) {
-  return config.modbus_rtu_enabled;
-}
-void zplc_config_set_modbus_rtu_enabled(bool enabled) {
-  config.modbus_rtu_enabled = enabled;
-}
+bool zplc_config_get_modbus_rtu_enabled(void) { return config.modbus_rtu_enabled; }
+void zplc_config_set_modbus_rtu_enabled(bool enabled) { config.modbus_rtu_enabled = enabled; }
 
-uint32_t zplc_config_get_modbus_rtu_baud(void) {
-  return config.modbus_rtu_baud;
-}
-void zplc_config_set_modbus_rtu_baud(uint32_t baud) {
-  config.modbus_rtu_baud = baud;
-}
+uint32_t zplc_config_get_modbus_rtu_baud(void) { return config.modbus_rtu_baud; }
+void zplc_config_set_modbus_rtu_baud(uint32_t baud) { config.modbus_rtu_baud = baud; }
 
-zplc_modbus_parity_t zplc_config_get_modbus_rtu_parity(void) {
-  return (zplc_modbus_parity_t)config.modbus_rtu_parity;
-}
+zplc_modbus_parity_t zplc_config_get_modbus_rtu_parity(void) { return (zplc_modbus_parity_t)config.modbus_rtu_parity; }
 
-void zplc_config_set_modbus_rtu_parity(zplc_modbus_parity_t parity) {
-  config.modbus_rtu_parity = (uint8_t)parity;
-}
+void zplc_config_set_modbus_rtu_parity(zplc_modbus_parity_t parity) { config.modbus_rtu_parity = (uint8_t)parity; }
 
-bool zplc_config_get_modbus_rtu_client_enabled(void) {
-  return config.modbus_rtu_client_enabled;
-}
-void zplc_config_set_modbus_rtu_client_enabled(bool enabled) {
-  config.modbus_rtu_client_enabled = enabled;
-}
+bool zplc_config_get_modbus_rtu_client_enabled(void) { return config.modbus_rtu_client_enabled; }
+void zplc_config_set_modbus_rtu_client_enabled(bool enabled) { config.modbus_rtu_client_enabled = enabled; }
 
-uint8_t zplc_config_get_modbus_rtu_client_slave_id(void) {
-  return config.modbus_rtu_client_slave_id;
-}
-void zplc_config_set_modbus_rtu_client_slave_id(uint8_t id) {
-  config.modbus_rtu_client_slave_id = id;
-}
+uint8_t zplc_config_get_modbus_rtu_client_slave_id(void) { return config.modbus_rtu_client_slave_id; }
+void zplc_config_set_modbus_rtu_client_slave_id(uint8_t id) { config.modbus_rtu_client_slave_id = id; }
 
-uint32_t zplc_config_get_modbus_rtu_client_poll_ms(void) {
-  return config.modbus_rtu_client_poll_ms;
-}
-void zplc_config_set_modbus_rtu_client_poll_ms(uint32_t ms) {
-  config.modbus_rtu_client_poll_ms = ms;
-}
+uint32_t zplc_config_get_modbus_rtu_client_poll_ms(void) { return config.modbus_rtu_client_poll_ms; }
+void zplc_config_set_modbus_rtu_client_poll_ms(uint32_t ms) { config.modbus_rtu_client_poll_ms = ms; }
 
-bool zplc_config_get_modbus_tcp_client_enabled(void) {
-  return config.modbus_tcp_client_enabled;
-}
-void zplc_config_set_modbus_tcp_client_enabled(bool enabled) {
-  config.modbus_tcp_client_enabled = enabled;
-}
+bool zplc_config_get_modbus_tcp_client_enabled(void) { return config.modbus_tcp_client_enabled; }
+void zplc_config_set_modbus_tcp_client_enabled(bool enabled) { config.modbus_tcp_client_enabled = enabled; }
 
 void zplc_config_get_modbus_tcp_client_host(char *buf, size_t len) {
   strncpy(buf, config.modbus_tcp_client_host, len);
@@ -901,48 +821,28 @@ void zplc_config_get_modbus_tcp_client_host(char *buf, size_t len) {
 }
 
 void zplc_config_set_modbus_tcp_client_host(const char *host) {
-  strncpy(config.modbus_tcp_client_host, host,
-          sizeof(config.modbus_tcp_client_host));
-  config.modbus_tcp_client_host[sizeof(config.modbus_tcp_client_host) - 1] =
-      '\0';
+  strncpy(config.modbus_tcp_client_host, host, sizeof(config.modbus_tcp_client_host));
+  config.modbus_tcp_client_host[sizeof(config.modbus_tcp_client_host) - 1] = '\0';
 }
 
-uint16_t zplc_config_get_modbus_tcp_client_port(void) {
-  return config.modbus_tcp_client_port;
-}
-void zplc_config_set_modbus_tcp_client_port(uint16_t port) {
-  config.modbus_tcp_client_port = port;
-}
+uint16_t zplc_config_get_modbus_tcp_client_port(void) { return config.modbus_tcp_client_port; }
+void zplc_config_set_modbus_tcp_client_port(uint16_t port) { config.modbus_tcp_client_port = port; }
 
-uint8_t zplc_config_get_modbus_tcp_client_unit_id(void) {
-  return config.modbus_tcp_client_unit_id;
-}
-void zplc_config_set_modbus_tcp_client_unit_id(uint8_t id) {
-  config.modbus_tcp_client_unit_id = id;
-}
+uint8_t zplc_config_get_modbus_tcp_client_unit_id(void) { return config.modbus_tcp_client_unit_id; }
+void zplc_config_set_modbus_tcp_client_unit_id(uint8_t id) { config.modbus_tcp_client_unit_id = id; }
 
-uint32_t zplc_config_get_modbus_tcp_client_poll_ms(void) {
-  return config.modbus_tcp_client_poll_ms;
-}
-void zplc_config_set_modbus_tcp_client_poll_ms(uint32_t ms) {
-  config.modbus_tcp_client_poll_ms = ms;
-}
+uint32_t zplc_config_get_modbus_tcp_client_poll_ms(void) { return config.modbus_tcp_client_poll_ms; }
+void zplc_config_set_modbus_tcp_client_poll_ms(uint32_t ms) { config.modbus_tcp_client_poll_ms = ms; }
 
-uint32_t zplc_config_get_modbus_tcp_client_timeout_ms(void) {
-  return config.modbus_tcp_client_timeout_ms;
-}
-void zplc_config_set_modbus_tcp_client_timeout_ms(uint32_t ms) {
-  config.modbus_tcp_client_timeout_ms = ms;
-}
+uint32_t zplc_config_get_modbus_tcp_client_timeout_ms(void) { return config.modbus_tcp_client_timeout_ms; }
+void zplc_config_set_modbus_tcp_client_timeout_ms(uint32_t ms) { config.modbus_tcp_client_timeout_ms = ms; }
 
 /* ============================================================================
  * Modbus Tag Overrides
  * ============================================================================
  */
 
-bool zplc_config_get_modbus_tag_override(uint16_t index,
-                                         uint16_t register_count,
-                                         uint32_t *address) {
+bool zplc_config_get_modbus_tag_override(uint16_t index, uint16_t register_count, uint32_t *address) {
   uint32_t override_addr;
 
   if (index >= ZPLC_MAX_TAGS || register_count == 0U)
@@ -954,8 +854,7 @@ bool zplc_config_get_modbus_tag_override(uint16_t index,
     return false;
   }
   override_addr = config.modbus_tag_override_addr[index];
-  if (override_addr > UINT16_MAX ||
-      register_count - 1U > UINT16_MAX - override_addr) {
+  if (override_addr > UINT16_MAX || register_count - 1U > UINT16_MAX - override_addr) {
     k_mutex_unlock(&modbus_tag_override_lock);
     return false;
   }
@@ -966,8 +865,7 @@ bool zplc_config_get_modbus_tag_override(uint16_t index,
   return true;
 }
 
-int zplc_config_set_modbus_tag_override(uint16_t index, uint32_t address,
-                                        uint16_t register_count) {
+int zplc_config_set_modbus_tag_override(uint16_t index, uint32_t address, uint16_t register_count) {
   if (index >= ZPLC_MAX_TAGS || register_count == 0U)
     return -EINVAL;
   if (address > UINT16_MAX || register_count - 1U > UINT16_MAX - address)
@@ -1002,9 +900,7 @@ int zplc_config_clear_modbus_tag_override(uint16_t index) {
  */
 
 bool zplc_config_get_mqtt_enabled(void) { return config.mqtt_enabled; }
-void zplc_config_set_mqtt_enabled(bool enabled) {
-  config.mqtt_enabled = enabled;
-}
+void zplc_config_set_mqtt_enabled(bool enabled) { config.mqtt_enabled = enabled; }
 
 /* Stubs — real MQTT implementations live in zplc_mqtt.c */
 __attribute__((weak)) int zplc_mqtt_init(void) {
@@ -1012,9 +908,7 @@ __attribute__((weak)) int zplc_mqtt_init(void) {
   return -ENOTSUP;
 }
 
-__attribute__((weak)) void zplc_mqtt_request_backoff_reset(void) {
-  LOG_WRN("zplc_mqtt_request_backoff_reset: MQTT module not linked");
-}
+__attribute__((weak)) void zplc_mqtt_request_backoff_reset(void) { LOG_WRN("zplc_mqtt_request_backoff_reset: MQTT module not linked"); }
 
 __attribute__((weak)) void zplc_mqtt_get_status(zplc_mqtt_status_t *status) {
   if (status != NULL) {
@@ -1029,8 +923,7 @@ __attribute__((weak)) void zplc_mqtt_get_status(zplc_mqtt_status_t *status) {
   }
 }
 
-__attribute__((weak)) void
-zplc_mqtt_set_azure_c2d_callback(zplc_azure_c2d_cb_t cb) {
+__attribute__((weak)) void zplc_mqtt_set_azure_c2d_callback(zplc_azure_c2d_cb_t cb) {
   ARG_UNUSED(cb);
   LOG_WRN("zplc_mqtt_set_azure_c2d_callback: MQTT module not linked");
 }
@@ -1063,36 +956,21 @@ void zplc_config_get_mqtt_topic_namespace(char *buf, size_t len) {
 }
 
 void zplc_config_set_mqtt_topic_namespace(const char *topic_namespace) {
-  strncpy(config.mqtt_topic_namespace, topic_namespace,
-          sizeof(config.mqtt_topic_namespace));
+  strncpy(config.mqtt_topic_namespace, topic_namespace, sizeof(config.mqtt_topic_namespace));
   config.mqtt_topic_namespace[sizeof(config.mqtt_topic_namespace) - 1] = '\0';
 }
 
-zplc_mqtt_profile_t zplc_config_get_mqtt_profile(void) {
-  return (zplc_mqtt_profile_t)config.mqtt_profile;
-}
-void zplc_config_set_mqtt_profile(zplc_mqtt_profile_t profile) {
-  config.mqtt_profile = (uint8_t)profile;
-}
+zplc_mqtt_profile_t zplc_config_get_mqtt_profile(void) { return (zplc_mqtt_profile_t)config.mqtt_profile; }
+void zplc_config_set_mqtt_profile(zplc_mqtt_profile_t profile) { config.mqtt_profile = (uint8_t)profile; }
 
-zplc_mqtt_protocol_t zplc_config_get_mqtt_protocol(void) {
-  return (zplc_mqtt_protocol_t)config.mqtt_protocol;
-}
-void zplc_config_set_mqtt_protocol(zplc_mqtt_protocol_t protocol) {
-  config.mqtt_protocol = (uint8_t)protocol;
-}
+zplc_mqtt_protocol_t zplc_config_get_mqtt_protocol(void) { return (zplc_mqtt_protocol_t)config.mqtt_protocol; }
+void zplc_config_set_mqtt_protocol(zplc_mqtt_protocol_t protocol) { config.mqtt_protocol = (uint8_t)protocol; }
 
-zplc_mqtt_transport_t zplc_config_get_mqtt_transport(void) {
-  return (zplc_mqtt_transport_t)config.mqtt_transport;
-}
-void zplc_config_set_mqtt_transport(zplc_mqtt_transport_t transport) {
-  config.mqtt_transport = (uint8_t)transport;
-}
+zplc_mqtt_transport_t zplc_config_get_mqtt_transport(void) { return (zplc_mqtt_transport_t)config.mqtt_transport; }
+void zplc_config_set_mqtt_transport(zplc_mqtt_transport_t transport) { config.mqtt_transport = (uint8_t)transport; }
 
 uint16_t zplc_config_get_mqtt_port(void) { return config.mqtt_port; }
-void zplc_config_set_mqtt_port(uint16_t port) {
-  config.mqtt_port = port;
-}
+void zplc_config_set_mqtt_port(uint16_t port) { config.mqtt_port = port; }
 
 void zplc_config_get_mqtt_username(char *buf, size_t len) {
   strncpy(buf, config.mqtt_username, len);
@@ -1114,78 +992,40 @@ void zplc_config_set_mqtt_password(const char *password) {
   config.mqtt_password[sizeof(config.mqtt_password) - 1] = '\0';
 }
 
-uint16_t zplc_config_get_mqtt_keepalive_sec(void) {
-  return config.mqtt_keepalive_sec;
-}
-void zplc_config_set_mqtt_keepalive_sec(uint16_t keepalive_sec) {
-  config.mqtt_keepalive_sec = keepalive_sec;
-}
+uint16_t zplc_config_get_mqtt_keepalive_sec(void) { return config.mqtt_keepalive_sec; }
+void zplc_config_set_mqtt_keepalive_sec(uint16_t keepalive_sec) { config.mqtt_keepalive_sec = keepalive_sec; }
 
-uint32_t zplc_config_get_mqtt_publish_interval_ms(void) {
-  return config.mqtt_publish_interval_ms;
-}
-void zplc_config_set_mqtt_publish_interval_ms(uint32_t publish_interval_ms) {
-  config.mqtt_publish_interval_ms = publish_interval_ms;
-}
+uint32_t zplc_config_get_mqtt_publish_interval_ms(void) { return config.mqtt_publish_interval_ms; }
+void zplc_config_set_mqtt_publish_interval_ms(uint32_t publish_interval_ms) { config.mqtt_publish_interval_ms = publish_interval_ms; }
 
-zplc_mqtt_qos_t zplc_config_get_mqtt_publish_qos(void) {
-  return (zplc_mqtt_qos_t)config.mqtt_publish_qos;
-}
-void zplc_config_set_mqtt_publish_qos(zplc_mqtt_qos_t qos) {
-  config.mqtt_publish_qos = (uint8_t)qos;
-}
+zplc_mqtt_qos_t zplc_config_get_mqtt_publish_qos(void) { return (zplc_mqtt_qos_t)config.mqtt_publish_qos; }
+void zplc_config_set_mqtt_publish_qos(zplc_mqtt_qos_t qos) { config.mqtt_publish_qos = (uint8_t)qos; }
 
-zplc_mqtt_qos_t zplc_config_get_mqtt_subscribe_qos(void) {
-  return (zplc_mqtt_qos_t)config.mqtt_subscribe_qos;
-}
-void zplc_config_set_mqtt_subscribe_qos(zplc_mqtt_qos_t qos) {
-  config.mqtt_subscribe_qos = (uint8_t)qos;
-}
+zplc_mqtt_qos_t zplc_config_get_mqtt_subscribe_qos(void) { return (zplc_mqtt_qos_t)config.mqtt_subscribe_qos; }
+void zplc_config_set_mqtt_subscribe_qos(zplc_mqtt_qos_t qos) { config.mqtt_subscribe_qos = (uint8_t)qos; }
 
-bool zplc_config_get_mqtt_publish_retain(void) {
-  return config.mqtt_publish_retain;
-}
-void zplc_config_set_mqtt_publish_retain(bool retain) {
-  config.mqtt_publish_retain = retain;
-}
+bool zplc_config_get_mqtt_publish_retain(void) { return config.mqtt_publish_retain; }
+void zplc_config_set_mqtt_publish_retain(bool retain) { config.mqtt_publish_retain = retain; }
 
-bool zplc_config_get_mqtt_clean_session(void) {
-  return config.mqtt_clean_session;
-}
-void zplc_config_set_mqtt_clean_session(bool clean_session) {
-  config.mqtt_clean_session = clean_session;
-}
+bool zplc_config_get_mqtt_clean_session(void) { return config.mqtt_clean_session; }
+void zplc_config_set_mqtt_clean_session(bool clean_session) { config.mqtt_clean_session = clean_session; }
 
-uint32_t zplc_config_get_mqtt_session_expiry_sec(void) {
-  return config.mqtt_session_expiry_sec;
-}
-void zplc_config_set_mqtt_session_expiry_sec(uint32_t session_expiry_sec) {
-  config.mqtt_session_expiry_sec = session_expiry_sec;
-}
+uint32_t zplc_config_get_mqtt_session_expiry_sec(void) { return config.mqtt_session_expiry_sec; }
+void zplc_config_set_mqtt_session_expiry_sec(uint32_t session_expiry_sec) { config.mqtt_session_expiry_sec = session_expiry_sec; }
 
-zplc_mqtt_security_t zplc_config_get_mqtt_security(void) {
-  return (zplc_mqtt_security_t)config.mqtt_security;
-}
-void zplc_config_set_mqtt_security(zplc_mqtt_security_t security) {
-  config.mqtt_security = (uint8_t)security;
-}
+zplc_mqtt_security_t zplc_config_get_mqtt_security(void) { return (zplc_mqtt_security_t)config.mqtt_security; }
+void zplc_config_set_mqtt_security(zplc_mqtt_security_t security) { config.mqtt_security = (uint8_t)security; }
 
 zplc_mqtt_tls_verify_t zplc_config_get_mqtt_tls_verify(void) {
-  if (config.mqtt_transport != ZPLC_MQTT_TRANSPORT_TLS &&
-      config.mqtt_transport != ZPLC_MQTT_TRANSPORT_WSS) {
+  if (config.mqtt_transport != ZPLC_MQTT_TRANSPORT_TLS && config.mqtt_transport != ZPLC_MQTT_TRANSPORT_WSS) {
     return ZPLC_MQTT_TLS_VERIFY_NOT_APPLICABLE;
   }
   /* NONE over a TLS transport is refused when the client is set up; it does
    * not reach a server unverified, so it is not reported as "off". */
-  return config.mqtt_security == ZPLC_MQTT_SECURITY_TLS_NO_VERIFY
-             ? ZPLC_MQTT_TLS_VERIFY_OFF
-             : ZPLC_MQTT_TLS_VERIFY_ON;
+  return config.mqtt_security == ZPLC_MQTT_SECURITY_TLS_NO_VERIFY ? ZPLC_MQTT_TLS_VERIFY_OFF : ZPLC_MQTT_TLS_VERIFY_ON;
 }
 
-bool zplc_config_mqtt_tls_verify_off(void) {
-  return config.mqtt_enabled &&
-         zplc_config_get_mqtt_tls_verify() == ZPLC_MQTT_TLS_VERIFY_OFF;
-}
+bool zplc_config_mqtt_tls_verify_off(void) { return config.mqtt_enabled && zplc_config_get_mqtt_tls_verify() == ZPLC_MQTT_TLS_VERIFY_OFF; }
 
 void zplc_config_get_mqtt_websocket_path(char *buf, size_t len) {
   strncpy(buf, config.mqtt_websocket_path, len);
@@ -1213,9 +1053,7 @@ void zplc_config_set_mqtt_alpn(const char *alpn) {
  */
 
 bool zplc_config_get_mqtt_lwt_enabled(void) { return config.mqtt_lwt_enabled; }
-void zplc_config_set_mqtt_lwt_enabled(bool enabled) {
-  config.mqtt_lwt_enabled = enabled;
-}
+void zplc_config_set_mqtt_lwt_enabled(bool enabled) { config.mqtt_lwt_enabled = enabled; }
 
 void zplc_config_get_mqtt_lwt_topic(char *buf, size_t len) {
   strncpy(buf, config.mqtt_lwt_topic, len);
@@ -1237,17 +1075,11 @@ void zplc_config_set_mqtt_lwt_payload(const char *payload) {
   config.mqtt_lwt_payload[sizeof(config.mqtt_lwt_payload) - 1] = '\0';
 }
 
-zplc_mqtt_qos_t zplc_config_get_mqtt_lwt_qos(void) {
-  return (zplc_mqtt_qos_t)config.mqtt_lwt_qos;
-}
-void zplc_config_set_mqtt_lwt_qos(zplc_mqtt_qos_t qos) {
-  config.mqtt_lwt_qos = (uint8_t)qos;
-}
+zplc_mqtt_qos_t zplc_config_get_mqtt_lwt_qos(void) { return (zplc_mqtt_qos_t)config.mqtt_lwt_qos; }
+void zplc_config_set_mqtt_lwt_qos(zplc_mqtt_qos_t qos) { config.mqtt_lwt_qos = (uint8_t)qos; }
 
 bool zplc_config_get_mqtt_lwt_retain(void) { return config.mqtt_lwt_retain; }
-void zplc_config_set_mqtt_lwt_retain(bool retain) {
-  config.mqtt_lwt_retain = retain;
-}
+void zplc_config_set_mqtt_lwt_retain(bool retain) { config.mqtt_lwt_retain = retain; }
 
 /* ============================================================================
  * MQTT — TLS Certs
@@ -1287,9 +1119,7 @@ int zplc_config_set_mqtt_client_key_path(const char *path) {
  */
 
 bool zplc_config_get_ntp_enabled(void) { return config.ntp_enabled; }
-void zplc_config_set_ntp_enabled(bool enabled) {
-  config.ntp_enabled = enabled;
-}
+void zplc_config_set_ntp_enabled(bool enabled) { config.ntp_enabled = enabled; }
 
 void zplc_config_get_ntp_server(char *buf, size_t len) {
   strncpy(buf, config.ntp_server, len);
@@ -1331,9 +1161,7 @@ void zplc_config_set_azure_sas_key(const char *key) {
   config.azure_sas_key[sizeof(config.azure_sas_key) - 1] = '\0';
 }
 
-uint32_t zplc_config_get_azure_sas_expiry_s(void) {
-  return config.azure_sas_expiry_s;
-}
+uint32_t zplc_config_get_azure_sas_expiry_s(void) { return config.azure_sas_expiry_s; }
 void zplc_config_set_azure_sas_expiry_s(uint32_t expiry_s) {
   if (expiry_s < 300U)
     expiry_s = 300U;
@@ -1347,38 +1175,22 @@ void zplc_config_set_azure_sas_expiry_s(uint32_t expiry_s) {
  * ============================================================================
  */
 
-bool zplc_config_get_azure_twin_enabled(void) {
-  return config.azure_twin_enabled;
-}
-void zplc_config_set_azure_twin_enabled(bool enabled) {
-  config.azure_twin_enabled = enabled;
-}
+bool zplc_config_get_azure_twin_enabled(void) { return config.azure_twin_enabled; }
+void zplc_config_set_azure_twin_enabled(bool enabled) { config.azure_twin_enabled = enabled; }
 
-bool zplc_config_get_azure_direct_methods_enabled(void) {
-  return config.azure_direct_methods_enabled;
-}
-void zplc_config_set_azure_direct_methods_enabled(bool enabled) {
-  config.azure_direct_methods_enabled = enabled;
-}
+bool zplc_config_get_azure_direct_methods_enabled(void) { return config.azure_direct_methods_enabled; }
+void zplc_config_set_azure_direct_methods_enabled(bool enabled) { config.azure_direct_methods_enabled = enabled; }
 
-bool zplc_config_get_azure_c2d_enabled(void) {
-  return config.azure_c2d_enabled;
-}
-void zplc_config_set_azure_c2d_enabled(bool enabled) {
-  config.azure_c2d_enabled = enabled;
-}
+bool zplc_config_get_azure_c2d_enabled(void) { return config.azure_c2d_enabled; }
+void zplc_config_set_azure_c2d_enabled(bool enabled) { config.azure_c2d_enabled = enabled; }
 
 /* ============================================================================
  * Azure — DPS (Device Provisioning Service)
  * ============================================================================
  */
 
-bool zplc_config_get_azure_dps_enabled(void) {
-  return config.azure_dps_enabled;
-}
-void zplc_config_set_azure_dps_enabled(bool enabled) {
-  config.azure_dps_enabled = enabled;
-}
+bool zplc_config_get_azure_dps_enabled(void) { return config.azure_dps_enabled; }
+void zplc_config_set_azure_dps_enabled(bool enabled) { config.azure_dps_enabled = enabled; }
 
 void zplc_config_get_azure_dps_id_scope(char *buf, size_t len) {
   strncpy(buf, config.azure_dps_id_scope, len);
@@ -1396,11 +1208,8 @@ void zplc_config_get_azure_dps_registration_id(char *buf, size_t len) {
 }
 
 void zplc_config_set_azure_dps_registration_id(const char *id) {
-  strncpy(config.azure_dps_registration_id, id,
-          sizeof(config.azure_dps_registration_id));
-  config
-      .azure_dps_registration_id[sizeof(config.azure_dps_registration_id) - 1] =
-      '\0';
+  strncpy(config.azure_dps_registration_id, id, sizeof(config.azure_dps_registration_id));
+  config.azure_dps_registration_id[sizeof(config.azure_dps_registration_id) - 1] = '\0';
 }
 
 void zplc_config_get_azure_dps_endpoint(char *buf, size_t len) {
@@ -1409,8 +1218,7 @@ void zplc_config_get_azure_dps_endpoint(char *buf, size_t len) {
 }
 
 void zplc_config_set_azure_dps_endpoint(const char *endpoint) {
-  strncpy(config.azure_dps_endpoint, endpoint,
-          sizeof(config.azure_dps_endpoint));
+  strncpy(config.azure_dps_endpoint, endpoint, sizeof(config.azure_dps_endpoint));
   config.azure_dps_endpoint[sizeof(config.azure_dps_endpoint) - 1] = '\0';
 }
 
@@ -1431,10 +1239,8 @@ void zplc_config_get_azure_event_grid_topic(char *buf, size_t len) {
 }
 
 void zplc_config_set_azure_event_grid_topic(const char *topic) {
-  strncpy(config.azure_event_grid_topic, topic,
-          sizeof(config.azure_event_grid_topic));
-  config.azure_event_grid_topic[sizeof(config.azure_event_grid_topic) - 1] =
-      '\0';
+  strncpy(config.azure_event_grid_topic, topic, sizeof(config.azure_event_grid_topic));
+  config.azure_event_grid_topic[sizeof(config.azure_event_grid_topic) - 1] = '\0';
 }
 
 void zplc_config_get_azure_event_grid_source(char *buf, size_t len) {
@@ -1443,10 +1249,8 @@ void zplc_config_get_azure_event_grid_source(char *buf, size_t len) {
 }
 
 void zplc_config_set_azure_event_grid_source(const char *source) {
-  strncpy(config.azure_event_grid_source, source,
-          sizeof(config.azure_event_grid_source));
-  config.azure_event_grid_source[sizeof(config.azure_event_grid_source) - 1] =
-      '\0';
+  strncpy(config.azure_event_grid_source, source, sizeof(config.azure_event_grid_source));
+  config.azure_event_grid_source[sizeof(config.azure_event_grid_source) - 1] = '\0';
 }
 
 void zplc_config_get_azure_event_grid_event_type(char *buf, size_t len) {
@@ -1455,11 +1259,8 @@ void zplc_config_get_azure_event_grid_event_type(char *buf, size_t len) {
 }
 
 void zplc_config_set_azure_event_grid_event_type(const char *type) {
-  strncpy(config.azure_event_grid_event_type, type,
-          sizeof(config.azure_event_grid_event_type));
-  config
-      .azure_event_grid_event_type[sizeof(config.azure_event_grid_event_type) -
-                                   1] = '\0';
+  strncpy(config.azure_event_grid_event_type, type, sizeof(config.azure_event_grid_event_type));
+  config.azure_event_grid_event_type[sizeof(config.azure_event_grid_event_type) - 1] = '\0';
 }
 
 /* ============================================================================
@@ -1467,29 +1268,19 @@ void zplc_config_set_azure_event_grid_event_type(const char *type) {
  * ============================================================================
  */
 
-bool zplc_config_get_aws_shadow_enabled(void) {
-  return config.aws_shadow_enabled;
-}
-void zplc_config_set_aws_shadow_enabled(bool enabled) {
-  config.aws_shadow_enabled = enabled;
-}
+bool zplc_config_get_aws_shadow_enabled(void) { return config.aws_shadow_enabled; }
+void zplc_config_set_aws_shadow_enabled(bool enabled) { config.aws_shadow_enabled = enabled; }
 
 bool zplc_config_get_aws_jobs_enabled(void) { return config.aws_jobs_enabled; }
-void zplc_config_set_aws_jobs_enabled(bool enabled) {
-  config.aws_jobs_enabled = enabled;
-}
+void zplc_config_set_aws_jobs_enabled(bool enabled) { config.aws_jobs_enabled = enabled; }
 
 /* ============================================================================
  * AWS — Fleet Provisioning
  * ============================================================================
  */
 
-bool zplc_config_get_aws_fleet_enabled(void) {
-  return config.aws_fleet_enabled;
-}
-void zplc_config_set_aws_fleet_enabled(bool enabled) {
-  config.aws_fleet_enabled = enabled;
-}
+bool zplc_config_get_aws_fleet_enabled(void) { return config.aws_fleet_enabled; }
+void zplc_config_set_aws_fleet_enabled(bool enabled) { config.aws_fleet_enabled = enabled; }
 
 void zplc_config_get_aws_fleet_template_name(char *buf, size_t len) {
   strncpy(buf, config.aws_fleet_template_name, len);
@@ -1497,10 +1288,8 @@ void zplc_config_get_aws_fleet_template_name(char *buf, size_t len) {
 }
 
 void zplc_config_set_aws_fleet_template_name(const char *name) {
-  strncpy(config.aws_fleet_template_name, name,
-          sizeof(config.aws_fleet_template_name));
-  config.aws_fleet_template_name[sizeof(config.aws_fleet_template_name) - 1] =
-      '\0';
+  strncpy(config.aws_fleet_template_name, name, sizeof(config.aws_fleet_template_name));
+  config.aws_fleet_template_name[sizeof(config.aws_fleet_template_name) - 1] = '\0';
 }
 
 void zplc_config_get_aws_claim_cert_path(char *buf, size_t len) {

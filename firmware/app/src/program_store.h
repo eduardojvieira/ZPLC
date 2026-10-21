@@ -26,12 +26,10 @@ int zplc_program_store_prepare(uint8_t *workspace, size_t workspace_capacity);
  * program_size must not exceed ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE. This code
  * only records an already mode-admitted artifact; it never loads a VM. The rollback is the one of the last
  * zplc_program_store_prepare() (or of a restore of the first firmware's program), and is used for one commit. */
-int zplc_program_store_commit(uint8_t *workspace, size_t program_size,
-                              size_t workspace_capacity);
+int zplc_program_store_commit(uint8_t *workspace, size_t program_size, size_t workspace_capacity);
 
 /* ZPLC_PROGRAM_STORE_UNVERIFIABLE of the core is reported as ZPLC_PROGRAM_STORE_ERROR here: the boot path fails
  * closed for both. */
-zplc_program_store_restore_t zplc_program_store_restore(
-    uint8_t *workspace, size_t workspace_capacity, size_t *program_size);
+zplc_program_store_restore_t zplc_program_store_restore(uint8_t *workspace, size_t workspace_capacity, size_t *program_size);
 
 #endif /* ZPLC_PROGRAM_STORE_H */

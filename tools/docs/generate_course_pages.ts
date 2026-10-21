@@ -59,43 +59,80 @@ function lessonBody(lesson: Lesson, lang: Lang): string {
     `- ${T.languages[lang]}: ${lesson.languages.join(', ')}`,
     `- ${T.tracks[lang]}: ${trackNames(lesson.tracks, lang)}`,
     `- ${T.plant[lang]}: ${lesson.plant ? `[${code(lesson.plant)}](../plants.md)` : T.none[lang]}`,
-    ...(lesson.prerequisites.length > 0 ? [`- ${T.prerequisites[lang]}: ${lesson.prerequisites.map((id) => `[${id}](./${id}.md)`).join(', ')}`] : []),
+    ...(lesson.prerequisites.length > 0
+      ? [`- ${T.prerequisites[lang]}: ${lesson.prerequisites.map((id) => `[${id}](./${id}.md)`).join(', ')}`]
+      : []),
   ];
   const hardware = lesson.unsupported.hardware;
   return [
     prose(text.summary),
-    `## ${T.facts[lang]}`, facts.join('\n'),
-    `## ${T.objectives[lang]}`, text.objectives.map((objective: string) => `- ${prose(objective)}`).join('\n'),
-    `## ${T.stages[lang]}`, text.stages.map((stage: { title: string; checkpoint: string }, index: number) => `${index + 1}. **${prose(stage.title)}**`).join('\n'),
-    `## ${T.scope[lang]}`, prose(text.scope),
-    ...(hardware ? [`## ${T.hardware[lang]}`, `${prose(hardware.reason[lang])} ${prose(hardware.instead[lang])}`] : wiringSection(lesson, lang)),
+    `## ${T.facts[lang]}`,
+    facts.join('\n'),
+    `## ${T.objectives[lang]}`,
+    text.objectives.map((objective: string) => `- ${prose(objective)}`).join('\n'),
+    `## ${T.stages[lang]}`,
+    text.stages.map((stage: { title: string; checkpoint: string }, index: number) => `${index + 1}. **${prose(stage.title)}**`).join('\n'),
+    `## ${T.scope[lang]}`,
+    prose(text.scope),
+    ...(hardware
+      ? [`## ${T.hardware[lang]}`, `${prose(hardware.reason[lang])} ${prose(hardware.instead[lang])}`]
+      : wiringSection(lesson, lang)),
   ].join('\n\n');
 }
 
 function moduleBody(module: Module, lang: Lang): string {
-  const rows = lessonsOf(module).map((lesson) => [`[${prose(titleOf(lesson, lang))}](../lessons/${lesson.id}.md)`, code(lesson.id), lesson.languages.join(', '), String(lesson.estimatedMinutes)]);
+  const rows = lessonsOf(module).map((lesson) => [
+    `[${prose(titleOf(lesson, lang))}](../lessons/${lesson.id}.md)`,
+    code(lesson.id),
+    lesson.languages.join(', '),
+    String(lesson.estimatedMinutes),
+  ]);
   return [
     prose(module.why[lang]),
-    [`- ${T.level[lang]}: ${level(module.level, lang)}`, `- ${T.tracks[lang]}: ${trackNames(module.tracks, lang)}`,
-      ...(module.requires === null ? [] : [`- ${T.requires[lang]}: [${module.requires}](./module-${module.requires}.md)`])].join('\n'),
+    [
+      `- ${T.level[lang]}: ${level(module.level, lang)}`,
+      `- ${T.tracks[lang]}: ${trackNames(module.tracks, lang)}`,
+      ...(module.requires === null ? [] : [`- ${T.requires[lang]}: [${module.requires}](./module-${module.requires}.md)`]),
+    ].join('\n'),
     `## ${T.lessons[lang]}`,
     rows.length > 0 ? table([T.lesson[lang], 'Id', T.languages[lang], T.minutes[lang]], rows) : T.none[lang],
   ].join('\n\n');
 }
 
 function moduleIndexBody(lang: Lang): string {
-  return table([T.module[lang], T.level[lang], T.lessons[lang]], LESSON_INDEX.course.modules.map((module) => [
-    `[${module.id}: ${prose(module.title[lang])}](./module-${module.id}.md)`, level(module.level, lang), String(lessonsOf(module).length),
-  ]));
+  return table(
+    [T.module[lang], T.level[lang], T.lessons[lang]],
+    LESSON_INDEX.course.modules.map((module) => [
+      `[${module.id}: ${prose(module.title[lang])}](./module-${module.id}.md)`,
+      level(module.level, lang),
+      String(lessonsOf(module).length),
+    ]),
+  );
 }
 
 function plantsBody(lang: Lang): string {
   const plants = [...new Set(LESSON_INDEX.lessons.flatMap((lesson) => (lesson.plant ? [lesson.plant] : [])))].sort();
   const intro: L10n = {
-    en: 'A plant is a simulated machine that a lesson connects to your program: the lesson maps the signals of the plant to the inputs and outputs of its starter project. This list is generated from the lesson packages.',
-    es: 'Una planta es una máquina simulada que una lección conecta a su programa: la lección asigna las señales de la planta a las entradas y salidas de su proyecto inicial. Esta lista se genera de los paquetes de lecciones.',
+    en:
+      'A plant is a simulated machine that a lesson connects to your program: the lesson maps the signals of the plant to the inputs ' +
+      'and outputs of its starter project. This list is generated from the lesson packages.',
+    es:
+      'Una planta es una máquina simulada que una lección conecta a su programa: la lección asigna las señales de la planta a las ' +
+      'entradas y salidas de su proyecto inicial. Esta lista se genera de los paquetes de lecciones.',
   };
-  return [intro[lang], table([T.plant[lang], T.used[lang]], plants.map((plant) => [code(plant), LESSON_INDEX.lessons.filter((lesson) => lesson.plant === plant).map((lesson) => `[${prose(titleOf(lesson, lang))}](./lessons/${lesson.id}.md)`).join(', ')]))].join('\n\n');
+  return [
+    intro[lang],
+    table(
+      [T.plant[lang], T.used[lang]],
+      plants.map((plant) => [
+        code(plant),
+        LESSON_INDEX.lessons
+          .filter((lesson) => lesson.plant === plant)
+          .map((lesson) => `[${prose(titleOf(lesson, lang))}](./lessons/${lesson.id}.md)`)
+          .join(', '),
+      ]),
+    ),
+  ].join('\n\n');
 }
 
 export const PAGES: ReferencePage[] = [
@@ -103,33 +140,49 @@ export const PAGES: ReferencePage[] = [
     path: `learn/modules/module-${module.id}.md`,
     title: { en: `Module ${module.id}: ${module.title.en}`, es: `Módulo ${module.id}: ${module.title.es}` },
     label: { en: `Module ${module.id}`, es: `Módulo ${module.id}` },
-    description: { en: `The lessons of module ${module.id} of the course, generated from the lesson packages.`, es: `Las lecciones del módulo ${module.id} del curso, generadas de los paquetes de lecciones.` },
+    description: {
+      en: `The lessons of module ${module.id} of the course, generated from the lesson packages.`,
+      es: `Las lecciones del módulo ${module.id} del curso, generadas de los paquetes de lecciones.`,
+    },
     body: (lang) => moduleBody(module, lang),
   })),
   {
     path: 'learn/modules/index.md',
     title: { en: 'Course modules', es: 'Módulos del curso' },
     label: { en: 'Course modules', es: 'Módulos del curso' },
-    description: { en: 'Every module of the course, generated from the lesson packages.', es: 'Todos los módulos del curso, generados de los paquetes de lecciones.' },
+    description: {
+      en: 'Every module of the course, generated from the lesson packages.',
+      es: 'Todos los módulos del curso, generados de los paquetes de lecciones.',
+    },
     body: moduleIndexBody,
   },
   ...LESSON_INDEX.lessons.map((lesson): ReferencePage => ({
     path: `learn/lessons/${lesson.id}.md`,
     title: { en: lesson.text.en.title, es: lesson.text.es.title },
     label: { en: lesson.id, es: lesson.id },
-    description: { en: `The lesson ${lesson.id}: level, time, languages and objectives, generated from its package.`, es: `La lección ${lesson.id}: nivel, tiempo, lenguajes y objetivos, generados de su paquete.` },
+    description: {
+      en: `The lesson ${lesson.id}: level, time, languages and objectives, generated from its package.`,
+      es: `La lección ${lesson.id}: nivel, tiempo, lenguajes y objetivos, generados de su paquete.`,
+    },
     body: (lang) => lessonBody(lesson, lang),
   })),
   {
     path: 'learn/plants.md',
     title: { en: 'Lesson plants', es: 'Plantas de las lecciones' },
     label: { en: 'Lesson plants', es: 'Plantas de las lecciones' },
-    description: { en: 'The simulated plants that lessons connect to your program, generated from the lesson packages.', es: 'Las plantas simuladas que las lecciones conectan a su programa, generadas de los paquetes de lecciones.' },
+    description: {
+      en: 'The simulated plants that lessons connect to your program, generated from the lesson packages.',
+      es: 'Las plantas simuladas que las lecciones conectan a su programa, generadas de los paquetes de lecciones.',
+    },
     body: plantsBody,
   },
 ];
 
 /** The pages as they must be on disk: unlisted, because the sidebar holds the outline and the outline links them. */
-export const outputs = () => outputsOf(GENERATOR, PAGES).map((output) => ({ ...output, content: output.content.replace('tags: [reference, generated]', 'tags: [learn, generated]\nunlisted: true') }));
+export const outputs = () =>
+  outputsOf(GENERATOR, PAGES).map((output) => ({
+    ...output,
+    content: output.content.replace('tags: [reference, generated]', 'tags: [learn, generated]\nunlisted: true'),
+  }));
 
 if (import.meta.main) process.exit(runGenerator(GENERATOR, outputs(), process.argv.slice(2)));

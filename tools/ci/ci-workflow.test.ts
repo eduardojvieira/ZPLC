@@ -54,7 +54,8 @@ describe('ci.yml cross-build artifacts', () => {
   const buildIndex = job.steps.findIndex((step) => step.run?.includes('west build'));
   const uploadIndex = job.steps.findIndex((step) => step.uses?.startsWith('actions/upload-artifact@'));
   const upload = job.steps[uploadIndex]!;
-  const forBoard = (value: string, id: string) => value.replaceAll('${{ matrix.id }}', id).replaceAll('${{ runner.temp }}', '${RUNNER_TEMP}');
+  const forBoard = (value: string, id: string) =>
+    value.replaceAll('${{ matrix.id }}', id).replaceAll('${{ runner.temp }}', '${RUNNER_TEMP}');
 
   it('builds every board of the matrix', () => {
     expect(boards.length).toBeGreaterThanOrEqual(6);
@@ -76,7 +77,10 @@ describe('ci.yml cross-build artifacts', () => {
   it('uploads the firmware files from the directory that the build step writes to', () => {
     const buildDir = /-d "([^"]+)"/.exec(job.steps[buildIndex]!.run!)![1]!;
     for (const board of boards) {
-      const paths = forBoard(upload.with!.path!, board.id).split('\n').map((line) => line.trim()).filter(Boolean);
+      const paths = forBoard(upload.with!.path!, board.id)
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
       expect(paths.length).toBeGreaterThan(0);
       for (const path of paths) expect(path.startsWith(`${forBoard(buildDir, board.id)}/zephyr/`)).toBe(true);
     }
@@ -85,7 +89,9 @@ describe('ci.yml cross-build artifacts', () => {
 
 describe('the package manager cache is restored before the install', () => {
   type Job = { steps: Step[] };
-  const nightly = Bun.YAML.parse(readFileSync(new URL('../../.github/workflows/nightly-quality.yml', import.meta.url), 'utf8')) as { jobs: Record<string, Job> };
+  const nightly = Bun.YAML.parse(readFileSync(new URL('../../.github/workflows/nightly-quality.yml', import.meta.url), 'utf8')) as {
+    jobs: Record<string, Job>;
+  };
   const sites: Array<[string, Job]> = [
     ['ci.yml typescript', workflow.jobs.typescript!],
     ['ci.yml docs-and-truth', workflow.jobs['docs-and-truth']!],
@@ -94,7 +100,9 @@ describe('the package manager cache is restored before the install', () => {
 
   it.each(sites)('%s restores the bun install cache under a key of bun.lock, then installs frozen', (_name, job) => {
     const install = job.steps.findIndex((step) => step.run?.includes('bun install'));
-    const cache = job.steps.findIndex((step) => step.uses?.startsWith('actions/cache@') && String(step.with?.path).includes('.bun/install/cache'));
+    const cache = job.steps.findIndex(
+      (step) => step.uses?.startsWith('actions/cache@') && String(step.with?.path).includes('.bun/install/cache'),
+    );
     expect(install).toBeGreaterThan(-1);
     expect(cache).toBeGreaterThan(-1);
     expect(cache).toBeLessThan(install);

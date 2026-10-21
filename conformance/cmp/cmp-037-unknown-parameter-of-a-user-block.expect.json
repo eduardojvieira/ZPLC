@@ -1,17 +1,9 @@
 {
   "requirement": "CMP-037",
   "title": "an unknown parameter of a user function block is rejected",
-  "matrix": [
-    "pous.function-block-call-with-named-inputs"
-  ],
+  "matrix": ["pous.function-block-call-with-named-inputs"],
   "build": "fails",
-  "lines": [
-    11
-  ],
-  "codes": [
-    "UNKNOWN_PARAMETER"
-  ],
-  "messageIncludes": [
-    "nothing"
-  ]
+  "lines": [11],
+  "codes": ["UNKNOWN_PARAMETER"],
+  "messageIncludes": ["nothing"]
 }

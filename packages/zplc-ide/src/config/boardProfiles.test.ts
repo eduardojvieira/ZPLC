@@ -33,12 +33,8 @@ describe('board network profile mapping', () => {
   });
 
   test('keeps board options aligned with the supported-board manifest', () => {
-    const manifestBoardIds = (supportedBoardsManifest as unknown as Array<{ ide_id: string }>).map(
-      (entry) => entry.ide_id
-    );
-    const optionIds = BOARD_OPTIONS.map((option) => option.value).filter(
-      (value) => value && value !== 'custom'
-    );
+    const manifestBoardIds = (supportedBoardsManifest as unknown as Array<{ ide_id: string }>).map((entry) => entry.ide_id);
+    const optionIds = BOARD_OPTIONS.map((option) => option.value).filter((value) => value && value !== 'custom');
 
     expect(optionIds).toEqual(manifestBoardIds);
   });
@@ -50,10 +46,19 @@ describe('board network profile mapping', () => {
   });
 
   test('maps all IDE board IDs to their exact canonical Zephyr targets', () => {
-    expect(Object.fromEntries([
-      'rpi_pico', 'arduino_giga_r1', 'esp32s3_devkitc',
-      'stm32f746g_disco', 'nucleo_h743zi', 'arduino_opta_wifi', 'waveshare_rp2040_zero',
-    ].map((id) => [id, getZephyrBoardTarget(id)]))).toEqual({
+    expect(
+      Object.fromEntries(
+        [
+          'rpi_pico',
+          'arduino_giga_r1',
+          'esp32s3_devkitc',
+          'stm32f746g_disco',
+          'nucleo_h743zi',
+          'arduino_opta_wifi',
+          'waveshare_rp2040_zero',
+        ].map((id) => [id, getZephyrBoardTarget(id)]),
+      ),
+    ).toEqual({
       rpi_pico: 'rpi_pico/rp2040',
       arduino_giga_r1: 'arduino_giga_r1/stm32h747xx/m7',
       esp32s3_devkitc: 'esp32s3_devkitc/esp32s3/procpu',
@@ -108,7 +113,7 @@ describe('network normalization by board', () => {
           ipv4: { dhcp: false, ip: '192.168.10.20', gateway: '192.168.10.1' },
         },
       },
-      'esp32s3_devkitc'
+      'esp32s3_devkitc',
     );
 
     expect(normalized?.wifi?.ssid).toBe('PlantWiFi');
@@ -126,7 +131,7 @@ describe('network normalization by board', () => {
           ipv4: { dhcp: true },
         },
       },
-      'stm32f746g_disco'
+      'stm32f746g_disco',
     );
 
     expect(normalized?.wifi).toBeUndefined();
@@ -169,7 +174,13 @@ describe('board I/O descriptions in the catalogue (IO-001, IO-003, IO-009)', () 
 
   test('every one of the seven profiles has its channels, the Opta its relays and the RP2040-Zero is listed (IO-010, IO-011)', () => {
     expect(catalogue.map((entry) => entry.ide_id).sort()).toEqual([
-      'arduino_giga_r1', 'arduino_opta_wifi', 'esp32s3_devkitc', 'nucleo_h743zi', 'rpi_pico', 'stm32f746g_disco', 'waveshare_rp2040_zero',
+      'arduino_giga_r1',
+      'arduino_opta_wifi',
+      'esp32s3_devkitc',
+      'nucleo_h743zi',
+      'rpi_pico',
+      'stm32f746g_disco',
+      'waveshare_rp2040_zero',
     ]);
     for (const entry of catalogue) expect(getBoardIo(entry.ide_id)?.channels.length, entry.ide_id).toBeGreaterThan(0);
     expect(getBoardIo('arduino_opta_wifi')!.channels.filter((c) => c.pin.includes('relay') && c.direction === 'output')).toHaveLength(4);
@@ -181,6 +192,7 @@ describe('board I/O descriptions in the catalogue (IO-001, IO-003, IO-009)', () 
   });
 
   test('every evidence reference of the manifest has its record bundled, so the level is derived from it', () => {
-    for (const entry of catalogue) for (const ref of entry.evidence_refs) expect(Object.keys(EVIDENCE_RECORDS), `${entry.ide_id}: ${ref}`).toContain(ref);
+    for (const entry of catalogue)
+      for (const ref of entry.evidence_refs) expect(Object.keys(EVIDENCE_RECORDS), `${entry.ide_id}: ${ref}`).toContain(ref);
   });
 });

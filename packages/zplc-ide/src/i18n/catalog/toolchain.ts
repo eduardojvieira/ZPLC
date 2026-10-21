@@ -3,13 +3,15 @@ import { PRODUCT_NAME } from '../../productName';
 export const toolchainEn = {
   // ToolchainCard.tsx
   'toolchain.firmwareToolchain': 'Firmware toolchain',
-  'toolchain.checksOnlyLocalFirmware': 'Checks only local firmware build prerequisites. It does not build, flash, deploy, connect to hardware, or qualify hardware.',
+  'toolchain.checksOnlyLocalFirmware':
+    'Checks only local firmware build prerequisites. It does not build, flash, deploy, connect to hardware, or qualify hardware.',
   'toolchain.chooseCheckoutCheck': 'Choose checkout & check',
   'toolchain.firmwareToolchainChecks': 'Firmware toolchain checks',
   'toolchain.ready': 'Ready',
   'toolchain.needsAttention': 'Needs attention',
   'toolchain.localRuntimeBuild': 'Local runtime build',
-  'toolchain.compilesRuntimeFirmwareNot': 'Compiles runtime firmware, not your PLC program. It runs west, CMake, Kconfig, and Python from the selected checkout; use a trusted checkout only. The temporary ELF is removed. This does not flash, deploy, connect a device, or qualify hardware. Source identity is unverified.',
+  'toolchain.compilesRuntimeFirmwareNot':
+    'Compiles runtime firmware, not your PLC program. It runs west, CMake, Kconfig, and Python from the selected checkout; use a trusted checkout only. The temporary ELF is removed. This does not flash, deploy, connect a device, or qualify hardware. Source identity is unverified.',
   'toolchain.buildRuntimeLocally': 'Build runtime locally',
   'toolchain.buildingLocally': 'Building locally…',
   'toolchain.cancellingSafely': 'Cancelling safely…',
@@ -22,30 +24,36 @@ export const toolchainEn = {
   'toolchain.firmwareBuildDidNot': 'Firmware build did not complete. Check the toolchain, then try again.',
   'toolchain.localCrossBuildCompleted': 'Local cross-build completed',
   'toolchain.cataloguedTarget': 'Catalogued target',
-  'toolchain.bytesTemporaryElfWas': '{value} bytes; temporary ELF was removed. This is not a flashable artifact or hardware evidence. Source identity is unverified.',
+  'toolchain.bytesTemporaryElfWas':
+    '{value} bytes; temporary ELF was removed. This is not a flashable artifact or hardware evidence. Source identity is unverified.',
 } as const;
 
 export const toolchainEs: Record<keyof typeof toolchainEn, string> = {
   // ToolchainCard.tsx
   'toolchain.firmwareToolchain': 'Cadena de herramientas del firmware',
-  'toolchain.checksOnlyLocalFirmware': 'Solo comprueba los requisitos locales para compilar el firmware. No compila, no graba, no despliega, no se conecta al hardware ni califica el hardware.',
+  'toolchain.checksOnlyLocalFirmware':
+    'Solo comprueba los requisitos locales para compilar el firmware. No compila, no graba, no despliega, no se conecta al hardware ni califica el hardware.',
   'toolchain.chooseCheckoutCheck': 'Elegir la copia de trabajo y comprobar',
   'toolchain.firmwareToolchainChecks': 'Comprobaciones de la cadena de herramientas del firmware',
   'toolchain.ready': 'Lista',
   'toolchain.needsAttention': 'Requiere atención',
   'toolchain.localRuntimeBuild': 'Compilación local del runtime',
-  'toolchain.compilesRuntimeFirmwareNot': 'Compila el firmware del runtime, no su programa de PLC. Ejecuta west, CMake, Kconfig y Python desde la copia de trabajo seleccionada; use solo una copia de trabajo de confianza. El ELF temporal se elimina. No graba, no despliega, no conecta ningún dispositivo ni califica el hardware. La identidad del código fuente no está verificada.',
+  'toolchain.compilesRuntimeFirmwareNot':
+    'Compila el firmware del runtime, no su programa de PLC. Ejecuta west, CMake, Kconfig y Python desde la copia de trabajo seleccionada; use solo una copia de trabajo de confianza. El ELF temporal se elimina. No graba, no despliega, no conecta ningún dispositivo ni califica el hardware. La identidad del código fuente no está verificada.',
   'toolchain.buildRuntimeLocally': 'Compilar el runtime localmente',
   'toolchain.buildingLocally': 'Compilando localmente…',
   'toolchain.cancellingSafely': 'Cancelando de forma segura…',
   'toolchain.cancelBuild': 'Cancelar la compilación',
-  'toolchain.aCheckedReadyCheckout': 'Una copia de trabajo comprobada y lista debe incluir este destino catalogado para que haya una compilación local disponible.',
-  'toolchain.localRuntimeBuildIs': 'La compilación local del runtime solo está disponible para un destino catalogado en esta aplicación, en Linux o macOS.',
+  'toolchain.aCheckedReadyCheckout':
+    'Una copia de trabajo comprobada y lista debe incluir este destino catalogado para que haya una compilación local disponible.',
+  'toolchain.localRuntimeBuildIs':
+    'La compilación local del runtime solo está disponible para un destino catalogado en esta aplicación, en Linux o macOS.',
   'toolchain.buildWasNotStarted': 'No se inició la compilación.',
   'toolchain.buildCancelledAfterLocal': 'Compilación cancelada tras la limpieza local.',
   'toolchain.buildStoppedButTemporary': `La compilación se detuvo, pero no se pudo confirmar la limpieza temporal. Reinicie ${PRODUCT_NAME} antes de intentarlo de nuevo.`,
   'toolchain.firmwareBuildDidNot': 'La compilación del firmware no se completó. Compruebe la cadena de herramientas e inténtelo de nuevo.',
   'toolchain.localCrossBuildCompleted': 'Compilación cruzada local completada',
   'toolchain.cataloguedTarget': 'Destino catalogado',
-  'toolchain.bytesTemporaryElfWas': '{value} bytes; se eliminó el ELF temporal. No es un artefacto grabable ni evidencia de hardware. La identidad del código fuente no está verificada.',
+  'toolchain.bytesTemporaryElfWas':
+    '{value} bytes; se eliminó el ELF temporal. No es un artefacto grabable ni evidencia de hardware. La identidad del código fuente no está verificada.',
 };

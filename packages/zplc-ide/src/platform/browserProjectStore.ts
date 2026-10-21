@@ -11,7 +11,11 @@ const MAX_NAME = 60;
 
 /** The folder name for a project name: letters, digits, dot, dash and underscore, never empty and never a dot path. */
 export function storedFolderName(wanted: string): string {
-  const cleaned = wanted.trim().replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^[-.]+|[-.]+$/g, '').slice(0, MAX_NAME);
+  const cleaned = wanted
+    .trim()
+    .replace(/[^A-Za-z0-9._-]+/g, '-')
+    .replace(/^[-.]+|[-.]+$/g, '')
+    .slice(0, MAX_NAME);
   return cleaned.length > 0 ? cleaned : 'project';
 }
 
@@ -31,7 +35,12 @@ export async function openBrowserProjectStore(): Promise<FileSystemDirectoryHand
 }
 
 async function exists(root: FileSystemDirectoryHandle, name: string): Promise<boolean> {
-  try { await root.getDirectoryHandle(name); return true; } catch { return false; }
+  try {
+    await root.getDirectoryHandle(name);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** A new, empty folder for a project: the name asked for, or the first free `name-2`, `name-3`. */
@@ -50,12 +59,16 @@ export async function listStoredProjects(root: FileSystemDirectoryHandle): Promi
     try {
       const file = await (await (entry as FileSystemDirectoryHandle).getFileHandle('zplc.json')).getFile();
       found.push({ recentId: entry.name, displayName: entry.name, lastOpenedAt: file.lastModified, available: true });
-    } catch { /* a folder with no zplc.json is not a project */ }
+    } catch {
+      /* a folder with no zplc.json is not a project */
+    }
   }
   return found.sort((a, b) => b.lastOpenedAt - a.lastOpenedAt);
 }
 
-/** The folder of a stored project. An id is a folder name made by `storedFolderName`: anything else is refused, so no id leaves the store. */
+/**
+ * The folder of a stored project. An id is a folder name made by `storedFolderName`: anything else is refused, so no id leaves the store.
+ */
 export async function openStoredFolder(root: FileSystemDirectoryHandle, recentId: string): Promise<FileSystemDirectoryHandle> {
   if (storedFolderName(recentId) !== recentId) throw new Error('That project is not in this browser.');
   return root.getDirectoryHandle(recentId);

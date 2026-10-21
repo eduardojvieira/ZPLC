@@ -1,13 +1,13 @@
 /**
  * ZPLC OOP Extensions Tests
- * 
+ *
  * Tests for IEC 61131-3 3rd Edition OOP features:
  * - INTERFACE declarations
  * - FUNCTION_BLOCK with EXTENDS and IMPLEMENTS
  * - METHOD declarations
  * - THIS keyword
  * - Method calls
- * 
+ *
  * SPDX-License-Identifier: MIT
  */
 
@@ -387,15 +387,15 @@ END_PROGRAM`;
 
         const child = symbols.getFBDefinition('FB_Child');
         expect(child).toBeDefined();
-        
+
         // Check inherited members
         expect(child!.members.has('BaseVal')).toBe(true);
         expect(child!.members.has('ChildVal')).toBe(true);
-        
+
         // Check inherited methods
         expect(child!.methods.has('BaseMethod')).toBe(true);
         expect(child!.methods.has('ChildMethod')).toBe(true);
-        
+
         // Check offsets
         const baseVal = child!.members.get('BaseVal')!;
         const childVal = child!.members.get('ChildVal')!;
@@ -588,7 +588,7 @@ END_PROGRAM`;
         // Should contain method call inline
         expect(code).toContain('Method call: obj.BaseMethod()');
         // It should use FB_Child.BaseMethod logic (inherited copy)
-        expect(code).toContain('FB_Child.BaseMethod'); 
+        expect(code).toContain('FB_Child.BaseMethod');
         expect(code).toContain('PUSH8 123');
     });
 
@@ -617,15 +617,15 @@ END_PROGRAM`;
         // Should store args to mangled vars
         // __M_FB_Calc_Add_A
         // __M_FB_Calc_Add_B
-        
+
         expect(code).toContain('Arg A := ...');
         expect(code).toContain('PUSH8 10');
         expect(code).toContain('STORE'); // Storing A
-        
+
         expect(code).toContain('Arg B := ...');
         expect(code).toContain('PUSH8 20');
         expect(code).toContain('STORE'); // Storing B
-        
+
         expect(code).toContain('ADD');
     });
 
@@ -709,16 +709,22 @@ END_PROGRAM`);
     });
 
     it('rejects an abstract method in a block that is not ABSTRACT', () => {
-        expect(() => tableOf('FUNCTION_BLOCK A\nMETHOD ABSTRACT M : INT\nEND_METHOD\nEND_FUNCTION_BLOCK\nPROGRAM P\nEND_PROGRAM'))
-            .toThrow(/must be declared FUNCTION_BLOCK ABSTRACT/);
+        expect(() => tableOf('FUNCTION_BLOCK A\nMETHOD ABSTRACT M : INT\nEND_METHOD\nEND_FUNCTION_BLOCK\nPROGRAM P\nEND_PROGRAM')).toThrow(
+            /must be declared FUNCTION_BLOCK ABSTRACT/,
+        );
     });
 
     it('rejects a block that leaves an inherited abstract method unimplemented, and one that implements it', () => {
         const base = 'FUNCTION_BLOCK ABSTRACT A\nMETHOD ABSTRACT M : INT\nEND_METHOD\nEND_FUNCTION_BLOCK\n';
-        expect(() => tableOf(`${base}FUNCTION_BLOCK B EXTENDS A\nEND_FUNCTION_BLOCK\nPROGRAM P\nEND_PROGRAM`))
-            .toThrow(/does not implement the ABSTRACT method 'M' of 'A'/);
-        expect(() => tableOf(`${base}FUNCTION_BLOCK B EXTENDS A\nMETHOD OVERRIDE M : INT\n  M := 1;\nEND_METHOD\nEND_FUNCTION_BLOCK\nPROGRAM P\nEND_PROGRAM`))
-            .not.toThrow();
+        expect(() => tableOf(`${base}FUNCTION_BLOCK B EXTENDS A\nEND_FUNCTION_BLOCK\nPROGRAM P\nEND_PROGRAM`)).toThrow(
+            /does not implement the ABSTRACT method 'M' of 'A'/,
+        );
+        expect(() =>
+            tableOf(
+                `${base}FUNCTION_BLOCK B EXTENDS A\nMETHOD OVERRIDE M : INT\n  M := 1;\nEND_METHOD\nEND_FUNCTION_BLOCK\nPROGRAM ` +
+                    `P\nEND_PROGRAM`,
+            ),
+        ).not.toThrow();
         // a block may stay abstract
         expect(() => tableOf(`${base}FUNCTION_BLOCK ABSTRACT B EXTENDS A\nEND_FUNCTION_BLOCK\nPROGRAM P\nEND_PROGRAM`)).not.toThrow();
     });
@@ -727,12 +733,15 @@ END_PROGRAM`);
         const base = 'FUNCTION_BLOCK ABSTRACT A\nEND_FUNCTION_BLOCK\n';
         expect(() => tableOf(`${base}PROGRAM P\nVAR a : A; END_VAR\nEND_PROGRAM`)).toThrow(/instance of the ABSTRACT function block 'A'/);
         expect(() => tableOf(`${base}PROGRAM P\nVAR a : ARRAY[0..1] OF A; END_VAR\nEND_PROGRAM`)).toThrow(/ABSTRACT/);
-        expect(() => tableOf(`${base}FUNCTION_BLOCK B\nVAR a : A; END_VAR\nEND_FUNCTION_BLOCK\nPROGRAM P\nEND_PROGRAM`)).toThrow(/ABSTRACT/);
+        expect(() => tableOf(`${base}FUNCTION_BLOCK B\nVAR a : A; END_VAR\nEND_FUNCTION_BLOCK\nPROGRAM P\nEND_PROGRAM`)).toThrow(
+            /ABSTRACT/,
+        );
     });
 
     it('rejects extending a FINAL block', () => {
-        expect(() => tableOf('FUNCTION_BLOCK FINAL A\nEND_FUNCTION_BLOCK\nFUNCTION_BLOCK B EXTENDS A\nEND_FUNCTION_BLOCK\nPROGRAM P\nEND_PROGRAM'))
-            .toThrow(/extends 'A', which is FINAL/);
+        expect(() =>
+            tableOf('FUNCTION_BLOCK FINAL A\nEND_FUNCTION_BLOCK\nFUNCTION_BLOCK B EXTENDS A\nEND_FUNCTION_BLOCK\nPROGRAM P\nEND_PROGRAM'),
+        ).toThrow(/extends 'A', which is FINAL/);
     });
 
     it('records the access specifier and the declaring block of each method, also an inherited one', () => {

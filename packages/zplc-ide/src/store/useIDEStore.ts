@@ -1,6 +1,6 @@
 /**
  * ZPLC global state store
- * 
+ *
  * Uses Zustand for state management.
  * Supports File System Access API for opening real folders.
  */
@@ -8,16 +8,28 @@
 import { create, type StoreApi } from 'zustand';
 import type { ZPLCProjectV2, FileTreeNode, ProjectFileWithHandle } from '../types';
 import { isFileSystemAccessSupported } from '../types';
-import { openDirectoryPicker, readDirectoryRecursive, readProjectConfig, writeProjectConfig, loadFileFromTree, createNewProject, copyProjectToFolder, findFileInTree, fileTreeFileId } from '../utils/fileSystem';
 import {
-  getAvailableProjects,
-  loadProject,
-  loadProjectAssets,
-} from '../utils/projectLoader';
+  openDirectoryPicker,
+  readDirectoryRecursive,
+  readProjectConfig,
+  writeProjectConfig,
+  loadFileFromTree,
+  createNewProject,
+  copyProjectToFolder,
+  findFileInTree,
+  fileTreeFileId,
+} from '../utils/fileSystem';
+import { getAvailableProjects, loadProject, loadProjectAssets } from '../utils/projectLoader';
 import { appendConsoleEntries, SHOW_OUTPUT } from './consoleEntries';
 import { createDebugActions } from './debugActions';
 import { folderErrorReason } from '../utils/errorMessages';
-import { forgetRecentProject as forgetRecentOnBridge, listRecentProjects, markProjectOpened, openRecentFolder, projectRootId } from '../ipc/projectFilesHandles';
+import {
+  forgetRecentProject as forgetRecentOnBridge,
+  listRecentProjects,
+  markProjectOpened,
+  openRecentFolder,
+  projectRootId,
+} from '../ipc/projectFilesHandles';
 import { loadSession } from '../ipc/sessionBridge';
 import { planRestore, type ViewState, type WorkspaceLayout } from '../utils/sessionState';
 import { flushSession, resetViewStates } from './sessionPersistence';
@@ -56,9 +68,10 @@ export function applyThemeToDOM(theme: Theme): void {
   if (theme !== 'system') {
     root.classList.add(theme);
   }
-  root.setAttribute('data-theme', theme === 'system'
-    ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-    : theme);
+  root.setAttribute(
+    'data-theme',
+    theme === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme,
+  );
 
   localStorage.setItem(THEME_STORAGE_KEY, theme);
 }
@@ -89,22 +102,33 @@ async function restoreSession(dirHandle: FileSystemDirectoryHandle, tree: FileTr
   if (!bridge || rootId === null) return null;
   const saved = await loadSession(bridge, rootId);
   if (!saved) return null;
-  const fileAt = (path: string) => { const node = findFileInTree(tree, path); return node?.type === 'file' ? node : null; };
+  const fileAt = (path: string) => {
+    const node = findFileInTree(tree, path);
+    return node?.type === 'file' ? node : null;
+  };
   const plan = planRestore(saved, (path) => fileAt(path) !== null);
   const files = new Map<string, ProjectFileWithHandle>();
   const paths: string[] = [];
   for (const path of plan.tabPaths) {
     try {
       const loaded = await loadFileFromTree(fileAt(path)!);
-      if (loaded) { files.set(loaded.id, loaded); paths.push(path); }
+      if (loaded) {
+        files.set(loaded.id, loaded);
+        paths.push(path);
+      }
     } catch {
       // An unreadable file is a tab that does not come back.
     }
   }
   const openTabs = paths.map(fileTreeFileId);
-  const activeFileId = plan.activePath !== null && paths.includes(plan.activePath) ? fileTreeFileId(plan.activePath) : openTabs.at(-1) ?? null;
+  const activeFileId =
+    plan.activePath !== null && paths.includes(plan.activePath) ? fileTreeFileId(plan.activePath) : (openTabs.at(-1) ?? null);
   return {
-    files, openTabs, activeFileId, layout: plan.layout, consoleCollapsed: plan.consoleCollapsed,
+    files,
+    openTabs,
+    activeFileId,
+    layout: plan.layout,
+    consoleCollapsed: plan.consoleCollapsed,
     viewStates: new Map([...plan.viewStates].filter(([path]) => paths.includes(path))),
   };
 }
@@ -166,7 +190,10 @@ async function openExistingProject(
     if (readResult.kind === 'valid') {
       config = readResult.config;
     } else {
-      get().reportProjectOpenProblem('warning', 'No zplc.json found. This folder was not changed. Use New Project to create a project in an empty folder.');
+      get().reportProjectOpenProblem(
+        'warning',
+        'No zplc.json found. This folder was not changed. Use New Project to create a project in an empty folder.',
+      );
       return false;
     }
 
@@ -181,9 +208,10 @@ async function openExistingProject(
       isProjectOpen: true,
       projectName: config.name,
       projectConfig: config,
-      projectMigrationPreview: readResult.changes.length > 0
-        ? { sourceSchemaVersion: readResult.sourceSchemaVersion, targetSchemaVersion: 2, changes: readResult.changes }
-        : null,
+      projectMigrationPreview:
+        readResult.changes.length > 0
+          ? { sourceSchemaVersion: readResult.sourceSchemaVersion, targetSchemaVersion: 2, changes: readResult.changes }
+          : null,
       directoryHandle: dirHandle,
       fileTree,
       loadedFiles: restored?.files ?? new Map(),
@@ -195,7 +223,10 @@ async function openExistingProject(
       workspaceScenarioLink: null,
       canonicalWorkspaceBuildEvidence: null,
       projectConfigDirty: false,
-      compilerMessages: [], compilerMessagesChecked: false, compilerNavigationTarget: null, compilerRunId: get().compilerRunId + 1,
+      compilerMessages: [],
+      compilerMessagesChecked: false,
+      compilerNavigationTarget: null,
+      compilerRunId: get().compilerRunId + 1,
     });
 
     if (openProjectIntent !== intent || get().projectSession !== expectedProjectSession + 1) return false;
@@ -288,7 +319,7 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
   // ==========================================================================
   // Theme Actions
   // ==========================================================================
-  
+
   setTheme: (theme) => {
     applyThemeToDOM(theme);
     set({ theme });
@@ -300,19 +331,31 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
 
   reportProjectOpenProblem: (type, message) => {
     get().addConsoleEntry({ type, message, source: 'system' });
-    // The Welcome screen and the Learn panel show projectOpenError; elsewhere the workbench shows the console, so an error brings it into view (IDE-003).
+    // The Welcome screen and the Learn panel show projectOpenError; elsewhere the workbench shows the console, so an error brings it into
+    // view (IDE-003).
     if (type !== 'error') set({ projectOpenError: message });
-    else set({ projectOpenError: message, isConsoleCollapsed: false, ...(get().activeConsoleTab === 'learn' ? {} : { activeConsoleTab: 'output' as const }) });
+    else
+      set({
+        projectOpenError: message,
+        isConsoleCollapsed: false,
+        ...(get().activeConsoleTab === 'learn' ? {} : { activeConsoleTab: 'output' as const }),
+      });
   },
 
   openProjectFromFolder: () => openExistingProject(set, get, openDirectoryPicker, 'Failed to open folder.'),
 
-  openRecentProject: (recentId) => openExistingProject(set, get, async () => {
-    const bridge = projectFilesBridge();
-    if (!bridge && isWebBuild()) return openBrowserProject(recentId);
-    if (!bridge) throw new Error('Recent projects are only available in the desktop app.');
-    return openRecentFolder(bridge, recentId);
-  }, 'Failed to open the recent project.'),
+  openRecentProject: (recentId) =>
+    openExistingProject(
+      set,
+      get,
+      async () => {
+        const bridge = projectFilesBridge();
+        if (!bridge && isWebBuild()) return openBrowserProject(recentId);
+        if (!bridge) throw new Error('Recent projects are only available in the desktop app.');
+        return openRecentFolder(bridge, recentId);
+      },
+      'Failed to open the recent project.',
+    ),
 
   refreshRecentProjects: async () => {
     const bridge = projectFilesBridge();
@@ -338,7 +381,7 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
 
     try {
       void flushSession();
-      const dirHandle = options?.handle ?? await openDirectoryPicker();
+      const dirHandle = options?.handle ?? (await openDirectoryPicker());
       if (!dirHandle) {
         return false;
       }
@@ -364,7 +407,10 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
         workspaceScenarioLink: null,
         canonicalWorkspaceBuildEvidence: null,
         projectConfigDirty: false,
-        compilerMessages: [], compilerMessagesChecked: false, compilerNavigationTarget: null, compilerRunId: get().compilerRunId + 1,
+        compilerMessages: [],
+        compilerMessagesChecked: false,
+        compilerNavigationTarget: null,
+        compilerRunId: get().compilerRunId + 1,
       });
 
       get().addConsoleEntry({
@@ -414,9 +460,18 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
     try {
       void flushSession();
       // The web build keeps an example in the store of the browser, with no dialog: it is a copy the person can edit and find again.
-      const chosen = folder ? await folder() : isWebBuild() ? { handle: await newBrowserProjectFolder(loaded.zplcConfig.name), seed: true } : await openDirectoryPicker().then((handle) => handle && { handle, seed: true });
-      if (!isCurrent() || !chosen) return false; const dirHandle = chosen.handle;
-      get().addConsoleEntry({ type: 'info', message: `${chosen.seed ? 'Copying example to' : 'Reopening'}: ${dirHandle.name}...`, source: 'system' });
+      const chosen = folder
+        ? await folder()
+        : isWebBuild()
+          ? { handle: await newBrowserProjectFolder(loaded.zplcConfig.name), seed: true }
+          : await openDirectoryPicker().then((handle) => handle && { handle, seed: true });
+      if (!isCurrent() || !chosen) return false;
+      const dirHandle = chosen.handle;
+      get().addConsoleEntry({
+        type: 'info',
+        message: `${chosen.seed ? 'Copying example to' : 'Reopening'}: ${dirHandle.name}...`,
+        source: 'system',
+      });
       if (chosen.seed) await copyProjectToFolder(dirHandle, loaded.zplcConfig, assets);
       if (!isCurrent()) return false;
       const readResult = await readProjectConfig(dirHandle);
@@ -444,7 +499,10 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
         workspaceScenarioLink: null,
         canonicalWorkspaceBuildEvidence: null,
         projectConfigDirty: false,
-        compilerMessages: [], compilerMessagesChecked: false, compilerNavigationTarget: null, compilerRunId: get().compilerRunId + 1,
+        compilerMessages: [],
+        compilerMessagesChecked: false,
+        compilerNavigationTarget: null,
+        compilerRunId: get().compilerRunId + 1,
       });
       if (openProjectIntent !== intent || get().projectSession !== expectedProjectSession + 1) return false;
       get().addConsoleEntry({ type: 'success', message: t('store.copiedExample', { name: readResult.config.name }), source: 'system' });
@@ -514,13 +572,13 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
         currentLine: null,
         currentPOU: null,
         currentPC: null,
-          watchVariables: [],
-          liveValues: new Map(),
-          forcedValues: new Map(),
-          forcesUnconfirmed: false,
-          nativeTrace: [],
-          isPolling: false,
-          pollingInterval: DEFAULT_DEBUG_POLLING_INTERVAL_MS,
+        watchVariables: [],
+        liveValues: new Map(),
+        forcedValues: new Map(),
+        forcesUnconfirmed: false,
+        nativeTrace: [],
+        isPolling: false,
+        pollingInterval: DEFAULT_DEBUG_POLLING_INTERVAL_MS,
         mpeekEnabled: false,
       },
     });
@@ -556,11 +614,18 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
     let recorded = false;
     set((state) => {
       const link = state.workspaceScenarioLink;
-      if (!state.isProjectOpen
-        || state.projectSession !== evidence.projectSession || state.compilerRunId !== evidence.compilerRunId
-        || link?.projectSession !== evidence.projectSession || link.workspaceId !== evidence.workspaceId
-        || evidence.zplc.kind !== 'zplc' || !/^[a-f0-9]{64}$/.test(evidence.zplc.sha256)
-        || !Number.isSafeInteger(evidence.zplc.byteLength) || evidence.zplc.byteLength <= 0) return {};
+      if (
+        !state.isProjectOpen ||
+        state.projectSession !== evidence.projectSession ||
+        state.compilerRunId !== evidence.compilerRunId ||
+        link?.projectSession !== evidence.projectSession ||
+        link.workspaceId !== evidence.workspaceId ||
+        evidence.zplc.kind !== 'zplc' ||
+        !/^[a-f0-9]{64}$/.test(evidence.zplc.sha256) ||
+        !Number.isSafeInteger(evidence.zplc.byteLength) ||
+        evidence.zplc.byteLength <= 0
+      )
+        return {};
       recorded = true;
       return { canonicalWorkspaceBuildEvidence: evidence };
     });
@@ -571,7 +636,7 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
     const { directoryHandle, projectConfig } = get();
     const expectedProjectSession = get().projectSession;
     const isCurrentProjectSession = () => get().projectSession === expectedProjectSession;
-    
+
     if (!projectConfig) {
       get().addConsoleEntry({
         type: 'warning',
@@ -594,7 +659,7 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
       // Verify we still have write permission
       const permission = await directoryHandle.queryPermission({ mode: 'readwrite' });
       if (!isCurrentProjectSession()) return;
-      
+
       if (permission !== 'granted') {
         // Try to request permission again
         const requestResult = await directoryHandle.requestPermission({ mode: 'readwrite' });
@@ -608,7 +673,7 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
           return;
         }
       }
-      
+
       const canonicalConfig = await writeProjectConfig(directoryHandle, projectConfig);
       const latest = get();
       if (latest.projectSession === expectedProjectSession && latest.projectConfig === projectConfig) {
@@ -655,10 +720,11 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
 
   setControllerStatus: (status) => set({ controllerStatus: status }),
 
-  clearControllerState: () => set({ 
-    controllerInfo: null, 
-    controllerStatus: null,
-  }),
+  clearControllerState: () =>
+    set({
+      controllerInfo: null,
+      controllerStatus: null,
+    }),
 
   // ==========================================================================
   // Console Actions
@@ -680,37 +746,52 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
 
   addCompilerMessage: (message) =>
     set((state) => ({
-      compilerMessages: [
-        ...state.compilerMessages,
-        { ...message, timestamp: new Date() },
-      ],
+      compilerMessages: [...state.compilerMessages, { ...message, timestamp: new Date() }],
       compilerMessagesChecked: true,
     })),
 
   markCompilerMessagesChecked: () => set({ compilerMessagesChecked: true }),
 
-  clearCompilerMessages: () => set((state) => ({ compilerMessages: [], compilerMessagesChecked: false, compilerNavigationTarget: null, compilerRunId: state.compilerRunId + 1 })),
+  clearCompilerMessages: () =>
+    set((state) => ({
+      compilerMessages: [],
+      compilerMessagesChecked: false,
+      compilerNavigationTarget: null,
+      compilerRunId: state.compilerRunId + 1,
+    })),
 
   setSTBufferDiagnostics: (result, expectedContent) => {
     let accepted = false;
     set((state) => {
       const file = state.loadedFiles.get(result.fileId);
-      if (!state.isProjectOpen || state.projectSession !== result.projectSession || state.compilerRunId !== result.compilerRunId
-        || state.activeFileId !== result.fileId || !file || file.language !== 'ST' || file.path !== result.file || file.content !== expectedContent) return {};
+      if (
+        !state.isProjectOpen ||
+        state.projectSession !== result.projectSession ||
+        state.compilerRunId !== result.compilerRunId ||
+        state.activeFileId !== result.fileId ||
+        !file ||
+        file.language !== 'ST' ||
+        file.path !== result.file ||
+        file.content !== expectedContent
+      )
+        return {};
       accepted = true;
       return { stBufferDiagnostics: result };
     });
     return accepted;
   },
 
-  clearSTBufferDiagnostics: (identity) => set((state) => {
-    const current = state.stBufferDiagnostics;
-    if (!current || !identity) return { stBufferDiagnostics: null };
-    return current.projectSession === identity.projectSession && current.compilerRunId === identity.compilerRunId
-      && current.fileId === identity.fileId && current.file === identity.file
-      ? { stBufferDiagnostics: null }
-      : {};
-  }),
+  clearSTBufferDiagnostics: (identity) =>
+    set((state) => {
+      const current = state.stBufferDiagnostics;
+      if (!current || !identity) return { stBufferDiagnostics: null };
+      return current.projectSession === identity.projectSession &&
+        current.compilerRunId === identity.compilerRunId &&
+        current.fileId === identity.fileId &&
+        current.file === identity.file
+        ? { stBufferDiagnostics: null }
+        : {};
+    }),
 
   navigateToCompilerDiagnostic: async (file, line, column) => {
     if (!file || line < 1) return false;
@@ -720,12 +801,20 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
     if (!node || node.type !== 'file' || node.path !== file) return false;
     await get().openFile(node.id);
     const opened = get().loadedFiles.get(node.id);
-    if (!opened || opened.path !== file || get().activeFileId !== node.id || get().fileTree !== tree || get().compilerRunId !== compilerRunId) return false;
+    if (
+      !opened ||
+      opened.path !== file ||
+      get().activeFileId !== node.id ||
+      get().fileTree !== tree ||
+      get().compilerRunId !== compilerRunId
+    )
+      return false;
     set({ showSettings: false, compilerNavigationTarget: { file, line, column: Math.max(1, column) } });
     return true;
   },
 
-  consumeCompilerNavigationTarget: (target) => set((state) => state.compilerNavigationTarget === target ? { compilerNavigationTarget: null } : {}),
+  consumeCompilerNavigationTarget: (target) =>
+    set((state) => (state.compilerNavigationTarget === target ? { compilerNavigationTarget: null } : {})),
 
   // ==========================================================================
   // UI Actions
@@ -769,4 +858,3 @@ export function initializeTheme(): void {
   const theme = getStoredTheme();
   applyThemeToDOM(theme);
 }
-

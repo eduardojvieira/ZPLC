@@ -35,35 +35,79 @@ const KIT = `${IDE_SRC}/ui/`;
 const LIST_PATH = new URL('./ui-kit-offenders.json', import.meta.url);
 
 export const RULES = [
-  'raw-button', 'raw-input', 'raw-select', 'raw-textarea', 'title-attribute', 'native-dialog',
-  'focus-override', 'small-text', 'unnamed-control', 'unnamed-icon-button', 'stock-palette', 'literal-colour', 'editor-effect',
+  'raw-button',
+  'raw-input',
+  'raw-select',
+  'raw-textarea',
+  'title-attribute',
+  'native-dialog',
+  'focus-override',
+  'small-text',
+  'unnamed-control',
+  'unnamed-icon-button',
+  'stock-palette',
+  'literal-colour',
+  'editor-effect',
 ] as const;
 export type Rule = (typeof RULES)[number];
 
 export const REQUIREMENT: Record<Rule, string> = {
-  'raw-button': 'UX-002', 'raw-input': 'UX-002', 'raw-select': 'UX-002', 'raw-textarea': 'UX-002', 'title-attribute': 'UX-002',
-  'native-dialog': 'UX-002', 'focus-override': 'UX-005', 'small-text': 'UX-006', 'unnamed-control': 'UX-026', 'unnamed-icon-button': 'UX-026',
-  'stock-palette': 'UX-002', 'literal-colour': 'UX-002', 'editor-effect': 'UX-010',
+  'raw-button': 'UX-002',
+  'raw-input': 'UX-002',
+  'raw-select': 'UX-002',
+  'raw-textarea': 'UX-002',
+  'title-attribute': 'UX-002',
+  'native-dialog': 'UX-002',
+  'focus-override': 'UX-005',
+  'small-text': 'UX-006',
+  'unnamed-control': 'UX-026',
+  'unnamed-icon-button': 'UX-026',
+  'stock-palette': 'UX-002',
+  'literal-colour': 'UX-002',
+  'editor-effect': 'UX-010',
 };
 
-export interface SourceFile { path: string; text: string }
-export interface Violation { file: string; rule: Rule; line: number; snippet: string }
-export interface Offender { file: string; rule: Rule; count: number; requirement: string; added: string; reason: string }
+export interface SourceFile {
+  path: string;
+  text: string;
+}
+export interface Violation {
+  file: string;
+  rule: Rule;
+  line: number;
+  snippet: string;
+}
+export interface Offender {
+  file: string;
+  rule: Rule;
+  count: number;
+  requirement: string;
+  added: string;
+  reason: string;
+}
 
 /** A source the guard reads: a TypeScript or CSS file of the application that is not the kit, a test or a declaration. */
 export const isGuarded = (path: string): boolean =>
-  path.startsWith(`${IDE_SRC}/`) && !path.startsWith(KIT) && /\.(?:tsx|css)$/.test(path)
-  && !/\.test\.tsx?$/.test(path) && !path.endsWith('.generated.css');
+  path.startsWith(`${IDE_SRC}/`) &&
+  !path.startsWith(KIT) &&
+  /\.(?:tsx|css)$/.test(path) &&
+  !/\.test\.tsx?$/.test(path) &&
+  !path.endsWith('.generated.css');
 
 const RAW: Record<string, Rule> = { button: 'raw-button', input: 'raw-input', select: 'raw-select', textarea: 'raw-textarea' };
 const KIT_FIELDS = new Set(['TextField', 'NumberField', 'Textarea', 'Select']);
-const FOCUS_UTILITY = new RegExp(String.raw`(?:^|[\s'"\`:])(?:focus|focus-visible|focus-within):(?:outline-(?:none|hidden|\d|\[|offset|white|black|[a-z]+-\d)|` + String.raw`ring(?:-\d|-\[|-offset|-[a-z]+-\d|\s|$|['"\`]))`);
+const FOCUS_UTILITY = new RegExp(
+  String.raw`(?:^|[\s'"\`:])(?:focus|focus-visible|focus-within):(?:outline-(?:none|hidden|\d|\[|offset|white|black|[a-z]+-\d)|` +
+    String.raw`ring(?:-\d|-\[|-offset|-[a-z]+-\d|\s|$|['"\`]))`,
+);
 const SMALL_TEXT = /\btext-\[(\d+(?:\.\d+)?)px\]/g;
-const STOCK_HUES = 'slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose';
+const STOCK_HUES =
+  'slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose';
 const UTILITY = 'bg|text|border|ring|outline|shadow|from|via|to|fill|stroke|divide|decoration|accent|caret|placeholder';
 const STOCK_PALETTE = new RegExp(`(?<![\\w-])(?:${UTILITY})-(?:(?:${STOCK_HUES})-\\d{2,3}|white|black)(?![\\w-])`, 'g');
 const LITERAL_COLOUR = /(?<![\w&])#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3})(?![\w-])|\b(?:rgba?|hsla?)\(/g;
-const EDITOR_EFFECT = /(?<![\w-])(?:animate-(?:pulse|ping|bounce|spin)|drop-shadow(?:-[\w[\]#().]+)?|shadow(?:-[a-z0-9]+)?|motion-safe:animate-\w+)(?![\w-])/g;
+const EDITOR_EFFECT =
+  /(?<![\w-])(?:animate-(?:pulse|ping|bounce|spin)|drop-shadow(?:-[\w[\]#().]+)?|shadow(?:-[a-z0-9]+)?|motion-safe:animate-\w+)(?![\w-])/g;
 const LIVE_PANELS = ['ControllerView', 'DebugWatchPanel', 'NotificationsList'].map((name) => `${IDE_SRC}/components/${name}.tsx`);
 const isEditorSource = (path: string): boolean => path.startsWith(`${IDE_SRC}/editors/`) || LIVE_PANELS.includes(path);
 const MIN_FONT_PX = 11;
@@ -73,10 +117,13 @@ function jsxName(node: ts.JsxOpeningLikeElement): string {
 }
 
 function attributeNamed(node: ts.JsxOpeningLikeElement, name: string): ts.JsxAttribute | undefined {
-  return node.attributes.properties.find((property): property is ts.JsxAttribute => ts.isJsxAttribute(property) && property.name.getText() === name);
+  return node.attributes.properties.find(
+    (property): property is ts.JsxAttribute => ts.isJsxAttribute(property) && property.name.getText() === name,
+  );
 }
 
-const hasSpread = (node: ts.JsxOpeningLikeElement): boolean => node.attributes.properties.some((property) => ts.isJsxSpreadAttribute(property));
+const hasSpread = (node: ts.JsxOpeningLikeElement): boolean =>
+  node.attributes.properties.some((property) => ts.isJsxSpreadAttribute(property));
 
 /** The text a string-valued attribute holds, or the source of its expression. */
 function attributeText(attribute: ts.JsxAttribute | undefined): string | undefined {
@@ -103,9 +150,11 @@ export function violationsOf(file: SourceFile): Violation[] {
     const uncommented = file.text.replace(/\/\*[\s\S]*?\*\//g, (comment) => comment.replace(/[^\n]/g, ' '));
     uncommented.split('\n').forEach((line, index) => {
       for (const [, size] of line.matchAll(/font-size:\s*(\d+(?:\.\d+)?)px/g)) {
-        if (Number.parseFloat(size) < MIN_FONT_PX) found.push({ file: file.path, rule: 'small-text', line: index + 1, snippet: line.trim().slice(0, 80) });
+        if (Number.parseFloat(size) < MIN_FONT_PX)
+          found.push({ file: file.path, rule: 'small-text', line: index + 1, snippet: line.trim().slice(0, 80) });
       }
-      for (const _match of line.matchAll(LITERAL_COLOUR)) found.push({ file: file.path, rule: 'literal-colour', line: index + 1, snippet: line.trim().slice(0, 80) });
+      for (const _match of line.matchAll(LITERAL_COLOUR))
+        found.push({ file: file.path, rule: 'literal-colour', line: index + 1, snippet: line.trim().slice(0, 80) });
     });
     return found;
   }
@@ -113,7 +162,12 @@ export function violationsOf(file: SourceFile): Violation[] {
   const source = ts.createSourceFile(file.path, file.text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const found: Violation[] = [];
   const add = (node: ts.Node, rule: Rule): void => {
-    found.push({ file: file.path, rule, line: source.getLineAndCharacterOfPosition(node.getStart()).line + 1, snippet: node.getText().replace(/\s+/g, ' ').slice(0, 80) });
+    found.push({
+      file: file.path,
+      rule,
+      line: source.getLineAndCharacterOfPosition(node.getStart()).line + 1,
+      snippet: node.getText().replace(/\s+/g, ' ').slice(0, 80),
+    });
   };
 
   // `htmlFor` expressions of the file, to recognise a control whose label is another element's `htmlFor={id}`.
@@ -136,30 +190,58 @@ export function violationsOf(file: SourceFile): Violation[] {
       if (intrinsic && RAW[name]) {
         add(opening, RAW[name]);
         if (name === 'button') {
-          const named = attributeNamed(opening, 'aria-label') || attributeNamed(opening, 'aria-labelledby') || attributeNamed(opening, 'title') || hasSpread(opening);
+          const named =
+            attributeNamed(opening, 'aria-label') ||
+            attributeNamed(opening, 'aria-labelledby') ||
+            attributeNamed(opening, 'title') ||
+            hasSpread(opening);
           if (!named && !hasContent(node as ts.JsxElement)) add(opening, 'unnamed-icon-button');
         } else {
           const type = attributeText(attributeNamed(opening, 'type'));
           const id = attributeText(attributeNamed(opening, 'id'));
-          const named = type === 'hidden' || attributeNamed(opening, 'aria-label') || attributeNamed(opening, 'aria-labelledby')
-            || ancestors.includes('label') || ancestors.includes('Field') || (id !== undefined && labelledIds.has(id)) || hasSpread(opening);
+          const named =
+            type === 'hidden' ||
+            attributeNamed(opening, 'aria-label') ||
+            attributeNamed(opening, 'aria-labelledby') ||
+            ancestors.includes('label') ||
+            ancestors.includes('Field') ||
+            (id !== undefined && labelledIds.has(id)) ||
+            hasSpread(opening);
           if (!named) add(opening, 'unnamed-control');
         }
       }
       if (intrinsic && name !== 'svg' && attributeNamed(opening, 'title')) add(attributeNamed(opening, 'title')!, 'title-attribute');
-      if (KIT_FIELDS.has(name) && !attributeNamed(opening, 'label') && !attributeNamed(opening, 'aria-label') && !attributeNamed(opening, 'aria-labelledby') && !ancestors.includes('Field') && !hasSpread(opening)) {
+      if (
+        KIT_FIELDS.has(name) &&
+        !attributeNamed(opening, 'label') &&
+        !attributeNamed(opening, 'aria-label') &&
+        !attributeNamed(opening, 'aria-labelledby') &&
+        !ancestors.includes('Field') &&
+        !hasSpread(opening)
+      ) {
         add(opening, 'unnamed-control');
       }
-      if ((name === 'Checkbox' || name === 'Switch') && !attributeNamed(opening, 'label') && !hasSpread(opening)) add(opening, 'unnamed-control');
+      if ((name === 'Checkbox' || name === 'Switch') && !attributeNamed(opening, 'label') && !hasSpread(opening))
+        add(opening, 'unnamed-control');
       if (name === 'IconButton' && !attributeNamed(opening, 'label') && !hasSpread(opening)) add(opening, 'unnamed-icon-button');
       nextAncestors = [...ancestors, name];
     }
     if (ts.isCallExpression(node)) {
       const callee = node.expression;
-      const global = ts.isIdentifier(callee) ? callee.text : ts.isPropertyAccessExpression(callee) && ['window', 'globalThis'].includes(callee.expression.getText()) ? callee.name.text : undefined;
+      const global = ts.isIdentifier(callee)
+        ? callee.text
+        : ts.isPropertyAccessExpression(callee) && ['window', 'globalThis'].includes(callee.expression.getText())
+          ? callee.name.text
+          : undefined;
       if (global === 'confirm' || global === 'alert' || global === 'prompt') add(node, 'native-dialog');
     }
-    if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateHead(node) || ts.isTemplateMiddle(node) || ts.isTemplateTail(node)) {
+    if (
+      ts.isStringLiteral(node) ||
+      ts.isNoSubstitutionTemplateLiteral(node) ||
+      ts.isTemplateHead(node) ||
+      ts.isTemplateMiddle(node) ||
+      ts.isTemplateTail(node)
+    ) {
       const text = node.text;
       if (FOCUS_UTILITY.test(text) || /(?:^|\s)outline-none(?:\s|$)/.test(text)) add(node, 'focus-override');
       for (const [, size] of text.matchAll(SMALL_TEXT)) if (Number.parseFloat(size) < MIN_FONT_PX) add(node, 'small-text');
@@ -172,14 +254,22 @@ export function violationsOf(file: SourceFile): Violation[] {
         }
       }
     }
-    if (ts.isPropertyAssignment(node) && node.name.getText() === 'fontSize' && ts.isNumericLiteral(node.initializer) && Number(node.initializer.text) < MIN_FONT_PX) add(node, 'small-text');
+    if (
+      ts.isPropertyAssignment(node) &&
+      node.name.getText() === 'fontSize' &&
+      ts.isNumericLiteral(node.initializer) &&
+      Number(node.initializer.text) < MIN_FONT_PX
+    )
+      add(node, 'small-text');
     ts.forEachChild(node, (child) => visit(child, nextAncestors));
   };
   visit(source, []);
   return found;
 }
 
-export interface GuardOptions { offenders: Offender[] }
+export interface GuardOptions {
+  offenders: Offender[];
+}
 
 const key = (file: string, rule: string): string => `${file}\u0000${rule}`;
 
@@ -188,18 +278,35 @@ export function checkKit(files: readonly SourceFile[], options: GuardOptions): s
   const counts = new Map<string, number>();
   const listed = new Map(options.offenders.map((entry) => [key(entry.file, entry.rule), entry] as const));
   for (const file of files.filter((item) => isGuarded(item.path))) {
-    for (const violation of violationsOf(file)) counts.set(key(file.path, violation.rule), (counts.get(key(file.path, violation.rule)) ?? 0) + 1);
+    for (const violation of violationsOf(file))
+      counts.set(key(file.path, violation.rule), (counts.get(key(file.path, violation.rule)) ?? 0) + 1);
   }
   for (const [id, count] of [...counts].sort(([left], [right]) => left.localeCompare(right))) {
     const [file, rule] = id.split('\u0000') as [string, Rule];
     const entry = listed.get(id);
     const requirement = REQUIREMENT[rule];
-    if (!entry) problems.push(`${requirement}: ${file} has ${count} ${rule} violation${count === 1 ? '' : 's'}; use the kit (src/ui) instead; the list of offenders can only shrink`);
-    else if (count > entry.count) problems.push(`${requirement}: ${file} grew from ${entry.count} to ${count} ${rule} violations; a file on tools/ci/ui-kit-offenders.json can only shrink`);
-    else if (count < entry.count) problems.push(`${requirement}: ${file} now has ${count} ${rule} violations, recorded ${entry.count}; lower the entry (bun tools/ci/ui-kit-guard.ts --write)`);
+    if (!entry)
+      problems.push(
+        `${requirement}: ${file} has ${count} ${rule} violation${count === 1 ? '' : 's'}; use the kit (src/ui) instead; the list of ` +
+          `offenders can only shrink`,
+      );
+    else if (count > entry.count)
+      problems.push(
+        `${requirement}: ${file} grew from ${entry.count} to ${count} ${rule} violations; a file on tools/ci/ui-kit-offenders.json can ` +
+          `only shrink`,
+      );
+    else if (count < entry.count)
+      problems.push(
+        `${requirement}: ${file} now has ${count} ${rule} violations, recorded ${entry.count}; lower the entry (bun ` +
+          `tools/ci/ui-kit-guard.ts --write)`,
+      );
   }
   for (const entry of options.offenders) {
-    if (!counts.has(key(entry.file, entry.rule))) problems.push(`${entry.requirement}: ${entry.file} has no ${entry.rule} violation any more; remove the entry (bun tools/ci/ui-kit-guard.ts --write)`);
+    if (!counts.has(key(entry.file, entry.rule)))
+      problems.push(
+        `${entry.requirement}: ${entry.file} has no ${entry.rule} violation any more; remove the entry (bun tools/ci/ui-kit-guard.ts ` +
+          `--write)`,
+      );
   }
   return problems;
 }
@@ -208,7 +315,8 @@ export function checkKit(files: readonly SourceFile[], options: GuardOptions): s
 export function ratchetOffenders(files: readonly SourceFile[], offenders: readonly Offender[]): Offender[] {
   const counts = new Map<string, number>();
   for (const file of files.filter((item) => isGuarded(item.path))) {
-    for (const violation of violationsOf(file)) counts.set(key(file.path, violation.rule), (counts.get(key(file.path, violation.rule)) ?? 0) + 1);
+    for (const violation of violationsOf(file))
+      counts.set(key(file.path, violation.rule), (counts.get(key(file.path, violation.rule)) ?? 0) + 1);
   }
   return offenders.flatMap((entry) => {
     const count = counts.get(key(entry.file, entry.rule)) ?? 0;
@@ -227,7 +335,7 @@ export function readSources(root: string): SourceFile[] {
 }
 
 export function readOffenders(): Offender[] {
-  return existsSync(LIST_PATH) ? JSON.parse(readFileSync(LIST_PATH, 'utf8')) as Offender[] : [];
+  return existsSync(LIST_PATH) ? (JSON.parse(readFileSync(LIST_PATH, 'utf8')) as Offender[]) : [];
 }
 
 export function checkRepository(root = resolve(dirname(new URL(import.meta.url).pathname), '../..')): string[] {
@@ -238,33 +346,68 @@ if (import.meta.main) {
   const root = resolve(dirname(new URL(import.meta.url).pathname), '../..');
   const files = readSources(root);
   if (process.argv.includes('--list')) {
-    for (const file of files.filter((item) => isGuarded(item.path))) for (const violation of violationsOf(file)) console.log(`${violation.file}:${violation.line} ${violation.rule} ${violation.snippet}`);
+    for (const file of files.filter((item) => isGuarded(item.path)))
+      for (const violation of violationsOf(file)) console.log(`${violation.file}:${violation.line} ${violation.rule} ${violation.snippet}`);
   }
   if (process.argv.includes('--seed')) {
-    if (readOffenders().length > 0) { console.error('ui-kit-guard: the list exists; it only shrinks (--write)'); process.exit(1); }
+    if (readOffenders().length > 0) {
+      console.error('ui-kit-guard: the list exists; it only shrinks (--write)');
+      process.exit(1);
+    }
     const counts = new Map<string, number>();
-    for (const file of files.filter((item) => isGuarded(item.path))) for (const violation of violationsOf(file)) counts.set(key(file.path, violation.rule), (counts.get(key(file.path, violation.rule)) ?? 0) + 1);
-    const seeded: Offender[] = [...counts].sort(([left], [right]) => left.localeCompare(right)).map(([id, count]) => {
-      const [file, rule] = id.split('\u0000') as [string, Rule];
-      return { file, rule, count, requirement: REQUIREMENT[rule], added: new Date().toISOString().slice(0, 10), reason: 'Not yet moved to the component kit; the surface\'s own work package replaces it.' };
-    });
+    for (const file of files.filter((item) => isGuarded(item.path)))
+      for (const violation of violationsOf(file))
+        counts.set(key(file.path, violation.rule), (counts.get(key(file.path, violation.rule)) ?? 0) + 1);
+    const seeded: Offender[] = [...counts]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([id, count]) => {
+        const [file, rule] = id.split('\u0000') as [string, Rule];
+        return {
+          file,
+          rule,
+          count,
+          requirement: REQUIREMENT[rule],
+          added: new Date().toISOString().slice(0, 10),
+          reason: "Not yet moved to the component kit; the surface's own work package replaces it.",
+        };
+      });
     writeFileSync(LIST_PATH, `${JSON.stringify(seeded, null, 2)}\n`);
   } else if (process.argv.some((argument) => argument.startsWith('--adopt='))) {
     // A rule added after the list was created: pin what the sources hold now for that rule only, once.
-    const adopted = process.argv.find((argument) => argument.startsWith('--adopt='))!.slice('--adopt='.length).split(',') as Rule[];
+    const adopted = process.argv
+      .find((argument) => argument.startsWith('--adopt='))!
+      .slice('--adopt='.length)
+      .split(',') as Rule[];
     const current = readOffenders();
     for (const rule of adopted) {
-      if (!RULES.includes(rule)) { console.error(`ui-kit-guard: ${rule} is not a rule`); process.exit(1); }
-      if (current.some((entry) => entry.rule === rule)) { console.error(`ui-kit-guard: ${rule} is already on the list; it only shrinks (--write)`); process.exit(1); }
+      if (!RULES.includes(rule)) {
+        console.error(`ui-kit-guard: ${rule} is not a rule`);
+        process.exit(1);
+      }
+      if (current.some((entry) => entry.rule === rule)) {
+        console.error(`ui-kit-guard: ${rule} is already on the list; it only shrinks (--write)`);
+        process.exit(1);
+      }
     }
     const counts = new Map<string, number>();
     for (const file of files.filter((item) => isGuarded(item.path))) {
-      for (const violation of violationsOf(file)) if (adopted.includes(violation.rule)) counts.set(key(file.path, violation.rule), (counts.get(key(file.path, violation.rule)) ?? 0) + 1);
+      for (const violation of violationsOf(file))
+        if (adopted.includes(violation.rule))
+          counts.set(key(file.path, violation.rule), (counts.get(key(file.path, violation.rule)) ?? 0) + 1);
     }
-    const added: Offender[] = [...counts].sort(([left], [right]) => left.localeCompare(right)).map(([id, count]) => {
-      const [file, rule] = id.split('\u0000') as [string, Rule];
-      return { file, rule, count, requirement: REQUIREMENT[rule], added: new Date().toISOString().slice(0, 10), reason: 'Not yet moved to the component kit and the tokens; the surface\'s own work package replaces it.' };
-    });
+    const added: Offender[] = [...counts]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([id, count]) => {
+        const [file, rule] = id.split('\u0000') as [string, Rule];
+        return {
+          file,
+          rule,
+          count,
+          requirement: REQUIREMENT[rule],
+          added: new Date().toISOString().slice(0, 10),
+          reason: "Not yet moved to the component kit and the tokens; the surface's own work package replaces it.",
+        };
+      });
     writeFileSync(LIST_PATH, `${JSON.stringify([...current, ...added], null, 2)}\n`);
   } else if (process.argv.includes('--write')) {
     writeFileSync(LIST_PATH, `${JSON.stringify(ratchetOffenders(files, readOffenders()), null, 2)}\n`);

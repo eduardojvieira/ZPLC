@@ -8,8 +8,14 @@ import { RECOVERY_LIMITS, parseRecoveryDiscard, parseRecoveryEntry, parseRecover
 import { projectKey } from './recentProjects';
 
 const directories: string[] = [];
-afterEach(async () => { await Promise.all(directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true }))); });
-async function fixture(): Promise<string> { const directory = await mkdtemp(join(tmpdir(), 'zplc-recovery-')); directories.push(directory); return directory; }
+afterEach(async () => {
+  await Promise.all(directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
+});
+async function fixture(): Promise<string> {
+  const directory = await mkdtemp(join(tmpdir(), 'zplc-recovery-'));
+  directories.push(directory);
+  return directory;
+}
 
 const PROJECT = '/home/ana/plant';
 const projectDirectory = (userData: string, realPath = PROJECT) => join(userData, RECOVERY_DIRECTORY, projectKey(realPath));
@@ -20,24 +26,33 @@ describe('recovery store (IDE-006)', () => {
     await expect(store.list(PROJECT)).resolves.toEqual([]);
   });
 
-  test('keeps the content of a modified file under the user-data directory, named by project and path, with the time it was kept', async () => {
-    const userData = await fixture();
-    const store = createRecoveryStore(userData, () => 1_700_000_000_000);
-    await store.write(PROJECT, 'src/Motor.st', 'PROGRAM Motor\nEND_PROGRAM\n');
-    await expect(store.list(PROJECT)).resolves.toEqual([{ path: 'src/Motor.st', content: 'PROGRAM Motor\nEND_PROGRAM\n', savedAt: 1_700_000_000_000 }]);
-    await expect(store.list('/home/ana/other')).resolves.toEqual([]);
-    const names = await readdir(projectDirectory(userData));
-    expect(names).toHaveLength(1);
-    expect(names[0]).toMatch(/^[0-9a-f]{64}\.json$/);
-    expect(await readFile(join(projectDirectory(userData), names[0]!), 'utf8')).not.toContain('/home/ana'); // the real project path is never stored
-  });
+  test(
+    'keeps the content of a modified file under the user-data directory, named by project and path, with the time it was ' + 'kept',
+    async () => {
+      const userData = await fixture();
+      const store = createRecoveryStore(userData, () => 1_700_000_000_000);
+      await store.write(PROJECT, 'src/Motor.st', 'PROGRAM Motor\nEND_PROGRAM\n');
+      await expect(store.list(PROJECT)).resolves.toEqual([
+        { path: 'src/Motor.st', content: 'PROGRAM Motor\nEND_PROGRAM\n', savedAt: 1_700_000_000_000 },
+      ]);
+      await expect(store.list('/home/ana/other')).resolves.toEqual([]);
+      const names = await readdir(projectDirectory(userData));
+      expect(names).toHaveLength(1);
+      expect(names[0]).toMatch(/^[0-9a-f]{64}\.json$/);
+      // the real project path is never stored
+      expect(await readFile(join(projectDirectory(userData), names[0]!), 'utf8')).not.toContain('/home/ana');
+    },
+  );
 
   test('replaces the entry of a file that is written again, and lists several files by path', async () => {
     const store = createRecoveryStore(await fixture());
     await store.write(PROJECT, 'src/Pump.st', 'one');
     await store.write(PROJECT, 'src/Motor.st', 'a');
     await store.write(PROJECT, 'src/Pump.st', 'two');
-    expect((await store.list(PROJECT)).map((entry) => [entry.path, entry.content])).toEqual([['src/Motor.st', 'a'], ['src/Pump.st', 'two']]);
+    expect((await store.list(PROJECT)).map((entry) => [entry.path, entry.content])).toEqual([
+      ['src/Motor.st', 'a'],
+      ['src/Pump.st', 'two'],
+    ]);
   });
 
   test('the last of several concurrent writes wins and no temporary file is left', async () => {
@@ -64,7 +79,8 @@ describe('recovery store (IDE-006)', () => {
   test('refuses a path or a content it cannot keep, and writes nothing', async () => {
     const userData = await fixture();
     const store = createRecoveryStore(userData);
-    for (const bad of ['../x.st', '/etc/passwd', '', 'a//b.st', 'a\\b.st']) await expect(store.write(PROJECT, bad, 'x')).rejects.toThrow('Invalid recovery entry');
+    for (const bad of ['../x.st', '/etc/passwd', '', 'a//b.st', 'a\\b.st'])
+      await expect(store.write(PROJECT, bad, 'x')).rejects.toThrow('Invalid recovery entry');
     await expect(store.write(PROJECT, 'a.st', 'x'.repeat(RECOVERY_LIMITS.maxContentChars + 1))).rejects.toThrow('Invalid recovery entry');
     await expect(readdir(join(userData, RECOVERY_DIRECTORY))).rejects.toThrow();
   });
@@ -75,14 +91,18 @@ describe('recovery store (IDE-006)', () => {
     await expect(store.write(PROJECT, 'src/Extra.st', 'x')).rejects.toThrow('Recovery store full');
     await store.write(PROJECT, 'src/F0.st', 'updated');
     expect((await store.list(PROJECT)).find((entry) => entry.path === 'src/F0.st')?.content).toBe('updated');
-  }, 60_000); // It writes the store to its limit, one file at a time: a loaded disk outgrows the 5 s default, which is not what it measures.
+    // It writes the store to its limit, one file at a time: a loaded disk outgrows the 5 s default, which is not what it measures.
+  }, 60_000);
 
   test('skips a file that is not exactly an entry and still lists the others', async () => {
     const userData = await fixture();
     const store = createRecoveryStore(userData);
     await store.write(PROJECT, 'src/Good.st', 'good');
     await writeFile(join(projectDirectory(userData), `${'0'.repeat(64)}.json`), '{ not json');
-    await writeFile(join(projectDirectory(userData), `${'1'.repeat(64)}.json`), JSON.stringify({ path: '../escape.st', content: 'x', savedAt: 1 }));
+    await writeFile(
+      join(projectDirectory(userData), `${'1'.repeat(64)}.json`),
+      JSON.stringify({ path: '../escape.st', content: 'x', savedAt: 1 }),
+    );
     await writeFile(join(projectDirectory(userData), 'notes.txt'), 'foreign');
     expect((await store.list(PROJECT)).map((entry) => entry.path)).toEqual(['src/Good.st']);
   });
@@ -127,7 +147,16 @@ describe('recovery messages (IDE-006)', () => {
     expect(parseRecoveryList({ rootId: 'r' })).toEqual({ rootId: 'r' });
     expect(parseRecoveryDiscard({ rootId: 'r', path: null })).toEqual({ rootId: 'r', path: null });
     expect(parseRecoveryDiscard({ rootId: 'r', path: 'src/A.st' })).toEqual({ rootId: 'r', path: 'src/A.st' });
-    for (const bad of [null, 'x', [], { rootId: 'r' }, { rootId: 'r', path: 'a.st', content: 'x', extra: 1 }, { rootId: '', path: 'a.st', content: 'x' }, { rootId: 'r', path: '../a.st', content: 'x' }, { rootId: 'r', path: 'a.st', content: 1 }]) {
+    for (const bad of [
+      null,
+      'x',
+      [],
+      { rootId: 'r' },
+      { rootId: 'r', path: 'a.st', content: 'x', extra: 1 },
+      { rootId: '', path: 'a.st', content: 'x' },
+      { rootId: 'r', path: '../a.st', content: 'x' },
+      { rootId: 'r', path: 'a.st', content: 1 },
+    ]) {
       expect(parseRecoveryWrite(bad)).toBeNull();
     }
     expect(parseRecoveryList({ rootId: 'r', path: 'a.st' })).toBeNull();

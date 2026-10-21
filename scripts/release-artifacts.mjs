@@ -5,17 +5,39 @@ import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // Installers, the bill of materials and the firmware images (REL-022, `zplc-runtime-<version>-<board>.<ext>` and the
-// `zplc-runtime-<version>.manifest.json` that lists them) are recognised by their extension; the standalone CLI and MCP executables (REL-026) have none on Linux and macOS, so
+// `zplc-runtime-<version>.manifest.json` that lists them) are recognised by their extension; the standalone CLI and MCP executables
+// (REL-026) have none on Linux and macOS, so
 // they are recognised by the whole scheme `<tool>-<version>-<os>-<arch>[.exe]` of scripts/release/binaries.ts.
-const ASSET_EXTENSIONS = ['.dmg', '.zip', '.exe', '.AppImage', '.deb', '.rpm', '.spdx.json', '.cdx.json', '.manifest.json', '.uf2', '.bin', '.elf'];
-const EXECUTABLE_NAME = /^zplc-(?:cli|mcp)-(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?-(?:linux|mac|win)-(?:x64|arm64)(?:\.exe)?$/;
-const SEMVER = new RegExp(String.raw`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|` + String.raw`[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*))?$`);
+const ASSET_EXTENSIONS = [
+  '.dmg',
+  '.zip',
+  '.exe',
+  '.AppImage',
+  '.deb',
+  '.rpm',
+  '.spdx.json',
+  '.cdx.json',
+  '.manifest.json',
+  '.uf2',
+  '.bin',
+  '.elf',
+];
+const EXECUTABLE_NAME =
+  /^zplc-(?:cli|mcp)-(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?-(?:linux|mac|win)-(?:x64|arm64)(?:\.exe)?$/;
+const SEMVER = new RegExp(
+  String.raw`^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|` +
+    String.raw`[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*))?$`,
+);
 const COMMIT_SHA = /^[a-f0-9]{40}$/;
 const SHA256 = /^[a-f0-9]{64}$/;
 const CONTROL = /[\u0000-\u001f\u007f]/;
 
-function fail(message) { throw new Error(`Release integrity bundle: ${message}`); }
-function compareName(left, right) { return left < right ? -1 : left > right ? 1 : 0; }
+function fail(message) {
+  throw new Error(`Release integrity bundle: ${message}`);
+}
+function compareName(left, right) {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
 
 function validateIdentity({ version, tag, commitSha }) {
   if (typeof version !== 'string' || !SEMVER.test(version)) fail('version must be canonical semver');
@@ -32,13 +54,14 @@ async function collectAssets(inputDir, relative = '') {
     const details = await lstat(absolutePath);
     if (details.isSymbolicLink()) fail(`symlink is not allowed: ${path}`);
     if (details.isDirectory()) {
-      assets.push(...await collectAssets(inputDir, path));
+      assets.push(...(await collectAssets(inputDir, path)));
       continue;
     }
     if (!details.isFile()) fail(`non-regular file is not allowed: ${path}`);
     const name = basename(path);
     if (CONTROL.test(name)) fail(`asset basename contains a control character: ${JSON.stringify(name)}`);
-    if (!ASSET_EXTENSIONS.some((extension) => name.endsWith(extension)) && !EXECUTABLE_NAME.test(name)) fail(`unexpected asset extension: ${path}`);
+    if (!ASSET_EXTENSIONS.some((extension) => name.endsWith(extension)) && !EXECUTABLE_NAME.test(name))
+      fail(`unexpected asset extension: ${path}`);
     assets.push({ absolutePath, name });
   }
   return assets;
@@ -112,7 +135,10 @@ export function mergeChecksums(texts) {
     }
   }
   if (hashes.size === 0) fail('no checksum lines to merge');
-  return [...hashes].sort(([left], [right]) => compareName(left, right)).map(([name, hash]) => `${hash}  ${name}\n`).join('');
+  return [...hashes]
+    .sort(([left], [right]) => compareName(left, right))
+    .map(([name, hash]) => `${hash}  ${name}\n`)
+    .join('');
 }
 
 function parseArguments(argv) {
@@ -120,24 +146,30 @@ function parseArguments(argv) {
   for (let index = 0; index < argv.length; index += 2) {
     const flag = argv[index];
     const value = argv[index + 1];
-    if (!['--input-dir', '--output-dir', '--version', '--tag', '--commit-sha'].includes(flag) || value === undefined || values.has(flag)) fail('expected each explicit release bundle argument once');
+    if (!['--input-dir', '--output-dir', '--version', '--tag', '--commit-sha'].includes(flag) || value === undefined || values.has(flag))
+      fail('expected each explicit release bundle argument once');
     values.set(flag, value);
   }
   if (argv.length !== 10) fail('expected --input-dir --output-dir --version --tag --commit-sha');
   return {
-    inputDir: values.get('--input-dir'), outputDir: values.get('--output-dir'), version: values.get('--version'), tag: values.get('--tag'), commitSha: values.get('--commit-sha'),
+    inputDir: values.get('--input-dir'),
+    outputDir: values.get('--output-dir'),
+    version: values.get('--version'),
+    tag: values.get('--tag'),
+    commitSha: values.get('--commit-sha'),
   };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const [mode, output, ...inputs] = process.argv.slice(2);
-  const done = mode === '--merge'
-    ? (async () => {
-      if (!output || inputs.length === 0) fail('expected --merge <output> <checksum file>...');
-      const texts = await Promise.all(inputs.map((path) => readFile(path, 'utf8')));
-      await writeFile(output, mergeChecksums(texts));
-    })()
-    : createReleaseIntegrityBundle(parseArguments(process.argv.slice(2)));
+  const done =
+    mode === '--merge'
+      ? (async () => {
+          if (!output || inputs.length === 0) fail('expected --merge <output> <checksum file>...');
+          const texts = await Promise.all(inputs.map((path) => readFile(path, 'utf8')));
+          await writeFile(output, mergeChecksums(texts));
+        })()
+      : createReleaseIntegrityBundle(parseArguments(process.argv.slice(2)));
   done.catch((error) => {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;

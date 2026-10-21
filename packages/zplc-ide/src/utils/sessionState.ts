@@ -6,7 +6,11 @@
 import { SESSION_LIMITS, isSessionPath, type SessionPanels, type SessionState, type SessionTab } from '../../electron/sessionStoreProtocol';
 
 /** Where the cursor and the scroll of one editor were, as Monaco reports them. */
-export interface ViewState { line: number; column: number; scrollTop: number }
+export interface ViewState {
+  line: number;
+  column: number;
+  scrollTop: number;
+}
 /** The split of the workbench in percent; the same as the panel defaults in App.tsx. */
 export type WorkspaceLayout = { editor: number; console: number };
 export const DEFAULT_WORKSPACE_LAYOUT: WorkspaceLayout = { editor: 72, console: 28 };
@@ -15,20 +19,26 @@ export const DEFAULT_WORKSPACE_LAYOUT: WorkspaceLayout = { editor: 72, console: 
 const isUsableLayout = (panels: Pick<SessionPanels, 'editor' | 'console'>): boolean =>
   panels.editor >= 30 && panels.console >= 5 && panels.console <= 65 && Math.abs(panels.editor + panels.console - 100) <= 1;
 
-/** The split to remember from the sizes the panel library reports, or null when the lower panel is collapsed or the group is not the workbench. */
+/**
+ * The split to remember from the sizes the panel library reports, or null when the lower panel is collapsed or the group is not the
+ * workbench.
+ */
 export function workspaceLayoutFrom(sizes: Record<string, number>): WorkspaceLayout | null {
   const { editor, console: lower } = sizes;
   if (typeof editor !== 'number' || typeof lower !== 'number' || !Number.isFinite(editor) || !Number.isFinite(lower)) return null;
   return isUsableLayout({ editor, console: lower }) ? { editor, console: lower } : null;
 }
 
-/** The project file behind a Monaco model: `uri.path` is `/<project session>/<file id>` (`editorModelPath`) and a file id is `file:<path>`. */
+/**
+ * The project file behind a Monaco model: `uri.path` is `/<project session>/<file id>` (`editorModelPath`) and a file id is `file:<path>`.
+ */
 export function projectPathFromModelPath(modelPath: string): string | null {
   const match = /^\/\d+\/file:(.+)$/.exec(modelPath);
   return match ? match[1]! : null;
 }
 
-const whole = (value: number, min: number, max: number): number => (Number.isFinite(value) ? Math.min(max, Math.max(min, Math.round(value))) : min);
+const whole = (value: number, min: number, max: number): number =>
+  Number.isFinite(value) ? Math.min(max, Math.max(min, Math.round(value))) : min;
 
 export interface SessionInput {
   /** File ids of the open tabs, in order. */
@@ -48,7 +58,8 @@ export function captureSession(input: SessionInput): SessionState {
   let activePath: string | null = null;
   for (const id of input.openTabs) {
     const path = input.files.get(id)?.path;
-    if (path === undefined || !isSessionPath(path) || tabs.length >= SESSION_LIMITS.maxTabs || tabs.some((tab) => tab.path === path)) continue;
+    if (path === undefined || !isSessionPath(path) || tabs.length >= SESSION_LIMITS.maxTabs || tabs.some((tab) => tab.path === path))
+      continue;
     const view = input.viewStates.get(path);
     tabs.push({
       path,
@@ -73,11 +84,13 @@ export interface RestorePlan {
   consoleCollapsed: boolean | null;
 }
 
-/** What to restore from a saved session. `exists` says whether a project file is still there; a tab whose file is gone is dropped silently. */
+/**
+ * What to restore from a saved session. `exists` says whether a project file is still there; a tab whose file is gone is dropped silently.
+ */
 export function planRestore(state: SessionState, exists: (path: string) => boolean): RestorePlan {
   const kept = state.tabs.filter((tab) => exists(tab.path));
   const tabPaths = kept.map((tab) => tab.path);
-  const activePath = state.activePath !== null && tabPaths.includes(state.activePath) ? state.activePath : tabPaths.at(-1) ?? null;
+  const activePath = state.activePath !== null && tabPaths.includes(state.activePath) ? state.activePath : (tabPaths.at(-1) ?? null);
   return {
     tabPaths,
     activePath,

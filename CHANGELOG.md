@@ -58,6 +58,7 @@ and version when the release is cut (see `RELEASING.md`).
   `tools/contract/safe_cross.py` has the C loader read what the compiler writes. The hardware
   state of a pin between power-on and the first instruction of the firmware is the part's own and
   is not claimed.
+
 ### What changed for you
 
 - **ZPLC saves your work and tells you what happened.** It keeps a copy of every
@@ -93,7 +94,7 @@ and version when the release is cut (see `RELEASING.md`).
   broker until an operator sets one, TLS verifies the certificate, no command prints
   a credential, `zplc config save` writes what it says, and no message from Modbus,
   MQTT or a cloud service can start or stop the program, set a force or load a program.
-- **New documentation.** An install page, the tutorial *Blink without hardware* with
+- **New documentation.** An install page, the tutorial _Blink without hardware_ with
   real screenshots, how-to guides for Modbus, MQTT and Sparkplug B, the cloud blocks,
   mapping I/O, forcing values, retained values, scenario tests, project archives,
   the command line, debugging, AI and MCP, porting to a board and troubleshooting,
@@ -315,7 +316,7 @@ and version when the release is cut (see `RELEASING.md`).
   `STATUS` word, and a test holds a request in the client while it resets one
   block and starts another.
 - The release pipeline can be rehearsed and says what it did (REL-030, REL-027,
-  REL-017). **Release Build** has a *Rehearsal* input that is on by default: it
+  REL-017). **Release Build** has a _Rehearsal_ input that is on by default: it
   runs every job, renders the notes and one `SHA256SUMS` as an artifact, and
   makes no draft, upload or attestation. A run publishes only for the push of
   the exact version tag, or a manual run on that tag with the rehearsal
@@ -349,7 +350,7 @@ and version when the release is cut (see `RELEASING.md`).
   of RAM. A test drives the real shell of `firmware/app` on `native_sim`.
 - The CLI and the MCP server are released as standalone executables (REL-026,
   IDE-026). `scripts/release/binaries.ts` compiles both with `bun build
-  --compile` for Linux, macOS and Windows on x64 and arm64 and names them
+--compile` for Linux, macOS and Windows on x64 and arm64 and names them
   `<tool>-<version>-<os>-<arch>[.exe]`; each platform job builds and smokes them
   on its own architecture (`--version`, a compile of a bundled project, the list
   of MCP tools). Each is about 98 MB, the size of the embedded runtime.
@@ -395,7 +396,7 @@ and version when the release is cut (see `RELEASING.md`).
   fails it. The image sizes are what the channels need, with Kconfig
   overrides and a build assertion; the memory behind the images stays the 4 KB
   of the instruction set (shrinking it is a contract change). `sys info
-  --json` reports the identity of the description (`io`). The native_sim suite
+--json` reports the identity of the description (`io`). The native_sim suite
   `io_table` runs the same test over two descriptions, one with three outputs
   and an input more, and a host test covers the accessors every port shares.
   `tools/ci/check_hal_contract.py` fails when a HAL function lacks an
@@ -700,8 +701,7 @@ and version when the release is cut (see `RELEASING.md`).
   are blocked by the production policy, a permission other than serial is
   refused, `window.open`, a `_blank` link and navigation to another origin are
   refused, and a project operation given `..`, an absolute path, or a link that
-  leaves the project is refused. The probes run on the development host (journey
-  29) and, with `ZPLC_PACKAGED_DIST`, on the packaged application. They found that
+  leaves the project is refused. The probes run on the development host (journey 29) and, with `ZPLC_PACKAGED_DIST`, on the packaged application. They found that
   a navigation the window refused still revoked its authority (its project folder
   and its IPC) until a reload; only a navigation that can replace the document
   revokes it now.
@@ -801,8 +801,8 @@ and version when the release is cut (see `RELEASING.md`).
   Zephyr library.
 - The shell and the cloud clients of the firmware application parse numbers
   strictly (`firmware/app/src/zplc_parse.h`, tested on the host). `zplc config set
-  modbus_tcp_port 70000` is refused instead of storing 4464, and so is `wifi_security
-  256` (it stored 0, an open network), `mqtt_port abc` (it stored 0) and `12abc`; a
+modbus_tcp_port 70000` is refused instead of storing 4464, and so is `wifi_security
+256` (it stored 0, an open network), `mqtt_port abc` (it stored 0) and `12abc`; a
   value above what the field holds, or above the last enumerator of an enumeration,
   is an error and nothing is stored. The same holds for the breakpoint address of
   `dbg bp add` and `dbg bp remove` (65536 was stored as 0), the offset of `mem dump`,
@@ -1176,7 +1176,7 @@ and version when the release is cut (see `RELEASING.md`).
   bundled `kitchen_sink` fixture keeps its call, which exercises the function,
   and already selects no warnings.
 - **Contract change, draft counter 4 -> 5.** A STRING argument of a communication
-  block reaches the handler (COM-005). The compiler stored the *address* of
+  block reaches the handler (COM-005). The compiler stored the _address_ of
   the literal into the first four bytes of the member, so the handler of
   `MQTT_PUBLISH` read an empty topic and an empty payload, and every other
   STRING input (`HOST`, `DEVICE_ID`, `TOPIC`, `EVENT_TYPE`, `TEMPLATE_NAME`)
@@ -1241,7 +1241,7 @@ and version when the release is cut (see `RELEASING.md`).
   timeout (`STATUS` 2) after the configured time. The frames are built and read
   by `zplc_modbus_tcp.c`, which the server of the product already used, so the
   host tests run the client's requests through the server. `firmware/tests/
-  modbus_client_tcp` runs the client against a Modbus TCP server written for the
+modbus_client_tcp` runs the client against a Modbus TCP server written for the
   test on the loopback interface of native_sim. No serial device is used by any
   of it: the RTU path is checked at the interface parameters, and the
   hardware record of an RTU exchange on the Pico is not made.

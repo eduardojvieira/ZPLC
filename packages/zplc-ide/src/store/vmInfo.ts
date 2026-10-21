@@ -12,7 +12,17 @@ const listeners = new Set<() => void>();
 
 /** The same values again are not a change: nothing is notified. */
 export function publishVmInfo(next: VMInfo | null): void {
-  if (next === info || (next && info && next.pc === info.pc && next.sp === info.sp && next.halted === info.halted && next.cycles === info.cycles && next.error === info.error)) return;
+  if (
+    next === info ||
+    (next &&
+      info &&
+      next.pc === info.pc &&
+      next.sp === info.sp &&
+      next.halted === info.halted &&
+      next.cycles === info.cycles &&
+      next.error === info.error)
+  )
+    return;
   info = next;
   for (const listener of listeners) listener();
 }
@@ -21,7 +31,9 @@ export const vmInfoNow = (): VMInfo | null => info;
 
 export const subscribeVmInfo = (listener: () => void): (() => void) => {
   listeners.add(listener);
-  return () => { listeners.delete(listener); };
+  return () => {
+    listeners.delete(listener);
+  };
 };
 
 export const useVmInfo = (): VMInfo | null => useSyncExternalStore(subscribeVmInfo, vmInfoNow);

@@ -6,7 +6,17 @@ import type { StateCreator } from 'zustand';
 import { SHOW_OUTPUT } from './consoleEntries';
 import type { PLCLanguage, ProjectFileWithHandle } from '../types';
 import { createEmptyFileContent } from '../types';
-import { readDirectoryRecursive, loadFileFromTree, writeFileContent, toggleDirectoryExpanded, findFileInTree, findSameSourceName, fileNameForNewFile, fileTreeFileId, FileNameTakenError } from '../utils/fileSystem';
+import {
+  readDirectoryRecursive,
+  loadFileFromTree,
+  writeFileContent,
+  toggleDirectoryExpanded,
+  findFileInTree,
+  findSameSourceName,
+  fileNameForNewFile,
+  fileTreeFileId,
+  FileNameTakenError,
+} from '../utils/fileSystem';
 import { createFolder, deleteFolder, duplicateEntry, moveEntry, renameEntry } from './projectTreeActions';
 import { preserveExpansion } from '../project/treeOperations';
 import type { IDEState } from './ideStoreTypes';
@@ -18,7 +28,30 @@ let fileTreeRefreshIntent = 0;
 
 const fileCreationReservations = new Set<string>();
 
-export const createFileActions: StateCreator<IDEState, [], [], Pick<IDEState, 'toggleDirectory' | 'refreshFileTree' | 'openFile' | 'saveFile' | 'saveAllFiles' | 'createFile' | 'deleteFile' | 'createFolder' | 'renameEntry' | 'moveEntry' | 'duplicateEntry' | 'deleteFolder' | 'setActiveFile' | 'updateFileContent' | 'closeTab' | 'discardFile'>> = (set, get) => ({
+export const createFileActions: StateCreator<
+  IDEState,
+  [],
+  [],
+  Pick<
+    IDEState,
+    | 'toggleDirectory'
+    | 'refreshFileTree'
+    | 'openFile'
+    | 'saveFile'
+    | 'saveAllFiles'
+    | 'createFile'
+    | 'deleteFile'
+    | 'createFolder'
+    | 'renameEntry'
+    | 'moveEntry'
+    | 'duplicateEntry'
+    | 'deleteFolder'
+    | 'setActiveFile'
+    | 'updateFileContent'
+    | 'closeTab'
+    | 'discardFile'
+  >
+> = (set, get) => ({
   // ==========================================================================
   // File Tree Actions
   // ==========================================================================
@@ -39,7 +72,8 @@ export const createFileActions: StateCreator<IDEState, [], [], Pick<IDEState, 't
     try {
       const read = await readDirectoryRecursive(directoryHandle);
       const current = get();
-      if (fileTreeRefreshIntent !== intent || current.projectSession !== projectSession || current.directoryHandle !== directoryHandle) return;
+      if (fileTreeRefreshIntent !== intent || current.projectSession !== projectSession || current.directoryHandle !== directoryHandle)
+        return;
       set({ fileTree: preserveExpansion(read, current.fileTree) });
     } catch (err) {
       console.error('Failed to refresh file tree:', err);
@@ -57,7 +91,7 @@ export const createFileActions: StateCreator<IDEState, [], [], Pick<IDEState, 't
     const node = resolveTreeFile(fileTree, fileId);
     if (!node) return;
     try {
-      const loaded = get().loadedFiles.get(fileId) ?? await loadFileFromTree(node);
+      const loaded = get().loadedFiles.get(fileId) ?? (await loadFileFromTree(node));
       const current = get();
       if (!loaded || current.projectSession !== projectSession || !current.fileTree || !resolveTreeFile(current.fileTree, fileId)) return;
       const loadedFiles = new Map(current.loadedFiles);
@@ -77,7 +111,7 @@ export const createFileActions: StateCreator<IDEState, [], [], Pick<IDEState, 't
     const { loadedFiles } = get();
     const file = loadedFiles.get(fileId);
     const expectedProjectSession = get().projectSession;
-    
+
     if (!file) {
       console.error(`File not found: ${fileId}`);
       return false;
@@ -122,7 +156,7 @@ export const createFileActions: StateCreator<IDEState, [], [], Pick<IDEState, 't
 
   saveAllFiles: async (options = {}) => {
     const { loadedFiles, projectSession } = get();
-    
+
     for (const [fileId, file] of loadedFiles) {
       if (get().projectSession !== projectSession) return;
       if (file.isModified) {
@@ -161,10 +195,12 @@ export const createFileActions: StateCreator<IDEState, [], [], Pick<IDEState, 't
 
     const isCurrentProject = () => {
       const current = get();
-      return current.projectSession === expectedProjectSession
-        && current.isProjectOpen
-        && current.fileTree !== null
-        && current.directoryHandle === directoryHandle;
+      return (
+        current.projectSession === expectedProjectSession &&
+        current.isProjectOpen &&
+        current.fileTree !== null &&
+        current.directoryHandle === directoryHandle
+      );
     };
 
     const currentTreeForCreation = () => {
@@ -215,10 +251,23 @@ export const createFileActions: StateCreator<IDEState, [], [], Pick<IDEState, 't
 
       let committed = false;
       set((state) => {
-        if (state.projectSession !== expectedProjectSession || !state.isProjectOpen || state.directoryHandle !== directoryHandle || !state.fileTree) return {};
+        if (
+          state.projectSession !== expectedProjectSession ||
+          !state.isProjectOpen ||
+          state.directoryHandle !== directoryHandle ||
+          !state.fileTree
+        )
+          return {};
         const parent = findFileInTree(state.fileTree, parentPath);
         if (!parent || parent.type !== 'directory' || state.loadedFiles.has(fileId) || findFileInTree(state.fileTree, filePath)) return {};
-        const newTree = appendTreeFile(state.fileTree, parentPath, { id: fileId, name: fileName, type: 'file', path: filePath, language, handle: newFile.handle });
+        const newTree = appendTreeFile(state.fileTree, parentPath, {
+          id: fileId,
+          name: fileName,
+          type: 'file',
+          path: filePath,
+          language,
+          handle: newFile.handle,
+        });
         if (!newTree) return {};
         committed = true;
         return {
@@ -234,9 +283,11 @@ export const createFileActions: StateCreator<IDEState, [], [], Pick<IDEState, 't
       });
       if (!committed) {
         if (!isCurrentProject()) throw new Error('Project changed while creating the file.');
-        throw new Error(createdPhysicalEntry
-          ? 'The file may exist on disk. Refresh the project before trying again.'
-          : 'Could not create the file. Check the name and folder access, then try again.');
+        throw new Error(
+          createdPhysicalEntry
+            ? 'The file may exist on disk. Refresh the project before trying again.'
+            : 'Could not create the file. Check the name and folder access, then try again.',
+        );
       }
 
       get().addConsoleEntry({ type: 'success', message: t('store.createdFile', { name: fileName }), source: 'system' });
@@ -246,12 +297,14 @@ export const createFileActions: StateCreator<IDEState, [], [], Pick<IDEState, 't
       const taken = !createdPhysicalEntry && error instanceof FileNameTakenError ? error : null;
       const message = createdPhysicalEntry
         ? 'The file may exist on disk. Refresh the project before trying again.'
-        : taken ? taken.message
-        : error instanceof Error && (error.message === 'A file with that name is already being created.'
-        || error.message === 'Choose an existing project folder for the new file.'
-        || error.message === 'The file may exist on disk. Refresh the project before trying again.')
-        ? error.message
-        : 'Could not create the file. Check the name and folder access, then try again.';
+        : taken
+          ? taken.message
+          : error instanceof Error &&
+              (error.message === 'A file with that name is already being created.' ||
+                error.message === 'Choose an existing project folder for the new file.' ||
+                error.message === 'The file may exist on disk. Refresh the project before trying again.')
+            ? error.message
+            : 'Could not create the file. Check the name and folder access, then try again.';
       get().addConsoleEntry({ type: 'error', message, source: 'system' });
       throw taken ?? new Error(message);
     } finally {
@@ -287,14 +340,14 @@ export const createFileActions: StateCreator<IDEState, [], [], Pick<IDEState, 't
 
     const loadedFiles = new Map(current.loadedFiles);
     loadedFiles.delete(fileId);
-    const openTabs = current.openTabs.filter(id => id !== fileId);
+    const openTabs = current.openTabs.filter((id) => id !== fileId);
     const breakpoints = new Map(current.debug.breakpoints);
     breakpoints.delete(fileId);
     set((state) => ({
-      fileTree: current.fileTree ? pruneTreeFile(current.fileTree, fileId) ?? current.fileTree : null,
+      fileTree: current.fileTree ? (pruneTreeFile(current.fileTree, fileId) ?? current.fileTree) : null,
       loadedFiles,
       openTabs,
-      activeFileId: current.activeFileId === fileId ? openTabs.at(-1) ?? null : current.activeFileId,
+      activeFileId: current.activeFileId === fileId ? (openTabs.at(-1) ?? null) : current.activeFileId,
       compilerMessages: [],
       compilerMessagesChecked: false,
       compilerNavigationTarget: null,
@@ -314,29 +367,32 @@ export const createFileActions: StateCreator<IDEState, [], [], Pick<IDEState, 't
     const { openTabs } = get();
     set({
       activeFileId: fileId,
-      openTabs: fileId && !openTabs.includes(fileId) 
-        ? [...openTabs, fileId] 
-        : openTabs,
+      openTabs: fileId && !openTabs.includes(fileId) ? [...openTabs, fileId] : openTabs,
     });
   },
 
   updateFileContent: (fileId: string, content: string) => {
     const { loadedFiles } = get();
     const file = loadedFiles.get(fileId);
-    
+
     if (!file) return;
 
     const newLoadedFiles = new Map(loadedFiles);
     newLoadedFiles.set(fileId, { ...file, content, isModified: true });
-    set((state) => ({ loadedFiles: newLoadedFiles, compilerMessages: [], compilerMessagesChecked: false, compilerNavigationTarget: null, stBufferDiagnostics: null, compilerRunId: state.compilerRunId + 1 }));
+    set((state) => ({
+      loadedFiles: newLoadedFiles,
+      compilerMessages: [],
+      compilerMessagesChecked: false,
+      compilerNavigationTarget: null,
+      stBufferDiagnostics: null,
+      compilerRunId: state.compilerRunId + 1,
+    }));
   },
 
   closeTab: (fileId: string) => {
     const { openTabs, activeFileId } = get();
-    const newTabs = openTabs.filter(id => id !== fileId);
-    const newActiveId = activeFileId === fileId
-      ? newTabs[newTabs.length - 1] || null
-      : activeFileId;
+    const newTabs = openTabs.filter((id) => id !== fileId);
+    const newActiveId = activeFileId === fileId ? newTabs[newTabs.length - 1] || null : activeFileId;
 
     set({
       openTabs: newTabs,
@@ -346,7 +402,7 @@ export const createFileActions: StateCreator<IDEState, [], [], Pick<IDEState, 't
 
   discardFile: (fileId: string) => {
     const { loadedFiles, openTabs, activeFileId } = get();
-    const newTabs = openTabs.filter(id => id !== fileId);
+    const newTabs = openTabs.filter((id) => id !== fileId);
     const files = new Map(loadedFiles);
     files.delete(fileId);
 

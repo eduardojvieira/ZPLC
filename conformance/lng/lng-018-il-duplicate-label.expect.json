@@ -4,13 +4,7 @@
   "matrix": ["il.jmp-jmpc-jmpcn-labels"],
   "build": "fails",
   "elements": ["line:9"],
-  "lines": [
-    9
-  ],
-  "codes": [
-    "TRANSLATION_FAILED"
-  ],
-  "messageIncludes": [
-    "again"
-  ]
+  "lines": [9],
+  "codes": ["TRANSLATION_FAILED"],
+  "messageIncludes": ["again"]
 }

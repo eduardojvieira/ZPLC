@@ -30,7 +30,9 @@ async function register(projectSession: number, rootId: string): Promise<Project
     const selection = await registerProjectRoot()?.({ rootId });
     const current = useIDEStore.getState();
     if (!selection?.workspaceId || !isWorkspaceManifestRegistrationCurrent(current.projectSession, projectSession)) return null;
-    return current.linkWorkspaceScenarios(selection.workspaceId, projectSession) ? { workspaceId: selection.workspaceId, projectSession } : null;
+    return current.linkWorkspaceScenarios(selection.workspaceId, projectSession)
+      ? { workspaceId: selection.workspaceId, projectSession }
+      : null;
   } catch {
     return null;
   }
@@ -54,7 +56,13 @@ export function linkProjectWorkspace(): Promise<ProjectWorkspaceLink | null> {
   const rootId = projectRootId(directoryHandle);
   if (rootId === null || !canLinkProjectWorkspace()) return Promise.resolve(null);
   if (running?.projectSession === projectSession && running.rootId === rootId) return running.link;
-  const started = { projectSession, rootId, link: register(projectSession, rootId).finally(() => { if (running === started) running = null; }) };
+  const started = {
+    projectSession,
+    rootId,
+    link: register(projectSession, rootId).finally(() => {
+      if (running === started) running = null;
+    }),
+  };
   running = started;
   return started.link;
 }

@@ -5,8 +5,16 @@
  * every later start reopens that folder by the id the main process gave it. What is remembered is a lesson id and that opaque
  * id; never a path. The steps are injected so the rules run under a test without a window.
  */
-export interface RecentEntry { recentId: string; lastOpenedAt: number; available: boolean }
-export interface WorkspaceMemory { get(lessonId: string): string | undefined; set(lessonId: string, recentId: string): void; forget(lessonId: string): void }
+export interface RecentEntry {
+  recentId: string;
+  lastOpenedAt: number;
+  available: boolean;
+}
+export interface WorkspaceMemory {
+  get(lessonId: string): string | undefined;
+  set(lessonId: string, recentId: string): void;
+  forget(lessonId: string): void;
+}
 export interface WorkspaceDeps {
   memory: WorkspaceMemory;
   /** The folders the main process remembers, newest first; it asks the main process again each time. */
@@ -42,8 +50,13 @@ export async function openLessonWorkspace(deps: WorkspaceDeps, lessonId: string,
   const startedAt = deps.now();
   if (!(await deps.createWorkspace(starterProject))) return 'cancelled';
   for (let look = 0; look < LOOKS; look += 1) {
-    const created = (await deps.recents()).filter((entry) => entry.available && entry.lastOpenedAt >= startedAt - CLOCK_SLACK_MS).sort((a, b) => b.lastOpenedAt - a.lastOpenedAt)[0];
-    if (created) { deps.memory.set(lessonId, created.recentId); return 'created'; }
+    const created = (await deps.recents())
+      .filter((entry) => entry.available && entry.lastOpenedAt >= startedAt - CLOCK_SLACK_MS)
+      .sort((a, b) => b.lastOpenedAt - a.lastOpenedAt)[0];
+    if (created) {
+      deps.memory.set(lessonId, created.recentId);
+      return 'created';
+    }
     await deps.wait(LOOK_EVERY_MS);
   }
   return 'created';
@@ -52,22 +65,51 @@ export async function openLessonWorkspace(deps: WorkspaceDeps, lessonId: string,
 export const WORKSPACE_MEMORY_KEY = 'zplc:learn-workspaces:v1';
 const LESSON_ID = /^[a-z0-9][a-z0-9-]{1,62}[a-z0-9]$/;
 
-/** The lesson to folder map in a stored text; anything damaged reads as empty, and an entry that is not a lesson id and a string is dropped. */
+/**
+ * The lesson to folder map in a stored text; anything damaged reads as empty, and an entry that is not a lesson id and a string is dropped.
+ */
 export function parseWorkspaceMemory(raw: string | null): Record<string, string> {
   if (!raw) return {};
   try {
     const value = JSON.parse(raw) as unknown;
     if (typeof value !== 'object' || value === null || Array.isArray(value)) return {};
-    return Object.fromEntries(Object.entries(value).filter((entry): entry is [string, string] => LESSON_ID.test(entry[0]) && typeof entry[1] === 'string' && entry[1].length > 0 && entry[1].length <= 128));
-  } catch { return {}; }
+    return Object.fromEntries(
+      Object.entries(value).filter(
+        (entry): entry is [string, string] =>
+          LESSON_ID.test(entry[0]) && typeof entry[1] === 'string' && entry[1].length > 0 && entry[1].length <= 128,
+      ),
+    );
+  } catch {
+    return {};
+  }
 }
 
-export function createWorkspaceMemory(storage: { getItem(key: string): string | null; setItem(key: string, value: string): void } | undefined): WorkspaceMemory {
-  const read = (): Record<string, string> => { try { return parseWorkspaceMemory(storage?.getItem(WORKSPACE_MEMORY_KEY) ?? null); } catch { return {}; } };
-  const write = (map: Record<string, string>): void => { try { storage?.setItem(WORKSPACE_MEMORY_KEY, JSON.stringify(map)); } catch { /* not remembered this session */ } };
+export function createWorkspaceMemory(
+  storage: { getItem(key: string): string | null; setItem(key: string, value: string): void } | undefined,
+): WorkspaceMemory {
+  const read = (): Record<string, string> => {
+    try {
+      return parseWorkspaceMemory(storage?.getItem(WORKSPACE_MEMORY_KEY) ?? null);
+    } catch {
+      return {};
+    }
+  };
+  const write = (map: Record<string, string>): void => {
+    try {
+      storage?.setItem(WORKSPACE_MEMORY_KEY, JSON.stringify(map));
+    } catch {
+      /* not remembered this session */
+    }
+  };
   return {
     get: (lessonId) => read()[lessonId],
-    set: (lessonId, recentId) => { write({ ...read(), [lessonId]: recentId }); },
-    forget: (lessonId) => { const map = read(); delete map[lessonId]; write(map); },
+    set: (lessonId, recentId) => {
+      write({ ...read(), [lessonId]: recentId });
+    },
+    forget: (lessonId) => {
+      const map = read();
+      delete map[lessonId];
+      write(map);
+    },
   };
 }

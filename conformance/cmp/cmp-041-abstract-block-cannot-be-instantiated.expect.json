@@ -1,19 +1,10 @@
 {
   "requirement": "CMP-041",
   "title": "a variable of an ABSTRACT function block is rejected",
-  "matrix": [
-    "pous.public-private-protected-abstract"
-  ],
+  "matrix": ["pous.public-private-protected-abstract"],
   "note": "IEC 61131-3 ed. 3, ABSTRACT: an abstract function block has no instances",
   "build": "fails",
-  "lines": [
-    8
-  ],
-  "codes": [
-    "ABSTRACT_INSTANTIATION"
-  ],
-  "messageIncludes": [
-    "ABSTRACT",
-    "Template"
-  ]
+  "lines": [8],
+  "codes": ["ABSTRACT_INSTANTIATION"],
+  "messageIncludes": ["ABSTRACT", "Template"]
 }

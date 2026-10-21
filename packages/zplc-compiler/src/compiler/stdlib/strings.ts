@@ -35,7 +35,7 @@ import type { AsmLine } from '../asm-line.ts';
 // Constants defined in zplc_isa.h for consistency
 
 /** "To the end of the string" for the length argument of the append routine. */
-const REST = 0x7FFF;
+const REST = 0x7fff;
 
 /**
  * A function that returns a string returns a work buffer, never one of its arguments: a string
@@ -44,7 +44,7 @@ const REST = 0x7FFF;
  */
 function newString(ctx: CodeGenContext, first: Expression, extra = 0): number {
     if (!ctx.stringTemp) ctx.fail('This string function needs the code generator of a program', 'INTERNAL_COMPILER_ERROR');
-    const capacity = Math.min(0xFFFF, (ctx.stringCapacity?.(first) ?? 80) + extra);
+    const capacity = Math.min(0xffff, (ctx.stringCapacity?.(first) ?? 80) + extra);
     const address = ctx.stringTemp(capacity);
     ctx.emit(`    PUSH16 ${address}`);
     ctx.emit('    STRCLR');
@@ -73,7 +73,14 @@ function callHelper(ctx: CodeGenContext, name: 'strappend' | 'strfind'): void {
 }
 
 /** Six 32-bit work cells that the string routines share: none of them calls another of them. */
-export interface StringCells { c0: number; c1: number; c2: number; c3: number; c4: number; c5: number }
+export interface StringCells {
+    c0: number;
+    c1: number;
+    c2: number;
+    c3: number;
+    c4: number;
+    c5: number;
+}
 
 const at = (n: number) => `0x${n.toString(16).padStart(4, '0')}`;
 
@@ -83,7 +90,10 @@ const at = (n: number) => `0x${n.toString(16).padStart(4, '0')}`;
  * the capacity of dst is left out.
  */
 export function strappendHelper(label: string, cells: StringCells, memcpyLabel: string): AsmLine[] {
-    const dst = at(cells.c0), src = at(cells.c1), start = at(cells.c2), n = at(cells.c3);
+    const dst = at(cells.c0),
+        src = at(cells.c1),
+        start = at(cells.c2),
+        n = at(cells.c3);
     return [
         `${label}:`,
         `    STORE32 ${n}`,
@@ -182,7 +192,9 @@ export function strappendHelper(label: string, cells: StringCells, memcpyLabel: 
  * [s start n] -> []. LEFT, RIGHT and MID of a variable assigned to that same variable.
  */
 export function strsubHelper(label: string, cells: StringCells, memcpyLabel: string): AsmLine[] {
-    const s = at(cells.c0), start = at(cells.c1), n = at(cells.c2);
+    const s = at(cells.c0),
+        start = at(cells.c1),
+        n = at(cells.c2);
     return [
         `${label}:`,
         `    STORE32 ${n}`,
@@ -249,7 +261,10 @@ export function strsubHelper(label: string, cells: StringCells, memcpyLabel: str
  * [s pos n] -> []. DELETE of a variable assigned to that same variable.
  */
 export function strdelHelper(label: string, cells: StringCells, memcpyLabel: string): AsmLine[] {
-    const s = at(cells.c0), pos = at(cells.c1), n = at(cells.c2), len = at(cells.c3);
+    const s = at(cells.c0),
+        pos = at(cells.c1),
+        n = at(cells.c2),
+        len = at(cells.c3);
     return [
         `${label}:`,
         `    STORE32 ${n}`,
@@ -325,7 +340,12 @@ export function strdelHelper(label: string, cells: StringCells, memcpyLabel: str
  * empty s2). [s1 s2] -> [pos].
  */
 export function strfindHelper(label: string, cells: StringCells): AsmLine[] {
-    const s1 = at(cells.c0), s2 = at(cells.c1), l1 = at(cells.c2), l2 = at(cells.c3), i = at(cells.c4), j = at(cells.c5);
+    const s1 = at(cells.c0),
+        s2 = at(cells.c1),
+        l1 = at(cells.c2),
+        l2 = at(cells.c3),
+        i = at(cells.c4),
+        j = at(cells.c5);
     return [
         `${label}:`,
         `    STORE32 ${s2}`,
@@ -410,7 +430,7 @@ export const LEN_FN: FunctionDef = {
         ctx.emit('    ; LEN(s)');
         ctx.emitExpression(args[0]);
         ctx.emit('    STRLEN');
-    }
+    },
 };
 
 // ============================================================================
@@ -438,7 +458,7 @@ export const CONCAT_FN: FunctionDef = {
         ctx.emit(`    PUSH16 ${result}`);
         ctx.emit('    STRCAT');
         ctx.emit(`    PUSH16 ${result}   ; result`);
-    }
+    },
 };
 
 // ============================================================================
@@ -458,12 +478,12 @@ export const COPY_FN: FunctionDef = {
     generateInline: (ctx: CodeGenContext, args: Expression[]) => {
         ctx.emit('    ; COPY(src, dst)');
         // STRCPY expects: [src_addr dst_addr]
-        ctx.emitExpression(args[0]);  // src
-        ctx.emitExpression(args[1]);  // dst
+        ctx.emitExpression(args[0]); // src
+        ctx.emitExpression(args[1]); // dst
         ctx.emit('    STRCPY');
         // Return dst address
         ctx.emitExpression(args[1]);
-    }
+    },
 };
 
 // ============================================================================
@@ -485,7 +505,7 @@ export const CLEAR_FN: FunctionDef = {
         ctx.emitExpression(args[0]);
         ctx.emit('    STRCLR');
         ctx.emitExpression(args[0]);
-    }
+    },
 };
 
 // ============================================================================
@@ -505,13 +525,19 @@ export const LEFT_FN: FunctionDef = {
     generateInline: (ctx: CodeGenContext, args: Expression[]) => {
         ctx.emit('    ; LEFT(s, n) - the n leftmost characters, a new string');
         const result = newString(ctx, args[0]);
-        append(ctx, result, args[0], () => ctx.emit('    PUSH8 0'), () => ctx.emitExpression(args[1]));
+        append(
+            ctx,
+            result,
+            args[0],
+            () => ctx.emit('    PUSH8 0'),
+            () => ctx.emitExpression(args[1]),
+        );
         ctx.emit(`    PUSH16 ${result}   ; result`);
-    }
+    },
 };
 
 // ============================================================================
-// RIGHT - Get Rightmost Characters  
+// RIGHT - Get Rightmost Characters
 // ============================================================================
 
 /**
@@ -535,7 +561,10 @@ export const RIGHT_FN: FunctionDef = {
     generateInline: (ctx: CodeGenContext, args: Expression[]) => {
         ctx.emit('    ; RIGHT(s, n) - the n rightmost characters, a new string');
         const result = newString(ctx, args[0]);
-        append(ctx, result, args[0],
+        append(
+            ctx,
+            result,
+            args[0],
             () => {
                 // start = LEN(s) - n; a negative start is taken as 0 (the whole string)
                 ctx.emitExpression(args[0]);
@@ -543,9 +572,10 @@ export const RIGHT_FN: FunctionDef = {
                 ctx.emitExpression(args[1]);
                 ctx.emit('    SUB');
             },
-            () => ctx.emitExpression(args[1]));
+            () => ctx.emitExpression(args[1]),
+        );
         ctx.emit(`    PUSH16 ${result}   ; result`);
-    }
+    },
 };
 
 // ============================================================================
@@ -573,15 +603,19 @@ export const MID_FN: FunctionDef = {
     generateInline: (ctx: CodeGenContext, args: Expression[]) => {
         ctx.emit('    ; MID(s, pos, n) - n characters from the 1-based position pos, a new string');
         const result = newString(ctx, args[0]);
-        append(ctx, result, args[0],
+        append(
+            ctx,
+            result,
+            args[0],
             () => {
                 ctx.emitExpression(args[1]);
                 ctx.emit('    PUSH8 1');
                 ctx.emit('    SUB');
             },
-            () => ctx.emitExpression(args[2]));
+            () => ctx.emitExpression(args[2]),
+        );
         ctx.emit(`    PUSH16 ${result}   ; result`);
-    }
+    },
 };
 
 // ============================================================================
@@ -605,7 +639,7 @@ export const FIND_FN: FunctionDef = {
         ctx.emitExpression(args[0]);
         ctx.emitExpression(args[1]);
         callHelper(ctx, 'strfind');
-    }
+    },
 };
 
 // ============================================================================
@@ -626,13 +660,25 @@ export const INSERT_FN: FunctionDef = {
         ctx.emit('    ; INSERT(s1, s2, pos) - s2 inserted into s1 after the pos-th character, a new string');
         const result = newString(ctx, args[0], ctx.stringCapacity?.(args[1]) ?? 0);
         // the first pos characters of s1, then s2, then the rest of s1
-        append(ctx, result, args[0], () => ctx.emit('    PUSH8 0'), () => ctx.emitExpression(args[2]));
+        append(
+            ctx,
+            result,
+            args[0],
+            () => ctx.emit('    PUSH8 0'),
+            () => ctx.emitExpression(args[2]),
+        );
         ctx.emitExpression(args[1]);
         ctx.emit(`    PUSH16 ${result}`);
         ctx.emit('    STRCAT');
-        append(ctx, result, args[0], () => ctx.emitExpression(args[2]), () => ctx.emit(`    PUSH32 ${REST}`));
+        append(
+            ctx,
+            result,
+            args[0],
+            () => ctx.emitExpression(args[2]),
+            () => ctx.emit(`    PUSH32 ${REST}`),
+        );
         ctx.emit(`    PUSH16 ${result}   ; result`);
-    }
+    },
 };
 
 // ============================================================================
@@ -655,20 +701,32 @@ export const DELETE_FN: FunctionDef = {
         ctx.emit('    ; DELETE(s, pos, n) - s without n characters from the 1-based position pos, a new string');
         const result = newString(ctx, args[0]);
         // the characters before pos, then the ones after pos + n - 1
-        append(ctx, result, args[0], () => ctx.emit('    PUSH8 0'), () => {
-            ctx.emitExpression(args[1]);
-            ctx.emit('    PUSH8 1');
-            ctx.emit('    SUB');
-        });
-        append(ctx, result, args[0], () => {
-            ctx.emitExpression(args[1]);
-            ctx.emitExpression(args[2]);
-            ctx.emit('    ADD');
-            ctx.emit('    PUSH8 1');
-            ctx.emit('    SUB');
-        }, () => ctx.emit(`    PUSH32 ${REST}`));
+        append(
+            ctx,
+            result,
+            args[0],
+            () => ctx.emit('    PUSH8 0'),
+            () => {
+                ctx.emitExpression(args[1]);
+                ctx.emit('    PUSH8 1');
+                ctx.emit('    SUB');
+            },
+        );
+        append(
+            ctx,
+            result,
+            args[0],
+            () => {
+                ctx.emitExpression(args[1]);
+                ctx.emitExpression(args[2]);
+                ctx.emit('    ADD');
+                ctx.emit('    PUSH8 1');
+                ctx.emit('    SUB');
+            },
+            () => ctx.emit(`    PUSH32 ${REST}`),
+        );
         ctx.emit(`    PUSH16 ${result}   ; result`);
-    }
+    },
 };
 
 // ============================================================================
@@ -690,23 +748,35 @@ export const REPLACE_FN: FunctionDef = {
     generateInline: (ctx: CodeGenContext, args: Expression[]) => {
         ctx.emit('    ; REPLACE(s1, s2, pos, n) - n characters of s1 from pos replaced by s2, a new string');
         const result = newString(ctx, args[0], ctx.stringCapacity?.(args[1]) ?? 0);
-        append(ctx, result, args[0], () => ctx.emit('    PUSH8 0'), () => {
-            ctx.emitExpression(args[2]);
-            ctx.emit('    PUSH8 1');
-            ctx.emit('    SUB');
-        });
+        append(
+            ctx,
+            result,
+            args[0],
+            () => ctx.emit('    PUSH8 0'),
+            () => {
+                ctx.emitExpression(args[2]);
+                ctx.emit('    PUSH8 1');
+                ctx.emit('    SUB');
+            },
+        );
         ctx.emitExpression(args[1]);
         ctx.emit(`    PUSH16 ${result}`);
         ctx.emit('    STRCAT');
-        append(ctx, result, args[0], () => {
-            ctx.emitExpression(args[2]);
-            ctx.emitExpression(args[3]);
-            ctx.emit('    ADD');
-            ctx.emit('    PUSH8 1');
-            ctx.emit('    SUB');
-        }, () => ctx.emit(`    PUSH32 ${REST}`));
+        append(
+            ctx,
+            result,
+            args[0],
+            () => {
+                ctx.emitExpression(args[2]);
+                ctx.emitExpression(args[3]);
+                ctx.emit('    ADD');
+                ctx.emit('    PUSH8 1');
+                ctx.emit('    SUB');
+            },
+            () => ctx.emit(`    PUSH32 ${REST}`),
+        );
         ctx.emit(`    PUSH16 ${result}   ; result`);
-    }
+    },
 };
 
 // ============================================================================
@@ -728,7 +798,7 @@ export const STRCMP_FN: FunctionDef = {
         ctx.emitExpression(args[0]);
         ctx.emitExpression(args[1]);
         ctx.emit('    STRCMP');
-    }
+    },
 };
 
 // ============================================================================
@@ -751,7 +821,7 @@ export const EQ_STRING_FN: FunctionDef = {
         ctx.emit('    STRCMP');
         ctx.emit('    PUSH8 0');
         ctx.emit('    EQ');
-    }
+    },
 };
 
 // ============================================================================
@@ -774,7 +844,7 @@ export const NE_STRING_FN: FunctionDef = {
         ctx.emit('    STRCMP');
         ctx.emit('    PUSH8 0');
         ctx.emit('    NE');
-    }
+    },
 };
 
 // ============================================================================

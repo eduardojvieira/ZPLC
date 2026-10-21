@@ -1,6 +1,6 @@
 /**
  * ConstantNode - Custom ReactFlow node for constant values
- * 
+ *
  * Renders BOOL, INT, REAL, TIME constants with appropriate styling.
  */
 
@@ -54,14 +54,12 @@ const ConstantNode = memo(({ id, data, selected }: NodeProps) => {
               </span>
             </Tooltip>
           </div>
-  
+
           {/* Type label */}
           <div className="bg-[var(--color-surface-700)] px-2 py-0.5 text-center border-t border-[var(--border-color)]">
-            <span className="text-[length:var(--font-size-caption)] text-[var(--text-tertiary)] font-mono">
-              {dataType}
-            </span>
+            <span className="text-[length:var(--font-size-caption)] text-[var(--text-tertiary)] font-mono">{dataType}</span>
           </div>
-  
+
           {/* Output handle */}
           <Handle
             type="source"

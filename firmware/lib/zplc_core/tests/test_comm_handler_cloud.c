@@ -32,7 +32,8 @@ uint32_t k_uptime_get_32(void) { return now_ms; }
 static struct cloud_req *queue_items[QUEUE_DEPTH];
 static int queue_count;
 int k_msgq_get(struct k_msgq *queue, void *data, int timeout) {
-  (void)queue; (void)timeout;
+  (void)queue;
+  (void)timeout;
   if (queue_count == 0) {
     return -1;
   }
@@ -42,7 +43,8 @@ int k_msgq_get(struct k_msgq *queue, void *data, int timeout) {
   return 0;
 }
 int k_msgq_put(struct k_msgq *queue, const void *data, int timeout) {
-  (void)queue; (void)timeout;
+  (void)queue;
+  (void)timeout;
   if (queue_count >= QUEUE_DEPTH) {
     return -35;
   }
@@ -50,17 +52,28 @@ int k_msgq_put(struct k_msgq *queue, const void *data, int timeout) {
   return 0;
 }
 void k_msgq_init(struct k_msgq *queue, char *buffer, size_t size, uint32_t count) {
-  (void)queue; (void)buffer; (void)size; (void)count;
+  (void)queue;
+  (void)buffer;
+  (void)size;
+  (void)count;
 }
-int k_thread_create(struct k_thread *thread, char *stack, size_t size,
-                    k_thread_entry_t entry, void *a, void *b, void *c,
-                    int priority, uint32_t options, int delay) {
-  (void)thread; (void)stack; (void)size; (void)entry; (void)a; (void)b;
-  (void)c; (void)priority; (void)options; (void)delay;
+int k_thread_create(struct k_thread *thread, char *stack, size_t size, k_thread_entry_t entry, void *a, void *b, void *c, int priority,
+                    uint32_t options, int delay) {
+  (void)thread;
+  (void)stack;
+  (void)size;
+  (void)entry;
+  (void)a;
+  (void)b;
+  (void)c;
+  (void)priority;
+  (void)options;
+  (void)delay;
   return 0;
 }
 int k_thread_name_set(struct k_thread *thread, const char *name) {
-  (void)thread; (void)name;
+  (void)thread;
+  (void)name;
   return 0;
 }
 
@@ -130,12 +143,8 @@ int zplc_aws_fleet_provision(void) {
   }
   return svc.fleet_rc;
 }
-void zplc_config_set_azure_dps_registration_id(const char *id) {
-  snprintf(svc.registration_id, sizeof(svc.registration_id), "%s", id);
-}
-void zplc_config_set_aws_fleet_template_name(const char *name) {
-  snprintf(svc.template_name, sizeof(svc.template_name), "%s", name);
-}
+void zplc_config_set_azure_dps_registration_id(const char *id) { snprintf(svc.registration_id, sizeof(svc.registration_id), "%s", id); }
+void zplc_config_set_aws_fleet_template_name(const char *name) { snprintf(svc.template_name, sizeof(svc.template_name), "%s", name); }
 /* Bounded copy: the caller's buffer may be smaller than the stub's 96-byte fields, which a
    "%s" snprintf reports as -Wformat-truncation under -Werror at -O2. */
 static void copy_out(char *buf, size_t len, const char *text) {
@@ -158,8 +167,7 @@ zplc_mqtt_fb_session_t zplc_mqtt_fb_session(int *last_error) {
   }
   return svc.session;
 }
-int zplc_mqtt_fb_event_grid(const void *owner, const char *event_type, const char *topic,
-                            const char *data) {
+int zplc_mqtt_fb_event_grid(const void *owner, const char *event_type, const char *topic, const char *data) {
   (void)owner;
   svc.eg_calls++;
   snprintf(svc.eg_type, sizeof(svc.eg_type), "%s", event_type);
@@ -182,7 +190,8 @@ void zplc_mqtt_fb_abort(const void *owner) {
   svc.abort_calls++;
 }
 int zplc_mqtt_fb_subscribe(const void *owner, const char *topic, uint8_t qos) {
-  (void)owner; (void)qos;
+  (void)owner;
+  (void)qos;
   svc.subscribe_calls++;
   svc.subscribe_topic_null = topic == NULL;
   return svc.subscribe_result;
@@ -219,14 +228,11 @@ static void set_string(uint8_t *memory, unsigned offset, const char *text) {
 }
 
 static uint32_t status_of(const uint8_t *memory) {
-  return (uint32_t)memory[4] | ((uint32_t)memory[5] << 8) |
-         ((uint32_t)memory[6] << 16) | ((uint32_t)memory[7] << 24);
+  return (uint32_t)memory[4] | ((uint32_t)memory[5] << 8) | ((uint32_t)memory[6] << 16) | ((uint32_t)memory[7] << 24);
 }
 
 /* BUSY, DONE, ERROR as one number: 100 busy, 10 done, 1 error. */
-static int state_of(const uint8_t *memory) {
-  return memory[1] * 100 + memory[2] * 10 + memory[3];
-}
+static int state_of(const uint8_t *memory) { return memory[1] * 100 + memory[2] * 10 + memory[3]; }
 
 /* One scan of a block: the dispatcher runs in the scan, where nothing may wait. */
 static void scan(zplc_comm_fb_kind_t kind, uint8_t *memory) {
@@ -281,8 +287,7 @@ static void test_provisioning_runs_on_the_worker_once_per_trigger(void) {
   scan(ZPLC_COMM_FB_AZURE_DPS_PROV, memory);
   assert(state_of(memory) == 10 && status_of(memory) == ZPLC_COMM_OK);
   assert(memory[ZPLC_COMM_AZURE_DPS_PROV_ASSIGNED_HUB_OFFSET] == 30U);
-  assert(memcmp(&memory[ZPLC_COMM_AZURE_DPS_PROV_ASSIGNED_HUB_OFFSET + 4U],
-                "assigned-hub.azure-devices.net", 31U) == 0);
+  assert(memcmp(&memory[ZPLC_COMM_AZURE_DPS_PROV_ASSIGNED_HUB_OFFSET + 4U], "assigned-hub.azure-devices.net", 31U) == 0);
   /* DEVICE_ID, which ends where ASSIGNED_HUB begins in the table, was not overwritten (COM-005) */
   assert(memory[ZPLC_COMM_AZURE_DPS_PROV_DEVICE_ID_OFFSET] == 11U);
   assert(memcmp(&memory[ZPLC_COMM_AZURE_DPS_PROV_DEVICE_ID_OFFSET + 4U], "device-0042", 12U) == 0);
@@ -303,7 +308,10 @@ static void test_provisioning_runs_on_the_worker_once_per_trigger(void) {
 }
 
 static void test_a_provisioning_failure_reports_a_status(void) {
-  static const struct { int rc; uint32_t status; } cases[] = {
+  static const struct {
+    int rc;
+    uint32_t status;
+  } cases[] = {
       {-110 /* ETIMEDOUT */, ZPLC_COMM_TIMEOUT},
       {-16 /* EBUSY: a provisioning is already running */, ZPLC_COMM_QUEUE_FULL},
       {-22 /* EINVAL: not configured */, ZPLC_COMM_INVALID_ADDR},
@@ -411,8 +419,7 @@ static void test_event_grid_publishes_once_and_reports_the_client(void) {
 
   scan(ZPLC_COMM_FB_AZURE_EG_PUB, memory);
   assert(svc.eg_calls == 1);
-  assert(strcmp(svc.eg_topic, "topic-1") == 0 && strcmp(svc.eg_type, "type-2") == 0 &&
-         strcmp(svc.eg_data, "{\"a\":1}") == 0);
+  assert(strcmp(svc.eg_topic, "topic-1") == 0 && strcmp(svc.eg_type, "type-2") == 0 && strcmp(svc.eg_data, "{\"a\":1}") == 0);
   assert(state_of(memory) == 100);
 
   svc.poll_result = ZPLC_COMM_HANDLER_DONE;

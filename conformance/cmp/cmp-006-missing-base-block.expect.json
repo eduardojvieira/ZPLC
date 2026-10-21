@@ -2,13 +2,7 @@
   "requirement": "CMP-006",
   "title": "a block that extends a missing block is reported at its declaration",
   "build": "fails",
-  "lines": [
-    1
-  ],
-  "codes": [
-    "INVALID_INHERITANCE"
-  ],
-  "messageIncludes": [
-    "Parent"
-  ]
+  "lines": [1],
+  "codes": ["INVALID_INHERITANCE"],
+  "messageIncludes": ["Parent"]
 }

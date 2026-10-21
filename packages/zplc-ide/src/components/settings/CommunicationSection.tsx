@@ -1,14 +1,7 @@
 /** Communication of the project: MQTT, Modbus and the tags that cross them. */
 
-import type {
-  CommunicationConfig,
-  MQTTCommunicationConfig,
-  ModbusClientConfig,
-  CommunicationTagConfig,
-} from '../../types';
-import {
-  getBoardNetworkType,
-} from '../../config/boardProfiles';
+import type { CommunicationConfig, MQTTCommunicationConfig, ModbusClientConfig, CommunicationTagConfig } from '../../types';
+import { getBoardNetworkType } from '../../config/boardProfiles';
 import type { SectionProps } from './settingsSectionProps';
 import { useT } from '../../i18n';
 import { MqttSettings } from './MqttSettings';
@@ -130,18 +123,26 @@ export function CommunicationSection({ config, updateConfig }: SectionProps) {
 
   return (
     <div className="pt-4 space-y-6">
-      <div className="rounded-lg border border-[var(--color-surface-600)] bg-[var(--color-surface-800)]/70 p-3 text-xs text-[var(--color-surface-300)]">
+      <div
+        className={
+          'rounded-lg border border-[var(--color-surface-600)] bg-[var(--color-surface-800)]/70 p-3 text-xs ' +
+          'text-[var(--color-surface-300)]'
+        }
+      >
         <p className="font-medium text-[var(--color-surface-100)]">{t('settings.communication.scope')}</p>
-        <p className="mt-1">
-          {t('settings.communication.scopeBody')}
-        </p>
+        <p className="mt-1">{t('settings.communication.scopeBody')}</p>
         <p className="mt-1 text-[var(--color-surface-400)]">
           {t('settings.communication.profile')} <strong className="text-[var(--color-accent-blue)]">{boardNetworkType}</strong>
         </p>
       </div>
       <MqttSettings boardNetworkType={boardNetworkType} mqtt={mqtt} updateCommunication={updateCommunication} />
 
-      <ModbusSettings boardNetworkType={boardNetworkType} modbus={modbus} modbusClient={modbusClient} updateCommunication={updateCommunication} />
+      <ModbusSettings
+        boardNetworkType={boardNetworkType}
+        modbus={modbus}
+        modbusClient={modbusClient}
+        updateCommunication={updateCommunication}
+      />
 
       <CommunicationTags tags={tags} addTag={addTag} updateTag={updateTag} removeTag={removeTag} />
     </div>

@@ -64,16 +64,15 @@ typedef struct {
 } zplc_comm_req_t;
 
 typedef struct {
-  void *slots;   /**< `count` structures of `stride` bytes, each starting with a zplc_comm_req_t */
+  void *slots; /**< `count` structures of `stride` bytes, each starting with a zplc_comm_req_t */
   size_t stride;
   size_t count;
-  void (*lock)(void *context);   /**< NULL when one thread uses the pool */
+  void (*lock)(void *context); /**< NULL when one thread uses the pool */
   void (*unlock)(void *context);
   void *context;
 } zplc_comm_req_pool_t;
 
-static inline zplc_comm_req_t *zplc_comm_req_at(const zplc_comm_req_pool_t *pool,
-                                                size_t index) {
+static inline zplc_comm_req_t *zplc_comm_req_at(const zplc_comm_req_pool_t *pool, size_t index) {
   return (zplc_comm_req_t *)((uint8_t *)pool->slots + index * pool->stride);
 }
 
@@ -143,9 +142,7 @@ static inline int zplc_comm_status_from_errno(int error) {
 }
 
 /** A handler result for a failure of the platform, as a -errno or a zplc_comm_status_t. */
-static inline int zplc_comm_fail_from_errno(int error) {
-  return ZPLC_COMM_HANDLER_FAIL(zplc_comm_status_from_errno(error));
-}
+static inline int zplc_comm_fail_from_errno(int error) { return ZPLC_COMM_HANDLER_FAIL(zplc_comm_status_from_errno(error)); }
 
 /**
  * @brief Take a free slot for a request of the block `owner` (scan side).
@@ -155,9 +152,7 @@ static inline int zplc_comm_fail_from_errno(int error) {
  * result of an earlier one. Returns NULL when every slot is taken: the block
  * reports ZPLC_COMM_QUEUE_FULL (COM-008).
  */
-static inline zplc_comm_req_t *zplc_comm_req_claim(const zplc_comm_req_pool_t *pool,
-                                                   const void *owner,
-                                                   uint32_t now_ms) {
+static inline zplc_comm_req_t *zplc_comm_req_claim(const zplc_comm_req_pool_t *pool, const void *owner, uint32_t now_ms) {
   zplc_comm_req_t *found = NULL;
   size_t i;
 
@@ -192,8 +187,7 @@ static inline zplc_comm_req_t *zplc_comm_req_claim(const zplc_comm_req_pool_t *p
 }
 
 /** The slot is filled in: hand it to the worker (scan side). */
-static inline void zplc_comm_req_submit(const zplc_comm_req_pool_t *pool,
-                                        zplc_comm_req_t *slot) {
+static inline void zplc_comm_req_submit(const zplc_comm_req_pool_t *pool, zplc_comm_req_t *slot) {
   zplc_comm_req_lock(pool);
   if (slot->state == ZPLC_COMM_REQ_CLAIMED) {
     slot->state = ZPLC_COMM_REQ_QUEUED;
@@ -202,8 +196,7 @@ static inline void zplc_comm_req_submit(const zplc_comm_req_pool_t *pool,
 }
 
 /** The request could not be queued after all: give the slot back (scan side). */
-static inline void zplc_comm_req_cancel(const zplc_comm_req_pool_t *pool,
-                                        zplc_comm_req_t *slot) {
+static inline void zplc_comm_req_cancel(const zplc_comm_req_pool_t *pool, zplc_comm_req_t *slot) {
   zplc_comm_req_lock(pool);
   if (slot->state == ZPLC_COMM_REQ_CLAIMED || slot->state == ZPLC_COMM_REQ_QUEUED) {
     slot->state = ZPLC_COMM_REQ_FREE;
@@ -218,8 +211,7 @@ static inline void zplc_comm_req_cancel(const zplc_comm_req_pool_t *pool,
  * Returns 1 when the request is to be run. Returns 0 when its block let go of
  * it while it waited: the slot is free again and nothing is sent.
  */
-static inline int zplc_comm_req_begin(const zplc_comm_req_pool_t *pool,
-                                      zplc_comm_req_t *slot) {
+static inline int zplc_comm_req_begin(const zplc_comm_req_pool_t *pool, zplc_comm_req_t *slot) {
   int run = 0;
 
   zplc_comm_req_lock(pool);
@@ -239,8 +231,7 @@ static inline int zplc_comm_req_begin(const zplc_comm_req_pool_t *pool,
  * The result is kept for the block, or dropped, and the slot freed, when the
  * block let go of the request while it ran.
  */
-static inline void zplc_comm_req_finish(const zplc_comm_req_pool_t *pool,
-                                        zplc_comm_req_t *slot, int result) {
+static inline void zplc_comm_req_finish(const zplc_comm_req_pool_t *pool, zplc_comm_req_t *slot, int result) {
   zplc_comm_req_lock(pool);
   if (slot->state == ZPLC_COMM_REQ_ABANDONED) {
     slot->state = ZPLC_COMM_REQ_FREE;
@@ -264,8 +255,7 @@ static inline void zplc_comm_req_finish(const zplc_comm_req_pool_t *pool,
  * block that has no request, which is the case of a block that was BUSY across a
  * program reload, is reported as ZPLC_COMM_UNKNOWN.
  */
-static inline int zplc_comm_req_peek(const zplc_comm_req_pool_t *pool, const void *owner,
-                                     uint32_t now_ms, uint32_t timeout_ms,
+static inline int zplc_comm_req_peek(const zplc_comm_req_pool_t *pool, const void *owner, uint32_t now_ms, uint32_t timeout_ms,
                                      zplc_comm_req_t **slot) {
   int result = ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_UNKNOWN);
   size_t i;
@@ -275,8 +265,7 @@ static inline int zplc_comm_req_peek(const zplc_comm_req_pool_t *pool, const voi
   for (i = 0U; i < pool->count; i++) {
     zplc_comm_req_t *candidate = zplc_comm_req_at(pool, i);
 
-    if (candidate->owner != owner || candidate->state == ZPLC_COMM_REQ_FREE ||
-        candidate->state == ZPLC_COMM_REQ_ABANDONED) {
+    if (candidate->owner != owner || candidate->state == ZPLC_COMM_REQ_FREE || candidate->state == ZPLC_COMM_REQ_ABANDONED) {
       continue;
     }
     if (candidate->state == ZPLC_COMM_REQ_DONE) {
@@ -290,8 +279,7 @@ static inline int zplc_comm_req_peek(const zplc_comm_req_pool_t *pool, const voi
       }
     } else if (now_ms - candidate->started_ms > timeout_ms) {
       /* queued, running or still being filled in: too old */
-      candidate->state = candidate->state == ZPLC_COMM_REQ_CLAIMED ? ZPLC_COMM_REQ_FREE
-                                                                    : ZPLC_COMM_REQ_ABANDONED;
+      candidate->state = candidate->state == ZPLC_COMM_REQ_CLAIMED ? ZPLC_COMM_REQ_FREE : ZPLC_COMM_REQ_ABANDONED;
       candidate->owner = NULL;
       result = ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_TIMEOUT);
     } else {
@@ -304,8 +292,7 @@ static inline int zplc_comm_req_peek(const zplc_comm_req_pool_t *pool, const voi
 }
 
 /** The block has read the result: free the slot (scan side). */
-static inline void zplc_comm_req_release(const zplc_comm_req_pool_t *pool,
-                                         zplc_comm_req_t *slot) {
+static inline void zplc_comm_req_release(const zplc_comm_req_pool_t *pool, zplc_comm_req_t *slot) {
   zplc_comm_req_lock(pool);
   if (slot->state == ZPLC_COMM_REQ_DONE) {
     slot->state = ZPLC_COMM_REQ_FREE;
@@ -320,8 +307,7 @@ static inline void zplc_comm_req_release(const zplc_comm_req_pool_t *pool,
  * A request in flight is abandoned, a finished one freed. Nothing the worker
  * is using is released before the worker is through with it (COM-008).
  */
-static inline void zplc_comm_req_abort(const zplc_comm_req_pool_t *pool,
-                                       const void *owner) {
+static inline void zplc_comm_req_abort(const zplc_comm_req_pool_t *pool, const void *owner) {
   size_t i;
 
   zplc_comm_req_lock(pool);

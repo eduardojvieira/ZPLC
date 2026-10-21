@@ -17,7 +17,11 @@ END_PROGRAM
 describe('global variables of a source file (UX-012)', () => {
   it('UX-012 lists every variable of every VAR_GLOBAL block with its position and whether the block is constant', () => {
     const found = globalVariablesOf('src/Globals.st', SOURCE);
-    expect(found.map((entry) => [entry.name, entry.constant])).toEqual([['Counter', false], ['Running', false], ['Limit', true]]);
+    expect(found.map((entry) => [entry.name, entry.constant])).toEqual([
+      ['Counter', false],
+      ['Running', false],
+      ['Limit', true],
+    ]);
     expect(found.every((entry) => entry.file === 'src/Globals.st' && entry.line >= 2)).toBe(true);
   });
 

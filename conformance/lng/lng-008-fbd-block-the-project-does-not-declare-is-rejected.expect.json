@@ -1,14 +1,9 @@
 {
   "requirement": "LNG-008",
   "title": "an FBD block of a type that neither the library nor the project declares is rejected by name",
-  "matrix": [
-    "ld-fbd.user-blocks-and-functions"
-  ],
+  "matrix": ["ld-fbd.user-blocks-and-functions"],
   "note": "LNG-002 and LNG-008: a block the transpiler cannot translate is an error that names it; declaring the type in the project is what makes it placeable",
   "build": "fails",
   "codes": ["TRANSLATION_FAILED"],
-  "messageIncludes": [
-    "nobody",
-    "NoSuchBlock"
-  ]
+  "messageIncludes": ["nobody", "NoSuchBlock"]
 }

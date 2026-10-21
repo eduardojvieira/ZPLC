@@ -30,7 +30,16 @@ export interface TabListProps {
   className?: string;
 }
 
-export function TabList({ label, tabs, value, onValueChange, idPrefix, orientation = 'horizontal', activation = 'automatic', className }: TabListProps) {
+export function TabList({
+  label,
+  tabs,
+  value,
+  onValueChange,
+  idPrefix,
+  orientation = 'horizontal',
+  activation = 'automatic',
+  className,
+}: TabListProps) {
   const list = useRef<HTMLDivElement>(null);
   const focusTab = (index: number): void => {
     const tab = tabs[index];
@@ -86,7 +95,13 @@ export interface TabPanelProps {
 export function TabPanel({ id, idPrefix, selected, className, children }: TabPanelProps) {
   if (!selected) return null;
   return (
-    <div id={`${idPrefix}-panel-${id}`} role="tabpanel" aria-labelledby={`${idPrefix}-tab-${id}`} tabIndex={0} className={cx('ui-tabpanel', className)}>
+    <div
+      id={`${idPrefix}-panel-${id}`}
+      role="tabpanel"
+      aria-labelledby={`${idPrefix}-tab-${id}`}
+      tabIndex={0}
+      className={cx('ui-tabpanel', className)}
+    >
       {children}
     </div>
   );

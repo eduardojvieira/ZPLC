@@ -21,10 +21,19 @@ const INSTANCE_LOCKS = /^(?:Singleton(?:Lock|Socket|Cookie)|lockfile)$/;
 
 export type UserDataMigration = 'migrated' | 'kept' | 'none' | 'failed';
 
-export function migrateUserData({ appData, userData, log = console.error }: { appData: string; userData: string; log?: (message: string) => void }): UserDataMigration {
+export function migrateUserData({
+  appData,
+  userData,
+  log = console.error,
+}: {
+  appData: string;
+  userData: string;
+  log?: (message: string) => void;
+}): UserDataMigration {
   if (path.dirname(userData) !== appData) return 'none';
-  const old = PREVIOUS_PRODUCT_NAMES.map((name) => path.join(appData, name))
-    .find((folder) => folder !== userData && existsSync(folder) && !existsSync(path.join(folder, MIGRATED_MARKER)));
+  const old = PREVIOUS_PRODUCT_NAMES.map((name) => path.join(appData, name)).find(
+    (folder) => folder !== userData && existsSync(folder) && !existsSync(path.join(folder, MIGRATED_MARKER)),
+  );
   if (old === undefined) return 'none';
   const staging = `${userData}.migrating`;
   try {
@@ -33,11 +42,19 @@ export function migrateUserData({ appData, userData, log = console.error }: { ap
     cpSync(old, staging, { recursive: true, verbatimSymlinks: true, filter: (source) => !INSTANCE_LOCKS.test(path.basename(source)) });
     if (existsSync(userData)) rmdirSync(userData);
     renameSync(staging, userData);
-    writeFileSync(path.join(old, MIGRATED_MARKER), `ZPLC copied this folder to ${userData} on ${new Date().toISOString()} and uses that one from then on. This folder is kept as it was; it can be deleted.\n`);
+    writeFileSync(
+      path.join(old, MIGRATED_MARKER),
+      `ZPLC copied this folder to ${userData} on ${new Date().toISOString()} and uses that one from then on. This folder is kept as it ` +
+        `was; it can be deleted.\n`,
+    );
     return 'migrated';
   } catch (error) {
     rmSync(staging, { recursive: true, force: true });
-    log(`ZPLC could not copy the settings of ${old} to ${userData}, and starts without them: ${error instanceof Error ? error.message : String(error)}`);
+    log(
+      `ZPLC could not copy the settings of ${old} to ${userData}, and starts without them: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
     return 'failed';
   }
 }

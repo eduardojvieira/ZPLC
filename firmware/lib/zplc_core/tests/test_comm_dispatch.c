@@ -34,8 +34,7 @@ static void script_play(int count, const int *results) {
   }
 }
 
-static int scripted_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
-                            uint16_t fb_len, zplc_comm_call_t call) {
+static int scripted_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len, zplc_comm_call_t call) {
   int result;
 
   script.last_call = call;
@@ -58,31 +57,25 @@ static int scripted_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
   return result;
 }
 
-#define EXEC(kind, mem)                                                       \
-  assert(zplc_comm_fb_exec((kind), (mem), zplc_comm_fb_size((kind))) == 0)
+#define EXEC(kind, mem) assert(zplc_comm_fb_exec((kind), (mem), zplc_comm_fb_size((kind))) == 0)
 
 static uint32_t status_of(const uint8_t *mem) {
-  return (uint32_t)mem[4] | ((uint32_t)mem[5] << 8) | ((uint32_t)mem[6] << 16) |
-         ((uint32_t)mem[7] << 24);
+  return (uint32_t)mem[4] | ((uint32_t)mem[5] << 8) | ((uint32_t)mem[6] << 16) | ((uint32_t)mem[7] << 24);
 }
 
 /* BUSY, DONE, ERROR of a block as one number: 100 is busy, 10 done, 1 error. */
-static int state_of(const uint8_t *mem) {
-  return mem[1] * 100 + mem[2] * 10 + mem[3];
-}
+static int state_of(const uint8_t *mem) { return mem[1] * 100 + mem[2] * 10 + mem[3]; }
 
 static void test_registration(void) {
   printf("test_registration...\n");
-  int res =
-      zplc_comm_register_handler(ZPLC_COMM_FB_MB_READ_HREG, scripted_handler);
+  int res = zplc_comm_register_handler(ZPLC_COMM_FB_MB_READ_HREG, scripted_handler);
   assert(res == 0);
 
   // Test invalid kind. The value is wider than the enum on targets that
   // compile with -fshort-enums, so it goes through a variable: the narrowed
   // result (0xFF) is the kind-count sentinel and is rejected as well.
   volatile int invalid_kind = 0xFFFF;
-  res = zplc_comm_register_handler((zplc_comm_fb_kind_t)invalid_kind,
-                                   scripted_handler);
+  res = zplc_comm_register_handler((zplc_comm_fb_kind_t)invalid_kind, scripted_handler);
   assert(res < 0);
 
   // Test NULL handler
@@ -98,13 +91,11 @@ static void test_the_handler_gets_the_block_and_its_length(void) {
   zplc_comm_register_handler(ZPLC_COMM_FB_MB_READ_HREG, scripted_handler);
   script_play(1, results);
   mem[10] = 0; /* EN off: the handler is not called */
-  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_MB_READ_HREG, &mem[10],
-                           ZPLC_COMM_MB_READ_HREG_SIZE) == 0);
+  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_MB_READ_HREG, &mem[10], ZPLC_COMM_MB_READ_HREG_SIZE) == 0);
   assert(script.starts == 0 && script.polls == 0 && script.resets == 0);
 
   mem[10] = 1;
-  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_MB_READ_HREG, &mem[10],
-                           ZPLC_COMM_MB_READ_HREG_SIZE) == 0);
+  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_MB_READ_HREG, &mem[10], ZPLC_COMM_MB_READ_HREG_SIZE) == 0);
   assert(script.starts == 1);
   assert(script.last_call == ZPLC_COMM_CALL_START);
   assert(script.last_kind == ZPLC_COMM_FB_MB_READ_HREG);
@@ -117,8 +108,7 @@ static void test_the_handler_gets_the_block_and_its_length(void) {
 static void test_a_pending_handler_is_polled_on_every_scan_until_it_finishes(void) {
   printf("test_a_pending_handler_is_polled_on_every_scan_until_it_finishes...\n");
   uint8_t mem[ZPLC_COMM_MB_READ_HREG_SIZE] = {0};
-  const int results[] = {ZPLC_COMM_HANDLER_PENDING, ZPLC_COMM_HANDLER_PENDING,
-                         ZPLC_COMM_HANDLER_PENDING, ZPLC_COMM_HANDLER_DONE};
+  const int results[] = {ZPLC_COMM_HANDLER_PENDING, ZPLC_COMM_HANDLER_PENDING, ZPLC_COMM_HANDLER_PENDING, ZPLC_COMM_HANDLER_DONE};
 
   script_play(4, results);
   mem[0] = 1;
@@ -183,8 +173,7 @@ static void test_en_falling_clears_the_result_and_the_next_rise_starts_again(voi
 static void test_a_pulse_trigger_completes_and_shows_its_result_for_one_scan(void) {
   printf("test_a_pulse_trigger_completes_and_shows_its_result_for_one_scan...\n");
   uint8_t mem[ZPLC_COMM_MB_READ_HREG_SIZE] = {0};
-  const int results[] = {ZPLC_COMM_HANDLER_PENDING, ZPLC_COMM_HANDLER_PENDING,
-                         ZPLC_COMM_HANDLER_DONE};
+  const int results[] = {ZPLC_COMM_HANDLER_PENDING, ZPLC_COMM_HANDLER_PENDING, ZPLC_COMM_HANDLER_DONE};
 
   script_play(3, results);
   mem[0] = 1;
@@ -200,8 +189,7 @@ static void test_a_pulse_trigger_completes_and_shows_its_result_for_one_scan(voi
 
   /* a rising EN while BUSY starts nothing: the trigger is absorbed, and the result is held while EN stays */
   {
-    const int busy[] = {ZPLC_COMM_HANDLER_PENDING, ZPLC_COMM_HANDLER_PENDING,
-                        ZPLC_COMM_HANDLER_DONE};
+    const int busy[] = {ZPLC_COMM_HANDLER_PENDING, ZPLC_COMM_HANDLER_PENDING, ZPLC_COMM_HANDLER_DONE};
 
     memset(mem, 0, sizeof(mem));
     script_play(3, busy);
@@ -251,9 +239,9 @@ static void test_a_failure_is_published_with_its_status_code(void) {
       {ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_PROTO_ERROR), ZPLC_COMM_PROTO_ERROR},
       {ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_AUTH_FAILED), ZPLC_COMM_AUTH_FAILED},
       {ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_UNAVAILABLE), ZPLC_COMM_UNAVAILABLE},
-      {-1, ZPLC_COMM_UNKNOWN},       /* not a status */
-      {-1000, ZPLC_COMM_UNKNOWN},    /* not a status */
-      {7, ZPLC_COMM_UNKNOWN},        /* a positive value that is not PENDING */
+      {-1, ZPLC_COMM_UNKNOWN},    /* not a status */
+      {-1000, ZPLC_COMM_UNKNOWN}, /* not a status */
+      {7, ZPLC_COMM_UNKNOWN},     /* a positive value that is not PENDING */
   };
   size_t i;
 
@@ -278,10 +266,8 @@ static void test_a_failure_is_published_with_its_status_code(void) {
 static void test_a_service_block_is_polled_on_every_scan_while_enabled(void) {
   printf("test_a_service_block_is_polled_on_every_scan_while_enabled...\n");
   uint8_t mem[ZPLC_COMM_MQTT_SUBSCRIBE_SIZE] = {0};
-  const int results[] = {ZPLC_COMM_HANDLER_PENDING, ZPLC_COMM_HANDLER_DONE,
-                         ZPLC_COMM_HANDLER_DONE,
-                         ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_NOT_CONNECTED),
-                         ZPLC_COMM_HANDLER_DONE};
+  const int results[] = {ZPLC_COMM_HANDLER_PENDING, ZPLC_COMM_HANDLER_DONE, ZPLC_COMM_HANDLER_DONE,
+                         ZPLC_COMM_HANDLER_FAIL(ZPLC_COMM_NOT_CONNECTED), ZPLC_COMM_HANDLER_DONE};
 
   assert(zplc_comm_fb_is_service(ZPLC_COMM_FB_MQTT_SUBSCRIBE));
   assert(zplc_comm_fb_is_service(ZPLC_COMM_FB_MQTT_CONNECT));
@@ -345,8 +331,7 @@ static void test_reset_clears_the_handshake_and_tells_the_handler(void) {
   mem[3] = 1;
   mem[4] = 123;
 
-  assert(zplc_comm_fb_reset(ZPLC_COMM_FB_MQTT_PUBLISH, mem,
-                            ZPLC_COMM_MQTT_PUBLISH_SIZE) == 0);
+  assert(zplc_comm_fb_reset(ZPLC_COMM_FB_MQTT_PUBLISH, mem, ZPLC_COMM_MQTT_PUBLISH_SIZE) == 0);
   assert(mem[0] == 0 && state_of(mem) == 0 && status_of(mem) == 0);
   assert(script.resets == 1 && script.last_call == ZPLC_COMM_CALL_RESET);
   assert(script.starts == 0 && script.polls == 0);
@@ -370,8 +355,7 @@ static void test_status_written_bytewise_at_unaligned_address(void) {
   /* A kind with no handler: STATUS = ZPLC_COMM_NO_HANDLER (3). */
   memset(fb, 0, 8);
   fb[0] = 1;
-  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_AWS_FLEET_PROV, fb,
-                           ZPLC_COMM_AWS_FLEET_PROV_SIZE) == 0);
+  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_AWS_FLEET_PROV, fb, ZPLC_COMM_AWS_FLEET_PROV_SIZE) == 0);
   assert(fb[3] == 1);
   assert(fb[4] == ZPLC_COMM_NO_HANDLER && fb[5] == 0 && fb[6] == 0 && fb[7] == 0);
 
@@ -380,8 +364,7 @@ static void test_status_written_bytewise_at_unaligned_address(void) {
   fb[0] = 1;
   zplc_comm_register_handler(ZPLC_COMM_FB_MQTT_PUBLISH, scripted_handler);
   script_play(1, fail);
-  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_MQTT_PUBLISH, fb,
-                           ZPLC_COMM_MQTT_PUBLISH_SIZE) == 0);
+  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_MQTT_PUBLISH, fb, ZPLC_COMM_MQTT_PUBLISH_SIZE) == 0);
   assert(fb[4] == ZPLC_COMM_AUTH_FAILED && fb[5] == 0 && fb[6] == 0 && fb[7] == 0);
 
   /* Reset clears all four STATUS bytes and touches nothing outside the block. */
@@ -389,8 +372,7 @@ static void test_status_written_bytewise_at_unaligned_address(void) {
   fb[5] = 0x56;
   fb[6] = 0x34;
   fb[7] = 0x12;
-  assert(zplc_comm_fb_reset(ZPLC_COMM_FB_MQTT_SUBSCRIBE, fb,
-                            ZPLC_COMM_MQTT_SUBSCRIBE_SIZE) == 0);
+  assert(zplc_comm_fb_reset(ZPLC_COMM_FB_MQTT_SUBSCRIBE, fb, ZPLC_COMM_MQTT_SUBSCRIBE_SIZE) == 0);
   assert(fb[4] == 0 && fb[5] == 0 && fb[6] == 0 && fb[7] == 0);
   assert(image.bytes[0] == 0xA5 && image.bytes[ZPLC_COMM_MQTT_SUBSCRIBE_SIZE + 1] == 0xA5);
 }
@@ -408,22 +390,18 @@ static void test_block_shorter_than_its_layout_is_refused(void) {
   script_play(1, results);
 
   /* one byte short of the table size: refused, handler not called, no write */
-  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_MB_READ_HREG, mem,
-                           ZPLC_COMM_MB_READ_HREG_SIZE - 1U) == -1);
+  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_MB_READ_HREG, mem, ZPLC_COMM_MB_READ_HREG_SIZE - 1U) == -1);
   assert(script.starts == 0);
   assert(mem[1] == 0 && mem[3] == 0);
   /* the reset of a short block clears nothing either */
   mem[1] = 1;
-  assert(zplc_comm_fb_reset(ZPLC_COMM_FB_MB_READ_HREG, mem,
-                            ZPLC_COMM_MB_READ_HREG_SIZE - 1U) == -1);
+  assert(zplc_comm_fb_reset(ZPLC_COMM_FB_MB_READ_HREG, mem, ZPLC_COMM_MB_READ_HREG_SIZE - 1U) == -1);
   assert(mem[0] == 1 && mem[1] == 1);
   /* no block at all */
-  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_MB_READ_HREG, NULL,
-                           ZPLC_COMM_MB_READ_HREG_SIZE) == -1);
+  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_MB_READ_HREG, NULL, ZPLC_COMM_MB_READ_HREG_SIZE) == -1);
   /* exactly the table size is accepted */
   mem[1] = 0; /* not busy */
-  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_MB_READ_HREG, mem,
-                           ZPLC_COMM_MB_READ_HREG_SIZE) == 0);
+  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_MB_READ_HREG, mem, ZPLC_COMM_MB_READ_HREG_SIZE) == 0);
   assert(script.starts == 1);
   assert(script.last_fb_len == ZPLC_COMM_MB_READ_HREG_SIZE);
 }
@@ -439,11 +417,9 @@ static void test_kind_without_layout_is_the_handshake(void) {
   script_play(1, results);
   assert(zplc_comm_fb_size(ZPLC_COMM_FB_COMM_STATUS) == 0);
   zplc_comm_register_handler(ZPLC_COMM_FB_COMM_STATUS, scripted_handler);
-  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_COMM_STATUS, mem,
-                           ZPLC_COMM_FB_HANDSHAKE_SIZE - 1U) == -1);
+  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_COMM_STATUS, mem, ZPLC_COMM_FB_HANDSHAKE_SIZE - 1U) == -1);
   assert(script.starts == 0);
-  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_COMM_STATUS, mem,
-                           ZPLC_COMM_FB_HANDSHAKE_SIZE) == 0);
+  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_COMM_STATUS, mem, ZPLC_COMM_FB_HANDSHAKE_SIZE) == 0);
   assert(script.starts == 1);
   assert(script.last_fb_len == ZPLC_COMM_FB_HANDSHAKE_SIZE);
 }

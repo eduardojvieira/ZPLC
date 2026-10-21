@@ -197,8 +197,7 @@ int zplc_sched_shutdown(void);
  * @return Task handle (0-based index) on success, negative error code on
  * failure
  */
-int zplc_sched_register_task(const zplc_task_def_t *def, const uint8_t *code,
-                             size_t code_size);
+int zplc_sched_register_task(const zplc_task_def_t *def, const uint8_t *code, size_t code_size);
 
 /**
  * @brief Validate whether a .zplc program can be admitted by this scheduler.
@@ -327,7 +326,6 @@ zplc_sched_state_t zplc_sched_get_state(void);
  */
 int zplc_sched_get_stats(zplc_sched_stats_t *stats);
 
-
 /**
  * @brief Get task information.
  *
@@ -395,7 +393,6 @@ int zplc_sched_lock(int timeout_ms);
  * @return 0 on success, negative error code on failure
  */
 int zplc_sched_unlock(void);
-
 
 #ifdef __cplusplus
 }

@@ -1,16 +1,16 @@
 /**
  * WebSerial Uploader for ZPLC
- * 
+ *
  * Implements the serial communication protocol for uploading bytecode
  * to a ZPLC-enabled Zephyr device.
- * 
+ *
  * Protocol:
  *   1. Stop any running program: "zplc stop\n"
  *   2. Prepare buffer: "zplc load <size>\n"
  *   3. Send hex chunks: "zplc data <hex>\n" (max 32 bytes per chunk = 64 hex chars)
  * The program remains stopped after transfer. Execution is a separate,
  * explicit operator action.
- *   
+ *
  * Each command returns "OK: ..." on success or "ERROR: ..." on failure.
  */
 
@@ -117,7 +117,7 @@ export interface UploadBytecodeOptions {
 export type ProgressCallback = (
   stage: 'connecting' | 'stopping' | 'loading' | 'sending' | 'complete' | 'error',
   progress: number,
-  message: string
+  message: string,
 ) => void;
 
 /**
@@ -221,10 +221,7 @@ function startReaderTask(connection: SerialConnection): void {
 /**
  * Connect to a serial port
  */
-export async function connect(
-  port: SerialPort,
-  baudRate: number = 115200
-): Promise<SerialConnection> {
+export async function connect(port: SerialPort, baudRate: number = 115200): Promise<SerialConnection> {
   await port.open({ baudRate });
   let connection: SerialConnection | null = null;
   try {
@@ -327,8 +324,8 @@ export async function disconnect(connection: SerialConnection): Promise<void> {
 
   // Wait for reader task to finish (with timeout)
   if (connection._readerTask) {
-    const timeout = new Promise<void>(resolve => setTimeout(resolve, 1000));
-    await Promise.race([connection._readerTask.catch(() => { }), timeout]);
+    const timeout = new Promise<void>((resolve) => setTimeout(resolve, 1000));
+    await Promise.race([connection._readerTask.catch(() => {}), timeout]);
   }
 
   // Close the port
@@ -345,18 +342,15 @@ export async function disconnect(connection: SerialConnection): Promise<void> {
 
 /**
  * Wait for a response matching our expected pattern
- * 
+ *
  * The Zephyr shell sends responses with various formats:
  * - Echo of the command (can be mixed with input)
  * - Response line starting with OK:, ERROR:, or WARN:
  * - Prompt (uart:~$ ) which may appear before/after response
- * 
+ *
  * We need to be flexible and find the response anywhere in the buffer.
  */
-async function waitForResponse(
-  connection: SerialConnection,
-  timeoutMs: number = COMMAND_TIMEOUT_MS
-): Promise<string> {
+async function waitForResponse(connection: SerialConnection, timeoutMs: number = COMMAND_TIMEOUT_MS): Promise<string> {
   const startTime = Date.now();
 
   // Regex to strip ANSI escape codes
@@ -406,10 +400,7 @@ async function waitForResponse(
 /**
  * Send a command and wait for response
  */
-async function sendCommand(
-  connection: SerialConnection,
-  command: string
-): Promise<string> {
+async function sendCommand(connection: SerialConnection, command: string): Promise<string> {
   const encoder = new TextEncoder();
 
   // Clear buffer before sending
@@ -448,11 +439,7 @@ function textToBytes(text: string): Uint8Array {
   return new TextEncoder().encode(text);
 }
 
-async function uploadSingleCertificate(
-  connection: SerialConnection,
-  kind: 'ca' | 'client' | 'key',
-  content: string,
-): Promise<void> {
+async function uploadSingleCertificate(connection: SerialConnection, kind: 'ca' | 'client' | 'key', content: string): Promise<void> {
   const bytes = textToBytes(content);
   const beginResp = await sendCommand(connection, `zplc cert begin ${kind} ${bytes.length}`);
   if (beginResp.startsWith('ERROR:')) {
@@ -477,10 +464,7 @@ async function uploadSingleCertificate(
   }
 }
 
-export async function uploadCertificates(
-  connection: SerialConnection,
-  certs: CertificateUploadBundle,
-): Promise<void> {
+export async function uploadCertificates(connection: SerialConnection, certs: CertificateUploadBundle): Promise<void> {
   connection._rxBuffer = '';
   if (certs.caCertPem) {
     await uploadSingleCertificate(connection, 'ca', certs.caCertPem);
@@ -500,16 +484,12 @@ export async function uploadBytecode(
   connection: SerialConnection,
   bytecode: Uint8Array,
   onProgress?: ProgressCallback,
-  options: UploadBytecodeOptions = {}
+  options: UploadBytecodeOptions = {},
 ): Promise<void> {
   const commandSet = getUploadCommandSet(options.hasSchedulerSupport ?? false);
   const trace = options.trace;
 
-  const notify = (
-    stage: Parameters<ProgressCallback>[0],
-    progress: number,
-    message: string
-  ) => {
+  const notify = (stage: Parameters<ProgressCallback>[0], progress: number, message: string) => {
     onProgress?.(stage, progress, message);
   };
 

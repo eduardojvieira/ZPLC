@@ -6,7 +6,12 @@ const dom = await setupDom();
 
 describe('Toast (UX-001) in a DOM', () => {
   it('an informational toast is a status and a danger toast is an alert', () => {
-    dom.render(<ToastRegion label="Notifications"><Toast>Saved</Toast><Toast tone="danger">Build failed</Toast></ToastRegion>);
+    dom.render(
+      <ToastRegion label="Notifications">
+        <Toast>Saved</Toast>
+        <Toast tone="danger">Build failed</Toast>
+      </ToastRegion>,
+    );
     expect(dom.screen.getByRole('region', { name: 'Notifications' })).toBeTruthy();
     expect(dom.screen.getByRole('status').textContent).toBe('Saved');
     expect(dom.screen.getByRole('alert').textContent).toBe('Build failed');
@@ -14,7 +19,11 @@ describe('Toast (UX-001) in a DOM', () => {
 
   it('its dismiss button is named, runs by click and by keyboard, and is absent without a handler', async () => {
     const onDismiss = mock(() => undefined);
-    const { user } = dom.render(<Toast dismissLabel="Dismiss notification" onDismiss={onDismiss}>Saved</Toast>);
+    const { user } = dom.render(
+      <Toast dismissLabel="Dismiss notification" onDismiss={onDismiss}>
+        Saved
+      </Toast>,
+    );
     await user.click(dom.screen.getByRole('button', { name: 'Dismiss notification' }));
     await user.keyboard('{Enter}');
     expect(onDismiss).toHaveBeenCalledTimes(2);

@@ -3,7 +3,8 @@
  *
  * The rules are the ones the compiler applies to an assignment (CMP-005): integers, bit strings and the real types form one
  * family of numbers, an integer converts to a real type, one real type to the other (the build warns when an LREAL is
- * narrowed to a REAL), and BOOL, TIME, DATE, TOD, DT and STRING take their own type only. The compiler keeps its rules private, so the table below is the editor's one copy and
+ * narrowed to a REAL), and BOOL, TIME, DATE, TOD, DT and STRING take their own type only. The compiler keeps its rules private, so the
+ * table below is the editor's one copy and
  * `pinTypes.test.ts` compiles an assignment for every pair of elementary types and fails when the two disagree.
  */
 
@@ -30,8 +31,13 @@ const GENERIC: Record<string, readonly string[]> = {
 
 /** What a generic pin takes, for the reason. */
 const TAKES: Record<string, string> = {
-  ANY_NUM: 'numbers', ANY_MAGNITUDE: 'numbers and times', ANY_INT: 'integers', ANY_REAL: 'real numbers',
-  ANY_BIT: 'a BOOL or a bit string', ANY_STRING: 'strings', ANY_DATE: 'dates and times',
+  ANY_NUM: 'numbers',
+  ANY_MAGNITUDE: 'numbers and times',
+  ANY_INT: 'integers',
+  ANY_REAL: 'real numbers',
+  ANY_BIT: 'a BOOL or a bit string',
+  ANY_STRING: 'strings',
+  ANY_DATE: 'dates and times',
 };
 
 /** The type of an integer constant that names none: it goes where any number does, and nowhere else. */
@@ -40,8 +46,11 @@ export const INTEGER_LITERAL = 'INTEGER_LITERAL';
 const ELEMENTARY = new Set([...INTEGERS, ...REALS, 'BOOL', 'TIME', ...DATES, ...STRINGS]);
 
 function normalize(type: string | undefined): string | undefined {
-  const name = type?.trim().replace(/\[\d+\]$|\(\d+\)$/, '').toUpperCase();
-  return name ? ALIASES[name] ?? name : undefined;
+  const name = type
+    ?.trim()
+    .replace(/\[\d+\]$|\(\d+\)$/, '')
+    .toUpperCase();
+  return name ? (ALIASES[name] ?? name) : undefined;
 }
 
 function describe(type: string): string {
@@ -74,29 +83,40 @@ export function pinTypeProblem(source: string | undefined, target: string | unde
   const admitted = GENERIC[to];
   if (from === INTEGER_LITERAL) {
     if (admitted) return admitted.some((type) => INTEGERS.includes(type)) ? undefined : `an integer constant cannot go into ${to}`;
-    return !ELEMENTARY.has(to) || INTEGERS.includes(to) || REALS.includes(to) ? undefined
+    return !ELEMENTARY.has(to) || INTEGERS.includes(to) || REALS.includes(to)
+      ? undefined
       : `an integer constant is a number and ${to} takes only its own type: write a ${to} value, or convert it explicitly`;
   }
 
   const sources = GENERIC[from] ?? (ELEMENTARY.has(from) ? [from] : undefined);
   if (!sources || (!admitted && !ELEMENTARY.has(to))) return undefined;
   // a result that depends on its inputs (ANY_NUM) is wrong only where none of its possible types fits
-  const fits = (candidate: string): boolean => admitted ? admitted.includes(candidate) : converts(candidate, to);
+  const fits = (candidate: string): boolean => (admitted ? admitted.includes(candidate) : converts(candidate, to));
   if (sources.some(fits)) return undefined;
 
   const what = GENERIC[from] ? `${from} is a number` : `${from} is ${describe(from)}`;
   if (REALS.includes(from) && INTEGERS.includes(to)) {
-    return `${what}, and IEC 61131-3 does not convert a REAL to an integer implicitly; convert it explicitly, for example with ${from}_TO_${to}`;
+    return (
+      `${what}, and IEC 61131-3 does not convert a REAL to an integer implicitly; convert it explicitly, for example ` +
+      `with ${from}_TO_${to}`
+    );
   }
   const into = admitted ? `${to} takes ${TAKES[to]}` : `${to} is ${describe(to)}`;
-  return `${what} and ${into}: IEC 61131-3 converts implicitly only to a wider type of the same kind; convert it explicitly${admitted ? '' : `, for example with ${from}_TO_${to}`}`;
+  return (
+    `${what} and ${into}: IEC 61131-3 converts implicitly only to a wider type of the same kind; convert it ` +
+    `explicitly${admitted ? '' : `, for example with ${from}_TO_${to}`}`
+  );
 }
 
 // =============================================================================
 // Connections of a diagram
 // =============================================================================
 
-interface Pin { block: FBDBlock; port: FBDPort; endpoint: FBDConnectionEndpoint }
+interface Pin {
+  block: FBDBlock;
+  port: FBDPort;
+  endpoint: FBDConnectionEndpoint;
+}
 
 function declaredType(model: FBDModel, name: string | undefined): string | undefined {
   if (!name) return undefined;
@@ -114,7 +134,10 @@ function constantType(block: FBDBlock): string | undefined {
   return undefined;
 }
 
-/** The type of the value on a pin: a variable block holds what its variable holds, a constant is what it is written as, else the type of the port. */
+/**
+ * The type of the value on a pin: a variable block holds what its variable holds, a constant is what it is written as, else the type of the
+ * port.
+ */
 function valueType(model: FBDModel, pin: Pin): string | undefined {
   const { type } = pin.block;
   if (type === 'constant') return constantType(pin.block);
@@ -157,7 +180,12 @@ export function judgeConnection(
   const backward = [pin(b, 'outputs'), pin(a, 'inputs')] as const;
   const [source, sink] = forward[0] && forward[1] ? forward : backward;
   if (!source || !sink) {
-    return { reason: pin(a, 'outputs') && pin(b, 'outputs') ? 'two outputs cannot be wired together: a wire joins an output to an input' : 'a wire joins an output to an input' };
+    return {
+      reason:
+        pin(a, 'outputs') && pin(b, 'outputs')
+          ? 'two outputs cannot be wired together: a wire joins an output to an input'
+          : 'a wire joins an output to an input',
+    };
   }
   const label = (end: FBDConnectionEndpoint) => `'${end.block}.${end.port}'`;
   const verdict = { from: source.endpoint, to: sink.endpoint };

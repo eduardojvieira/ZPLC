@@ -5,7 +5,5 @@
   "note": "IEC 61131-3, comments: a comment is any text between (* and *); it is not part of the program, so ((1 + 2) * 5) is 15",
   "scans": 1,
   "scanMs": 10,
-  "expect": [
-    {"at": "%QW0", "type": "INT", "value": 15}
-  ]
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 15 }]
 }

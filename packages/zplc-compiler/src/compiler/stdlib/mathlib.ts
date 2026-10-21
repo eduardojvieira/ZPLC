@@ -564,7 +564,7 @@ const ATANF: AsmLine[] = [
     `    GT`,
     `    JNZ ${ATANF_LABEL}_big`,
     `    DUP`,
-    `    PUSH32 ${f(0.4142135623730950)}`,
+    `    PUSH32 ${f(0.414213562373095)}`,
     `    GT`,
     `    JNZ ${ATANF_LABEL}_mid`,
     `    PUSH8 0             ; [x a y]`,

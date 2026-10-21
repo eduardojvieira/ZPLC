@@ -3,8 +3,20 @@ import { describe, expect, it } from 'bun:test';
 import type { FileTreeNode } from '../types';
 import { declarationKindLabel, libraryChoices, libraryRows } from './projectDeclarationsPresentation';
 
-const file = (path: string, language: FileTreeNode['language'] = 'ST'): FileTreeNode => ({ id: `file:${path}`, name: path.split('/').at(-1)!, type: 'file', path, language });
-const folder = (path: string, children: FileTreeNode[]): FileTreeNode => ({ id: `dir:${path}`, name: path.split('/').at(-1)!, type: 'directory', path, children });
+const file = (path: string, language: FileTreeNode['language'] = 'ST'): FileTreeNode => ({
+  id: `file:${path}`,
+  name: path.split('/').at(-1)!,
+  type: 'file',
+  path,
+  language,
+});
+const folder = (path: string, children: FileTreeNode[]): FileTreeNode => ({
+  id: `dir:${path}`,
+  name: path.split('/').at(-1)!,
+  type: 'directory',
+  path,
+  children,
+});
 const tree: FileTreeNode = folder('', [
   folder('src', [file('src/Main.st')]),
   folder('lib', [file('lib/Debounce.st'), file('lib/pump.ld.json', 'LD'), folder('lib/math', [file('lib/math/Scale.st')])]),
@@ -13,12 +25,16 @@ const tree: FileTreeNode = folder('', [
 ]);
 
 describe('libraryRows', () => {
-  it('counts the Structured Text files directly in each library, the ones the build reads, and marks a folder that is not in the project', () => {
-    expect(libraryRows(['lib', 'gone'], tree)).toEqual([
-      { path: 'lib', missing: false, files: 1 },
-      { path: 'gone', missing: true, files: 0 },
-    ]);
-  });
+  it(
+    'counts the Structured Text files directly in each library, the ones the build reads, and marks a folder that is not in the ' +
+      'project',
+    () => {
+      expect(libraryRows(['lib', 'gone'], tree)).toEqual([
+        { path: 'lib', missing: false, files: 1 },
+        { path: 'gone', missing: true, files: 0 },
+      ]);
+    },
+  );
 });
 
 describe('libraryChoices', () => {

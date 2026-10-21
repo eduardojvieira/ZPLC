@@ -12,7 +12,11 @@
     { "atMs": 70, "set": { "Conveyor.Reset": false } }
   ],
   "expectations": [
-    { "kind": "AT", "atMs": 0, "condition": { "Conveyor.BeltCommand": false, "Conveyor.DiverterCommand": false, "Conveyor.FaultLamp": false } },
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": { "Conveyor.BeltCommand": false, "Conveyor.DiverterCommand": false, "Conveyor.FaultLamp": false }
+    },
     { "kind": "AT", "atMs": 10, "condition": { "Conveyor.BeltCommand": true } },
     { "kind": "RISING", "fromMs": 20, "withinMs": 10, "condition": { "Conveyor.DiverterCommand": true } },
     { "kind": "NEVER", "condition": { "Conveyor.DiverterCommand": true, "Conveyor.BeltCommand": false } },

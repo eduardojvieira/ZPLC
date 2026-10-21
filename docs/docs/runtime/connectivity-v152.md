@@ -1,6 +1,6 @@
 ---
 draft: true
-draft_reason: "A planning snapshot of March 2026, not a description of the product: its status column (In Progress, Partial) is a point in time, it names Kconfig symbols (ZPLC_MODBUS_RTU_CLIENT, ZPLC_MODBUS_TCP_CLIENT) that do not exist, and the communication handshake and block set it plans were rewritten since. The published pages are the how-to guides (Modbus, MQTT and Sparkplug B, cloud blocks), the connectivity page, the communication function blocks page and the generated Kconfig and function-block references."
+draft_reason: 'A planning snapshot of March 2026, not a description of the product: its status column (In Progress, Partial) is a point in time, it names Kconfig symbols (ZPLC_MODBUS_RTU_CLIENT, ZPLC_MODBUS_TCP_CLIENT) that do not exist, and the communication handshake and block set it plans were rewritten since. The published pages are the how-to guides (Modbus, MQTT and Sparkplug B, cloud blocks), the connectivity page, the communication function blocks page and the generated Kconfig and function-block references.'
 ---
 
 # Connectivity v1_5_2 — Implementation Spec
@@ -15,15 +15,15 @@ This document is the authoritative gap analysis and implementation contract for 
 
 ## 1. Gap Summary Table
 
-| # | Feature | Layer | Priority | Effort | Dependency | Current Status |
-|---|---------|-------|----------|--------|------------|----------------|
-| G1 | Modbus RTU **Client** (Master) | Firmware + application | 🔴 High | M | None | 🟡 Partial - config/API/polling scaffold exists; tag model and production validation still missing |
-| G2 | Modbus TCP **Client** (Master) | Firmware + application | 🔴 High | M | None | 🟡 Partial - client API and poll loop exist; persistent socket/gateway semantics still missing |
-| G3 | Azure C2D Messaging | Firmware + application | 🔴 High | S | Azure IoT Hub ✅ | ✅ Implemented in runtime/config/UI |
-| G4 | Sparkplug B Rebirth (NCMD/DCMD) | Firmware | 🔴 High | S | Sparkplug B ✅ | ✅ Implemented; NCMD pre-existed, DCMD rebirth added |
-| G5 | Azure DPS (Device Provisioning) | Firmware + application | 🟡 Medium | L | Azure IoT Hub ✅ | 🟡 Partial - dedicated DPS MQTT connect/subscribe/register/poll loop exists, but needs compile validation and broker validation |
-| G6 | AWS Fleet Provisioning | Firmware + application | 🟡 Medium | L | AWS IoT Core ✅ | 🟡 Partial - mutual-TLS MQTT exchange skeleton exists, but needs compile validation and broker validation |
-| G7 | Azure Event Grid (full impl) | Firmware + application | 🟡 Medium | M | Azure IoT Hub ✅ | ✅ Implemented in runtime/config/UI, pending release validation |
+| #   | Feature                         | Layer                  | Priority  | Effort | Dependency       | Current Status                                                                                                                  |
+| --- | ------------------------------- | ---------------------- | --------- | ------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| G1  | Modbus RTU **Client** (Master)  | Firmware + application | 🔴 High   | M      | None             | 🟡 Partial - config/API/polling scaffold exists; tag model and production validation still missing                              |
+| G2  | Modbus TCP **Client** (Master)  | Firmware + application | 🔴 High   | M      | None             | 🟡 Partial - client API and poll loop exist; persistent socket/gateway semantics still missing                                  |
+| G3  | Azure C2D Messaging             | Firmware + application | 🔴 High   | S      | Azure IoT Hub ✅ | ✅ Implemented in runtime/config/UI                                                                                             |
+| G4  | Sparkplug B Rebirth (NCMD/DCMD) | Firmware               | 🔴 High   | S      | Sparkplug B ✅   | ✅ Implemented; NCMD pre-existed, DCMD rebirth added                                                                            |
+| G5  | Azure DPS (Device Provisioning) | Firmware + application | 🟡 Medium | L      | Azure IoT Hub ✅ | 🟡 Partial - dedicated DPS MQTT connect/subscribe/register/poll loop exists, but needs compile validation and broker validation |
+| G6  | AWS Fleet Provisioning          | Firmware + application | 🟡 Medium | L      | AWS IoT Core ✅  | 🟡 Partial - mutual-TLS MQTT exchange skeleton exists, but needs compile validation and broker validation                       |
+| G7  | Azure Event Grid (full impl)    | Firmware + application | 🟡 Medium | M      | Azure IoT Hub ✅ | ✅ Implemented in runtime/config/UI, pending release validation                                                                 |
 
 **Effort key:** S = Small (less than 1 day), M = Medium (1–3 days), L = Large (3–7 days), XL = Extra Large (weeks)
 
@@ -254,6 +254,7 @@ config ZPLC_MODBUS_TCP_CLIENT
 #### Required changes
 
 1. **Subscribe on CONNACK** (add to the Azure IoT Hub `CONNACK` handler alongside the existing Twin/Methods subscriptions):
+
    ```c
    /* C2D topic */
    snprintf(s_c2d_topic, sizeof(s_c2d_topic),
@@ -262,6 +263,7 @@ config ZPLC_MODBUS_TCP_CLIENT
    ```
 
 2. **Dispatch in `PUBLISH` handler** (add a new `else if` branch to `mqtt_evt_handler`):
+
    ```c
    } else if (azure_hub_enabled &&
               strncmp(topic, "devices/", 8) == 0 &&
@@ -275,6 +277,7 @@ config ZPLC_MODBUS_TCP_CLIENT
    ```
 
 3. **Callback registration API** (new):
+
    ```c
    typedef void (*zplc_azure_c2d_cb_t)(const uint8_t *payload, size_t len);
    void zplc_mqtt_set_azure_c2d_callback(zplc_azure_c2d_cb_t cb);
@@ -295,7 +298,7 @@ void zplc_config_set_azure_c2d_enabled(bool enabled);
 
 ### Problem
 
-The spec requires testing: *"Simulate Primary Application REBIRTH request, verify REBIRTH response"* (Phase 5.1 verification). Currently, `zplc_mqtt.c` publishes `NBIRTH` on connect but **never subscribes to `NCMD` or `DCMD` topics**, so a SCADA system (Ignition, HiveMQ) cannot trigger a Rebirth.
+The spec requires testing: _"Simulate Primary Application REBIRTH request, verify REBIRTH response"_ (Phase 5.1 verification). Currently, `zplc_mqtt.c` publishes `NBIRTH` on connect but **never subscribes to `NCMD` or `DCMD` topics**, so a SCADA system (Ignition, HiveMQ) cannot trigger a Rebirth.
 
 ### Spec (from `TECHNICAL_SPEC.md` Phase 1_5_1)
 
@@ -310,6 +313,7 @@ The spec requires testing: *"Simulate Primary Application REBIRTH request, verif
 #### Required changes
 
 1. **Subscribe to NCMD on CONNACK** (after NBIRTH publish):
+
    ```c
    /* Sparkplug B: subscribe to node commands */
    snprintf(buf, sizeof(buf), "spBv1.0/%s/NCMD/%s", group_id, edge_node_id);
@@ -317,6 +321,7 @@ The spec requires testing: *"Simulate Primary Application REBIRTH request, verif
    ```
 
 2. **Handle NCMD in PUBLISH dispatcher**:
+
    ```c
    } else if (profile == ZPLC_MQTT_PROFILE_SPARKPLUG_B &&
               strstr(topic, "/NCMD/")) {
@@ -488,6 +493,7 @@ bool zplc_aws_fleet_is_provisioned(void);
 ### What Azure Event Grid MQTT requires
 
 Azure Event Grid's MQTT broker (GA since 2024) uses standard MQTT 5.0 with:
+
 - **Custom topics** (user-defined, not the `$iothub/` hierarchy)
 - **CloudEvents schema** (`Content-Type: application/cloudevents+json; charset=utf-8`) for structured events
 - **MQTT 5.0** with User Properties for CloudEvents attributes

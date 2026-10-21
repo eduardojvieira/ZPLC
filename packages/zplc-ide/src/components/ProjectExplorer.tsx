@@ -20,12 +20,24 @@ export function ProjectExplorer() {
           label={t('navigator.mode.label')}
           value={mode}
           onValueChange={(value) => setMode(value as NavigatorMode)}
-          options={[{ value: 'objects', label: t('navigator.mode.objects') }, { value: 'files', label: t('navigator.mode.files') }]}
+          options={[
+            { value: 'objects', label: t('navigator.mode.objects') },
+            { value: 'files', label: t('navigator.mode.files') },
+          ]}
         />
       </div>
-      {mode === 'objects'
-        ? <div className="min-h-0 flex-1"><ObjectNavigator /></div>
-        : <><div className="min-h-0 flex-1"><Sidebar /></div><ProjectDeclarations /></>}
+      {mode === 'objects' ? (
+        <div className="min-h-0 flex-1">
+          <ObjectNavigator />
+        </div>
+      ) : (
+        <>
+          <div className="min-h-0 flex-1">
+            <Sidebar />
+          </div>
+          <ProjectDeclarations />
+        </>
+      )}
     </div>
   );
 }

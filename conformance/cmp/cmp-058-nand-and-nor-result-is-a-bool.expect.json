@@ -6,9 +6,9 @@
   "scans": 1,
   "scanMs": 10,
   "expect": [
-    {"at": "%QB0", "type": "BYTE", "value": 1},
-    {"at": "%QB1", "type": "BYTE", "value": 0},
-    {"at": "%QB2", "type": "BYTE", "value": 1},
-    {"at": "%QB3", "type": "BYTE", "value": 0}
+    { "at": "%QB0", "type": "BYTE", "value": 1 },
+    { "at": "%QB1", "type": "BYTE", "value": 0 },
+    { "at": "%QB2", "type": "BYTE", "value": 1 },
+    { "at": "%QB3", "type": "BYTE", "value": 0 }
   ]
 }

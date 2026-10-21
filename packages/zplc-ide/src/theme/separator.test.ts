@@ -6,7 +6,11 @@ import { THEME_IDS, resolveTokens } from './tokens';
 const raw = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
 const css = raw.replace(/\/\*[\s\S]*?\*\//g, '');
 const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, selector, body]) => ({ selector: selector.trim(), body }));
-const rule = (selector: string) => rules.filter((item) => item.selector === selector).map((item) => item.body).join('\n');
+const rule = (selector: string) =>
+  rules
+    .filter((item) => item.selector === selector)
+    .map((item) => item.body)
+    .join('\n');
 
 /** UX-017: react-resizable-panels 4.x marks a separator with data-separator = inactive | hover | active | focus | disabled. */
 describe('panel separator styles', () => {
@@ -22,7 +26,8 @@ describe('panel separator styles', () => {
   });
 
   it('UX-017 show hover, active and focus as three different looks, from tokens only', () => {
-    const fill = (state: string): string | undefined => /background-color:\s*(var\(--[a-z0-9-]+\))/.exec(rule(`[data-separator="${state}"]`))?.[1];
+    const fill = (state: string): string | undefined =>
+      /background-color:\s*(var\(--[a-z0-9-]+\))/.exec(rule(`[data-separator="${state}"]`))?.[1];
     expect(fill('hover')).toBe('var(--color-surface-500)');
     expect(fill('active')).toBe('var(--color-accent-blue)');
     expect(fill('focus')).toBe('var(--color-surface-500)');
@@ -38,7 +43,11 @@ describe('panel separator styles', () => {
     for (const theme of THEME_IDS) {
       const tokens = resolveTokens(theme);
       for (const surface of ['--color-surface-900', '--color-surface-800']) {
-        expect({ theme, surface, visible: contrastRatio(tokens['--separator-rule'], tokens[surface]) >= 3 }).toEqual({ theme, surface, visible: true });
+        expect({ theme, surface, visible: contrastRatio(tokens['--separator-rule'], tokens[surface]) >= 3 }).toEqual({
+          theme,
+          surface,
+          visible: true,
+        });
       }
     }
   });

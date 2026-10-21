@@ -1,17 +1,9 @@
 {
   "requirement": "CMP-037",
   "title": "an input of a standard block is given with :=, not bound with =>",
-  "matrix": [
-    "pous.function-block-call-with-named-inputs"
-  ],
+  "matrix": ["pous.function-block-call-with-named-inputs"],
   "build": "fails",
-  "lines": [
-    6
-  ],
-  "codes": [
-    "INVALID_OUTPUT_BINDING"
-  ],
-  "messageIncludes": [
-    "IN"
-  ]
+  "lines": [6],
+  "codes": ["INVALID_OUTPUT_BINDING"],
+  "messageIncludes": ["IN"]
 }

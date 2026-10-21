@@ -132,9 +132,7 @@ static void load_and_start_tasks(zplc_trace_log_t *trace, const zplc_trace_task_
   zplc_sched_test_stop_timers();
 }
 
-static void load_and_start(zplc_trace_log_t *trace) {
-  load_and_start_tasks(trace, ZPLC_TRACE_TASKS, ZPLC_TRACE_TASK_COUNT);
-}
+static void load_and_start(zplc_trace_log_t *trace) { load_and_start_tasks(trace, ZPLC_TRACE_TASKS, ZPLC_TRACE_TASK_COUNT); }
 
 static void run_batch(unsigned batch) {
   unsigned slot;
@@ -159,8 +157,7 @@ ZTEST(zplc_scheduler_equivalence, test_the_zephyr_adapter_decides_the_golden_tra
 
   load_and_start(&trace_log);
   zassert_ok(zplc_sched_get_stats(&before), "read the baseline");
-  zassert_equal(zplc_sched_test_core()->miss_limit, ZPLC_SCHED_DEFAULT_MISS_LIMIT,
-                "the firmware runs with the default limit of the core");
+  zassert_equal(zplc_sched_test_core()->miss_limit, ZPLC_SCHED_DEFAULT_MISS_LIMIT, "the firmware runs with the default limit of the core");
   zassert_equal(ZPLC_SCHED_DEFAULT_MISS_LIMIT, 3U, "which is three misses in a row");
 
   for (batch = 0U; batch < ZPLC_TRACE_BATCH_COUNT; batch++) {
@@ -169,8 +166,8 @@ ZTEST(zplc_scheduler_equivalence, test_the_zephyr_adapter_decides_the_golden_tra
 
   zassert_equal(trace_log.count, ZPLC_TRACE_GOLDEN_COUNT, "as many decisions as the golden trace");
   for (line = 0U; line < trace_log.count && line < ZPLC_TRACE_GOLDEN_COUNT; line++) {
-    zassert_true(strcmp(trace_log.line[line], ZPLC_TRACE_GOLDEN[line]) == 0, "line %u: got \"%s\", want \"%s\"", line,
-                 trace_log.line[line], ZPLC_TRACE_GOLDEN[line]);
+    zassert_true(strcmp(trace_log.line[line], ZPLC_TRACE_GOLDEN[line]) == 0, "line %u: got \"%s\", want \"%s\"", line, trace_log.line[line],
+                 ZPLC_TRACE_GOLDEN[line]);
   }
 
   zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR, "the third miss in a row latches");
@@ -191,8 +188,7 @@ ZTEST(zplc_scheduler_equivalence, test_the_zephyr_adapter_decides_the_golden_tra
 /* RT-018: a program of one task is a one-task configuration of the same scheduler, and decides what the
  * single-task configuration of the firmware and the host session decide for it. */
 ZTEST(zplc_scheduler_equivalence, test_one_task_decides_the_one_task_golden_trace) {
-  static const zplc_trace_task_t one = {ZPLC_TRACE_ONE_TASK_ID, 0U, ZPLC_TRACE_ONE_INTERVAL_MS,
-                                        ZPLC_TRACE_ONE_OUTPUT};
+  static const zplc_trace_task_t one = {ZPLC_TRACE_ONE_TASK_ID, 0U, ZPLC_TRACE_ONE_INTERVAL_MS, ZPLC_TRACE_ONE_OUTPUT};
   unsigned batch;
   unsigned line;
 

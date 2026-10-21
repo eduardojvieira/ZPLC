@@ -5,7 +5,5 @@
   "note": "IEC 61131-3, function block declaration and call: inputs are given at the call and outputs are read from the instance; the instance keeps its state between scans, so four calls of step 3 total 12",
   "scans": 4,
   "scanMs": 10,
-  "expect": [
-    {"at": "%QW0", "type": "INT", "value": 12}
-  ]
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 12 }]
 }

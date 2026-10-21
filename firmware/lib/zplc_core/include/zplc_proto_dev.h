@@ -57,8 +57,8 @@ extern "C" {
 
 /** @brief What the port tells about the runtime. The engine compares successive values to produce events. */
 typedef struct {
-  uint8_t state;              /**< ZPLC_PROTO_RUN_STATE_* */
-  uint8_t fault;              /**< ZPLC_PROTO_FAULT_* */
+  uint8_t state; /**< ZPLC_PROTO_RUN_STATE_* */
+  uint8_t fault; /**< ZPLC_PROTO_FAULT_* */
   uint8_t program_loaded;
   uint8_t forces;
   uint32_t cycles;
@@ -66,7 +66,7 @@ typedef struct {
   uint32_t program_size;
   uint32_t program_generation;
   uint32_t uptime_ms;
-  uint8_t break_hit;          /**< 1 while the runtime is stopped at a breakpoint */
+  uint8_t break_hit; /**< 1 while the runtime is stopped at a breakpoint */
   uint8_t break_task;
   uint16_t break_pc;
   uint8_t fault_task;
@@ -115,10 +115,10 @@ typedef struct {
 typedef struct {
   void *context;
 
-  uint32_t (*now_ms)(void *context);                                    /**< required */
-  int (*random)(void *context, uint8_t *out, size_t length);            /**< cryptographic bytes; NULL: no authenticated sessions */
+  uint32_t (*now_ms)(void *context);                         /**< required */
+  int (*random)(void *context, uint8_t *out, size_t length); /**< cryptographic bytes; NULL: no authenticated sessions */
 
-  int (*key_load)(void *context, uint8_t key[ZPLC_PROTO_KEY_BYTES]);    /**< 0 when a key is held */
+  int (*key_load)(void *context, uint8_t key[ZPLC_PROTO_KEY_BYTES]); /**< 0 when a key is held */
   int (*key_store)(void *context, const uint8_t key[ZPLC_PROTO_KEY_BYTES]);
   int (*key_erase)(void *context);
 
@@ -128,8 +128,7 @@ typedef struct {
   /** Snapshot read: the memory as the last scan published it. */
   int (*mem_read)(void *context, uint16_t address, uint8_t *out, uint16_t length);
   /** Every extent from one scan; NULL makes the engine call mem_read for each. Returns the scan counter. */
-  int (*mem_read_many)(void *context, const zplc_proto_extent_t *extents, size_t count, uint8_t *out,
-                       uint32_t *scan);
+  int (*mem_read_many)(void *context, const zplc_proto_extent_t *extents, size_t count, uint8_t *out, uint32_t *scan);
   /** Whole with respect to the scan: queued and applied at the next input latch (zplc_exchange_write). */
   int (*mem_write)(void *context, uint16_t address, const uint8_t *data, uint16_t length);
 
@@ -283,8 +282,8 @@ struct zplc_proto_dev {
 int zplc_proto_dev_init(zplc_proto_dev_t *dev, const zplc_proto_ops_t *ops, uint16_t idle_timeout_s);
 
 /** @brief Attach a link. `write` is called once per frame. */
-void zplc_proto_link_init(zplc_proto_link_t *link, zplc_proto_dev_t *dev, uint8_t transport,
-                          zplc_proto_write_fn write, void *write_context);
+void zplc_proto_link_init(zplc_proto_link_t *link, zplc_proto_dev_t *dev, uint8_t transport, zplc_proto_write_fn write,
+                          void *write_context);
 
 /** @brief Bytes that arrived on a stream link. */
 void zplc_proto_link_feed(zplc_proto_link_t *link, const uint8_t *data, size_t length);

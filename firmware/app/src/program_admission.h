@@ -18,8 +18,6 @@
  * the exact cyclic interval in milliseconds, or the 100 ms legacy default;
  * it may be NULL for validation-only callers.
  */
-int zplc_program_admit_legacy(const uint8_t *binary, size_t size,
-                              uint8_t *workspace, size_t workspace_size,
-                              uint32_t *scan_interval_ms);
+int zplc_program_admit_legacy(const uint8_t *binary, size_t size, uint8_t *workspace, size_t workspace_size, uint32_t *scan_interval_ms);
 
 #endif /* ZPLC_PROGRAM_ADMISSION_H */

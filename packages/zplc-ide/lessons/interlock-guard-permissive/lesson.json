@@ -5,15 +5,9 @@
   "order": 18,
   "module": 6,
   "level": "intermediate",
-  "prerequisites": [
-    "pedestrian-crossing-states"
-  ],
-  "languages": [
-    "ST"
-  ],
-  "tracks": [
-    "simulation"
-  ],
+  "prerequisites": ["pedestrian-crossing-states"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
   "unsupported": {
     "hardware": {
       "reason": {

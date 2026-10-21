@@ -3,7 +3,7 @@ slug: /tutorials/blink-without-hardware
 id: blink-without-hardware
 title: Blink without hardware
 sidebar_label: Blink without hardware
-description: "From a fresh download of ZPLC to a toggling simulated output and a passing scenario test, with no board."
+description: 'From a fresh download of ZPLC to a toggling simulated output and a passing scenario test, with no board.'
 tags: [tutorial, simulation, structured-text]
 ---
 
@@ -180,12 +180,12 @@ it passes again.
 
 ## What this shows, and what it does not
 
-| Claim | Evidence | Level |
-| --- | --- | --- |
-| The program compiles, runs on the simulator and its output toggles | The documentation check runs the page's code | Host |
-| The seven steps work in the real application | The end-to-end journey `Blink without hardware (the tutorial)` of `bun run test:journeys` performs them, so this page cannot drift from the product | Host |
-| The scenario passes and fails as described | ZPLC runs `tests/blinky-visual.scenario.json` on the simulator's virtual clock | Host |
-| Anything about a board | Nothing on this page | Not yet verified on hardware: see [Hardware support](../reference/capabilities-evidence.md) |
+| Claim                                                              | Evidence                                                                                                                                            | Level                                                                                       |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| The program compiles, runs on the simulator and its output toggles | The documentation check runs the page's code                                                                                                        | Host                                                                                        |
+| The seven steps work in the real application                       | The end-to-end journey `Blink without hardware (the tutorial)` of `bun run test:journeys` performs them, so this page cannot drift from the product | Host                                                                                        |
+| The scenario passes and fails as described                         | ZPLC runs `tests/blinky-visual.scenario.json` on the simulator's virtual clock                                                                      | Host                                                                                        |
+| Anything about a board                                             | Nothing on this page                                                                                                                                | Not yet verified on hardware: see [Hardware support](../reference/capabilities-evidence.md) |
 
 A pass here is a host result on the simulator's virtual clock.
 

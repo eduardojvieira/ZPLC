@@ -1,5 +1,4 @@
-
-import { t } from '../i18n';/**
+import { t } from '../i18n'; /**
  * The signal vocabulary (UX-009): how Studio shows the state of a value, defined once. FALSE is neutral, green means a
  * confirmed TRUE (or RUN) and nothing else, amber means forced or a warning, red means a fault and nothing else, and a
  * value that has not been read is neutral and dashed. Colour never carries a state alone: every state has a label and a
@@ -41,28 +40,74 @@ export const SIGNAL_TEXT_CLASS: Record<SignalTone, string> = {
 };
 
 /** The chip of a state: text, fill and border from the same tokens; an unknown value is outlined with a dashed rule. */
-export const SIGNAL_CHIP_CLASS: Record<SignalTone, string> = Object.fromEntries(SIGNAL_TONES.map((tone) => [
-  tone,
-  `${SIGNAL_TEXT_CLASS[tone]} bg-[var(--signal-${tone}-bg)] border border-[var(--signal-${tone}-border)]${tone === 'unknown' ? ' border-dashed' : ''}`,
-])) as Record<SignalTone, string>;
+export const SIGNAL_CHIP_CLASS: Record<SignalTone, string> = Object.fromEntries(
+  SIGNAL_TONES.map((tone) => [
+    tone,
+    `${SIGNAL_TEXT_CLASS[tone]} bg-[var(--signal-${tone}-bg)] border border-[var(--signal-${tone}-border)]${
+      tone === 'unknown' ? ' border-dashed' : ''
+    }`,
+  ]),
+) as Record<SignalTone, string>;
 
 /** What says the state besides its colour: a word and a shape. */
-export interface SignalCue { label: string; glyph: string; description: string }
+export interface SignalCue {
+  label: string;
+  glyph: string;
+  description: string;
+}
 
 export const SIGNAL_CUES: Record<SignalTone, SignalCue> = {
-  true: { label: 'TRUE', glyph: '●', get description() { return t('signal.cue.true'); } },
-  false: { label: 'FALSE', glyph: '○', get description() { return t('signal.cue.false'); } },
-  unknown: { label: '---', glyph: '◌', get description() { return t('signal.cue.unknown'); } },
-  forced: { label: 'FORCED', glyph: '◆', get description() { return t('signal.cue.forced'); } },
-  fault: { label: 'FAULT', glyph: '▲', get description() { return t('signal.cue.fault'); } },
-  value: { label: 'VALUE', glyph: '#', get description() { return t('signal.cue.value'); } },
+  true: {
+    label: 'TRUE',
+    glyph: '●',
+    get description() {
+      return t('signal.cue.true');
+    },
+  },
+  false: {
+    label: 'FALSE',
+    glyph: '○',
+    get description() {
+      return t('signal.cue.false');
+    },
+  },
+  unknown: {
+    label: '---',
+    glyph: '◌',
+    get description() {
+      return t('signal.cue.unknown');
+    },
+  },
+  forced: {
+    label: 'FORCED',
+    glyph: '◆',
+    get description() {
+      return t('signal.cue.forced');
+    },
+  },
+  fault: {
+    label: 'FAULT',
+    glyph: '▲',
+    get description() {
+      return t('signal.cue.fault');
+    },
+  },
+  value: {
+    label: 'VALUE',
+    glyph: '#',
+    get description() {
+      return t('signal.cue.value');
+    },
+  },
 };
 
 /** The tokens of a state as `var()` values, for SVG `fill` and `stroke`, where the class names above do not apply. */
-export const SIGNAL_PAINT: Record<SignalTone, { fg: string; bg: string; border: string }> = Object.fromEntries(SIGNAL_TONES.map((tone) => [
-  tone,
-  { fg: `var(--signal-${tone}-fg)`, bg: `var(--signal-${tone}-bg)`, border: `var(--signal-${tone}-border)` },
-])) as Record<SignalTone, { fg: string; bg: string; border: string }>;
+export const SIGNAL_PAINT: Record<SignalTone, { fg: string; bg: string; border: string }> = Object.fromEntries(
+  SIGNAL_TONES.map((tone) => [
+    tone,
+    { fg: `var(--signal-${tone}-fg)`, bg: `var(--signal-${tone}-bg)`, border: `var(--signal-${tone}-border)` },
+  ]),
+) as Record<SignalTone, { fg: string; bg: string; border: string }>;
 
 /** A live reading as an editor holds it: the debug map's result, plus whether the user forces the variable. */
 export interface SignalSample {

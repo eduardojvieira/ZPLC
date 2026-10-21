@@ -26,11 +26,7 @@ import { inputMember, outputMember, internalMember, formatAddr } from './types.t
  *   +3: _padding (1 byte)
  * Total: 4 bytes
  */
-const R_TRIG_MEMBERS: MemberDef[] = [
-    inputMember('CLK', 1, 0),
-    outputMember('Q', 1, 1),
-    internalMember('_prev', 1, 2),
-];
+const R_TRIG_MEMBERS: MemberDef[] = [inputMember('CLK', 1, 0), outputMember('Q', 1, 1), internalMember('_prev', 1, 2)];
 
 /**
  * R_TRIG (Rising Edge Detector):
@@ -67,8 +63,8 @@ export const R_TRIG_FB: FunctionBlockDef = {
         ctx.emit(`    LOAD8 ${prevAddr}`);
         ctx.emit(`    NOT`);
         ctx.emit(`    PUSH8 1`);
-        ctx.emit(`    AND`);           // Mask to bool
-        ctx.emit(`    AND`);           // CLK AND (NOT prev)
+        ctx.emit(`    AND`); // Mask to bool
+        ctx.emit(`    AND`); // CLK AND (NOT prev)
         ctx.emit(`    STORE8 ${qAddr}`);
 
         // _prev := CLK
@@ -91,11 +87,7 @@ export const R_TRIG_FB: FunctionBlockDef = {
  *   +3: _padding (1 byte)
  * Total: 4 bytes
  */
-const F_TRIG_MEMBERS: MemberDef[] = [
-    inputMember('CLK', 1, 0),
-    outputMember('Q', 1, 1),
-    internalMember('_prev', 1, 2),
-];
+const F_TRIG_MEMBERS: MemberDef[] = [inputMember('CLK', 1, 0), outputMember('Q', 1, 1), internalMember('_prev', 1, 2)];
 
 /**
  * F_TRIG (Falling Edge Detector):
@@ -131,9 +123,9 @@ export const F_TRIG_FB: FunctionBlockDef = {
         ctx.emit(`    LOAD8 ${clkAddr}`);
         ctx.emit(`    NOT`);
         ctx.emit(`    PUSH8 1`);
-        ctx.emit(`    AND`);           // Mask to bool
+        ctx.emit(`    AND`); // Mask to bool
         ctx.emit(`    LOAD8 ${prevAddr}`);
-        ctx.emit(`    AND`);           // (NOT CLK) AND prev
+        ctx.emit(`    AND`); // (NOT CLK) AND prev
         ctx.emit(`    STORE8 ${qAddr}`);
 
         // _prev := CLK
@@ -156,11 +148,7 @@ export const F_TRIG_FB: FunctionBlockDef = {
  *   +3: _padding (1 byte)
  * Total: 4 bytes
  */
-const RS_MEMBERS: MemberDef[] = [
-    inputMember('S', 1, 0),
-    inputMember('R1', 1, 1),
-    outputMember('Q1', 1, 2),
-];
+const RS_MEMBERS: MemberDef[] = [inputMember('S', 1, 0), inputMember('R1', 1, 1), outputMember('Q1', 1, 2)];
 
 /**
  * RS (Reset-Dominant Bistable):
@@ -199,13 +187,13 @@ export const RS_FB: FunctionBlockDef = {
         ctx.emit(`    LOAD8 ${r1Addr}`);
         ctx.emit(`    NOT`);
         ctx.emit(`    PUSH8 1`);
-        ctx.emit(`    AND`);           // NOT R1
+        ctx.emit(`    AND`); // NOT R1
 
         ctx.emit(`    LOAD8 ${sAddr}`);
         ctx.emit(`    LOAD8 ${q1Addr}`);
-        ctx.emit(`    OR`);            // S OR Q1
+        ctx.emit(`    OR`); // S OR Q1
 
-        ctx.emit(`    AND`);           // (NOT R1) AND (S OR Q1)
+        ctx.emit(`    AND`); // (NOT R1) AND (S OR Q1)
         ctx.emit(`    STORE8 ${q1Addr}`);
 
         ctx.emit(`    ; --- End RS ---`);
@@ -224,11 +212,7 @@ export const RS_FB: FunctionBlockDef = {
  *   +3: _padding (1 byte)
  * Total: 4 bytes
  */
-const SR_MEMBERS: MemberDef[] = [
-    inputMember('S1', 1, 0),
-    inputMember('R', 1, 1),
-    outputMember('Q1', 1, 2),
-];
+const SR_MEMBERS: MemberDef[] = [inputMember('S1', 1, 0), inputMember('R', 1, 1), outputMember('Q1', 1, 2)];
 
 /**
  * SR (Set-Dominant Bistable):
@@ -269,11 +253,11 @@ export const SR_FB: FunctionBlockDef = {
         ctx.emit(`    LOAD8 ${rAddr}`);
         ctx.emit(`    NOT`);
         ctx.emit(`    PUSH8 1`);
-        ctx.emit(`    AND`);           // NOT R
+        ctx.emit(`    AND`); // NOT R
         ctx.emit(`    LOAD8 ${q1Addr}`);
-        ctx.emit(`    AND`);           // (NOT R) AND Q1
+        ctx.emit(`    AND`); // (NOT R) AND Q1
 
-        ctx.emit(`    OR`);            // S1 OR ((NOT R) AND Q1)
+        ctx.emit(`    OR`); // S1 OR ((NOT R) AND Q1)
         ctx.emit(`    STORE8 ${q1Addr}`);
 
         ctx.emit(`    ; --- End SR ---`);

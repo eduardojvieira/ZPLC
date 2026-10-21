@@ -3,7 +3,7 @@ slug: /guides/project-archive
 id: project-archive
 title: Exportar e importar un archivo de proyecto
 sidebar_label: Archivos de proyecto
-description: "Lleve un proyecto a otro equipo como un solo archivo y abra un proyecto que alguien le envió, con las comprobaciones que hace ZPLC antes de escribir nada."
+description: 'Lleve un proyecto a otro equipo como un solo archivo y abra un proyecto que alguien le envió, con las comprobaciones que hace ZPLC antes de escribir nada.'
 tags: [how-to, projects, archive]
 ---
 
@@ -59,11 +59,11 @@ rechazado no se escribe nada.
 
 ## Qué está verificado y qué no
 
-| Parte | Verificado | Nivel |
-| --- | --- | --- |
-| El formato, los rechazos y un viaje de ida y vuelta en carpetas reales | Pruebas unitarias del lector y del escritor de archivos | Host |
-| Exportar y luego importar en una carpeta vacía da carpetas iguales y un `zplc.json` idéntico byte a byte | Recorrido 30 en la aplicación real | Host |
-| Un archivo que escribió otra herramienta, almacenado o comprimido | Pruebas unitarias con archivos escritos por otra herramienta | Host |
+| Parte                                                                                                    | Verificado                                                   | Nivel |
+| -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ----- |
+| El formato, los rechazos y un viaje de ida y vuelta en carpetas reales                                   | Pruebas unitarias del lector y del escritor de archivos      | Host  |
+| Exportar y luego importar en una carpeta vacía da carpetas iguales y un `zplc.json` idéntico byte a byte | Recorrido 30 en la aplicación real                           | Host  |
+| Un archivo que escribió otra herramienta, almacenado o comprimido                                        | Pruebas unitarias con archivos escritos por otra herramienta | Host  |
 
 ## Vea también
 

@@ -2,7 +2,12 @@
  * Colour arithmetic for the design tokens (UX-024): parsing the value forms the token source uses, compositing a
  * translucent colour over its backdrop, and the WCAG 2.2 contrast ratio. Pure string and number work; no DOM.
  */
-export interface Rgba { r: number; g: number; b: number; a: number }
+export interface Rgba {
+  r: number;
+  g: number;
+  b: number;
+  a: number;
+}
 
 const hexColor = (text: string): Rgba | null => {
   const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/.exec(text);
@@ -21,7 +26,10 @@ function topLevelArguments(text: string): string[] {
     const char = text[index];
     if (char === '(') depth += 1;
     else if (char === ')') depth -= 1;
-    else if (char === ',' && depth === 0) { parts.push(text.slice(start, index).trim()); start = index + 1; }
+    else if (char === ',' && depth === 0) {
+      parts.push(text.slice(start, index).trim());
+      start = index + 1;
+    }
   }
   parts.push(text.slice(start).trim());
   return parts;

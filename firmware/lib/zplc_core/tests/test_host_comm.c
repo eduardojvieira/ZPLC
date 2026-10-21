@@ -74,8 +74,7 @@ static void reset(zplc_comm_fb_kind_t kind, uint8_t *memory) {
 }
 
 static uint32_t status_of(const uint8_t *memory) {
-  return (uint32_t)memory[4] | ((uint32_t)memory[5] << 8) | ((uint32_t)memory[6] << 16) |
-         ((uint32_t)memory[7] << 24);
+  return (uint32_t)memory[4] | ((uint32_t)memory[5] << 8) | ((uint32_t)memory[6] << 16) | ((uint32_t)memory[7] << 24);
 }
 
 #define BUSY(m) ((m)[1])
@@ -87,13 +86,11 @@ static void set_u16(uint8_t *memory, unsigned offset, uint16_t value) {
   memory[offset + 1U] = (uint8_t)(value >> 8);
 }
 
-static uint16_t get_u16(const uint8_t *memory, unsigned offset) {
-  return (uint16_t)(memory[offset] | (memory[offset + 1U] << 8));
-}
+static uint16_t get_u16(const uint8_t *memory, unsigned offset) { return (uint16_t)(memory[offset] | (memory[offset + 1U] << 8)); }
 
 static void set_text(uint8_t *memory, zplc_comm_fb_kind_t kind, unsigned offset, const char *text) {
-  assert(zplc_fb_string_set(memory, zplc_comm_fb_size((uint32_t)kind), (uint16_t)offset, STRING_ROOM,
-                            (const uint8_t *)text, strlen(text)) == strlen(text));
+  assert(zplc_fb_string_set(memory, zplc_comm_fb_size((uint32_t)kind), (uint16_t)offset, STRING_ROOM, (const uint8_t *)text,
+                            strlen(text)) == strlen(text));
 }
 
 /* Scan until the block is no longer BUSY, a scan every 2 ms, for at most `limit_ms`. */
@@ -135,7 +132,7 @@ static uint16_t server_port;
 
 /* A TCP request of the blocks of kind `kind`, to `port`: EN is not set. */
 static void modbus_request(uint8_t *memory, zplc_comm_fb_kind_t kind, uint16_t port, uint16_t address) {
-  memory[8] = 1U; /* PROTO: TCP */
+  memory[8] = 1U;          /* PROTO: TCP */
   set_u16(memory, 9U, 1U); /* SLAVE_ID */
   set_u16(memory, 11U, address);
   set_u16(memory, 13U, 1U); /* COUNT */
@@ -247,7 +244,7 @@ static void test_a_slow_server_does_not_hold_the_scan(void) {
     scans++;
   }
   assert(DONE(b) == 1U && get_u16(b, ZPLC_COMM_MB_READ_HREG_VALUE_OFFSET) == 0x0707U);
-  assert(scans > 20);            /* the program went on scanning while the answer was awaited */
+  assert(scans > 20); /* the program went on scanning while the answer was awaited */
   assert(longest_scan_ms < 50);
   zplc_loopback_modbus_set_mode(server, ZPLC_LOOPBACK_MODBUS_GOOD);
   free(b);
@@ -420,8 +417,7 @@ static void test_the_session_is_reported_and_a_message_is_published_once(void) {
     sleep_ms(5);
   }
   assert(zplc_loopback_mqtt_publishes(broker) == 1U);
-  assert(zplc_loopback_mqtt_last_publish(broker, topic, sizeof(topic), payload, sizeof(payload), &length, &qos,
-                                         &retain));
+  assert(zplc_loopback_mqtt_last_publish(broker, topic, sizeof(topic), payload, sizeof(payload), &length, &qos, &retain));
   assert(strcmp(topic, "plant/a") == 0 && length == 5U && memcmp(payload, "hello", 5U) == 0);
   assert(qos == 1U && !retain);
 
@@ -450,7 +446,7 @@ static void test_a_subscription_delivers_a_message_for_one_scan(void) {
   assert(get_u16(sub, ZPLC_COMM_MQTT_SUBSCRIBE_PAYLOAD_OFFSET) == 2U);
   assert(memcmp(&sub[ZPLC_COMM_MQTT_SUBSCRIBE_PAYLOAD_OFFSET + 4U], "go", 2U) == 0);
   scan(ZPLC_COMM_FB_MQTT_SUBSCRIBE, sub);
-  assert(sub[ZPLC_COMM_MQTT_SUBSCRIBE_VALID_OFFSET] == 0U); /* VALID is one scan */
+  assert(sub[ZPLC_COMM_MQTT_SUBSCRIBE_VALID_OFFSET] == 0U);            /* VALID is one scan */
   assert(get_u16(sub, ZPLC_COMM_MQTT_SUBSCRIBE_PAYLOAD_OFFSET) == 2U); /* PAYLOAD keeps the last message */
 
   /* another topic: nothing */

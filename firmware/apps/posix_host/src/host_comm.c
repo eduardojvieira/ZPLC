@@ -18,8 +18,7 @@
 #include "zplc_comm_mqtt_handler.h"
 
 /* The service of a block that a simulation does not have: a status of its own, not "no handler". */
-static int unavailable_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len,
-                               zplc_comm_call_t call) {
+static int unavailable_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len, zplc_comm_call_t call) {
   (void)kind;
   (void)fb_mem;
   (void)fb_len;
@@ -32,10 +31,9 @@ static int unavailable_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16
 /* Every one of the twelve blocks, answered "unavailable in simulation" (an endpoint could not start). */
 static int register_all_unavailable(void) {
   static const zplc_comm_fb_kind_t all[] = {
-      ZPLC_COMM_FB_MB_READ_HREG,   ZPLC_COMM_FB_MB_WRITE_HREG,  ZPLC_COMM_FB_MB_READ_COIL,
-      ZPLC_COMM_FB_MB_WRITE_COIL,  ZPLC_COMM_FB_MQTT_CONNECT,   ZPLC_COMM_FB_MQTT_PUBLISH,
-      ZPLC_COMM_FB_MQTT_SUBSCRIBE, ZPLC_COMM_FB_AZURE_C2D_RECV, ZPLC_COMM_FB_AZURE_DPS_PROV,
-      ZPLC_COMM_FB_AZURE_EG_PUB,   ZPLC_COMM_FB_AWS_FLEET_PROV, ZPLC_COMM_FB_SPB_REBIRTH,
+      ZPLC_COMM_FB_MB_READ_HREG,   ZPLC_COMM_FB_MB_WRITE_HREG, ZPLC_COMM_FB_MB_READ_COIL,   ZPLC_COMM_FB_MB_WRITE_COIL,
+      ZPLC_COMM_FB_MQTT_CONNECT,   ZPLC_COMM_FB_MQTT_PUBLISH,  ZPLC_COMM_FB_MQTT_SUBSCRIBE, ZPLC_COMM_FB_AZURE_C2D_RECV,
+      ZPLC_COMM_FB_AZURE_DPS_PROV, ZPLC_COMM_FB_AZURE_EG_PUB,  ZPLC_COMM_FB_AWS_FLEET_PROV, ZPLC_COMM_FB_SPB_REBIRTH,
   };
   size_t i;
 

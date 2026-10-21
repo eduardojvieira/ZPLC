@@ -319,10 +319,7 @@
           "id": "branch_rung_p5",
           "startCol": 0,
           "endCol": 1,
-          "rows": [
-            0,
-            1
-          ]
+          "rows": [0, 1]
         }
       ]
     },
@@ -441,10 +438,7 @@
           "id": "branch_rung_p4",
           "startCol": 0,
           "endCol": 1,
-          "rows": [
-            0,
-            1
-          ]
+          "rows": [0, 1]
         }
       ]
     },
@@ -563,10 +557,7 @@
           "id": "branch_rung_p3",
           "startCol": 0,
           "endCol": 1,
-          "rows": [
-            0,
-            1
-          ]
+          "rows": [0, 1]
         }
       ]
     },
@@ -685,10 +676,7 @@
           "id": "branch_rung_p2",
           "startCol": 0,
           "endCol": 1,
-          "rows": [
-            0,
-            1
-          ]
+          "rows": [0, 1]
         }
       ]
     },
@@ -807,10 +795,7 @@
           "id": "branch_rung_p1",
           "startCol": 0,
           "endCol": 1,
-          "rows": [
-            0,
-            1
-          ]
+          "rows": [0, 1]
         }
       ]
     },
@@ -929,10 +914,7 @@
           "id": "branch_rung_p0",
           "startCol": 0,
           "endCol": 1,
-          "rows": [
-            0,
-            1
-          ]
+          "rows": [0, 1]
         }
       ]
     },
@@ -1099,10 +1081,7 @@
           "id": "branch_rung_led1",
           "startCol": 0,
           "endCol": 0,
-          "rows": [
-            0,
-            1
-          ]
+          "rows": [0, 1]
         }
       ]
     },
@@ -1209,10 +1188,7 @@
           "id": "branch_rung_led2",
           "startCol": 0,
           "endCol": 0,
-          "rows": [
-            0,
-            1
-          ]
+          "rows": [0, 1]
         }
       ]
     },

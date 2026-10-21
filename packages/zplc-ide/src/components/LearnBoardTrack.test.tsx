@@ -8,7 +8,11 @@ import { auditMarkup } from '../ui/audit';
 import { LearnBoardTrackView } from './LearnBoardTrack';
 
 const render = (board: 'rpi-pico-rp2040' | 'esp32-s3-devkitc' | null, passedOnHardware: string[] = []): string =>
-  renderToStaticMarkup(<LearnBoardTrackView board={board} passedOnHardware={passedOnHardware} onChoose={() => undefined}><p data-home>home</p></LearnBoardTrackView>);
+  renderToStaticMarkup(
+    <LearnBoardTrackView board={board} passedOnHardware={passedOnHardware} onChoose={() => undefined}>
+      <p data-home>home</p>
+    </LearnBoardTrackView>,
+  );
 const pressed = (out: string): string[] => [...out.matchAll(/<button[^>]*aria-pressed="true"[^>]*>([^<]*)</g)].map((match) => match[1]!);
 
 describe('the board of the hardware track in the Learn home (LRN-013)', () => {

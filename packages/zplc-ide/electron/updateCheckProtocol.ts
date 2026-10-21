@@ -29,14 +29,16 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 const isVersion = (value: unknown): value is string => typeof value === 'string' && value.length <= 64 && VERSION.test(value);
-const isReleaseUrl = (value: unknown): value is string => typeof value === 'string' && value.length <= 512 && value.startsWith(RELEASE_URL_PREFIX);
+const isReleaseUrl = (value: unknown): value is string =>
+  typeof value === 'string' && value.length <= 512 && value.startsWith(RELEASE_URL_PREFIX);
 
 /** A fresh, validated answer, or null for anything that is not exactly one. */
 export function parseUpdateCheckResult(value: unknown): UpdateCheckResult | null {
   if (!isPlainObject(value) || typeof value.current !== 'string' || value.current.length > 64) return null;
   const keys = Object.keys(value).sort().join();
   if (value.status === 'unavailable' && keys === 'current,status') return { status: 'unavailable', current: value.current };
-  if (value.status === 'current' && keys === 'current,latest,status' && isVersion(value.latest)) return { status: 'current', current: value.current, latest: value.latest };
+  if (value.status === 'current' && keys === 'current,latest,status' && isVersion(value.latest))
+    return { status: 'current', current: value.current, latest: value.latest };
   if (value.status === 'available' && keys === 'current,latest,status,url' && isVersion(value.latest) && isReleaseUrl(value.url)) {
     return { status: 'available', current: value.current, latest: value.latest, url: value.url };
   }

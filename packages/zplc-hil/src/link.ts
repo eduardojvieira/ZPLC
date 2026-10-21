@@ -68,7 +68,10 @@ export interface DeviceLink {
   reset(): Promise<void>;
   peek(address: number, length: number): Promise<Uint8Array>;
   poke(address: number, bytes: Uint8Array): Promise<void>;
-  /** Force bytes of the memory image. A force belongs to this link and is released by `clearForces`, and by the device when the link is lost (COM-020). */
+  /**
+   * Force bytes of the memory image. A force belongs to this link and is released by `clearForces`, and by the device when the link is lost
+   * (COM-020).
+   */
   force(address: number, bytes: Uint8Array): Promise<void>;
   clearForces(): Promise<void>;
   forces(): Promise<ForceEntry[]>;
@@ -130,20 +133,45 @@ export function parseBuildIdentity(value: unknown): BuildIdentity | undefined {
   const text = (key: string): string | undefined => (typeof object[key] === 'string' ? (object[key] as string) : undefined);
   const count = (key: string): number | undefined => (Number.isInteger(object[key]) ? (object[key] as number) : undefined);
   if (Object.keys(object).length !== BUILD_KEYS.length || BUILD_KEYS.some((key) => !(key in object))) return undefined;
-  const [version, commit, board, optionsHash, options] = [text('version'), text('commit'), text('board'), text('options_hash'), text('options')];
+  const [version, commit, board, optionsHash, options] = [
+    text('version'),
+    text('commit'),
+    text('board'),
+    text('options_hash'),
+    text('options'),
+  ];
   const [abiMajor, abiMinor, draftCounter] = [count('abi_major'), count('abi_minor'), count('draft_counter')];
-  if (version === undefined || commit === undefined || board === undefined || optionsHash === undefined || options === undefined
-    || abiMajor === undefined || abiMinor === undefined || draftCounter === undefined || typeof object.dirty !== 'boolean') return undefined;
+  if (
+    version === undefined ||
+    commit === undefined ||
+    board === undefined ||
+    optionsHash === undefined ||
+    options === undefined ||
+    abiMajor === undefined ||
+    abiMinor === undefined ||
+    draftCounter === undefined ||
+    typeof object.dirty !== 'boolean'
+  )
+    return undefined;
   return { version, commit, dirty: object.dirty, board, abiMajor, abiMinor, draftCounter, optionsHash, options };
 }
 
 const TEXT_LABELS: Record<string, string> = {
-  Commit: 'commit', Dirty: 'dirty', Board: 'board', 'Bytecode ABI': 'abi', 'Contract draft': 'draft_counter', 'Options hash': 'options_hash', Options: 'options',
+  Commit: 'commit',
+  Dirty: 'dirty',
+  Board: 'board',
+  'Bytecode ABI': 'abi',
+  'Contract draft': 'draft_counter',
+  'Options hash': 'options_hash',
+  Options: 'options',
 };
 
 /** The identity from the text of `zplc version` (or `zplc sys build`); undefined for an image that prints something else. */
 export function parseIdentityText(text: string): BuildIdentity | undefined {
-  const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
   const first = lines.find((line) => line.startsWith('ZPLC Runtime v'));
   if (first === undefined) return undefined;
   const found: Record<string, unknown> = { version: first.slice('ZPLC Runtime v'.length) };
@@ -155,7 +183,10 @@ export function parseIdentityText(text: string): BuildIdentity | undefined {
     if (key === undefined) continue;
     if (key === 'abi') {
       const [major, minor] = value.split('.');
-      if (/^\d+$/.test(major ?? '') && /^\d+$/.test(minor ?? '')) { found.abi_major = Number(major); found.abi_minor = Number(minor); }
+      if (/^\d+$/.test(major ?? '') && /^\d+$/.test(minor ?? '')) {
+        found.abi_major = Number(major);
+        found.abi_minor = Number(minor);
+      }
     } else if (key === 'draft_counter') {
       if (/^\d+$/.test(value)) found[key] = Number(value);
     } else if (key === 'dirty') found[key] = value === 'yes';

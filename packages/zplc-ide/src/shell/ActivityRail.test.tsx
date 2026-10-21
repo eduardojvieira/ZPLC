@@ -18,7 +18,9 @@ describe('activity rail (UX-011)', () => {
   it('UX-011 marks the selected activity with aria-current and a data mark that the stylesheet draws as a bar, not by colour alone', () => {
     const out = render('search', 'regular');
     expect(out.match(/aria-current="true"/g)?.length).toBe(1);
-    expect(out).toMatch(/<button[^>]*aria-current="true"[^>]*data-activity="search"|<button[^>]*data-activity="search"[^>]*aria-current="true"/);
+    expect(out).toMatch(
+      /<button[^>]*aria-current="true"[^>]*data-activity="search"|<button[^>]*data-activity="search"[^>]*aria-current="true"/,
+    );
     expect(out).toContain('data-active="true"');
   });
 

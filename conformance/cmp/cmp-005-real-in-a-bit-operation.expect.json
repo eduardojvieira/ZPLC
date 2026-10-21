@@ -1,17 +1,9 @@
 {
   "requirement": "CMP-005",
   "title": "a REAL operand of AND is rejected",
-  "matrix": [
-    "functions.implicit-widening-conversion"
-  ],
+  "matrix": ["functions.implicit-widening-conversion"],
   "build": "fails",
-  "lines": [
-    6
-  ],
-  "codes": [
-    "TYPE_MISMATCH"
-  ],
-  "messageIncludes": [
-    "REAL"
-  ]
+  "lines": [6],
+  "codes": ["TYPE_MISMATCH"],
+  "messageIncludes": ["REAL"]
 }

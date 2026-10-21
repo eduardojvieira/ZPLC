@@ -20,11 +20,20 @@ export function MigrationDifferenceView({ difference }: { difference: MigrationD
       <p className="mt-0.5 text-xs text-[var(--color-surface-300)]">
         {tn('workbench.migration.linesRemoved', difference.removed)}, {tn('workbench.migration.linesAdded', difference.added)}
       </p>
-      <div role="group" aria-label={t('workbench.migration.differenceIn', { file: difference.file })} tabIndex={0} className="mt-2 max-h-72 overflow-auto border border-[var(--color-surface-600)] bg-[var(--color-surface-900)]">
+      <div
+        role="group"
+        aria-label={t('workbench.migration.differenceIn', { file: difference.file })}
+        tabIndex={0}
+        className="mt-2 max-h-72 overflow-auto border border-[var(--color-surface-600)] bg-[var(--color-surface-900)]"
+      >
         {difference.hunks.map((hunk, index) => (
           <pre key={index} className="border-b border-[var(--color-surface-700)] py-1 font-mono text-xs leading-5 last:border-b-0">
             {hunk.map((line, lineIndex) => (
-              <div key={lineIndex} className={`whitespace-pre px-2 ${TONE[line.kind]}`} data-diff-line={line.kind}>{`${SIGN[line.kind]} ${line.text}`}</div>
+              <div
+                key={lineIndex}
+                className={`whitespace-pre px-2 ${TONE[line.kind]}`}
+                data-diff-line={line.kind}
+              >{`${SIGN[line.kind]} ${line.text}`}</div>
             ))}
           </pre>
         ))}

@@ -1,19 +1,10 @@
 {
   "requirement": "CMP-005",
   "title": "a STRING is not compared with a number",
-  "matrix": [
-    "data-types.string-string-n"
-  ],
+  "matrix": ["data-types.string-string-n"],
   "note": "CMP-005: a text and a number are different kinds of value; IEC 61131-3 converts neither to the other implicitly, so the build is refused at the value and names both types",
   "build": "fails",
-  "lines": [
-    7
-  ],
-  "codes": [
-    "TYPE_MISMATCH"
-  ],
-  "messageIncludes": [
-    "STRING",
-    "INT"
-  ]
+  "lines": [7],
+  "codes": ["TYPE_MISMATCH"],
+  "messageIncludes": ["STRING", "INT"]
 }

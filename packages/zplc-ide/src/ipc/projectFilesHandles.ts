@@ -81,7 +81,10 @@ async function toBytes(chunk: unknown): Promise<Uint8Array> {
   throw new TypeError('Only whole text, bytes or Blob content can be written.');
 }
 
-interface Context { bridge: ProjectFilesBridge; rootId: string }
+interface Context {
+  bridge: ProjectFilesBridge;
+  rootId: string;
+}
 
 abstract class ProjectHandle {
   abstract readonly kind: 'file' | 'directory';
@@ -99,12 +102,20 @@ abstract class ProjectHandle {
     return other instanceof ProjectHandle && other.context.rootId === this.context.rootId && other.path === this.path;
   }
 
-  async queryPermission(): Promise<'granted'> { return 'granted'; }
-  async requestPermission(): Promise<'granted'> { return 'granted'; }
+  async queryPermission(): Promise<'granted'> {
+    return 'granted';
+  }
+  async requestPermission(): Promise<'granted'> {
+    return 'granted';
+  }
 
-  get rootId(): string { return this.context.rootId; }
+  get rootId(): string {
+    return this.context.rootId;
+  }
 
-  protected get request() { return { rootId: this.context.rootId, path: this.path }; }
+  protected get request() {
+    return { rootId: this.context.rootId, path: this.path };
+  }
 }
 
 class ProjectWritable {
@@ -128,7 +139,10 @@ class ProjectWritable {
     this.#open = false;
     const bytes = new Uint8Array(this.#chunks.reduce((total, chunk) => total + chunk.byteLength, 0));
     let offset = 0;
-    for (const chunk of this.#chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+    for (const chunk of this.#chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
     this.#chunks = [];
     await ask(this.#context.bridge.write({ rootId: this.#context.rootId, path: this.#path, bytes }));
   }
@@ -157,7 +171,9 @@ class ProjectDirectoryHandle extends ProjectHandle {
 
   #child(entry: ProjectEntry): ProjectFileHandle | ProjectDirectoryHandle {
     const path = childPath(this.path, entry.name);
-    return entry.kind === 'directory' ? new ProjectDirectoryHandle(this.context, path, entry.name) : new ProjectFileHandle(this.context, path, entry.name);
+    return entry.kind === 'directory'
+      ? new ProjectDirectoryHandle(this.context, path, entry.name)
+      : new ProjectFileHandle(this.context, path, entry.name);
   }
 
   /** What is at a child path, or null when nothing is. */
@@ -192,7 +208,9 @@ class ProjectDirectoryHandle extends ProjectHandle {
 
   async removeEntry(name: string, options?: { recursive?: boolean }): Promise<void> {
     checkName(name);
-    await ask(this.context.bridge.remove({ rootId: this.context.rootId, path: childPath(this.path, name), recursive: options?.recursive === true }));
+    await ask(
+      this.context.bridge.remove({ rootId: this.context.rootId, path: childPath(this.path, name), recursive: options?.recursive === true }),
+    );
   }
 
   async *values(): AsyncGenerator<ProjectFileHandle | ProjectDirectoryHandle> {
@@ -207,7 +225,9 @@ class ProjectDirectoryHandle extends ProjectHandle {
     for await (const entry of this.values()) yield [entry.name, entry];
   }
 
-  [Symbol.asyncIterator]() { return this.entries(); }
+  [Symbol.asyncIterator]() {
+    return this.entries();
+  }
 }
 
 /**
@@ -220,7 +240,9 @@ class ProjectDirectoryHandle extends ProjectHandle {
 export async function chooseProjectFolder(bridge: ProjectFilesBridge): Promise<FileSystemDirectoryHandle | null> {
   const folder = await ask(bridge.chooseFolder());
   // Cast: the class implements the subset above, not the whole interface (no `resolve`).
-  return folder ? new ProjectDirectoryHandle({ bridge, rootId: folder.rootId }, '', folder.name) as unknown as FileSystemDirectoryHandle : null;
+  return folder
+    ? (new ProjectDirectoryHandle({ bridge, rootId: folder.rootId }, '', folder.name) as unknown as FileSystemDirectoryHandle)
+    : null;
 }
 
 /**
@@ -242,8 +264,13 @@ const guarded = <T>(call: () => Promise<ProjectFilesResult<T>>) => settle((async
 const isRecentProject = (value: unknown): value is RecentProject => {
   if (typeof value !== 'object' || value === null) return false;
   const item = value as Record<string, unknown>;
-  return typeof item.recentId === 'string' && typeof item.displayName === 'string'
-    && typeof item.lastOpenedAt === 'number' && Number.isFinite(item.lastOpenedAt) && typeof item.available === 'boolean';
+  return (
+    typeof item.recentId === 'string' &&
+    typeof item.displayName === 'string' &&
+    typeof item.lastOpenedAt === 'number' &&
+    Number.isFinite(item.lastOpenedAt) &&
+    typeof item.available === 'boolean'
+  );
 };
 
 /** The folders the user chose before, most recent first. Never throws: no list is an empty list. */
@@ -271,9 +298,16 @@ export async function openLearnWorkspaceFolder(
   lessonId: string,
 ): Promise<{ handle: FileSystemDirectoryHandle; fresh: boolean }> {
   const answer = await learn.open(lessonId);
-  const folder = typeof answer === 'object' && answer !== null ? answer as Record<string, unknown> : {};
+  const folder = typeof answer === 'object' && answer !== null ? (answer as Record<string, unknown>) : {};
   const { rootId, name, fresh } = folder;
-  if (Object.keys(folder).length !== 3 || typeof rootId !== 'string' || rootId.length < 1 || rootId.length > PROJECT_FILES_LIMITS.maxRootIdChars || typeof name !== 'string' || typeof fresh !== 'boolean') {
+  if (
+    Object.keys(folder).length !== 3 ||
+    typeof rootId !== 'string' ||
+    rootId.length < 1 ||
+    rootId.length > PROJECT_FILES_LIMITS.maxRootIdChars ||
+    typeof name !== 'string' ||
+    typeof fresh !== 'boolean'
+  ) {
     throw new Error('The lesson workspace could not be opened.');
   }
   return { handle: new ProjectDirectoryHandle({ bridge, rootId }, '', name) as unknown as FileSystemDirectoryHandle, fresh };

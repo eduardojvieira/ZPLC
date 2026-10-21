@@ -15,8 +15,7 @@ export const DEBUG_CAPABILITY_STATUS = {
   UNAVAILABLE: 'unavailable',
 } as const;
 
-export type DebugCapabilityStatus =
-  (typeof DEBUG_CAPABILITY_STATUS)[keyof typeof DEBUG_CAPABILITY_STATUS];
+export type DebugCapabilityStatus = (typeof DEBUG_CAPABILITY_STATUS)[keyof typeof DEBUG_CAPABILITY_STATUS];
 
 export interface DebugFeatureSupport {
   status: DebugCapabilityStatus;
@@ -77,17 +76,16 @@ export function getWasmCapabilities(): DebugCapabilities {
   return getDebugCapabilitiesFromProfile(wasmCapabilityProfile('project'));
 }
 
-export function getDebugCapabilitiesFromProfile(
-  profile: NativeCapabilityProfile | null,
-): DebugCapabilities {
+export function getDebugCapabilitiesFromProfile(profile: NativeCapabilityProfile | null): DebugCapabilities {
   const buildSupport = (featureName: string): DebugFeatureSupport => {
     const matches = profile?.features.filter((entry) => entry.name === featureName) ?? [];
     if (matches.length !== 1) {
       return {
         status: DEBUG_CAPABILITY_STATUS.UNAVAILABLE,
-        reason: matches.length === 0
-          ? 'Feature not reported by native simulator capability profile'
-          : 'Feature reported more than once by native simulator capability profile',
+        reason:
+          matches.length === 0
+            ? 'Feature not reported by native simulator capability profile'
+            : 'Feature reported more than once by native simulator capability profile',
       };
     }
     const feature = matches[0]!;
