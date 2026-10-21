@@ -230,7 +230,7 @@ describe('the Spanish pages keep the neutral usted register (DOC-015, D-10)', ()
   // The same deny-list of voseo forms as the application's Spanish catalogs (tools/ci/i18n-guard.ts), so that a short form
   // the pattern above cannot see ("usá", two letters before the accent) fails too, in any file of the Spanish site:
   // pages, partials and the translation files of the navigation. Code is not prose, so fenced blocks and code spans are left out,
-  // and so is a single word in italics: that is how a page cites a word as a word (the glossary names the register it avoids, *vos*).
+  // and so is a single word in italics: that is how a page cites a word as a word (the glossary names the register it avoids, _vos_; a formatter writes italics with underscores).
   it('DOC-015: no Spanish docs page or translation file uses a voseo form of the application deny-list', () => {
     const files: string[] = [];
     const walk = (directory: string) => {
@@ -245,7 +245,7 @@ describe('the Spanish pages keep the neutral usted register (DOC-015, D-10)', ()
     for (const file of files) {
       const lines = text(file).replace(/^```[\s\S]*?^```/gm, (block) => block.replace(/[^\n]/g, '')).split('\n');
       lines.forEach((line, index) => {
-        const match = VOSEO_MARKERS.exec(line.replace(/`[^`]*`/g, '').replace(/(?<!\*)\*\p{L}+\*(?!\*)/gu, ''));
+        const match = VOSEO_MARKERS.exec(line.replace(/`[^`]*`/g, '').replace(/(?<![*_])[*_]\p{L}+[*_](?![*_])/gu, ''));
         if (match) found.push(`${file}:${index + 1}: ${match[0]}`);
       });
     }
