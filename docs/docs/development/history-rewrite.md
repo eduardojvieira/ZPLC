@@ -107,3 +107,8 @@ the force-push, and publishing the mirror, are the owner's decision.
 
 `git-filter-repo` removes the `origin` remote by default. The tool runs it with
 `--partial` so the remote and the remote-tracking branches stay as they were.
+
+Between the rewrite and the force-push, do not run `git fetch` or `git pull`
+from `origin` in the rewritten repository: the remote still holds the old
+history, and a fetch brings it back into the remote-tracking branches and a pull
+merges it into a local branch. Force-push first, then fetch.

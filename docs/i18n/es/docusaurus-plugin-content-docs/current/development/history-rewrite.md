@@ -112,3 +112,8 @@ son decisión del propietario.
 `git-filter-repo` elimina por defecto el remoto `origin`. La herramienta lo
 ejecuta con `--partial` para que el remoto y las ramas de seguimiento remoto
 queden como estaban.
+
+Entre la reescritura y el force-push, no ejecute `git fetch` ni `git pull`
+desde `origin` en el repositorio reescrito: el remoto todavía tiene el historial
+anterior, y un fetch lo vuelve a traer a las ramas de seguimiento remoto y un
+pull lo fusiona en una rama local. Primero haga el force-push y después el fetch.
