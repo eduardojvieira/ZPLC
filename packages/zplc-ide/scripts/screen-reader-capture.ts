@@ -15,11 +15,10 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { translate } from '../src/i18n/translate';
 import { LESSON_INDEX } from '../src/generated/lessonIndex';
-import { learnLessonCatalog } from '../src/components/learnLesson';
 import { courseOrder } from '../src/learn/course';
 import { packageRoot, assert } from './run-desktop-smoke';
 import { launchApp, startHarness, type App } from './journeyApp';
-import { Recorder, type Focus, type StepRecord } from './screenReaderRecorder';
+import { Recorder, type StepRecord } from './screenReaderRecorder';
 
 type Language = 'en' | 'es';
 const REPOSITORY = join(packageRoot, '..', '..');
@@ -478,5 +477,4 @@ async function main(): Promise<void> {
 }
 
 assert(existsSync(join(packageRoot, 'node_modules', 'electron', 'dist')), 'Electron is not installed');
-void readFileSync; void stepLearn;
 if (import.meta.main) await main();
