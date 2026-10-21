@@ -225,7 +225,8 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
   const [status, setStatus] = useState('');
   // the element whose properties are open: the panel is asked for, selecting an element by keyboard does not open it
   const [propertiesFor, setPropertiesFor] = useState<string | null>(null);
-  const [commentRequest, setCommentRequest] = useState(0);
+  // which rung the keyboard asked to comment on, and how many times: a rung compares its own count, so moving the cursor onto it asks for nothing
+  const [commentRequest, setCommentRequest] = useState({ rungId: '', count: 0 });
   const [focusRequest, setFocusRequest] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
   const projectBlocks = useProjectBlocks();
@@ -436,11 +437,11 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
       select(outcome.selection);
     }
     const next = outcome.prompt;
-    if (next?.kind === 'comment') setCommentRequest((count) => count + 1);
+    if (next?.kind === 'comment') setCommentRequest((current) => ({ rungId: next.rungId, count: current.count + 1 }));
     else if (next?.kind === 'select') setPropertiesFor(next.elementId);
     else if (next) setAsk(next);
-    // a question has the focus itself; the focus goes to the cursor when there is none
-    if (!next || next.kind === 'select' || next.kind === 'comment') setFocusRequest((count) => count + 1);
+    // a question has the focus itself (the comment field takes it when it opens); the focus goes to the cursor when there is none
+    if (!next || next.kind === 'select') setFocusRequest((count) => count + 1);
   }, [commit, placeCursor, select]);
 
   const runCommand = useCallback((command: string, argument?: Parameters<typeof runLDCommand>[3], at: LDCursor | null = cursorRef.current) => {
@@ -640,7 +641,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                     onInsert={(item, row, col) => dropItem(item, rung.id, row, col)}
                     cursor={cursor?.rungId === rung.id ? cursor : null}
                     onCursor={(row, col) => placeCursor({ rungId: rung.id, row, col })}
-                    commentRequest={cursor?.rungId === rung.id ? commentRequest : undefined}
+                    commentRequest={commentRequest.rungId === rung.id ? commentRequest.count : 0}
                     readOnly={readOnly}
                     elementStates={monitor.active ? monitor.states : undefined}
                     debugValues={debugValues}

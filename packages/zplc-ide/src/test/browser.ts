@@ -45,6 +45,8 @@ export class BrowserApp {
   async press(chord: string): Promise<void> {
     const { modifiers, key } = parseChord(chord);
     const printable = key.length === 1;
+    // a punctuation mark has no virtual key code of its own (the code of `(` is that of the Down arrow): the text is inserted as typed
+    if (printable && modifiers === 0 && !/[a-z0-9 ]/i.test(key)) { await this.cdp.command('Input.insertText', { text: key }); return; }
     const code = NAMED_CODES[key] ?? (printable ? key.toUpperCase().charCodeAt(0) : 0);
     const text = printable && (modifiers & ~MODIFIERS.Shift!) === 0 ? key : undefined;
     const base = { modifiers, key, code: printable ? (key === ' ' ? 'Space' : /[a-z]/i.test(key) ? `Key${key.toUpperCase()}` : /\d/.test(key) ? `Digit${key}` : key) : key, windowsVirtualKeyCode: code, nativeVirtualKeyCode: code };
