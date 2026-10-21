@@ -51,13 +51,16 @@ async function layOut(file: string, text: string): Promise<string> {
   return guarded.restore(await prettier.format(guarded.text, { ...options, filepath: path }));
 }
 
-/** The fixed point of Prettier and the wrapper for one file. */
+/**
+ * The fixed point of Prettier and the wrapper for one file: the text that both leave as it is. Prettier can lay out its own
+ * output differently (a member chain follows the line breaks it finds), so the loop runs until a whole round changes nothing.
+ */
 export async function normalize(file: string, text: string): Promise<string> {
-  let current = await layOut(file, text);
-  for (let round = 0; round < 8 && CODE_FILE.test(file); round += 1) {
-    const wrapped = wrapFile(file, current);
-    if (wrapped === current) break;
-    current = await layOut(file, wrapped);
+  let current = text;
+  for (let round = 0; round < 8; round += 1) {
+    const next = await layOut(file, CODE_FILE.test(file) ? wrapFile(file, current) : current);
+    if (next === current) return current;
+    current = next;
   }
   return current;
 }
