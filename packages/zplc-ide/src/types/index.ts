@@ -7,6 +7,8 @@
 // The declaration of `window.electronAPI` is in its own module; importing the types brings it into the program.
 import type {} from './electronApi';
 import { t } from '../i18n';
+import { isWebBuild } from '../platform/webCapabilities';
+import { hasBrowserProjectStore } from '../platform/browserProjectStore';
 
 // =============================================================================
 // IEC 61131-3 Language Types
@@ -672,7 +674,7 @@ export interface FileSystemProject {
 
 /** Folder access exists in the desktop app (native dialog through the bridge) or in a browser with the picker. */
 export function isFileSystemAccessSupported(): boolean {
-  return Boolean(window.electronAPI?.projectFiles) || 'showDirectoryPicker' in window;
+  return Boolean(window.electronAPI?.projectFiles) || 'showDirectoryPicker' in window || (isWebBuild() && hasBrowserProjectStore());
 }
 
 // =============================================================================

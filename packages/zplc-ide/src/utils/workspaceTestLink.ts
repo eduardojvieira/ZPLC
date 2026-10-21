@@ -8,6 +8,7 @@
 import { projectRootId } from '../ipc/projectFilesHandles';
 import { isWorkspaceManifestRegistrationCurrent } from '../components/workspaceTestPresentation';
 import { useIDEStore } from '../store/useIDEStore';
+import { isWebBuild } from '../platform/webCapabilities';
 
 function registerProjectRoot() {
   const workspaceTests = globalThis.window?.electronAPI?.workspaceTests;
@@ -17,6 +18,8 @@ function registerProjectRoot() {
 /** Whether the open project can be linked here: a desktop host that registers a project folder, and a folder the main process owns. */
 export function canLinkProjectWorkspace(): boolean {
   const { isProjectOpen, directoryHandle } = useIDEStore.getState();
+  // The web build builds the folder it holds the handle of, in the page: there is no main process to register it with (REL-037).
+  if (isWebBuild()) return isProjectOpen && directoryHandle !== null;
   return isProjectOpen && projectRootId(directoryHandle) !== null && registerProjectRoot() !== null;
 }
 
@@ -44,6 +47,10 @@ let running: { projectSession: number; rootId: string; link: Promise<ProjectWork
  */
 export function linkProjectWorkspace(): Promise<ProjectWorkspaceLink | null> {
   const { projectSession, directoryHandle } = useIDEStore.getState();
+  if (isWebBuild()) {
+    const linked = canLinkProjectWorkspace() && useIDEStore.getState().linkWorkspaceScenarios('web', projectSession);
+    return Promise.resolve(linked ? { workspaceId: 'web', projectSession } : null);
+  }
   const rootId = projectRootId(directoryHandle);
   if (rootId === null || !canLinkProjectWorkspace()) return Promise.resolve(null);
   if (running?.projectSession === projectSession && running.rootId === rootId) return running.link;

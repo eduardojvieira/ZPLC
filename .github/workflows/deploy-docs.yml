@@ -3,6 +3,10 @@ name: Deploy Documentation
 # REL-033: the site is built from the branch that holds 2.0, which is zplc-2.0-candidate until decision D-12 merges it into
 # master (its default is to merge now, with the site labelled as a preview), and it names the latest published release.
 
+# REL-037 (decision D-07): the hosted web build of ZPLC is built here and deployed with the site as /app/, for Chrome and Edge.
+# It has no device connection and states what it lacks (docs/docs/ide/browser.md). The web build, its smoke and the copy
+# into docs/build are authored to run on GitHub and have not been run there: they were run by hand on a Linux machine.
+
 on:
   push:
     branches: [master, main, zplc-2.0-candidate]
@@ -12,6 +16,12 @@ on:
       - 'tools/hil/validate_docs_parity.py'
       - 'firmware/lib/zplc_core/include/**'
       - 'firmware/app/boards/boards.json'
+      - 'packages/zplc-ide/**'
+      - 'packages/zplc-compiler/**'
+      - 'tools/wasm-core/**'
+      - 'firmware/lib/zplc_core/src/**'
+      - 'firmware/apps/posix_host/src/**'
+      - '.github/workflows/deploy-docs.yml'
   pull_request:
     branches: [master, main, zplc-2.0-candidate]
     paths:
@@ -20,6 +30,12 @@ on:
       - 'tools/hil/validate_docs_parity.py'
       - 'firmware/lib/zplc_core/include/**'
       - 'firmware/app/boards/boards.json'
+      - 'packages/zplc-ide/**'
+      - 'packages/zplc-compiler/**'
+      - 'tools/wasm-core/**'
+      - 'firmware/lib/zplc_core/src/**'
+      - 'firmware/apps/posix_host/src/**'
+      - '.github/workflows/deploy-docs.yml'
   workflow_dispatch:
 
 permissions:
@@ -66,6 +82,38 @@ jobs:
         run: bun run build
         env:
           NODE_OPTIONS: '--max_old_space_size=4096'
+
+      # REL-037: the web build is the renderer of the desktop app with no Electron preload. The browser runtime is the core compiled
+      # to WebAssembly with clang and wasm-ld, which CI requires (the build fails without them).
+      - name: Install the WebAssembly toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends clang lld
+
+      - name: Build the compiler for the web build
+        run: bun run build:compiler
+
+      - name: Build the web build
+        working-directory: packages/zplc-ide
+        env:
+          CI: 'true'
+        run: |
+          bun run build:assets
+          bun run build:web
+
+      # The pages come first and the app after: docusaurus empties docs/build, and the app is served from /ZPLC/app/.
+      - name: Add the web build to the site
+        run: |
+          mkdir -p docs/build/app
+          cp -r packages/zplc-ide/build/web/. docs/build/app/
+
+      # The smoke serves docs/build the way Pages does (under /ZPLC/) and drives headless Chrome through it: load, an example,
+      # an edit, a build, a WASM simulation with a value that changes, the notice, and the device actions refused.
+      - name: Smoke test the web build
+        working-directory: packages/zplc-ide
+        env:
+          ZPLC_WEB_SITE_ROOT: ${{ github.workspace }}/docs/build
+        run: bun run smoke:web
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1

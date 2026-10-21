@@ -14,6 +14,9 @@
  * Each command returns "OK: ..." on success or "ERROR: ..." on failure.
  */
 
+import { t } from '../i18n';
+import { deviceLinkRefusal, isWebBuild } from '../platform/webCapabilities';
+
 // Type augmentation for WebSerial API
 declare global {
   interface Navigator {
@@ -129,6 +132,9 @@ export function isWebSerialSupported(): boolean {
  * @returns SerialPort or null if cancelled
  */
 export async function requestPort(): Promise<SerialPort | null> {
+  // The web build never opens a device (REL-037, AGENTS.md rule 7), whatever the browser offers.
+  const refusal = deviceLinkRefusal(isWebBuild(), { t });
+  if (refusal !== null) throw new Error(refusal);
   if (!isWebSerialSupported()) {
     throw new Error('WebSerial is not supported in this browser. Use Chrome or Edge.');
   }

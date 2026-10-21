@@ -5,6 +5,11 @@
  */
 import type { ProjectFilesBridge, ProjectFilesResult } from '../../electron/projectFilesProtocol';
 import { projectFilesFailure, projectRootId } from './projectFilesHandles';
+import { createBrowserFolder, isBrowserFolder, readBrowserFile, removeBrowserEntry, renameBrowserEntry, writeBrowserFile } from './projectOpsBrowser';
+
+/** A browser folder (the picker, or the store of the web build) has no bridge: the operations run on its handles (REL-037). */
+const inBrowser = (handle: unknown): handle is FileSystemDirectoryHandle =>
+  isBrowserFolder(handle) && projectRootId(handle) === null && (typeof window === 'undefined' || window.electronAPI?.projectFiles === undefined);
 
 function target(handle: unknown): { bridge: ProjectFilesBridge; rootId: string } {
   const bridge = typeof window === 'undefined' ? undefined : window.electronAPI?.projectFiles;
@@ -21,26 +26,31 @@ async function settled<T>(call: Promise<ProjectFilesResult<T>>): Promise<T> {
 }
 
 export async function renameProjectEntry(handle: unknown, from: string, to: string): Promise<void> {
+  if (inBrowser(handle)) return renameBrowserEntry(handle, from, to);
   const { bridge, rootId } = target(handle);
   await settled(bridge.rename({ rootId, from, to }));
 }
 
 export async function createProjectFolder(handle: unknown, path: string): Promise<void> {
+  if (inBrowser(handle)) return createBrowserFolder(handle, path);
   const { bridge, rootId } = target(handle);
   await settled(bridge.mkdir({ rootId, path }));
 }
 
 export async function removeProjectEntry(handle: unknown, path: string, recursive: boolean): Promise<void> {
+  if (inBrowser(handle)) return removeBrowserEntry(handle, path, recursive);
   const { bridge, rootId } = target(handle);
   await settled(bridge.remove({ rootId, path, recursive }));
 }
 
 export async function readProjectFile(handle: unknown, path: string): Promise<Uint8Array> {
+  if (inBrowser(handle)) return readBrowserFile(handle, path);
   const { bridge, rootId } = target(handle);
   return settled(bridge.read({ rootId, path }));
 }
 
 export async function writeProjectFile(handle: unknown, path: string, bytes: Uint8Array): Promise<void> {
+  if (inBrowser(handle)) return writeBrowserFile(handle, path, bytes);
   const { bridge, rootId } = target(handle);
   await settled(bridge.write({ rootId, path, bytes }));
 }

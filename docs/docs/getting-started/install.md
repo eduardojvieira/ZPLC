@@ -43,6 +43,10 @@ open it:
 
 The steps of each system are under [First launch](#first-launch).
 
+## Without installing
+
+[ZPLC in the browser](https://eduardojvieira.github.io/ZPLC/app/) runs the application in Chrome or Edge with nothing to install. It has no device connection, no firmware builds and no native simulation: [what it lacks](../ide/browser.md#what-is-not-available).
+
 ## Channels
 
 | Channel | State | What it is |

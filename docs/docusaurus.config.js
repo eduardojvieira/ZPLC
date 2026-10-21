@@ -120,6 +120,12 @@ const config = {
             label: 'Docs',
           },
           {
+            // The hosted web build (REL-037): deployed beside the docs by deploy-docs.yml, so it is not a docs route.
+            href: 'https://eduardojvieira.github.io/ZPLC/app/',
+            label: 'Open in browser',
+            position: 'left',
+          },
+          {
             type: 'localeDropdown',
             position: 'right',
           },

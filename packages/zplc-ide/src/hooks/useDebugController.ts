@@ -69,6 +69,7 @@ import { useDeviceLogQueue } from './useDeviceLogQueue';
 import { useDebugControllerPolling } from './useDebugControllerPolling';
 import { useDebugControllerForces } from './useDebugControllerForces';
 import { t } from '../i18n';
+import { deviceLinkRefusal, isWebBuild } from '../platform/webCapabilities';
 
 // =============================================================================
 // Hook Implementation
@@ -459,6 +460,9 @@ export function useDebugController(): DebugController {
   }, [addConsoleEntry, bindAdapterEventHandlers, disconnect, invalidateNativeTrace, resetConnectionState, setDebugMode]);
 
   const connectHardware = useCallback(async () => {
+    // The web build has no device link at all (REL-037, AGENTS.md rule 7): refuse before any adapter or port is touched.
+    const refusal = deviceLinkRefusal(isWebBuild(), { t });
+    if (refusal !== null) throw new Error(refusal);
     try {
       externalDisconnectReportedRef.current = false;
       explicitHardwareDisconnectRef.current = false;
