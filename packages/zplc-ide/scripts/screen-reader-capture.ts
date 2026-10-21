@@ -109,7 +109,7 @@ async function stepEdit({ app, recorder: rec }: Session): Promise<void> {
   rec.begin('2', 'Edit', 'The file is opened from the file tree, the editor is announced as a text input, the tab as selected, and a save is announced.');
   await rec.key('Ctrl+Shift+E', 'show the project navigator');
   await rec.reach('the row of main.st in the file tree', `el.textContent.includes('main.st')`, 'Tab', 60);
-  rec.check('the file row is a tree item with a name', true);
+  rec.fact('fileRow', (await rec.focus())?.spoken ?? '');
   await rec.key('Enter', 'open main.st');
   await app.until('main.st in the code editor', async () => (await app.eval<string>(`window.monaco?.editor.getModels()[0]?.getValue() ?? ''`)).includes('PROGRAM Blinky') || undefined, 30_000)
     .catch(async () => { await Bun.sleep(1_500); });
@@ -198,6 +198,7 @@ async function stepWatch({ app, recorder: rec, language }: Session): Promise<voi
   rec.check('the row of LED_Output is in the table with a value', values.some((row) => /TRUE|FALSE/.test(row)), values[0] ?? '');
   const states = new Set(values.map((row) => /TRUE/.test(row) ? 'TRUE' : /FALSE/.test(row) ? 'FALSE' : '?'));
   rec.check('the value is seen changing between TRUE and FALSE', states.has('TRUE') && states.has('FALSE'), [...states].join(', '));
+  rec.fact('valueChangesAreNotAnnounced', 'by design: a value that changes twice a second is read by moving to its row, not announced; the row is named and its value is readable');
   await rec.shot('5-watch-row');
   rec.end();
 }
