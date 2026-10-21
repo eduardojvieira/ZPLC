@@ -10,6 +10,7 @@ const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf
 
 type Builder = {
   productName: string;
+  extraMetadata?: { productName?: string };
   executableName?: string;
   beforePack?: string;
   extraResources: Array<{ from: string; to: string; filter?: string[] }>;
@@ -59,6 +60,16 @@ describe('the macOS bundle is named ZPLC.app (REL-016)', () => {
   it('names the bundle ZPLC.app and keeps the Linux executable zplc', () => {
     expect(`${builder.mac.executableName ?? builder.executableName ?? builder.productName}.app`).toBe('ZPLC.app');
     expect(builder.executableName).toBe('zplc');
+  });
+});
+
+describe('the packaged application keeps its data in a folder named ZPLC (REL-016)', () => {
+  // Electron names the user-data folder after the productName of the packaged package.json, else its name (@zplc/ide, a
+  // folder with that scope). electron-builder does not copy its own productName there, so extraMetadata must. Found by the
+  // simulated first-run check, which launched the packaged application and listed the folder it created.
+  it('writes the product name into the packaged package.json', () => {
+    expect(builder.extraMetadata?.productName).toBe(builder.productName);
+    expect(builder.productName).toBe('ZPLC');
   });
 });
 

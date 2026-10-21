@@ -10,6 +10,10 @@ appId: com.zenithindustrialcloud.zplc
 productName: ZPLC
 # executableName without spaces — rpmbuild chokes on spaces in .spec paths
 executableName: zplc
+# Electron names the user-data folder after the productName of the packaged package.json, else its name (@zplc/ide). The
+# folder must be named ZPLC (REL-016).
+extraMetadata:
+  productName: ZPLC
 
 # Directories
 directories:
