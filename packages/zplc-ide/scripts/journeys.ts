@@ -1834,7 +1834,9 @@ export const JOURNEYS: Journey[] = [
       assert(!existsSync(motor) && disk(join(project, 'src', 'Drive.st')) === original, 'The file was not renamed on disk, or its content changed.');
       assert((await editorText(app)).includes(EDIT), 'The unsaved text did not follow the renamed file.');
       assert(await app.visible(editorTab('file:src/Drive.st')), 'The tab did not follow the renamed file.');
-      assert(JSON.parse(disk(join(project, 'zplc.json'))).tasks.every((task: { programs: string[] }) => !task.programs.includes('Motor.st')), 'A task still runs Motor.st after the rename.');
+      // the task list is rewritten after the tree and the tab have moved: on a loaded machine that is later than the tab
+      await app.until('no task to run Motor.st after the rename', () => JSON.parse(disk(join(project, 'zplc.json'))).tasks.every((task: { programs: string[] }) => !task.programs.includes('Motor.st')) || undefined)
+        .catch(() => { throw new Error('A task still runs Motor.st after the rename.'); });
       await app.click(saveButton);
       await app.until('the buffer saved under the new name', () => disk(join(project, 'src', 'Drive.st')).includes(EDIT) || undefined);
       assert(!existsSync(motor), 'Saving brought the old name back.');
