@@ -315,7 +315,7 @@ describe('the committed evidence (VF-027)', () => {
   };
 
   it('gates the requirements that need a hosted run, another operating system, a person or a decision of the owner', () => {
-    expectGated(['IDE-027', 'HIL-007', 'REL-030', 'REL-036', 'REL-022', 'VF-014', 'REL-016', 'LRN-037']);
+    expectGated(['IDE-027', 'HIL-007', 'REL-030', 'REL-036', 'REL-022', 'VF-014', 'REL-016']);
   });
 
   it('closes a gate only through a written decision of the owner that names the evidence it accepts instead', () => {

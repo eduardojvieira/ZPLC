@@ -183,3 +183,4 @@ checks of step 6. Fill these in when they happen; an empty row is a check that h
 | First run of the DMG on an Intel Mac | not yet recorded | | | |
 | Windows 11 installer, Smart App Control on | not yet recorded | | | |
 | Windows 11 installer, Smart App Control off | not yet recorded | | | |
+| Screen reader check of the main path and one Learn lesson (UX-028, LRN-037) | current build | 2026-10-20 | recorded by script | 18 of 18 steps pass (9 steps, English and Spanish). Linux, Chromium accessibility tree, recorded 2026-10-20; owner decision 2026-10-20 accepts this in place of NVDA/JAWS on Windows and VoiceOver on macOS. Not a run of a screen reader product; the deploy dialog was opened without a board. See [Screen reader check](docs/docs/development/screen-reader-check.md) and `docs/static/img/screen-reader-check/2026-10-20/results.json` |

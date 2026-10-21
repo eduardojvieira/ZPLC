@@ -3,7 +3,7 @@
  * over the results panel, and the secondary sidebar, with a separator between each pair (UX-017). The sidebars collapse
  * rather than unmount their panels, so a layout saved with one hidden comes back the same.
  */
-import { useEffect, type ComponentType } from 'react';
+import { useEffect, useRef, type ComponentType } from 'react';
 import { Group, Panel, useGroupCallbackRef, usePanelCallbackRef, type PanelSize } from 'react-resizable-panels';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { LearnHome } from '../components/LearnHome';
@@ -18,6 +18,7 @@ import { useShellLayoutSizes, useWorkspaceLayout } from '../utils/layoutStorage'
 import { workspaceLayoutFrom } from '../utils/sessionState';
 import { ActivityRail } from './ActivityRail';
 import { PrimarySidebar, SecondarySidebar } from './Sidebars';
+import { claimLostFocus } from './claimLostFocus';
 import { COMPACT_MAX_WIDTH, useShellDensity } from './shellDensity';
 
 interface WorkbenchShellProps {
@@ -53,6 +54,10 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
   const [shellGroup, setShellGroup] = useGroupCallbackRef();
   const [primaryPanel, setPrimaryPanel] = usePanelCallbackRef();
   const [secondaryPanel, setSecondaryPanel] = usePanelCallbackRef();
+
+  // The Welcome screen closes with the button that opened the project, so the focus would fall to the page body (UX-025, UX-028): it goes to the editor region.
+  const editorRegion = useRef<HTMLElement>(null);
+  useEffect(() => { claimLostFocus(editorRegion.current, document.activeElement, document.body); }, []);
 
   // A request for the lessons, the explorer or the inspector, made by name as a console tab, shows that view.
   useEffect(() => startShellRouting(useIDEStore, () => useShellLayout.getState()), []);
@@ -125,7 +130,7 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
             }}
           >
             <Panel id="editor" defaultSize="72%" minSize="30%" className="overflow-hidden">
-              <main aria-label={t('shell.editor.label')} className="relative h-full min-h-0">
+              <main ref={editorRegion} tabIndex={-1} aria-label={t('shell.editor.label')} className="relative h-full min-h-0">
                 <ErrorBoundary region="Editor">
                   <EditorArea />
                 </ErrorBoundary>

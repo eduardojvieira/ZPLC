@@ -1,6 +1,7 @@
 /** The text of one surface, in English and in Spanish (UX-029, UX-030). Keys `editors.*`. */
 export const editorsEn = {
   'editors.search': 'Search',
+  'editors.code.label': 'Code editor for {name}. Press Ctrl+M so that the tab key moves the focus out of the editor.',
   'editors.search.placeholder': 'Type to search',
   'editors.search.choices': '{title}: choices',
   'editors.nothingMatches': 'Nothing matches.',
@@ -70,6 +71,7 @@ export const editorsEn = {
 } as const;
 
 export const editorsEs: Record<keyof typeof editorsEn, string> = {
+  'editors.code.label': 'Editor de código de {name}. Pulse Ctrl+M para que la tecla de tabulación saque el foco del editor.',
   'editors.search': 'Buscar',
   'editors.search.placeholder': 'Escriba para buscar',
   'editors.search.choices': '{title}: opciones',

@@ -38,6 +38,14 @@ export const MANIFEST = `${IMAGE_DIR}/manifest.json`;
  * the lesson data and keeps in step with it, not pictures of the product, so they need no capture and no manifest entry.
  */
 export const DIAGRAM_DIR = `${IMAGE_DIR}/wiring`;
+/**
+ * The recorded screen-reader check (UX-028): pictures that packages/zplc-ide/scripts/screen-reader-capture.ts takes of the
+ * application, one dated folder per run, each with a results.json that lists its pictures with their hash and size. They are
+ * captured by automation like the tutorial pictures, with their own record instead of the manifest of the tutorial.
+ */
+export const RECORDED_DIR = `${IMAGE_DIR}/screen-reader-check`;
+/** A picture of a recorded run, as its results.json lists it, with the path below the repository. */
+export interface RecordedImage { path: string; sha256: string; width: number; height: number }
 const PAGE_DIRS = ['docs/docs', 'docs/i18n/es/docusaurus-plugin-content-docs/current'];
 
 /** The pictures the journey takes, in the order of the steps. The journey and this list are checked against each other by a capture. */
@@ -94,8 +102,9 @@ export function staticPathOf(reference: string): string | undefined {
 
 export interface Problem { where: string; message: string }
 
-export function checkManifest(manifest: Manifest, pages: Array<{ page: string; text: string }>, readImage: (path: string) => Uint8Array | undefined, listed: string[]): Problem[] {
+export function checkManifest(manifest: Manifest, pages: Array<{ page: string; text: string }>, readImage: (path: string) => Uint8Array | undefined, listed: string[], recorded: RecordedImage[] = []): Problem[] {
   const problems: Problem[] = [];
+  const recordedByPath = new Map(recorded.map((image) => [image.path, image]));
   if (manifest.schemaVersion !== 1) problems.push({ where: MANIFEST, message: 'schemaVersion must be 1' });
   if (!/^[0-9a-f]{40}$/.test(manifest.commit)) problems.push({ where: MANIFEST, message: 'commit must be the 40 hexadecimal digits of the commit the application was built from' });
   const known = new Map(manifest.images.map((image) => [`${IMAGE_DIR}/${image.file}`, image]));
@@ -108,11 +117,25 @@ export function checkManifest(manifest: Manifest, pages: Array<{ page: string; t
       if (size.width !== image.width || size.height !== image.height) problems.push({ where: path, message: `the picture is ${size.width}x${size.height}, the manifest says ${image.width}x${image.height}` });
     } catch { problems.push({ where: path, message: 'is not a PNG file' }); }
   }
+  for (const image of recorded) {
+    const bytes = readImage(image.path);
+    if (!bytes) { problems.push({ where: image.path, message: 'is listed by a results.json and is not in the folder' }); continue; }
+    if (sha256(bytes) !== image.sha256) problems.push({ where: image.path, message: 'differs from the picture its results.json recorded: run the capture again' });
+    try {
+      const size = pngSize(bytes);
+      if (size.width !== image.width || size.height !== image.height) problems.push({ where: image.path, message: `is ${size.width}x${size.height}, its results.json says ${image.width}x${image.height}` });
+    } catch { problems.push({ where: image.path, message: 'is not a PNG file' }); }
+  }
+  for (const path of listed) if (path.startsWith(`${RECORDED_DIR}/`) && path.endsWith('.png') && !recordedByPath.has(path)) problems.push({ where: path, message: 'is a picture that no results.json of the recorded check lists: a published image is a captured one' });
   for (const path of listed) if ((path.startsWith(`${PICTURE_DIR}/`) || path.startsWith(`${EDITOR_DIR}/`)) && !known.has(path)) problems.push({ where: path, message: 'is a picture that the manifest does not list: a published image is a captured one' });
   for (const { page, text } of pages) {
     for (const reference of imagesOf(text)) {
       const path = staticPathOf(reference);
       if (path === undefined) { problems.push({ where: page, message: `shows ${reference}, which is not an image of ${IMAGE_DIR}: product images are captured by automation and listed in ${MANIFEST}` }); continue; }
+      if (path.startsWith(`${RECORDED_DIR}/`)) {
+        if (!recordedByPath.has(path)) problems.push({ where: page, message: `shows ${reference}, which no results.json of ${RECORDED_DIR} lists` });
+        continue;
+      }
       if (path.startsWith(`${DIAGRAM_DIR}/`)) {
         if (!readImage(path)) problems.push({ where: page, message: `shows ${reference}, a wiring diagram that is not in ${DIAGRAM_DIR}: run bun tools/docs/generate_hardware_pages.ts` });
         continue;
@@ -193,6 +216,23 @@ function captureEditors(): void {
   } finally { rmSync(scratch, { recursive: true, force: true }); }
 }
 
+/** The pictures that the dated folders of the recorded screen-reader check list in their results.json. */
+function recordedImages(): { folders: string[]; images: RecordedImage[] } {
+  const base = join(ROOT, RECORDED_DIR);
+  if (!existsSync(base)) return { folders: [], images: [] };
+  const folders: string[] = []; const images: RecordedImage[] = [];
+  for (const entry of readdirSync(base, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const folder = `${RECORDED_DIR}/${entry.name}`;
+    folders.push(folder);
+    const file = join(ROOT, folder, 'results.json');
+    if (!existsSync(file)) continue;
+    const listedImages = (JSON.parse(readFileSync(file, 'utf8')) as { images?: Array<{ file: string; sha256: string; width: number; height: number }> }).images ?? [];
+    for (const image of listedImages) images.push({ path: `${folder}/${image.file}`, sha256: image.sha256, width: image.width, height: image.height });
+  }
+  return { folders, images };
+}
+
 function check(): number {
   // With no manifest nothing is published: no page may show an image and no picture may be in the folder.
   const manifest: Manifest = existsSync(join(ROOT, MANIFEST))
@@ -201,7 +241,9 @@ function check(): number {
   const hasManifest = manifest.commit !== '';
   const pages = PAGE_DIRS.flatMap((directory) => markdownFiles(ROOT, directory)).map((page) => ({ page, text: readFileSync(join(ROOT, page), 'utf8') }));
   const listed = [PICTURE_DIR, EDITOR_DIR].flatMap((directory) => (existsSync(join(ROOT, directory)) ? readdirSync(join(ROOT, directory)).map((name) => `${directory}/${name}`) : []));
-  const problems = checkManifest(manifest, pages, (path) => (existsSync(join(ROOT, path)) ? new Uint8Array(readFileSync(join(ROOT, path))) : undefined), listed)
+  const recorded = recordedImages();
+  const recordedFiles = recorded.folders.flatMap((folder) => readdirSync(join(ROOT, folder)).map((name) => `${folder}/${name}`));
+  const problems = checkManifest(manifest, pages, (path) => (existsSync(join(ROOT, path)) ? new Uint8Array(readFileSync(join(ROOT, path))) : undefined), [...listed, ...recordedFiles], recorded.images)
     .filter((problem) => hasManifest || !problem.message.includes('commit must be'));
   if (hasManifest && git(['rev-parse', '--is-shallow-repository']) === 'false') {
     const known = spawnSync('git', ['cat-file', '-e', `${manifest.commit}^{commit}`], { cwd: ROOT });

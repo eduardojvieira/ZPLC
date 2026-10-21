@@ -1,5 +1,5 @@
 import { BookOpen, Copy, FlaskConical, Info, RotateCcw } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LESSON_INDEX } from '../generated/lessonIndex';
 import { buildCourseView, trackSupport } from '../learn/course';
 import { useLearnUi } from '../learn/learnUi';
@@ -15,6 +15,7 @@ import { useLessonCheck } from '../learn/useLessonCheck';
 import { getFileContent } from '../utils/projectLoader';
 import { gradeRecordedScenarioLesson, learnLessonCatalog, type LearnLessonGrade, type LearnLessonId, type LearnLocale } from './learnLesson';
 import { announce } from '../utils/announce';
+import { useGiveFocusBack } from '../hooks/useGiveFocusBack';
 import { AlertDialog, Button, ToggleGroup } from '../ui';
 import { LearnBoardLesson } from './LearnBoardLesson';
 
@@ -83,9 +84,12 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
     setStartFailed(false);
     void useLearnUi.getState().startLesson(lesson.id).then((opened) => { setStartFailed(!opened); });
   };
+  const resetButton = useRef<HTMLButtonElement>(null);
+  const resetStarted = useGiveFocusBack(resetStatus === 'working', resetButton);
   const restoreStarter = () => {
     setConfirm(null);
     setResetStatus('working');
+    resetStarted();
     void useLearnUi.getState().restoreLesson(lesson.id).then((restored) => {
       setResetStatus(restored ? 'done' : 'failed');
       announce(t(restored ? 'learn.reset.done' : 'learn.reset.failed'));
@@ -174,7 +178,7 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
               <h3 className="font-medium text-[var(--color-surface-100)]">{stage.title}</h3>
               <p className="mt-1 leading-5 text-[var(--color-surface-300)]">{stage.body}</p>
               <details className="mt-2 text-xs text-[var(--color-surface-300)]">
-                <summary className="cursor-pointer select-none font-medium text-[var(--color-accent-blue)]">{t('learn.showExpectedCheckpoint')}</summary>
+                <summary aria-label={t('learn.showExpectedCheckpointFor', { stage: stage.title })} className="cursor-pointer select-none font-medium text-[var(--color-accent-blue)]">{t('learn.showExpectedCheckpoint')}</summary>
                 <p className="mt-1 leading-5">{stage.checkpoint}</p>
               </details>
             </li>
@@ -206,9 +210,9 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
         <section aria-label={t('learn.lessonActions')} className="border-t border-[var(--color-surface-600)] pt-3">
           <div className="flex flex-wrap gap-2">
             {workspaceOpen
-              ? <Button variant="secondary" size="sm" data-learn-reset disabled={resetStatus === 'working'} onClick={() => setConfirm('reset')}><RotateCcw size={14} aria-hidden="true" />{t('learn.reset')}</Button>
+              ? <Button ref={resetButton} variant="secondary" size="sm" data-learn-reset disabled={resetStatus === 'working'} onClick={() => setConfirm('reset')}><RotateCcw size={14} aria-hidden="true" />{t('learn.reset')}</Button>
               : <Button variant="primary" size="sm" data-learn-open-workspace onClick={startWorkspace} disabled={!folderAccess || starting || locked}><Copy size={14} aria-hidden="true" />{starting ? t('learn.workspacePreparing') : t('learn.openWorkspace')}</Button>}
-            {checkAvailable && <Button variant="secondary" size="sm" data-learn-check onClick={() => { void lessonCheck.run(lesson.id); }} disabled={!lessonCheck.canRun || lessonCheck.running(lesson.id)}><FlaskConical size={14} aria-hidden="true" />{lessonCheck.running(lesson.id) ? (t('interlock.checking')) : (t('learn.check'))}</Button>}
+            {checkAvailable && <Button variant="secondary" size="sm" data-learn-check onClick={() => { if (!lessonCheck.running(lesson.id)) void lessonCheck.run(lesson.id); }} disabled={!lessonCheck.canRun} aria-disabled={lessonCheck.running(lesson.id) || undefined}><FlaskConical size={14} aria-hidden="true" />{lessonCheck.running(lesson.id) ? (t('interlock.checking')) : (t('learn.check'))}</Button>}
             {checkAvailable && lessonCheck.running(lesson.id) && <Button variant="secondary" size="sm" onClick={lessonCheck.cancel}>{t('common.cancel')}</Button>}
             <Button variant="primary" size="sm" onClick={() => setActiveConsoleTab('tests')}><FlaskConical size={14} aria-hidden="true" />{testsLabel}</Button>
           </div>

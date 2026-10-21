@@ -41,6 +41,14 @@ describe('presentOperationalStatus', () => {
     });
   });
 
+  it('presents the state in the words of the interface, accents included, and still refuses markup', () => {
+    const shown = (text: string) => presentOperationalStatus({ ...base, adapterType: 'native', connected: true, vmInfo: { cycles: 0 }, status: { text, tone: 'success' } }).status.text;
+    expect(shown('En ejecución')).toBe('En ejecución');
+    expect(shown('Conectado · falta cargar')).toBe('Conectado · falta cargar');
+    expect(shown('<script>')).toBe('Status unavailable');
+    expect(shown('Run\u0000ning')).toBe('Status unavailable');
+  });
+
   it('prefers a safe serial handshake board over the configured target and permits a safe version', () => {
     const result = presentOperationalStatus({
       ...base,
