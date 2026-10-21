@@ -222,27 +222,28 @@ export interface McpTool { name: string; title: string; description: string; inp
 export interface McpResource { uri: string; template: boolean }
 export interface Mcp { tools: McpTool[]; resources: McpResource[] }
 
-export function parseMcp(text: string): Mcp {
+export function parseMcp(source: string): Mcp {
+  const text = flattenConcatenations(source);
   const inputs = new Map<string, string[]>();
   for (const match of text.matchAll(/^const (\w+_INPUT) = z\.object\(\{([\s\S]*?)\}\)\.strict\(\);/gm)) {
     inputs.set(match[1]!, [...match[2]!.matchAll(/(\w+):\s*z\./g)].map((field) => field[1]!));
   }
   const annotations = new Map<string, boolean>();
-  for (const match of text.matchAll(/^const (\w+) = \{ readOnlyHint: (true|false)/gm)) annotations.set(match[1]!, match[2] === 'true');
-  const tools: McpTool[] = [...text.matchAll(/registerTool\('(\w+)', \{ title: '([^']*)', description: '([^']*)', inputSchema: (\w+), annotations: (\w+) \}/g)].map((match) => {
-    const fields = inputs.get(match[4]!);
-    const readOnly = annotations.get(match[5]!);
-    if (fields === undefined || readOnly === undefined) throw new Error(`mcp/server.ts: the tool ${match[1]} uses ${match[4]} or ${match[5]}, which the reader does not know`);
-    return { name: match[1]!, title: match[2]!, description: match[3]!, inputs: fields, readOnly };
+  for (const match of text.matchAll(/^const (\w+) = \{\s*readOnlyHint: (true|false)/gm)) annotations.set(match[1]!, match[2] === 'true');
+  const tools: McpTool[] = [...text.matchAll(/registerTool\(\s*'(\w+)',\s*\{\s*title: (['"])(.*?)\2,\s*description: (['"])(.*?)\4,\s*inputSchema: (\w+),\s*annotations: (\w+),?\s*\}/g)].map((match) => {
+    const fields = inputs.get(match[6]!);
+    const readOnly = annotations.get(match[7]!);
+    if (fields === undefined || readOnly === undefined) throw new Error(`mcp/server.ts: the tool ${match[1]} uses ${match[6]} or ${match[7]}, which the reader does not know`);
+    return { name: match[1]!, title: match[3]!, description: match[5]!, inputs: fields, readOnly };
   });
   const declared = /export const MCP_TOOL_NAMES = \[([^\]]*)\]/.exec(text);
   const declaredNames = declared ? [...declared[1]!.matchAll(/'(\w+)'/g)].map((match) => match[1]!) : [];
   if (declaredNames.join() !== tools.map((tool) => tool.name).join()) throw new Error(`mcp/server.ts: MCP_TOOL_NAMES (${declaredNames.join(', ')}) and the registered tools (${tools.map((tool) => tool.name).join(', ')}) differ`);
   const uris = /export const MCP_RESOURCE_URIS = \[([^\]]*)\]/.exec(text);
   const uriList = uris ? [...uris[1]!.matchAll(/'(zplc:\/\/[^']+)'/g)].map((match) => match[1]!) : [];
-  const templates = [...text.matchAll(/template\('[\w-]+', '(zplc:\/\/[^']+)'/g)].map((match) => match[1]!);
-  const fixed = [...text.matchAll(/^\s*resource\('(zplc:\/\/[^']+)'/gm)].map((match) => match[1]!);
-  for (const topic of text.matchAll(/for \(const topic of \[([^\]]*)\] as const\) resource\(`(zplc:\/\/[a-z]+)\/\$\{topic\}`/g)) {
+  const templates = [...text.matchAll(/template\(\s*'[\w-]+',\s*'(zplc:\/\/[^']+)'/g)].map((match) => match[1]!);
+  const fixed = [...text.matchAll(/^\s*resource\(\s*'(zplc:\/\/[^']+)'/gm)].map((match) => match[1]!);
+  for (const topic of text.matchAll(/for \(const topic of \[([^\]]*)\] as const\)\s*resource\(\s*`(zplc:\/\/[a-z]+)\/\$\{topic\}`/g)) {
     for (const name of topic[1]!.matchAll(/'(\w+)'/g)) fixed.push(`${topic[2]}/${name[1]}`);
   }
   if (uriList.slice().sort().join() !== fixed.slice().sort().join()) throw new Error(`mcp/server.ts: MCP_RESOURCE_URIS and the registered resources differ (${uriList.join(', ')} against ${fixed.join(', ')})`);
