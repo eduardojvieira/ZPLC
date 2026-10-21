@@ -150,7 +150,7 @@ export class Recorder {
   private async patient<T>(call: () => Promise<T>): Promise<T> {
     for (let attempt = 1; ; attempt++) {
       try { return await call(); } catch (error) {
-        if (attempt >= 8 || !/timed out|collected/i.test(error instanceof Error ? error.message : String(error))) throw error;
+        if (attempt >= 2 || !/timed out|collected/i.test(error instanceof Error ? error.message : String(error))) throw error;
         await Bun.sleep(1_000);
       }
     }
@@ -170,8 +170,11 @@ export class Recorder {
   private async focusOnce(): Promise<Focus | null | undefined> {
     const { result } = await this.app.cdp.command('Runtime.evaluate', { expression: '(() => { const el = document.activeElement; return el && el !== document.body && el !== document.documentElement ? el : null; })()' }) as { result: { objectId?: string; subtype?: string } };
     if (!result.objectId || result.subtype === 'null') return null;
-    if (this.onDemand) await this.app.cdp.command('Accessibility.enable');
-    try { return (await axOfObject(this.app.cdp, result.objectId)) ?? undefined; } finally { if (this.onDemand) await this.app.cdp.command('Accessibility.disable'); }
+    // The tree is built for the read; the domain is switched on only when the tree has no node for the element yet.
+    const first = await axOfObject(this.app.cdp, result.objectId);
+    if (first || !this.onDemand) return first ?? undefined;
+    await this.app.cdp.command('Accessibility.enable');
+    try { return (await axOfObject(this.app.cdp, result.objectId)) ?? undefined; } finally { await this.app.cdp.command('Accessibility.disable'); }
   }
 
   /** Records a stop where the focus is now, after whatever the action was. */

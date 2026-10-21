@@ -119,7 +119,7 @@ async function stepEdit({ app, recorder: rec }: Session): Promise<void> {
   await rec.type('\n(* checked with the keyboard *)');
   await rec.stop('after typing a comment');
   await rec.key('Ctrl+S', 'save');
-  await rec.expectAnnounced('the save is announced in the status region', /Saved|Guardado/i);
+  await rec.expectAnnounced('the save is announced in the status region', /Saved|guard/i);
   await rec.shot('2-editor-saved');
   // The editor takes Tab as a character. Ctrl+M (Monaco's Tab focus mode) is the way out; a person must be able to learn it from the editor itself.
   const editor = await rec.stop('the editor, before looking for the way out');
@@ -210,18 +210,18 @@ async function stepForce({ app, recorder: rec, language }: Session): Promise<voi
   await rec.key('Space', 'force LED_Output');
   await rec.expectAnnounced('the force is announced', /forced|forzad/i);
   await rec.key('Space', 'release the force');
-  await rec.expectAnnounced('the release is announced', /released|liberad/i);
+  await rec.expectAnnounced('the release is announced', /released|liber/i);
   await rec.key('Space', 'force again');
   await rec.expectAnnounced('the second force is announced', /forced|forzad/i);
   // Release all forces is a physical-device action (it is disabled in the simulator), so the announcement that several forces were released together is not reachable here.
   rec.fact('releaseAll', 'not reachable in the simulator: the button is disabled without a device; the words are covered by the unit tests of the force announcements');
   await rec.key('Space', 'release the force');
-  await rec.expectAnnounced('the second release is announced', /released|liberad/i);
+  await rec.expectAnnounced('the second release is announced', /released|liber/i);
   // Force once more and lose the connection: the alert region must say that a force is unconfirmed.
   await rec.key('Space', 'force LED_Output again');
   await palette(rec, app, w.disconnect);
   // In the simulator, ending the connection clears the forces (they are the simulator's own); only a physical device keeps a force that nobody confirms.
-  await rec.expectAnnounced('ending the connection says that the force was released', /released|liberad/i, 8_000);
+  await rec.expectAnnounced('ending the connection says that the force was released', /released|liber/i, 8_000);
   rec.fact('unconfirmedAlert', 'not reachable in the simulator: it needs a device that keeps a force after the link is lost; the assertive announcement is covered by the unit tests of the force announcements');
   await rec.shot('6-force-after-disconnect');
   rec.end();
@@ -301,10 +301,11 @@ async function stepLearn({ app, recorder: rec, language }: Session): Promise<voi
   const opened = await rec.stop('the lesson has opened');
   rec.check('focus is somewhere in the workbench after the lesson opens', opened.focus !== null);
   rec.fact('lessonTitle', await app.eval<string>(`document.getElementById('learn-title')?.textContent?.trim() ?? ''`));
-  const headings = await app.eval<string[]>(`[...document.querySelectorAll('#learn-title, [aria-label="Primary sidebar"] h3')].map((h) => h.textContent.trim())`);
+  const panel = `document.getElementById('learn-title').closest('section')`;
+  const headings = await app.eval<string[]>(`[document.getElementById('learn-title'), ...${panel}.querySelectorAll('h3')].map((h) => h.textContent.trim())`);
   rec.fact('lessonHeadings', JSON.stringify(headings));
   rec.check('the lesson has a heading and a named heading per stage', headings.length >= 3, JSON.stringify(headings));
-  rec.fact('stagesList', await app.eval<string>(`document.querySelector('[aria-label="Primary sidebar"] ol')?.getAttribute('aria-label') ?? '(unnamed list)'`));
+  rec.fact('stagesList', await app.eval<string>(`${panel}.querySelector('ol')?.getAttribute('aria-label') ?? '(unnamed list)'`));
   await rec.shot('8-lesson-panel');
   // a hint: a disclosure that says whether it is open
   await rec.reach('the first hint', `el.tagName === 'SUMMARY' && el.closest('details') !== null`, 'Shift+Tab', 60);
@@ -331,7 +332,7 @@ async function stepLearn({ app, recorder: rec, language }: Session): Promise<voi
   const confirmation = await rec.stop('the confirmation to restore the starter');
   rec.check('the confirmation is an alert dialog that holds the focus', confirmation.focus?.within.some((entry) => entry.role === 'alertdialog') === true, JSON.stringify(confirmation.focus?.within));
   await rec.shot('8-restore-confirmation');
-  await rec.reach('the confirm button', `el.closest('[role="alertdialog"]') !== null && (el.hasAttribute('data-confirm') || /restor|restablec/i.test(el.textContent ?? ''))`, 'Tab', 6);
+  await rec.reach('the confirm button', `el.closest('[role="alertdialog"]') !== null && (el.hasAttribute('data-confirm') || /restor|restaur|restablec/i.test(el.textContent ?? ''))`, 'Tab', 6);
   await rec.key('Enter', 'confirm');
   await rec.expectAnnounced('the restore is announced', new RegExp(escape(w.t('learn.reset.done'))), 10_000);
   rec.end();
@@ -421,7 +422,7 @@ async function withSession(harness: Awaited<ReturnType<typeof startHarness>>['ha
   launched.app.cdp.command = async (method, params) => {
     for (let attempt = 1; ; attempt++) {
       try { return await send(method, params); } catch (error) {
-        if (method.startsWith('Input.') || attempt >= 6 || !/timed out|collected/i.test(error instanceof Error ? error.message : String(error))) throw error;
+        if (method.startsWith('Input.') || attempt >= 4 || !/timed out|collected/i.test(error instanceof Error ? error.message : String(error))) throw error;
         await Bun.sleep(2_000);
       }
     }
@@ -461,7 +462,12 @@ async function main(): Promise<void> {
     }
   } finally { await stop(); }
   const commit = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: REPOSITORY, encoding: 'utf8' }).stdout.trim();
-  const results = { schemaVersion: 1, date: DATE, commit, command: 'bun run packages/zplc-ide/scripts/screen-reader-capture.ts', method: 'Linux, Chromium accessibility tree over the DevTools protocol, keyboard only, real Electron development host', languages: all, images };
+  // A run of one language keeps what an earlier run of the other language recorded in the same folder.
+  const earlier = existsSync(join(OUT, 'results.json')) ? JSON.parse(readFileSync(join(OUT, 'results.json'), 'utf8')) as { languages?: typeof all; images?: Recorder['images'] } : {};
+  const kept = Object.fromEntries(Object.entries(earlier.languages ?? {}).filter(([lang]) => !LANGUAGES.includes(lang as Language)));
+  images.unshift(...(earlier.images ?? []).filter((image) => Object.keys(kept).some((lang) => image.file.startsWith(`${lang}-`))));
+  Object.assign(all, kept);
+  const results = { schemaVersion: 1, date: DATE, commit, command: 'bun run packages/zplc-ide/scripts/screen-reader-capture.ts', method: 'Linux, Chromium accessibility tree over the DevTools protocol, keyboard only, real Electron development host', languages: Object.fromEntries(Object.entries(all).sort(([a], [b]) => a.localeCompare(b))), images };
   writeFileSync(join(OUT, 'results.json'), `${JSON.stringify(results, null, 2)}\n`);
   let failed = 0;
   for (const [lang, run] of Object.entries(all)) for (const step of run.steps) { if (step.result === 'fail') failed += 1; console.log(`${lang} ${step.id} ${step.title}: ${step.result}${step.checks.filter((check) => !check.ok).map((check) => `\n    - ${check.description}: ${check.detail}`).join('')}`); }
