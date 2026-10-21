@@ -120,9 +120,10 @@ export default function SFCToolbox({ onInsert }: SFCToolboxProps) {
                       data-sfc-toolbox-item={element.type}
                       aria-label={t('editors.insert', { name: element.label })}
                       tooltip={t('editors.sfc.insertTooltip', { name: element.description })}
-                      className="mx-2 my-0.5 w-[calc(100%-1rem)] flex-col items-start justify-center whitespace-normal px-2 py-1.5 text-left text-xs
-                                 bg-[var(--color-surface-700)] hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] cursor-grab active:cursor-grabbing
-                                 border border-transparent hover:border-[var(--color-accent-blue)]"
+                      className="mx-2 my-0.5 w-[calc(100%-1rem)] flex-col items-start justify-center whitespace-normal px-2 py-1.5
+                                 text-left text-xs bg-[var(--color-surface-700)]
+                                 hover:bg-[color-mix(in_srgb,var(--text-primary)_12%,transparent)] cursor-grab active:cursor-grabbing border
+                                 border-transparent hover:border-[var(--color-accent-blue)]"
                     >
                       <div className="text-[var(--text-primary)] font-medium">{element.label}</div>
                       <div className={`${CAPTION} font-normal text-[var(--text-tertiary)] mt-0.5`}>
