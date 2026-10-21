@@ -1,4 +1,4 @@
-# VF-017: the C style of the core (LLVM base, two spaces, attached braces) at the repository line limit of 120.
+# VF-017: the C style of the core (LLVM base, two spaces, attached braces) at the repository line limit of 140.
 # clang-format output changes between versions: CI and contributors use the pinned wheel in tools/ci/clang-format-version.txt.
 BasedOnStyle: LLVM
 ColumnLimit: 140
