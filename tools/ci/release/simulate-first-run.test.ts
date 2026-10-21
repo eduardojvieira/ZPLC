@@ -1,8 +1,8 @@
-// The pure parts of tools/release/simulate-first-run.ts (REL-016). The simulation itself needs installers, Wine and a
+// The pure parts of tools/ci/release/simulate-first-run.ts (REL-016). The simulation itself needs installers, Wine and a
 // display: it is run by hand and its record is committed; these tests pin the parts that read and judge that record.
 import { expect, test } from 'bun:test';
 import { homedir } from 'node:os';
-import { APP_ID, plistString, scrub, STATEMENT, summarize, type Step } from '../../release/simulate-first-run';
+import { APP_ID, plistString, scrub, STATEMENT, summarize, type Step } from './simulate-first-run';
 
 test('counts the steps by status', () => {
   const step = (status: Step['status']): Step => ({ os: 'linux', id: status, status, detail: '' });

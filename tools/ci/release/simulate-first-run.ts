@@ -16,7 +16,7 @@
  *   macOS    the zip is read as files only: bundle name, Info.plist, nested native runtime. It cannot be launched here.
  *
  * Usage (DISPLAY must be a private display, never the owner's :0; Wayland variables are removed for the children):
- *   DISPLAY=:42 bun tools/release/simulate-first-run.ts [--dist DIR] [--out FILE] [--only linux,windows,macos]
+ *   DISPLAY=:42 bun tools/ci/release/simulate-first-run.ts [--dist DIR] [--out FILE] [--only linux,windows,macos]
  *
  * Everything the script writes goes under ~/.cache/zplc-rel016 (the Wine prefix, the unpacked packages, the profiles).
  */
@@ -25,7 +25,7 @@ import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renam
 import { createServer } from 'node:net';
 import { homedir, hostname } from 'node:os';
 import { basename, join, relative } from 'node:path';
-import { Cdp } from '../../packages/zplc-ide/scripts/cdpHarness';
+import { Cdp } from '../../../packages/zplc-ide/scripts/cdpHarness';
 
 export type Status = 'pass' | 'fail' | 'not-simulated';
 export interface Step { os: 'linux' | 'windows' | 'macos'; id: string; status: Status; detail: string }
@@ -33,7 +33,7 @@ export interface Step { os: 'linux' | 'windows' | 'macos'; id: string; status: S
 export const STATEMENT = 'Simulated on Linux by owner decision 2026-10-20, not a real Mac or Windows machine.';
 export const APP_ID = 'com.zenithindustrialcloud.zplc';
 
-const repo = join(import.meta.dir, '..', '..');
+const repo = join(import.meta.dir, '..', '..', '..');
 const cache = join(homedir(), '.cache', 'zplc-rel016');
 const HOST = '127.0.0.1';
 
@@ -504,7 +504,7 @@ async function main(): Promise<void> {
     version,
     commit: await git('rev-parse HEAD'),
     dirtyTree: (await git('status --porcelain')).length > 0,
-    script: 'tools/release/simulate-first-run.ts',
+    script: 'tools/ci/release/simulate-first-run.ts',
     host: { kernel: (await sh('uname -sr')).out, hostname: hostname() === '' ? '' : 'redacted', wine: (await sh('wine --version')).out, docker: (await sh('docker --version')).out },
     artifacts,
     summary: summarize(steps),

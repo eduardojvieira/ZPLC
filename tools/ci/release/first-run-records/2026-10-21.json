@@ -1,0 +1,332 @@
+{
+  "schema": "zplc.first-run-simulation/1",
+  "requirement": "REL-016",
+  "statement": "Simulated on Linux by owner decision 2026-10-20, not a real Mac or Windows machine.",
+  "started": "2026-10-21T14:47:41.514Z",
+  "finished": "2026-10-21T14:49:47.831Z",
+  "version": "2.0.0-rc.3",
+  "commit": "8a340022df8c6e9f192ac057777497827029ea37",
+  "dirtyTree": false,
+  "script": "tools/release/simulate-first-run.ts",
+  "host": {
+    "kernel": "Linux 7.2.10-1-cachyos",
+    "hostname": "redacted",
+    "wine": "wine-11.20",
+    "docker": "Docker version 29.9.2, build a82e528901"
+  },
+  "artifacts": [
+    {
+      "file": "zplc-2.0.0-rc.3-linux-amd64.deb",
+      "bytes": 106424852,
+      "sha256": "16a52d4e134115dc69d33ac8d110600b7e83bbd483ef31a09c346676f38f1985"
+    },
+    {
+      "file": "zplc-2.0.0-rc.3-linux-x86_64.AppImage",
+      "bytes": 105775425,
+      "sha256": "0e149d4ef19e957a221a49e0aec12c688812722b678f7168083e90a3f48dcc0f"
+    },
+    {
+      "file": "zplc-2.0.0-rc.3-linux-x86_64.rpm",
+      "bytes": 92414172,
+      "sha256": "51febb9541bdc6529b3e3a360274a50fd086f6b2f29dafaa147d32b1665ff7b8"
+    },
+    {
+      "file": "zplc-2.0.0-rc.3-mac-x64.zip",
+      "bytes": 368913278,
+      "sha256": "4d3ffe5d4cf604cbbd8f641431d294504c7143bc95c18cb94e67050e5f440370"
+    },
+    {
+      "file": "zplc-2.0.0-rc.3-win-x64-portable-unsigned.exe",
+      "bytes": 109213589,
+      "sha256": "6d280dd20ebce8f9bc28c18d33b5cd399eb18f6def11ab7fc17641e7711c7806"
+    },
+    {
+      "file": "zplc-2.0.0-rc.3-win-x64-setup-unsigned.exe",
+      "bytes": 109443599,
+      "sha256": "35719fe3e65ea72091885bb2baf5f0bb668f8d30d0ee819fb4b27c7db0029e1c"
+    }
+  ],
+  "summary": {
+    "pass": 38,
+    "fail": 0,
+    "not-simulated": 8
+  },
+  "steps": [
+    {
+      "os": "linux",
+      "id": "docker",
+      "status": "not-simulated",
+      "detail": "a clean container install was not run: this user cannot reach the Docker daemon (permission denied while trying to connect to the docker API at unix:///var/run/docker.sock). The packages are unpacked with bsdtar and rpm2cpio instead; scripts/check-linux-package.sh, which installs them in Debian 13, Ubuntu 24.04 and Fedora containers, runs in the hosted release workflow"
+    },
+    {
+      "os": "linux",
+      "id": "deb.control",
+      "status": "pass",
+      "detail": "Package zplc, Version 2.0.0~rc.3, Architecture amd64, 9 dependencies"
+    },
+    {
+      "os": "linux",
+      "id": "deb.files",
+      "status": "pass",
+      "detail": "opt/ZPLC holds the runtime (executable), notices, examples and app.asar; the post-install script links /usr/bin/zplc; com.zenithindustrialcloud.zplc.desktop and the udev rule are installed"
+    },
+    {
+      "os": "linux",
+      "id": "rpm.files",
+      "status": "pass",
+      "detail": "rpm zplc 2.0.0~rc.3-1 x86_64; opt/ZPLC holds the same files as the deb"
+    },
+    {
+      "os": "linux",
+      "id": "deb-layout.launch",
+      "status": "pass",
+      "detail": "the application opened its window (app.asar/dist/index.html)"
+    },
+    {
+      "os": "linux",
+      "id": "deb-layout.title",
+      "status": "pass",
+      "detail": "the page title and the title of the window on the display are ZPLC (window 4194305)"
+    },
+    {
+      "os": "linux",
+      "id": "deb-layout.version",
+      "status": "pass",
+      "detail": "version 2.0.0-rc.3, isPackaged true, platform linux/x64"
+    },
+    {
+      "os": "linux",
+      "id": "deb-layout.user-data",
+      "status": "pass",
+      "detail": "the application keeps its data in a folder named ZPLC (xdg-deb/ZPLC), not ZPLC IDE"
+    },
+    {
+      "os": "linux",
+      "id": "appimage.present",
+      "status": "pass",
+      "detail": "zplc-2.0.0-rc.3-linux-x86_64.AppImage is executable (106 MB)"
+    },
+    {
+      "os": "linux",
+      "id": "appimage.launch",
+      "status": "pass",
+      "detail": "the application opened its window (app.asar/dist/index.html)"
+    },
+    {
+      "os": "linux",
+      "id": "appimage.title",
+      "status": "pass",
+      "detail": "the page title and the title of the window on the display are ZPLC (window 4194305)"
+    },
+    {
+      "os": "linux",
+      "id": "appimage.version",
+      "status": "pass",
+      "detail": "version 2.0.0-rc.3, isPackaged true, platform linux/x64"
+    },
+    {
+      "os": "linux",
+      "id": "appimage.user-data",
+      "status": "pass",
+      "detail": "the application keeps its data in a folder named ZPLC (xdg-appimage/ZPLC), not ZPLC IDE"
+    },
+    {
+      "os": "linux",
+      "id": "appimage.open-example",
+      "status": "pass",
+      "detail": "the first lesson (\"Your first blink in simulation\") opened with its starter project"
+    },
+    {
+      "os": "linux",
+      "id": "appimage.native-folder-dialog",
+      "status": "not-simulated",
+      "detail": "the Open project button opens the native folder dialog of the system, which a headless run cannot answer (the test hook that answers it exists only in builds made for the suite, by design, VF-008); the example was opened through the Learn course, which opens an app-owned workspace with no dialog. The real dialog of the system was not exercised"
+    },
+    {
+      "os": "linux",
+      "id": "appimage.build",
+      "status": "pass",
+      "detail": "Built saved workspace locally: 306 bytes (230 code, 1 tasks, contract draft 6)"
+    },
+    {
+      "os": "linux",
+      "id": "appimage.simulation-connect",
+      "status": "pass",
+      "detail": "Connect started the packaged native runtime and the window shows Disconnect"
+    },
+    {
+      "os": "linux",
+      "id": "appimage.simulation-run",
+      "status": "pass",
+      "detail": "Run shows Pause; the faceplate output values seen over 9 s: ◌ Not read yet: —, ○ FALSE, ● TRUE"
+    },
+    {
+      "os": "windows",
+      "id": "wine",
+      "status": "pass",
+      "detail": "wine-11.20, fresh prefix created (.cache/zplc-rel016/wine-prefix); Wine's powershell.exe stub moved away, because it makes the NSIS running-application check report ZPLC as running"
+    },
+    {
+      "os": "windows",
+      "id": "installer.silent-install",
+      "status": "pass",
+      "detail": "the NSIS setup installed silently (exit 0) to AppData/Local/Programs/zplc, per user, with no administrator prompt"
+    },
+    {
+      "os": "windows",
+      "id": "installer.files",
+      "status": "pass",
+      "detail": "zplc.exe, the native runtime (a PE file), notices, examples and app.asar are installed; the Start menu and desktop shortcuts are named ZPLC"
+    },
+    {
+      "os": "windows",
+      "id": "installer.apps-entry",
+      "status": "pass",
+      "detail": "Settings, Apps, Installed apps would list ZPLC 2.0.0-rc.3 2.0.0-rc.3 (Uninstall key of the user)"
+    },
+    {
+      "os": "windows",
+      "id": "installed.launch",
+      "status": "pass",
+      "detail": "the application opened its window (app.asar/dist/index.html)"
+    },
+    {
+      "os": "windows",
+      "id": "installed.title",
+      "status": "pass",
+      "detail": "the page title and the title of the window on the display are ZPLC (window 10485765)"
+    },
+    {
+      "os": "windows",
+      "id": "installed.version",
+      "status": "pass",
+      "detail": "version 2.0.0-rc.3, isPackaged true, platform win32/x64"
+    },
+    {
+      "os": "windows",
+      "id": "installed.user-data",
+      "status": "pass",
+      "detail": "the application keeps its data in a folder named ZPLC (Roaming/ZPLC), not ZPLC IDE"
+    },
+    {
+      "os": "windows",
+      "id": "installed.open-example",
+      "status": "pass",
+      "detail": "the first lesson (\"Your first blink in simulation\") opened with its starter project"
+    },
+    {
+      "os": "windows",
+      "id": "installed.native-folder-dialog",
+      "status": "not-simulated",
+      "detail": "the Open project button opens the native folder dialog of the system, which a headless run cannot answer (the test hook that answers it exists only in builds made for the suite, by design, VF-008); the example was opened through the Learn course, which opens an app-owned workspace with no dialog. The real dialog of the system was not exercised"
+    },
+    {
+      "os": "windows",
+      "id": "installed.build",
+      "status": "pass",
+      "detail": "Built saved workspace locally: 306 bytes (230 code, 1 tasks, contract draft 6)"
+    },
+    {
+      "os": "windows",
+      "id": "installed.simulation-connect",
+      "status": "pass",
+      "detail": "Connect started the packaged native runtime and the window shows Disconnect"
+    },
+    {
+      "os": "windows",
+      "id": "installed.simulation-run",
+      "status": "pass",
+      "detail": "Run shows Pause; the faceplate output values seen over 9 s: ◌ Not read yet: —, ○ FALSE, ● TRUE"
+    },
+    {
+      "os": "windows",
+      "id": "portable.launch",
+      "status": "pass",
+      "detail": "the application opened its window (app.asar/dist/index.html)"
+    },
+    {
+      "os": "windows",
+      "id": "portable.title",
+      "status": "pass",
+      "detail": "the page title and the title of the window on the display are ZPLC (window 12582917)"
+    },
+    {
+      "os": "windows",
+      "id": "portable.version",
+      "status": "pass",
+      "detail": "version 2.0.0-rc.3, isPackaged true, platform win32/x64"
+    },
+    {
+      "os": "windows",
+      "id": "portable.user-data",
+      "status": "pass",
+      "detail": "the application keeps its data in a folder named ZPLC (Roaming/ZPLC), not ZPLC IDE"
+    },
+    {
+      "os": "windows",
+      "id": "smartscreen-and-smart-app-control",
+      "status": "not-simulated",
+      "detail": "Windows protected your PC (SmartScreen, More info, Run anyway) and Smart App Control are behaviours of Windows itself; Wine has neither, so the first-run steps 2 and 3 of the install page were not exercised"
+    },
+    {
+      "os": "windows",
+      "id": "uninstall",
+      "status": "pass",
+      "detail": "the silent uninstall removed the application, and the user-data folder (ZPLC) stayed, as the install page says"
+    },
+    {
+      "os": "macos",
+      "id": "bundle-name",
+      "status": "pass",
+      "detail": "the zip holds one bundle, ZPLC.app"
+    },
+    {
+      "os": "macos",
+      "id": "info-plist",
+      "status": "pass",
+      "detail": "CFBundleIdentifier com.zenithindustrialcloud.zplc, CFBundleShortVersionString 2.0.0-rc.3, CFBundleName ZPLC, CFBundleExecutable ZPLC"
+    },
+    {
+      "os": "macos",
+      "id": "main-executable",
+      "status": "pass",
+      "detail": "Contents/MacOS/ZPLC is an executable Mach-O file (magic feedfacf)"
+    },
+    {
+      "os": "macos",
+      "id": "bundle-files",
+      "status": "pass",
+      "detail": "app.asar, examples, notices, icon.icns and the frameworks are in the bundle"
+    },
+    {
+      "os": "macos",
+      "id": "native-runtime-present",
+      "status": "pass",
+      "detail": "Contents/Resources/native-runtime/zplc_runtime is present and executable"
+    },
+    {
+      "os": "macos",
+      "id": "native-runtime-format",
+      "status": "not-simulated",
+      "detail": "the runtime in this zip is a Linux ELF file standing in for the macOS build: no macOS compiler exists on this machine, so its Mach-O format and its architecture were not checked here (the hosted macOS job builds and signs it)"
+    },
+    {
+      "os": "macos",
+      "id": "launch",
+      "status": "not-simulated",
+      "detail": "a macOS application cannot be launched on Linux; nothing of the Gatekeeper, Done, Privacy & Security, Open Anyway sequence of the install page was exercised"
+    },
+    {
+      "os": "macos",
+      "id": "ad-hoc-signature",
+      "status": "not-simulated",
+      "detail": "codesign exists only on macOS: the ad hoc seal of the bundle was not made or verified here (scripts/verify-mac-signature.ts checks it in the hosted job)"
+    },
+    {
+      "os": "macos",
+      "id": "dmg",
+      "status": "not-simulated",
+      "detail": "a DMG can only be built on macOS: only the zip was produced and read"
+    }
+  ]
+}
