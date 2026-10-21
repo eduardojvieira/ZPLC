@@ -80,8 +80,11 @@ def main(argv):
     elif cmd == "excerpt":  # LIST arg is the old-commit list; tokens on stdin; argv[3] is the commit-map
         commits = open(lst).read().split()
         newof = dict(l.split() for l in open(argv[3]).read().splitlines()[1:])
+        by7 = {}
+        for c in commits:
+            by7.setdefault(c[:7], []).append(c)
         for tok in sorted(set(sys.stdin.read().split())):
-            full = [c for c in commits if c.startswith(tok)]
+            full = [c for c in by7.get(tok[:7], []) if c.startswith(tok)]
             if len(full) == 1 and full[0] in newof:
                 print(tok, full[0], newof[full[0]])
     else:

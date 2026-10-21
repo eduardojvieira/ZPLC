@@ -146,7 +146,9 @@ report_baseline_and_excerpt() { # repo meta mapfile
     printf '%s %s\n' "$BASELINE_FULL" "$NEW_BASELINE" >"$meta/baseline.txt"
   fi
   # commits cited in the tracked tree that exist in the old history
-  git -C "$repo" grep -ohE '\b[0-9a-f]{7,40}\b' HEAD -- . 2>/dev/null | sed 's/^HEAD://' | sort -u >"$meta/cited-tokens.txt" || true
+  # (scans HEAD, every ref in ZPLC_CITE_REFS, and every file in ZPLC_CITE_FILES, e.g. the untracked spec)
+  { git -C "$repo" grep -ohE '\b[0-9a-f]{7,40}\b' HEAD ${ZPLC_CITE_REFS:-} 2>/dev/null || true
+    for f in ${ZPLC_CITE_FILES:-}; do grep -ohE '\b[0-9a-f]{7,40}\b' "$f" || true; done; } | sort -u >"$meta/cited-tokens.txt"
   git -C "$MIRROR" rev-list --all >"$meta/old-commits.txt"
   "${LIB[@]}" excerpt "$meta/old-commits.txt" "$map" <"$meta/cited-tokens.txt" >"$meta/commit-map-excerpt.txt"
   rm -f "$meta/cited-tokens.txt" "$meta/old-commits.txt"
@@ -229,9 +231,11 @@ cmd_apply() {
   done
   git -C "$repo" for-each-ref --format='%(refname)' 'refs/zplc-rewrite/' | xargs -r -n1 git -C "$repo" update-ref -d
   # restore anything the checkout reset touched
-  if ! (cd "$main" && sha256sum -c --quiet "$meta/main-checkout.sha256" >/dev/null 2>&1); then
-    say "main checkout files changed during the rewrite: restoring from $backup_main"
-    (cd "$main" && tar -xf "$backup_main")
+  if ! changed="$(cd "$main" && sha256sum -c --quiet "$meta/main-checkout.sha256" 2>&1)"; then
+    say "main checkout files changed during the rewrite, restoring from $backup_main:"; printf "%s\n" "$changed" | head -5
+    # filter-repo ends with `git reset --hard`, which reverts tracked edits: restore just the files that differ
+    changed="$(cd "$main" && sha256sum -c "$meta/main-checkout.sha256" 2>/dev/null | sed -n 's/: FAILED.*$//p' || true)"
+    printf '%s\n' "$changed" | (cd "$main" && xargs -d '\n' tar -xf "$backup_main" --overwrite --)
   fi
   (cd "$main" && sha256sum -c --quiet "$meta/main-checkout.sha256") && pass "main checkout: modified/untracked/excluded files intact ($(wc -l <"$meta/main-checkout.sha256") files)"
   # origin: --partial keeps it; restore if anything removed it

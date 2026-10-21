@@ -1,6 +1,6 @@
 // Behaviour tests for tools/history/rewrite-history.sh (DOC-027). The end-to-end case needs the
 // pinned git-filter-repo (see the script header) and is skipped, loudly, when it is absent.
-import { describe, expect, test } from "bun:test";
+import { afterAll, describe, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, readFileSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
@@ -19,8 +19,12 @@ const git = (cwd: string, ...a: string[]) => {
   return r.out.trim();
 };
 
+const scratch: string[] = [];
+afterAll(() => scratch.forEach((d) => rmSync(d, { recursive: true, force: true })));
+
 function listWith(body: string) {
   const dir = mkdtempSync(join(tmpdir(), "hist-list-"));
+  scratch.push(dir);
   const f = join(dir, "removed.txt");
   writeFileSync(f, body);
   return f;
