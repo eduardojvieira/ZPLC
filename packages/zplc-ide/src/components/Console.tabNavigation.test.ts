@@ -3,7 +3,6 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 import { compactSource, withEnglishMessages } from '../i18n/inlineMessages';
 import { claimMotorInputCommand, shouldClearMotorInputFailure } from './liveNativeMotorPanel';
-import { compactSource } from '../i18n/inlineMessages';
 
 // Console.tsx and the modules split out of it (IDE-014): the pins below read the text of all of them, as they did of the one file.
 const CONSOLE_MODULES = ['Console.tsx', 'ConsoleReviewPanels.tsx', 'LiveNativeMotorControls.tsx', 'WorkspaceTestResult.tsx'];
