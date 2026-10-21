@@ -15,7 +15,9 @@ El estado de cada elemento de esta página se lee de las pruebas de conformidad 
 
 El diagrama de bloques de función se dibuja en el editor de diagramas de ZPLC: bloques con pines tipados y conexiones, con deshacer y validación mientras se dibuja. El texto estructurado que la compilación genera a partir del diagrama es solo una salida de lectura.
 
-Aquí se publica una captura de pantalla real de este editor, tomada de forma automática de la versión actual de ZPLC, cuando la captura exista. Hasta entonces la página no muestra imagen alguna: nunca muestra un dibujo ni una maqueta del editor.
+![El editor de diagrama de bloques de función de ZPLC con el ejemplo Blinky abierto, que muestra sus bloques y conexiones, con la interfaz en español](/img/editors/fbd-es.png)
+
+La imagen es una captura de pantalla real de este editor, tomada de forma automática de la versión actual de ZPLC con un programa de ejemplo pequeño abierto.
 
 ## Elementos
 

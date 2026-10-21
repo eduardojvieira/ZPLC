@@ -15,7 +15,9 @@ The status of every element on this page is read off the executed conformance te
 
 Sequential Function Chart is drawn in the chart editor of ZPLC: steps, transitions and actions, with undo and validation while you draw. The Structured Text that the build generates from the chart is read-only output.
 
-A real screenshot of this editor, captured by automation from the current version of ZPLC, is published here when the capture exists. Until then the page shows no image: it never shows a drawing or a mock-up of the editor.
+![The Sequential Function Chart editor of ZPLC with the Blinky example open, showing its steps and transitions, in English](/img/editors/sfc-en.png)
+
+The picture is a real screenshot of this editor, captured by automation from the current version of ZPLC with a small example program open.
 
 ## Elements
 

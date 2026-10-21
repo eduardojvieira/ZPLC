@@ -64,6 +64,10 @@ describe('documentation screenshots: a page shows only captured pictures (DOC-01
     expect(checkManifest(manifest(), [], () => undefined, [])[0]!.message).toContain('is listed and is not in docs/static/img');
   });
 
+  it('fails an editor picture that the manifest does not list, as it does a tutorial picture (DOC-006)', () => {
+    expect(checkManifest(manifest(), [], read, ['docs/static/img/tutorials/a.png', 'docs/static/img/editors/st-en.png']).map((problem) => problem.where)).toEqual(['docs/static/img/editors/st-en.png']);
+  });
+
   it('wants the commit of the build, in full', () => {
     expect(checkManifest({ ...manifest(), commit: 'main' }, [], read, ['docs/static/img/tutorials/a.png'])[0]!.message).toContain('40 hexadecimal digits');
   });
