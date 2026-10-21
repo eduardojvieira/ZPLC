@@ -616,28 +616,28 @@ export function Toolbar({ debugController }: ToolbarProps) {
     switch (vmState) {
       case 'running':
         return hasCurrentCompileResult
-          ? { text: 'Running', tone: 'success' as const }
-          : { text: 'Running · rebuild required', tone: 'attention' as const };
+          ? { text: t('toolbarMsg.status.running'), tone: 'success' as const }
+          : { text: t('toolbarMsg.status.runningRebuild'), tone: 'attention' as const };
       case 'paused':
         return hasCurrentCompileResult
-          ? { text: 'Paused', tone: 'attention' as const }
-          : { text: 'Paused · rebuild required', tone: 'attention' as const };
+          ? { text: t('toolbarMsg.status.paused'), tone: 'attention' as const }
+          : { text: t('toolbarMsg.status.pausedRebuild'), tone: 'attention' as const };
       case 'idle':
         if (executionMode === EXECUTION_MODE.HARDWARE) {
           if (programLoadState === PROGRAM_LOAD_STATE.LOADED && hasCurrentCompileResult) {
-            return { text: 'Deployed · stopped', tone: 'info' as const };
+            return { text: t('toolbarMsg.status.deployedStopped'), tone: 'info' as const };
           }
           return hasCurrentCompileResult
-            ? { text: 'Connected · deploy required', tone: 'info' as const }
+            ? { text: t('toolbarMsg.status.connectedDeploy'), tone: 'info' as const }
             : lastCompileResult
-              ? { text: 'Connected · rebuild required', tone: 'attention' as const }
-              : { text: 'Connected · build required', tone: 'info' as const };
+              ? { text: t('toolbarMsg.status.connectedRebuild'), tone: 'attention' as const }
+              : { text: t('toolbarMsg.status.connectedBuild'), tone: 'info' as const };
         }
         return lastCompileResult && !hasCurrentCompileResult
-          ? { text: 'Ready · rebuild required', tone: 'attention' as const }
-          : { text: 'Ready', tone: 'info' as const };
+          ? { text: t('toolbarMsg.status.readyRebuild'), tone: 'attention' as const }
+          : { text: t('toolbarMsg.status.ready'), tone: 'info' as const };
       case 'error':
-        return { text: 'Error', tone: 'danger' as const };
+        return { text: t('toolbarMsg.status.error'), tone: 'danger' as const };
       default:
         return { text: vmState, tone: 'neutral' as const };
     }

@@ -47,6 +47,7 @@ const words = (language: Language) => {
     paletteProject: t('command.view.showProject'), paletteLearn: t('command.view.showLearn'),
     buildOk: new RegExp(escape(t('toolbarMsg.buildSucceeded'))), buildFailed: new RegExp(escape(t('toolbarMsg.buildFailed'))),
     simulatorReady: new RegExp(escape(t('toolbarMsg.simulatorReady'))),
+    running: new RegExp(`^${escape(t('toolbarMsg.status.running'))}$`),
   };
 };
 
@@ -174,7 +175,7 @@ async function stepSimulate({ app, recorder: rec, language }: Session): Promise<
   await app.until('the simulation to connect', async () => await app.eval<boolean>(`[...document.querySelectorAll('button')].some((b) => (b.getAttribute('aria-label') ?? b.textContent ?? '').includes(${JSON.stringify(w.disconnect)}))`) || undefined, 30_000);
   await rec.expectAnnounced('the connection is announced', w.simulatorReady);
   await rec.key('F5', 'Run');
-  await rec.expectAnnounced('running is announced by the status bar or the announcer', /Running|RUN\b|Ejecuci|En ejecuci/i);
+  await rec.expectAnnounced('running is announced, in the interface language', w.running);
   const status = await app.eval<string>(`document.querySelector('[aria-label="Operational status"], [role="status"]')?.textContent ?? ''`);
   rec.fact('statusBar', status.replace(/\s+/g, ' ').slice(0, 120));
   rec.check('the status bar says that the program runs', /RUN|Running|En ejecuci|Ejecut/i.test(await app.eval<string>(`document.querySelector('[aria-label="Operational status"]')?.innerText ?? document.body.innerText`)), status.slice(0, 80));
