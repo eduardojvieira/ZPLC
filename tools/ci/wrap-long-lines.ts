@@ -148,6 +148,7 @@ function cutPoint(text: string, from: number, last: number, owner: ts.Node, end:
   }
   // a string with no space (base64, a JSON text): cut where no escape sequence is near
   if (!ts.isStringLiteral(owner) && !ts.isNoSubstitutionTemplateLiteral(owner)) return -1;
+  if (end - from < 60) return -1; // a key or a name is not data to cut
   if (/\s/.test(text.slice(from, last))) return -1;
   for (let at = last; at > from + 8; at -= 1) {
     if (!text.slice(at - 12, at + 1).includes('\\')) return at;
