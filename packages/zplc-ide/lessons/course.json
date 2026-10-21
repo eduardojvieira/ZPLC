@@ -58,8 +58,8 @@
         "hardware"
       ],
       "title": {
-        "en": "Getting ready: a tour of Studio, the simulation and, for hardware, checking your board",
-        "es": "Primeros pasos: un recorrido por Studio, la simulación y, para hardware, la verificación de su placa"
+        "en": "Getting ready: a tour of ZPLC, the simulation and, for hardware, checking your board",
+        "es": "Primeros pasos: un recorrido por ZPLC, la simulación y, para hardware, la verificación de su placa"
       },
       "why": {
         "en": "You see something move before any theory: a tour of ZPLC and the simulation that ends in a blinking output within ten minutes and, for the hardware track, a check of your board.",

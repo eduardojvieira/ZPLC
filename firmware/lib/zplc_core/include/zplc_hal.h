@@ -297,7 +297,7 @@ typedef struct {
 /** @brief The whole description of a board, as built. */
 typedef struct {
     const char *board_id;           /**< Board id of the manifest, or the id of the default profile */
-    uint32_t description_hash;      /**< FNV-1a 32 of the canonical description; Studio compares it */
+    uint32_t description_hash;      /**< FNV-1a 32 of the canonical description; the ZPLC application compares it */
     uint16_t input_bytes;           /**< Bytes of the input image the channels need (or the Kconfig override) */
     uint16_t output_bytes;          /**< Bytes of the output image the channels need (or the Kconfig override) */
     uint16_t channel_count;         /**< Entries of `channels` */
@@ -310,7 +310,7 @@ typedef struct {
  * @note Platform implementations:
  *       - Zephyr: generated at build time from the board description
  *       - POSIX, WASM: an empty table; the host runtime exchanges the image
- *         with Studio, not with pins
+ *         with the ZPLC application, not with pins
  */
 const zplc_io_table_t *zplc_io_table(void);
 

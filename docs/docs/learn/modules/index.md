@@ -12,7 +12,7 @@ unlisted: true
 
 | Module | Level | Lessons |
 | --- | --- | --- |
-| [0: Getting ready: a tour of Studio, the simulation and, for hardware, checking your board](./module-0.md) | Foundation | 2 |
+| [0: Getting ready: a tour of ZPLC, the simulation and, for hardware, checking your board](./module-0.md) | Foundation | 2 |
 | [1: How a PLC thinks: the scan cycle, then a first blink](./module-1.md) | Foundation | 3 |
 | [2: Boolean logic and latching: contacts, coils, seal-in, set and reset, safe stop](./module-2.md) | Foundation | 4 |
 | [3: Timers, edges and counters](./module-3.md) | Foundation | 3 |

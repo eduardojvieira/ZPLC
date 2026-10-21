@@ -1,6 +1,6 @@
 # Bundled fonts (UX-006)
 
-Studio ships its interface and code typefaces so that a person sees the same letters on Windows, macOS and Linux. Both
+ZPLC ships its interface and code typefaces so that a person sees the same letters on Windows, macOS and Linux. Both
 families are open-licensed under the SIL Open Font License 1.1; the full text of each licence sits next to the files, is
 copied into the application as `licenses/*.txt` (`packages/zplc-ide/public/licenses/`), and is named in THIRD-PARTY-NOTICES.txt
 (`scripts/release/font-licences.json`).

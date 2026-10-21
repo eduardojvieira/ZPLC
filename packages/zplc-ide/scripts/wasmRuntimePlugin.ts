@@ -72,11 +72,11 @@ export function buildWasmRuntime(options: WasmRuntimeBuildOptions): WasmRuntimeB
     const done = spawn([bun, path.join(options.root, 'tools/wasm-core/build.ts'), '--out', out, '--manifest', manifestFile]);
     if (done.status === EXIT_TOOLCHAIN_MISSING) {
       const reason = done.stderr.trim().replace(/^wasm-core: /, '') || 'a tool of the WebAssembly build is missing';
-      if (options.ci) throw new Error(`${reason} (CI is set: the WebAssembly runtime of the IDE is built in CI; install clang and lld)`);
+      if (options.ci) throw new Error(`${reason} (CI is set: the WebAssembly runtime of ZPLC is built in CI; install clang and lld)`);
       return {
         manifest: null,
         bytesBase64: null,
-        unavailableReason: `${reason}. This build has no browser runtime: native simulation is unaffected, and the web build of the IDE cannot simulate.`,
+        unavailableReason: `${reason}. This build has no browser runtime: native simulation is unaffected, and the web build of ZPLC cannot simulate.`,
       };
     }
     if (done.status !== 0) throw new Error(`the WebAssembly runtime did not build:\n${done.stdout}${done.stderr}`);

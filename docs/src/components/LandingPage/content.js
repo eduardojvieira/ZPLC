@@ -111,7 +111,7 @@ const landingPageContent = {
     roadmapSection: {
       label: 'IN THE REPOSITORY',
       title: 'Three parts',
-      subtitle: 'The runtime, the Studio app and the function blocks for communication.',
+      subtitle: 'The runtime, the ZPLC application and the function blocks for communication.',
       phases: [
         {
           badge: 'RUNTIME',
@@ -264,7 +264,7 @@ const landingPageContent = {
     roadmapSection: {
       label: 'EN EL REPOSITORIO',
       title: 'Tres partes',
-      subtitle: 'El runtime, la aplicación Studio y los bloques de función de comunicación.',
+      subtitle: 'El runtime, la aplicación ZPLC y los bloques de función de comunicación.',
       phases: [
         {
           badge: 'RUNTIME',

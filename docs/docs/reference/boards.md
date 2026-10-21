@@ -49,7 +49,7 @@ The ZPLC application reads the same file. The I/O mapping editor of the project 
 
 ## Board matrix
 
-| Display name | Board ID | IDE ID | Zephyr target | Network | Support level | Evidence records |
+| Display name | Board ID | ZPLC ID | Zephyr target | Network | Support level | Evidence records |
 | --- | --- | --- | --- | --- | --- | --- |
 | Raspberry Pi Pico (RP2040) | `rpi-pico-rp2040` | `rpi_pico` | `rpi_pico/rp2040` | Serial-focused | cross-build | 0 |
 | Arduino GIGA R1 (STM32H747 M7) | `arduino-giga-r1-m7` | `arduino_giga_r1` | `arduino_giga_r1/stm32h747xx/m7` | Serial-focused | cross-build | 0 |
@@ -78,7 +78,7 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 ### Raspberry Pi Pico (RP2040)
 
 - **Board ID:** `rpi-pico-rp2040`
-- **IDE ID:** `rpi_pico`
+- **ZPLC ID:** `rpi_pico`
 - **Zephyr target:** `rpi_pico/rp2040`
 - **Variant:** `rp2040`
 - **Network:** Serial-focused
@@ -120,7 +120,7 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 ### Arduino GIGA R1 (STM32H747 M7)
 
 - **Board ID:** `arduino-giga-r1-m7`
-- **IDE ID:** `arduino_giga_r1`
+- **ZPLC ID:** `arduino_giga_r1`
 - **Zephyr target:** `arduino_giga_r1/stm32h747xx/m7`
 - **Variant:** `stm32h747xx/m7`
 - **Network:** Serial-focused
@@ -145,7 +145,7 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 ### ESP32-S3-DevKitC-1 (N8R8)
 
 - **Board ID:** `esp32-s3-devkitc`
-- **IDE ID:** `esp32s3_devkitc`
+- **ZPLC ID:** `esp32s3_devkitc`
 - **Zephyr target:** `esp32s3_devkitc/esp32s3/procpu`
 - **Variant:** `esp32s3/procpu`
 - **Network:** Network-capable (Wi-Fi)
@@ -182,7 +182,7 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 ### STM32F746G Discovery
 
 - **Board ID:** `stm32f746g-disco`
-- **IDE ID:** `stm32f746g_disco`
+- **ZPLC ID:** `stm32f746g_disco`
 - **Zephyr target:** `stm32f746g_disco/stm32f746xx`
 - **Variant:** `stm32f746xx`
 - **Network:** Network-capable (Ethernet)
@@ -206,7 +206,7 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 ### STM32 Nucleo-H743ZI
 
 - **Board ID:** `nucleo-h743zi`
-- **IDE ID:** `nucleo_h743zi`
+- **ZPLC ID:** `nucleo_h743zi`
 - **Zephyr target:** `nucleo_h743zi/stm32h743xx`
 - **Variant:** `stm32h743xx`
 - **Network:** Network-capable (Ethernet)
@@ -231,7 +231,7 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 ### Arduino Opta WiFi (STM32H747 M7)
 
 - **Board ID:** `arduino-opta-wifi-m7`
-- **IDE ID:** `arduino_opta_wifi`
+- **ZPLC ID:** `arduino_opta_wifi`
 - **Zephyr target:** `arduino_opta/stm32h747xx/m7`
 - **Variant:** `stm32h747xx/m7`
 - **Network:** Network-capable (Wi-Fi)
@@ -266,7 +266,7 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 ### Waveshare RP2040-Zero
 
 - **Board ID:** `waveshare-rp2040-zero`
-- **IDE ID:** `waveshare_rp2040_zero`
+- **ZPLC ID:** `waveshare_rp2040_zero`
 - **Zephyr target:** `rp2040_zero/rp2040`
 - **Variant:** `rp2040`
 - **Network:** Serial-focused

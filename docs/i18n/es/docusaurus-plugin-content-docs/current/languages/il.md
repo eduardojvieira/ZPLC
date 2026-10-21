@@ -10,7 +10,7 @@ Qué funciona hoy de la lista de instrucciones, leído de las pruebas de conform
 
 ## Ruta de compilación
 
-El IDE analiza IL y lo transpila a texto estructurado (ST); después envía ese ST generado al compilador para producir bytecode `.zplc`.
+La aplicación ZPLC analiza IL y lo transpila a texto estructurado (ST); después envía ese ST generado al compilador para producir bytecode `.zplc`.
 
 ```mermaid
 flowchart LR

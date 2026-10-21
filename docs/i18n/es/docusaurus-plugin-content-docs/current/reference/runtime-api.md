@@ -2798,7 +2798,7 @@ const zplc_io_table_t *zplc_io_table(void);
 | — | — | Ninguno. |
 
 **Notas fuente:**
-- Platform implementations: - Zephyr: generated at build time from the board description - POSIX, WASM: an empty table; the host runtime exchanges the image with Studio, not with pins
+- Platform implementations: - Zephyr: generated at build time from the board description - POSIX, WASM: an empty table; the host runtime exchanges the image with the ZPLC application, not with pins
 
 #### `zplc_io_channel_count`
 
@@ -2983,7 +2983,7 @@ Ninguno.
 
 A trace of the process image recorded on the device, one sample per scan, read afterwards (LRN-024).
 
-The hardware check of a lesson compares what a board did with the lesson's reference scenario. Read over the serial link a hundred milliseconds apart, the board's inputs and outputs are too coarse for a scenario whose assertions are ten milliseconds apart. This trace is recorded where the scan happens: the scheduler core calls zplc_io_trace_sched_hook() through its trace port, and at the end of every scan that wrote its outputs the trace keeps one sample: the instant the scan latched its inputs, the scan's number in its run (1 is the first scan after a start), and the first bytes of the input and the output images. Studio reads the samples afterwards, in chunks. The trace only reads. Arming, reading and clearing it never write PLC memory, never force and never start or stop a program. Storage is a ring of fixed-size samples in a buffer the platform supplies: the newest sample overwrites the oldest once the ring is full, and every sample has a sequence number, counted from 0 at the arm, so a reader that fell behind sees which samples it lost. One writer (the scan) and readers on threads that cannot preempt it in the middle of a sample (a lower priority on one core, or the same thread on the host): a read copies the slot and then checks that the writer has not reached it again meanwhile. Cost per scan: a clock read at the input latch; at the output commit, two reads of the image and one copy of at most 8 + 2 x ZPLC_IO_TRACE_MAX_IO_BYTES bytes. No loop depends on the capacity. A trace that is not armed costs a test.
+The hardware check of a lesson compares what a board did with the lesson's reference scenario. Read over the serial link a hundred milliseconds apart, the board's inputs and outputs are too coarse for a scenario whose assertions are ten milliseconds apart. This trace is recorded where the scan happens: the scheduler core calls zplc_io_trace_sched_hook() through its trace port, and at the end of every scan that wrote its outputs the trace keeps one sample: the instant the scan latched its inputs, the scan's number in its run (1 is the first scan after a start), and the first bytes of the input and the output images. The ZPLC application reads the samples afterwards, in chunks. The trace only reads. Arming, reading and clearing it never write PLC memory, never force and never start or stop a program. Storage is a ring of fixed-size samples in a buffer the platform supplies: the newest sample overwrites the oldest once the ring is full, and every sample has a sequence number, counted from 0 at the arm, so a reader that fell behind sees which samples it lost. One writer (the scan) and readers on threads that cannot preempt it in the middle of a sample (a lower priority on one core, or the same thread on the host): a read copies the slot and then checks that the writer has not reached it again meanwhile. Cost per scan: a clock read at the input latch; at the output commit, two reads of the image and one copy of at most 8 + 2 x ZPLC_IO_TRACE_MAX_IO_BYTES bytes. No loop depends on the capacity. A trace that is not armed costs a test.
 
 Fuente: `firmware/lib/zplc_core/include/zplc_io_trace.h`
 
@@ -3142,7 +3142,7 @@ zplc_io_trace_t *zplc_io_trace_board(void);
 
 ZPLC Virtual Machine Instruction Set Architecture Definitions
 
-This header defines the binary format and instruction set for the ZPLC VM. It is the contract between the compiler (IDE) and runtime (VM). See docs/ISA.md for the complete specification.
+This header defines the binary format and instruction set for the ZPLC VM. It is the contract between the compiler (the ZPLC application) and runtime (VM). See docs/ISA.md for the complete specification.
 
 Fuente: `firmware/lib/zplc_core/include/zplc_isa.h`
 
@@ -3486,7 +3486,7 @@ The program of the first firmware was read and admitted into @p workspace by the
 
 The codec of the device link protocol: frames, and a decoder that finds them in a byte stream (COM-019).
 
-A frame is a header (sync, version, flags, message, sequence, length), a payload, an optional 32-byte message authentication code and a CRC-32. The numbers and layouts are in zplc_proto_defs.h, generated from tools/contract/protocol.json; the rules (what a decoder discards and counts) are written there too, and the TypeScript codec of Studio follows the same rules. Both run the same generated frames (zplc_proto_vectors.h). Portable C99: no Zephyr header, no allocation, no clock. A decoder owns one buffer of ZPLC_PROTO_FRAME_MAX bytes.
+A frame is a header (sync, version, flags, message, sequence, length), a payload, an optional 32-byte message authentication code and a CRC-32. The numbers and layouts are in zplc_proto_defs.h, generated from tools/contract/protocol.json; the rules (what a decoder discards and counts) are written there too, and the TypeScript codec of the ZPLC application follows the same rules. Both run the same generated frames (zplc_proto_vectors.h). Portable C99: no Zephyr header, no allocation, no clock. A decoder owns one buffer of ZPLC_PROTO_FRAME_MAX bytes.
 
 Fuente: `firmware/lib/zplc_core/include/zplc_proto.h`
 
@@ -4689,7 +4689,7 @@ int zplc_io_reset_image(void);
 | `ZPLC_IO_MAX_CHANNELS` | Estructura | The physical inputs of one scan, kept by table index until they are latched into the image. |
 | `ZPLC_IO_MAX_CHANNELS` | Estructura | The values the physical outputs are given at the end of one scan, by table index. |
 | `read` | Estructura | Replaces the HAL access of the helpers below: a test makes a channel fail. NULL members, and a NULL table, are the HAL (zplc_io_read_channel, zplc_io_write_channel). |
-| `inputs` | Estructura | How many channels of the board's I/O table the build could not serve (IO-007): an operation the board cannot perform answers ZPLC_HAL_NOT_IMPL, the scan goes on, and the channel is counted here instead of being forgotten. The ports report the numbers to the user (device status, the `zplc status` command, and a log event of the device link that Studio shows). |
+| `inputs` | Estructura | How many channels of the board's I/O table the build could not serve (IO-007): an operation the board cannot perform answers ZPLC_HAL_NOT_IMPL, the scan goes on, and the channel is counted here instead of being forgotten. The ports report the numbers to the user (device status, the `zplc status` command, and a log event of the device link that the ZPLC application shows). |
 
 ### Constantes y macros
 
@@ -5529,7 +5529,7 @@ Estas tablas se generan desde `tools/contract/contract.json`, la fuente única d
 | --- | --- | --- |
 | Número mágico | `0x434C505A` | `5A 50 4C 43` = "ZPLC" |
 | Versión del ISA (mayor.menor) | `1.0` |  |
-| Contador de borrador del contrato | `6` | Se escribe en la palabra 28 de la cabecera de cada artefacto. El loader y Studio rechazan un artefacto, o una imagen de dispositivo, cuyo contador difiere del propio y muestran ambos números; 0 significa un artefacto construido antes del contador. Aumenta con cada cambio del contrato hasta el congelamiento. |
+| Contador de borrador del contrato | `6` | Se escribe en la palabra 28 de la cabecera de cada artefacto. El loader y la aplicación ZPLC rechazan un artefacto, o una imagen de dispositivo, cuyo contador difiere del propio y muestran ambos números; 0 significa un artefacto construido antes del contador. Aumenta con cada cambio del contrato hasta el congelamiento. |
 | Tamaño de la cabecera del archivo (bytes) | `32` |  |
 | Tamaño de la entrada de segmento (bytes) | `8` |  |
 | Tamaño de la definición de tarea (bytes) | `16` |  |

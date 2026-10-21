@@ -83,7 +83,7 @@ export function wasmCapabilityProfile(storage: WasmRetainStorage = 'project'): N
       {
         name: 'physical-io',
         status: 'unavailable',
-        reason: 'There are no pins: inputs and outputs are the process image that Studio reads and writes.',
+        reason: 'There are no pins: inputs and outputs are the process image that ZPLC reads and writes.',
         recommended_action: 'Wire the project to a board in a hardware session.',
       },
     ],

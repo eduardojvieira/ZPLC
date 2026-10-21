@@ -18,7 +18,7 @@ Esta separación protege el comportamiento determinista del runtime en el hardwa
 ```mermaid
 flowchart LR
   subgraph Engineering[Superficies de ingeniería]
-    IDE[Interfaz del IDE]
+    IDE[Interfaz de la aplicación ZPLC]
     COMPILER[Canal de compilación de ZPLC]
   end
 
@@ -40,16 +40,16 @@ flowchart LR
 
 ZPLC se entiende mejor como cuatro límites y no como una sola aplicación monolítica:
 
-1. **Límite de autoría.** Las personas trabajan en el IDE con archivos `.st`, `.ld` o modelos visuales.
+1. **Límite de autoría.** Las personas trabajan en ZPLC con archivos `.st`, `.ld` o modelos visuales.
 2. **Límite de compilación.** La autoría en cada lenguaje converge en una transpilación canónica a ST, que genera el bytecode `.zplc` compartido.
 3. **Límite de ejecución.** El núcleo de ejecución en C99 interpreta el bytecode de forma determinista en el hardware de destino.
 4. **Límite de plataforma.** El hardware, la persistencia, los temporizadores, los sockets y los servicios del sistema operativo quedan detrás de la capa de abstracción de hardware (HAL).
 
 ## Los componentes principales
 
-### 1. El IDE
+### 1. La aplicación ZPLC
 
-El IDE es la superficie de ingeniería para quien opera y para quien desarrolla. Gestiona la edición de texto de Structured Text e Instruction List, la edición visual de Ladder, FBD y SFC, y la orquestación del proyecto (compilar, cargar, depurar).
+La aplicación ZPLC es la superficie de ingeniería para quien opera y para quien desarrolla. Gestiona la edición de texto de Structured Text e Instruction List, la edición visual de Ladder, FBD y SFC, y la orquestación del proyecto (compilar, cargar, depurar).
 
 ### 2. El compilador
 

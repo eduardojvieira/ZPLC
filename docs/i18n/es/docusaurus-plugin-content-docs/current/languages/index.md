@@ -80,9 +80,9 @@ Valide como un único flujo el lenguaje fuente, la representación generada, los
 
 ## Depuración y evidencia de runtime
 
-El IDE expone inspección, simulación y depuración según el perfil de capacidades del runtime activo. POSIX nativo es un runtime lógico de host, no evidencia de tiempos de hardware ni de comportamiento en destino. Los puntos de parada de hardware, los forzados, la carga y los controles de ejecución son específicos de capacidades y requieren evidencia separada.
+La aplicación ZPLC expone inspección, simulación y depuración según el perfil de capacidades del runtime activo. POSIX nativo es un runtime lógico de host, no evidencia de tiempos de hardware ni de comportamiento en destino. Los puntos de parada de hardware, los forzados, la carga y los controles de ejecución son específicos de capacidades y requieren evidencia separada.
 
-En la simulación nativa de un host Linux, los recorridos del IDE detienen el programa en un punto de parada sobre una línea de texto estructurado, una línea de lista de instrucciones, un peldaño de un diagrama de escalera, un bloque de un diagrama de bloques de función y un paso de un diagrama funcional secuencial, y marcan el elemento donde se detuvo. Estas ejecuciones no son evidencia de un punto de parada en una placa: eso requiere una ejecución de hardware en el lazo en esa placa.
+En la simulación nativa de un host Linux, los recorridos de la aplicación ZPLC detienen el programa en un punto de parada sobre una línea de texto estructurado, una línea de lista de instrucciones, un peldaño de un diagrama de escalera, un bloque de un diagrama de bloques de función y un paso de un diagrama funcional secuencial, y marcan el elemento donde se detuvo. Estas ejecuciones no son evidencia de un punto de parada en una placa: eso requiere una ejecución de hardware en el lazo en esa placa.
 
 ## Biblioteca estándar
 

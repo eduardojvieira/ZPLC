@@ -16,7 +16,7 @@ const ALL = ['ST', 'LD', 'FBD', 'SFC', 'IL'];
  * where the learner chooses.
  */
 const TABLE = [
-  { id: 0, title: [/tour of Studio/i, /simulation/i, /board/i], level: 'foundation', requires: null, languages: [], tracks: ['simulation', 'hardware'] },
+  { id: 0, title: [/tour of ZPLC/i, /simulation/i, /board/i], level: 'foundation', requires: null, languages: [], tracks: ['simulation', 'hardware'] },
   { id: 1, title: [/scan cycle/i, /first blink/i], level: 'foundation', requires: 0, languages: ['LD', 'ST'], tracks: ['simulation', 'hardware'] },
   { id: 2, title: [/Boolean logic/i, /contacts/i, /coils/i, /seal-in/i, /set and reset/i, /safe stop/i], level: 'foundation', requires: 1, languages: ['LD', 'ST'], tracks: ['simulation', 'hardware'] },
   { id: 3, title: [/timers/i, /edges/i, /counters/i], level: 'foundation', requires: 2, languages: ['LD', 'FBD', 'ST'], tracks: ['simulation', 'hardware'] },

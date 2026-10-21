@@ -14,7 +14,7 @@ That includes:
 
 - Zephyr targets
 - host/POSIX runtimes
-- a browser/WebAssembly port (the runtime of the browser simulation, built with the IDE)
+- a browser/WebAssembly port (the runtime of the browser simulation, built with ZPLC)
 - any future board-specific port
 
 The functions below, the scheduler port and the conformance suite that every port passes are on one generated page:

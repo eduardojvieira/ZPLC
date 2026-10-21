@@ -35,7 +35,7 @@ export function reviewArchive(summary: ArchiveSummary): ArchiveReview {
   const result = parseAndMigrateProject(parsed);
   if (!result.ok) {
     const first = result.diagnostics[0];
-    return { ...base, openable: false, problem: first ? `Studio would not open this project: ${first.path}: ${first.message}.` : 'Studio would not open this project.' };
+    return { ...base, openable: false, problem: first ? `ZPLC would not open this project: ${first.path}: ${first.message}.` : 'ZPLC would not open this project.' };
   }
   return {
     ...base,

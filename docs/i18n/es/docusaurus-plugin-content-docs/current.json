@@ -1,6 +1,6 @@
 {
   "version.label": {
-    "message": "ZPLC 2.0",
+    "message": "2.0",
     "description": "The label for version current"
   },
   "sidebar.docsSidebar.category.Start here": {
@@ -39,9 +39,9 @@
     "message": "Conceptos",
     "description": "The label for category 'Concepts' in sidebar 'docsSidebar'"
   },
-  "sidebar.docsSidebar.category.Studio": {
+  "sidebar.docsSidebar.category.ZPLC application": {
     "message": "Aplicación ZPLC",
-    "description": "The label for category 'Studio' in sidebar 'docsSidebar'"
+    "description": "The label for category 'ZPLC application' in sidebar 'docsSidebar'"
   },
   "sidebar.docsSidebar.category.Runtime": {
     "message": "Runtime",

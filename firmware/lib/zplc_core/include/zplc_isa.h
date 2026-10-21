@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: MIT
  *
  * This header defines the binary format and instruction set for the ZPLC VM.
- * It is the contract between the compiler (IDE) and runtime (VM).
+ * It is the contract between the compiler (the ZPLC application) and runtime (VM).
  *
  * See docs/ISA.md for the complete specification.
  *

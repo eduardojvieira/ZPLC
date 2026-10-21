@@ -227,7 +227,7 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
             "",
             f"## {summary_title}",
             "",
-            f"| {board_col} | Board ID | IDE ID | {zephyr_col} | {network_col} | {validation_col} | {evidence_col} |",
+            f"| {board_col} | Board ID | ZPLC ID | {zephyr_col} | {network_col} | {validation_col} | {evidence_col} |",
             "| --- | --- | --- | --- | --- | --- | --- |",
         ]
     )
@@ -286,7 +286,7 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
                 f"### {board['display_name']}",
                 "",
                 f"- **Board ID:** `{board['board_id']}`",
-                f"- **IDE ID:** `{board['ide_id']}`",
+                f"- **ZPLC ID:** `{board['ide_id']}`",
                 f"- **Zephyr target:** `{board['zephyr_board']}`",
                 f"- **Variant:** `{board['variant']}`",
                 f"- **Network:** {network_summary(board, spanish)}",
@@ -423,9 +423,9 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
 def render_support_table(boards: list[dict[str, object]], spanish: bool) -> str:
     """The one board status table (DOC-010): the level of each board comes from its evidence records, never by hand."""
     head = (
-        "| Board | IDE ID | Zephyr target | Network | Support level | Evidence records |"
+        "| Board | ZPLC ID | Zephyr target | Network | Support level | Evidence records |"
         if not spanish
-        else "| Placa | ID del IDE | Destino de Zephyr | Red | Nivel de compatibilidad | Registros de evidencia |"
+        else "| Placa | ID de ZPLC | Destino de Zephyr | Red | Nivel de compatibilidad | Registros de evidencia |"
     )
     none = "ninguno" if spanish else "none"
     lines = [head, "| --- | --- | --- | --- | --- | --- |"]

@@ -1,5 +1,5 @@
 {
-  "$comment": "The ZPLC device link protocol (COM-019, COM-029): the one definition of the framed protocol that Studio and a device speak. tools/contract/generate_protocol.py writes the C header (firmware/lib/zplc_core/include/zplc_proto_defs.h), the TypeScript tables (packages/zplc-ide/src/runtime/link/protocol.generated.ts), the test frames both codecs run and the memory access cases the adapters and the device check (tools/contract/golden/protocol-vectors.json and firmware/lib/zplc_core/tests/zplc_proto_vectors.h) and, through tools/docs/generate_source_references.ts, the reference page. Change this file, then run `python3 tools/contract/generate_protocol.py`. A change that renumbers a message, an error or a field is a protocol change: increase `version`.",
+  "$comment": "The ZPLC device link protocol (COM-019, COM-029): the one definition of the framed protocol that the ZPLC application and a device speak. tools/contract/generate_protocol.py writes the C header (firmware/lib/zplc_core/include/zplc_proto_defs.h), the TypeScript tables (packages/zplc-ide/src/runtime/link/protocol.generated.ts), the test frames both codecs run and the memory access cases the adapters and the device check (tools/contract/golden/protocol-vectors.json and firmware/lib/zplc_core/tests/zplc_proto_vectors.h) and, through tools/docs/generate_source_references.ts, the reference page. Change this file, then run `python3 tools/contract/generate_protocol.py`. A change that renumbers a message, an error or a field is a protocol change: increase `version`.",
   "schema": 1,
   "name": "ZPLC device link",
   "version": 1,
@@ -18,7 +18,7 @@
       { "name": "length", "offset": 9, "size": 2, "doc": "Bytes of the payload." }
     ],
     "kinds": [
-      { "name": "REQUEST", "value": 0, "doc": "Studio asks the device to do something." },
+      { "name": "REQUEST", "value": 0, "doc": "The ZPLC application asks the device to do something." },
       { "name": "RESPONSE", "value": 1, "doc": "The device answers one request, with the same message number and sequence." },
       { "name": "EVENT", "value": 2, "doc": "The device reports something that happened, without being asked." }
     ],

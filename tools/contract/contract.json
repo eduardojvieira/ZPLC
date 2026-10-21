@@ -4,7 +4,7 @@
   "abi": {
     "versionMajor": 1,
     "versionMinor": 0,
-    "doc": "ISA and container version. The one final version integer of CMP-052 is assigned and frozen when the conformance matrix is closed; until then the draft counter below is what the loader and Studio compare.",
+    "doc": "ISA and container version. The one final version integer of CMP-052 is assigned and frozen when the conformance matrix is closed; until then the draft counter below is what the loader and the ZPLC application compare.",
     "draftCounter": 6,
     "draftDoc": "Draft contract counter (CMP-052).\n\nIncreases by one with every change of an opcode, layout, size or code until the contract freeze. The compiler writes it in header word 28 of every artifact and the loader refuses an artifact whose counter differs from this value (ZPLC_LOADER_ERR_DRAFT). 0 is what an artifact built before the counter carries and is never accepted."
   },

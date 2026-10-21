@@ -7,7 +7,7 @@ sidebar_position: 3
 La fuente de referencia de la biblioteca estándar de los lenguajes es el registro
 de la stdlib del compilador en `packages/zplc-compiler/src/compiler/stdlib/index.ts`.
 
-El IDE y el compilador usan ese registro para resolver las funciones y los bloques integrados.
+La aplicación ZPLC y el compilador usan ese registro para resolver las funciones y los bloques integrados.
 
 Cada función y bloque de función registrado, con su firma o tabla de pines y un ejemplo que CI ejecuta, está en la [referencia de funciones](../reference/functions.md) y en la [referencia de bloques de función](../reference/function-blocks.md) generadas.
 

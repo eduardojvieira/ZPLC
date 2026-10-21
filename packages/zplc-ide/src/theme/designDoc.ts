@@ -63,7 +63,7 @@ export function renderFrontMatter(): string {
   const colour = (name: string, tokens: Record<string, string>): string => `"${tokens[name]}"`;
   return [
     '---',
-    'name: "ZPLC Studio 2.0"',
+    'name: "ZPLC"',
     'description: "A dense, verifiable desktop workbench for PLC programming."',
     'colors:',
     `  drawing-sheet-canvas: ${colour('--color-surface-900', light)}`,

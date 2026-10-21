@@ -9,7 +9,7 @@
  * ten milliseconds apart. This trace is recorded where the scan happens: the scheduler core calls
  * zplc_io_trace_sched_hook() through its trace port, and at the end of every scan that wrote its outputs the trace
  * keeps one sample: the instant the scan latched its inputs, the scan's number in its run (1 is the first scan after
- * a start), and the first bytes of the input and the output images. Studio reads the samples afterwards, in chunks.
+ * a start), and the first bytes of the input and the output images. The ZPLC application reads the samples afterwards, in chunks.
  *
  * The trace only reads. Arming, reading and clearing it never write PLC memory, never force and never start or stop
  * a program.

@@ -36,7 +36,7 @@ flowchart TB
 1. **Máquina virtual del núcleo (`libzplc_core`)**: intérprete de bytecode en C99, validación de programas, estado del runtime e interfaces del planificador.
 2. **Capa de abstracción de hardware (HAL)**: adaptadores para los servicios de la plataforma, como relojes, almacenamiento, E/S y transportes configurados.
 3. **Compilador**: transforma los flujos de proyecto admitidos, centrados en Structured Text, en bytecode `.zplc`.
-4. **IDE**: entorno de ingeniería de escritorio para escribir programas, ver diagnósticos y usar los flujos del runtime según sus capacidades.
+4. **Aplicación ZPLC**: entorno de ingeniería de escritorio para escribir programas, ver diagnósticos y usar los flujos del runtime según sus capacidades.
 
 ## Flujo típico
 

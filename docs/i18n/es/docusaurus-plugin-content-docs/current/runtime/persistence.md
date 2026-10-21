@@ -74,7 +74,7 @@ Un almacén clave-valor en flash guarda una entrada dentro de un sector de borra
 trozos de `CONFIG_ZPLC_PROGRAM_STORE_CHUNK_SIZE` bytes (1024 por defecto), cada uno bajo su propia clave. El mayor
 artefacto es un único número, `CONFIG_ZPLC_CODE_SIZE_MAX`: es la región de código, el mayor artefacto que acepta el
 cargador, el tamaño de los búferes de recepción y de restore, el tamaño que informa `zplc sys info`
-(`max_artifact_size`) y el tamaño que se comunica al IDE para la placa (RT-028). La compilación falla si dos ranuras
+(`max_artifact_size`) y el tamaño que se comunica a la aplicación ZPLC para la placa (RT-028). La compilación falla si dos ranuras
 de ese tamaño, en trozos, no caben en la partición de almacenamiento. Por eso el perfil Raspberry Pi Pico fija 24576
 bytes (su partición de 128 KB también guarda los registros de RETAIN), el perfil STM32F746G Discovery 16384 y el perfil Arduino Opta WiFi 32768 (su RAM), y
 el perfil ESP32-S3 mantiene sus 8192; los demás perfiles mantienen 45056. El búfer de staging de carga y la VM

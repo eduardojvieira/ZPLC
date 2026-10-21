@@ -471,7 +471,7 @@ zplc_hal_result_t zplc_io_sample(zplc_io_samples_t *samples, const zplc_io_ops_t
  * @brief How many channels of the board's I/O table the build could not serve (IO-007): an operation the board
  *        cannot perform answers ZPLC_HAL_NOT_IMPL, the scan goes on, and the channel is counted here instead of
  *        being forgotten. The ports report the numbers to the user (device status, the `zplc status` command, and
- *        a log event of the device link that Studio shows).
+ *        a log event of the device link that the ZPLC application shows).
  */
 typedef struct {
   uint16_t inputs;  /**< input channels that answered "not supported" when sampled */

@@ -54,7 +54,7 @@ The sequence number of the first frame after the open is the one of the open plu
 
 | Kind | Value | Meaning |
 | --- | --- | --- |
-| `REQUEST` | 0 | Studio asks the device to do something. |
+| `REQUEST` | 0 | The ZPLC application asks the device to do something. |
 | `RESPONSE` | 1 | The device answers one request, with the same message number and sequence. |
 | `EVENT` | 2 | The device reports something that happened, without being asked. |
 

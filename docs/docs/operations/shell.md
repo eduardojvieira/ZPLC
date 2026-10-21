@@ -13,7 +13,7 @@ ZPLC adds a `zplc` command set to the Zephyr shell on the board's interactive UA
 
 Every subcommand, with its arguments and the Kconfig symbol that enables it, is in the generated [shell command reference](../reference/shell-commands.md).
 
-From a terminal you can inspect memory, check the network, read execution errors and control the virtual machine without the desktop IDE.
+From a terminal you can inspect memory, check the network, read execution errors and control the virtual machine without the ZPLC desktop application.
 
 ## Accessing the Shell
 

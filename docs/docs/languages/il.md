@@ -10,7 +10,7 @@ What of Instruction List works today, read off the executed conformance tests, i
 
 ## Compilation path
 
-The IDE parses IL and transpiles it to Structured Text (ST), then sends that generated ST through the compiler to produce `.zplc` bytecode.
+The ZPLC application parses IL and transpiles it to Structured Text (ST), then sends that generated ST through the compiler to produce `.zplc` bytecode.
 
 ```mermaid
 flowchart LR

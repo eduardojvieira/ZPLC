@@ -54,7 +54,7 @@ El número de secuencia de la primera trama tras la apertura es el de la apertur
 
 | Clase | Valor | Significado |
 | --- | --- | --- |
-| `REQUEST` | 0 | Studio asks the device to do something. |
+| `REQUEST` | 0 | The ZPLC application asks the device to do something. |
 | `RESPONSE` | 1 | The device answers one request, with the same message number and sequence. |
 | `EVENT` | 2 | The device reports something that happened, without being asked. |
 

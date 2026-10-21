@@ -49,7 +49,7 @@ Cada uno de los cinco lenguajes se presenta en una lección cuyo objetivo lo nom
 | SFC | `sfc-fill-mix-sequence` | diagrama funcional secuencial |
 | IL | `instruction-list-door-alarm` | lista de instrucciones |
 
-## Módulo 0: Primeros pasos: un recorrido por Studio, la simulación y, para hardware, la verificación de su placa
+## Módulo 0: Primeros pasos: un recorrido por ZPLC, la simulación y, para hardware, la verificación de su placa
 
 Fundamentos. Requiere el módulo: ninguno. Rutas: Simulación, Hardware.
 

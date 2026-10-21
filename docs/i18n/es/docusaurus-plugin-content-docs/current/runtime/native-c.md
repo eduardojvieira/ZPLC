@@ -18,7 +18,7 @@ Es importante mantener la separación de responsabilidades:
 - **Use la lógica estándar de ZPLC (ST, SFC, LD)** para la automatización de planta, las operaciones generales, la lógica de secuencias, el control PID y la lógica de negocio.
 - **Use C nativo de Zephyr** para operaciones muy rígidas, como los controladores I2C de pantallas, los algoritmos propietarios de control de movimiento, los servicios criptográficos de hardware y los protocolos heredados.
 
-*Las tareas en C nativo no se enlazan directamente al flujo de la lógica programable de ZPLC en el IDE.* Se ejecutan como hilos independientes, en paralelo, dentro del ecosistema de Zephyr.
+*Las tareas en C nativo no se enlazan directamente al flujo de la lógica programable de ZPLC.* Se ejecutan como hilos independientes, en paralelo, dentro del ecosistema de Zephyr.
 
 ## Flujo de trabajo estándar
 

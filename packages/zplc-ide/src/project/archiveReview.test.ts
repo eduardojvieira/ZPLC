@@ -39,6 +39,7 @@ describe('reviewArchive (IDE-022)', () => {
     const sensitive = reviewArchive(summary(v2({ network: { wifi: { password: 'secret' } } })));
     expect(sensitive.openable).toBe(false);
     expect(sensitive.problem).toContain('network.wifi.password');
+    expect(sensitive.problem).toMatch(/^ZPLC would not open this project: /);
     expect(sensitive.problem).not.toContain('secret');
     const empty = reviewArchive(summary(JSON.stringify({ schemaVersion: 2, name: '', version: '1.0.0', tasks: [] })));
     expect(empty.openable).toBe(false);

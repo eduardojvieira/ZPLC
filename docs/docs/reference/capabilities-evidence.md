@@ -45,7 +45,7 @@ stays at `cross-build`.
 
 {/* >>> GENERATED (tools/docs/generate_board_reference.py): hardware-support-boards. Do not edit. >>> */}
 
-| Board | IDE ID | Zephyr target | Network | Support level | Evidence records |
+| Board | ZPLC ID | Zephyr target | Network | Support level | Evidence records |
 | --- | --- | --- | --- | --- | --- |
 | Raspberry Pi Pico (RP2040) | `rpi_pico` | `rpi_pico/rp2040` | Serial-focused | `cross-build` | none |
 | Arduino GIGA R1 (STM32H747 M7) | `arduino_giga_r1` | `arduino_giga_r1/stm32h747xx/m7` | Serial-focused | `cross-build` | none |

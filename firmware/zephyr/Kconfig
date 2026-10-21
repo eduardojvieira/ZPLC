@@ -60,7 +60,7 @@ config ZPLC_CODE_SIZE_MAX
       Largest artifact the runtime accepts, in bytes. This one value is the
       code region of the VM, the largest artifact the program store keeps and
       restores (RT-028), the size of the staging buffers and the size the
-      shell and the IDE handshake advertise. Program addresses are 16 bits
+      shell and the ZPLC application handshake advertise. Program addresses are 16 bits
       wide and the code region starts at 0x5000, so 45056 (0xB000) is the
       largest value.
 
@@ -165,7 +165,7 @@ config ZPLC_DEVICE_LINK
       Authenticated sessions (for a network transport) are offered only where the board has a cryptographic
       generator (CONFIG_CSPRNG_ENABLED): the nonces of a challenge and of a session must not be predictable.
 
-      A board that has no RAM for it turns it off: Studio then talks to the text shell and says so.
+      A board that has no RAM for it turns it off: ZPLC then talks to the text shell and says so.
 
 config ZPLC_PROTO_PAYLOAD_MAX
     int "Largest payload of one frame of the device link, in bytes"
@@ -175,7 +175,7 @@ config ZPLC_PROTO_PAYLOAD_MAX
     help
       Each link of the protocol keeps one buffer of this size plus 47 bytes, and the engine one more for the
       response it builds. A payload of 264 bytes or more carries the largest force (a 255-character STRING);
-      a smaller one makes Studio send a program in smaller chunks and refuse a force it cannot carry.
+      a smaller one makes ZPLC send a program in smaller chunks and refuse a force it cannot carry.
 
 config ZPLC_PROTO_EVENT_QUEUE
     int "Events the device link can hold until they are sent"
@@ -518,7 +518,7 @@ config ZPLC_IO_TRACE
     default y if SOC_SERIES_RP2040 || SOC_SERIES_ESP32S3
     help
       Keeps, at the end of every scan, the instant the scan latched its inputs, the scan's number in its run and
-      the first bytes of the input and output images, in a ring that Studio reads with 'zplc dbg trace' (LRN-024).
+      the first bytes of the input and output images, in a ring that the ZPLC application reads with 'zplc dbg trace' (LRN-024).
       The hardware check of a Learn lesson grades that trace instead of reading the board over serial every
       100 ms, so its time tolerance is one scan, not one serial round trip. It only reads: it never writes PLC
       memory, forces, or starts or stops a program. On by default on the two learner boards (Raspberry Pi Pico,
@@ -530,7 +530,7 @@ config ZPLC_IO_TRACE_BUFFER_SIZE
     default 2048
     range 256 65536
     help
-      A sample takes 8 bytes plus the input and output bytes it keeps (at most 32 of each). Studio reads the
+      A sample takes 8 bytes plus the input and output bytes it keeps (at most 32 of each). The ZPLC application reads the
       ring while the check runs, a chunk every 100 ms or so, so the ring needs to hold a few hundred milliseconds
       of scans. The default holds 204 samples of one input and one output byte, two seconds at a 10 ms scan.
 

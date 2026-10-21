@@ -30,7 +30,7 @@ function base64ToBytes(text: string): Uint8Array {
 export async function loadShippedWasmRuntime(): Promise<ShippedWasmRuntime> {
   const shipped = await import('virtual:zplc-wasm-runtime');
   if (shipped.bytesBase64 === null || shipped.manifest === null) {
-    throw new Error(shipped.unavailableReason ?? 'This build of the IDE has no WebAssembly runtime.');
+    throw new Error(shipped.unavailableReason ?? 'This build of ZPLC has no WebAssembly runtime.');
   }
   return { bytes: base64ToBytes(shipped.bytesBase64), manifest: shipped.manifest };
 }

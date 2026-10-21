@@ -18,7 +18,7 @@ It is vital to maintain separation of concerns:
 - **Use standard ZPLC Logic (ST, SFC, LD)**: For factory automation, general operations, sequence logic, PID handling, and business logic mapping.
 - **Use Native Zephyr C**: For highly rigid operations such as writing display I2C drivers, proprietary motion control algorithms, hardware cryptographic services, and legacy protocols.
 
-*Native C tasks are not directly bound into the programmable ZPLC logic flow in the IDE.* They run as independent, side-by-side threads in the Zephyr ecosystem.
+*Native C tasks are not directly bound into the programmable ZPLC logic flow in ZPLC.* They run as independent, side-by-side threads in the Zephyr ecosystem.
 
 ## Standard Workflow
 

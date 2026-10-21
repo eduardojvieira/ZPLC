@@ -7,7 +7,7 @@
  * A frame is a header (sync, version, flags, message, sequence, length), a payload, an optional 32-byte message
  * authentication code and a CRC-32. The numbers and layouts are in zplc_proto_defs.h, generated from
  * tools/contract/protocol.json; the rules (what a decoder discards and counts) are written there too, and the
- * TypeScript codec of Studio follows the same rules. Both run the same generated frames (zplc_proto_vectors.h).
+ * TypeScript codec of the ZPLC application follows the same rules. Both run the same generated frames (zplc_proto_vectors.h).
  *
  * Portable C99: no Zephyr header, no allocation, no clock. A decoder owns one buffer of ZPLC_PROTO_FRAME_MAX bytes.
  */
