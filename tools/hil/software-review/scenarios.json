@@ -295,7 +295,7 @@
           ],
           "given": "a scenario with assertions at named times",
           "when": "the engine evaluates them over the port",
-          "then": "each assertion window is checked against device-time samples, widened by the tolerance, and the outcome is recorded with the observed times",
+          "then": "each assertion is checked against samples taken on the device clock; the tolerance is a lateness bound, so a sample later than it voids the run instead of widening the assertion window, and the outcome is recorded with the observed times of every tick (hardware-in-the-loop.md, the hardware runtime port)",
           "code_paths": [
             "packages/zplc-hil/src/assertions.ts",
             "packages/zplc-hil/src/hardwarePort.ts:44 StepObservation",
@@ -2577,14 +2577,14 @@
           "when": "progress is saved",
           "then": "the grade is kept as a hardware grade with the program hash and the ZPLC version the board reported; it does not pass a lesson gradeable in simulation, a simulation pass is not a hardware pass, and verify-my-board is the one exception",
           "code_paths": [
-            "packages/zplc-ide/electron/learnProgressModel.ts:166 parseGradeRecord",
-            "packages/zplc-ide/electron/learnProgressModel.ts:251 parseProgressValue",
+            "packages/zplc-ide/shared/learnProgressModel.ts:166 parseGradeRecord",
+            "packages/zplc-ide/shared/learnProgressModel.ts:251 parseProgressValue",
             "packages/zplc-ide/src/components/LearnBoardTrack.tsx"
           ],
           "simulation_evidence": [
             {
-              "ref": "packages/zplc-ide/electron/learnProgressModel.test.ts",
-              "command": "cd packages/zplc-ide && bun test electron/learnProgressModel.test.ts"
+              "ref": "packages/zplc-ide/shared/learnProgressModel.test.ts",
+              "command": "cd packages/zplc-ide && bun test shared/learnProgressModel.test.ts"
             },
             {
               "ref": "LearnBoardTrack.test.tsx",
@@ -3072,7 +3072,7 @@
           ],
           "given": "a profile with the hardware watchdog on and pause=feed (boards.json watchdog.pause)",
           "when": "a breakpoint holds the scan longer than the watchdog timeout",
-          "then": "the control path feeds the watchdog, the board does not reset, and the outputs keep the state the paused scan left",
+          "then": "the control path feeds the watchdog, the board does not reset, and the physical outputs are driven to their safe state while the output image of the paused scan is kept (docs/docs/runtime/scheduler.md, the pause section)",
           "code_paths": [
             "firmware/lib/zplc_core/src/hal/zephyr/zplc_scheduler_zephyr.c:619 wait under a feeding profile",
             "firmware/lib/zplc_core/src/core/zplc_failsafe.c:114 zplc_wdt_action",
@@ -3419,7 +3419,7 @@
             "firmware/app/boards/arduino_opta_stm32h747xx_m7.conf:89-106",
             "docs/docs/runtime/connectivity.md:80",
             "docs/docs/safety-and-limitations.md:103",
-            "firmware/app/src/shell_cmds.c:4583"
+            "firmware/app/src/zplc_mqtt.c:653-658"
           ],
           "simulation_evidence": [
             {

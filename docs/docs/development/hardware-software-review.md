@@ -10,10 +10,10 @@ description: The scenarios that close the requirements needing a physical board 
 On 2026-10-20 the owner decided how the requirements that need a physical board are closed: by a software and simulation review, not by a bench run. This page is the first half of that review. It lists, for each requirement, every behaviour the requirement asks of a board as a numbered scenario. A separate reviewer then judges each scenario by software analysis or simulation only. A scenario judged "should not pass" is a defect and is fixed.
 
 :::warning Not hardware evidence
-Nothing here says that a scenario passes, and no scenario has been run on a physical board. Every verdict field is empty until the reviewer fills it. A software verdict does not replace a hardware record (see [Hardware in the Loop](./hardware-in-the-loop.md)): it covers what software can show, and each scenario names what only silicon could reveal.
+No scenario has been run on a physical board. A verdict below is a judgement from the code and from simulation, not a measurement. A software verdict does not replace a hardware record (see [Hardware in the Loop](./hardware-in-the-loop.md)): it covers what software can show, and each scenario names what only silicon could reveal.
 :::
 
-The same scenarios are in `tools/hil/software-review/scenarios.json`, which is the file the reviewer fills: each scenario there has `verdict`, `reasoning` and `evidence_run` set to null.
+The same scenarios are in `tools/hil/software-review/scenarios.json`. The verdicts, each with its reasoning and the command that was run, are in `tools/hil/software-review/verdicts.json`, keyed by scenario id.
 
 ## How to read a scenario
 
@@ -42,6 +42,32 @@ There are 116 scenarios.
 | COM-016 | TLS and the random generator | 5 |
 | DOC-004 | First board and build from source | 6 |
 
+## Results of the review
+
+Two reviewers judged the 116 scenarios on 2026-10-20 by reading the code and running what runs on a development machine (unit, C and native_sim tests, the native runtime, the emulated bench, QEMU and firmware builds). The scenarios judged "should not pass" were fixed where the fix was small and a test could prove it, and judged again on the fixed tree: the verdicts below are the final ones. The verdicts, with their reasoning and the command run, are in `tools/hil/software-review/verdicts.json`.
+
+| Verdict | Scenarios |
+|---|---|
+| Should pass | 110 |
+| Should not pass | 1 |
+| Cannot be judged in software | 5 |
+
+No physical bench run is recorded for any of these scenarios.
+
+### Scenarios that cannot be judged in software
+
+For each one, the silicon fact that a person checks at a bench:
+
+- **HIL-010.13** Analog read at 0 %, 50 % and 100 % of full scale: converter accuracy, offset and gain error, reference voltage, noise and the nonlinearity near both ends
+- **HIL-010.14** ESP32-S3 analog scaling is the one the board description documents: the eFuse calibration quality of the individual chip and the converter nonlinearity
+- **HIL-010.17** Scan jitter: every scan period is within 20 % of the interval: the true period distribution, which depends on the oscillator and on the other interrupts of the chip
+- **HIL-015.06** A difference found on hardware is reflected in the simulator's capability profile: the differences themselves: no hardware comparison has been recorded, so there is nothing yet to reflect
+- **IO-006.03** ESP32-S3 AI0 scaling is documented and read: eFuse calibration of the individual chip and nonlinearity near both ends
+
+### Scenarios that still should not pass
+
+- **COM-016.05** the two boards still build without TLS (`firmware/app/boards/nucleo_h743zi.conf:86-103`, `firmware/app/boards/arduino_opta_stm32h747xx_m7.conf:89-106`: `CONFIG_MQTT_LIB_TLS`, `CONFIG_NET_SOCKETS_SOCKOPT_TLS` and `CONFIG_TLS_CREDENTIALS` unset). COM-016 asks for TLS on again, with a verified hardware entropy source, before GA; the build half works (the rule passes with TLS on), so turning it on is a software step. It was not taken, by instruction, and the hardware record of the generator (HIL-011) is still missing.
+
 ## HIL-001 packages/zplc-hil runs the real chain
 
 ### HIL-001.01 packages/zplc-hil compiles a test program with the repository compiler
@@ -54,7 +80,7 @@ There are 116 scenarios.
 - **Simulation:**
   - packages/zplc-hil/tests/runner.test.ts: the runner compiles, deploys, starts and observes (HIL-001): `cd packages/zplc-hil && bun test tests/runner.test.ts`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-001.02 The runner deploys through the control protocol
 
@@ -67,7 +93,7 @@ There are 116 scenarios.
   - packages/zplc-hil/tests/shellLink.test.ts: `cd packages/zplc-hil && bun test tests/shellLink.test.ts`
   - packages/zplc-hil/tests/runner.test.ts: `cd packages/zplc-hil && bun test tests/runner.test.ts`
 - **Only silicon:** the real USB-CDC serial path: framing loss, buffer overruns and timing of the UART at 115200 baud
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-001.03 The runner observes the device with no mocked step
 
@@ -80,7 +106,7 @@ There are 116 scenarios.
   - packages/zplc-hil/tests/runner.test.ts: `cd packages/zplc-hil && bun test tests/runner.test.ts`
   - tools/ci/hil-emulator.test.ts: `bun test tools/ci/hil-emulator.test.ts`
 - **Only silicon:** whether a real board answers the same reads at the same speed as the native runtime
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-001.04 Opcode and block test files each contain tests that run
 
@@ -92,7 +118,7 @@ There are 116 scenarios.
 - **Simulation:**
   - packages/zplc-hil/tests/**: `cd packages/zplc-hil && bun test `
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-001.05 A deploy that the device refuses is raised, not resent
 
@@ -105,7 +131,7 @@ There are 116 scenarios.
   - tools/hil/test_hil_bench.py CompilePerBoardTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k every_step_program_compiles_for_both_learner_boards`
   - hil-emulation.md finding 'Deploy (ESP32-S3)': `bash tools/hil/emulator/setup.sh; tools/hil/emulator/build.sh esp32s3; python3 tools/hil/run_chain.py esp32s3_devkitc --bench emulated`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ## HIL-002 Scenario engine on a board
 
@@ -120,7 +146,7 @@ There are 116 scenarios.
   - packages/zplc-hil/tests/hardwarePort.test.ts: `cd packages/zplc-hil && bun test tests/hardwarePort.test.ts`
   - packages/zplc-ide/src/test-engine/hardwarePort.test.ts: `cd packages/zplc-ide && bun test src/test-engine/hardwarePort.test.ts`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-002.02 Time is taken from the device clock
 
@@ -132,7 +158,7 @@ There are 116 scenarios.
 - **Simulation:**
   - hardwarePort.test.ts: time is taken from the device clock, and each tick waits for it: `cd packages/zplc-hil && bun test tests/hardwarePort.test.ts`
 - **Only silicon:** oscillator accuracy and drift of the real board clock against the bench clock
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-002.03 A sample later than the declared tolerance voids the run
 
@@ -144,7 +170,7 @@ There are 116 scenarios.
 - **Simulation:**
   - hardwarePort.test.ts: a sample taken later than the declared tolerance voids the run: `cd packages/zplc-hil && bun test tests/hardwarePort.test.ts`
 - **Only silicon:** the real late-sample distribution of the USB link under host load
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-002.04 Inputs are forced, not written
 
@@ -156,19 +182,19 @@ There are 116 scenarios.
 - **Simulation:**
   - hardwarePort.test.ts: an input is forced, a scan runs with it and the output is read after that scan: `cd packages/zplc-hil && bun test tests/hardwarePort.test.ts`
 - **Only silicon:** pin electrics: pull-up strength, 1 kOhm loopback levels, drive current, pin multiplexing on the real pad
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-002.05 Assertions are evaluated with the declared tolerance on device timestamps
 
 - **Boards:** Raspberry Pi Pico, ESP32-S3-DevKitC-1
 - **Given:** a scenario with assertions at named times
 - **When:** the engine evaluates them over the port
-- **Then:** each assertion window is checked against device-time samples, widened by the tolerance, and the outcome is recorded with the observed times
+- **Then:** each assertion is checked against samples taken on the device clock; the tolerance is a lateness bound, so a sample later than it voids the run instead of widening the assertion window, and the outcome is recorded with the observed times of every tick (hardware-in-the-loop.md, the hardware runtime port)
 - **Code:** `packages/zplc-hil/src/assertions.ts`; `packages/zplc-hil/src/hardwarePort.ts:44` StepObservation; `packages/zplc-ide/src/test-engine/index.ts`
 - **Simulation:**
   - packages/zplc-ide/src/test-engine/hardwarePort.test.ts: `cd packages/zplc-ide && bun test src/test-engine/hardwarePort.test.ts`
 - **Only silicon:** oscillator accuracy and drift of the real board clock against the bench clock
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-002.06 Addresses outside the images and a never-reached tick are refused
 
@@ -180,7 +206,7 @@ There are 116 scenarios.
 - **Simulation:**
   - hardwarePort.test.ts: addresses outside the images ... / a device that never reaches the tick: `cd packages/zplc-hil && bun test tests/hardwarePort.test.ts`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-002.07 A scenario run on a board writes a record and is bound to the image
 
@@ -192,7 +218,7 @@ There are 116 scenarios.
 - **Simulation:**
   - packages/zplc-hil/tests (record and cli): `cd packages/zplc-hil && bun test `
 - **Only silicon:** a run on a real board: no scenario file has produced a hardware record yet (gate note of HIL-002)
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ## HIL-005 Language fixtures on a board
 
@@ -207,7 +233,7 @@ There are 116 scenarios.
   - packages/zplc-ide/src/cli/hilFixtures.test.ts: language fixtures of tools/hil (HIL-005, HIL-006): `cd packages/zplc-ide && bun test src/cli/hilFixtures.test.ts`
   - tools/hil/verify_compilation.py: `python3 tools/hil/verify_compilation.py`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-005.02 Every phase of every fixture holds its expected values on the native runtime
 
@@ -219,7 +245,7 @@ There are 116 scenarios.
 - **Simulation:**
   - packages/zplc-ide/src/cli/hilFixtures.test.ts: every phase of every language fixture holds on the native runtime (HIL-005): `cd packages/zplc-ide && bun test src/cli/hilFixtures.test.ts  (needs ZPLC_NATIVE_SIM_BIN)`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-005.03 Every expected value names a real address and the manifest lists each fixture once
 
@@ -231,7 +257,7 @@ There are 116 scenarios.
 - **Simulation:**
   - packages/zplc-ide/src/cli/hilFixtures.test.ts: the manifest lists every language fixture of tools/hil, once: `cd packages/zplc-ide && bun test src/cli/hilFixtures.test.ts`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-005.04 The fixtures tagged for hardware run through the chain on the bench
 
@@ -244,7 +270,7 @@ There are 116 scenarios.
   - tools/hil/test_hil_chain.py DryRunTests (host runtime stand-in): `python3 -B -m unittest discover -s tools/hil -p 'test_hil_chain.py' -k on_the_host_runtime_the_flow_passes`
   - emulated Pico bench; blink counts are not evidence on rp2040js (hil-emulation.md): `bash tools/hil/emulator/setup.sh; tools/hil/emulator/build.sh pico; python3 tools/hil/run_chain.py rpi_pico --bench emulated`
 - **Only silicon:** pin electrics: pull-up strength, 1 kOhm loopback levels, drive current, pin multiplexing on the real pad
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-005.05 A fixture compiled for a board uses that board's memory sizes
 
@@ -257,7 +283,7 @@ There are 116 scenarios.
   - tools/hil/test_hil_bench.py CompilePerBoardTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k every_step_program_compiles_for_both_learner_boards`
   - tools/hil/test_hil_chain.py PreflightTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_chain.py' -k each_fixture_is_compiled_for_the_board_under_test`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ## HIL-010 The bench record of each learner board
 
@@ -271,7 +297,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/hil/test_hil_chain.py GuardTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_chain.py' -k physical_step`
 - **Only silicon:** the real bootloader: BOOTSEL drive on the Pico, download mode and esptool on the ESP32-S3
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.02 Identity handshake reports board, commit and image options
 
@@ -284,7 +310,7 @@ There are 116 scenarios.
   - tools/hil/test_hil_chain.py BuildCommandAndTraceTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_chain.py' -k the_record_carries_the_exact_build_command`
   - firmware/tests/app_shell_identity: `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.03 The device's I/O description equals boards.json
 
@@ -297,7 +323,7 @@ There are 116 scenarios.
   - tools/hil/test_hil_chain.py IoDescriptionTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_chain.py' -k description`
   - tools/hil/test_board_io_description.py: `python3 -B tools/hil/test_board_io_description.py`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.04 Deploy of a program over the device link
 
@@ -310,7 +336,7 @@ There are 116 scenarios.
   - tools/hil/test_hil_chain.py DryRunTests (host-runtime stand-in, never hardware): `python3 -B -m unittest discover -s tools/hil -p 'test_hil_chain.py' -k on_the_host_runtime_the_flow_passes`
   - firmware/lib/zplc_core/tests test_loader_verify: `bun run test:core  (ctest --test-dir build/core-sanitized -R test_loader_verify)`
 - **Only silicon:** the real serial throughput and any lost characters on a USB cable
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.05 Run: the scan counter advances
 
@@ -323,7 +349,7 @@ There are 116 scenarios.
   - tools/hil/test_hil_chain.py DryRunTests (host-runtime stand-in, never hardware): `python3 -B -m unittest discover -s tools/hil -p 'test_hil_chain.py' -k on_the_host_runtime_the_flow_passes`
   - firmware/tests/scheduler_run_control: `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.06 Blink in ST
 
@@ -336,7 +362,7 @@ There are 116 scenarios.
   - packages/zplc-ide/src/cli/hilFixtures.test.ts (native runtime): `cd packages/zplc-ide && bun test src/cli/hilFixtures.test.ts`
   - emulated Pico bench: blink counts on rp2040js are not evidence (hil-emulation.md): `bash tools/hil/emulator/setup.sh; tools/hil/emulator/build.sh pico; python3 tools/hil/run_chain.py rpi_pico --bench emulated`
 - **Only silicon:** the actual LED or pad level and the real blink period against a scope
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.07 Blink in IL
 
@@ -349,7 +375,7 @@ There are 116 scenarios.
   - packages/zplc-ide/src/cli/hilFixtures.test.ts (native runtime): `cd packages/zplc-ide && bun test src/cli/hilFixtures.test.ts`
   - emulated Pico bench: blink counts on rp2040js are not evidence (hil-emulation.md): `bash tools/hil/emulator/setup.sh; tools/hil/emulator/build.sh pico; python3 tools/hil/run_chain.py rpi_pico --bench emulated`
 - **Only silicon:** the actual LED or pad level and the real blink period against a scope
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.08 Blink in LD
 
@@ -362,7 +388,7 @@ There are 116 scenarios.
   - packages/zplc-ide/src/cli/hilFixtures.test.ts (native runtime): `cd packages/zplc-ide && bun test src/cli/hilFixtures.test.ts`
   - emulated Pico bench: blink counts on rp2040js are not evidence (hil-emulation.md): `bash tools/hil/emulator/setup.sh; tools/hil/emulator/build.sh pico; python3 tools/hil/run_chain.py rpi_pico --bench emulated`
 - **Only silicon:** the actual LED or pad level and the real blink period against a scope
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.09 Blink in FBD
 
@@ -375,7 +401,7 @@ There are 116 scenarios.
   - packages/zplc-ide/src/cli/hilFixtures.test.ts (native runtime): `cd packages/zplc-ide && bun test src/cli/hilFixtures.test.ts`
   - emulated Pico bench: blink counts on rp2040js are not evidence (hil-emulation.md): `bash tools/hil/emulator/setup.sh; tools/hil/emulator/build.sh pico; python3 tools/hil/run_chain.py rpi_pico --bench emulated`
 - **Only silicon:** the actual LED or pad level and the real blink period against a scope
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.10 Blink in SFC
 
@@ -388,7 +414,7 @@ There are 116 scenarios.
   - packages/zplc-ide/src/cli/hilFixtures.test.ts (native runtime): `cd packages/zplc-ide && bun test src/cli/hilFixtures.test.ts`
   - emulated Pico bench: blink counts on rp2040js are not evidence (hil-emulation.md): `bash tools/hil/emulator/setup.sh; tools/hil/emulator/build.sh pico; python3 tools/hil/run_chain.py rpi_pico --bench emulated`
 - **Only silicon:** the actual LED or pad level and the real blink period against a scope
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.11 Digital loopback: each output moves its own input
 
@@ -402,7 +428,7 @@ There are 116 scenarios.
   - emulated Pico bench (DO0..DO3 to DI0..DI3 modelled): `bash tools/hil/emulator/setup.sh; tools/hil/emulator/build.sh pico; python3 tools/hil/run_chain.py rpi_pico --bench emulated`
   - emulated ESP32-S3: not emulable (no GPIO model): none yet
 - **Only silicon:** pin electrics: pull-up strength, 1 kOhm loopback levels, drive current, pin multiplexing on the real pad
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.12 Digital loopback: inputs are active-low through the pull-up
 
@@ -414,7 +440,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/hil/test_hil_bench.py StepTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k each_output_moves_its_own_input`
 - **Only silicon:** pin electrics: pull-up strength, 1 kOhm loopback levels, drive current, pin multiplexing on the real pad
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.13 Analog read at 0 %, 50 % and 100 % of full scale
 
@@ -429,7 +455,7 @@ There are 116 scenarios.
   - emulated Pico bench (analog injection on ADC0..4): `bash tools/hil/emulator/setup.sh; tools/hil/emulator/build.sh pico; python3 tools/hil/run_chain.py rpi_pico --bench emulated`
   - emulated ESP32-S3: not emulable (no SAR ADC): none yet
 - **Only silicon:** converter accuracy, offset and gain error, reference voltage, noise and the nonlinearity near both ends
-- **Verdict:** not judged yet
+- **Verdict:** cannot be judged in software
 
 ### HIL-010.14 ESP32-S3 analog scaling is the one the board description documents
 
@@ -441,7 +467,7 @@ There are 116 scenarios.
 - **Simulation:**
   - firmware/tests/io_analog: `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
 - **Only silicon:** the eFuse calibration quality of the individual chip and the converter nonlinearity
-- **Verdict:** not judged yet
+- **Verdict:** cannot be judged in software
 
 ### HIL-010.15 Timer accuracy: a TON of 3 s
 
@@ -455,7 +481,7 @@ There are 116 scenarios.
   - tools/hil/test_hil_bench.py StepTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k timer_accuracy_against_the_bench_clock`
   - QEMU clock note: a TON of 3 s took 8 s on the ESP32-S3 emulator, which measures QEMU (hil-emulation.md): none yet
 - **Only silicon:** oscillator accuracy and drift of the real board clock against the bench clock
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.16 Scan jitter over ten minutes: no overrun, no deadline miss
 
@@ -468,7 +494,7 @@ There are 116 scenarios.
   - firmware/lib/zplc_core/tests/test_sched_core.c HIL-010 period test: `bun run test:core  (ctest --test-dir build/core-sanitized -R test_sched_core)`
   - tools/hil/test_hil_bench.py StepTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k scan_jitter_runs_ten_minutes`
 - **Only silicon:** real interrupt latency, USB or Wi-Fi interrupt load and cache or flash-wait effects on the scan period
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.17 Scan jitter: every scan period is within 20 % of the interval
 
@@ -481,7 +507,7 @@ There are 116 scenarios.
   - firmware/lib/zplc_core/tests/test_sched_core.c: `bun run test:core  (ctest --test-dir build/core-sanitized -R test_sched_core)`
   - tools/hil/test_hil_bench.py StepTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k scan_jitter`
 - **Only silicon:** the true period distribution, which depends on the oscillator and on the other interrupts of the chip
-- **Verdict:** not judged yet
+- **Verdict:** cannot be judged in software
 
 ### HIL-010.18 Outputs off after an overrun fault
 
@@ -496,7 +522,7 @@ There are 116 scenarios.
   - tools/hil/test_hil_bench.py StepTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k outputs_off_after_an_overrun`
   - emulated Pico bench (both boards latched deadline_miss, 2026-10-20): `bash tools/hil/emulator/setup.sh; tools/hil/emulator/build.sh pico; python3 tools/hil/run_chain.py rpi_pico --bench emulated`
 - **Only silicon:** that the physical pin is at the safe level (no glitch) when the fault latches
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.19 The overrun program stays inside the VM instruction budget
 
@@ -508,7 +534,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/hil/test_hil_bench.py: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k overrun_program_stays_inside_the_boards_instruction_budget`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.20 Outputs off after a forced fatal fault
 
@@ -523,7 +549,7 @@ There are 116 scenarios.
   - tools/hil/test_hil_bench.py NativeRuntimeStepTests (native runtime): `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k on_the_native_runtime`
   - emulated ESP32-S3: latched after 1.4 s host time, 21 scans (hil-emulation.md): `bash tools/hil/emulator/setup.sh; tools/hil/emulator/build.sh esp32s3; python3 tools/hil/run_chain.py esp32s3_devkitc --bench emulated`
 - **Only silicon:** pin state during the real exception entry and reset, and the real reset timing
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.21 Outputs safe after a commanded STOP
 
@@ -536,7 +562,7 @@ There are 116 scenarios.
   - firmware/tests/scheduler_run_control: `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
   - tools/hil/test_hil_bench.py StepTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k outputs_safe_after_stop_and_after_link_loss`
 - **Only silicon:** pin electrics: pull-up strength, 1 kOhm loopback levels, drive current, pin multiplexing on the real pad
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.22 Forces are released when the link is lost (Pico: DTR)
 
@@ -549,7 +575,7 @@ There are 116 scenarios.
   - firmware/tests/app_device_link; firmware/lib/zplc_core/tests test_proto_session: `bun run test:core  (ctest --test-dir build/core-sanitized -R test_proto_session)`
   - tools/hil/test_hil_bench.py StepTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k link_loss_with_forces_active`
 - **Only silicon:** the real USB enumeration, DTR behaviour of the host driver and cable pull timing
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.23 Forces are released when the link is lost (ESP32-S3: idle time)
 
@@ -562,7 +588,7 @@ There are 116 scenarios.
   - firmware/lib/zplc_core/tests test_proto_session (idle timeout): `bun run test:core  (ctest --test-dir build/core-sanitized -R test_proto_session)`
   - tools/hil/test_hil_bench.py StepTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k link_loss`
 - **Only silicon:** the real 30 s idle time against the board's clock and that USB-Serial/JTAG reports no line state
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.24 Watchdog reset time
 
@@ -577,7 +603,7 @@ There are 116 scenarios.
   - tools/hil/test_hil_bench.py: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k watchdog_reset_time_needs_the_hil_build`
   - emulators: the watchdog step is not emulable (hil-emulation.md): none yet
 - **Only silicon:** the real watchdog counter: its true timeout tolerance, and that the pins really fall to the safe level while the chip resets
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.25 After a watchdog reset the board is in STOP with the cause recorded
 
@@ -590,7 +616,7 @@ There are 116 scenarios.
   - firmware/lib/zplc_core/tests/test_failsafe.c: `bun run test:core  (ctest --test-dir build/core-sanitized -R test_failsafe)`
   - firmware/tests/failsafe_reboot (qemu_cortex_m3): `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh qemu-m3`
 - **Only silicon:** the reset-cause register of the real chip and whether it survives a brown-out
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.26 Program restored to STOP after a power cycle
 
@@ -603,7 +629,7 @@ There are 116 scenarios.
   - firmware/tests/program_boot_restore, runtime_boot (native_sim): `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
   - emulated Pico bench: power cycle on a flash file: `bash tools/hil/emulator/setup.sh; tools/hil/emulator/build.sh pico; python3 tools/hil/run_chain.py rpi_pico --bench emulated`
 - **Only silicon:** real flash behaviour: erase and program time, a cut in the middle of a sector, wear and retention
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.27 RETAIN restored after a power cycle
 
@@ -617,7 +643,7 @@ There are 116 scenarios.
   - firmware/lib/zplc_core/tests/test_retain.c: `bun run test:core  (ctest --test-dir build/core-sanitized -R test_retain)`
   - emulated Pico HIL image: 102 before and after; ESP32-S3: 16 before and after: `bash tools/hil/emulator/setup.sh; tools/hil/emulator/build.sh pico; python3 tools/hil/run_chain.py rpi_pico --bench emulated`
 - **Only silicon:** real flash behaviour: erase and program time, a cut in the middle of a sector, wear and retention
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.28 Twenty power interruptions during deploy leave a whole program
 
@@ -631,7 +657,7 @@ There are 116 scenarios.
   - firmware/lib/zplc_core/tests/test_program_store.c: `bun run test:core  (ctest --test-dir build/core-sanitized -R test_program_store)`
   - tools/hil/test_hil_bench.py StepTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k twenty_power_cuts`
 - **Only silicon:** real flash behaviour: erase and program time, a cut in the middle of a sector, wear and retention
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.29 Force set, list and release
 
@@ -644,7 +670,7 @@ There are 116 scenarios.
   - tools/hil/test_hil_chain.py DryRunTests (host-runtime stand-in, never hardware): `python3 -B -m unittest discover -s tools/hil -p 'test_hil_chain.py' -k on_the_host_runtime_the_flow_passes`
   - firmware/tests/modbus_force: `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.30 Atomic multi-byte write
 
@@ -657,7 +683,7 @@ There are 116 scenarios.
   - tools/hil/test_hil_bench.py StepTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k atomic_write_is_never_seen_half_written`
   - firmware/lib/zplc_core/tests test_proto_session: `bun run test:core  (ctest --test-dir build/core-sanitized -R test_proto_session)`
 - **Only silicon:** the true interleaving of the write with the scan on the real interrupt timing of the chip
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.31 Fieldbus exchange: Modbus RTU on the Pico
 
@@ -670,7 +696,7 @@ There are 116 scenarios.
   - tools/hil/test_hil_bench.py StepTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k modbus_rtu_on_the_pico`
   - emulated Pico bench (UART1 on a host pty): read 0x5A17: `bash tools/hil/emulator/setup.sh; tools/hil/emulator/build.sh pico; python3 tools/hil/run_chain.py rpi_pico --bench emulated`
 - **Only silicon:** UART electrics, 3.3 V logic levels, baud rate error and inter-frame silence on a real adapter
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.32 Fieldbus exchange: Modbus TCP on the ESP32-S3
 
@@ -684,7 +710,7 @@ There are 116 scenarios.
   - tools/hil/test_hil_bench.py: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k modbus_tcp_and_mqtt_on_the_esp32s3`
   - emulated ESP32-S3: not emulable (no Wi-Fi): none yet
 - **Only silicon:** the radio: association, signal, roaming, packet loss and the DHCP behaviour of the real access point
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.33 Fieldbus exchange: MQTT on the ESP32-S3
 
@@ -697,7 +723,7 @@ There are 116 scenarios.
   - firmware/tests/inbound_mqtt, mqtt_command, mqtt_broker_double (native_sim): `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
   - emulated ESP32-S3: not emulable (no Wi-Fi): none yet
 - **Only silicon:** the radio and the real network path, TCP keep-alive and broker reconnection over Wi-Fi
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-010.34 Every step writes its measurements and verdict into the run record
 
@@ -710,7 +736,7 @@ There are 116 scenarios.
   - tools/hil/test_hil_bench.py StepTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k a_bench_that_cannot_do_a_step_records_it_as_not_run_never_passed`
   - tools/hil/test_hil_chain.py DryRunTests (host-runtime stand-in, never hardware): `python3 -B -m unittest discover -s tools/hil -p 'test_hil_chain.py' -k on_the_host_runtime_the_flow_passes`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ## HIL-012 One command per board
 
@@ -725,7 +751,7 @@ There are 116 scenarios.
   - tools/hil/test_hil_chain.py DryRunTests (host-runtime stand-in, never hardware): `python3 -B -m unittest discover -s tools/hil -p 'test_hil_chain.py' -k on_the_host_runtime_the_flow_passes`
   - tools/hil/test_hil_chain.py: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_chain.py'`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-012.02 The person is prompted for each physical step under the human-presence guard
 
@@ -738,7 +764,7 @@ There are 116 scenarios.
   - tools/hil/test_hil_chain.py GuardTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_chain.py' -k GuardTests`
   - tools/hil/test_hil_bench.py: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k human_bench_refuses_without_a_terminal_and_needs_the_identity_typed`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-012.03 Without an interactive terminal the command exits with an error before opening a port
 
@@ -751,7 +777,7 @@ There are 116 scenarios.
   - tools/hil/test_hil_chain.py StartTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_chain.py' -k started_without_an_interactive_terminal`
   - packages/zplc-ide/src/mcp/deviceLink.test.ts: `cd packages/zplc-ide && bun test src/mcp/deviceLink.test.ts`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-012.04 The chain says how long it takes before it starts, about 30 minutes
 
@@ -763,7 +789,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/hil/test_hil_bench.py BudgetTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k the_chain_says_how_long_it_takes`
 - **Only silicon:** the true wall time of a person's bench: how fast a person unplugs, turns a potentiometer and flashes
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-012.05 The chain stops at the first failing step and still writes a record
 
@@ -775,7 +801,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/hil/test_hil_chain.py DryRunTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_chain.py' -k a_device_that_shows_nothing_fails_the_chain`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-012.06 The emulated bench runs the same chain without a person and labels the record emulated
 
@@ -789,7 +815,7 @@ There are 116 scenarios.
   - tools/ci/hil-emulator.test.ts: `bun test tools/ci/hil-emulator.test.ts`
   - emulated runs: `bash tools/hil/emulator/setup.sh; tools/hil/emulator/build.sh pico; python3 tools/hil/run_chain.py rpi_pico --bench emulated`
 - **Only silicon:** everything the emulator does not model (pins, real clocks, the ESP32-S3 radio and converter)
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ## HIL-014 The bench guide
 
@@ -803,7 +829,7 @@ There are 116 scenarios.
 - **Simulation:**
   - docs parity validation: `bun run docs:validate; bun run check:docs`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-014.02 The wiring table equals the pin map of boards.json
 
@@ -816,7 +842,7 @@ There are 116 scenarios.
   - tools/hil/test_board_io_description.py: `python3 -B tools/hil/test_board_io_description.py`
   - a table-to-manifest comparison of the guide: none yet
 - **Only silicon:** that the header pin numbers (J1-5, pin 20) point at the pads printed on the real board
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-014.03 The parts list equals the course kit plus the bench extras
 
@@ -828,7 +854,7 @@ There are 116 scenarios.
 - **Simulation:**
   - packages/zplc-ide/src/boards/wiring/kit.test.ts: `cd packages/zplc-ide && bun test src/boards/wiring/kit.test.ts`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-014.04 The voltage limits agree with the electrical notes of the board description
 
@@ -840,7 +866,7 @@ There are 116 scenarios.
 - **Simulation:**
   - packages/zplc-ide/src/boards/wiring/wiring.test.ts: `cd packages/zplc-ide && bun test src/boards/wiring/wiring.test.ts`
 - **Only silicon:** the real current capability of the pads, which only a measurement shows
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-014.05 Every command of the procedure exists with the flags the guide shows
 
@@ -852,7 +878,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/hil/test_hil_chain.py: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_chain.py' -k StartTests`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-014.06 The guide says what has and has not been executed
 
@@ -864,7 +890,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/docs/check_doc_claims.ts: `bun tools/docs/check_doc_claims.ts`
 - **Only silicon:** the requirement asks for the procedure 'actually executed': only a person's bench run can make that true
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ## HIL-015 Simulation against hardware
 
@@ -878,7 +904,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/hil/test_hil_compare.py CompareTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_compare.py' -k CompareTests`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-015.02 The same inputs at the same times drive native simulation and the bench
 
@@ -890,7 +916,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/hil/test_hil_compare.py: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_compare.py' -k native_against_native_is_the_same`
 - **Only silicon:** pin electrics: pull-up strength, 1 kOhm loopback levels, drive current, pin multiplexing on the real pad
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-015.03 A different output sequence is recorded as a difference
 
@@ -902,7 +928,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/hil/test_hil_compare.py TraceTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_compare.py' -k TraceTests`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-015.04 A change more than --tolerance-ms (100 ms) from its twin is recorded
 
@@ -914,7 +940,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/hil/test_hil_compare.py: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_compare.py' -k a_late_or_missing_change_is_named`
 - **Only silicon:** oscillator accuracy and drift of the real board clock against the bench clock
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-015.05 A bench that differs produces a comparison record
 
@@ -926,7 +952,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/hil/test_hil_compare.py CompareTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_compare.py' -k a_bench_that_differs_is_recorded_as_different`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### HIL-015.06 A difference found on hardware is reflected in the simulator's capability profile
 
@@ -938,7 +964,7 @@ There are 116 scenarios.
 - **Simulation:**
   - packages/zplc-ide/src/runtime/wasmRuntime.test.ts: `cd packages/zplc-ide && bun test src/runtime/wasmRuntime.test.ts`
 - **Only silicon:** the differences themselves: no hardware comparison has been recorded, so there is nothing yet to reflect
-- **Verdict:** not judged yet
+- **Verdict:** cannot be judged in software
 
 ### HIL-015.07 The emulated Pico can be compared in place of a board and the record says emulated
 
@@ -950,7 +976,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/firmware-test/run.sh app-native: `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh app-native`
 - **Only silicon:** everything an emulator does not model: pin multiplexing, electrical levels and real clocks
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ## LRN-013 Choose a board in Learn
 
@@ -964,7 +990,7 @@ There are 116 scenarios.
 - **Simulation:**
   - packages/zplc-ide/src/components/LearnBoardTrack.test.tsx: `cd packages/zplc-ide && bun test src/components/LearnBoardTrack.test.tsx`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### LRN-013.02 A hardware lesson shows no wiring before a board is chosen
 
@@ -976,7 +1002,7 @@ There are 116 scenarios.
 - **Simulation:**
   - LearnBoardLesson.test.tsx: LRN-013 asks for a board before it shows any wiring: `cd packages/zplc-ide && bun test src/components/LearnBoardLesson.test.tsx`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### LRN-013.03 The lesson shows that board's wiring as a diagram, a numbered list and a pin map
 
@@ -989,7 +1015,7 @@ There are 116 scenarios.
   - packages/zplc-ide/src/boards/wiring/wiring.test.ts: `cd packages/zplc-ide && bun test src/boards/wiring/wiring.test.ts`
   - packages/zplc-ide/src/boards/wiring/render.test.ts: `cd packages/zplc-ide && bun test src/boards/wiring/render.test.ts`
 - **Only silicon:** that the diagram matches a real breadboard and the printed pin names of the real board
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### LRN-013.04 Check on board is disabled until board, connection, deploy and identity agree
 
@@ -1002,7 +1028,7 @@ There are 116 scenarios.
   - packages/zplc-ide/src/learn/boardCheck.test.ts: `cd packages/zplc-ide && bun test src/learn/boardCheck.test.ts`
   - LearnBoardLesson.test.tsx: LRN-013 names a connected board that is not the one the learner chose: `cd packages/zplc-ide && bun test src/components/LearnBoardLesson.test.tsx`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### LRN-013.05 The lesson program runs on the chosen board and is checked
 
@@ -1016,7 +1042,7 @@ There are 116 scenarios.
   - deviceTraceRecorder.test.ts: `cd packages/zplc-ide && bun test src/learn/deviceTraceRecorder.test.ts`
   - firmware/tests/io_trace (native_sim): `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
 - **Only silicon:** a trace from a real board: no such trace exists yet and the tolerances are derived, not measured
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### LRN-013.06 Learn never connects, deploys, runs, stops, forces or flashes by itself
 
@@ -1028,7 +1054,7 @@ There are 116 scenarios.
 - **Simulation:**
   - LearnBoardLesson.test.tsx: the check on the board waits for the learner (LRN-015, LRN-024): `cd packages/zplc-ide && bun test src/components/LearnBoardLesson.test.tsx`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ## LRN-024 Hardware check, labelled apart
 
@@ -1042,7 +1068,7 @@ There are 116 scenarios.
 - **Simulation:**
   - packages/zplc-ide/src/learn/boardCheck.test.ts: `cd packages/zplc-ide && bun test src/learn/boardCheck.test.ts`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### LRN-024.02 The scenario is aligned on what the learner did
 
@@ -1054,7 +1080,7 @@ There are 116 scenarios.
 - **Simulation:**
   - packages/zplc-ide/src/learn/boardCheck.test.ts: `cd packages/zplc-ide && bun test src/learn/boardCheck.test.ts`
 - **Only silicon:** human reaction timing, which only a person on a bench shows
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### LRN-024.03 The tolerance the lesson declares is applied, with the polling widening
 
@@ -1067,7 +1093,7 @@ There are 116 scenarios.
   - packages/zplc-ide/src/learn/boardCheck.test.ts: `cd packages/zplc-ide && bun test src/learn/boardCheck.test.ts`
   - deviceTraceRecorder.test.ts: `cd packages/zplc-ide && bun test src/learn/deviceTraceRecorder.test.ts`
 - **Only silicon:** the 10 ms jitter margin and the 1 ms timestamp resolution are derived, not measured; scan jitter on silicon (HIL-010) would confirm them
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### LRN-024.04 The device trace is read without changing the program
 
@@ -1080,7 +1106,7 @@ There are 116 scenarios.
   - firmware/tests/io_trace (native_sim): `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
   - packages/zplc-ide/src/learn/deviceTraceNative.test.ts: `cd packages/zplc-ide && bun test src/learn/deviceTraceNative.test.ts`
 - **Only silicon:** the cost of the trace hook in the scan time on the real chip
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### LRN-024.05 A failed check names the assertion, time, expected and observed values and the sample
 
@@ -1092,7 +1118,7 @@ There are 116 scenarios.
 - **Simulation:**
   - packages/zplc-ide/src/components/LearnBoardLesson.test.tsx: `cd packages/zplc-ide && bun test src/components/LearnBoardLesson.test.tsx`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### LRN-024.06 A pass on the board is labelled Passed on hardware and kept apart from a simulation pass
 
@@ -1100,12 +1126,12 @@ There are 116 scenarios.
 - **Given:** a passing board check
 - **When:** progress is saved
 - **Then:** the grade is kept as a hardware grade with the program hash and the ZPLC version the board reported; it does not pass a lesson gradeable in simulation, a simulation pass is not a hardware pass, and verify-my-board is the one exception
-- **Code:** `packages/zplc-ide/electron/learnProgressModel.ts:166` parseGradeRecord; `packages/zplc-ide/electron/learnProgressModel.ts:251` parseProgressValue; `packages/zplc-ide/src/components/LearnBoardTrack.tsx`
+- **Code:** `packages/zplc-ide/shared/learnProgressModel.ts:166` parseGradeRecord; `packages/zplc-ide/shared/learnProgressModel.ts:251` parseProgressValue; `packages/zplc-ide/src/components/LearnBoardTrack.tsx`
 - **Simulation:**
-  - packages/zplc-ide/electron/learnProgressModel.test.ts: `cd packages/zplc-ide && bun test electron/learnProgressModel.test.ts`
+  - packages/zplc-ide/shared/learnProgressModel.test.ts: `cd packages/zplc-ide && bun test shared/learnProgressModel.test.ts`
   - LearnBoardTrack.test.tsx: `cd packages/zplc-ide && bun test src/components/LearnBoardTrack.test.tsx`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### LRN-024.07 Every string of the hardware track exists in English and Spanish
 
@@ -1117,7 +1143,7 @@ There are 116 scenarios.
 - **Simulation:**
   - LearnBoardTrack.test.tsx: LRN-024 has every string of the hardware track in English and Spanish: `cd packages/zplc-ide && bun test src/components/LearnBoardTrack.test.tsx`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ## RT-025 RETAIN across a power cycle
 
@@ -1132,7 +1158,7 @@ There are 116 scenarios.
   - firmware/tests/retain_persist: test_stop_stores_and_load_restores, test_stop_of_an_unchanged_region_writes_nothing: `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
   - firmware/lib/zplc_core/tests/test_retain.c: `bun run test:core  (ctest --test-dir build/core-sanitized -R test_retain)`
 - **Only silicon:** real flash behaviour: erase and program time, a cut in the middle of a sector, wear and retention
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### RT-025.02 RETAIN is saved periodically while running, not faster than the minimum interval
 
@@ -1144,7 +1170,7 @@ There are 116 scenarios.
 - **Simulation:**
   - firmware/tests/retain_persist: test_periodic_save_respects_the_minimum_interval: `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
 - **Only silicon:** whether a real flash write stalls the scan (not measured on any board; docs/docs/runtime/persistence.md)
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### RT-025.03 Each record carries magic, sequence, program identity, layout hash and checksum
 
@@ -1156,7 +1182,7 @@ There are 116 scenarios.
 - **Simulation:**
   - firmware/lib/zplc_core/tests/test_retain.c: RT-025 a record carries a magic, a sequence, the program identity, the layout hash and a checksum: `bun run test:core  (ctest --test-dir build/core-sanitized -R test_retain)`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### RT-025.04 Two records alternate
 
@@ -1169,7 +1195,7 @@ There are 116 scenarios.
   - firmware/lib/zplc_core/tests/test_retain.c: `bun run test:core  (ctest --test-dir build/core-sanitized -R test_retain)`
   - firmware/tests/retain_persist: `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
 - **Only silicon:** a power cut at the instant of the slot write on real flash
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### RT-025.05 A record is restored only when identity and layout match; otherwise the region is initialised and the status says why
 
@@ -1183,7 +1209,7 @@ There are 116 scenarios.
   - firmware/lib/zplc_core/tests/test_retain.c: `bun run test:core  (ctest --test-dir build/core-sanitized -R test_retain)`
   - firmware/lib/zplc_core/tests/test_native_runtime_session.c RT-025, RT-027: `bun run test:core  (ctest --test-dir build/core-sanitized -R test_native_runtime_session)`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### RT-025.06 RETAIN survives a power cycle on the Raspberry Pi Pico
 
@@ -1196,7 +1222,7 @@ There are 116 scenarios.
   - emulated Pico HIL image: 102 before and after (hil-emulation.md): `bash tools/hil/emulator/setup.sh; tools/hil/emulator/build.sh pico; python3 tools/hil/run_chain.py rpi_pico --bench emulated`
   - tools/hil/check_storage_partitions.py: `python3 tools/hil/check_storage_partitions.py`
 - **Only silicon:** real flash behaviour: erase and program time, a cut in the middle of a sector, wear and retention
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### RT-025.07 RETAIN survives a power cycle on the ESP32-S3
 
@@ -1208,7 +1234,7 @@ There are 116 scenarios.
 - **Simulation:**
   - emulated ESP32-S3 HIL image: 16 before and after (hil-emulation.md): `bash tools/hil/emulator/setup.sh; tools/hil/emulator/build.sh esp32s3; python3 tools/hil/run_chain.py esp32s3_devkitc --bench emulated`
 - **Only silicon:** real flash behaviour: erase and program time, a cut in the middle of a sector, wear and retention
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### RT-025.08 The other shipped boards have a storage partition for the records and the option is a documented state
 
@@ -1220,7 +1246,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/hil/check_storage_partitions.py: `python3 tools/hil/check_storage_partitions.py`
 - **Only silicon:** flash behaviour of each board's flash controller, none of which has been measured
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ## LNG-004 Breakpoints on source elements
 
@@ -1235,7 +1261,7 @@ There are 116 scenarios.
   - packages/zplc-ide/src/compiler/debugElements.test.ts: LNG-004 the debug map of an IL program names IL lines: `cd packages/zplc-ide && bun test src/compiler/debugElements.test.ts`
   - elementBreakpoints.test.ts: a breakpoint on an IL line is the line of the IL source: `cd packages/zplc-ide && bun test src/editors/elementBreakpoints.test.ts`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### LNG-004.02 A breakpoint on a Ladder rung
 
@@ -1247,7 +1273,7 @@ There are 116 scenarios.
 - **Simulation:**
   - debugElements.test.ts: LNG-004 the debug map of a Ladder diagram names rungs and cells: `cd packages/zplc-ide && bun test src/compiler/debugElements.test.ts`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### LNG-004.03 A breakpoint on an FBD block
 
@@ -1259,7 +1285,7 @@ There are 116 scenarios.
 - **Simulation:**
   - debugElements.test.ts: LNG-004 the debug map of an FBD diagram names blocks: `cd packages/zplc-ide && bun test src/compiler/debugElements.test.ts`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### LNG-004.04 A breakpoint on an SFC step and on an SFC transition
 
@@ -1272,7 +1298,7 @@ There are 116 scenarios.
   - debugElements.test.ts: LNG-004 the debug map of an SFC chart names steps and transitions: `cd packages/zplc-ide && bun test src/compiler/debugElements.test.ts`
   - packages/zplc-ide/src/transpiler/sourceMap.test.ts: LNG-004 and LNG-026 the SFC source map: `cd packages/zplc-ide && bun test src/transpiler/sourceMap.test.ts`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### LNG-004.05 Execution stops at the element in simulation
 
@@ -1284,7 +1310,7 @@ There are 116 scenarios.
 - **Simulation:**
   - debugElementsRuntime.test.ts: LNG-004 a breakpoint on an element stops the VM at the element: `cd packages/zplc-ide && bun test src/compiler/debugElementsRuntime.test.ts  (needs ZPLC_NATIVE_SIM_BIN)`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### LNG-004.06 The breakpoint is armed on a board by program counter and stops the scheduler
 
@@ -1296,20 +1322,20 @@ There are 116 scenarios.
 - **Simulation:**
   - firmware/tests/scheduler_run_control (native_sim): `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
 - **Only silicon:** a stop on a real chip over the serial link; the board path has no hardware run
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### LNG-004.07 A paused or breakpointed board keeps its watchdog fed and its outputs defined
 
 - **Boards:** Raspberry Pi Pico, ESP32-S3-DevKitC-1
 - **Given:** a profile with the hardware watchdog on and pause=feed (boards.json watchdog.pause)
 - **When:** a breakpoint holds the scan longer than the watchdog timeout
-- **Then:** the control path feeds the watchdog, the board does not reset, and the outputs keep the state the paused scan left
+- **Then:** the control path feeds the watchdog, the board does not reset, and the physical outputs are driven to their safe state while the output image of the paused scan is kept (docs/docs/runtime/scheduler.md, the pause section)
 - **Code:** `firmware/lib/zplc_core/src/hal/zephyr/zplc_scheduler_zephyr.c:619` wait under a feeding profile; `firmware/lib/zplc_core/src/core/zplc_failsafe.c:114` zplc_wdt_action; `firmware/lib/zplc_core/src/hal/zephyr/zplc_scheduler_zephyr.c:442` watchdog_policy
 - **Simulation:**
   - firmware/tests/scheduler_watchdog (model of the part, native_sim): `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
   - firmware/lib/zplc_core/tests/test_failsafe.c: `bun run test:core  (ctest --test-dir build/core-sanitized -R test_failsafe)`
 - **Only silicon:** the real watchdog counter: its true timeout tolerance, and that the pins really fall to the safe level while the chip resets
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### LNG-004.08 A breakpoint follows its element from build to build
 
@@ -1321,7 +1347,7 @@ There are 116 scenarios.
 - **Simulation:**
   - elementBreakpoints.test.ts: LNG-004 a breakpoint on an element is armed at the element and follows it from build to build: `cd packages/zplc-ide && bun test src/editors/elementBreakpoints.test.ts`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ## IO-006 Analog input and output
 
@@ -1336,7 +1362,7 @@ There are 116 scenarios.
   - firmware/tests/io_analog (ADC emulator): `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
   - emulated Pico bench: injection on ADC0..4 (a defect of rp2040js was fixed, hil-emulation.md): `bash tools/hil/emulator/setup.sh; tools/hil/emulator/build.sh pico; python3 tools/hil/run_chain.py rpi_pico --bench emulated`
 - **Only silicon:** converter accuracy, offset, gain and noise of the real RP2040 ADC
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### IO-006.02 Raspberry Pi Pico AI3 reports VSYS/3 and AI4 the temperature sensor with the documented formula
 
@@ -1348,7 +1374,7 @@ There are 116 scenarios.
 - **Simulation:**
   - firmware/tests/io_analog: `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
 - **Only silicon:** the temperature sensor's chip-to-chip spread and its real accuracy
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### IO-006.03 ESP32-S3 AI0 scaling is documented and read
 
@@ -1361,7 +1387,7 @@ There are 116 scenarios.
   - firmware/tests/io_analog: `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
   - emulated ESP32-S3: not emulable (no SAR ADC): none yet
 - **Only silicon:** eFuse calibration of the individual chip and nonlinearity near both ends
-- **Verdict:** not judged yet
+- **Verdict:** cannot be judged in software
 
 ### IO-006.04 A board whose description lists no analog channel does not offer one
 
@@ -1374,7 +1400,7 @@ There are 116 scenarios.
   - firmware/tests/io_table, io_analog: `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
   - tools/hil/test_board_io_description.py: `python3 -B tools/hil/test_board_io_description.py`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### IO-006.05 An analog output is absent from every description
 
@@ -1387,7 +1413,7 @@ There are 116 scenarios.
   - firmware/tests/io_table: `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
   - tools/hil/test_board_io_description.py: `python3 -B tools/hil/test_board_io_description.py`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### IO-006.06 The analog scaling is documented where the learner reads it
 
@@ -1399,7 +1425,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/docs/generate_board_reference.py: `python3 tools/docs/generate_board_reference.py --check`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ## COM-016 TLS and the random generator
 
@@ -1413,7 +1439,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/firmware-test/test_comm_rules.py TlsRandomRule: `python3 -B tools/firmware-test/test_comm_rules.py`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### COM-016.02 The rule fires in the application build
 
@@ -1425,7 +1451,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/firmware-test/test_fwtest.py: `python3 -B tools/firmware-test/test_fwtest.py`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### COM-016.03 Nucleo-H743ZI and Opta use a hardware entropy source
 
@@ -1437,7 +1463,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/firmware-test/test_comm_rules.py: `python3 -B tools/firmware-test/test_comm_rules.py`
 - **Only silicon:** that the STM32 RNG really is random on the board (HIL-011): its entropy quality and health tests
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### COM-016.04 TLS is off on those two boards and the documentation says so
 
@@ -1445,11 +1471,11 @@ There are 116 scenarios.
 - **Given:** the two board configs and the docs
 - **When:** they are read
 - **Then:** CONFIG_MQTT_LIB_TLS, CONFIG_NET_SOCKETS_SOCKOPT_TLS and CONFIG_TLS_CREDENTIALS are n; connectivity.md and safety-and-limitations.md state it; a TLS transport is refused, not downgraded
-- **Code:** `firmware/app/boards/nucleo_h743zi.conf:86-103`; `firmware/app/boards/arduino_opta_stm32h747xx_m7.conf:89-106`; `docs/docs/runtime/connectivity.md:80`; `docs/docs/safety-and-limitations.md:103`; `firmware/app/src/shell_cmds.c:4583`
+- **Code:** `firmware/app/boards/nucleo_h743zi.conf:86-103`; `firmware/app/boards/arduino_opta_stm32h747xx_m7.conf:89-106`; `docs/docs/runtime/connectivity.md:80`; `docs/docs/safety-and-limitations.md:103`; `firmware/app/src/zplc_mqtt.c:653-658`
 - **Simulation:**
   - firmware/tests/tls_credentials: `ZPLC_FW_WS=<private view> bash tools/firmware-test/run.sh native`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### COM-016.05 Before GA the two boards have TLS on again with a verified hardware source
 
@@ -1461,7 +1487,7 @@ There are 116 scenarios.
 - **Simulation:**
   - none for TLS on: the build passes the rule only with a cryptographic source: none yet
 - **Only silicon:** everything: the generator verification and a TLS session on the real Nucleo and Opta need those boards (HIL-011)
-- **Verdict:** not judged yet
+- **Verdict:** should not pass
 
 ## DOC-004 First board and build from source
 
@@ -1475,7 +1501,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/docs/install_and_status_pages.test.ts: first board page: `bun test tools/docs/install_and_status_pages.test.ts`
 - **Only silicon:** that each step works on a real Pico: the page states that nobody has executed it
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### DOC-004.02 A First board tutorial exists for the ESP32-S3
 
@@ -1487,7 +1513,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/docs/install_and_status_pages.test.ts: `bun test tools/docs/install_and_status_pages.test.ts`
 - **Only silicon:** that each step works on a real ESP32-S3, including esptool and the download-mode caveat
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### DOC-004.03 The tutorial is written from the board manifest
 
@@ -1499,7 +1525,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/docs/install_and_status_pages.test.ts: `bun test tools/docs/install_and_status_pages.test.ts`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### DOC-004.04 The tutorial is honest about what has been executed
 
@@ -1511,7 +1537,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/docs/check_doc_claims.ts: `bun tools/docs/check_doc_claims.ts`
 - **Only silicon:** the requirement asks for a tutorial that works; only a person following it on a board can show that
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### DOC-004.05 Build firmware from source uses the script CI runs
 
@@ -1523,7 +1549,7 @@ There are 116 scenarios.
 - **Simulation:**
   - tools/firmware-test/test_fwtest.py: `python3 -B tools/firmware-test/test_fwtest.py`
 - **Only silicon:** a Zephyr build on the author's machine: the page says the Zephyr builds were not run while writing it
-- **Verdict:** not judged yet
+- **Verdict:** should pass
 
 ### DOC-004.06 Both pages exist in English and Spanish
 
@@ -1535,4 +1561,4 @@ There are 116 scenarios.
 - **Simulation:**
   - docs parity validation: `bun run docs:validate; bun run check:docs`
 - **Only silicon:** nothing beyond the software; the verdict is complete in software
-- **Verdict:** not judged yet
+- **Verdict:** should pass
