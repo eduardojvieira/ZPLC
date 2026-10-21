@@ -6,6 +6,7 @@ import type { ZPLCProjectConfig } from '../../types';
 const dom = await setupDom();
 await stubProjectLoader();
 const { TasksSection } = await import('./TasksSection');
+const { useIDEStore } = await import('../../store/useIDEStore');
 
 const task = { name: 'Fast', trigger: 'cyclic' as const, interval: 10, priority: 3, programs: [] };
 
@@ -51,6 +52,7 @@ describe('Task configuration (UX-013) in a DOM', () => {
   });
 
   it('warns when there is no program to choose from', () => {
+    dom.patchStore(useIDEStore, { fileTree: null }); // the store is shared by the files of one run
     dom.render(<SectionHost Section={TasksSection} initial={{ tasks: [task] }} />);
     expect(dom.screen.getByText(dom.t('settings.tasks.noPrograms'))).toBeTruthy();
   });
