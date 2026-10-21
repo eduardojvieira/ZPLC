@@ -18,6 +18,12 @@
       "options": {
         "parser": "mdx"
       }
+    },
+    {
+      "files": "*.css",
+      "options": {
+        "singleQuote": false
+      }
     }
   ]
 }

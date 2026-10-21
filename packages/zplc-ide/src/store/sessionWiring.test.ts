@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { compactSource } from '../i18n/inlineMessages';
 
-const source = (...parts: string[]) => readFileSync(join(import.meta.dir, '..', ...parts), 'utf8');
+const source = (...parts: string[]) => compactSource(readFileSync(join(import.meta.dir, '..', ...parts), 'utf8'));
 const editor = source('components', 'CodeEditor.tsx');
 // the app starts the saving; the workbench shell, which App renders, holds the split
 const app = source('App.tsx') + source('shell', 'WorkbenchShell.tsx');

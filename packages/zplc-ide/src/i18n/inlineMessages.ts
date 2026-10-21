@@ -14,3 +14,17 @@ export function withEnglishMessages(source: string): string {
     .replace(/\{tn?\('([\w.]+)'[^()]*(?:\([^()]*\)[^()]*)*\)\}/g, (_, key: string) => text(key))
     .replace(/\btn?\('([\w.]+)'(?:, [^()]*(?:\([^()]*\)[^()]*)*)?\)/g, (_, key: string) => text(key));
 }
+
+/**
+ * For the same tests, the source laid out by a formatter (VF-017) read as the one-line form their assertions state: runs of
+ * white space are one space, a trailing comma before a closing bracket is gone, and a space stays inside braces only.
+ */
+export function compactSource(source: string): string {
+  return source
+    .replace(/(['"`])\s*\+\s*\1/g, '')
+    .replace(/\s+/g, ' ')
+    .replace(/,\s*([)\]])/g, '$1')
+    .replace(/,\s*\}/g, ' }')
+    .replace(/([([])\s+/g, '$1')
+    .replace(/\s+([)\]])/g, '$1');
+}

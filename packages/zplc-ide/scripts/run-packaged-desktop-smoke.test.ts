@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'bun:test';
 import { discoverPackagedExecutable, installedExecutable } from './run-packaged-desktop-smoke';
+import { compactSource } from '../src/i18n/inlineMessages';
 
 function unpacked(root: string, platform: NodeJS.Platform, name: string): string {
   const directory = platform === 'darwin'
@@ -104,7 +105,7 @@ test('release runs the packaged launch smoke in every native matrix lane', () =>
 
 test('desktop smoke exercises real renderer accessibility and packaged isolation', () => {
   const developmentSmoke = readFileSync(join(import.meta.dir, 'run-desktop-smoke.ts'), 'utf8');
-  const packagedSmoke = readFileSync(join(import.meta.dir, 'run-packaged-desktop-smoke.ts'), 'utf8');
+  const packagedSmoke = compactSource(readFileSync(join(import.meta.dir, 'run-packaged-desktop-smoke.ts'), 'utf8'));
 
   expect(developmentSmoke).toContain("Emulation.setEmulatedMedia");
   expect(developmentSmoke).toContain("prefers-reduced-motion");

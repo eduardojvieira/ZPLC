@@ -3,10 +3,11 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 
 import { en } from '../i18n/en';
+import { compactSource } from '../i18n/inlineMessages';
 
 describe('Sidebar migration disclosure', () => {
   it('keeps the migration notice read-only and discoverable in the lower Explorer ledger tab, with the difference in a dialog of its own', () => {
-    const source = readFileSync(join(import.meta.dir, 'Sidebar.tsx'), 'utf8');
+    const source = compactSource(readFileSync(join(import.meta.dir, 'Sidebar.tsx'), 'utf8'));
 
     // The texts are in the catalog (UX-029); the explorer writes them through t().
     expect(en['explorer.migration.heading']).toBe('Migration preview');
@@ -26,14 +27,14 @@ describe('Sidebar migration disclosure', () => {
 
   // Fails without the FileNameTakenError branch in the New File dialog: the dialog showed the generic "Could not create the file" text.
   it('shows the reason when New File refuses a name that is taken, instead of the generic failure text', () => {
-    const source = readFileSync(join(import.meta.dir, 'Sidebar.tsx'), 'utf8');
+    const source = compactSource(readFileSync(join(import.meta.dir, 'Sidebar.tsx'), 'utf8'));
 
     expect(source).toContain('error instanceof FileNameTakenError');
     expect(source).toContain("from '../utils/fileSystem'");
   });
 
   it('keeps a failed new-file creation visible and accessible', () => {
-    const source = readFileSync(join(import.meta.dir, 'Sidebar.tsx'), 'utf8');
+    const source = compactSource(readFileSync(join(import.meta.dir, 'Sidebar.tsx'), 'utf8'));
 
     // The error goes to the kit's TextField, whose Field announces it (role="alert"), marks the input invalid and describes it
     // (aria-invalid, aria-describedby): ui/kit.test.tsx proves those, so the dialog only has to hand the message over.

@@ -6,8 +6,9 @@ import { en } from '../i18n/en';
 import { LESSON_INDEX } from '../generated/lessonIndex';
 import { courseOrder } from '../learn/course';
 import { learnLessonCatalog } from './learnLesson';
+import { compactSource } from '../i18n/inlineMessages';
 
-const source = readFileSync(join(import.meta.dir, 'WelcomeScreen.tsx'), 'utf8');
+const source = compactSource(readFileSync(join(import.meta.dir, 'WelcomeScreen.tsx'), 'utf8'));
 
 describe('Welcome screen contract', () => {
   it('offers only folder-backed project starts: Open, New and Learn in one row, then the examples', () => {
