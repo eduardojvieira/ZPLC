@@ -28,7 +28,7 @@ describe('Function block diagram editor in a browser (VF-007, LNG-012)', () => {
     await app.axNode('region', t('editors.fbd.canvas'));
     await app.axNode('toolbar', t('workbench.editor.history'));
     for (const [kind, name] of [['variable', 'LED_Output'], ['NOT', 'not_led'], ['TON', 'OffTimer'], ['TON', 'OnTimer'], ['OR', 'or_set_or_hold'], ['output', 'LED_Output']] as const) await app.axNode('group', label(kind, name));
-    expect(await app.eval('document.querySelectorAll(".react-flow__node").length')).toBe(9);
+    expect(await app.eval<number>('document.querySelectorAll(".react-flow__node").length')).toBe(9);
     await select(app, 'ton_off');
     expect(await selected(app)).toEqual(['ton_off']);
     expect((await app.focused())?.name).toBe(label('TON', 'OffTimer'));
@@ -59,7 +59,7 @@ describe('Function block diagram editor in a browser (VF-007, LNG-012)', () => {
     await app.until('the block in the file', `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return JSON.parse(s.loadedFiles.get(s.activeFileId).content).blocks.length === 10; })`);
     const diagram = await openDocument<Diagram>(app);
     expect(diagram.blocks.filter((block) => block.type === 'variable' && block.variableName === 'LED_Output')).toHaveLength(2);
-    expect(await app.eval('document.querySelectorAll(".react-flow__node").length')).toBe(10);
+    expect(await app.eval<number>('document.querySelectorAll(".react-flow__node").length')).toBe(10);
   });
 
   test('i opens the block palette, typing filters it, and Enter inserts the chosen block next to the selection', async () => {
@@ -109,7 +109,7 @@ describe('Function block diagram editor in a browser (VF-007, LNG-012)', () => {
     const added = blocks.find((id) => !['var_led_read', 'not_led', 'const_500ms', 'ton_off', 'ton_on', 'not_on_done', 'or_set_or_hold', 'and_run', 'output_led'].includes(id))!;
     await app.drag(await handleCentre(app, 'ton_on', 'Q'), await handleCentre(app, added, 'IN1'));
     await app.until('the wire in the file', `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return JSON.parse(s.loadedFiles.get(s.activeFileId).content).connections.some((w) => w.from.block === 'ton_on' && w.from.port === 'Q' && w.to.port === 'IN1' && w.to.block !== 'not_on_done'); })`);
-    expect(await app.eval('document.querySelectorAll(".react-flow__edge").length')).toBe(12);
+    expect(await app.eval<number>('document.querySelectorAll(".react-flow__edge").length')).toBe(12);
   });
 
   test('Delete removes the selected block with its wires and the Undo button of the toolbar gives them back', async () => {

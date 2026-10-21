@@ -23,7 +23,7 @@ async function clickCell(app: BrowserApp, rung: string, row: number, col: number
 
 const rungsOf = (app: BrowserApp): Promise<Array<{ id: string; comment: string; elements: string[] }>> => app.eval(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return JSON.parse(s.loadedFiles.get(s.activeFileId).content).rungs.map((r) => ({ id: r.id, comment: r.comment ?? '', elements: r.grid.flat().filter((c) => c.element).map((c) => c.element.type + '/' + (c.element.variable ?? '')) })); })`);
 const waitCursor = (app: BrowserApp, at: string) => app.until('the cursor on ' + at, `document.querySelector('[data-ld-cursor-at]')?.getAttribute('data-ld-cursor-at') === '${at}'`);
-const SELECT = (kind: string, name: string) => `Select ${t(`ld.kind.${kind}`)} ${name}`;
+const SELECT = (kind: 'contact_nc' | 'contact_no' | 'coil_set', name: string) => `Select ${t(`ld.kind.${kind}` as const)} ${name}`;
 
 describe('Ladder editor in a browser (VF-007, LNG-012)', () => {
   test('clicking an empty cell puts the cursor there and keeps the focus on the editor, not on the rung comment', async () => {

@@ -30,7 +30,7 @@ describe('Sequential function chart editor in a browser (VF-007, LNG-012)', () =
     await app.axNode('group', t('a11y.sfc.step', { name: 'LED_ON' }));
     await app.axNode('group', t('a11y.sfc.step', { name: 'LED_OFF' }));
     await app.axNode('group', t('a11y.sfc.transition', { condition: 'step_led_on.T >= T#500ms' }));
-    expect(await app.eval('document.querySelectorAll(".react-flow__node").length')).toBe(4);
+    expect(await app.eval<number>('document.querySelectorAll(".react-flow__node").length')).toBe(4);
     await select(app, 'step_led_off');
     expect(await selected(app)).toEqual(['step_led_off']);
     expect((await app.focused())?.name).toBe(t('a11y.sfc.step', { name: 'LED_OFF' }));

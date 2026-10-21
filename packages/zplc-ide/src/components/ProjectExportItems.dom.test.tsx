@@ -55,7 +55,7 @@ describe('Project export items in a DOM (VF-007, IDE-022)', () => {
     const { user } = dom.render(<div role="menu"><ProjectExportItems /></div>);
     await user.click(dom.screen.getByRole('menuitem', { name: dom.t('workbench.export.projectLabel') }));
     await dom.waitFor(() => expect(anchors).toEqual(['plant.zplc.json']));
-    const exported = JSON.parse(await blobs[0]!.text()) as { files: Array<{ path: string; content: string }>; config: { name: string }; redactedPaths: string[] };
+    const exported = JSON.parse(await blobs[0]!.text()) as { files: Array<{ name: string; path: string; language: string; content: string }>; config: { name: string }; redactedPaths: string[] };
     expect(exported.files).toEqual([{ name: 'main.st', path: 'src/main.st', language: 'ST', content: FILE.content }]);
     expect(exported.config.name).toBe('plant');
     expect(Array.isArray(exported.redactedPaths)).toBe(true);

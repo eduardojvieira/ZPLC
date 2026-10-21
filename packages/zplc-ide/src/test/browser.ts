@@ -29,7 +29,9 @@ function parseChord(chord: string): { modifiers: number; key: string } {
 }
 
 export class BrowserApp {
-  constructor(readonly cdp: Cdp, readonly url: string) {}
+  readonly cdp: Cdp;
+  readonly url: string;
+  constructor(cdp: Cdp, url: string) { this.cdp = cdp; this.url = url; }
 
   eval<T = unknown>(expression: string): Promise<T> { return this.cdp.evaluate(expression) as Promise<T>; }
 
