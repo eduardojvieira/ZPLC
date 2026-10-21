@@ -17,6 +17,18 @@ export const CLANG_FILE = /\.(?:c|h)$/;
 /** The line-length guard reads these: hand-written source code, not data (JSON) and not prose (Markdown). */
 export const GUARDED_FILE = /\.(?:ts|tsx|js|mjs|cjs|css|c|h)$/;
 
+/**
+ * Files that are formatted but not held to the limit, each with its reason. A message of the interface catalogs is one
+ * string literal whose type the translator reads (`ParamNames` of src/i18n/translate.ts takes the `{name}` placeholders
+ * from it), so cutting it in two would turn it into `string` and lose the check of every `t(key, { name })` call. Like a
+ * paragraph of Markdown, a message is prose, and it is shown to a person whole.
+ */
+export const LINE_LENGTH_EXEMPT: ReadonlyArray<{ pattern: RegExp; reason: string }> = [
+  { pattern: /^packages\/zplc-ide\/src\/i18n\/catalog\/[^/]+\.ts$/, reason: 'a catalog message is a literal type that t() reads' },
+];
+
+export const isLengthExempt = (file: string): boolean => LINE_LENGTH_EXEMPT.some(({ pattern }) => pattern.test(file));
+
 /** Every tracked file that .prettierignore does not exclude, in repository order. */
 export async function formattableFiles(root: string = ROOT): Promise<string[]> {
   const run = spawnSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });

@@ -17,7 +17,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import ts from 'typescript';
 
-import { ROOT, formattableFiles } from './format-files';
+import { ROOT, formattableFiles, isLengthExempt } from './format-files';
 import { LIMIT } from './line-length-guard';
 
 const CODE_FILE = /\.(?:ts|tsx|js|mjs|cjs)$/;
@@ -220,7 +220,10 @@ export function wrapText(file: string, text: string, limit: number = LIMIT): str
         if (DIRECTIVE.test(body) || /\S {3,}\S/.test(body)) return;
         const lead = `${indent} * `;
         const wrapped = wrapWords(body.split(/\s+/).filter(Boolean), lead, lead);
-        edits.push({ start: lineStart, end: lineEnd, text: [`${indent}/**`, ...wrapped, `${indent} */`].join('\n') });
+        // the code after a one-line comment (`/** note */ field: string`) goes on the next line, not away
+        const rest = text.slice(comment.end, lineEnd).trim();
+        const block = [`${indent}/**`, ...wrapped, `${indent} */`, ...(rest === '' ? [] : [`${indent}${rest}`])];
+        edits.push({ start: lineStart, end: lineEnd, text: block.join('\n') });
         return;
       }
       if (comment.pos < lineStart) {
@@ -293,6 +296,7 @@ export function wrapText(file: string, text: string, limit: number = LIMIT): str
 
 /** Wraps a file until it no longer changes (a cut line can still be long); returns the new text. */
 export function wrapFile(file: string, text: string, limit: number = LIMIT): string {
+  if (isLengthExempt(file)) return text;
   let current = text;
   for (let pass = 0; pass < 8; pass += 1) {
     const next = wrapText(file, current, limit);

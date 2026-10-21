@@ -4,12 +4,12 @@
 //
 // Prettier and clang-format wrap code at LIMIT columns, but neither breaks a long string literal or re-wraps a
 // comment, so this guard is the other half of the rule. It reads the TypeScript, JavaScript, CSS, C and header
-// files that tools/ci/format-files.ts selects. JSON is data and Markdown is prose: both are formatted, neither is
-// held to the limit (a JSON string and a paragraph cannot be wrapped without changing what they say).
+// files that tools/ci/format-files.ts selects, except the ones it lists as exempt. JSON is data and Markdown is prose:
+// both are formatted, neither is held to the limit (a JSON string and a paragraph cannot be wrapped without changing what they say).
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { GUARDED_FILE, ROOT, formattableFiles } from './format-files';
+import { GUARDED_FILE, ROOT, formattableFiles, isLengthExempt } from './format-files';
 
 /** The one number: keep it equal to printWidth in .prettierrc.json and ColumnLimit in .clang-format. */
 export const LIMIT = 140;
@@ -43,7 +43,7 @@ export function longLines(
 
 /** The offenders of every guarded file, or of the files named. */
 export async function offenders(files?: string[]): Promise<Offender[]> {
-  const named = files ?? (await formattableFiles()).filter((file) => GUARDED_FILE.test(file));
+  const named = files ?? (await formattableFiles()).filter((file) => GUARDED_FILE.test(file) && !isLengthExempt(file));
   return named.flatMap((file) =>
     longLines(readFileSync(resolve(ROOT, file), 'utf8'), LIMIT, /\.(?:c|h)$/.test(file)).map(({ line, length }) => ({ file, line, length })),
   );
