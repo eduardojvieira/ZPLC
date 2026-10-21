@@ -314,10 +314,6 @@ describe('the committed evidence (VF-027)', () => {
     expect(ids.filter((id) => states.get(id) === 'covered')).toEqual([]);
   };
 
-  it('gates the requirements that only a run on a physical board can meet, so that no test or comment covers them', () => {
-    expectGated(['HIL-001', 'HIL-002', 'HIL-005', 'HIL-010', 'HIL-012', 'HIL-014', 'HIL-015', 'LRN-013', 'LRN-024', 'RT-025', 'LNG-004']);
-  });
-
   it('gates the requirements that need a hosted run, another operating system, a person or a decision of the owner', () => {
     expectGated(['IDE-027', 'HIL-007', 'REL-030', 'REL-036', 'REL-022', 'VF-014', 'REL-016', 'LRN-037']);
   });
@@ -327,6 +323,18 @@ describe('the committed evidence (VF-027)', () => {
     const accepted = (evidence['LRN-012'] ?? []).filter((check) => check.kind === 'manual' && /Owner decision \d{4}-\d{2}-\d{2}/.test(check.note ?? ''));
     expect(accepted.length).toBeGreaterThan(0);
     expect((evidence['LRN-012'] ?? []).some((check) => check.kind === 'gate')).toBe(false);
+  });
+
+  it('closes the requirements that needed a physical board through the software review the owner accepted instead (2026-10-20)', () => {
+    // Every scenario of these requirements is should_pass, or cannot_judge_in_software for a named silicon fact
+    // (tools/hil/software-review/verdicts.json). COM-016 is not here: COM-016.05 still should not pass.
+    const closed = ['HIL-001', 'HIL-002', 'HIL-005', 'HIL-010', 'HIL-012', 'HIL-014', 'HIL-015', 'LRN-013', 'LRN-024', 'RT-025', 'LNG-004', 'IO-006', 'DOC-004'];
+    for (const id of closed) {
+      const accepted = (evidence[id] ?? []).filter((check) => check.kind === 'manual' && /^Owner decision 2026-10-20:/.test(check.note ?? '') && /no physical bench run is recorded/.test(check.note ?? ''));
+      expect({ id, accepted: accepted.length }).toEqual({ id, accepted: 1 });
+      expect({ id, gate: (evidence[id] ?? []).some((check) => check.kind === 'gate') }).toEqual({ id, gate: false });
+    }
+    expect((evidence['COM-016'] ?? []).some((check) => check.kind === 'manual' && /Owner decision/.test(check.note ?? ''))).toBe(false);
   });
 
   it('lists every gated requirement with the evidence its gate still asks for', () => {
