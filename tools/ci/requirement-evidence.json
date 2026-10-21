@@ -31,7 +31,7 @@
     {"kind":"unit","ref":"tools/ci/dom-render-coverage.test.ts","test":"DOM render coverage guard: the kit, the isolation and the evidence note (VF-007)"},
     {"kind":"unit","ref":"tools/ci/dom-render-coverage.test.ts","test":"DOM render coverage guard: the spec table (VF-007)"},
     {"kind":"unit","ref":"tools/ci/dom-render-coverage.test.ts","test":"DOM render coverage guard: this repository (VF-007)"},
-    {"kind":"gate","ref":"tools/ci/dom-render-surfaces.json","test":"10 surfaces remain without a render test in a DOM","note":"10 surfaces remain without a render test in a DOM: the Structured Text, Instruction List, Ladder, FBD and SFC editors (Monaco and React Flow need a browser engine that happy-dom does not provide), the Learn panel, the Changes and Trace tabs (only their tab and panel are driven), the Terminal and the project export items. Every kit component and 21 surfaces have *.dom.test.tsx files that run through user events; tools/ci/dom-render-surfaces.json lists each remaining one with its reason and can only shrink."}
+    {"kind":"gate","ref":"tools/ci/dom-render-surfaces.json","test":"\"state\": \"remaining\"","note":"10 surfaces remain without a render test in a DOM: the Structured Text, Instruction List, Ladder, FBD and SFC editors (Monaco and React Flow need a browser engine that happy-dom does not provide), the Learn panel, the Changes and Trace tabs (only their tab and panel are driven), the Terminal and the project export items. Every kit component and 21 surfaces have *.dom.test.tsx files that run through user events; tools/ci/dom-render-surfaces.json lists each remaining one with its reason and can only shrink."}
   ],
   "VF-008": [
     {"kind":"unit","ref":"tools/ci/end-to-end-journeys.test.ts","test":"the end-to-end suite and the journeys of the requirement (VF-008)"},
@@ -1863,6 +1863,7 @@
     {"kind":"c-test","ref":"firmware/tests/comm_safety/src/main.c","test":"COM-027","partial":true,"note":"every setting is stored and read back after a reboot of the configuration on native_sim (HAL NVS on the simulated flash); a board record that a setting survives a power cycle is not made, and the Nucleo-H743ZI cannot mount its store (IO-008)"}
   ],
   "COM-028": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/DeployDialog.dom.test.tsx","test":"Hardware deploy admission and confirmation (COM-028, UX-019) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/deployComparison.test.ts","test":"UX-019 says how the program travels, and that the older text shell does not read it back (COM-028)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/deployFlow.test.ts","test":"COM-028 and UX-019 the deploy goes through the dialog and nowhere else"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/deployFlow.test.ts","test":"COM-028 refuses to write when the project changed while the dialog was open"},
@@ -2472,6 +2473,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"44 The connection indicator, the deploy dialog and the alert dialogs","partial":true}
   ],
   "UX-019": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/DeployDialog.dom.test.tsx","test":"Hardware deploy admission and confirmation (COM-028, UX-019) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/DeployDialog.test.tsx","test":"UX-019 compares the project and the device in a table with a header, row headers and a verdict in words and icon"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/DeployDialog.test.tsx","test":"UX-019 deploy dialog"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/DeployDialog.test.tsx","test":"UX-019 explains a refusal by admission above the table, in an alert"},
