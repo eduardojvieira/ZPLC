@@ -6,7 +6,7 @@ import { findAppBundle, parseCodesignDisplay, verifyMacBundle, type Exec } from 
 
 // These samples follow the documented layout of `codesign -dv --verbose=4`. They were written from that
 // layout, not captured on a macOS runner: the first hosted run is what checks them against the real tool.
-const sealedAdHocApp = (arch: string) => `Executable=/dist/mac-${arch}/ZPLC.app/Contents/MacOS/zplc
+const sealedAdHocApp = (arch: string) => `Executable=/dist/mac-${arch}/ZPLC.app/Contents/MacOS/ZPLC
 Identifier=com.zenithindustrialcloud.zplc
 Format=app bundle with Mach-O thin (${arch})
 CodeDirectory v=20500 size=637 flags=0x10002(adhoc,runtime) hashes=11+7 location=embedded
@@ -34,7 +34,7 @@ Internal requirements count=0 size=12
 const resignedRuntime = linkerSignedRuntime.replace('0x20002(adhoc,linker-signed)', '0x10002(adhoc,runtime)');
 
 // What rc.3 shipped on Apple silicon: only the linker signature on the main executable, nothing sealed.
-const unsealedApp = `Executable=/dist/mac-arm64/ZPLC.app/Contents/MacOS/zplc
+const unsealedApp = `Executable=/dist/mac-arm64/ZPLC.app/Contents/MacOS/ZPLC
 Identifier=zplc
 Format=app bundle with Mach-O thin (arm64)
 CodeDirectory v=20400 size=402 flags=0x20002(adhoc,linker-signed) hashes=9+0 location=embedded
@@ -45,7 +45,7 @@ Sealed Resources=none
 Internal requirements count=0 size=12
 `;
 
-const developerIdApp = `Executable=/dist/mac-arm64/ZPLC.app/Contents/MacOS/zplc
+const developerIdApp = `Executable=/dist/mac-arm64/ZPLC.app/Contents/MacOS/ZPLC
 Identifier=com.zenithindustrialcloud.zplc
 Format=app bundle with Mach-O thin (arm64)
 CodeDirectory v=20500 size=637 flags=0x10000(runtime) hashes=11+7 location=embedded

@@ -442,7 +442,7 @@ jobs:
           app="$install_dir/$(basename "${apps[0]}")"
           ditto "${apps[0]}" "$app"
           codesign --verify --deep --strict "$app"
-          ZPLC_PACKAGED_EXECUTABLE="$app/Contents/MacOS/zplc" bun run smoke:desktop-packaged
+          ZPLC_PACKAGED_EXECUTABLE="$app/Contents/MacOS/ZPLC" bun run smoke:desktop-packaged
           bun ../../tools/ci/release/install-record.ts write --version "$RELEASE_VERSION" --out ../../install-records "${images[0]}"
 
       - name: Unpack the ZIP and launch the application
@@ -461,7 +461,7 @@ jobs:
           apps=("$target"/*.app)
           [ "${#apps[@]}" -eq 1 ] || { echo "Expected exactly one .app in the archive, found ${#apps[@]}"; exit 1; }
           codesign --verify --deep --strict "${apps[0]}"
-          ZPLC_PACKAGED_EXECUTABLE="${apps[0]}/Contents/MacOS/zplc" bun run smoke:desktop-packaged
+          ZPLC_PACKAGED_EXECUTABLE="${apps[0]}/Contents/MacOS/ZPLC" bun run smoke:desktop-packaged
           bun ../../tools/ci/release/install-record.ts write --version "$RELEASE_VERSION" --out ../../install-records "${archives[0]}"
 
       # REL-034, REL-019: the unpacked application holds the example projects, the lessons and the licence notices.
