@@ -9,6 +9,8 @@ takes, and how to send the result.
   Spanish.
 - Be kind: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). Vulnerabilities go to a
   private advisory: [SECURITY.md](SECURITY.md).
+- History is rewritten once for decision D-05 (a schematic and old build trees
+  leave it). Old clones need a reset: [History rewrite](docs/docs/development/history-rewrite.md).
 - How the repository fits together: [ARCHITECTURE.md](ARCHITECTURE.md). The rules
   a change must respect, in plain language: [Engineering principles](docs/docs/contributing/principles.md).
 

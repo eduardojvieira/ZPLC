@@ -1,0 +1,11 @@
+# Paths removed from every commit by tools/history/rewrite-history.sh (DOC-027, decision D-05).
+# One path or glob per line, then " # reason". A trailing "/" removes a directory.
+# A "*" matches across "/" (git-filter-repo --path-glob semantics). Every line needs a reason.
+# Inventory with evidence: docs/docs/development/history-rewrite.md.
+
+Screenshots/mb1940-n657x0q-c02-schematic.pdf # third-party board schematic, 34 MB, not ours to redistribute (D-05)
+firmware/app/build_disco/ # Zephyr build tree for disco_l475_iot1 committed by mistake: elf, map, libs, 71 MB
+firmware/app/build_esp32s3/ # Zephyr build tree for ESP32-S3 committed by mistake: elf, map, libs, 183 MB
+firmware/app/build_giga/ # Zephyr build tree for Arduino Giga committed by mistake, 15 MB
+firmware/app/build_verify_esp32s3/ # Zephyr verification build tree committed by mistake, 120 MB
+firmware/app/build_tests/ # CMake configure output (CMakeCache.txt, logs) committed by mistake; the directory is a build dir
