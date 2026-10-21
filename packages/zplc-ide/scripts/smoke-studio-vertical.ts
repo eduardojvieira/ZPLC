@@ -9,7 +9,9 @@ import { createServer } from 'node:net';
 import { compilerCompile, testsRun, type CompilerCompileResult, type TestRunResult } from '../src/cli/toolApi';
 
 const HOST = '127.0.0.1';
-const TIMEOUT_MS = 15_000;
+// A hang guard for one CDP reply and for one waitFor, not a measurement: a pass returns the moment its condition holds, so a long
+// bound costs nothing there (a loaded machine needs far more than 15 s for one Runtime.evaluate).
+const TIMEOUT_MS = 60_000;
 
 type OwnedProcess = ReturnType<typeof Bun.spawn>;
 

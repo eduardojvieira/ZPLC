@@ -97,6 +97,9 @@ function processesOfProfile(profile: string): number[] {
   return found;
 }
 
+/** How many times longer than its alone-on-the-machine bound a journey waits for a condition (see `until`). */
+const LOAD_PATIENCE = 3;
+
 /**
  * Connects to a renderer target over the DevTools protocol and builds the `App` a journey drives: the same real clicks,
  * keys and text insertion for the development host and for a packaged application.
@@ -112,7 +115,11 @@ async function connectApp(target: string, context: { answerFile: string | undefi
   // The window asks for 1440x900 (electron/main.ts) but the private display is smaller; lay the page out at the size the app asks for.
   await page.command('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
   const evaluate = <T,>(expression: string) => page.evaluate(expression) as Promise<T>;
-  const until: App['until'] = async (description, check, timeoutMs = 20_000) => {
+  // The bound of a wait is a hang guard, not a measurement (a wait ends the moment its condition holds), and the renderer of a
+  // machine at a load average of 40 to 100 needs several times the seconds it needs alone. Journeys that measure time do so
+  // with Date.now() around their own work, never through this bound.
+  const until: App['until'] = async (description, check, bound = 20_000) => {
+    const timeoutMs = bound * LOAD_PATIENCE;
     const started = Date.now(); let last: unknown;
     while (Date.now() - started < timeoutMs) {
       try { const value = await check(); if (value !== undefined && value !== false) { if (process.env.ZPLC_JOURNEY_TRACE && Date.now() - started > 1_000) console.log(`  slow wait ${Date.now() - started} ms: ${description}`); return value; } } catch (error) { last = error; }

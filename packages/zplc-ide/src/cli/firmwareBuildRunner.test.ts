@@ -23,6 +23,12 @@ function validElf64BigEndian(): Buffer {
   return elf;
 }
 
+/** Waits for a condition, not a time: under load the runner's own awaits (mkdtemp, mkdir, stat) take unbounded time, so the bound is only a hang guard. */
+async function until(condition: () => boolean, what: string): Promise<void> {
+  const deadline = Date.now() + 30_000;
+  while (!condition()) { if (Date.now() > deadline) throw new Error(`timed out waiting for ${what}`); await new Promise((resolve) => setTimeout(resolve, 1)); }
+}
+
 describe('runFirmwareBuild', () => {
   it('rejects a directory replacement when only its nanosecond generation changes', () => {
     expect(sameDirectoryIdentity(
@@ -101,7 +107,7 @@ describe('runFirmwareBuild', () => {
       const pending = runFirmwareBuild(root, 'board', { signal: controller.signal, killGraceMs: 1, pollMs: 1, isGroupAlive: () => alive, sendGroupSignal: (_pid, signal) => signals.push(signal), remove: (async (path, options) => { removed = true; return rm(path, options); }) as typeof rm, spawnProcess: (_command, args) => {
         const child = new FakeChild(); directory = args[args.indexOf('-d') + 1] as string; controller.abort(); setTimeout(() => { child.stdout.write('late'); child.emit('close', 0); }, 1); return child as never;
       } });
-      await new Promise((resolve) => setTimeout(resolve, 8)); expect(removed).toBe(false); expect((await lstat(directory)).isDirectory()).toBe(true); expect(signals).toEqual(['SIGTERM', 'SIGKILL']);
+      await until(() => signals.length === 2, 'SIGTERM then SIGKILL'); expect(removed).toBe(false); expect((await lstat(directory)).isDirectory()).toBe(true); expect(signals).toEqual(['SIGTERM', 'SIGKILL']);
       alive = false; await expect(pending).resolves.toMatchObject({ ok: false, failure: 'cancelled', output: { stdoutBytes: 4 } }); expect(removed).toBe(true);
     } finally { await rm(root, { recursive: true, force: true }); }
   });
@@ -119,10 +125,12 @@ describe('runFirmwareBuild', () => {
   it('keeps timed-out groups and owned output until the group is gone', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-runner-root-')); const signals: string[] = []; let alive = true; let removed = false; let directory = '';
     try {
-      const pending = runFirmwareBuild(root, 'board', { timeoutMs: 1, killGraceMs: 1, pollMs: 1, isGroupAlive: () => alive, sendGroupSignal: (_pid, signal) => signals.push(signal), remove: (async (path, options) => { removed = true; return rm(path, options); }) as typeof rm, spawnProcess: (_command, args) => {
-        const child = new FakeChild(); directory = args[args.indexOf('-d') + 1] as string; setTimeout(() => child.emit('close', 0), 2); return child as never;
+      let child: FakeChild | undefined;
+      const pending = runFirmwareBuild(root, 'board', { timeoutMs: 1, killGraceMs: 1, pollMs: 1, isGroupAlive: () => alive, sendGroupSignal: (_pid, signal) => { signals.push(signal); if (signal === 'SIGTERM') setTimeout(() => child?.emit('close', 0), 0); }, remove: (async (path, options) => { removed = true; return rm(path, options); }) as typeof rm, spawnProcess: (_command, args) => {
+        // The leader closes only after the timeout fired, so a stalled timer cannot turn the timeout into a plain failure.
+        child = new FakeChild(); directory = args[args.indexOf('-d') + 1] as string; return child as never;
       } });
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await until(() => signals.length === 2, 'SIGTERM then SIGKILL');
       expect(signals).toEqual(['SIGTERM', 'SIGKILL']); expect(removed).toBe(false); expect((await lstat(directory)).isDirectory()).toBe(true);
       alive = false;
       await expect(pending).resolves.toMatchObject({ ok: false, failure: 'timeout' }); expect(removed).toBe(true);
@@ -135,7 +143,7 @@ describe('runFirmwareBuild', () => {
       const pending = runFirmwareBuild(root, 'board', { killGraceMs: 1, pollMs: 1, isGroupAlive: () => alive, sendGroupSignal: (_pid, signal) => signals.push(signal), remove: (async (path, options) => { removed = true; return rm(path, options); }) as typeof rm, spawnProcess: (_command, args) => {
         const child = new FakeChild(); directory = args[args.indexOf('-d') + 1] as string; setTimeout(() => child.emit('close', 0), 1); return child as never;
       } });
-      await new Promise((resolve) => setTimeout(resolve, 8));
+      await until(() => signals.length === 2, 'SIGTERM then SIGKILL');
       expect(signals).toEqual(['SIGTERM', 'SIGKILL']); expect(removed).toBe(false); expect((await lstat(directory)).isDirectory()).toBe(true);
       alive = false;
       await expect(pending).resolves.toMatchObject({ ok: false, failure: 'failed' }); expect(removed).toBe(true);
@@ -180,7 +188,7 @@ describe('runFirmwareBuild', () => {
         const pending = runFirmwareBuild(root, 'board', { killGraceMs: 1, pollMs: 1, isGroupAlive: () => alive, sendGroupSignal: (_pid, signal) => signals.push(signal), remove: (async (path, options) => { removed = true; return rm(path, options); }) as typeof rm, spawnProcess: (_command, args) => {
           const child = new FakeChild(); directory = args[args.indexOf('-d') + 1] as string; setTimeout(() => { child[stream].emit('error', new Error(`${stream} failed`)); child.emit('close', 0); }, 1); return child as never;
         } });
-        await new Promise((resolve) => setTimeout(resolve, 8));
+        await until(() => signals.length === 2, 'SIGTERM then SIGKILL');
         expect(signals).toEqual(['SIGTERM', 'SIGKILL']); expect(removed).toBe(false); expect((await lstat(directory)).isDirectory()).toBe(true);
         alive = false;
         await expect(pending).resolves.toMatchObject({ ok: false, failure: 'failed' }); expect(removed).toBe(true);

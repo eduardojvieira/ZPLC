@@ -7,7 +7,9 @@ import { isElectronHeadlessBootstrapQuarantine } from './electronHeadlessQuarant
 import { DEFAULT_DEVELOPMENT_RENDERER_PORT, parseTrustedDevelopmentRendererPort, trustedDevelopmentRendererUrl } from '../electron/security';
 
 const HOST = '127.0.0.1';
-const TIMEOUT_MS = 20_000;
+// A hang guard for one CDP reply and for one waitFor, not a measurement: a pass returns the moment its condition holds, so a long
+// bound costs nothing there. At a load average of 40 to 100 on 12 cores a renderer needs far more than 20 s to answer one Runtime.evaluate.
+const TIMEOUT_MS = 90_000;
 const packageRoot = join(import.meta.dir, '..');
 type OwnedProcess = ReturnType<typeof Bun.spawn>;
 
