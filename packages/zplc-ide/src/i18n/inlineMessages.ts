@@ -26,5 +26,9 @@ export function compactSource(source: string): string {
     .replace(/,\s*([)\]])/g, '$1')
     .replace(/,\s*\}/g, ' }')
     .replace(/([([])\s+/g, '$1')
-    .replace(/\s+([)\]])/g, '$1');
+    .replace(/\s+([)\]])/g, '$1')
+    .replace(/\s+(<\/)/g, '$1') // text before a closing tag
+    .replace(/\s+\.(?=[A-Za-z_$])/g, '.') // a member chain on several lines
+    .replace(/=\{ ([^{}]*?) \}/g, '={$1}') // an attribute expression on its own lines
+    .replace(/=\{(['"])([^'"{}]*)\1\}/g, '="$2"'); // a string attribute written as an expression
 }

@@ -45,7 +45,7 @@ describe('project files IPC boundary', () => {
 
   it('keeps the permission handlers deny-by-default: serial only, and no file system permission anywhere', () => {
     expect(mainSource).toContain("permission === 'serial' && webContents !== null && serialRendererIsCurrent(webContents)");
-    expect(mainSource).toContain('setPermissionRequestHandler((_webContents, _permission, callback) => {\n    callback(false);\n  });');
+    expect(mainSource).toContain('setPermissionRequestHandler((_webContents, _permission, callback) => { callback(false); });');
     for (const name of ['main.ts', 'preload.ts', 'projectFiles.ts', 'projectFilesProtocol.ts']) {
       expect(read(name)).not.toMatch(/fileSystem|file-system|showDirectoryPicker/);
     }

@@ -14,7 +14,7 @@ describe('Learn panel failures', () => {
   it('shows why the exercise could not be copied, in the panel where the action started, and nothing for a cancelled dialog', () => {
     const source = withEnglishMessages(compactSource(readFileSync(join(import.meta.dir, 'LearnPanel.tsx'), 'utf8')));
     expect(source).toContain("const projectOpenError = useIDEStore((state) => state.projectOpenError);");
-    expect(source).toContain("startFailed && projectOpenError && <p role=\"alert\" data-learn-copy-error");
+    expect(source).toContain("startFailed && projectOpenError && (<p role=\"alert\" data-learn-copy-error");
     expect(source).toContain('{projectOpenError}</p>');
   });
 });
