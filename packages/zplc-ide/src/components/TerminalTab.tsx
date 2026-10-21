@@ -295,6 +295,9 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
     };
   }, [isActive, isConnected, startReading, stopReading, appendOutput]);
 
+  // The read loop is a frame loop of this component: it must end with it, or it keeps draining the link for a tab that is gone
+  useEffect(() => stopReading, [stopReading]);
+
   // Auto-scroll to bottom when new lines are added
   useEffect(() => {
     if (outputRef.current) {
