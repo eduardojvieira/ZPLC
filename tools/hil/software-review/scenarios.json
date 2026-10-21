@@ -3528,7 +3528,7 @@
           ],
           "given": "boards.json",
           "when": "the page values are compared",
-          "then": "build target, Studio board, example project, first output, pins and example commands equal the manifest",
+          "then": "build target, ZPLC board, example project, first output, pins and example commands equal the manifest",
           "code_paths": [
             "firmware/app/boards/boards.json",
             "firmware/zephyr/scripts/zplc_boards.py",

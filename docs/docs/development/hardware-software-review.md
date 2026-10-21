@@ -1520,7 +1520,7 @@ For each one, the silicon fact that a person checks at a bench:
 - **Boards:** Raspberry Pi Pico, ESP32-S3-DevKitC-1
 - **Given:** boards.json
 - **When:** the page values are compared
-- **Then:** build target, Studio board, example project, first output, pins and example commands equal the manifest
+- **Then:** build target, ZPLC board, example project, first output, pins and example commands equal the manifest
 - **Code:** `firmware/app/boards/boards.json`; `firmware/zephyr/scripts/zplc_boards.py`; `tools/docs/install_and_status_pages.test.ts`
 - **Simulation:**
   - tools/docs/install_and_status_pages.test.ts: `bun test tools/docs/install_and_status_pages.test.ts`

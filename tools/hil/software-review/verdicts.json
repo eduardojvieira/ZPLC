@@ -56,7 +56,7 @@
   "DOC-004.03": {
     "verdict": "should_pass",
     "judge": "b",
-    "reasoning": "Build target, Studio board, example project, first output and pins in the What you need table equal boards.json (verified against the entries for rpi_pico and esp32s3_devkitc: GP0/GPIO15, DI GP15..GP12 / GPIO5..8, AI0 GP26 / GPIO4, GND pin 3 / J1 pin 22); the page tests enforce this.",
+    "reasoning": "Build target, ZPLC board, example project, first output and pins in the What you need table equal boards.json (verified against the entries for rpi_pico and esp32s3_devkitc: GP0/GPIO15, DI GP15..GP12 / GPIO5..8, AI0 GP26 / GPIO4, GND pin 3 / J1 pin 22); the page tests enforce this.",
     "evidence_run": "bun test tools/docs/install_and_status_pages.test.ts: 23 pass; python3 -B tools/docs/generate_board_reference.py --check OK"
   },
   "DOC-004.04": {
