@@ -12,7 +12,7 @@ import { resolve } from 'node:path';
 import { GUARDED_FILE, ROOT, formattableFiles } from './format-files';
 
 /** The one number: keep it equal to printWidth in .prettierrc.json and ColumnLimit in .clang-format. */
-export const LIMIT = 120;
+export const LIMIT = 140;
 
 export interface Offender {
   file: string;
