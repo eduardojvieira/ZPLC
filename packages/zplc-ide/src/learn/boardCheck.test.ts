@@ -136,7 +136,7 @@ describe('a check on a board that keeps a device trace: arm, then the learner pr
     let now = 0;
     const scans: DeviceTraceSample[] = [];
     const calls: string[] = [];
-    const session = { connected: true, state: 'idle' as VMState };
+    const session = { connected: true, state: 'idle' as VMState, readWatchVariables: async (variables: WatchVariable[]) => variables.map((variable) => ({ ...variable, value: false })) };
     const trace: DeviceTrace = {
       status: async () => { calls.push('status'); return { available: true, armed: false, capacity: 200, inBytes: 1, outBytes: 1, written: 0, first: 0, maxIoBytes: 32 }; },
       arm: async () => { calls.push('arm'); return { available: true, armed: true, capacity: 200, inBytes: 1, outBytes: 1, written: 0, first: 0, maxIoBytes: 32 }; },

@@ -39,7 +39,7 @@ describe('the scenario session of the command line', () => {
   itNative('answers a communication block with the simulation answer, not "no handler"', async () => {
     const compiled = await compilerCompile(root);
     if (!compiled.ok || !compiled.zplcFile) throw new Error('the program does not build');
-    const environment = { ...process.env, ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary };
+    const environment: NodeJS.ProcessEnv = { ...process.env, ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary };
     delete environment.ZPLC_NATIVE_COMM;
     delete environment.ZPLC_NATIVE_LOOPBACK;
     const session = await createNativeScenarioSession(environment);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 
-import { checkManifest } from './capture-screenshots';
+import { checkManifest, JOURNEY, type Manifest } from './capture-screenshots';
 import { PAGES as COURSE_PAGES } from './generate_course_pages';
 import { BOARDS, HARDWARE_LESSONS, KIT, KIT_PAGES, WIRING_PAGES, outputs } from './generate_hardware_pages';
 import { ROOT } from './reference-lib';
@@ -61,7 +61,7 @@ describe('the hardware pages and diagrams are in step with their sources (drift 
 });
 
 describe('DOC-013 the wiring diagrams are generated drawings, not pictures of the product', () => {
-  const manifest = { schemaVersion: 1 as const, commit: 'a'.repeat(40), images: [] };
+  const manifest: Manifest = { schemaVersion: 1, command: 'bun run docs:screenshots', journey: JOURNEY, commit: 'a'.repeat(40), worktreeClean: true, productVersion: '2.0.0', images: [] };
   const page = (reference: string) => [{ page: 'p.md', text: `![a diagram](${reference})` }];
   const exists = (path: string) => (path.endsWith('/lesson.en.svg') ? new Uint8Array([60]) : undefined);
 

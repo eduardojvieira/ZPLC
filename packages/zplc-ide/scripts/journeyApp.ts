@@ -33,7 +33,6 @@ const KEYS: Record<string, { key: string; code: string; keyCode: number }> = {
   S: { key: 's', code: 'KeyS', keyCode: 83 }, P: { key: 'p', code: 'KeyP', keyCode: 80 }, B: { key: 'b', code: 'KeyB', keyCode: 66 }, Z: { key: 'z', code: 'KeyZ', keyCode: 90 },
   A: { key: 'a', code: 'KeyA', keyCode: 65 }, R: { key: 'r', code: 'KeyR', keyCode: 82 }, End: { key: 'End', code: 'End', keyCode: 35 }, Home: { key: 'Home', code: 'Home', keyCode: 36 },
   // the keys of the keyboard editing of the visual editors (LNG-012)
-  ArrowLeft: { key: 'ArrowLeft', code: 'ArrowLeft', keyCode: 37 }, ArrowRight: { key: 'ArrowRight', code: 'ArrowRight', keyCode: 39 },
   Delete: { key: 'Delete', code: 'Delete', keyCode: 46 }, Backspace: { key: 'Backspace', code: 'Backspace', keyCode: 8 }, Insert: { key: 'Insert', code: 'Insert', keyCode: 45 },
   PageUp: { key: 'PageUp', code: 'PageUp', keyCode: 33 }, PageDown: { key: 'PageDown', code: 'PageDown', keyCode: 34 },
   C: { key: 'c', code: 'KeyC', keyCode: 67 }, N: { key: 'n', code: 'KeyN', keyCode: 78 }, O: { key: 'o', code: 'KeyO', keyCode: 79 }, I: { key: 'i', code: 'KeyI', keyCode: 73 },

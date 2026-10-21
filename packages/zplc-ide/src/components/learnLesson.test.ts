@@ -43,7 +43,7 @@ describe('Learn lesson catalog', () => {
     expect(es).toHaveLength(LESSON_INDEX.lessons.length);
     expect(en).toHaveLength(LESSON_INDEX.lessons.length);
     expect(es.map(({ id, exampleId, requiredScenario, sourcePath, scenarioPath }) => ({ id, exampleId, requiredScenario, sourcePath, scenarioPath }))).toEqual(en.map(({ id, exampleId, requiredScenario, sourcePath, scenarioPath }) => ({ id, exampleId, requiredScenario, sourcePath, scenarioPath })));
-    expect(es.map(({ id }) => id)).toEqual(LESSON_INDEX.lessons.map(({ id }) => id));
+    expect<string[]>(es.map(({ id }) => id)).toEqual(LESSON_INDEX.lessons.map(({ id }) => id));
     expect(es[1]).toMatchObject({ exampleId: 'pedestrian_crossing', requiredScenario: 'PedestrianCrossing', sourcePath: 'src/PedestrianCrossing.st', scenarioPath: 'tests/pedestrian-crossing.scenario.json', title: 'Cruce peatonal y estados seguros' });
     expect(en[1]).toMatchObject({ title: 'Pedestrian crossing and safe states' });
     // Lesson 8 has an extra Evidence stage; lesson 10 has its Edit stage since LRN-038 (it used to have none).
