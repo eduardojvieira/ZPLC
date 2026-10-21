@@ -44,7 +44,7 @@ export interface DomHarness {
  * reaches the store calls this first and then imports the store and its components with `await import(...)`.
  */
 export const stubProjectLoader = async (): Promise<void> => {
-  await mock.module('../utils/projectLoader', () => ({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null }));
+  await mock.module('../utils/projectLoader', () => ({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null, getFileContent: () => null }));
 };
 
 /** Monaco cannot start without a browser engine and a worker; a panel that only links to it gets an empty editor. The code editors stay on the VF-007 remaining list. */
