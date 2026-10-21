@@ -192,6 +192,7 @@ async function exercise(launch: Launch, expectedVersion: string): Promise<void> 
       opened = true;
       return `the first lesson ("${await cdp!.evaluate(`document.getElementById('learn-title').textContent.trim()`)}") opened with its starter project`;
     });
+    record(os, `${label}.native-folder-dialog`, 'not-simulated', 'the Open project button opens the native folder dialog of the system, which a headless run cannot answer (the test hook that answers it exists only in builds made for the suite, by design, VF-008); the example was opened through the Learn course, which opens an app-owned workspace with no dialog. The real dialog of the system was not exercised');
     if (!opened) return;
     let built = false;
     await step(os, `${label}.build`, async () => {
@@ -396,6 +397,7 @@ async function windows(dist: string, version: string, runDir: string): Promise<v
     env: { ...wineEnv }, userData: roaming, flow: false, stop: stopWine,
   }, version);
 
+  record('windows', 'smartscreen-and-smart-app-control', 'not-simulated', 'Windows protected your PC (SmartScreen, More info, Run anyway) and Smart App Control are behaviours of Windows itself; Wine has neither, so the first-run steps 2 and 3 of the install page were not exercised');
   await step('windows', 'uninstall', async () => {
     must(installDir, 'nothing was installed');
     const uninstaller = tree(installDir).find((p) => /^Uninstall .*\.exe$/.test(p));
