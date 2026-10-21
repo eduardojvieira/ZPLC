@@ -2,8 +2,9 @@
 import { describe, expect, it } from 'bun:test';
 import { existsSync, readFileSync } from 'node:fs';
 
-import { JOURNEY_DECLARATION, cChecks, flattenConcatenations, conformanceChecks, coverage, isFailing, journeyChecks, mergeEvidence, pythonChecks, pythonFilesRunInCi, scanFiles, serializeEvidence, unitChecks, type Check } from './requirement-coverage';
+import { JOURNEY_DECLARATION, cChecks, conformanceChecks, coverage, isFailing, journeyChecks, mergeEvidence, pythonChecks, pythonFilesRunInCi, scanFiles, serializeEvidence, unitChecks, type Check } from './requirement-coverage';
 import type { Inventory } from './test-inventory';
+import { flattenConcatenations } from './source-text';
 
 const REF = 'packages/zplc-ide/src/a.test.ts';
 

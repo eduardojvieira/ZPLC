@@ -33,6 +33,7 @@ import { parseArgs } from 'node:util';
 
 import { ID_PATTERN, validateIndex, type Requirement } from './generate-requirement-index';
 import { TEST_FILE, type Inventory } from './test-inventory';
+import { flattenConcatenations } from './source-text';
 
 export type Kind = 'conformance' | 'unit' | 'journey' | 'c-test' | 'manual' | 'hardware' | 'py-test' | 'decided' | 'gate';
 export interface Check {
@@ -76,8 +77,6 @@ export function conformanceChecks(path: string, text: string): Array<[string, Ch
 // (a fixture) is not mistaken for a test; a name built at run time (a template with ${}) and it.each names are not found.
 const TITLE = /^[ \t]*(?:describe|describeCases|it|itNative|itWasm|test)(?:\.(?:only|concurrent))?\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1/gm;
 
-/** `'a ' +\n 'b'` read as `'a b'`: a formatter cuts a long title at a space, the title stays one. */
-export const flattenConcatenations = (text: string): string => text.replace(/(['"`])\s*\+\s*\1/g, '');
 
 export function unitChecks(ref: string, source: string): Array<[string, Check]> {
   const found: Array<[string, Check]> = [];

@@ -11,6 +11,8 @@
 //   parseScenarioFormat packages/zplc-ide/src/test-engine/index.ts   the fields, kinds and limits of a scenario file
 //   parseProtocol       firmware/apps/posix_host/src/native_runtime_session.c   the request methods and their parameters
 
+import { flattenConcatenations } from '../ci/source-text';
+
 // ---------------------------------------------------------------------------
 // Kconfig
 // ---------------------------------------------------------------------------
@@ -168,7 +170,8 @@ export interface CliCommand { name: string; usage: string }
 export interface CliOption { flags: string; description: string }
 export interface Cli { commands: CliCommand[]; options: CliOption[]; exitCodes: Array<{ code: number; meaning: string }>; footnote: string }
 
-export function parseCli(text: string): Cli {
+export function parseCli(source: string): Cli {
+  const text = flattenConcatenations(source);
   const help = /printHelp\([^)]*\)[^{]*\{\s*output\.log\(`([\s\S]*?)`\);/.exec(text);
   if (!help) throw new Error('cli/index.ts: printHelp was not found');
   const lines = help[1]!.replace(/\\n/g, '\n').split('\n');
@@ -260,12 +263,12 @@ export interface ScenarioFormat {
 }
 
 export function parseScenarioFormat(engine: string, workspace: string): ScenarioFormat {
-  const top = /exact\(source, hasPlant \? \[([^\]]*)\] : \[([^\]]*)\], 'scenario'\)/.exec(engine);
+  const top = /exact\(\s*source,\s*hasPlant\s*\?\s*\[([^\]]*)\]\s*:\s*\[([^\]]*)\],\s*'scenario',?\s*\)/.exec(engine);
   if (!top) throw new Error('test-engine/index.ts: the top-level keys of a scenario were not found');
   const list = (text: string) => [...text.matchAll(/'(\w+)'/g)].map((match) => match[1]!);
   const withPlant = list(top[1]!);
   const without = list(top[2]!);
-  const event = /exact\(event, \[([^\]]*)\]/.exec(engine);
+  const event = /exact\(\s*event,\s*\[([^\]]*)\]/.exec(engine);
   if (!event) throw new Error('test-engine/index.ts: the keys of an event were not found');
   const kindsType = /export type ScenarioKind = ([^;]*);/.exec(engine);
   if (!kindsType) throw new Error('test-engine/index.ts: ScenarioKind was not found');
