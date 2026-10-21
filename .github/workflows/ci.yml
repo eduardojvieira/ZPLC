@@ -129,6 +129,9 @@ jobs:
           python3 -B tools/test_crc32_cross.py
           bun test packages/zplc-hil
 
+      # VF-007: the *.browser.test.ts files of the IDE (the Monaco and React Flow editors) are part of this suite: they start the
+      # Vite server in the test process and drive headless Chromium over the DevTools protocol (packages/zplc-ide/src/test/browser.ts),
+      # with the google-chrome of the runner image, as the studio-vertical smoke below does. They need no display and no new dependency.
       - name: Build, test, and lint IDE
         env:
           ZPLC_NATIVE_SIM_BIN: ${{ runner.temp }}/zplc-native-sim-build/zplc_runtime

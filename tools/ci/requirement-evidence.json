@@ -28,10 +28,19 @@
     {"kind":"unit","ref":"tools/ci/test-source-guard.test.ts","test":"test source guard: this repository (VF-006)"}
   ],
   "VF-007": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/CodeEditor.browser.test.ts","test":"Instruction List editor in a browser (VF-007, LNG-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/CodeEditor.browser.test.ts","test":"Structured Text editor in a browser (VF-007, LNG-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/ConsoleChangesTrace.dom.test.tsx","test":"Changes tab contents in a DOM (VF-007)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/ConsoleChangesTrace.dom.test.tsx","test":"Trace tab contents in a DOM (VF-007)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnPanel.dom.test.tsx","test":"Learn lesson panel in a DOM (VF-007, LRN-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/ProjectExportItems.dom.test.tsx","test":"Project export items in a DOM (VF-007, IDE-022)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/TerminalTab.dom.test.tsx","test":"Terminal tab in a DOM (VF-007)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/FBDEditor.browser.test.ts","test":"Function block diagram editor in a browser (VF-007, LNG-012)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/LDEditor.browser.test.ts","test":"Ladder editor in a browser (VF-007, LNG-012)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/SFCEditor.browser.test.ts","test":"Sequential function chart editor in a browser (VF-007, LNG-012)"},
     {"kind":"unit","ref":"tools/ci/dom-render-coverage.test.ts","test":"DOM render coverage guard: the kit, the isolation and the evidence note (VF-007)"},
     {"kind":"unit","ref":"tools/ci/dom-render-coverage.test.ts","test":"DOM render coverage guard: the spec table (VF-007)"},
-    {"kind":"unit","ref":"tools/ci/dom-render-coverage.test.ts","test":"DOM render coverage guard: this repository (VF-007)"},
-    {"kind":"gate","ref":"tools/ci/dom-render-surfaces.json","test":"\"state\": \"remaining\"","note":"10 surfaces remain without a render test in a DOM: the Structured Text, Instruction List, Ladder, FBD and SFC editors (Monaco and React Flow need a browser engine that happy-dom does not provide), the Learn panel, the Changes and Trace tabs (only their tab and panel are driven), the Terminal and the project export items. Every kit component and 21 surfaces have *.dom.test.tsx files that run through user events; tools/ci/dom-render-surfaces.json lists each remaining one with its reason and can only shrink."}
+    {"kind":"unit","ref":"tools/ci/dom-render-coverage.test.ts","test":"DOM render coverage guard: this repository (VF-007)"}
   ],
   "VF-008": [
     {"kind":"unit","ref":"tools/ci/end-to-end-journeys.test.ts","test":"the end-to-end suite and the journeys of the requirement (VF-008)"},
@@ -1080,6 +1089,7 @@
   ],
   "LNG-012": [
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/SearchList.test.tsx","test":"the search list of the visual editors (LNG-012) on the component kit"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/FBDEditor.browser.test.ts","test":"Function block diagram editor in a browser (VF-007, LNG-012)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/FBDToolbox.test.tsx","test":"the FBD toolbox (LNG-012) on the component kit"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 aligns two blocks by keyboard alone: extend, then align left, one gesture"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 binding a function block diagram from the declared symbols"},
@@ -1093,6 +1103,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 selecting more than one block from the keyboard"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/keyboard.test.ts","test":"LNG-012 selects every block with one key"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/keymap.test.ts","test":"LNG-012 the key table of the visual editors"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/LDEditor.browser.test.ts","test":"Ladder editor in a browser (VF-007, LNG-012)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/LDToolbox.test.tsx","test":"the Ladder toolbox (LNG-012) on the component kit"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 binding a variable from the declared symbols"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 ladder cursor"},
@@ -1100,6 +1111,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 ladder structure from the keyboard"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/keyboard.test.ts","test":"LNG-012 what the keyboard does not do without a cursor to show it"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/picker.test.ts","test":"LNG-012 palettes are searchable from the keyboard"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/SFCEditor.browser.test.ts","test":"Sequential function chart editor in a browser (VF-007, LNG-012)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/SFCToolbox.test.tsx","test":"the SFC toolbox (LNG-012) on the component kit"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 connecting and deleting in the chart from the keyboard"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"LNG-012 extends the selection down the chart and aligns the two elements with keys alone, as one gesture"},
@@ -1129,6 +1141,8 @@
   ],
   "LNG-015": [
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/check.test.ts","test":"checking a project (LNG-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/CodeEditor.browser.test.ts","test":"Instruction List editor in a browser (VF-007, LNG-015)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/CodeEditor.browser.test.ts","test":"Structured Text editor in a browser (VF-007, LNG-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/assist.test.ts","test":"completion in a buffer that is being typed (LNG-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/assist.test.ts","test":"hover and outline across the project (LNG-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/langsvc/liveDiagnostics.test.ts","test":"the live diagnostics of the project (LNG-015)"},
@@ -2098,6 +2112,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectArchiveZip.test.ts","test":"readZip of an archive another tool wrote (IDE-022)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectArchiveZip.test.ts","test":"readZip refusals (IDE-022)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectArchiveZip.test.ts","test":"writeZip (IDE-022)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/ProjectExportItems.dom.test.tsx","test":"Project export items in a DOM (VF-007, IDE-022)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ipc/projectArchiveBridge.test.ts","test":"the renderer side of the project archives (IDE-022)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/archiveReview.test.ts","test":"reviewArchive (IDE-022)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/project/migrationDiff.test.ts","test":"describeMigration of a version 1 project (IDE-022)"},
@@ -2723,6 +2738,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
   ],
   "LRN-004": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnPanel.dom.test.tsx","test":"Learn lesson panel in a DOM (VF-007, LRN-004)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/shellRouting.test.ts","test":"LRN-004 keeps an open lesson beside the editor whatever the rail selects: in the primary sidebar on Learn, in the secondary one elsewhere"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/shellRouting.test.ts","test":"where the open lesson is shown (LRN-004)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}

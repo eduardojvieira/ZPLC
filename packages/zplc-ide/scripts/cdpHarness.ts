@@ -27,6 +27,16 @@ export function chromium(): string {
     const resolved = Bun.which(candidate);
     if (resolved) return resolved;
   }
+  // The browsers that the hosted macOS and Windows runners ship, which are not on the PATH (authored here, not run on those systems).
+  const installed = [
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+  ];
+  for (const candidate of installed) {
+    const found = executable(candidate);
+    if (found) return found;
+  }
   throw new Error('Chrome/Chromium not found. Set ZPLC_CHROMIUM_BIN to an executable browser path.');
 }
 

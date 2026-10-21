@@ -62,6 +62,20 @@ describe('DOM render coverage guard: the kit, the isolation and the evidence not
     expect(checkDomRender(list(BOTH), SPEC, tree([...FILES, plain], { [plain]: "import { render } from 'react-dom/server';" }), note)).toEqual([]);
   });
 
+  it('accepts a browser test as the render test of a surface, and fails on any other file', () => {
+    const browser = 'packages/zplc-ide/src/editors/ld/LDEditor.browser.test.ts';
+    const list2 = list([entry({ tests: [browser] }), entry({ surface: 'Explorer', tests: [browser] })]);
+    expect(checkDomRender(list2, SPEC, tree([browser]), undefined)).toEqual([]);
+    const other = list([entry({ tests: [browser, 'packages/zplc-ide/src/editors/ld/LDEditor.spec.ts'] }), entry({ surface: 'Explorer', tests: [browser] })]);
+    expect(checkDomRender(other, SPEC, tree([browser]), undefined).join('\n')).toContain('is not a *.dom.test.tsx or a *.browser.test.ts');
+  });
+
+  it('wants the gate gone once no surface remains, so the requirement is covered by its tests', () => {
+    const none = list([entry(), entry({ surface: 'Explorer', state: 'out-of-scope', tests: [], reason: 'a data module' })]);
+    expect(checkDomRender(none, SPEC, tree(FILES), undefined)).toEqual([]);
+    expect(checkDomRender(none, SPEC, tree(FILES), '0 surfaces remain')).toEqual([expect.stringContaining('take the VF-007 gate out')]);
+  });
+
   it('fails when the gate note of the evidence file miscounts the remaining surfaces', () => {
     expect(checkDomRender(list(BOTH), SPEC, tree(FILES), '3 surfaces remain')).toEqual([expect.stringContaining('must say "1 surfaces remain"')]);
     expect(checkDomRender(list(BOTH), SPEC, tree(FILES), undefined)).toEqual([expect.stringContaining('no VF-007 gate note')]);
