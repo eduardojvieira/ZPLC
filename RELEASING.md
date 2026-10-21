@@ -102,6 +102,26 @@ These need a person at a real machine. Record the result in [Recorded runs](#rec
 - The Windows installer on Windows 11 with Smart App Control on and off: "More info", "Run anyway".
 - For GA: the hardware records of gate 6 made on the draft's own firmware images (HIL-009).
 
+By decision of the owner (2026-10-20, REL-016: "se puede simular en esta pc de linux"), these first-run checks are
+simulated on a Linux machine, and the hardware records of gate 6 were closed on 2026-10-20 by emulation and software
+review (`tools/hil/software-review/verdicts.json`). The simulation is not a real Mac or a real Windows machine and
+never claims to be one:
+
+```bash
+# the installers of the draft's commit, built with electron-builder into a folder outside the tree, then:
+DISPLAY=:<private display> bun tools/ci/release/simulate-first-run.ts --dist <folder with the installers>
+```
+
+It installs the Windows setup silently into a fresh Wine prefix and launches the installed application and the
+portable file, launches the AppImage and the layout of the `.deb`, reads the `.deb`, the `.rpm` and the macOS zip as
+files, and in each launched application checks the window title and the version, opens the first Learn lesson, builds
+it and runs it in the native simulation. It writes a JSON record with the result of every step, and says which steps
+it could not make: a clean container install (no Docker access), the Mach-O format of the macOS runtime, the launch
+and the ad hoc seal of a macOS bundle, the DMG, the native folder dialog, and SmartScreen and Smart App Control. A real
+Mac and a real Windows machine are still recommended for the GA release, and their rows below stay empty until a
+person fills them. What the simulation cannot prove (that the pipeline alone makes the draft, from the run of its own
+tag, and that nobody uploads an asset) is proven by a hosted run: REL-030.
+
 ### 7. Publish
 
 Publish the draft in the GitHub interface. This is the only step that makes the release public.
@@ -183,4 +203,5 @@ checks of step 6. Fill these in when they happen; an empty row is a check that h
 | First run of the DMG on an Intel Mac | not yet recorded | | | |
 | Windows 11 installer, Smart App Control on | not yet recorded | | | |
 | Windows 11 installer, Smart App Control off | not yet recorded | | | |
+| Simulated first run of the installers, on Linux (REL-016) | 2.0.0-rc.3, installers built from the tree of commit `7f5d0f3c` | 2026-10-21 | recorded by script | 38 of 46 steps pass, 0 fail, 8 are not simulated. Simulated on Linux by owner decision 2026-10-20, not a real Mac or Windows machine. Linux: `.deb` and `.rpm` read as files, `.deb` layout and AppImage launched. Windows: setup installed silently, then installed and portable application launched, under Wine 11.20 in a fresh prefix, and uninstalled. In every launched application: title ZPLC, version 2.0.0-rc.3, first Learn lesson opened, built and run in the native simulation. macOS: the zip read as files only, never launched. Not simulated: a clean container install, the Mach-O format of the macOS runtime, the launch and ad hoc seal of a macOS bundle, the DMG, the native folder dialog, SmartScreen and Smart App Control. Script `tools/ci/release/simulate-first-run.ts`; record `tools/ci/release/first-run-records/2026-10-21.json`, which names the commit it ran at |
 | Screen reader check of the main path and one Learn lesson (UX-028, LRN-037) | current build | 2026-10-20 | recorded by script | 18 of 18 steps pass (9 steps, English and Spanish). Linux, Chromium accessibility tree, recorded 2026-10-20; owner decision 2026-10-20 accepts this in place of NVDA/JAWS on Windows and VoiceOver on macOS. Not a run of a screen reader product; the deploy dialog was opened without a board. See [Screen reader check](docs/docs/development/screen-reader-check.md) and `docs/static/img/screen-reader-check/2026-10-20/results.json` |

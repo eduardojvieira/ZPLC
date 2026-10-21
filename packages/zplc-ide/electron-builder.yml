@@ -10,6 +10,10 @@ appId: com.zenithindustrialcloud.zplc
 productName: ZPLC
 # executableName without spaces — rpmbuild chokes on spaces in .spec paths
 executableName: zplc
+# Electron names the user-data folder after the productName of the packaged package.json, else its name (@zplc/ide). The
+# folder must be named ZPLC (REL-016).
+extraMetadata:
+  productName: ZPLC
 
 # Directories
 directories:
@@ -64,6 +68,9 @@ publish: null
 # macOS Configuration
 # ============================================================================
 mac:
+  # The global executableName (zplc, for rpmbuild) would also name the bundle zplc.app and its executable zplc. The bundle is
+  # ZPLC.app everywhere the docs, the Homebrew cask and the signature check name it (REL-016).
+  executableName: ZPLC
   category: public.app-category.developer-tools
   icon: ../../tools/brand/icon.icns
   darkModeSupport: true

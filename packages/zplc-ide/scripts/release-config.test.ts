@@ -9,9 +9,13 @@ import { EXPECTED_ARTIFACTS } from './smoke-desktop-builds';
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
 
 type Builder = {
+  productName: string;
+  extraMetadata?: { productName?: string };
+  executableName?: string;
   beforePack?: string;
   extraResources: Array<{ from: string; to: string; filter?: string[] }>;
   mac: {
+    executableName?: string;
     identity?: string | null;
     binaries?: string[];
     hardenedRuntime?: boolean;
@@ -47,6 +51,27 @@ const indexOfStep = (job: Job, text: string) => job.steps.findIndex((step) => st
 // ponytail: reads only the flat `<key>..</key><true/>` pairs of the entitlements file; a nested or typed
 // value would need a real plist parser.
 const entitlementKeys = (file: string) => [...read(`../${file}`).matchAll(/<key>([^<]+)<\/key>\s*<true\/>/g)].map((match) => match[1]!);
+
+describe('the macOS bundle is named ZPLC.app (REL-016)', () => {
+  // electron-builder names the bundle, and the executable inside it, after the platform's executableName, then the global
+  // one, then the product name (app-builder-lib AppInfo.productFilename). The install page, the Homebrew cask and the
+  // signature check all say ZPLC.app, while the Linux executable must stay `zplc` (rpmbuild chokes on spaces and the
+  // package name is zplc).
+  it('names the bundle ZPLC.app and keeps the Linux executable zplc', () => {
+    expect(`${builder.mac.executableName ?? builder.executableName ?? builder.productName}.app`).toBe('ZPLC.app');
+    expect(builder.executableName).toBe('zplc');
+  });
+});
+
+describe('the packaged application keeps its data in a folder named ZPLC (REL-016)', () => {
+  // Electron names the user-data folder after the productName of the packaged package.json, else its name (@zplc/ide, a
+  // folder with that scope). electron-builder does not copy its own productName there, so extraMetadata must. Found by the
+  // simulated first-run check, which launched the packaged application and listed the folder it created.
+  it('writes the product name into the packaged package.json', () => {
+    expect(builder.extraMetadata?.productName).toBe(builder.productName);
+    expect(builder.productName).toBe('ZPLC');
+  });
+});
 
 describe('electron-builder.yml macOS signing (REL-001)', () => {
   it('signs ad hoc by an explicit identity and never notarizes', () => {

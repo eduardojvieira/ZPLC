@@ -61,7 +61,7 @@ describe('app.asar scan of the packaged smoke', () => {
   it('finds app.asar in the resources of each platform layout', () => {
     expect(packagedAsarPath(join('/p', 'linux-unpacked', 'zplc'), 'linux')).toBe(join('/p', 'linux-unpacked', 'resources', 'app.asar'));
     expect(packagedAsarPath(join('/p', 'win-unpacked', 'zplc.exe'), 'win32')).toBe(join('/p', 'win-unpacked', 'resources', 'app.asar'));
-    expect(packagedAsarPath(join('/p', 'mac', 'ZPLC.app', 'Contents', 'MacOS', 'zplc'), 'darwin')).toBe(join('/p', 'mac', 'ZPLC.app', 'Contents', 'Resources', 'app.asar'));
+    expect(packagedAsarPath(join('/p', 'mac', 'ZPLC.app', 'Contents', 'MacOS', 'ZPLC'), 'darwin')).toBe(join('/p', 'mac', 'ZPLC.app', 'Contents', 'Resources', 'app.asar'));
   });
 
   it('runs inside the packaged smoke, next to the preload surface it already checks, and asks for the project root bridge', () => {
