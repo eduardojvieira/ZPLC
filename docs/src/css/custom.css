@@ -158,9 +158,10 @@
 }
 
 /* ---------------------------------------------------------------------------------------------------------------------
- * Tokens: Commissioning Spine (dark)
+ * Tokens: Commissioning Spine (dark). `.zplc-spine` puts a region on the dark material in both modes (the landing hero).
  * ------------------------------------------------------------------------------------------------------------------- */
-[data-theme="dark"] {
+[data-theme="dark"],
+.zplc-spine {
   --zplc-canvas: #0f171b;
   --zplc-panel: #141e23;
   --zplc-band: #19262c;
@@ -225,6 +226,20 @@ samp {
 
 .nowrap {
   white-space: nowrap;
+}
+
+/* a region on the dark material resolves the derived colours again from its own tokens */
+.zplc-spine {
+  --ifm-link-color: var(--zplc-cobalt);
+  --ifm-link-hover-color: var(--zplc-cobalt-strong);
+  --ifm-code-background: var(--zplc-band);
+  --ifm-heading-color: var(--zplc-ink);
+  --ifm-font-color-base: var(--zplc-ink);
+  --ifm-color-content: var(--zplc-ink);
+  --ifm-color-content-secondary: var(--zplc-ink-2);
+  background-color: var(--zplc-canvas);
+  color: var(--zplc-ink);
+  color-scheme: dark;
 }
 
 a {

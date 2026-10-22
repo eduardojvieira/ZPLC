@@ -1,7 +1,8 @@
 /*
- * The landing page. Its tokens are the theme tokens of src/css/custom.css (--zplc-*); this file adds no colour of its own.
- * The page is one sheet: regions separated by 1px technical rules, a real capture read like a drawing with numbered item
- * balloons and a parts list, and cobalt only for actions, links, selection and the balloons that point at the picture.
+ * The landing page. Its colours are the theme tokens of src/css/custom.css (--zplc-*); this file adds none of its own.
+ * The visual language is the one of an electrical drawing: 1 px rules, terminal strips with numbered marker tags, ladder rungs
+ * between two power rails, a timing diagram, steps of a sequential function chart, and status lamps only for a real state.
+ * The hero sits on the dark material (Commissioning Spine) in both modes; every other region follows the theme.
  */
 
 .page {
@@ -16,47 +17,98 @@
   padding-inline: var(--zplc-gutter);
 }
 
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--zplc-space-2) var(--zplc-space-5);
+  margin: var(--zplc-space-5) 0 0;
+  font-size: var(--zplc-text-sm);
+  font-weight: 500;
+}
+
+/* ---------------------------------------------------------------------------------------------------------------------
+ * Placeholder of an image that does not exist yet
+ * ------------------------------------------------------------------------------------------------------------------- */
+.placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  background: var(--zplc-band);
+  border: 1px dashed var(--zplc-rule-strong);
+  border-radius: var(--zplc-radius-figure);
+}
+
+.placeholderLabel {
+  display: grid;
+  gap: var(--zplc-space-1);
+  padding: var(--zplc-space-4);
+  text-align: center;
+  font-size: var(--zplc-text-xs);
+  color: var(--zplc-ink-3);
+}
+
+.placeholderLabel strong {
+  font-family: var(--zplc-font-mono);
+  font-size: 1.5rem;
+  color: var(--zplc-ink-2);
+}
+
+.placeholderLabel code {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 0.75rem;
+  word-break: break-all;
+}
+
 /* ---------------------------------------------------------------------------------------------------------------------
  * Hero
  * ------------------------------------------------------------------------------------------------------------------- */
 .hero {
-  padding-block: clamp(2.5rem, 1.5rem + 4vw, 5rem) var(--zplc-space-6);
-}
-
-.heroCopy {
-  max-width: 62rem;
+  padding-block: clamp(3rem, 2rem + 4vw, 6rem);
+  border-bottom: 1px solid var(--zplc-rule);
+  overflow: hidden;
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: var(--zplc-space-3);
-  margin: 0 0 var(--zplc-space-5);
-  font-size: 1.5rem;
+  margin: 0 0 var(--zplc-space-6);
+  font-size: 1.375rem;
   font-weight: 650;
   letter-spacing: -0.01em;
   line-height: 1;
 }
 
 .brand img {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.25rem;
+  height: 2.25rem;
 }
 
 .heroTitle {
+  max-width: 17em;
   margin: 0;
-  font-size: var(--zplc-text-3xl);
-  font-weight: 600;
-  line-height: 1.08;
-  letter-spacing: -0.022em;
+  font-size: clamp(2.375rem, 1.3rem + 3.4vw, 4.25rem);
+  font-weight: 650;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
   text-wrap: balance;
 }
 
+.heroGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: clamp(2rem, 1rem + 3vw, 4rem);
+  align-items: end;
+  margin-top: clamp(2rem, 1rem + 3vw, 3.5rem);
+}
+
 .heroLead {
-  margin: var(--zplc-space-5) 0 0;
-  max-width: 40rem;
-  font-size: var(--zplc-text-lg);
-  line-height: 1.5;
+  max-width: 30rem;
+  margin: 0;
+  font-size: clamp(1.125rem, 1rem + 0.5vw, 1.375rem);
+  line-height: 1.45;
   color: var(--zplc-ink-2);
 }
 
@@ -71,7 +123,7 @@
 .secondaryAction {
   display: inline-flex;
   align-items: center;
-  min-height: 2.75rem;
+  min-height: 2.875rem;
   padding-inline: var(--zplc-space-5);
   border: 1px solid transparent;
   border-radius: var(--zplc-radius-control);
@@ -99,7 +151,7 @@
 }
 
 .secondaryAction {
-  background: var(--zplc-panel);
+  background: transparent;
   border-color: var(--zplc-rule-strong);
   color: var(--zplc-ink);
 }
@@ -115,110 +167,25 @@
   transform: translateY(1px);
 }
 
-/* the capture as a drawing sheet: the picture, and its parts list in the margin */
-.sheet {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 18rem;
-  margin: clamp(2.5rem, 2rem + 2vw, 4rem) 0 0;
-  background: var(--zplc-panel);
-  border: 1px solid var(--zplc-rule);
-  border-radius: var(--zplc-radius-figure);
-  overflow: hidden;
-}
-
-.plate {
-  position: relative;
-  border-right: 1px solid var(--zplc-rule);
-  background: var(--zplc-band);
-}
-
-.plate img {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.balloon,
-.parts li::before {
-  display: inline-grid;
-  place-items: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 50%;
-  background: var(--zplc-cobalt);
-  color: var(--zplc-on-cobalt);
-  font-size: 0.75rem;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-
-.balloon {
-  position: absolute;
-  left: var(--x);
-  top: var(--y);
-  transform: translate(-50%, -50%);
-  box-shadow: 0 0 0 2px var(--zplc-panel);
-}
-
-.legend {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: var(--zplc-space-5);
-  padding: var(--zplc-space-5);
-  font-size: var(--zplc-text-sm);
-  line-height: 1.5;
-}
-
-.parts {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: part;
-}
-
-.parts li {
-  display: grid;
-  grid-template-columns: 1.5rem 1fr;
-  gap: var(--zplc-space-3);
-  align-items: start;
-  counter-increment: part;
-}
-
-.parts li + li {
-  margin-top: var(--zplc-space-4);
-}
-
-.parts li::before {
-  content: counter(part);
-}
-
-.provenance {
-  margin: 0;
-  padding-top: var(--zplc-space-4);
-  border-top: 1px solid var(--zplc-rule);
-  font-size: var(--zplc-text-xs);
-  color: var(--zplc-ink-3);
-}
-
-.provenance code {
-  border: 0;
-  background: none;
-  padding: 0;
-  font-size: 0.95em;
-  color: var(--zplc-ink-2);
-}
-
-/* the release status: amber is the colour of attention, and the word says it too */
+/* the release status: an amber lamp, the word and one sentence; the lamp shows a real state and does not blink */
 .status {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--zplc-space-2) var(--zplc-space-4);
-  margin: var(--zplc-space-5) 0 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--zplc-space-2) var(--zplc-space-3);
+  margin: var(--zplc-space-7) 0 0;
+  padding-top: var(--zplc-space-5);
+  border-top: 1px solid var(--zplc-rule);
   font-size: var(--zplc-text-sm);
   color: var(--zplc-ink-2);
+}
+
+.lamp {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  background: var(--zplc-amber);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 27, 0.35);
 }
 
 .statusLabel {
@@ -229,6 +196,14 @@
   color: var(--zplc-amber);
 }
 
+.statusText {
+  grid-column: 1 / -1;
+}
+
+.heroArt {
+  margin-right: calc(-1 * var(--zplc-gutter));
+}
+
 /* ---------------------------------------------------------------------------------------------------------------------
  * A section of the page
  * ------------------------------------------------------------------------------------------------------------------- */
@@ -237,19 +212,23 @@
   border-top: 1px solid var(--zplc-rule);
 }
 
+.hero + .section {
+  border-top: 0;
+}
+
 .sectionTitle {
+  max-width: 18em;
   margin: 0;
-  max-width: 30ch;
-  font-size: var(--zplc-text-2xl);
-  font-weight: 600;
-  line-height: 1.15;
-  letter-spacing: -0.018em;
+  font-size: clamp(2rem, 1.4rem + 2.2vw, 3.25rem);
+  font-weight: 650;
+  line-height: 1.08;
+  letter-spacing: -0.028em;
   text-wrap: balance;
 }
 
 .sectionLead {
-  margin: var(--zplc-space-4) 0 0;
   max-width: 40rem;
+  margin: var(--zplc-space-5) 0 0;
   font-size: var(--zplc-text-lg);
   line-height: 1.55;
   color: var(--zplc-ink-2);
@@ -258,6 +237,301 @@
 
 .sectionLead code {
   font-size: 0.85em;
+}
+
+.subTitle {
+  margin: clamp(3.5rem, 2.5rem + 3vw, 5rem) 0 var(--zplc-space-5);
+  font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.625rem);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+/* ---------------------------------------------------------------------------------------------------------------------
+ * What makes ZPLC different: portability and the terminal strip of the HAL
+ * ------------------------------------------------------------------------------------------------------------------- */
+.portGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: clamp(2rem, 1rem + 4vw, 5rem);
+  align-items: start;
+  margin-top: clamp(3rem, 2rem + 3vw, 4.5rem);
+}
+
+.portTitle {
+  margin: 0;
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.portText {
+  margin: var(--zplc-space-4) 0 0;
+  color: var(--zplc-ink-2);
+  text-wrap: pretty;
+}
+
+.targetsTitle {
+  margin: var(--zplc-space-6) 0 var(--zplc-space-3);
+  font-size: var(--zplc-text-sm);
+  font-weight: 600;
+}
+
+.targets {
+  margin: 0;
+  border-top: 1px solid var(--zplc-rule);
+}
+
+.targets > div {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: var(--zplc-space-1) var(--zplc-space-4);
+  padding: var(--zplc-space-3) 0;
+  border-bottom: 1px solid var(--zplc-rule);
+  font-size: var(--zplc-text-sm);
+}
+
+.targets dt {
+  font-weight: 600;
+}
+
+.targets dd {
+  margin: 0;
+  color: var(--zplc-ink-2);
+}
+
+.strip {
+  margin: 0;
+  background: var(--zplc-panel);
+  border: 1px solid var(--zplc-rule);
+  border-radius: var(--zplc-radius-figure);
+  overflow: hidden;
+}
+
+.stripHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--zplc-space-4);
+  padding: var(--zplc-space-3) var(--zplc-space-5);
+  font-size: var(--zplc-text-sm);
+  font-weight: 600;
+}
+
+.stripHead code {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: var(--zplc-text-xs);
+  color: var(--zplc-ink-3);
+}
+
+/* the mounting rail under the head: a slotted DIN rail seen from the front */
+.rail {
+  height: 0.625rem;
+  border-block: 1px solid var(--zplc-rule);
+  background:
+    repeating-linear-gradient(90deg, transparent 0 0.75rem, var(--zplc-canvas) 0.75rem 1.5rem) center / 100% 0.25rem no-repeat,
+    var(--zplc-band);
+}
+
+.stripGroup {
+  display: grid;
+  grid-template-columns: 9.5rem minmax(0, 1fr);
+}
+
+.stripGroup + .stripGroup {
+  border-top: 1px solid var(--zplc-rule);
+}
+
+.stripLabel {
+  margin: 0;
+  padding: var(--zplc-space-3) var(--zplc-space-4) var(--zplc-space-3) var(--zplc-space-5);
+  border-right: 1px solid var(--zplc-rule);
+  font-size: var(--zplc-text-xs);
+  font-weight: 600;
+  color: var(--zplc-ink-2);
+}
+
+.terminals {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: var(--zplc-space-2) var(--zplc-space-4);
+  margin: 0;
+  padding: var(--zplc-space-3) var(--zplc-space-4);
+  list-style: none;
+}
+
+.terminals li {
+  display: flex;
+  align-items: center;
+  gap: var(--zplc-space-2);
+  min-width: 0;
+}
+
+/* a printed marker tag of a terminal block */
+.terminalTag {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.75rem;
+  height: 1.375rem;
+  padding: 0 var(--zplc-space-1);
+  border: 1px solid var(--zplc-rule-strong);
+  border-radius: 1px;
+  background: var(--zplc-canvas);
+  font-family: var(--zplc-font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.terminals code {
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 0.8125rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stripGroup[data-optional] {
+  background: var(--zplc-canvas);
+}
+
+.stripGroup[data-optional] .terminalTag {
+  border-style: dashed;
+  color: var(--zplc-ink-3);
+}
+
+.stripGroup[data-optional] code {
+  color: var(--zplc-ink-3);
+}
+
+/* ---------------------------------------------------------------------------------------------------------------------
+ * The ladder: each distinctive feature is a rung between the two power rails
+ * ------------------------------------------------------------------------------------------------------------------- */
+.ladder {
+  margin: clamp(4rem, 3rem + 3vw, 6rem) 0 0;
+  padding: var(--zplc-space-3) 0;
+  border-inline: 2px solid var(--zplc-ink-3);
+  list-style: none;
+}
+
+.rung {
+  --rung-color: var(--zplc-ink-3);
+  position: relative;
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) 3rem;
+  align-items: start;
+  padding: var(--zplc-space-5) 0;
+}
+
+/* the rung wire, at the height of the title; the title and the symbols sit on it */
+.rung::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: calc(var(--zplc-space-5) + 0.8125rem);
+  border-top: 1.5px solid var(--rung-color);
+  transition: border-color 200ms ease-out;
+}
+
+/* a rung under the pointer or the keyboard conducts: TRUE is green in ZPLC, so the wire and its symbols turn green */
+.rung:hover,
+.rung:focus-within {
+  --rung-color: var(--zplc-green);
+}
+
+.symbol {
+  position: relative;
+  display: block;
+  width: 3rem;
+  height: 1.5rem;
+  margin-top: 1px;
+  fill: none;
+  stroke: var(--rung-color);
+  stroke-width: 2;
+  background: var(--zplc-canvas);
+  transition: stroke 200ms ease-out;
+}
+
+.rungBody {
+  position: relative;
+  min-width: 0;
+  padding-inline: var(--zplc-space-3);
+}
+
+.rungTitle {
+  display: inline;
+  margin: 0;
+  padding-right: var(--zplc-space-3);
+  background: var(--zplc-canvas);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  box-decoration-break: clone;
+}
+
+.rungText {
+  max-width: 62ch;
+  margin-top: var(--zplc-space-2);
+  color: var(--zplc-ink-2);
+}
+
+.rungText p {
+  margin: 0 0 var(--zplc-space-2);
+  text-wrap: pretty;
+}
+
+.rungText a {
+  font-size: var(--zplc-text-sm);
+  font-weight: 500;
+}
+
+.timing {
+  max-width: 34rem;
+  margin: var(--zplc-space-4) 0;
+}
+
+.timing svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.timing figcaption {
+  margin-top: var(--zplc-space-1);
+  font-size: var(--zplc-text-xs);
+  color: var(--zplc-ink-3);
+}
+
+.timingLabel {
+  font-family: var(--zplc-font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  fill: var(--zplc-ink-2);
+}
+
+.timingWave {
+  fill: none;
+  stroke: var(--zplc-ink);
+  stroke-width: 1.5;
+  stroke-linejoin: miter;
+}
+
+.timingWave[data-row="1"] {
+  stroke: var(--zplc-cobalt);
+}
+
+.timingGrid {
+  stroke: var(--zplc-rule);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
 }
 
 /* ---------------------------------------------------------------------------------------------------------------------
@@ -353,8 +627,8 @@
 }
 
 .panelCaption p {
-  margin: 0;
   max-width: 56ch;
+  margin: 0;
   color: var(--zplc-ink-2);
 }
 
@@ -363,7 +637,6 @@
   white-space: nowrap;
 }
 
-/* how the claim is checked: a label column and a value column, as the Inspector of the application lays out a fact */
 .evidence {
   display: grid;
   grid-template-columns: 16rem minmax(0, 1fr);
@@ -377,31 +650,171 @@
 .evidenceLabel {
   margin: 0;
   font-weight: 600;
-  color: var(--zplc-ink);
 }
 
 .evidenceText {
-  margin: 0;
   max-width: 70ch;
+  margin: 0;
   color: var(--zplc-ink-2);
 }
 
 /* ---------------------------------------------------------------------------------------------------------------------
- * Narrow screens: one column, the parts list under the picture, the tabs in a row of codes
+ * Learn: the facts, the course as a sequential function chart, the plants
+ * ------------------------------------------------------------------------------------------------------------------- */
+.learnGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: clamp(2rem, 1rem + 4vw, 5rem);
+  align-items: start;
+  margin-top: clamp(3rem, 2rem + 3vw, 4.5rem);
+}
+
+.facts {
+  margin: 0;
+  border-top: 1px solid var(--zplc-rule);
+}
+
+.facts > div {
+  padding: var(--zplc-space-4) 0;
+  border-bottom: 1px solid var(--zplc-rule);
+}
+
+.facts dt {
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.facts dd {
+  margin: var(--zplc-space-1) 0 0;
+  font-size: 0.9375rem;
+  color: var(--zplc-ink-2);
+}
+
+.chart {
+  display: grid;
+  gap: var(--zplc-space-5);
+}
+
+.branch {
+  display: grid;
+  grid-template-columns: 9.5rem minmax(0, 1fr);
+  align-items: start;
+  gap: var(--zplc-space-4);
+  padding-top: var(--zplc-space-5);
+  border-top: 1px solid var(--zplc-rule);
+}
+
+.branchLabel {
+  margin: 0.75rem 0 0;
+  font-size: var(--zplc-text-xs);
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--zplc-ink-3);
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* a step: its box, the link to the next step, and the transition bar across the link */
+.step {
+  position: relative;
+  display: grid;
+  justify-items: start;
+  gap: var(--zplc-space-3);
+  padding-right: var(--zplc-space-4);
+}
+
+.stepBox {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1.5px solid var(--zplc-ink-2);
+  background: var(--zplc-canvas);
+  font-family: var(--zplc-font-mono);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* the initial step of IEC 61131-3 has a double frame */
+.step[data-initial] .stepBox {
+  outline: 1.5px solid var(--zplc-ink-2);
+  outline-offset: 3px;
+}
+
+.step::after {
+  content: "";
+  position: absolute;
+  top: 1.375rem;
+  left: 2.75rem;
+  right: 0;
+  border-top: 1.5px solid var(--zplc-ink-3);
+}
+
+.step::before {
+  content: "";
+  position: absolute;
+  top: 0.875rem;
+  left: calc(2.75rem + (100% - 2.75rem) / 2);
+  height: 1rem;
+  border-left: 3px solid var(--zplc-ink-2);
+}
+
+.step:last-child::after,
+.step:last-child::before {
+  content: none;
+}
+
+.stepTitle {
+  max-width: 15ch;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.plants {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--zplc-space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plantName {
+  margin: var(--zplc-space-3) 0 0;
+  font-weight: 600;
+}
+
+.plantLesson {
+  margin: var(--zplc-space-1) 0 0;
+  font-size: var(--zplc-text-sm);
+  color: var(--zplc-ink-2);
+}
+
+/* ---------------------------------------------------------------------------------------------------------------------
+ * Narrow screens: one column everywhere
  * ------------------------------------------------------------------------------------------------------------------- */
 @media (max-width: 996px) {
-  .sheet {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .plate {
-    border-right: 0;
-    border-bottom: 1px solid var(--zplc-rule);
-  }
-
+  .heroGrid,
+  .portGrid,
+  .learnGrid,
   .languageLayout,
   .evidence {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .heroArt {
+    margin-right: 0;
   }
 
   .languageLayout {
@@ -418,8 +831,8 @@
 
   .tab {
     display: block;
-    width: auto;
     flex: 1 0 auto;
+    width: auto;
     padding: var(--zplc-space-3) var(--zplc-space-4);
     border-bottom: 0;
     text-align: center;
@@ -442,68 +855,117 @@
     clip-path: inset(50%);
     white-space: nowrap;
   }
+
+  .branch {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .steps {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--zplc-space-3);
+  }
+
+  .step {
+    grid-template-columns: 2.75rem minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .step::after,
+  .step::before {
+    content: none;
+  }
+
+  .stepTitle {
+    max-width: none;
+  }
+
+  .plants {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 600px) {
-  .balloon {
-    width: 1.125rem;
-    height: 1.125rem;
-    font-size: 0.625rem;
-    box-shadow: 0 0 0 1.5px var(--zplc-panel);
-  }
-
-  .legend {
-    padding: var(--zplc-space-4);
-  }
-
   .actions > * {
     flex: 1 1 auto;
     justify-content: center;
   }
+
+  .stripGroup {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stripLabel {
+    border-right: 0;
+    padding-bottom: 0;
+  }
+
+  .targets > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ladder {
+    border-right: 0;
+  }
+
+  .rung {
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+  }
+
+  .rung > .symbol:last-child {
+    display: none;
+  }
+
+  .symbol {
+    width: 2.25rem;
+  }
 }
 
 /* ---------------------------------------------------------------------------------------------------------------------
- * Motion: the copy rises once on load, then the balloons are placed on the drawing in the order of the list. Nothing
- * moves under reduced motion, and everything is visible without the animation.
+ * Motion: the hero copy rises once, then the image is drawn from the left as a signal travels a wire; the course steps
+ * come in as they scroll into view. Nothing moves under reduced motion, and everything is visible without the animation.
  * ------------------------------------------------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: no-preference) {
-  .heroCopy > * {
-    animation: rise 640ms var(--zplc-ease-out) both;
+  .brand,
+  .heroTitle,
+  .heroBody {
+    animation: rise 680ms var(--zplc-ease-out) both;
   }
 
-  .heroCopy > :nth-child(2) {
-    animation-delay: 60ms;
+  .heroTitle {
+    animation-delay: 70ms;
   }
 
-  .heroCopy > :nth-child(3) {
-    animation-delay: 120ms;
+  .heroBody {
+    animation-delay: 160ms;
   }
 
-  .heroCopy > :nth-child(4) {
-    animation-delay: 180ms;
-  }
-
-  .balloon {
-    animation: place 420ms var(--zplc-ease-out) both;
-    animation-delay: calc(500ms + var(--i) * 110ms);
+  .heroArt {
+    animation: wire 1100ms var(--zplc-ease-out) 240ms both;
   }
 
   .panel:not([hidden]) .panelFigure img {
     animation: settle 240ms ease-out both;
+  }
+
+  @supports (animation-timeline: view()) {
+    .step {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 70%;
+    }
   }
 }
 
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(0.5rem);
+    transform: translateY(0.75rem);
   }
 }
 
-@keyframes place {
+@keyframes wire {
   from {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.6);
+    clip-path: inset(0 100% 0 0);
   }
 }
 

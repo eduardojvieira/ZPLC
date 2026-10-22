@@ -6,16 +6,41 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 
 const releasesUrl = 'https://github.com/eduardojvieira/ZPLC/releases';
 
-// The numbered regions of the hero capture (docs/static/img/editors/ld-<locale>.png, 1366 x 768), as fractions of its width
-// and height; the English and the Spanish captures share the layout. The order is the order of the list beside the picture.
-const heroCallouts = [
-  { x: '51.2%', y: '23%' },
-  { x: '34.4%', y: '31.4%' },
-  { x: '22.7%', y: '12.9%' },
-  { x: '55.6%', y: '8.5%' },
+const languageIds = ['st', 'il', 'ld', 'fbd', 'sfc'];
+
+// The functions of firmware/lib/zplc_core/include/zplc_hal.h, in the groups of docs/docs/runtime/port-interface.md. The last
+// group is optional: the portable core does not call it.
+const halGroups = [
+  { key: 'clock', functions: ['zplc_hal_tick', 'zplc_hal_sleep'] },
+  {
+    key: 'io',
+    functions: [
+      'zplc_hal_gpio_read',
+      'zplc_hal_gpio_write',
+      'zplc_hal_adc_read',
+      'zplc_hal_dac_write',
+      'zplc_io_table',
+      'zplc_io_channel_count',
+    ],
+  },
+  { key: 'storage', functions: ['zplc_hal_persist_save', 'zplc_hal_persist_load', 'zplc_hal_persist_delete'] },
+  { key: 'locks', functions: ['zplc_hal_mutex_create', 'zplc_hal_mutex_lock', 'zplc_hal_mutex_unlock', 'zplc_hal_mutex_destroy'] },
+  { key: 'life', functions: ['zplc_hal_log', 'zplc_hal_init', 'zplc_hal_shutdown'] },
+  { key: 'network', optional: true, functions: ['zplc_hal_net_init', 'zplc_hal_net_get_ip'] },
 ];
 
-const languageIds = ['st', 'il', 'ld', 'fbd', 'sfc'];
+// The modules of the course (packages/zplc-ide/lessons/*/lesson.json: `module` and `level`; titles from
+// docs/docs/learn/course-outline.md). Modules 0 to 3 are foundation, 4 to 7 intermediate, 8 to 11 advanced.
+const moduleLevels = [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2];
+
+// The simulated plants of the course (LESSON_PLANTS in packages/zplc-ide/src/learn/lessonPackage.ts) and the generated
+// illustration planned for each (docs/design/image-plan.md).
+const plantIds = [
+  { id: 'G1', key: 'tank' },
+  { id: 'G2', key: 'conveyor' },
+  { id: 'G3', key: 'motor' },
+  { id: 'G4', key: 'crossing' },
+];
 
 const landingPageContent = {
   en: {
@@ -25,6 +50,7 @@ const landingPageContent = {
         'ZPLC compiles the five IEC 61131-3 languages to one bytecode. Its C99 runtime builds for Zephyr boards and runs as a ' +
         'simulator on your computer, and its desktop application edits, simulates and tests programs.',
     },
+    placeholder: { generated: 'Generated image, to come', capture: 'Real capture, to come' },
     hero: {
       title: 'Open-source IEC 61131-3 PLC runtime and development environment on Zephyr RTOS.',
       lead: 'Program, simulate, and verify deterministic IEC 61131-3 control logic.',
@@ -32,19 +58,102 @@ const landingPageContent = {
       downloadHref: releasesUrl,
       start: 'Get started',
       startTo: '/docs/getting-started',
-      shot: 'editors/ld-en.png',
-      shotAlt: 'ZPLC with the Blinky example open in the Ladder Diagram editor.',
-      callouts: [
-        'Ladder Diagram editor with the Blinky example: four rungs, two timers.',
-        'Toolbox: contacts, coils and blocks for the rung.',
-        'Project: programs, tasks, I/O mapping, communication and the target device.',
-        'Status rail: mode, runtime session and task interval.',
-      ],
-      provenance: 'Real screenshot, captured from commit',
+      artAlt:
+        'Illustration: a ladder rung drawn as a schematic, wired to the terminals of a generic controller module on a DIN rail; ' +
+        'the path to one output is highlighted.',
       statusLabel: 'Prerelease',
       status: 'Version 2.0 is for evaluation. No board has been tested on hardware, and ZPLC must not control machinery.',
       statusLink: 'Safety and limitations',
       statusTo: '/docs/safety-and-limitations',
+    },
+    different: {
+      title: 'What makes ZPLC different',
+      lead: 'The parts of ZPLC that set it apart, each with the page that shows how it is checked.',
+      port: {
+        title: 'A new microcontroller needs 18 functions',
+        text:
+          'The runtime is portable C99 behind a hardware abstraction layer. A port implements its 18 functions and two optional ' +
+          'network calls, then passes the port conformance suite: every opcode, the loader rejections, the scheduler phases and ' +
+          'faults, timing, I/O and storage.',
+        targetsTitle: 'Ports in the repository',
+        targets: [
+          {
+            name: 'Zephyr RTOS',
+            text:
+              'Seven board profiles on RP2040, STM32 and ESP32-S3 chips build in CI. The conformance suite runs on `native_sim` ' +
+              'and on QEMU Cortex-M3 and M0. No board has been tested on hardware yet.',
+          },
+          { name: 'POSIX host', text: 'The simulator of the ZPLC application is this port, built from the same C sources.' },
+          { name: 'FreeRTOS', text: 'Built and conformance-tested on the FreeRTOS POSIX simulator in CI.' },
+        ],
+        stripTitle: 'The hardware abstraction layer',
+        groups: {
+          clock: 'Clock',
+          io: 'I/O table',
+          storage: 'Storage',
+          locks: 'Locks',
+          life: 'Log and life cycle',
+          network: 'Network, optional',
+        },
+        links: [
+          { label: 'Port interface and conformance suite', to: '/docs/runtime/port-interface' },
+          { label: 'Port to a board', to: '/docs/guides/port-to-a-board' },
+        ],
+      },
+      rungs: [
+        {
+          title: 'Simulate before any hardware',
+          text:
+            'The simulator is the same C runtime, built for your computer and bundled with ZPLC. Scenario tests set inputs and ' +
+            'check outputs over time, in the Tests tab or with `zplc-cli` in a CI job.',
+          link: 'Scenario tests',
+          to: '/docs/guides/scenario-tests',
+        },
+        {
+          title: 'Watch, force and step online',
+          text:
+            'In all five languages: values on the program while it runs, breakpoints, pause and a one-cycle step, and forced ' +
+            'values that stay marked as forced.',
+          link: 'Simulate and debug',
+          to: '/docs/guides/simulate-and-debug',
+        },
+        {
+          title: 'A scan in a fixed order',
+          text:
+            'Tasks released together run by release time, then priority, then task ID, against one snapshot of the inputs. A ' +
+            'program has up to 16 tasks, each with its own interval. The interval is a deadline; no board has a measured scan ' +
+            'time yet.',
+          link: 'Scheduler',
+          to: '/docs/runtime/scheduler',
+          timing: true,
+        },
+        {
+          title: 'A person starts every physical action',
+          text:
+            'Learn and the MCP server for AI assistants never flash, deploy, force, or start and stop a program. A person does, ' +
+            'with the controls of ZPLC.',
+          link: 'AI assistants and MCP',
+          to: '/docs/guides/ai-and-mcp',
+        },
+        {
+          title: 'Communication blocks',
+          text:
+            'Function blocks for Modbus, MQTT with Sparkplug B, and cloud services. They are checked against servers written for ' +
+            'the tests on this computer, not yet against a live broker or a device on a wire.',
+          link: 'Communication function blocks',
+          to: '/docs/runtime/communication-function-blocks',
+        },
+        {
+          title: 'English and Spanish',
+          text: 'The application, the 33 lessons and this documentation, in English and in neutral Spanish.',
+          link: 'Getting started',
+          to: '/docs/getting-started',
+        },
+      ],
+      timing: {
+        caption: 'The order of one scan, not to scale',
+        rows: ['Read inputs', 'Run tasks', 'Write outputs'],
+      },
     },
     languages: {
       title: 'Five IEC 61131-3 languages, one bytecode',
@@ -94,6 +203,71 @@ const landingPageContent = {
         },
       ],
     },
+    learn: {
+      title: 'Learn PLC programming in ZPLC',
+      lead:
+        'A course of 33 lessons in 12 modules, from the scan cycle to a small machine, in English and Spanish. ZPLC grades every ' +
+        'lesson, and all but one run in the simulator with no board and no network.',
+      facts: [
+        {
+          title: 'Graded against a scenario',
+          text:
+            'Check runs your saved program against the scenario of the lesson and lists each assertion that failed, with the ' +
+            'time, the value expected and the value seen.',
+        },
+        {
+          title: 'Two tracks',
+          text:
+            'All lessons but one run in simulation. 21 of them also take the lesson to a learner board, with the wiring as a diagram and ' +
+            'a pin ' +
+            'map; no check on a board has been recorded yet.',
+        },
+        {
+          title: 'Four simulated plants',
+          text: 'A tank, a conveyor, a motor and a pedestrian crossing answer the outputs of your program.',
+        },
+        {
+          title: 'Hints before the solution',
+          text: 'Two levels of hint, the solution only on request, and a teacher can hide it.',
+        },
+      ],
+      captureAlt: 'The first lesson of Learn open beside the editor, after Check passed.',
+      courseTitle: 'The course, module by module',
+      levels: ['Foundation', 'Intermediate', 'Advanced'],
+      modules: [
+        'Getting ready',
+        'How a PLC thinks',
+        'Boolean logic and latching',
+        'Timers, edges and counters',
+        'Data and analog scaling',
+        'State machines and sequences',
+        'Feedback, faults and interlocks',
+        'Structuring programs',
+        'Testing and diagnosis',
+        'One logic in five languages',
+        'Modbus and MQTT basics',
+        'Capstone: a small machine',
+      ],
+      plantsTitle: 'The plants your program drives',
+      plants: {
+        tank: { name: 'Tank', lesson: 'Tank level, faults, and reset', alt: 'Illustration of a tank with a pump and two level switches.' },
+        conveyor: {
+          name: 'Conveyor',
+          lesson: 'Conveyor classification and safe jam',
+          alt: 'Illustration of a belt conveyor with part sensors and a diverter.',
+        },
+        motor: { name: 'Motor', lesson: 'Command, feedback, and speed', alt: 'Illustration of an electric motor with a speed sensor.' },
+        crossing: {
+          name: 'Pedestrian crossing',
+          lesson: 'Pedestrian crossing and safe states',
+          alt: 'Illustration of a pedestrian crossing with signal lamps and a push button.',
+        },
+      },
+      links: [
+        { label: 'Start with Learn', to: '/docs/learn' },
+        { label: 'For educators', to: '/docs/learn/educators' },
+      ],
+    },
   },
   es: {
     home: {
@@ -102,6 +276,7 @@ const landingPageContent = {
         'ZPLC compila los cinco lenguajes IEC 61131-3 a un solo bytecode. Su runtime en C99 se compila para placas Zephyr y se ' +
         'ejecuta como simulador en su equipo, y su aplicación de escritorio edita, simula y prueba programas.',
     },
+    placeholder: { generated: 'Imagen generada, pendiente', capture: 'Captura real, pendiente' },
     hero: {
       title: 'Runtime y entorno de desarrollo de PLC IEC 61131-3, de código abierto, sobre Zephyr RTOS.',
       lead: 'Programe, simule y verifique lógica de control IEC 61131-3 determinista.',
@@ -109,19 +284,105 @@ const landingPageContent = {
       downloadHref: releasesUrl,
       start: 'Primeros pasos',
       startTo: '/docs/getting-started',
-      shot: 'editors/ld-es.png',
-      shotAlt: 'ZPLC con el ejemplo Blinky abierto en el editor de diagrama de escalera.',
-      callouts: [
-        'Editor de diagrama de escalera con el ejemplo Blinky: cuatro peldaños, dos temporizadores.',
-        'Caja de herramientas: contactos, bobinas y bloques para el peldaño.',
-        'Proyecto: programas, tareas, mapeo de E/S, comunicación y dispositivo de destino.',
-        'Barra de estado: modo, sesión del runtime e intervalo de tarea.',
-      ],
-      provenance: 'Captura real, tomada del commit',
+      artAlt:
+        'Ilustración: un peldaño de diagrama de escalera dibujado como esquema, cableado a los bornes de un módulo controlador ' +
+        'genérico sobre un riel DIN; el camino hasta una salida está resaltado.',
       statusLabel: 'Versión preliminar',
       status: 'La versión 2.0 es para evaluación. Ninguna placa se ha probado con hardware, y ZPLC no debe controlar maquinaria.',
       statusLink: 'Seguridad y limitaciones',
       statusTo: '/docs/safety-and-limitations',
+    },
+    different: {
+      title: 'Lo que distingue a ZPLC',
+      lead: 'Las partes de ZPLC que lo diferencian, cada una con la página que muestra cómo se comprueba.',
+      port: {
+        title: 'Un microcontrolador nuevo necesita 18 funciones',
+        text:
+          'El runtime es C99 portable detrás de una capa de abstracción de hardware. Un port implementa sus 18 funciones y dos ' +
+          'llamadas de red opcionales, y luego pasa la suite de conformidad de ports: cada código de operación, los rechazos del ' +
+          'cargador, las fases y fallas del planificador, la temporización, la E/S y el almacenamiento.',
+        targetsTitle: 'Ports en el repositorio',
+        targets: [
+          {
+            name: 'Zephyr RTOS',
+            text:
+              'Siete perfiles de placa con chips RP2040, STM32 y ESP32-S3 se compilan en CI. La suite de conformidad se ejecuta ' +
+              'en `native_sim` y en QEMU Cortex-M3 y M0. Ninguna placa se ha probado todavía con hardware.',
+          },
+          {
+            name: 'Host POSIX',
+            text: 'El simulador de la aplicación ZPLC es este port, compilado desde las mismas fuentes en C.',
+          },
+          { name: 'FreeRTOS', text: 'Compilado y probado con la suite de conformidad en el simulador POSIX de FreeRTOS, en CI.' },
+        ],
+        stripTitle: 'La capa de abstracción de hardware',
+        groups: {
+          clock: 'Reloj',
+          io: 'Tabla de E/S',
+          storage: 'Almacenamiento',
+          locks: 'Bloqueos',
+          life: 'Registro y ciclo de vida',
+          network: 'Red, opcional',
+        },
+        links: [
+          { label: 'Interfaz de port y suite de conformidad', to: '/docs/runtime/port-interface' },
+          { label: 'Portar a una placa', to: '/docs/guides/port-to-a-board' },
+        ],
+      },
+      rungs: [
+        {
+          title: 'Simule antes de usar hardware',
+          text:
+            'El simulador es el mismo runtime en C, compilado para su equipo e incluido con ZPLC. Las pruebas de escenario fijan ' +
+            'entradas y verifican salidas en el tiempo, desde la pestaña Pruebas o con `zplc-cli` en un trabajo de CI.',
+          link: 'Pruebas de escenario',
+          to: '/docs/guides/scenario-tests',
+        },
+        {
+          title: 'Observe, fuerce y avance en línea',
+          text:
+            'En los cinco lenguajes: valores sobre el programa mientras se ejecuta, puntos de interrupción, pausa y avance de un ' +
+            'ciclo, y valores forzados que siguen marcados como forzados.',
+          link: 'Simular y depurar',
+          to: '/docs/guides/simulate-and-debug',
+        },
+        {
+          title: 'Un ciclo en un orden fijo',
+          text:
+            'Las tareas liberadas juntas se ejecutan por instante de liberación, luego por prioridad y luego por ID de tarea, ' +
+            'sobre una sola instantánea de las entradas. Un programa tiene hasta 16 tareas, cada una con su intervalo. El ' +
+            'intervalo es un plazo; ninguna placa tiene todavía un tiempo de ciclo medido.',
+          link: 'Planificador',
+          to: '/docs/runtime/scheduler',
+          timing: true,
+        },
+        {
+          title: 'Una persona inicia cada acción física',
+          text:
+            'Learn y el servidor MCP para asistentes de IA nunca graban firmware, despliegan, fuerzan, ni inician o detienen un ' +
+            'programa. Lo hace una persona, con los controles de ZPLC.',
+          link: 'Asistentes de IA y MCP',
+          to: '/docs/guides/ai-and-mcp',
+        },
+        {
+          title: 'Bloques de comunicación',
+          text:
+            'Bloques de función para Modbus, MQTT con Sparkplug B y servicios en la nube. Se comprueban contra servidores ' +
+            'escritos para las pruebas en este equipo, todavía no contra un broker real ni un dispositivo en un cable.',
+          link: 'Bloques de función de comunicación',
+          to: '/docs/runtime/communication-function-blocks',
+        },
+        {
+          title: 'Inglés y español',
+          text: 'La aplicación, las 33 lecciones y esta documentación, en inglés y en español neutro.',
+          link: 'Primeros pasos',
+          to: '/docs/getting-started',
+        },
+      ],
+      timing: {
+        caption: 'El orden de un ciclo, sin escala',
+        rows: ['Leer entradas', 'Ejecutar tareas', 'Escribir salidas'],
+      },
     },
     languages: {
       title: 'Cinco lenguajes IEC 61131-3, un solo bytecode',
@@ -185,6 +446,79 @@ const landingPageContent = {
         },
       ],
     },
+    learn: {
+      title: 'Aprenda programación de PLC en ZPLC',
+      lead:
+        'Un curso de 33 lecciones en 12 módulos, del ciclo de un PLC a una máquina pequeña, en inglés y en español. ZPLC califica ' +
+        'cada lección, y todas menos una se ejecutan en el simulador, sin placa y sin red.',
+      facts: [
+        {
+          title: 'Calificada con un escenario',
+          text:
+            'Comprobar ejecuta su programa guardado contra el escenario de la lección y lista cada aserción que falló, con el ' +
+            'instante, el valor esperado y el valor observado.',
+        },
+        {
+          title: 'Dos recorridos',
+          text:
+            'Todas las lecciones menos una se ejecutan en simulación. 21 de ellas llevan además la lección a una placa del estudiante, ' +
+            'con el cableado en un ' +
+            'diagrama y un mapa de pines; todavía no se ha registrado ninguna comprobación en una placa.',
+        },
+        {
+          title: 'Cuatro plantas simuladas',
+          text: 'Un tanque, una cinta transportadora, un motor y un cruce peatonal responden a las salidas de su programa.',
+        },
+        {
+          title: 'Pistas antes de la solución',
+          text: 'Dos niveles de pista, la solución solo a pedido, y un docente puede ocultarla.',
+        },
+      ],
+      captureAlt: 'La primera lección de Learn abierta junto al editor, después de que Comprobar pasó.',
+      courseTitle: 'El curso, módulo por módulo',
+      levels: ['Inicial', 'Intermedio', 'Avanzado'],
+      modules: [
+        'Primeros pasos',
+        'Cómo piensa un PLC',
+        'Lógica booleana y retención',
+        'Temporizadores, flancos y contadores',
+        'Datos y escalado analógico',
+        'Máquinas de estado y secuencias',
+        'Realimentación, fallas y enclavamientos',
+        'Estructura de programas',
+        'Pruebas y diagnóstico',
+        'Una lógica en cinco lenguajes',
+        'Fundamentos de Modbus y MQTT',
+        'Proyecto final: una máquina pequeña',
+      ],
+      plantsTitle: 'Las plantas que maneja su programa',
+      plants: {
+        tank: {
+          name: 'Tanque',
+          lesson: 'Nivel de tanque, fallas y reset',
+          alt: 'Ilustración de un tanque con una bomba y dos interruptores de nivel.',
+        },
+        conveyor: {
+          name: 'Cinta transportadora',
+          lesson: 'Cinta de clasificación y atasco seguro',
+          alt: 'Ilustración de una cinta transportadora con sensores de pieza y un desviador.',
+        },
+        motor: {
+          name: 'Motor',
+          lesson: 'Orden, realimentación y velocidad',
+          alt: 'Ilustración de un motor eléctrico con un sensor de velocidad.',
+        },
+        crossing: {
+          name: 'Cruce peatonal',
+          lesson: 'Cruce peatonal y estados seguros',
+          alt: 'Ilustración de un cruce peatonal con lámparas de señal y un pulsador.',
+        },
+      },
+      links: [
+        { label: 'Empezar con Learn', to: '/docs/learn' },
+        { label: 'Para docentes', to: '/docs/learn/educators' },
+      ],
+    },
   },
 };
 
@@ -194,7 +528,13 @@ export function getLandingPageContent(locale) {
   const content = landingPageContent[lang];
   return {
     ...content,
-    hero: { ...content.hero, callouts: content.hero.callouts.map((text, index) => ({ ...heroCallouts[index], text })) },
+    different: {
+      ...content.different,
+      port: {
+        ...content.different.port,
+        groups: halGroups.map((group) => ({ ...group, label: content.different.port.groups[group.key] })),
+      },
+    },
     languages: {
       ...content.languages,
       items: content.languages.items.map((item, index) => ({
@@ -203,6 +543,11 @@ export function getLandingPageContent(locale) {
         shot: `editors/${languageIds[index]}-${lang}.png`,
         to: `/docs/reference/language-${languageIds[index]}`,
       })),
+    },
+    learn: {
+      ...content.learn,
+      modules: content.learn.modules.map((title, index) => ({ number: index, title, level: moduleLevels[index] })),
+      plants: plantIds.map((plant) => ({ ...plant, ...content.learn.plants[plant.key] })),
     },
   };
 }
