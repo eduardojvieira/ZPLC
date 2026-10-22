@@ -338,7 +338,12 @@ export async function closeBrowserApp(): Promise<void> {
     ['ask the browser to close', () => app.cdp.command('Browser.close').catch(() => undefined)],
     ['close the DevTools socket', () => app.cdp.close()],
     ['stop the browser process', () => stop(browser)],
-    ['close the Vite server', () => server.close()],
+    // ponytail: on the hosted ubuntu runner server.close() never finished (3 of 4 files, run 39831168254) and it could
+    // not be reproduced here. Its parts are closed one by one so the warning names the one that hangs; the test process
+    // drops a server left open when it exits. Make these fatal again once that part is fixed.
+    ['close the Vite file watcher', () => server.watcher.close(), { warn: true }],
+    ['close the Vite HMR socket', () => server.ws.close(), { warn: true }],
+    ['close the Vite server', () => server.close(), { warn: true }],
     ['delete the browser profile', () => rmSync(scratch, { recursive: true, force: true })],
   ]);
 }

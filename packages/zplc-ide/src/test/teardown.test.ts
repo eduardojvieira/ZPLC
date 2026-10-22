@@ -21,6 +21,26 @@ describe('teardown of the browser test environment', () => {
     expect(Date.now() - started).toBeLessThan(2_000);
   });
 
+  test('reports a late step marked as a warning on stderr without failing, and still runs the steps after it', async () => {
+    const ran: string[] = [];
+    const warnings: string[] = [];
+    const write = process.stderr.write.bind(process.stderr);
+    process.stderr.write = ((chunk: string | Uint8Array) => (warnings.push(String(chunk)), true)) as typeof process.stderr.write;
+    try {
+      await teardown(
+        [
+          ['close the file watcher', () => new Promise<void>(() => undefined), { warn: true }],
+          ['delete the profile', async () => void ran.push('delete the profile')],
+        ],
+        50,
+      );
+    } finally {
+      process.stderr.write = write;
+    }
+    expect(ran).toEqual(['delete the profile']);
+    expect(warnings.join('')).toContain('close the file watcher: did not finish within 50 ms');
+  });
+
   test('names a step that throws and passes when every step is done', async () => {
     await expect(teardown([['a', async () => undefined]], 50)).resolves.toBeUndefined();
     await expect(
