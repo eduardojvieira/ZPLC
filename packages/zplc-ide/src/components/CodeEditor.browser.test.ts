@@ -20,24 +20,6 @@ async function caretOnBlankLine(app: BrowserApp): Promise<void> {
   await app.press('ArrowUp');
 }
 
-/**
- * Opens the suggestion list with Ctrl+Space. The editor cancels a request that the page supersedes while it settles (the
- * provider answers a cancelled request with no items, and the widget shows no list), and a busy machine decides when that
- * happens. The test measures what the list holds, not the first press, so it presses again when no list came.
- */
-async function suggestList(app: BrowserApp): Promise<void> {
-  for (let attempt = 1; ; attempt++) {
-    await app.press('Ctrl+ ');
-    try {
-      await app.axNode('listbox', 'Suggest', 8_000);
-      return;
-    } catch (error) {
-      if (attempt === 4) throw error;
-      await app.press('Escape');
-    }
-  }
-}
-
 const editorName = (name: string, t: typeof en) => t('editors.code.label', { name });
 
 describe('Structured Text editor in a browser (VF-007, LNG-015)', () => {
@@ -74,7 +56,8 @@ describe('Structured Text editor in a browser (VF-007, LNG-015)', () => {
     const app = await browserApp();
     await app.open({ name: 'main.st', language: 'ST', content: ST });
     await caretOnBlankLine(app);
-    await suggestList(app);
+    await app.press('Ctrl+ ');
+    await app.axNode('listbox', 'Suggest');
     const option = await app.axNode('option', /^x\b/);
     expect(option.name).toContain('x');
     await app.type('x');

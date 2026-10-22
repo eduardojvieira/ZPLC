@@ -112,13 +112,21 @@ export class BrowserApp {
     for (const char of text) await this.press(char);
   }
 
-  /** Clicks the centre of the first element that matches `selector`, with a real pointer event. */
+  /**
+   * Clicks the centre of the first element that matches `selector`, with a real pointer event, once the element has stopped
+   * moving: the workbench lays its panels out for some hundreds of milliseconds after an editor is drawn, and a click aimed at
+   * the box measured in the middle of that lands on whatever the layout puts there (the sidebar separator took the focus
+   * from the editor and every key of the test then went to the separator).
+   */
   async click(selector: string, options: { button?: 'left' | 'right'; count?: number } = {}): Promise<void> {
     const box = await this.until<{ x: number; y: number }>(
-      `${selector} to be visible`,
-      `(() => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return null; el.scrollIntoView({ block: ` +
-        `'center', inline: 'center' }); const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 ? { x: r.x + r.width / ` +
-        `2, y: r.y + r.height / 2 } : null; })()`,
+      `${selector} to be visible and still`,
+      `(async () => { const el = document.querySelector(${JSON.stringify(selector)}); if (!el) return null; el.scrollIntoView({ block: ` +
+        `'center', inline: 'center' }); const read = () => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 ? ` +
+        `[r.x, r.y, r.width, r.height] : null; }; let last = read(); let still = 0; for (let i = 0; i < 100 && last && still < 3; i++) { ` +
+        `await new Promise((resolve) => setTimeout(resolve, 50)); const now = read(); still = now && last.every((v, k) => v === now[k]) ` +
+        `? ` +
+        `still + 1 : 0; last = now; } return last && still >= 3 ? { x: last[0] + last[2] / 2, y: last[1] + last[3] / 2 } : null; })()`,
     );
     await this.clickAt(box.x, box.y, options);
   }
