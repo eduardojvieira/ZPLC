@@ -10,6 +10,8 @@ export default function Hero() {
   const { hero } = useLandingPageContent();
   const logo = useBaseUrl('/img/logo.svg');
   const art = useBaseUrl('/img/generated/hero-rung-to-terminal.avif');
+  const artSmall = useBaseUrl('/img/generated/hero-rung-to-terminal-720.avif');
+  const artMedium = useBaseUrl('/img/generated/hero-rung-to-terminal-1080.avif');
 
   return (
     <header className={`${styles.hero} zplc-spine`}>
@@ -38,7 +40,17 @@ export default function Hero() {
               </span>
             </p>
           </div>
-          <img className={styles.heroArt} src={art} alt={hero.artAlt} width="1376" height="768" fetchPriority="high" decoding="async" />
+          <img
+            className={styles.heroArt}
+            src={art}
+            srcSet={`${artSmall} 720w, ${artMedium} 1080w, ${art} 1376w`}
+            sizes="(max-width: 996px) calc(100vw - 2rem), 58vw"
+            alt={hero.artAlt}
+            width="1376"
+            height="768"
+            fetchPriority="high"
+            decoding="async"
+          />
         </div>
       </div>
     </header>

@@ -339,7 +339,8 @@
   min-width: 0;
 }
 
-/* a printed marker tag of a terminal block */
+/* a printed marker tag of a terminal block; mono labels of this page use the regular weight only, so the bold mono file
+   is not downloaded by the landing */
 .terminalTag {
   flex: none;
   display: inline-grid;
@@ -352,7 +353,7 @@
   background: var(--zplc-canvas);
   font-family: var(--zplc-font-mono);
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 400;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -559,7 +560,7 @@
 .tabCode {
   font-family: var(--zplc-font-mono);
   font-size: var(--zplc-text-xs);
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.02em;
   color: var(--zplc-ink-3);
 }
@@ -710,7 +711,7 @@
   background: var(--zplc-canvas);
   font-family: var(--zplc-font-mono);
   font-size: 0.9375rem;
-  font-weight: 700;
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
 }
 
@@ -973,7 +974,7 @@
   grid-row: span 2;
   font-family: var(--zplc-font-mono);
   font-size: 1.75rem;
-  font-weight: 700;
+  font-weight: 400;
   line-height: 1;
 }
 
@@ -986,7 +987,7 @@
   border: 0;
   background: none;
   font-size: var(--zplc-text-sm);
-  font-weight: 700;
+  font-weight: 400;
   color: inherit;
 }
 
@@ -1352,8 +1353,8 @@
 }
 
 /* ---------------------------------------------------------------------------------------------------------------------
- * Motion: the hero copy rises once, then the image is drawn from the left as a signal travels a wire; the course steps
- * come in as they scroll into view. Nothing moves under reduced motion, and everything is visible without the animation.
+ * Motion: the hero copy rises once into place; the course steps come in as they scroll into view; a rung conducts under
+ * the pointer. Nothing moves under reduced motion, and everything is visible without the animation.
  * ------------------------------------------------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: no-preference) {
   .brand,
@@ -1370,10 +1371,6 @@
     animation-delay: 160ms;
   }
 
-  .heroArt {
-    animation: wire 1100ms var(--zplc-ease-out) 240ms both;
-  }
-
   .panel:not([hidden]) .panelFigure img {
     animation: settle 240ms ease-out both;
   }
@@ -1387,16 +1384,10 @@
   }
 }
 
+/* from the visible default: only the position moves, so the first paint already shows the content */
 @keyframes rise {
   from {
-    opacity: 0;
     transform: translateY(0.75rem);
-  }
-}
-
-@keyframes wire {
-  from {
-    clip-path: inset(0 100% 0 0);
   }
 }
 
