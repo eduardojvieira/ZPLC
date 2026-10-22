@@ -38,8 +38,6 @@ import type { Theme, IDEState } from './ideStoreTypes';
 import { firstTreeFile } from './fileTreeLookup';
 import { createFileActions } from './fileActions';
 import { t } from '../i18n';
-import { isWebBuild } from '../platform/webCapabilities';
-import { forgetBrowserProject, listBrowserProjects, newBrowserProjectFolder, openBrowserProject } from '../platform/browserProjectStore';
 export type { Theme, CompilerNavigationTarget, CloseProjectOptions, DebugMode, LiveValue, DebugState, IDEState } from './ideStoreTypes';
 
 let openProjectIntent = 0;
@@ -350,7 +348,6 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
       get,
       async () => {
         const bridge = projectFilesBridge();
-        if (!bridge && isWebBuild()) return openBrowserProject(recentId);
         if (!bridge) throw new Error('Recent projects are only available in the desktop app.');
         return openRecentFolder(bridge, recentId);
       },
@@ -359,13 +356,12 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
 
   refreshRecentProjects: async () => {
     const bridge = projectFilesBridge();
-    set({ recentProjects: bridge ? await listRecentProjects(bridge) : isWebBuild() ? await listBrowserProjects() : [] });
+    set({ recentProjects: bridge ? await listRecentProjects(bridge) : [] });
   },
 
   forgetRecentProject: async (recentId) => {
     const bridge = projectFilesBridge();
     if (bridge) await forgetRecentOnBridge(bridge, recentId);
-    else if (isWebBuild()) await forgetBrowserProject(recentId);
     set({ recentProjects: get().recentProjects.filter((entry) => entry.recentId !== recentId) });
     await get().refreshRecentProjects();
   },
@@ -459,12 +455,7 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
     }
     try {
       void flushSession();
-      // The web build keeps an example in the store of the browser, with no dialog: it is a copy the person can edit and find again.
-      const chosen = folder
-        ? await folder()
-        : isWebBuild()
-          ? { handle: await newBrowserProjectFolder(loaded.zplcConfig.name), seed: true }
-          : await openDirectoryPicker().then((handle) => handle && { handle, seed: true });
+      const chosen = folder ? await folder() : await openDirectoryPicker().then((handle) => handle && { handle, seed: true });
       if (!isCurrent() || !chosen) return false;
       const dirHandle = chosen.handle;
       get().addConsoleEntry({

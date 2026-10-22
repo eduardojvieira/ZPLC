@@ -8,7 +8,6 @@ import { withShortcut } from '../commands/shortcutLabels';
 import { canRunCurrentProgram, type ProgramLoadState } from './debugSessionState';
 import { EXECUTION_MODE, type ExecutionMode } from './runtimeArtifactSelection';
 import { Button } from '../ui';
-import { deviceLinkRefusal, isWebBuild } from '../platform/webCapabilities';
 
 export function RunControls({
   executionMode,
@@ -59,10 +58,7 @@ export function RunControls({
   onStop: () => Promise<void>;
   onReset: () => Promise<void>;
 }) {
-  const translator = useT();
-  const { t } = translator;
-  // The web build never reaches a device (AGENTS.md rule 7): the hardware mode is off, with its reason in the label and the tooltip.
-  const hardwareRefusal = deviceLinkRefusal(isWebBuild(), translator);
+  const { t } = useT();
   return (
     <>
       {/* Mode Toggle */}
@@ -96,16 +92,15 @@ export function RunControls({
           onClick={() => {
             void onExecutionModeChange(EXECUTION_MODE.HARDWARE);
           }}
-          disabled={controlsBusy || hardwareRefusal !== null}
-          data-web-unavailable={hardwareRefusal === null ? undefined : 'deviceLink'}
+          disabled={controlsBusy}
           className={`focus-ring flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${
             executionMode === EXECUTION_MODE.HARDWARE
               ? 'bg-[var(--color-accent-blue)] text-[var(--color-on-accent)]'
               : 'text-[var(--color-surface-300)] hover:bg-[var(--menu-item-bg-active)]'
           } disabled:opacity-50`}
-          aria-label={hardwareRefusal === null ? t('toolbar.hardware.label') : `${t('toolbar.hardware.label')}. ${hardwareRefusal}`}
+          aria-label={t('toolbar.hardware.label')}
           aria-pressed={executionMode === EXECUTION_MODE.HARDWARE}
-          tooltip={hardwareRefusal ?? t('toolbar.hardware.title')}
+          tooltip={t('toolbar.hardware.title')}
         >
           <Radio size={14} />
           <span className="hidden sm:inline">{t('toolbar.hardware.text')}</span>

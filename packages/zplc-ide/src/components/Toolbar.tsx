@@ -45,8 +45,6 @@ import { vmInfoNow } from '../store/vmInfo';
 import { Notifications } from './Notifications';
 import { useDropdownMenu } from './useDropdownMenu';
 import { canLinkProjectWorkspace, linkProjectWorkspace } from '../utils/workspaceTestLink';
-import { isWebBuild } from '../platform/webCapabilities';
-import { webBuildBridge } from '../platform/webWorkspace';
 import { performHardwareDeploy } from './deployFlow';
 import { confirmReset, confirmStop, proceedAfterConfirmation } from './physicalActions';
 import { RunControls } from './ToolbarRunControls';
@@ -259,11 +257,10 @@ export function Toolbar({ debugController }: ToolbarProps) {
     const isCurrentRun = () => useIDEStore.getState().compilerRunId === compilerRunId;
     buildMenu.setOpen(false);
 
-    const workspaceTests =
-      shownProjectBridge(window.electronAPI?.workspaceTests) ?? webBuildBridge(() => useIDEStore.getState().directoryHandle);
+    const workspaceTests = shownProjectBridge(window.electronAPI?.workspaceTests);
     const currentWorkspaceLink = workspaceScenarioLink?.projectSession === projectSession ? workspaceScenarioLink : null;
     const workspaceCompileRoute = resolveWorkspaceCompileRoute({
-      isElectronHost: window.electronAPI !== undefined || navigator.userAgent.includes('Electron/') || isWebBuild(),
+      isElectronHost: window.electronAPI !== undefined || navigator.userAgent.includes('Electron/'),
       canonicalCompileAvailable: typeof workspaceTests?.compile === 'function',
       isProjectOpen: useIDEStore.getState().isProjectOpen,
       hasCurrentLink: currentWorkspaceLink !== null,
