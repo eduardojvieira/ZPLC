@@ -373,13 +373,15 @@ describe('the committed evidence (VF-027)', () => {
   const records = Object.entries(evidence).flatMap(([id, checks]) => checks.map((check) => ({ id, check })));
 
   it(
-    'records the second port as shipped by D-06 (option A): checks that run it, a gate for the hosted CI run, and no decided ' + 'record',
+    'records the second port as shipped by D-06 (option A): checks that run it, the hosted CI run as evidence, and no decided ' + 'record',
     () => {
       const port = ['IO', '016'].join('-'); // not in the title: a title that names it would be a check of it
       const kinds = new Set(evidence[port]?.map((check) => check.kind));
       expect(kinds.has('decided')).toBe(false);
-      expect([...kinds].sort()).toEqual(['c-test', 'gate', 'unit']);
-      expect(evidence[port]?.find((check) => check.kind === 'gate')?.note).toContain('freertos-port');
+      expect([...kinds].sort()).toEqual(['c-test', 'manual', 'unit']);
+      const hosted = evidence[port]?.find((check) => check.kind === 'manual');
+      expect(hosted?.note).toContain('freertos-port');
+      expect(hosted?.note).toMatch(/run .*39783240189 on commit 8cee3dd4/);
     },
   );
 

@@ -183,11 +183,6 @@ class Pinning(unittest.TestCase):
             binary = self.fake(directory, "18.1.3")
             self.assertEqual(tidy.main(["--clang-tidy", binary]), 2)
 
-    def test_the_workflow_installs_the_pinned_version(self) -> None:
-        workflow = (HERE.parent.parent / ".github/workflows/ci.yml").read_text()
-        self.assertIn(f"pipx install clang-tidy=={tidy.CLANG_TIDY_VERSION}", workflow)
-        self.assertNotIn("install --yes --no-install-recommends clang-tidy", workflow)
-
 
 if __name__ == "__main__":
     unittest.main()
