@@ -54,7 +54,7 @@ jobs:
       - name: Build native POSIX simulator for IDE scenarios
         run: |
           cmake -S firmware/lib/zplc_core -B "${RUNNER_TEMP}/zplc-native-sim-build"
-          cmake --build "${RUNNER_TEMP}/zplc-native-sim-build" --target zplc_runtime --parallel
+          cmake --build "${RUNNER_TEMP}/zplc-native-sim-build" --target zplc_runtime zplc_loopback --parallel
 
       - name: Test documentation tooling
         env:

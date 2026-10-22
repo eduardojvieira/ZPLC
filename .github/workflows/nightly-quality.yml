@@ -165,7 +165,7 @@ jobs:
           bun run build:compiler
           build="${RUNNER_TEMP}/zplc-native-sim-build"
           cmake -S firmware/lib/zplc_core -B "${build}" -DCMAKE_BUILD_TYPE=Release
-          cmake --build "${build}" --target zplc_runtime --config Release
+          cmake --build "${build}" --target zplc_runtime zplc_loopback --config Release
           runtime=''
           for candidate in "${build}/zplc_runtime" "${build}/zplc_runtime.exe" "${build}/Release/zplc_runtime.exe"; do
             if [ -f "${candidate}" ]; then runtime="${candidate}"; break; fi

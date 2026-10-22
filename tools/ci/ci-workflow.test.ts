@@ -143,6 +143,26 @@ describe('ci.yml documentation tooling (DOC-009)', () => {
   });
 });
 
+describe('native simulator builds for the IDE suite (COM-009)', () => {
+  // The IDE suite starts zplc_loopback beside zplc_runtime (the communication blocks in simulation), so every job that runs
+  // it must build both targets, not the runtime alone.
+  const nightly = Bun.YAML.parse(readFileSync(new URL('../../.github/workflows/nightly-quality.yml', import.meta.url), 'utf8')) as Workflow;
+  const runtimeBuilds = (flow: Workflow) =>
+    Object.values(flow.jobs)
+      .flatMap((job) => job.steps)
+      .map((step) => step.run ?? '')
+      .filter((run) => /--target zplc_runtime/.test(run));
+
+  it.each([
+    ['ci.yml', workflow],
+    ['nightly-quality.yml', nightly],
+  ] as const)('%s builds zplc_loopback with every zplc_runtime it gives the IDE suite', (_name, flow) => {
+    const builds = runtimeBuilds(flow);
+    expect(builds.length).toBeGreaterThan(0);
+    for (const run of builds.filter((text) => !/zplc-docs-runtime/.test(text))) expect(run).toMatch(/--target zplc_runtime zplc_loopback/);
+  });
+});
+
 describe('ci.yml formatting job (VF-017)', () => {
   const job = workflow.jobs.format;
 
