@@ -3595,6 +3595,11 @@
   "DOC-026": [
     {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"examples: the VM fixtures are labelled and the PLC projects are easy to find (DOC-026)"}
   ],
+  "DOC-027": [
+    {"kind":"unit","ref":"tools/history/rewrite-history.test.ts","test":"no removed path is reachable from any ref (DOC-027)"},
+    {"kind":"unit","ref":"tools/history/rewrite-history.test.ts","test":"the spec header records the rewritten baseline, and the commit exists in a full clone (DOC-027)"},
+    {"kind":"manual","ref":"docs/docs/development/history-rewrite.md","note":"History rewritten once on 2026-10-22 with tools/history/rewrite-history.sh --apply (git-filter-repo 2.47.0): the schematic PDF and the old firmware/app build outputs are removed from all 192 refs and 23 tags, 1688 commits map one for one, every tip tree equals the old tree minus the removed paths, and the baseline b379d82 is now 6b73a0c, recorded in the spec header. The mirror and bundle of the old history (~/Backups/zplc-pre-rewrite-2026-10-22.git and .bundle, with the commit map) keep every older SHA resolvable on the maintainer machine; publishing the mirror and the force-push are the owner's, at push time."}
+  ],
   "DOC-029": [
     {"kind":"unit","ref":"tools/docs/contributor_docs.test.ts","test":"principles: the constitution is readable from the contributor pages (DOC-029)"}
   ],

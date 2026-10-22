@@ -3,7 +3,7 @@
 **Implementation branch**: `zplc-2.0-candidate` until it merges to `master` (decision D-12)  
 **Created**: 2026-10-08  
 **Status**: Draft for owner review  
-**Baseline**: commit `b379d82`, version `2.0.0-rc.3`  
+**Baseline**: commit `6b73a0c`, version `2.0.0-rc.3` (it was `b379d82` before the one-time history rewrite of 2026-10-22, DOC-027; the mirror made before the rewrite keeps `b379d82` and every older SHA resolvable)  
 **Builds on**: `specs/010-zplc-2-0-foundation/spec.md` (approved RFC)  
 **Companion**: `research.md` in this directory (decisions with evidence)
 
@@ -37,7 +37,7 @@ This specification defines what must be true before ZPLC 2.0.0 is released as ge
 **Conventions.**
 
 - Requirements use MUST, MUST NOT and SHOULD. Each has a stable ID such as `CMP-012`. An ID is never reused.
-- Evidence is cited as `path:line` at commit `b379d82`. Four path prefixes are shortened: `IDE/` is `packages/zplc-ide/`, `COMPILER/` is `packages/zplc-compiler/src/`, `CORE/` is `firmware/lib/zplc_core/`, `APP/` is `firmware/app/`. Within one workstream, a file cited once with its path is afterwards cited by file name, and `:line` alone continues the file named just before it. If decision D-05 rewrites history, the baseline gets a new SHA: the mirror made before the rewrite keeps `b379d82` resolvable, the header of this spec then records the new SHA, and every `path:line` citation stays valid, because the files the rewrite removes (the schematic and the build outputs deleted in an earlier clean-up) are not in the baseline tree.
+- Evidence is cited as `path:line` at commit `b379d82`. Four path prefixes are shortened: `IDE/` is `packages/zplc-ide/`, `COMPILER/` is `packages/zplc-compiler/src/`, `CORE/` is `firmware/lib/zplc_core/`, `APP/` is `firmware/app/`. Within one workstream, a file cited once with its path is afterwards cited by file name, and `:line` alone continues the file named just before it. If decision D-05 rewrites history, the baseline gets a new SHA: the mirror made before the rewrite keeps `b379d82` resolvable, the header of this spec then records the new SHA, and every `path:line` citation stays valid, because no citation names a file the rewrite removes: the schematic and the build outputs deleted in an earlier clean-up are not in the baseline tree, and the only removed files it held are three CMake cache files under `firmware/app/build_tests/`. The rewrite was made on 2026-10-22: `b379d82` is now `6b73a0c`.
 - Severity labels come from the review: **Blocker** (must be fixed before a release professionals can use), **Major** (serious, has a workaround), **Minor**.
 - "Executed" means the reviewer compiled a program with the repository compiler and ran it on the real C virtual machine (VM). "Inferred" means reasoned from code and not observed; the first task under the matching requirement is to confirm it.
 - **Design default** marks a choice made when this spec was written, not an owner decision. It stands until the owner revises it; section 4.6 lists them.

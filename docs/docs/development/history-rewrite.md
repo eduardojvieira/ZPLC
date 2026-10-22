@@ -13,11 +13,12 @@ mistake. This page says what goes, why, where the old history is kept, and what
 a contributor does with an existing clone.
 
 :::caution Status
-The tool and its rehearsal are ready. The rewrite itself has not been run on
-the shared repository, and nothing has been force-pushed. Until the maintainer
-runs it, the commands for contributors below do not apply. The maintainer
-updates this page with the date, the mirror location and the new baseline SHA
-when it is done.
+The maintainer's repository was rewritten on 2026-10-22: the baseline commit
+`b379d82` is now `6b73a0c`, and 1688 commits were rewritten one for one. The
+mirror of the old history and its bundle are kept on the maintainer's machine
+until they are published as a read-only repository. The force-push to GitHub
+has not been made yet; until it is, the commands for contributors below do not
+apply.
 :::
 
 ## What is removed, and why

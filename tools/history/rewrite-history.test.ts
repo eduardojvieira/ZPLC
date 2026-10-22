@@ -147,3 +147,35 @@ describe.skipIf(!existsSync(FR))('rewrite end to end on a synthetic repository',
     }
   }, 60_000);
 });
+
+// The rewrite of 2026-10-22 itself: nothing on the removed list is left in this repository, and the spec names the new
+// baseline. A shallow clone (CI checks out one commit) is checked at HEAD; a full clone is checked over every ref.
+describe('this repository after the one-time rewrite', () => {
+  const root = join(HERE, '../..');
+  const shallow = git(root, 'rev-parse', '--is-shallow-repository') === 'true';
+  const NEW_BASELINE = '6b73a0ca416e6c7f01718b7eba0bc8ff495398ca';
+
+  test('no removed path is reachable from any ref (DOC-027)', () => {
+    const args = run(['bash', SCRIPT, '--print-args'], HERE).out.trim().split('\n');
+    const paths: string[] = [];
+    const globs: Bun.Glob[] = [];
+    for (let i = 0; i < args.length; i += 2)
+      (args[i] === '--path' ? paths : (globs as unknown[])).push(args[i] === '--path' ? args[i + 1]! : new Bun.Glob(args[i + 1]!));
+    const reachable = shallow
+      ? git(root, 'ls-tree', '-r', '--name-only', 'HEAD').split('\n')
+      : git(root, 'rev-list', '--objects', '--all')
+          .split('\n')
+          .map((line) => line.slice(41))
+          .filter(Boolean);
+    const removed = (path: string) =>
+      paths.some((p) => path === p || (p.endsWith('/') && path.startsWith(p))) || globs.some((g) => g.match(path));
+    expect(reachable.length).toBeGreaterThan(1000);
+    expect(reachable.filter(removed)).toEqual([]);
+  });
+
+  test('the spec header records the rewritten baseline, and the commit exists in a full clone (DOC-027)', () => {
+    const spec = readFileSync(join(root, 'specs/011-zplc-2-0-remediation/spec.md'), 'utf8');
+    expect(spec).toContain(`**Baseline**: commit \`${NEW_BASELINE.slice(0, 7)}\``);
+    if (!shallow) expect(git(root, 'cat-file', '-t', NEW_BASELINE)).toBe('commit');
+  });
+});

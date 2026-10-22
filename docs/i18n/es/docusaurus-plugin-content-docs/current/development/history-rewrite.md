@@ -14,11 +14,12 @@ por qué, dónde se conserva el historial anterior y qué debe hacer usted con u
 clon existente.
 
 :::caution Estado
-La herramienta y su ensayo están listos. La reescritura no se ha ejecutado en
-el repositorio compartido y no se ha hecho ningún force-push. Mientras el
-mantenedor no la ejecute, los comandos para colaboradores de más abajo no
-aplican. El mantenedor actualizará esta página con la fecha, la ubicación del
-espejo y el nuevo SHA de la línea base cuando termine.
+El repositorio del mantenedor se reescribió el 2026-10-22: el commit de la
+línea base `b379d82` ahora es `6b73a0c`, y se reescribieron 1688 commits, uno
+por uno. El espejo del historial anterior y su bundle se guardan en la máquina
+del mantenedor hasta que se publiquen como repositorio de solo lectura. El
+force-push a GitHub todavía no se hizo; mientras no se haga, los comandos para
+colaboradores de más abajo no aplican.
 :::
 
 ## Qué se elimina y por qué
