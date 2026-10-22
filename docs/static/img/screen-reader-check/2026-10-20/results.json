@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "date": "2026-10-20",
-  "commit": "11c0c8ac61013014675456245ce6dc66f3b68458",
+  "commit": "4b2b5ca5b74cb9d96dfd02d72d5324145ce56701",
   "command": "bun run packages/zplc-ide/scripts/screen-reader-capture.ts",
   "method": "Linux, Chromium accessibility tree over the DevTools protocol, keyboard only, real Electron development host",
   "languages": {

@@ -1,7 +1,7 @@
 {
   "schema": "zplc.hw-software-review/1",
   "decision": "Decision of 2026-10-20: each requirement that needs a physical board is closed by a software and simulation review. This file lists the scenarios; a separate reviewer judges each one by software analysis or simulation only. A scenario judged 'should not pass' is a defect.",
-  "branch_base": "ws-integration 892bc79f",
+  "branch_base": "ws-integration 7a6601e6",
   "verdict_values": ["should_pass", "should_not_pass", "cannot_judge_in_software"],
   "requirements": [
     {

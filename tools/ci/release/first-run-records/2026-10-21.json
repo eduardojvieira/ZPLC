@@ -5,7 +5,7 @@
   "started": "2026-10-21T14:51:21.444Z",
   "finished": "2026-10-21T14:52:39.166Z",
   "version": "2.0.0-rc.3",
-  "commit": "ac9dd87f91ccf917587f5bd0d38b4de5ef7a8c28",
+  "commit": "8000d9ff222220105b99778286eb0c85cfae95e9",
   "dirtyTree": false,
   "script": "tools/ci/release/simulate-first-run.ts",
   "host": {
