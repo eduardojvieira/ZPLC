@@ -1738,6 +1738,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/communication.test.ts","test":"COM-009 the communication blocks in simulation"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/nativeAdapter.test.ts","test":"tells the console what the simulated communication endpoints are, or that they did not start (COM-009)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/nativeCommunicationEndpoints.test.ts","test":"COM-009 the endpoints that the Studio session starts"},
+    {"kind":"unit","ref":"tools/ci/ci-workflow.test.ts","test":"native simulator builds for the IDE suite (COM-009)"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_host_comm.c","test":"The communication blocks in the simulation runtime, on real sockets (COM-006, COM-009, COM-018)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_host_loopback.c","test":"The loopback endpoints that a Studio session starts for its runtime (COM-009)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"COM-009: the endpoints of the session are told in the hello, with their reason, so that Studio can show them"}
