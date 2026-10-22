@@ -28,10 +28,6 @@ Qué placas se han probado con un dispositivo físico está en
 3. En ZPLC, copie el ejemplo **Blinky** a una carpeta.
 4. Compílelo, cambie a **Simular**, pulse **Conectar** y luego **Ejecutar**.
 
-## Pruébelo primero en el navegador
-
-Si no puede instalar nada, abra [ZPLC en el navegador](https://eduardojvieira.github.io/ZPLC/app/) en Chrome o Edge: la misma aplicación, con los ejemplos y el simulador, y sin las funciones que necesitan la aplicación de escritorio. [ZPLC en el navegador](../ide/browser.md) las enumera.
-
 ## Abrir un ejemplo
 
 1. Inicie ZPLC. La pantalla de bienvenida ofrece **Abrir proyecto**, **Nuevo proyecto** y **Aprender**, y una lista de **Ejemplos**.

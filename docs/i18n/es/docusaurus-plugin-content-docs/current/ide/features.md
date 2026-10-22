@@ -425,7 +425,7 @@ la medida en que el compilador la acepta.
 
 La simulación POSIX nativa es la forma de ejecutar un programa en su equipo.
 Requiere la aplicación de escritorio, que incluye el runtime nativo. Donde el
-runtime nativo no puede arrancar, y en la compilación web, la simulación corre en
+runtime nativo no puede arrancar, la simulación corre en
 el runtime WebAssembly, y la barra de estado lo dice y lista lo que no tiene (sin
 bloques de comunicación, sin serie, sin pines, con el timing de un navegador):
 ver [Runtime del navegador](../runtime/browser-runtime.md). Las acciones de hardware
