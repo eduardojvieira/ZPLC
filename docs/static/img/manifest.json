@@ -143,6 +143,24 @@
       "width": 1366,
       "height": 768,
       "commit": "890f450241d1f1f97fea2cbf48ea8d3cbe7cf491"
+    },
+    {
+      "file": "learn/lesson-checked-en.png",
+      "step": "The first lesson of Learn passed its Check, interface in English, light theme",
+      "sha256": "a5b7795fe00b0261b6274b918a1e36b34d66f633d73265dbedcc2ded0bd49bfe",
+      "bytes": 177035,
+      "width": 1440,
+      "height": 900,
+      "commit": "3eed682eddc9ffa11f63877fc2e2068a70b52e13"
+    },
+    {
+      "file": "learn/lesson-checked-es.png",
+      "step": "The first lesson of Learn passed its Check, interface in Spanish, light theme",
+      "sha256": "8018f6263ece7ba3a476a029fe3a24c7f1cb8ee26e2343b3ce50b788bda5df6f",
+      "bytes": 179697,
+      "width": 1440,
+      "height": 900,
+      "commit": "3eed682eddc9ffa11f63877fc2e2068a70b52e13"
     }
   ]
 }
