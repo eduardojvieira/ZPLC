@@ -81,7 +81,8 @@ export async function stop(process: OwnedProcess | undefined): Promise<void> {
   await Promise.race([process.exited, Bun.sleep(3_000)]);
   if (process.exitCode === null) {
     process.kill('SIGKILL');
-    await process.exited;
+    await Promise.race([process.exited, Bun.sleep(5_000)]);
+    if (process.exitCode === null) throw new Error(`process ${process.pid} is still running 5 s after SIGKILL`);
   }
 }
 

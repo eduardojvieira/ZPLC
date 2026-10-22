@@ -12,6 +12,7 @@ import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { createServer, type ViteDevServer } from 'vite';
 import { releaseStaleDom } from './isolate';
+import { teardown } from './teardown';
 import { Cdp, freePort, HOST, openPage, stop, waitFor, type OwnedProcess } from '../../scripts/cdpHarness';
 
 const PACKAGE = join(import.meta.dir, '..', '..');
@@ -333,11 +334,13 @@ export async function closeBrowserApp(): Promise<void> {
   running = undefined;
   if (!current) return;
   const { app, server, browser, scratch } = await current;
-  await app.cdp.command('Browser.close').catch(() => undefined);
-  app.cdp.close();
-  await stop(browser);
-  await server.close();
-  rmSync(scratch, { recursive: true, force: true });
+  await teardown([
+    ['ask the browser to close', () => app.cdp.command('Browser.close').catch(() => undefined)],
+    ['close the DevTools socket', () => app.cdp.close()],
+    ['stop the browser process', () => stop(browser)],
+    ['close the Vite server', () => server.close()],
+    ['delete the browser profile', () => rmSync(scratch, { recursive: true, force: true })],
+  ]);
 }
 
 /** The parsed JSON of the open file: the document that a visual editor keeps in the store. */
