@@ -135,6 +135,15 @@ zplc_host_stdio_result_t zplc_host_wait_for_request_line(FILE *input, char *buff
     return ZPLC_HOST_STDIO_ERROR;
   }
 
+  /*
+   * take_pending_line() empties a full buffer, so this cannot happen; the test states the bound
+   * to GCC 13, which otherwise reads sizeof - len as a wrapped size and stops on
+   * -Werror=stringop-overflow in the fortified read().
+   */
+  if (pending.len >= sizeof(pending.data)) {
+    return ZPLC_HOST_STDIO_ERROR;
+  }
+
   /* select() said readable, so this read does not block; it may carry several lines. */
   read_result = read(fd, pending.data + pending.len, sizeof(pending.data) - pending.len);
   if (read_result < 0) {
