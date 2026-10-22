@@ -92,6 +92,7 @@
     {"kind":"unit","ref":"tools/ci/wrap-long-lines.test.ts","test":"VF-017 wrap-long-lines: words"}
   ],
   "VF-018": [
+    {"kind":"unit","ref":"tools/ci/ci-workflow.test.ts","test":"ci.yml clang-tidy jobs (VF-018)"},
     {"kind":"unit","ref":"tools/ci/test_run_clang_tidy.py","test":"HostUnits","partial":true,"note":"the host pass of clang-tidy runs in CI over the core, the POSIX HAL and the host application with warnings as errors; the Zephyr HAL and firmware/app are analysed only where a west build tree exists (run.sh tidy) and firmware/app carries a per-board baseline of findings; -Werror on the Zephyr library was applied without a Zephyr build; the Zephyr pass was run locally on the Arduino Opta build (core and HAL clean, firmware/app 24 findings within its baseline, none a defect), not in a hosted run"}
   ],
   "VF-019": [
@@ -3523,6 +3524,7 @@
     {"kind":"unit","ref":"tools/docs/source-parsers.test.ts","test":"source readers: the shell command tree (DOC-008)"}
   ],
   "DOC-009": [
+    {"kind":"unit","ref":"tools/ci/ci-workflow.test.ts","test":"ci.yml documentation tooling (DOC-009)"},
     {"kind":"unit","ref":"tools/docs/check-docs-config.test.ts","test":"docs configuration fragments: a fragment is a piece of a project file that builds (DOC-009)"},
     {"kind":"unit","ref":"tools/docs/check-docs-config.test.ts","test":"finds a board entry of a page by its fence and checks it against the validator of the board manifest (DOC-009)"},
     {"kind":"unit","ref":"tools/docs/check-docs-config.test.ts","test":"how-to guides: each task has a page in both languages with something that runs (DOC-009)"},
