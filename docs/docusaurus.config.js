@@ -88,7 +88,8 @@ const config = {
         },
         blog: false,
         theme: {
-          customCss: './src/css/custom.css', // Preserving visual identity contract
+          // The theme of the site inherits the visual system of the ZPLC application (docs/design/design-brief.md).
+          customCss: './src/css/custom.css',
         },
       }),
     ],
@@ -114,7 +115,7 @@ const config = {
         },
       ],
       colorMode: {
-        defaultMode: 'dark',
+        defaultMode: 'light',
         respectPrefersColorScheme: true,
       },
       navbar: {
@@ -131,10 +132,16 @@ const config = {
             label: 'Docs',
           },
           {
-            // The hosted web build (REL-037): deployed beside the docs by deploy-docs.yml, so it is not a docs route.
-            href: 'https://eduardojvieira.github.io/ZPLC/app/',
-            label: 'Open in browser',
+            type: 'doc',
+            docId: 'learn/index',
             position: 'left',
+            label: 'Learn',
+          },
+          {
+            type: 'doc',
+            docId: 'release-notes/index',
+            position: 'left',
+            label: 'Release notes',
           },
           {
             type: 'localeDropdown',
@@ -148,7 +155,7 @@ const config = {
         ],
       },
       footer: {
-        style: 'dark',
+        style: 'light',
         links: [
           {
             title: 'Docs',
@@ -179,8 +186,8 @@ const config = {
         copyright: `Copyright © 2026 ZPLC contributors. Released under the MIT licence. ZPLC ${releaseTag}.`,
       },
       prism: {
-        theme: prismThemes.github,
-        darkTheme: prismThemes.dracula,
+        theme: prismThemes.oneLight,
+        darkTheme: prismThemes.oneDark,
       },
     }),
 };

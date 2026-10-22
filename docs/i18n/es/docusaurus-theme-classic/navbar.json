@@ -11,9 +11,13 @@
     "message": "Documentación",
     "description": "Navbar item with label Docs"
   },
-  "item.label.Open in browser": {
-    "message": "Abrir en el navegador",
-    "description": "Navbar item with label Open in browser"
+  "item.label.Learn": {
+    "message": "Aprender",
+    "description": "Navbar item with label Learn"
+  },
+  "item.label.Release notes": {
+    "message": "Notas de la versión",
+    "description": "Navbar item with label Release notes"
   },
   "item.label.GitHub": {
     "message": "GitHub",
