@@ -61,7 +61,7 @@ Ninguna placa tiene un registro de hardware: cada fila dice que el firmware comp
 {/* <<< END GENERATED: hardware-support-boards <<< */}
 
 Los canales de E/S de cada placa, con sus pines y sus valores seguros, están en
-[Placas soportadas](./boards.md).
+[Placas](./boards.md).
 
 ## Qué se deduce de un nivel
 

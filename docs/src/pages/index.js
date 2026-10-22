@@ -1,18 +1,27 @@
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
+import Architecture from '../components/LandingPage/Architecture';
+import Boards from '../components/LandingPage/Boards';
+import Closing from '../components/LandingPage/Closing';
+import Different from '../components/LandingPage/Different';
 import Hero from '../components/LandingPage/Hero';
-import Features from '../components/LandingPage/Features';
-import { getLandingPageContent } from '../components/LandingPage/content';
+import Languages from '../components/LandingPage/Languages';
+import Learn from '../components/LandingPage/Learn';
+import styles from '../components/LandingPage/LandingPage.module.css';
+import { useLandingPageContent } from '../components/LandingPage/content';
 
 export default function Home() {
-  const { i18n } = useDocusaurusContext();
-  const content = getLandingPageContent(i18n.currentLocale);
+  const { home } = useLandingPageContent();
 
   return (
-    <Layout title={content.home.metaTitle} description={content.home.metaDescription}>
-      <main>
+    <Layout title={home.metaTitle} description={home.metaDescription}>
+      <main className={styles.page}>
         <Hero />
-        <Features />
+        <Different />
+        <Languages />
+        <Learn />
+        <Architecture />
+        <Boards />
+        <Closing />
       </main>
     </Layout>
   );

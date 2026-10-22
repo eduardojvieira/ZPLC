@@ -86,6 +86,25 @@ def validation_summary(board: dict[str, object]) -> str:
     return str(support(board)["level"])
 
 
+def levels_line(boards: list[dict[str, object]], spanish: bool) -> str:
+    """How many boards are at each support level, so that the page says what it lists before any table."""
+    counts: dict[str, int] = {}
+    for board in boards:
+        level = validation_summary(board)
+        counts[level] = counts.get(level, 0) + 1
+    total = len(boards)
+    parts = [f"`{level}` ({count} / {total})" for level, count in counts.items()]
+    if spanish:
+        return (
+            "Nivel de compatibilidad de las placas, derivado de sus registros de evidencia "
+            "([Compatibilidad de hardware](./capabilities-evidence.md#los-niveles)): " + ", ".join(parts) + "."
+        )
+    return (
+        "Support level of the boards, derived from their evidence records "
+        "([Hardware support](./capabilities-evidence.md#the-levels)): " + ", ".join(parts) + "."
+    )
+
+
 def watchdog_line(board: dict[str, object], spanish: bool) -> str:
     """The hardware watchdog of the profile, and why it is off when it is (RT-020, HIL-011)."""
     watchdog = board.get("watchdog")
@@ -149,7 +168,8 @@ def cell(text: object) -> str:
 
 def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> str:
     budget = load_budget()
-    title = "Supported Boards" if not spanish else "Placas soportadas"
+    # The page lists every board of the manifest at the level its evidence gives; "supported" would claim more than that.
+    title = "Boards" if not spanish else "Placas"
     description = (
         "Generated board reference for the ZPLC 2.0 candidate."
         if not spanish
@@ -213,6 +233,8 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
         ":::note",
         intro,
         ":::",
+        "",
+        levels_line(boards, spanish),
         "",
         f"## {topology_title}",
         "",
@@ -487,11 +509,32 @@ def replace_block(text: str, name: str, body: str, path: Path) -> str:
     return text[: start + len(begin)] + "\n\n" + body + "\n\n" + text[stop:]
 
 
+# The boards on the landing page of the site: name, Zephyr target, network class and support level, from the manifest, so
+# that the page never types a board or a level by hand.
+SITE_DATA = ROOT / "docs/src/data/boards.json"
+
+
+def render_site_data(boards: list[dict[str, object]]) -> str:
+    rows = [
+        {
+            "board_id": str(board["board_id"]),
+            "display_name": str(board["display_name"]),
+            "zephyr_board": str(board["zephyr_board"]),
+            "network": {"en": network_summary(board, False), "es": network_summary(board, True)},
+            "learner": bool(board.get("learner")),
+            "level": validation_summary(board),
+        }
+        for board in boards
+    ]
+    return json.dumps(rows, indent=2, ensure_ascii=False) + "\n"
+
+
 def expected_outputs() -> dict[Path, str]:
     boards = load_boards()
     outputs = {
         OUTPUT_EN: render_board_reference(boards, False),
         OUTPUT_ES: render_board_reference(boards, True),
+        SITE_DATA: render_site_data(boards),
     }
     for path, spanish in ((SUPPORT_EN, False), (SUPPORT_ES, True)):
         outputs[path] = replace_block(

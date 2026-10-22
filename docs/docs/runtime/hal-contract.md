@@ -60,7 +60,7 @@ The public I/O surface is channel-based:
 
 The core addresses I/O by **logical channel**, not by board pin. Which channels a board has, where each one sits in
 the process image and which pin it is, is data: the board I/O description in
-`firmware/app/boards/boards.json` (see [Supported Boards](../reference/boards.md)).
+`firmware/app/boards/boards.json` (see [Boards](../reference/boards.md)).
 
 ### The I/O table
 

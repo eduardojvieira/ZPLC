@@ -43,7 +43,7 @@ La superficie pública de E/S es por canal:
 
 El núcleo direcciona la E/S por **canal lógico**, no por pin de la placa. Qué canales tiene una placa, dónde está cada
 uno en la imagen de proceso y cuál es su pin es un dato: la descripción de E/S de la placa en
-`firmware/app/boards/boards.json` (véase [Placas soportadas](../reference/boards.md)).
+`firmware/app/boards/boards.json` (véase [Placas](../reference/boards.md)).
 
 ### La tabla de E/S
 

@@ -1,17 +1,19 @@
 ---
 slug: /reference/boards
 id: boards
-title: Supported Boards
-sidebar_label: Supported Boards
+title: Boards
+sidebar_label: Boards
 description: Generated board reference for the ZPLC 2.0 candidate.
 tags: [reference, boards, generated]
 ---
 
-# Supported Boards
+# Boards
 
 :::note
 This page is generated from `firmware/app/boards/boards.json`, the one board manifest. Update the JSON or rerun `python3 tools/docs/generate_board_reference.py` instead of editing this file manually.
 :::
+
+Support level of the boards, derived from their evidence records ([Hardware support](./capabilities-evidence.md#the-levels)): `cross-build` (7 / 7).
 
 ## Topology
 

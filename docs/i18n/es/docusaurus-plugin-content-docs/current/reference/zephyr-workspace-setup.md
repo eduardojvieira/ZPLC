@@ -16,7 +16,7 @@ prueba la grabación, el arranque, la E/S, la temporización, la persistencia ni
 1. Instale el SDK y la cadena de herramientas de Zephyr y deje `west` disponible.
 2. Active el entorno Zephyr para que exista `ZEPHYR_BASE`.
 3. Ponga ZPLC en el espacio de trabajo como una copia del módulo o como un clon.
-4. Ejecute el comando exacto de la página generada [Placas soportadas](./boards.md).
+4. Ejecute el comando exacto de la página generada [Placas](./boards.md).
 
 ## Anclas del repositorio
 
@@ -60,5 +60,5 @@ un dispositivo no probado. Consulte [Límites de recuperación](../operations/re
 
 ## Páginas relacionadas
 
-- [Placas soportadas](./boards.md)
+- [Placas](./boards.md)
 - [Compatibilidad de hardware](./capabilities-evidence.md)

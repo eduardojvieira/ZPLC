@@ -1,17 +1,19 @@
 ---
 slug: /reference/boards
 id: boards
-title: Placas soportadas
-sidebar_label: Placas soportadas
+title: Placas
+sidebar_label: Placas
 description: Referencia generada de placas para el candidato ZPLC 2.0.
 tags: [reference, boards, generated]
 ---
 
-# Placas soportadas
+# Placas
 
 :::note
 Esta página se genera desde `firmware/app/boards/boards.json`, el único manifiesto de placas. Actualice el JSON o vuelva a ejecutar `python3 tools/docs/generate_board_reference.py` en lugar de editar este archivo manualmente.
 :::
+
+Nivel de compatibilidad de las placas, derivado de sus registros de evidencia ([Compatibilidad de hardware](./capabilities-evidence.md#los-niveles)): `cross-build` (7 / 7).
 
 ## Topología
 

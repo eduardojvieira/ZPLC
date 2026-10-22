@@ -8,6 +8,10 @@
 //                                       headless Chromium against the Vite renderer (no display, no Electron): one picture of each language
 //                                       editor in English and in Spanish, for the language reference pages (DOC-006), into
 //                                       docs/static/img/editors; the manifest keeps the tutorial pictures and records the commit of these
+//   bun run docs:screenshots -- --learn
+//                                       journey 59 in the real application (a display, the built runtime and application, as for
+//                                       the tutorial): the first lesson of Learn passed, in English and Spanish, light and dark,
+//                                       for the landing page, into docs/static/img/learn; the manifest records their commit
 //   bun tools/docs/capture-screenshots.ts --check
 //                                       exit 1 when a page shows an image that the manifest does not list, a listed image is
 //                                       missing or changed, or a picture of the folder is not in the manifest
@@ -36,6 +40,17 @@ export const EDITOR_LANGUAGES = ['st', 'il', 'ld', 'fbd', 'sfc'] as const;
 export const EDITOR_LOCALES = ['en', 'es'] as const;
 export const EDITOR_COMMAND = 'bun run docs:screenshots -- --editors';
 export const MANIFEST = `${IMAGE_DIR}/manifest.json`;
+/**
+ * The pictures of Learn on the landing page, taken by journey 59 once per language. The journey can also take them in the
+ * dark theme (ZPLC_DOC_SHOTS_THEME=dark), but the code editor of the application keeps the token colours of the light theme
+ * on a dark background there, so no dark picture is published until that is fixed.
+ */
+export const LEARN_DIR = `${IMAGE_DIR}/learn`;
+export const LEARN_JOURNEY = '59 The first lesson of Learn is checked and passes';
+export const LEARN_PICTURES = [
+  { file: 'lesson-checked-en.png', locale: 'en', theme: 'light' },
+  { file: 'lesson-checked-es.png', locale: 'es', theme: 'light' },
+] as const;
 /**
  * The wiring diagrams of the hardware lessons (LRN-014): drawings that tools/docs/generate_hardware_pages.ts writes from
  * the lesson data and keeps in step with it, not pictures of the product, so they need no capture and no manifest entry.
@@ -273,6 +288,59 @@ function capture(): void {
   }
 }
 
+/** The pictures of Learn: journey 59 runs once per language and theme, and this script hashes them into the manifest. */
+function captureLearn(): void {
+  const cache = process.env.TMPDIR ?? join(process.env.HOME ?? ROOT, '.cache', 'zplc-doc-shots');
+  mkdirSync(cache, { recursive: true });
+  const scratch = mkdtempSync(join(cache, 'docs-learn-shots-'));
+  try {
+    for (const { locale, theme } of LEARN_PICTURES) {
+      const run = spawnSync('bun', ['run', 'scripts/run-journeys.ts'], {
+        cwd: join(ROOT, 'packages/zplc-ide'),
+        env: {
+          ...process.env,
+          ZPLC_JOURNEY_ONLY: LEARN_JOURNEY,
+          ZPLC_DOC_SHOTS: scratch,
+          ZPLC_DOC_SHOTS_LOCALE: locale,
+          ZPLC_DOC_SHOTS_THEME: theme,
+        },
+        stdio: ['ignore', 'pipe', 'pipe'],
+        encoding: 'utf8',
+      });
+      if (run.status !== 0 || !/^PASS\b.*59 The first lesson of Learn/m.test(run.stdout)) {
+        process.stderr.write(`${run.stdout}\n${run.stderr}\n`);
+        throw new Error(`the journey "${LEARN_JOURNEY}" did not pass in ${locale} and ${theme}, so no picture is written`);
+      }
+    }
+    const taken = readdirSync(scratch)
+      .filter((name) => name.endsWith('.png'))
+      .sort();
+    const wanted = LEARN_PICTURES.map(({ file }) => file).sort();
+    if (taken.join() !== wanted.join())
+      throw new Error(`the journey took ${taken.join(', ') || 'no picture'}; this script expects ${wanted.join(', ')}`);
+    mkdirSync(join(ROOT, LEARN_DIR), { recursive: true });
+    const commit = git(['rev-parse', 'HEAD']);
+    const images: ManifestImage[] = LEARN_PICTURES.map(({ file, locale, theme }) => {
+      copyFileSync(join(scratch, file), join(ROOT, LEARN_DIR, file));
+      const bytes = readFileSync(join(ROOT, LEARN_DIR, file));
+      return {
+        file: `learn/${file}`,
+        step: `The first lesson of Learn passed its Check, interface in ${locale === 'en' ? 'English' : 'Spanish'}, ${theme} theme`,
+        sha256: sha256(bytes),
+        bytes: bytes.length,
+        ...pngSize(bytes),
+        commit,
+      };
+    });
+    const manifest = JSON.parse(readFileSync(join(ROOT, MANIFEST), 'utf8')) as Manifest;
+    manifest.images = [...manifest.images.filter((image) => !image.file.startsWith('learn/')), ...images];
+    writeFileSync(join(ROOT, MANIFEST), `${JSON.stringify(manifest, null, 2)}\n`);
+    console.log(`docs-screenshots: ${images.length} Learn pictures of ${commit.slice(0, 8)} written to ${LEARN_DIR}`);
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+}
+
 /** The editor pictures: the helper of the IDE package takes them, this script hashes them into the manifest. */
 function captureEditors(): void {
   const cache = process.env.TMPDIR ?? join(process.env.HOME ?? ROOT, '.cache', 'zplc-doc-shots');
@@ -359,7 +427,7 @@ function check(): number {
     page,
     text: readFileSync(join(ROOT, page), 'utf8'),
   }));
-  const listed = [PICTURE_DIR, EDITOR_DIR].flatMap((directory) =>
+  const listed = [PICTURE_DIR, EDITOR_DIR, LEARN_DIR].flatMap((directory) =>
     existsSync(join(ROOT, directory)) ? readdirSync(join(ROOT, directory)).map((name) => `${directory}/${name}`) : [],
   );
   const recorded = recordedImages();
@@ -400,5 +468,6 @@ function check(): number {
 if (import.meta.main) {
   if (process.argv.includes('--check')) process.exit(check());
   if (process.argv.includes('--editors')) captureEditors();
+  else if (process.argv.includes('--learn')) captureLearn();
   else capture();
 }

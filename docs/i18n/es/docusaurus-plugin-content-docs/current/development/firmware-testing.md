@@ -390,5 +390,5 @@ requiere el banco de HIL-010.
 ## Páginas relacionadas
 
 - [Configuración del espacio de trabajo de Zephyr](../reference/zephyr-workspace-setup.md)
-- [Placas soportadas](../reference/boards.md)
+- [Placas](../reference/boards.md)
 - [Compatibilidad de hardware](../reference/capabilities-evidence.md)
