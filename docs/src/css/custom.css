@@ -228,6 +228,12 @@ samp {
   white-space: nowrap;
 }
 
+/* an image drawn for one colour mode: the other one is hidden, and a lazy image that is hidden is not fetched */
+[data-theme="dark"] .zplc-light-only,
+html:not([data-theme="dark"]) .zplc-dark-only {
+  display: none !important;
+}
+
 /* a region on the dark material resolves the derived colours again from its own tokens */
 .zplc-spine {
   --ifm-link-color: var(--zplc-cobalt);
@@ -445,6 +451,107 @@ a {
 
 .footer__copyright {
   font-size: var(--zplc-text-xs);
+}
+
+/* ---------------------------------------------------------------------------------------------------------------------
+ * Documentation layout: the page header, the sidebar, the table of contents, code titles, tabs, tables, search, footer
+ * ------------------------------------------------------------------------------------------------------------------- */
+.theme-doc-markdown > header > h1,
+.markdown > header > h1 {
+  margin-bottom: var(--zplc-space-6);
+  padding-bottom: var(--zplc-space-4);
+  border-bottom: 1px solid var(--zplc-rule);
+  font-size: clamp(2rem, 1.6rem + 1.2vw, 2.5rem);
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+.breadcrumbs__link {
+  border-radius: var(--zplc-radius-control);
+  font-size: var(--zplc-text-xs);
+}
+
+.breadcrumbs__item--active .breadcrumbs__link {
+  background: var(--zplc-band);
+  color: var(--zplc-ink);
+}
+
+.theme-doc-sidebar-container {
+  border-right-color: var(--zplc-rule) !important;
+}
+
+.theme-doc-sidebar-menu {
+  padding-block: var(--zplc-space-4);
+}
+
+.theme-doc-sidebar-item-category-level-1 > .menu__list-item-collapsible > .menu__link {
+  font-weight: 600;
+  color: var(--zplc-ink);
+}
+
+/* the current page: the selection of the application, cobalt text on a cobalt tint with a 2 px cobalt edge */
+.menu__link--active:not(.menu__link--sublist) {
+  box-shadow: inset 2px 0 0 var(--zplc-cobalt);
+}
+
+.table-of-contents {
+  font-size: var(--zplc-text-xs);
+}
+
+.table-of-contents__link:hover {
+  color: var(--zplc-ink);
+}
+
+.theme-code-block [class*="codeBlockTitle"] {
+  border-bottom: 1px solid var(--zplc-rule);
+  background: var(--zplc-band);
+  font-family: var(--zplc-font-mono);
+  font-size: var(--zplc-text-xs);
+}
+
+.tabs__item {
+  border-radius: var(--zplc-radius-control) var(--zplc-radius-control) 0 0;
+  font-weight: 500;
+}
+
+.tabs__item--active {
+  border-bottom-color: var(--zplc-cobalt);
+}
+
+.markdown table thead tr {
+  border-bottom: 1.5px solid var(--zplc-rule-strong);
+}
+
+.markdown th,
+.markdown td {
+  padding: var(--zplc-space-2) var(--zplc-space-3);
+  border-color: var(--zplc-rule);
+}
+
+.markdown blockquote {
+  --ifm-blockquote-border-color: var(--zplc-rule-strong);
+  --ifm-blockquote-border-left-width: 2px;
+  color: var(--zplc-ink-2);
+}
+
+.navbar__search-input,
+.navbar [class*="searchBar"] input {
+  border: 1px solid var(--zplc-rule);
+  border-radius: var(--zplc-radius-control);
+  background-color: var(--zplc-band);
+  color: var(--zplc-ink);
+}
+
+.footer {
+  padding-block: var(--zplc-space-8) var(--zplc-space-6);
+}
+
+.footer__links {
+  margin-bottom: var(--zplc-space-6);
+}
+
+.footer__link-item {
+  font-size: var(--zplc-text-sm);
 }
 
 /* ---------------------------------------------------------------------------------------------------------------------

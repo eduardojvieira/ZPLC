@@ -1,0 +1,79 @@
+[
+  {
+    "board_id": "rpi-pico-rp2040",
+    "display_name": "Raspberry Pi Pico (RP2040)",
+    "zephyr_board": "rpi_pico/rp2040",
+    "network": {
+      "en": "Serial-focused",
+      "es": "Orientada al puerto serie"
+    },
+    "learner": true,
+    "level": "cross-build"
+  },
+  {
+    "board_id": "arduino-giga-r1-m7",
+    "display_name": "Arduino GIGA R1 (STM32H747 M7)",
+    "zephyr_board": "arduino_giga_r1/stm32h747xx/m7",
+    "network": {
+      "en": "Serial-focused",
+      "es": "Orientada al puerto serie"
+    },
+    "learner": false,
+    "level": "cross-build"
+  },
+  {
+    "board_id": "esp32-s3-devkitc",
+    "display_name": "ESP32-S3-DevKitC-1 (N8R8)",
+    "zephyr_board": "esp32s3_devkitc/esp32s3/procpu",
+    "network": {
+      "en": "Network-capable (Wi-Fi)",
+      "es": "Capacidad de red (Wi-Fi)"
+    },
+    "learner": true,
+    "level": "cross-build"
+  },
+  {
+    "board_id": "stm32f746g-disco",
+    "display_name": "STM32F746G Discovery",
+    "zephyr_board": "stm32f746g_disco/stm32f746xx",
+    "network": {
+      "en": "Network-capable (Ethernet)",
+      "es": "Capacidad de red (Ethernet)"
+    },
+    "learner": false,
+    "level": "cross-build"
+  },
+  {
+    "board_id": "nucleo-h743zi",
+    "display_name": "STM32 Nucleo-H743ZI",
+    "zephyr_board": "nucleo_h743zi/stm32h743xx",
+    "network": {
+      "en": "Network-capable (Ethernet)",
+      "es": "Capacidad de red (Ethernet)"
+    },
+    "learner": false,
+    "level": "cross-build"
+  },
+  {
+    "board_id": "arduino-opta-wifi-m7",
+    "display_name": "Arduino Opta WiFi (STM32H747 M7)",
+    "zephyr_board": "arduino_opta/stm32h747xx/m7",
+    "network": {
+      "en": "Network-capable (Wi-Fi)",
+      "es": "Capacidad de red (Wi-Fi)"
+    },
+    "learner": false,
+    "level": "cross-build"
+  },
+  {
+    "board_id": "waveshare-rp2040-zero",
+    "display_name": "Waveshare RP2040-Zero",
+    "zephyr_board": "rp2040_zero/rp2040",
+    "network": {
+      "en": "Serial-focused",
+      "es": "Orientada al puerto serie"
+    },
+    "learner": false,
+    "level": "cross-build"
+  }
+]

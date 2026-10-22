@@ -1,35 +1,47 @@
 {
-  "link.title.Docs": {
+  "link.title.Documentation": {
     "message": "Documentación",
-    "description": "The title of the footer links column with title=Docs in the footer"
+    "description": "The title of the footer links column with title=Documentation in the footer"
   },
   "link.title.Project": {
     "message": "Proyecto",
     "description": "The title of the footer links column with title=Project in the footer"
   },
-  "link.title.Community": {
-    "message": "Comunidad",
-    "description": "The title of the footer links column with title=Community in the footer"
+  "link.title.Source": {
+    "message": "Código fuente",
+    "description": "The title of the footer links column with title=Source in the footer"
   },
   "link.item.label.Getting started": {
     "message": "Primeros pasos",
     "description": "The label of footer link with label=Getting started linking to /docs/getting-started"
   },
-  "link.item.label.Hardware support": {
-    "message": "Compatibilidad de hardware",
-    "description": "The label of footer link with label=Hardware support linking to /docs/reference/capabilities-evidence"
-  },
-  "link.item.label.Reference": {
-    "message": "Referencia",
-    "description": "The label of footer link with label=Reference linking to /docs/reference"
+  "link.item.label.Languages": {
+    "message": "Lenguajes",
+    "description": "The label of footer link with label=Languages linking to /docs/languages"
   },
   "link.item.label.ZPLC application": {
     "message": "Aplicación ZPLC",
     "description": "The label of footer link with label=ZPLC application linking to /docs/ide"
   },
+  "link.item.label.Runtime": {
+    "message": "Runtime",
+    "description": "The label of footer link with label=Runtime linking to /docs/runtime"
+  },
+  "link.item.label.Boards": {
+    "message": "Placas",
+    "description": "The label of footer link with label=Boards linking to /docs/reference/boards"
+  },
+  "link.item.label.Reference": {
+    "message": "Referencia",
+    "description": "The label of footer link with label=Reference linking to /docs/reference"
+  },
   "link.item.label.Release notes": {
     "message": "Notas de la versión",
     "description": "The label of footer link with label=Release notes linking to /docs/release-notes"
+  },
+  "link.item.label.Safety and limitations": {
+    "message": "Seguridad y limitaciones",
+    "description": "The label of footer link with label=Safety and limitations linking to /docs/safety-and-limitations"
   },
   "link.item.label.Contributing": {
     "message": "Contribuir",
@@ -47,9 +59,9 @@
     "message": "Discusiones",
     "description": "The label of footer link with label=Discussions linking to https://github.com/eduardojvieira/ZPLC/discussions"
   },
-  "link.item.label.Zephyr Project": {
-    "message": "Proyecto Zephyr",
-    "description": "The label of footer link with label=Zephyr Project linking to https://zephyrproject.org/"
+  "link.item.label.MIT licence": {
+    "message": "Licencia MIT",
+    "description": "The label of footer link with label=MIT licence linking to https://github.com/eduardojvieira/ZPLC/blob/master/LICENSE"
   },
   "copyright": {
     "message": "Copyright © 2026 colaboradores de ZPLC. Publicado bajo la licencia MIT.",

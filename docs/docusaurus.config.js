@@ -125,23 +125,25 @@ const config = {
           src: 'img/logo.svg',
         },
         items: [
+          // Plain links with their own patterns: a `doc` item counts as active on every page of its sidebar, and every page
+          // shares one sidebar, so all three would be marked.
           {
-            type: 'doc',
-            docId: 'getting-started/index',
-            position: 'left',
+            to: '/docs/getting-started',
             label: 'Docs',
+            position: 'left',
+            activeBaseRegex: '/docs/(?!learn|release-notes)',
           },
           {
-            type: 'doc',
-            docId: 'learn/index',
-            position: 'left',
+            to: '/docs/learn',
             label: 'Learn',
+            position: 'left',
+            activeBaseRegex: '/docs/learn',
           },
           {
-            type: 'doc',
-            docId: 'release-notes/index',
-            position: 'left',
+            to: '/docs/release-notes',
             label: 'Release notes',
+            position: 'left',
+            activeBaseRegex: '/docs/release-notes',
           },
           {
             type: 'localeDropdown',
@@ -158,28 +160,31 @@ const config = {
         style: 'light',
         links: [
           {
-            title: 'Docs',
+            title: 'Documentation',
             items: [
               { label: 'Getting started', to: '/docs/getting-started' },
-              { label: 'Hardware support', to: '/docs/reference/capabilities-evidence' },
-              { label: 'Reference', to: '/docs/reference' },
+              { label: 'Languages', to: '/docs/languages' },
               { label: 'ZPLC application', to: '/docs/ide' },
+              { label: 'Runtime', to: '/docs/runtime' },
+              { label: 'Boards', to: '/docs/reference/boards' },
+              { label: 'Reference', to: '/docs/reference' },
             ],
           },
           {
             title: 'Project',
             items: [
               { label: 'Release notes', to: '/docs/release-notes' },
+              { label: 'Safety and limitations', to: '/docs/safety-and-limitations' },
               { label: 'Contributing', to: '/docs/contributing' },
               { label: 'Roadmap', to: '/docs/contributing/roadmap' },
             ],
           },
           {
-            title: 'Community',
+            title: 'Source',
             items: [
               { label: 'GitHub', href: 'https://github.com/eduardojvieira/ZPLC' },
               { label: 'Discussions', href: 'https://github.com/eduardojvieira/ZPLC/discussions' },
-              { label: 'Zephyr Project', href: 'https://zephyrproject.org/' },
+              { label: 'MIT licence', href: 'https://github.com/eduardojvieira/ZPLC/blob/master/LICENSE' },
             ],
           },
         ],

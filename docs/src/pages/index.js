@@ -1,4 +1,7 @@
 import Layout from '@theme/Layout';
+import Architecture from '../components/LandingPage/Architecture';
+import Boards from '../components/LandingPage/Boards';
+import Closing from '../components/LandingPage/Closing';
 import Different from '../components/LandingPage/Different';
 import Hero from '../components/LandingPage/Hero';
 import Languages from '../components/LandingPage/Languages';
@@ -16,6 +19,9 @@ export default function Home() {
         <Different />
         <Languages />
         <Learn />
+        <Architecture />
+        <Boards />
+        <Closing />
       </main>
     </Layout>
   );

@@ -1,12 +1,14 @@
 import Link from '@docusaurus/Link';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from './LandingPage.module.css';
-import Placeholder from './Placeholder';
 import { useLandingPageContent } from './content';
 
 // Learn as a headline feature: the facts of the course beside a capture of a lesson, the course drawn as a sequential
 // function chart (each module a step, each level a branch of steps), and the four simulated plants.
 export default function Learn() {
-  const { learn, placeholder } = useLandingPageContent();
+  const { learn } = useLandingPageContent();
+  const shot = useBaseUrl(`/img/${learn.shot}`);
+  const generated = useBaseUrl('/img/generated/');
 
   return (
     <section className={styles.section} aria-labelledby="learn-title">
@@ -25,16 +27,7 @@ export default function Learn() {
               </div>
             ))}
           </dl>
-          <Placeholder
-            id="C3"
-            kind="capture"
-            label={placeholder.capture}
-            path="img/learn/lesson-checked.png"
-            width={1440}
-            height={900}
-            alt={learn.captureAlt}
-            className={styles.learnShot}
-          />
+          <img className={styles.learnShot} src={shot} alt={learn.captureAlt} width="1440" height="900" loading="lazy" decoding="async" />
         </div>
 
         <h3 className={styles.subTitle}>{learn.courseTitle}</h3>
@@ -62,15 +55,20 @@ export default function Learn() {
         <ul className={styles.plants}>
           {learn.plants.map((plant) => (
             <li key={plant.key}>
-              <Placeholder
-                id={plant.id}
-                kind="generated"
-                label={placeholder.generated}
-                path={`img/generated/plant-${plant.key}-light.png`}
-                width={1600}
-                height={1200}
-                alt={plant.alt}
-              />
+              <span className={styles.plantArt}>
+                {['light', 'dark'].map((theme) => (
+                  <img
+                    key={theme}
+                    className={`zplc-${theme}-only`}
+                    src={`${generated}plant-${plant.key}-${theme}.avif`}
+                    alt={plant.alt}
+                    width="900"
+                    height="672"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                ))}
+              </span>
               <p className={styles.plantName}>{plant.name}</p>
               <p className={styles.plantLesson}>{plant.lesson}</p>
             </li>

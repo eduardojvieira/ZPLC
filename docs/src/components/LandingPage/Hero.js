@@ -1,14 +1,15 @@
 import Link from '@docusaurus/Link';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from './LandingPage.module.css';
-import Placeholder from './Placeholder';
 import { keepStandard, useLandingPageContent } from './content';
 
 // The hero: always on the dark material of the application (Commissioning Spine), the tagline set large across the page,
-// the action tagline and the two actions beside the generated image, and the release status with an amber status lamp.
+// the action tagline and the two actions beside the generated image (docs/static/img/generated/README.md), and the release status with an
+// amber status lamp.
 export default function Hero() {
-  const { hero, placeholder } = useLandingPageContent();
+  const { hero } = useLandingPageContent();
   const logo = useBaseUrl('/img/logo.svg');
+  const art = useBaseUrl('/img/generated/hero-rung-to-terminal.avif');
 
   return (
     <header className={`${styles.hero} zplc-spine`}>
@@ -37,16 +38,7 @@ export default function Hero() {
               </span>
             </p>
           </div>
-          <Placeholder
-            id="H1"
-            kind="generated"
-            label={placeholder.generated}
-            path="img/generated/hero-rung-to-terminal.png"
-            width={2400}
-            height={1500}
-            alt={hero.artAlt}
-            className={styles.heroArt}
-          />
+          <img className={styles.heroArt} src={art} alt={hero.artAlt} width="1376" height="768" fetchPriority="high" decoding="async" />
         </div>
       </div>
     </header>

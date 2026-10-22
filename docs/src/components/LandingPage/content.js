@@ -34,7 +34,7 @@ const halGroups = [
 const moduleLevels = [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2];
 
 // The simulated plants of the course (LESSON_PLANTS in packages/zplc-ide/src/learn/lessonPackage.ts) and the generated
-// illustration planned for each (docs/design/image-plan.md).
+// illustration of each (docs/static/img/generated/README.md).
 const plantIds = [
   { id: 'G1', key: 'tank' },
   { id: 'G2', key: 'conveyor' },
@@ -50,7 +50,6 @@ const landingPageContent = {
         'ZPLC compiles the five IEC 61131-3 languages to one bytecode. Its C99 runtime builds for Zephyr boards and runs as a ' +
         'simulator on your computer, and its desktop application edits, simulates and tests programs.',
     },
-    placeholder: { generated: 'Generated image, to come', capture: 'Real capture, to come' },
     hero: {
       title: 'Open-source IEC 61131-3 PLC runtime and development environment on Zephyr RTOS.',
       lead: 'Program, simulate, and verify deterministic IEC 61131-3 control logic.',
@@ -268,6 +267,80 @@ const landingPageContent = {
         { label: 'For educators', to: '/docs/learn/educators' },
       ],
     },
+    architecture: {
+      title: 'From a rung to a pin',
+      lead:
+        'ZPLC compiles every language to `.zplc` bytecode. A C99 virtual machine runs it, and the hardware abstraction layer ' +
+        'connects it to the platform.',
+      app: 'ZPLC application: edit, build, simulate, test, deploy, monitor',
+      stages: [
+        { title: 'Source', items: ['ST', 'IL', 'LD', 'FBD', 'SFC'] },
+        { title: 'Compiler', items: ['TypeScript', '`packages/zplc-compiler`'] },
+        { title: 'Bytecode', items: ['`.zplc`', 'verified by the loader'] },
+        { title: 'Runtime', items: ['C99 virtual machine', 'scheduler, process image'] },
+        { title: 'HAL', items: ['18 functions', '2 optional'] },
+      ],
+      ports: [
+        { name: 'Zephyr RTOS', note: '7 board profiles, cross-build' },
+        { name: 'POSIX host', note: 'the simulator of ZPLC' },
+        { name: 'FreeRTOS', note: 'POSIX simulator, in CI' },
+      ],
+      links: [
+        { label: 'Runtime', to: '/docs/runtime' },
+        { label: 'Instruction set', to: '/docs/runtime/isa' },
+        { label: 'HAL contract', to: '/docs/runtime/hal-contract' },
+        { label: 'System architecture', to: '/docs/architecture' },
+      ],
+    },
+    boards: {
+      title: 'Boards, at the level their evidence gives',
+      lead:
+        'Seven Zephyr board profiles build in CI and fit their flash and RAM budgets. None has been flashed, booted or run on ' +
+        'hardware yet; the next level needs a recorded test on the exact board.',
+      levels: [
+        { id: 'cross-build', text: 'The firmware builds for the board and fits its flash and RAM budget.' },
+        { id: 'community-reported', text: 'A user reported what happened on their own board, with the image it ran.' },
+        { id: 'human-hil', text: 'A person ran a recorded procedure on the exact board, with the image named by commit and hash.' },
+        { id: 'production-qualified', text: 'A separately governed production evidence package exists.' },
+      ],
+      columns: { board: 'Board', target: 'Zephyr target', network: 'Network', level: 'Level' },
+      learner: 'Learner board of the course',
+      links: [
+        { label: 'Boards', to: '/docs/reference/boards' },
+        { label: 'Hardware support', to: '/docs/reference/capabilities-evidence' },
+      ],
+    },
+    limits: {
+      title: 'What ZPLC is not',
+      items: [
+        'It is not a safety PLC, and no part of it has been certified or assessed against a functional-safety standard.',
+        'It must not control machinery or protect people: not as an emergency stop, an interlock or a guard.',
+        'It does not guarantee timing: no board has a measured scan time, jitter or worst-case execution time.',
+        'Version 2.0 is a prerelease for evaluation, and no board is past the level its records give.',
+      ],
+      link: 'Safety and limitations',
+      to: '/docs/safety-and-limitations',
+    },
+    get: {
+      title: 'Get ZPLC',
+      lead: 'The installers are files of a GitHub release, the only channel today. Check the file against `SHA256SUMS`, then open it.',
+      systems: [
+        { name: 'Windows', text: 'The `setup-unsigned.exe` installer. It is unsigned: choose More info, then Run anyway.' },
+        { name: 'macOS', text: 'The `.dmg` or `.zip` for your chip. It is signed ad hoc and not notarized.' },
+        { name: 'Linux', text: 'The `.deb` or `.rpm`, or the AppImage. They are unsigned, so the checksum is your check.' },
+      ],
+      download: 'Download from GitHub',
+      install: 'Install ZPLC',
+      installTo: '/docs/getting-started/install',
+      sourceTitle: 'Open source',
+      source: 'ZPLC is MIT-licensed. The runtime, the compiler, the application, the course and this site are in one repository.',
+      sourceLinks: [
+        { label: 'Repository', href: 'https://github.com/eduardojvieira/ZPLC' },
+        { label: 'Contributing', to: '/docs/contributing' },
+        { label: 'Release notes', to: '/docs/release-notes' },
+        { label: 'Discussions', href: 'https://github.com/eduardojvieira/ZPLC/discussions' },
+      ],
+    },
   },
   es: {
     home: {
@@ -276,7 +349,6 @@ const landingPageContent = {
         'ZPLC compila los cinco lenguajes IEC 61131-3 a un solo bytecode. Su runtime en C99 se compila para placas Zephyr y se ' +
         'ejecuta como simulador en su equipo, y su aplicación de escritorio edita, simula y prueba programas.',
     },
-    placeholder: { generated: 'Imagen generada, pendiente', capture: 'Captura real, pendiente' },
     hero: {
       title: 'Runtime y entorno de desarrollo de PLC IEC 61131-3, de código abierto, sobre Zephyr RTOS.',
       lead: 'Programe, simule y verifique lógica de control IEC 61131-3 determinista.',
@@ -519,6 +591,88 @@ const landingPageContent = {
         { label: 'Para docentes', to: '/docs/learn/educators' },
       ],
     },
+    architecture: {
+      title: 'De un peldaño a un pin',
+      lead:
+        'ZPLC compila cada lenguaje a bytecode `.zplc`. Una máquina virtual en C99 lo ejecuta, y la capa de abstracción de ' +
+        'hardware lo conecta con la plataforma.',
+      app: 'Aplicación ZPLC: editar, compilar, simular, probar, desplegar, monitorear',
+      stages: [
+        { title: 'Fuente', items: ['ST', 'IL', 'LD', 'FBD', 'SFC'] },
+        { title: 'Compilador', items: ['TypeScript', '`packages/zplc-compiler`'] },
+        { title: 'Bytecode', items: ['`.zplc`', 'verificado por el cargador'] },
+        { title: 'Runtime', items: ['máquina virtual en C99', 'planificador, imagen de proceso'] },
+        { title: 'HAL', items: ['18 funciones', '2 opcionales'] },
+      ],
+      ports: [
+        { name: 'Zephyr RTOS', note: '7 perfiles de placa, cross-build' },
+        { name: 'Host POSIX', note: 'el simulador de ZPLC' },
+        { name: 'FreeRTOS', note: 'simulador POSIX, en CI' },
+      ],
+      links: [
+        { label: 'Runtime', to: '/docs/runtime' },
+        { label: 'Conjunto de instrucciones', to: '/docs/runtime/isa' },
+        { label: 'Contrato de la HAL', to: '/docs/runtime/hal-contract' },
+        { label: 'Arquitectura del sistema', to: '/docs/architecture' },
+      ],
+    },
+    boards: {
+      title: 'Placas, en el nivel que da su evidencia',
+      lead:
+        'Siete perfiles de placa de Zephyr se compilan en CI y caben en sus presupuestos de flash y RAM. Ninguno se ha grabado, ' +
+        'arrancado ni ejecutado todavía en hardware; el nivel siguiente necesita una prueba registrada en la placa exacta.',
+      levels: [
+        { id: 'cross-build', text: 'El firmware compila para la placa y cabe en su presupuesto de flash y RAM.' },
+        { id: 'community-reported', text: 'Un usuario informó qué ocurrió en su propia placa, con la imagen que ejecutó.' },
+        {
+          id: 'human-hil',
+          text: 'Una persona ejecutó un procedimiento registrado en la placa exacta, con la imagen identificada por commit y hash.',
+        },
+        { id: 'production-qualified', text: 'Existe un paquete de evidencia de producción gobernado por separado.' },
+      ],
+      columns: { board: 'Placa', target: 'Destino de Zephyr', network: 'Red', level: 'Nivel' },
+      learner: 'Placa del estudiante del curso',
+      links: [
+        { label: 'Placas', to: '/docs/reference/boards' },
+        { label: 'Compatibilidad de hardware', to: '/docs/reference/capabilities-evidence' },
+      ],
+    },
+    limits: {
+      title: 'Lo que ZPLC no es',
+      items: [
+        'No es un PLC de seguridad, y ninguna de sus partes se ha certificado ni evaluado frente a una norma de seguridad funcional.',
+        'No debe controlar maquinaria ni proteger personas: ni como parada de emergencia, ni como enclavamiento, ni como resguardo.',
+        'No garantiza tiempos: ninguna placa tiene un tiempo de ciclo, una fluctuación ni un peor caso de ejecución medidos.',
+        'La versión 2.0 es preliminar, para evaluación, y ninguna placa supera el nivel que dan sus registros.',
+      ],
+      link: 'Seguridad y limitaciones',
+      to: '/docs/safety-and-limitations',
+    },
+    get: {
+      title: 'Obtenga ZPLC',
+      lead:
+        'Los instaladores son archivos de una versión publicada en GitHub, el único canal hoy. Verifique el archivo con ' +
+        '`SHA256SUMS` y luego ábralo.',
+      systems: [
+        {
+          name: 'Windows',
+          text: 'El instalador `setup-unsigned.exe`. No está firmado: elija Más información y luego Ejecutar de todas formas.',
+        },
+        { name: 'macOS', text: 'El `.dmg` o el `.zip` para su chip. Tiene una firma ad hoc y no está notarizado.' },
+        { name: 'Linux', text: 'El `.deb` o el `.rpm`, o la AppImage. No están firmados, así que la suma de verificación es su control.' },
+      ],
+      download: 'Descargar desde GitHub',
+      install: 'Instalar ZPLC',
+      installTo: '/docs/getting-started/install',
+      sourceTitle: 'Código abierto',
+      source: 'ZPLC tiene licencia MIT. El runtime, el compilador, la aplicación, el curso y este sitio están en un solo repositorio.',
+      sourceLinks: [
+        { label: 'Repositorio', href: 'https://github.com/eduardojvieira/ZPLC' },
+        { label: 'Contribuir', to: '/docs/contributing' },
+        { label: 'Notas de la versión', to: '/docs/release-notes' },
+        { label: 'Discusiones', href: 'https://github.com/eduardojvieira/ZPLC/discussions' },
+      ],
+    },
   },
 };
 
@@ -548,6 +702,7 @@ export function getLandingPageContent(locale) {
       ...content.learn,
       modules: content.learn.modules.map((title, index) => ({ number: index, title, level: moduleLevels[index] })),
       plants: plantIds.map((plant) => ({ ...plant, ...content.learn.plants[plant.key] })),
+      shot: `learn/lesson-checked-${lang}.png`,
     },
   };
 }

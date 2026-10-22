@@ -509,11 +509,32 @@ def replace_block(text: str, name: str, body: str, path: Path) -> str:
     return text[: start + len(begin)] + "\n\n" + body + "\n\n" + text[stop:]
 
 
+# The boards on the landing page of the site: name, Zephyr target, network class and support level, from the manifest, so
+# that the page never types a board or a level by hand.
+SITE_DATA = ROOT / "docs/src/data/boards.json"
+
+
+def render_site_data(boards: list[dict[str, object]]) -> str:
+    rows = [
+        {
+            "board_id": str(board["board_id"]),
+            "display_name": str(board["display_name"]),
+            "zephyr_board": str(board["zephyr_board"]),
+            "network": {"en": network_summary(board, False), "es": network_summary(board, True)},
+            "learner": bool(board.get("learner")),
+            "level": validation_summary(board),
+        }
+        for board in boards
+    ]
+    return json.dumps(rows, indent=2, ensure_ascii=False) + "\n"
+
+
 def expected_outputs() -> dict[Path, str]:
     boards = load_boards()
     outputs = {
         OUTPUT_EN: render_board_reference(boards, False),
         OUTPUT_ES: render_board_reference(boards, True),
+        SITE_DATA: render_site_data(boards),
     }
     for path, spanish in ((SUPPORT_EN, False), (SUPPORT_ES, True)):
         outputs[path] = replace_block(

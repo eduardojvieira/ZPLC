@@ -27,41 +27,6 @@
 }
 
 /* ---------------------------------------------------------------------------------------------------------------------
- * Placeholder of an image that does not exist yet
- * ------------------------------------------------------------------------------------------------------------------- */
-.placeholder {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  background: var(--zplc-band);
-  border: 1px dashed var(--zplc-rule-strong);
-  border-radius: var(--zplc-radius-figure);
-}
-
-.placeholderLabel {
-  display: grid;
-  gap: var(--zplc-space-1);
-  padding: var(--zplc-space-4);
-  text-align: center;
-  font-size: var(--zplc-text-xs);
-  color: var(--zplc-ink-3);
-}
-
-.placeholderLabel strong {
-  font-family: var(--zplc-font-mono);
-  font-size: 1.5rem;
-  color: var(--zplc-ink-2);
-}
-
-.placeholderLabel code {
-  padding: 0;
-  border: 0;
-  background: none;
-  font-size: 0.75rem;
-  word-break: break-all;
-}
-
-/* ---------------------------------------------------------------------------------------------------------------------
  * Hero
  * ------------------------------------------------------------------------------------------------------------------- */
 .hero {
@@ -201,7 +166,11 @@
 }
 
 .heroArt {
-  margin-right: calc(-1 * var(--zplc-gutter));
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--zplc-rule);
+  border-radius: var(--zplc-radius-figure);
 }
 
 /* ---------------------------------------------------------------------------------------------------------------------
@@ -781,6 +750,23 @@
   line-height: 1.35;
 }
 
+.learnShot {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--zplc-rule);
+  border-radius: var(--zplc-radius-figure);
+}
+
+.plantArt img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--zplc-rule);
+  border-radius: var(--zplc-radius-figure);
+  background: var(--zplc-panel);
+}
+
 .plants {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -802,6 +788,358 @@
 }
 
 /* ---------------------------------------------------------------------------------------------------------------------
+ * Architecture: a block diagram with wires between the stages and a bus to the ports
+ * ------------------------------------------------------------------------------------------------------------------- */
+.flow {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  column-gap: 2rem;
+  margin: clamp(3rem, 2rem + 3vw, 4.5rem) 0 0;
+}
+
+/* the application spans the stages it owns, drawn as a bracket over them */
+.flowApp {
+  grid-column: 1 / 4;
+  margin: 0 0 var(--zplc-space-3);
+  padding: var(--zplc-space-2) var(--zplc-space-3);
+  border: 1.5px solid var(--zplc-ink-3);
+  border-bottom: 0;
+  font-size: var(--zplc-text-xs);
+  font-weight: 600;
+  text-align: center;
+  color: var(--zplc-ink-2);
+}
+
+.stages {
+  display: contents;
+  list-style: none;
+}
+
+.stage {
+  position: relative;
+  grid-row: 2;
+  display: grid;
+  align-content: start;
+  gap: var(--zplc-space-3);
+  min-height: 8.5rem;
+  padding: var(--zplc-space-4);
+  border: 1.5px solid var(--zplc-ink-2);
+  background: var(--zplc-panel);
+}
+
+/* the wire to the next stage, and the input terminal it lands on */
+.stage::after {
+  content: "";
+  position: absolute;
+  top: 2.25rem;
+  left: 100%;
+  width: 2rem;
+  border-top: 1.5px solid var(--zplc-ink-3);
+}
+
+.stage::before {
+  content: "";
+  position: absolute;
+  top: calc(2.25rem - 3px);
+  left: -4px;
+  width: 6px;
+  height: 6px;
+  border: 1.5px solid var(--zplc-ink-2);
+  background: var(--zplc-canvas);
+}
+
+.stage:first-child::before {
+  content: none;
+}
+
+/* the HAL drops to the bus of the ports */
+.stage:last-child::after {
+  top: 100%;
+  left: 50%;
+  width: 0;
+  height: 2rem;
+  border-top: 0;
+  border-left: 1.5px solid var(--zplc-ink-3);
+}
+
+.stageTitle {
+  font-size: var(--zplc-text-sm);
+  font-weight: 650;
+}
+
+.stageItems {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--zplc-space-1) var(--zplc-space-2);
+}
+
+.stageItems > span {
+  padding: 0.125rem 0.375rem;
+  border: 1px solid var(--zplc-rule);
+  background: var(--zplc-canvas);
+  font-size: var(--zplc-text-xs);
+  color: var(--zplc-ink-2);
+}
+
+.stageItems code {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 1em;
+}
+
+.ports {
+  position: relative;
+  grid-row: 3;
+  grid-column: 3 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--zplc-space-4);
+  margin: 4rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* the bus: one line over the three ports, fed by the HAL */
+.ports::before {
+  content: "";
+  position: absolute;
+  top: -2rem;
+  left: calc((100% - 2 * var(--zplc-space-4)) / 6);
+  right: calc((100% - 2 * var(--zplc-space-4)) / 6);
+  border-top: 1.5px solid var(--zplc-ink-3);
+}
+
+.ports li {
+  position: relative;
+  display: grid;
+  gap: var(--zplc-space-1);
+  padding: var(--zplc-space-3) var(--zplc-space-4);
+  border: 1.5px solid var(--zplc-ink-2);
+  background: var(--zplc-panel);
+}
+
+.ports li::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  height: 2rem;
+  border-left: 1.5px solid var(--zplc-ink-3);
+}
+
+.portName {
+  font-size: var(--zplc-text-sm);
+  font-weight: 650;
+}
+
+.portNote {
+  font-size: var(--zplc-text-xs);
+  color: var(--zplc-ink-2);
+}
+
+/* ---------------------------------------------------------------------------------------------------------------------
+ * Boards: the ladder of levels and the table of the manifest
+ * ------------------------------------------------------------------------------------------------------------------- */
+.levels {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: clamp(3rem, 2rem + 3vw, 4.5rem) 0 0;
+  padding: 0;
+  border: 1px solid var(--zplc-rule);
+  list-style: none;
+}
+
+.level {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--zplc-space-2) var(--zplc-space-3);
+  padding: var(--zplc-space-4) var(--zplc-space-5);
+  color: var(--zplc-ink-3);
+}
+
+.level + .level {
+  border-left: 1px solid var(--zplc-rule);
+}
+
+.level[data-reached] {
+  background: var(--zplc-panel);
+  color: var(--zplc-ink);
+  box-shadow: inset 0 -2px 0 var(--zplc-cobalt);
+}
+
+.levelCount {
+  grid-row: span 2;
+  font-family: var(--zplc-font-mono);
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.level[data-reached] .levelCount {
+  color: var(--zplc-cobalt);
+}
+
+.levelName {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: var(--zplc-text-sm);
+  font-weight: 700;
+  color: inherit;
+}
+
+.levelText {
+  font-size: var(--zplc-text-xs);
+  line-height: 1.45;
+  color: var(--zplc-ink-2);
+}
+
+.boardTable {
+  margin-top: var(--zplc-space-6);
+  overflow-x: auto;
+}
+
+.boardTable table {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--zplc-text-sm);
+}
+
+.boardTable th,
+.boardTable td {
+  padding: var(--zplc-space-3) var(--zplc-space-4);
+  border: 0;
+  border-bottom: 1px solid var(--zplc-rule);
+  background: none;
+  text-align: left;
+  vertical-align: baseline;
+}
+
+.boardTable thead th {
+  font-size: var(--zplc-text-xs);
+  font-weight: 600;
+  color: var(--zplc-ink-2);
+  background: var(--zplc-band);
+}
+
+.boardTable tbody tr {
+  background: none;
+}
+
+.boardTable tbody th {
+  font-weight: 600;
+}
+
+.boardTable code {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 0.8125rem;
+}
+
+.learnerTag {
+  display: inline-block;
+  margin-left: var(--zplc-space-2);
+  padding: 0 var(--zplc-space-2);
+  border: 1px solid var(--zplc-rule-strong);
+  border-radius: var(--zplc-radius-control);
+  font-size: var(--zplc-text-xs);
+  font-weight: 500;
+  color: var(--zplc-ink-2);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------------------------------------------------
+ * The close: the warning label of the limits, how to get ZPLC, the source
+ * ------------------------------------------------------------------------------------------------------------------- */
+.label {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+  gap: var(--zplc-space-4) var(--zplc-space-7);
+  padding: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+  border: 1.5px solid var(--zplc-amber);
+  border-radius: var(--zplc-radius-figure);
+  background: color-mix(in srgb, var(--zplc-amber) 6%, var(--zplc-panel));
+}
+
+.labelTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--zplc-space-3);
+  margin: 0;
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.labelList {
+  grid-row: span 2;
+  display: grid;
+  gap: var(--zplc-space-3);
+  margin: 0;
+  padding-left: 1.125rem;
+}
+
+.labelList li::marker {
+  color: var(--zplc-amber);
+}
+
+.labelLink {
+  align-self: end;
+  font-size: var(--zplc-text-sm);
+  font-weight: 500;
+}
+
+.getGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: clamp(2rem, 1rem + 4vw, 5rem);
+  align-items: start;
+  margin-top: clamp(4rem, 3rem + 3vw, 6rem);
+}
+
+.systems {
+  margin: 0;
+  border-top: 1px solid var(--zplc-rule);
+}
+
+.systems > div {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  gap: var(--zplc-space-1) var(--zplc-space-4);
+  padding: var(--zplc-space-4) 0;
+  border-bottom: 1px solid var(--zplc-rule);
+}
+
+.systems dt {
+  font-weight: 600;
+}
+
+.systems dd {
+  margin: 0;
+  color: var(--zplc-ink-2);
+}
+
+.source {
+  margin-top: clamp(3rem, 2rem + 3vw, 4.5rem);
+  padding-top: var(--zplc-space-6);
+  border-top: 1px solid var(--zplc-rule);
+}
+
+.source .subTitle {
+  margin-top: 0;
+}
+
+.source > p:not(.links) {
+  max-width: 60ch;
+  margin: 0;
+  color: var(--zplc-ink-2);
+}
+
+/* ---------------------------------------------------------------------------------------------------------------------
  * Narrow screens: one column everywhere
  * ------------------------------------------------------------------------------------------------------------------- */
 @media (max-width: 996px) {
@@ -811,10 +1149,6 @@
   .languageLayout,
   .evidence {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .heroArt {
-    margin-right: 0;
   }
 
   .languageLayout {
@@ -882,9 +1216,106 @@
   .plants {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .flow {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 2rem;
+  }
+
+  .flowApp {
+    grid-column: 1;
+    margin-bottom: -1rem;
+  }
+
+  .stage {
+    grid-row: auto;
+    min-height: 0;
+  }
+
+  .stage::after,
+  .stage:last-child::after {
+    top: 100%;
+    left: 2rem;
+    width: 0;
+    height: 2rem;
+    border-top: 0;
+    border-left: 1.5px solid var(--zplc-ink-3);
+  }
+
+  .stage::before {
+    top: -4px;
+    left: calc(2rem - 3px);
+  }
+
+  .ports {
+    grid-row: auto;
+    grid-column: 1;
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: 0;
+  }
+
+  .ports::before,
+  .ports li::before {
+    content: none;
+  }
+
+  .levels {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .level:nth-child(3) {
+    border-left: 0;
+  }
+
+  .level:nth-child(n + 3) {
+    border-top: 1px solid var(--zplc-rule);
+  }
+
+  .label,
+  .getGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .labelList {
+    grid-row: auto;
+  }
 }
 
 @media (max-width: 600px) {
+  /* a board per row: its name and level, then its target and network */
+  .boardTable thead {
+    display: none;
+  }
+
+  .boardTable tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--zplc-space-3);
+    padding: var(--zplc-space-3) 0;
+    border-bottom: 1px solid var(--zplc-rule);
+  }
+
+  .boardTable tbody th,
+  .boardTable td {
+    padding: 0;
+    border: 0;
+  }
+
+  .boardTable td:nth-child(2),
+  .boardTable td:nth-child(3) {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+
+  .boardTable td:nth-child(4) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .boardTable td:nth-child(3) {
+    font-size: var(--zplc-text-xs);
+    color: var(--zplc-ink-2);
+  }
+
   .actions > * {
     flex: 1 1 auto;
     justify-content: center;
