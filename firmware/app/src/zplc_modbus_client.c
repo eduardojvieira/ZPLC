@@ -238,7 +238,7 @@ int zplc_modbus_tcp_client_write_coil(const char *host, uint16_t port, uint8_t u
 
 int zplc_modbus_client_poll_tags(bool use_tcp) {
   uint16_t count = zplc_core_get_tag_count();
-  uint16_t regs[2];
+  uint16_t regs[2] = {0U, 0U};
   int rc = 0;
   static bool warned_unreadable;
 
