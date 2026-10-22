@@ -49,8 +49,19 @@ jobs:
       - name: Test CI tooling
         run: bun test ./tools/ci
 
+      # DOC-009: the scenarios of the documentation pages run on the native runtime (tools/docs/check-docs-config.ts), so
+      # the simulator is built before the documentation tooling is tested. The later steps of this job use it too.
+      - name: Build native POSIX simulator for IDE scenarios
+        run: |
+          cmake -S firmware/lib/zplc_core -B "${RUNNER_TEMP}/zplc-native-sim-build"
+          cmake --build "${RUNNER_TEMP}/zplc-native-sim-build" --target zplc_runtime --parallel
+
       - name: Test documentation tooling
-        run: bun test ./tools/docs
+        env:
+          ZPLC_NATIVE_SIM_BIN: ${{ runner.temp }}/zplc-native-sim-build/zplc_runtime
+        run: |
+          test -x "$ZPLC_NATIVE_SIM_BIN"
+          bun test ./tools/docs
 
       # The end-to-end rewrite case needs the pinned git-filter-repo and skips itself here; the list parsing runs.
       - name: Test history rewrite tooling
@@ -114,11 +125,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes --no-install-recommends clang lld
-
-      - name: Build native POSIX simulator for IDE scenarios
-        run: |
-          cmake -S firmware/lib/zplc_core -B "${RUNNER_TEMP}/zplc-native-sim-build"
-          cmake --build "${RUNNER_TEMP}/zplc-native-sim-build" --target zplc_runtime --parallel
 
       # HIL-001, HIL-004, HIL-007, HIL-008, HIL-009, HIL-012, HIL-017: the Python tests of tools/hil (every device script
       # exits non-zero when a check fails, the chain command and the run record, the CRC32 cross check of the C loader
