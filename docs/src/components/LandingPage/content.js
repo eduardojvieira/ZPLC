@@ -1,349 +1,231 @@
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 
+// The text of the landing page, in English and in Spanish. Every claim here is backed by a file of the repository; the list
+// is in docs/design/content-outline.md. tools/docs/check_capability_claims.ts and tools/ci/product-name.ts read this file.
+// A span between backticks is a literal identifier and is set in code.
+
 const releasesUrl = 'https://github.com/eduardojvieira/ZPLC/releases';
+
+// The numbered regions of the hero capture (docs/static/img/editors/ld-<locale>.png, 1366 x 768), as fractions of its width
+// and height; the English and the Spanish captures share the layout. The order is the order of the list beside the picture.
+const heroCallouts = [
+  { x: '51.2%', y: '23%' },
+  { x: '34.4%', y: '31.4%' },
+  { x: '22.7%', y: '12.9%' },
+  { x: '55.6%', y: '8.5%' },
+];
+
+const languageIds = ['st', 'il', 'ld', 'fbd', 'sfc'];
 
 const landingPageContent = {
   en: {
     home: {
-      metaTitle: 'ZPLC - Open-source PLC runtime and IDE',
-      metaDescription: 'An open-source IEC 61131-3 PLC runtime in portable C99 and a desktop IDE to write, test and simulate programs.',
+      metaTitle: 'Open-source IEC 61131-3 PLC runtime and development environment',
+      metaDescription:
+        'ZPLC compiles the five IEC 61131-3 languages to one bytecode. Its C99 runtime builds for Zephyr boards and runs as a ' +
+        'simulator on your computer, and its desktop application edits, simulates and tests programs.',
     },
     hero: {
-      badge: 'ZPLC',
-      titleLead: 'Open-source',
-      titleAccent: 'PLC runtime and IDE.',
-      subtitle:
-        'Write IEC 61131-3 programs, test them with scenarios and run them in a simulator on your computer. The same C99 runtime builds ' +
-        'for Zephyr boards. Version 2.0 is a preview: no board has been tested on hardware yet.',
-      primaryCta: 'Download the prerelease',
-      primaryTo: releasesUrl,
-      secondaryCta: 'Get started',
-      secondaryTo: '/docs/getting-started',
-      chips: ['IEC 61131-3', 'Zephyr RTOS', 'MIT licence'],
+      title: 'Open-source IEC 61131-3 PLC runtime and development environment on Zephyr RTOS.',
+      lead: 'Program, simulate, and verify deterministic IEC 61131-3 control logic.',
+      download: 'Download',
+      downloadHref: releasesUrl,
+      start: 'Get started',
+      startTo: '/docs/getting-started',
+      shot: 'editors/ld-en.png',
+      shotAlt: 'ZPLC with the Blinky example open in the Ladder Diagram editor.',
+      callouts: [
+        'Ladder Diagram editor with the Blinky example: four rungs, two timers.',
+        'Toolbox: contacts, coils and blocks for the rung.',
+        'Project: programs, tasks, I/O mapping, communication and the target device.',
+        'Status rail: mode, runtime session and task interval.',
+      ],
+      provenance: 'Real screenshot, captured from commit',
+      statusLabel: 'Prerelease',
+      status: 'Version 2.0 is for evaluation. No board has been tested on hardware, and ZPLC must not control machinery.',
+      statusLink: 'Safety and limitations',
+      statusTo: '/docs/safety-and-limitations',
     },
-    runtimeSection: {
-      label: 'RUNTIME',
-      title: 'A small C99 runtime',
-      subtitle: 'One bytecode runtime, separated from the hardware by a HAL.',
-      cards: [
+    languages: {
+      title: 'Five IEC 61131-3 languages, one bytecode',
+      lead: 'Write in text or in diagrams. Every language compiles to the same `.zplc` bytecode, which one C99 runtime executes.',
+      tabsLabel: 'IEC 61131-3 languages',
+      evidenceLabel: 'How this is checked',
+      evidence:
+        'For each language, an end-to-end test of ZPLC edits, builds, simulates, debugs, forces and deploys a program. Deploy goes ' +
+        'to the native runtime behind an emulated board; no physical board takes part.',
+      evidenceLink: 'Languages and their evidence',
+      evidenceTo: '/docs/languages',
+      items: [
         {
-          icon: '🛡️',
-          title: 'Fixed memory regions',
-          description: 'Programs work in five fixed regions: inputs, outputs, work, retain and code. Their sizes are set at build time.',
+          code: 'ST',
+          name: 'Structured Text',
+          text: 'A text editor for Structured Text. While the program runs, each variable shows its value beside its line.',
+          alt: 'The Structured Text editor of ZPLC with the Blinky example.',
+          reference: 'Structured Text reference',
         },
         {
-          icon: '⏱️',
-          title: 'Tasks and priorities',
-          description: 'Programs run in tasks with a priority and a cycle time. Timing on a board has not been measured yet.',
+          code: 'IL',
+          name: 'Instruction List',
+          text: 'Instruction List in the same text editor, with breakpoints on a line and values that you can watch and force.',
+          alt: 'The Instruction List editor of ZPLC with the Blinky example.',
+          reference: 'Instruction List reference',
         },
         {
-          icon: '⚡',
-          title: 'Portable core',
-          description: 'The core reaches the platform only through a HAL. The Zephyr and POSIX ports are included in this release.',
+          code: 'LD',
+          name: 'Ladder Diagram',
+          text: 'Rungs built from the toolbox or from the keyboard alone, with the values of the rung shown while the program runs.',
+          alt: 'The Ladder Diagram editor of ZPLC with the Blinky example: four rungs and a toolbox of contacts and coils.',
+          reference: 'Ladder Diagram reference',
         },
         {
-          icon: '💻',
-          title: 'Native simulation',
-          description:
-            'Run a program on your computer with the same C runtime. The simulator does not model a board’s I/O or its real timing.',
+          code: 'FBD',
+          name: 'Function Block Diagram',
+          text: 'Blocks placed and wired on a canvas, also from the keyboard, with online values while the program runs.',
+          alt: 'The Function Block Diagram editor of ZPLC with the Blinky example: two timers and logic gates.',
+          reference: 'Function Block Diagram reference',
+        },
+        {
+          code: 'SFC',
+          name: 'Sequential Function Chart',
+          text: 'Steps, transitions and actions on a chart, edited from the keyboard, with the online state of the chart while it runs.',
+          alt: 'The Sequential Function Chart editor of ZPLC with the Blinky example.',
+          reference: 'Sequential Function Chart reference',
         },
       ],
-    },
-    architectureSection: {
-      label: 'WORKFLOW',
-      title: 'From source to runtime',
-      subtitle: 'Write, compile, simulate, then deploy to a board.',
-      steps: [
-        {
-          icon: '1',
-          title: 'Compile',
-          description: 'Compile a project to `.zplc` bytecode and read the compiler diagnostics.',
-        },
-        {
-          icon: '2',
-          title: 'Simulate',
-          description: 'Run the program on the POSIX runtime and watch its variables.',
-        },
-        {
-          icon: '3',
-          title: 'Test',
-          description: 'Run scenarios: scripted inputs with timed checks on the outputs.',
-        },
-        {
-          icon: '4',
-          title: 'Deploy',
-          description: 'Send the program to a connected board. A person starts every deploy.',
-        },
-      ],
-    },
-    hardwareSection: {
-      label: 'BOARDS',
-      title: 'Seven board profiles',
-      subtitle: 'All seven cross-build in CI. None has been tested on hardware yet.',
-      boards: [
-        { value: 'RP2040', label: 'Raspberry Pi Pico' },
-        { value: 'STM32H747', label: 'Arduino GIGA R1' },
-        { value: 'ESP32-S3', label: 'ESP32-S3 DevKitC' },
-        { value: 'STM32F746', label: 'STM32F746G Discovery' },
-        { value: 'STM32H743', label: 'Nucleo-H743ZI' },
-        { value: 'STM32H747', label: 'Arduino Opta WiFi' },
-        { value: 'RP2040', label: 'Waveshare RP2040-Zero' },
-      ],
-      architectures: 'Evidence level for every board: cross-build',
-    },
-    documentationSection: {
-      label: 'LANGUAGES AND TOOLS',
-      title: 'Languages and debugging',
-      subtitle: 'Edit in text or in diagrams, then run and inspect the program.',
-      languageBlock: {
-        title: 'IEC 61131-3 languages',
-        description:
-          'Structured Text is the main path. Instruction List is a text path. Ladder, Function Block Diagram and Sequential Function ' +
-          'Chart have visual editors.',
-        items: [
-          'Structured Text (ST)',
-          'Instruction List (IL)',
-          'Ladder Diagram (LD)',
-          'Function Block Diagram (FBD)',
-          'Sequential Function Chart (SFC)',
-        ],
-      },
-      referenceBlock: {
-        title: 'Run and inspect',
-        items: [
-          'Watch variables while a program runs',
-          'Step one cycle at a time',
-          'Scenario tests on the simulator',
-          'Trace of recorded values',
-        ],
-      },
-    },
-    roadmapSection: {
-      label: 'IN THE REPOSITORY',
-      title: 'Three parts',
-      subtitle: 'The runtime, the ZPLC application and the function blocks for communication.',
-      phases: [
-        {
-          badge: 'RUNTIME',
-          title: 'C99 VM',
-          items: ['Task scheduler and diagnostics', 'Zephyr and POSIX HALs', 'Loader that verifies programs'],
-          accentStyle: { border: '1px solid #22d3ee', background: 'rgba(34, 211, 238, 0.05)' },
-          badgeStyle: {},
-        },
-        {
-          badge: 'STUDIO',
-          title: 'Desktop app',
-          items: ['Text and visual editors', 'TypeScript compiler', 'Native POSIX simulation'],
-          accentStyle: {},
-          badgeStyle: { color: '#a855f7', borderColor: 'rgba(168, 85, 247, 0.2)', background: 'rgba(168, 85, 247, 0.05)' },
-        },
-        {
-          badge: 'COMMUNICATION',
-          title: 'Function blocks',
-          items: ['Modbus', 'MQTT', 'Azure and AWS cloud blocks'],
-          accentStyle: {},
-          badgeStyle: { color: '#f59e0b', borderColor: 'rgba(245, 158, 11, 0.2)', background: 'rgba(245, 158, 11, 0.05)' },
-        },
-      ],
-    },
-    ideSection: {
-      label: 'ZPLC STUDIO',
-      title: 'Desktop app for Windows, macOS and Linux',
-      subtitle: 'Edit, compile, simulate and test in one place. The installers of this prerelease are unsigned.',
-      cards: [
-        { icon: '✏️', title: 'Author', description: 'A text editor for ST and IL, and visual editors for LD, FBD and SFC.' },
-        { icon: '🚀', title: 'Simulate', description: 'Run a program on the bundled POSIX runtime and watch its variables.' },
-        { icon: '📦', title: 'Compile', description: 'Compile a project to `.zplc` bytecode and read the diagnostics.' },
-        { icon: '🛠️', title: 'Test', description: 'Run scenario tests and look at the trace they record.' },
-      ],
-      snippet:
-        `PROGRAM Main\nVAR\n  PumpEnabled : BOOL := FALSE;\n  TankLevel : INT := 42;\nEND_VAR\n\nIF TankLevel < 30 THEN\n ` +
-        ` PumpEnabled := TRUE;\nEND_IF;\nEND_PROGRAM`,
-    },
-    ctaSection: {
-      title: 'Try ZPLC',
-      subtitle: 'Download the prerelease, copy an example project and run it in the simulator.',
-      primaryCta: 'Read Getting Started',
-      primaryTo: '/docs/getting-started',
-      secondaryCta: 'GitHub Repository',
     },
   },
   es: {
     home: {
-      metaTitle: 'ZPLC - Runtime y IDE para PLC de código abierto',
+      metaTitle: 'Runtime y entorno de desarrollo de PLC IEC 61131-3, de código abierto',
       metaDescription:
-        'Un runtime PLC IEC 61131-3 de código abierto en C99 portable y un IDE de escritorio para escribir, probar y simular programas.',
+        'ZPLC compila los cinco lenguajes IEC 61131-3 a un solo bytecode. Su runtime en C99 se compila para placas Zephyr y se ' +
+        'ejecuta como simulador en su equipo, y su aplicación de escritorio edita, simula y prueba programas.',
     },
     hero: {
-      badge: 'ZPLC',
-      titleLead: 'Runtime e IDE para PLC',
-      titleAccent: 'de código abierto.',
-      subtitle:
-        'Escriba programas IEC 61131-3, pruébelos con escenarios y ejecútelos en un simulador en su equipo. El mismo runtime en C99 se ' +
-        'compila para placas Zephyr. La versión 2.0 es preliminar: todavía no se ha probado ninguna placa con hardware.',
-      primaryCta: 'Descargar la versión preliminar',
-      primaryTo: releasesUrl,
-      secondaryCta: 'Primeros pasos',
-      secondaryTo: '/docs/getting-started',
-      chips: ['IEC 61131-3', 'Zephyr RTOS', 'Licencia MIT'],
+      title: 'Runtime y entorno de desarrollo de PLC IEC 61131-3, de código abierto, sobre Zephyr RTOS.',
+      lead: 'Programe, simule y verifique lógica de control IEC 61131-3 determinista.',
+      download: 'Descargar',
+      downloadHref: releasesUrl,
+      start: 'Primeros pasos',
+      startTo: '/docs/getting-started',
+      shot: 'editors/ld-es.png',
+      shotAlt: 'ZPLC con el ejemplo Blinky abierto en el editor de diagrama de escalera.',
+      callouts: [
+        'Editor de diagrama de escalera con el ejemplo Blinky: cuatro peldaños, dos temporizadores.',
+        'Caja de herramientas: contactos, bobinas y bloques para el peldaño.',
+        'Proyecto: programas, tareas, mapeo de E/S, comunicación y dispositivo de destino.',
+        'Barra de estado: modo, sesión del runtime e intervalo de tarea.',
+      ],
+      provenance: 'Captura real, tomada del commit',
+      statusLabel: 'Versión preliminar',
+      status: 'La versión 2.0 es para evaluación. Ninguna placa se ha probado con hardware, y ZPLC no debe controlar maquinaria.',
+      statusLink: 'Seguridad y limitaciones',
+      statusTo: '/docs/safety-and-limitations',
     },
-    runtimeSection: {
-      label: 'RUNTIME',
-      title: 'Un runtime pequeño en C99',
-      subtitle: 'Un solo runtime de bytecode, separado del hardware mediante una HAL.',
-      cards: [
+    languages: {
+      title: 'Cinco lenguajes IEC 61131-3, un solo bytecode',
+      lead:
+        'Escriba en texto o en diagramas. Todos los lenguajes se compilan al mismo bytecode `.zplc`, que ejecuta un único ' +
+        'runtime en C99.',
+      tabsLabel: 'Lenguajes IEC 61131-3',
+      evidenceLabel: 'Cómo se comprueba',
+      evidence:
+        'Para cada lenguaje, una prueba de extremo a extremo de ZPLC edita, compila, simula, depura, fuerza y despliega un ' +
+        'programa. El despliegue va al runtime nativo detrás de una placa emulada; no interviene ninguna placa física.',
+      evidenceLink: 'Los lenguajes y su evidencia',
+      evidenceTo: '/docs/languages',
+      items: [
         {
-          icon: '🛡️',
-          title: 'Regiones de memoria fijas',
-          description:
-            'Los programas trabajan en cinco regiones fijas: entradas, salidas, trabajo, retain y código. Sus tamaños se definen al ' +
-            'compilar.',
+          code: 'ST',
+          name: 'Texto estructurado',
+          text:
+            'Un editor de texto para texto estructurado. Mientras el programa se ejecuta, cada variable muestra su valor junto a ' +
+            'su línea.',
+          alt: 'El editor de texto estructurado de ZPLC con el ejemplo Blinky.',
+          reference: 'Referencia de texto estructurado',
         },
         {
-          icon: '⏱️',
-          title: 'Tareas y prioridades',
-          description:
-            'Los programas se ejecutan en tareas con prioridad y tiempo de ciclo. Los tiempos en una placa todavía no se han medido.',
+          code: 'IL',
+          name: 'Lista de instrucciones',
+          text:
+            'Lista de instrucciones en el mismo editor de texto, con puntos de interrupción en una línea y valores que se pueden ' +
+            'observar y forzar.',
+          alt: 'El editor de lista de instrucciones de ZPLC con el ejemplo Blinky.',
+          reference: 'Referencia de lista de instrucciones',
         },
         {
-          icon: '⚡',
-          title: 'Núcleo portable',
-          description: 'El núcleo accede a la plataforma solo mediante una HAL. Esta versión incluye los ports de Zephyr y POSIX.',
+          code: 'LD',
+          name: 'Diagrama de escalera',
+          text:
+            'Peldaños armados desde la caja de herramientas o solo con el teclado, con los valores del peldaño mientras el ' +
+            'programa se ejecuta.',
+          alt:
+            'El editor de diagrama de escalera de ZPLC con el ejemplo Blinky: cuatro peldaños y una caja de herramientas con ' +
+            'contactos y bobinas.',
+          reference: 'Referencia de diagrama de escalera',
         },
         {
-          icon: '💻',
-          title: 'Simulación nativa',
-          description:
-            'Ejecute un programa en su equipo con el mismo runtime en C. El simulador no modela la E/S de una placa ni sus tiempos reales.',
+          code: 'FBD',
+          name: 'Diagrama de bloques de función',
+          text:
+            'Bloques colocados y conectados en un lienzo, también desde el teclado, con valores en línea mientras el programa se ' +
+            'ejecuta.',
+          alt: 'El editor de diagrama de bloques de función de ZPLC con el ejemplo Blinky: dos temporizadores y compuertas lógicas.',
+          reference: 'Referencia de diagrama de bloques de función',
+        },
+        {
+          code: 'SFC',
+          name: 'Diagrama funcional secuencial',
+          text:
+            'Etapas, transiciones y acciones en un diagrama, editadas desde el teclado, con el estado en línea del diagrama mientras ' +
+            'se ejecuta.',
+          alt: 'El editor de diagrama funcional secuencial de ZPLC con el ejemplo Blinky.',
+          reference: 'Referencia de diagrama funcional secuencial',
         },
       ],
-    },
-    architectureSection: {
-      label: 'FLUJO DE TRABAJO',
-      title: 'Del código fuente al runtime',
-      subtitle: 'Escribir, compilar, simular y luego desplegar en una placa.',
-      steps: [
-        {
-          icon: '1',
-          title: 'Compilar',
-          description: 'Compile un proyecto a bytecode `.zplc` y lea los diagnósticos del compilador.',
-        },
-        {
-          icon: '2',
-          title: 'Simular',
-          description: 'Ejecute el programa en el runtime POSIX y observe sus variables.',
-        },
-        {
-          icon: '3',
-          title: 'Probar',
-          description: 'Ejecute escenarios: entradas definidas con verificaciones temporizadas sobre las salidas.',
-        },
-        {
-          icon: '4',
-          title: 'Desplegar',
-          description: 'Envíe el programa a una placa conectada. Una persona inicia cada despliegue.',
-        },
-      ],
-    },
-    hardwareSection: {
-      label: 'PLACAS',
-      title: 'Siete perfiles de placa',
-      subtitle: 'Las siete se compilan en CI. Ninguna se ha probado todavía con hardware.',
-      boards: [
-        { value: 'RP2040', label: 'Raspberry Pi Pico' },
-        { value: 'STM32H747', label: 'Arduino GIGA R1' },
-        { value: 'ESP32-S3', label: 'ESP32-S3 DevKitC' },
-        { value: 'STM32F746', label: 'STM32F746G Discovery' },
-        { value: 'STM32H743', label: 'Nucleo-H743ZI' },
-        { value: 'STM32H747', label: 'Arduino Opta WiFi' },
-        { value: 'RP2040', label: 'Waveshare RP2040-Zero' },
-      ],
-      architectures: 'Nivel de evidencia de todas las placas: cross-build',
-    },
-    documentationSection: {
-      label: 'LENGUAJES Y HERRAMIENTAS',
-      title: 'Lenguajes y depuración',
-      subtitle: 'Edite en texto o en diagramas, y luego ejecute e inspeccione el programa.',
-      languageBlock: {
-        title: 'Lenguajes IEC 61131-3',
-        description:
-          'Structured Text es la vía principal. Instruction List es una vía de texto. Ladder, Function Block Diagram y Sequential ' +
-          'Function Chart tienen editores visuales.',
-        items: [
-          'Structured Text (ST)',
-          'Instruction List (IL)',
-          'Ladder Diagram (LD)',
-          'Function Block Diagram (FBD)',
-          'Sequential Function Chart (SFC)',
-        ],
-      },
-      referenceBlock: {
-        title: 'Ejecutar e inspeccionar',
-        items: [
-          'Observar variables mientras el programa se ejecuta',
-          'Avanzar un ciclo a la vez',
-          'Pruebas de escenario en el simulador',
-          'Trace de los valores registrados',
-        ],
-      },
-    },
-    roadmapSection: {
-      label: 'EN EL REPOSITORIO',
-      title: 'Tres partes',
-      subtitle: 'El runtime, la aplicación ZPLC y los bloques de función de comunicación.',
-      phases: [
-        {
-          badge: 'RUNTIME',
-          title: 'VM en C99',
-          items: ['Planificador de tareas y diagnósticos', 'HAL de Zephyr y de POSIX', 'Cargador que verifica los programas'],
-          accentStyle: { border: '1px solid #22d3ee', background: 'rgba(34, 211, 238, 0.05)' },
-          badgeStyle: {},
-        },
-        {
-          badge: 'STUDIO',
-          title: 'Aplicación de escritorio',
-          items: ['Editores de texto y visuales', 'Compilador en TypeScript', 'Simulación POSIX nativa'],
-          accentStyle: {},
-          badgeStyle: { color: '#a855f7', borderColor: 'rgba(168, 85, 247, 0.2)', background: 'rgba(168, 85, 247, 0.05)' },
-        },
-        {
-          badge: 'COMUNICACIÓN',
-          title: 'Bloques de función',
-          items: ['Modbus', 'MQTT', 'Bloques de nube de Azure y AWS'],
-          accentStyle: {},
-          badgeStyle: { color: '#f59e0b', borderColor: 'rgba(245, 158, 11, 0.2)', background: 'rgba(245, 158, 11, 0.05)' },
-        },
-      ],
-    },
-    ideSection: {
-      label: 'ZPLC STUDIO',
-      title: 'Aplicación de escritorio para Windows, macOS y Linux',
-      subtitle: 'Edite, compile, simule y pruebe en un solo lugar. Los instaladores de esta versión preliminar no están firmados.',
-      cards: [
-        { icon: '✏️', title: 'Editar', description: 'Un editor de texto para ST e IL, y editores visuales para LD, FBD y SFC.' },
-        { icon: '🚀', title: 'Simular', description: 'Ejecute un programa en el runtime POSIX incluido y observe sus variables.' },
-        { icon: '📦', title: 'Compilar', description: 'Compile un proyecto a bytecode `.zplc` y lea los diagnósticos.' },
-        { icon: '🛠️', title: 'Probar', description: 'Ejecute pruebas de escenario y revise el trace que registran.' },
-      ],
-      snippet:
-        `PROGRAM Main\nVAR\n  PumpEnabled : BOOL := FALSE;\n  TankLevel : INT := 42;\nEND_VAR\n\nIF TankLevel < 30 THEN\n ` +
-        ` PumpEnabled := TRUE;\nEND_IF;\nEND_PROGRAM`,
-    },
-    ctaSection: {
-      title: 'Pruebe ZPLC',
-      subtitle: 'Descargue la versión preliminar, copie un proyecto de ejemplo y ejecútelo en el simulador.',
-      primaryCta: 'Leer Primeros pasos',
-      primaryTo: '/docs/getting-started',
-      secondaryCta: 'Repositorio en GitHub',
     },
   },
 };
 
+/** The content of one locale, with the data that both locales share. */
 export function getLandingPageContent(locale) {
-  return landingPageContent[locale] ?? landingPageContent.en;
+  const lang = locale in landingPageContent ? locale : 'en';
+  const content = landingPageContent[lang];
+  return {
+    ...content,
+    hero: { ...content.hero, callouts: content.hero.callouts.map((text, index) => ({ ...heroCallouts[index], text })) },
+    languages: {
+      ...content.languages,
+      items: content.languages.items.map((item, index) => ({
+        ...item,
+        id: languageIds[index],
+        shot: `editors/${languageIds[index]}-${lang}.png`,
+        to: `/docs/reference/language-${languageIds[index]}`,
+      })),
+    },
+  };
 }
 
 export function useLandingPageContent() {
   const { i18n } = useDocusaurusContext();
   return getLandingPageContent(i18n.currentLocale);
+}
+
+/** A string with spans between backticks, as text and `<code>` elements. */
+export function withCode(text) {
+  return text.split('`').map((part, index) => (index % 2 === 1 ? <code key={index}>{part}</code> : part));
+}
+
+/** A heading with the name of the standard kept on one line, so that "61131-3" never breaks at its hyphen. */
+export function keepStandard(text) {
+  return text.split(/(IEC 61131-3)/).map((part, index) =>
+    index % 2 === 1 ? (
+      <span key={index} className="nowrap">
+        {part}
+      </span>
+    ) : (
+      part
+    ),
+  );
 }
