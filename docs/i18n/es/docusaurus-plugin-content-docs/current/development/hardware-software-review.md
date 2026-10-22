@@ -67,6 +67,12 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 
 - **COM-016.05** las dos placas aún se compilan sin TLS (`firmware/app/boards/nucleo_h743zi.conf:86-103`, `firmware/app/boards/arduino_opta_stm32h747xx_m7.conf:89-106`: `CONFIG_MQTT_LIB_TLS`, `CONFIG_NET_SOCKETS_SOCKOPT_TLS` y `CONFIG_TLS_CREDENTIALS` sin definir). COM-016 pide TLS activado de nuevo, con una fuente de entropía de hardware verificada, antes de GA; la parte de compilación funciona (la regla pasa con TLS activado), así que activarlo es un paso de software. No se dio, por instrucción, y falta el registro de hardware del generador (HIL-011).
 
+### Decisiones del propietario del 2026-10-22
+
+- **HIL-002.05** Se acepta el escenario reformulado: la tolerancia es un límite de retraso que invalida la ejecución, no una ampliación de las ventanas de verificación.
+- **HIL-010.24** y **HIL-010.25** Se acepta el juicio sobre el código y la compilación: ningún emulador puede reiniciarse por el watchdog, así que el reinicio en sí se verifica en el silicio.
+- **COM-016.05** TLS sigue desactivado en las dos placas hasta GA, como permite COM-016, y el registro de cambios y la página de seguridad lo indican. Activarlo con una fuente de entropía de hardware verificada sigue siendo un punto del gate de GA.
+
 ## HIL-001 packages/zplc-hil ejecuta la cadena real
 
 ### HIL-001.01 packages/zplc-hil compila un programa de prueba con el compilador del repositorio

@@ -68,6 +68,12 @@ For each one, the silicon fact that a person checks at a bench:
 
 - **COM-016.05** the two boards still build without TLS (`firmware/app/boards/nucleo_h743zi.conf:86-103`, `firmware/app/boards/arduino_opta_stm32h747xx_m7.conf:89-106`: `CONFIG_MQTT_LIB_TLS`, `CONFIG_NET_SOCKETS_SOCKOPT_TLS` and `CONFIG_TLS_CREDENTIALS` unset). COM-016 asks for TLS on again, with a verified hardware entropy source, before GA; the build half works (the rule passes with TLS on), so turning it on is a software step. It was not taken, by instruction, and the hardware record of the generator (HIL-011) is still missing.
 
+### Owner decisions of 2026-10-22
+
+- **HIL-002.05** The reworded scenario is accepted: the tolerance is a lateness bound that voids a run, not a widening of the check windows.
+- **HIL-010.24** and **HIL-010.25** The judgment on the code and the build is accepted: neither emulator can reset on the watchdog, so the reset itself is checked on silicon.
+- **COM-016.05** TLS stays off on the two boards until GA, as COM-016 allows, and the changelog and the safety page say so. Turning it on with a verified hardware entropy source stays a GA gate item.
+
 ## HIL-001 packages/zplc-hil runs the real chain
 
 ### HIL-001.01 packages/zplc-hil compiles a test program with the repository compiler

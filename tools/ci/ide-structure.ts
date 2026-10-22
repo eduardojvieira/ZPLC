@@ -27,6 +27,7 @@
 // median module had 100 lines, and the 15 above it were the oversized ones (the next step down, 600 lines, would
 // have listed 27 and asked for splits inside the visual editors and the store that other work packages are
 // rewriting). 800 lines is about ten screens, where a module stops being reviewable in one sitting.
+// The owner accepted 1600 on 2026-10-22.
 // Why 1600 since VF-017: the formatter lays the code out at 140 columns, and the same modules take more lines (23 per
 // cent more over the product, a module of long messages or class lists up to three times: mcp/server.ts went from 416 to
 // 1299 lines, Console.tsx from 785 to 1593). The limit moved with the layout, not with the size of what a module does:
