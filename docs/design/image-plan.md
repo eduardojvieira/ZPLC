@@ -1,4 +1,4 @@
-# Site image plan (stage A)
+# Site image plan
 
 The images the new site needs: (a) five illustrations that the owner generates with Antigravity and drops at the paths below,
 the hero first, and (b) the real captures still to be taken. Diagrams (the scan timing diagram, the course chart, the HAL
@@ -6,6 +6,17 @@ terminal strip, and the architecture in phase 2) are drawn by the site in SVG an
 controller of a brand, person or product screen is ever generated.
 
 Until a file exists, the page shows a dashed placeholder of its exact size with its id and path.
+
+## Status (stage B, 2026-10-22)
+
+- **Generated:** all nine files are in `docs/static/img/generated/` as AVIF (268 KB in all), made with `agy` 1.4.5 from the
+  prompts in `docs/design/prompts/`. The README there records, per file, the prompt and the attempt kept. H1 is attempt 2 of 3
+  (its back plate is a light fill; attempt 3 was refused by the model quota). The dark crossing is derived from the light one
+  (lightness inverted in Lab), because the generated dark attempt filled the road with a light colour.
+- **Real captures:** C3 is taken in English and Spanish by `bun run docs:screenshots -- --learn` (journey 59) and registered in
+  the manifest (`docs/static/img/learn/`). C4 (dark) is not published: in the dark theme the code editor of the application keeps
+  the token colours of the light theme on a dark background, which a picture would show. C2 was not taken (journey 56 would need
+  a Spanish variant).
 
 ## The shared style (every prompt below contains it word for word)
 

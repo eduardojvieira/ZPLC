@@ -1,8 +1,8 @@
-# Site design brief (stage A)
+# Site design brief
 
 The visual direction of the new ZPLC site. The prototype is the landing page (`docs/src/pages/index.js`,
 `docs/src/components/LandingPage/`) and the theme tokens (`docs/src/css/custom.css`). Screenshots:
-`~/.cache/zplc-site/prototype-b/landing-{en,es}-{light,dark}-{1440,390}.png`.
+`~/.cache/zplc-site/final/` (landing and four docs pages, stage B).
 
 ## Direction
 
@@ -71,7 +71,9 @@ On-cobalt text on the cobalt fill: 6.91 (light) and 6.94 (dark). The hero uses t
 
 ## Type
 
-- Inter (variable, optical size 14 to 32) and JetBrains Mono, served from `docs/static/fonts/` (OFL). The detector flags
+- Inter (variable, optical size 14 to 32, weights 400 to 700 only) and JetBrains Mono, served from `docs/static/fonts/` (OFL);
+  a local fallback face with Inter's metrics prevents a layout shift while Inter loads. The landing uses mono in the regular
+  weight only. The detector flags
   Inter as overused; it stays (owner decision 2026-10-23) because the application bundles it and the site matches it.
 - Mono is for identifiers only: function names on the terminal strip, terminal and step numbers, file names, `.zplc`.
 - `cv05` everywhere (l, I and 1 differ); tabular numerals in code, tags and steps.
@@ -123,13 +125,14 @@ Stage B: architecture SVG, boards by level, limits, download block, footer, docs
 
 ## Motion
 
-- Hero: brand, heading and body rise 12 px with a fade (680 ms, `cubic-bezier(0.16, 1, 0.3, 1)`, 70 ms apart); the image is
-  revealed from the left with a clip (1100 ms, 240 ms delay).
+- Hero: brand, heading and body rise 12 px into place (680 ms, `cubic-bezier(0.16, 1, 0.3, 1)`, 70 ms apart) from their
+  visible place: nothing starts hidden, so the first paint shows the content (stage B: the clip reveal of the image and the fade
+  were removed after Lighthouse showed them delaying the largest paint).
 - Ladder: the wire and symbols of a rung change to green in 200 ms on hover or focus within.
 - Course chart: each step rises as it enters the viewport (CSS scroll-driven animation where the browser has it; elsewhere it
   is simply visible).
-- Only transform, opacity and clip-path animate; nothing loops or blinks (the status lamp is steady). Under
-  `prefers-reduced-motion: reduce` nothing moves; the landing animations are declared only under `no-preference`.
+- Only transform animates; nothing loops or blinks (the status lamp is steady). Under `prefers-reduced-motion: reduce`
+  nothing moves; the landing animations are declared only under `no-preference`.
 
 ## Images
 

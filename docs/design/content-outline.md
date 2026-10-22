@@ -1,4 +1,4 @@
-# Site content outline (stage A)
+# Site content outline
 
 What the new landing page and the navigation say, ranked for the audience, with the file that backs every claim. This is a
 design note for the owner's review. It is not a page of the site: Docusaurus serves `docs/docs/` and `docs/src/pages/`, never
@@ -41,7 +41,7 @@ packages), `packages/zplc-ide/src/learn/lessonPackage.ts`, `packages/zplc-ide/sr
 
 ## Landing page, ranked
 
-Status: **A** is built in the stage-A prototype; **B** is stage B.
+Status: every section below is built (stage A built 1 to 4, stage B built 5 to 8 and the footer).
 
 ### 1. Hero (A)
 
@@ -90,16 +90,17 @@ The language feature (one bytecode for five languages) has its own section, next
   per level.
 - One real capture of a lesson (C3, to be taken) and the four plant illustrations (G1 to G4).
 
-### 5. Architecture (B)
+### 5. Architecture (built)
 
 A hand-built SVG in the same schematic line work: five languages, the compiler, `.zplc` bytecode, the C99 VM, the HAL and the
 ports (Zephyr, POSIX host, FreeRTOS), the application around them.
 
-### 6. Boards and evidence levels (B)
+### 6. Boards and evidence levels (built)
 
-The seven boards from `firmware/app/boards/boards.json` by level, generated at build time; what is emulated. No board picture.
+The seven boards from `firmware/app/boards/boards.json` with their level, read from `docs/src/data/boards.json`, which
+`tools/docs/generate_board_reference.py` writes and checks; the four levels with the number of boards on each. No board picture.
 
-### 7. Safety and limits (B), 8. Get ZPLC and take part (B), footer (B)
+### 7. Safety and limits, 8. Get ZPLC and take part, footer (built)
 
 As in checkpoint 1: the five "is not" statements and a link; download per system with the unsigned note; licence, repository,
 Contributing, Release notes. The workflow section of checkpoint 1 is folded into feature 2; communications into feature 6.
@@ -107,8 +108,8 @@ Contributing, Release notes. The workflow section of checkpoint 1 is folded into
 ## Navigation
 
 - **Navbar (built):** Docs, Learn, Release notes; then search, language, GitHub.
-- **Footer (B):** Documentation, Project, Source, as in checkpoint 1.
-- **Boards page (B):** renamed away from "Supported Boards" (owner decision 2026-10-23).
+- **Footer (built):** Documentation, Project, Source.
+- **Boards page (built):** renamed "Boards" ("Placas") by its generator, which now states the number of boards at each level.
 
 ## Open for the owner
 
