@@ -25,7 +25,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src", "electron", "shared", "scripts", "vite.config.ts", "vite.web.config.ts"],
+  "include": ["src", "electron", "shared", "scripts", "vite.config.ts"],
   // preload.ts declares window.electronAPI for the preload bundle, and the renderer declares it again in
   // src/types/index.ts with another shape: they are two programs by design, so tsconfig.preload.json checks it.
   "exclude": ["electron/preload.ts"]

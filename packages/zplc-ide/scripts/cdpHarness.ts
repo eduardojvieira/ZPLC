@@ -1,5 +1,5 @@
 /**
- * A small Chromium DevTools driver for the smokes that need no Electron (REL-037). It starts a headless Chromium on a
+ * A small Chromium DevTools driver for the smokes that need no Electron. It starts a headless Chromium on a
  * private profile, speaks the DevTools protocol over its WebSocket and collects every page error and console error.
  */
 import { accessSync, constants, existsSync, readFileSync } from 'node:fs';

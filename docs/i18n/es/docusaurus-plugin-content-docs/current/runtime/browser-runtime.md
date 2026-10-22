@@ -9,7 +9,7 @@ description: 'El runtime WebAssembly de la aplicación ZPLC: cuándo se ejecuta 
 
 # Runtime del navegador (WebAssembly)
 
-La aplicación ZPLC simula un programa en el runtime nativo de la aplicación de escritorio. Cuando ese runtime no puede arrancar, o donde no existe (la compilación web de la aplicación), la simulación se ejecuta en el **runtime del navegador**: el mismo código de sesión, compilado a WebAssembly. Es una simulación degradada, y la aplicación lo dice dondequiera que muestra el runtime.
+La aplicación ZPLC simula un programa en el runtime nativo de la aplicación de escritorio. Cuando ese runtime no puede arrancar, la simulación se ejecuta en el **runtime del navegador**: el mismo código de sesión, compilado a WebAssembly. Es una simulación degradada, y la aplicación lo dice dondequiera que muestra el runtime.
 
 ## Qué es
 
@@ -27,7 +27,6 @@ El módulo se compila a partir de los archivos del runtime nativo y del firmware
 
 ## Cuándo se ejecuta
 
-- En la compilación web de ZPLC, que no tiene runtime nativo.
 - En la aplicación de escritorio cuando el runtime nativo no arranca: falta su binario, no fue compilado para la plataforma o falló su handshake. La consola dice que la simulación nativa no pudo arrancar y que en su lugar se ejecuta el runtime WebAssembly.
 
 Una compilación de ZPLC sin empaquetar apaga el runtime nativo con `ZPLC_RUNTIME=wasm`, para que una prueba muestre el runtime del navegador en una máquina que tiene el nativo. Una copia instalada de ZPLC ignora la variable.

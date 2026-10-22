@@ -22,6 +22,9 @@ and version when the release is cut (see `RELEASING.md`).
 
 ## Unreleased
 
+- Removed: the hosted browser build; ZPLC is the desktop application only (REL-037, decision D-07).
+  The `build:web` and `smoke:web` scripts, the `/app/` deploy of the docs site and the page
+  "ZPLC in the browser" are gone. The WebAssembly simulation fallback of the desktop app stays.
 - The scheduler is one portable core, and the firmware fails safe (RT-008, RT-014, RT-018 to
   RT-022). Task order, the deadline check, the fault latch and the safe state are decided in
   `zplc_sched_core` and used by the host runtime, the Zephyr scheduler and the single-task

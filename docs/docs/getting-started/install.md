@@ -43,9 +43,9 @@ open it:
 
 The steps of each system are under [First launch](#first-launch).
 
-## Without installing
+## Desktop only
 
-[ZPLC in the browser](https://eduardojvieira.github.io/ZPLC/app/) runs the application in Chrome or Edge with nothing to install. It has no device connection, no firmware builds and no native simulation: [what it lacks](../ide/browser.md#what-is-not-available).
+ZPLC is a desktop application for Linux, macOS and Windows. There is no hosted or browser version.
 
 ## Channels
 

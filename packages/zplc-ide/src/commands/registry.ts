@@ -11,7 +11,6 @@
  * button of the toolbar it stands for.
  */
 import type { MessageKey } from '../i18n/en';
-import { isWebBuild } from '../platform/webCapabilities';
 
 export const COMMAND_CATEGORIES = ['file', 'edit', 'view', 'project', 'build', 'online', 'debug', 'help'] as const;
 export type CommandCategory = (typeof COMMAND_CATEGORIES)[number];
@@ -106,7 +105,7 @@ export const COMMANDS = [
     id: 'online.hardware',
     titleKey: 'command.online.hardware',
     category: 'online',
-    enabled: (s) => idle(s) && s.mode !== 'hardware' && !isWebBuild(),
+    enabled: (s) => idle(s) && s.mode !== 'hardware',
   },
   { id: 'online.connect', titleKey: 'command.online.connect', category: 'online', physical: true, enabled: (s) => idle(s) && !s.connected },
   { id: 'online.disconnect', titleKey: 'command.online.disconnect', category: 'online', physical: true, enabled: online },
