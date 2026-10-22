@@ -7803,6 +7803,91 @@ export const JOURNEYS: Journey[] = [
       );
     },
   },
+  {
+    // DOC-013: the picture of Learn on the site, taken by `bun run docs:screenshots -- --learn`. The first lesson is started
+    // from the Learn home, its reference solution is put in its workspace and Check grades it as passed; then the window is
+    // pictured. ZPLC_DOC_SHOTS_LOCALE (en or es) and ZPLC_DOC_SHOTS_THEME (light or dark) choose the language and the theme
+    // first, the language in the stored preferences and the theme with the arrow keys on its control, as a person would.
+    name: '59 The first lesson of Learn is checked and passes, for the picture of the site',
+    example: 'none',
+    proves: [],
+    partly: [],
+    run: async (app, { root }) => {
+      const locale = process.env.ZPLC_DOC_SHOTS_LOCALE === 'es' ? 'es' : 'en';
+      const theme = process.env.ZPLC_DOC_SHOTS_THEME === 'dark' ? 'dark' : 'light';
+      await app.cdp.command('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+      if (locale === 'es') {
+        await app.eval(
+          `(() => { const key = 'zplc-ide-settings'; const stored = JSON.parse(localStorage.getItem(key) || '{}'); const target = ` +
+            `stored.settings ?? stored; target.language = 'es'; localStorage.setItem(key, JSON.stringify(stored)); })()`,
+        );
+        await app.cdp.command('Page.reload');
+      }
+      // after a reload the old document answers for a moment: wait for the theme control and, in Spanish, the translated button
+      const welcome = () =>
+        app.until(
+          `the Welcome screen in ${locale}`,
+          async () =>
+            (await app.eval<boolean>(
+              `document.querySelector('select[data-theme-control]') !== null && ` +
+                `(document.querySelector('[data-welcome-learn]')?.textContent?.trim().startsWith('Learn') ?? false) === ${locale === 'en'}`,
+            )) || undefined,
+          45_000,
+        );
+      await welcome();
+      const themes = await app.eval<string[]>(
+        `[...document.querySelector('select[data-theme-control]').options].map((option) => option.value)`,
+      );
+      const current = await app.eval<number>(`document.querySelector('select[data-theme-control]').selectedIndex`);
+      const wanted = themes.indexOf(theme);
+      assert(wanted >= 0, `The theme control offers ${JSON.stringify(themes)}, not ${theme}`);
+      await app.eval(`document.querySelector('select[data-theme-control]').focus()`);
+      for (let step = 0; step < Math.abs(wanted - current); step++) await app.press(wanted > current ? 'ArrowDown' : 'ArrowUp');
+      const themed = () =>
+        app.until(
+          `the ${theme} theme`,
+          async () => (await app.eval<string>(`document.documentElement.getAttribute('data-theme')`)) === theme || undefined,
+        );
+      await themed();
+      // the window starts again in the chosen theme, as it would on the next launch, so every view is created in it
+      await app.cdp.command('Page.reload');
+      await welcome();
+      await themed();
+
+      const first = courseOrder(LESSON_INDEX).find((lesson) => lesson.tracks.includes('simulation'))!;
+      await app.click(css('[data-welcome-learn]'), 'Learn on the Welcome screen');
+      await app.until('the Learn home', async () => (await app.visible(css('[data-learn-home]'))) || undefined);
+      await app.click(css('[data-learn-continue]'), 'Start the course on the Learn home');
+      await app.until(
+        'the first lesson beside its workspace',
+        async () =>
+          // the toolbar by its role: its accessible name is translated
+          ((await app.visible(css('[role="toolbar"]'))) &&
+            (await app.eval<string>(`document.getElementById('learn-title')?.textContent?.trim() ?? ''`)) === first.text[locale].title) ||
+          undefined,
+        45_000,
+      );
+      writeFileSync(
+        join(root, 'profile', 'learn-workspaces', first.id, first.starter.program),
+        disk(join(packageRoot, 'projects', first.solution.project, first.solution.program)),
+      );
+      await app.until(
+        'the Check button to be enabled',
+        async () => (await app.eval<boolean>(`document.querySelector('[data-learn-check]')?.disabled === false`)) || undefined,
+        45_000,
+      );
+      await app.click(css('[data-learn-check]'), 'Check');
+      await app.until(
+        'Learn to grade the first lesson as passed',
+        async () => (await app.eval<boolean>(`document.querySelector('[data-learn-grade="passed"]') !== null`)) || undefined,
+        90_000,
+      );
+      // the picture shows the grade: the lesson panel scrolls to it
+      await app.eval(`document.querySelector('[data-learn-grade="passed"]').scrollIntoView({ block: 'center' })`);
+      await app.until('the passed grade in view', async () => (await app.visible(css('[data-learn-grade="passed"]'))) || undefined);
+      await docShot(app, `lesson-checked-${locale}${theme === 'dark' ? '-dark' : ''}`);
+    },
+  },
 ];
 
 /** Walks a native select to the option with this text with the arrow keys, as a keyboard user would. */
