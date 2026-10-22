@@ -362,5 +362,5 @@ evidence: how the flash of a board behaves needs the bench of HIL-010.
 ## Related pages
 
 - [Zephyr Workspace Setup](../reference/zephyr-workspace-setup.md)
-- [Supported Boards](../reference/boards.md)
+- [Boards](../reference/boards.md)
 - [Hardware support](../reference/capabilities-evidence.md)

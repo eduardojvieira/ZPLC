@@ -40,7 +40,7 @@ lo cual está verificado.
 | Interfaz con ZPLC      | El cable USB de la placa                                             | El cable USB, en el puerto marcado USB (no UART)                         |
 
 Los canales y el valor seguro de cada salida, las notas eléctricas y qué pines
-demuestra el devicetree de la placa están en [Placas soportadas](../reference/boards.md).
+demuestra el devicetree de la placa están en [Placas](../reference/boards.md).
 Lea las notas de su placa antes de cablear nada: los pines son de lógica de 3,3 V y
 no toleran 5 V. Allí están también las entradas y la entrada analógica: en la Pico,
 `DI0` a `DI3` son GP15 a GP12 y `AI0` es GP26; en la DevKitC-1, `DI0` a `DI3` son
@@ -148,6 +148,6 @@ imagen es lo que lleva a una placa de `cross-build` a `human-hil`.
 ## Vea también
 
 - [Compatibilidad de hardware](../reference/capabilities-evidence.md): los niveles y el nivel de cada placa hoy.
-- [Placas soportadas](../reference/boards.md): los canales, pines y valores seguros.
+- [Placas](../reference/boards.md): los canales, pines y valores seguros.
 - [Despliegue y sesiones de runtime](../ide/deployment.md): las cuatro operaciones separadas.
 - [Seguridad y limitaciones](../safety-and-limitations.md).

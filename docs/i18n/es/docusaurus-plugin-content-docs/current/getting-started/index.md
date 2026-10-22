@@ -62,7 +62,7 @@ un tiempo definido y verifica las salidas.
 
 Las placas que tienen un perfil de compilación, y hasta dónde se ha demostrado
 que funciona cada una, están en [Compatibilidad de hardware](../reference/capabilities-evidence.md);
-los pines y canales de cada una están en [Placas soportadas](../reference/boards.md).
+los pines y canales de cada una están en [Placas](../reference/boards.md).
 Una placa cuyo nivel es `cross-build` tiene un firmware que compila en integración
 continua, y nada más: nadie ha demostrado que se grabe, arranque o ejecute un
 programa.

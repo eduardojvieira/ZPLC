@@ -18,14 +18,14 @@ se trata y qué hacen la compilación y el despliegue cuando la dirección es er
 Cada placa tiene una descripción de E/S en `firmware/app/boards/boards.json`: sus
 canales, la dirección IEC y el pin de cada uno, sus notas eléctricas y el valor
 seguro de cada salida. La aplicación ZPLC, la compilación, el firmware y la documentación leen
-ese único archivo, por lo que la tabla de pines de [Placas soportadas](../reference/boards.md)
+ese único archivo, por lo que la tabla de pines de [Placas](../reference/boards.md)
 contiene los mismos datos que comprueba la compilación. Ningún pin se ha medido en un
 banco: [Compatibilidad de hardware](../reference/capabilities-evidence.md).
 :::
 
 ## 1. Encuentre los canales de su placa
 
-Abra [Placas soportadas](../reference/boards.md) y la sección de su placa. Cada fila
+Abra [Placas](../reference/boards.md) y la sección de su placa. Cada fila
 es un canal: su dirección (`%QX0.0` para una salida digital, `%IW4` para una entrada
 analógica), el pin o borne impreso en la placa, si el pin lo demuestra el
 devicetree de la placa (`devicetree`) o lo eligió el perfil (`profile`), y el valor
@@ -109,6 +109,6 @@ compilación falla cuando la descripción y el devicetree no coinciden.
 
 ## Vea también
 
-- [Placas soportadas](../reference/boards.md): los canales, pines, valores seguros y huella de cada placa.
+- [Placas](../reference/boards.md): los canales, pines, valores seguros y huella de cada placa.
 - [Forzar un valor](./force-values.md) y [Ejecutar pruebas de escenario](./scenario-tests.md).
 - [Archivo de proyecto](../reference/project-file.md): cada campo de `io`.

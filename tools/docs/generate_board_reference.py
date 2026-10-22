@@ -86,6 +86,25 @@ def validation_summary(board: dict[str, object]) -> str:
     return str(support(board)["level"])
 
 
+def levels_line(boards: list[dict[str, object]], spanish: bool) -> str:
+    """How many boards are at each support level, so that the page says what it lists before any table."""
+    counts: dict[str, int] = {}
+    for board in boards:
+        level = validation_summary(board)
+        counts[level] = counts.get(level, 0) + 1
+    total = len(boards)
+    parts = [f"`{level}` ({count} / {total})" for level, count in counts.items()]
+    if spanish:
+        return (
+            "Nivel de compatibilidad de las placas, derivado de sus registros de evidencia "
+            "([Compatibilidad de hardware](./capabilities-evidence.md#los-niveles)): " + ", ".join(parts) + "."
+        )
+    return (
+        "Support level of the boards, derived from their evidence records "
+        "([Hardware support](./capabilities-evidence.md#the-levels)): " + ", ".join(parts) + "."
+    )
+
+
 def watchdog_line(board: dict[str, object], spanish: bool) -> str:
     """The hardware watchdog of the profile, and why it is off when it is (RT-020, HIL-011)."""
     watchdog = board.get("watchdog")
@@ -149,7 +168,8 @@ def cell(text: object) -> str:
 
 def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> str:
     budget = load_budget()
-    title = "Supported Boards" if not spanish else "Placas soportadas"
+    # The page lists every board of the manifest at the level its evidence gives; "supported" would claim more than that.
+    title = "Boards" if not spanish else "Placas"
     description = (
         "Generated board reference for the ZPLC 2.0 candidate."
         if not spanish
@@ -213,6 +233,8 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
         ":::note",
         intro,
         ":::",
+        "",
+        levels_line(boards, spanish),
         "",
         f"## {topology_title}",
         "",
