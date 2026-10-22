@@ -49,6 +49,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
+# The findings of clang-tidy change between versions, so CI and a contributor run this one (the PyPI wheel, like clang-format).
+CLANG_TIDY_VERSION = "23.1.3"
 REPO = Path(__file__).resolve().parents[2]
 CONFIG = REPO / ".clang-tidy"
 BASELINE = REPO / "tools/ci/clang-tidy-app-baseline.json"
@@ -263,6 +265,16 @@ def zephyr_pass(tidy: str, build: Path, board: str, jobs: int, update_baseline: 
     return 1 if errors else status
 
 
+def tidy_version(binary: str) -> str | None:
+    """The `X.Y.Z` that `binary --version` prints, or None."""
+    try:
+        out = subprocess.run([binary, "--version"], capture_output=True, text=True, check=False).stdout
+    except OSError:
+        return None
+    found = re.search(r"version (\d+\.\d+\.\d+)", out)
+    return found.group(1) if found else None
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--clang-tidy", default=os.environ.get("CLANG_TIDY", "clang-tidy"))
@@ -275,7 +287,15 @@ def main(argv: list[str]) -> int:
     args = parser.parse_args(argv)
 
     if shutil.which(args.clang_tidy) is None:
-        print(f"clang-tidy: {args.clang_tidy} not found (Debian and Ubuntu: apt-get install clang-tidy)", file=sys.stderr)
+        print(f"clang-tidy: {args.clang_tidy} not found (pipx install clang-tidy=={CLANG_TIDY_VERSION})", file=sys.stderr)
+        return 2
+    found = tidy_version(args.clang_tidy)
+    if found != CLANG_TIDY_VERSION:
+        print(
+            f"clang-tidy: {args.clang_tidy} is version {found}, this repository pins {CLANG_TIDY_VERSION} because the findings change "
+            f"between versions (pipx install clang-tidy=={CLANG_TIDY_VERSION})",
+            file=sys.stderr,
+        )
         return 2
     if shutil.which("cmake") is None:
         print("clang-tidy: cmake not found", file=sys.stderr)
