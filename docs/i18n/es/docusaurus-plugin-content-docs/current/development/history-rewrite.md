@@ -110,6 +110,21 @@ ningún commit, actualiza cada worktree, verifica el resultado e imprime los
 comandos de push. Nunca hace push: el force-push y la publicación del espejo
 son decisión del propietario.
 
+Envíe solo las ramas que ya existen en `origin`, desde sus ramas de seguimiento
+remoto reescritas, más la rama 2.0 y las etiquetas. No use
+`git push --force --all`: publica todas las ramas locales, y este repositorio
+tiene muchas más ramas locales que `origin`. El bucle siguiente funciona en
+cualquier shell POSIX; en zsh, `$b:r` es un modificador, por eso la variable se
+escribe `"${b}"`.
+
+```sh
+git for-each-ref --format='%(refname:strip=3)' refs/remotes/origin | while read -r b; do
+  [ "${b}" = HEAD ] || git push --force origin "refs/remotes/origin/${b}:refs/heads/${b}"
+done
+git push --force origin refs/heads/zplc-2.0-candidate:refs/heads/zplc-2.0-candidate
+git push --force --tags origin
+```
+
 `git-filter-repo` elimina por defecto el remoto `origin`. La herramienta lo
 ejecuta con `--partial` para que el remoto y las ramas de seguimiento remoto
 queden como estaban.

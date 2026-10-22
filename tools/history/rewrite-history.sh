@@ -259,10 +259,13 @@ cmd_apply() {
 Rewrite done. Nothing was pushed. Backups: $pre.git  $pre.bundle  $pre.meta/
 Owner steps, in this order (the force-push is destructive for every existing clone):
   1. Update the spec header baseline: $BASELINE_FULL -> ${NEW_BASELINE:-n/a}
-  2. git -C $repo push --force --all origin
-  3. git -C $repo push --force --tags origin
-  4. Branches that exist only as refs/remotes/origin/* were rewritten in place; push the ones you keep, for example:
-     git -C $repo push --force origin refs/remotes/origin/gh-pages:refs/heads/gh-pages
+  2. Push only the branches that already exist on origin, from their rewritten remote-tracking refs (never --all: it
+     would publish every local branch, and this repository has many that are not on origin):
+     git -C $repo for-each-ref --format='%(refname:strip=3)' refs/remotes/origin | while read -r b; do [ "\${b}" = HEAD ] || git -C $repo push --force origin "refs/remotes/origin/\${b}:refs/heads/\${b}"; done
+  3. The 2.0 branch:
+     git -C $repo push --force origin refs/heads/zplc-2.0-candidate:refs/heads/zplc-2.0-candidate
+  4. The tags:
+     git -C $repo push --force --tags origin
   5. Publish $pre.git as the read-only mirror if you want old SHAs resolvable on GitHub.
 E
 }
