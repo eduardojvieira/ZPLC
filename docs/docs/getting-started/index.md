@@ -28,10 +28,6 @@ Which boards have been tested with a physical device is on
 3. In ZPLC, copy the **Blinky** example into a folder.
 4. Compile it, switch to **Simulate**, press **Connect**, then **Run**.
 
-## Try it in the browser first
-
-If you cannot install anything, open [ZPLC in the browser](https://eduardojvieira.github.io/ZPLC/app/) in Chrome or Edge: the same application, with the examples and the simulator, and without the features that need the desktop app. [ZPLC in the browser](../ide/browser.md) lists them.
-
 ## Open an example
 
 1. Start ZPLC. The Welcome screen offers **Open project**, **New project** and **Learn**, and a list of **Examples**.

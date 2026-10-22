@@ -9,8 +9,6 @@ import { useT } from '../i18n';
 import { useIDEStore } from '../store/useIDEStore';
 import { useNewProjectDialog } from '../store/newProjectDialog';
 import { openDirectoryPicker } from '../utils/fileSystem';
-import { isWebBuild } from '../platform/webCapabilities';
-import { hasBrowserProjectStore, newBrowserProjectFolder } from '../platform/browserProjectStore';
 import { PLC_LANGUAGES, type PLCLanguage } from '../types';
 import { NEW_PROJECT_LANGUAGES, SIMULATION_TARGET, newProjectTargets, validateProjectName } from '../project/newProject';
 
@@ -20,9 +18,6 @@ function NewProjectForm({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState('');
   const [nameEdited, setNameEdited] = useState(false);
   const [folder, setFolder] = useState<FileSystemDirectoryHandle | null>(null);
-  // The web build can keep the project in the store of the browser instead of a folder; the folder is made when Create is pressed.
-  const [inBrowser, setInBrowser] = useState(false);
-  const browserStore = isWebBuild() && hasBrowserProjectStore();
   const [target, setTarget] = useState(SIMULATION_TARGET);
   const [language, setLanguage] = useState<PLCLanguage>('ST');
   const [busy, setBusy] = useState(false);
@@ -31,15 +26,13 @@ function NewProjectForm({ onClose }: { onClose: () => void }) {
     const handle = await openDirectoryPicker().catch(() => null);
     if (!handle) return;
     setFolder(handle);
-    setInBrowser(false);
     // until the person types a name, the project is named after the folder
     if (!nameEdited) setName(handle.name);
   };
   const submit = async () => {
-    if ((!folder && !inBrowser) || problem) return;
+    if (!folder || problem) return;
     setBusy(true);
-    const handle = inBrowser ? await newBrowserProjectFolder(name.trim()).catch(() => null) : folder;
-    const made = handle ? await create({ handle, name: name.trim(), target, language }) : false;
+    const made = await create({ handle: folder, name: name.trim(), target, language });
     setBusy(false);
     if (made) onClose();
   };
@@ -63,36 +56,19 @@ function NewProjectForm({ onClose }: { onClose: () => void }) {
       />
       <div className="flex items-center gap-2">
         <span className="min-w-0 flex-1 truncate text-sm" data-testid="new-project-folder">
-          {inBrowser ? t('web.store.keep') : folder ? folder.name : t('project.new.noFolder')}
+          {folder ? folder.name : t('project.new.noFolder')}
         </span>
-        {'showDirectoryPicker' in window || !browserStore ? (
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              void choose();
-            }}
-          >
-            <FolderOpen size={14} aria-hidden="true" />
-            {t('project.new.chooseFolder')}
-          </Button>
-        ) : null}
-        {browserStore ? (
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            data-new-project="keep-in-browser"
-            tooltip={t('web.store.keepHint')}
-            onClick={() => {
-              setInBrowser(true);
-              setFolder(null);
-            }}
-          >
-            {t('web.store.keep')}
-          </Button>
-        ) : null}
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            void choose();
+          }}
+        >
+          <FolderOpen size={14} aria-hidden="true" />
+          {t('project.new.chooseFolder')}
+        </Button>
       </div>
       <Select data-new-project="target" label={t('project.new.target')} value={target} onChange={(event) => setTarget(event.target.value)}>
         {newProjectTargets().map((entry) => (
@@ -117,7 +93,7 @@ function NewProjectForm({ onClose }: { onClose: () => void }) {
         <Button type="button" variant="ghost" onClick={onClose}>
           {t('common.cancel')}
         </Button>
-        <Button type="submit" variant="primary" disabled={(!folder && !inBrowser) || problem !== null || busy}>
+        <Button type="submit" variant="primary" disabled={!folder || problem !== null || busy}>
           {t('project.new.create')}
         </Button>
       </div>

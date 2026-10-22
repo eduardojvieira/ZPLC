@@ -415,7 +415,7 @@ accepts it.
 
 Native POSIX simulation is the way to run a program on your computer. It needs
 the desktop app, which includes the native runtime. Where the native runtime
-cannot start, and in the web build, the simulation runs on the WebAssembly
+cannot start, the simulation runs on the WebAssembly
 runtime, and the status bar says so and lists what it does not have (no
 communication blocks, no serial, no pins, the timing of a browser): see [Browser
 runtime](../runtime/browser-runtime.md). Hardware actions are separate:

@@ -144,7 +144,7 @@ Each decision has a recommended default. Work that a decision blocks is named so
 | D-04 | IEC features that do not exist today: 2.0 or 2.x | See section 4.5 | As listed in section 4.5 | The "Decision D-04" rows of section 6 |
 | D-05 | Rewrite git history to drop the 34 MB board schematic PDF and old build outputs | (A) Rewrite once and force-push all branches and tags. (B) Leave history. | A, once, before any HIL record or GA tag is bound to a commit SHA, with a mirror backup. The file is third-party material and the cost of rewriting grows with every SHA-bound record. The mirror keeps every old SHA resolvable, including the baseline `b379d82` that this spec cites; the spec header then records the baseline's new SHA (section 1, conventions). Destructive: needs explicit approval at the time. | DOC-027; ordering of HIL-009 and the GA tag |
 | D-06 | A second, non-Zephyr port in 2.0 | (A) 2.0 (Pico SDK or FreeRTOS). (B) 2.x. | B. 2.0 delivers the portable scheduler core and port conformance suite, used by Zephyr, POSIX and WASM, and words the claim accordingly. | IO-016, DOC-012 wording |
-| D-07 | A hosted web build of Studio in 2.0 | (A) 2.0, for Chrome and Edge. (B) 2.x, with 2.0 keeping it possible. | B. 2.0 keeps project files behind a service interface and ships a tested WASM runtime, so a web build is a later, cheap step. | REL-037, the shape of IDE-001 |
+| D-07 | A hosted web build of Studio in 2.0 | (A) 2.0, for Chrome and Edge. (B) 2.x, with 2.0 keeping it possible. | B. 2.0 keeps project files behind a service interface and ships a tested WASM runtime, so a web build is a later, cheap step. Owner decision 2026-10-23: no hosted web build at all; ZPLC is the desktop application only (it replaces option A, chosen on 2026-10-20), so REL-037 does not apply. | REL-037, the shape of IDE-001 |
 | D-08 | HIL execution model | (A) Self-hosted runner. (B) Manual protocol with recorded evidence. | B. A person at the bench runs one command per board; the tool writes the record. It fits P7, costs nothing, and avoids exposing a self-hosted runner to a public repository. | HIL-012, the wording of gate 6 in section 8 |
 | D-09 | Track this spec publicly while it describes unpatched security defects | (A) Now. (B) After RT-001, RT-002, COM-001, COM-016 and COM-022 are merged. (C) A redacted copy now. | B. The spec gives no reproduction detail, but it names locations. Note what B implies: COM-022 needs the session rule of COM-020, which arrives only with the device side of the new control protocol, so under B this spec and its plan stay untracked until that protocol work is done, long after the early fixes. The owner may judge an earlier point sufficient, for example once RT-001, RT-002, COM-001 and COM-016 are merged and the raw-memory command is disabled as a stopgap, and decide then. | When contributors can read it |
 | D-10 | Spanish register for the application, the course and the docs | Neutral Latin American Spanish, or Rioplatense voseo | Neutral, with impersonal or "usted" forms, as is usual in industrial manuals | UX-030, LRN-029, DOC-015 |
@@ -731,7 +731,7 @@ The first ten minutes work: open, edit, build, simulate and save, with no hidden
 
 #### Risks and dependencies
 - IDE-001 touches most of the renderer and should be done before the shell rewrite (UX), which builds on it.
-- A later hosted web build (decision D-07) needs a browser implementation of the same project operations, so IDE-001 must define an interface, not Electron-only calls.
+- A later hosted web build (decision D-07) needs a browser implementation of the same project operations, so IDE-001 must define an interface, not Electron-only calls. Since the owner decision of 2026-10-23 there is no web build; the interface stays as the seam of the desktop application.
 - IDE-013 needs a measured baseline before a threshold is fixed.
 - Depends on VF-008 and VF-010. IDE-025 also depends on the shared scheduler core (RT-008) and the port conformance suite (IO-013).
 
@@ -1061,7 +1061,7 @@ Anyone can install ZPLC Studio and flash a learner board from published files, a
 
 #### Risks and dependencies
 - Homebrew may add an audit that rejects casks which remove quarantine; option B of D-01 is the fallback and costs the user four clicks.
-- A future macOS may tighten rules for ad-hoc signed applications; the web build of D-07 is the hedge.
+- A future macOS may tighten rules for ad-hoc signed applications. The web build of D-07 was the hedge; the owner removed it on 2026-10-23, so a stricter macOS would need a signing decision instead.
 - The Microsoft Store individual account is for work "not in relation to a business"; if ZPLC is tied to the owner's company the wording matters. SignPath Foundation may decline a single-maintainer project. Both are applications, not purchases, and may take weeks or be refused; REL-038 applies to prereleases and to GA until each is live, so neither outside decision can delay GA (a design default, section 4.6).
 - If REL-008 fails for Web Serial or for the child process, the Store package cannot be the supported channel as it stands, and S-5 needs the owner's attention again; GA still proceeds on the fallback.
 - Smart App Control blocks unsigned Windows applications with no per-application bypass.

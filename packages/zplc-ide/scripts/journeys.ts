@@ -6420,12 +6420,20 @@ export const JOURNEYS: Journey[] = [
         refused.includes('No file has been written.'),
         `The review of a refused change does not say that nothing was written: ${JSON.stringify(refused)}`,
       );
-      assert(
-        await app.visible(css('[aria-label="Change review result"] .monaco-diff-editor')),
-        `The review of a refused change does not show the difference: ${await app.eval<string>(
-          `document.querySelector('[aria-label="Chan` + `ge review result"]')?.outerHTML.slice(0, 400) ?? 'no result'`,
-        )}`,
-      );
+      // The result text renders first; @monaco-editor/react loads Monaco and mounts the diff editor after it.
+      await app
+        .until(
+          'the difference of the refused change',
+          async () => (await app.visible(css('[aria-label="Change review result"] .monaco-diff-editor'))) || undefined,
+          30_000,
+        )
+        .catch(async () => {
+          throw new Error(
+            `The review of a refused change does not show the difference: ${await app.eval<string>(
+              `document.querySelector('[aria-label="Chan` + `ge review result"]')?.outerHTML.slice(0, 400) ?? 'no result'`,
+            )}`,
+          );
+        });
       assert(!(await app.visible(button('Save reviewed change'))), 'A change that the review refused is offered for saving.');
       assert(disk(file) === original, 'Reviewing the change wrote the file.');
 

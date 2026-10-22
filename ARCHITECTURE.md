@@ -24,7 +24,7 @@ reference pages already say.
         v
  HAL       (zplc_hal.h)               time, I/O, persistence, mutexes, network
         v
- Zephyr board  |  POSIX host (the simulator)  |  WASM (the browser runtime of Studio)
+ Zephyr board  |  POSIX host (the simulator)  |  WASM (the simulation fallback of ZPLC)
 ```
 
 ## Parts

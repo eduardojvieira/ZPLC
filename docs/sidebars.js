@@ -135,7 +135,7 @@ const sidebars = {
           type: 'category',
           label: 'ZPLC application',
           collapsed: true,
-          items: ['ide/index', 'ide/overview', 'ide/features', 'ide/editors', 'ide/compiler', 'ide/browser'],
+          items: ['ide/index', 'ide/overview', 'ide/features', 'ide/editors', 'ide/compiler'],
         },
         'languages/index',
         {

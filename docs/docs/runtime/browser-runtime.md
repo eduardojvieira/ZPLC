@@ -9,7 +9,7 @@ description: 'The WebAssembly runtime of the ZPLC application: when it runs inst
 
 # Browser Runtime (WebAssembly)
 
-The ZPLC application simulates a program on the native runtime of the desktop app. When that runtime cannot start, or where there is none (the web build of the application), the simulation runs on the **browser runtime**: the same session code, built to WebAssembly. It is a degraded simulation, and the application says so wherever it shows the runtime.
+The ZPLC application simulates a program on the native runtime of the desktop app. When that runtime cannot start, the simulation runs on the **browser runtime**: the same session code, built to WebAssembly. It is a degraded simulation, and the application says so wherever it shows the runtime.
 
 ## What it is
 
@@ -27,7 +27,6 @@ The module is built from the files of the native runtime and of the firmware, no
 
 ## When it runs
 
-- In the web build of ZPLC, which has no native runtime.
 - In the desktop app when the native runtime does not start: its binary is missing, it was not built for the platform, or its handshake failed. The console says that the native simulation could not start and that the WebAssembly runtime runs instead.
 
 An unpackaged build of ZPLC switches the native runtime off with `ZPLC_RUNTIME=wasm`, so that a test can show the browser runtime on a machine that has the native one. An installed copy of ZPLC ignores the variable.

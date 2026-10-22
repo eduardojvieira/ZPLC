@@ -107,8 +107,8 @@ ZPLC_NATIVE_SIM_BIN="$PWD/firmware/lib/zplc_core/build/zplc_runtime" \
 
 `bun run --cwd=packages/zplc-ide electron:build` builds the installers. The
 simulator needs the Electron app. `bun run --cwd=packages/zplc-ide dev` starts
-the editor in a browser at http://localhost:3000, where the native simulator is
-not available.
+the renderer dev server that `electron:dev` uses. ZPLC is a desktop application
+for Linux, macOS and Windows; there is no hosted browser version.
 
 ### Runtime on your computer
 
