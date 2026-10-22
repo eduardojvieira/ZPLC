@@ -185,7 +185,7 @@ after_checks() { # repo mirror meta map before-size
   git -C "$repo" config --get-regexp '^remote\.' | diff - "$meta/remote-config-before.txt" >/dev/null && pass "remote configuration unchanged" || say "NOTE: remote configuration differs from before"
   local left; left="$(git -C "$repo" rev-list --objects --all | cut -d' ' -f1 | git -C "$repo" cat-file --batch-check='%(objecttype) %(objectsize)' | awk -v b="$BIG" '$1=="blob"&&$2>b' | wc -l)"
   say "blobs over $BIG bytes still reachable (all legitimate, see inventory): $left"
-  say "size before: $before   after: $(size_line "$repo")"
+  say "size before: $before   after: $(size_line "$(git -C "$repo" rev-parse --absolute-git-dir)")"
   git -C "$repo" count-objects -vH | grep -E 'size-pack|^size:'
   [ "$rc" = 0 ] || die "verification failed"
 }
