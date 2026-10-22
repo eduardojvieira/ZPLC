@@ -38,7 +38,8 @@ string(JSON ZPLC_CORE_VERSION_STR GET "${ZPLC_PACKAGE_JSON}" version)
 #   default  ISA defaults: 8 KB work, 4 KB retentive, 44 KB code (64-bit host,
 #            32-bit native_sim)
 #   small    for 64 KB of RAM (qemu_cortex_m3)
-#   tiny     for 16 KB of RAM (qemu_cortex_m0); also fewer tags and shallower stacks
+#   tiny     for 16 KB of RAM (qemu_cortex_m0); also fewer tags, shallower stacks and two force entries
+#            (a force entry holds two 260-byte images since COM-020, 8 of them are 4 KB)
 set(ZPLC_SUITE_PROFILE default CACHE STRING "VM memory profile: default, small or tiny")
 set(ZPLC_SUITE_PROFILE_DEFINITIONS)
 if(ZPLC_SUITE_PROFILE STREQUAL "small")
@@ -53,7 +54,8 @@ elseif(ZPLC_SUITE_PROFILE STREQUAL "tiny")
     CONFIG_ZPLC_CODE_SIZE_MAX=512
     CONFIG_ZPLC_STACK_DEPTH=32
     CONFIG_ZPLC_CALL_STACK_DEPTH=8
-    ZPLC_MAX_TAGS=4)
+    ZPLC_MAX_TAGS=4
+    ZPLC_FORCE_MAX_ENTRIES=2U)
 elseif(NOT ZPLC_SUITE_PROFILE STREQUAL "default")
   message(FATAL_ERROR "ZPLC_SUITE_PROFILE must be default, small or tiny")
 endif()

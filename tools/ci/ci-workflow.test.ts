@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 
 import { CLANG_FORMAT_VERSION } from './format';
 
-type Step = { name?: string; uses?: string; run?: string; if?: string; with?: Record<string, string> };
+type Step = { name?: string; uses?: string; run?: string; if?: string; env?: Record<string, string>; with?: Record<string, string> };
 type Workflow = {
   on: Record<string, { branches?: string[] } | null>;
   jobs: Record<string, { 'runs-on'?: string; steps: Step[]; strategy?: { matrix: { include: Array<{ id: string; board: string }> } } }>;
@@ -109,6 +109,37 @@ describe('the package manager cache is restored before the install', () => {
     expect(job.steps[cache]!.uses).toMatch(/^actions\/cache@[0-9a-f]{40}$/);
     expect(String((job.steps[cache]!.with as Record<string, string>).key)).toContain("hashFiles('bun.lock')");
     expect(job.steps[install]!.run).toContain('--frozen-lockfile');
+  });
+});
+
+describe('ci.yml clang-tidy jobs (VF-018)', () => {
+  // the version that run_clang_tidy.py pins, as it tells a contributor whose clang-tidy is missing
+  const pinned = /clang-tidy==(\d+\.\d+\.\d+)/.exec(
+    Bun.spawnSync(['python3', '-B', 'tools/ci/run_clang_tidy.py', '--clang-tidy', '/nonexistent/clang-tidy'], {
+      cwd: new URL('../../', import.meta.url).pathname,
+      stderr: 'pipe',
+    }).stderr.toString(),
+  )?.[1];
+
+  it.each(['host-core-sanitized', 'zephyr-cross-build'])(
+    '%s installs the clang-tidy that run_clang_tidy.py pins, not the apt one',
+    (id) => {
+      expect(pinned).toBeDefined();
+      const commands = workflow.jobs[id]!.steps.map((step) => step.run ?? '').join('\n');
+      expect(commands).toContain(`pipx install clang-tidy==${pinned}`);
+      expect(commands).not.toMatch(/apt-get install[^\n]*clang-tidy/);
+    },
+  );
+});
+
+describe('ci.yml documentation tooling (DOC-009)', () => {
+  it('builds the native simulator before the typescript job tests the documentation tooling, and names it', () => {
+    const steps = workflow.jobs.typescript!.steps;
+    const build = steps.findIndex((step) => /zplc-native-sim-build/.test(step.run ?? '') && /--target zplc_runtime/.test(step.run ?? ''));
+    const docs = steps.findIndex((step) => /bun test \.\/tools\/docs/.test(step.run ?? ''));
+    expect(build).toBeGreaterThanOrEqual(0);
+    expect(docs).toBeGreaterThan(build);
+    expect(String(steps[docs]!.env?.ZPLC_NATIVE_SIM_BIN)).toContain('zplc-native-sim-build/zplc_runtime');
   });
 });
 

@@ -8,6 +8,7 @@ from __future__ import annotations
 import importlib.util
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -164,6 +165,23 @@ class Configuration(unittest.TestCase):
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertIn("cert-err33-c", done.stdout)
         self.assertNotIn("misc-include-cleaner", done.stdout)
+
+
+class Pinning(unittest.TestCase):
+    def fake(self, directory: str, version: str) -> str:
+        path = Path(directory) / "clang-tidy"
+        path.write_text(f"#!/bin/sh\necho 'LLVM version {version}'\n")
+        path.chmod(0o755)
+        return str(path)
+
+    def test_reads_the_version_of_the_binary(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            self.assertEqual(tidy.tidy_version(self.fake(directory, "18.1.3")), "18.1.3")
+
+    def test_refuses_another_version_than_the_pinned_one(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            binary = self.fake(directory, "18.1.3")
+            self.assertEqual(tidy.main(["--clang-tidy", binary]), 2)
 
 
 if __name__ == "__main__":

@@ -106,6 +106,20 @@ rewrites every branch and tag without dropping any commit, refreshes every
 worktree, verifies the result and prints the push commands. It never pushes:
 the force-push, and publishing the mirror, are the owner's decision.
 
+Push only the branches that already exist on `origin`, from their rewritten
+remote-tracking refs, plus the 2.0 branch and the tags. Do not use
+`git push --force --all`: it publishes every local branch, and this repository
+has far more local branches than `origin` has. The loop below is POSIX-shell
+safe; in zsh, `$b:r` is a modifier, so the variable is written `"${b}"`.
+
+```sh
+git for-each-ref --format='%(refname:strip=3)' refs/remotes/origin | while read -r b; do
+  [ "${b}" = HEAD ] || git push --force origin "refs/remotes/origin/${b}:refs/heads/${b}"
+done
+git push --force origin refs/heads/zplc-2.0-candidate:refs/heads/zplc-2.0-candidate
+git push --force --tags origin
+```
+
 `git-filter-repo` removes the `origin` remote by default. The tool runs it with
 `--partial` so the remote and the remote-tracking branches stay as they were.
 

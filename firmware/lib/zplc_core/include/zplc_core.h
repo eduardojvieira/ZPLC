@@ -48,8 +48,10 @@
 /** Bytes a string opcode (STRCPY, STRCAT, STRCMP) processes for one unit of the instruction budget (RT-006). */
 #define ZPLC_VM_BYTES_PER_BUDGET_UNIT 4U
 
+#ifndef ZPLC_FORCE_MAX_ENTRIES
 /** Maximum number of independent forced ranges. */
 #define ZPLC_FORCE_MAX_ENTRIES 8U
+#endif
 
 /** Maximum byte length of one forced range. */
 #define ZPLC_FORCE_MAX_BYTES 260U
