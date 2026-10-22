@@ -24,6 +24,6 @@ describe('the click of the browser driver', () => {
       return true;
     })()`);
     await app.click('#moving');
-    expect(await app.eval('window.__hit === true')).toBe(true);
+    expect(await app.eval<boolean>('window.__hit === true')).toBe(true);
   });
 });
