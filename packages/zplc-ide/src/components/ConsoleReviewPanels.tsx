@@ -3,10 +3,10 @@
  * Console.tsx).
  */
 
-import { DiffEditor, type Monaco } from './monacoRuntime';
+import { DiffEditor } from './monacoRuntime';
 import { type CandidateChangeSetReviewPresentation } from './workspaceTestPresentation';
 import { type AiProviderResponsePresentation, type AiProviderStatusPresentation } from './aiProviderPresentation';
-import { ZPLC_DARK_THEME_ID, ZPLC_HIGH_CONTRAST_THEME_ID, ZPLC_LIGHT_THEME_ID } from '../utils/monaco-themes';
+import { MONACO_THEME_ID } from '../utils/monaco-themes';
 import { Badge, Button, Tooltip } from '../ui';
 import { useT } from '../i18n';
 
@@ -49,13 +49,11 @@ export type AgentState =
 export function CandidateReviewResult({
   state,
   effectiveTheme,
-  beforeMount,
   onSave,
   busy,
 }: {
   state: Extract<CandidateReviewState, { kind: 'result' }>;
   effectiveTheme: 'light' | 'dark' | 'high-contrast';
-  beforeMount: (monaco: Monaco) => void;
   onSave: () => void;
   busy: boolean;
 }) {
@@ -133,14 +131,7 @@ export function CandidateReviewResult({
           original={snapshot.baseline}
           modified={snapshot.candidate}
           language="st"
-          theme={
-            effectiveTheme === 'high-contrast'
-              ? ZPLC_HIGH_CONTRAST_THEME_ID
-              : effectiveTheme === 'dark'
-                ? ZPLC_DARK_THEME_ID
-                : ZPLC_LIGHT_THEME_ID
-          }
-          beforeMount={beforeMount}
+          theme={MONACO_THEME_ID[effectiveTheme]}
           options={{
             readOnly: true,
             automaticLayout: true,

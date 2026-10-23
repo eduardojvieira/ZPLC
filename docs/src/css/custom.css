@@ -56,13 +56,13 @@
   --zplc-rule-strong: #7d8a86;
   --zplc-ink: #172127;
   --zplc-ink-2: #4c5a59;
-  --zplc-ink-3: #5f6d6b;
+  --zplc-ink-3: #566462;
   --zplc-cobalt: #245d8f;
   --zplc-cobalt-strong: #1c4a73;
   --zplc-cobalt-tint: rgba(36, 93, 143, 0.08);
   --zplc-on-cobalt: #ffffff;
-  --zplc-green: #177344;
-  --zplc-amber: #8a5800;
+  --zplc-green: #146c40;
+  --zplc-amber: #835300;
   --zplc-red: #a33838;
   --zplc-selection: rgba(36, 93, 143, 0.2);
 
@@ -116,7 +116,7 @@
   --ifm-color-gray-300: #d7dfda;
   --ifm-color-gray-400: #a8b5b0;
   --ifm-color-gray-500: #7d8a86;
-  --ifm-color-gray-600: #5f6d6b;
+  --ifm-color-gray-600: #566462;
   --ifm-color-gray-700: #4c5a59;
   --ifm-color-gray-800: #273537;
   --ifm-color-gray-900: #172127;
@@ -188,7 +188,7 @@
   --zplc-on-cobalt: #0f171b;
   --zplc-green: #65c98e;
   --zplc-amber: #e0ae4f;
-  --zplc-red: #ed7070;
+  --zplc-red: #f07878;
   --zplc-selection: rgba(91, 167, 223, 0.28);
 
   --ifm-color-primary: #5ba7df;

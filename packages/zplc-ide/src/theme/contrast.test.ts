@@ -19,6 +19,18 @@ describe('theme token contrast (UX-024 stopgap: the main screens have no automat
     });
   }
 
+  // AA is the floor; the default themes keep a margin above it, because 11px labels and thin code strokes lose contrast to
+  // anti-aliasing: body text and code read at 7:1 (AAA), every other text pair at 5:1.
+  for (const theme of ['light', 'dark'] as const) {
+    it(`keeps text in the ${theme} theme above the floor: 7:1 for body text and code, 5:1 for the rest`, () => {
+      const body = new Set(['--text-primary', '--editor-fg']);
+      const weak = contrastResults(theme)
+        .filter(({ pair, ratio }) => pair.min === 4.5 && ratio < (body.has(pair.fg) && !pair.over ? 7 : 5))
+        .map(({ pair, ratio }) => `${pair.fg} on ${pair.bg}${pair.over ? ` over ${pair.over}` : ''}: ${ratio.toFixed(2)}:1`);
+      expect(weak).toEqual([]);
+    });
+  }
+
   it('declares the pairs of the kit, the signals, the focus ring and the code editor', () => {
     const names = new Set(CONTRAST_PAIRS.flatMap((pair) => [pair.fg, pair.bg]));
     for (const required of [
@@ -28,6 +40,8 @@ describe('theme token contrast (UX-024 stopgap: the main screens have no automat
       '--signal-fault-fg',
       '--focus-ring-color',
       '--syntax-keyword',
+      '--editor-line-highlight',
+      '--color-status-running',
       '--tooltip-fg',
     ]) {
       expect({ required, declared: names.has(required) }).toEqual({ required, declared: true });

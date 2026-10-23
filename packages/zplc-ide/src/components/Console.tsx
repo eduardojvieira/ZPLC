@@ -33,7 +33,6 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { type Monaco } from './monacoRuntime';
 import { shownProjectBridge } from '../ipc/shownProjectBridge';
 import { trackTestRun } from './workspaceTestNotifications';
 import { useIDEStore } from '../store/useIDEStore';
@@ -75,14 +74,6 @@ import {
   type AiProviderStatusPresentation,
 } from './aiProviderPresentation';
 import { useTheme } from '../hooks/useTheme';
-import {
-  ZPLC_DARK_THEME,
-  ZPLC_DARK_THEME_ID,
-  ZPLC_HIGH_CONTRAST_THEME,
-  ZPLC_HIGH_CONTRAST_THEME_ID,
-  ZPLC_LIGHT_THEME,
-  ZPLC_LIGHT_THEME_ID,
-} from '../utils/monaco-themes';
 import { Badge, Button, Checkbox, FileInput, IconButton, TextField, Textarea, Tooltip } from '../ui';
 import { useT } from '../i18n';
 import { CommandEmptyState } from './panelStates';
@@ -884,12 +875,6 @@ export function Console({ debugController }: ConsoleProps) {
     }
   };
 
-  const beforeMountDiff = (monaco: Monaco) => {
-    monaco.editor.defineTheme(ZPLC_DARK_THEME_ID, ZPLC_DARK_THEME);
-    monaco.editor.defineTheme(ZPLC_LIGHT_THEME_ID, ZPLC_LIGHT_THEME);
-    monaco.editor.defineTheme(ZPLC_HIGH_CONTRAST_THEME_ID, ZPLC_HIGH_CONTRAST_THEME);
-  };
-
   // Collapsed state - just show header bar
   if (isConsoleCollapsed) {
     return (
@@ -1245,7 +1230,6 @@ export function Console({ debugController }: ConsoleProps) {
                 <CandidateReviewResult
                   state={candidateReviewStateForCurrent}
                   effectiveTheme={effectiveTheme}
-                  beforeMount={beforeMountDiff}
                   onSave={() => {
                     void saveReviewedChange();
                   }}

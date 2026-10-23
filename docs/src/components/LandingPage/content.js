@@ -703,6 +703,7 @@ export function getLandingPageContent(locale) {
       modules: content.learn.modules.map((title, index) => ({ number: index, title, level: moduleLevels[index] })),
       plants: plantIds.map((plant) => ({ ...plant, ...content.learn.plants[plant.key] })),
       shot: `learn/lesson-checked-${lang}.png`,
+      shotDark: `learn/lesson-checked-${lang}-dark.png`,
     },
   };
 }

@@ -33,7 +33,7 @@ asked ("mas moderno", "algo mas de industria, de electronica, de plc, mas que ed
 
 ## Palette
 
-Unchanged from checkpoint 1; tokens in `docs/src/css/custom.css`. `.zplc-spine` puts a region on the dark tokens in both
+Tokens in `docs/src/css/custom.css`, the same steps as the application's ramps (`packages/zplc-ide/src/theme/tokens.ts`). The readability pass of 2026-10-23 moved four of them with the application: ink-3, green and amber in light, red in dark; every text pair keeps 5:1 or more. `.zplc-spine` puts a region on the dark tokens in both
 modes; the hero is the only such region.
 
 | Token                  | Light (Drawing Sheet) | Dark (Commissioning Spine) | Role                                                   |
@@ -45,13 +45,13 @@ modes; the hero is the only such region.
 | `--zplc-rule-strong`   | `#7D8A86`             | `#6B7D82`                  | Control boundary, terminal marker tags                 |
 | `--zplc-ink`           | `#172127`             | `#E5EDEB`                  | Headings, body                                         |
 | `--zplc-ink-2`         | `#4C5A59`             | `#B7C4C0`                  | Secondary text, step frames, ladder symbols            |
-| `--zplc-ink-3`         | `#5F6D6B`             | `#8E9E9A`                  | Tertiary text, power rails, rung wires                 |
+| `--zplc-ink-3`         | `#566462`             | `#8E9E9A`                  | Tertiary text, power rails, rung wires                 |
 | `--zplc-cobalt`        | `#245D8F`             | `#5BA7DF`                  | Links, primary action, selection, the task trace       |
 | `--zplc-cobalt-strong` | `#1C4A73`             | `#7DB9E6`                  | Hover and pressed accent                               |
 | `--zplc-on-cobalt`     | `#FFFFFF`             | `#0F171B`                  | Text on a cobalt fill                                  |
-| `--zplc-green`         | `#177344`             | `#65C98E`                  | A conducting rung (TRUE), a pass, RUN                  |
-| `--zplc-amber`         | `#8A5800`             | `#E0AE4F`                  | The prerelease lamp and label, warnings                |
-| `--zplc-red`           | `#A33838`             | `#ED7070`                  | Fault or danger only                                   |
+| `--zplc-green`         | `#146C40`             | `#65C98E`                  | A conducting rung (TRUE), a pass, RUN                  |
+| `--zplc-amber`         | `#835300`             | `#E0AE4F`                  | The prerelease lamp and label, warnings                |
+| `--zplc-red`           | `#A33838`             | `#F07878`                  | Fault or danger only                                   |
 
 ### Contrast (WCAG 2.x)
 
@@ -59,12 +59,12 @@ modes; the hero is the only such region.
 | ----------------- | ------------- | ------------ | ----------- | ------------ | ----------- | ---------- |
 | ink               | 15.59         | 16.36        | 14.48       | 15.23        | 14.23       | 13.02      |
 | ink-2             | 6.87          | 7.21         | 6.38        | 10.07        | 9.41        | 8.61       |
-| ink-3             | 5.15          | 5.40         | 4.78        | 6.48         | 6.06        | 5.54       |
+| ink-3             | 5.89          | 6.19         | 5.47        | 6.48         | 6.06        | 5.54       |
 | cobalt            | 6.59          | 6.91         | 6.12        | 6.94         | 6.48        | 5.93       |
 | cobalt-strong     | 8.79          | 9.22         | 8.16        | 8.59         | 8.03        | 7.35       |
-| green             | 5.60          | 5.88         | 5.20        | 8.89         | 8.31        | 7.60       |
-| amber             | 5.76          | 6.04         | 5.35        | 8.92         | 8.34        | 7.63       |
-| red               | 6.29          | 6.60         | 5.84        | 6.17         | 5.77        | 5.28       |
+| green             | 6.16          | 6.46         | 5.72        | 8.89         | 8.31        | 7.60       |
+| amber             | 6.25          | 6.56         | 5.80        | 8.92         | 8.34        | 7.63       |
+| red               | 6.29          | 6.60         | 5.84        | 6.61         | 6.18        | 5.66       |
 | rule-strong (3:1) | 3.42          | 3.59         | 3.18        | 4.21         | 3.94        | 3.60       |
 
 On-cobalt text on the cobalt fill: 6.91 (light) and 6.94 (dark). The hero uses the dark column in both modes.

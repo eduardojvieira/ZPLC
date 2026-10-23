@@ -72,7 +72,7 @@ ramp('paper', 'Drawing Sheet neutral, from the page to the ink', {
   200: '#e7ece8',
   300: '#d7dfda',
   400: '#a8b5b0',
-  500: '#5f6d6b',
+  500: '#566462',
   600: '#4c5a59',
   800: '#273537',
   900: '#172127',
@@ -82,7 +82,7 @@ ramp('graphite', 'Commissioning Spine neutral, from the ink to the canvas', {
   100: '#d3ddda',
   200: '#b7c4c0',
   400: '#8e9e9a',
-  600: '#52666e',
+  600: '#5c737c',
   700: '#34464d',
   800: '#19262c',
   900: '#141e23',
@@ -99,10 +99,10 @@ ramp('pure', 'Neutral of the high-contrast theme, black to white', {
 });
 // Step 500 is the frame of the mark (tools/brand/mark.svg, DOC-017): the brand draws only with colours of this palette.
 ramp('cobalt', 'Cobalt, the reference and selection hue', { 200: '#55c8ff', 300: '#5ba7df', 500: '#347bb6', 700: '#245d8f' });
-ramp('green', 'Confirmed green, TRUE and RUN only', { 200: '#7dff9a', 300: '#65c98e', 700: '#177344' });
-ramp('amber', 'Amber, forced values and warnings', { 200: '#ffe16b', 300: '#e0ae4f', 700: '#8a5800' });
-ramp('red', 'Fault red', { 200: '#ff9393', 300: '#ed7070', 700: '#a33838' });
-ramp('violet', 'Violet, types and labels in code', { 200: '#d0b8ff', 300: '#b9a8ef', 700: '#635b95' });
+ramp('green', 'Confirmed green, TRUE and RUN only', { 200: '#7dff9a', 300: '#65c98e', 700: '#146c40' });
+ramp('amber', 'Amber, forced values and warnings', { 200: '#ffe16b', 300: '#e0ae4f', 700: '#835300' });
+ramp('red', 'Fault red', { 200: '#ff9393', 300: '#f07878', 700: '#a33838' });
+ramp('violet', 'Violet, types and labels in code', { 200: '#d0b8ff', 300: '#b9a8ef', 700: '#5d558f' });
 ramp('teal', 'Teal, numbers and literals in code', { 200: '#5ff5e0', 300: '#4fc1b3', 700: '#1c6b66' });
 
 const r = (family: string, step: string | number): string => `var(--ramp-${family}-${step})`;
@@ -680,6 +680,17 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     })),
     { fg: '--signal-true-border', bg, min: 3 as const, use: 'A wire that carries power or a TRUE value, and the border of an active step' },
   ]),
+  ...text(
+    [
+      '--color-status-running',
+      '--color-status-stopped',
+      '--color-status-warning',
+      '--color-status-connected',
+      '--color-status-disconnected',
+    ],
+    ['--color-surface-900', '--color-surface-800'],
+    'A runtime or connection status in the status bar and the toolbar',
+  ),
   { fg: '--focus-ring-color', bg: '--color-surface-900', min: 3, use: 'The focus indicator on the canvas' },
   { fg: '--focus-ring-color', bg: '--color-surface-800', min: 3, use: 'The focus indicator on a panel' },
   { fg: '--focus-ring-color', bg: '--color-surface-700', min: 3, use: 'The focus indicator on a raised surface' },
@@ -696,7 +707,11 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     '--syntax-label',
     '--syntax-operator',
     '--syntax-bracket',
-  ].map((fg) => ({ fg, bg: '--editor-bg', min: 4.5 as const, use: 'Syntax colour on the code editor background' })),
+  ].flatMap((fg) => [
+    { fg, bg: '--editor-bg', min: 4.5 as const, use: 'Syntax colour on the code editor background' },
+    { fg, bg: '--editor-line-highlight', over: '--editor-bg', min: 4.5 as const, use: 'Syntax colour on the line of the cursor' },
+  ]),
+  { fg: '--editor-fg', bg: '--editor-line-highlight', over: '--editor-bg', min: 4.5, use: 'Code on the line of the cursor' },
   { fg: '--editor-fg', bg: '--editor-selection-bg', over: '--editor-bg', min: 4.5, use: 'Selected code' },
   ...graphic(
     ['--debug-breakpoint', '--debug-line-edge'],

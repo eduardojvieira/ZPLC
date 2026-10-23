@@ -1,6 +1,8 @@
 import { afterAll, describe, expect, setDefaultTimeout, test } from 'bun:test';
 import { translatorFor } from '../i18n';
 import { browserApp, closeBrowserApp, type BrowserApp } from '../test/browser';
+import { contrastRatio, parseColor, toHex } from '../theme/color';
+import { resolveTokens, type ThemeId } from '../theme/tokens';
 
 // VF-007: the Structured Text and Instruction List editors are Monaco, which needs a browser engine. These tests run in
 // headless Chromium (src/test/browser.ts), press real keys, and read roles and names from the accessibility tree.
@@ -101,6 +103,79 @@ describe('Structured Text editor in a browser (VF-007, LNG-015)', () => {
     const focused = await app.focused();
     expect(focused).toBeDefined();
     expect(focused!.name).not.toBe(editorName('src/main.st', en));
+  });
+});
+
+/** One of every kind of token the Structured Text grammar colours: keywords, declarations, types, literals, addresses, comments. */
+const COLOURED = [
+  'PROGRAM Main',
+  'VAR',
+  '  lamp AT %QX0.0 : BOOL;',
+  '  period : TIME := T#500ms;',
+  "  count : INT := 16#FF; name : STRING := 'tank';",
+  'END_VAR',
+  '(* the lamp follows the period *)',
+  'lamp := NOT lamp AND TRUE;',
+  'count := ABS(count) + 1;',
+  'END_PROGRAM',
+  '',
+].join('\n');
+
+interface Drawn {
+  background: string;
+  spans: Array<{ text: string; color: string }>;
+}
+
+/** The colour the page computes for the editor background and for every token span it draws. */
+const drawn = (app: BrowserApp): Promise<Drawn> =>
+  app.eval<Drawn>(`(() => {
+    const background = getComputedStyle(document.querySelector('.monaco-editor .monaco-editor-background')).backgroundColor;
+    const spans = [...document.querySelectorAll('.monaco-editor .view-lines .view-line > span > span')]
+      .filter((span) => span.textContent.trim() !== '')
+      .map((span) => ({ text: span.textContent.trim(), color: getComputedStyle(span).color }));
+    return { background, spans };
+  })()`);
+
+const hexOf = (colour: string): string => toHex(parseColor(colour));
+
+/** Waits until the editor draws its keyword in the keyword colour of `theme`, then checks every token against the background. */
+async function expectReadableTokens(app: BrowserApp, theme: ThemeId): Promise<void> {
+  const tokens = resolveTokens(theme);
+  const keyword = hexOf(tokens['--syntax-keyword']);
+  const keywordOf = (colours: Drawn) => colours.spans.find((span) => span.text === 'PROGRAM')?.color;
+  let colours = await drawn(app);
+  for (let tries = 0; tries < 50 && (keywordOf(colours) === undefined || hexOf(keywordOf(colours)!) !== keyword); tries++) {
+    await Bun.sleep(100);
+    colours = await drawn(app);
+  }
+  // The ZPLC theme of the app theme is the one Monaco applies, not the light base it falls back to.
+  expect({ theme, keyword: hexOf(keywordOf(colours) ?? '#000') }).toEqual({ theme, keyword });
+  expect(hexOf(colours.background)).toBe(hexOf(tokens['--editor-bg']));
+  const identifier = colours.spans.find((span) => span.text === 'Main');
+  expect(hexOf(identifier!.color)).toBe(hexOf(tokens['--editor-fg']));
+  const weak = colours.spans
+    .map((span) => ({ ...span, ratio: Number(contrastRatio(span.color, colours.background).toFixed(2)) }))
+    .filter((span) => span.ratio < 4.5);
+  expect({ theme, weak }).toEqual({ theme, weak: [] });
+}
+
+describe('code editor colours follow the theme of the app (UX-003, UX-024)', () => {
+  test('a dark editor draws every token in the dark ZPLC theme from the first draw, at 4.5:1 or more', async () => {
+    const app = await browserApp();
+    await app.open({ name: 'main.st', language: 'ST', content: COLOURED }, 'en', 'dark');
+    await expectReadableTokens(app, 'dark');
+  });
+
+  test('the colours switch with the app theme while the editor is open', async () => {
+    const app = await browserApp();
+    await app.open({ name: 'main.st', language: 'ST', content: COLOURED });
+    await expectReadableTokens(app, 'light');
+    for (const theme of ['dark', 'high-contrast', 'light'] as const) {
+      await app.eval(
+        `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { useIDEStore.getState().setTheme('${theme}'); return true; })`,
+      );
+      await expectReadableTokens(app, theme);
+    }
   });
 });
 

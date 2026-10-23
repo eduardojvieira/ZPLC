@@ -2272,6 +2272,7 @@
     {"kind":"unit","ref":"tools/ci/ui-kit-guard.test.ts","test":"kit guard: what breaks the kit rules (UX-002)"}
   ],
   "UX-003": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/CodeEditor.browser.test.ts","test":"code editor colours follow the theme of the app (UX-003, UX-024)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/contrast.test.ts","test":"theme token consistency (UX-003)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"design tokens (UX-003)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/monaco-themes.test.ts","test":"Monaco themes are generated from the semantic roles (UX-003)"},
@@ -2598,6 +2599,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"45 The shell fits 1366 by 768 and 1024 by 768, and its separators move from the keyboard"}
   ],
   "UX-024": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/CodeEditor.browser.test.ts","test":"code editor colours follow the theme of the app (UX-003, UX-024)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/color.test.ts","test":"WCAG 2.2 contrast arithmetic (UX-024 stopgap)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/contrast.test.ts","test":"theme token contrast (UX-024 stopgap: the main screens have no automated check yet)","partial":true},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/audit.test.ts","test":"structural accessibility audit of markup (UX-024, UX-026 stopgap)","partial":true},

@@ -7,8 +7,8 @@ colors:
   drawing-sheet-rule: "#d7dfda"
   drawing-sheet-ink: "#172127"
   drawing-sheet-cobalt: "#245d8f"
-  drawing-sheet-green: "#177344"
-  drawing-sheet-amber: "#8a5800"
+  drawing-sheet-green: "#146c40"
+  drawing-sheet-amber: "#835300"
   drawing-sheet-red: "#a33838"
   commissioning-spine-canvas: "#0f171b"
   commissioning-spine-panel: "#141e23"
@@ -17,7 +17,7 @@ colors:
   commissioning-spine-cobalt: "#5ba7df"
   commissioning-spine-green: "#65c98e"
   commissioning-spine-amber: "#e0ae4f"
-  commissioning-spine-red: "#ed7070"
+  commissioning-spine-red: "#f07878"
 typography:
   body:
     fontFamily: "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
@@ -86,7 +86,7 @@ Colour is a role, not a decoration. A component reads a semantic role (`--color-
 
 ### Code editor
 
-The Monaco themes are generated from the roles (`src/utils/monaco-themes.ts`): the editor background, text, selection, line numbers and the syntax colours (`--syntax-*`) of each theme are tokens, every syntax colour meets 4.5:1 on the editor background, and the breakpoint and paused-line markers are tokens too (`--debug-*`). Red stays the breakpoint colour; whether a breakpoint should be red, given that the vocabulary keeps red for faults, is an open decision.
+The Monaco themes are generated from the roles (`src/utils/monaco-themes.ts`): the editor background, text, selection, line numbers and the syntax colours (`--syntax-*`) of each theme are tokens, every syntax colour meets 4.5:1 on the editor background and on the line of the cursor, and the breakpoint and paused-line markers are tokens too (`--debug-*`). The themes are defined when Monaco loads (`src/components/monacoRuntime.ts`), before any editor exists: Monaco answers an editor created with an unknown theme with its light base, which put light token colours on the dark editor. Every token class the Structured Text and Instruction List grammars emit has a rule of its own, and no bracket pair is colourised: Monaco's bracket rainbow is not a token, and its grammar pairs keywords such as PROGRAM and END_PROGRAM as brackets. One Monaco theme serves every editor on the page, the diff editor of a reviewed change included, and it switches with the app theme. Red stays the breakpoint colour; whether a breakpoint should be red, given that the vocabulary keeps red for faults, is an open decision.
 
 ### Themes
 
@@ -95,6 +95,17 @@ The theme is light, dark or high contrast, chosen in the Welcome screen header, 
 ### Contrast
 
 Text and meaningful graphics meet WCAG 2.2 AA in the three themes: 4.5:1 for text, 3:1 for a graphic that carries meaning (a field border, the focus ring, a signal border). CI computes the ratio of every declared foreground and background pair from the tokens; the pairs and their ratios are in the Contrast table below.
+
+The light and dark themes keep a margin above that floor, because 11px labels and thin code strokes lose contrast to anti-aliasing: body text and code read at 7:1 or more, every other text pair at 5:1 or more (`src/theme/contrast.test.ts`). The readability pass of 2026-10-23 measured the pairs that sat at the floor and moved six ramp steps, keeping each hue:
+
+| Step | Before | After | Weakest pair it carries, before → after |
+| --- | --- | --- | --- |
+| `--ramp-paper-500` | `#5f6d6b` | `#566462` | Light hints, comments and line numbers on the canvas: 4.52 → 5.17 |
+| `--ramp-green-700` | `#177344` | `#146c40` | Light TRUE chip: 4.60 → 5.02 |
+| `--ramp-amber-700` | `#8a5800` | `#835300` | Light forced chip: 4.73 → 5.10 |
+| `--ramp-violet-700` | `#635b95` | `#5d558f` | Light strings and labels on the line of the cursor: 4.91 → 5.37 |
+| `--ramp-red-300` | `#ed7070` | `#f07878` | Dark fault chip: 4.77 → 5.04 |
+| `--ramp-graphite-600` | `#52666e` | `#5c737c` | Dark idle wire on the visual-editor canvas: 3.01 → 3.62 |
 
 **The Evidence-Over-Color Rule.** Every status also has text, iconography, or another non-color cue; color never carries a state alone.
 
@@ -221,7 +232,7 @@ Raw values with no meaning. Only a role may name a ramp step; a component never 
 | `--ramp-paper-200` | Drawing Sheet neutral, from the page to the ink (step 200). | `#e7ece8` | `= light` | `= light` |
 | `--ramp-paper-300` | Drawing Sheet neutral, from the page to the ink (step 300). | `#d7dfda` | `= light` | `= light` |
 | `--ramp-paper-400` | Drawing Sheet neutral, from the page to the ink (step 400). | `#a8b5b0` | `= light` | `= light` |
-| `--ramp-paper-500` | Drawing Sheet neutral, from the page to the ink (step 500). | `#5f6d6b` | `= light` | `= light` |
+| `--ramp-paper-500` | Drawing Sheet neutral, from the page to the ink (step 500). | `#566462` | `= light` | `= light` |
 | `--ramp-paper-600` | Drawing Sheet neutral, from the page to the ink (step 600). | `#4c5a59` | `= light` | `= light` |
 | `--ramp-paper-800` | Drawing Sheet neutral, from the page to the ink (step 800). | `#273537` | `= light` | `= light` |
 | `--ramp-paper-900` | Drawing Sheet neutral, from the page to the ink (step 900). | `#172127` | `= light` | `= light` |
@@ -234,7 +245,7 @@ Raw values with no meaning. Only a role may name a ramp step; a component never 
 | `--ramp-graphite-100` | Commissioning Spine neutral, from the ink to the canvas (step 100). | `#d3ddda` | `= light` | `= light` |
 | `--ramp-graphite-200` | Commissioning Spine neutral, from the ink to the canvas (step 200). | `#b7c4c0` | `= light` | `= light` |
 | `--ramp-graphite-400` | Commissioning Spine neutral, from the ink to the canvas (step 400). | `#8e9e9a` | `= light` | `= light` |
-| `--ramp-graphite-600` | Commissioning Spine neutral, from the ink to the canvas (step 600). | `#52666e` | `= light` | `= light` |
+| `--ramp-graphite-600` | Commissioning Spine neutral, from the ink to the canvas (step 600). | `#5c737c` | `= light` | `= light` |
 | `--ramp-graphite-700` | Commissioning Spine neutral, from the ink to the canvas (step 700). | `#34464d` | `= light` | `= light` |
 | `--ramp-graphite-800` | Commissioning Spine neutral, from the ink to the canvas (step 800). | `#19262c` | `= light` | `= light` |
 | `--ramp-graphite-900` | Commissioning Spine neutral, from the ink to the canvas (step 900). | `#141e23` | `= light` | `= light` |
@@ -267,7 +278,7 @@ Raw values with no meaning. Only a role may name a ramp step; a component never 
 |---|---|---|---|---|
 | `--ramp-green-200` | Confirmed green, TRUE and RUN only (step 200). | `#7dff9a` | `= light` | `= light` |
 | `--ramp-green-300` | Confirmed green, TRUE and RUN only (step 300). | `#65c98e` | `= light` | `= light` |
-| `--ramp-green-700` | Confirmed green, TRUE and RUN only (step 700). | `#177344` | `= light` | `= light` |
+| `--ramp-green-700` | Confirmed green, TRUE and RUN only (step 700). | `#146c40` | `= light` | `= light` |
 
 #### Ramp: amber
 
@@ -275,14 +286,14 @@ Raw values with no meaning. Only a role may name a ramp step; a component never 
 |---|---|---|---|---|
 | `--ramp-amber-200` | Amber, forced values and warnings (step 200). | `#ffe16b` | `= light` | `= light` |
 | `--ramp-amber-300` | Amber, forced values and warnings (step 300). | `#e0ae4f` | `= light` | `= light` |
-| `--ramp-amber-700` | Amber, forced values and warnings (step 700). | `#8a5800` | `= light` | `= light` |
+| `--ramp-amber-700` | Amber, forced values and warnings (step 700). | `#835300` | `= light` | `= light` |
 
 #### Ramp: red
 
 | Token | Use | Light | Dark | High contrast |
 |---|---|---|---|---|
 | `--ramp-red-200` | Fault red (step 200). | `#ff9393` | `= light` | `= light` |
-| `--ramp-red-300` | Fault red (step 300). | `#ed7070` | `= light` | `= light` |
+| `--ramp-red-300` | Fault red (step 300). | `#f07878` | `= light` | `= light` |
 | `--ramp-red-700` | Fault red (step 700). | `#a33838` | `= light` | `= light` |
 
 #### Ramp: violet
@@ -291,7 +302,7 @@ Raw values with no meaning. Only a role may name a ramp step; a component never 
 |---|---|---|---|---|
 | `--ramp-violet-200` | Violet, types and labels in code (step 200). | `#d0b8ff` | `= light` | `= light` |
 | `--ramp-violet-300` | Violet, types and labels in code (step 300). | `#b9a8ef` | `= light` | `= light` |
-| `--ramp-violet-700` | Violet, types and labels in code (step 700). | `#635b95` | `= light` | `= light` |
+| `--ramp-violet-700` | Violet, types and labels in code (step 700). | `#5d558f` | `= light` | `= light` |
 
 #### Ramp: teal
 
@@ -313,8 +324,8 @@ What a colour is for, per theme. A value written `= light` is the light value; t
 | `--color-surface-800` | Panel: sidebars, the code editor, the inspector and the result panels. | `#f8faf7` | `#141e23` | `#080808` |
 | `--color-surface-700` | Raised surface: nodes, inputs, cards and controls sitting on a panel. | `#ffffff` | `#19262c` | `#111111` |
 | `--color-surface-600` | Rule and separator fill; the border colour of the high-contrast theme. | `#d7dfda` | `#34464d` | `#ffffff` |
-| `--color-surface-500` | Strong rule, scrollbar thumb and the quiet side of a border. | `#a8b5b0` | `#52666e` | `#d7d7d7` |
-| `--color-surface-400` | Quiet ink: tertiary text, wires and the stopped state. | `#5f6d6b` | `#8e9e9a` | `#e5e5e5` |
+| `--color-surface-500` | Strong rule, scrollbar thumb and the quiet side of a border. | `#a8b5b0` | `#5c737c` | `#d7d7d7` |
+| `--color-surface-400` | Quiet ink: tertiary text, wires and the stopped state. | `#566462` | `#8e9e9a` | `#e5e5e5` |
 | `--color-surface-300` | Secondary ink. | `#4c5a59` | `#b7c4c0` | `#f2f2f2` |
 | `--color-surface-200` | Strong ink for emphasis on a panel. | `#273537` | `#d3ddda` | `#ffffff` |
 | `--color-surface-100` | Primary ink. | `#172127` | `#e5edeb` | `#ffffff` |
@@ -325,22 +336,22 @@ What a colour is for, per theme. A value written `= light` is the light value; t
 |---|---|---|---|---|
 | `--color-accent-blue` | Cobalt: selection, focus, an active reference and connected technical navigation. Never a success colour. | `#245d8f` | `#5ba7df` | `#55c8ff` |
 | `--color-accent-cyan` | Alias of cobalt kept for components that name it. | `#245d8f` | `#5ba7df` | `#55c8ff` |
-| `--color-accent-green` | Confirmed green: a TRUE value, RUN, a pass. Nothing else. | `#177344` | `#65c98e` | `#7dff9a` |
-| `--color-accent-yellow` | Amber: a forced value, a warning, attention. | `#8a5800` | `#e0ae4f` | `#ffe16b` |
-| `--color-accent-orange` | Alias of amber kept for components that name it. | `#8a5800` | `#e0ae4f` | `#ffe16b` |
-| `--color-accent-red` | Fault red: an error, a fault, a destructive action. Never FALSE. | `#a33838` | `#ed7070` | `#ff9393` |
-| `--color-accent-purple` | Violet: a type or a label that is neither state nor selection. | `#635b95` | `#b9a8ef` | `#d0b8ff` |
+| `--color-accent-green` | Confirmed green: a TRUE value, RUN, a pass. Nothing else. | `#146c40` | `#65c98e` | `#7dff9a` |
+| `--color-accent-yellow` | Amber: a forced value, a warning, attention. | `#835300` | `#e0ae4f` | `#ffe16b` |
+| `--color-accent-orange` | Alias of amber kept for components that name it. | `#835300` | `#e0ae4f` | `#ffe16b` |
+| `--color-accent-red` | Fault red: an error, a fault, a destructive action. Never FALSE. | `#a33838` | `#f07878` | `#ff9393` |
+| `--color-accent-purple` | Violet: a type or a label that is neither state nor selection. | `#5d558f` | `#b9a8ef` | `#d0b8ff` |
 | `--color-on-accent` | Text and icons on a solid accent fill: white on the light accents, the canvas colour on the dark ones. | `#ffffff` | `#0f171b` | `#000000` |
 
 #### Status
 
 | Token | Use | Light | Dark | High contrast |
 |---|---|---|---|---|
-| `--color-status-running` | The runtime is running. | `#177344` | `#65c98e` | `#7dff9a` |
-| `--color-status-stopped` | The runtime is stopped or idle: neutral. | `#5f6d6b` | `#8e9e9a` | `#e5e5e5` |
-| `--color-status-warning` | A warning needs attention. | `#8a5800` | `#e0ae4f` | `#ffe16b` |
+| `--color-status-running` | The runtime is running. | `#146c40` | `#65c98e` | `#7dff9a` |
+| `--color-status-stopped` | The runtime is stopped or idle: neutral. | `#566462` | `#8e9e9a` | `#e5e5e5` |
+| `--color-status-warning` | A warning needs attention. | `#835300` | `#e0ae4f` | `#ffe16b` |
 | `--color-status-connected` | A connection is established. | `#245d8f` | `#5ba7df` | `#55c8ff` |
-| `--color-status-disconnected` | No connection: neutral. | `#5f6d6b` | `#8e9e9a` | `#e5e5e5` |
+| `--color-status-disconnected` | No connection: neutral. | `#566462` | `#8e9e9a` | `#e5e5e5` |
 
 #### Text and border
 
@@ -348,8 +359,8 @@ What a colour is for, per theme. A value written `= light` is the light value; t
 |---|---|---|---|---|
 | `--text-primary` | Body text and values. | `#172127` | `#e5edeb` | `#ffffff` |
 | `--text-secondary` | Labels and supporting text. | `#4c5a59` | `#b7c4c0` | `#f2f2f2` |
-| `--text-tertiary` | Hints, units and captions. | `#5f6d6b` | `#8e9e9a` | `#e5e5e5` |
-| `--text-muted` | De-emphasised text that is still readable. | `#5f6d6b` | `#8e9e9a` | `#d7d7d7` |
+| `--text-tertiary` | Hints, units and captions. | `#566462` | `#8e9e9a` | `#e5e5e5` |
+| `--text-muted` | De-emphasised text that is still readable. | `#566462` | `#8e9e9a` | `#d7d7d7` |
 | `--border-color` | The default 1px rule between regions and around controls. | `#d7dfda` | `#34464d` | `#ffffff` |
 | `--color-scrim` | The veil behind a modal dialog. | `rgb(23 33 39 / 0.5)` | `rgb(0 0 0 / 0.6)` | `rgb(0 0 0 / 0.8)` |
 
@@ -367,8 +378,8 @@ What a colour is for, per theme. A value written `= light` is the light value; t
 | `--visual-canvas` | Canvas of the Ladder, FBD and SFC editors. | `#e7ece8` | `#0f171b` | `#000000` |
 | `--visual-panel` | Toolbox and control panels of the visual editors. | `#f8faf7` | `#141e23` | `#080808` |
 | `--visual-node` | Fill of a node, a rung element or a step. | `#ffffff` | `#19262c` | `#111111` |
-| `--visual-muted` | Secondary labels on the canvas. | `#5f6d6b` | `#8e9e9a` | `#e5e5e5` |
-| `--visual-wire` | An idle wire or connection: neutral, never a state. | `#5f6d6b` | `#52666e` | `#e5e5e5` |
+| `--visual-muted` | Secondary labels on the canvas. | `#566462` | `#8e9e9a` | `#e5e5e5` |
+| `--visual-wire` | An idle wire or connection: neutral, never a state. | `#566462` | `#5c737c` | `#e5e5e5` |
 
 #### Focus and separators
 
@@ -377,7 +388,7 @@ What a colour is for, per theme. A value written `= light` is the light value; t
 | `--focus-ring-color` | The one focus indicator (UX-005); the operating system supplies it in forced-colors mode. | `#245d8f` | `#5ba7df` | `#55c8ff` |
 | `--focus-ring-width` | Thickness of the focus indicator; thicker in the high-contrast theme. | `2px` | `= light` | `3px` |
 | `--focus-ring-offset` | Gap between a control and its focus indicator. | `2px` | `= light` | `= light` |
-| `--separator-rule` | The 1px rule drawn inside a resize handle at rest. | `#5f6d6b` | `#8e9e9a` | `#e5e5e5` |
+| `--separator-rule` | The 1px rule drawn inside a resize handle at rest. | `#566462` | `#8e9e9a` | `#e5e5e5` |
 
 #### Code editor
 
@@ -386,18 +397,18 @@ What a colour is for, per theme. A value written `= light` is the light value; t
 | `--editor-bg` | Background of the code editor and its gutter. | `#f8faf7` | `#141e23` | `#080808` |
 | `--editor-fg` | Default text of the code editor. | `#172127` | `#e5edeb` | `#ffffff` |
 | `--editor-selection-bg` | The selection of the active code editor. | `color-mix(in srgb, #245d8f 28%, transparent)` | `color-mix(in srgb, #5ba7df 32%, transparent)` | `color-mix(in srgb, #55c8ff 55%, transparent)` |
-| `--editor-inactive-selection-bg` | The selection of a code editor that does not have focus. | `color-mix(in srgb, #5f6d6b 22%, transparent)` | `color-mix(in srgb, #8e9e9a 22%, transparent)` | `color-mix(in srgb, #e5e5e5 22%, transparent)` |
-| `--editor-line-number` | Line numbers in the gutter. | `#5f6d6b` | `#8e9e9a` | `#e5e5e5` |
+| `--editor-inactive-selection-bg` | The selection of a code editor that does not have focus. | `color-mix(in srgb, #566462 22%, transparent)` | `color-mix(in srgb, #8e9e9a 22%, transparent)` | `color-mix(in srgb, #e5e5e5 22%, transparent)` |
+| `--editor-line-number` | Line numbers in the gutter. | `#566462` | `#8e9e9a` | `#e5e5e5` |
 | `--editor-line-number-active` | The line number of the cursor line. | `#172127` | `#e5edeb` | `#ffffff` |
 | `--editor-cursor` | The text cursor. | `#172127` | `#e5edeb` | `#ffffff` |
-| `--editor-line-highlight` | The background of the cursor line. | `color-mix(in srgb, #5f6d6b 12%, transparent)` | `color-mix(in srgb, #8e9e9a 12%, transparent)` | `color-mix(in srgb, #e5e5e5 12%, transparent)` |
-| `--syntax-comment` | Comments, set in italic. | `#5f6d6b` | `#8e9e9a` | `#e5e5e5` |
+| `--editor-line-highlight` | The background of the cursor line. | `color-mix(in srgb, #566462 12%, transparent)` | `color-mix(in srgb, #8e9e9a 12%, transparent)` | `color-mix(in srgb, #e5e5e5 12%, transparent)` |
+| `--syntax-comment` | Comments, set in italic. | `#566462` | `#8e9e9a` | `#e5e5e5` |
 | `--syntax-keyword` | Keywords and control structures (bold). | `#245d8f` | `#5ba7df` | `#55c8ff` |
 | `--syntax-type` | Data types such as INT, REAL and TIME. | `#1c6b66` | `#4fc1b3` | `#5ff5e0` |
-| `--syntax-number` | Numeric and time literals. | `#8a5800` | `#e0ae4f` | `#ffe16b` |
-| `--syntax-string` | String literals. | `#635b95` | `#b9a8ef` | `#d0b8ff` |
-| `--syntax-address` | Direct addresses (%I, %Q, %M) and predefined variables (bold). | `#8a5800` | `#e0ae4f` | `#ffe16b` |
-| `--syntax-label` | IL labels and jump targets (bold). | `#635b95` | `#b9a8ef` | `#d0b8ff` |
+| `--syntax-number` | Numeric and time literals. | `#835300` | `#e0ae4f` | `#ffe16b` |
+| `--syntax-string` | String literals. | `#5d558f` | `#b9a8ef` | `#d0b8ff` |
+| `--syntax-address` | Direct addresses (%I, %Q, %M) and predefined variables (bold). | `#835300` | `#e0ae4f` | `#ffe16b` |
+| `--syntax-label` | IL labels and jump targets (bold). | `#5d558f` | `#b9a8ef` | `#d0b8ff` |
 | `--syntax-operator` | Operators and delimiters. | `#4c5a59` | `#b7c4c0` | `#f2f2f2` |
 | `--syntax-bracket` | Brackets and parentheses. | `#172127` | `#e5edeb` | `#ffffff` |
 
@@ -405,11 +416,11 @@ What a colour is for, per theme. A value written `= light` is the light value; t
 
 | Token | Use | Light | Dark | High contrast |
 |---|---|---|---|---|
-| `--debug-breakpoint` | Fill of a breakpoint dot in the editor margin. Red stays the breakpoint colour; the signal vocabulary reserves red for faults, which is an open question for the owner (see DESIGN.md). | `#a33838` | `#ed7070` | `#ff9393` |
-| `--debug-breakpoint-edge` | Ring around a breakpoint dot: toward the text colour, so the dot keeps its outline on either margin. | `color-mix(in srgb, #a33838 65%, #172127)` | `color-mix(in srgb, #ed7070 65%, #e5edeb)` | `color-mix(in srgb, #ff9393 65%, #ffffff)` |
-| `--debug-breakpoint-line` | Tint of the line a breakpoint is on. | `color-mix(in srgb, #a33838 15%, transparent)` | `color-mix(in srgb, #ed7070 15%, transparent)` | `color-mix(in srgb, #ff9393 15%, transparent)` |
-| `--debug-line-bg` | Background of the line execution is paused on. | `color-mix(in srgb, #a33838 16%, transparent)` | `color-mix(in srgb, #ed7070 16%, transparent)` | `color-mix(in srgb, #ff9393 16%, transparent)` |
-| `--debug-line-edge` | Left edge and arrow of the line execution is paused on. | `#a33838` | `#ed7070` | `#ff9393` |
+| `--debug-breakpoint` | Fill of a breakpoint dot in the editor margin. Red stays the breakpoint colour; the signal vocabulary reserves red for faults, which is an open question for the owner (see DESIGN.md). | `#a33838` | `#f07878` | `#ff9393` |
+| `--debug-breakpoint-edge` | Ring around a breakpoint dot: toward the text colour, so the dot keeps its outline on either margin. | `color-mix(in srgb, #a33838 65%, #172127)` | `color-mix(in srgb, #f07878 65%, #e5edeb)` | `color-mix(in srgb, #ff9393 65%, #ffffff)` |
+| `--debug-breakpoint-line` | Tint of the line a breakpoint is on. | `color-mix(in srgb, #a33838 15%, transparent)` | `color-mix(in srgb, #f07878 15%, transparent)` | `color-mix(in srgb, #ff9393 15%, transparent)` |
+| `--debug-line-bg` | Background of the line execution is paused on. | `color-mix(in srgb, #a33838 16%, transparent)` | `color-mix(in srgb, #f07878 16%, transparent)` | `color-mix(in srgb, #ff9393 16%, transparent)` |
+| `--debug-line-edge` | Left edge and arrow of the line execution is paused on. | `#a33838` | `#f07878` | `#ff9393` |
 
 ### Tier 3: component tokens
 
@@ -421,15 +432,15 @@ What one component reads. They reference roles, so they follow every theme.
 |---|---|---|---|---|
 | `--button-bg` | Fill of a secondary button. | `#ffffff` | `#19262c` | `#111111` |
 | `--button-fg` | Label of a secondary button. | `#172127` | `#e5edeb` | `#ffffff` |
-| `--button-border` | Border of a secondary button. | `#5f6d6b` | `#8e9e9a` | `#e5e5e5` |
+| `--button-border` | Border of a secondary button. | `#566462` | `#8e9e9a` | `#e5e5e5` |
 | `--button-bg-hover` | Fill of a secondary button under the pointer. | `color-mix(in srgb, #172127 12%, #ffffff)` | `color-mix(in srgb, #e5edeb 12%, #19262c)` | `color-mix(in srgb, #ffffff 12%, #111111)` |
 | `--button-bg-active` | Fill of a secondary button while pressed. | `color-mix(in srgb, #172127 20%, #ffffff)` | `color-mix(in srgb, #e5edeb 20%, #19262c)` | `color-mix(in srgb, #ffffff 20%, #111111)` |
 | `--button-primary-bg` | Fill of the primary action of a surface. | `#245d8f` | `#5ba7df` | `#55c8ff` |
 | `--button-primary-fg` | Label of a primary button. | `#ffffff` | `#0f171b` | `#000000` |
 | `--button-primary-bg-hover` | Fill of a primary button under the pointer: nearer to the text colour, so the label keeps its contrast. | `color-mix(in srgb, #245d8f 85%, #172127)` | `color-mix(in srgb, #5ba7df 85%, #e5edeb)` | `color-mix(in srgb, #55c8ff 85%, #ffffff)` |
-| `--button-danger-bg` | Fill of a destructive action. | `#a33838` | `#ed7070` | `#ff9393` |
+| `--button-danger-bg` | Fill of a destructive action. | `#a33838` | `#f07878` | `#ff9393` |
 | `--button-danger-fg` | Label of a destructive button. | `#ffffff` | `#0f171b` | `#000000` |
-| `--button-danger-bg-hover` | Fill of a destructive button under the pointer. | `color-mix(in srgb, #a33838 85%, #172127)` | `color-mix(in srgb, #ed7070 85%, #e5edeb)` | `color-mix(in srgb, #ff9393 85%, #ffffff)` |
+| `--button-danger-bg-hover` | Fill of a destructive button under the pointer. | `color-mix(in srgb, #a33838 85%, #172127)` | `color-mix(in srgb, #f07878 85%, #e5edeb)` | `color-mix(in srgb, #ff9393 85%, #ffffff)` |
 | `--button-ghost-fg` | Label or icon of a button with no fill. | `#4c5a59` | `#b7c4c0` | `#f2f2f2` |
 | `--button-ghost-bg-hover` | Fill of a button with no fill under the pointer. | `color-mix(in srgb, #172127 12%, transparent)` | `color-mix(in srgb, #e5edeb 12%, transparent)` | `color-mix(in srgb, #ffffff 12%, transparent)` |
 | `--button-disabled-opacity` | Opacity of a disabled control. | `0.5` | `= light` | `= light` |
@@ -440,13 +451,13 @@ What one component reads. They reference roles, so they follow every theme.
 |---|---|---|---|---|
 | `--input-bg` | Fill of a text, number or select field. | `#ffffff` | `#19262c` | `#111111` |
 | `--input-fg` | Text of a field. | `#172127` | `#e5edeb` | `#ffffff` |
-| `--input-border` | Border of a field; 3:1 against the panel it sits on. | `#5f6d6b` | `#8e9e9a` | `#e5e5e5` |
+| `--input-border` | Border of a field; 3:1 against the panel it sits on. | `#566462` | `#8e9e9a` | `#e5e5e5` |
 | `--input-border-hover` | Border of a field under the pointer. | `#4c5a59` | `#b7c4c0` | `#f2f2f2` |
-| `--input-placeholder` | Placeholder text. | `#5f6d6b` | `#8e9e9a` | `#e5e5e5` |
-| `--input-invalid` | Border and message of a field with an error. | `#a33838` | `#ed7070` | `#ff9393` |
+| `--input-placeholder` | Placeholder text. | `#566462` | `#8e9e9a` | `#e5e5e5` |
+| `--input-invalid` | Border and message of a field with an error. | `#a33838` | `#f07878` | `#ff9393` |
 | `--label-fg` | The label of a field. | `#4c5a59` | `#b7c4c0` | `#f2f2f2` |
-| `--hint-fg` | The hint under a field. | `#5f6d6b` | `#8e9e9a` | `#e5e5e5` |
-| `--check-border` | Border of an unchecked checkbox or switch. | `#5f6d6b` | `#8e9e9a` | `#e5e5e5` |
+| `--hint-fg` | The hint under a field. | `#566462` | `#8e9e9a` | `#e5e5e5` |
+| `--check-border` | Border of an unchecked checkbox or switch. | `#566462` | `#8e9e9a` | `#e5e5e5` |
 | `--check-bg-checked` | Fill of a checked checkbox or switch. | `#245d8f` | `#5ba7df` | `#55c8ff` |
 | `--check-fg-checked` | Mark on a checked checkbox or switch. | `#ffffff` | `#0f171b` | `#000000` |
 
@@ -459,8 +470,8 @@ What one component reads. They reference roles, so they follow every theme.
 | `--tab-indicator` | The rule under the selected tab. | `#245d8f` | `#5ba7df` | `#55c8ff` |
 | `--tab-bg-hover` | A tab under the pointer. | `color-mix(in srgb, #172127 8%, transparent)` | `color-mix(in srgb, #e5edeb 8%, transparent)` | `color-mix(in srgb, #ffffff 8%, transparent)` |
 | `--menu-item-bg-active` | The active item of a menu, listbox or tree. | `color-mix(in srgb, #245d8f 22%, transparent)` | `color-mix(in srgb, #5ba7df 22%, transparent)` | `color-mix(in srgb, #55c8ff 22%, transparent)` |
-| `--menu-item-bg-active-danger` | The active item of a menu when the item is destructive: a red tint, so red text keeps its contrast. | `color-mix(in srgb, #a33838 14%, transparent)` | `color-mix(in srgb, #ed7070 14%, transparent)` | `color-mix(in srgb, #ff9393 14%, transparent)` |
-| `--menu-separator` | A separator between groups of menu items. | `#a8b5b0` | `#52666e` | `#d7d7d7` |
+| `--menu-item-bg-active-danger` | The active item of a menu when the item is destructive: a red tint, so red text keeps its contrast. | `color-mix(in srgb, #a33838 14%, transparent)` | `color-mix(in srgb, #f07878 14%, transparent)` | `color-mix(in srgb, #ff9393 14%, transparent)` |
+| `--menu-separator` | A separator between groups of menu items. | `#a8b5b0` | `#5c737c` | `#d7d7d7` |
 
 #### Overlay
 
@@ -468,7 +479,7 @@ What one component reads. They reference roles, so they follow every theme.
 |---|---|---|---|---|
 | `--overlay-bg` | Fill of a dialog, a menu and a popover. | `#f8faf7` | `#141e23` | `#080808` |
 | `--overlay-fg` | Text on an overlay. | `#172127` | `#e5edeb` | `#ffffff` |
-| `--overlay-border` | Border of an overlay. | `#a8b5b0` | `#52666e` | `#d7d7d7` |
+| `--overlay-border` | Border of an overlay. | `#a8b5b0` | `#5c737c` | `#d7d7d7` |
 | `--tooltip-bg` | Fill of a tooltip: the inverse of the panel. | `#172127` | `#e5edeb` | `#ffffff` |
 | `--tooltip-fg` | Text of a tooltip. | `#e7ece8` | `#0f171b` | `#000000` |
 
@@ -479,38 +490,38 @@ What one component reads. They reference roles, so they follow every theme.
 | `--tone-info-fg` | Text and icon of a info badge or message. | `#245d8f` | `#5ba7df` | `#55c8ff` |
 | `--tone-info-bg` | Fill of a info badge or message. | `color-mix(in srgb, #245d8f 14%, transparent)` | `color-mix(in srgb, #5ba7df 14%, transparent)` | `color-mix(in srgb, #55c8ff 14%, transparent)` |
 | `--tone-info-border` | Border of a info badge or message. | `#245d8f` | `#5ba7df` | `#55c8ff` |
-| `--tone-success-fg` | Text and icon of a success badge or message. | `#177344` | `#65c98e` | `#7dff9a` |
-| `--tone-success-bg` | Fill of a success badge or message. | `color-mix(in srgb, #177344 14%, transparent)` | `color-mix(in srgb, #65c98e 14%, transparent)` | `color-mix(in srgb, #7dff9a 14%, transparent)` |
-| `--tone-success-border` | Border of a success badge or message. | `#177344` | `#65c98e` | `#7dff9a` |
-| `--tone-warning-fg` | Text and icon of a warning badge or message. | `#8a5800` | `#e0ae4f` | `#ffe16b` |
-| `--tone-warning-bg` | Fill of a warning badge or message. | `color-mix(in srgb, #8a5800 14%, transparent)` | `color-mix(in srgb, #e0ae4f 14%, transparent)` | `color-mix(in srgb, #ffe16b 14%, transparent)` |
-| `--tone-warning-border` | Border of a warning badge or message. | `#8a5800` | `#e0ae4f` | `#ffe16b` |
-| `--tone-danger-fg` | Text and icon of a danger badge or message. | `#a33838` | `#ed7070` | `#ff9393` |
-| `--tone-danger-bg` | Fill of a danger badge or message. | `color-mix(in srgb, #a33838 14%, transparent)` | `color-mix(in srgb, #ed7070 14%, transparent)` | `color-mix(in srgb, #ff9393 14%, transparent)` |
-| `--tone-danger-border` | Border of a danger badge or message. | `#a33838` | `#ed7070` | `#ff9393` |
+| `--tone-success-fg` | Text and icon of a success badge or message. | `#146c40` | `#65c98e` | `#7dff9a` |
+| `--tone-success-bg` | Fill of a success badge or message. | `color-mix(in srgb, #146c40 14%, transparent)` | `color-mix(in srgb, #65c98e 14%, transparent)` | `color-mix(in srgb, #7dff9a 14%, transparent)` |
+| `--tone-success-border` | Border of a success badge or message. | `#146c40` | `#65c98e` | `#7dff9a` |
+| `--tone-warning-fg` | Text and icon of a warning badge or message. | `#835300` | `#e0ae4f` | `#ffe16b` |
+| `--tone-warning-bg` | Fill of a warning badge or message. | `color-mix(in srgb, #835300 14%, transparent)` | `color-mix(in srgb, #e0ae4f 14%, transparent)` | `color-mix(in srgb, #ffe16b 14%, transparent)` |
+| `--tone-warning-border` | Border of a warning badge or message. | `#835300` | `#e0ae4f` | `#ffe16b` |
+| `--tone-danger-fg` | Text and icon of a danger badge or message. | `#a33838` | `#f07878` | `#ff9393` |
+| `--tone-danger-bg` | Fill of a danger badge or message. | `color-mix(in srgb, #a33838 14%, transparent)` | `color-mix(in srgb, #f07878 14%, transparent)` | `color-mix(in srgb, #ff9393 14%, transparent)` |
+| `--tone-danger-border` | Border of a danger badge or message. | `#a33838` | `#f07878` | `#ff9393` |
 | `--tone-neutral-fg` | Text and icon of a neutral badge or message. | `#4c5a59` | `#b7c4c0` | `#f2f2f2` |
-| `--tone-neutral-bg` | Fill of a neutral badge or message. | `color-mix(in srgb, #5f6d6b 14%, transparent)` | `color-mix(in srgb, #8e9e9a 14%, transparent)` | `color-mix(in srgb, #e5e5e5 14%, transparent)` |
-| `--tone-neutral-border` | Border of a neutral badge or message; 3:1 against the panel, so a FALSE chip keeps its outline. | `#5f6d6b` | `#8e9e9a` | `#e5e5e5` |
+| `--tone-neutral-bg` | Fill of a neutral badge or message. | `color-mix(in srgb, #566462 14%, transparent)` | `color-mix(in srgb, #8e9e9a 14%, transparent)` | `color-mix(in srgb, #e5e5e5 14%, transparent)` |
+| `--tone-neutral-border` | Border of a neutral badge or message; 3:1 against the panel, so a FALSE chip keeps its outline. | `#566462` | `#8e9e9a` | `#e5e5e5` |
 
 #### Signal vocabulary
 
 | Token | Use | Light | Dark | High contrast |
 |---|---|---|---|---|
-| `--signal-true-fg` | A confirmed TRUE value: green. | `#177344` | `#65c98e` | `#7dff9a` |
-| `--signal-true-bg` | Chip fill of a TRUE value. | `color-mix(in srgb, #177344 14%, transparent)` | `color-mix(in srgb, #65c98e 14%, transparent)` | `color-mix(in srgb, #7dff9a 14%, transparent)` |
-| `--signal-true-border` | Chip border of a TRUE value. | `#177344` | `#65c98e` | `#7dff9a` |
+| `--signal-true-fg` | A confirmed TRUE value: green. | `#146c40` | `#65c98e` | `#7dff9a` |
+| `--signal-true-bg` | Chip fill of a TRUE value. | `color-mix(in srgb, #146c40 14%, transparent)` | `color-mix(in srgb, #65c98e 14%, transparent)` | `color-mix(in srgb, #7dff9a 14%, transparent)` |
+| `--signal-true-border` | Chip border of a TRUE value. | `#146c40` | `#65c98e` | `#7dff9a` |
 | `--signal-false-fg` | A FALSE value: neutral, never red. | `#4c5a59` | `#b7c4c0` | `#f2f2f2` |
-| `--signal-false-bg` | Chip fill of a FALSE value. | `color-mix(in srgb, #5f6d6b 14%, transparent)` | `color-mix(in srgb, #8e9e9a 14%, transparent)` | `color-mix(in srgb, #e5e5e5 14%, transparent)` |
-| `--signal-false-border` | Chip border of a FALSE value. | `#5f6d6b` | `#8e9e9a` | `#e5e5e5` |
+| `--signal-false-bg` | Chip fill of a FALSE value. | `color-mix(in srgb, #566462 14%, transparent)` | `color-mix(in srgb, #8e9e9a 14%, transparent)` | `color-mix(in srgb, #e5e5e5 14%, transparent)` |
+| `--signal-false-border` | Chip border of a FALSE value. | `#566462` | `#8e9e9a` | `#e5e5e5` |
 | `--signal-unknown-fg` | A value that has not been read: neutral, and the border is dashed. | `#4c5a59` | `#b7c4c0` | `#f2f2f2` |
 | `--signal-unknown-bg` | Chip fill of an unknown value. | `transparent` | `= light` | `= light` |
-| `--signal-unknown-border` | Chip border of an unknown value. | `#5f6d6b` | `#8e9e9a` | `#e5e5e5` |
-| `--signal-forced-fg` | A forced value: amber. | `#8a5800` | `#e0ae4f` | `#ffe16b` |
-| `--signal-forced-bg` | Chip fill of a forced value. | `color-mix(in srgb, #8a5800 14%, transparent)` | `color-mix(in srgb, #e0ae4f 14%, transparent)` | `color-mix(in srgb, #ffe16b 14%, transparent)` |
-| `--signal-forced-border` | Chip border of a forced value. | `#8a5800` | `#e0ae4f` | `#ffe16b` |
-| `--signal-fault-fg` | A fault: red, and only a fault. | `#a33838` | `#ed7070` | `#ff9393` |
-| `--signal-fault-bg` | Chip fill of a fault. | `color-mix(in srgb, #a33838 14%, transparent)` | `color-mix(in srgb, #ed7070 14%, transparent)` | `color-mix(in srgb, #ff9393 14%, transparent)` |
-| `--signal-fault-border` | Chip border of a fault. | `#a33838` | `#ed7070` | `#ff9393` |
+| `--signal-unknown-border` | Chip border of an unknown value. | `#566462` | `#8e9e9a` | `#e5e5e5` |
+| `--signal-forced-fg` | A forced value: amber. | `#835300` | `#e0ae4f` | `#ffe16b` |
+| `--signal-forced-bg` | Chip fill of a forced value. | `color-mix(in srgb, #835300 14%, transparent)` | `color-mix(in srgb, #e0ae4f 14%, transparent)` | `color-mix(in srgb, #ffe16b 14%, transparent)` |
+| `--signal-forced-border` | Chip border of a forced value. | `#835300` | `#e0ae4f` | `#ffe16b` |
+| `--signal-fault-fg` | A fault: red, and only a fault. | `#a33838` | `#f07878` | `#ff9393` |
+| `--signal-fault-bg` | Chip fill of a fault. | `color-mix(in srgb, #a33838 14%, transparent)` | `color-mix(in srgb, #f07878 14%, transparent)` | `color-mix(in srgb, #ff9393 14%, transparent)` |
+| `--signal-fault-border` | Chip border of a fault. | `#a33838` | `#f07878` | `#ff9393` |
 | `--signal-value-fg` | A numeric or string value that is not a state: cobalt. | `#245d8f` | `#5ba7df` | `#55c8ff` |
 | `--signal-value-bg` | Chip fill of a plain value. | `color-mix(in srgb, #245d8f 14%, transparent)` | `color-mix(in srgb, #5ba7df 14%, transparent)` | `color-mix(in srgb, #55c8ff 14%, transparent)` |
 | `--signal-value-border` | Chip border of a plain value. | `#245d8f` | `#5ba7df` | `#55c8ff` |
@@ -576,7 +587,7 @@ Type, shape, elevation, icons, layers and density. The compact column is the val
 
 ### Contrast
 
-CI computes the WCAG 2.2 ratio of each pair below from the tokens, in all three themes, and fails when one falls under its minimum (4.5:1 for text, 3:1 for a graphic that carries meaning). 127 pairs are declared and listed here with their computed ratios.
+CI computes the WCAG 2.2 ratio of each pair below from the tokens, in all three themes, and fails when one falls under its minimum (4.5:1 for text, 3:1 for a graphic that carries meaning). 147 pairs are declared and listed here with their computed ratios.
 
 | Pair | Use | Minimum | Light | Dark | High contrast |
 |---|---|---|---|---|---|
@@ -586,48 +597,48 @@ CI computes the WCAG 2.2 ratio of each pair below from the tokens, in all three 
 | `--text-secondary` on `--color-surface-900` | Body, label, hint and muted text on the canvas, a panel and a raised surface | 4.5:1 | 6.03:1 | 10.07:1 | 18.76:1 |
 | `--text-secondary` on `--color-surface-800` | Body, label, hint and muted text on the canvas, a panel and a raised surface | 4.5:1 | 6.87:1 | 9.41:1 | 17.89:1 |
 | `--text-secondary` on `--color-surface-700` | Body, label, hint and muted text on the canvas, a panel and a raised surface | 4.5:1 | 7.21:1 | 8.61:1 | 16.87:1 |
-| `--text-tertiary` on `--color-surface-900` | Body, label, hint and muted text on the canvas, a panel and a raised surface | 4.5:1 | 4.52:1 | 6.48:1 | 16.67:1 |
-| `--text-tertiary` on `--color-surface-800` | Body, label, hint and muted text on the canvas, a panel and a raised surface | 4.5:1 | 5.15:1 | 6.06:1 | 15.90:1 |
-| `--text-tertiary` on `--color-surface-700` | Body, label, hint and muted text on the canvas, a panel and a raised surface | 4.5:1 | 5.40:1 | 5.54:1 | 14.99:1 |
-| `--text-muted` on `--color-surface-900` | Body, label, hint and muted text on the canvas, a panel and a raised surface | 4.5:1 | 4.52:1 | 6.48:1 | 14.59:1 |
-| `--text-muted` on `--color-surface-800` | Body, label, hint and muted text on the canvas, a panel and a raised surface | 4.5:1 | 5.15:1 | 6.06:1 | 13.92:1 |
-| `--text-muted` on `--color-surface-700` | Body, label, hint and muted text on the canvas, a panel and a raised surface | 4.5:1 | 5.40:1 | 5.54:1 | 13.12:1 |
+| `--text-tertiary` on `--color-surface-900` | Body, label, hint and muted text on the canvas, a panel and a raised surface | 4.5:1 | 5.17:1 | 6.48:1 | 16.67:1 |
+| `--text-tertiary` on `--color-surface-800` | Body, label, hint and muted text on the canvas, a panel and a raised surface | 4.5:1 | 5.89:1 | 6.06:1 | 15.90:1 |
+| `--text-tertiary` on `--color-surface-700` | Body, label, hint and muted text on the canvas, a panel and a raised surface | 4.5:1 | 6.19:1 | 5.54:1 | 14.99:1 |
+| `--text-muted` on `--color-surface-900` | Body, label, hint and muted text on the canvas, a panel and a raised surface | 4.5:1 | 5.17:1 | 6.48:1 | 14.59:1 |
+| `--text-muted` on `--color-surface-800` | Body, label, hint and muted text on the canvas, a panel and a raised surface | 4.5:1 | 5.89:1 | 6.06:1 | 13.92:1 |
+| `--text-muted` on `--color-surface-700` | Body, label, hint and muted text on the canvas, a panel and a raised surface | 4.5:1 | 6.19:1 | 5.54:1 | 13.12:1 |
 | `--color-accent-blue` on `--color-surface-900` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 5.78:1 | 6.94:1 | 11.09:1 |
 | `--color-accent-blue` on `--color-surface-800` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 6.59:1 | 6.48:1 | 10.58:1 |
 | `--color-accent-blue` on `--color-surface-700` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 6.91:1 | 5.93:1 | 9.97:1 |
-| `--color-accent-green` on `--color-surface-900` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 4.92:1 | 8.89:1 | 16.64:1 |
-| `--color-accent-green` on `--color-surface-800` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 5.60:1 | 8.31:1 | 15.87:1 |
-| `--color-accent-green` on `--color-surface-700` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 5.88:1 | 7.60:1 | 14.96:1 |
-| `--color-accent-yellow` on `--color-surface-900` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 5.05:1 | 8.92:1 | 16.23:1 |
-| `--color-accent-yellow` on `--color-surface-800` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 5.76:1 | 8.34:1 | 15.48:1 |
-| `--color-accent-yellow` on `--color-surface-700` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 6.04:1 | 7.63:1 | 14.60:1 |
-| `--color-accent-red` on `--color-surface-900` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 5.52:1 | 6.17:1 | 9.85:1 |
-| `--color-accent-red` on `--color-surface-800` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 6.29:1 | 5.77:1 | 9.39:1 |
-| `--color-accent-red` on `--color-surface-700` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 6.60:1 | 5.28:1 | 8.85:1 |
-| `--color-accent-purple` on `--color-surface-900` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 5.07:1 | 8.55:1 | 11.98:1 |
-| `--color-accent-purple` on `--color-surface-800` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 5.78:1 | 7.99:1 | 11.43:1 |
-| `--color-accent-purple` on `--color-surface-700` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 6.07:1 | 7.31:1 | 10.77:1 |
+| `--color-accent-green` on `--color-surface-900` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 5.41:1 | 8.89:1 | 16.64:1 |
+| `--color-accent-green` on `--color-surface-800` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 6.16:1 | 8.31:1 | 15.87:1 |
+| `--color-accent-green` on `--color-surface-700` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 6.46:1 | 7.60:1 | 14.96:1 |
+| `--color-accent-yellow` on `--color-surface-900` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 5.48:1 | 8.92:1 | 16.23:1 |
+| `--color-accent-yellow` on `--color-surface-800` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 6.25:1 | 8.34:1 | 15.48:1 |
+| `--color-accent-yellow` on `--color-surface-700` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 6.56:1 | 7.63:1 | 14.60:1 |
+| `--color-accent-red` on `--color-surface-900` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 5.52:1 | 6.61:1 | 9.85:1 |
+| `--color-accent-red` on `--color-surface-800` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 6.29:1 | 6.18:1 | 9.39:1 |
+| `--color-accent-red` on `--color-surface-700` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 6.60:1 | 5.66:1 | 8.85:1 |
+| `--color-accent-purple` on `--color-surface-900` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 5.55:1 | 8.55:1 | 11.98:1 |
+| `--color-accent-purple` on `--color-surface-800` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 6.33:1 | 7.99:1 | 11.43:1 |
+| `--color-accent-purple` on `--color-surface-700` | Accent text and icons on the canvas, a panel and a raised surface | 4.5:1 | 6.64:1 | 7.31:1 | 10.77:1 |
 | `--color-on-accent` on `--color-accent-blue` | Text on a solid accent fill | 4.5:1 | 6.91:1 | 6.94:1 | 11.09:1 |
-| `--color-on-accent` on `--color-accent-green` | Text on a solid accent fill | 4.5:1 | 5.88:1 | 8.89:1 | 16.64:1 |
-| `--color-on-accent` on `--color-accent-yellow` | Text on a solid accent fill | 4.5:1 | 6.04:1 | 8.92:1 | 16.23:1 |
-| `--color-on-accent` on `--color-accent-red` | Text on a solid accent fill | 4.5:1 | 6.60:1 | 6.17:1 | 9.85:1 |
-| `--color-on-accent` on `--color-accent-purple` | Text on a solid accent fill | 4.5:1 | 6.07:1 | 8.55:1 | 11.98:1 |
+| `--color-on-accent` on `--color-accent-green` | Text on a solid accent fill | 4.5:1 | 6.46:1 | 8.89:1 | 16.64:1 |
+| `--color-on-accent` on `--color-accent-yellow` | Text on a solid accent fill | 4.5:1 | 6.56:1 | 8.92:1 | 16.23:1 |
+| `--color-on-accent` on `--color-accent-red` | Text on a solid accent fill | 4.5:1 | 6.60:1 | 6.61:1 | 9.85:1 |
+| `--color-on-accent` on `--color-accent-purple` | Text on a solid accent fill | 4.5:1 | 6.64:1 | 8.55:1 | 11.98:1 |
 | `--color-on-accent` on `--button-primary-bg-hover` | Label of a primary or destructive button under the pointer | 4.5:1 | 7.94:1 | 7.85:1 | 12.16:1 |
-| `--color-on-accent` on `--button-danger-bg-hover` | Label of a primary or destructive button under the pointer | 4.5:1 | 7.77:1 | 7.01:1 | 11.04:1 |
+| `--color-on-accent` on `--button-danger-bg-hover` | Label of a primary or destructive button under the pointer | 4.5:1 | 7.77:1 | 7.44:1 | 11.04:1 |
 | `--button-fg` on `--button-bg` | Label of a secondary button | 4.5:1 | 16.36:1 | 13.02:1 | 18.88:1 |
 | `--button-fg` on `--button-bg-hover` | Label of a secondary button under the pointer | 4.5:1 | 12.89:1 | 9.29:1 | 13.66:1 |
 | `--button-fg` on `--button-bg-active` | Label of a secondary button while pressed | 4.5:1 | 10.85:1 | 7.24:1 | 10.27:1 |
 | `--button-ghost-fg` on `--color-surface-800` | Label or icon of a button with no fill | 4.5:1 | 6.87:1 | 9.41:1 | 17.89:1 |
 | `--button-ghost-fg` on `--button-ghost-bg-hover` over `--color-surface-800` | Label of a button with no fill under the pointer | 4.5:1 | 5.42:1 | 6.79:1 | 13.58:1 |
 | `--input-fg` on `--input-bg` | Text in a field | 4.5:1 | 16.36:1 | 13.02:1 | 18.88:1 |
-| `--input-placeholder` on `--input-bg` | Placeholder text in a field | 4.5:1 | 5.40:1 | 5.54:1 | 14.99:1 |
+| `--input-placeholder` on `--input-bg` | Placeholder text in a field | 4.5:1 | 6.19:1 | 5.54:1 | 14.99:1 |
 | `--label-fg` on `--color-surface-800` | Field label on a panel | 4.5:1 | 6.87:1 | 9.41:1 | 17.89:1 |
-| `--hint-fg` on `--color-surface-800` | Field hint on a panel | 4.5:1 | 5.15:1 | 6.06:1 | 15.90:1 |
-| `--input-invalid` on `--color-surface-800` | Validation message on a panel | 4.5:1 | 6.29:1 | 5.77:1 | 9.39:1 |
-| `--input-border` on `--color-surface-800` | Boundary of a field, a checkbox or a switch | 3:1 | 5.15:1 | 6.06:1 | 15.90:1 |
-| `--input-border` on `--color-surface-700` | Boundary of a field, a checkbox or a switch | 3:1 | 5.40:1 | 5.54:1 | 14.99:1 |
-| `--check-border` on `--color-surface-800` | Boundary of a field, a checkbox or a switch | 3:1 | 5.15:1 | 6.06:1 | 15.90:1 |
-| `--check-border` on `--color-surface-700` | Boundary of a field, a checkbox or a switch | 3:1 | 5.40:1 | 5.54:1 | 14.99:1 |
+| `--hint-fg` on `--color-surface-800` | Field hint on a panel | 4.5:1 | 5.89:1 | 6.06:1 | 15.90:1 |
+| `--input-invalid` on `--color-surface-800` | Validation message on a panel | 4.5:1 | 6.29:1 | 6.18:1 | 9.39:1 |
+| `--input-border` on `--color-surface-800` | Boundary of a field, a checkbox or a switch | 3:1 | 5.89:1 | 6.06:1 | 15.90:1 |
+| `--input-border` on `--color-surface-700` | Boundary of a field, a checkbox or a switch | 3:1 | 6.19:1 | 5.54:1 | 14.99:1 |
+| `--check-border` on `--color-surface-800` | Boundary of a field, a checkbox or a switch | 3:1 | 5.89:1 | 6.06:1 | 15.90:1 |
+| `--check-border` on `--color-surface-700` | Boundary of a field, a checkbox or a switch | 3:1 | 6.19:1 | 5.54:1 | 14.99:1 |
 | `--check-fg-checked` on `--check-bg-checked` | Mark on a checked box | 4.5:1 | 6.91:1 | 6.94:1 | 11.09:1 |
 | `--tab-fg` on `--color-surface-800` | An unselected tab | 4.5:1 | 6.87:1 | 9.41:1 | 17.89:1 |
 | `--tab-fg-selected` on `--color-surface-800` | The selected tab | 4.5:1 | 15.59:1 | 14.23:1 | 20.03:1 |
@@ -635,77 +646,97 @@ CI computes the WCAG 2.2 ratio of each pair below from the tokens, in all three 
 | `--tab-indicator` on `--color-surface-800` | The rule under the selected tab | 3:1 | 6.59:1 | 6.48:1 | 10.58:1 |
 | `--overlay-fg` on `--overlay-bg` | Text of a dialog, a menu or a popover | 4.5:1 | 15.59:1 | 14.23:1 | 20.03:1 |
 | `--overlay-fg` on `--menu-item-bg-active` over `--overlay-bg` | The active item of a menu | 4.5:1 | 11.17:1 | 9.65:1 | 13.36:1 |
-| `--color-accent-red` on `--menu-item-bg-active-danger` over `--overlay-bg` | A destructive item of a menu when it is active | 4.5:1 | 5.08:1 | 4.77:1 | 7.70:1 |
-| `--color-accent-red` on `--overlay-bg` | A destructive item of a menu | 4.5:1 | 6.29:1 | 5.77:1 | 9.39:1 |
+| `--color-accent-red` on `--menu-item-bg-active-danger` over `--overlay-bg` | A destructive item of a menu when it is active | 4.5:1 | 5.08:1 | 5.04:1 | 7.70:1 |
+| `--color-accent-red` on `--overlay-bg` | A destructive item of a menu | 4.5:1 | 6.29:1 | 6.18:1 | 9.39:1 |
 | `--tooltip-fg` on `--tooltip-bg` | Text of a tooltip | 4.5:1 | 13.68:1 | 15.23:1 | 21.00:1 |
 | `--tone-info-fg` on `--tone-info-bg` over `--color-surface-800` | A info badge on a panel | 4.5:1 | 5.35:1 | 5.13:1 | 8.53:1 |
-| `--tone-success-fg` on `--tone-success-bg` over `--color-surface-800` | A success badge on a panel | 4.5:1 | 4.60:1 | 6.31:1 | 11.92:1 |
-| `--tone-warning-fg` on `--tone-warning-bg` over `--color-surface-800` | A warning badge on a panel | 4.5:1 | 4.73:1 | 6.38:1 | 11.64:1 |
-| `--tone-danger-fg` on `--tone-danger-bg` over `--color-surface-800` | A danger badge on a panel | 4.5:1 | 5.08:1 | 4.77:1 | 7.70:1 |
-| `--tone-neutral-fg` on `--tone-neutral-bg` over `--color-surface-800` | A neutral badge on a panel | 4.5:1 | 5.74:1 | 7.53:1 | 13.35:1 |
-| `--signal-true-fg` on `--signal-true-bg` over `--color-surface-800` | A true value in a chip, the Watch table and the status bar | 4.5:1 | 4.60:1 | 6.31:1 | 11.92:1 |
-| `--signal-true-border` on `--color-surface-800` | Chip border of a true value | 3:1 | 5.60:1 | 8.31:1 | 15.87:1 |
-| `--signal-false-fg` on `--signal-false-bg` over `--color-surface-800` | A false value in a chip, the Watch table and the status bar | 4.5:1 | 5.74:1 | 7.53:1 | 13.35:1 |
-| `--signal-false-border` on `--color-surface-800` | Chip border of a false value | 3:1 | 5.15:1 | 6.06:1 | 15.90:1 |
+| `--tone-success-fg` on `--tone-success-bg` over `--color-surface-800` | A success badge on a panel | 4.5:1 | 5.02:1 | 6.31:1 | 11.92:1 |
+| `--tone-warning-fg` on `--tone-warning-bg` over `--color-surface-800` | A warning badge on a panel | 4.5:1 | 5.10:1 | 6.38:1 | 11.64:1 |
+| `--tone-danger-fg` on `--tone-danger-bg` over `--color-surface-800` | A danger badge on a panel | 4.5:1 | 5.08:1 | 5.04:1 | 7.70:1 |
+| `--tone-neutral-fg` on `--tone-neutral-bg` over `--color-surface-800` | A neutral badge on a panel | 4.5:1 | 5.67:1 | 7.53:1 | 13.35:1 |
+| `--signal-true-fg` on `--signal-true-bg` over `--color-surface-800` | A true value in a chip, the Watch table and the status bar | 4.5:1 | 5.02:1 | 6.31:1 | 11.92:1 |
+| `--signal-true-border` on `--color-surface-800` | Chip border of a true value | 3:1 | 6.16:1 | 8.31:1 | 15.87:1 |
+| `--signal-false-fg` on `--signal-false-bg` over `--color-surface-800` | A false value in a chip, the Watch table and the status bar | 4.5:1 | 5.67:1 | 7.53:1 | 13.35:1 |
+| `--signal-false-border` on `--color-surface-800` | Chip border of a false value | 3:1 | 5.89:1 | 6.06:1 | 15.90:1 |
 | `--signal-unknown-fg` on `--signal-unknown-bg` over `--color-surface-800` | A unknown value in a chip, the Watch table and the status bar | 4.5:1 | 6.87:1 | 9.41:1 | 17.89:1 |
-| `--signal-unknown-border` on `--color-surface-800` | Chip border of a unknown value | 3:1 | 5.15:1 | 6.06:1 | 15.90:1 |
-| `--signal-forced-fg` on `--signal-forced-bg` over `--color-surface-800` | A forced value in a chip, the Watch table and the status bar | 4.5:1 | 4.73:1 | 6.38:1 | 11.64:1 |
-| `--signal-forced-border` on `--color-surface-800` | Chip border of a forced value | 3:1 | 5.76:1 | 8.34:1 | 15.48:1 |
-| `--signal-fault-fg` on `--signal-fault-bg` over `--color-surface-800` | A fault value in a chip, the Watch table and the status bar | 4.5:1 | 5.08:1 | 4.77:1 | 7.70:1 |
-| `--signal-fault-border` on `--color-surface-800` | Chip border of a fault value | 3:1 | 6.29:1 | 5.77:1 | 9.39:1 |
+| `--signal-unknown-border` on `--color-surface-800` | Chip border of a unknown value | 3:1 | 5.89:1 | 6.06:1 | 15.90:1 |
+| `--signal-forced-fg` on `--signal-forced-bg` over `--color-surface-800` | A forced value in a chip, the Watch table and the status bar | 4.5:1 | 5.10:1 | 6.38:1 | 11.64:1 |
+| `--signal-forced-border` on `--color-surface-800` | Chip border of a forced value | 3:1 | 6.25:1 | 8.34:1 | 15.48:1 |
+| `--signal-fault-fg` on `--signal-fault-bg` over `--color-surface-800` | A fault value in a chip, the Watch table and the status bar | 4.5:1 | 5.08:1 | 5.04:1 | 7.70:1 |
+| `--signal-fault-border` on `--color-surface-800` | Chip border of a fault value | 3:1 | 6.29:1 | 6.18:1 | 9.39:1 |
 | `--signal-value-fg` on `--signal-value-bg` over `--color-surface-800` | A value value in a chip, the Watch table and the status bar | 4.5:1 | 5.35:1 | 5.13:1 | 8.53:1 |
 | `--signal-value-border` on `--color-surface-800` | Chip border of a value value | 3:1 | 6.59:1 | 6.48:1 | 10.58:1 |
-| `--visual-wire` on `--visual-canvas` | An idle wire on the visual editor canvas | 3:1 | 4.52:1 | 3.01:1 | 16.67:1 |
+| `--visual-wire` on `--visual-canvas` | An idle wire on the visual editor canvas | 3:1 | 5.17:1 | 3.62:1 | 16.67:1 |
 | `--text-primary` on `--visual-canvas` | Text and labels drawn in a visual editor | 4.5:1 | 13.68:1 | 15.23:1 | 21.00:1 |
 | `--text-secondary` on `--visual-canvas` | Text and labels drawn in a visual editor | 4.5:1 | 6.03:1 | 10.07:1 | 18.76:1 |
-| `--visual-muted` on `--visual-canvas` | Text and labels drawn in a visual editor | 4.5:1 | 4.52:1 | 6.48:1 | 16.67:1 |
-| `--signal-true-fg` on `--visual-canvas` | A true value drawn on the canvas or on a node of a visual editor | 4.5:1 | 4.92:1 | 8.89:1 | 16.64:1 |
+| `--visual-muted` on `--visual-canvas` | Text and labels drawn in a visual editor | 4.5:1 | 5.17:1 | 6.48:1 | 16.67:1 |
+| `--signal-true-fg` on `--visual-canvas` | A true value drawn on the canvas or on a node of a visual editor | 4.5:1 | 5.41:1 | 8.89:1 | 16.64:1 |
 | `--signal-false-fg` on `--visual-canvas` | A false value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.03:1 | 10.07:1 | 18.76:1 |
 | `--signal-unknown-fg` on `--visual-canvas` | A unknown value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.03:1 | 10.07:1 | 18.76:1 |
-| `--signal-forced-fg` on `--visual-canvas` | A forced value drawn on the canvas or on a node of a visual editor | 4.5:1 | 5.05:1 | 8.92:1 | 16.23:1 |
-| `--signal-fault-fg` on `--visual-canvas` | A fault value drawn on the canvas or on a node of a visual editor | 4.5:1 | 5.52:1 | 6.17:1 | 9.85:1 |
+| `--signal-forced-fg` on `--visual-canvas` | A forced value drawn on the canvas or on a node of a visual editor | 4.5:1 | 5.48:1 | 8.92:1 | 16.23:1 |
+| `--signal-fault-fg` on `--visual-canvas` | A fault value drawn on the canvas or on a node of a visual editor | 4.5:1 | 5.52:1 | 6.61:1 | 9.85:1 |
 | `--signal-value-fg` on `--visual-canvas` | A value value drawn on the canvas or on a node of a visual editor | 4.5:1 | 5.78:1 | 6.94:1 | 11.09:1 |
-| `--signal-true-border` on `--visual-canvas` | A wire that carries power or a TRUE value, and the border of an active step | 3:1 | 4.92:1 | 8.89:1 | 16.64:1 |
+| `--signal-true-border` on `--visual-canvas` | A wire that carries power or a TRUE value, and the border of an active step | 3:1 | 5.41:1 | 8.89:1 | 16.64:1 |
 | `--text-primary` on `--visual-node` | Text and labels drawn in a visual editor | 4.5:1 | 16.36:1 | 13.02:1 | 18.88:1 |
 | `--text-secondary` on `--visual-node` | Text and labels drawn in a visual editor | 4.5:1 | 7.21:1 | 8.61:1 | 16.87:1 |
-| `--visual-muted` on `--visual-node` | Text and labels drawn in a visual editor | 4.5:1 | 5.40:1 | 5.54:1 | 14.99:1 |
-| `--signal-true-fg` on `--visual-node` | A true value drawn on the canvas or on a node of a visual editor | 4.5:1 | 5.88:1 | 7.60:1 | 14.96:1 |
+| `--visual-muted` on `--visual-node` | Text and labels drawn in a visual editor | 4.5:1 | 6.19:1 | 5.54:1 | 14.99:1 |
+| `--signal-true-fg` on `--visual-node` | A true value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.46:1 | 7.60:1 | 14.96:1 |
 | `--signal-false-fg` on `--visual-node` | A false value drawn on the canvas or on a node of a visual editor | 4.5:1 | 7.21:1 | 8.61:1 | 16.87:1 |
 | `--signal-unknown-fg` on `--visual-node` | A unknown value drawn on the canvas or on a node of a visual editor | 4.5:1 | 7.21:1 | 8.61:1 | 16.87:1 |
-| `--signal-forced-fg` on `--visual-node` | A forced value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.04:1 | 7.63:1 | 14.60:1 |
-| `--signal-fault-fg` on `--visual-node` | A fault value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.60:1 | 5.28:1 | 8.85:1 |
+| `--signal-forced-fg` on `--visual-node` | A forced value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.56:1 | 7.63:1 | 14.60:1 |
+| `--signal-fault-fg` on `--visual-node` | A fault value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.60:1 | 5.66:1 | 8.85:1 |
 | `--signal-value-fg` on `--visual-node` | A value value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.91:1 | 5.93:1 | 9.97:1 |
-| `--signal-true-border` on `--visual-node` | A wire that carries power or a TRUE value, and the border of an active step | 3:1 | 5.88:1 | 7.60:1 | 14.96:1 |
+| `--signal-true-border` on `--visual-node` | A wire that carries power or a TRUE value, and the border of an active step | 3:1 | 6.46:1 | 7.60:1 | 14.96:1 |
 | `--text-primary` on `--visual-panel` | Text and labels drawn in a visual editor | 4.5:1 | 15.59:1 | 14.23:1 | 20.03:1 |
 | `--text-secondary` on `--visual-panel` | Text and labels drawn in a visual editor | 4.5:1 | 6.87:1 | 9.41:1 | 17.89:1 |
-| `--visual-muted` on `--visual-panel` | Text and labels drawn in a visual editor | 4.5:1 | 5.15:1 | 6.06:1 | 15.90:1 |
-| `--signal-true-fg` on `--visual-panel` | A true value drawn on the canvas or on a node of a visual editor | 4.5:1 | 5.60:1 | 8.31:1 | 15.87:1 |
+| `--visual-muted` on `--visual-panel` | Text and labels drawn in a visual editor | 4.5:1 | 5.89:1 | 6.06:1 | 15.90:1 |
+| `--signal-true-fg` on `--visual-panel` | A true value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.16:1 | 8.31:1 | 15.87:1 |
 | `--signal-false-fg` on `--visual-panel` | A false value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.87:1 | 9.41:1 | 17.89:1 |
 | `--signal-unknown-fg` on `--visual-panel` | A unknown value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.87:1 | 9.41:1 | 17.89:1 |
-| `--signal-forced-fg` on `--visual-panel` | A forced value drawn on the canvas or on a node of a visual editor | 4.5:1 | 5.76:1 | 8.34:1 | 15.48:1 |
-| `--signal-fault-fg` on `--visual-panel` | A fault value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.29:1 | 5.77:1 | 9.39:1 |
+| `--signal-forced-fg` on `--visual-panel` | A forced value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.25:1 | 8.34:1 | 15.48:1 |
+| `--signal-fault-fg` on `--visual-panel` | A fault value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.29:1 | 6.18:1 | 9.39:1 |
 | `--signal-value-fg` on `--visual-panel` | A value value drawn on the canvas or on a node of a visual editor | 4.5:1 | 6.59:1 | 6.48:1 | 10.58:1 |
-| `--signal-true-border` on `--visual-panel` | A wire that carries power or a TRUE value, and the border of an active step | 3:1 | 5.60:1 | 8.31:1 | 15.87:1 |
+| `--signal-true-border` on `--visual-panel` | A wire that carries power or a TRUE value, and the border of an active step | 3:1 | 6.16:1 | 8.31:1 | 15.87:1 |
+| `--color-status-running` on `--color-surface-900` | A runtime or connection status in the status bar and the toolbar | 4.5:1 | 5.41:1 | 8.89:1 | 16.64:1 |
+| `--color-status-running` on `--color-surface-800` | A runtime or connection status in the status bar and the toolbar | 4.5:1 | 6.16:1 | 8.31:1 | 15.87:1 |
+| `--color-status-stopped` on `--color-surface-900` | A runtime or connection status in the status bar and the toolbar | 4.5:1 | 5.17:1 | 6.48:1 | 16.67:1 |
+| `--color-status-stopped` on `--color-surface-800` | A runtime or connection status in the status bar and the toolbar | 4.5:1 | 5.89:1 | 6.06:1 | 15.90:1 |
+| `--color-status-warning` on `--color-surface-900` | A runtime or connection status in the status bar and the toolbar | 4.5:1 | 5.48:1 | 8.92:1 | 16.23:1 |
+| `--color-status-warning` on `--color-surface-800` | A runtime or connection status in the status bar and the toolbar | 4.5:1 | 6.25:1 | 8.34:1 | 15.48:1 |
+| `--color-status-connected` on `--color-surface-900` | A runtime or connection status in the status bar and the toolbar | 4.5:1 | 5.78:1 | 6.94:1 | 11.09:1 |
+| `--color-status-connected` on `--color-surface-800` | A runtime or connection status in the status bar and the toolbar | 4.5:1 | 6.59:1 | 6.48:1 | 10.58:1 |
+| `--color-status-disconnected` on `--color-surface-900` | A runtime or connection status in the status bar and the toolbar | 4.5:1 | 5.17:1 | 6.48:1 | 16.67:1 |
+| `--color-status-disconnected` on `--color-surface-800` | A runtime or connection status in the status bar and the toolbar | 4.5:1 | 5.89:1 | 6.06:1 | 15.90:1 |
 | `--focus-ring-color` on `--color-surface-900` | The focus indicator on the canvas | 3:1 | 5.78:1 | 6.94:1 | 11.09:1 |
 | `--focus-ring-color` on `--color-surface-800` | The focus indicator on a panel | 3:1 | 6.59:1 | 6.48:1 | 10.58:1 |
 | `--focus-ring-color` on `--color-surface-700` | The focus indicator on a raised surface | 3:1 | 6.91:1 | 5.93:1 | 9.97:1 |
-| `--separator-rule` on `--color-surface-900` | The rule inside a resize handle | 3:1 | 4.52:1 | 6.48:1 | 16.67:1 |
-| `--separator-rule` on `--color-surface-800` | The rule inside a resize handle | 3:1 | 5.15:1 | 6.06:1 | 15.90:1 |
+| `--separator-rule` on `--color-surface-900` | The rule inside a resize handle | 3:1 | 5.17:1 | 6.48:1 | 16.67:1 |
+| `--separator-rule` on `--color-surface-800` | The rule inside a resize handle | 3:1 | 5.89:1 | 6.06:1 | 15.90:1 |
 | `--editor-fg` on `--editor-bg` | Code and the active line number | 4.5:1 | 15.59:1 | 14.23:1 | 20.03:1 |
 | `--editor-line-number-active` on `--editor-bg` | Code and the active line number | 4.5:1 | 15.59:1 | 14.23:1 | 20.03:1 |
-| `--editor-line-number` on `--editor-bg` | Line numbers | 4.5:1 | 5.15:1 | 6.06:1 | 15.90:1 |
-| `--syntax-comment` on `--editor-bg` | Syntax colour on the code editor background | 4.5:1 | 5.15:1 | 6.06:1 | 15.90:1 |
+| `--editor-line-number` on `--editor-bg` | Line numbers | 4.5:1 | 5.89:1 | 6.06:1 | 15.90:1 |
+| `--syntax-comment` on `--editor-bg` | Syntax colour on the code editor background | 4.5:1 | 5.89:1 | 6.06:1 | 15.90:1 |
+| `--syntax-comment` on `--editor-line-highlight` over `--editor-bg` | Syntax colour on the line of the cursor | 4.5:1 | 5.01:1 | 5.02:1 | 12.55:1 |
 | `--syntax-keyword` on `--editor-bg` | Syntax colour on the code editor background | 4.5:1 | 6.59:1 | 6.48:1 | 10.58:1 |
+| `--syntax-keyword` on `--editor-line-highlight` over `--editor-bg` | Syntax colour on the line of the cursor | 4.5:1 | 5.59:1 | 5.37:1 | 8.35:1 |
 | `--syntax-type` on `--editor-bg` | Syntax colour on the code editor background | 4.5:1 | 5.98:1 | 7.75:1 | 14.90:1 |
-| `--syntax-number` on `--editor-bg` | Syntax colour on the code editor background | 4.5:1 | 5.76:1 | 8.34:1 | 15.48:1 |
-| `--syntax-string` on `--editor-bg` | Syntax colour on the code editor background | 4.5:1 | 5.78:1 | 7.99:1 | 11.43:1 |
-| `--syntax-address` on `--editor-bg` | Syntax colour on the code editor background | 4.5:1 | 5.76:1 | 8.34:1 | 15.48:1 |
-| `--syntax-label` on `--editor-bg` | Syntax colour on the code editor background | 4.5:1 | 5.78:1 | 7.99:1 | 11.43:1 |
+| `--syntax-type` on `--editor-line-highlight` over `--editor-bg` | Syntax colour on the line of the cursor | 4.5:1 | 5.08:1 | 6.43:1 | 11.76:1 |
+| `--syntax-number` on `--editor-bg` | Syntax colour on the code editor background | 4.5:1 | 6.25:1 | 8.34:1 | 15.48:1 |
+| `--syntax-number` on `--editor-line-highlight` over `--editor-bg` | Syntax colour on the line of the cursor | 4.5:1 | 5.31:1 | 6.91:1 | 12.22:1 |
+| `--syntax-string` on `--editor-bg` | Syntax colour on the code editor background | 4.5:1 | 6.33:1 | 7.99:1 | 11.43:1 |
+| `--syntax-string` on `--editor-line-highlight` over `--editor-bg` | Syntax colour on the line of the cursor | 4.5:1 | 5.37:1 | 6.62:1 | 9.02:1 |
+| `--syntax-address` on `--editor-bg` | Syntax colour on the code editor background | 4.5:1 | 6.25:1 | 8.34:1 | 15.48:1 |
+| `--syntax-address` on `--editor-line-highlight` over `--editor-bg` | Syntax colour on the line of the cursor | 4.5:1 | 5.31:1 | 6.91:1 | 12.22:1 |
+| `--syntax-label` on `--editor-bg` | Syntax colour on the code editor background | 4.5:1 | 6.33:1 | 7.99:1 | 11.43:1 |
+| `--syntax-label` on `--editor-line-highlight` over `--editor-bg` | Syntax colour on the line of the cursor | 4.5:1 | 5.37:1 | 6.62:1 | 9.02:1 |
 | `--syntax-operator` on `--editor-bg` | Syntax colour on the code editor background | 4.5:1 | 6.87:1 | 9.41:1 | 17.89:1 |
+| `--syntax-operator` on `--editor-line-highlight` over `--editor-bg` | Syntax colour on the line of the cursor | 4.5:1 | 5.83:1 | 7.80:1 | 14.12:1 |
 | `--syntax-bracket` on `--editor-bg` | Syntax colour on the code editor background | 4.5:1 | 15.59:1 | 14.23:1 | 20.03:1 |
+| `--syntax-bracket` on `--editor-line-highlight` over `--editor-bg` | Syntax colour on the line of the cursor | 4.5:1 | 13.24:1 | 11.80:1 | 15.81:1 |
+| `--editor-fg` on `--editor-line-highlight` over `--editor-bg` | Code on the line of the cursor | 4.5:1 | 13.24:1 | 11.80:1 | 15.81:1 |
 | `--editor-fg` on `--editor-selection-bg` over `--editor-bg` | Selected code | 4.5:1 | 10.13:1 | 7.87:1 | 5.35:1 |
-| `--debug-breakpoint` on `--editor-bg` | A breakpoint dot and the marker of the paused line in the editor margin | 3:1 | 6.29:1 | 5.77:1 | 9.39:1 |
-| `--debug-line-edge` on `--editor-bg` | A breakpoint dot and the marker of the paused line in the editor margin | 3:1 | 6.29:1 | 5.77:1 | 9.39:1 |
-| `--editor-fg` on `--debug-line-bg` over `--editor-bg` | Code on the line execution is paused on | 4.5:1 | 12.18:1 | 11.39:1 | 15.78:1 |
+| `--debug-breakpoint` on `--editor-bg` | A breakpoint dot and the marker of the paused line in the editor margin | 3:1 | 6.29:1 | 6.18:1 | 9.39:1 |
+| `--debug-line-edge` on `--editor-bg` | A breakpoint dot and the marker of the paused line in the editor margin | 3:1 | 6.29:1 | 6.18:1 | 9.39:1 |
+| `--editor-fg` on `--debug-line-bg` over `--editor-bg` | Code on the line execution is paused on | 4.5:1 | 12.18:1 | 11.21:1 | 15.78:1 |
 
 <!-- tokens:end -->
