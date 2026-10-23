@@ -195,9 +195,9 @@ async function show(cdp: Cdp, example: (typeof EXAMPLES)[number], locale: (typeo
   );
   if (text) {
     // The example opens with a comment block: show the program, not the licence-like header.
-    const { MONACO_MODULE_URL } = await import('./run-desktop-smoke');
+    const { MONACO_MODULE } = await import('./run-desktop-smoke');
     await cdp.evaluate(
-      `(async () => { const monaco = await import(${MONACO_MODULE_URL}); const editor = monaco.editor.getEditors()[0]; const line = ` +
+      `(async () => { const monaco = await ${MONACO_MODULE}; const editor = monaco.editor.getEditors()[0]; const line = ` +
         `editor.getModel().getValue().split('\\n').findIndex((row) => /^PROGRAM /.test(row)) + 1; editor.setScrollTop(0); ` +
         `editor.revealLineNearTop(line); })()`,
     );

@@ -26,7 +26,7 @@ import { resolveTokens, type ThemeId } from '../src/theme/tokens';
 import { auditMarkup } from '../src/ui/audit';
 import { compilerCompile } from '../src/cli/toolApi';
 import { NATIVE_PROGRAM_MAX_BYTES } from '../electron/security';
-import { assert, MONACO_MODULE_URL, packageRoot } from './run-desktop-smoke';
+import { assert, MONACO_MODULE, packageRoot } from './run-desktop-smoke';
 import { button, css, launchPackagedApp, menuItem, notPossible, tab, type App, type Target } from './journeyApp';
 import { domAuditExpression, type DomAuditResult } from './domAudit';
 import { attachEmulatedDevice } from './emulatedDevice';
@@ -100,9 +100,7 @@ const lessonButton = (title: string) =>
  * the editor shows and where things are.
  */
 const monacoEval = <T>(app: App, body: string) =>
-  app.eval<T>(
-    `(async () => { const monaco = await import(${MONACO_MODULE_URL}); const editor = monaco.editor.getEditors()[0]; ${body} })()`,
-  );
+  app.eval<T>(`(async () => { const monaco = await ${MONACO_MODULE}; const editor = monaco.editor.getEditors()[0]; ${body} })()`);
 const editorText = (app: App) => monacoEval<string>(app, 'return editor?.getModel()?.getValue() ?? "";');
 /** True when the text declares `PROGRAM <name>`: an example may open with a comment block, so its first characters say nothing. */
 const hasProgram = (text: string, name: string) => new RegExp(`^PROGRAM ${name}\\b`, 'm').test(text);

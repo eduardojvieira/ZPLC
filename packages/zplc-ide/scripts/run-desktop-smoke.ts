@@ -226,7 +226,11 @@ class Cdp {
     };
   }
   async evaluate(expression: string): Promise<unknown> {
-    const response = (await this.command('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true })) as {
+    const response = (await this.command('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }).catch(
+      (error: Error) => {
+        throw new Error(`${error.message} (evaluating ${expression.slice(0, 240)})`);
+      },
+    )) as {
       result?: { value?: unknown };
       exceptionDetails?: { text?: string; exception?: { description?: string } };
     };
@@ -240,15 +244,17 @@ class Cdp {
 }
 
 /**
- * A page expression for the URL of the page's own Monaco module, so that `import()` gives the instance the editors use.
- * The development host serves the editor core that Studio imports (IDE-015) pre-bundled under `?v=<hash>`. The page loads
- * hundreds of modules and its resource-timing buffer keeps the first 250, which no longer include a module that loads on
- * use, so the hash is read from a pre-bundled dependency that is in it (React is the first).
+ * A page expression for `{ editor }`, the editor namespace of the Monaco instance the editors use. It comes from the
+ * application's own Monaco runtime, by its source path, as the store does. The pre-bundled Monaco file is not a stable
+ * address: its `?v=` hash changes whenever the development server optimizes dependencies, and a guessed hash failed the
+ * import, or loaded a second Monaco, on a cold cache.
+ *
+ * The import is kept on the page (`pageModule`): an evaluation awaiting a fresh `import()` that nothing else holds can lose
+ * it to the garbage collector, and the DevTools protocol then answers "Promise was collected".
  */
-export const MONACO_MODULE_URL =
-  `(() => { const version = performance.getEntriesByType('resource').map((entry) => ` +
-  `/\\/node_modules\\/\\.vite\\/deps\\/[^?]+\\.js\\?v=(\\w+)/.exec(entry.name)?.[1]).find(Boolean); return ` +
-  `'/node_modules/.vite/deps/monaco-editor_esm_vs_editor_edcore__main.js' + (version ? '?v=' + version : ''); })()`;
+const pageModule = (name: string, path: string) => `(globalThis.${name} ??= import('${path}'))`;
+export const MONACO_MODULE =
+  `${pageModule('__zplcSmokeMonaco', '/src/components/monacoRuntime.ts')}.then(({ monacoEditor }) => ({ ` + `editor: monacoEditor }))`;
 
 function click(text: string): string {
   return (
@@ -264,15 +270,14 @@ async function press(cdp: Cdp, key: string, code = key): Promise<void> {
 }
 const storeEval = (cdp: Cdp, body: string): Promise<unknown> =>
   cdp.evaluate(
-    `import('/src/store/useIDEStore.ts').then(async ({ useIDEStore }) => { const state = () => useIDEStore.getState(); ${body} })`,
+    `${pageModule('__zplcSmokeStore', '/src/store/useIDEStore.ts')}.then(async ({ useIDEStore }) => { ` +
+      `const state = () => useIDEStore.getState(); ${body} })`,
   );
 const fileContent = (cdp: Cdp, id: string) =>
   storeEval(cdp, `return state().loadedFiles.get(${JSON.stringify(id)})?.content;`) as Promise<string | undefined>;
 /** Runs `body` with the page's own Monaco module instance, its first editor and its models in scope. */
 const monacoEval = (cdp: Cdp, body: string): Promise<unknown> =>
-  cdp.evaluate(
-    `(async () => { const monaco = await import(${MONACO_MODULE_URL}); const editor = monaco.editor.getEditors()[0]; ${body} })()`,
-  );
+  cdp.evaluate(`(async () => { const monaco = await ${MONACO_MODULE}; const editor = monaco.editor.getEditors()[0]; ${body} })()`);
 async function showFile(cdp: Cdp, id: string): Promise<void> {
   assert(
     (await cdp.evaluate(
