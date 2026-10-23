@@ -2696,6 +2696,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"49 The migrated screens read in Spanish, with no raw catalog key, no English left over and no clipped control at 1366 by 768","partial":true}
   ],
   "UX-030": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/operationalStatusPresentation.es.test.ts","test":"UX-030 the status bar and the block groups in Spanish"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"UX-030 the Spanish of the whole application uses the glossary terms of the course"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/productNameMessages.test.ts","test":"UX-030 DOC-017 the messages that reach a person name the product ZPLC"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/productNameMessages.test.ts","test":"UX-030 the browser capability profile says which process image ZPLC reads and writes"},
