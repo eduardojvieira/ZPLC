@@ -2732,6 +2732,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"UX-033 aligning and distributing steps and transitions from the keyboard"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"UX-033 aligns the selected steps and transitions in one gesture, and says how many"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"UX-033 refuses to distribute two elements, with the reason, and changes nothing"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/viewBounds.test.ts","test":"UX-033 fits a diagram above the minimap of the canvas, whatever its height"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/viewBounds.test.ts","test":"UX-033 the zoom range of the diagram editors"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51c The visual editors fit to the view, zoom wide, and open context menus from the keyboard","partial":true}
   ],
