@@ -3,6 +3,29 @@ import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync }
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
+/** What the stage copies from the repository: everything the compiler, the host runtime and the IDE build read. */
+const COPY_TARGETS = [
+  { path: 'package.json', directory: false },
+  { path: 'bun.lock', directory: false },
+  { path: 'docs/package.json', directory: false },
+  { path: 'packages/zplc-hil/package.json', directory: false },
+  { path: 'packages/zplc-compiler', directory: true },
+  { path: 'packages/zplc-ide', directory: true },
+  { path: 'packages/zplc-ide/build', directory: true },
+  { path: 'firmware/app/boards', directory: true },
+  // the Modbus and MQTT handlers of the simulator's communication (COM-009) are the firmware's own sources
+  { path: 'firmware/app/src', directory: true },
+  { path: 'firmware/app/include', directory: true },
+  { path: 'firmware/lib/zplc_core', directory: true },
+  { path: 'firmware/apps/posix_host', directory: true },
+  { path: 'examples', directory: true },
+  { path: 'scripts/release-version.ts', directory: false },
+  // the licence notices are generated while electron-builder packs (scripts/before-pack.mjs, REL-019)
+  { path: 'scripts/release', directory: true },
+];
+
+export const STAGED_PATHS = COPY_TARGETS.map((target) => target.path);
+
 function run(command, args, cwd, env = process.env) {
   execFileSync(command, args, {
     cwd,
@@ -75,27 +98,10 @@ function main() {
   const stagedIde = path.join(stagedRepo, 'packages/zplc-ide');
   const stagedDistElectron = path.join(stagedIde, 'dist-electron');
 
-  const copyTargets = [
-    { path: 'package.json', directory: false },
-    { path: 'bun.lock', directory: false },
-    { path: 'docs/package.json', directory: false },
-    { path: 'packages/zplc-hil/package.json', directory: false },
-    { path: 'packages/zplc-compiler', directory: true },
-    { path: 'packages/zplc-ide', directory: true },
-    { path: 'packages/zplc-ide/build', directory: true },
-    { path: 'firmware/app/boards', directory: true },
-    { path: 'firmware/lib/zplc_core', directory: true },
-    { path: 'firmware/apps/posix_host', directory: true },
-    { path: 'examples', directory: true },
-    { path: 'scripts/release-version.ts', directory: false },
-    // the licence notices are generated while electron-builder packs (scripts/before-pack.mjs, REL-019)
-    { path: 'scripts/release', directory: true },
-  ];
-
   try {
     mkdirSync(stagedRepo, { recursive: true });
 
-    for (const target of copyTargets) {
+    for (const target of COPY_TARGETS) {
       const source = path.join(repoRoot, target.path);
       const destination = path.join(stagedRepo, target.path);
       copyPath(source, destination, repoRoot, target.directory);
@@ -151,4 +157,4 @@ function main() {
   }
 }
 
-main();
+if (import.meta.main) main();
