@@ -51,8 +51,9 @@ const landingPageContent = {
         'simulator on your computer, and its desktop application edits, simulates and tests programs.',
     },
     hero: {
-      title: 'Open-source IEC 61131-3 PLC runtime and development environment on Zephyr RTOS.',
-      lead: 'Program, simulate, and verify deterministic IEC 61131-3 control logic.',
+      title: 'The open-source PLC you can port to any microcontroller.',
+      subtitle: 'Open-source IEC 61131-3 PLC runtime and development environment on Zephyr RTOS.',
+      lead: 'Start without a board: the desktop application runs your program in its built-in simulator.',
       download: 'Download',
       downloadHref: releasesUrl,
       start: 'Get started',
@@ -350,8 +351,9 @@ const landingPageContent = {
         'ejecuta como simulador en su equipo, y su aplicación de escritorio edita, simula y prueba programas.',
     },
     hero: {
-      title: 'Runtime y entorno de desarrollo de PLC IEC 61131-3, de código abierto, sobre Zephyr RTOS.',
-      lead: 'Programe, simule y verifique lógica de control IEC 61131-3 determinista.',
+      title: 'El PLC de código abierto que puede llevar a cualquier microcontrolador.',
+      subtitle: 'Runtime y entorno de desarrollo de PLC IEC 61131-3, de código abierto, sobre Zephyr RTOS.',
+      lead: 'Empiece sin placa: la aplicación de escritorio ejecuta su programa en el simulador incluido.',
       download: 'Descargar',
       downloadHref: releasesUrl,
       start: 'Primeros pasos',

@@ -61,11 +61,21 @@
   text-wrap: balance;
 }
 
+.heroSubtitle {
+  max-width: 38rem;
+  margin: clamp(1rem, 0.6rem + 1vw, 1.5rem) 0 0;
+  font-size: clamp(1.125rem, 0.95rem + 0.6vw, 1.5rem);
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--zplc-ink-2);
+  text-wrap: balance;
+}
+
 .heroGrid {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   gap: clamp(2rem, 1rem + 3vw, 4rem);
-  align-items: end;
+  align-items: start;
   margin-top: clamp(2rem, 1rem + 3vw, 3.5rem);
 }
 
@@ -1363,12 +1373,17 @@
 @media (prefers-reduced-motion: no-preference) {
   .brand,
   .heroTitle,
+  .heroSubtitle,
   .heroBody {
     animation: rise 680ms var(--zplc-ease-out) both;
   }
 
   .heroTitle {
     animation-delay: 70ms;
+  }
+
+  .heroSubtitle {
+    animation-delay: 115ms;
   }
 
   .heroBody {
