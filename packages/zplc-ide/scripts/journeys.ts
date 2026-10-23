@@ -26,6 +26,8 @@ import { resolveTokens, type ThemeId } from '../src/theme/tokens';
 import { auditMarkup } from '../src/ui/audit';
 import { compilerCompile } from '../src/cli/toolApi';
 import { NATIVE_PROGRAM_MAX_BYTES } from '../electron/security';
+import { en } from '../src/i18n/en';
+import { translate } from '../src/i18n/translate';
 import { assert, MONACO_MODULE, packageRoot } from './run-desktop-smoke';
 import { button, css, launchPackagedApp, menuItem, notPossible, tab, type App, type Target } from './journeyApp';
 import { domAuditExpression, type DomAuditResult } from './domAudit';
@@ -64,11 +66,25 @@ export interface Journey {
 // Steps a user performs
 // ---------------------------------------------------------------------------------------------------------------------
 
-const toolbar = css('[role="toolbar"][aria-label="Project operations"]');
+/** A selector for a control named in either language of the interface: `make` writes it for one name. */
+const inEither = (key: keyof typeof en, make: (label: string) => string): string =>
+  (['en', 'es'] as const).map((locale) => make(translate(locale, key))).join(', ');
+// the toolbar of the project, named in either language of the interface (the tutorial journey runs in Spanish too)
+const toolbar = css(
+  (['en', 'es'] as const).map((locale) => `[role="toolbar"][aria-label=${JSON.stringify(translate(locale, 'toolbar.label'))}]`).join(', '),
+);
 /** The title of the Welcome screen: the product name of decision D-03, with no version (UX-016). */
 const WELCOME_TITLE = `document.querySelector('h1')?.textContent ?? null`;
 const treeItem = (id: string) => css(`[role="treeitem"][data-tree-node-id="${id}"]`);
 const disk = (path: string) => readFileSync(path, 'utf8');
+
+/**
+ * The language of the interface the journey drives. Every journey finds controls by their English names; the tutorial
+ * (56) can run in Spanish for the pictures of the Spanish pages, so the controls it shares with the other journeys are
+ * named through the catalog: `ui('toolbar.connect')` is "Connect" in English and "Conectar" in Spanish.
+ */
+let journeyLocale: 'en' | 'es' = 'en';
+const ui = (key: keyof typeof en): string => translate(journeyLocale, key);
 
 /** Open a folder through the Welcome screen's "Open project" button and the native dialog. */
 async function openFolder(app: App, folder: string): Promise<void> {
@@ -159,7 +175,10 @@ async function clickEditorLine(app: App, line: number, where: 'text' | 'gutter' 
  */
 async function showExplorer(app: App): Promise<void> {
   await app.click(css('[data-activity="project"]'), 'the Project activity of the rail');
-  await app.click(css('[aria-label="Navigator view"] button:nth-of-type(2)'), 'the Files mode of the navigator');
+  await app.click(
+    css(inEither('navigator.mode.label', (label) => `[aria-label=${JSON.stringify(label)}] button:nth-of-type(2)`)),
+    'the Files mode of the navigator',
+  );
 }
 
 /** Click a project file in the Explorer tree, expanding its folders first. */
@@ -208,33 +227,45 @@ const modelText = (app: App, name: string) =>
 /** `text` with `addition` appended to its first line, as typing it at the end of that line does. */
 const appendToFirstLine = (text: string, addition: string) => text.replace(/^[^\n]*/, (line) => `${line}${addition}`);
 
+// the messages of a build, in English and in Spanish: the text of the catalog up to its first value
+const BUILD_MESSAGE_KEYS = [
+  'toolbarMsg.builtSavedWorkspaceLocally',
+  'toolbarMsg.canonicalWorkspaceBuildFailed',
+  'toolbarMsg.saveChangesBeforeBuilding',
+  'toolbarMsg.buildRequiresASaved',
+  'toolbarMsg.savedWorkspaceCompilerIs',
+  'toolbarMsg.savedWorkspaceCouldNot',
+] as const;
+const buildMessageStart = (locale: 'en' | 'es', key: (typeof BUILD_MESSAGE_KEYS)[number]) =>
+  translate(locale, key).split('{')[0]!.replace(/\.$/, '');
 const BUILD_RESULT = new RegExp(
-  String.raw`Built saved workspace locally: [^\n]*|Canonical workspace build failed|Save changes before building[^\n]*|` +
-    String.raw`Build requires a saved folder[^\n]*|Saved workspace (?:compiler is unavailable|could not be opened)[^\n]*`,
+  (['en', 'es'] as const)
+    .flatMap((locale) => BUILD_MESSAGE_KEYS.map((key) => buildMessageStart(locale, key).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^\\n]*'))
+    .join('|'),
   'g',
 );
 type BuildKind = 'built' | 'failed' | 'save-required' | 'unavailable';
 const buildKind = (message: string): BuildKind =>
-  message.startsWith('Built')
+  (['en', 'es'] as const).some((locale) => message.startsWith(buildMessageStart(locale, 'toolbarMsg.builtSavedWorkspaceLocally')))
     ? 'built'
-    : message.startsWith('Canonical')
+    : (['en', 'es'] as const).some((locale) => message.startsWith(buildMessageStart(locale, 'toolbarMsg.canonicalWorkspaceBuildFailed')))
       ? 'failed'
-      : message.startsWith('Save changes')
+      : (['en', 'es'] as const).some((locale) => message.startsWith(buildMessageStart(locale, 'toolbarMsg.saveChangesBeforeBuilding')))
         ? 'save-required'
         : 'unavailable';
 
 /** What the Output panel says; it selects the Output tab first. */
 async function outputText(app: App): Promise<string> {
   if (!(await app.eval(`document.getElementById('console-tab-output')?.getAttribute('aria-selected') === 'true'`)))
-    await app.click(tab('Output'));
+    await app.click(tab(ui('panel.output')));
   return await app.eval<string>(`document.querySelector('[role="tabpanel"][id^="console-panel-"]')?.innerText ?? ''`);
 }
 
 /** Build > Compile through the toolbar menu, then read what the Output panel reports. */
 async function compile(app: App): Promise<{ kind: BuildKind; message: string }> {
   const before = (await outputText(app)).match(BUILD_RESULT)?.length ?? 0;
-  await app.click(button('Build options'));
-  await app.click(menuItem('Compile'));
+  await app.click(button(ui('toolbar.build.label')));
+  await app.click(menuItem(ui('toolbar.compile.text')));
   const messages = await app.until('a build result in Output', async () => {
     const found = (await outputText(app)).match(BUILD_RESULT) ?? [];
     return found.length > before ? found : undefined;
@@ -318,11 +349,11 @@ async function buildWithUndeclaredVariable(app: App, project: string): Promise<v
 }
 
 async function connectAndRun(app: App): Promise<void> {
-  await app.click(button('Connect'));
-  await app.until('the simulation to connect', async () => (await app.visible(button('Disconnect'))) || undefined);
-  await app.click(button('Run (F5)', 'prefix'));
+  await app.click(button(ui('toolbar.connect')));
+  await app.until('the simulation to connect', async () => (await app.visible(button(ui('toolbar.disconnect')))) || undefined);
+  await app.click(button(`${ui('toolbar.run.label')} (F5)`, 'prefix'));
   await app
-    .until('the program to run', async () => (await app.visible(button('Pause (F6)', 'prefix'))) || undefined)
+    .until('the program to run', async () => (await app.visible(button(`${ui('toolbar.pause.label')} (F6)`, 'prefix'))) || undefined)
     .catch(async (error: Error) => {
       throw new Error(`${error.message}: the window says ${JSON.stringify((await app.text()).replace(/\s+/g, ' ').slice(-900))}`);
     });
@@ -338,9 +369,10 @@ const cycles = async (app: App) =>
   );
 
 async function watch(app: App, variable: string): Promise<void> {
-  await app.click(tab('Watch', 'prefix'));
-  if (!(await app.visible(css('input[placeholder^="Variable path"]')))) await app.click(button('Add variable'));
-  await app.click(css('input[placeholder^="Variable path"]'));
+  const path = css(`input[placeholder^=${JSON.stringify(ui('workbench.watch.pathPlaceholder').split(' (')[0])}]`);
+  await app.click(tab(ui('panel.watch'), 'prefix'));
+  if (!(await app.visible(path))) await app.click(button(ui('workbench.watch.addVariable')));
+  await app.click(path);
   await app.type(variable);
   await app.press('Enter');
   await app.until(`${variable} in the Watch table`, async () => (await watchValue(app, variable)) !== null || undefined);
@@ -5883,57 +5915,76 @@ export const JOURNEYS: Journey[] = [
     run: async (app, { root }) => {
       const folder = join(root, 'blink');
       mkdirSync(folder);
-      await app.until(
-        'the Welcome screen with the example',
-        async () => (await app.visible(css('button[data-welcome-example="blinky_st"]'))) || undefined,
-      );
-      await app.eval(`document.querySelector('button[data-welcome-example="blinky_st"]')?.scrollIntoView({ block: 'center' })`);
-      await docShot(app, 'blink-1-welcome');
-
-      // Step 2: copy the example into an empty folder; Studio opens it.
-      app.answer(folder);
-      await app.click(css('button[data-welcome-example="blinky_st"]'), 'the Blinky (Structured Text) example');
-      await app.until('the project workbench to appear', async () => (await app.visible(toolbar)) || undefined);
-      for (const file of ['zplc.json', 'src/main.st', 'tests/blinky-st.scenario.json']) {
-        assert(existsSync(join(folder, ...file.split('/'))), `The copied example has no ${file}.`);
+      // ZPLC_DOC_SHOTS_LOCALE=es drives the whole tutorial in Spanish (the stored language and a reload, as journey 59 does), and
+      // the pictures get the suffix `-es`; the controls are named through the catalog, so the steps are the same in both languages.
+      const locale = process.env.ZPLC_DOC_SHOTS_LOCALE === 'es' ? 'es' : 'en';
+      const shot = (name: string) => docShot(app, locale === 'es' ? `${name}-es` : name);
+      if (locale === 'es') {
+        await app.eval(
+          `(() => { const key = 'zplc-ide-settings'; const stored = JSON.parse(localStorage.getItem(key) || '{}'); const target = ` +
+            `stored.settings ?? stored; target.language = 'es'; localStorage.setItem(key, JSON.stringify(stored)); })()`,
+        );
+        await app.cdp.command('Page.reload');
+        journeyLocale = 'es';
       }
+      try {
+        await app.until(
+          'the Welcome screen with the example',
+          async () => (await app.visible(css('button[data-welcome-example="blinky_st"]'))) || undefined,
+        );
+        await app.eval(`document.querySelector('button[data-welcome-example="blinky_st"]')?.scrollIntoView({ block: 'center' })`);
+        await shot('blink-1-welcome');
 
-      // Step 3: read the program.
-      await openFile(app, 'src/main.st');
-      assert(hasProgram(await editorText(app), 'Blinky'), 'The example does not open its program Blinky.');
-      await docShot(app, 'blink-2-program');
-
-      // Step 4: build it.
-      const built = await compile(app);
-      assert(built.kind === 'built', `The example does not build: ${built.message}`);
-      await docShot(app, 'blink-3-built');
-
-      // Steps 5 and 6: connect to the simulator, run, and watch the output change.
-      await connectAndRun(app);
-      await watch(app, 'LED_Output');
-      // The divider above the lower panel is dragged up so that the Watch table has room (the user's own choice).
-      await app.click(css('#workspace-separator'), 'the divider above the lower panel');
-      for (let step = 0; step < 6; step++) await app.press('ArrowUp');
-      // The output changes every 500 ms: a picture counts when the table showed the value before and after it was taken.
-      const outputShot = async (name: string, value: 'TRUE' | 'FALSE') => {
-        for (let attempt = 0; attempt < 20; attempt++) {
-          await app.until(`LED_Output to be ${value}`, async () => (await watchValue(app, 'LED_Output')) === value || undefined);
-          await docShot(app, name);
-          if ((await watchValue(app, 'LED_Output')) === value) return;
+        // Step 2: copy the example into an empty folder; Studio opens it.
+        app.answer(folder);
+        await app.click(css('button[data-welcome-example="blinky_st"]'), 'the Blinky (Structured Text) example');
+        await app.until('the project workbench to appear', async () => (await app.visible(toolbar)) || undefined);
+        for (const file of ['zplc.json', 'src/main.st', 'tests/blinky-st.scenario.json']) {
+          assert(existsSync(join(folder, ...file.split('/'))), `The copied example has no ${file}.`);
         }
-        throw new Error(`The picture of LED_Output = ${value} could not be taken while the table showed it.`);
-      };
-      await outputShot('blink-4-output-true', 'TRUE');
-      await outputShot('blink-5-output-false', 'FALSE');
-      await app.click(button('Stop (Shift+F5)', 'prefix'), 'Stop');
-      await app.until('the program to stop', async () => (await app.visible(button('Run (F5)', 'prefix'))) || undefined);
 
-      // Step 7: run the scenario test of the project.
-      await app.click(tab('Tests'));
-      await app.click(button('Run host scenarios'));
-      await app.until('the scenario to pass', async () => (await app.text()).includes('Host POSIX scenarios passed.') || undefined, 30_000);
-      assert(!(await app.text()).includes('scenario assertions failed'), 'The tutorial scenario reports a failed assertion.');
-      await docShot(app, 'blink-6-scenario');
+        // Step 3: read the program.
+        await openFile(app, 'src/main.st');
+        assert(hasProgram(await editorText(app), 'Blinky'), 'The example does not open its program Blinky.');
+        await shot('blink-2-program');
+
+        // Step 4: build it.
+        const built = await compile(app);
+        assert(built.kind === 'built', `The example does not build: ${built.message}`);
+        await shot('blink-3-built');
+
+        // Steps 5 and 6: connect to the simulator, run, and watch the output change.
+        await connectAndRun(app);
+        await watch(app, 'LED_Output');
+        // The divider above the lower panel is dragged up so that the Watch table has room (the user's own choice).
+        await app.click(css('#workspace-separator'), 'the divider above the lower panel');
+        for (let step = 0; step < 6; step++) await app.press('ArrowUp');
+        // The output changes every 500 ms: a picture counts when the table showed the value before and after it was taken.
+        const outputShot = async (name: string, value: 'TRUE' | 'FALSE') => {
+          for (let attempt = 0; attempt < 20; attempt++) {
+            await app.until(`LED_Output to be ${value}`, async () => (await watchValue(app, 'LED_Output')) === value || undefined);
+            await shot(name);
+            if ((await watchValue(app, 'LED_Output')) === value) return;
+          }
+          throw new Error(`The picture of LED_Output = ${value} could not be taken while the table showed it.`);
+        };
+        await outputShot('blink-4-output-true', 'TRUE');
+        await outputShot('blink-5-output-false', 'FALSE');
+        await app.click(button(`${ui('toolbar.stop.label')} (`, 'prefix'), 'Stop');
+        await app.until(
+          'the program to stop',
+          async () => (await app.visible(button(`${ui('toolbar.run.label')} (F5)`, 'prefix'))) || undefined,
+        );
+
+        // Step 7: run the scenario test of the project.
+        await app.click(tab(ui('panel.tests')));
+        await app.click(button(ui('console.runHostScenarios')));
+        await app.until('the scenario to pass', async () => (await app.text()).includes(ui('testDiag.passedMany')) || undefined, 30_000);
+        assert(!(await app.text()).includes('scenario assertions failed'), 'The tutorial scenario reports a failed assertion.');
+        await shot('blink-6-scenario');
+      } finally {
+        journeyLocale = 'en';
+      }
     },
   },
   {

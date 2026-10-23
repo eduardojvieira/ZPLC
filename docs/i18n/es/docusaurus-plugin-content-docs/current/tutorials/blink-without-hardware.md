@@ -23,7 +23,7 @@ para la versión preliminar 2.0.
 ## Qué va a hacer
 
 1. Iniciar ZPLC y mirar la pantalla de bienvenida.
-2. Copiar el ejemplo **Blinky (Structured Text)** en una carpeta vacía.
+2. Copiar el ejemplo **Blinky (texto estructurado)** en una carpeta vacía.
 3. Leer el programa.
 4. Compilarlo.
 5. Conectarse al simulador y ejecutar el programa.
@@ -36,11 +36,11 @@ Abra ZPLC. La pantalla de bienvenida ofrece **Abrir proyecto**, **Nuevo proyecto
 y **Aprender**, y bajo **Ejemplos** una lista de proyectos de ejemplo, agrupados por lo
 que enseñan.
 
-![La pantalla de bienvenida de ZPLC, desplazada hasta el grupo Language tour, que contiene Blinky (Structured Text)](/img/tutorials/blink-1-welcome.png)
+![La pantalla de bienvenida de ZPLC, desplazada hasta el grupo Recorrido por los lenguajes, que contiene Blinky (texto estructurado)](/img/tutorials/blink-1-welcome-es.png)
 
 ## 2. Copie el ejemplo
 
-1. Bajo **Ejemplos**, en el grupo **Recorrido por los lenguajes**, elija **Blinky (Structured Text)**.
+1. Bajo **Ejemplos**, en el grupo **Recorrido por los lenguajes**, elija **Blinky (texto estructurado)**.
 2. Elija una carpeta vacía como destino. ZPLC copia el ejemplo allí y lo abre. Si
    ya hay un archivo con el mismo nombre en la carpeta, la copia se detiene y no
    escribe nada.
@@ -54,7 +54,7 @@ de escenario.
 Abra `src/main.st` desde el árbol del proyecto, en la pestaña **Explorador** del panel
 inferior. Se abre en el editor:
 
-![El programa Blinky abierto en el editor de ZPLC](/img/tutorials/blink-2-program.png)
+![El programa Blinky abierto en el editor de ZPLC](/img/tutorials/blink-2-program-es.png)
 
 Sin sus comentarios, el programa es este:
 
@@ -90,10 +90,10 @@ de 10 ms, 750 ms, `LED_Output` es TRUE.
 ## 4. Compílelo
 
 1. Abra el menú **Compilación** de la barra de herramientas y elija **Compilar** (Ctrl+B, o Cmd+B en macOS).
-2. Abra la pestaña **Salida**. Dice `Built saved workspace locally`, con el tamaño
-   del programa. La pestaña **Problemas** dice `0 errors`.
+2. Abra la pestaña **Salida**. Dice `Espacio de trabajo guardado compilado de forma local`, con el tamaño
+   del programa. La pestaña **Problemas** dice `0 errores`.
 
-![La pestaña Output después de la compilación, con el tamaño del programa y la notificación Build succeeded](/img/tutorials/blink-3-built.png)
+![La pestaña Salida después de la compilación, con el tamaño del programa y la notificación Compilación correcta](/img/tutorials/blink-3-built-es.png)
 
 Si la compilación falla, **Problemas** enumera cada error con su línea y su columna.
 
@@ -114,9 +114,9 @@ temporizador. No modela el lado eléctrico de una placa ni sus tiempos reales.
 2. Mire la columna **Valor**. Cambia entre `TRUE` y `FALSE` aproximadamente cada
    medio segundo.
 
-![La pestaña Watch con LED_Output en TRUE mientras el programa se ejecuta](/img/tutorials/blink-4-output-true.png)
+![La pestaña Observación con LED_Output en TRUE mientras el programa se ejecuta](/img/tutorials/blink-4-output-true-es.png)
 
-![La misma tabla medio segundo después, con LED_Output en FALSE](/img/tutorials/blink-5-output-false.png)
+![La misma tabla medio segundo después, con LED_Output en FALSE](/img/tutorials/blink-5-output-false-es.png)
 
 Si la tabla de observación queda cortada, arrastre hacia arriba el divisor que está sobre el
 panel inferior.
@@ -135,11 +135,11 @@ campo, y su ejemplo es el escenario de este proyecto.
 1. Abra la pestaña **Pruebas**. ZPLC vincula por sí mismo el `zplc.json` del proyecto abierto.
 2. Pulse **Ejecutar escenarios en el host**.
 
-La pestaña dice **Host POSIX scenarios passed.** y `1 scenario passed.` Esto ejecutó
+La pestaña dice **Los escenarios POSIX del equipo pasaron.** y `1 escenario superado.` Esto ejecutó
 su programa guardado en el simulador, sin interfaz y con un reloj virtual, así que
 tarda un momento y no espera 2,1 segundos.
 
-![La pestaña Tests informando Host POSIX scenarios passed](/img/tutorials/blink-6-scenario.png)
+![La pestaña Pruebas informando que los escenarios POSIX del equipo pasaron](/img/tutorials/blink-6-scenario-es.png)
 
 Puede ejecutar la misma prueba sin la aplicación ZPLC, desde una terminal en la raíz de una copia
 del repositorio, una vez que `bun run setup` haya construido el runtime:
@@ -177,8 +177,8 @@ LED_Output := LedState;
 END_PROGRAM
 ```
 
-Ejecute el escenario de nuevo. Ahora falla, con **One or more scenario assertions
-failed.**, porque el escenario todavía espera que la salida esté apagada a los
+Ejecute el escenario de nuevo. Ahora falla, con **Fallaron una o más aserciones de
+escenarios.**, porque el escenario todavía espera que la salida esté apagada a los
 250 ms. Para eso sirve un escenario: dice qué debe hacer el programa y avisa cuando
 un cambio lo rompe. Devuelva los tiempos a `T#500ms`, o edite el escenario, y vuelve
 a pasar.
