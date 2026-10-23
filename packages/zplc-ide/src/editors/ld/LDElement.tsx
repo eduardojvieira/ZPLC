@@ -468,9 +468,9 @@ function FBSymbol({ fbType, instance, selected, energized, debugValues }: FBSymb
         <text
           key={`${line}-${index}`}
           x={CELL_WIDTH / 2}
-          y={boxY + 24 + index * 6}
+          y={boxY + 24 + index * 9}
           fill={COLORS.textDim}
-          fontSize={6}
+          fontSize={9}
           textAnchor="middle"
           fontFamily="monospace"
         >

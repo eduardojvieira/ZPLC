@@ -17,7 +17,9 @@ describe('LD function-block labels', () => {
     const source = readFileSync(join(import.meta.dir, 'LDElement.tsx'), 'utf8');
     expect(source).toContain('y={boxY + (typeLines.length > 1 ? 9 : 12)}');
     expect(source).toContain('fontSize={typeLines.length > 1 ? 7 : 10}');
-    expect(source).toContain('y={boxY + 24 + index * 6}');
+    // The instance name is set at 9px, as large as ten monospace characters fit in the 70px box (6px was unreadable).
+    expect(source).toContain('y={boxY + 24 + index * 9}');
+    expect(source).toContain('fontSize={9}');
     expect(source).toContain('y1={boxY + 28}');
     expect(source).toContain('showsOutputValues ? 1 : 2');
   });
