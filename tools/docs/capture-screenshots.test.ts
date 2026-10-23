@@ -5,6 +5,8 @@ import {
   checkManifest,
   imagesOf,
   JOURNEY,
+  LEARN_JOURNEY,
+  journeyPassed,
   pngSize,
   RECORDED_DIR,
   staticPathOf,
@@ -103,6 +105,15 @@ describe('documentation screenshots: a page shows only captured pictures (DOC-01
         (problem) => problem.where,
       ),
     ).toEqual(['docs/static/img/editors/st-en.png']);
+  });
+
+  it('takes a picture only from a journey the runner reports as passed', () => {
+    const line = (status: string, name: string) => `${status.padEnd(13)}${name} (none, 4.5s)\n`;
+    for (const journey of [JOURNEY, LEARN_JOURNEY]) {
+      expect({ journey, passed: journeyPassed(`noise\n${line('PASS', journey)}`, journey) }).toEqual({ journey, passed: true });
+      expect(journeyPassed(line('FAIL', journey), journey)).toBe(false);
+    }
+    expect(journeyPassed(line('PASS', LEARN_JOURNEY), JOURNEY)).toBe(false);
   });
 
   it('wants the commit of the build, in full', () => {

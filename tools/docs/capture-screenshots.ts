@@ -41,15 +41,16 @@ export const EDITOR_LOCALES = ['en', 'es'] as const;
 export const EDITOR_COMMAND = 'bun run docs:screenshots -- --editors';
 export const MANIFEST = `${IMAGE_DIR}/manifest.json`;
 /**
- * The pictures of Learn on the landing page, taken by journey 59 once per language. The journey can also take them in the
- * dark theme (ZPLC_DOC_SHOTS_THEME=dark), but the code editor of the application keeps the token colours of the light theme
- * on a dark background there, so no dark picture is published until that is fixed.
+ * The pictures of Learn on the landing page, taken by journey 59 once per language and theme: the landing shows the dark one
+ * in its dark mode.
  */
 export const LEARN_DIR = `${IMAGE_DIR}/learn`;
 export const LEARN_JOURNEY = '59 The first lesson of Learn is checked and passes';
 export const LEARN_PICTURES = [
   { file: 'lesson-checked-en.png', locale: 'en', theme: 'light' },
   { file: 'lesson-checked-es.png', locale: 'es', theme: 'light' },
+  { file: 'lesson-checked-en-dark.png', locale: 'en', theme: 'dark' },
+  { file: 'lesson-checked-es-dark.png', locale: 'es', theme: 'dark' },
 ] as const;
 /**
  * The wiring diagrams of the hardware lessons (LRN-014): drawings that tools/docs/generate_hardware_pages.ts writes from
@@ -242,6 +243,11 @@ function git(args: string[]): string {
   return result.stdout.trim();
 }
 
+/** Whether the journey runner's output has a PASS line for this journey (a name the runner may print with more after it). */
+export function journeyPassed(stdout: string, journey: string): boolean {
+  return stdout.split('\n').some((line) => /^PASS\s/.test(line) && line.includes(journey));
+}
+
 function capture(): void {
   const scratch = mkdtempSync(join(tmpdir(), 'zplc-docs-shots-'));
   try {
@@ -251,7 +257,7 @@ function capture(): void {
       stdio: ['ignore', 'pipe', 'pipe'],
       encoding: 'utf8',
     });
-    if (run.status !== 0 || !/^PASS\s+41 Blink/m.test(run.stdout)) {
+    if (run.status !== 0 || !journeyPassed(run.stdout, JOURNEY)) {
       process.stderr.write(`${run.stdout}\n${run.stderr}\n`);
       throw new Error(`the journey "${JOURNEY}" did not pass, so no picture is written`);
     }
@@ -275,7 +281,15 @@ function capture(): void {
       commit: git(['rev-parse', 'HEAD']),
       worktreeClean: !dirty,
       productVersion: (JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as { version: string }).version,
-      images,
+      // the editor and Learn pictures keep their own entries and commits
+      images: [
+        ...images,
+        ...(existsSync(join(ROOT, MANIFEST))
+          ? (JSON.parse(readFileSync(join(ROOT, MANIFEST), 'utf8')) as Manifest).images.filter(
+              (image) => !image.file.startsWith('tutorials/'),
+            )
+          : []),
+      ],
     };
     writeFileSync(join(ROOT, MANIFEST), `${JSON.stringify(manifest, null, 2)}\n`);
     console.log(
@@ -307,7 +321,7 @@ function captureLearn(): void {
         stdio: ['ignore', 'pipe', 'pipe'],
         encoding: 'utf8',
       });
-      if (run.status !== 0 || !/^PASS\b.*59 The first lesson of Learn/m.test(run.stdout)) {
+      if (run.status !== 0 || !journeyPassed(run.stdout, LEARN_JOURNEY)) {
         process.stderr.write(`${run.stdout}\n${run.stderr}\n`);
         throw new Error(`the journey "${LEARN_JOURNEY}" did not pass in ${locale} and ${theme}, so no picture is written`);
       }
