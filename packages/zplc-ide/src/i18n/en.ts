@@ -26,6 +26,7 @@ import { labSceneEn } from './catalog/labScene';
 import { workbenchEn } from './catalog/workbench';
 import { moduleTextEn } from './catalog/moduleText';
 import { boardsEn } from './catalog/boards';
+import { statusTextEn } from './catalog/statusText';
 
 /**
  * The English catalog of ZPLC (UX-029): the source of truth for every user-visible string. A key is a dotted path
@@ -642,6 +643,7 @@ export const en = {
   ...workbenchEn,
   ...moduleTextEn,
   ...boardsEn,
+  ...statusTextEn,
 } as const;
 
 export type MessageKey = keyof typeof en;
