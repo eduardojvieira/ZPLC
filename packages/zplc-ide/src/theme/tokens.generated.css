@@ -10,7 +10,7 @@
   --ramp-paper-200: #e7ece8;
   --ramp-paper-300: #d7dfda;
   --ramp-paper-400: #a8b5b0;
-  --ramp-paper-500: #5f6d6b;
+  --ramp-paper-500: #566462;
   --ramp-paper-600: #4c5a59;
   --ramp-paper-800: #273537;
   --ramp-paper-900: #172127;
@@ -19,7 +19,7 @@
   --ramp-graphite-100: #d3ddda;
   --ramp-graphite-200: #b7c4c0;
   --ramp-graphite-400: #8e9e9a;
-  --ramp-graphite-600: #52666e;
+  --ramp-graphite-600: #5c737c;
   --ramp-graphite-700: #34464d;
   --ramp-graphite-800: #19262c;
   --ramp-graphite-900: #141e23;
@@ -40,19 +40,19 @@
   /* Ramp: green */
   --ramp-green-200: #7dff9a;
   --ramp-green-300: #65c98e;
-  --ramp-green-700: #177344;
+  --ramp-green-700: #146c40;
   /* Ramp: amber */
   --ramp-amber-200: #ffe16b;
   --ramp-amber-300: #e0ae4f;
-  --ramp-amber-700: #8a5800;
+  --ramp-amber-700: #835300;
   /* Ramp: red */
   --ramp-red-200: #ff9393;
-  --ramp-red-300: #ed7070;
+  --ramp-red-300: #f07878;
   --ramp-red-700: #a33838;
   /* Ramp: violet */
   --ramp-violet-200: #d0b8ff;
   --ramp-violet-300: #b9a8ef;
-  --ramp-violet-700: #635b95;
+  --ramp-violet-700: #5d558f;
   /* Ramp: teal */
   --ramp-teal-200: #5ff5e0;
   --ramp-teal-300: #4fc1b3;
