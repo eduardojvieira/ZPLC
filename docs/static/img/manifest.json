@@ -2,165 +2,183 @@
   "schemaVersion": 1,
   "command": "bun run docs:screenshots",
   "journey": "56 Blink without hardware (the tutorial)",
-  "commit": "bfd0672049be1deecdcc3b0825bc758fb2618b8c",
+  "commit": "c53410dba39ef7a0c5a054d7d3262e0a72074237",
   "worktreeClean": true,
   "productVersion": "2.0.0-rc.3",
   "images": [
     {
       "file": "tutorials/blink-1-welcome.png",
       "step": "The Welcome screen with the example list",
-      "sha256": "10b30b337826d9fd33a7c9a68f8b85c7cba1ddddab266c35e0f64767890fcd11",
-      "bytes": 126672,
+      "sha256": "8482419e435ec104b37bd1d40711ec6ea8affbc03062f9f4bdd5542e68295893",
+      "bytes": 144078,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-2-program.png",
       "step": "The program open in the editor",
-      "sha256": "9d3aaebb7b5fc001eb853351cc991ec7b9db1587321e4064cab4bae5bd1563e5",
-      "bytes": 112917,
+      "sha256": "10b2efecb8413254ccd7f70d1dae39e622e639c3895f13e9650423b124ec07e2",
+      "bytes": 140579,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-3-built.png",
       "step": "The build succeeded",
-      "sha256": "4a8fc125cde20c4dedc503ffe6f63618dafb1d07d16515118d6b50dee94b8206",
-      "bytes": 141699,
+      "sha256": "21061fd1ed5f489d15539b8f3e5d4f3e37c528104e08fdd65149886ce6ebbfa9",
+      "bytes": 161730,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-4-output-true.png",
       "step": "The simulator runs and the output is TRUE",
-      "sha256": "2fb465e471c7e0f02940937c360ba83342bfa0dd39f34b00234b3d4285948abb",
-      "bytes": 102354,
+      "sha256": "e66d3509c59dd793b3fc6ff1fdf057ca494f0ae9e25dadd59358ffaaf8a38932",
+      "bytes": 122552,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-5-output-false.png",
       "step": "The output is FALSE half a second later",
-      "sha256": "c0293237b457940c9f3c5b907c757e2b8c4a7922a7786eb549971320f4b08b10",
-      "bytes": 102633,
+      "sha256": "e3d7f96e83ce31bf814da71cdf95c6d1d52a5920dbce0433da10e7f205ce9d96",
+      "bytes": 122553,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-6-scenario.png",
       "step": "The scenario test passed",
-      "sha256": "07f220d7565c06a3350007d736430f8b02abe9b4bfdf247e6e910c3b7e8bc4b0",
-      "bytes": 126313,
+      "sha256": "15b205b391585bcba7d1c20a7d4c7c39872c1063e525a318603bef60946cd9c5",
+      "bytes": 150563,
       "width": 1440,
       "height": 900
     },
     {
       "file": "editors/st-en.png",
       "step": "The ST editor with the Blinky example, interface in English",
-      "sha256": "3bf19bf0bbf65cad6a90c09b3237e7703f4565f79f339d7f5d257723bfb9fea2",
-      "bytes": 128418,
+      "sha256": "255f705dbd214f3dd53f130a5b6efcc8547b5fc4a7927c68b24b5350bb4e85e6",
+      "bytes": 141331,
       "width": 1366,
       "height": 768,
-      "commit": "890f450241d1f1f97fea2cbf48ea8d3cbe7cf491"
+      "commit": "c53410dba39ef7a0c5a054d7d3262e0a72074237"
     },
     {
       "file": "editors/st-es.png",
       "step": "The ST editor with the Blinky example, interface in Spanish",
-      "sha256": "a65d034e0ccef63f7ecb4ac777ff8c76c8609f256e9c346cb0a656e9738a123b",
-      "bytes": 147386,
+      "sha256": "ac438a154082ca6f5fab7d17e7e00f08a1cd6fad9831219303f605ba55e68ef6",
+      "bytes": 147309,
       "width": 1366,
       "height": 768,
-      "commit": "890f450241d1f1f97fea2cbf48ea8d3cbe7cf491"
+      "commit": "c53410dba39ef7a0c5a054d7d3262e0a72074237"
     },
     {
       "file": "editors/il-en.png",
       "step": "The IL editor with the Blinky example, interface in English",
-      "sha256": "31aa38b23f2b51d038c93161620cf04815bfdd52b53da5e442793adbf92ffa76",
-      "bytes": 130470,
+      "sha256": "ebd6ec99dc947756c9a025f9da26077b0e78ff3c856ee0a6292f39ea5e24d786",
+      "bytes": 147461,
       "width": 1366,
       "height": 768,
-      "commit": "890f450241d1f1f97fea2cbf48ea8d3cbe7cf491"
+      "commit": "c53410dba39ef7a0c5a054d7d3262e0a72074237"
     },
     {
       "file": "editors/il-es.png",
       "step": "The IL editor with the Blinky example, interface in Spanish",
-      "sha256": "c2f3f502539d9e1e002f966e46b99838dda4728773dd1099b7cdecff4ecf251c",
-      "bytes": 153178,
+      "sha256": "8495bf58a3b95a6186289bd6ab0108d511d424f717ad80d5a091c157ae979d72",
+      "bytes": 153252,
       "width": 1366,
       "height": 768,
-      "commit": "890f450241d1f1f97fea2cbf48ea8d3cbe7cf491"
+      "commit": "c53410dba39ef7a0c5a054d7d3262e0a72074237"
     },
     {
       "file": "editors/ld-en.png",
       "step": "The LD editor with the Blinky example, interface in English",
-      "sha256": "5bbd82b3e392e64c7ce194bbb6472dabdfcc05794f4516516e249d9b452afc81",
-      "bytes": 127351,
+      "sha256": "e8e499f5b4d5b43c2eebf03c3f3ad8f85e0459e1455a6c95d35a2735eaeb0ddf",
+      "bytes": 127784,
       "width": 1366,
       "height": 768,
-      "commit": "890f450241d1f1f97fea2cbf48ea8d3cbe7cf491"
+      "commit": "c53410dba39ef7a0c5a054d7d3262e0a72074237"
     },
     {
       "file": "editors/ld-es.png",
       "step": "The LD editor with the Blinky example, interface in Spanish",
-      "sha256": "24aee9a4ceedd1495561dd348b8e7b6443981d39cd3cd8124b436758c09f4eb6",
-      "bytes": 141301,
+      "sha256": "4a94eef60ae91822e109c4248d08fe7f54f285fc132ef19d3358779e9c454cfd",
+      "bytes": 141783,
       "width": 1366,
       "height": 768,
-      "commit": "890f450241d1f1f97fea2cbf48ea8d3cbe7cf491"
+      "commit": "c53410dba39ef7a0c5a054d7d3262e0a72074237"
     },
     {
       "file": "editors/fbd-en.png",
       "step": "The FBD editor with the Blinky example, interface in English",
-      "sha256": "5f4b3beaab3dce8461d0b47207835c55b27ff9fa730a083e5e42922ee4b9f72f",
-      "bytes": 113480,
+      "sha256": "fb4e556a4b845daa9d78e8e3ace76653bb8072ab3f72df475016a4687127c0e8",
+      "bytes": 113541,
       "width": 1366,
       "height": 768,
-      "commit": "890f450241d1f1f97fea2cbf48ea8d3cbe7cf491"
+      "commit": "c53410dba39ef7a0c5a054d7d3262e0a72074237"
     },
     {
       "file": "editors/fbd-es.png",
       "step": "The FBD editor with the Blinky example, interface in Spanish",
-      "sha256": "90e73aa922aa8e9cb8fc05a307638ea31f6a9c1e22b0d3641b1eddcacc3768b4",
-      "bytes": 120219,
+      "sha256": "cceed55e5bc28340610e7e7c969b82c259f2475aa4a5f02c406b587cd6f52e2b",
+      "bytes": 120446,
       "width": 1366,
       "height": 768,
-      "commit": "890f450241d1f1f97fea2cbf48ea8d3cbe7cf491"
+      "commit": "c53410dba39ef7a0c5a054d7d3262e0a72074237"
     },
     {
       "file": "editors/sfc-en.png",
       "step": "The SFC editor with the Blinky example, interface in English",
-      "sha256": "8021efc2be204308fa04f0bfa5a49a325b3840884f17b8b960037a26dba3cbff",
-      "bytes": 109760,
+      "sha256": "7f4af8b616bb8e861f7936dff2d301e55908c5b2faaf2c56472903aaf9ce5b84",
+      "bytes": 109820,
       "width": 1366,
       "height": 768,
-      "commit": "890f450241d1f1f97fea2cbf48ea8d3cbe7cf491"
+      "commit": "c53410dba39ef7a0c5a054d7d3262e0a72074237"
     },
     {
       "file": "editors/sfc-es.png",
       "step": "The SFC editor with the Blinky example, interface in Spanish",
-      "sha256": "0018f98225e67d180ac0d304a8f5c25e77ee1e2630f542dd3e894d97c5eb2974",
-      "bytes": 119529,
+      "sha256": "81940ad580af39494a72459e7934c5fc8792d5294b4a265e593b87de6e1a6a2e",
+      "bytes": 119600,
       "width": 1366,
       "height": 768,
-      "commit": "890f450241d1f1f97fea2cbf48ea8d3cbe7cf491"
+      "commit": "c53410dba39ef7a0c5a054d7d3262e0a72074237"
     },
     {
       "file": "learn/lesson-checked-en.png",
       "step": "The first lesson of Learn passed its Check, interface in English, light theme",
-      "sha256": "a5b7795fe00b0261b6274b918a1e36b34d66f633d73265dbedcc2ded0bd49bfe",
-      "bytes": 177035,
+      "sha256": "2c0b249464ac41314b77c8e0831da105a73db54bbb5a366f6ac1f37103ca82b3",
+      "bytes": 180717,
       "width": 1440,
       "height": 900,
-      "commit": "3eed682eddc9ffa11f63877fc2e2068a70b52e13"
+      "commit": "c53410dba39ef7a0c5a054d7d3262e0a72074237"
     },
     {
       "file": "learn/lesson-checked-es.png",
       "step": "The first lesson of Learn passed its Check, interface in Spanish, light theme",
-      "sha256": "8018f6263ece7ba3a476a029fe3a24c7f1cb8ee26e2343b3ce50b788bda5df6f",
-      "bytes": 179697,
+      "sha256": "28a7ba336771116276ea075be77c0fc075252aa674efbfa09f2b03e4d597b864",
+      "bytes": 182933,
       "width": 1440,
       "height": 900,
-      "commit": "3eed682eddc9ffa11f63877fc2e2068a70b52e13"
+      "commit": "c53410dba39ef7a0c5a054d7d3262e0a72074237"
+    },
+    {
+      "file": "learn/lesson-checked-en-dark.png",
+      "step": "The first lesson of Learn passed its Check, interface in English, dark theme",
+      "sha256": "344a40f9183392473cdd9082ce43fe8a0d84149bb12b29d3bc4fbb78321cbd12",
+      "bytes": 179601,
+      "width": 1440,
+      "height": 900,
+      "commit": "c53410dba39ef7a0c5a054d7d3262e0a72074237"
+    },
+    {
+      "file": "learn/lesson-checked-es-dark.png",
+      "step": "The first lesson of Learn passed its Check, interface in Spanish, dark theme",
+      "sha256": "6b0163413c1fed202e9d4287cbca46f4dd0ae62fdbe9404a90dd934ad70f0547",
+      "bytes": 182043,
+      "width": 1440,
+      "height": 900,
+      "commit": "c53410dba39ef7a0c5a054d7d3262e0a72074237"
     }
   ]
 }

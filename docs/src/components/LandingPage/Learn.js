@@ -8,6 +8,7 @@ import { useLandingPageContent } from './content';
 export default function Learn() {
   const { learn } = useLandingPageContent();
   const shot = useBaseUrl(`/img/${learn.shot}`);
+  const shotDark = useBaseUrl(`/img/${learn.shotDark}`);
   const generated = useBaseUrl('/img/generated/');
 
   return (
@@ -27,7 +28,24 @@ export default function Learn() {
               </div>
             ))}
           </dl>
-          <img className={styles.learnShot} src={shot} alt={learn.captureAlt} width="1440" height="900" loading="lazy" decoding="async" />
+          {/* The capture in the theme of the page: the dark one is the application in its dark theme. */}
+          <span className={styles.learnShot}>
+            {[
+              ['light', shot],
+              ['dark', shotDark],
+            ].map(([theme, src]) => (
+              <img
+                key={theme}
+                className={`zplc-${theme}-only`}
+                src={src}
+                alt={learn.captureAlt}
+                width="1440"
+                height="900"
+                loading="lazy"
+                decoding="async"
+              />
+            ))}
+          </span>
         </div>
 
         <h3 className={styles.subTitle}>{learn.courseTitle}</h3>
