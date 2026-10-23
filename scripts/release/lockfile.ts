@@ -22,6 +22,9 @@ export interface LockPackage {
   dependencies: string[];
   optionalDependencies: string[];
   peerDependencies: string[];
+  /** The `os` and `cpu` fields of the package's manifest, as bun records them; absent when it runs anywhere. */
+  os?: string[];
+  cpu?: string[];
 }
 
 export interface LockWorkspace {
@@ -108,6 +111,8 @@ export function parseLockfile(text: string): Lockfile {
       optionalDependencies?: Record<string, string>;
       peerDependencies?: Record<string, string>;
       optionalPeers?: string[];
+      os?: string | string[];
+      cpu?: string | string[];
     };
     const optionalPeers = new Set(meta.optionalPeers ?? []);
     const workspacePath = version.startsWith(WORKSPACE_PREFIX) ? version.slice(WORKSPACE_PREFIX.length) : undefined;
@@ -120,6 +125,8 @@ export function parseLockfile(text: string): Lockfile {
       version,
       ...(workspacePath === undefined ? {} : { workspacePath }),
       ...(integrity === undefined ? {} : { integrity }),
+      ...(meta.os === undefined ? {} : { os: [meta.os].flat() }),
+      ...(meta.cpu === undefined ? {} : { cpu: [meta.cpu].flat() }),
       dependencies: Object.keys(meta.dependencies ?? {}),
       optionalDependencies: Object.keys(meta.optionalDependencies ?? {}),
       peerDependencies: Object.keys(meta.peerDependencies ?? {}).filter((peer) => !optionalPeers.has(peer)),
@@ -234,6 +241,19 @@ export function locateInstalled(repoRoot: string, lock: Lockfile, entry: LockPac
     }
   }
   return undefined;
+}
+
+/**
+ * Whether the package installs on this system: npm's `os` and `cpu` lists, where a name allows that value and `!name`
+ * refuses it. bun skips a package whose lists leave the system out, so it is never on disk there.
+ */
+export function installsOn(entry: LockPackage, platform: { os: string; cpu: string }): boolean {
+  const allows = (list: string[] | undefined, value: string): boolean => {
+    if (list === undefined || list.includes(`!${value}`)) return list === undefined;
+    const allowed = list.filter((item) => !item.startsWith('!'));
+    return allowed.length === 0 || allowed.includes(value);
+  };
+  return allows(entry.os, platform.os) && allows(entry.cpu, platform.cpu);
 }
 
 /** `sha512-<base64>` as a hex digest, or undefined for another scheme. */

@@ -10,7 +10,7 @@
 // leaves a component out is worse than none.
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
-import { closureFrom, locateInstalled, parseLockfile, productionClosure, type LockPackage, type Lockfile } from './lockfile';
+import { closureFrom, installsOn, locateInstalled, parseLockfile, productionClosure, type LockPackage, type Lockfile } from './lockfile';
 
 export interface PackageNotice {
   name: string;
@@ -96,9 +96,17 @@ export interface CollectOptions {
   workspacePath: string;
   /** Development dependencies of the workspace package that the renderer bundles. */
   bundled: readonly string[];
+  /** The system the installer is built on; a package locked for another one is not installed and not shipped. */
+  platform?: { os: string; cpu: string };
 }
 
-export function collectNotices({ repoRoot, lock, workspacePath, bundled }: CollectOptions): {
+export function collectNotices({
+  repoRoot,
+  lock,
+  workspacePath,
+  bundled,
+  platform = { os: process.platform, cpu: process.arch },
+}: CollectOptions): {
   notices: PackageNotice[];
   missing: string[];
 } {
@@ -114,6 +122,7 @@ export function collectNotices({ repoRoot, lock, workspacePath, bundled }: Colle
   const notices = new Map<string, PackageNotice>();
   for (const entry of entries.values()) {
     if (entry.workspacePath !== undefined) continue; // this repository's own packages are the product, not a third party
+    if (!installsOn(entry, platform)) continue;
     const directory = locateInstalled(repoRoot, lock, entry);
     if (directory === undefined) {
       missing.push(`${entry.id} is locked but not installed`);

@@ -95,6 +95,31 @@ describe('collectNotices (REL-019)', () => {
     expect(notices.find((notice) => notice.name === 'left')?.license).toBe('UNKNOWN');
     installAll();
   });
+
+  test('leaves out a package locked for another platform, which bun does not install, and still reports one for this platform', () => {
+    const lock = parseLockfile(`{
+  "workspaces": { "packages/app": { "name": "@fx/app", "dependencies": { "bin": "^1" } } },
+  "packages": {
+    "@fx/app": ["@fx/app@workspace:packages/app"],
+    "bin": ["bin@1.0.0", "", { "optionalDependencies": { "bin-win": "1.0.0", "bin-linux": "1.0.0", "bin-mac": "1.0.0" } }, "sha512-FFFF"],
+    "bin-win": ["bin-win@1.0.0", "", { "os": "win32", "cpu": "x64" }, "sha512-GGGG"],
+    "bin-linux": ["bin-linux@1.0.0", "", { "os": "linux", "cpu": ["x64", "arm64"] }, "sha512-HHHH"],
+    "bin-mac": ["bin-mac@1.0.0", "", { "os": "!linux" }, "sha512-IIII"],
+  }
+}`);
+    install('node_modules/bin', { name: 'bin', version: '1.0.0', license: 'MIT' });
+    const linux = { repoRoot: root, lock, workspacePath: 'packages/app', bundled: [], platform: { os: 'linux', cpu: 'x64' } };
+    expect(collectNotices(linux).missing).toEqual(['bin-linux@1.0.0 is locked but not installed']);
+    install('node_modules/bin-linux', { name: 'bin-linux', version: '1.0.0', license: 'MIT' });
+    const { missing, notices } = collectNotices(linux);
+    expect(missing).toEqual([]);
+    expect(notices.map((notice) => notice.name)).toEqual(['bin', 'bin-linux']);
+    expect(collectNotices({ ...linux, platform: { os: 'darwin', cpu: 'arm64' } }).missing).toEqual([
+      'bin-mac@1.0.0 is locked but not installed',
+    ]);
+    rmSync(join(root, 'node_modules/bin'), { recursive: true });
+    rmSync(join(root, 'node_modules/bin-linux'), { recursive: true });
+  });
 });
 
 describe('bundledDevDependencies (REL-019)', () => {
