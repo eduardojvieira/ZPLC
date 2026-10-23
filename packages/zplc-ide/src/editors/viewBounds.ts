@@ -11,4 +11,14 @@
 export const ZOOM_MIN = 0.1;
 export const ZOOM_MAX = 4;
 
-export const FIT_VIEW_OPTIONS = { padding: 0.24, minZoom: ZOOM_MIN, maxZoom: 1 } as const;
+/**
+ * The minimap sits in the bottom-right corner of the canvas (200x150 and its margin). A fit keeps this much room under the
+ * diagram, so that the minimap never covers the end of a comment or a block of the fitted diagram.
+ */
+export const MINIMAP_RESERVE_PX = 170;
+
+export const FIT_VIEW_OPTIONS = {
+  padding: { top: 0.24, right: 0.24, left: 0.24, bottom: `${MINIMAP_RESERVE_PX}px` },
+  minZoom: ZOOM_MIN,
+  maxZoom: 1,
+} as const;
