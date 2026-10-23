@@ -12,10 +12,13 @@ export function navigatorWords({ t }: Pick<Translator, 't'>): NavigatorWords {
     },
     constant: t('navigator.constant'),
     noTasks: t('navigator.tasks.none'),
-    task: ({ trigger, intervalMs, priority }) =>
-      intervalMs === undefined
+    task: ({ trigger: raw, intervalMs, priority }) => {
+      // the trigger is a word of the project file: said in the language of the interface when it is one of the three
+      const trigger = raw === 'cyclic' || raw === 'event' || raw === 'freewheeling' ? t(`statusText.trigger.${raw}`) : raw;
+      return intervalMs === undefined
         ? t('navigator.task.other', { trigger, priority })
-        : t('navigator.task.cyclic', { trigger, interval: intervalMs, priority }),
+        : t('navigator.task.cyclic', { trigger, interval: intervalMs, priority });
+    },
     inputs: (count) => t('navigator.io.inputs', { count }),
     outputs: (count) => t('navigator.io.outputs', { count }),
     tags: (count) => t('navigator.tags', { count }),

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test';
 
 import { getBlockCategories } from '../catalog/blockCatalog';
 import { blockGroupLabel } from '../editors/fbd/palette';
+import { t } from '../i18n';
 import { useAppSettings } from '../store/useAppSettings';
 import { presentOperationalStatus, type OperationalStatusInput } from './operationalStatusPresentation';
 
@@ -45,6 +46,8 @@ describe('UX-030 the status bar and the block groups in Spanish', () => {
     setLanguage('es');
     expect(blockGroupLabel('Timers')).toBe('Temporizadores');
     expect(blockGroupLabel('Project')).toBe('Proyecto');
+    expect(t('statusText.trigger.cyclic')).toBe('cíclica');
+    expect([t('statusText.group.steps'), t('statusText.group.transitions')]).toEqual(['Pasos', 'Transiciones']);
     expect(blockGroupLabel('Made by the author')).toBe('Made by the author');
     for (const { name } of getBlockCategories()) expect(blockGroupLabel(name)).not.toBe(name);
   });
