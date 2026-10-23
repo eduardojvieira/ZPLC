@@ -235,10 +235,10 @@ export class BrowserApp {
   }
 
   /**
-   * Reloads the page, puts a project with one open file in the store and waits for the page to draw it. Retries when Vite reloads the page
-   * to optimise a lazy editor.
+   * Reloads the page, puts a project with one open file in the store and waits for the page to draw it, in `theme` from the first
+   * draw. Retries when Vite reloads the page to optimise a lazy editor.
    */
-  async open(file: SeedFile, locale: 'en' | 'es' = 'en'): Promise<void> {
+  async open(file: SeedFile, locale: 'en' | 'es' = 'en', theme: 'light' | 'dark' | 'high-contrast' = 'light'): Promise<void> {
     const seed =
       `(async () => {
       const { useAppSettings } = await import('/src/store/useAppSettings.ts');
@@ -248,7 +248,7 @@ export class BrowserApp {
       const file = { id: 'f1', name: ${JSON.stringify(file.name)}, path, language: ${JSON.stringify(
         file.language,
       )}, content: ${JSON.stringify(file.content)}, isModified: false, parentPath: 'src' };
-      useIDEStore.getState().setTheme('light');
+      useIDEStore.getState().setTheme(${JSON.stringify(theme)});
       useIDEStore.setState({
         isProjectOpen: true, projectName: 'Browser test', projectConfig: { name: 'Browser test', version: '1.0.0', target: 'posix', ` +
       `tasks: [], io: { inputs: [], outputs: [] } }, projectSession: 1, projectConfigDirty: false, directoryHandle: null,

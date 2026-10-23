@@ -33,14 +33,7 @@ import {
 } from '../utils/breakpoints';
 import { isInlineLivePreviewEnabled } from './codeEditorLivePreview';
 import { ST_LANGUAGE_ID, stLanguage, stConf, IL_LANGUAGE_ID, ilLanguage, ilConf } from '../utils/monaco-languages';
-import {
-  ZPLC_DARK_THEME,
-  ZPLC_DARK_THEME_ID,
-  ZPLC_HIGH_CONTRAST_THEME,
-  ZPLC_HIGH_CONTRAST_THEME_ID,
-  ZPLC_LIGHT_THEME,
-  ZPLC_LIGHT_THEME_ID,
-} from '../utils/monaco-themes';
+import { MONACO_THEME_ID } from '../utils/monaco-themes';
 import { debugLog } from '../utils/debugLog';
 import { projectPathFromModelPath } from '../utils/sessionState';
 import { recordViewState, takePendingViewState } from '../store/sessionPersistence';
@@ -278,11 +271,6 @@ export function CodeEditor({ fileId, content, language, onChange, readOnly = fal
         monaco.languages.setMonarchTokensProvider(IL_LANGUAGE_ID, ilLanguage);
         monaco.languages.setLanguageConfiguration(IL_LANGUAGE_ID, ilConf);
       }
-
-      // Register custom themes
-      monaco.editor.defineTheme(ZPLC_DARK_THEME_ID, ZPLC_DARK_THEME);
-      monaco.editor.defineTheme(ZPLC_LIGHT_THEME_ID, ZPLC_LIGHT_THEME);
-      monaco.editor.defineTheme(ZPLC_HIGH_CONTRAST_THEME_ID, ZPLC_HIGH_CONTRAST_THEME);
 
       setEditorReady(true);
     },
@@ -577,13 +565,7 @@ export function CodeEditor({ fileId, content, language, onChange, readOnly = fal
         value={content}
         onChange={handleChange}
         onMount={handleEditorDidMount}
-        theme={
-          effectiveTheme === 'high-contrast'
-            ? ZPLC_HIGH_CONTRAST_THEME_ID
-            : effectiveTheme === 'dark'
-              ? ZPLC_DARK_THEME_ID
-              : ZPLC_LIGHT_THEME_ID
-        }
+        theme={MONACO_THEME_ID[effectiveTheme]}
         options={{
           // The editor takes Tab as a character; a person who cannot see the screen learns the way out from its name (UX-025, UX-028).
           ariaLabel: t('editors.code.label', { name: fileName }),

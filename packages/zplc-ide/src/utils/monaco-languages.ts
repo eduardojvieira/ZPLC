@@ -195,6 +195,8 @@ export const stLanguage: languages.IMonarchLanguage = {
 export const IL_LANGUAGE_ID = 'il';
 
 export const ilConf: languages.LanguageConfiguration = {
+  // Brackets take the colour of the theme, not Monaco's bracket rainbow (see monacoRuntime.ts).
+  colorizedBracketPairs: [],
   comments: {
     blockComment: ['(*', '*)'],
     lineComment: '//',

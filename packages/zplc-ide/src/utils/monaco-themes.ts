@@ -33,12 +33,22 @@ function themeFor(id: ThemeId, base: editor.BuiltinTheme): editor.IStandaloneThe
       rule(tokens, 'comment', '--syntax-comment', 'italic'),
       // Keywords: control structures.
       rule(tokens, 'keyword', '--syntax-keyword', 'bold'),
+      // The Structured Text grammar Monaco ships, which the editor uses, names word operators (NOT, AND, MOD) `operators`
+      // and declaration sections (VAR_OUTPUT, END_VAR) `variable`: both are reserved words.
+      rule(tokens, 'operators', '--syntax-keyword', 'bold'),
+      rule(tokens, 'variable', '--syntax-keyword', 'bold'),
       rule(tokens, 'type', '--syntax-type'),
       rule(tokens, 'operator', '--syntax-operator'),
       rule(tokens, 'identifier', '--editor-fg'),
       // Direct addresses (%I, %Q, %M) and predefined variables.
       rule(tokens, 'variable.predefined', '--syntax-address', 'bold'),
+      // Monaco's grammar: standard functions and variables, then time literals and direct addresses, then a member after a dot.
+      rule(tokens, 'predefined', '--syntax-address', 'bold'),
+      rule(tokens, 'tag', '--syntax-address'),
+      rule(tokens, 'variable.name', '--editor-fg'),
       rule(tokens, 'number', '--syntax-number'),
+      // TRUE, FALSE and NULL are literals.
+      rule(tokens, 'constant', '--syntax-number'),
       rule(tokens, 'string', '--syntax-string'),
       rule(tokens, 'delimiter', '--syntax-operator'),
       rule(tokens, 'bracket', '--syntax-bracket'),
@@ -70,3 +80,10 @@ export const ZPLC_HIGH_CONTRAST_THEME: editor.IStandaloneThemeData = themeFor('h
 export const ZPLC_DARK_THEME_ID = 'zplc-dark';
 export const ZPLC_LIGHT_THEME_ID = 'zplc-light';
 export const ZPLC_HIGH_CONTRAST_THEME_ID = 'zplc-high-contrast';
+
+/** The Monaco theme of each app theme. Monaco has one theme for every editor on the page, the diff editor included. */
+export const MONACO_THEME_ID: Readonly<Record<ThemeId, string>> = {
+  light: ZPLC_LIGHT_THEME_ID,
+  dark: ZPLC_DARK_THEME_ID,
+  'high-contrast': ZPLC_HIGH_CONTRAST_THEME_ID,
+};
