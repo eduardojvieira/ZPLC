@@ -2293,7 +2293,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"48 The main screens pass the rendered accessibility check in light, dark and high contrast","partial":true}
   ],
   "UX-006": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/fbLabel.test.tsx","test":"UX-006 draws the port names of a function block in debug at 9px, never smaller than the instance name"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/LDElement.portNames.test.tsx","test":"UX-006 draws the port names of a function block in debug at 9px, never smaller than the instance name"},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-006 gives values, addresses and times tabular, slashed-zero numerals through one class"},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-006 sets no font size under 11 pixels in any style sheet or component, and keeps the scale floor at 11"},
