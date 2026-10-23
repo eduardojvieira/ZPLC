@@ -15,7 +15,9 @@ El estado de cada elemento de esta página se lee de las pruebas de conformidad 
 
 El diagrama de escalera se dibuja en el editor de peldaños de ZPLC: contactos, bobinas, ramas y bloques, con deshacer y validación mientras se dibuja. El texto estructurado que la compilación genera a partir de los peldaños es solo una salida de lectura.
 
-![El editor de diagrama de escalera de ZPLC con el ejemplo Blinky abierto, que muestra sus peldaños, contactos y bobinas, con la interfaz en español](/img/editors/ld-es.png)
+![El editor de diagrama de escalera de ZPLC con el ejemplo Blinky abierto, que muestra sus peldaños, contactos y bobinas, con la interfaz en español](/img/editors/ld-es.png#gh-light-mode-only)
+
+![El editor de diagrama de escalera de ZPLC con el ejemplo Blinky abierto, que muestra sus peldaños, contactos y bobinas, con la interfaz en español](/img/editors/ld-es-dark.png#gh-dark-mode-only)
 
 La imagen es una captura de pantalla real de este editor, tomada de forma automática de la versión actual de ZPLC con un programa de ejemplo pequeño abierto.
 

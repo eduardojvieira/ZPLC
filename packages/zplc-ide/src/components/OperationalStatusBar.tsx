@@ -117,7 +117,10 @@ export function OperationalStatusView({
         <div className="flex min-w-max items-center gap-3 whitespace-nowrap">
           <ConnectionIndicator indicator={indicator} />
           <span className="h-3.5 w-px bg-[var(--color-surface-700)]" aria-hidden="true" />
-          <Detail label={t('status.mode')} value={presentation.mode} />
+          <Detail
+            label={t('status.mode')}
+            value={presentation.mode === 'HARDWARE' ? t('statusText.mode.hardware') : t('statusText.mode.simulation')}
+          />
           <span className="h-3.5 w-px bg-[var(--color-surface-700)]" aria-hidden="true" />
           <Detail label={t('status.runtime')} value={presentation.runtime} />
           {presentation.target && <Detail label={t('status.target')} value={presentation.target} />}

@@ -60,6 +60,8 @@ describe('documentation screenshots: a page shows only captured pictures (DOC-01
     expect(imagesOf(text)).toEqual(['/img/tutorials/a.png', '/img/b.svg']);
     expect(staticPathOf('/img/tutorials/a.png')).toBe('docs/static/img/tutorials/a.png');
     expect(staticPathOf('https://example.org/x.png')).toBeUndefined();
+    // the fragment that picks a colour mode is not part of the path
+    expect(staticPathOf('/img/editors/st-en-dark.png#gh-dark-mode-only')).toBe('docs/static/img/editors/st-en-dark.png');
   });
 
   it('accepts a page whose images are all listed, with the bytes and the size the manifest recorded', () => {

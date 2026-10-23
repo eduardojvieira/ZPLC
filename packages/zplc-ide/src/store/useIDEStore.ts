@@ -460,7 +460,7 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
       const dirHandle = chosen.handle;
       get().addConsoleEntry({
         type: 'info',
-        message: `${chosen.seed ? 'Copying example to' : 'Reopening'}: ${dirHandle.name}...`,
+        message: t(chosen.seed ? 'statusText.copyingExample' : 'statusText.reopening', { name: dirHandle.name }),
         source: 'system',
       });
       if (chosen.seed) await copyProjectToFolder(dirHandle, loaded.zplcConfig, assets);

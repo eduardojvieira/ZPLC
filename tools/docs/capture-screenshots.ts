@@ -6,7 +6,8 @@
 //                                       application, as `bun run test:journeys` does)
 //   bun run docs:screenshots -- --editors
 //                                       headless Chromium against the Vite renderer (no display, no Electron): one picture of each language
-//                                       editor in English and in Spanish, for the language reference pages (DOC-006), into
+//                                       editor in English and in Spanish, light and dark, for the language reference pages
+//                                       (DOC-006) and the landing, into
 //                                       docs/static/img/editors; the manifest keeps the tutorial pictures and records the commit of these
 //   bun run docs:screenshots -- --learn
 //                                       journey 59 in the real application (a display, the built runtime and application, as for
@@ -38,6 +39,10 @@ export const PICTURE_DIR = `${IMAGE_DIR}/tutorials`;
 export const EDITOR_DIR = `${IMAGE_DIR}/editors`;
 export const EDITOR_LANGUAGES = ['st', 'il', 'ld', 'fbd', 'sfc'] as const;
 export const EDITOR_LOCALES = ['en', 'es'] as const;
+export const EDITOR_THEMES = ['light', 'dark'] as const;
+/** The file of an editor picture: the dark one has a `-dark` suffix, as the Learn pictures do. */
+export const editorFile = (language: string, locale: string, theme: (typeof EDITOR_THEMES)[number]): string =>
+  `${language}-${locale}${theme === 'dark' ? '-dark' : ''}.png`;
 export const EDITOR_COMMAND = 'bun run docs:screenshots -- --editors';
 export const MANIFEST = `${IMAGE_DIR}/manifest.json`;
 /**
@@ -73,7 +78,7 @@ export interface RecordedImage {
 const PAGE_DIRS = ['docs/docs', 'docs/i18n/es/docusaurus-plugin-content-docs/current'];
 
 /** The pictures the journey takes, in the order of the steps. The journey and this list are checked against each other by a capture. */
-export const PICTURES = [
+const ENGLISH_PICTURES = [
   { file: 'blink-1-welcome.png', step: 'The Welcome screen with the example list' },
   { file: 'blink-2-program.png', step: 'The program open in the editor' },
   { file: 'blink-3-built.png', step: 'The build succeeded' },
@@ -81,6 +86,11 @@ export const PICTURES = [
   { file: 'blink-5-output-false.png', step: 'The output is FALSE half a second later' },
   { file: 'blink-6-scenario.png', step: 'The scenario test passed' },
 ] as const;
+/** The same steps again with the interface in Spanish (`ZPLC_DOC_SHOTS_LOCALE=es`): the file has the suffix `-es`. */
+export const PICTURES: ReadonlyArray<{ file: string; step: string }> = [
+  ...ENGLISH_PICTURES,
+  ...ENGLISH_PICTURES.map(({ file, step }) => ({ file: file.replace(/\.png$/, '-es.png'), step: `${step}, interface in Spanish` })),
+];
 export const JOURNEY = '56 Blink without hardware (the tutorial)';
 
 export interface ManifestImage {
@@ -135,7 +145,8 @@ export function imagesOf(text: string): string[] {
 
 /** The path of a page image below `docs/static`, or undefined when it is not a path of the site's static folder. */
 export function staticPathOf(reference: string): string | undefined {
-  return reference.startsWith('/img/') ? `docs/static${reference}` : undefined;
+  // a `#gh-light-mode-only` or `#gh-dark-mode-only` fragment picks the picture of a colour mode: it is not part of the path
+  return reference.startsWith('/img/') ? `docs/static${reference.replace(/#.*$/, '')}` : undefined;
 }
 
 export interface Problem {
@@ -251,15 +262,17 @@ export function journeyPassed(stdout: string, journey: string): boolean {
 function capture(): void {
   const scratch = mkdtempSync(join(tmpdir(), 'zplc-docs-shots-'));
   try {
-    const run = spawnSync('bun', ['run', 'scripts/run-journeys.ts'], {
-      cwd: join(ROOT, 'packages/zplc-ide'),
-      env: { ...process.env, ZPLC_JOURNEY_ONLY: JOURNEY, ZPLC_DOC_SHOTS: scratch },
-      stdio: ['ignore', 'pipe', 'pipe'],
-      encoding: 'utf8',
-    });
-    if (run.status !== 0 || !journeyPassed(run.stdout, JOURNEY)) {
-      process.stderr.write(`${run.stdout}\n${run.stderr}\n`);
-      throw new Error(`the journey "${JOURNEY}" did not pass, so no picture is written`);
+    for (const locale of EDITOR_LOCALES) {
+      const run = spawnSync('bun', ['run', 'scripts/run-journeys.ts'], {
+        cwd: join(ROOT, 'packages/zplc-ide'),
+        env: { ...process.env, ZPLC_JOURNEY_ONLY: JOURNEY, ZPLC_DOC_SHOTS: scratch, ZPLC_DOC_SHOTS_LOCALE: locale },
+        stdio: ['ignore', 'pipe', 'pipe'],
+        encoding: 'utf8',
+      });
+      if (run.status !== 0 || !journeyPassed(run.stdout, JOURNEY)) {
+        process.stderr.write(`${run.stdout}\n${run.stderr}\n`);
+        throw new Error(`the journey "${JOURNEY}" did not pass in ${locale}, so no picture is written`);
+      }
     }
     const taken = readdirSync(scratch)
       .filter((name) => name.endsWith('.png'))
@@ -372,7 +385,9 @@ function captureEditors(): void {
       throw new Error('the editor capture failed, so no picture is written');
     }
     const wanted = EDITOR_LANGUAGES.flatMap((language) =>
-      EDITOR_LOCALES.map((locale) => ({ language, locale, file: `${language}-${locale}.png` })),
+      EDITOR_LOCALES.flatMap((locale) =>
+        EDITOR_THEMES.map((theme) => ({ language, locale, theme, file: editorFile(language, locale, theme) })),
+      ),
     );
     const taken = readdirSync(scratch)
       .filter((name) => name.endsWith('.png'))
@@ -389,12 +404,14 @@ function captureEditors(): void {
       );
     mkdirSync(join(ROOT, EDITOR_DIR), { recursive: true });
     const commit = git(['rev-parse', 'HEAD']);
-    const images: ManifestImage[] = wanted.map(({ language, locale, file }) => {
+    const images: ManifestImage[] = wanted.map(({ language, locale, theme, file }) => {
       copyFileSync(join(scratch, file), join(ROOT, EDITOR_DIR, file));
       const bytes = readFileSync(join(ROOT, EDITOR_DIR, file));
       return {
         file: `editors/${file}`,
-        step: `The ${language.toUpperCase()} editor with the Blinky example, interface in ${locale === 'en' ? 'English' : 'Spanish'}`,
+        step:
+          `The ${language.toUpperCase()} editor with the Blinky example, interface ` +
+          `in ${locale === 'en' ? 'English' : 'Spanish'}, ${theme} theme`,
         sha256: sha256(bytes),
         bytes: bytes.length,
         ...pngSize(bytes),

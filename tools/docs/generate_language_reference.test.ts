@@ -114,14 +114,20 @@ describe('language reference: every row of the matrix is on a page, in both lang
       for (const lang of ['en', 'es'] as const) {
         const text = languageBody(language, inputs, lang);
         const shown = imagesOf(text);
-        expect([language, lang, shown]).toEqual([language, lang, [editorImage(language, lang)]]);
-        const path = staticPathOf(shown[0]!)!;
-        expect([language, lang, existsSync(join(root, path))]).toEqual([language, lang, true]);
-        const entry = manifest.images.find((image) => `${IMAGE_DIR}/${image.file}` === path);
-        expect([language, lang, entry !== undefined]).toEqual([language, lang, true]);
-        const alt = new RegExp(`!\\[([^\\]]+)\\]\\(${shown[0]!.replace(/[.]/g, '\\.')}\\)`).exec(text)?.[1] ?? '';
-        expect(alt).toBe(editorAlt(language, lang));
-        expect(alt.length).toBeGreaterThan(30);
+        expect([language, lang, shown]).toEqual([
+          language,
+          lang,
+          [`${editorImage(language, lang)}#gh-light-mode-only`, `${editorImage(language, lang, 'dark')}#gh-dark-mode-only`],
+        ]);
+        for (const reference of shown) {
+          const path = staticPathOf(reference)!;
+          expect([language, lang, existsSync(join(root, path))]).toEqual([language, lang, true]);
+          const entry = manifest.images.find((image) => `${IMAGE_DIR}/${image.file}` === path);
+          expect([language, lang, entry !== undefined]).toEqual([language, lang, true]);
+          const alt = new RegExp(`!\\[([^\\]]+)\\]\\(${reference.replace(/[.]/g, '\\.')}\\)`).exec(text)?.[1] ?? '';
+          expect(alt).toBe(editorAlt(language, lang));
+          expect(alt.length).toBeGreaterThan(30);
+        }
       }
   });
 
@@ -130,7 +136,11 @@ describe('language reference: every row of the matrix is on a page, in both lang
     const manifest = JSON.parse(readFileSync(join(root, MANIFEST), 'utf8')) as Manifest;
     const editors = manifest.images.filter((image) => image.file.startsWith('editors/'));
     expect(editors.map((image) => image.file).sort()).toEqual(
-      LANGUAGES.flatMap((language) => (['en', 'es'] as const).map((lang) => editorImage(language, lang).replace('/img/', ''))).sort(),
+      LANGUAGES.flatMap((language) =>
+        (['en', 'es'] as const).flatMap((lang) =>
+          (['light', 'dark'] as const).map((theme) => editorImage(language, lang, theme).replace('/img/', '')),
+        ),
+      ).sort(),
     );
     for (const image of editors) {
       const bytes = new Uint8Array(readFileSync(join(root, IMAGE_DIR, image.file)));

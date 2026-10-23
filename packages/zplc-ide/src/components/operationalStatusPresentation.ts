@@ -1,3 +1,4 @@
+import { t, tn } from '../i18n';
 import { wasmCapabilityProfile } from '../runtime/wasmCapabilities';
 
 export type OperationalStatusTone = 'neutral' | 'info' | 'success' | 'attention' | 'danger';
@@ -52,7 +53,7 @@ function safeLabel(value: unknown): string | undefined {
 function safeStatus(value: OperationalStatusInput['status']): OperationalStatusPresentation['status'] {
   return typeof value?.text === 'string' && value.text.length <= 96 && SAFE_STATUS.test(value.text) && TONES.has(value.tone)
     ? value
-    : { text: 'Status unavailable', tone: 'neutral' };
+    : { text: t('statusText.unavailable'), tone: 'neutral' };
 }
 
 /** The board that a connected controller reported, when it is a plain label. */
@@ -98,7 +99,7 @@ function browserRuntimeLimits(): string {
       .filter((feature) => feature.status === status)
       .map((feature) => feature.name)
       .join(', ');
-  return `Browser runtime. Not available: ${named('unavailable')}. Degraded: ${named('degraded')}. Timing follows the browser clock.`;
+  return t('statusText.browserLimits', { unavailable: named('unavailable'), degraded: named('degraded') });
 }
 
 /** Reduces runtime and store state to bounded operational copy; untrusted data is omitted. */
@@ -113,21 +114,23 @@ export function presentOperationalStatus(input: OperationalStatusInput): Operati
   const reportedBoard = serialConnected ? reportedBoardOf(input.controllerInfo) : undefined;
   const version = serialConnected ? controllerVersion(input.controllerInfo) : undefined;
   const runtime = runtimeMismatch
-    ? 'No compatible runtime session'
+    ? t('statusText.runtime.incompatible')
     : nativeConnected
-      ? 'Native POSIX'
+      ? t('statusText.runtime.native')
       : serialConnected
-        ? `Serial runtime${version ? ` · ${version}` : ''}`
+        ? version
+          ? t('statusText.runtime.serialVersion', { version })
+          : t('statusText.runtime.serial')
         : wasmConnected
-          ? 'WASM fallback · degraded'
-          : 'No runtime session';
+          ? t('statusText.runtime.wasm')
+          : t('statusText.runtime.none');
   const target =
     nativeConnected && mode === 'SIMULATION'
-      ? 'Local POSIX'
+      ? t('statusText.target.local')
       : reportedBoard
         ? reportedBoard
         : mode === 'HARDWARE' && configuredBoard
-          ? `${configuredBoard} (configured)`
+          ? t('statusText.target.configured', { board: configuredBoard })
           : undefined;
   const cycleCount = compatibleSession ? cycles(input.vmInfo) : undefined;
   const overruns = compatibleSession ? reportedOverruns(input) : undefined;
@@ -136,18 +139,16 @@ export function presentOperationalStatus(input: OperationalStatusInput): Operati
     input.forcesUnconfirmed === true ||
     (forceCount !== undefined && forceCount > 0 && !compatibleSession) ||
     (forceCount !== undefined && forceCount > 8)
-      ? { kind: 'unconfirmed' as const, text: 'Force state unconfirmed — verify and reconnect before operating.' }
+      ? { kind: 'unconfirmed' as const, text: t('statusText.force.unconfirmed') }
       : (() => {
-          return forceCount && forceCount <= 8
-            ? { kind: 'active' as const, text: `${forceCount} active force${forceCount === 1 ? '' : 's'}` }
-            : undefined;
+          return forceCount && forceCount <= 8 ? { kind: 'active' as const, text: tn('statusText.force.active', forceCount) } : undefined;
         })();
 
   return {
     mode,
     runtime,
     ...(target ? { target } : {}),
-    status: runtimeMismatch ? { text: 'Runtime mode mismatch · reconnect required', tone: 'danger' } : safeStatus(input.status),
+    status: runtimeMismatch ? { text: t('statusText.mismatch'), tone: 'danger' } : safeStatus(input.status),
     ...(cycleCount !== undefined ? { cycles: cycleCount } : {}),
     ...taskMetrics(input.projectTasks),
     ...(overruns !== undefined ? { overruns } : {}),

@@ -2293,6 +2293,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"48 The main screens pass the rendered accessibility check in light, dark and high contrast","partial":true}
   ],
   "UX-006": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/ld/LDElement.portNames.test.tsx","test":"UX-006 draws the port names of a function block in debug at 9px, never smaller than the instance name"},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/tokens.test.ts","test":"type, shape and density tokens (UX-006, UX-007, UX-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-006 gives values, addresses and times tabular, slashed-zero numerals through one class"},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/typography.test.ts","test":"UX-006 sets no font size under 11 pixels in any style sheet or component, and keeps the scale floor at 11"},
@@ -2696,6 +2697,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"49 The migrated screens read in Spanish, with no raw catalog key, no English left over and no clipped control at 1366 by 768","partial":true}
   ],
   "UX-030": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/operationalStatusPresentation.es.test.ts","test":"UX-030 the status bar and the block groups in Spanish"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonLanguage.test.ts","test":"UX-030 the Spanish of the whole application uses the glossary terms of the course"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/productNameMessages.test.ts","test":"UX-030 DOC-017 the messages that reach a person name the product ZPLC"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/productNameMessages.test.ts","test":"UX-030 the browser capability profile says which process image ZPLC reads and writes"},
@@ -2730,6 +2732,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"UX-033 aligning and distributing steps and transitions from the keyboard"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"UX-033 aligns the selected steps and transitions in one gesture, and says how many"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/sfc/keyboard.test.ts","test":"UX-033 refuses to distribute two elements, with the reason, and changes nothing"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/viewBounds.test.ts","test":"UX-033 fits a diagram above the minimap of the canvas, whatever its height"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/viewBounds.test.ts","test":"UX-033 the zoom range of the diagram editors"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"51c The visual editors fit to the view, zoom wide, and open context menus from the keyboard","partial":true}
   ],

@@ -105,7 +105,9 @@ export default function SFCToolbox({ onInsert }: SFCToolboxProps) {
                 >
                   <span className="text-[var(--text-tertiary)]">{isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}</span>
                   <span className="text-[var(--text-tertiary)]">{category.icon}</span>
-                  <span className="text-xs text-[var(--text-secondary)] font-medium">{category.name}</span>
+                  <span className="text-xs text-[var(--text-secondary)] font-medium">
+                    {category.name === 'Steps' ? t('statusText.group.steps') : t('statusText.group.transitions')}
+                  </span>
                 </Button>
 
                 {/* Elements */}

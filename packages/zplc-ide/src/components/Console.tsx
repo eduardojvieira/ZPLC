@@ -250,9 +250,7 @@ export function Console({ debugController }: ConsoleProps) {
   const warningCount =
     compilerMessages.filter((message) => message.type === 'warning').length +
     liveSTDiagnostics.filter((message) => message.type === 'warning').length;
-  const problemSummary = `${errorCount} ${errorCount === 1 ? 'error' : 'errors'} · ${warningCount} ${
-    warningCount === 1 ? 'warning' : 'warnings'
-  }`;
+  const problemSummary = `${tn('workbench.inspector.errors', errorCount)} · ${tn('workbench.inspector.warnings', warningCount)}`;
 
   // Opening a problem opens its file at its position, and in a diagram selects the element it is about (LNG-003)
   const activateDiagnostic = async (msg: { file?: string; line?: number; column?: number; message: string; element?: string }) => {

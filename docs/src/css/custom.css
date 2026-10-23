@@ -242,7 +242,9 @@ samp {
 
 /* an image drawn for one colour mode: the other one is hidden, and a lazy image that is hidden is not fetched */
 [data-theme="dark"] .zplc-light-only,
-html:not([data-theme="dark"]) .zplc-dark-only {
+html:not([data-theme="dark"]) .zplc-dark-only,
+[data-theme="dark"] img[src$="#gh-light-mode-only"],
+html:not([data-theme="dark"]) img[src$="#gh-dark-mode-only"] {
   display: none !important;
 }
 

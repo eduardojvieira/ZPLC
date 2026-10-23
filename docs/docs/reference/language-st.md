@@ -15,7 +15,9 @@ The status of every element on this page is read off the executed conformance te
 
 Structured Text is written in the primary text editor of ZPLC, which shows the diagnostics of the build with their line and column and navigates from a diagnostic to its source.
 
-![The Structured Text editor of ZPLC with the Blinky example open, showing the program and its variable declarations, in English](/img/editors/st-en.png)
+![The Structured Text editor of ZPLC with the Blinky example open, showing the program and its variable declarations, in English](/img/editors/st-en.png#gh-light-mode-only)
+
+![The Structured Text editor of ZPLC with the Blinky example open, showing the program and its variable declarations, in English](/img/editors/st-en-dark.png#gh-dark-mode-only)
 
 The picture is a real screenshot of this editor, captured by automation from the current version of ZPLC with a small example program open.
 

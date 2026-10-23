@@ -26,7 +26,7 @@ import {
   Radio,
 } from 'lucide-react';
 import { Button, TextField } from '../../ui';
-import { FBD_VALUE_BLOCKS, fbdPaletteCategories } from './palette';
+import { FBD_VALUE_BLOCKS, blockGroupLabel, fbdPaletteCategories } from './palette';
 import { describeProjectBlock, projectPalette } from '../../models/projectBlocks';
 import { filterItems } from '../picker';
 import { useProjectBlocks } from '../useProjectBlocks';
@@ -157,7 +157,7 @@ export default function FBDToolbox({ onInsert }: FBDToolboxProps) {
               >
                 <span className="text-[var(--text-tertiary)]">{isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}</span>
                 <span className="text-[var(--text-tertiary)]">{category.icon}</span>
-                <span className="text-xs text-[var(--text-secondary)] font-medium">{category.name}</span>
+                <span className="text-xs text-[var(--text-secondary)] font-medium">{blockGroupLabel(category.name)}</span>
               </Button>
 
               {/* Blocks */}

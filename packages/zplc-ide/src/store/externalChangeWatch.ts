@@ -5,6 +5,7 @@
  * asked about: keep the user's version, or load the one on disk. The decision itself is `planExternalChanges`.
  */
 import { create } from 'zustand';
+import { t } from '../i18n';
 import { parseProjectChange } from '../../electron/projectFilesProtocol';
 import { projectRootId } from '../ipc/projectFilesHandles';
 import { readFileContent } from '../utils/fileSystem';
@@ -65,13 +66,13 @@ export async function checkOpenFiles(): Promise<void> {
     const file = byPath.get(reload.path)!;
     loadedFiles.set(file.id, { ...file, content: reload.content, isModified: false, diskContent: reload.content });
     changed = true;
-    note(`Reloaded ${file.name}: it was changed outside ZPLC.`);
+    note(t('statusText.reloadedFromDisk', { name: file.name }));
   }
   if (changed) useIDEStore.setState({ loadedFiles });
   for (const path of plan.close) {
     const file = byPath.get(path)!;
     useIDEStore.getState().discardFile(file.id);
-    note(`Closed ${file.name}: it was deleted outside ZPLC.`);
+    note(t('statusText.closedDeleted', { name: file.name }));
   }
   const open = new Set(files.map((file) => file.path));
   setConflicts((previous) => [

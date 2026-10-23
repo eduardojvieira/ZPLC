@@ -15,7 +15,9 @@ The status of every element on this page is read off the executed conformance te
 
 Instruction List is written in a text editor. The source is parsed and translated to Structured Text before it is compiled, so the data types, functions and function blocks are those of Structured Text.
 
-![The Instruction List editor of ZPLC with the Blinky example open, showing the program and its variable declarations, in English](/img/editors/il-en.png)
+![The Instruction List editor of ZPLC with the Blinky example open, showing the program and its variable declarations, in English](/img/editors/il-en.png#gh-light-mode-only)
+
+![The Instruction List editor of ZPLC with the Blinky example open, showing the program and its variable declarations, in English](/img/editors/il-en-dark.png#gh-dark-mode-only)
 
 The picture is a real screenshot of this editor, captured by automation from the current version of ZPLC with a small example program open.
 

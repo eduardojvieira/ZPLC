@@ -712,6 +712,7 @@ export function getLandingPageContent(locale) {
         ...item,
         id: languageIds[index],
         shot: `editors/${languageIds[index]}-${lang}.png`,
+        shotDark: `editors/${languageIds[index]}-${lang}-dark.png`,
         to: `/docs/reference/language-${languageIds[index]}`,
       })),
     },

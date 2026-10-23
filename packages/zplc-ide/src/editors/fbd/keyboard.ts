@@ -13,7 +13,7 @@ import { getDefaultPorts, type FBDModel } from '../../models/fbd';
 import { judgeConnection } from '../../models/pinTypes';
 import { fbdNeedsInstance } from '../../transpiler/fbdToST';
 import { findProjectBlock, projectPalette, type ProjectBlock } from '../../models/projectBlocks';
-import { FBD_VALUE_BLOCKS, fbdPaletteCategories } from './palette';
+import { FBD_VALUE_BLOCKS, blockGroupLabel, fbdPaletteCategories } from './palette';
 import { connectBlocks, edgesToConnections, nodesToBlocks } from './graphModel';
 import { getNodeType } from './nodes/nodeType';
 import { cursorNode, firstNode, freeId, freePosition, nearestNode, numberedId, selectOnly, type Direction } from '../graphNav';
@@ -138,7 +138,8 @@ export function paletteChoices(projectBlocks: readonly ProjectBlock[]): PickerIt
         t('fbd.group.project'),
         findProjectBlock(projectBlocks, name)?.kind === 'FUNCTION' ? t('fbd.detail.function') : t('fbd.detail.functionBlock'),
       );
-  for (const category of fbdPaletteCategories()) for (const name of category.blocks) add(name, category.name, category.name);
+  for (const category of fbdPaletteCategories())
+    for (const name of category.blocks) add(name, blockGroupLabel(category.name), blockGroupLabel(category.name));
   for (const name of FBD_VALUE_BLOCKS) add(name, t('fbd.group.io'), name === 'constant' ? t('fbd.detail.value') : t('fbd.detail.variable'));
   return items;
 }

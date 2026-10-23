@@ -494,7 +494,7 @@ function FBSymbol({ fbType, instance, selected, energized, debugValues }: FBSymb
             return (
               <g key={port.name}>
                 {/* Port name */}
-                <text x={xPos + 12} y={boxY + 36} fill={COLORS.textDim} fontSize={6} textAnchor="middle" fontFamily="monospace">
+                <text x={xPos + 12} y={boxY + 35} fill={COLORS.textDim} fontSize={9} textAnchor="middle" fontFamily="monospace">
                   {port.name}
                 </text>
                 {/* Port value */}
