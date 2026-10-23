@@ -3096,7 +3096,13 @@ export const JOURNEYS: Journey[] = [
       // Duplicate, then move the copy into the new folder, then delete the folder with it.
       await contextMenu('src/Drive.st', 'file', 'Duplicate');
       await app.until('the copy in the tree', async () => (await inTree('src/Drive_copy.st')) || undefined);
-      assert(disk(join(project, 'src', 'Drive_copy.st')).includes(EDIT), 'The copy does not hold the content of the file.');
+      // the tree can list the new file before its content is on disk, on a loaded machine
+      const copy = join(project, 'src', 'Drive_copy.st');
+      await app
+        .until('the content in the copy', () => (existsSync(copy) && disk(copy).includes(EDIT)) || undefined)
+        .catch(() => {
+          throw new Error('The copy does not hold the content of the file.');
+        });
       await contextMenu('src/Drive.st', 'file', 'Rename…');
       await typeName('drive_COPY.st');
       await app.click(button('Rename'));
@@ -6972,6 +6978,12 @@ export const JOURNEYS: Journey[] = [
       await app.press('Ctrl+A');
       await app.press('Ctrl+V');
       await app.until('the solution in the editor', async () => (await editorText(app)).includes('Forward') || undefined);
+      // Monaco tells the workspace about a paste a few milliseconds after its model holds it, and Save writes what the workspace
+      // holds: wait for the tab to show the file as modified, as a person sees it before saving.
+      await app.until(
+        'the tab of Motor.st to show the paste as unsaved',
+        async () => (await app.eval<string>(`${editorTab('file:src/Motor.st')}?.textContent ?? ''`)).includes('*') || undefined,
+      );
       await app.press('Ctrl+S');
       await app.until('the save to be announced', async () => /Saved/.test(await live('polite')) || undefined);
 
