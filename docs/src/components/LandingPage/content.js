@@ -5,6 +5,7 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 // A span between backticks is a literal identifier and is set in code.
 
 const releasesUrl = 'https://github.com/eduardojvieira/ZPLC/releases';
+const boardReportUrl = 'https://github.com/eduardojvieira/ZPLC/issues/new?template=board_report.yml';
 
 const languageIds = ['st', 'il', 'ld', 'fbd', 'sfc'];
 
@@ -45,7 +46,7 @@ const plantIds = [
 const landingPageContent = {
   en: {
     home: {
-      metaTitle: 'Open-source IEC 61131-3 PLC runtime and development environment',
+      metaTitle: 'The open-source PLC you can port to any microcontroller',
       metaDescription:
         'ZPLC compiles the five IEC 61131-3 languages to one bytecode. Its C99 runtime builds for Zephyr boards and runs as a ' +
         'simulator on your computer, and its desktop application edits, simulates and tests programs.',
@@ -67,10 +68,12 @@ const landingPageContent = {
       statusTo: '/docs/safety-and-limitations',
     },
     different: {
-      title: 'What makes ZPLC different',
-      lead: 'The parts of ZPLC that set it apart, each with the page that shows how it is checked.',
+      title: 'Everything a PLC needs, on the chip you choose',
+      lead:
+        'Port the runtime once, then edit, simulate, debug and test in one application. Each claim below links to the page that ' +
+        'shows how it is checked.',
       port: {
-        title: 'A new microcontroller needs 18 functions',
+        title: 'Port it in 18 functions',
         text:
           'The runtime is portable C99 behind a hardware abstraction layer. A port implements its 18 functions and two optional ' +
           'network calls, then passes the port conformance suite: every opcode, the loader rejections, the scheduler phases and ' +
@@ -102,7 +105,7 @@ const landingPageContent = {
       },
       rungs: [
         {
-          title: 'Simulate before any hardware',
+          title: 'Test it before you buy a board',
           text:
             'The simulator is the same C runtime, built for your computer and bundled with ZPLC. Scenario tests set inputs and ' +
             'check outputs over time, in the Tests tab or with `zplc-cli` in a CI job.',
@@ -110,7 +113,7 @@ const landingPageContent = {
           to: '/docs/guides/scenario-tests',
         },
         {
-          title: 'Watch, force and step online',
+          title: 'See every value while it runs',
           text:
             'In all five languages: values on the program while it runs, breakpoints, pause and a one-cycle step, and forced ' +
             'values that stay marked as forced.',
@@ -118,7 +121,7 @@ const landingPageContent = {
           to: '/docs/guides/simulate-and-debug',
         },
         {
-          title: 'A scan in a fixed order',
+          title: 'Tasks run in an order you can predict',
           text:
             'Tasks released together run by release time, then priority, then task ID, against one snapshot of the inputs. A ' +
             'program has up to 16 tasks, each with its own interval. The interval is a deadline; no board has a measured scan ' +
@@ -128,7 +131,7 @@ const landingPageContent = {
           timing: true,
         },
         {
-          title: 'A person starts every physical action',
+          title: 'AI assists, a person decides',
           text:
             'Learn and the MCP server for AI assistants never flash, deploy, force, or start and stop a program. A person does, ' +
             'with the controls of ZPLC.',
@@ -136,7 +139,7 @@ const landingPageContent = {
           to: '/docs/guides/ai-and-mcp',
         },
         {
-          title: 'Communication blocks',
+          title: 'Modbus and MQTT from your program',
           text:
             'Function blocks for Modbus, MQTT with Sparkplug B, and cloud services. They are checked against servers written for ' +
             'the tests on this computer, not yet against a live broker or a device on a wire.',
@@ -144,7 +147,7 @@ const landingPageContent = {
           to: '/docs/runtime/communication-function-blocks',
         },
         {
-          title: 'English and Spanish',
+          title: 'In English and in Spanish',
           text: 'The application, the 33 lessons and this documentation, in English and in neutral Spanish.',
           link: 'Getting started',
           to: '/docs/getting-started',
@@ -156,8 +159,10 @@ const landingPageContent = {
       },
     },
     languages: {
-      title: 'Five IEC 61131-3 languages, one bytecode',
-      lead: 'Write in text or in diagrams. Every language compiles to the same `.zplc` bytecode, which one C99 runtime executes.',
+      title: 'Ladder or text: all five IEC 61131-3 languages',
+      lead:
+        'Draw rungs, wire blocks, chart steps or type code. Every language compiles to the same `.zplc` bytecode, which one C99 ' +
+        'runtime executes.',
       tabsLabel: 'IEC 61131-3 languages',
       evidenceLabel: 'How this is checked',
       evidence:
@@ -204,26 +209,26 @@ const landingPageContent = {
       ],
     },
     learn: {
-      title: 'Learn PLC programming in ZPLC',
+      title: 'Learn PLC programming without buying a PLC',
       lead:
-        'A course of 33 lessons in 12 modules, from the scan cycle to a small machine, in English and Spanish. ZPLC grades every ' +
+        'A free course of 33 lessons in 12 modules, from the scan cycle to a small machine, in English and Spanish. ZPLC grades every ' +
         'lesson, and all but one run in the simulator with no board and no network.',
       facts: [
         {
-          title: 'Graded against a scenario',
+          title: 'Feedback on every attempt',
           text:
             'Check runs your saved program against the scenario of the lesson and lists each assertion that failed, with the ' +
             'time, the value expected and the value seen.',
         },
         {
-          title: 'Two tracks',
+          title: 'Simulator first, board when you are ready',
           text:
             'All lessons but one run in simulation. 21 of them also take the lesson to a learner board, with the wiring as a diagram and ' +
             'a pin ' +
             'map; no check on a board has been recorded yet.',
         },
         {
-          title: 'Four simulated plants',
+          title: 'Drive four simulated machines',
           text: 'A tank, a conveyor, a motor and a pedestrian crossing answer the outputs of your program.',
         },
         {
@@ -294,10 +299,10 @@ const landingPageContent = {
       ],
     },
     boards: {
-      title: 'Boards, at the level their evidence gives',
+      title: 'Have a board? Be the first to try ZPLC on it',
       lead:
         'Seven Zephyr board profiles build in CI and fit their flash and RAM budgets. None has been flashed, booted or run on ' +
-        'hardware yet; the next level needs a recorded test on the exact board.',
+        'hardware yet, so your report is the lead the project follows: tell us what happened, with the image you ran.',
       levels: [
         { id: 'cross-build', text: 'The firmware builds for the board and fits its flash and RAM budget.' },
         { id: 'community-reported', text: 'A user reported what happened on their own board, with the image it ran.' },
@@ -307,6 +312,7 @@ const landingPageContent = {
       columns: { board: 'Board', target: 'Zephyr target', network: 'Network', level: 'Level' },
       learner: 'Learner board of the course',
       links: [
+        { label: 'Report your board', href: boardReportUrl },
         { label: 'Boards', to: '/docs/reference/boards' },
         { label: 'Hardware support', to: '/docs/reference/capabilities-evidence' },
       ],
@@ -323,8 +329,10 @@ const landingPageContent = {
       to: '/docs/safety-and-limitations',
     },
     get: {
-      title: 'Get ZPLC',
-      lead: 'The installers are files of a GitHub release, the only channel today. Check the file against `SHA256SUMS`, then open it.',
+      title: 'Run your first program today',
+      lead:
+        'Free and MIT-licensed, for Windows, macOS and Linux. The installers are files of a GitHub release, the only channel ' +
+        'today. Check the file against `SHA256SUMS`, then open it.',
       systems: [
         { name: 'Windows', text: 'The `setup-unsigned.exe` installer. It is unsigned: choose More info, then Run anyway.' },
         { name: 'macOS', text: 'The `.dmg` or `.zip` for your chip. It is signed ad hoc and not notarized.' },
@@ -345,7 +353,7 @@ const landingPageContent = {
   },
   es: {
     home: {
-      metaTitle: 'Runtime y entorno de desarrollo de PLC IEC 61131-3, de código abierto',
+      metaTitle: 'El PLC de código abierto que puede llevar a cualquier microcontrolador',
       metaDescription:
         'ZPLC compila los cinco lenguajes IEC 61131-3 a un solo bytecode. Su runtime en C99 se compila para placas Zephyr y se ' +
         'ejecuta como simulador en su equipo, y su aplicación de escritorio edita, simula y prueba programas.',
@@ -367,10 +375,12 @@ const landingPageContent = {
       statusTo: '/docs/safety-and-limitations',
     },
     different: {
-      title: 'Lo que distingue a ZPLC',
-      lead: 'Las partes de ZPLC que lo diferencian, cada una con la página que muestra cómo se comprueba.',
+      title: 'Todo lo que necesita un PLC, en el chip que usted elija',
+      lead:
+        'Porte el runtime una vez y luego edite, simule, depure y pruebe en una sola aplicación. Cada afirmación enlaza con la ' +
+        'página que muestra cómo se comprueba.',
       port: {
-        title: 'Un microcontrolador nuevo necesita 18 funciones',
+        title: 'Pórtelo con 18 funciones',
         text:
           'El runtime es C99 portable detrás de una capa de abstracción de hardware. Un port implementa sus 18 funciones y dos ' +
           'llamadas de red opcionales, y luego pasa la suite de conformidad de ports: cada código de operación, los rechazos del ' +
@@ -405,7 +415,7 @@ const landingPageContent = {
       },
       rungs: [
         {
-          title: 'Simule antes de usar hardware',
+          title: 'Pruébelo antes de comprar una placa',
           text:
             'El simulador es el mismo runtime en C, compilado para su equipo e incluido con ZPLC. Las pruebas de escenario fijan ' +
             'entradas y verifican salidas en el tiempo, desde la pestaña Pruebas o con `zplc-cli` en un trabajo de CI.',
@@ -413,7 +423,7 @@ const landingPageContent = {
           to: '/docs/guides/scenario-tests',
         },
         {
-          title: 'Observe, fuerce y avance en línea',
+          title: 'Vea cada valor mientras se ejecuta',
           text:
             'En los cinco lenguajes: valores sobre el programa mientras se ejecuta, puntos de interrupción, pausa y avance de un ' +
             'ciclo, y valores forzados que siguen marcados como forzados.',
@@ -421,7 +431,7 @@ const landingPageContent = {
           to: '/docs/guides/simulate-and-debug',
         },
         {
-          title: 'Un ciclo en un orden fijo',
+          title: 'Las tareas se ejecutan en un orden predecible',
           text:
             'Las tareas liberadas juntas se ejecutan por instante de liberación, luego por prioridad y luego por ID de tarea, ' +
             'sobre una sola instantánea de las entradas. Un programa tiene hasta 16 tareas, cada una con su intervalo. El ' +
@@ -431,7 +441,7 @@ const landingPageContent = {
           timing: true,
         },
         {
-          title: 'Una persona inicia cada acción física',
+          title: 'La IA asiste, una persona decide',
           text:
             'Learn y el servidor MCP para asistentes de IA nunca graban firmware, despliegan, fuerzan, ni inician o detienen un ' +
             'programa. Lo hace una persona, con los controles de ZPLC.',
@@ -439,7 +449,7 @@ const landingPageContent = {
           to: '/docs/guides/ai-and-mcp',
         },
         {
-          title: 'Bloques de comunicación',
+          title: 'Modbus y MQTT desde su programa',
           text:
             'Bloques de función para Modbus, MQTT con Sparkplug B y servicios en la nube. Se comprueban contra servidores ' +
             'escritos para las pruebas en este equipo, todavía no contra un broker real ni un dispositivo en un cable.',
@@ -447,7 +457,7 @@ const landingPageContent = {
           to: '/docs/runtime/communication-function-blocks',
         },
         {
-          title: 'Inglés y español',
+          title: 'En inglés y en español',
           text: 'La aplicación, las 33 lecciones y esta documentación, en inglés y en español neutro.',
           link: 'Primeros pasos',
           to: '/docs/getting-started',
@@ -459,9 +469,10 @@ const landingPageContent = {
       },
     },
     languages: {
-      title: 'Cinco lenguajes IEC 61131-3, un solo bytecode',
+      title: 'Ladder o texto: los cinco lenguajes IEC 61131-3',
       lead:
-        'Escriba en texto o en diagramas. Todos los lenguajes se compilan al mismo bytecode `.zplc`, que ejecuta un único ' +
+        'Dibuje peldaños, conecte bloques, encadene pasos o escriba código. Todos los lenguajes se compilan al mismo bytecode `.zplc`, ' +
+        'que ejecuta un único ' +
         'runtime en C99.',
       tabsLabel: 'Lenguajes IEC 61131-3',
       evidenceLabel: 'Cómo se comprueba',
@@ -521,26 +532,27 @@ const landingPageContent = {
       ],
     },
     learn: {
-      title: 'Aprenda programación de PLC en ZPLC',
+      title: 'Aprenda a programar PLC sin comprar un PLC',
       lead:
-        'Un curso de 33 lecciones en 12 módulos, del ciclo de un PLC a una máquina pequeña, en inglés y en español. ZPLC califica ' +
+        'Un curso gratuito de 33 lecciones en 12 módulos, del ciclo de un PLC a una máquina pequeña, en inglés y en español. ZPLC ' +
+        'califica ' +
         'cada lección, y todas menos una se ejecutan en el simulador, sin placa y sin red.',
       facts: [
         {
-          title: 'Calificada con un escenario',
+          title: 'Una devolución en cada intento',
           text:
             'Comprobar ejecuta su programa guardado contra el escenario de la lección y lista cada aserción que falló, con el ' +
             'instante, el valor esperado y el valor observado.',
         },
         {
-          title: 'Dos recorridos',
+          title: 'Primero el simulador, la placa cuando esté listo',
           text:
             'Todas las lecciones menos una se ejecutan en simulación. 21 de ellas llevan además la lección a una placa del estudiante, ' +
             'con el cableado en un ' +
             'diagrama y un mapa de pines; todavía no se ha registrado ninguna comprobación en una placa.',
         },
         {
-          title: 'Cuatro plantas simuladas',
+          title: 'Controle cuatro máquinas simuladas',
           text: 'Un tanque, una cinta transportadora, un motor y un cruce peatonal responden a las salidas de su programa.',
         },
         {
@@ -619,10 +631,11 @@ const landingPageContent = {
       ],
     },
     boards: {
-      title: 'Placas, en el nivel que da su evidencia',
+      title: '¿Tiene una placa? Pruebe ZPLC en ella antes que nadie',
       lead:
         'Siete perfiles de placa de Zephyr se compilan en CI y caben en sus presupuestos de flash y RAM. Ninguno se ha grabado, ' +
-        'arrancado ni ejecutado todavía en hardware; el nivel siguiente necesita una prueba registrada en la placa exacta.',
+        'arrancado ni ejecutado todavía en hardware, así que su informe es la pista que sigue el proyecto: cuente qué ocurrió, ' +
+        'con la imagen que ejecutó.',
       levels: [
         { id: 'cross-build', text: 'El firmware compila para la placa y cabe en su presupuesto de flash y RAM.' },
         { id: 'community-reported', text: 'Un usuario informó qué ocurrió en su propia placa, con la imagen que ejecutó.' },
@@ -635,6 +648,7 @@ const landingPageContent = {
       columns: { board: 'Placa', target: 'Destino de Zephyr', network: 'Red', level: 'Nivel' },
       learner: 'Placa del estudiante del curso',
       links: [
+        { label: 'Informar sobre su placa', href: boardReportUrl },
         { label: 'Placas', to: '/docs/reference/boards' },
         { label: 'Compatibilidad de hardware', to: '/docs/reference/capabilities-evidence' },
       ],
@@ -651,9 +665,10 @@ const landingPageContent = {
       to: '/docs/safety-and-limitations',
     },
     get: {
-      title: 'Obtenga ZPLC',
+      title: 'Ejecute su primer programa hoy',
       lead:
-        'Los instaladores son archivos de una versión publicada en GitHub, el único canal hoy. Verifique el archivo con ' +
+        'Gratuito y con licencia MIT, para Windows, macOS y Linux. Los instaladores son archivos de una versión publicada en GitHub, el ' +
+        'único canal hoy. Verifique el archivo con ' +
         '`SHA256SUMS` y luego ábralo.',
       systems: [
         {

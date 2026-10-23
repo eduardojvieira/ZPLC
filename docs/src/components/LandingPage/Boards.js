@@ -67,7 +67,7 @@ export default function Boards() {
 
         <p className={styles.links}>
           {text.links.map((link) => (
-            <Link key={link.to} to={link.to}>
+            <Link key={link.label} {...(link.href ? { href: link.href } : { to: link.to })}>
               {link.label}
             </Link>
           ))}
