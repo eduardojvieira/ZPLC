@@ -4,8 +4,10 @@
  *   bun run scripts/capture-editor-shots.ts <folder>
  *
  * Headless Chromium over CDP against the Vite renderer, as scripts/smoke-studio-vertical.ts does, so it needs no display and
- * no Electron. The frame is fixed (1366x768, scale 1, light theme, a fixed project name) so a second run on the same build
- * writes the same bytes. The folder gets `<language>-<locale>.png` for st, il, ld, fbd and sfc. The caller
+ * no Electron. The frame is fixed (1366x768, scale 1, a fixed project name; each editor in light and in dark) so a second run on the same
+ * build
+ * writes the same bytes. The folder gets `<language>-<locale>.png` and `<language>-<locale>-dark.png` for st, il, ld, fbd and sfc. The
+ * caller
  * (tools/docs/capture-screenshots.ts --editors) hashes the files and writes the manifest.
  */
 import { accessSync, constants, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -27,6 +29,7 @@ const EXAMPLES = [
   { language: 'sfc', project: 'blinky_sfc', file: 'main.sfc.json', kind: 'SFC' },
 ] as const;
 const LOCALES = ['en', 'es'] as const;
+const THEMES = ['light', 'dark'] as const;
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -153,7 +156,12 @@ class Cdp {
 }
 
 /** Opens the example in the editor of the running renderer, with the interface in `locale`, and waits until it is drawn. */
-async function show(cdp: Cdp, example: (typeof EXAMPLES)[number], locale: (typeof LOCALES)[number]): Promise<void> {
+async function show(
+  cdp: Cdp,
+  example: (typeof EXAMPLES)[number],
+  locale: (typeof LOCALES)[number],
+  theme: (typeof THEMES)[number],
+): Promise<void> {
   const root = join(PROJECTS, example.project);
   const content = readFileSync(join(root, 'src', example.file), 'utf8');
   const config = JSON.parse(readFileSync(join(root, 'zplc.json'), 'utf8')) as unknown;
@@ -167,7 +175,7 @@ async function show(cdp: Cdp, example: (typeof EXAMPLES)[number], locale: (typeo
       `name: ${JSON.stringify(example.file)}, path: ${JSON.stringify(path)}, language: ${JSON.stringify(
         example.kind,
       )}, content: ${JSON.stringify(content)}, isModified: false, parentPath: 'src' };
-    useIDEStore.getState().setTheme('light');
+    useIDEStore.getState().setTheme(${JSON.stringify(theme)});
     useIDEStore.setState({
       isProjectOpen: true, projectName: 'Blinky', projectConfig: ${JSON.stringify(config)}, projectSession: 1, projectConfigDirty: ` +
       `false, directoryHandle: null,
@@ -265,31 +273,32 @@ async function main(): Promise<void> {
         : undefined,
     );
     for (const locale of LOCALES)
-      for (const example of EXAMPLES) {
-        // The first load of a lazy editor can make Vite re-optimise its dependencies and reload the page, which drops the seeded
-        // state: seed again (the second time the dependencies are known).
-        for (let attempt = 1; ; attempt++) {
-          try {
-            await show(cdp, example, locale);
-            break;
-          } catch (error) {
-            if (attempt === 3) throw new Error(`${String(error)}${cdp.errors.length ? `; ${cdp.errors.slice(0, 2).join(' | ')}` : ''}`);
+      for (const example of EXAMPLES)
+        for (const theme of THEMES) {
+          // The first load of a lazy editor can make Vite re-optimise its dependencies and reload the page, which drops the seeded
+          // state: seed again (the second time the dependencies are known).
+          for (let attempt = 1; ; attempt++) {
+            try {
+              await show(cdp, example, locale, theme);
+              break;
+            } catch (error) {
+              if (attempt === 3) throw new Error(`${String(error)}${cdp.errors.length ? `; ${cdp.errors.slice(0, 2).join(' | ')}` : ''}`);
+            }
           }
+          // Under load an animation (the fit-view of a diagram, a theme transition) can still be running: take the picture when two
+          // consecutive ones are the same.
+          let previous = '';
+          let data = '';
+          for (let attempt = 0; (attempt < 30 && data !== previous) || attempt === 0; attempt++) {
+            previous = data;
+            await Bun.sleep(400);
+            data =
+              ((await cdp.command('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })) as { data?: string }).data ??
+              '';
+          }
+          assert(data.length > 0 && data === previous, `the window of ${example.language} in ${locale} (${theme}) did not settle`);
+          writeFileSync(join(folder, `${example.language}-${locale}${theme === 'dark' ? '-dark' : ''}.png`), Buffer.from(data, 'base64'));
         }
-        // Under load an animation (the fit-view of a diagram, a theme transition) can still be running: take the picture when two
-        // consecutive ones are the same.
-        let previous = '';
-        let data = '';
-        for (let attempt = 0; (attempt < 30 && data !== previous) || attempt === 0; attempt++) {
-          previous = data;
-          await Bun.sleep(400);
-          data =
-            ((await cdp.command('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })) as { data?: string }).data ??
-            '';
-        }
-        assert(data.length > 0 && data === previous, `the window of ${example.language} in ${locale} did not settle`);
-        writeFileSync(join(folder, `${example.language}-${locale}.png`), Buffer.from(data, 'base64'));
-      }
   } finally {
     cdp?.close();
     await stop(browser);

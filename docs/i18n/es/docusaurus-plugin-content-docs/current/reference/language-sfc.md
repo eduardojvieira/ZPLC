@@ -15,7 +15,9 @@ El estado de cada elemento de esta página se lee de las pruebas de conformidad 
 
 El diagrama funcional secuencial se dibuja en el editor de diagramas de ZPLC: pasos, transiciones y acciones, con deshacer y validación mientras se dibuja. El texto estructurado que la compilación genera a partir del diagrama es solo una salida de lectura.
 
-![El editor de diagrama funcional secuencial de ZPLC con el ejemplo Blinky abierto, que muestra sus pasos y transiciones, con la interfaz en español](/img/editors/sfc-es.png)
+![El editor de diagrama funcional secuencial de ZPLC con el ejemplo Blinky abierto, que muestra sus pasos y transiciones, con la interfaz en español](/img/editors/sfc-es.png#gh-light-mode-only)
+
+![El editor de diagrama funcional secuencial de ZPLC con el ejemplo Blinky abierto, que muestra sus pasos y transiciones, con la interfaz en español](/img/editors/sfc-es-dark.png#gh-dark-mode-only)
 
 La imagen es una captura de pantalla real de este editor, tomada de forma automática de la versión actual de ZPLC con un programa de ejemplo pequeño abierto.
 

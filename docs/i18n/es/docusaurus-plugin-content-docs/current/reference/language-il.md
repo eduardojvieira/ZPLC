@@ -15,7 +15,9 @@ El estado de cada elemento de esta página se lee de las pruebas de conformidad 
 
 La lista de instrucciones se escribe en un editor de texto. El código se analiza y se traduce a texto estructurado antes de compilarse, por eso los tipos de datos, funciones y bloques de función son los del texto estructurado.
 
-![El editor de lista de instrucciones de ZPLC con el ejemplo Blinky abierto, que muestra el programa y la declaración de sus variables, con la interfaz en español](/img/editors/il-es.png)
+![El editor de lista de instrucciones de ZPLC con el ejemplo Blinky abierto, que muestra el programa y la declaración de sus variables, con la interfaz en español](/img/editors/il-es.png#gh-light-mode-only)
+
+![El editor de lista de instrucciones de ZPLC con el ejemplo Blinky abierto, que muestra el programa y la declaración de sus variables, con la interfaz en español](/img/editors/il-es-dark.png#gh-dark-mode-only)
 
 La imagen es una captura de pantalla real de este editor, tomada de forma automática de la versión actual de ZPLC con un programa de ejemplo pequeño abierto.
 

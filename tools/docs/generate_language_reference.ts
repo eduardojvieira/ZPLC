@@ -234,7 +234,8 @@ const HEADINGS: Record<string, L10n> = {
 };
 
 /** The image of a language editor and where it lives: captured by `bun run docs:screenshots -- --editors` (DOC-006, DOC-013). */
-export const editorImage = (language: Language, lang: Lang): string => `/img/editors/${language}-${lang}.png`;
+export const editorImage = (language: Language, lang: Lang, theme: 'light' | 'dark' = 'light'): string =>
+  `/img/editors/${language}-${lang}${theme === 'dark' ? '-dark' : ''}.png`;
 
 const EDITOR_SHOT: Record<Language, L10n> = {
   st: {
@@ -453,7 +454,9 @@ export function languageBody(language: Language, inputs: Inputs, lang: Lang): st
     PAGE_INTRO[lang].replace('{counts}', counts[lang]),
     `## ${HEADINGS.editor![lang]}`,
     text.editor[lang],
-    `![${editorAlt(language, lang)}](${editorImage(language, lang)})`,
+    // the picture of the colour mode of the reader: the stylesheet of the site hides the other one
+    `![${editorAlt(language, lang)}](${editorImage(language, lang)}#gh-light-mode-only)`,
+    `![${editorAlt(language, lang)}](${editorImage(language, lang, 'dark')}#gh-dark-mode-only)`,
     SCREENSHOT[lang],
     `## ${HEADINGS.elements![lang]}`,
     ...sections,

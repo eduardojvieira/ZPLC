@@ -15,7 +15,9 @@ El estado de cada elemento de esta página se lee de las pruebas de conformidad 
 
 El texto estructurado se escribe en el editor de texto principal de ZPLC, que muestra los diagnósticos de la compilación con su línea y columna y navega desde un diagnóstico hasta su código.
 
-![El editor de texto estructurado de ZPLC con el ejemplo Blinky abierto, que muestra el programa y la declaración de sus variables, con la interfaz en español](/img/editors/st-es.png)
+![El editor de texto estructurado de ZPLC con el ejemplo Blinky abierto, que muestra el programa y la declaración de sus variables, con la interfaz en español](/img/editors/st-es.png#gh-light-mode-only)
+
+![El editor de texto estructurado de ZPLC con el ejemplo Blinky abierto, que muestra el programa y la declaración de sus variables, con la interfaz en español](/img/editors/st-es-dark.png#gh-dark-mode-only)
 
 La imagen es una captura de pantalla real de este editor, tomada de forma automática de la versión actual de ZPLC con un programa de ejemplo pequeño abierto.
 

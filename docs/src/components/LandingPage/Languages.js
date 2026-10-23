@@ -7,6 +7,7 @@ import { nextTab } from './tabs';
 
 function Panel({ item, selected }) {
   const shot = useBaseUrl(`/img/${item.shot}`);
+  const shotDark = useBaseUrl(`/img/${item.shotDark}`);
   return (
     <div
       role="tabpanel"
@@ -16,7 +17,22 @@ function Panel({ item, selected }) {
       className={styles.panel}
     >
       <figure className={styles.panelFigure}>
-        <img src={shot} alt={item.alt} width="1366" height="768" loading="lazy" decoding="async" />
+        {/* the capture in the theme of the page: the dark one is the editor in its dark theme */}
+        {[
+          ['light', shot],
+          ['dark', shotDark],
+        ].map(([theme, src]) => (
+          <img
+            key={theme}
+            className={`zplc-${theme}-only`}
+            src={src}
+            alt={item.alt}
+            width="1366"
+            height="768"
+            loading="lazy"
+            decoding="async"
+          />
+        ))}
         <figcaption className={styles.panelCaption}>
           <p>{item.text}</p>
           <Link to={item.to}>{item.reference}</Link>

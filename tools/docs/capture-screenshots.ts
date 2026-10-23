@@ -6,7 +6,7 @@
 //                                       application, as `bun run test:journeys` does)
 //   bun run docs:screenshots -- --editors
 //                                       headless Chromium against the Vite renderer (no display, no Electron): one picture of each language
-//                                       editor in English and in Spanish, for the language reference pages (DOC-006), into
+//                                       editor in English and in Spanish, light and dark, for the language reference pages (DOC-006) and the landing, into
 //                                       docs/static/img/editors; the manifest keeps the tutorial pictures and records the commit of these
 //   bun run docs:screenshots -- --learn
 //                                       journey 59 in the real application (a display, the built runtime and application, as for
@@ -38,6 +38,10 @@ export const PICTURE_DIR = `${IMAGE_DIR}/tutorials`;
 export const EDITOR_DIR = `${IMAGE_DIR}/editors`;
 export const EDITOR_LANGUAGES = ['st', 'il', 'ld', 'fbd', 'sfc'] as const;
 export const EDITOR_LOCALES = ['en', 'es'] as const;
+export const EDITOR_THEMES = ['light', 'dark'] as const;
+/** The file of an editor picture: the dark one has a `-dark` suffix, as the Learn pictures do. */
+export const editorFile = (language: string, locale: string, theme: (typeof EDITOR_THEMES)[number]): string =>
+  `${language}-${locale}${theme === 'dark' ? '-dark' : ''}.png`;
 export const EDITOR_COMMAND = 'bun run docs:screenshots -- --editors';
 export const MANIFEST = `${IMAGE_DIR}/manifest.json`;
 /**
@@ -135,7 +139,8 @@ export function imagesOf(text: string): string[] {
 
 /** The path of a page image below `docs/static`, or undefined when it is not a path of the site's static folder. */
 export function staticPathOf(reference: string): string | undefined {
-  return reference.startsWith('/img/') ? `docs/static${reference}` : undefined;
+  // a `#gh-light-mode-only` or `#gh-dark-mode-only` fragment picks the picture of a colour mode: it is not part of the path
+  return reference.startsWith('/img/') ? `docs/static${reference.replace(/#.*$/, '')}` : undefined;
 }
 
 export interface Problem {
@@ -372,7 +377,9 @@ function captureEditors(): void {
       throw new Error('the editor capture failed, so no picture is written');
     }
     const wanted = EDITOR_LANGUAGES.flatMap((language) =>
-      EDITOR_LOCALES.map((locale) => ({ language, locale, file: `${language}-${locale}.png` })),
+      EDITOR_LOCALES.flatMap((locale) =>
+        EDITOR_THEMES.map((theme) => ({ language, locale, theme, file: editorFile(language, locale, theme) })),
+      ),
     );
     const taken = readdirSync(scratch)
       .filter((name) => name.endsWith('.png'))
@@ -389,12 +396,14 @@ function captureEditors(): void {
       );
     mkdirSync(join(ROOT, EDITOR_DIR), { recursive: true });
     const commit = git(['rev-parse', 'HEAD']);
-    const images: ManifestImage[] = wanted.map(({ language, locale, file }) => {
+    const images: ManifestImage[] = wanted.map(({ language, locale, theme, file }) => {
       copyFileSync(join(scratch, file), join(ROOT, EDITOR_DIR, file));
       const bytes = readFileSync(join(ROOT, EDITOR_DIR, file));
       return {
         file: `editors/${file}`,
-        step: `The ${language.toUpperCase()} editor with the Blinky example, interface in ${locale === 'en' ? 'English' : 'Spanish'}`,
+        step:
+          `The ${language.toUpperCase()} editor with the Blinky example, interface ` +
+          `in ${locale === 'en' ? 'English' : 'Spanish'}, ${theme} theme`,
         sha256: sha256(bytes),
         bytes: bytes.length,
         ...pngSize(bytes),
