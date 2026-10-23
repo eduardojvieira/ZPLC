@@ -6,7 +6,8 @@
 //                                       application, as `bun run test:journeys` does)
 //   bun run docs:screenshots -- --editors
 //                                       headless Chromium against the Vite renderer (no display, no Electron): one picture of each language
-//                                       editor in English and in Spanish, light and dark, for the language reference pages (DOC-006) and the landing, into
+//                                       editor in English and in Spanish, light and dark, for the language reference pages
+//                                       (DOC-006) and the landing, into
 //                                       docs/static/img/editors; the manifest keeps the tutorial pictures and records the commit of these
 //   bun run docs:screenshots -- --learn
 //                                       journey 59 in the real application (a display, the built runtime and application, as for
