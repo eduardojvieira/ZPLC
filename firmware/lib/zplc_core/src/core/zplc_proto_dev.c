@@ -793,7 +793,7 @@ static void do_force_set(const request_t *r) {
     respond_range(r->link, r->frame, address, (uint32_t)length, start, end);
     return;
   }
-  if (check_access(address, length, ACCESS_FORCE, &start, &end) != 0) {
+  if (check_access(address, (uint32_t)length, ACCESS_FORCE, &start, &end) != 0) {
     respond_range(r->link, r->frame, address, (uint32_t)length, start, end);
     return;
   }
@@ -1624,7 +1624,7 @@ int zplc_proto_dev_init(zplc_proto_dev_t *dev, const zplc_proto_ops_t *ops, uint
   dev->idle_timeout_s = idle_timeout_s == 0U ? (uint16_t)ZPLC_PROTO_SESSION_IDLE_S_DEFAULT : idle_timeout_s;
   dev->capabilities = ZPLC_PROTO_CAP_SESSION | ZPLC_PROTO_CAP_EVENTS;
   for (bit = 1U; bit < 32U; bit++) {
-    const uint32_t flag = 1UL << bit;
+    const uint32_t flag = 1U << bit;
 
     if ((flag & (ZPLC_PROTO_CAP_MEMORY | ZPLC_PROTO_CAP_FORCE | ZPLC_PROTO_CAP_RUN_CONTROL | ZPLC_PROTO_CAP_BREAKPOINTS |
                  ZPLC_PROTO_CAP_PROGRAM | ZPLC_PROTO_CAP_WATCH | ZPLC_PROTO_CAP_AUTH | ZPLC_PROTO_CAP_CONFIG | ZPLC_PROTO_CAP_CREDENTIALS |

@@ -1595,7 +1595,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     b = VM_POP(vm); /* dst_addr */
     a = VM_POP(vm); /* src_addr */
     {
-      uint16_t src_len, dst_cap;
+      uint16_t src_len = 0U, dst_cap = 0U;
       uint16_t copy_len;
       uint16_t i;
       uint8_t ch;
@@ -1661,7 +1661,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     b = VM_POP(vm); /* dst_addr */
     a = VM_POP(vm); /* src_addr */
     {
-      uint16_t src_len, dst_len, dst_cap;
+      uint16_t src_len = 0U, dst_len = 0U, dst_cap = 0U;
       uint16_t space_left, copy_len;
       uint16_t i;
       uint8_t ch;
@@ -1729,9 +1729,9 @@ int zplc_vm_step(zplc_vm_t *vm) {
     b = VM_POP(vm); /* addr2 */
     a = VM_POP(vm); /* addr1 */
     {
-      uint16_t len1, len2;
+      uint16_t len1 = 0U, len2 = 0U;
       uint16_t min_len, i;
-      uint8_t ch1, ch2;
+      uint8_t ch1 = 0U, ch2 = 0U;
       int32_t strcmp_result = 0;
 
       /* Read lengths; an address that is not in PLC memory faults here, so
