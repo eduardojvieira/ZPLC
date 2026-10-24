@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres bandas",
+  "summary": "Mantenga un total acumulado en una variable INT con bloques ADD, SEL y R_TRIG, y conviértalo en tres resultados BOOL con bloques de comparación.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el rango de un sensor real ni el comportamiento ante desbordamiento de un controlador en particular, ni son evidencia de HIL ni de certificación.",
+  "objectives": [
+    "Use una variable INT para un número: un bloque ADD calcula el valor siguiente, los bloques SEL eligen entre el total anterior, el nuevo y cero, y los bloques LT, EQ y GT convierten el número en resultados BOOL.",
+    "Sume a un número solo en el flanco ascendente de una entrada, con un bloque R_TRIG, de modo que un botón mantenido durante varios ciclos cuente una sola vez."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/TypedSteps.fbd.json un bloque SEL borra la variable INT Total mientras Reset es TRUE, y las comparaciones Low (Total < 10), Exact (Total = 10) y High (Total > 10) están conectadas a sus salidas. Arme la aritmética: en cada flanco ascendente de Step sume 5 a Total.",
+      "checkpoint": "Total va de 0 a 5, a 10 y a 15, y las tres salidas muestran en qué banda está."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Step se pulsa tres veces, y la primera pulsación dura dos ciclos. Prediga qué salida está en ON a los {{t:20}}, {{t:40}} y {{t:60}} ms.",
+      "checkpoint": "{{v:TypedSteps.Low=true,TypedSteps.Exact=false,TypedSteps.High=false@20|Low}} a los {{t:20}} ms (Total vale 5); {{v:TypedSteps.Low=false,TypedSteps.Exact=true,TypedSteps.High=false@40|Exact}} a los {{t:40}} ms (Total vale 10); {{v:TypedSteps.Low=false,TypedSteps.Exact=false,TypedSteps.High=true@60|High}} a los {{t:60}} ms (Total vale 15)."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del diagrama inicial, guárdelo y pulse Comprobar: El diagrama inicial borra Total con Reset pero nunca le suma, así que Low se queda en ON para siempre; sume 5 a Total en cada flanco ascendente de Step. Coloque un bloque R_TRIG llamado StepEdge con Step en CLK, un bloque ADD que sume Total y una constante 5 de tipo INT, y un bloque SEL con StepEdge.Q en G, Total en IN0 y ADD.OUT en IN1. Conecte la salida de ese SEL a IN0 del bloque SEL que maneja Reset, en lugar del cable que viene de Total.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama TypedSteps y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare los {{t:20}}, {{t:40}} y {{t:60}} ms: exactamente una de las tres salidas está en ON cada vez, y Reset a los {{t:80}} ms devuelve Low.",
+      "checkpoint": "Exact está en ON solo con el total de 10, desde los {{t:40}} ms; la primera pulsación larga sumó 5 una vez, no dos."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Qué pasa si Step va directo a G del bloque SEL, sin el bloque R_TRIG? ¿Y si Exact usa un bloque GE en lugar de EQ? Pruebe cada caso y vea qué aserción falla.",
+      "checkpoint": "Una comparación da un BOOL, y EQ no es lo mismo que GE. El escenario solo observa las tres salidas BOOL; no muestra el valor de Total ni qué pasa cuando un INT se desborda."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Total es un INT, así que Total + 5 es un INT. SEL da IN0 mientras G es FALSE e IN1 mientras G es TRUE, y R_TRIG.Q es TRUE durante un ciclo en cada flanco ascendente."
+    },
+    {
+      "level": 2,
+      "text": "Conecte Step a StepEdge.CLK, StepEdge.Q a G de un SEL nuevo, Total a su IN0 y a un bloque ADD con la constante 5, ADD.OUT a su IN1, y el SEL nuevo a IN0 del SEL que borra Total."
+    }
+  ],
+  "faultCases": [
+    "El diagrama inicial borra Total con Reset pero nunca le suma, así que Low se queda en ON para siempre; sume 5 a Total en cada flanco ascendente de Step."
+  ]
+}

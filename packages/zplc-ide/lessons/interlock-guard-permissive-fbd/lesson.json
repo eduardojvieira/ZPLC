@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "interlock-guard-permissive-fbd",
+  "version": 3,
+  "order": 53,
+  "module": 6,
+  "level": "intermediate",
+  "prerequisites": [
+    "interlock-guard-permissive",
+    "boolean-logic-two-hand-guard-fbd"
+  ],
+  "languages": [
+    "FBD"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The run feedback of this Function Block Diagram comes from the simulated motor plant; a learner board has no motor to give it.",
+        "es": "La realimentación de marcha de este diagrama de bloques de función proviene de la planta simulada del motor; una placa del estudiante no tiene un motor que la dé."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, which provides the motor and its run feedback to the Function Block Diagram.",
+        "es": "Complétela en Simulación, que proporciona el motor y su realimentación de marcha al diagrama de bloques de función."
+      }
+    }
+  },
+  "plant": "motor-v1",
+  "estimatedMinutes": 25,
+  "starter": {
+    "project": "fbd_interlock_guard_starter",
+    "program": "src/MotorPlant.fbd.json"
+  },
+  "solution": {
+    "project": "fbd_interlock_guard",
+    "program": "src/MotorPlant.fbd.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "MotorInterlock",
+    "path": "tests/motor-interlock.scenario.json",
+    "sha256": "6ffc4a74fd39e3cec015cfce8d79a9860e8fd254f143438bea0d61d1794b8a63"
+  },
+  "regressionScenarios": []
+}

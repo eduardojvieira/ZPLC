@@ -1,0 +1,266 @@
+{
+  "name": "Delays",
+  "description": "Keep Light on for 300 ms after Button is released (TOF) and raise Confirmed only after Sensor has been on for 200 ms (TON).",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Button",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Push button"
+      },
+      {
+        "name": "Sensor",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Sensor that may blip"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Light",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Stays on after the button is released"
+      },
+      {
+        "name": "Confirmed",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Sensor confirmed after the filter time"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "var_button",
+      "type": "variable",
+      "variableName": "Button",
+      "direction": "read",
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 40,
+        "y": 40
+      }
+    },
+    {
+      "id": "var_sensor",
+      "type": "variable",
+      "variableName": "Sensor",
+      "direction": "read",
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 40,
+        "y": 200
+      }
+    },
+    {
+      "id": "out_light",
+      "type": "output",
+      "variableName": "Light",
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 560,
+        "y": 40
+      }
+    },
+    {
+      "id": "out_conf",
+      "type": "output",
+      "variableName": "Confirmed",
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 560,
+        "y": 200
+      }
+    },
+    {
+      "id": "const_hold",
+      "type": "constant",
+      "dataType": "TIME",
+      "value": "T#300ms",
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "TIME"
+        }
+      ],
+      "position": {
+        "x": 40,
+        "y": 100
+      },
+      "comment": "Hold time"
+    },
+    {
+      "id": "const_filter",
+      "type": "constant",
+      "dataType": "TIME",
+      "value": "T#200ms",
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "TIME"
+        }
+      ],
+      "position": {
+        "x": 40,
+        "y": 260
+      },
+      "comment": "Filter time"
+    },
+    {
+      "id": "hold",
+      "type": "TOF",
+      "instanceName": "HoldTimer",
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        },
+        {
+          "name": "PT",
+          "type": "TIME"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "Q",
+          "type": "BOOL"
+        },
+        {
+          "name": "ET",
+          "type": "TIME"
+        }
+      ],
+      "position": {
+        "x": 300,
+        "y": 40
+      }
+    },
+    {
+      "id": "filter",
+      "type": "TON",
+      "instanceName": "FilterTimer",
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        },
+        {
+          "name": "PT",
+          "type": "TIME"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "Q",
+          "type": "BOOL"
+        },
+        {
+          "name": "ET",
+          "type": "TIME"
+        }
+      ],
+      "position": {
+        "x": 300,
+        "y": 200
+      }
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn_var_button_out_hold_in",
+      "from": {
+        "block": "var_button",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "hold",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_const_hold_out_hold_pt",
+      "from": {
+        "block": "const_hold",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "hold",
+        "port": "PT"
+      }
+    },
+    {
+      "id": "conn_hold_q_out_light_in",
+      "from": {
+        "block": "hold",
+        "port": "Q"
+      },
+      "to": {
+        "block": "out_light",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_var_sensor_out_filter_in",
+      "from": {
+        "block": "var_sensor",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "filter",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_const_filter_out_filter_pt",
+      "from": {
+        "block": "const_filter",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "filter",
+        "port": "PT"
+      }
+    },
+    {
+      "id": "conn_filter_q_out_conf_in",
+      "from": {
+        "block": "filter",
+        "port": "Q"
+      },
+      "to": {
+        "block": "out_conf",
+        "port": "IN"
+      }
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-24",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

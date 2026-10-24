@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Timers in Function Block Diagram: an off-delay light and an on-delay filter",
+  "summary": "Wire a TOF block to keep a light on after a button is released, and a TON block to ignore a sensor blip that is too short.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish electrical debounce, sensor response, target timing, HIL, or certification.",
+  "objectives": [
+    "Keep an output ON for a fixed time after its input drops, with a TOF block whose PT input is wired to a TIME constant.",
+    "Ignore an input that is ON for less than a fixed time, with a TON block, and say which timer delays the start and which one delays the end."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/Delays.fbd.json Button is wired straight to Light and Sensor straight to Confirmed. Light must stay ON for {{t:300}} ms after Button is released. Confirmed must turn ON only after Sensor has stayed ON for {{t:200}} ms.",
+      "checkpoint": "You can say which timer block keeps an output on and which one waits before turning it on."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "The scenario presses Button at {{t:100}} ms and releases it at {{t:300}} ms. Sensor blips ON from {{t:100}} ms to {{t:140}} ms and is ON again from {{t:500}} ms to {{t:900}} ms. Predict Light and Confirmed at {{t:200}}, {{t:450}}, {{t:650}}, and {{t:800}} ms.",
+      "checkpoint": "{{v:Delays.Light=true,Delays.Confirmed=false@200|Light ON, Confirmed OFF}} at {{t:200}} ms; {{v:Delays.Light=true,Delays.Confirmed=false@450|Light ON, Confirmed OFF}} at {{t:450}} ms; {{v:Delays.Light=false,Delays.Confirmed=false@650|both OFF}} at {{t:650}} ms; {{v:Delays.Light=false,Delays.Confirmed=true@800|Confirmed ON, Light OFF}} at {{t:800}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this flaw of the starting diagram, save it, then press Check: The starting diagram wires the inputs straight to the outputs, so Light is already OFF at {{t:450}} ms and Confirmed turns ON for the {{t:100}} ms blip. Place a TOF block named HoldTimer, wire Button to its IN and a TIME constant T#300ms to its PT, and wire its Q to Light in place of the wire from Button. Do the same with a TON block named FilterTimer, Sensor and T#200ms for Confirmed. Save the file.",
+      "checkpoint": "Both timer blocks are in the diagram and each output is wired to its timer's Q."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named Delays and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Follow Light and Confirmed in the trace: the short blip never turns Confirmed ON, Light is still ON at {{t:450}} ms although Button went OFF at {{t:300}} ms, and Confirmed rises about {{t:200}} ms after Sensor came back at {{t:500}} ms.",
+      "checkpoint": "Light falls about {{t:300}} ms after Button, and Confirmed rises about {{t:200}} ms after the second Sensor pulse."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Swap the two timer blocks in your head: what would a TON on Button and a TOF on Sensor do with this scenario?",
+      "checkpoint": "TON delays the start and TOF delays the end; each answers a different question about a signal."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "TOF keeps its Q ON for the preset time after IN falls, and TON raises Q only after IN has been ON for the preset time."
+    },
+    {
+      "level": 2,
+      "text": "Place a TOF block named HoldTimer with Button on IN and the constant T#300ms on PT, and its Q on Light. Place a TON block named FilterTimer with Sensor on IN and the constant T#200ms on PT, and its Q on Confirmed."
+    }
+  ],
+  "faultCases": [
+    "The starting diagram wires the inputs straight to the outputs, so Light is already OFF at {{t:450}} ms and Confirmed turns ON for the {{t:100}} ms blip."
+  ]
+}

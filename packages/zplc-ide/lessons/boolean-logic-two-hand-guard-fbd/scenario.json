@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "id": "TwoHand",
+  "tickMs": 10,
+  "durationMs": 60,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "TwoHand.LeftHand": false,
+        "TwoHand.RightHand": false,
+        "TwoHand.GuardClosed": true
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "TwoHand.LeftHand": true,
+        "TwoHand.RightHand": false,
+        "TwoHand.GuardClosed": true
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "TwoHand.LeftHand": true,
+        "TwoHand.RightHand": true,
+        "TwoHand.GuardClosed": true
+      }
+    },
+    {
+      "atMs": 30,
+      "set": {
+        "TwoHand.LeftHand": true,
+        "TwoHand.RightHand": true,
+        "TwoHand.GuardClosed": false
+      }
+    },
+    {
+      "atMs": 40,
+      "set": {
+        "TwoHand.LeftHand": false,
+        "TwoHand.RightHand": true,
+        "TwoHand.GuardClosed": true
+      }
+    },
+    {
+      "atMs": 50,
+      "set": {
+        "TwoHand.LeftHand": false,
+        "TwoHand.RightHand": false,
+        "TwoHand.GuardClosed": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "TwoHand.PressEnable": false,
+        "TwoHand.GuardLamp": false,
+        "TwoHand.OneHandWarning": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "TwoHand.PressEnable": false,
+        "TwoHand.GuardLamp": false,
+        "TwoHand.OneHandWarning": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 20,
+      "condition": {
+        "TwoHand.PressEnable": true,
+        "TwoHand.GuardLamp": false,
+        "TwoHand.OneHandWarning": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 30,
+      "condition": {
+        "TwoHand.PressEnable": false,
+        "TwoHand.GuardLamp": true,
+        "TwoHand.OneHandWarning": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 40,
+      "condition": {
+        "TwoHand.PressEnable": false,
+        "TwoHand.GuardLamp": false,
+        "TwoHand.OneHandWarning": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "TwoHand.PressEnable": false,
+        "TwoHand.GuardLamp": true,
+        "TwoHand.OneHandWarning": false
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 20,
+      "withinMs": 0,
+      "condition": {
+        "TwoHand.PressEnable": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 30,
+      "withinMs": 0,
+      "condition": {
+        "TwoHand.PressEnable": false
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "TwoHand.PressEnable": true,
+        "TwoHand.GuardLamp": true
+      }
+    }
+  ]
+}

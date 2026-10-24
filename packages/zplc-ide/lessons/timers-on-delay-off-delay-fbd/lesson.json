@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "id": "timers-on-delay-off-delay-fbd",
+  "version": 2,
+  "order": 51,
+  "module": 3,
+  "level": "foundation",
+  "prerequisites": [
+    "timers-on-delay-off-delay",
+    "boolean-logic-two-hand-guard-fbd"
+  ],
+  "languages": [
+    "FBD"
+  ],
+  "tracks": [
+    "simulation",
+    "hardware"
+  ],
+  "unsupported": {},
+  "plant": null,
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "fbd_delays_starter",
+    "program": "src/Delays.fbd.json"
+  },
+  "solution": {
+    "project": "fbd_delays",
+    "program": "src/Delays.fbd.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "Delays",
+    "path": "tests/delays.scenario.json",
+    "sha256": "423836cfdc574a00a8192742eb0671439833a3e1e3dc4c2e90c550d63a33599d"
+  },
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 20,
+      "analogPercent": 5
+    }
+  }
+}

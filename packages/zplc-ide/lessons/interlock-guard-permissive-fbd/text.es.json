@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Enclavamientos y permisivos en diagrama de bloques de función: una protección que detiene el motor",
+  "summary": "Conecte un permisivo al reinicio de un biestable RS para que el motor funcione solo mientras la protección esté cerrada, y compruébelo con la planta del motor y su realimentación de velocidad.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX para un modelo de planta de motor incorporado y una tarea de 10 ms; no demuestran una función de seguridad, el cableado de la protección ni el tiempo de parada, ni son evidencia de HIL ni de certificación.",
+  "objectives": [
+    "Distinga un permisivo, una condición que debe ser TRUE para que la salida esté en ON, de una orden.",
+    "Conecte el permisivo al reinicio de un biestable RS, que es dominante al reinicio, para que una protección abierta suelte el motor y además impida que Start lo rearranque."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/MotorPlant.fbd.json un bloque RS llamado Hold activa Command con Start y lo reinicia con Stop, y un bloque AND activa Running cuando la planta informa AtSpeed. Agregue GuardClosed como permisivo: cuando la protección está abierta el reinicio debe ser TRUE, de modo que Command caiga y Start no pueda rearrancarlo.",
+      "checkpoint": "Command está en ON solo mientras la protección está cerrada, y Running sigue necesitando el AtSpeed de la planta."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Antes de ejecutar, prediga Command y Running a los {{t:30}} ms, cuando la protección se abre a los {{t:50}} ms, y a los {{t:60}} ms cuando se pulsa Start con la protección todavía abierta.",
+      "checkpoint": "{{v:MotorPlant.Command=true,MotorPlant.Running=true@30|Ambas en ON}} a los {{t:30}} ms; {{v:MotorPlant.Command=false,MotorPlant.Running=false@50|ambas en OFF}} a los {{t:50}} ms; {{v:MotorPlant.Command=false@60|Command en OFF}} a los {{t:60}} ms, porque Start se ignora."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del diagrama inicial, guárdelo y pulse Comprobar: El diagrama inicial no tiene un permisivo en la protección, así que cuando la protección se abre a los {{t:50}} ms el motor sigue en marcha y Start puede rearrancarlo; reinicie el bloque RS siempre que la protección esté abierta. Coloque un bloque NOT sobre GuardClosed y un bloque OR con Stop y la salida del bloque NOT, y luego conecte la salida del OR a Hold.R1 en lugar del cable que viene de Stop.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección, con la planta del motor respondiendo a sus salidas.",
+      "checkpoint": "El escenario se llama MotorInterlock y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare los {{t:30}}, {{t:50}} y {{t:80}} ms: el motor está a velocidad a los {{t:30}} ms, se suelta cuando la protección se abre a los {{t:50}} ms, y no rearranca a los {{t:80}} ms cuando la protección se cierra, porque Start ya se había soltado.",
+      "checkpoint": "Command se mantiene en OFF de los {{t:60}} a los {{t:80}} ms y sube de nuevo solo a los {{t:90}} ms, con un nuevo Start."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Por qué la protección llega al reinicio del bloque RS y no solo a Start? Ponga un bloque AND de Start y GuardClosed en S y deje R1 conectado solo a Stop, y vea qué aserción falla.",
+      "checkpoint": "Un permisivo que condiciona solo a Start deja que un motor en marcha ignore una protección abierta. El escenario muestra solo la lógica; no es una función de seguridad ni reemplaza un enclavamiento de protección certificado."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Command puede estar en ON solo si la protección está cerrada, Stop no está pulsado, y Start se pulsó o Command ya estaba en ON. El bloque RS recuerda el arranque, y su reinicio gana sobre su activación."
+    },
+    {
+      "level": 2,
+      "text": "Coloque un bloque NOT sobre GuardClosed, un bloque OR con Stop y la salida del NOT, y conecte la salida del OR a Hold.R1. Deje Start en Hold.S."
+    }
+  ],
+  "faultCases": [
+    "El diagrama inicial no tiene un permisivo en la protección, así que cuando la protección se abre a los {{t:50}} ms el motor sigue en marcha y Start puede rearrancarlo; reinicie el bloque RS siempre que la protección esté abierta."
+  ]
+}
