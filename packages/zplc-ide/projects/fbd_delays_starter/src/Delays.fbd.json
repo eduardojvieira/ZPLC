@@ -1,0 +1,130 @@
+{
+  "name": "Delays",
+  "description": "Keep Light on for 300 ms after Button is released (TOF) and raise Confirmed only after Sensor has been on for 200 ms (TON).",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Button",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Push button"
+      },
+      {
+        "name": "Sensor",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Sensor that may blip"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Light",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Stays on after the button is released"
+      },
+      {
+        "name": "Confirmed",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Sensor confirmed after the filter time"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "var_button",
+      "type": "variable",
+      "variableName": "Button",
+      "direction": "read",
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 40,
+        "y": 40
+      }
+    },
+    {
+      "id": "var_sensor",
+      "type": "variable",
+      "variableName": "Sensor",
+      "direction": "read",
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 40,
+        "y": 200
+      }
+    },
+    {
+      "id": "out_light",
+      "type": "output",
+      "variableName": "Light",
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 560,
+        "y": 40
+      }
+    },
+    {
+      "id": "out_conf",
+      "type": "output",
+      "variableName": "Confirmed",
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 560,
+        "y": 200
+      }
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn_var_button_out_out_light_in",
+      "from": {
+        "block": "var_button",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out_light",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_var_sensor_out_out_conf_in",
+      "from": {
+        "block": "var_sensor",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out_conf",
+        "port": "IN"
+      }
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-24",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

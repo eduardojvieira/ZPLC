@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "id": "types-arithmetic-comparison-fbd",
+  "version": 2,
+  "order": 52,
+  "module": 4,
+  "level": "intermediate",
+  "prerequisites": [
+    "types-arithmetic-comparison",
+    "boolean-logic-two-hand-guard-fbd"
+  ],
+  "languages": [
+    "FBD"
+  ],
+  "tracks": [
+    "simulation",
+    "hardware"
+  ],
+  "unsupported": {},
+  "plant": null,
+  "estimatedMinutes": 25,
+  "starter": {
+    "project": "fbd_typed_steps_starter",
+    "program": "src/TypedSteps.fbd.json"
+  },
+  "solution": {
+    "project": "fbd_typed_steps",
+    "program": "src/TypedSteps.fbd.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "TypedSteps",
+    "path": "tests/typed-steps.scenario.json",
+    "sha256": "edfe148b3d0b37ea6e9da6b1e38dbb46da974cf62c160a3fcc2b429e4a16c169"
+  },
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 20,
+      "analogPercent": 5
+    }
+  }
+}

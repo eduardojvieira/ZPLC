@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Diagrama de bloques de función: un mando a dos manos con protección",
+  "summary": "Lea un diagrama de bloques de función (FBD) y conecte bloques AND, NOT y XOR para que una prensa solo se habilite con las dos manos en los botones y la protección cerrada.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el tiempo de respuesta, la redundancia ni el comportamiento ante fallas que exige un dispositivo real de mando a dos manos, y no son evidencia de seguridad, de HIL ni de certificación.",
+  "objectives": [
+    "Lea un diagrama de bloques de función (FBD): los bloques se unen con cables desde un puerto de salida hasta un puerto de entrada, y cada salida muestra el resultado de los bloques conectados a ella.",
+    "Conecte bloques AND, NOT y XOR para que una salida esté en ON solo cuando varias entradas estén en ON a la vez, cuando una entrada esté en OFF o cuando exactamente una de dos entradas esté en ON."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/TwoHand.fbd.json las tres salidas todavía no son correctas. PressEnable debe estar en ON solo con LeftHand, RightHand y GuardClosed en ON. GuardLamp debe estar en ON cuando la protección está abierta. OneHandWarning debe estar en ON cuando exactamente una mano está en su botón. Lea el diagrama de izquierda a derecha: cada cable lleva el valor de un puerto de salida a un puerto de entrada.",
+      "checkpoint": "Usted puede decir, para cada salida, qué bloques forman su condición."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Antes de ejecutar, prediga las tres salidas a los {{t:20}}, {{t:30}} y {{t:40}} ms. Las entradas cambian cada {{t:10}} ms, así que avance un paso a la vez.",
+      "checkpoint": "{{v:TwoHand.PressEnable=true,TwoHand.GuardLamp=false,TwoHand.OneHandWarning=false@20|solo PressEnable en ON}} a los {{t:20}} ms; {{v:TwoHand.PressEnable=false,TwoHand.GuardLamp=true,TwoHand.OneHandWarning=false@30|solo GuardLamp en ON}} a los {{t:30}} ms; {{v:TwoHand.PressEnable=false,TwoHand.GuardLamp=false,TwoHand.OneHandWarning=true@40|solo OneHandWarning en ON}} a los {{t:40}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta falla del diagrama inicial, guárdelo y pulse Comprobar: El diagrama inicial habilita la prensa con un bloque OR, así que PressEnable ya está en ON a los {{t:10}} ms con una sola mano, y GuardLamp y OneHandWarning se quedan en OFF. Elimine el bloque OR y las dos constantes FALSE. Coloque un bloque AND con LeftHand y RightHand, un segundo bloque AND con el primero y GuardClosed, y conecte el segundo AND a PressEnable. Coloque un bloque NOT desde GuardClosed hasta GuardLamp, y un bloque XOR desde LeftHand y RightHand hasta OneHandWarning. Guarde el archivo.",
+      "checkpoint": "Cada salida está conectada a sus propios bloques y el archivo está guardado."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama TwoHand y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare los {{t:20}}, {{t:30}} y {{t:40}} ms: la prensa se habilita una vez, a los {{t:20}} ms, y se apaga de nuevo a los {{t:30}} ms cuando se abre la protección.",
+      "checkpoint": "PressEnable sube a los {{t:20}} ms y cae a los {{t:30}} ms, y nunca está en ON mientras GuardLamp está en ON."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "Reemplace el primer bloque AND por un bloque OR y diga qué combinación de entradas habilita la prensa por error.",
+      "checkpoint": "OR habilita la prensa con una sola mano, justamente lo que un mando a dos manos existe para impedir."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "AND está en ON solo cuando todas sus entradas están en ON, y un bloque AND tiene dos entradas, así que un segundo bloque AND agrega la protección."
+    },
+    {
+      "level": 2,
+      "text": "Conecte LeftHand y RightHand a un bloque AND, ese bloque y GuardClosed a un segundo bloque AND, y el segundo bloque a PressEnable. Use un bloque NOT para GuardLamp y un bloque XOR para OneHandWarning."
+    }
+  ],
+  "faultCases": [
+    "El diagrama inicial habilita la prensa con un bloque OR, así que PressEnable ya está en ON a los {{t:10}} ms con una sola mano, y GuardLamp y OneHandWarning se quedan en OFF."
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "id": "boolean-logic-two-hand-guard-fbd",
+  "version": 2,
+  "order": 50,
+  "module": 2,
+  "level": "foundation",
+  "prerequisites": [
+    "boolean-logic-two-hand-guard"
+  ],
+  "languages": [
+    "FBD"
+  ],
+  "tracks": [
+    "simulation",
+    "hardware"
+  ],
+  "unsupported": {},
+  "plant": null,
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "fbd_two_hand_starter",
+    "program": "src/TwoHand.fbd.json"
+  },
+  "solution": {
+    "project": "fbd_two_hand",
+    "program": "src/TwoHand.fbd.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "TwoHand",
+    "path": "tests/two-hand.scenario.json",
+    "sha256": "960b79d6f460c148242199db15454c0d4be08bae5de73f200a4f2623f0e1b4d4"
+  },
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 20,
+      "analogPercent": 5
+    }
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Types, arithmetic and comparison in Function Block Diagram: a total and three bands",
+  "summary": "Keep a running total in an INT variable with ADD, SEL and R_TRIG blocks, and turn it into three BOOL results with comparison blocks.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the range of a real sensor or the overflow behaviour of a particular controller, HIL, or certification.",
+  "objectives": [
+    "Use an INT variable for a number: an ADD block builds the next value, SEL blocks choose between the old total, the new one and zero, and LT, EQ and GT blocks turn the number into BOOL results.",
+    "Add to a number only on the rising edge of an input, with an R_TRIG block, so that a button held for several scans counts once."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/TypedSteps.fbd.json a SEL block clears the INT variable Total while Reset is TRUE, and the comparisons Low (Total < 10), Exact (Total = 10) and High (Total > 10) are wired to their outputs. Build the arithmetic: on each rising edge of Step add 5 to Total.",
+      "checkpoint": "Total goes 0, 5, 10, 15, and the three outputs show which band it is in."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Step is pressed three times, the first press lasting two scans. Predict which output is ON at {{t:20}}, {{t:40}} and {{t:60}} ms.",
+      "checkpoint": "{{v:TypedSteps.Low=true,TypedSteps.Exact=false,TypedSteps.High=false@20|Low}} at {{t:20}} ms (Total is 5); {{v:TypedSteps.Low=false,TypedSteps.Exact=true,TypedSteps.High=false@40|Exact}} at {{t:40}} ms (Total is 10); {{v:TypedSteps.Low=false,TypedSteps.Exact=false,TypedSteps.High=true@60|High}} at {{t:60}} ms (Total is 15)."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter clears Total on Reset but never adds to it, so Low stays ON for ever; add 5 to Total on each rising edge of Step. Place an R_TRIG block named StepEdge with Step on CLK, an ADD block that adds Total and a constant 5 of type INT, and a SEL block with StepEdge.Q on G, Total on IN0 and ADD.OUT on IN1. Wire the SEL output to IN0 of the SEL block that handles Reset, in place of the wire from Total.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named TypedSteps and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:20}}, {{t:40}} and {{t:60}} ms: exactly one of the three outputs is ON each time, and Reset at {{t:80}} ms brings Low back.",
+      "checkpoint": "Exact is ON only at the one total of 10, from {{t:40}} ms; the long first press added 5 once, not twice."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "What happens if Step goes straight to G of the SEL block, without the R_TRIG block? And if Exact uses a GE block instead of EQ? Try each and see which assertion fails.",
+      "checkpoint": "A comparison gives a BOOL, and EQ is not the same as GE. The scenario only watches the three BOOL outputs; it does not show the value of Total itself or what happens when an INT overflows."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Total is an INT, so Total + 5 is an INT. SEL gives IN0 while G is FALSE and IN1 while G is TRUE, and R_TRIG.Q is TRUE for one scan on each rising edge."
+    },
+    {
+      "level": 2,
+      "text": "Wire Step to StepEdge.CLK, StepEdge.Q to the G of a new SEL block, Total to its IN0 and to an ADD block with the constant 5, ADD.OUT to its IN1, and the new SEL block to IN0 of the SEL block that clears Total."
+    }
+  ],
+  "faultCases": [
+    "The starter clears Total on Reset but never adds to it, so Low stays ON for ever; add 5 to Total on each rising edge of Step."
+  ]
+}

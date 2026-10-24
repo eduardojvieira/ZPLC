@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "id": "TypedSteps",
+  "tickMs": 10,
+  "durationMs": 100,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "TypedSteps.Step": false,
+        "TypedSteps.Reset": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "TypedSteps.Step": true
+      }
+    },
+    {
+      "atMs": 30,
+      "set": {
+        "TypedSteps.Step": false
+      }
+    },
+    {
+      "atMs": 40,
+      "set": {
+        "TypedSteps.Step": true
+      }
+    },
+    {
+      "atMs": 50,
+      "set": {
+        "TypedSteps.Step": false
+      }
+    },
+    {
+      "atMs": 60,
+      "set": {
+        "TypedSteps.Step": true
+      }
+    },
+    {
+      "atMs": 70,
+      "set": {
+        "TypedSteps.Step": false
+      }
+    },
+    {
+      "atMs": 80,
+      "set": {
+        "TypedSteps.Reset": true
+      }
+    },
+    {
+      "atMs": 90,
+      "set": {
+        "TypedSteps.Reset": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "TypedSteps.Low": true,
+        "TypedSteps.Exact": false,
+        "TypedSteps.High": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 20,
+      "condition": {
+        "TypedSteps.Low": true,
+        "TypedSteps.Exact": false,
+        "TypedSteps.High": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 40,
+      "condition": {
+        "TypedSteps.Low": false,
+        "TypedSteps.Exact": true,
+        "TypedSteps.High": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 60,
+      "condition": {
+        "TypedSteps.Low": false,
+        "TypedSteps.Exact": false,
+        "TypedSteps.High": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 80,
+      "condition": {
+        "TypedSteps.Low": true,
+        "TypedSteps.Exact": false,
+        "TypedSteps.High": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 40,
+      "forMs": 10,
+      "condition": {
+        "TypedSteps.Exact": true
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 40,
+      "withinMs": 0,
+      "condition": {
+        "TypedSteps.Exact": true
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "TypedSteps.Exact": true,
+        "TypedSteps.High": true
+      }
+    }
+  ]
+}

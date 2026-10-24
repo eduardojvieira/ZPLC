@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "id": "Delays",
+  "tickMs": 10,
+  "durationMs": 1000,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "Delays.Button": false,
+        "Delays.Sensor": false
+      }
+    },
+    {
+      "atMs": 100,
+      "set": {
+        "Delays.Button": true,
+        "Delays.Sensor": true
+      }
+    },
+    {
+      "atMs": 140,
+      "set": {
+        "Delays.Sensor": false
+      }
+    },
+    {
+      "atMs": 300,
+      "set": {
+        "Delays.Button": false
+      }
+    },
+    {
+      "atMs": 500,
+      "set": {
+        "Delays.Sensor": true
+      }
+    },
+    {
+      "atMs": 900,
+      "set": {
+        "Delays.Sensor": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "Delays.Light": false,
+        "Delays.Confirmed": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 200,
+      "condition": {
+        "Delays.Light": true,
+        "Delays.Confirmed": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 450,
+      "condition": {
+        "Delays.Light": true,
+        "Delays.Confirmed": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 650,
+      "condition": {
+        "Delays.Light": false,
+        "Delays.Confirmed": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 800,
+      "condition": {
+        "Delays.Light": false,
+        "Delays.Confirmed": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 950,
+      "condition": {
+        "Delays.Light": false,
+        "Delays.Confirmed": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 110,
+      "forMs": 470,
+      "condition": {
+        "Delays.Light": true
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 100,
+      "forMs": 400,
+      "condition": {
+        "Delays.Confirmed": false
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 560,
+      "withinMs": 100,
+      "condition": {
+        "Delays.Light": false
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 600,
+      "withinMs": 200,
+      "condition": {
+        "Delays.Confirmed": true
+      }
+    }
+  ]
+}

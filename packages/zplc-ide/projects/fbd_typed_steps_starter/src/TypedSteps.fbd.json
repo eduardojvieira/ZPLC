@@ -1,0 +1,453 @@
+{
+  "name": "TypedSteps",
+  "description": "Add 5 to Total on each rising edge of Step, clear it while Reset is TRUE, and show whether Total is below, at or above 10.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Total",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "Running total"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Step",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Step push button"
+      },
+      {
+        "name": "Reset",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Clears the total"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Low",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Total below 10"
+      },
+      {
+        "name": "Exact",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Total equal to 10"
+      },
+      {
+        "name": "High",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "Total above 10"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "var_step",
+      "type": "variable",
+      "variableName": "Step",
+      "direction": "read",
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 40,
+        "y": 40
+      }
+    },
+    {
+      "id": "var_reset",
+      "type": "variable",
+      "variableName": "Reset",
+      "direction": "read",
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 40,
+        "y": 400
+      }
+    },
+    {
+      "id": "rd_total",
+      "type": "variable",
+      "variableName": "Total",
+      "direction": "read",
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "INT"
+        }
+      ],
+      "position": {
+        "x": 40,
+        "y": 200
+      },
+      "comment": "Total as the last scan left it"
+    },
+    {
+      "id": "var_total",
+      "type": "variable",
+      "variableName": "Total",
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "INT"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "INT"
+        }
+      ],
+      "position": {
+        "x": 1000,
+        "y": 300
+      },
+      "comment": "Total after this scan"
+    },
+    {
+      "id": "const_zero",
+      "type": "constant",
+      "dataType": "INT",
+      "value": 0,
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "INT"
+        }
+      ],
+      "position": {
+        "x": 700,
+        "y": 460
+      },
+      "comment": "Cleared total"
+    },
+    {
+      "id": "sel_reset",
+      "type": "SEL",
+      "inputs": [
+        {
+          "name": "G",
+          "type": "ANY"
+        },
+        {
+          "name": "IN0",
+          "type": "ANY"
+        },
+        {
+          "name": "IN1",
+          "type": "ANY"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "ANY"
+        }
+      ],
+      "position": {
+        "x": 760,
+        "y": 300
+      },
+      "comment": "Reset TRUE selects 0"
+    },
+    {
+      "id": "const_ten",
+      "type": "constant",
+      "dataType": "INT",
+      "value": 10,
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "INT"
+        }
+      ],
+      "position": {
+        "x": 1000,
+        "y": 480
+      },
+      "comment": "Band limit"
+    },
+    {
+      "id": "cmp_low",
+      "type": "LT",
+      "inputs": [
+        {
+          "name": "IN1",
+          "type": "ANY"
+        },
+        {
+          "name": "IN2",
+          "type": "ANY"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 1200,
+        "y": 200
+      }
+    },
+    {
+      "id": "cmp_exact",
+      "type": "EQ",
+      "inputs": [
+        {
+          "name": "IN1",
+          "type": "ANY"
+        },
+        {
+          "name": "IN2",
+          "type": "ANY"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 1200,
+        "y": 320
+      }
+    },
+    {
+      "id": "cmp_high",
+      "type": "GT",
+      "inputs": [
+        {
+          "name": "IN1",
+          "type": "ANY"
+        },
+        {
+          "name": "IN2",
+          "type": "ANY"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 1200,
+        "y": 440
+      }
+    },
+    {
+      "id": "out_low",
+      "type": "output",
+      "variableName": "Low",
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 1400,
+        "y": 200
+      }
+    },
+    {
+      "id": "out_exact",
+      "type": "output",
+      "variableName": "Exact",
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 1400,
+        "y": 320
+      }
+    },
+    {
+      "id": "out_high",
+      "type": "output",
+      "variableName": "High",
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 1400,
+        "y": 440
+      }
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn_var_reset_out_sel_reset_g",
+      "from": {
+        "block": "var_reset",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "sel_reset",
+        "port": "G"
+      }
+    },
+    {
+      "id": "conn_const_zero_out_sel_reset_in1",
+      "from": {
+        "block": "const_zero",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "sel_reset",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_sel_reset_out_var_total_in",
+      "from": {
+        "block": "sel_reset",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "var_total",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_rd_total_out_sel_reset_in0",
+      "from": {
+        "block": "rd_total",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "sel_reset",
+        "port": "IN0"
+      }
+    },
+    {
+      "id": "conn_var_total_out_cmp_low_in1",
+      "from": {
+        "block": "var_total",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "cmp_low",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_const_ten_out_cmp_low_in2",
+      "from": {
+        "block": "const_ten",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "cmp_low",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "conn_cmp_low_out_out_low_in",
+      "from": {
+        "block": "cmp_low",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out_low",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_var_total_out_cmp_exact_in1",
+      "from": {
+        "block": "var_total",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "cmp_exact",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_const_ten_out_cmp_exact_in2",
+      "from": {
+        "block": "const_ten",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "cmp_exact",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "conn_cmp_exact_out_out_exact_in",
+      "from": {
+        "block": "cmp_exact",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out_exact",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_var_total_out_cmp_high_in1",
+      "from": {
+        "block": "var_total",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "cmp_high",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_const_ten_out_cmp_high_in2",
+      "from": {
+        "block": "const_ten",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "cmp_high",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "conn_cmp_high_out_out_high_in",
+      "from": {
+        "block": "cmp_high",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out_high",
+        "port": "IN"
+      }
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-24",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

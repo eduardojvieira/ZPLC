@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Function Block Diagram: a two-hand control with a guard",
+  "summary": "Read a Function Block Diagram and wire AND, NOT and XOR blocks so a press can only be enabled when both hands are on the buttons and the guard is closed.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the response time, redundancy or fault behaviour a real two-hand safety device needs, and they are not safety, HIL, or certification evidence.",
+  "objectives": [
+    "Read a Function Block Diagram: blocks are joined by wires from an output port to an input port, and each output shows the result of the blocks wired to it.",
+    "Wire AND, NOT and XOR blocks so that an output is ON only when several inputs are ON together, when one input is OFF, or when exactly one of two inputs is ON."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/TwoHand.fbd.json the three outputs are not yet right. PressEnable must be ON only with LeftHand, RightHand and GuardClosed all ON. GuardLamp must be ON when the guard is open. OneHandWarning must be ON when exactly one hand is on its button. Read the diagram from left to right: each wire carries the value of an output port to an input port.",
+      "checkpoint": "You can say, for each output, which blocks make its condition."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, predict the three outputs at {{t:20}}, {{t:30}}, and {{t:40}} ms. The inputs change every {{t:10}} ms, so work through one step at a time.",
+      "checkpoint": "{{v:TwoHand.PressEnable=true,TwoHand.GuardLamp=false,TwoHand.OneHandWarning=false@20|PressEnable ON only}} at {{t:20}} ms; {{v:TwoHand.PressEnable=false,TwoHand.GuardLamp=true,TwoHand.OneHandWarning=false@30|GuardLamp ON only}} at {{t:30}} ms; {{v:TwoHand.PressEnable=false,TwoHand.GuardLamp=false,TwoHand.OneHandWarning=true@40|OneHandWarning ON only}} at {{t:40}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this flaw of the starting diagram, save it, then press Check: The starting diagram enables the press with an OR block, so PressEnable is already ON at {{t:10}} ms with one hand, and GuardLamp and OneHandWarning stay OFF. Delete the OR block and the two FALSE constants. Place an AND block with LeftHand and RightHand, a second AND block with the first one and GuardClosed, and wire the second AND to PressEnable. Place a NOT block from GuardClosed to GuardLamp, and an XOR block from LeftHand and RightHand to OneHandWarning. Save the file.",
+      "checkpoint": "Each output is wired to its own blocks and the file is saved."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named TwoHand and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:20}}, {{t:30}}, and {{t:40}} ms: the press is enabled once, at {{t:20}} ms, and switches off again at {{t:30}} ms when the guard opens.",
+      "checkpoint": "PressEnable rises at {{t:20}} ms and falls at {{t:30}} ms, and is never ON while GuardLamp is ON."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Replace the first AND block by an OR block and say which input combination wrongly enables the press.",
+      "checkpoint": "OR enables the press with a single hand, which is exactly what a two-hand control exists to prevent."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "AND is ON only when every input is ON, and an AND block has two inputs, so a second AND block adds the guard."
+    },
+    {
+      "level": 2,
+      "text": "Wire LeftHand and RightHand to an AND block, that block and GuardClosed to a second AND block, and the second block to PressEnable. Use a NOT block for GuardLamp and an XOR block for OneHandWarning."
+    }
+  ],
+  "faultCases": [
+    "The starting diagram enables the press with an OR block, so PressEnable is already ON at {{t:10}} ms with one hand, and GuardLamp and OneHandWarning stay OFF."
+  ]
+}

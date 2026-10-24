@@ -1,0 +1,263 @@
+{
+  "name": "TwoHand",
+  "description": "Enable the press only with both hands on the buttons and the guard closed; light the guard lamp when the guard is open; warn when exactly one hand is on.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "LeftHand",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Left hand button"
+      },
+      {
+        "name": "RightHand",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Right hand button"
+      },
+      {
+        "name": "GuardClosed",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "Guard closed"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "PressEnable",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Press enable"
+      },
+      {
+        "name": "GuardLamp",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Guard open lamp"
+      },
+      {
+        "name": "OneHandWarning",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "Exactly one hand is on its button"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "var_left",
+      "type": "variable",
+      "variableName": "LeftHand",
+      "direction": "read",
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 40,
+        "y": 40
+      }
+    },
+    {
+      "id": "var_right",
+      "type": "variable",
+      "variableName": "RightHand",
+      "direction": "read",
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 40,
+        "y": 140
+      }
+    },
+    {
+      "id": "var_guard",
+      "type": "variable",
+      "variableName": "GuardClosed",
+      "direction": "read",
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 40,
+        "y": 240
+      }
+    },
+    {
+      "id": "out_press",
+      "type": "output",
+      "variableName": "PressEnable",
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 640,
+        "y": 60
+      }
+    },
+    {
+      "id": "out_lamp",
+      "type": "output",
+      "variableName": "GuardLamp",
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 640,
+        "y": 260
+      }
+    },
+    {
+      "id": "out_warn",
+      "type": "output",
+      "variableName": "OneHandWarning",
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 640,
+        "y": 360
+      }
+    },
+    {
+      "id": "or_hands",
+      "type": "OR",
+      "inputs": [
+        {
+          "name": "IN1",
+          "type": "BOOL"
+        },
+        {
+          "name": "IN2",
+          "type": "BOOL"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 260,
+        "y": 60
+      },
+      "comment": "Either hand"
+    },
+    {
+      "id": "const_lamp",
+      "type": "constant",
+      "dataType": "BOOL",
+      "value": false,
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 260,
+        "y": 260
+      }
+    },
+    {
+      "id": "const_warn",
+      "type": "constant",
+      "dataType": "BOOL",
+      "value": false,
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "position": {
+        "x": 260,
+        "y": 360
+      }
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn_var_left_out_or_hands_in1",
+      "from": {
+        "block": "var_left",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "or_hands",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_var_right_out_or_hands_in2",
+      "from": {
+        "block": "var_right",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "or_hands",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "conn_or_hands_out_out_press_in",
+      "from": {
+        "block": "or_hands",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out_press",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_const_lamp_out_out_lamp_in",
+      "from": {
+        "block": "const_lamp",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out_lamp",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_const_warn_out_out_warn_in",
+      "from": {
+        "block": "const_warn",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out_warn",
+        "port": "IN"
+      }
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-24",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
