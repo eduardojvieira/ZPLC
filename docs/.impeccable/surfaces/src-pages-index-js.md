@@ -1,8 +1,8 @@
 ---
 version: 1
-slug: "src-pages-index-js"
-primary_target: "src/pages/index.js"
-related_targets: ["src/components/LandingPage"]
+slug: 'src-pages-index-js'
+primary_target: 'src/pages/index.js'
+related_targets: ['src/components/LandingPage']
 ---
 
 # Landing page (product page)
