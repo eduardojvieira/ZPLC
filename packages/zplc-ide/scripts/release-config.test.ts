@@ -247,6 +247,16 @@ describe('Linux packages declare what Electron needs and are installed in clean 
     expect(readFileSync(script, 'utf8')).not.toContain('--no-sandbox');
   });
 
+  // The AppImage is extracted as root, and the unprivileged user that starts it got "/tmp/squashfs-root/zplc: Permission
+  // denied" (release rehearsal 40125534053): the extracted tree must be readable and its folders searchable by that user.
+  it('lets the unprivileged user reach the extracted AppImage', () => {
+    const text = readFileSync(script, 'utf8');
+    const extract = text.indexOf('--appimage-extract');
+    const reach = text.indexOf('chmod -R a+rX /tmp/squashfs-root');
+    expect(reach).toBeGreaterThan(extract);
+    expect(extract).toBeGreaterThan(-1);
+  });
+
   // Electron 43's debugging server answers HTTP/1.0 with nothing ("Cannot handle request with protocol: HTTP/1.0",
   // release rehearsal 40118359942), so the window check never saw the page of the application it had started.
   it('asks the debugging port for the window with HTTP/1.1 and a read that cannot hang', () => {

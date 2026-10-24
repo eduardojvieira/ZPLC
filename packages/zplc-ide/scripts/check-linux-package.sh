@@ -38,6 +38,8 @@ case "$package" in
     apt-get update
     apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 libasound2t64
     (cd /tmp && ./zplc.AppImage --appimage-extract > /dev/null)
+    # Extracted as root, with the image's own folder modes: the unprivileged user that starts it must reach every file.
+    chmod -R a+rX /tmp/squashfs-root
     appimage_dir=/tmp/squashfs-root
     install_display() { apt-get install -y xvfb xauth; }
     ;;
