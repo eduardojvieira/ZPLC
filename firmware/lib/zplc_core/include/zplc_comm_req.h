@@ -110,7 +110,9 @@ static inline int zplc_comm_status_from_errno(int error) {
   case ENETDOWN:
   case EHOSTUNREACH:
   case EPIPE:
+#ifdef ESHUTDOWN /* not POSIX: macOS hides it under _POSIX_C_SOURCE */
   case ESHUTDOWN:
+#endif
     return ZPLC_COMM_NOT_CONNECTED;
   case ENOMEM:
   case EBUSY:
