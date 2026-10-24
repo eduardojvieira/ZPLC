@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Retardo a la conexión y a la desconexión en escalera: temporizadores como bloques en un peldaño",
+  "summary": "Coloque un TOF y un TON entre un contacto y una bobina, y compruebe que un retardo a la desconexión mantiene una luz tras soltar el botón y que un retardo a la conexión ignora un sensor que no se mantiene.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran los requisitos de filtrado de un sensor real, el cableado, los tiempos del hardware, HIL ni certificación.",
+  "objectives": [
+    "Coloque un bloque temporizador en un peldaño, con el contacto en su entrada IN y su salida en la bobina.",
+    "Distinga un retardo a la desconexión (TOF) de uno a la conexión (TON) por lo que hace cada uno cuando la entrada sube y baja."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/DelaysLd.ld.json dos peldaños conectan un contacto directamente a una bobina. Inserte un TOF de T#300ms en el primer peldaño, para que Light siga encendida T#300ms después de soltar Button, y un TON de T#200ms en el segundo, para que Confirmed se active solo después de que Sensor lleve T#200ms en ON.",
+      "checkpoint": "Cada peldaño tiene contacto, temporizador y bobina, en ese orden."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Button se pulsa a los {{t:100}} ms y se suelta a los {{t:300}} ms. Sensor está en ON de {{t:100}} a {{t:140}} ms y de nuevo de {{t:500}} a {{t:900}} ms. Prediga Light a los {{t:450}} y {{t:650}} ms, y Confirmed a los {{t:450}} y {{t:800}} ms.",
+      "checkpoint": "{{v:DelaysLd.Light=true@450|En ON}} a los {{t:450}} ms, aún dentro de la retención de T#300ms; {{v:DelaysLd.Light=false@650|en OFF}} a los {{t:650}} ms; {{v:DelaysLd.Confirmed=false@450|en OFF}} a los {{t:450}} ms, porque el pulso fue demasiado corto; {{v:DelaysLd.Confirmed=true@800|en ON}} a los {{t:800}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene temporizadores: Light cae en cuanto se suelta Button y Confirmed sigue a Sensor, así que Light está en OFF a los {{t:450}} ms y Confirmed está en ON a los {{t:120}} ms; ponga un TOF de T#300ms entre Button y Light, y un TON de T#200ms entre Sensor y Confirmed. Desde la caja de herramientas arrastre un bloque TOF al primer peldaño y un TON al segundo, entre el contacto y la bobina, y fije PT en cada uno.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama DelaysLd y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare Light a los {{t:300}} y {{t:650}} ms con Confirmed a los {{t:140}} y {{t:800}} ms: el TOF retarda la caída de su entrada y el TON retarda la subida.",
+      "checkpoint": "Light cae una vez, después de la retención, y Confirmed sube una vez, después de que el sensor se mantenga T#200ms; el pulso corto de {{t:100}} ms nunca la activa."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "Intercambie los dos bloques, TON para la retención y TOF para el filtro, y vea qué aserciones fallan. ¿Qué hace cada bloque con un pulso corto?",
+      "checkpoint": "Un TON ignora un pulso más corto que su preset y un TOF alarga un pulso en su preset. Un filtro de sensor real exige además elegir el preset frente a la señal real, algo que este escenario no mide."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "La bobina no debe ver el contacto directamente. ¿Qué bloque va entre ellos y qué hace cada uno de los dos bloques con una señal?"
+    },
+    {
+      "level": 2,
+      "text": "En el primer peldaño coloque un TOF con PT T#300ms y en el segundo un TON con PT T#200ms, cada uno entre su contacto y su bobina, y deje IN conectado al contacto."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial no tiene temporizadores: Light cae en cuanto se suelta Button y Confirmed sigue a Sensor, así que Light está en OFF a los {{t:450}} ms y Confirmed está en ON a los {{t:120}} ms; ponga un TOF de T#300ms entre Button y Light, y un TON de T#200ms entre Sensor y Confirmed."
+  ]
+}
