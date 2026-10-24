@@ -564,8 +564,16 @@ async function main(): Promise<void> {
     if (cdp) await cdp.command('Browser.close').catch(() => undefined);
     cdp?.close();
     await stop(electron);
-    if (tempRoot.startsWith(join(tmpdir(), 'zplc-packaged-smoke-')) && existsSync(tempRoot))
-      rmSync(tempRoot, { recursive: true, force: true });
+    if (tempRoot.startsWith(join(tmpdir(), 'zplc-packaged-smoke-')) && existsSync(tempRoot)) {
+      // The portable Windows executable runs the application as a child that can hold the profile a moment after the
+      // launcher has exited (EBUSY): a folder left in the temporary directory is not a failed launch, and an error thrown
+      // here would hide the smoke's own result.
+      try {
+        rmSync(tempRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 });
+      } catch (error) {
+        console.warn(`The smoke could not remove ${tempRoot}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
   }
 }
 
