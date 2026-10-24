@@ -21,6 +21,15 @@ export function nodeChangesCommit(changes: readonly NodeChange[]): boolean {
   );
 }
 
+/**
+ * The changes of a canvas that the editor applies. A read-only canvas (a chart online) is not edited, but React Flow measures
+ * its nodes all the same, and draws a node without its measured size hidden until it measures it again: the editor keeps
+ * the sizes, or every node it rebuilds for an online value is hidden, and can stay hidden.
+ */
+export function appliedNodeChanges(changes: readonly NodeChange[], readOnly: boolean): NodeChange[] {
+  return readOnly ? changes.filter((change) => change.type === 'dimensions') : [...changes];
+}
+
 /** Whether the changes of a canvas change the wires of the document. */
 export function edgeChangesCommit(changes: readonly EdgeChange[]): boolean {
   return changes.some((change) => change.type === 'add' || change.type === 'remove' || change.type === 'replace');

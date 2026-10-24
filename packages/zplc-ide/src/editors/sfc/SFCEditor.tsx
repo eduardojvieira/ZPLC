@@ -57,7 +57,7 @@ import {
   type DebugTransitionInfo,
 } from './debugInfo';
 import { useCanvasKeyboard } from '../useCanvasKeyboard';
-import { edgeChangesCommit, nodeChangesCommit } from '../gesture';
+import { appliedNodeChanges, edgeChangesCommit, nodeChangesCommit } from '../gesture';
 import { useGestureCommit } from '../useGestureCommit';
 import { getVisualSelection, setVisualSelection, useVisualFileKey } from '../visualSelection';
 import type { VisualGesture } from '../visualHistory';
@@ -415,8 +415,10 @@ function SFCEditorInner({
 
   // Notify parent of changes
   const handleNodesChange = useCallback(
-    (changes: Parameters<typeof applyNodeChanges>[0]) => {
-      if (readOnly) return;
+    (reported: Parameters<typeof applyNodeChanges>[0]) => {
+      // online the chart is read-only, and only the sizes React Flow measures are kept
+      const changes = appliedNodeChanges(reported, readOnly);
+      if (changes.length === 0) return;
       const nextNodes = applyNodeChanges(changes, nodesRef.current);
       // the steps of a drag only move the node on the canvas: the document is committed when the node is put down
       if (nodeChangesCommit(changes)) commitGraph(nextNodes, edgesRef.current);

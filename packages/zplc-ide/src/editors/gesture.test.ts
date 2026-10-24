@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { applyNodeChanges, type Edge, type EdgeChange, type Node, type NodeChange } from '@xyflow/react';
-import { createCommitBatcher, edgeChangesCommit, nodeChangesCommit } from './gesture';
+import { appliedNodeChanges, createCommitBatcher, edgeChangesCommit, nodeChangesCommit } from './gesture';
 import { applyFBDSelection, edgesToConnections, fbdSelection, nodesToBlocks } from './fbd/graphModel';
 import { serializeFBDModel, type FBDModel } from '../models/fbd';
 import { recordVisualSnapshot, undoVisualSnapshot, type VisualHistories } from './visualHistory';
@@ -30,6 +30,29 @@ describe('which changes of a canvas end a gesture (LNG-010)', () => {
     expect(nodeChangesCommit([{ type: 'add', item: { id: 'n', position: { x: 0, y: 0 }, data: {} } }])).toBe(true);
     expect(edgeChangesCommit([{ id: 'w', type: 'remove' } as EdgeChange])).toBe(true);
     expect(edgeChangesCommit([{ id: 'w', type: 'select', selected: true } as EdgeChange])).toBe(false);
+  });
+});
+
+describe('what a canvas applies while it is read-only', () => {
+  const changes: NodeChange[] = [
+    { id: 'start', type: 'select', selected: true },
+    move('start', false),
+    { id: 'start', type: 'dimensions', dimensions: { width: 120, height: 40 } },
+  ];
+
+  // a node without its measured size is drawn hidden by React Flow until it is measured again: a chart online rebuilds its
+  // nodes for every value, so a read-only canvas that dropped the sizes would hide its nodes, and could leave them hidden
+  it('keeps the size React Flow measured, and nothing that edits or selects', () => {
+    const applied = appliedNodeChanges(changes, true);
+    expect(applied.map((change) => change.type)).toEqual(['dimensions']);
+    const [node] = applyNodeChanges(applied, [{ id: 'start', position: { x: 0, y: 0 }, data: {} }]);
+    expect(node?.measured).toEqual({ width: 120, height: 40 });
+    expect(node?.selected).toBeUndefined();
+    expect(node?.position).toEqual({ x: 0, y: 0 });
+  });
+
+  it('applies every change while the canvas is edited', () => {
+    expect(appliedNodeChanges(changes, false)).toEqual(changes);
   });
 });
 

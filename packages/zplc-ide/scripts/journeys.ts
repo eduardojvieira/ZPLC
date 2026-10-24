@@ -4138,7 +4138,14 @@ export const JOURNEYS: Journey[] = [
             );
           });
         const shown = await app.eval<string>(`document.querySelector('.react-flow__node[data-id="${id}"]')?.innerText ?? ''`);
-        assert(shown.includes('FORCED'), `A transition that reads a forced variable says FORCED, not "${shown}".`);
+        // innerText is what a person sees: a node React Flow draws hidden has none
+        if (!shown.includes('FORCED')) {
+          const nodes = await app.eval<string>(
+            `[...document.querySelectorAll('.react-flow__node')]` +
+              `.map((n) => n.getAttribute('data-id') + ' ' + getComputedStyle(n).visibility).join(', ')`,
+          );
+          throw new Error(`A transition that reads a forced variable says FORCED, not "${shown}"; the nodes are ${nodes}.`);
+        }
       }
       assert(
         !(await app.eval<boolean>(`document.querySelector('.react-flow')?.querySelector('[data-signal="fault"]') !== null`)),
