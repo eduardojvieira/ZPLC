@@ -3100,8 +3100,18 @@ export const JOURNEYS: Journey[] = [
       const copy = join(project, 'src', 'Drive_copy.st');
       await app
         .until('the content in the copy', () => (existsSync(copy) && disk(copy).includes(EDIT)) || undefined)
-        .catch(() => {
-          throw new Error('The copy does not hold the content of the file.');
+        .catch(async () => {
+          const held = await app.eval<string>(
+            `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => JSON.stringify(` +
+              `[...useIDEStore.getState().loadedFiles.entries()].map(([id, file]) => ` +
+              `[id, file.isModified, file.content.length, file.content.includes(${JSON.stringify(EDIT)})])))`,
+          );
+          const copied = existsSync(copy) ? JSON.stringify(disk(copy).slice(0, 120)) : 'no file';
+          const saved = disk(join(project, 'src', 'Drive.st')).includes(EDIT) ? 'has' : 'lacks';
+          throw new Error(
+            `The copy does not hold the content of the file: the copy has ${copied}, Drive.st on disk ${saved} the edit, ` +
+              `the open files are ${held}`,
+          );
         });
       await contextMenu('src/Drive.st', 'file', 'Rename…');
       await typeName('drive_COPY.st');

@@ -39,6 +39,7 @@ export async function checkOpenFiles(): Promise<void> {
   const before = useIDEStore.getState();
   const session = before.projectSession;
   const checked = [...before.loadedFiles.values()].filter((file) => file.handle);
+  const known = new Map(checked.map((file) => [file.path, file.diskContent]));
   const disk = new Map<string, string | null | undefined>();
   await Promise.all(
     checked.map(async (file) => {
@@ -47,6 +48,10 @@ export async function checkOpenFiles(): Promise<void> {
   );
   const state = useIDEStore.getState();
   if (state.projectSession !== session) return;
+  // A reading taken before Studio wrote the file (a save while it was read: the save's own write is a change the watcher
+  // reports) is older than what Studio now knows of the disk. It is dropped; the write brings a check of its own.
+  for (const file of state.loadedFiles.values())
+    if (disk.has(file.path) && file.diskContent !== known.get(file.path)) disk.delete(file.path);
 
   const files = [...state.loadedFiles.values()];
   const plan = planExternalChanges(files, disk);
