@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "plant": "tank-v1",
+  "reads": {
+    "pump": "TankLevel.Pump"
+  },
+  "drives": {
+    "levelLow": "TankLevel.LevelLow",
+    "levelHigh": "TankLevel.LevelHigh",
+    "pumpFault": "TankLevel.PumpFault"
+  }
+}
