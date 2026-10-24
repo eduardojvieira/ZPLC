@@ -80,6 +80,19 @@ Each release has a prebuilt image for this board, `zplc-runtime-<version>-esp32-
 | [Interlocks in Ladder: a reversing motor](./esp32-s3-devkitc/interlock-reversing-ladder.md) | `interlock-reversing-ladder` |
 | [Your own function block in Function Block Diagram: two valves, one block](./esp32-s3-devkitc/function-block-valves-fbd.md) | `function-block-valves-fbd` |
 | [Verify my board](./esp32-s3-devkitc/verify-my-board.md) | `verify-my-board` |
+| [Boolean logic in Ladder: a two-hand guard](./esp32-s3-devkitc/boolean-logic-two-hand-guard-ladder.md) | `boolean-logic-two-hand-guard-ladder` |
+| [Latching an alarm in Ladder: SET and RESET coils, and the order of the rungs](./esp32-s3-devkitc/set-reset-alarm-latch-ladder.md) | `set-reset-alarm-latch-ladder` |
+| [On-delay and off-delay in Ladder: timers as blocks in a rung](./esp32-s3-devkitc/timers-on-delay-off-delay-ladder.md) | `timers-on-delay-off-delay-ladder` |
+| [Counting pulses in Ladder: a CTU counts the edges itself](./esp32-s3-devkitc/edge-counter-pulses-ladder.md) | `edge-counter-pulses-ladder` |
+| [Function Block Diagram: a two-hand control with a guard](./esp32-s3-devkitc/boolean-logic-two-hand-guard-fbd.md) | `boolean-logic-two-hand-guard-fbd` |
+| [Timers in Function Block Diagram: an off-delay light and an on-delay filter](./esp32-s3-devkitc/timers-on-delay-off-delay-fbd.md) | `timers-on-delay-off-delay-fbd` |
+| [Types, arithmetic and comparison in Function Block Diagram: a total and three bands](./esp32-s3-devkitc/types-arithmetic-comparison-fbd.md) | `types-arithmetic-comparison-fbd` |
+| [Instruction List: the current result in a two-hand control](./esp32-s3-devkitc/boolean-logic-two-hand-guard-il.md) | `boolean-logic-two-hand-guard-il` |
+| [Instruction List: S and R, and the line that comes last](./esp32-s3-devkitc/set-reset-alarm-latch-il.md) | `set-reset-alarm-latch-il` |
+| [Instruction List: calling an off-delay and an on-delay timer](./esp32-s3-devkitc/timers-on-delay-off-delay-il.md) | `timers-on-delay-off-delay-il` |
+| [Instruction List: counting pulses with a CTU](./esp32-s3-devkitc/edge-counter-pulses-il.md) | `edge-counter-pulses-il` |
+| [Instruction List: arithmetic, comparison and a jump on a rising edge](./esp32-s3-devkitc/types-arithmetic-comparison-il.md) | `types-arithmetic-comparison-il` |
+| [Instruction List: calling a function block and reading its outputs](./esp32-s3-devkitc/function-block-call-il.md) | `function-block-call-il` |
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc <<< */}
 

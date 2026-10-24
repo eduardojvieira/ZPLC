@@ -22,6 +22,11 @@ Una máquina que hace cosas en orden es una máquina de estados. Las secuencias 
 | --- | --- | --- | --- |
 | [Cruce peatonal y estados seguros](../lessons/pedestrian-crossing-states.md) | `pedestrian-crossing-states` | ST | 25 |
 | [Una secuencia en diagrama funcional secuencial: llenar y luego mezclar](../lessons/sfc-fill-mix-sequence.md) | `sfc-fill-mix-sequence` | SFC | 25 |
+| [Cruce peatonal como diagrama funcional secuencial](../lessons/pedestrian-crossing-sfc.md) | `pedestrian-crossing-sfc` | SFC | 25 |
+| [Ramas de selección: un camino entre dos](../lessons/selection-branches-sfc.md) | `selection-branches-sfc` | SFC | 25 |
+| [Ramas simultáneas: llenar y calentar a la vez](../lessons/simultaneous-branches-sfc.md) | `simultaneous-branches-sfc` | SFC | 30 |
+| [Tiempos de paso: una bocina antes de abrir la puerta](../lessons/step-times-sfc.md) | `step-times-sfc` | SFC | 20 |
+| [Clasificación en un transportador como diagrama](../lessons/conveyor-sorting-sfc.md) | `conveyor-sorting-sfc` | SFC | 30 |
 
 {/* <<< END GENERATED: learn/modules/module-5 <<< */}
 

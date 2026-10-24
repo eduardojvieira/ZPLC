@@ -24,6 +24,10 @@ A command is not a fact: the plant must confirm it. Once a program can run a seq
 | [Tank level, faults, and reset](../lessons/tank-level-fault-reset.md) | `tank-level-fault-reset` | ST | 25 |
 | [Interlocks and permissives: a guard that stops the motor](../lessons/interlock-guard-permissive.md) | `interlock-guard-permissive` | ST | 20 |
 | [Interlocks in Ladder: a reversing motor](../lessons/interlock-reversing-ladder.md) | `interlock-reversing-ladder` | LD | 20 |
+| [Tank level, faults and reset in Ladder: latches and the order of the rungs](../lessons/tank-level-fault-reset-ladder.md) | `tank-level-fault-reset-ladder` | LD | 30 |
+| [Interlocks and permissives in Function Block Diagram: a guard that stops the motor](../lessons/interlock-guard-permissive-fbd.md) | `interlock-guard-permissive-fbd` | FBD | 25 |
+| [Faults, stop and reset in a chart](../lessons/fault-stop-reset-sfc.md) | `fault-stop-reset-sfc` | SFC | 25 |
+| [Instruction List: a guard as a permissive on the whole condition](../lessons/interlock-guard-permissive-il.md) | `interlock-guard-permissive-il` | IL | 20 |
 
 {/* <<< END GENERATED: learn/modules/module-6 <<< */}
 

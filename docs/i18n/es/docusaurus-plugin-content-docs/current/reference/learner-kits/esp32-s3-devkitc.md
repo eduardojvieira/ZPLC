@@ -80,6 +80,19 @@ Cada versión publicada tiene una imagen precompilada para esta placa, `zplc-run
 | [Enclavamientos en diagrama de escalera: un motor con inversión de giro](./esp32-s3-devkitc/interlock-reversing-ladder.md) | `interlock-reversing-ladder` |
 | [Su propio bloque de función en diagrama de bloques de función: dos válvulas, un bloque](./esp32-s3-devkitc/function-block-valves-fbd.md) | `function-block-valves-fbd` |
 | [Verificar mi placa](./esp32-s3-devkitc/verify-my-board.md) | `verify-my-board` |
+| [Lógica booleana en escalera: un mando a dos manos](./esp32-s3-devkitc/boolean-logic-two-hand-guard-ladder.md) | `boolean-logic-two-hand-guard-ladder` |
+| [Enclavar una alarma en escalera: bobinas SET y RESET, y el orden de los peldaños](./esp32-s3-devkitc/set-reset-alarm-latch-ladder.md) | `set-reset-alarm-latch-ladder` |
+| [Retardo a la conexión y a la desconexión en escalera: temporizadores como bloques en un peldaño](./esp32-s3-devkitc/timers-on-delay-off-delay-ladder.md) | `timers-on-delay-off-delay-ladder` |
+| [Contar pulsos en escalera: un CTU cuenta los flancos por sí mismo](./esp32-s3-devkitc/edge-counter-pulses-ladder.md) | `edge-counter-pulses-ladder` |
+| [Diagrama de bloques de función: un mando a dos manos con protección](./esp32-s3-devkitc/boolean-logic-two-hand-guard-fbd.md) | `boolean-logic-two-hand-guard-fbd` |
+| [Temporizadores en diagrama de bloques de función: una luz con retardo a la desconexión y un filtro con retardo a la conexión](./esp32-s3-devkitc/timers-on-delay-off-delay-fbd.md) | `timers-on-delay-off-delay-fbd` |
+| [Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres bandas](./esp32-s3-devkitc/types-arithmetic-comparison-fbd.md) | `types-arithmetic-comparison-fbd` |
+| [Lista de instrucciones: el resultado actual en un mando a dos manos](./esp32-s3-devkitc/boolean-logic-two-hand-guard-il.md) | `boolean-logic-two-hand-guard-il` |
+| [Lista de instrucciones: S y R, y la línea que va al final](./esp32-s3-devkitc/set-reset-alarm-latch-il.md) | `set-reset-alarm-latch-il` |
+| [Lista de instrucciones: llamar a un temporizador de retardo a la desconexión y a la conexión](./esp32-s3-devkitc/timers-on-delay-off-delay-il.md) | `timers-on-delay-off-delay-il` |
+| [Lista de instrucciones: contar pulsos con un CTU](./esp32-s3-devkitc/edge-counter-pulses-il.md) | `edge-counter-pulses-il` |
+| [Lista de instrucciones: aritmética, comparación y un salto en un flanco ascendente](./esp32-s3-devkitc/types-arithmetic-comparison-il.md) | `types-arithmetic-comparison-il` |
+| [Lista de instrucciones: llamar a un bloque de función y leer sus salidas](./esp32-s3-devkitc/function-block-call-il.md) | `function-block-call-il` |
 
 {/* <<< END GENERATED: reference/learner-kits/esp32-s3-devkitc <<< */}
 

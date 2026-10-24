@@ -84,6 +84,19 @@ Each release has a prebuilt image for this board, `zplc-runtime-<version>-rpi-pi
 | [Interlocks in Ladder: a reversing motor](./rpi-pico-rp2040/interlock-reversing-ladder.md) | `interlock-reversing-ladder` |
 | [Your own function block in Function Block Diagram: two valves, one block](./rpi-pico-rp2040/function-block-valves-fbd.md) | `function-block-valves-fbd` |
 | [Verify my board](./rpi-pico-rp2040/verify-my-board.md) | `verify-my-board` |
+| [Boolean logic in Ladder: a two-hand guard](./rpi-pico-rp2040/boolean-logic-two-hand-guard-ladder.md) | `boolean-logic-two-hand-guard-ladder` |
+| [Latching an alarm in Ladder: SET and RESET coils, and the order of the rungs](./rpi-pico-rp2040/set-reset-alarm-latch-ladder.md) | `set-reset-alarm-latch-ladder` |
+| [On-delay and off-delay in Ladder: timers as blocks in a rung](./rpi-pico-rp2040/timers-on-delay-off-delay-ladder.md) | `timers-on-delay-off-delay-ladder` |
+| [Counting pulses in Ladder: a CTU counts the edges itself](./rpi-pico-rp2040/edge-counter-pulses-ladder.md) | `edge-counter-pulses-ladder` |
+| [Function Block Diagram: a two-hand control with a guard](./rpi-pico-rp2040/boolean-logic-two-hand-guard-fbd.md) | `boolean-logic-two-hand-guard-fbd` |
+| [Timers in Function Block Diagram: an off-delay light and an on-delay filter](./rpi-pico-rp2040/timers-on-delay-off-delay-fbd.md) | `timers-on-delay-off-delay-fbd` |
+| [Types, arithmetic and comparison in Function Block Diagram: a total and three bands](./rpi-pico-rp2040/types-arithmetic-comparison-fbd.md) | `types-arithmetic-comparison-fbd` |
+| [Instruction List: the current result in a two-hand control](./rpi-pico-rp2040/boolean-logic-two-hand-guard-il.md) | `boolean-logic-two-hand-guard-il` |
+| [Instruction List: S and R, and the line that comes last](./rpi-pico-rp2040/set-reset-alarm-latch-il.md) | `set-reset-alarm-latch-il` |
+| [Instruction List: calling an off-delay and an on-delay timer](./rpi-pico-rp2040/timers-on-delay-off-delay-il.md) | `timers-on-delay-off-delay-il` |
+| [Instruction List: counting pulses with a CTU](./rpi-pico-rp2040/edge-counter-pulses-il.md) | `edge-counter-pulses-il` |
+| [Instruction List: arithmetic, comparison and a jump on a rising edge](./rpi-pico-rp2040/types-arithmetic-comparison-il.md) | `types-arithmetic-comparison-il` |
+| [Instruction List: calling a function block and reading its outputs](./rpi-pico-rp2040/function-block-call-il.md) | `function-block-call-il` |
 
 {/* <<< END GENERATED: reference/learner-kits/rpi-pico-rp2040 <<< */}
 

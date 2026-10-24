@@ -23,6 +23,11 @@ Time and events come after logic: timers delay or hold a signal, edges turn a le
 | [Timers: an off-delay light and an on-delay filter](../lessons/timers-on-delay-off-delay.md) | `timers-on-delay-off-delay` | ST | 15 |
 | [Edges and pulse counter](../lessons/edge-counter-pulses.md) | `edge-counter-pulses` | ST | 15 |
 | [Counters in Function Block Diagram: count parts to a batch](../lessons/counter-batch-fbd.md) | `counter-batch-fbd` | FBD | 20 |
+| [On-delay and off-delay in Ladder: timers as blocks in a rung](../lessons/timers-on-delay-off-delay-ladder.md) | `timers-on-delay-off-delay-ladder` | LD | 20 |
+| [Counting pulses in Ladder: a CTU counts the edges itself](../lessons/edge-counter-pulses-ladder.md) | `edge-counter-pulses-ladder` | LD | 20 |
+| [Timers in Function Block Diagram: an off-delay light and an on-delay filter](../lessons/timers-on-delay-off-delay-fbd.md) | `timers-on-delay-off-delay-fbd` | FBD | 20 |
+| [Instruction List: calling an off-delay and an on-delay timer](../lessons/timers-on-delay-off-delay-il.md) | `timers-on-delay-off-delay-il` | IL | 15 |
+| [Instruction List: counting pulses with a CTU](../lessons/edge-counter-pulses-il.md) | `edge-counter-pulses-il` | IL | 15 |
 
 {/* <<< END GENERATED: learn/modules/module-3 <<< */}
 

@@ -23,6 +23,8 @@ Las señales reales son números, no solo encendido y apagado. Los tipos, la ari
 | [Tipos, aritmética y comparación: un total y tres bandas](../lessons/types-arithmetic-comparison.md) | `types-arithmetic-comparison` | ST | 20 |
 | [Escalado analógico: de cuentas en bruto a un porcentaje](../lessons/analog-scaling-integer.md) | `analog-scaling-integer` | ST | 20 |
 | [Escalado analógico en diagrama de bloques de función: una alarma de nivel alto](../lessons/analog-scaling-fbd.md) | `analog-scaling-fbd` | FBD | 20 |
+| [Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres bandas](../lessons/types-arithmetic-comparison-fbd.md) | `types-arithmetic-comparison-fbd` | FBD | 25 |
+| [Lista de instrucciones: aritmética, comparación y un salto en un flanco ascendente](../lessons/types-arithmetic-comparison-il.md) | `types-arithmetic-comparison-il` | IL | 20 |
 
 {/* <<< END GENERATED: learn/modules/module-4 <<< */}
 

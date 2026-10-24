@@ -21,6 +21,7 @@ El curso termina con una máquina pequeña, llevada de una descripción escrita 
 | Lección | Id | Lenguajes | minutos |
 | --- | --- | --- | --- |
 | [Proyecto final: una estación de empaque, de la descripción al programa probado](../lessons/capstone-packing-station.md) | `capstone-packing-station` | ST | 60 |
+| [Proyecto final: una estación de empaque como diagrama](../lessons/packing-station-sfc.md) | `packing-station-sfc` | SFC | 60 |
 
 {/* <<< END GENERATED: learn/modules/module-11 <<< */}
 

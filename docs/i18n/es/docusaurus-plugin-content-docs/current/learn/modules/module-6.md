@@ -24,6 +24,10 @@ Una orden no es un hecho: la planta debe confirmarla. Cuando un programa ya pued
 | [Nivel de tanque, fallas y reset](../lessons/tank-level-fault-reset.md) | `tank-level-fault-reset` | ST | 25 |
 | [Enclavamientos y permisivos: una protección que detiene el motor](../lessons/interlock-guard-permissive.md) | `interlock-guard-permissive` | ST | 20 |
 | [Enclavamientos en diagrama de escalera: un motor con inversión de giro](../lessons/interlock-reversing-ladder.md) | `interlock-reversing-ladder` | LD | 20 |
+| [Nivel de tanque, fallas y reset en escalera: enclavamientos y orden de los peldaños](../lessons/tank-level-fault-reset-ladder.md) | `tank-level-fault-reset-ladder` | LD | 30 |
+| [Enclavamientos y permisivos en diagrama de bloques de función: una protección que detiene el motor](../lessons/interlock-guard-permissive-fbd.md) | `interlock-guard-permissive-fbd` | FBD | 25 |
+| [Fallas, parada y reinicio en un diagrama](../lessons/fault-stop-reset-sfc.md) | `fault-stop-reset-sfc` | SFC | 25 |
+| [Lista de instrucciones: una protección como permisivo de toda la condición](../lessons/interlock-guard-permissive-il.md) | `interlock-guard-permissive-il` | IL | 20 |
 
 {/* <<< END GENERATED: learn/modules/module-6 <<< */}
 

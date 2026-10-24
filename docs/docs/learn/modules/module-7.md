@@ -23,6 +23,7 @@ Programs grow. Once you work with data, functions, function blocks, structures, 
 | [Function blocks: one latch, two pumps](../lessons/function-block-pump-pair.md) | `function-block-pump-pair` | ST | 25 |
 | [Structures and arrays: a panel of three calls](../lessons/structures-arrays-call-panel.md) | `structures-arrays-call-panel` | ST | 25 |
 | [Your own function block in Function Block Diagram: two valves, one block](../lessons/function-block-valves-fbd.md) | `function-block-valves-fbd` | FBD | 20 |
+| [Instruction List: calling a function block and reading its outputs](../lessons/function-block-call-il.md) | `function-block-call-il` | IL | 25 |
 
 {/* <<< END GENERATED: learn/modules/module-7 <<< */}
 
