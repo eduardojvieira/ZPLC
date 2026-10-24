@@ -246,6 +246,15 @@ describe('Linux packages declare what Electron needs and are installed in clean 
     expect(refused.stderr).toContain('outside the CI container');
     expect(readFileSync(script, 'utf8')).not.toContain('--no-sandbox');
   });
+
+  // Electron 43's debugging server answers HTTP/1.0 with nothing ("Cannot handle request with protocol: HTTP/1.0",
+  // release rehearsal 40118359942), so the window check never saw the page of the application it had started.
+  it('asks the debugging port for the window with HTTP/1.1 and a read that cannot hang', () => {
+    const text = readFileSync(script, 'utf8');
+    expect(text).toContain("printf 'GET /json/list HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nConnection: close\\r\\n\\r\\n'");
+    expect(text).not.toContain('HTTP/1.0');
+    expect(text).toMatch(/read -r -t \d+ line/);
+  });
 });
 
 describe('the release builds the firmware of every board and ships it in its own chain (REL-022, REL-025)', () => {

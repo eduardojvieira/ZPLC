@@ -72,12 +72,13 @@ runuser -u "$user" -- env HOME="/home/$user" xvfb-run -a "$executable" --headles
   --remote-debugging-port="$port" --user-data-dir="$profile" >"$log" 2>&1 &
 pid=$!
 
-# Chromium lists a page target for the packaged file:// renderer once the application is up.
+# Chromium lists a page target for the packaged file:// renderer once the application is up. Its debugging server
+# answers HTTP/1.1 only; the read times out in case it keeps the connection open after the answer.
 targets() {
   exec 3<>"/dev/tcp/127.0.0.1/$port" || return 1
-  printf 'GET /json/list HTTP/1.0\r\nHost: 127.0.0.1\r\n\r\n' >&3
+  printf 'GET /json/list HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n' >&3
   local line out=''
-  while IFS= read -r line <&3 || [ -n "$line" ]; do out+="$line"; done
+  while IFS= read -r -t 2 line <&3 || [ -n "$line" ]; do out+="$line"; done
   exec 3>&-
   printf '%s' "$out"
 }
