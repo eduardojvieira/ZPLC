@@ -10,7 +10,7 @@ tags: [how-to, ai, mcp, safety]
 # Use an AI assistant and MCP safely
 
 `zplc-mcp` is a local server of the Model Context Protocol. It lets an AI assistant
-inspect one project, compile it, run its scenario tests and read the evidence, so
+inspect one project, read the source of its programs, compile it, run its scenario tests and read the evidence, so
 that the assistant works from what the build and the simulator say and not from a
 guess. It runs on your computer and talks to the assistant over standard input and
 output; it opens no network port and no serial port.
@@ -114,21 +114,22 @@ to update; the server does not change.
 
 Ask for what a tool returns, so that every claim of the assistant has a result behind it:
 
-| Ask for                                   | Tool                             | What comes back                                                       |
-| ----------------------------------------- | -------------------------------- | --------------------------------------------------------------------- |
-| "Is this project file valid?"             | `project_validate`               | `ok` and the diagnostics                                              |
-| "Does it compile, and what does it need?" | `compiler_check`, `symbols_list` | The size of the program, the diagnostics, the public symbols          |
-| "Do its scenarios pass?"                  | `tests_run`, `scenario_run`      | One result per scenario, with the digest of its trace                 |
-| "What happened at scan 40?"               | `trace_get`, `runtime_snapshot`  | A bounded, sanitised trace of a recorded run                          |
-| "Which boards are described?"             | `boards_list`                    | The boards of the manifest and their level, with no probe of hardware |
+| Ask for                                   | Tool                                                      | What comes back                                                                                 |
+| ----------------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| "Is this project file valid?"             | `project_validate`                                        | `ok` and the diagnostics                                                                        |
+| "Does it compile, and what does it need?" | `compiler_check`, `symbols_list`                          | The size of the program, the diagnostics, the public symbols                                    |
+| "Do its scenarios pass?"                  | `tests_run`, `scenario_run`                               | One result per scenario, with the digest of its trace                                           |
+| "What happened at scan 40?"               | `trace_get`, `runtime_snapshot`                           | A bounded, sanitised trace of a recorded run                                                    |
+| "Show me the program"                     | `zplc://project/programs`, `zplc://project/source/{name}` | The list of the programs of `src` with their language, and the text and language of one of them |
+| "Which boards are described?"             | `boards_list`                                             | The boards of the manifest and their level, with no probe of hardware                           |
 
-[The MCP reference](../reference/mcp.md) lists all 15 tools and 13 resources. A
+[The MCP reference](../reference/mcp.md) lists all 15 tools and 15 resources. The two program resources are read-only: they return the saved source of a program in any of the five languages, within the size limits of the project reader, and nothing in the server writes a program. `zplc://project/source/{name}` takes the file name as written in the URI (a space is `%20`); a name that is not in `src` answers `MCP_NOT_FOUND`, a name with a separator answers `MCP_INVALID_ARGUMENTS`, and a project the reader refuses answers `MCP_WORKSPACE_UNREADABLE`. A
 scenario runs on the simulator of your computer, so its result is evidence of a
 simulated run, not of the plant.
 
 ## 4. Review what the assistant proposes
 
-1. No tool of the server changes your project: every tool is read-only, and
+1. No tool or resource of the server changes your project: every tool is read-only, and
    `firmware_build` builds in an ephemeral place. When the client of the assistant
    edits files, read the change as a difference before you keep it.
 2. Compile it and run the scenarios yourself, or ask for `compiler_check` and
@@ -138,7 +139,9 @@ simulated run, not of the plant.
    the project declares, before the change goes near a board.
 4. Put a program on a board only from ZPLC, where a person chooses the action.
 
-AI inside ZPLC follows the same boundary and has its own data rules:
+AI inside ZPLC follows the same boundary and has its own data rules. Its assistant reads the open program
+and a project summary, proposes a change set of up to four files that you review and save, and proposes editor
+actions and display settings that you apply with a click; a multi-file save has no rollback. All of that is on
 [AI, privacy and human review](../ide/ai-privacy.md).
 
 ## What is verified, and what is not
@@ -148,6 +151,7 @@ AI inside ZPLC follows the same boundary and has its own data rules:
 | The server lists 15 tools when asked; `project_validate`, `compiler_check` and `tests_run` pass on a bundled project; `boards_list` answers with `--repository`; an `initialize` of revision 2025-06-18, and a request with no revision, are refused with `-32022`, and one without `clientCapabilities` with `-32602` | Run by hand with a script that sends the requests over standard input and output, through `bun run --cwd=packages/zplc-ide mcp`, on the bundled project `pico_blinky_ton`; not repeated by CI | Host  |
 | The built executable starts and lists its tools the way a 2026-07-28 client asks                                                                                                                                                                                                                                       | The release build starts the executable and counts the tools                                                                                                                                  | Host  |
 | No tool reaches a device, a socket or a serial port                                                                                                                                                                                                                                                                    | A test lists the registered tools and resources of the live server and traps every socket and serial entry point                                                                              | Host  |
+| The two program resources return the text and language of each of the five languages, refuse a name that is not a program of `src`, a link and an oversized file, and the server has no tool that writes                                                                                                               | `packages/zplc-ide/src/mcp/server.test.ts` and `deviceLink.test.ts`                                                                                                                           | Host  |
 | A named assistant product works with the entry above                                                                                                                                                                                                                                                                   | Not verified: no client product was run for this page                                                                                                                                         | None  |
 | An assistant's change is correct                                                                                                                                                                                                                                                                                       | Never implied: only the build and the scenarios say so                                                                                                                                        | None  |
 
