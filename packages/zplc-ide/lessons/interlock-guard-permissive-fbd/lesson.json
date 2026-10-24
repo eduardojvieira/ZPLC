@@ -5,16 +5,9 @@
   "order": 53,
   "module": 6,
   "level": "intermediate",
-  "prerequisites": [
-    "interlock-guard-permissive",
-    "boolean-logic-two-hand-guard-fbd"
-  ],
-  "languages": [
-    "FBD"
-  ],
-  "tracks": [
-    "simulation"
-  ],
+  "prerequisites": ["interlock-guard-permissive", "boolean-logic-two-hand-guard-fbd"],
+  "languages": ["FBD"],
+  "tracks": ["simulation"],
   "unsupported": {
     "hardware": {
       "reason": {

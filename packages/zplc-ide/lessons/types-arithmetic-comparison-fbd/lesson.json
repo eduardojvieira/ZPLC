@@ -5,17 +5,9 @@
   "order": 52,
   "module": 4,
   "level": "intermediate",
-  "prerequisites": [
-    "types-arithmetic-comparison",
-    "boolean-logic-two-hand-guard-fbd"
-  ],
-  "languages": [
-    "FBD"
-  ],
-  "tracks": [
-    "simulation",
-    "hardware"
-  ],
+  "prerequisites": ["types-arithmetic-comparison", "boolean-logic-two-hand-guard-fbd"],
+  "languages": ["FBD"],
+  "tracks": ["simulation", "hardware"],
   "unsupported": {},
   "plant": null,
   "estimatedMinutes": 25,
