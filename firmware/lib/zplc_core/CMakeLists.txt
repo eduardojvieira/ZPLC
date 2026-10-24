@@ -51,6 +51,12 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
+# macOS declares what it adds to POSIX (ESHUTDOWN, INADDR_LOOPBACK and the like) only when _POSIX_C_SOURCE is not
+# defined, and the host sources define it; _DARWIN_C_SOURCE keeps those declarations beside POSIX.
+if(APPLE)
+    add_compile_definitions(_DARWIN_C_SOURCE)
+endif()
+
 # 32-bit x86: gcc defaults to x87 arithmetic, which rounds a double-precision result twice. The VM computes its
 # double-precision results in integer arithmetic and does not depend on this; the host `double` that the test
 # models take as the reference does. Zephyr's 32-bit native_sim sets the same flags.
