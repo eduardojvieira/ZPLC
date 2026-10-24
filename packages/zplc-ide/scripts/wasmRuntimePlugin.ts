@@ -21,6 +21,9 @@ import type { Plugin } from 'vite';
 
 export const WASM_RUNTIME_MODULE_ID = 'virtual:zplc-wasm-runtime';
 
+/** The script that builds the module, from the repository root (the macOS stage copies it). */
+export const WASM_BUILD_SCRIPT = 'tools/wasm-core/build.ts';
+
 /** The exit code of tools/wasm-core/build.ts for "a tool is missing" (EXIT_TOOLCHAIN_MISSING there). */
 const EXIT_TOOLCHAIN_MISSING = 3;
 
@@ -73,7 +76,7 @@ export function buildWasmRuntime(options: WasmRuntimeBuildOptions): WasmRuntimeB
   try {
     const out = path.join(work, 'zplc-runtime.wasm');
     const manifestFile = path.join(work, 'zplc-runtime.json');
-    const done = spawn([bun, path.join(options.root, 'tools/wasm-core/build.ts'), '--out', out, '--manifest', manifestFile]);
+    const done = spawn([bun, path.join(options.root, WASM_BUILD_SCRIPT), '--out', out, '--manifest', manifestFile]);
     if (done.status === EXIT_TOOLCHAIN_MISSING) {
       const reason = done.stderr.trim().replace(/^wasm-core: /, '') || 'a tool of the WebAssembly build is missing';
       if (options.ci) throw new Error(`${reason} (CI is set: the WebAssembly runtime of ZPLC is built in CI; install clang and lld)`);

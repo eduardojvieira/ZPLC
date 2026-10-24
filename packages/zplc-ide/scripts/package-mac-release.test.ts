@@ -5,6 +5,7 @@ import { describe, expect, it } from 'bun:test';
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, posix, relative, sep } from 'node:path';
 import { STAGED_PATHS } from './package-mac-release.mjs';
+import { WASM_BUILD_SCRIPT } from './wasmRuntimePlugin';
 
 const CORE = 'firmware/lib/zplc_core';
 const ROOT = join(import.meta.dir, '..', '..', '..');
@@ -62,10 +63,7 @@ describe('the macOS stage holds what the host runtime build reads', () => {
   // Release rehearsal 40125534053: the Vite build stopped on "Module not found .../tools/wasm-core/build.ts", which the
   // WebAssembly runtime plugin runs from the repository root by path, not by import.
   it('copies what the WebAssembly runtime plugin of the Vite build runs from the repository root', () => {
-    const plugin = readFileSync(join(ROOT, PACKAGE, 'scripts/wasmRuntimePlugin.ts'), 'utf8');
-    const paths = [...plugin.matchAll(/path\.join\(options\.root, '([^']+)'\)/g)].map((match) => match[1]!);
-    expect(paths).toContain('tools/wasm-core/build.ts');
-    expect(paths.filter((path) => !staged(path))).toEqual([]);
+    expect(staged(WASM_BUILD_SCRIPT)).toBe(true);
   });
 
   it('copies every file that the application imports from outside its package', () => {
