@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "edge-counter-pulses-il",
+  "version": 2,
+  "order": 73,
+  "module": 3,
+  "level": "foundation",
+  "prerequisites": ["edge-counter-pulses", "boolean-logic-two-hand-guard-il"],
+  "languages": ["IL"],
+  "tracks": ["simulation", "hardware"],
+  "unsupported": {},
+  "plant": null,
+  "estimatedMinutes": 15,
+  "starter": {
+    "project": "il_edge_counter_starter",
+    "program": "src/EdgeCounter.il"
+  },
+  "solution": {
+    "project": "il_edge_counter",
+    "program": "src/EdgeCounter.il"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "EdgeCounter",
+    "path": "tests/edge-counter.scenario.json",
+    "sha256": "113e7ec465e6bb596e31d2679ba513863e0e8695e12c6713aa5445e9588cdcc0"
+  },
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 20,
+      "analogPercent": 5
+    }
+  }
+}

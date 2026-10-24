@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Lista de instrucciones: llamar a un temporizador de retardo a la desconexión y a la conexión",
+  "summary": "Llame a un temporizador TOF con CAL para mantener una luz encendida después de soltar un botón, y a un temporizador TON para ignorar un pulso corto de un sensor, y lea cada salida del temporizador con LD.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el antirrebote eléctrico, la respuesta de un sensor ni los tiempos en un dispositivo de destino, HIL ni certificación.",
+  "objectives": [
+    "Llame a una instancia de temporizador con CAL, pasándole su entrada y su valor preestablecido, y lea su salida con LD.",
+    "Mantenga una salida encendida un tiempo fijo después de que su entrada baja, con TOF, e ignore una entrada que está en ON menos de un tiempo fijo, con TON."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/Delays.il los temporizadores HoldTimer (TOF) y FilterTimer (TON) están declarados pero no se llaman. Un temporizador no es una sola instrucción: CAL HoldTimer(IN := Button, PT := T#300ms) lo ejecuta con sus entradas, y un LD HoldTimer.Q posterior carga su salida en el resultado actual, lista para ST. Light debe quedar en ON {{t:300}} ms después de soltar Button. Confirmed debe pasar a ON solo después de que Sensor haya estado en ON durante {{t:200}} ms.",
+      "checkpoint": "Puede decir qué temporizador mantiene una salida encendida y cuál espera antes de encenderla."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "El escenario pulsa Button a los {{t:100}} ms y lo suelta a los {{t:300}} ms. Sensor da un pulso en ON de {{t:100}} a {{t:140}} ms y vuelve a estar en ON de {{t:500}} a {{t:900}} ms. Prediga Light y Confirmed a los {{t:200}}, {{t:450}}, {{t:650}} y {{t:800}} ms.",
+      "checkpoint": "{{v:Delays.Light=true,Delays.Confirmed=false@200|Light en ON, Confirmed en OFF}} a los {{t:200}} ms; {{v:Delays.Light=true,Delays.Confirmed=false@450|Light en ON, Confirmed en OFF}} a los {{t:450}} ms; {{v:Delays.Light=false,Delays.Confirmed=false@650|ambas en OFF}} a los {{t:650}} ms; {{v:Delays.Light=false,Delays.Confirmed=true@800|Confirmed en ON, Light en OFF}} a los {{t:800}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija este defecto del programa inicial, guárdelo y pulse Comprobar: El programa inicial carga cada entrada y la guarda en la salida, así que Light ya está en OFF a los {{t:450}} ms y Confirmed pasa a ON con el pulso de {{t:100}} ms; llame a HoldTimer con Button como IN y T#300ms como PT, cargue HoldTimer.Q y guárdelo en Light, y haga lo mismo con FilterTimer, Sensor y T#200ms para Confirmed.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama Delays y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Siga Light y Confirmed en la traza: el pulso corto nunca pone Confirmed en ON, Light sigue en ON a los {{t:450}} ms aunque Button pasó a OFF a los {{t:300}} ms, y Confirmed sube unos {{t:200}} ms después de que Sensor volvió a los {{t:500}} ms.",
+      "checkpoint": "Light baja unos {{t:300}} ms después de Button, y Confirmed sube unos {{t:200}} ms después del segundo pulso de Sensor."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "Intercambie los dos temporizadores mentalmente: ¿qué haría un TON en Button y un TOF en Sensor con este escenario?",
+      "checkpoint": "TON retrasa el inicio y TOF retrasa el final; cada uno responde una pregunta distinta sobre una señal. En IL ambos se llaman igual, así que la declaración decide cuál obtiene."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "TOF mantiene su Q en ON durante el valor preestablecido después de que IN baja, y TON sube Q solo después de que IN haya estado en ON ese tiempo. CAL ejecuta el temporizador; LD Timer.Q lee su salida."
+    },
+    {
+      "level": 2,
+      "text": "CAL HoldTimer(IN := Button, PT := T#300ms), LD HoldTimer.Q, ST Light; CAL FilterTimer(IN := Sensor, PT := T#200ms), LD FilterTimer.Q, ST Confirmed."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial carga cada entrada y la guarda en la salida, así que Light ya está en OFF a los {{t:450}} ms y Confirmed pasa a ON con el pulso de {{t:100}} ms; llame a HoldTimer con Button como IN y T#300ms como PT, cargue HoldTimer.Q y guárdelo en Light, y haga lo mismo con FilterTimer, Sensor y T#200ms para Confirmed."
+  ]
+}

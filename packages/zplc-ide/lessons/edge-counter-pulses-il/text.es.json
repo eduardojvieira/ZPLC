@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Lista de instrucciones: contar pulsos con un CTU",
+  "summary": "Llame a un contador CTU desde lista de instrucciones para contar tres pulsos discretos, lea su salida con LD y reinicie la cuenta.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran sensores físicos, rebote de contactos ni tiempos de hardware, HIL ni certificación.",
+  "objectives": [
+    "Llame a un contador CTU con CAL y lea su salida con LD Count.Q.",
+    "Cuente los flancos ascendentes de PulseInput hasta un valor preestablecido de 3, y borre la cuenta con Reset."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/EdgeCounter.il el contador Count (CTU) está declarado pero no se llama. Llámelo en cada ciclo con CAL Count(CU := PulseInput, R := Reset, PV := 3), luego cargue Count.Q y guárdelo en CountReached. CTU cuenta cada flanco ascendente de CU una sola vez, por mucho que dure el pulso en ON, así que usted no detecta el flanco.",
+      "checkpoint": "CountReached está en ON desde el tercer pulso hasta que Reset borra la cuenta."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Antes de ejecutar, prediga cuándo el contador llega a PV=3.",
+      "checkpoint": "CountReached queda en OFF a los {{v:EdgeCounter.CountReached=false@0|0}}, {{v:EdgeCounter.CountReached=false@10|10}} y {{v:EdgeCounter.CountReached=false@30|30}} ms; pasa a ON a los {{v:EdgeCounter.CountReached=true@50|50}} tras el tercer flanco; vuelve a OFF a los {{v:EdgeCounter.CountReached=false@70|70}} con Reset."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial guarda FALSE en CountReached y nunca llama al contador; llame a Count con PV := 3 para que CountReached pase a ON en el tercer flanco ascendente y Reset lo pase a OFF.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama EdgeCounter y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:10}}, {{t:30}}, {{t:50}} y {{t:70}} ms con CountReached.",
+      "checkpoint": "El tercer pulso llega a PV=3; Reset domina y devuelve CountReached a OFF."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "Mueva el CAL después de la línea LD Count.Q, de modo que la salida se lea antes de que el contador se ejecute. ¿Qué cambia, y en qué ciclo?",
+      "checkpoint": "La salida mostraría la cuenta del ciclo anterior, un ciclo tarde. En IL el orden de las líneas es el orden de ejecución. Las aserciones AT, RISING y FALLING cubren solo esta secuencia lógica; no demuestran rebote, pulsos eléctricos, tiempos de hardware, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Un CTU ya cuenta solo los flancos ascendentes de CU, así que un pulso largo cuenta una sola vez. CAL ejecuta el contador con sus entradas; LD Count.Q lee su salida."
+    },
+    {
+      "level": 2,
+      "text": "CAL Count(CU := PulseInput, R := Reset, PV := 3), y luego LD Count.Q y ST CountReached."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial guarda FALSE en CountReached y nunca llama al contador; llame a Count con PV := 3 para que CountReached pase a ON en el tercer flanco ascendente y Reset lo pase a OFF."
+  ]
+}

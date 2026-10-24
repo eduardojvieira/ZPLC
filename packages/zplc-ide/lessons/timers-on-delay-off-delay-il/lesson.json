@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "timers-on-delay-off-delay-il",
+  "version": 2,
+  "order": 72,
+  "module": 3,
+  "level": "foundation",
+  "prerequisites": ["timers-on-delay-off-delay", "boolean-logic-two-hand-guard-il"],
+  "languages": ["IL"],
+  "tracks": ["simulation", "hardware"],
+  "unsupported": {},
+  "plant": null,
+  "estimatedMinutes": 15,
+  "starter": {
+    "project": "il_delays_starter",
+    "program": "src/Delays.il"
+  },
+  "solution": {
+    "project": "il_delays",
+    "program": "src/Delays.il"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "Delays",
+    "path": "tests/delays.scenario.json",
+    "sha256": "423836cfdc574a00a8192742eb0671439833a3e1e3dc4c2e90c550d63a33599d"
+  },
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 20,
+      "analogPercent": 5
+    }
+  }
+}

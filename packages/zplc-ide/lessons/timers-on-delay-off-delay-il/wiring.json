@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "parts": [
+    {
+      "id": "button",
+      "kind": "button",
+      "channel": "DI0",
+      "label": {
+        "en": "Button",
+        "es": "Pulsador"
+      }
+    },
+    {
+      "id": "sensor",
+      "kind": "button",
+      "channel": "DI1",
+      "label": {
+        "en": "Sensor",
+        "es": "Sensor"
+      }
+    },
+    {
+      "id": "light",
+      "kind": "led",
+      "channel": "DO0",
+      "color": "yellow",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Light",
+        "es": "Luz"
+      }
+    },
+    {
+      "id": "confirmed",
+      "kind": "led",
+      "channel": "DO1",
+      "color": "green",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Confirmed",
+        "es": "Confirmado"
+      }
+    }
+  ]
+}

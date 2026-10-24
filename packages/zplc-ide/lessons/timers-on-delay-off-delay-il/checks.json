@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [
+    {
+      "intent": "the input stored in the timer before the call",
+      "files": {
+        "src/Delays.il": "PROGRAM Delays\nVAR_INPUT\n    Button AT %I0.0 : BOOL;\n    Sensor AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Light AT %Q0.0 : BOOL;\n    Confirmed AT %Q0.1 : BOOL;\nEND_VAR\nVAR\n    HoldTimer : TOF;\n    FilterTimer : TON;\nEND_VAR\n\n        LD    Button\n        ST    HoldTimer.IN\n        CAL   HoldTimer(PT := T#300ms)\n        LD    HoldTimer.Q\n        ST    Light\n        LD    Sensor\n        ST    FilterTimer.IN\n        CAL   FilterTimer(PT := T#200ms)\n        LD    FilterTimer.Q\n        ST    Confirmed\nEND_PROGRAM\n"
+      }
+    }
+  ],
+  "wrong": [
+    {
+      "intent": "has no off-delay: Light follows Button",
+      "files": {
+        "src/Delays.il": "PROGRAM Delays\nVAR_INPUT\n    Button AT %I0.0 : BOOL;\n    Sensor AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Light AT %Q0.0 : BOOL;\n    Confirmed AT %Q0.1 : BOOL;\nEND_VAR\nVAR\n    HoldTimer : TOF;\n    FilterTimer : TON;\nEND_VAR\n\n        LD    Button\n        ST    Light\n        CAL   FilterTimer(IN := Sensor, PT := T#200ms)\n        LD    FilterTimer.Q\n        ST    Confirmed\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "has no on-delay: Confirmed follows Sensor",
+      "files": {
+        "src/Delays.il": "PROGRAM Delays\nVAR_INPUT\n    Button AT %I0.0 : BOOL;\n    Sensor AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Light AT %Q0.0 : BOOL;\n    Confirmed AT %Q0.1 : BOOL;\nEND_VAR\nVAR\n    HoldTimer : TOF;\n    FilterTimer : TON;\nEND_VAR\n\n        CAL   HoldTimer(IN := Button, PT := T#300ms)\n        LD    HoldTimer.Q\n        ST    Light\n        LD    Sensor\n        ST    Confirmed\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "swaps the timers: TON on Button and TOF on Sensor",
+      "files": {
+        "src/Delays.il": "PROGRAM Delays\nVAR_INPUT\n    Button AT %I0.0 : BOOL;\n    Sensor AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Light AT %Q0.0 : BOOL;\n    Confirmed AT %Q0.1 : BOOL;\nEND_VAR\nVAR\n    HoldTimer : TOF;\n    FilterTimer : TON;\nEND_VAR\n\n        CAL   FilterTimer(IN := Button, PT := T#300ms)\n        LD    FilterTimer.Q\n        ST    Light\n        CAL   HoldTimer(IN := Sensor, PT := T#200ms)\n        LD    HoldTimer.Q\n        ST    Confirmed\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

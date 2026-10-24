@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [
+    {
+      "intent": "the inputs stored in the counter before the call",
+      "files": {
+        "src/EdgeCounter.il": "PROGRAM EdgeCounter\nVAR_INPUT\n    PulseInput AT %I0.0 : BOOL;\n    Reset AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    CountReached AT %Q0.0 : BOOL;\nEND_VAR\nVAR\n    Count : CTU;\nEND_VAR\n\n        LD    PulseInput\n        ST    Count.CU\n        LD    Reset\n        ST    Count.R\n        CAL   Count(PV := 3)\n        LD    Count.Q\n        ST    CountReached\nEND_PROGRAM\n"
+      }
+    }
+  ],
+  "wrong": [
+    {
+      "intent": "output simply follows the pulse input",
+      "files": {
+        "src/EdgeCounter.il": "PROGRAM EdgeCounter\nVAR_INPUT\n    PulseInput AT %I0.0 : BOOL;\n    Reset AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    CountReached AT %Q0.0 : BOOL;\nEND_VAR\nVAR\n    Count : CTU;\nEND_VAR\n\n        LD    PulseInput\n        ST    CountReached\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "counts to 2 instead of 3",
+      "files": {
+        "src/EdgeCounter.il": "PROGRAM EdgeCounter\nVAR_INPUT\n    PulseInput AT %I0.0 : BOOL;\n    Reset AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    CountReached AT %Q0.0 : BOOL;\nEND_VAR\nVAR\n    Count : CTU;\nEND_VAR\n\n        CAL   Count(CU := PulseInput, R := Reset, PV := 2)\n        LD    Count.Q\n        ST    CountReached\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "counts to 4 instead of 3",
+      "files": {
+        "src/EdgeCounter.il": "PROGRAM EdgeCounter\nVAR_INPUT\n    PulseInput AT %I0.0 : BOOL;\n    Reset AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    CountReached AT %Q0.0 : BOOL;\nEND_VAR\nVAR\n    Count : CTU;\nEND_VAR\n\n        CAL   Count(CU := PulseInput, R := Reset, PV := 4)\n        LD    Count.Q\n        ST    CountReached\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "Reset is never wired to the counter",
+      "files": {
+        "src/EdgeCounter.il": "PROGRAM EdgeCounter\nVAR_INPUT\n    PulseInput AT %I0.0 : BOOL;\n    Reset AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    CountReached AT %Q0.0 : BOOL;\nEND_VAR\nVAR\n    Count : CTU;\nEND_VAR\n\n        CAL   Count(CU := PulseInput, PV := 3)\n        LD    Count.Q\n        ST    CountReached\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}
