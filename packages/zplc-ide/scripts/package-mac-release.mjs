@@ -19,6 +19,8 @@ const COPY_TARGETS = [
   { path: 'firmware/lib/zplc_core', directory: true },
   { path: 'firmware/apps/posix_host', directory: true },
   { path: 'examples', directory: true },
+  // the USB identifiers of the boards: the serial port picker (src/config/serialBoards.ts) and the udev rule read them
+  { path: 'tools/hil/usb-ids.json', directory: false },
   { path: 'scripts/release-version.ts', directory: false },
   // the licence notices are generated while electron-builder packs (scripts/before-pack.mjs, REL-019)
   { path: 'scripts/release', directory: true },
