@@ -342,7 +342,8 @@ async function main(): Promise<void> {
     : discoverPackagedExecutable(process.env.ZPLC_PACKAGED_DIST ?? join(packageRoot, 'dist-electron'));
   // The portable Windows executable unpacks itself at run time and runs the application as a child: it has no archive
   // beside it, and it does not forward the application's output.
-  const portable = Boolean(installed) && !existsSync(packagedAsarPath(executable));
+  // Named for it as well, so that any other layout without an archive still fails the archive check.
+  const portable = Boolean(installed) && /-portable-[^\\/]*\.exe$/i.test(executable) && !existsSync(packagedAsarPath(executable));
   // VF-008: the folder dialog test hook never ships. Checked on the archive itself, before anything is launched.
   if (!portable) assertAsarHasNoDevOnlyCode(readFileSync(packagedAsarPath(executable)));
   const tempRoot = mkdtempSync(join(tmpdir(), 'zplc-packaged-smoke-'));
