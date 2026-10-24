@@ -1,0 +1,139 @@
+{
+  "name": "Station",
+  "description": "A packing station as a chart: run, count three parts, stop on a full batch or a blocked sensor.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Start pushbutton"
+      },
+      {
+        "name": "Stop",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Stop pushbutton"
+      },
+      {
+        "name": "EStop",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "Emergency stop"
+      },
+      {
+        "name": "Part",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "Part sensor"
+      },
+      {
+        "name": "Reset",
+        "type": "BOOL",
+        "address": "%I0.4",
+        "comment": "Reset pushbutton"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Belt",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Belt motor"
+      },
+      {
+        "name": "BatchFull",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Batch full lamp"
+      },
+      {
+        "name": "Fault",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "Fault lamp"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "step_idle",
+      "name": "IDLE",
+      "isInitial": true,
+      "position": {
+        "x": 300,
+        "y": 50
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_IDLE",
+          "comment": "Everything off"
+        }
+      ]
+    },
+    {
+      "id": "step_run",
+      "name": "RUN",
+      "isInitial": false,
+      "position": {
+        "x": 300,
+        "y": 250
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_RUN",
+          "comment": "Belt on"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t_start",
+      "fromStep": "step_idle",
+      "toStep": "step_run",
+      "condition": "Start",
+      "comment": "",
+      "position": {
+        "x": 300,
+        "y": 150
+      }
+    },
+    {
+      "id": "t_stop_run",
+      "fromStep": "step_run",
+      "toStep": "step_idle",
+      "priority": 1,
+      "condition": "Stop",
+      "comment": "Stop or emergency stop",
+      "position": {
+        "x": 300,
+        "y": 350
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "A_IDLE",
+      "name": "A_IDLE",
+      "type": "ST",
+      "body": "Belt := FALSE; BatchFull := FALSE; Fault := FALSE;"
+    },
+    {
+      "id": "A_RUN",
+      "name": "A_RUN",
+      "type": "ST",
+      "body": "Belt := TRUE; BatchFull := FALSE; Fault := FALSE;"
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-24",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

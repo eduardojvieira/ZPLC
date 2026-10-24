@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Fallas, parada y reinicio en un diagrama",
+  "summary": "Detenga un ciclo de alimentación y prensa en cuanto aparece una falla, y devuélvalo a IDLE solo cuando la falla haya desaparecido y se pulse Reset.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran una parada segura, una función de seguridad, el comportamiento de una prensa, HIL ni certificación.",
+  "objectives": [
+    "Agregue un paso de falla al que pueda llegar todo paso de trabajo, con una transición de mayor prioridad que las temporizadas.",
+    "Devuelva el diagrama a su paso inicial con un Reset que funciona solo cuando la falla ha desaparecido."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/PressCell.sfc.json están dibujados los pasos IDLE, FEEDING, PRESSING y FAULTED, sus acciones y las transiciones que recorren el ciclo y entran en FAULTED con Fault. Agregue la transición que falta de FAULTED a IDLE con la condición Reset AND NOT Fault.",
+      "checkpoint": "Una falla detiene el ciclo de inmediato y enciende Alarm, un Reset con la falla presente no cambia nada, y un Reset posterior devuelve el diagrama a IDLE y permite un nuevo ciclo."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Start se pulsa a los {{t:10}} ms y aparece una falla a los {{t:80}} ms, durante la prensa. Reset se pulsa a los {{t:110}} ms con la falla todavía presente, la falla desaparece a los {{t:130}} ms y Reset se pulsa otra vez a los {{t:150}} ms. Prediga Alarm a los {{t:90}}, {{t:150}} y {{t:160}} ms.",
+      "checkpoint": "{{v:PressCell.Feeder=false,PressCell.Press=false,PressCell.Alarm=true@90|Alarm en ON, alimentador y prensa en OFF}} a los {{t:90}} ms; {{v:PressCell.Alarm=true@150|Alarm sigue en ON}} a los {{t:150}} ms, porque el primer Reset no cambió nada; {{v:PressCell.Feeder=false,PressCell.Press=false,PressCell.Alarm=false@160|todo en OFF}} a los {{t:160}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial entra en FAULTED con Fault pero no tiene salida, así que Alarm queda encendida para siempre y no puede iniciarse un nuevo ciclo; agregue una transición de FAULTED a IDLE cuya condición sea Reset AND NOT Fault.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama PressCell y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:80}}, {{t:90}}, {{t:110}} y {{t:160}} ms: la falla aparece a los {{t:80}} ms con la prensa todavía encendida, el diagrama está en FAULTED un ciclo después con la prensa y el alimentador apagados, y el Reset de los {{t:110}} ms se ignora porque Fault sigue verdadera. Tras el segundo Reset, el Start de los {{t:180}} ms vuelve a ejecutar un ciclo completo: el alimentador desde los {{t:190}} ms y la prensa a los {{t:230}} ms.",
+      "checkpoint": "Feeder, Press y Alarm nunca están encendidos a la vez, y el segundo ciclo repite el primero."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Por qué la condición es Reset AND NOT Fault y no solo Reset? Use solo Reset y vea qué aserción falla.",
+      "checkpoint": "Un reinicio que funcionara con la falla presente la ocultaría: el ciclo podría reiniciarse con la causa todavía allí. Las transiciones de falla tienen prioridad 1, por delante de las temporizadas (prioridad 2), así que una falla que llega en el mismo ciclo que un temporizador gana. El escenario muestra solo la lógica; no es un diseño de parada segura."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "La salida de un paso de falla es una transición como cualquier otra: un paso de origen, un paso de destino y una condición. La transición de IDLE a FEEDING muestra la forma."
+    },
+    {
+      "level": 2,
+      "text": "Agregue una transición con fromStep step_fault, toStep step_idle y la condición Reset AND NOT Fault."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial entra en FAULTED con Fault pero no tiene salida, así que Alarm queda encendida para siempre y no puede iniciarse un nuevo ciclo; agregue una transición de FAULTED a IDLE cuya condición sea Reset AND NOT Fault."
+  ]
+}
