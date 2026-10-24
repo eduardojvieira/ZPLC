@@ -2,10 +2,10 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 
-import { compileMultiTaskProject } from '@zplc/compiler';
-import type { DebugMap } from '../compiler';
+import { compileMultiTaskProject, type DebugMap } from '../compiler';
 import { LESSON_INDEX } from '../generated/lessonIndex';
 import { listIoMap } from '../runtime/ioMap';
+import { getLanguageFromFilename } from '../types';
 import { resolvePlantMap, validatePlantMap } from './plantMap';
 
 const PROJECTS = join(import.meta.dir, '../../projects');
@@ -22,15 +22,13 @@ describe('every lesson that names a plant ships its mapping (LRN-021)', () => {
       const map = (lesson as { plantMap?: unknown }).plantMap;
       expect(validatePlantMap(map)).toEqual([]);
       expect((map as { plant: string }).plant).toBe(lesson.plant as string);
-      const source = readFileSync(join(PROJECTS, lesson.starter.project, lesson.starter.program), 'utf8');
-      const program = /PROGRAM\s+(\w+)/.exec(source)![1]!;
-      const project = {
-        name: 't',
-        version: '1',
-        tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: [program] }],
-      } as never;
+      // the starter in whichever of the five languages it is written, compiled as its own project names it
+      const folder = join(PROJECTS, lesson.starter.project);
+      const source = readFileSync(join(folder, lesson.starter.program), 'utf8');
+      const project = JSON.parse(readFileSync(join(folder, 'zplc.json'), 'utf8'));
+      const program = project.tasks[0].programs[0] as string;
       const debugMap = compileMultiTaskProject(project, [
-        { name: program, content: source, language: 'ST', sourceRef: lesson.starter.program } as never,
+        { name: program, content: source, language: getLanguageFromFilename(lesson.starter.program), sourceRef: lesson.starter.program },
       ]).debugMap as unknown as DebugMap;
       expect(resolvePlantMap(map as never, listIoMap(debugMap)).problems).toEqual([]);
     });
