@@ -13,6 +13,13 @@ const VALID = {
   ask: { workspaceId, mode: 'ask', prompt: 'Explain this' },
   plan: { workspaceId, mode: 'plan', prompt: 'Plan this' },
   edit: { workspaceId, mode: 'edit', prompt: 'Fix', activeFile: { fileId: 'file:src/Main.st', path: 'src/Main.st' } },
+  // the open program of any language goes with a request in every mode (S4), and carries no more than its identity
+  askWithProgram: {
+    workspaceId,
+    mode: 'ask',
+    prompt: 'Explain',
+    activeFile: { fileId: 'file:src/Lamp.ld.json', path: 'src/Lamp.ld.json' },
+  },
   debug: {
     workspaceId,
     mode: 'debug',

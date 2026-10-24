@@ -205,8 +205,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   candidateChangeSet: {
-    review: (request: { workspaceId: string; edit: { path: string; content: string } }) =>
-      ipcRenderer.invoke(CANDIDATE_CHANGE_SET_CHANNEL.REVIEW, request) as Promise<unknown>,
+    review: (
+      request:
+        | { workspaceId: string; edit: { path: string; content: string } }
+        | { workspaceId: string; edits: Array<{ path: string; content: string }> },
+    ) => ipcRenderer.invoke(CANDIDATE_CHANGE_SET_CHANNEL.REVIEW, request) as Promise<unknown>,
   },
 
   toolchain: {
@@ -299,7 +302,11 @@ declare global {
         onRequested: (callback: (offer: unknown) => void) => () => void;
       };
       candidateChangeSet: {
-        review: (request: { workspaceId: string; edit: { path: string; content: string } }) => Promise<unknown>;
+        review: (
+          request:
+            | { workspaceId: string; edit: { path: string; content: string } }
+            | { workspaceId: string; edits: Array<{ path: string; content: string }> },
+        ) => Promise<unknown>;
       };
       toolchain: {
         inspect: () => Promise<unknown | null>;

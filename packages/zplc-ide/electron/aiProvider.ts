@@ -1,6 +1,14 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { lstat, mkdir, readFile, realpath, rename, unlink, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, readdir, readFile, realpath, rename, unlink, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
+import {
+  CANDIDATE_CHANGE_CAP,
+  candidateLanguageOf,
+  isCandidateChangePath,
+  isCandidateSourcePathPattern,
+  type CandidateLanguage,
+} from '../src/ai/candidatePaths.js';
+import { manifestForAssistant, manifestSensitivePaths } from '../src/ai/manifestPrivacy.js';
 
 export type AiErrorCode =
   | 'AI_UNCONFIGURED'
@@ -29,6 +37,7 @@ export interface AiRequest {
   workspaceId: string;
   mode: AiMode;
   prompt: string;
+  /** The program the person has open, in any of the five languages; edit mode needs it as the baseline of a proposal. */
   activeFile?: { fileId: string; path: string };
   diagnostics?: Array<{ code: string; path?: string; line?: number; column?: number }>;
   trace?: Array<{ atMs: number; signal: string; value: boolean | number }>;
@@ -49,7 +58,12 @@ const MAX_SOURCE = 64 * 1024;
 const MAX_RESPONSE = 256 * 1024;
 const MAX_ANSWER = 16 * 1024;
 const MAX_REPLACEMENT = 256 * 1024;
-const ST_PATH = /^src\/[^/\\\0\r\n]+\.st$/;
+const MAX_MANIFEST = 128 * 1024;
+const MAX_MANIFEST_SUMMARY = 24 * 1024;
+const MAX_PROGRAMS = 128;
+const MAX_REPLACE_BASE = 256 * 1024;
+const MAX_SOURCE_FILE = 256 * 1024;
+const MAX_BODY = 128 * 1024;
 const MODEL = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/;
 const KNOWN_SECRET_PATTERNS = [
   /(?:api|client|access|refresh)[_. -]?(?:key|secret|token)\b|(?:aws[_. -]?)?secret(?:[_. -]?access)?[_. -]?key\b/i,
@@ -57,9 +71,32 @@ const KNOWN_SECRET_PATTERNS = [
   /https?:\/\/[^/\s:@]+:[^/\s@]+@/i,
 ];
 const SYSTEM_POLICY =
-  'You are ZPLC Agent. Provide explanation or one inert Structured Text proposal only. Never claim hardware action, never request tools, ' +
-  'and never initiate flash, deploy, force, RUN, STOP, recovery, serial, shell, or filesystem operations.';
+  'You are ZPLC Agent. Provide an explanation, or an explanation with one inert proposed change set. Never claim hardware action, never ' +
+  'request tools, ' +
+  'and never initiate flash, deploy, force, RUN, STOP, recovery, serial, shell, or filesystem operations. ' +
+  'To propose a change answer with JSON only: {"answer": "...", "changes": [{"path": "...", "content": "..."}]} with the whole new text ' +
+  'of each file ' +
+  `and at most ${CANDIDATE_CHANGE_CAP} files. A path is src/<name>.st, .il, .ld.json, .fbd.json or .sfc.json, or zplc.json. ` +
+  'A new program file needs a task of its own in a zplc.json change in the same set (a task runs exactly one program). Ladder, FBD and ' +
+  'SFC files are the JSON documents of their editors. ' +
+  'Never put credentials, keys or passwords in any file. A person reviews every difference and saves it; nothing you propose takes ' +
+  'effect before that.';
 
+function sha256(value: string): string {
+  return createHash('sha256').update(value).digest('hex');
+}
+/** The name the build reads a program under: case does not tell two programs apart, and main.ld is main.ld.json. */
+function sourceKey(path: string): string {
+  return path.toLowerCase().replace(/\.(ld|fbd|sfc)$/, '$&.json');
+}
+function manifestIsAllowed(text: string): boolean {
+  try {
+    const parsed = JSON.parse(text) as unknown;
+    return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed) && manifestSensitivePaths(parsed).length === 0;
+  } catch {
+    return false;
+  }
+}
 function code(code: AiErrorCode): { ok: false; code: AiErrorCode } {
   return { ok: false, code };
 }
@@ -223,31 +260,118 @@ export function createAiProvider(options: { userDataPath: string; vault: SafeSto
       return null;
     }
   }
-  async function readActiveSource(
-    root: string,
-    activeFile: NonNullable<AiRequest['activeFile']>,
-  ): Promise<{ source: string; baselineSha256: string } | null> {
-    if (!ST_PATH.test(activeFile.path) || activeFile.fileId !== `file:${activeFile.path}`) return null;
-    const candidate = resolve(root, activeFile.path);
-    if (candidate !== join(root, activeFile.path)) return null;
+  /** True when `src` is a real folder of the project, not a link out of it. */
+  async function sourceFolderIsReal(root: string): Promise<boolean> {
     try {
       const sourceDirectory = join(root, 'src');
-      const sourceDirectoryStatus = await lstat(sourceDirectory);
-      if (
-        sourceDirectoryStatus.isSymbolicLink() ||
-        !sourceDirectoryStatus.isDirectory() ||
-        (await realpath(sourceDirectory)) !== sourceDirectory
-      )
-        return null;
+      const status = await lstat(sourceDirectory);
+      return !status.isSymbolicLink() && status.isDirectory() && (await realpath(sourceDirectory)) === sourceDirectory;
+    } catch {
+      return false;
+    }
+  }
+  /** The text of one project file, read without following a link, or null; the manifest and a program have their own limits. */
+  async function readProjectFile(root: string, path: string, limit: number): Promise<string | null> {
+    const candidate = resolve(root, path);
+    if (candidate !== join(root, path)) return null;
+    try {
+      if (path !== 'zplc.json' && !(await sourceFolderIsReal(root))) return null;
       const status = await lstat(candidate);
-      if (status.isSymbolicLink() || !status.isFile() || status.size > MAX_SOURCE) return null;
+      if (status.isSymbolicLink() || !status.isFile() || status.size > limit) return null;
       if ((await realpath(candidate)) !== candidate) return null;
-      const source = await readFile(candidate, 'utf8');
-      if (Buffer.byteLength(source) > MAX_SOURCE || hasKnownSecretPattern(source)) return null;
-      return { source, baselineSha256: createHash('sha256').update(source).digest('hex') };
+      const text = await readFile(candidate, 'utf8');
+      return Buffer.byteLength(text) > limit ? null : text;
     } catch {
       return null;
     }
+  }
+  async function readActiveSource(
+    root: string,
+    activeFile: NonNullable<AiRequest['activeFile']>,
+  ): Promise<{ source: string; baselineSha256: string; language: CandidateLanguage } | null> {
+    const language = candidateLanguageOf(activeFile.path);
+    if (!language || activeFile.fileId !== `file:${activeFile.path}`) return null;
+    const source = await readProjectFile(root, activeFile.path, MAX_SOURCE);
+    if (source === null || hasKnownSecretPattern(source)) return null;
+    return { source, baselineSha256: sha256(source), language };
+  }
+  /**
+   * The programs of `src`, the tasks and the manifest without any credential, within the size limits; whatever is unreadable is left out.
+   */
+  async function readProjectSummary(root: string, withManifest: boolean): Promise<Record<string, unknown> | undefined> {
+    const names = await listPrograms(root);
+    if (!names) return undefined;
+    const programs = names.map((path) => ({ path, language: candidateLanguageOf(path) }));
+    const summary: Record<string, unknown> = { programs };
+    const text = await readProjectFile(root, 'zplc.json', MAX_MANIFEST);
+    let manifest: unknown;
+    try {
+      manifest = text === null ? undefined : manifestForAssistant(JSON.parse(text));
+    } catch {
+      manifest = undefined;
+    }
+    if (typeof manifest !== 'object' || manifest === null || Array.isArray(manifest)) return summary;
+    const tasks = (manifest as Record<string, unknown>).tasks;
+    const tasksText = JSON.stringify(tasks ?? null);
+    if (Array.isArray(tasks) && Buffer.byteLength(tasksText) <= MAX_MANIFEST_SUMMARY && !hasKnownSecretPattern(tasksText))
+      summary.tasks = tasks;
+    const manifestText = JSON.stringify(manifest);
+    if (withManifest && Buffer.byteLength(manifestText) <= MAX_MANIFEST_SUMMARY && !hasKnownSecretPattern(manifestText))
+      summary.manifest = manifest;
+    return summary;
+  }
+  async function listPrograms(root: string): Promise<string[] | null> {
+    try {
+      if (!(await sourceFolderIsReal(root))) return null;
+      const entries = await readdir(join(root, 'src'), { withFileTypes: true });
+      return entries
+        .filter((entry) => entry.isFile() && isCandidateSourcePathPattern.test(`src/${entry.name}`))
+        .map((entry) => `src/${entry.name}`)
+        .sort()
+        .slice(0, MAX_PROGRAMS);
+    } catch {
+      return null;
+    }
+  }
+  /** Where the proposed files stand: the sha256 of the one each replaces, or that it is new; null when the set cannot be one. */
+  async function resolveChanges(
+    root: string,
+    value: unknown,
+  ): Promise<Array<{ path: string; kind: 'modify' | 'create'; content: string; baselineSha256?: string }> | null> {
+    if (!Array.isArray(value) || value.length < 1 || value.length > CANDIDATE_CHANGE_CAP) return null;
+    const existing = await listPrograms(root);
+    if (!existing) return null;
+    const taken = new Set(existing.map(sourceKey));
+    const seen = new Set<string>();
+    const resolved: Array<{ path: string; kind: 'modify' | 'create'; content: string; baselineSha256?: string }> = [];
+    for (const item of value as unknown[]) {
+      if (!exact(item, ['path', 'content'])) return null;
+      const { path, content } = item;
+      if (
+        !isCandidateChangePath(path) ||
+        typeof content !== 'string' ||
+        content.length === 0 ||
+        Buffer.byteLength(content) > MAX_REPLACEMENT
+      )
+        return null;
+      const key = sourceKey(path);
+      if (seen.has(key)) return null;
+      seen.add(key);
+      if (path === 'zplc.json') {
+        if (!manifestIsAllowed(content)) return null;
+        const before = await readProjectFile(root, path, MAX_MANIFEST);
+        if (before === null || before === content) return null;
+        resolved.push({ path, kind: 'modify', content, baselineSha256: sha256(before) });
+      } else if (existing.includes(path)) {
+        const before = await readProjectFile(root, path, MAX_REPLACE_BASE);
+        if (before === null || before === content) return null;
+        resolved.push({ path, kind: 'modify', content, baselineSha256: sha256(before) });
+      } else {
+        if (taken.has(key) || Buffer.byteLength(content) > MAX_SOURCE_FILE) return null;
+        resolved.push({ path, kind: 'create', content });
+      }
+    }
+    return resolved;
   }
   return {
     async getStatus(): Promise<AiProviderStatus> {
@@ -309,29 +433,41 @@ export function createAiProvider(options: { userDataPath: string; vault: SafeSto
       const secret = await key();
       if (gatewaySignal.aborted) return code('AI_CANCELLED');
       if (!config?.enabled || !secret) return code(vaultState(options.vault).usable ? 'AI_UNCONFIGURED' : 'AI_VAULT_UNAVAILABLE');
-      let source: { source: string; baselineSha256: string } | undefined;
-      if (request.mode === 'edit') {
-        if (!request.activeFile) return code('AI_CONTEXT_REJECTED');
+      let source: Awaited<ReturnType<typeof readActiveSource>> | undefined;
+      if (request.mode === 'edit' && !request.activeFile) return code('AI_CONTEXT_REJECTED');
+      if (request.activeFile) {
+        // a proposal needs its baseline, so edit mode refuses a file it may not send; the other modes simply go without it
         const activeSource = await readActiveSource(root, request.activeFile);
         if (gatewaySignal.aborted) return code('AI_CANCELLED');
-        if (!activeSource) return code('AI_CONTEXT_REJECTED');
-        source = activeSource;
+        if (activeSource) source = activeSource;
+        else if (request.mode === 'edit') return code('AI_CONTEXT_REJECTED');
       }
-      const context = {
-        mode: request.mode,
-        prompt: request.prompt,
-        ...(source ? { activeFile: { path: request.activeFile!.path, source: source.source } } : {}),
-        ...(request.mode === 'debug' ? { diagnostics: request.diagnostics ?? [], trace: request.trace ?? [] } : {}),
-      };
-      const body = JSON.stringify({
-        model: config.model,
-        stream: false,
-        messages: [
-          { role: 'system', content: SYSTEM_POLICY },
-          { role: 'user', content: JSON.stringify(context) },
-        ],
-      });
-      if (Buffer.byteLength(body) > 128 * 1024) return code('AI_CONTEXT_REJECTED');
+      const contextBody = (project: Record<string, unknown> | undefined) =>
+        JSON.stringify({
+          model: config.model,
+          stream: false,
+          messages: [
+            { role: 'system', content: SYSTEM_POLICY },
+            {
+              role: 'user',
+              content: JSON.stringify({
+                mode: request.mode,
+                prompt: request.prompt,
+                ...(source ? { activeFile: { path: request.activeFile!.path, language: source.language, source: source.source } } : {}),
+                ...(project ? { project } : {}),
+                ...(request.mode === 'debug' ? { diagnostics: request.diagnostics ?? [], trace: request.trace ?? [] } : {}),
+              }),
+            },
+          ],
+        });
+      // the project summary is context, not a requirement: it is reduced before a request is refused for its size
+      const summary = await readProjectSummary(root, true);
+      if (gatewaySignal.aborted) return code('AI_CANCELLED');
+      let body = contextBody(summary);
+      if (Buffer.byteLength(body) > MAX_BODY && summary) body = contextBody(await readProjectSummary(root, false));
+      if (Buffer.byteLength(body) > MAX_BODY && summary) body = contextBody({ programs: summary.programs });
+      if (Buffer.byteLength(body) > MAX_BODY) body = contextBody(undefined);
+      if (Buffer.byteLength(body) > MAX_BODY) return code('AI_CONTEXT_REJECTED');
       const controller = new AbortController();
       active = controller;
       activeCancelled = false;
@@ -389,32 +525,24 @@ export function createAiProvider(options: { userDataPath: string; vault: SafeSto
           return code('AI_RESPONSE_INVALID');
         const message = (messageObject as Record<string, unknown>).content as string;
         let answer = compact(message);
-        let replacement: { path: string; content: string } | undefined;
+        let changes: Awaited<ReturnType<typeof resolveChanges>> | undefined;
         try {
           const parsed = JSON.parse(message) as unknown;
           if (
             typeof parsed === 'object' &&
             parsed !== null &&
             !Array.isArray(parsed) &&
-            !(exact(parsed, ['answer']) || exact(parsed, ['answer', 'replacement']))
+            !(exact(parsed, ['answer']) || exact(parsed, ['answer', 'changes']))
           )
             return code('AI_RESPONSE_INVALID');
-          if (exact(parsed, ['answer']) || exact(parsed, ['answer', 'replacement'])) {
+          if (exact(parsed, ['answer']) || exact(parsed, ['answer', 'changes'])) {
             answer = compact(parsed.answer);
-            if (Object.hasOwn(parsed, 'replacement')) {
-              const candidate = parsed.replacement;
-              if (
-                !source ||
-                !request.activeFile ||
-                !exact(candidate, ['path', 'content']) ||
-                candidate.path !== request.activeFile.path ||
-                typeof candidate.content !== 'string' ||
-                candidate.content.length === 0 ||
-                Buffer.byteLength(candidate.content) > MAX_REPLACEMENT ||
-                candidate.content === source.source
-              )
-                return code('AI_RESPONSE_INVALID');
-              replacement = { path: candidate.path, content: candidate.content };
+            if (Object.hasOwn(parsed, 'changes')) {
+              // a change set is a proposal for the person to review, and only an edit request asks for one
+              if (request.mode !== 'edit' || !source) return code('AI_RESPONSE_INVALID');
+              changes = await resolveChanges(root, parsed.changes);
+              if (gatewaySignal.aborted) return code('AI_CANCELLED');
+              if (!changes) return code('AI_RESPONSE_INVALID');
             }
           }
         } catch {
@@ -424,7 +552,7 @@ export function createAiProvider(options: { userDataPath: string; vault: SafeSto
         return {
           ok: true,
           answer,
-          ...(replacement ? { replacement } : {}),
+          ...(changes ? { changes } : {}),
           ...(source && request.activeFile
             ? {
                 workspaceId: request.workspaceId,
