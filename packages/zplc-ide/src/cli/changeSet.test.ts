@@ -92,7 +92,10 @@ describe('isolated candidate change sets (IDE-030)', () => {
     for (const edits of [
       [{ path: '../src/Motor.st', content: 'x' }],
       [{ path: '/src/Motor.st', content: 'x' }],
-      [{ path: 'src/Unknown.st', content: 'x' }],
+      [{ path: 'lib/Unknown.st', content: 'x' }],
+      [{ path: 'src/sub/Unknown.st', content: 'x' }],
+      [{ path: 'src/Unknown.gvl', content: 'x' }],
+      [{ path: 'src/MOTOR.ST', content: 'x' }],
       [{ path: 'tests/motor-start-stop.scenario.json', content: 'x' }],
       [{ path: 'src/Motor.st', content: oversized }],
       [{ path: 'zplc.json', content: manifestOversized }],
@@ -219,4 +222,99 @@ describe('isolated candidate change sets (IDE-030)', () => {
     },
     30_000,
   );
+
+  describe('a program is created together with the project that names it, and the manifest never takes a credential (S5)', () => {
+    const lamp = 'PROGRAM Lamp\nVAR_OUTPUT\n    Lit AT %Q0.4 : BOOL;\nEND_VAR\nLit := TRUE;\nEND_PROGRAM\n';
+    // a task runs exactly one program, so a new program comes with a task of its own
+    const withLamp = async (manifest: string) =>
+      manifest.replace(
+        '"programs": ["Motor.st"]\n    }',
+        '"programs": ["Motor.st"]\n    },\n    { "name": "LampTask", "trigger": "cyclic", "interval_ms": 10, "priority": 2, "programs": ' +
+          '["Lamp.st"] }',
+      );
+
+    itNative(
+      'accepts a new program with its task entry, reports it as created, and writes nothing to the base',
+      async () => {
+        const root = await copiedMotorWorkspace();
+        const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
+        process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
+        try {
+          const manifest = await withLamp(await readFile(join(root, 'zplc.json'), 'utf8'));
+          const result = await createCandidateChangeSet(root, [
+            { path: 'src/Lamp.st', content: lamp },
+            { path: 'zplc.json', content: manifest },
+          ]);
+          expect(result).toMatchObject({ accepted: true, evidenceScope: 'native-posix-host' });
+          expect(result.changeSet?.changes).toEqual([
+            {
+              path: 'src/Lamp.st',
+              kind: 'create',
+              after: { sha256: expect.stringMatching(/^[0-9a-f]{64}$/), byteLength: Buffer.byteLength(lamp) },
+            },
+            {
+              path: 'zplc.json',
+              kind: 'modify',
+              before: expect.objectContaining({ byteLength: expect.any(Number) }),
+              after: expect.objectContaining({ byteLength: Buffer.byteLength(manifest) }),
+            },
+          ]);
+          expect(existsSync(join(root, 'src/Lamp.st'))).toBe(false);
+          expect(await readFile(join(root, 'zplc.json'), 'utf8')).not.toContain('Lamp.st');
+        } finally {
+          if (oldBinary === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
+          else process.env.ZPLC_NATIVE_SIM_BIN = oldBinary;
+          await rm(root, { recursive: true, force: true });
+        }
+      },
+      30_000,
+    );
+
+    itNative(
+      'does not accept a new program the build cannot compile, and still reports what it would create',
+      async () => {
+        const root = await copiedMotorWorkspace();
+        const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
+        process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
+        try {
+          const manifest = await withLamp(await readFile(join(root, 'zplc.json'), 'utf8'));
+          const broken = await createCandidateChangeSet(root, [
+            { path: 'src/Lamp.st', content: 'PROGRAM Lamp\nLit := ;\nEND_PROGRAM\n' },
+            { path: 'zplc.json', content: manifest },
+          ]);
+          expect(broken.accepted).toBe(false);
+          expect(broken.changeSet?.changes[0]).toMatchObject({ path: 'src/Lamp.st', kind: 'create' });
+        } finally {
+          if (oldBinary === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
+          else process.env.ZPLC_NATIVE_SIM_BIN = oldBinary;
+          await rm(root, { recursive: true, force: true });
+        }
+      },
+      30_000,
+    );
+
+    it('refuses a creation that the build reads as an existing program, one too many, and a manifest that adds a credential', async () => {
+      const root = await copiedMotorWorkspace();
+      try {
+        await writeFile(join(root, 'src/Pump.ld.json'), '{}');
+        const manifest = await readFile(join(root, 'zplc.json'), 'utf8');
+        const sensitive = manifest.replace('"tasks"', '"network": { "wifi": { "password": "hunter2" } }, "tasks"');
+        const clientKey = manifest.replace('"tasks"', '"communication": { "mqtt": { "clientKeyPath": "/k" } }, "tasks"');
+        for (const [edits, code] of [
+          [[{ path: 'src/pump.ld.json', content: '{}' }], 'CHANGESET_INVALID'],
+          [[{ path: 'src/Pump.ld', content: '{}' }], 'CHANGESET_INVALID'],
+          [[{ path: 'src/MOTOR.st', content: 'x' }], 'CHANGESET_INVALID'],
+          [['A', 'B', 'C', 'D', 'E'].map((name) => ({ path: `src/${name}.st`, content: lamp })), 'CHANGESET_INVALID'],
+          [[{ path: 'zplc.json', content: sensitive }], 'CHANGESET_SENSITIVE_FIELD'],
+          [[{ path: 'zplc.json', content: clientKey }], 'CHANGESET_SENSITIVE_FIELD'],
+        ] as const) {
+          const result = await createCandidateChangeSet(root, edits);
+          expect(result, JSON.stringify(edits.map((edit) => edit.path))).toMatchObject({ accepted: false, diagnostics: [{ code }] });
+          expect(JSON.stringify(result)).not.toContain('hunter2');
+        }
+      } finally {
+        await rm(root, { recursive: true, force: true });
+      }
+    });
+  });
 });

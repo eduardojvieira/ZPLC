@@ -3,6 +3,8 @@ import { lstat, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, win32 } from 'node:path';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
+import { CANDIDATE_CHANGE_CAP, isCandidateSourcePath } from '../ai/candidatePaths';
+import { manifestSensitivePaths } from '../ai/manifestPrivacy';
 import { markProgramInputs } from './programInputs';
 import { collectUnboundedLoopDiagnostics, safetyDiagnostic } from './safetyDiagnostics';
 import {
@@ -659,14 +661,17 @@ export interface CandidateChangeSetEdit {
   path: string;
   content: string;
 }
-export interface CandidateChangeSetChange {
-  path: string;
-  kind: 'modify';
-  before: { sha256: string; byteLength: number };
-  after: { sha256: string; byteLength: number };
-}
+/** A file the set replaces (with what it replaces) or a program it creates (a new file has no `before`). */
+export type CandidateChangeSetChange =
+  | { path: string; kind: 'modify'; before: { sha256: string; byteLength: number }; after: { sha256: string; byteLength: number } }
+  | { path: string; kind: 'create'; after: { sha256: string; byteLength: number } };
 type CandidateChangeSetDiagnostic = {
-  code: 'CHANGESET_INVALID' | 'CHANGESET_BASE_INVALID' | 'CHANGESET_MATERIALIZATION_FAILED' | 'CHANGESET_CLEANUP_FAILED';
+  code:
+    | 'CHANGESET_INVALID'
+    | 'CHANGESET_BASE_INVALID'
+    | 'CHANGESET_MATERIALIZATION_FAILED'
+    | 'CHANGESET_CLEANUP_FAILED'
+    | 'CHANGESET_SENSITIVE_FIELD';
   message: string;
 };
 export interface CandidateChangeSetResult {
@@ -693,6 +698,10 @@ export const __changeSetTestHooks: {
 const CHANGESET_MANIFEST_MAX_BYTES = 128 * 1024;
 const CHANGESET_SOURCE_MAX_BYTES = 256 * 1024;
 const CHANGESET_PATH_MAX_LENGTH = 512;
+/** The programs one change set may create, which is also the cap on the files an assistant's set holds (IDE-030). */
+const CHANGESET_MAX_CREATED = CANDIDATE_CHANGE_CAP;
+/** The name the build reads a program under: case does not tell two programs apart, and main.ld is main.ld.json. */
+const sourceNameKey = (path: string): string => path.toLowerCase().replace(/\.(ld|fbd|sfc)$/, '$&.json');
 
 export function createTestDeadline(options: TestsRunOptions): {
   signal: AbortSignal;
@@ -991,10 +1000,20 @@ function changeSetRejected(code: CandidateChangeSetDiagnostic['code']): Candidat
               ? 'Candidate base is unavailable'
               : code === 'CHANGESET_CLEANUP_FAILED'
                 ? 'Candidate cleanup failed'
-                : 'Candidate materialization failed',
+                : code === 'CHANGESET_SENSITIVE_FIELD'
+                  ? 'Candidate manifest holds a sensitive field'
+                  : 'Candidate materialization failed',
       },
     ],
   };
+}
+/** A manifest the assistant proposes may not hold a value in a sensitive field; one that is not JSON fails the build as it stands. */
+function manifestHoldsSensitiveField(text: string): boolean {
+  try {
+    return manifestSensitivePaths(JSON.parse(text) as unknown).length > 0;
+  } catch {
+    return false;
+  }
 }
 function invalidChangeSetPath(path: string): boolean {
   return (
@@ -1123,23 +1142,41 @@ export async function createCandidateChangeSet(
       ['zplc.json', stable.workspace.manifestBytes] as const,
       ...stable.workspace.sources.map((source): readonly [string, Uint8Array] => [source.path, source.bytes]),
     ]);
-    const edits = decodeChangeSetEdits(input, files.size);
+    const edits = decodeChangeSetEdits(input, files.size + CHANGESET_MAX_CREATED);
     if (!edits) return changeSetRejected('CHANGESET_INVALID');
     const allowedByCase = new Map([...files.keys()].map((path) => [path.toLowerCase(), path]));
+    const takenNames = new Set([...files.keys()].map(sourceNameKey));
     const replacements = new Map<string, Uint8Array>();
+    const creations = new Map<string, Uint8Array>();
     for (const edit of edits) {
       if (edit.path.length > CHANGESET_PATH_MAX_LENGTH || invalidChangeSetPath(edit.path)) return changeSetRejected('CHANGESET_INVALID');
       const path = allowedByCase.get(edit.path.toLowerCase());
-      if (!path || path !== edit.path || replacements.has(path)) return changeSetRejected('CHANGESET_INVALID');
-      const limit = path === 'zplc.json' ? CHANGESET_MANIFEST_MAX_BYTES : CHANGESET_SOURCE_MAX_BYTES;
+      const isNew = path === undefined && isCandidateSourcePath(edit.path) && !takenNames.has(sourceNameKey(edit.path));
+      if (
+        (!isNew && (!path || path !== edit.path)) ||
+        replacements.has(edit.path) ||
+        creations.has(edit.path) ||
+        (isNew && creations.size >= CHANGESET_MAX_CREATED)
+      )
+        return changeSetRejected('CHANGESET_INVALID');
+      if (isNew && [...creations.keys()].some((created) => sourceNameKey(created) === sourceNameKey(edit.path)))
+        return changeSetRejected('CHANGESET_INVALID');
+      const limit = edit.path === 'zplc.json' ? CHANGESET_MANIFEST_MAX_BYTES : CHANGESET_SOURCE_MAX_BYTES;
       if (edit.content.length > limit) return changeSetRejected('CHANGESET_INVALID');
       const bytes = new TextEncoder().encode(edit.content);
-      if (bytes.byteLength > limit || sameBytes(files.get(path)!, bytes)) return changeSetRejected('CHANGESET_INVALID');
-      replacements.set(path, bytes);
+      if (bytes.byteLength > limit || (!isNew && sameBytes(files.get(edit.path)!, bytes))) return changeSetRejected('CHANGESET_INVALID');
+      if (edit.path === 'zplc.json' && manifestHoldsSensitiveField(edit.content)) return changeSetRejected('CHANGESET_SENSITIVE_FIELD');
+      (isNew ? creations : replacements).set(edit.path, bytes);
     }
-    const changes = [...replacements]
-      .map(([path, after]) => ({ path, kind: 'modify' as const, before: changeSetDigest(files.get(path)!), after: changeSetDigest(after) }))
-      .sort((left, right) => (left.path < right.path ? -1 : left.path > right.path ? 1 : 0));
+    const changes: CandidateChangeSetChange[] = [
+      ...[...replacements].map(([path, after]) => ({
+        path,
+        kind: 'modify' as const,
+        before: changeSetDigest(files.get(path)!),
+        after: changeSetDigest(after),
+      })),
+      ...[...creations].map(([path, after]) => ({ path, kind: 'create' as const, after: changeSetDigest(after) })),
+    ].sort((left, right) => (left.path < right.path ? -1 : left.path > right.path ? 1 : 0));
     const changeSet = {
       sha256: createHash('sha256')
         .update(JSON.stringify({ schemaVersion: 1, changes }))
@@ -1152,6 +1189,7 @@ export async function createCandidateChangeSet(
     await writeFile(join(candidateRoot, 'zplc.json'), replacements.get('zplc.json') ?? files.get('zplc.json')!, { mode: 0o600 });
     for (const source of stable.workspace.sources)
       await writeFile(join(candidateRoot, source.path), replacements.get(source.path) ?? source.bytes, { mode: 0o600 });
+    for (const [path, bytes] of creations) await writeFile(join(candidateRoot, path), bytes, { mode: 0o600 });
     for (const scenario of stable.scenarios) await writeFile(join(candidateRoot, scenario.path), scenario.bytes, { mode: 0o600 });
     await __changeSetTestHooks.afterMaterialize?.(candidateRoot);
     const result = await testsRun(candidateRoot, options);
