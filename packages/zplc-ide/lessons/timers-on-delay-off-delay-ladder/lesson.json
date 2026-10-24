@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "timers-on-delay-off-delay-ladder",
+  "version": 2,
+  "order": 42,
+  "module": 3,
+  "level": "foundation",
+  "prerequisites": ["timers-on-delay-off-delay", "blinky-ladder-timer-feedback"],
+  "languages": ["LD"],
+  "tracks": ["simulation", "hardware"],
+  "unsupported": {},
+  "plant": null,
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "ld_delays_starter",
+    "program": "src/DelaysLd.ld.json"
+  },
+  "solution": {
+    "project": "ld_delays",
+    "program": "src/DelaysLd.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "DelaysLd",
+    "path": "tests/delays-ld.scenario.json",
+    "sha256": "1d949aba72caa18acd185c10be90f451c4100e526186a4d5cc04ea015e29281d"
+  },
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 20,
+      "analogPercent": 5
+    }
+  }
+}

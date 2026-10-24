@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "On-delay and off-delay in Ladder: timers as blocks in a rung",
+  "summary": "Place a TOF and a TON between a contact and a coil, and see that an off-delay keeps a light on after the button and an on-delay ignores a sensor that does not stay on.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish real sensor filtering requirements, wiring, hardware timing, HIL, or certification.",
+  "objectives": [
+    "Place a timer function block in a rung, with the contact feeding its IN and its output feeding the coil.",
+    "Tell an off-delay (TOF) from an on-delay (TON) by what each does when the input rises and falls."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/DelaysLd.ld.json two rungs connect a contact straight to a coil. Insert a TOF of T#300ms in the first rung, so that Light stays on for T#300ms after Button is released, and a TON of T#200ms in the second, so that Confirmed turns on only after Sensor has been on for T#200ms.",
+      "checkpoint": "Each rung has contact, timer and coil in that order."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Button is pressed at {{t:100}} ms and released at {{t:300}} ms. Sensor is on from {{t:100}} to {{t:140}} ms, and again from {{t:500}} to {{t:900}} ms. Predict Light at {{t:450}} and {{t:650}} ms and Confirmed at {{t:450}} and {{t:800}} ms.",
+      "checkpoint": "{{v:DelaysLd.Light=true@450|ON}} at {{t:450}} ms, still inside the T#300ms hold; {{v:DelaysLd.Light=false@650|OFF}} at {{t:650}} ms; {{v:DelaysLd.Confirmed=false@450|OFF}} at {{t:450}} ms, because the pulse was too short; {{v:DelaysLd.Confirmed=true@800|ON}} at {{t:800}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter has no timers: Light drops the moment Button is released and Confirmed follows Sensor, so Light is OFF at {{t:450}} ms and Confirmed is ON at {{t:120}} ms; place a TOF of T#300ms between Button and Light, and a TON of T#200ms between Sensor and Confirmed. From the toolbox drag a TOF block into the first rung and a TON into the second, between the contact and the coil, and set PT on each.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named DelaysLd and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare Light at {{t:300}} and {{t:650}} ms with Confirmed at {{t:140}} and {{t:800}} ms: the TOF delays the fall of its input, the TON delays the rise.",
+      "checkpoint": "Light falls once, after the hold, and Confirmed rises once, after the sensor has stayed on for T#200ms; the short pulse at {{t:100}} ms never raises it."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Swap the two blocks, TON for the hold and TOF for the filter, and see which assertions fail. What does each block do to a short pulse?",
+      "checkpoint": "A TON ignores a pulse shorter than its preset and a TOF stretches a pulse by its preset. A real sensor filter also needs a preset chosen against the real signal, which this scenario does not measure."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "The coil must not see the contact directly. Which block sits between them, and what does each of the two blocks do to a signal?"
+    },
+    {
+      "level": 2,
+      "text": "In the first rung place a TOF with PT T#300ms and in the second a TON with PT T#200ms, each between its contact and its coil, and leave IN connected to the contact."
+    }
+  ],
+  "faultCases": [
+    "The starter has no timers: Light drops the moment Button is released and Confirmed follows Sensor, so Light is OFF at {{t:450}} ms and Confirmed is ON at {{t:120}} ms; place a TOF of T#300ms between Button and Light, and a TON of T#200ms between Sensor and Confirmed."
+  ]
+}

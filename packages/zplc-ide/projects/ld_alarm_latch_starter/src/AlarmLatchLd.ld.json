@@ -1,0 +1,164 @@
+{
+  "name": "AlarmLatchLd",
+  "description": "Alarm latch with SET and RESET coils: the rung that comes last wins when Fault and Ack arrive together.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Fault",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Fault input: TRUE while the fault is present"
+      },
+      {
+        "name": "Ack",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Acknowledge pushbutton, normally open: TRUE while pressed"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "SetFirst",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Alarm latch where the last SET rung wins: set has priority"
+      },
+      {
+        "name": "ResetFirst",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Alarm latch where the last RESET rung wins: reset has priority"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "SetFirst follows Fault. Replace the plain coil with a SET coil and add a RESET rung for Ack.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_Fault_00",
+              "type": "contact_no",
+              "variable": "Fault",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_SetFirst_07",
+              "type": "coil",
+              "variable": "SetFirst",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "ResetFirst follows Fault. Replace the plain coil with a SET coil and add a RESET rung for Ack.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_Fault_00",
+              "type": "contact_no",
+              "variable": "Fault",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_ResetFirst_07",
+              "type": "coil",
+              "variable": "ResetFirst",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-24",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

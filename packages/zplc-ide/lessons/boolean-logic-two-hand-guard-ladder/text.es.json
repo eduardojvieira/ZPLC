@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Lógica booleana en escalera: un mando a dos manos",
+  "summary": "Dibuje AND, NOT y OR exclusivo como contactos en serie y en paralelo, y habilite una prensa solo con las dos manos en los botones y la protección cerrada.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran un mando bimanual certificado ni una función de seguridad, el cableado, los tiempos del hardware, HIL ni certificación.",
+  "objectives": [
+    "Lea los contactos en serie como AND, un contacto normalmente cerrado como NOT y dos caminos en paralelo como OR.",
+    "Construya un OR exclusivo (exactamente una mano) con dos caminos en paralelo de dos contactos cada uno."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/TwoHandLd.ld.json hay tres peldaños dibujados: PressEnable, GuardLamp y OneHandWarning. El peldaño de PressEnable revisa las dos manos pero no la protección. Agregue la protección para que la prensa se habilite solo con las dos manos en los botones y la protección cerrada.",
+      "checkpoint": "PressEnable necesita tres contactos en serie."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Antes de ejecutar, prediga PressEnable a los {{t:20}} ms (dos manos, protección cerrada), a los {{t:30}} ms (dos manos, protección abierta) y OneHandWarning a los {{t:40}} ms (una mano).",
+      "checkpoint": "{{v:TwoHandLd.PressEnable=true@20|En ON}} a los {{t:20}} ms; {{v:TwoHandLd.PressEnable=false@30|en OFF}} a los {{t:30}} ms, porque la protección está abierta; {{v:TwoHandLd.OneHandWarning=true@40|en ON}} a los {{t:40}} ms, porque solo la mano derecha está puesta."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial habilita la prensa sin mirar la protección: PressEnable está en ON a los {{t:30}} ms aunque GuardClosed está en FALSE; agregue un contacto normalmente abierto de GuardClosed en serie con los dos contactos de mano del peldaño de PressEnable. En el editor de escalera, agregue un contacto después de RightHand en el primer peldaño y asígnele la variable GuardClosed.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama TwoHandLd y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:20}}, {{t:30}} y {{t:50}} ms: con la protección abierta a los {{t:30}} ms las dos manos ya no habilitan la prensa y GuardLamp se enciende.",
+      "checkpoint": "PressEnable sube una vez a los {{t:20}} ms y cae una vez a los {{t:30}} ms; nunca está en ON mientras GuardLamp está en ON."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "Cambie la serie del peldaño de PressEnable por dos caminos en paralelo y vea qué aserción falla. ¿Por qué la serie es AND y el paralelo es OR?",
+      "checkpoint": "Con las manos en paralelo, una sola mano habilita la prensa, justo lo que un mando bimanual debe impedir. El escenario muestra la lógica de una ejecución registrada; no demuestra una función de seguridad."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "La energía llega a PressEnable solo por contactos que estén todos cerrados. ¿Qué contacto falta en el peldaño?"
+    },
+    {
+      "level": 2,
+      "text": "Agregue un contacto normalmente abierto en el primer peldaño, a la derecha de RightHand, y asígnele la variable GuardClosed. Deje los peldaños de GuardLamp y OneHandWarning como están."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial habilita la prensa sin mirar la protección: PressEnable está en ON a los {{t:30}} ms aunque GuardClosed está en FALSE; agregue un contacto normalmente abierto de GuardClosed en serie con los dos contactos de mano del peldaño de PressEnable."
+  ]
+}

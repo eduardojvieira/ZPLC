@@ -1,0 +1,197 @@
+{
+  "name": "DelaysLd",
+  "description": "An off-delay keeps a light on after a button; an on-delay confirms a sensor that stays on.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "HoldTimer",
+        "type": "TOF",
+        "comment": "Off-delay: keeps Light on after Button is released"
+      },
+      {
+        "name": "FilterTimer",
+        "type": "TON",
+        "comment": "On-delay: confirms Sensor only after it stays on"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Button",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Button, normally open: TRUE while pressed"
+      },
+      {
+        "name": "Sensor",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Sensor: TRUE while it detects"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Light",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Light that stays on after Button is released"
+      },
+      {
+        "name": "Confirmed",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "TRUE once Sensor has been on long enough"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Hold: while Button is pressed the timer is fed; after it is released Light stays on for the preset (off-delay).",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_Button_00",
+              "type": "contact_no",
+              "variable": "Button",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "fb_HoldTimer",
+              "type": "function_block",
+              "fbType": "TOF",
+              "instance": "HoldTimer",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#300ms"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_Light_07",
+              "type": "coil",
+              "variable": "Light",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "Filter: Confirmed turns on only after Sensor has stayed on for the preset (on-delay).",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_Sensor_00",
+              "type": "contact_no",
+              "variable": "Sensor",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "fb_FilterTimer",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "FilterTimer",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#200ms"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_Confirmed_07",
+              "type": "coil",
+              "variable": "Confirmed",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-24",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

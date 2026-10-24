@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "parts": [
+    {
+      "id": "fault",
+      "kind": "button",
+      "channel": "DI0",
+      "label": {
+        "en": "Fault",
+        "es": "Falla"
+      }
+    },
+    {
+      "id": "ack",
+      "kind": "button",
+      "channel": "DI1",
+      "label": {
+        "en": "Acknowledge",
+        "es": "Reconocimiento"
+      }
+    },
+    {
+      "id": "set-first",
+      "kind": "led",
+      "channel": "DO0",
+      "color": "red",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Set-dominant alarm",
+        "es": "Alarma con prioridad de set"
+      }
+    },
+    {
+      "id": "reset-first",
+      "kind": "led",
+      "channel": "DO1",
+      "color": "yellow",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Reset-dominant alarm",
+        "es": "Alarma con prioridad de reset"
+      }
+    }
+  ]
+}

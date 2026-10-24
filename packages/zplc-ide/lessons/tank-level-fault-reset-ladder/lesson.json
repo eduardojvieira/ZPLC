@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "tank-level-fault-reset-ladder",
+  "version": 2,
+  "order": 44,
+  "module": 6,
+  "level": "intermediate",
+  "prerequisites": ["tank-level-fault-reset", "blinky-ladder-timer-feedback"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The level sensors and the pump fault of this Ladder program come from the tank plant, which exists only in simulation, and the program reads six inputs where the learner boards have four.",
+        "es": "Los sensores de nivel y la falla de la bomba de este programa en escalera provienen de la planta del tanque, que existe solo en simulación, y el programa lee seis entradas cuando las placas del estudiante tienen cuatro."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where a fault costs nothing and can be repeated.",
+        "es": "Complétela en Simulación, donde una falla no cuesta nada y se puede repetir."
+      }
+    }
+  },
+  "plant": "tank-v1",
+  "estimatedMinutes": 30,
+  "starter": {
+    "project": "ld_tank_level_starter",
+    "program": "src/TankLevel.ld.json"
+  },
+  "solution": {
+    "project": "ld_tank_level",
+    "program": "src/TankLevel.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "TankLevel",
+    "path": "tests/tank-level-ld.scenario.json",
+    "sha256": "881a8c7220930e5be4ad73a8ad6d25d172784b508ee94937c958b60d9f13f81a"
+  },
+  "regressionScenarios": []
+}

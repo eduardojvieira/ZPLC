@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "set-reset-alarm-latch-ladder",
+  "version": 2,
+  "order": 41,
+  "module": 2,
+  "level": "foundation",
+  "prerequisites": ["set-reset-alarm-latch", "blinky-ladder-timer-feedback"],
+  "languages": ["LD"],
+  "tracks": ["simulation", "hardware"],
+  "unsupported": {},
+  "plant": null,
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "ld_alarm_latch_starter",
+    "program": "src/AlarmLatchLd.ld.json"
+  },
+  "solution": {
+    "project": "ld_alarm_latch",
+    "program": "src/AlarmLatchLd.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "AlarmLatchLd",
+    "path": "tests/alarm-latch-ld.scenario.json",
+    "sha256": "024a2cf5ab782138c1a4e9f3130a2420dc1513b8535cb1dcbf490981a8bc3eed"
+  },
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 20,
+      "analogPercent": 5
+    }
+  }
+}

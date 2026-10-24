@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Latching an alarm in Ladder: SET and RESET coils, and the order of the rungs",
+  "summary": "Hold a fault in memory with SET and RESET coils, and see that in Ladder the rung that comes last decides which one wins.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the alarm handling requirements of a real machine, wiring, hardware timing, HIL, or certification.",
+  "objectives": [
+    "Hold an alarm after the fault has gone with a SET coil, and clear it only with a RESET coil.",
+    "Decide the priority between set and reset by the order of the rungs: the last one scanned wins."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/AlarmLatchLd.ld.json each output has a plain coil driven by Fault. Make both outputs stay ON after Fault drops and go OFF only when Ack is pressed. When Fault and Ack arrive together, SetFirst must stay ON and ResetFirst must go OFF.",
+      "checkpoint": "You can say which rung order gives priority to set and which to reset."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Fault pulses ON at {{t:10}} ms. Ack is pressed at {{t:30}} ms. At {{t:50}} ms both arrive together. Predict both outputs at {{t:20}}, {{t:30}} and {{t:50}} ms.",
+      "checkpoint": "{{v:AlarmLatchLd.SetFirst=true,AlarmLatchLd.ResetFirst=true@20|both ON}} at {{t:20}} ms; {{v:AlarmLatchLd.SetFirst=false,AlarmLatchLd.ResetFirst=false@30|both OFF}} at {{t:30}} ms; {{v:AlarmLatchLd.SetFirst=true,AlarmLatchLd.ResetFirst=false@50|SetFirst ON only}} at {{t:50}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter drives both outputs with plain coils from Fault, so they go OFF at {{t:20}} ms when the fault is gone; use a SET coil for Fault and a RESET coil for Ack on each output. Put the RESET rung of SetFirst before its SET rung, and the SET rung of ResetFirst before its RESET rung.",
+      "checkpoint": "Each output has one SET rung and one RESET rung, in the order that gives the priority asked for."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named AlarmLatchLd and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:20}}, {{t:30}} and {{t:50}} ms: both alarms hold after the fault is gone, both drop on Ack, and only SetFirst survives when Fault and Ack arrive together.",
+      "checkpoint": "SetFirst rises at {{t:10}} ms and falls at {{t:30}} ms; at {{t:50}} ms it is ON while ResetFirst is OFF."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Swap the two rungs of SetFirst and run again. Which assertion fails, and why does the rung that comes last win?",
+      "checkpoint": "The processor scans the rungs from top to bottom in each cycle, so the last coil to write the variable leaves its value. This is the scan order of this runtime, not a property of every PLC: check the order rule of the PLC you use."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "A plain coil forgets its value on every scan. Which kind of coil keeps its value after the power that set it is gone?"
+    },
+    {
+      "level": 2,
+      "text": "Replace each plain coil with a SET coil driven by Fault, and add a RESET coil driven by Ack. For SetFirst put the RESET rung first; for ResetFirst put the RESET rung last."
+    }
+  ],
+  "faultCases": [
+    "The starter drives both outputs with plain coils from Fault, so they go OFF at {{t:20}} ms when the fault is gone; use a SET coil for Fault and a RESET coil for Ack on each output."
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Enclavar una alarma en escalera: bobinas SET y RESET, y el orden de los peldaños",
+  "summary": "Mantenga una falla en memoria con bobinas SET y RESET, y compruebe que en escalera el peldaño que va al final decide cuál gana.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran los requisitos de manejo de alarmas de una máquina real, el cableado, los tiempos del hardware, HIL ni certificación.",
+  "objectives": [
+    "Mantenga una alarma después de que la falla desaparezca con una bobina SET y bórrela solo con una bobina RESET.",
+    "Decida la prioridad entre set y reset por el orden de los peldaños: gana el último que se escanea."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/AlarmLatchLd.ld.json cada salida tiene una bobina simple accionada por Fault. Haga que ambas salidas sigan en ON después de que Fault baje y pasen a OFF solo al pulsar Ack. Cuando Fault y Ack llegan a la vez, SetFirst debe seguir en ON y ResetFirst debe pasar a OFF.",
+      "checkpoint": "Usted puede decir qué orden de peldaños da prioridad al set y cuál al reset."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Fault pulsa ON a los {{t:10}} ms. Ack se pulsa a los {{t:30}} ms. A los {{t:50}} ms llegan juntos. Prediga ambas salidas a los {{t:20}}, {{t:30}} y {{t:50}} ms.",
+      "checkpoint": "{{v:AlarmLatchLd.SetFirst=true,AlarmLatchLd.ResetFirst=true@20|Ambas en ON}} a los {{t:20}} ms; {{v:AlarmLatchLd.SetFirst=false,AlarmLatchLd.ResetFirst=false@30|ambas en OFF}} a los {{t:30}} ms; {{v:AlarmLatchLd.SetFirst=true,AlarmLatchLd.ResetFirst=false@50|solo SetFirst en ON}} a los {{t:50}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial acciona ambas salidas con bobinas simples desde Fault, así que se apagan a los {{t:20}} ms cuando la falla desaparece; use una bobina SET para Fault y una bobina RESET para Ack en cada salida. Ponga el peldaño RESET de SetFirst antes de su peldaño SET, y el peldaño SET de ResetFirst antes de su peldaño RESET.",
+      "checkpoint": "Cada salida tiene un peldaño SET y un peldaño RESET, en el orden que da la prioridad pedida."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama AlarmLatchLd y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:20}}, {{t:30}} y {{t:50}} ms: ambas alarmas se mantienen cuando la falla ya pasó, ambas caen con Ack y solo SetFirst sobrevive cuando Fault y Ack llegan juntos.",
+      "checkpoint": "SetFirst sube a los {{t:10}} ms y cae a los {{t:30}} ms; a los {{t:50}} ms está en ON mientras ResetFirst está en OFF."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "Intercambie los dos peldaños de SetFirst y ejecute de nuevo. ¿Qué aserción falla y por qué gana el peldaño que va al final?",
+      "checkpoint": "El procesador escanea los peldaños de arriba abajo en cada ciclo, así que la última bobina que escribe la variable deja su valor. Es el orden de escaneo de este runtime, no una propiedad de todos los PLC: revise la regla de orden del PLC que utilice."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Una bobina simple olvida su valor en cada escaneo. ¿Qué tipo de bobina conserva su valor cuando ya no llega la energía que la activó?"
+    },
+    {
+      "level": 2,
+      "text": "Reemplace cada bobina simple por una bobina SET accionada por Fault y agregue una bobina RESET accionada por Ack. Para SetFirst ponga primero el peldaño RESET; para ResetFirst ponga el peldaño RESET al final."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial acciona ambas salidas con bobinas simples desde Fault, así que se apagan a los {{t:20}} ms cuando la falla desaparece; use una bobina SET para Fault y una bobina RESET para Ack en cada salida."
+  ]
+}

@@ -1,0 +1,365 @@
+{
+  "name": "TankLevel",
+  "description": "Tank fill with a latched fault and an armed Reset.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "FaultLatched",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "A fault happened and has not been reset"
+      },
+      {
+        "name": "ResetArmed",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "Reset has been seen released while the fault was latched"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "AutoEnable",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Automatic mode: TRUE while the pump may run"
+      },
+      {
+        "name": "LevelLow",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Low-level sensor of the tank plant: TRUE while the level is low"
+      },
+      {
+        "name": "LevelHigh",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "High-level sensor of the tank plant: TRUE while the tank is full"
+      },
+      {
+        "name": "PumpFault",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "Pump fault from the plant: TRUE while the pump reports a fault"
+      },
+      {
+        "name": "EStop",
+        "type": "BOOL",
+        "address": "%I0.4",
+        "comment": "Emergency stop, active-high here: TRUE while pressed"
+      },
+      {
+        "name": "Reset",
+        "type": "BOOL",
+        "address": "%I0.5",
+        "comment": "Reset pushbutton, normally open: TRUE while pressed"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Pump",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Pump command. It is also the memory that keeps the fill going until LevelHigh."
+      },
+      {
+        "name": "Alarm",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Alarm: a fault is present or latched"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Pump with seal-in and every stop condition in series. FaultLatched is never set yet.",
+      "branches": [
+        {
+          "id": "branch_1",
+          "startCol": 5,
+          "endCol": 6,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_AutoEnable_00",
+              "type": "contact_no",
+              "variable": "AutoEnable",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "nc_LevelHigh_01",
+              "type": "contact_nc",
+              "variable": "LevelHigh",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "nc_FaultLatched_02",
+              "type": "contact_nc",
+              "variable": "FaultLatched",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "nc_EStop_03",
+              "type": "contact_nc",
+              "variable": "EStop",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "nc_PumpFault_04",
+              "type": "contact_nc",
+              "variable": "PumpFault",
+              "row": 0,
+              "col": 4
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "no_LevelLow_05",
+              "type": "contact_no",
+              "variable": "LevelLow",
+              "row": 0,
+              "col": 5
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_Pump_07",
+              "type": "coil",
+              "variable": "Pump",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": {
+              "id": "no_Pump_15",
+              "type": "contact_no",
+              "variable": "Pump",
+              "row": 1,
+              "col": 5
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "Alarm follows the fault inputs and the latch, but nothing sets FaultLatched. Add the latch rungs before the pump rung.",
+      "branches": [
+        {
+          "id": "branch_1",
+          "startCol": 0,
+          "endCol": 1,
+          "rows": [0, 1, 2]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 3,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_FaultLatched_00",
+              "type": "contact_no",
+              "variable": "FaultLatched",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_Alarm_07",
+              "type": "coil",
+              "variable": "Alarm",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "no_EStop_10",
+              "type": "contact_no",
+              "variable": "EStop",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "no_PumpFault_20",
+              "type": "contact_no",
+              "variable": "PumpFault",
+              "row": 2,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-24",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

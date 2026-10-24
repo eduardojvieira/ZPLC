@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Tank level, faults and reset in Ladder: latches and the order of the rungs",
+  "summary": "Control a tank pump with a seal-in, latch a fault with SET and RESET coils, and clear it only with a fresh Reset, in a program that follows the plant level.",
+  "scope": "Tests provide deterministic native POSIX host evidence only; they are not physical-process, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Keep the pump on from LevelLow until LevelHigh with a seal-in, with every stop condition in series.",
+    "Latch the alarm on PumpFault or EStop with a SET coil, and release it with a RESET coil that only a fresh Reset press can reach."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/TankLevel.ld.json the pump rung and the alarm rung are drawn; the plant owns LevelLow, LevelHigh and PumpFault. Add the rungs that set FaultLatched, arm Reset, and clear FaultLatched, so that the alarm stays on after the fault input goes away until a Reset pressed after it.",
+      "checkpoint": "Fault, armed Reset and cleared latch have explicit states."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, predict the pump and the alarm through the level and fault changes.",
+      "checkpoint": "{{v:TankLevel.Pump=true,TankLevel.Alarm=false@10|Pump ON, alarm normal}} at {{t:10}} ms; {{v:TankLevel.Pump=false,TankLevel.Alarm=false@70|pump OFF, alarm normal}} at {{t:70}} ms; {{v:TankLevel.Pump=false,TankLevel.Alarm=true@80|pump OFF, alarm ON}} at {{t:80}} ms; {{v:TankLevel.Pump=false,TankLevel.Alarm=false@100|OFF, normal}} at {{t:100}} ms; {{v:TankLevel.Pump=false,TankLevel.Alarm=true@120|OFF, alarm ON}} at {{t:120}} ms; {{v:TankLevel.Pump=false,TankLevel.Alarm=false@140|OFF, normal}} at {{t:140}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter never sets FaultLatched, so Alarm drops as soon as PumpFault goes away at {{t:90}} ms instead of staying ON until a Reset; add the rungs that set FaultLatched on EStop or PumpFault, arm Reset when it is released, and clear the latch with a fresh Reset press. The rungs run from top to bottom: put the latch rungs before the pump rung, so that the pump rung already sees the FaultLatched of this scan.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the TankLevel scenario.",
+      "checkpoint": "The required scenario is named TankLevel and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Relate {{t:80}}, {{t:100}}, {{t:120}} and {{t:140}} ms to the fault, the reset, the emergency stop and the recovery; Pump and Alarm must never be ON together.",
+      "checkpoint": "The recorded matrix in Tests shows every pump and alarm transition."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The NEVER assertion covers Pump and Alarm only in this recorded scenario. Try pressing Reset before the fault input has gone away: which rung stops it?",
+      "checkpoint": "It does not establish a physical process, hardware timing, HIL, or certification. The scenario never holds Reset through a fault, so the armed Reset is explained here but not proved by it."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "LevelLow goes FALSE as soon as the level rises, so the pump needs a contact of its own output in parallel with LevelLow, and every stop condition must be in series. What keeps a fault after its input is gone?"
+    },
+    {
+      "level": 2,
+      "text": "Add a SET coil on FaultLatched driven by EStop or PumpFault in parallel; a SET coil on ResetArmed when FaultLatched is on and Reset, EStop and PumpFault are off; a RESET coil on FaultLatched when FaultLatched, ResetArmed and Reset are on and EStop and PumpFault are off; and a RESET coil on ResetArmed when EStop or PumpFault is on, or FaultLatched is off. A variable takes one SET coil and one RESET coil at most."
+    }
+  ],
+  "faultCases": [
+    "The starter never sets FaultLatched, so Alarm drops as soon as PumpFault goes away at {{t:90}} ms instead of staying ON until a Reset; add the rungs that set FaultLatched on EStop or PumpFault, arm Reset when it is released, and clear the latch with a fresh Reset press."
+  ]
+}
