@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "function-block-call-il",
+  "version": 2,
+  "order": 76,
+  "module": 7,
+  "level": "intermediate",
+  "prerequisites": ["function-block-pump-pair", "boolean-logic-two-hand-guard-il"],
+  "languages": ["IL"],
+  "tracks": ["simulation", "hardware"],
+  "unsupported": {},
+  "plant": null,
+  "estimatedMinutes": 25,
+  "starter": {
+    "project": "il_pump_pair_starter",
+    "program": "src/PumpPair.il"
+  },
+  "solution": {
+    "project": "il_pump_pair",
+    "program": "src/PumpPair.il"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "PumpPair",
+    "path": "tests/pump-pair.scenario.json",
+    "sha256": "563ba151d719de250ab4f7be0f7362a1095c5bf7e1623c7d1638b732f4bcb203"
+  },
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 20,
+      "analogPercent": 5
+    }
+  }
+}

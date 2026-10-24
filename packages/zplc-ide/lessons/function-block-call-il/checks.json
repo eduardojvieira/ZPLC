@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [
+    {
+      "intent": "the inputs stored in the instance before the call",
+      "files": {
+        "src/PumpPair.il": "PROGRAM PumpPair\nVAR_INPUT\n    StartA AT %I0.0 : BOOL;\n    StopA AT %I0.1 : BOOL;\n    StartB AT %I0.2 : BOOL;\n    StopB AT %I0.3 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    RunA AT %Q0.0 : BOOL;\n    RunB AT %Q0.1 : BOOL;\nEND_VAR\nVAR\n    PumpA : Latch;\n    PumpB : Latch;\nEND_VAR\n\n        LD    StartA\n        ST    PumpA.Set\n        LD    StopA\n        ST    PumpA.Reset\n        CAL   PumpA\n        LD    PumpA.Q\n        ST    RunA\n        LD    StartB\n        ST    PumpB.Set\n        LD    StopB\n        ST    PumpB.Reset\n        CAL   PumpB\n        LD    PumpB.Q\n        ST    RunB\nEND_PROGRAM\n"
+      }
+    }
+  ],
+  "wrong": [
+    {
+      "intent": "lets Start win over Stop, so pump A restarts when both arrive together",
+      "files": {
+        "src/Latch.st": "(* Latch: Q keeps its value between calls. Set turns it ON, Reset turns it OFF, and Reset wins when both are TRUE. *)\nFUNCTION_BLOCK Latch\nVAR_INPUT Set : BOOL; Reset : BOOL; END_VAR\nVAR_OUTPUT Q : BOOL; END_VAR\nQ := Set OR (Q AND NOT Reset);\nEND_FUNCTION_BLOCK\n"
+      }
+    },
+    {
+      "intent": "never uses Reset, so no pump ever stops",
+      "files": {
+        "src/PumpPair.il": "PROGRAM PumpPair\nVAR_INPUT\n    StartA AT %I0.0 : BOOL;\n    StopA AT %I0.1 : BOOL;\n    StartB AT %I0.2 : BOOL;\n    StopB AT %I0.3 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    RunA AT %Q0.0 : BOOL;\n    RunB AT %Q0.1 : BOOL;\nEND_VAR\nVAR\n    PumpA : Latch;\n    PumpB : Latch;\nEND_VAR\n\n        CAL   PumpA(Set := StartA)\n        LD    PumpA.Q\n        ST    RunA\n        CAL   PumpB(Set := StartB)\n        LD    PumpB.Q\n        ST    RunB\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "gives pump B the inputs of pump A, so B copies A",
+      "files": {
+        "src/PumpPair.il": "PROGRAM PumpPair\nVAR_INPUT\n    StartA AT %I0.0 : BOOL;\n    StopA AT %I0.1 : BOOL;\n    StartB AT %I0.2 : BOOL;\n    StopB AT %I0.3 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    RunA AT %Q0.0 : BOOL;\n    RunB AT %Q0.1 : BOOL;\nEND_VAR\nVAR\n    PumpA : Latch;\n    PumpB : Latch;\nEND_VAR\n\n        CAL   PumpA(Set := StartA, Reset := StopA)\n        LD    PumpA.Q\n        ST    RunA\n        CAL   PumpB(Set := StartA, Reset := StopA)\n        LD    PumpB.Q\n        ST    RunB\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "never calls pump B, so RunB stays OFF",
+      "files": {
+        "src/PumpPair.il": "PROGRAM PumpPair\nVAR_INPUT\n    StartA AT %I0.0 : BOOL;\n    StopA AT %I0.1 : BOOL;\n    StartB AT %I0.2 : BOOL;\n    StopB AT %I0.3 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    RunA AT %Q0.0 : BOOL;\n    RunB AT %Q0.1 : BOOL;\nEND_VAR\nVAR\n    PumpA : Latch;\n    PumpB : Latch;\nEND_VAR\n\n        CAL   PumpA(Set := StartA, Reset := StopA)\n        LD    PumpA.Q\n        ST    RunA\n        LD    PumpB.Q\n        ST    RunB\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}
