@@ -7,6 +7,7 @@ import * as z from 'zod/v4';
 import idePackage from '../../package.json';
 import { directoryIdentity, sameDirectoryIdentity, type DirectoryIdentity } from '../cli/firmwareBuildRunner';
 import * as toolApi from '../cli/toolApi';
+import { readWorkspace } from '../cli/workspace';
 import { LESSON_IDS as LEARN_LESSON_IDS, LESSON_INDEX } from '../generated/lessonIndex';
 import { passedIn } from '../learn/course';
 import {
@@ -75,6 +76,7 @@ export const MCP_TOOL_NAMES = [
 ] as const;
 export const MCP_RESOURCE_URIS = [
   'zplc://project/manifest',
+  'zplc://project/programs',
   'zplc://project/symbols',
   'zplc://project/io-map',
   'zplc://project/diagnostics',
@@ -1087,6 +1089,7 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
       }
     });
   resource('zplc://project/manifest', async () => resourceProject(workspace, 'manifest'));
+  resource('zplc://project/programs', async () => programsResource(workspace));
   resource('zplc://project/symbols', async () => resourceProject(workspace, 'symbols'));
   resource('zplc://project/io-map', async () => resourceProject(workspace, 'io-map'));
   resource('zplc://project/diagnostics', async () => resourceProject(workspace, 'diagnostics'));
@@ -1155,6 +1158,16 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
     const result = await dispatch(tool, args, signal);
     return result.structuredContent;
   };
+  template('project-source', 'zplc://project/source/{name}', async (variables) => {
+    // the template hands over the name as the URI wrote it, so a name with a space arrives as %20
+    let name: string | undefined;
+    try {
+      name = typeof variables.name === 'string' ? decodeURIComponent(variables.name) : undefined;
+    } catch {
+      name = undefined;
+    }
+    return name === undefined ? { ok: false, error: 'MCP_INVALID_ARGUMENTS' } : sourceResource(workspace, name);
+  });
   template('runtime-trace', 'zplc://runtime/trace/{scenarioId}', (variables, signal) => replayResource('trace_get', variables, signal));
   template('runtime-snapshot', 'zplc://runtime/snapshot/{scenarioId}/{cursor}/{traceSha256}', (variables, signal) =>
     replayResource('runtime_snapshot', variables, signal),
@@ -1209,6 +1222,38 @@ export async function courseProgressResource(workspace: McpWorkspace): Promise<R
   // as the course counts it: a hardware-only lesson by its passing hardware check (LRN-024).
   const mastered = LEARN_LESSON_IDS.filter((id) => passedIn(LESSON_INDEX, id, progress!));
   return { ok: true, schemaVersion: 1, mastered, completed: mastered.length, total: LEARN_LESSON_IDS.length };
+}
+
+/**
+ * The programs of `src`, read by the workspace reader with its limits and its refusal of links; false when the root changed or is
+ * unreadable.
+ */
+async function readPrograms(workspace: McpWorkspace) {
+  if (!sameIdentity(workspace.identity, await directoryIdentity(workspace.root))) return { error: 'MCP_WORKSPACE_CHANGED' } as const;
+  const loaded = await readWorkspace(workspace.root);
+  if (!sameIdentity(workspace.identity, await directoryIdentity(workspace.root))) return { error: 'MCP_WORKSPACE_CHANGED' } as const;
+  return loaded.ok
+    ? ({ sources: loaded.workspace.sources.filter((source) => source.library === undefined) } as const)
+    : ({ error: 'MCP_WORKSPACE_UNREADABLE' } as const);
+}
+
+/** @internal The list of the programs of the project: name, path and language. Read-only (IDE-030). */
+export async function programsResource(workspace: McpWorkspace): Promise<Record<string, unknown>> {
+  const read = await readPrograms(workspace);
+  if ('error' in read) return { ok: false, error: read.error };
+  return { ok: true, programs: read.sources.map(({ name, path, language }) => ({ name, path, language })) };
+}
+
+/** @internal The text and the language of one program of `src`. There is no resource, tool or argument that writes it. */
+export async function sourceResource(workspace: McpWorkspace, name: string): Promise<Record<string, unknown>> {
+  if (name.length === 0 || name.length > 128 || name === '.' || name === '..' || /[/\\\0\r\n]/.test(name))
+    return { ok: false, error: 'MCP_INVALID_ARGUMENTS' };
+  const read = await readPrograms(workspace);
+  if ('error' in read) return { ok: false, error: read.error };
+  const source = read.sources.find((candidate) => candidate.name === name);
+  return source
+    ? { ok: true, name: source.name, path: source.path, language: source.language, source: source.content }
+    : { ok: false, error: 'MCP_NOT_FOUND' };
 }
 
 async function resourceProject(

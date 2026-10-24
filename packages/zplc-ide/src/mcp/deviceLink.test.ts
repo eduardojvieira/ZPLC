@@ -126,7 +126,8 @@ describe('COM-030: the MCP server cannot open the device link', () => {
     expect(tools.map((tool) => tool.name).sort()).toEqual([...MCP_TOOL_NAMES].sort());
     const staticUris = resources.filter((resource) => typeof resource.uri === 'string').map((resource) => resource.uri as string);
     expect(staticUris.sort()).toEqual([...MCP_RESOURCE_URIS].sort());
-    expect(resources.filter((resource) => typeof resource.uri !== 'string')).toHaveLength(2);
+    // the replay of a trace, the replay of a snapshot, and the text of one program (IDE-030): templates, all of them reads
+    expect(resources.filter((resource) => typeof resource.uri !== 'string')).toHaveLength(3);
 
     // The only arguments any tool takes name a scenario, a position in a recorded trace, or a board profile.
     const allowed = new Set(['scenarioId', 'cursor', 'traceSha256', 'ideId']);
