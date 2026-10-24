@@ -62,7 +62,10 @@ export type ChangeSetReviewOutcome =
 const fileIdOf = (path: string) => `file:${path}`;
 
 /** The settings the store would hold after the change, and what `saveProjectConfig` would write for them, byte for byte. */
-function mergedConfig(base: ZPLCProjectConfig, proposed: ZPLCProjectConfig): { updates: Partial<ZPLCProjectConfig>; content: string } | null {
+function mergedConfig(
+  base: ZPLCProjectConfig,
+  proposed: ZPLCProjectConfig,
+): { updates: Partial<ZPLCProjectConfig>; content: string } | null {
   const removed = Object.keys(base).filter((key) => !(key in proposed));
   const updates = { ...proposed, ...Object.fromEntries(removed.map((key) => [key, undefined])) } as Partial<ZPLCProjectConfig>;
   const written = canonicalManifest({ ...base, ...updates });
@@ -121,7 +124,13 @@ async function snapshotOf(
     const node = findFileInTree(state.fileTree, change.path);
     if (change.kind === 'create') {
       if (node) return null;
-      files.push({ path: change.path, kind: 'create', baseline: '', candidate: change.content, afterSha256: await sha256Text(change.content) });
+      files.push({
+        path: change.path,
+        kind: 'create',
+        baseline: '',
+        candidate: change.content,
+        afterSha256: await sha256Text(change.content),
+      });
       continue;
     }
     const loaded = state.loadedFiles.get(fileIdOf(change.path));
@@ -185,7 +194,12 @@ export async function reviewChangeSet(
       snapshot,
       presentation: presentChangeSetReview(
         result,
-        snapshot.files.map(({ path, kind, beforeSha256, afterSha256 }) => ({ path, kind, afterSha256, ...(beforeSha256 ? { beforeSha256 } : {}) })),
+        snapshot.files.map(({ path, kind, beforeSha256, afterSha256 }) => ({
+          path,
+          kind,
+          afterSha256,
+          ...(beforeSha256 ? { beforeSha256 } : {}),
+        })),
       ),
     };
   } catch {

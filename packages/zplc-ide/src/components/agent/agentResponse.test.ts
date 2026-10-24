@@ -7,7 +7,7 @@ const identity = { workspaceId: 'workspace-1', fileId: 'file:src/Main.st', path:
 const modify = (path: string, content = 'PROGRAM A\nEND_PROGRAM\n') => ({ path, kind: 'modify' as const, content, baselineSha256: sha });
 const create = (path: string, content = 'PROGRAM A\nEND_PROGRAM\n') => ({ path, kind: 'create' as const, content });
 
-describe('what the host answers is shown as the assistant\'s answer and a change set, or not at all (IDE-030)', () => {
+describe("what the host answers is shown as the assistant's answer and a change set, or not at all (IDE-030)", () => {
   it('takes a plain answer with or without the identity of the program that was sent', () => {
     expect(presentAgentResponse({ ok: true, answer: 'Words' })).toEqual({ kind: 'answer', answer: 'Words' });
     expect(presentAgentResponse({ ok: true, answer: 'Words' }, expected)).toEqual({ kind: 'answer', answer: 'Words' });
@@ -79,7 +79,10 @@ describe('what the host answers is shown as the assistant\'s answer and a change
 
   it('does not ask a request that did not need a baseline to match one', () => {
     const open = { workspaceId: 'workspace-1', fileId: 'file:src/Main.st', path: 'src/Main.st' };
-    expect(presentAgentResponse({ ok: true, answer: 'x', ...open, baselineSha256: 'c'.repeat(64) }, open)).toEqual({ kind: 'answer', answer: 'x' });
+    expect(presentAgentResponse({ ok: true, answer: 'x', ...open, baselineSha256: 'c'.repeat(64) }, open)).toEqual({
+      kind: 'answer',
+      answer: 'x',
+    });
     expect(presentAgentResponse({ ok: true, answer: 'x', ...open, baselineSha256: 'nope' }, open).kind).toBe('invalid');
   });
 });

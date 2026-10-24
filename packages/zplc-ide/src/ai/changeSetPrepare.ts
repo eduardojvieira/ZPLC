@@ -16,8 +16,7 @@ export interface ProposedChange {
   baselineSha256?: string;
 }
 export type PrepareResult =
-  | { ok: true; changes: ProposedChange[] }
-  | { ok: false; reason: 'invalid-file' | 'sensitive-field'; path: string; violations: string[] };
+  { ok: true; changes: ProposedChange[] } | { ok: false; reason: 'invalid-file' | 'sensitive-field'; path: string; violations: string[] };
 
 const refusal = (reason: 'invalid-file' | 'sensitive-field', path: string, violations: string[] = []): PrepareResult => ({
   ok: false,

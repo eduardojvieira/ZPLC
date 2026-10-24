@@ -80,8 +80,11 @@ describe('the review of a change set is accepted only for exactly the files and 
       files,
     );
     expect(failed).toMatchObject({ kind: 'rejected', diagnostics: [{ code: 'SCENARIO_ASSERTION_FAILED' }] });
-    expect(presentChangeSetReview({ schemaVersion: 1, accepted: false, evidenceScope: 'native-posix-host', diagnostics: [{ code: 'lower' }] }, files).kind).toBe(
-      'invalid',
-    );
+    expect(
+      presentChangeSetReview(
+        { schemaVersion: 1, accepted: false, evidenceScope: 'native-posix-host', diagnostics: [{ code: 'lower' }] },
+        files,
+      ).kind,
+    ).toBe('invalid');
   });
 });

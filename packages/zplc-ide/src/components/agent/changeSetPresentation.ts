@@ -20,8 +20,14 @@ const invalid = (): CandidateChangeSetReviewPresentation => ({ kind: 'invalid', 
 const only = (item: Record<string, unknown>, keys: readonly string[]) => Object.keys(item).every((key) => keys.includes(key));
 const digest = (value: unknown, maximum: number) => {
   const item = record(value);
-  return item && only(item, ['sha256', 'byteLength']) && typeof item.sha256 === 'string' && SHA256.test(item.sha256) &&
-    typeof item.byteLength === 'number' && Number.isSafeInteger(item.byteLength) && item.byteLength >= 0 && item.byteLength <= maximum
+  return item &&
+    only(item, ['sha256', 'byteLength']) &&
+    typeof item.sha256 === 'string' &&
+    SHA256.test(item.sha256) &&
+    typeof item.byteLength === 'number' &&
+    Number.isSafeInteger(item.byteLength) &&
+    item.byteLength >= 0 &&
+    item.byteLength <= maximum
     ? item.sha256
     : null;
 };
@@ -47,7 +53,8 @@ function boundChanges(value: unknown, expected: readonly ReviewedFile[]): boolea
     if (!change || !file || seen.has(file.path) || change.kind !== file.kind) return false;
     seen.add(file.path);
     if (digest(change.after, 256 * 1024) !== file.afterSha256) return false;
-    if (file.kind === 'create' ? !only(change, ['path', 'kind', 'after']) : !only(change, ['path', 'kind', 'before', 'after'])) return false;
+    if (file.kind === 'create' ? !only(change, ['path', 'kind', 'after']) : !only(change, ['path', 'kind', 'before', 'after']))
+      return false;
     if (file.kind === 'modify' && digest(change.before, 256 * 1024) !== file.beforeSha256) return false;
   }
   return seen.size === expected.length;
@@ -55,13 +62,20 @@ function boundChanges(value: unknown, expected: readonly ReviewedFile[]): boolea
 
 export function presentChangeSetReview(value: unknown, expected: readonly ReviewedFile[]): CandidateChangeSetReviewPresentation {
   const result = record(value);
-  if (!result || !only(result, TOP_LEVEL) || result.schemaVersion !== 1 || typeof result.accepted !== 'boolean' || result.evidenceScope !== 'native-posix-host')
+  if (
+    !result ||
+    !only(result, TOP_LEVEL) ||
+    result.schemaVersion !== 1 ||
+    typeof result.accepted !== 'boolean' ||
+    result.evidenceScope !== 'native-posix-host'
+  )
     return invalid();
   const reviewDiagnostics = result.diagnostics === undefined ? [] : list(result.diagnostics, 32);
   const codes: Array<{ code: string }> = [];
   for (const item of reviewDiagnostics ?? [null]) {
     const diagnostic = record(item);
-    if (!diagnostic || !only(diagnostic, ['code']) || typeof diagnostic.code !== 'string' || !DIAGNOSTIC.test(diagnostic.code)) return invalid();
+    if (!diagnostic || !only(diagnostic, ['code']) || typeof diagnostic.code !== 'string' || !DIAGNOSTIC.test(diagnostic.code))
+      return invalid();
     codes.push({ code: diagnostic.code });
   }
   let artifacts: CandidateChangeSetReviewPresentation['artifacts'] = [];
@@ -70,8 +84,14 @@ export function presentChangeSetReview(value: unknown, expected: readonly Review
     const evidence = record(result.evidence);
     const found = evidence && list(evidence.artifacts, 2);
     const diagnostics = evidence && list(evidence.diagnostics, 128);
-    if (!evidence || !found || !diagnostics || !only(evidence, ['schemaVersion', 'operation', 'outcome', 'diagnostics', 'artifacts'])) return invalid();
-    if (evidence.schemaVersion !== 1 || evidence.operation !== 'test' || (evidence.outcome !== 'passed' && evidence.outcome !== 'failed') || found.length !== 2)
+    if (!evidence || !found || !diagnostics || !only(evidence, ['schemaVersion', 'operation', 'outcome', 'diagnostics', 'artifacts']))
+      return invalid();
+    if (
+      evidence.schemaVersion !== 1 ||
+      evidence.operation !== 'test' ||
+      (evidence.outcome !== 'passed' && evidence.outcome !== 'failed') ||
+      found.length !== 2
+    )
       return invalid();
     const projected: CandidateChangeSetReviewPresentation['artifacts'] = [];
     for (const raw of found) {

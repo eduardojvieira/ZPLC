@@ -143,10 +143,18 @@ const sha = (text: string) => sha256Text(text);
 async function proposal(disk: Map<string, string>) {
   const manifest = canonicalManifest({
     ...config,
-    tasks: [...(config as unknown as { tasks: unknown[] }).tasks, { name: 'Flow', trigger: 'cyclic', interval_ms: 10, priority: 2, programs: ['Lamp.st'] }],
+    tasks: [
+      ...(config as unknown as { tasks: unknown[] }).tasks,
+      { name: 'Flow', trigger: 'cyclic', interval_ms: 10, priority: 2, programs: ['Lamp.st'] },
+    ],
   }) as { content: string };
   return [
-    { path: 'src/Main.st', kind: 'modify' as const, content: `${MAIN}(* changed *)\n`, baselineSha256: await sha(disk.get('src/Main.st')!) },
+    {
+      path: 'src/Main.st',
+      kind: 'modify' as const,
+      content: `${MAIN}(* changed *)\n`,
+      baselineSha256: await sha(disk.get('src/Main.st')!),
+    },
     { path: 'src/Lamp.st', kind: 'create' as const, content: 'PROGRAM Lamp\nEND_PROGRAM\n' },
     { path: 'zplc.json', kind: 'modify' as const, content: manifest.content, baselineSha256: await sha(disk.get('zplc.json')!) },
   ];
@@ -231,7 +239,9 @@ describe('the review and the save of an assistant change set (S5, IDE-030)', () 
     expect((await reviewChangeSet(withTaken, { workspaceId: WORKSPACE, bridge, getState: () => taken.state })).kind).toBe('stale');
     const other = project();
     other.state.workspaceScenarioLink = { workspaceId: 'workspace-2', projectSession: 1 };
-    expect((await reviewChangeSet(await proposal(other.disk), { workspaceId: WORKSPACE, bridge, getState: () => other.state })).kind).toBe('stale');
+    expect((await reviewChangeSet(await proposal(other.disk), { workspaceId: WORKSPACE, bridge, getState: () => other.state })).kind).toBe(
+      'stale',
+    );
     expect(asked).toHaveLength(0);
   });
 
@@ -240,7 +250,12 @@ describe('the review and the save of an assistant change set (S5, IDE-030)', () 
     const { bridge, asked } = host(p.disk);
     const same = [
       { path: 'src/Main.st', kind: 'modify' as const, content: MAIN, baselineSha256: await sha(MAIN) },
-      { path: 'zplc.json', kind: 'modify' as const, content: p.disk.get('zplc.json')!, baselineSha256: await sha(p.disk.get('zplc.json')!) },
+      {
+        path: 'zplc.json',
+        kind: 'modify' as const,
+        content: p.disk.get('zplc.json')!,
+        baselineSha256: await sha(p.disk.get('zplc.json')!),
+      },
     ];
     expect(await reviewChangeSet(same, { workspaceId: WORKSPACE, bridge, getState: () => p.state })).toEqual({ kind: 'no-change' });
     expect(asked).toHaveLength(0);
@@ -258,7 +273,11 @@ describe('the review and the save of an assistant change set (S5, IDE-030)', () 
     expect(p.disk).toEqual(before);
     expect(p.calls).toEqual([]);
     const q = project({ open: ['src/Main.st'] });
-    const second = await reviewChangeSet(await proposal(q.disk), { workspaceId: WORKSPACE, bridge: host(q.disk).bridge, getState: () => q.state });
+    const second = await reviewChangeSet(await proposal(q.disk), {
+      workspaceId: WORKSPACE,
+      bridge: host(q.disk).bridge,
+      getState: () => q.state,
+    });
     if (second.kind !== 'result') throw new Error('no review');
     q.state.compilerRunId += 1;
     expect(changeSetIsCurrent(second.snapshot, q.state)).toBe(false);
@@ -280,7 +299,14 @@ describe('the review and the save of an assistant change set (S5, IDE-030)', () 
     const p = project();
     const refused = await reviewChangeSet(await proposal(p.disk), {
       workspaceId: WORKSPACE,
-      bridge: { review: async () => ({ schemaVersion: 1, accepted: false, evidenceScope: 'native-posix-host', diagnostics: [{ code: 'CHANGESET_INVALID' }] }) },
+      bridge: {
+        review: async () => ({
+          schemaVersion: 1,
+          accepted: false,
+          evidenceScope: 'native-posix-host',
+          diagnostics: [{ code: 'CHANGESET_INVALID' }],
+        }),
+      },
       getState: () => p.state,
     });
     expect(refused).toMatchObject({ kind: 'result', presentation: { kind: 'rejected', diagnostics: [{ code: 'CHANGESET_INVALID' }] } });
