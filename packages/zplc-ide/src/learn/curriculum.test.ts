@@ -13,7 +13,8 @@ const ALL = ['ST', 'LD', 'FBD', 'SFC', 'IL'];
 /**
  * The curriculum table of the spec (section "Curriculum"). `title` holds the words the module title must keep (its intent),
  * `languages` the languages the module teaches: "none" for the tour of module 0, and every language for the capstone,
- * where the learner chooses.
+ * where the learner chooses. The owner widened modules 2, 3, 4, 6 and 7 on 2026-10-24 ("como minimo 8 lecciones relevantes
+ * por lenguaje"), so that each language has its own lessons of the central topics.
  */
 const TABLE = [
   {
@@ -37,7 +38,7 @@ const TABLE = [
     title: [/Boolean logic/i, /contacts/i, /coils/i, /seal-in/i, /set and reset/i, /safe stop/i],
     level: 'foundation',
     requires: 1,
-    languages: ['LD', 'ST'],
+    languages: ['LD', 'ST', 'FBD', 'IL'],
     tracks: ['simulation', 'hardware'],
   },
   {
@@ -45,7 +46,7 @@ const TABLE = [
     title: [/timers/i, /edges/i, /counters/i],
     level: 'foundation',
     requires: 2,
-    languages: ['LD', 'FBD', 'ST'],
+    languages: ['LD', 'FBD', 'ST', 'IL'],
     tracks: ['simulation', 'hardware'],
   },
   {
@@ -53,7 +54,7 @@ const TABLE = [
     title: [/types/i, /arithmetic/i, /comparison/i, /analog scaling/i],
     level: 'intermediate',
     requires: 3,
-    languages: ['ST', 'FBD'],
+    languages: ['ST', 'FBD', 'LD', 'IL'],
     tracks: ['simulation', 'hardware'],
   },
   {
@@ -69,7 +70,7 @@ const TABLE = [
     title: [/feedback/i, /faults/i, /interlocks/i],
     level: 'intermediate',
     requires: 5,
-    languages: ['ST', 'LD'],
+    languages: ['ST', 'LD', 'FBD', 'SFC', 'IL'],
     tracks: ['simulation', 'hardware'],
   },
   {
@@ -77,7 +78,7 @@ const TABLE = [
     title: [/functions/i, /function blocks/i, /structures/i, /arrays/i, /tasks/i],
     level: 'intermediate',
     requires: 4,
-    languages: ['ST', 'FBD'],
+    languages: ['ST', 'FBD', 'IL'],
     tracks: ['simulation', 'hardware'],
   },
   {
