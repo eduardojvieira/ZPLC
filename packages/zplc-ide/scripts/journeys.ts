@@ -7665,12 +7665,17 @@ export const JOURNEYS: Journey[] = [
 
       // Where the runtime cannot apply a change the controls are disabled and the panel says why in words.
       await app.click(button('Stop (Shift+F5)', 'prefix'), 'Stop');
+      const reason = () => app.eval<string>(`document.querySelector('[data-faceplate-reason]')?.textContent ?? ''`);
       await patiently(
         'the faceplate to say that the simulation is not running',
-        async () =>
-          (await app.eval<string>(`document.querySelector('[data-faceplate-reason]')?.textContent ?? ''`)).includes('not running') ||
-          undefined,
-      );
+        async () => (await reason()).includes('not running') || undefined,
+      ).catch(async (error: Error) => {
+        const toolbar = await app.eval<string>(
+          `[...document.querySelectorAll('button[aria-label^="Run"], button[aria-label^="Stop"], button[aria-label^="Pause"]')]` +
+            `.map((b) => b.getAttribute('aria-label') + (b.disabled ? ' (disabled)' : '')).join(', ')`,
+        );
+        throw new Error(`${error.message}: the faceplate says "${await reason()}"; the toolbar has ${toolbar}`);
+      });
       assert(!(await app.clickable(button('Gate: FALSE'))), 'The switch should be disabled while the simulation is not running.');
       assert(
         !(await app.clickable(css('button[aria-label="Hold Bell"]'))),

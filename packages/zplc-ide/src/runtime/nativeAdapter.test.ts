@@ -625,6 +625,8 @@ describe('NativeAdapter', () => {
     });
 
     await adapter.connect();
+    // only start or resume runs the program, so a running event follows one of them
+    await adapter.start();
 
     eventApi.emit({
       type: 'event',
@@ -663,6 +665,7 @@ describe('NativeAdapter', () => {
     const snapshots: import('./debugAdapter').RuntimeSnapshot[] = [];
     adapter.setEventHandlers({ onRuntimeSnapshot: (snapshot) => snapshots.push(snapshot) });
     await adapter.connect();
+    await adapter.start();
 
     eventApi.emit({
       type: 'event',
@@ -690,7 +693,7 @@ describe('NativeAdapter', () => {
       }),
     });
 
-    expect(adapter.state).toBe('idle');
+    expect(adapter.state).toBe('running');
     expect(snapshots).toEqual([]);
   });
 
@@ -749,7 +752,7 @@ describe('NativeAdapter', () => {
     expect(hits).toEqual([42]);
   });
 
-  describe('execution.pause reply racing a status.changed event that predates it', () => {
+  describe('execution.pause or execution.stop reply racing a status.changed event that predates it', () => {
     // The host delivers events and replies through different channels, so the `running` event of the
     // first scan can reach the adapter after the pause reply. Nothing resumed the program: the pause stands.
     it('stays paused when a stale running event arrives after the pause reply', async () => {
@@ -770,6 +773,49 @@ describe('NativeAdapter', () => {
 
       expect(adapter.state).toBe('paused');
       expect(states).toEqual(['idle', 'running', 'paused']);
+    });
+
+    // A running program sends status.changed every scan, so the event of its last scan can reach the adapter after the
+    // stop reply. A stopped program sends no more events: taken, that one would show the program running until the session ends.
+    it('stays stopped when a stale running event arrives after the stop reply', async () => {
+      const eventApi = createEventApi();
+      const adapter = new NativeAdapter({
+        startSession,
+        stopSession,
+        onEvent: eventApi.onEvent,
+        request: async <TResult>(): Promise<TResult> => ({}) as TResult,
+      });
+      const states: string[] = [];
+      adapter.setEventHandlers({ onStateChange: (state) => states.push(state) });
+      await adapter.connect();
+      await adapter.start();
+      await adapter.stop();
+
+      eventApi.emit({ type: 'event', method: 'status.changed', params: nativeSnapshot({ state: 'running' }) });
+
+      expect(adapter.state).toBe('idle');
+      expect(states).toEqual(['idle', 'running', 'idle']);
+    });
+
+    it('takes the running events of the next start after a stop', async () => {
+      const eventApi = createEventApi();
+      const adapter = new NativeAdapter({
+        startSession,
+        stopSession,
+        onEvent: eventApi.onEvent,
+        request: async <TResult>(): Promise<TResult> => ({}) as TResult,
+      });
+      const cycles: number[] = [];
+      adapter.setEventHandlers({ onInfoUpdate: (info) => cycles.push(info.cycles) });
+      await adapter.connect();
+      await adapter.start();
+      await adapter.stop();
+      await adapter.start();
+
+      eventApi.emit({ type: 'event', method: 'status.changed', params: nativeSnapshot({ state: 'running' }) });
+
+      expect(adapter.state).toBe('running');
+      expect(cycles).toEqual([8]);
     });
 
     // The pause reply is empty and a paused runtime sends no event, so the cycle count Studio shows would stay at

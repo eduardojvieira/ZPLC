@@ -260,8 +260,8 @@ export class NativeAdapter implements IDebugAdapter {
   private unsubscribe: (() => void) | null = null;
   private requestCount = 0;
   private statusEventCount = 0;
-  /** True from the moment the adapter is paused until start or resume is requested. */
-  private pauseStands = false;
+  /** True from the moment the adapter is paused or idle (stopped, reset, loaded) until start or resume is requested. */
+  private haltStands = false;
   private parityEvidence: NativeParityEvidenceRecord[] = [];
   private sessionGeneration = 0;
   private programGeneration: number | null = null;
@@ -287,7 +287,7 @@ export class NativeAdapter implements IDebugAdapter {
   }
 
   private setState(state: VMState): void {
-    this.pauseStands = state === 'paused';
+    this.haltStands = state === 'paused' || state === 'idle';
     if (this._state !== state) {
       this._state = state;
       this.events.onStateChange?.(state);
@@ -371,9 +371,9 @@ export class NativeAdapter implements IDebugAdapter {
       }
       if (event.method === 'status.changed' && isNativeRuntimeSnapshot(event.params)) {
         const snapshot = event.params;
-        // Nothing resumes a paused program but start/resume (they clear the flag first), so a `running` event after
-        // the pause reply was emitted before the pause and only arrived late (events and replies take two channels).
-        if (this.pauseStands && snapshot.state === 'running') return;
+        // Nothing runs a paused or stopped program but start/resume (they clear the flag first), so a `running` event after
+        // the pause or stop reply was emitted before it and only arrived late (events and replies take two channels).
+        if (this.haltStands && snapshot.state === 'running') return;
         this.statusEventCount += 1;
         const normalizedSnapshot = this.publishSnapshot(snapshot, generation);
         // The runtime sends status.changed with `paused` once per stop (the tick that hit the breakpoint;
@@ -514,7 +514,7 @@ export class NativeAdapter implements IDebugAdapter {
   // is newer than the `running` this reply would set. pause, stop and reset keep their blind set:
   // an event in flight during them predates the command, so the reply is the newer fact.
   private async requestThenRun(method: string): Promise<void> {
-    this.pauseStands = false;
+    this.haltStands = false;
     const statusEventsBefore = this.statusEventCount;
     await this.request(method);
     if (this.statusEventCount === statusEventsBefore) {
