@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "parts": [
+    {
+      "id": "pulse",
+      "kind": "button",
+      "channel": "DI0",
+      "label": {
+        "en": "Pulse input",
+        "es": "Entrada de pulsos"
+      }
+    },
+    {
+      "id": "reset",
+      "kind": "button",
+      "channel": "DI1",
+      "label": {
+        "en": "Reset",
+        "es": "Reset"
+      }
+    },
+    {
+      "id": "count-reached",
+      "kind": "led",
+      "channel": "DO0",
+      "color": "green",
+      "resistorOhms": 330,
+      "label": {
+        "en": "Count reached",
+        "es": "Cuenta alcanzada"
+      }
+    }
+  ]
+}

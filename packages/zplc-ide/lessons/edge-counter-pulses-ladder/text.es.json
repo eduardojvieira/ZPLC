@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Contar pulsos en escalera: un CTU cuenta los flancos por sí mismo",
+  "summary": "Coloque un CTU en un peldaño para que CountReached se active en el tercer flanco ascendente de una entrada de pulsos y Reset borre la cuenta.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran la exactitud de conteo de una entrada real, el cableado, los tiempos del hardware, HIL ni certificación.",
+  "objectives": [
+    "Coloque un bloque contador en un peldaño y fije su preset y su reset.",
+    "Explique que un contador suma uno en el flanco ascendente de su entrada, no en cada escaneo en que la entrada está en alto."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/EdgeCounterLd.ld.json un peldaño copia PulseInput a CountReached. Reemplace la copia por un CTU de preset 3 entre el contacto y la bobina, y conecte Reset a su entrada R, para que CountReached se active con el tercer pulso y Reset la borre.",
+      "checkpoint": "El contador queda entre PulseInput y la bobina de CountReached."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "PulseInput sube a los {{t:10}}, {{t:30}} y {{t:50}} ms, un escaneo cada vez. Reset se pulsa a los {{t:70}} ms. Prediga CountReached a los {{t:30}}, {{t:50}} y {{t:70}} ms.",
+      "checkpoint": "{{v:EdgeCounterLd.CountReached=false@30|En OFF}} a los {{t:30}} ms, solo dos pulsos hasta ahora; {{v:EdgeCounterLd.CountReached=true@50|en ON}} a los {{t:50}} ms, con el tercero; {{v:EdgeCounterLd.CountReached=false@70|en OFF}} a los {{t:70}} ms, tras Reset."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia el pulso a la bobina: CountReached está en ON a los {{t:10}} ms, con el primer pulso, en lugar de después del tercero; coloque un CTU con PV 3 y Reset en su entrada R entre PulseInput y CountReached. En el editor de escalera arrastre un bloque CTU entre el contacto y la bobina, asigne a su instancia el nombre Count y fije PV en 3 y R en Reset.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama EdgeCounterLd y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:30}}, {{t:50}} y {{t:70}} ms: CountReached sube una vez, con el tercer pulso, y cae una vez, cuando Reset borra la cuenta.",
+      "checkpoint": "CountReached sube una vez a los {{t:50}} ms y cae una vez a los {{t:70}} ms."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "Reemplace el contacto simple delante del CTU por un contacto de transición positiva y ejecute de nuevo. ¿Por qué el resultado no cambia?",
+      "checkpoint": "El CTU ya cuenta solo el cambio de FALSE a TRUE de su entrada, así que un pulso cuenta una vez sin importar cuántos escaneos se mantenga en alto; el contacto de flanco solo repite lo que hace el bloque. Un pulso que sube mientras Reset está activo se pierde."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Una bobina solo muestra la energía que le llega. ¿Qué bloque recuerda cuántas veces ha subido la energía?"
+    },
+    {
+      "level": 2,
+      "text": "Coloque un CTU entre PulseInput y CountReached, asigne a la instancia el nombre Count y fije PV en 3 y R en Reset. La bobina toma la salida del bloque."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial copia el pulso a la bobina: CountReached está en ON a los {{t:10}} ms, con el primer pulso, en lugar de después del tercero; coloque un CTU con PV 3 y Reset en su entrada R entre PulseInput y CountReached."
+  ]
+}

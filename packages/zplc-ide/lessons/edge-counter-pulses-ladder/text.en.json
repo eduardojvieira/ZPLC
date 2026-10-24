@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Counting pulses in Ladder: a CTU counts the edges itself",
+  "summary": "Place a CTU in a rung so that CountReached turns on at the third rising edge of a pulse input and Reset clears the count.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the counting accuracy of a real input, wiring, hardware timing, HIL, or certification.",
+  "objectives": [
+    "Place a counter block in a rung and set its preset and its reset.",
+    "Explain that a counter adds one on the rising edge of its input, not on every scan in which the input is high."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/EdgeCounterLd.ld.json one rung copies PulseInput to CountReached. Replace the copy with a CTU of preset 3 between the contact and the coil, and wire Reset to its R input, so that CountReached turns on at the third pulse and Reset clears it.",
+      "checkpoint": "The counter sits between PulseInput and the coil of CountReached."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "PulseInput goes high at {{t:10}}, {{t:30}} and {{t:50}} ms, one scan each time. Reset is pressed at {{t:70}} ms. Predict CountReached at {{t:30}}, {{t:50}} and {{t:70}} ms.",
+      "checkpoint": "{{v:EdgeCounterLd.CountReached=false@30|OFF}} at {{t:30}} ms, only two pulses so far; {{v:EdgeCounterLd.CountReached=true@50|ON}} at {{t:50}} ms, on the third; {{v:EdgeCounterLd.CountReached=false@70|OFF}} at {{t:70}} ms, after Reset."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter copies the pulse to the coil: CountReached is ON at {{t:10}} ms, on the first pulse, instead of after the third; place a CTU with PV 3, Reset on its R input, between PulseInput and CountReached. In the Ladder editor drag a CTU block between the contact and the coil, name its instance Count, and set PV to 3 and R to Reset.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named EdgeCounterLd and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:30}}, {{t:50}} and {{t:70}} ms: CountReached rises once, at the third pulse, and falls once, when Reset clears the count.",
+      "checkpoint": "CountReached rises once at {{t:50}} ms and falls once at {{t:70}} ms."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Replace the plain contact in front of the CTU with a positive-transition contact and run again. Why does the result not change?",
+      "checkpoint": "The CTU already counts only the change from FALSE to TRUE of its input, so a pulse counts once however many scans it stays high; the edge contact only repeats what the block does. A pulse that rises while Reset is held is lost."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "A coil only shows the power that reaches it. Which block remembers how many times the power has risen?"
+    },
+    {
+      "level": 2,
+      "text": "Place a CTU between PulseInput and CountReached, name the instance Count, and set PV to 3 and R to Reset. The coil takes the output of the block."
+    }
+  ],
+  "faultCases": [
+    "The starter copies the pulse to the coil: CountReached is ON at {{t:10}} ms, on the first pulse, instead of after the third; place a CTU with PV 3, Reset on its R input, between PulseInput and CountReached."
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "name": "EdgeCounterLd",
+  "description": "Count three rising edges of a pulse input with a CTU in a rung; Reset clears the count.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Count",
+        "type": "CTU",
+        "comment": "Up counter: Count.CV is the count so far"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "PulseInput",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Pulse input: TRUE while the pulse is high"
+      },
+      {
+        "name": "Reset",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Reset pushbutton, normally open: TRUE while pressed"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "CountReached",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "TRUE once the count has reached the preset"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "CountReached copies the pulse. Put a CTU with a preset of 3 between the contact and the coil.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_PulseInput_00",
+              "type": "contact_no",
+              "variable": "PulseInput",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_CountReached_07",
+              "type": "coil",
+              "variable": "CountReached",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-24",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
