@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "interlock-guard-permissive-il",
+  "version": 2,
+  "order": 75,
+  "module": 6,
+  "level": "intermediate",
+  "prerequisites": ["interlock-guard-permissive", "boolean-logic-two-hand-guard-il"],
+  "languages": ["IL"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The Instruction List motor interlock reads run feedback from the simulated motor plant; a learner board has no motor to give it.",
+        "es": "El enclavamiento del motor en lista de instrucciones lee la realimentación de marcha de la planta simulada del motor; una placa del estudiante no tiene un motor que la dé."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, which provides the motor and its run feedback.",
+        "es": "Complétela en Simulación, que proporciona el motor y su realimentación de marcha."
+      }
+    }
+  },
+  "plant": "motor-v1",
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "il_interlock_guard_starter",
+    "program": "src/MotorPlant.il"
+  },
+  "solution": {
+    "project": "il_interlock_guard",
+    "program": "src/MotorPlant.il"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "MotorInterlock",
+    "path": "tests/motor-interlock.scenario.json",
+    "sha256": "6ffc4a74fd39e3cec015cfce8d79a9860e8fd254f143438bea0d61d1794b8a63"
+  },
+  "regressionScenarios": []
+}

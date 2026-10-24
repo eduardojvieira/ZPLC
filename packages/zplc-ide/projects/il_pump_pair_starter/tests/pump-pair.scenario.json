@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "id": "PumpPair",
+  "tickMs": 10,
+  "durationMs": 110,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "PumpPair.StartA": false,
+        "PumpPair.StopA": false,
+        "PumpPair.StartB": false,
+        "PumpPair.StopB": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "PumpPair.StartA": true
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "PumpPair.StartA": false
+      }
+    },
+    {
+      "atMs": 30,
+      "set": {
+        "PumpPair.StartB": true
+      }
+    },
+    {
+      "atMs": 40,
+      "set": {
+        "PumpPair.StartB": false
+      }
+    },
+    {
+      "atMs": 50,
+      "set": {
+        "PumpPair.StopA": true
+      }
+    },
+    {
+      "atMs": 60,
+      "set": {
+        "PumpPair.StopA": false
+      }
+    },
+    {
+      "atMs": 70,
+      "set": {
+        "PumpPair.StopB": true
+      }
+    },
+    {
+      "atMs": 80,
+      "set": {
+        "PumpPair.StopB": false
+      }
+    },
+    {
+      "atMs": 90,
+      "set": {
+        "PumpPair.StartA": true,
+        "PumpPair.StopA": true
+      }
+    },
+    {
+      "atMs": 100,
+      "set": {
+        "PumpPair.StartA": false,
+        "PumpPair.StopA": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "PumpPair.RunA": false,
+        "PumpPair.RunB": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "PumpPair.RunA": true,
+        "PumpPair.RunB": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 30,
+      "condition": {
+        "PumpPair.RunA": true,
+        "PumpPair.RunB": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "PumpPair.RunA": false,
+        "PumpPair.RunB": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 70,
+      "condition": {
+        "PumpPair.RunA": false,
+        "PumpPair.RunB": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 90,
+      "condition": {
+        "PumpPair.RunA": false,
+        "PumpPair.RunB": false
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 30,
+      "withinMs": 0,
+      "condition": {
+        "PumpPair.RunB": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 50,
+      "withinMs": 0,
+      "condition": {
+        "PumpPair.RunA": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 50,
+      "forMs": 10,
+      "condition": {
+        "PumpPair.RunB": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Instruction List: arithmetic, comparison and a jump on a rising edge",
+  "summary": "Keep a running total in an INT variable, add to it on each press with ADD and a conditional jump, and turn it into three BOOL results with LT, EQ and GT.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the range of a real sensor or the overflow behaviour of a particular controller, HIL, or certification.",
+  "objectives": [
+    "Use ADD on a number in the current result, and LT, EQ and GT to turn a number into a BOOL.",
+    "Skip a group of lines with JMPCN so that a number changes only on the rising edge of an input."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/TypedSteps.il the three comparisons at the end are written: LD Total loads the INT, LT 10 compares it and leaves a BOOL, and ST Low stores it. Write the arithmetic above them: on each rising edge of Step (Step ON now and StepWas OFF) add 5 to Total, with LD Total, ADD 5, ST Total; JMPCN skip jumps over those lines when the condition is FALSE. Then, while Reset is TRUE, load 0 and store it in Total.",
+      "checkpoint": "Total goes 0, 5, 10, 15, and the three outputs show which band it is in."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Step is pressed three times, the first press lasting two scans. Predict which output is ON at {{t:20}}, {{t:40}} and {{t:60}} ms.",
+      "checkpoint": "{{v:TypedSteps.Low=true,TypedSteps.Exact=false,TypedSteps.High=false@20|Low}} at {{t:20}} ms (Total is 5); {{v:TypedSteps.Low=false,TypedSteps.Exact=true,TypedSteps.High=false@40|Exact}} at {{t:40}} ms (Total is 10); {{v:TypedSteps.Low=false,TypedSteps.Exact=false,TypedSteps.High=true@60|High}} at {{t:60}} ms (Total is 15)."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starting program remembers Step in StepWas and writes the three comparisons, but never changes Total, so Low stays ON for ever; add 5 to Total on each rising edge of Step and clear it while Reset is TRUE.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named TypedSteps and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:20}}, {{t:40}} and {{t:60}} ms: exactly one of the three outputs is ON each time, and Reset at {{t:80}} ms brings Low back.",
+      "checkpoint": "Exact is ON only at the one total of 10, from {{t:40}} ms; the long first press added 5 once, not twice."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "What happens if you write Exact with GE 10? And if you remove ANDN StepWas? Try each and see which assertion fails.",
+      "checkpoint": "A comparison leaves a BOOL in the current result, and EQ is not the same as GE. Without ANDN StepWas a press that lasts two scans adds twice. The scenario only watches the three BOOL outputs; it does not show the value of Total itself or what happens when an INT overflows."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Total is an INT, so LD Total, ADD 5 and ST Total keep it an INT. A rising edge is LD Step followed by ANDN StepWas. JMPCN skip jumps to the label skip: when the current result is FALSE."
+    },
+    {
+      "level": 2,
+      "text": "LD Step, ANDN StepWas, JMPCN skip, LD Total, ADD 5, ST Total, skip:, then the lines that copy Step to StepWas, then LD Reset, JMPCN keep, LD 0, ST Total, keep:, before the three comparisons."
+    }
+  ],
+  "faultCases": [
+    "The starting program remembers Step in StepWas and writes the three comparisons, but never changes Total, so Low stays ON for ever; add 5 to Total on each rising edge of Step and clear it while Reset is TRUE."
+  ]
+}

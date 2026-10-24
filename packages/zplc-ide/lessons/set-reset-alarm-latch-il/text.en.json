@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Instruction List: S and R, and the line that comes last",
+  "summary": "Keep a fault in memory with the S and R instructions and see that, when the fault and the acknowledge arrive together, the instruction written last decides which one wins.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish alarm handling requirements of a real machine, HIL, or certification.",
+  "objectives": [
+    "Hold an alarm after the fault has gone, until it is acknowledged, with the IL instructions S and R.",
+    "Use the order of two lines to decide whether set or reset wins, and tell it from the SR and RS blocks."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/AlarmLatch.il, S sets its operand to TRUE when the current result is TRUE and does nothing otherwise; R sets it to FALSE in the same way. Both outputs must stay ON after Fault drops and go OFF only when Ack is pressed. When Fault and Ack arrive together, SetFirst must stay ON and ResetFirst must go OFF, so SetFirst needs its R line before its S line, and ResetFirst the other way round.",
+      "checkpoint": "You can say which of the two lines runs last, and so wins, for each output."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Fault pulses ON at {{t:10}} ms. Ack is pressed at {{t:30}} ms. At {{t:50}} ms both arrive together, and Ack is held at {{t:60}} ms. Predict both outputs at {{t:20}}, {{t:30}} and {{t:50}} ms.",
+      "checkpoint": "{{v:AlarmLatch.SetFirst=true,AlarmLatch.ResetFirst=true@20|both ON}} at {{t:20}} ms; {{v:AlarmLatch.SetFirst=false,AlarmLatch.ResetFirst=false@30|both OFF}} at {{t:30}} ms; {{v:AlarmLatch.SetFirst=true,AlarmLatch.ResetFirst=false@50|SetFirst ON only}} at {{t:50}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter flaw, save it, then press Check: The starting program copies Fault to both outputs with ST, so they go OFF at {{t:20}} ms when the fault is gone; replace it with S and R lines, loading Ack and then Fault for SetFirst, and Fault and then Ack for ResetFirst, and save the file.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named AlarmLatch and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:20}}, {{t:30}} and {{t:50}} ms: the alarm is still ON at {{t:20}} ms after Fault has gone, Ack clears it at {{t:30}} ms, and only the order of the lines makes the two outputs differ at {{t:50}} ms.",
+      "checkpoint": "The outputs differ only when Fault and Ack arrive together."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Which order would you choose for a stop command, and which for a start request? Think about what should win when both are pressed.",
+      "checkpoint": "A stop or reset should usually win, so its R line goes last; the choice is a design decision, not a default. The SR and RS blocks fix that priority in the block, while S and R leave it to the order of your lines."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "LD Fault followed by S SetFirst sets the output when Fault is TRUE; LD Ack followed by R SetFirst clears it when Ack is TRUE. If both run in one scan, the last one runs last and wins."
+    },
+    {
+      "level": 2,
+      "text": "SetFirst: LD Ack, R SetFirst, LD Fault, S SetFirst. ResetFirst: LD Fault, S ResetFirst, LD Ack, R ResetFirst."
+    }
+  ],
+  "faultCases": [
+    "The starting program copies Fault to both outputs with ST, so they go OFF at {{t:20}} ms when the fault is gone; replace it with S and R lines, loading Ack and then Fault for SetFirst, and Fault and then Ack for ResetFirst, and save the file."
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Lista de instrucciones: llamar a un bloque de función y leer sus salidas",
+  "summary": "Llame con CAL a dos instancias del mismo bloque de función, pase sus entradas por nombre y lea cada salida con LD Instancia.Salida.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el comportamiento de una bomba, la corriente de arranque ni ningún requisito de una máquina real, HIL ni certificación.",
+  "objectives": [
+    "Llame a una instancia de bloque de función con CAL, pasando sus entradas por nombre, y lea su salida con LD Instancia.Salida.",
+    "Vea que dos instancias del mismo bloque de función guardan memorias separadas."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "src/Latch.st declara el bloque de función Latch con las entradas Set y Reset y la salida Q, y src/PumpPair.il declara dos instancias, PumpA y PumpB. PumpA ya se llama: CAL PumpA(Set := StartA, Reset := StopA) la ejecuta, LD PumpA.Q carga su salida y ST RunA la guarda. Escriba las mismas tres líneas para PumpB con StartB y StopB.",
+      "checkpoint": "Cada bomba arranca con su propio Start, se detiene con su propio Stop, y una bomba nunca mueve a la otra."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "PumpA arranca a los {{t:10}} ms y PumpB a los {{t:30}} ms. PumpA se detiene a los {{t:50}} ms. Prediga RunA y RunB a los {{t:30}}, {{t:50}} y {{t:70}} ms.",
+      "checkpoint": "{{v:PumpPair.RunA=true,PumpPair.RunB=true@30|Ambas en ON}} a los {{t:30}} ms; {{v:PumpPair.RunA=false,PumpPair.RunB=true@50|solo RunB}} a los {{t:50}} ms; {{v:PumpPair.RunA=false,PumpPair.RunB=false@70|ambas en OFF}} a los {{t:70}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial llama a PumpA pero nunca llama a PumpB, así que RunB nunca sube y queda en OFF a los {{t:30}} ms; agregue CAL PumpB(Set := StartB, Reset := StopB), y luego LD PumpB.Q y ST RunB.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama PumpPair y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:10}}, {{t:30}} y {{t:50}} ms: RunA se mantiene al soltar su botón, RunB se une a los {{t:30}} ms, y detener A a los {{t:50}} ms deja B en ON.",
+      "checkpoint": "RunA y RunB cambian en momentos distintos con el mismo bloque, lo que muestra dos memorias. A los {{t:90}} ms Start y Stop llegan juntos a la bomba A y esta sigue en OFF."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Qué cambiaría si conectara a PumpB las entradas de la bomba A? Pruébelo y vea qué aserción falla.",
+      "checkpoint": "Cada instancia tiene su propia copia de las variables del bloque, así que el mismo código sirve para cualquier número de bombas; solo las entradas que usted pasa en CAL las hacen distintas. Un LD PumpB.Q antes de CAL PumpB leería el valor del ciclo anterior. El escenario muestra solo la lógica; no muestra la secuencia de arranque ni una falla de bomba."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "CAL ejecuta la instancia con las entradas entre paréntesis; CAL no devuelve la salida, usted la lee después con LD PumpB.Q."
+    },
+    {
+      "level": 2,
+      "text": "CAL PumpB(Set := StartB, Reset := StopB), LD PumpB.Q, ST RunB, después de las tres líneas de PumpA."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial llama a PumpA pero nunca llama a PumpB, así que RunB nunca sube y queda en OFF a los {{t:30}} ms; agregue CAL PumpB(Set := StartB, Reset := StopB), y luego LD PumpB.Q y ST RunB."
+  ]
+}

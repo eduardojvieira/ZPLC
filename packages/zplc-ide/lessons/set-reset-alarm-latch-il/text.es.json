@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Lista de instrucciones: S y R, y la línea que va al final",
+  "summary": "Mantenga una falla en memoria con las instrucciones S y R y vea que, cuando la falla y el reconocimiento llegan juntos, la instrucción escrita al final decide cuál gana.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran los requisitos de manejo de alarmas de una máquina real, HIL ni certificación.",
+  "objectives": [
+    "Retenga una alarma después de que la falla desaparece, hasta que se reconozca, con las instrucciones IL S y R.",
+    "Use el orden de dos líneas para decidir si gana set o reset, y distíngalo de los bloques SR y RS."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/AlarmLatch.il, S pone su operando en TRUE cuando el resultado actual es TRUE y no hace nada en otro caso; R lo pone en FALSE de la misma forma. Ambas salidas deben quedar en ON después de que Fault baja y pasar a OFF solo cuando se pulsa Ack. Cuando Fault y Ack llegan juntos, SetFirst debe seguir en ON y ResetFirst debe pasar a OFF, así que SetFirst necesita su línea R antes de su línea S, y ResetFirst al revés.",
+      "checkpoint": "Puede decir cuál de las dos líneas se ejecuta al final, y por tanto gana, en cada salida."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Fault pasa a ON a los {{t:10}} ms. Ack se pulsa a los {{t:30}} ms. A los {{t:50}} ms llegan juntas, y Ack se mantiene a los {{t:60}} ms. Prediga ambas salidas a los {{t:20}}, {{t:30}} y {{t:50}} ms.",
+      "checkpoint": "{{v:AlarmLatch.SetFirst=true,AlarmLatch.ResetFirst=true@20|Ambas en ON}} a los {{t:20}} ms; {{v:AlarmLatch.SetFirst=false,AlarmLatch.ResetFirst=false@30|ambas en OFF}} a los {{t:30}} ms; {{v:AlarmLatch.SetFirst=true,AlarmLatch.ResetFirst=false@50|solo SetFirst en ON}} a los {{t:50}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija este defecto del programa inicial, guárdelo y pulse Comprobar: El programa inicial copia Fault a las dos salidas con ST, así que pasan a OFF a los {{t:20}} ms cuando la falla desaparece; reemplácelo por líneas S y R, cargando Ack y luego Fault para SetFirst, y Fault y luego Ack para ResetFirst, y guarde el archivo.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama AlarmLatch y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:20}}, {{t:30}} y {{t:50}} ms: la alarma sigue en ON a los {{t:20}} ms después de que Fault desapareció, Ack la borra a los {{t:30}} ms, y solo el orden de las líneas hace que las dos salidas difieran a los {{t:50}} ms.",
+      "checkpoint": "Las salidas difieren solo cuando Fault y Ack llegan juntos."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Qué orden elegiría para una orden de parada, y cuál para una solicitud de arranque? Piense qué debe ganar cuando se pulsan ambas.",
+      "checkpoint": "Una parada o un reset normalmente debe ganar, así que su línea R va al final; la elección es una decisión de diseño, no un valor por defecto. Los bloques SR y RS fijan esa prioridad en el bloque, mientras que S y R la dejan al orden de sus líneas."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "LD Fault seguido de S SetFirst activa la salida cuando Fault es TRUE; LD Ack seguido de R SetFirst la desactiva cuando Ack es TRUE. Si ambas actúan en un ciclo, la que se ejecuta al final gana."
+    },
+    {
+      "level": 2,
+      "text": "SetFirst: LD Ack, R SetFirst, LD Fault, S SetFirst. ResetFirst: LD Fault, S ResetFirst, LD Ack, R ResetFirst."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial copia Fault a las dos salidas con ST, así que pasan a OFF a los {{t:20}} ms cuando la falla desaparece; reemplácelo por líneas S y R, cargando Ack y luego Fault para SetFirst, y Fault y luego Ack para ResetFirst, y guarde el archivo."
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Instruction List: calling an off-delay and an on-delay timer",
+  "summary": "Call a TOF timer with CAL to keep a light on after a button is released, and a TON timer to ignore a sensor blip that is too short, then read each timer output with LD.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish electrical debounce, sensor response or target timing, HIL, or certification.",
+  "objectives": [
+    "Call a timer instance with CAL, passing its input and its preset, and read its output with LD.",
+    "Keep an output on for a fixed time after its input drops, using TOF, and ignore an input that is on for less than a fixed time, using TON."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/Delays.il the timers HoldTimer (TOF) and FilterTimer (TON) are declared but not called. A timer is not a single instruction: CAL HoldTimer(IN := Button, PT := T#300ms) runs it with its inputs, and a following LD HoldTimer.Q loads its output into the current result, ready for ST. Light must stay ON for {{t:300}} ms after Button is released. Confirmed must turn ON only after Sensor has stayed ON for {{t:200}} ms.",
+      "checkpoint": "You can say which timer keeps an output on and which one waits before turning it on."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "The scenario presses Button at {{t:100}} ms and releases it at {{t:300}} ms. Sensor blips ON from {{t:100}} ms to {{t:140}} ms and is ON again from {{t:500}} ms to {{t:900}} ms. Predict Light and Confirmed at {{t:200}}, {{t:450}}, {{t:650}} and {{t:800}} ms.",
+      "checkpoint": "{{v:Delays.Light=true,Delays.Confirmed=false@200|Light ON, Confirmed OFF}} at {{t:200}} ms; {{v:Delays.Light=true,Delays.Confirmed=false@450|Light ON, Confirmed OFF}} at {{t:450}} ms; {{v:Delays.Light=false,Delays.Confirmed=false@650|both OFF}} at {{t:650}} ms; {{v:Delays.Light=false,Delays.Confirmed=true@800|Confirmed ON, Light OFF}} at {{t:800}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter flaw, save it, then press Check: The starting program loads each input and stores it in the output, so Light is already OFF at {{t:450}} ms and Confirmed turns ON for the {{t:100}} ms blip; call HoldTimer with Button as IN and T#300ms as PT, then load HoldTimer.Q and store it in Light, and do the same with FilterTimer, Sensor and T#200ms for Confirmed.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named Delays and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Follow Light and Confirmed in the trace: the short blip never turns Confirmed ON, Light is still ON at {{t:450}} ms although Button went OFF at {{t:300}} ms, and Confirmed rises about {{t:200}} ms after Sensor came back at {{t:500}} ms.",
+      "checkpoint": "Light falls about {{t:300}} ms after Button, and Confirmed rises about {{t:200}} ms after the second Sensor pulse."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Swap the two timers in your head: what would a TON on Button and a TOF on Sensor do with this scenario?",
+      "checkpoint": "TON delays the start and TOF delays the end; each answers a different question about a signal. In IL both are called the same way, so the declaration decides which one you get."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "TOF keeps its Q on for the preset time after IN falls, and TON raises Q only after IN has been on for the preset time. CAL runs the timer; LD Timer.Q reads its output."
+    },
+    {
+      "level": 2,
+      "text": "CAL HoldTimer(IN := Button, PT := T#300ms), LD HoldTimer.Q, ST Light; CAL FilterTimer(IN := Sensor, PT := T#200ms), LD FilterTimer.Q, ST Confirmed."
+    }
+  ],
+  "faultCases": [
+    "The starting program loads each input and stores it in the output, so Light is already OFF at {{t:450}} ms and Confirmed turns ON for the {{t:100}} ms blip; call HoldTimer with Button as IN and T#300ms as PT, then load HoldTimer.Q and store it in Light, and do the same with FilterTimer, Sensor and T#200ms for Confirmed."
+  ]
+}

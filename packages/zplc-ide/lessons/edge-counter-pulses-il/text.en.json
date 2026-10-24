@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Instruction List: counting pulses with a CTU",
+  "summary": "Call a CTU counter from Instruction List to count three discrete pulses, read its output with LD and reset the count.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish physical sensors, contact bounce or hardware timing, HIL, or certification.",
+  "objectives": [
+    "Call a CTU counter with CAL and read its output with LD Count.Q.",
+    "Count the rising edges of PulseInput up to a preset of 3, and clear the count with Reset."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/EdgeCounter.il the counter Count (CTU) is declared but not called. Call it every scan with CAL Count(CU := PulseInput, R := Reset, PV := 3), then load Count.Q and store it in CountReached. CTU counts each rising edge of CU once, however long the pulse stays high, so you do not detect the edge yourself.",
+      "checkpoint": "CountReached is ON from the third pulse until Reset clears the count."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, predict when the counter reaches PV=3.",
+      "checkpoint": "CountReached stays OFF at {{v:EdgeCounter.CountReached=false@0|0}}, {{v:EdgeCounter.CountReached=false@10|10}} and {{v:EdgeCounter.CountReached=false@30|30}} ms; turns ON at {{v:EdgeCounter.CountReached=true@50|50}} after the third edge; returns OFF at {{v:EdgeCounter.CountReached=false@70|70}} with Reset."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starting program stores FALSE in CountReached and never calls the counter; call Count with PV := 3 so that CountReached turns ON on the third rising edge and Reset turns it OFF.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named EdgeCounter and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:10}}, {{t:30}}, {{t:50}} and {{t:70}} ms with CountReached.",
+      "checkpoint": "The third pulse reaches PV=3; Reset dominates and returns CountReached to OFF."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Move the CAL after the LD Count.Q line, so that the output is read before the counter runs. What changes, and in which scan?",
+      "checkpoint": "The output would show the count of the previous scan, one scan late. In IL the order of the lines is the order of execution. The AT, RISING and FALLING assertions cover this logical sequence only; they do not establish bounce, electrical pulses, hardware timing, HIL or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "A CTU already counts only rising edges of CU, so a long pulse still counts once. CAL runs the counter with its inputs; LD Count.Q reads its output."
+    },
+    {
+      "level": 2,
+      "text": "CAL Count(CU := PulseInput, R := Reset, PV := 3), then LD Count.Q and ST CountReached."
+    }
+  ],
+  "faultCases": [
+    "The starting program stores FALSE in CountReached and never calls the counter; call Count with PV := 3 so that CountReached turns ON on the third rising edge and Reset turns it OFF."
+  ]
+}

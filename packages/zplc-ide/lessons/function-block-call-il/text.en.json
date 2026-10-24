@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Instruction List: calling a function block and reading its outputs",
+  "summary": "Call two instances of the same function block with CAL, pass their inputs by name, and read each output with LD Instance.Output.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish pump behaviour, start-up current or any real machine requirement, HIL, or certification.",
+  "objectives": [
+    "Call a function block instance with CAL, passing its inputs by name, and read its output with LD Instance.Output.",
+    "See that two instances of the same function block keep separate memories."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "src/Latch.st declares the function block Latch with the inputs Set and Reset and the output Q, and src/PumpPair.il declares two instances, PumpA and PumpB. PumpA is already called: CAL PumpA(Set := StartA, Reset := StopA) runs it, LD PumpA.Q loads its output and ST RunA stores it. Write the same three lines for PumpB with StartB and StopB.",
+      "checkpoint": "Each pump starts on its own Start, stops on its own Stop, and one pump never moves the other."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "PumpA starts at {{t:10}} ms and PumpB at {{t:30}} ms. PumpA is stopped at {{t:50}} ms. Predict RunA and RunB at {{t:30}}, {{t:50}} and {{t:70}} ms.",
+      "checkpoint": "{{v:PumpPair.RunA=true,PumpPair.RunB=true@30|Both ON}} at {{t:30}} ms; {{v:PumpPair.RunA=false,PumpPair.RunB=true@50|only RunB}} at {{t:50}} ms; {{v:PumpPair.RunA=false,PumpPair.RunB=false@70|both OFF}} at {{t:70}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starting program calls PumpA but never calls PumpB, so RunB never rises and stays OFF at {{t:30}} ms; add CAL PumpB(Set := StartB, Reset := StopB), then LD PumpB.Q and ST RunB.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named PumpPair and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:10}}, {{t:30}} and {{t:50}} ms: RunA holds after its button is released, RunB joins at {{t:30}} ms, and stopping A at {{t:50}} ms leaves B ON.",
+      "checkpoint": "RunA and RunB change at different times from the same block, which shows two memories. At {{t:90}} ms Start and Stop arrive together on pump A and it stays OFF."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "What would change if you gave PumpB the inputs of pump A? Try it and see which assertion fails.",
+      "checkpoint": "Each instance has its own copy of the variables of the block, so the same code serves any number of pumps; only the inputs you pass in CAL make them different. LD PumpB.Q before CAL PumpB would read the value of the previous scan. The scenario shows the logic only; it does not show start-up sequencing or a pump fault."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "CAL runs the instance with the inputs between brackets; the output is not returned by CAL, you read it afterwards with LD PumpB.Q."
+    },
+    {
+      "level": 2,
+      "text": "CAL PumpB(Set := StartB, Reset := StopB), LD PumpB.Q, ST RunB, after the three lines of PumpA."
+    }
+  ],
+  "faultCases": [
+    "The starting program calls PumpA but never calls PumpB, so RunB never rises and stays OFF at {{t:30}} ms; add CAL PumpB(Set := StartB, Reset := StopB), then LD PumpB.Q and ST RunB."
+  ]
+}

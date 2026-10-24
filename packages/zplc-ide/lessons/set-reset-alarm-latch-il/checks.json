@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [
+    {
+      "intent": "the SR and RS blocks called from IL, with the same priorities",
+      "files": {
+        "src/AlarmLatch.il": "PROGRAM AlarmLatch\nVAR_INPUT\n    Fault AT %I0.0 : BOOL;\n    Ack AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    SetFirst AT %Q0.0 : BOOL;\n    ResetFirst AT %Q0.1 : BOOL;\nEND_VAR\nVAR\n    SetLatch : SR;\n    ResetLatch : RS;\nEND_VAR\n\n        CAL   SetLatch(S1 := Fault, R := Ack)\n        LD    SetLatch.Q1\n        ST    SetFirst\n        CAL   ResetLatch(S := Fault, R1 := Ack)\n        LD    ResetLatch.Q1\n        ST    ResetFirst\nEND_PROGRAM\n"
+      }
+    }
+  ],
+  "wrong": [
+    {
+      "intent": "has no memory: the alarm follows Fault",
+      "files": {
+        "src/AlarmLatch.il": "PROGRAM AlarmLatch\nVAR_INPUT\n    Fault AT %I0.0 : BOOL;\n    Ack AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    SetFirst AT %Q0.0 : BOOL;\n    ResetFirst AT %Q0.1 : BOOL;\nEND_VAR\n\n        LD    Fault\n        ST    SetFirst\n        ST    ResetFirst\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "writes the reset last for both, so Ack wins when they arrive together",
+      "files": {
+        "src/AlarmLatch.il": "PROGRAM AlarmLatch\nVAR_INPUT\n    Fault AT %I0.0 : BOOL;\n    Ack AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    SetFirst AT %Q0.0 : BOOL;\n    ResetFirst AT %Q0.1 : BOOL;\nEND_VAR\n\n        LD    Fault\n        S     SetFirst\n        LD    Ack\n        R     SetFirst\n        LD    Fault\n        S     ResetFirst\n        LD    Ack\n        R     ResetFirst\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "never lets Ack clear the alarm",
+      "files": {
+        "src/AlarmLatch.il": "PROGRAM AlarmLatch\nVAR_INPUT\n    Fault AT %I0.0 : BOOL;\n    Ack AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    SetFirst AT %Q0.0 : BOOL;\n    ResetFirst AT %Q0.1 : BOOL;\nEND_VAR\n\n        LD    Fault\n        S     SetFirst\n        LD    Fault\n        S     ResetFirst\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Lista de instrucciones: una protección como permisivo de toda la condición",
+  "summary": "Agregue un permisivo al arranque y la parada de un motor en lista de instrucciones para que el motor funcione solo mientras una protección está cerrada, y compruébelo con la planta del motor y su realimentación de velocidad.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran una función de seguridad, el cableado de la protección ni el tiempo de parada, HIL ni certificación.",
+  "objectives": [
+    "Distinga un permisivo, una condición que debe ser verdadera para que la salida esté en ON, de una orden, y escríbalo como una línea AND más.",
+    "Coloque el permisivo después de las líneas que retienen el motor, para que lo apague y también impida que Start lo reinicie."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/MotorPlant.il las primeras líneas retienen Command con una autorretención: LD Start, OR Command y ANDN Stop, y luego ST Command. Después de ese ST el resultado actual sigue siendo Command, así que AND AtSpeed y ST Running ponen Running en ON cuando la planta informa AtSpeed. Agregue AND GuardClosed antes de ST Command, para que una protección abierta apague Command y bloquee Start.",
+      "checkpoint": "Command está en ON solo mientras la protección está cerrada, y Running sigue necesitando AtSpeed de la planta."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Antes de ejecutar, prediga Command y Running a los {{t:30}} ms, cuando la protección se abre a los {{t:50}} ms, y a los {{t:60}} ms cuando se pulsa Start con la protección aún abierta.",
+      "checkpoint": "{{v:MotorPlant.Command=true,MotorPlant.Running=true@30|Ambas en ON}} a los {{t:30}} ms; {{v:MotorPlant.Command=false,MotorPlant.Running=false@50|ambas en OFF}} a los {{t:50}} ms; {{v:MotorPlant.Command=false@60|Command en OFF}} a los {{t:60}} ms, porque Start se ignora."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene ninguna línea para la protección, así que cuando la protección se abre a los {{t:50}} ms el motor sigue funcionando y Start puede reiniciarlo; agregue AND GuardClosed después de ANDN Stop y antes de ST Command, para que se aplique a toda la condición.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama MotorInterlock y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:30}}, {{t:50}} y {{t:80}} ms: el motor está a velocidad a los {{t:30}} ms, se detiene cuando la protección se abre a los {{t:50}} ms, y no se reinicia a los {{t:80}} ms cuando la protección se cierra, porque Start ya se soltó.",
+      "checkpoint": "Command queda en OFF de los {{t:60}} a los {{t:80}} ms y sube de nuevo solo a los {{t:90}} ms, con un nuevo Start."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Por qué un permisivo sobre toda la condición es más seguro que un permisivo solo sobre Start? Mueva AND GuardClosed junto a LD Start y vea qué aserción falla.",
+      "checkpoint": "Un permisivo que solo condiciona Start deja que un motor en marcha ignore una protección abierta. En IL la posición de la línea es su alcance: todo lo que está encima queda dentro de la condición. El escenario muestra solo la lógica; no es una función de seguridad ni reemplaza un enclavamiento de protección certificado."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Command solo puede ser TRUE si la protección está cerrada, Stop no está pulsado y, además, Start está pulsado o Command ya era TRUE. Cada línea se combina con todo lo que tiene encima."
+    },
+    {
+      "level": 2,
+      "text": "LD Start, OR Command, ANDN Stop, AND GuardClosed, ST Command, AND AtSpeed, ST Running. No ponga AND GuardClosed antes de OR Command."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial no tiene ninguna línea para la protección, así que cuando la protección se abre a los {{t:50}} ms el motor sigue funcionando y Start puede reiniciarlo; agregue AND GuardClosed después de ANDN Stop y antes de ST Command, para que se aplique a toda la condición."
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Instruction List: the current result in a two-hand control",
+  "summary": "Read an Instruction List program as one current result that each line combines with an operand, and use it to enable a press only when both hands are on the buttons and the guard is closed.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the response time, redundancy or fault behaviour a real two-hand safety device needs, HIL, or certification.",
+  "objectives": [
+    "Read an Instruction List (IL) program as one current result that each instruction combines with an operand, from top to bottom.",
+    "Use LD, LDN, AND, XOR and ST to turn three inputs into three outputs."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/TwoHand.il each line is one instruction. LD loads an operand into the current result, AND combines the next operand with it, and ST stores the result in an output; the result stays in place after ST, so the next LD starts a new line of logic. PressEnable must be ON only with LeftHand, RightHand and GuardClosed all ON. GuardLamp must be ON when the guard is open (LDN loads the opposite of an operand). OneHandWarning must be ON when exactly one hand is on its button (XOR).",
+      "checkpoint": "You can say, for each output, the instructions that build its condition."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, predict the three outputs at {{t:20}}, {{t:30}} and {{t:40}} ms. The inputs change every {{t:10}} ms, so work through one step at a time.",
+      "checkpoint": "{{v:TwoHand.PressEnable=true,TwoHand.GuardLamp=false,TwoHand.OneHandWarning=false@20|PressEnable ON only}} at {{t:20}} ms; {{v:TwoHand.PressEnable=false,TwoHand.GuardLamp=true,TwoHand.OneHandWarning=false@30|GuardLamp ON only}} at {{t:30}} ms; {{v:TwoHand.PressEnable=false,TwoHand.GuardLamp=false,TwoHand.OneHandWarning=true@40|OneHandWarning ON only}} at {{t:40}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter flaw, save it, then press Check: The starting program loads LeftHand, combines it with OR RightHand and stores it in PressEnable, so PressEnable is already ON at {{t:10}} ms with one hand, and the two lamps are fixed OFF; rewrite the three groups of lines, one for each output, and save the file.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named TwoHand and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:20}}, {{t:30}} and {{t:40}} ms: the press is enabled once, at {{t:20}} ms, and switches off again at {{t:30}} ms when the guard opens.",
+      "checkpoint": "PressEnable rises at {{t:20}} ms and falls at {{t:30}} ms, and is never ON while GuardLamp is ON."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Change AND RightHand into OR RightHand and say which input combination wrongly enables the press.",
+      "checkpoint": "OR enables the press with a single hand, which is exactly what a two-hand control exists to prevent. Each line works on the result of the lines above it, which is why the order of the lines matters in IL."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "AND is true only when every operand is true, so PressEnable needs LD LeftHand followed by two AND lines. LDN loads the opposite of an operand."
+    },
+    {
+      "level": 2,
+      "text": "LD LeftHand, AND RightHand, AND GuardClosed, ST PressEnable; LDN GuardClosed, ST GuardLamp; LD LeftHand, XOR RightHand, ST OneHandWarning."
+    }
+  ],
+  "faultCases": [
+    "The starting program loads LeftHand, combines it with OR RightHand and stores it in PressEnable, so PressEnable is already ON at {{t:10}} ms with one hand, and the two lamps are fixed OFF; rewrite the three groups of lines, one for each output, and save the file."
+  ]
+}

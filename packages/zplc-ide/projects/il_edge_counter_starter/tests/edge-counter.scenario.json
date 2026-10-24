@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "EdgeCounter",
+  "tickMs": 10,
+  "durationMs": 80,
+  "events": [
+    { "atMs": 0, "set": { "EdgeCounter.PulseInput": false, "EdgeCounter.Reset": false } },
+    { "atMs": 10, "set": { "EdgeCounter.PulseInput": true } },
+    { "atMs": 20, "set": { "EdgeCounter.PulseInput": false } },
+    { "atMs": 30, "set": { "EdgeCounter.PulseInput": true } },
+    { "atMs": 40, "set": { "EdgeCounter.PulseInput": false } },
+    { "atMs": 50, "set": { "EdgeCounter.PulseInput": true } },
+    { "atMs": 60, "set": { "EdgeCounter.PulseInput": false } },
+    { "atMs": 70, "set": { "EdgeCounter.Reset": true } },
+    { "atMs": 80, "set": { "EdgeCounter.Reset": false } }
+  ],
+  "expectations": [
+    { "kind": "AT", "atMs": 0, "condition": { "EdgeCounter.CountReached": false } },
+    { "kind": "AT", "atMs": 10, "condition": { "EdgeCounter.CountReached": false } },
+    { "kind": "AT", "atMs": 30, "condition": { "EdgeCounter.CountReached": false } },
+    { "kind": "AT", "atMs": 50, "condition": { "EdgeCounter.CountReached": true } },
+    { "kind": "AT", "atMs": 70, "condition": { "EdgeCounter.CountReached": false } },
+    { "kind": "RISING", "fromMs": 50, "withinMs": 0, "condition": { "EdgeCounter.CountReached": true } },
+    { "kind": "FALLING", "fromMs": 70, "withinMs": 0, "condition": { "EdgeCounter.CountReached": false } }
+  ]
+}
