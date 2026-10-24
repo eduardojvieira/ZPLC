@@ -591,4 +591,100 @@ describe('optional AI provider (IDE-030)', () => {
       expect(await ask(directory, old)).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
     });
   });
+
+  describe('editor actions and display settings as proposals (S6, S7)', () => {
+    async function configured(directory: string, content: unknown) {
+      const provider = createAiProvider({
+        userDataPath: directory,
+        vault: vault(),
+        fetch: async () => new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(content) } }] })),
+      });
+      await provider.saveConfig({ enabled: true, endpoint: 'https://api.example.test', model: 'gpt-test' });
+      await provider.storeKey('secret');
+      return provider;
+    }
+    const proposals = [
+      { type: 'openFile', path: 'src/Main.st' },
+      { type: 'goToLine', path: 'src/Main.st', line: 2 },
+      { type: 'compile' },
+      { type: 'setting', name: 'theme', value: 'dark' },
+    ];
+
+    it('returns the proposals of an answer in every mode, bounded and validated', async () => {
+      const directory = await fixture();
+      const provider = await configured(directory, { answer: 'Open it and compile', proposals });
+      for (const mode of ['ask', 'plan', 'edit', 'debug'] as const) {
+        const answer = await provider.request(
+          join(directory, 'workspace'),
+          { ...request, mode, ...(mode === 'edit' ? {} : { activeFile: request.activeFile }) },
+          new AbortController().signal,
+        );
+        expect(answer, mode).toMatchObject({ ok: true, answer: 'Open it and compile', proposals });
+      }
+    });
+
+    it('takes proposals together with a change set', async () => {
+      const directory = await fixture();
+      const provider = await configured(directory, {
+        answer: 'x',
+        changes: [{ path: 'src/Main.st', content: 'PROGRAM Main\nEND_PROGRAM\n// z\n' }],
+        proposals: [{ type: 'compile' }],
+      });
+      expect(await provider.request(join(directory, 'workspace'), request, new AbortController().signal)).toMatchObject({
+        ok: true,
+        changes: [{ path: 'src/Main.st' }],
+        proposals: [{ type: 'compile' }],
+      });
+    });
+
+    it('refuses an answer that proposes anything physical, a setting out of reach, too many, or a tool call', async () => {
+      const directory = await fixture();
+      for (const bad of [
+        [{ type: 'deploy' }],
+        [{ type: 'setting', name: 'autosaveSeconds', value: 5 }],
+        [{ type: 'setting', name: 'unlockAllLessons', value: true }],
+        [{ type: 'setting', name: 'theme', value: 'neon' }],
+        [{ type: 'openFile', path: 'zplc.json' }],
+        Array.from({ length: 7 }, () => ({ type: 'compile' })),
+        [],
+      ]) {
+        const provider = await configured(directory, { answer: 'x', proposals: bad });
+        expect(await provider.request(join(directory, 'workspace'), request, new AbortController().signal), JSON.stringify(bad)).toEqual({
+          ok: false,
+          code: 'AI_RESPONSE_INVALID',
+        });
+      }
+      const tools = await configured(directory, { answer: 'x', tool_calls: [{ name: 'deploy' }] });
+      expect(await tools.request(join(directory, 'workspace'), request, new AbortController().signal)).toEqual({
+        ok: false,
+        code: 'AI_RESPONSE_INVALID',
+      });
+    });
+
+    it('sends no application setting and no provider configuration to the provider', async () => {
+      const directory = await fixture();
+      let body = '';
+      const provider = createAiProvider({
+        userDataPath: directory,
+        vault: vault(),
+        fetch: async (_url, init) => {
+          body = String(init.body);
+          return new Response(JSON.stringify({ choices: [{ message: { content: 'ok' } }] }));
+        },
+      });
+      await provider.saveConfig({ enabled: true, endpoint: 'https://api.example.test', model: 'gpt-test' });
+      await provider.storeKey('secret-key-value');
+      await provider.request(join(directory, 'workspace'), request, new AbortController().signal);
+      const user = (JSON.parse(body) as { messages: Array<{ content: string }> }).messages[1]!.content;
+      for (const forbidden of [
+        'autosaveSeconds',
+        'checkForUpdates',
+        'unlockAllLessons',
+        'hideSolutions',
+        'secret-key-value',
+        'api.example.test',
+      ])
+        expect(user).not.toContain(forbidden);
+    });
+  });
 });

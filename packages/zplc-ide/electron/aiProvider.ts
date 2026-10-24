@@ -8,6 +8,7 @@ import {
   isCandidateSourcePathPattern,
   type CandidateLanguage,
 } from '../src/ai/candidatePaths.js';
+import { parseProposals, type AiProposal } from '../src/ai/proposals.js';
 import { manifestForAssistant, manifestSensitivePaths } from '../src/ai/manifestPrivacy.js';
 
 export type AiErrorCode =
@@ -79,6 +80,11 @@ const SYSTEM_POLICY =
   `and at most ${CANDIDATE_CHANGE_CAP} files. A path is src/<name>.st, .il, .ld.json, .fbd.json or .sfc.json, or zplc.json. ` +
   'A new program file needs a task of its own in a zplc.json change in the same set (a task runs exactly one program). Ladder, FBD and ' +
   'SFC files are the JSON documents of their editors. ' +
+  'You may also add "proposals" (at most 6): {"type":"openFile","path"}, {"type":"goToLine","path","line"}, ' +
+  '{"type":"selectElement","path","element"} ' +
+  'with element rung:<id>, block:<id>, step:<id> or transition:<id>, {"type":"compile"}, {"type":"generateSt"}, ' +
+  '{"type":"startSimulation"}, or ' +
+  '{"type":"setting","name":"theme|language|density|editorFontSize|editorTabSize","value"}; each is a button the person may click. ' +
   'Never put credentials, keys or passwords in any file. A person reviews every difference and saves it; nothing you propose takes ' +
   'effect before that.';
 
@@ -97,6 +103,7 @@ function manifestIsAllowed(text: string): boolean {
     return false;
   }
 }
+const ANSWER_SHAPES = [['answer'], ['answer', 'changes'], ['answer', 'proposals'], ['answer', 'changes', 'proposals']] as const;
 function code(code: AiErrorCode): { ok: false; code: AiErrorCode } {
   return { ok: false, code };
 }
@@ -526,17 +533,18 @@ export function createAiProvider(options: { userDataPath: string; vault: SafeSto
         const message = (messageObject as Record<string, unknown>).content as string;
         let answer = compact(message);
         let changes: Awaited<ReturnType<typeof resolveChanges>> | undefined;
+        let proposals: AiProposal[] | undefined;
         try {
           const parsed = JSON.parse(message) as unknown;
-          if (
-            typeof parsed === 'object' &&
-            parsed !== null &&
-            !Array.isArray(parsed) &&
-            !(exact(parsed, ['answer']) || exact(parsed, ['answer', 'changes']))
-          )
-            return code('AI_RESPONSE_INVALID');
-          if (exact(parsed, ['answer']) || exact(parsed, ['answer', 'changes'])) {
+          const shaped = ANSWER_SHAPES.some((keys) => exact(parsed, keys));
+          if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed) && !shaped) return code('AI_RESPONSE_INVALID');
+          if (shaped && exact(parsed, Object.keys(parsed as object))) {
             answer = compact(parsed.answer);
+            if (Object.hasOwn(parsed, 'proposals')) {
+              // editor actions and display settings from a closed list; a person clicks each one, nothing here runs it
+              proposals = parseProposals(parsed.proposals) ?? undefined;
+              if (!proposals) return code('AI_RESPONSE_INVALID');
+            }
             if (Object.hasOwn(parsed, 'changes')) {
               // a change set is a proposal for the person to review, and only an edit request asks for one
               if (request.mode !== 'edit' || !source) return code('AI_RESPONSE_INVALID');
@@ -553,6 +561,7 @@ export function createAiProvider(options: { userDataPath: string; vault: SafeSto
           ok: true,
           answer,
           ...(changes ? { changes } : {}),
+          ...(proposals ? { proposals } : {}),
           ...(source && request.activeFile
             ? {
                 workspaceId: request.workspaceId,
