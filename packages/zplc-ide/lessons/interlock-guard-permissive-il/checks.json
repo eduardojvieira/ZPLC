@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [
+    {
+      "intent": "the permissive and the stop gathered in one bracket",
+      "files": {
+        "src/MotorPlant.il": "PROGRAM MotorPlant\nVAR_INPUT\n    Start AT %I0.0 : BOOL;\n    Stop AT %I0.1 : BOOL;\n    AtSpeed AT %I0.2 : BOOL;\n    GuardClosed AT %I0.3 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Command AT %Q0.0 : BOOL;\n    Running AT %Q0.1 : BOOL;\nEND_VAR\n\n        LD    Start\n        OR    Command\n        AND(  GuardClosed\n        ANDN  Stop\n        )\n        ST    Command\n        AND   AtSpeed\n        ST    Running\nEND_PROGRAM\n"
+      }
+    }
+  ],
+  "wrong": [
+    {
+      "intent": "uses the guard inverted, so the motor runs only with the guard open",
+      "files": {
+        "src/MotorPlant.il": "PROGRAM MotorPlant\nVAR_INPUT\n    Start AT %I0.0 : BOOL;\n    Stop AT %I0.1 : BOOL;\n    AtSpeed AT %I0.2 : BOOL;\n    GuardClosed AT %I0.3 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Command AT %Q0.0 : BOOL;\n    Running AT %Q0.1 : BOOL;\nEND_VAR\n\n        LD    Start\n        OR    Command\n        ANDN  Stop\n        ANDN  GuardClosed\n        ST    Command\n        AND   AtSpeed\n        ST    Running\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "puts the guard only on Start, so an open guard does not stop a running motor",
+      "files": {
+        "src/MotorPlant.il": "PROGRAM MotorPlant\nVAR_INPUT\n    Start AT %I0.0 : BOOL;\n    Stop AT %I0.1 : BOOL;\n    AtSpeed AT %I0.2 : BOOL;\n    GuardClosed AT %I0.3 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Command AT %Q0.0 : BOOL;\n    Running AT %Q0.1 : BOOL;\nEND_VAR\n\n        LD    Start\n        AND   GuardClosed\n        OR    Command\n        ANDN  Stop\n        ST    Command\n        AND   AtSpeed\n        ST    Running\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "has no memory, so the motor stops when Start is released",
+      "files": {
+        "src/MotorPlant.il": "PROGRAM MotorPlant\nVAR_INPUT\n    Start AT %I0.0 : BOOL;\n    Stop AT %I0.1 : BOOL;\n    AtSpeed AT %I0.2 : BOOL;\n    GuardClosed AT %I0.3 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Command AT %Q0.0 : BOOL;\n    Running AT %Q0.1 : BOOL;\nEND_VAR\n\n        LD    Start\n        ANDN  Stop\n        AND   GuardClosed\n        ST    Command\n        AND   AtSpeed\n        ST    Running\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "copies Command to Running without waiting for AtSpeed",
+      "files": {
+        "src/MotorPlant.il": "PROGRAM MotorPlant\nVAR_INPUT\n    Start AT %I0.0 : BOOL;\n    Stop AT %I0.1 : BOOL;\n    AtSpeed AT %I0.2 : BOOL;\n    GuardClosed AT %I0.3 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Command AT %Q0.0 : BOOL;\n    Running AT %Q0.1 : BOOL;\nEND_VAR\n\n        LD    Start\n        OR    Command\n        ANDN  Stop\n        AND   GuardClosed\n        ST    Command\n        ST    Running\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

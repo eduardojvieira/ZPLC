@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "types-arithmetic-comparison-il",
+  "version": 2,
+  "order": 74,
+  "module": 4,
+  "level": "intermediate",
+  "prerequisites": ["types-arithmetic-comparison", "edge-counter-pulses-il"],
+  "languages": ["IL"],
+  "tracks": ["simulation", "hardware"],
+  "unsupported": {},
+  "plant": null,
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "il_typed_steps_starter",
+    "program": "src/TypedSteps.il"
+  },
+  "solution": {
+    "project": "il_typed_steps",
+    "program": "src/TypedSteps.il"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "TypedSteps",
+    "path": "tests/typed-steps.scenario.json",
+    "sha256": "edfe148b3d0b37ea6e9da6b1e38dbb46da974cf62c160a3fcc2b429e4a16c169"
+  },
+  "regressionScenarios": [],
+  "hardware": {
+    "wiring": "wiring.json",
+    "tolerances": {
+      "timeMs": 20,
+      "analogPercent": 5
+    }
+  }
+}

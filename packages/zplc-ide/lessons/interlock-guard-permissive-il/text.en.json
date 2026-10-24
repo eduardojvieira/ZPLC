@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Instruction List: a guard as a permissive on the whole condition",
+  "summary": "Add a permissive to a motor start and stop in Instruction List so that the motor runs only while a guard is closed, and check it against the motor plant and its speed feedback.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish a safety function, guard wiring or stopping time, HIL, or certification.",
+  "objectives": [
+    "Tell a permissive, a condition that must be true for the output to be on, from a command, and write it as one more AND line.",
+    "Place the permissive after the lines that hold the motor, so that it drops the motor and also stops Start from restarting it."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/MotorPlant.il the first lines hold Command with a seal-in: LD Start, OR Command and ANDN Stop, then ST Command. After that ST the current result is still Command, so AND AtSpeed and ST Running set Running when the plant reports AtSpeed. Add AND GuardClosed before ST Command, so that an open guard drops Command and blocks Start.",
+      "checkpoint": "Command is on only while the guard is closed, and Running still needs the plant AtSpeed."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, predict Command and Running at {{t:30}} ms, when the guard opens at {{t:50}} ms, and at {{t:60}} ms when Start is pressed with the guard still open.",
+      "checkpoint": "{{v:MotorPlant.Command=true,MotorPlant.Running=true@30|Both ON}} at {{t:30}} ms; {{v:MotorPlant.Command=false,MotorPlant.Running=false@50|both OFF}} at {{t:50}} ms; {{v:MotorPlant.Command=false@60|Command OFF}} at {{t:60}} ms, because Start is ignored."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starting program has no line for the guard, so when the guard opens at {{t:50}} ms the motor keeps running and Start can restart it; add AND GuardClosed after ANDN Stop and before ST Command, so that it applies to the whole condition.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named MotorInterlock and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:30}}, {{t:50}} and {{t:80}} ms: the motor is at speed at {{t:30}} ms, drops when the guard opens at {{t:50}} ms, and does not restart at {{t:80}} ms when the guard closes, because Start was released.",
+      "checkpoint": "Command stays OFF from {{t:60}} to {{t:80}} ms and rises again only at {{t:90}} ms, with a new Start."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Why is a permissive on the whole condition safer than a permissive only on Start? Move AND GuardClosed next to LD Start and see which assertion fails.",
+      "checkpoint": "A permissive that gates only Start lets a running motor ignore an open guard. In IL the position of the line is its scope: everything above it is in the condition. The scenario shows the logic only; it is not a safety function and does not replace a certified guard interlock."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Command may be TRUE only if the guard is closed, Stop is not pressed, and either Start is pressed or Command was already TRUE. Each line combines with everything above it."
+    },
+    {
+      "level": 2,
+      "text": "LD Start, OR Command, ANDN Stop, AND GuardClosed, ST Command, AND AtSpeed, ST Running. Do not put AND GuardClosed before OR Command."
+    }
+  ],
+  "faultCases": [
+    "The starting program has no line for the guard, so when the guard opens at {{t:50}} ms the motor keeps running and Start can restart it; add AND GuardClosed after ANDN Stop and before ST Command, so that it applies to the whole condition."
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [
+    {
+      "intent": "the same logic as one Structured Text program",
+      "files": {
+        "src/TypedSteps.st": "PROGRAM TypedSteps\nVAR_INPUT Step AT %I0.0 : BOOL; Reset AT %I0.1 : BOOL; END_VAR\nVAR_OUTPUT Low AT %Q0.0 : BOOL; Exact AT %Q0.1 : BOOL; High AT %Q0.2 : BOOL; END_VAR\nVAR Total : INT := 0; StepWas : BOOL := FALSE; END_VAR\nIF Reset THEN Total := 0; ELSIF Step AND NOT StepWas THEN Total := Total + 5; END_IF;\nStepWas := Step;\nLow := Total < 10; Exact := Total = 10; High := Total > 10;\nEND_PROGRAM\n",
+        "zplc.json": "{\"schemaVersion\":2,\"name\":\"il_typed_steps_starter\",\"version\":\"1.0.0\",\"target\":{\"board\":\"posix\"},\"tasks\":[{\"name\":\"MainTask\",\"trigger\":\"cyclic\",\"interval_ms\":10,\"priority\":1,\"programs\":[\"TypedSteps.st\"]}]}"
+      },
+      "remove": ["src/TypedSteps.il"]
+    }
+  ],
+  "wrong": [
+    {
+      "intent": "adds 5 on every scan while Step is TRUE, so a long press counts twice",
+      "files": {
+        "src/TypedSteps.il": "PROGRAM TypedSteps\nVAR_INPUT\n    Step AT %I0.0 : BOOL;\n    Reset AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Low AT %Q0.0 : BOOL;\n    Exact AT %Q0.1 : BOOL;\n    High AT %Q0.2 : BOOL;\nEND_VAR\nVAR\n    Total : INT := 0;\n    StepWas : BOOL := FALSE;\nEND_VAR\n\n        LD    Step\n        JMPCN skip\n        LD    Total\n        ADD   5\n        ST    Total\nskip:\n        LD    Step\n        ST    StepWas\n        LD    Reset\n        JMPCN keep\n        LD    0\n        ST    Total\nkeep:\n        LD    Total\n        LT    10\n        ST    Low\n        LD    Total\n        EQ    10\n        ST    Exact\n        LD    Total\n        GT    10\n        ST    High\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "writes Exact as Total >= 10, so it stays ON in the High band",
+      "files": {
+        "src/TypedSteps.il": "PROGRAM TypedSteps\nVAR_INPUT\n    Step AT %I0.0 : BOOL;\n    Reset AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Low AT %Q0.0 : BOOL;\n    Exact AT %Q0.1 : BOOL;\n    High AT %Q0.2 : BOOL;\nEND_VAR\nVAR\n    Total : INT := 0;\n    StepWas : BOOL := FALSE;\nEND_VAR\n\n        LD    Step\n        ANDN  StepWas\n        JMPCN skip\n        LD    Total\n        ADD   5\n        ST    Total\nskip:\n        LD    Step\n        ST    StepWas\n        LD    Reset\n        JMPCN keep\n        LD    0\n        ST    Total\nkeep:\n        LD    Total\n        LT    10\n        ST    Low\n        LD    Total\n        GE    10\n        ST    Exact\n        LD    Total\n        GT    10\n        ST    High\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "adds 1 instead of 5, so the total never leaves the Low band",
+      "files": {
+        "src/TypedSteps.il": "PROGRAM TypedSteps\nVAR_INPUT\n    Step AT %I0.0 : BOOL;\n    Reset AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Low AT %Q0.0 : BOOL;\n    Exact AT %Q0.1 : BOOL;\n    High AT %Q0.2 : BOOL;\nEND_VAR\nVAR\n    Total : INT := 0;\n    StepWas : BOOL := FALSE;\nEND_VAR\n\n        LD    Step\n        ANDN  StepWas\n        JMPCN skip\n        LD    Total\n        ADD   1\n        ST    Total\nskip:\n        LD    Step\n        ST    StepWas\n        LD    Reset\n        JMPCN keep\n        LD    0\n        ST    Total\nkeep:\n        LD    Total\n        LT    10\n        ST    Low\n        LD    Total\n        EQ    10\n        ST    Exact\n        LD    Total\n        GT    10\n        ST    High\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "never clears the total on Reset",
+      "files": {
+        "src/TypedSteps.il": "PROGRAM TypedSteps\nVAR_INPUT\n    Step AT %I0.0 : BOOL;\n    Reset AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Low AT %Q0.0 : BOOL;\n    Exact AT %Q0.1 : BOOL;\n    High AT %Q0.2 : BOOL;\nEND_VAR\nVAR\n    Total : INT := 0;\n    StepWas : BOOL := FALSE;\nEND_VAR\n\n        LD    Step\n        ANDN  StepWas\n        JMPCN skip\n        LD    Total\n        ADD   5\n        ST    Total\nskip:\n        LD    Step\n        ST    StepWas\n        LD    Total\n        LT    10\n        ST    Low\n        LD    Total\n        EQ    10\n        ST    Exact\n        LD    Total\n        GT    10\n        ST    High\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

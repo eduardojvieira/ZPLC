@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Lista de instrucciones: aritmética, comparación y un salto en un flanco ascendente",
+  "summary": "Mantenga un total en una variable INT, súmele en cada pulsación con ADD y un salto condicional, y conviértalo en tres resultados BOOL con LT, EQ y GT.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el rango de un sensor real ni el comportamiento de desbordamiento de un controlador concreto, HIL ni certificación.",
+  "objectives": [
+    "Use ADD sobre un número en el resultado actual, y LT, EQ y GT para convertir un número en un BOOL.",
+    "Salte un grupo de líneas con JMPCN para que un número cambie solo en el flanco ascendente de una entrada."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/TypedSteps.il están escritas las tres comparaciones del final: LD Total carga el INT, LT 10 lo compara y deja un BOOL, y ST Low lo guarda. Escriba la aritmética encima: en cada flanco ascendente de Step (Step en ON ahora y StepWas en OFF) sume 5 a Total, con LD Total, ADD 5, ST Total; JMPCN skip salta esas líneas cuando la condición es FALSE. Después, mientras Reset sea TRUE, cargue 0 y guárdelo en Total.",
+      "checkpoint": "Total pasa por 0, 5, 10, 15, y las tres salidas muestran en qué banda está."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Step se pulsa tres veces, y la primera pulsación dura dos ciclos. Prediga qué salida está en ON a los {{t:20}}, {{t:40}} y {{t:60}} ms.",
+      "checkpoint": "{{v:TypedSteps.Low=true,TypedSteps.Exact=false,TypedSteps.High=false@20|Low}} a los {{t:20}} ms (Total es 5); {{v:TypedSteps.Low=false,TypedSteps.Exact=true,TypedSteps.High=false@40|Exact}} a los {{t:40}} ms (Total es 10); {{v:TypedSteps.Low=false,TypedSteps.Exact=false,TypedSteps.High=true@60|High}} a los {{t:60}} ms (Total es 15)."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial recuerda Step en StepWas y escribe las tres comparaciones, pero nunca cambia Total, así que Low queda en ON para siempre; sume 5 a Total en cada flanco ascendente de Step y bórrelo mientras Reset sea TRUE.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama TypedSteps y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:20}}, {{t:40}} y {{t:60}} ms: exactamente una de las tres salidas está en ON cada vez, y Reset a los {{t:80}} ms devuelve Low.",
+      "checkpoint": "Exact está en ON solo con el total de 10, desde los {{t:40}} ms; la primera pulsación larga sumó 5 una vez, no dos."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Qué pasa si escribe Exact con GE 10? ¿Y si quita ANDN StepWas? Pruebe cada caso y vea qué aserción falla.",
+      "checkpoint": "Una comparación deja un BOOL en el resultado actual, y EQ no es lo mismo que GE. Sin ANDN StepWas una pulsación de dos ciclos suma dos veces. El escenario solo vigila las tres salidas BOOL; no muestra el valor de Total ni qué ocurre cuando un INT se desborda."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Total es un INT, así que LD Total, ADD 5 y ST Total lo mantienen como INT. Un flanco ascendente es LD Step seguido de ANDN StepWas. JMPCN skip salta a la etiqueta skip: cuando el resultado actual es FALSE."
+    },
+    {
+      "level": 2,
+      "text": "LD Step, ANDN StepWas, JMPCN skip, LD Total, ADD 5, ST Total, skip:, luego las líneas que copian Step en StepWas, luego LD Reset, JMPCN keep, LD 0, ST Total, keep:, antes de las tres comparaciones."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial recuerda Step en StepWas y escribe las tres comparaciones, pero nunca cambia Total, así que Low queda en ON para siempre; sume 5 a Total en cada flanco ascendente de Step y bórrelo mientras Reset sea TRUE."
+  ]
+}
