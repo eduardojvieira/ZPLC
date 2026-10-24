@@ -6817,13 +6817,16 @@ export const JOURNEYS: Journey[] = [
 
         // the code editor wears the same theme
         await app.click(editorTab('file:src/note.st'), 'the code editor tab');
-        const code = await monacoEval<{ background: string; text: string }>(
-          app,
-          `const root = editor.getContainerDomNode(); const background = ` +
-            `getComputedStyle(root.querySelector('.monaco-editor-background')).backgroundColor; const token = ` +
-            `root.querySelector('.view-lines .view-line span span'); return { background, text: getComputedStyle(token ?? ` +
-            `root.querySelector('.view-line span')).color };`,
-        );
+        // the tab is shown before Monaco has drawn its lines, on a loaded machine
+        const code = await app.until('the code editor to draw its text', async () => {
+          const drawn = await monacoEval<{ background: string; text: string } | null>(
+            app,
+            `const root = editor.getContainerDomNode(); const back = root.querySelector('.monaco-editor-background'); ` +
+              `const token = root.querySelector('.view-lines .view-line span span') ?? root.querySelector('.view-line span'); ` +
+              `return back && token ? { background: getComputedStyle(back).backgroundColor, text: getComputedStyle(token).color } : null;`,
+          );
+          return drawn ?? undefined;
+        });
         assert(
           await monacoEval<boolean>(app, 'return editor.getOption(monaco.editor.EditorOption.minimap).enabled === false'),
           'The minimap of the code editor is on before the user turned it on (UX-034).',
