@@ -4,8 +4,17 @@ import type { FileTreeNode } from '../../types';
 import { checkProposals, runProposal, type ProposalDeps } from './editorProposals';
 
 const ladder = JSON.stringify({ name: 'L', variables: { local: [], outputs: [] }, rungs: [{ id: 'r1', number: 1, elements: [] }] });
-const fbd = JSON.stringify({ name: 'F', variables: { local: [], outputs: [] }, blocks: [{ id: 'and_1', type: 'AND', position: { x: 0, y: 0 } }], connections: [] });
-const sfc = JSON.stringify({ name: 'S', steps: [{ id: 'S0', name: 'S0', position: { x: 0, y: 0 } }], transitions: [{ id: 't1', fromStep: 'S0', toStep: 'S0', condition: 'TRUE' }] });
+const fbd = JSON.stringify({
+  name: 'F',
+  variables: { local: [], outputs: [] },
+  blocks: [{ id: 'and_1', type: 'AND', position: { x: 0, y: 0 } }],
+  connections: [],
+});
+const sfc = JSON.stringify({
+  name: 'S',
+  steps: [{ id: 'S0', name: 'S0', position: { x: 0, y: 0 } }],
+  transitions: [{ id: 't1', fromStep: 'S0', toStep: 'S0', condition: 'TRUE' }],
+});
 const disk: Record<string, string> = {
   'src/Main.st': 'PROGRAM Main\nEND_PROGRAM\n',
   'src/Lamp.ld.json': ladder,
@@ -27,11 +36,23 @@ function deps(over: Partial<ProposalDeps> = {}) {
         name: 'src',
         type: 'directory',
         path: 'src',
-        children: Object.keys(disk).map((path) => ({ id: `file:${path}`, name: path.slice(4), type: 'file' as const, path, handle: handle(path) })),
+        children: Object.keys(disk).map((path) => ({
+          id: `file:${path}`,
+          name: path.slice(4),
+          type: 'file' as const,
+          path,
+          handle: handle(path),
+        })),
       },
     ],
   };
-  const settings: Record<string, unknown> = { theme: 'light', language: 'auto', density: 'comfortable', editorFontSize: 14, editorTabSize: 4 };
+  const settings: Record<string, unknown> = {
+    theme: 'light',
+    language: 'auto',
+    density: 'comfortable',
+    editorFontSize: 14,
+    editorTabSize: 4,
+  };
   const value: ProposalDeps = {
     isProjectOpen: true,
     fileTree: tree,
@@ -84,10 +105,9 @@ describe('the proposals of an assistant are checked against the project and run 
     const { value } = deps({ loadedFiles: new Map([['file:src/Main.st', { content: 'a\nb\nc\nd' }]]) as never });
     expect((await checkProposals([{ type: 'goToLine', path: 'src/Main.st', line: 4 }], value))[0]!.state).toBe('ready');
     const closed = deps({ isProjectOpen: false });
-    expect((await checkProposals([{ type: 'compile' }, { type: 'openFile', path: 'src/Main.st' }], closed.value)).map((c) => c.state)).toEqual([
-      'no-project',
-      'no-project',
-    ]);
+    expect(
+      (await checkProposals([{ type: 'compile' }, { type: 'openFile', path: 'src/Main.st' }], closed.value)).map((c) => c.state),
+    ).toEqual(['no-project', 'no-project']);
   });
 
   it('shows a setting with its current value and says when it is already so', async () => {

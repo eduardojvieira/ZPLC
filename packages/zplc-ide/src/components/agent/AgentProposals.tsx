@@ -106,7 +106,11 @@ export function AgentProposals({ proposals }: { proposals: readonly AiProposal[]
               disabled={check.state !== 'ready'}
               onClick={() => {
                 void runProposal(check.proposal, liveDeps()).then((outcome) =>
-                  setMessage(outcome === 'ran' ? t('console.proposalDone', { action: label(check.proposal) }) : t('console.proposalNotRun', { action: label(check.proposal) })),
+                  setMessage(
+                    outcome === 'ran'
+                      ? t('console.proposalDone', { action: label(check.proposal) })
+                      : t('console.proposalNotRun', { action: label(check.proposal) }),
+                  ),
                 );
               }}
             >

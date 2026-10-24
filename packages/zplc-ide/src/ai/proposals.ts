@@ -4,7 +4,7 @@
  * would use themselves. Nothing physical is in the list, and a test holds it against the command registry. Pure, so the main
  * process, the window and the tests share it; the lists of values are those of the application, held equal by a test.
  */
-import { isCandidateSourcePath } from './candidatePaths';
+import { isCandidateSourcePath } from './candidatePaths.js';
 
 export const AI_PROPOSAL_CAP = 6;
 

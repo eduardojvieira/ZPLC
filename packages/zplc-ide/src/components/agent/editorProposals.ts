@@ -54,7 +54,13 @@ function hasElement(path: string, text: string, element: string): boolean {
   try {
     const document = JSON.parse(text) as Record<string, unknown>;
     const list = (key: string): Array<{ id?: unknown }> => (Array.isArray(document[key]) ? (document[key] as Array<{ id?: unknown }>) : []);
-    const items = path.endsWith('.ld.json') ? list('rungs') : path.endsWith('.fbd.json') ? list('blocks') : kind === 'step' ? list('steps') : list('transitions');
+    const items = path.endsWith('.ld.json')
+      ? list('rungs')
+      : path.endsWith('.fbd.json')
+        ? list('blocks')
+        : kind === 'step'
+          ? list('steps')
+          : list('transitions');
     return items.some((item) => item?.id === id);
   } catch {
     return false;
@@ -71,7 +77,8 @@ async function checkOne(proposal: AiProposal, deps: ProposalDeps): Promise<Propo
     const text = await textOf(proposal.path, deps);
     if (text === null) return { proposal, state: 'missing-file' };
     if (proposal.type === 'goToLine' && proposal.line > text.split('\n').length) return { proposal, state: 'missing-line' };
-    if (proposal.type === 'selectElement' && !hasElement(proposal.path, text, proposal.element)) return { proposal, state: 'missing-element' };
+    if (proposal.type === 'selectElement' && !hasElement(proposal.path, text, proposal.element))
+      return { proposal, state: 'missing-element' };
   }
   return { proposal, state: 'ready' };
 }
