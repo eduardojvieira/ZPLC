@@ -1,0 +1,307 @@
+{
+  "name": "TwoHandLd",
+  "description": "Two-hand guard: the press is enabled only with both hands on the buttons and the guard closed.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "LeftHand",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Left-hand button, normally open: TRUE while pressed"
+      },
+      {
+        "name": "RightHand",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Right-hand button, normally open: TRUE while pressed"
+      },
+      {
+        "name": "GuardClosed",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "Guard switch: TRUE while the guard is closed"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "PressEnable",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Press enable: both hands on the buttons and the guard closed"
+      },
+      {
+        "name": "GuardLamp",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Lamp that shows an open guard"
+      },
+      {
+        "name": "OneHandWarning",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "Warning: exactly one hand is on a button"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Press enable: Left, Right and Guard in series; power reaches the coil only if all three are TRUE (AND).",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_LeftHand_00",
+              "type": "contact_no",
+              "variable": "LeftHand",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "no_RightHand_01",
+              "type": "contact_no",
+              "variable": "RightHand",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "no_GuardClosed_02",
+              "type": "contact_no",
+              "variable": "GuardClosed",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_PressEnable_07",
+              "type": "coil",
+              "variable": "PressEnable",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "Guard lamp: the normally closed contact passes power while the guard is open (NOT).",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "nc_GuardClosed_00",
+              "type": "contact_nc",
+              "variable": "GuardClosed",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_GuardLamp_07",
+              "type": "coil",
+              "variable": "GuardLamp",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "One-hand warning: two parallel paths, Left without Right or Right without Left (XOR).",
+      "branches": [
+        {
+          "id": "branch_1",
+          "startCol": 0,
+          "endCol": 1,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_LeftHand_00",
+              "type": "contact_no",
+              "variable": "LeftHand",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "nc_RightHand_01",
+              "type": "contact_nc",
+              "variable": "RightHand",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_OneHandWarning_07",
+              "type": "coil",
+              "variable": "OneHandWarning",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "nc_LeftHand_10",
+              "type": "contact_nc",
+              "variable": "LeftHand",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "no_RightHand_11",
+              "type": "contact_no",
+              "variable": "RightHand",
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-24",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

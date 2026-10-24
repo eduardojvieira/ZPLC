@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 2,
+  "name": "ld_two_hand_guard_starter",
+  "version": "1.0.0",
+  "target": {
+    "board": "posix"
+  },
+  "tasks": [
+    {
+      "name": "MainTask",
+      "trigger": "cyclic",
+      "interval_ms": 10,
+      "priority": 1,
+      "programs": ["TwoHandLd.ld"]
+    }
+  ]
+}
