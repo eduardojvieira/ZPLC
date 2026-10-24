@@ -73,6 +73,46 @@ export function installedExecutable(path: string, platform: NodeJS.Platform = pr
   return executable;
 }
 
+/** The top-level objects the packaged preload gives the renderer, sorted; the preload unit test holds the preload to it too. */
+export const PACKAGED_PRELOAD_SURFACE = [
+  'aiProvider',
+  'candidateChangeSet',
+  'closeGuard',
+  'firmwareBuild',
+  'firmwareImages',
+  'getAppInfo',
+  'isElectron',
+  'learnProgress',
+  'learnWorkspace',
+  'menu',
+  'nativeSimulation',
+  'platform',
+  'portChoice',
+  'projectFiles',
+  'recovery',
+  'session',
+  'toolExecutionAudit',
+  'toolchain',
+  'updateCheck',
+  'windowPreferences',
+  'workspaceTests',
+] as const;
+
+/**
+ * Whether a menu accelerator reloads the page or opens the developer tools (IDE-005): Ctrl or Cmd with R, with or without
+ * Shift (the chords electron/appMenu.ts isReloadShortcut catches), F12, and Ctrl or Cmd with Shift and I. F5 is not one:
+ * Studio uses it for Resume.
+ */
+export function isReloadOrDevToolsAccelerator(accelerator: string): boolean {
+  const parts = accelerator.toLowerCase().split('+');
+  const key = parts.at(-1);
+  const modifiers = new Set(parts.slice(0, -1));
+  if (key === 'f12') return true;
+  const command = ['cmdorctrl', 'commandorcontrol', 'ctrl', 'control', 'cmd', 'command', 'super', 'meta'].some((m) => modifiers.has(m));
+  if (!command || modifiers.has('alt') || modifiers.has('option')) return false;
+  return key === 'r' || (key === 'i' && modifiers.has('shift'));
+}
+
 /** What exists only in a build made for the suite (VF-008): a released installer contains none of it. */
 export const DEV_ONLY_VARIABLE = 'ZPLC_SMOKE_FOLDER_ANSWER_FILE';
 const DEV_ONLY_MODULE = /(^|\/)devFolderDialogHook\.js(\.map)?$/;
@@ -360,27 +400,7 @@ async function main(): Promise<void> {
       `Node globals leaked into packaged renderer: ${JSON.stringify(rendererBoundary.node)}`,
     );
     assert(
-      JSON.stringify(rendererBoundary.preload) ===
-        JSON.stringify([
-          'aiProvider',
-          'candidateChangeSet',
-          'closeGuard',
-          'firmwareBuild',
-          'firmwareImages',
-          'getAppInfo',
-          'isElectron',
-          'learnProgress',
-          'nativeSimulation',
-          'platform',
-          'portChoice',
-          'projectFiles',
-          'recovery',
-          'session',
-          'toolExecutionAudit',
-          'toolchain',
-          'updateCheck',
-          'workspaceTests',
-        ]),
+      JSON.stringify(rendererBoundary.preload) === JSON.stringify(PACKAGED_PRELOAD_SURFACE),
       `Unexpected packaged preload surface: ${JSON.stringify(rendererBoundary.preload)}`,
     );
     assert(rendererBoundary.welcome, 'Packaged renderer did not render the folder-backed Welcome screen.');
@@ -465,7 +485,7 @@ async function main(): Promise<void> {
       `Packaged application menu has a reload or developer-tools entry: ${menuReport}`,
     );
     assert(
-      registeredAccelerators.every((accelerator) => !/^(F5|F12|.*\+(R|I))$/i.test(accelerator)),
+      !registeredAccelerators.some(isReloadOrDevToolsAccelerator),
       `Packaged application menu has a reload or developer-tools accelerator: ${menuReport}`,
     );
     const closeGuard = (await cdp.evaluate(

@@ -2,7 +2,12 @@ import { chmodSync, mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, w
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'bun:test';
-import { discoverPackagedExecutable, installedExecutable } from './run-packaged-desktop-smoke';
+import {
+  discoverPackagedExecutable,
+  installedExecutable,
+  isReloadOrDevToolsAccelerator,
+  PACKAGED_PRELOAD_SURFACE,
+} from './run-packaged-desktop-smoke';
 import { compactSource } from '../src/i18n/inlineMessages';
 
 function unpacked(root: string, platform: NodeJS.Platform, name: string): string {
@@ -107,6 +112,32 @@ test('release runs the packaged launch smoke in every native matrix lane', () =>
   }
 });
 
+// IDE-005 asks for no reload and no developer tools by keyboard in a packaged build; F5 is Studio's Resume and Ctrl+Alt+I its
+// secondary sidebar, keys of the command registry that reload nothing.
+test('the packaged menu check refuses the reload and developer-tools keys and only those', () => {
+  for (const accelerator of [
+    'CmdOrCtrl+R',
+    'CmdOrCtrl+Shift+R',
+    'Shift+CommandOrControl+R',
+    'Ctrl+R',
+    'Command+R',
+    'F12',
+    'CmdOrCtrl+Shift+I',
+  ])
+    expect([accelerator, isReloadOrDevToolsAccelerator(accelerator)]).toEqual([accelerator, true]);
+  for (const accelerator of [
+    'F5',
+    'Shift+F5',
+    'CmdOrCtrl+Alt+I',
+    'CmdOrCtrl+Alt+R',
+    'CmdOrCtrl+S',
+    'CmdOrCtrl+Shift+P',
+    'R',
+    'CmdOrCtrl+I',
+  ])
+    expect([accelerator, isReloadOrDevToolsAccelerator(accelerator)]).toEqual([accelerator, false]);
+});
+
 test('desktop smoke exercises real renderer accessibility and packaged isolation', () => {
   const developmentSmoke = readFileSync(join(import.meta.dir, 'run-desktop-smoke.ts'), 'utf8');
   const packagedSmoke = compactSource(readFileSync(join(import.meta.dir, 'run-packaged-desktop-smoke.ts'), 'utf8'));
@@ -119,7 +150,8 @@ test('desktop smoke exercises real renderer accessibility and packaged isolation
   expect(developmentSmoke).not.toContain('nativeVirtualKeyCode');
   expect(packagedSmoke).toContain('Node globals leaked into packaged renderer');
   expect(packagedSmoke).toContain('Unexpected packaged preload surface');
-  expect(packagedSmoke).toContain("'isElectron', 'learnProgress', 'nativeSimulation'");
+  // the renderer's keys are sorted before they are compared, so the expected list must be sorted too
+  expect([...PACKAGED_PRELOAD_SURFACE]).toEqual([...PACKAGED_PRELOAD_SURFACE].sort());
   expect(packagedSmoke).toContain('Packaged renderer opened a new window');
   expect(packagedSmoke).toContain('select[data-theme-control]');
   expect(packagedSmoke).not.toContain('nativeVirtualKeyCode');

@@ -9,6 +9,7 @@ import path from 'node:path';
 import { IPC_EVENT_CHANNELS, IPC_INVOKE_CHANNELS, PROJECT_FILES_CHANNEL } from './ipcContract';
 import { PROJECT_ARCHIVE_OPS } from './projectArchiveProtocol';
 import { PROJECT_FILES_OPS, PROJECT_RECENT_OPS, PROJECT_WATCH_OPS } from './projectFilesProtocol';
+import { PACKAGED_PRELOAD_SURFACE } from '../scripts/run-packaged-desktop-smoke';
 
 type Api = Record<string, unknown>;
 const invoked: Array<{ channel: string; args: unknown[] }> = [];
@@ -69,29 +70,8 @@ beforeAll(async () => {
 
 describe('preload bridge (IDE-017)', () => {
   it('exposes the same top-level objects as the packaged smoke expects, and nothing else', () => {
-    expect(Object.keys(api).sort()).toEqual([
-      'aiProvider',
-      'candidateChangeSet',
-      'closeGuard',
-      'firmwareBuild',
-      'firmwareImages',
-      'getAppInfo',
-      'isElectron',
-      'learnProgress',
-      'learnWorkspace',
-      'menu',
-      'nativeSimulation',
-      'platform',
-      'portChoice',
-      'projectFiles',
-      'recovery',
-      'session',
-      'toolExecutionAudit',
-      'toolchain',
-      'updateCheck',
-      'windowPreferences',
-      'workspaceTests',
-    ]);
+    // one list: the packaged smoke runs only at a release, so a bridge added here must fail here first
+    expect(Object.keys(api).sort()).toEqual([...PACKAGED_PRELOAD_SURFACE]);
   });
 
   it('exposes narrow objects: one method per operation of each group, nothing generic', () => {
