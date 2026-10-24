@@ -3295,7 +3295,7 @@
   ],
   "REL-011": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/packaged-content.test.ts","test":"the Linux desktop identity of the unpacked package (REL-011)"},
-    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"Linux packages use electron-builder defaults and are installed in clean containers (REL-011)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"Linux packages declare what Electron needs and are installed in clean containers (REL-011)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the Linux desktop identity of the package is the one of decision D-03 (REL-011)"}
   ],
   "REL-012": [
