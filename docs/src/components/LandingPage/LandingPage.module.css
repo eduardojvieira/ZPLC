@@ -1,8 +1,9 @@
 /*
  * The landing page. Its colours are the theme tokens of src/css/custom.css (--zplc-*); this file adds none of its own.
- * The visual language is the one of an electrical drawing: 1 px rules, terminal strips with numbered marker tags, ladder rungs
- * between two power rails, a timing diagram, steps of a sequential function chart, and status lamps only for a real state.
- * The hero sits on the dark material (Commissioning Spine) in both modes; every other region follows the theme.
+ * The visual language is the one of an electrical drawing: 1 px rules, a terminal strip with numbered marker tags, ladder
+ * rungs between two power rails, a timing diagram, the steps of a sequential function chart, and a data sheet.
+ * The hero sits on the dark material (Commissioning Spine) in both modes; Learn sits on the band; every other region follows
+ * the theme.
  */
 
 .page {
@@ -30,7 +31,7 @@
  * Hero
  * ------------------------------------------------------------------------------------------------------------------- */
 .hero {
-  padding-block: clamp(3rem, 2rem + 4vw, 6rem);
+  padding-block: clamp(2.5rem, 1.5rem + 3vw, 4.5rem) clamp(3rem, 2rem + 4vw, 6rem);
   border-bottom: 1px solid var(--zplc-rule);
   overflow: hidden;
 }
@@ -39,7 +40,7 @@
   display: flex;
   align-items: center;
   gap: var(--zplc-space-3);
-  margin: 0 0 var(--zplc-space-6);
+  margin: 0 0 var(--zplc-space-5);
   font-size: 1.375rem;
   font-weight: 650;
   letter-spacing: -0.01em;
@@ -61,118 +62,25 @@
   text-wrap: balance;
 }
 
-.heroSubtitle {
-  max-width: 38rem;
-  margin: clamp(1rem, 0.6rem + 1vw, 1.5rem) 0 0;
-  font-size: clamp(1.125rem, 0.95rem + 0.6vw, 1.5rem);
-  font-weight: 500;
-  line-height: 1.35;
-  color: var(--zplc-ink-2);
-  text-wrap: balance;
-}
-
 .heroGrid {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   gap: clamp(2rem, 1rem + 3vw, 4rem);
   align-items: start;
-  margin-top: clamp(2rem, 1rem + 3vw, 3.5rem);
+  margin-top: clamp(1.75rem, 1rem + 2vw, 2.5rem);
 }
 
 .heroLead {
-  max-width: 30rem;
-  margin: 0;
-  font-size: clamp(1.125rem, 1rem + 0.5vw, 1.375rem);
-  line-height: 1.45;
+  max-width: 46rem;
+  margin: clamp(1rem, 0.6rem + 1vw, 1.5rem) 0 0;
+  font-size: clamp(1.0625rem, 0.98rem + 0.4vw, 1.3125rem);
+  line-height: 1.5;
   color: var(--zplc-ink-2);
+  text-wrap: pretty;
 }
 
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--zplc-space-3);
-  margin-top: var(--zplc-space-6);
-}
-
-.primaryAction,
-.secondaryAction {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.875rem;
-  padding-inline: var(--zplc-space-5);
-  border: 1px solid transparent;
-  border-radius: var(--zplc-radius-control);
-  font-size: 0.9375rem;
-  font-weight: 600;
-  white-space: nowrap;
-  text-decoration: none;
-  transition:
-    background-color 150ms ease-out,
-    border-color 150ms ease-out,
-    color 150ms ease-out;
-}
-
-.primaryAction {
-  background: var(--zplc-cobalt);
-  border-color: var(--zplc-cobalt);
-  color: var(--zplc-on-cobalt);
-}
-
-.primaryAction:hover {
-  background: var(--zplc-cobalt-strong);
-  border-color: var(--zplc-cobalt-strong);
-  color: var(--zplc-on-cobalt);
-  text-decoration: none;
-}
-
-.secondaryAction {
-  background: transparent;
-  border-color: var(--zplc-rule-strong);
-  color: var(--zplc-ink);
-}
-
-.secondaryAction:hover {
-  border-color: var(--zplc-ink);
-  color: var(--zplc-ink);
-  text-decoration: none;
-}
-
-.primaryAction:active,
-.secondaryAction:active {
-  transform: translateY(1px);
-}
-
-/* the release status: an amber lamp, the word and one sentence; the lamp shows a real state and does not blink */
-.status {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: var(--zplc-space-2) var(--zplc-space-3);
-  margin: var(--zplc-space-7) 0 0;
-  padding-top: var(--zplc-space-5);
-  border-top: 1px solid var(--zplc-rule);
-  font-size: var(--zplc-text-sm);
-  color: var(--zplc-ink-2);
-}
-
-.lamp {
-  width: 0.625rem;
-  height: 0.625rem;
-  border-radius: 50%;
-  background: var(--zplc-amber);
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 27, 0.35);
-}
-
-.statusLabel {
-  font-size: var(--zplc-text-xs);
-  font-weight: 650;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--zplc-amber);
-}
-
-.statusText {
-  grid-column: 1 / -1;
+.heroBody .paths {
+  margin-top: 0;
 }
 
 .heroArt {
@@ -181,6 +89,139 @@
   height: auto;
   border: 1px solid var(--zplc-rule);
   border-radius: var(--zplc-radius-figure);
+}
+
+/* ---------------------------------------------------------------------------------------------------------------------
+ * The two ways in: build and learn, two modules of the same size, each with its own primary action
+ * ------------------------------------------------------------------------------------------------------------------- */
+.paths {
+  display: grid;
+  gap: var(--zplc-space-3);
+  margin: var(--zplc-space-5) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.paths[data-layout="row"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--zplc-space-5);
+  margin-top: clamp(2rem, 1.5rem + 2vw, 3rem);
+}
+
+/* the symbol in the first column; the title, the text, the action and the note stacked in the second */
+.path {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  align-content: start;
+  gap: var(--zplc-space-2) var(--zplc-space-4);
+  padding: var(--zplc-space-5);
+  background: var(--zplc-panel);
+  border: 1px solid var(--zplc-rule);
+  border-radius: var(--zplc-radius-figure);
+  transition: border-color 200ms ease-out;
+}
+
+.path:hover,
+.path:focus-within {
+  border-color: var(--zplc-rule-strong);
+}
+
+.paths[data-layout="row"] .path {
+  padding: clamp(1.5rem, 1rem + 1.5vw, 2.25rem);
+}
+
+.pathSymbol {
+  grid-row: 1 / span 3;
+  width: 2.25rem;
+  height: 2.25rem;
+  fill: none;
+  stroke: var(--zplc-cobalt);
+  stroke-width: 1.5;
+  stroke-linejoin: miter;
+}
+
+.pathTitle,
+.pathText,
+.pathRow {
+  grid-column: 2;
+}
+
+/* the action and, beside it, the note and the second link */
+.pathRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--zplc-space-2) var(--zplc-space-4);
+  margin-top: var(--zplc-space-2);
+}
+
+.pathTitle {
+  margin: 0;
+  font-size: clamp(1.125rem, 1.05rem + 0.3vw, 1.3125rem);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.012em;
+}
+
+.paths[data-layout="row"] .pathTitle {
+  font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.625rem);
+}
+
+.pathText {
+  max-width: 44ch;
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--zplc-ink-2);
+  text-wrap: pretty;
+}
+
+.paths[data-layout="row"] .pathText {
+  font-size: 1rem;
+}
+
+.pathMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  margin: 0;
+  font-size: var(--zplc-text-sm);
+  line-height: 1.4;
+  color: var(--zplc-ink-3);
+}
+
+.pathMeta a {
+  font-weight: 500;
+}
+
+/* the action sits under the text, at the same place in both modules */
+.pathAction {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding-inline: var(--zplc-space-5);
+  border: 1px solid var(--zplc-cobalt);
+  border-radius: var(--zplc-radius-control);
+  background: var(--zplc-cobalt);
+  color: var(--zplc-on-cobalt);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out;
+}
+
+.pathAction:hover {
+  background: var(--zplc-cobalt-strong);
+  border-color: var(--zplc-cobalt-strong);
+  color: var(--zplc-on-cobalt);
+  text-decoration: none;
+}
+
+.pathAction:active {
+  transform: translateY(1px);
 }
 
 /* ---------------------------------------------------------------------------------------------------------------------
@@ -206,7 +247,7 @@
 }
 
 .sectionLead {
-  max-width: 40rem;
+  max-width: 42rem;
   margin: var(--zplc-space-5) 0 0;
   font-size: var(--zplc-text-lg);
   line-height: 1.55;
@@ -226,58 +267,142 @@
 }
 
 /* ---------------------------------------------------------------------------------------------------------------------
- * What makes ZPLC different: portability and the terminal strip of the HAL
+ * Portability: the wiring of the program to the runtime and the three platforms, then the terminal strip of the hardware
+ * abstraction layer
  * ------------------------------------------------------------------------------------------------------------------- */
+
+/* program, wire, runtime, wire, then a bus with a branch to each platform; the wires conduct (green) under the pointer or
+   the keyboard, as a rung does */
+.wiring {
+  --wire: var(--zplc-ink-3);
+  --bus: 1.75rem;
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) 2.5rem minmax(0, 0.85fr) 2.5rem minmax(0, 1.7fr);
+  align-items: center;
+  margin: clamp(3rem, 2rem + 3vw, 4.5rem) 0 0;
+}
+
+.wiring:hover,
+.wiring:focus-within {
+  --wire: var(--zplc-green);
+}
+
+.wNode {
+  position: relative;
+  display: grid;
+  gap: var(--zplc-space-1);
+  padding: var(--zplc-space-4) var(--zplc-space-5);
+  border: 1.5px solid var(--zplc-ink-2);
+  background: var(--zplc-panel);
+}
+
+/* the runtime is the one block every platform shares: a double frame, as the initial step of a chart, drawn inside the
+   block so that it keeps the edge of the others */
+.wNode[data-node="runtime"] {
+  outline: 1.5px solid var(--zplc-ink-2);
+  outline-offset: -6px;
+}
+
+.wName {
+  font-size: 1.0625rem;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+a.wName {
+  justify-self: start;
+}
+
+.wText {
+  font-size: var(--zplc-text-sm);
+  line-height: 1.45;
+  color: var(--zplc-ink-2);
+}
+
+.wNode[data-node="program"] .wText {
+  font-family: var(--zplc-font-mono);
+  font-size: var(--zplc-text-xs);
+  font-weight: 400;
+}
+
+.wWire {
+  border-top: 1.5px solid var(--wire);
+  transition: border-color 200ms ease-out;
+}
+
+.wTargets {
+  position: relative;
+  display: grid;
+  gap: var(--zplc-space-3);
+  margin: 0;
+  padding: 0 0 0 var(--bus);
+  list-style: none;
+}
+
+/* the junction where the wire from the runtime meets the bus */
+.wTargets::before {
+  content: "";
+  position: absolute;
+  left: -3.5px;
+  top: calc(50% - 3.5px);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--wire);
+  transition: background-color 200ms ease-out;
+}
+
+/* the branch from the bus to each platform, and the piece of the bus beside it */
+.wTargets > li::before,
+.wTargets > li::after {
+  content: "";
+  position: absolute;
+  transition: border-color 200ms ease-out;
+}
+
+.wTargets > li::before {
+  right: 100%;
+  top: 50%;
+  width: calc(var(--bus) + 1.5px);
+  border-top: 1.5px solid var(--wire);
+}
+
+.wTargets > li::after {
+  left: calc(-1 * var(--bus) - 1.5px);
+  top: calc(var(--zplc-space-3) / -2 - 1.5px);
+  bottom: calc(var(--zplc-space-3) / -2 - 1.5px);
+  border-left: 1.5px solid var(--wire);
+}
+
+.wTargets > li:first-child::after {
+  top: 50%;
+}
+
+.wTargets > li:last-child::after {
+  bottom: 50%;
+}
+
 .portGrid {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   gap: clamp(2rem, 1rem + 4vw, 5rem);
   align-items: start;
-  margin-top: clamp(3rem, 2rem + 3vw, 4.5rem);
+  margin-top: clamp(4rem, 3rem + 3vw, 6rem);
 }
 
 .portTitle {
   margin: 0;
-  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  font-size: clamp(1.375rem, 1.15rem + 0.8vw, 1.75rem);
   font-weight: 650;
-  line-height: 1.15;
+  line-height: 1.2;
   letter-spacing: -0.02em;
   text-wrap: balance;
 }
 
 .portText {
-  margin: var(--zplc-space-4) 0 0;
+  margin: var(--zplc-space-3) 0 0;
   color: var(--zplc-ink-2);
   text-wrap: pretty;
-}
-
-.targetsTitle {
-  margin: var(--zplc-space-6) 0 var(--zplc-space-3);
-  font-size: var(--zplc-text-sm);
-  font-weight: 600;
-}
-
-.targets {
-  margin: 0;
-  border-top: 1px solid var(--zplc-rule);
-}
-
-.targets > div {
-  display: grid;
-  grid-template-columns: 8.5rem minmax(0, 1fr);
-  gap: var(--zplc-space-1) var(--zplc-space-4);
-  padding: var(--zplc-space-3) 0;
-  border-bottom: 1px solid var(--zplc-rule);
-  font-size: var(--zplc-text-sm);
-}
-
-.targets dt {
-  font-weight: 600;
-}
-
-.targets dd {
-  margin: 0;
-  color: var(--zplc-ink-2);
 }
 
 .strip {
@@ -290,19 +415,18 @@
 
 .stripHead {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: baseline;
-  gap: var(--zplc-space-4);
-  padding: var(--zplc-space-3) var(--zplc-space-5);
-  font-size: var(--zplc-text-sm);
+  gap: var(--zplc-space-1) var(--zplc-space-4);
+  padding: var(--zplc-space-4) var(--zplc-space-5);
+  font-size: 0.9375rem;
   font-weight: 600;
 }
 
-.stripHead code {
-  padding: 0;
-  border: 0;
-  background: none;
+.stripCount {
   font-size: var(--zplc-text-xs);
+  font-weight: 500;
   color: var(--zplc-ink-3);
 }
 
@@ -335,7 +459,7 @@
 
 .terminals {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
   gap: var(--zplc-space-2) var(--zplc-space-4);
   margin: 0;
   padding: var(--zplc-space-3) var(--zplc-space-4);
@@ -347,6 +471,7 @@
   align-items: center;
   gap: var(--zplc-space-2);
   min-width: 0;
+  font-size: var(--zplc-text-sm);
 }
 
 /* a printed marker tag of a terminal block; mono labels of this page use the regular weight only, so the bold mono file
@@ -368,16 +493,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.terminals code {
-  overflow: hidden;
-  padding: 0;
-  border: 0;
-  background: none;
-  font-size: 0.8125rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .stripGroup[data-optional] {
   background: var(--zplc-canvas);
 }
@@ -387,15 +502,277 @@
   color: var(--zplc-ink-3);
 }
 
-.stripGroup[data-optional] code {
+.stripGroup[data-optional] li {
   color: var(--zplc-ink-3);
 }
 
 /* ---------------------------------------------------------------------------------------------------------------------
- * The ladder: each distinctive feature is a rung between the two power rails
+ * Boards: the illustration and the boards of the manifest
  * ------------------------------------------------------------------------------------------------------------------- */
+.boardsGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+  gap: clamp(2rem, 1rem + 4vw, 5rem);
+  align-items: center;
+}
+
+.boardsArt img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--zplc-rule);
+  border-radius: var(--zplc-radius-figure);
+  background: var(--zplc-panel);
+}
+
+.boardTable {
+  margin-top: clamp(2.5rem, 2rem + 2vw, 4rem);
+  overflow-x: auto;
+}
+
+.boardTable table {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--zplc-text-sm);
+}
+
+.boardTable th,
+.boardTable td {
+  padding: var(--zplc-space-3) var(--zplc-space-4);
+  border: 0;
+  border-bottom: 1px solid var(--zplc-rule);
+  background: none;
+  text-align: left;
+  vertical-align: baseline;
+}
+
+.boardTable thead th {
+  font-size: var(--zplc-text-xs);
+  font-weight: 600;
+  color: var(--zplc-ink-2);
+  background: var(--zplc-band);
+}
+
+.boardTable tbody tr {
+  background: none;
+}
+
+.boardTable tbody th {
+  font-weight: 600;
+}
+
+.boardTable code {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 0.8125rem;
+}
+
+.learnerTag {
+  display: inline-block;
+  margin-left: var(--zplc-space-2);
+  padding: 0 var(--zplc-space-2);
+  border: 1px solid var(--zplc-rule-strong);
+  border-radius: var(--zplc-radius-control);
+  font-size: var(--zplc-text-xs);
+  font-weight: 500;
+  color: var(--zplc-ink-2);
+  white-space: nowrap;
+}
+
+.boardsReport {
+  max-width: 60ch;
+  margin: var(--zplc-space-6) 0 0;
+  color: var(--zplc-ink-2);
+}
+
+.boardsReport + .links {
+  margin-top: var(--zplc-space-3);
+}
+
+/* ---------------------------------------------------------------------------------------------------------------------
+ * The five languages
+ * ------------------------------------------------------------------------------------------------------------------- */
+.languageLayout {
+  display: grid;
+  grid-template-columns: 16rem minmax(0, 1fr);
+  gap: var(--zplc-space-6);
+  align-items: start;
+  margin-top: var(--zplc-space-7);
+}
+
+.tablist {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--zplc-rule);
+}
+
+.tab {
+  display: grid;
+  grid-template-columns: 2.75rem 1fr;
+  align-items: baseline;
+  gap: var(--zplc-space-2);
+  width: 100%;
+  padding: var(--zplc-space-4) var(--zplc-space-3) var(--zplc-space-4) var(--zplc-space-4);
+  border: 0;
+  border-bottom: 1px solid var(--zplc-rule);
+  background: none;
+  color: var(--zplc-ink-2);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
+}
+
+.tab:hover {
+  background: var(--zplc-band);
+  color: var(--zplc-ink);
+}
+
+.tab[aria-selected="true"] {
+  background: var(--zplc-panel);
+  color: var(--zplc-ink);
+  box-shadow: inset 2px 0 0 var(--zplc-cobalt);
+}
+
+.tab:focus-visible {
+  outline-offset: -2px;
+}
+
+.tabCode {
+  font-family: var(--zplc-font-mono);
+  font-size: var(--zplc-text-xs);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--zplc-ink-3);
+}
+
+.tab[aria-selected="true"] .tabCode {
+  color: var(--zplc-cobalt);
+}
+
+.panelFigure {
+  margin: 0;
+  background: var(--zplc-panel);
+  border: 1px solid var(--zplc-rule);
+  border-radius: var(--zplc-radius-figure);
+  overflow: hidden;
+}
+
+.panelFigure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1366 / 768;
+  background: var(--zplc-band);
+}
+
+.panelCaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--zplc-space-2) var(--zplc-space-6);
+  padding: var(--zplc-space-4) var(--zplc-space-5);
+  border-top: 1px solid var(--zplc-rule);
+  font-size: var(--zplc-text-sm);
+}
+
+.panelCaption p {
+  max-width: 56ch;
+  margin: 0;
+  color: var(--zplc-ink-2);
+}
+
+.panelCaption a {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* what every editor offers: three entries under one rule, aligned with the panel */
+.editorFeatures {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--zplc-space-5) var(--zplc-space-6);
+  margin: var(--zplc-space-7) 0 0 calc(16rem + var(--zplc-space-6));
+  padding-top: var(--zplc-space-5);
+  border-top: 1px solid var(--zplc-rule);
+}
+
+.editorFeatures dt {
+  font-weight: 600;
+}
+
+.editorFeatures dd {
+  margin: var(--zplc-space-1) 0 0;
+  font-size: var(--zplc-text-sm);
+  color: var(--zplc-ink-2);
+}
+
+/* ---------------------------------------------------------------------------------------------------------------------
+ * Simulate and debug: the features as the rungs of a ladder between two power rails, beside the capture
+ * ------------------------------------------------------------------------------------------------------------------- */
+.debugGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: clamp(2rem, 1rem + 3vw, 4rem);
+  align-items: start;
+  margin-top: clamp(3rem, 2rem + 3vw, 4.5rem);
+}
+
+.debugShot {
+  position: sticky;
+  top: calc(var(--ifm-navbar-height) + var(--zplc-space-6));
+}
+
+/* a framed capture: one or more regions of it, ruled apart, and a caption under them */
+.shotFigure {
+  display: block;
+  margin: 0;
+  overflow: hidden;
+  background: var(--zplc-panel);
+  border: 1px solid var(--zplc-rule);
+  border-radius: var(--zplc-radius-figure);
+}
+
+.shotFigure .crop + .crop {
+  border-top: 1px solid var(--zplc-rule);
+}
+
+.shotFigure figcaption {
+  padding: var(--zplc-space-3) var(--zplc-space-5);
+  border-top: 1px solid var(--zplc-rule);
+  font-size: var(--zplc-text-sm);
+  color: var(--zplc-ink-2);
+}
+
+/* a window onto one region of a capture (Crop.js): the image at the scale that makes the region fill the box */
+.crop {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: var(--w) / var(--h);
+  background: var(--zplc-band);
+}
+
+.crop img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: calc(100% * var(--iw) / var(--w));
+  max-width: none;
+  height: auto;
+  transform: translate(calc(-100% * var(--x) / var(--iw)), calc(-100% * var(--y) / var(--ih)));
+}
+
 .ladder {
-  margin: clamp(4rem, 3rem + 3vw, 6rem) 0 0;
+  margin: 0;
   padding: var(--zplc-space-3) 0;
   border-inline: 2px solid var(--zplc-ink-3);
   list-style: none;
@@ -515,132 +892,12 @@
 }
 
 /* ---------------------------------------------------------------------------------------------------------------------
- * The five languages
+ * Learn: the facts, the course as a sequential function chart, the plants; on the band material
  * ------------------------------------------------------------------------------------------------------------------- */
-.languageLayout {
-  display: grid;
-  grid-template-columns: 16rem minmax(0, 1fr);
-  gap: var(--zplc-space-6);
-  align-items: start;
-  margin-top: var(--zplc-space-7);
-}
-
-.tablist {
-  display: flex;
-  flex-direction: column;
-  border-top: 1px solid var(--zplc-rule);
-}
-
-.tab {
-  display: grid;
-  grid-template-columns: 2.75rem 1fr;
-  align-items: baseline;
-  gap: var(--zplc-space-2);
-  width: 100%;
-  padding: var(--zplc-space-4) var(--zplc-space-3) var(--zplc-space-4) var(--zplc-space-4);
-  border: 0;
-  border-bottom: 1px solid var(--zplc-rule);
-  background: none;
-  color: var(--zplc-ink-2);
-  font: inherit;
-  font-size: 0.9375rem;
-  font-weight: 500;
-  text-align: left;
-  cursor: pointer;
-  transition:
-    background-color 150ms ease-out,
-    color 150ms ease-out;
-}
-
-.tab:hover {
-  background: var(--zplc-band);
-  color: var(--zplc-ink);
-}
-
-.tab[aria-selected="true"] {
-  background: var(--zplc-panel);
-  color: var(--zplc-ink);
-  box-shadow: inset 2px 0 0 var(--zplc-cobalt);
-}
-
-.tab:focus-visible {
-  outline-offset: -2px;
-}
-
-.tabCode {
-  font-family: var(--zplc-font-mono);
-  font-size: var(--zplc-text-xs);
-  font-weight: 400;
-  letter-spacing: 0.02em;
-  color: var(--zplc-ink-3);
-}
-
-.tab[aria-selected="true"] .tabCode {
-  color: var(--zplc-cobalt);
-}
-
-.panelFigure {
-  margin: 0;
-  background: var(--zplc-panel);
-  border: 1px solid var(--zplc-rule);
-  border-radius: var(--zplc-radius-figure);
-  overflow: hidden;
-}
-
-.panelFigure img {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 1366 / 768;
+.learnSection {
   background: var(--zplc-band);
 }
 
-.panelCaption {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--zplc-space-2) var(--zplc-space-6);
-  padding: var(--zplc-space-4) var(--zplc-space-5);
-  border-top: 1px solid var(--zplc-rule);
-  font-size: var(--zplc-text-sm);
-}
-
-.panelCaption p {
-  max-width: 56ch;
-  margin: 0;
-  color: var(--zplc-ink-2);
-}
-
-.panelCaption a {
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.evidence {
-  display: grid;
-  grid-template-columns: 16rem minmax(0, 1fr);
-  gap: var(--zplc-space-2) var(--zplc-space-6);
-  margin-top: var(--zplc-space-6);
-  padding-top: var(--zplc-space-5);
-  border-top: 1px solid var(--zplc-rule);
-  font-size: var(--zplc-text-sm);
-}
-
-.evidenceLabel {
-  margin: 0;
-  font-weight: 600;
-}
-
-.evidenceText {
-  max-width: 70ch;
-  margin: 0;
-  color: var(--zplc-ink-2);
-}
-
-/* ---------------------------------------------------------------------------------------------------------------------
- * Learn: the facts, the course as a sequential function chart, the plants
- * ------------------------------------------------------------------------------------------------------------------- */
 .learnGrid {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
@@ -761,18 +1018,6 @@
   line-height: 1.35;
 }
 
-.learnShot {
-  display: block;
-}
-
-.learnShot img {
-  display: block;
-  width: 100%;
-  height: auto;
-  border: 1px solid var(--zplc-rule);
-  border-radius: var(--zplc-radius-figure);
-}
-
 .plantArt img {
   display: block;
   width: 100%;
@@ -803,229 +1048,30 @@
 }
 
 /* ---------------------------------------------------------------------------------------------------------------------
- * Architecture: a block diagram with wires between the stages and a bus to the ports
+ * Technical data: the data sheet of a controller, one parameter per row
  * ------------------------------------------------------------------------------------------------------------------- */
-.flow {
+.specsGrid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  column-gap: 2rem;
-  margin: clamp(3rem, 2rem + 3vw, 4.5rem) 0 0;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+  gap: var(--zplc-space-6) clamp(2rem, 1rem + 4vw, 5rem);
+  align-items: start;
 }
 
-/* the application spans the stages it owns, drawn as a bracket over them */
-.flowApp {
-  grid-column: 1 / 4;
-  margin: 0 0 var(--zplc-space-3);
-  padding: var(--zplc-space-2) var(--zplc-space-3);
-  border: 1.5px solid var(--zplc-ink-3);
-  border-bottom: 0;
-  font-size: var(--zplc-text-xs);
-  font-weight: 600;
-  text-align: center;
-  color: var(--zplc-ink-2);
-}
-
-.stages {
-  display: contents;
-  list-style: none;
-}
-
-.stage {
-  position: relative;
-  grid-row: 2;
-  display: grid;
-  align-content: start;
-  gap: var(--zplc-space-3);
-  min-height: 8.5rem;
-  padding: var(--zplc-space-4);
-  border: 1.5px solid var(--zplc-ink-2);
-  background: var(--zplc-panel);
-}
-
-/* the wire to the next stage, and the input terminal it lands on */
-.stage::after {
-  content: "";
-  position: absolute;
-  top: 2.25rem;
-  left: 100%;
-  width: 2rem;
-  border-top: 1.5px solid var(--zplc-ink-3);
-}
-
-.stage::before {
-  content: "";
-  position: absolute;
-  top: calc(2.25rem - 3px);
-  left: -4px;
-  width: 6px;
-  height: 6px;
-  border: 1.5px solid var(--zplc-ink-2);
-  background: var(--zplc-canvas);
-}
-
-.stage:first-child::before {
-  content: none;
-}
-
-/* the HAL drops to the bus of the ports */
-.stage:last-child::after {
-  top: 100%;
-  left: 50%;
-  width: 0;
-  height: 2rem;
-  border-top: 0;
-  border-left: 1.5px solid var(--zplc-ink-3);
-}
-
-.stageTitle {
-  font-size: var(--zplc-text-sm);
-  font-weight: 650;
-}
-
-.stageItems {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--zplc-space-1) var(--zplc-space-2);
-}
-
-.stageItems > span {
-  padding: 0.125rem 0.375rem;
-  border: 1px solid var(--zplc-rule);
-  background: var(--zplc-canvas);
-  font-size: var(--zplc-text-xs);
-  color: var(--zplc-ink-2);
-}
-
-.stageItems code {
-  padding: 0;
-  border: 0;
-  background: none;
-  font-size: 1em;
-}
-
-.ports {
-  position: relative;
-  grid-row: 3;
-  grid-column: 3 / -1;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--zplc-space-4);
-  margin: 4rem 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-/* the bus: one line over the three ports, fed by the HAL */
-.ports::before {
-  content: "";
-  position: absolute;
-  top: -2rem;
-  left: calc((100% - 2 * var(--zplc-space-4)) / 6);
-  right: calc((100% - 2 * var(--zplc-space-4)) / 6);
-  border-top: 1.5px solid var(--zplc-ink-3);
-}
-
-.ports li {
-  position: relative;
-  display: grid;
-  gap: var(--zplc-space-1);
-  padding: var(--zplc-space-3) var(--zplc-space-4);
-  border: 1.5px solid var(--zplc-ink-2);
-  background: var(--zplc-panel);
-}
-
-.ports li::before {
-  content: "";
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  height: 2rem;
-  border-left: 1.5px solid var(--zplc-ink-3);
-}
-
-.portName {
-  font-size: var(--zplc-text-sm);
-  font-weight: 650;
-}
-
-.portNote {
-  font-size: var(--zplc-text-xs);
-  color: var(--zplc-ink-2);
-}
-
-/* ---------------------------------------------------------------------------------------------------------------------
- * Boards: the ladder of levels and the table of the manifest
- * ------------------------------------------------------------------------------------------------------------------- */
-.levels {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin: clamp(3rem, 2rem + 3vw, 4.5rem) 0 0;
-  padding: 0;
-  border: 1px solid var(--zplc-rule);
-  list-style: none;
-}
-
-.level {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: baseline;
-  gap: var(--zplc-space-2) var(--zplc-space-3);
-  padding: var(--zplc-space-4) var(--zplc-space-5);
-  color: var(--zplc-ink-3);
-}
-
-.level + .level {
-  border-left: 1px solid var(--zplc-rule);
-}
-
-.level[data-reached] {
-  background: var(--zplc-panel);
-  color: var(--zplc-ink);
-  box-shadow: inset 0 -2px 0 var(--zplc-cobalt);
-}
-
-.levelCount {
-  grid-row: span 2;
-  font-family: var(--zplc-font-mono);
-  font-size: 1.75rem;
-  font-weight: 400;
-  line-height: 1;
-}
-
-.level[data-reached] .levelCount {
-  color: var(--zplc-cobalt);
-}
-
-.levelName {
-  padding: 0;
-  border: 0;
-  background: none;
-  font-size: var(--zplc-text-sm);
-  font-weight: 400;
-  color: inherit;
-}
-
-.levelText {
-  font-size: var(--zplc-text-xs);
-  line-height: 1.45;
-  color: var(--zplc-ink-2);
-}
-
-.boardTable {
-  margin-top: var(--zplc-space-6);
-  overflow-x: auto;
-}
-
-.boardTable table {
+.specs {
   display: table;
   width: 100%;
+  margin: 0;
   border-collapse: collapse;
-  font-size: var(--zplc-text-sm);
+  border-top: 1.5px solid var(--zplc-ink-2);
 }
 
-.boardTable th,
-.boardTable td {
-  padding: var(--zplc-space-3) var(--zplc-space-4);
+.specs tr {
+  background: none;
+}
+
+.specs th,
+.specs td {
+  padding: var(--zplc-space-3) 0;
   border: 0;
   border-bottom: 1px solid var(--zplc-rule);
   background: none;
@@ -1033,111 +1079,25 @@
   vertical-align: baseline;
 }
 
-.boardTable thead th {
-  font-size: var(--zplc-text-xs);
-  font-weight: 600;
-  color: var(--zplc-ink-2);
-  background: var(--zplc-band);
-}
-
-.boardTable tbody tr {
-  background: none;
-}
-
-.boardTable tbody th {
+.specs th {
+  width: 11.5rem;
+  padding-right: var(--zplc-space-5);
+  font-size: var(--zplc-text-sm);
   font-weight: 600;
 }
 
-.boardTable code {
-  padding: 0;
-  border: 0;
-  background: none;
-  font-size: 0.8125rem;
+.specs td {
+  color: var(--zplc-ink-2);
+  text-wrap: pretty;
 }
 
-.learnerTag {
-  display: inline-block;
-  margin-left: var(--zplc-space-2);
-  padding: 0 var(--zplc-space-2);
-  border: 1px solid var(--zplc-rule-strong);
-  border-radius: var(--zplc-radius-control);
-  font-size: var(--zplc-text-xs);
-  font-weight: 500;
-  color: var(--zplc-ink-2);
-  white-space: nowrap;
+.specs code {
+  font-size: 0.85em;
 }
 
 /* ---------------------------------------------------------------------------------------------------------------------
- * The close: the warning label of the limits, how to get ZPLC, the source
+ * The close: the two ways in again, and the source
  * ------------------------------------------------------------------------------------------------------------------- */
-.label {
-  display: grid;
-  grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
-  gap: var(--zplc-space-4) var(--zplc-space-7);
-  padding: clamp(1.5rem, 1rem + 2vw, 2.5rem);
-  border: 1.5px solid var(--zplc-amber);
-  border-radius: var(--zplc-radius-figure);
-  background: color-mix(in srgb, var(--zplc-amber) 6%, var(--zplc-panel));
-}
-
-.labelTitle {
-  display: flex;
-  align-items: center;
-  gap: var(--zplc-space-3);
-  margin: 0;
-  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
-  font-weight: 650;
-  letter-spacing: -0.02em;
-}
-
-.labelList {
-  grid-row: span 2;
-  display: grid;
-  gap: var(--zplc-space-3);
-  margin: 0;
-  padding-left: 1.125rem;
-}
-
-.labelList li::marker {
-  color: var(--zplc-amber);
-}
-
-.labelLink {
-  align-self: end;
-  font-size: var(--zplc-text-sm);
-  font-weight: 500;
-}
-
-.getGrid {
-  display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-  gap: clamp(2rem, 1rem + 4vw, 5rem);
-  align-items: start;
-  margin-top: clamp(4rem, 3rem + 3vw, 6rem);
-}
-
-.systems {
-  margin: 0;
-  border-top: 1px solid var(--zplc-rule);
-}
-
-.systems > div {
-  display: grid;
-  grid-template-columns: 6.5rem minmax(0, 1fr);
-  gap: var(--zplc-space-1) var(--zplc-space-4);
-  padding: var(--zplc-space-4) 0;
-  border-bottom: 1px solid var(--zplc-rule);
-}
-
-.systems dt {
-  font-weight: 600;
-}
-
-.systems dd {
-  margin: 0;
-  color: var(--zplc-ink-2);
-}
-
 .source {
   margin-top: clamp(3rem, 2rem + 3vw, 4.5rem);
   padding-top: var(--zplc-space-6);
@@ -1160,10 +1120,52 @@
 @media (max-width: 996px) {
   .heroGrid,
   .portGrid,
+  .boardsGrid,
   .learnGrid,
   .languageLayout,
-  .evidence {
+  .debugGrid,
+  .specsGrid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .paths[data-layout="row"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* the wiring runs down the page: each wire drops from the block above, the bus starts where the last one lands */
+  .wiring {
+    --bus: 1.25rem;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wWire {
+    height: 2rem;
+    margin-left: 1rem;
+    border-top: 0;
+    border-left: 1.5px solid var(--wire);
+  }
+
+  .wTargets {
+    margin-left: 1rem;
+  }
+
+  .wTargets::before {
+    top: -3.5px;
+  }
+
+  .wTargets > li:first-child::after {
+    top: -1.5px;
+  }
+
+  .debugShot {
+    position: static;
+    order: -1;
+  }
+
+  .editorFeatures {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--zplc-space-4);
+    margin-left: 0;
   }
 
   .languageLayout {
@@ -1231,80 +1233,17 @@
   .plants {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .flow {
-    grid-template-columns: minmax(0, 1fr);
-    row-gap: 2rem;
-  }
-
-  .flowApp {
-    grid-column: 1;
-    margin-bottom: -1rem;
-  }
-
-  .stage {
-    grid-row: auto;
-    min-height: 0;
-  }
-
-  .stage::after,
-  .stage:last-child::after {
-    top: 100%;
-    left: 2rem;
-    width: 0;
-    height: 2rem;
-    border-top: 0;
-    border-left: 1.5px solid var(--zplc-ink-3);
-  }
-
-  .stage::before {
-    top: -4px;
-    left: calc(2rem - 3px);
-  }
-
-  .ports {
-    grid-row: auto;
-    grid-column: 1;
-    grid-template-columns: minmax(0, 1fr);
-    margin-top: 0;
-  }
-
-  .ports::before,
-  .ports li::before {
-    content: none;
-  }
-
-  .levels {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .level:nth-child(3) {
-    border-left: 0;
-  }
-
-  .level:nth-child(n + 3) {
-    border-top: 1px solid var(--zplc-rule);
-  }
-
-  .label,
-  .getGrid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .labelList {
-    grid-row: auto;
-  }
 }
 
 @media (max-width: 600px) {
-  /* a board per row: its name and level, then its target and network */
+  /* a board per row: its name, then its target and network */
   .boardTable thead {
     display: none;
   }
 
   .boardTable tr {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    column-gap: var(--zplc-space-3);
+    gap: var(--zplc-space-1);
     padding: var(--zplc-space-3) 0;
     border-bottom: 1px solid var(--zplc-rule);
   }
@@ -1315,24 +1254,13 @@
     border: 0;
   }
 
-  .boardTable td:nth-child(2),
-  .boardTable td:nth-child(3) {
-    grid-column: 1 / -1;
-    grid-row: auto;
-  }
-
-  .boardTable td:nth-child(4) {
-    grid-column: 2;
-    grid-row: 1;
-  }
-
   .boardTable td:nth-child(3) {
     font-size: var(--zplc-text-xs);
     color: var(--zplc-ink-2);
   }
 
-  .actions > * {
-    flex: 1 1 auto;
+  .pathAction {
+    flex: 1 1 100%;
     justify-content: center;
   }
 
@@ -1345,20 +1273,24 @@
     padding-bottom: 0;
   }
 
-  .targets > div {
-    grid-template-columns: minmax(0, 1fr);
+  .specs th,
+  .specs td {
+    display: block;
+    width: auto;
   }
 
-  .ladder {
-    border-right: 0;
+  .specs th {
+    padding-bottom: 0;
+    border-bottom: 0;
   }
 
+  /* the rung keeps its coil and both rails, on narrower symbols, so no wire is left open */
   .rung {
-    grid-template-columns: 2.25rem minmax(0, 1fr);
+    grid-template-columns: 2.25rem minmax(0, 1fr) 2.25rem;
   }
 
-  .rung > .symbol:last-child {
-    display: none;
+  .rungBody {
+    padding-inline: var(--zplc-space-2);
   }
 
   .symbol {
@@ -1373,7 +1305,7 @@
 @media (prefers-reduced-motion: no-preference) {
   .brand,
   .heroTitle,
-  .heroSubtitle,
+  .heroLead,
   .heroBody {
     animation: rise 680ms var(--zplc-ease-out) both;
   }
@@ -1382,7 +1314,7 @@
     animation-delay: 70ms;
   }
 
-  .heroSubtitle {
+  .heroLead {
     animation-delay: 115ms;
   }
 

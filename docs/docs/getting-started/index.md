@@ -15,9 +15,10 @@ own computer. You need no PLC and no development board. The tutorial
 version of this page, with the program explained and a scenario test.
 
 :::warning Prerelease
-ZPLC 2.0.0-rc.3 is an unsigned prerelease for evaluation. Do not use it to
-control machinery: read [Safety and limitations](../safety-and-limitations.md).
-Which boards have been tested with a physical device is on
+Version 2.0 is for evaluation. No board has been tested on hardware, and ZPLC
+must not control machinery. ZPLC 2.0.0-rc.3 is an unsigned prerelease: read
+[Safety and limitations](../safety-and-limitations.md) before you rely on it.
+The level that each board has reached is on
 [Hardware support](../reference/capabilities-evidence.md).
 :::
 

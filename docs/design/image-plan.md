@@ -175,11 +175,19 @@ meaning: a solid accent fill is the actuator the program drives, an accent outli
   > recognisable commercial product, development board or brand; neon, glow, lens flare or light rays. Colours: background
   > #F8FAF7, lines #172127, accent #245D8F, secondary fill #E7ECE8. 1600 x 1200 px.
 
+### G5: boards on one rail (product page, 2026-10-24)
+
+- Purpose: the boards section of the product page, which the owner asked to show as a strength ("las placas soportadas").
+  Generic microcontroller boards of three sizes on one DIN rail, wired from one terminal block: one program, the board you
+  choose. Paths: `docs/static/img/generated/boards-on-rail-light.avif` and `-dark.avif`, 1200 x 896. Prompts:
+  `docs/design/prompts/g5-boards-light.txt`, and `g5-boards-dark.txt` with the light image as reference.
+- This replaces the earlier rule "no image of a board". The boards drawn are generic and are not the seven of the manifest;
+  the text beside them calls those seven board profiles that build, never boards that were tested.
+
 ### Not generated, and why
 
-- The portability section shows the HAL as a terminal strip built in HTML from the real function names: a picture would only
-  repeat it less precisely.
-- No image of a board: every board is at `cross-build`, and a picture would read as support.
+- The portability section shows the HAL as a terminal strip built in HTML from the groups of the real functions: a picture
+  would only repeat it less precisely.
 
 ### Format, conversion and record
 

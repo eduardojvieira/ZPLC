@@ -42,7 +42,8 @@ function Panel({ item, selected }) {
   );
 }
 
-// The five languages: a tab per language with the real editor capture in the reader's language.
+// The five languages: a tab per language with the real editor capture in the reader's language, then what every editor
+// offers.
 export default function Languages() {
   const { languages } = useLandingPageContent();
   const [active, setActive] = useState(0);
@@ -92,12 +93,14 @@ export default function Languages() {
           ))}
         </div>
 
-        <div className={styles.evidence}>
-          <p className={styles.evidenceLabel}>{languages.evidenceLabel}</p>
-          <p className={styles.evidenceText}>
-            {languages.evidence} <Link to={languages.evidenceTo}>{languages.evidenceLink}</Link>
-          </p>
-        </div>
+        <dl className={styles.editorFeatures}>
+          {languages.features.map((feature) => (
+            <div key={feature.title}>
+              <dt>{feature.title}</dt>
+              <dd>{feature.text}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
     </section>
   );

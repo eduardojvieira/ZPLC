@@ -1,117 +1,134 @@
 # Site content outline
 
-What the new landing page and the navigation say, ranked for the audience, with the file that backs every claim. This is a
-design note for the owner's review. It is not a page of the site: Docusaurus serves `docs/docs/` and `docs/src/pages/`, never
-`docs/design/`, and no repository guard reads this folder (checked: `tools/ci/product-name.ts`,
-`tools/docs/check_capability_claims.ts`, `tools/docs/check_doc_claims.ts`, `tools/hil/validate_docs_parity.py`,
-`tools/docs/docs_structure.test.ts` and `tools/docs/capture-screenshots.ts` read `docs/docs`, the Spanish docs, the landing
-module and the configuration only). The landing text itself is in `docs/src/components/LandingPage/content.js`, which the
-capability-claims and product-name guards do read.
+What the landing page says, section by section, with the file that backs every claim. This is a design note for the owner's
+review. It is not a page of the site: Docusaurus serves `docs/docs/` and `docs/src/pages/`, never `docs/design/`. The landing
+text itself is in `docs/src/components/LandingPage/content.js`, which the capability-claims guard
+(`tools/docs/check_capability_claims.ts`) and the product-name guard (`tools/ci/product-name.ts`) read.
 
-## What changed at stage A (owner, 2026-10-23)
+## The product page (owner, 2026-10-24)
 
-- "un poco mas moderno": a bolder scale, asymmetric sections, a dark hero.
-- "una imagen generada en el primer hero": the hero is the generated image H1, not an editor capture.
-- "no abusar" of editor captures: one per section at most, none in the hero; they are evidence, not the face of the site.
-- "destacar el learn": Learn is a full section with the real course.
-- "todas las features que hacen a zplc unico ... ser portado facilmente a cualquier mcu": a "What makes ZPLC different"
-  section that leads with portability, phrased as far as the evidence goes.
-- "algo mas de industria, de electronica, de plc, mas que editor de codigo": the page speaks in the notation of the audience
-  (terminal strips, ladder rungs, a timing diagram, sequential function chart steps, status lamps).
+The landing was rewritten from a project page into a product page (`odd/tasks/site-product-page.md`, S1 to S5):
 
-## Sources reviewed
-
-`README.md`, `CHANGELOG.md`, `docs/docs/**`, `packages/zplc-ide/DESIGN.md`, `packages/zplc-ide/lessons/*/lesson.json` (33
-packages), `packages/zplc-ide/src/learn/lessonPackage.ts`, `packages/zplc-ide/src/test-engine/index.ts`,
-`firmware/app/boards/boards.json`, `firmware/lib/zplc_core/include/zplc_hal.h`, `firmware/lib/zplc_core/src/hal/`,
-`.github/workflows/ci.yml`, `tools/docs/language-capabilities.json`, `docs/capability-claims.json`, `AGENTS.md`, and
-`specs/011-zplc-2-0-remediation/spec.md` for intent only.
+- "te enfocas mucho en las cosas de programacion, no en un PLC de código abierto que puede llevar a cualquier
+  microcontrolador": the promise is the PLC for the microcontroller you choose; function names, file names, the bytecode and
+  the compiler stages left the page.
+- "destacar los puntos fuertes, los lenguajes, el editor, las placas soportadas, la simulacion": each one has its own section.
+- "haz una pagina que venda y muestre las features como el learn, la simulacion, debugger": Learn, the simulator and the
+  debugger are sections of their own, and a data sheet lists the rest.
+- "oculta de la pagina web: La versión 2.0 es para evaluación. Ninguna placa se ha probado con hardware, y ZPLC no debe
+  controlar maquinaria. esta aclaracion dejala para la documentcion": the status line of the hero and the "What ZPLC is not"
+  label are gone from the site, with the limits that rode inside other sections. The notice is in the documentation: the
+  warning at the top of Getting Started (`docs/docs/getting-started/index.md`, and the Spanish page) states it in full, and
+  Safety and limitations (`docs/docs/safety-and-limitations.md`) keeps the detail.
+- "Los dos por igual": building and learning are two ways in of the same size, each with its own primary action, in the hero
+  and again at the close.
 
 ## What the site must not say
 
-| Never claim                                                                   | Why                                                                                                                         |
-| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| "Ports easily to any MCU", or that a board "runs", "supports" or "was tested" | Ports exist for Zephyr, POSIX and FreeRTOS only; every board is `cross-build` (rules `board-capability`, `hardware-tested`) |
-| Real-time, deterministic scan, a scan time, jitter                            | No board has a measured scan time (`docs/docs/safety-and-limitations.md:25-27`, rules `timing`, `timing-figure`)            |
-| A safety rating, SIL, certification, IEC 61131-3 "compliance"                 | `docs/docs/safety-and-limitations.md:19-24`                                                                                 |
-| That Modbus or MQTT "work" or are "supported"                                 | Checked against stand-ins only (rule `communication-protocols`)                                                             |
-| Homebrew, AUR, winget, the Microsoft Store                                    | Not published (`README.md:29`, rule `distribution-channel`)                                                                 |
-| A browser version                                                             | Removed from the project (S6)                                                                                               |
-| A subset count written as "N lessons"                                         | The counts guard reads it as the total; write "all but one", "21 of them"                                                   |
+| Never claim                                                                    | Why                                                                                                            |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| That a board "runs", "supports", "works", "is ready" or "was tested"           | Every board is `cross-build` (rules `board-capability`, `hardware-tested`); boards are build targets           |
+| Real-time, deterministic scan, a scan time, jitter                             | No board has a measured scan time (rules `timing`, `timing-figure`)                                            |
+| A safety rating, SIL, certification, "industrial-grade", "production-ready"    | `docs/docs/safety-and-limitations.md` (rule `safety`)                                                          |
+| That Modbus, MQTT or a cloud service "works", "is supported" or "was verified" | Checked against stand-ins only (rules `communication-protocols`, `cloud-verified`)                             |
+| A browser version, Homebrew, AUR, winget, the Microsoft Store, notarization    | Removed or not published (rules `browser-simulator`, `distribution-channel`, `notarized-or-developer-signed`)  |
+| Retentive variables from the source (`RETAIN`)                                 | Source-level `RETAIN` is not supported yet (`docs/docs/runtime/index.md`)                                      |
+| A count that differs from the repository                                       | The guard compares boards, lessons, examples, standard functions and standard function blocks with the sources |
 
-## Landing page, ranked
+The guard reads `content.js` as one block of text and cuts it into sentences only at a full stop followed by a space, so a
+sentence runs across the ends of strings. A chip name (RP2040, STM32, ESP32) must not share such a sentence with "runs",
+"works", "supports", "ready" or "tested", even across two properties.
 
-Status: every section below is built (stage A built 1 to 4, stage B built 5 to 8 and the footer).
+## Landing page, in order
 
-### 1. Hero (A)
+### 1. Hero (spine)
 
-- The mark and "ZPLC"; the EN primary tagline as the heading, the action tagline under it (decision D-03); Download (the
-  releases page, `README.md:27-29`) and Get started.
-- The generated image H1 (`image-plan.md`): a ladder rung drawn as a schematic whose wire reaches an output terminal of a
-  generic controller module on a DIN rail. It shows the idea, not the product.
-- The release status with an amber lamp: version 2.0 is for evaluation, no board has been tested on hardware, ZPLC must not
-  control machinery (`README.md:13-15`, `docs/docs/safety-and-limitations.md:19-31`).
+- The promise: "The open-source PLC for the microcontroller you choose." Lead: the five IEC 61131-3 languages, simulate and
+  debug on your computer, build the same runtime for your board, free and open source. Source: `docs/PRODUCT.md`
+  (Positioning).
+- The two ways in, the same size, each with a primary action: **Build a controller** (Download ZPLC, the releases page;
+  Windows, macOS and Linux; Get started) and **Learn PLC programming** (33 lessons, ZPLC checks the program in every lesson;
+  Start learning, `/docs/learn`; For educators). Sources: `README.md` (download), `packages/zplc-ide/src/generated/
+lessonIndex.json` (33 lessons, the count the guard holds), `docs/docs/learn/index.md` (Check).
+- The generated image H1, kept from the previous rewrite.
 
-### 2. What makes ZPLC different (A), ranked
+### 2. Portability: "Write the program once. Choose the hardware."
 
-| #   | Feature, as the page says it                                                                                                                                                                                                                                                                                                          | Evidence                                                                                                                                                                                                                    |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **A new microcontroller needs 18 functions.** Portable C99 behind a HAL of 18 functions (clock 2, I/O table 6, storage 3, locks 4, log and life cycle 3) plus 2 optional network calls; a port implements them and passes the port conformance suite (opcodes, loader rejections, scheduler phases and faults, timing, I/O, storage). | `firmware/lib/zplc_core/include/zplc_hal.h`; `docs/docs/runtime/port-interface.md` (generated by `tools/docs/generate_port_interface.ts`), sections "The HAL" and "The conformance suite"; `tools/ci/port-conformance.json` |
-| 1a  | Zephyr RTOS: seven board profiles on RP2040, STM32 and ESP32-S3 chips build in CI; the suite runs on `native_sim` and QEMU Cortex-M3 and M0; no board tested on hardware.                                                                                                                                                             | `firmware/app/boards/boards.json`; `docs/docs/reference/capabilities-evidence.md:30,44-56`; `docs/docs/runtime/port-interface.md` (per-opcode row of Zephyr)                                                                |
-| 1b  | POSIX host: the simulator of the application is this port.                                                                                                                                                                                                                                                                            | `README.md:52`; `firmware/lib/zplc_core/src/hal/posix/`                                                                                                                                                                     |
-| 1c  | FreeRTOS: built and conformance-tested on the FreeRTOS POSIX simulator in CI (owner wording, 2026-10-23).                                                                                                                                                                                                                             | `.github/workflows/ci.yml:323-331` (job "FreeRTOS port (POSIX simulator)"); `docs/docs/runtime/port-interface.md`, "What the suite shows about the ports today"                                                             |
-| 2   | **Simulate before any hardware**: the same C runtime built for the host, bundled; scenario tests from the Tests tab or `zplc-cli` in CI.                                                                                                                                                                                              | `README.md:42-43,52`; `docs/docs/guides/scenario-tests.md`; `docs/docs/guides/command-line.md:12-16`                                                                                                                        |
-| 3   | **Watch, force and step online** in all five languages: online values, breakpoints, pause and one-cycle step, forced values marked as forced.                                                                                                                                                                                         | `tools/docs/language-capabilities.json` (rows watch, debug, pause, force; journeys 51, 51b, 51d show forced values)                                                                                                         |
-| 4   | **A scan in a fixed order**: tasks released together run by release time, priority, task ID, against one snapshot of the inputs; up to 16 tasks, each with its interval; the interval is a deadline, no scan time is measured. The timing diagram shows the order (read inputs, run tasks, write outputs), "not to scale".            | `docs/docs/runtime/scheduler.md:38-45,67`; `docs/docs/safety-and-limitations.md:60`; scheduler phases in `docs/docs/runtime/port-interface.md` ("The scheduler port")                                                       |
-| 5   | **A person starts every physical action**: Learn and the MCP server never flash, deploy, force, or start and stop a program.                                                                                                                                                                                                          | `AGENTS.md` rule 7; `docs/docs/release-notes/index.md:39-40`; `docs/docs/guides/ai-and-mcp.md:12-17`; `docs/docs/learn/hardware-track.md` ("You start every physical operation")                                            |
-| 6   | **Communication blocks**: Modbus, MQTT with Sparkplug B, cloud services; checked against test servers on this computer, not a live broker or a device on a wire.                                                                                                                                                                      | `docs/docs/safety-and-limitations.md:46`; `docs/docs/runtime/communication-function-blocks.md`                                                                                                                              |
-| 7   | **English and Spanish**: the application, the 33 lessons, the documentation.                                                                                                                                                                                                                                                          | `packages/zplc-ide/src/i18n/catalog/`; `packages/zplc-ide/lessons/*/text.{en,es}.json` (33 of each); `docs/i18n/es/`                                                                                                        |
+| Claim                                                                                                                   | Evidence                                                                                                        |
+| ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| The runtime is portable C99 and reaches the hardware through one interface                                              | `firmware/lib/zplc_core/include/zplc_hal.h`; `docs/docs/runtime/port-interface.md`                              |
+| The program runs on the same runtime on Zephyr boards, the FreeRTOS port and the simulator; the wiring diagram draws it | `docs/PRODUCT.md`; `.github/workflows/ci.yml` (FreeRTOS POSIX simulator job); `firmware/lib/zplc_core/src/hal/` |
+| Zephyr: seven board profiles with RP2040, STM32 and ESP32-S3 chips, serial to Ethernet and Wi-Fi                        | `firmware/app/boards/boards.json` (7 entries, `network`)                                                        |
+| FreeRTOS: a second RTOS port checked by the port conformance suite in CI                                                | `docs/docs/runtime/port-interface.md` ("What the suite shows about the ports today")                            |
+| A port implements 18 functions; the conformance suite checks instructions, scheduler, I/O and storage                   | `docs/docs/runtime/port-interface.md` (The HAL, The conformance suite)                                          |
+| The terminal strip: the six groups of the HAL with each function in words, 18 numbered plus 2 optional                  | `zplc_hal.h`; groups as in `port-interface.md`                                                                  |
 
-The language feature (one bytecode for five languages) has its own section, next.
+### 3. Boards: "Seven boards to start from"
 
-### 3. Five languages, one bytecode (A, kept from checkpoint 1)
+- The boards come from `docs/src/data/boards.json` (written by `tools/docs/generate_board_reference.py` from the manifest):
+  name, Zephyr target, network, and the tag of the two learner boards (`learner: true`). Each profile builds on every change
+  and fits its flash and RAM budget (`docs/docs/reference/boards.md`).
+- The generated image G5 (boards on one rail, wired to the same terminal block), `docs/static/img/generated/README.md`.
+- A request for community reports, with the board report form; no claim of a level.
 
-- One tab per language with its registered editor capture in the reader's language (`docs/static/img/editors/`), one
-  sentence each, and the evidence line (`tools/docs/language-capabilities.json`, `docs/docs/languages/index.md:26`).
+### 4. Languages: "Five IEC 61131-3 languages, an editor for each"
 
-### 4. Learn (A)
+- One tab per language with its registered editor capture (`docs/static/img/editors/`, `manifest.json`) and one sentence.
+- What the editors offer: completion, go to definition, find references and rename across the project in Structured Text
+  (`docs/docs/ide/editors.md`, "The Structured Text language service"); every editing action of the Ladder, FBD and SFC
+  editors from the keyboard (`docs/docs/ide/editors.md`, "Editing from the keyboard"); the command palette, Ctrl+Shift+P,
+  reaches every command (`docs/docs/ide/features.md`, "Application menu, command palette and shortcuts").
 
-| Fact                                                                                                                                                     | Evidence                                                                                                                                  |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| 33 lessons in 12 modules (0 to 11), from the scan cycle to a capstone machine                                                                            | `packages/zplc-ide/lessons/*/lesson.json` (`module`); `docs/docs/learn/course-outline.md`                                                 |
-| Levels: modules 0 to 3 foundation (12 lessons), 4 to 7 intermediate (12), 8 to 11 advanced (9)                                                           | `lesson.json` (`level`)                                                                                                                   |
-| Every lesson graded: Check runs the saved program against the lesson's scenario and lists failed assertions with time, expected and seen values          | `docs/docs/learn/index.md:23-27`; `packages/zplc-ide/src/learn/lessonCheck.ts`, `gradeRecord.ts`                                          |
-| All but one lesson run in simulation (32); 21 also have a hardware track for a learner board, with wiring diagrams and pin maps; no board check recorded | `lesson.json` (`tracks`: 20 both, 12 simulation only, 1 hardware only); `wiring.json` in 21 packages; `docs/docs/learn/hardware-track.md` |
-| Four simulated plants: tank, conveyor, motor, pedestrian crossing                                                                                        | `LESSON_PLANTS` in `packages/zplc-ide/src/learn/lessonPackage.ts:37`; `docs/docs/learn/plants.md`                                         |
-| Two hint levels, solution on request, teachers can hide it                                                                                               | `LESSON_HINT_LEVELS` in `lessonPackage.ts:40`; `docs/docs/learn/index.md`; `docs/docs/learn/educators.md`                                 |
-| Offline, English and Spanish                                                                                                                             | `docs/docs/learn/index.md:18,53`; `text.en.json` and `text.es.json` in every package                                                      |
+### 5. Simulate and debug: "Simulate and debug before you wire anything"
 
-- The course is drawn as a sequential function chart: each module a step (module 0 the initial step, double frame), one row
-  per level.
-- One real capture of a lesson (C3, to be taken) and the four plant illustrations (G1 to G4).
+| Rung                                                                                               | Evidence                                                                                     |
+| -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Breakpoints on an ST or IL line, a rung, an FBD block, an SFC step                                 | `docs/docs/guides/simulate-and-debug.md` (section 2)                                         |
+| Pause between scans, step one cycle, resume (timing diagram of one scan, "not to scale")           | `docs/docs/ide/features.md` (Pause, resume, step and Stop); `docs/docs/runtime/scheduler.md` |
+| Watch in decimal, hexadecimal, binary or time; a forced value stays marked until released          | `docs/docs/ide/features.md` (The Watch table); `docs/docs/guides/force-values.md`            |
+| The live I/O faceplate: switch, push button or slider per input; the change lands at the next scan | `docs/docs/ide/features.md` (Live I/O)                                                       |
+| Scenario tests in the Tests tab or with `zplc-cli` in CI                                           | `docs/docs/guides/scenario-tests.md`; `docs/docs/guides/command-line.md`                     |
 
-### 5. Architecture (built)
+- The capture is the recorded picture `screen-reader-check/2026-10-20/<locale>-9-plant-at-speed.png` (listed with its hash in
+  that folder's `results.json`), shown as two regions through a CSS crop window (`Crop.js`): the status line and the code
+  with live values, and the inputs of the Live I/O faceplate. No derived raster is published.
 
-A hand-built SVG in the same schematic line work: five languages, the compiler, `.zplc` bytecode, the C99 VM, the HAL and the
-ports (Zephyr, POSIX host, FreeRTOS), the application around them.
+### 6. Learn (band): "Learn PLC programming without buying a PLC"
 
-### 6. Boards and evidence levels (built)
+| Fact                                                                                  | Evidence                                                                                    |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| 33 lessons in 12 modules, from the scan cycle to a small machine, English and Spanish | `packages/zplc-ide/lessons/*/lesson.json`; `docs/docs/learn/course-outline.md`              |
+| Check lists each failed assertion with time, expected and seen value                  | `docs/docs/ide/features.md` (Learn); `packages/zplc-ide/src/learn/lessonCheck.ts`           |
+| All lessons but one run in the simulator; 21 have a track for a learner board         | `lesson.json` (`tracks`: 20 both, 12 simulation only, 1 hardware only); `wiring.json` in 21 |
+| Four plants, with faults you can trigger                                              | `LESSON_PLANTS` in `lessonPackage.ts`; `docs/docs/ide/features.md` (Live plants)            |
+| Two hint levels, solution on request, a teacher can hide it                           | `docs/docs/learn/educators.md`                                                              |
 
-The seven boards from `firmware/app/boards/boards.json` with their level, read from `docs/src/data/boards.json`, which
-`tools/docs/generate_board_reference.py` writes and checks; the four levels with the number of boards on each. No board picture.
+- The course as a sequential function chart, the capture `learn/lesson-checked-*.png` (journey 59, shown through a crop
+  window on the lesson panel and the code), the plants G1 to G4.
 
-### 7. Safety and limits, 8. Get ZPLC and take part, footer (built)
+### 7. Technical data
 
-As in checkpoint 1: the five "is not" statements and a link; download per system with the unsigned note; licence, repository,
-Contributing, Release notes. The workflow section of checkpoint 1 is folded into feature 2; communications into feature 6.
+| Row           | Evidence                                                                                                                      |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Languages     | `docs/docs/languages/index.md`                                                                                                |
+| Runtime       | `docs/docs/runtime/index.md`                                                                                                  |
+| Platforms     | as section 2                                                                                                                  |
+| Boards        | `firmware/app/boards/boards.json`                                                                                             |
+| Tasks         | `docs/docs/runtime/scheduler.md` (at most 16 tasks, interval, priority)                                                       |
+| Library       | `docs/docs/reference/function-blocks.md` (34 blocks, their groups); `docs/docs/reference/functions.md` (297, 240 conversions) |
+| Communication | `docs/docs/runtime/communication-function-blocks.md` (twelve blocks: Modbus, MQTT, Sparkplug B, Azure, AWS)                   |
+| Debugging     | as section 5                                                                                                                  |
+| Testing       | as section 5                                                                                                                  |
+| Examples      | `welcomeExamples()` in `tools/docs/check_capability_claims.ts` (46 on the Welcome screen)                                     |
+| Application   | `README.md`; `docs/docs/ide/features.md` (Interface language)                                                                 |
+| AI assistants | `docs/docs/guides/ai-and-mcp.md` (no tool flashes, deploys, forces, starts or stops)                                          |
+| Licence       | `LICENSE`                                                                                                                     |
+
+### 8. Close
+
+The two ways in again, side by side, and the source: MIT, one public repository, Contributing, Discussions, Release notes.
 
 ## Navigation
 
-- **Navbar (built):** Docs, Learn, Release notes; then search, language, GitHub.
-- **Footer (built):** Documentation, Project, Source.
-- **Boards page (built):** renamed "Boards" ("Placas") by its generator, which now states the number of boards at each level.
-
-## Open for the owner
-
-1. Approve the hero concept and generate H1 first.
-2. The hero is dark in both colour modes; the rest of the page follows the mode.
+Unchanged: the navbar (Docs, Learn, Release notes; search, language, GitHub) and the footer (Documentation, Project, Source).
+The footer still links Safety and limitations, which is a page of the documentation.

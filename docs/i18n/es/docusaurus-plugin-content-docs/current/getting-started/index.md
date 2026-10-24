@@ -15,9 +15,10 @@ tutorial [Blink sin hardware](../tutorials/blink-without-hardware.md) es la vers
 más pausada de esta página, con el programa explicado y una prueba de escenario.
 
 :::warning Versión preliminar
-ZPLC 2.0.0-rc.3 es una versión preliminar sin firmar, pensada para evaluación.
-No la use para controlar maquinaria: lea [Seguridad y limitaciones](../safety-and-limitations.md).
-Qué placas se han probado con un dispositivo físico está en
+La versión 2.0 es para evaluación. Ninguna placa se ha probado con hardware, y
+ZPLC no debe controlar maquinaria. ZPLC 2.0.0-rc.3 es una versión preliminar sin
+firmar: lea [Seguridad y limitaciones](../safety-and-limitations.md) antes de
+confiar en ella. El nivel que alcanzó cada placa está en
 [Compatibilidad de hardware](../reference/capabilities-evidence.md).
 :::
 

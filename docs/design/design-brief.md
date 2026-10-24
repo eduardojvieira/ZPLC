@@ -2,7 +2,17 @@
 
 The visual direction of the new ZPLC site. The prototype is the landing page (`docs/src/pages/index.js`,
 `docs/src/components/LandingPage/`) and the theme tokens (`docs/src/css/custom.css`). Screenshots:
-`~/.cache/zplc-site/final/` (landing and four docs pages, stage B).
+`~/.cache/zplc-site/final/` (landing and four docs pages, stage B) and `~/.cache/zplc-site/product-page/` (the product page).
+
+**Product page (2026-10-24).** The landing became a product page (`odd/tasks/site-product-page.md`); the world below is
+unchanged, the content and the order of the sections changed (`content-outline.md`). Hero: the promise, the lead, and the two
+ways in (build and learn) as two modules of the same size, each with a primary action, beside H1; no status lamp. Then
+portability (the platforms and the HAL as a terminal strip whose terminals are named in words, not identifiers), the boards
+(G5 and the manifest table), the languages (tabs and what the editors offer), simulate and debug (the debugging features as
+ladder rungs beside a sticky capture), Learn on the band material, the technical data as a data sheet, and the close with
+the two ways in side by side. The "What ZPLC is not" label, the evaluation status and the architecture block diagram left
+the site; amber is no longer used on the landing. The landing's own design contract is in
+`docs/.impeccable/surfaces/src-pages-index-js.md`.
 
 ## Direction
 
@@ -21,11 +31,11 @@ asked ("mas moderno", "algo mas de industria, de electronica, de plc, mas que ed
   neon hero with glowing gradients, and the code-editor screenshot as the hero.
 - **Own world.** Tinted paper and graphite neutrals; 1 px rules; IEC 60617 symbols drawn in line work; square shapes; cobalt
   for actions, links and selection; green only when something conducts or is TRUE; amber only for the prerelease status.
-- **Story.** The visitor reads what ZPLC is, sees the idea (logic reaching a terminal) in the hero image, learns what sets it
-  apart (portability first, with the 18 functions on a terminal strip), sees the five languages, and finds a real course to
-  learn with. The limits are on the first screen.
-- **First viewport (1440 x 900).** The hero on the dark material: brand, the primary tagline at up to 68 px across three
-  lines, then a two-column row: the action tagline, Download and Get started, and the status lamp on the left (5 of 12
+- **Story.** The visitor reads what ZPLC is, sees the idea (logic reaching a terminal) in the hero image, picks one of the two
+  ways in, then sees the proof: portability with the 18 functions on a terminal strip, the boards, the five languages, the
+  simulator and debugger, a real course to learn with, and the data sheet. The limits are in the documentation.
+- **First viewport (1440 x 900).** The hero on the dark material: brand, the promise at up to 68 px in two lines, then a
+  two-column row: the lead and the two ways in (Build a controller, Learn PLC programming) stacked on the left (5 of 12
   columns); the generated image H1 on the right (7 of 12 columns), reaching the right gutter.
 - **Signature interactions.** The hero image is drawn in from the left once, like a signal travelling a wire. A rung of the
   ladder conducts (its wire and symbols turn the green of a TRUE value) under the pointer or the keyboard focus. The steps of
@@ -109,19 +119,28 @@ allows; never as an eyebrow above a heading.
 
 ## Components
 
-Built at stage A:
+On the product page (2026-10-24):
 
-- Hero on the dark material: brand, heading, lead, two actions, status lamp, image (placeholder H1 until the file exists).
-- Placeholder: a dashed box of the exact aspect ratio with the image id, its path and size; it carries the final alt text.
-- Terminal strip: head with `zplc_hal.h`, a slotted DIN rail, one row per group with a label column, numbered marker tags
-  1 to 18, the optional network group with dashed tags.
+- Hero on the dark material: brand, heading, lead, the two ways in (two modules of the same size: an IEC symbol, a title, a
+  sentence, a primary action with a note and a second link beside it), image H1.
+- Wiring diagram: the program block wired to the runtime block (double frame) and on to a bus with a branch to each of the
+  three platforms; 1.5 px wires that conduct green under the pointer or the keyboard; it runs down the page under 997 px.
+- Terminal strip: head with the name of the layer and its count, a slotted DIN rail, one row per group with a label
+  column, numbered marker tags 1 to 18 with what each terminal does in words, the optional network group with dashed tags.
+- Framed capture: one or more regions of a real capture shown through a crop window (`Crop.js`, a CSS window onto the
+  published file, no derived raster), ruled apart, with a caption.
+- Data sheet: one parameter per row under a 1.5 px top rule.
+
+Built at stage A and kept:
+
 - Ladder: two power rails, one rung per feature with an IEC normally open contact and a coil, the title sitting on the wire.
 - Timing diagram: three traces over three scans, labelled, with the caption "not to scale".
 - Language tabs (from checkpoint 1).
 - Facts list (label and text), course chart (steps with numbers, the initial step double-framed, links and transition bars,
   one row per level), plant cards (image, plant, lesson).
 
-Stage B: architecture SVG, boards by level, limits, download block, footer, docs restyle, 404.
+Stage B: architecture SVG, boards by level, limits, download block, footer, docs restyle, 404. The architecture SVG, the
+boards by level, the limits label and the status lamp left the landing with the product page.
 
 ## Motion
 

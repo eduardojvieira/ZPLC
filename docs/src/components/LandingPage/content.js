@@ -5,29 +5,21 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 // A span between backticks is a literal identifier and is set in code.
 
 const releasesUrl = 'https://github.com/eduardojvieira/ZPLC/releases';
+const repositoryUrl = 'https://github.com/eduardojvieira/ZPLC';
 const boardReportUrl = 'https://github.com/eduardojvieira/ZPLC/issues/new?template=board_report.yml';
 
 const languageIds = ['st', 'il', 'ld', 'fbd', 'sfc'];
 
-// The functions of firmware/lib/zplc_core/include/zplc_hal.h, in the groups of docs/docs/runtime/port-interface.md. The last
-// group is optional: the portable core does not call it.
+// The groups of the hardware abstraction layer (firmware/lib/zplc_core/include/zplc_hal.h, grouped as in
+// docs/docs/runtime/port-interface.md), with the number of functions of each. The last group is optional: the portable core
+// does not call it. The words of each terminal are in the locales below, in the same order.
 const halGroups = [
-  { key: 'clock', functions: ['zplc_hal_tick', 'zplc_hal_sleep'] },
-  {
-    key: 'io',
-    functions: [
-      'zplc_hal_gpio_read',
-      'zplc_hal_gpio_write',
-      'zplc_hal_adc_read',
-      'zplc_hal_dac_write',
-      'zplc_io_table',
-      'zplc_io_channel_count',
-    ],
-  },
-  { key: 'storage', functions: ['zplc_hal_persist_save', 'zplc_hal_persist_load', 'zplc_hal_persist_delete'] },
-  { key: 'locks', functions: ['zplc_hal_mutex_create', 'zplc_hal_mutex_lock', 'zplc_hal_mutex_unlock', 'zplc_hal_mutex_destroy'] },
-  { key: 'life', functions: ['zplc_hal_log', 'zplc_hal_init', 'zplc_hal_shutdown'] },
-  { key: 'network', optional: true, functions: ['zplc_hal_net_init', 'zplc_hal_net_get_ip'] },
+  { key: 'clock', size: 2 },
+  { key: 'io', size: 6 },
+  { key: 'storage', size: 3 },
+  { key: 'locks', size: 4 },
+  { key: 'life', size: 3 },
+  { key: 'network', size: 2, optional: true },
 ];
 
 // The modules of the course (packages/zplc-ide/lessons/*/lesson.json: `module` and `level`; titles from
@@ -46,130 +38,114 @@ const plantIds = [
 const landingPageContent = {
   en: {
     home: {
-      metaTitle: 'The open-source PLC you can port to any microcontroller',
+      metaTitle: 'The open-source PLC for the microcontroller you choose',
       metaDescription:
-        'ZPLC compiles the five IEC 61131-3 languages to one bytecode. Its C99 runtime builds for Zephyr boards and runs as a ' +
-        'simulator on your computer, and its desktop application edits, simulates and tests programs.',
+        'ZPLC is an open-source IEC 61131-3 PLC: program it in five languages, simulate and debug it on your computer, build ' +
+        'its portable runtime for your board, and learn PLC programming with the course inside the application.',
     },
     hero: {
-      title: 'The open-source PLC you can port to any microcontroller.',
-      subtitle: 'Open-source IEC 61131-3 PLC runtime and development environment on Zephyr RTOS.',
-      lead: 'Start without a board: the desktop application runs your program in its built-in simulator.',
-      download: 'Download',
-      downloadHref: releasesUrl,
-      start: 'Get started',
-      startTo: '/docs/getting-started',
+      title: 'The open-source PLC for the microcontroller you choose.',
+      lead:
+        'Program it in the five IEC 61131-3 languages, simulate and debug it on your computer, then build the same runtime for ' +
+        'your board. Free and open source.',
       artAlt:
         'Illustration: a ladder rung drawn as a schematic, wired to the terminals of a generic controller module on a DIN rail; ' +
         'the path to one output is highlighted.',
-      statusLabel: 'Prerelease',
-      status: 'Version 2.0 is for evaluation. No board has been tested on hardware, and ZPLC must not control machinery.',
-      statusLink: 'Safety and limitations',
-      statusTo: '/docs/safety-and-limitations',
     },
-    different: {
-      title: 'Everything a PLC needs, on the chip you choose',
-      lead:
-        'Port the runtime once, then edit, simulate, debug and test in one application. Each claim below links to the page that ' +
-        'shows how it is checked.',
-      port: {
-        title: 'Port it in 18 functions',
-        text:
-          'The runtime is portable C99 behind a hardware abstraction layer. A port implements its 18 functions and two optional ' +
-          'network calls, then passes the port conformance suite: every opcode, the loader rejections, the scheduler phases and ' +
-          'faults, timing, I/O and storage.',
-        targetsTitle: 'Ports in the repository',
-        targets: [
-          {
-            name: 'Zephyr RTOS',
-            text:
-              'Seven board profiles on RP2040, STM32 and ESP32-S3 chips build in CI. The conformance suite runs on `native_sim` ' +
-              'and on QEMU Cortex-M3 and M0. No board has been tested on hardware yet.',
-          },
-          { name: 'POSIX host', text: 'The simulator of the ZPLC application is this port, built from the same C sources.' },
-          { name: 'FreeRTOS', text: 'Built and conformance-tested on the FreeRTOS POSIX simulator in CI.' },
-        ],
-        stripTitle: 'The hardware abstraction layer',
-        groups: {
-          clock: 'Clock',
-          io: 'I/O table',
-          storage: 'Storage',
-          locks: 'Locks',
-          life: 'Log and life cycle',
-          network: 'Network, optional',
-        },
-        links: [
-          { label: 'Port interface and conformance suite', to: '/docs/runtime/port-interface' },
-          { label: 'Port to a board', to: '/docs/guides/port-to-a-board' },
-        ],
+    paths: {
+      label: 'Two ways to start',
+      build: {
+        title: 'Build a controller',
+        text: 'Program, simulate and debug in the ZPLC application, then build the runtime for your board.',
+        action: 'Download ZPLC',
+        note: 'For Windows, macOS and Linux.',
+        more: 'Get started',
       },
-      rungs: [
+      learn: {
+        title: 'Learn PLC programming',
+        text: 'A free course of 33 lessons inside the same application. ZPLC checks your program in every lesson.',
+        action: 'Start learning',
+        note: 'In English and Spanish.',
+        more: 'For educators',
+      },
+    },
+    portability: {
+      title: 'Write the program once. Choose the hardware.',
+      lead:
+        'Your program runs on the same ZPLC runtime everywhere: on boards with Zephyr RTOS, on the FreeRTOS port and in the ' +
+        'simulator on your computer. If your board is not on the list yet, you can bring it.',
+      wiring: {
+        label: 'One program, one runtime, three platforms',
+        program: { name: 'Your program', text: 'ST · IL · LD · FBD · SFC' },
+        runtime: { name: 'ZPLC runtime', text: 'The same core on every platform.' },
+      },
+      platforms: [
         {
-          title: 'Test it before you buy a board',
-          text:
-            'The simulator is the same C runtime, built for your computer and bundled with ZPLC. Scenario tests set inputs and ' +
-            'check outputs over time, in the Tests tab or with `zplc-cli` in a CI job.',
-          link: 'Scenario tests',
-          to: '/docs/guides/scenario-tests',
+          name: 'Zephyr RTOS',
+          text: 'Seven board profiles with RP2040, STM32 and ESP32-S3 chips, from serial boards to Ethernet and Wi-Fi.',
+          to: '/docs/reference/boards',
         },
+        { name: 'FreeRTOS', text: 'A second RTOS port, checked by the port conformance suite in CI.', to: '/docs/runtime/port-interface' },
         {
-          title: 'See every value while it runs',
-          text:
-            'In all five languages: values on the program while it runs, breakpoints, pause and a one-cycle step, and forced ' +
-            'values that stay marked as forced.',
-          link: 'Simulate and debug',
+          name: 'Your computer',
+          text: 'The simulator of the ZPLC application, built for Windows, macOS and Linux.',
           to: '/docs/guides/simulate-and-debug',
         },
-        {
-          title: 'Tasks run in an order you can predict',
-          text:
-            'Tasks released together run by release time, then priority, then task ID, against one snapshot of the inputs. A ' +
-            'program has up to 16 tasks, each with its own interval. The interval is a deadline; no board has a measured scan ' +
-            'time yet.',
-          link: 'Scheduler',
-          to: '/docs/runtime/scheduler',
-          timing: true,
-        },
-        {
-          title: 'AI assists, a person decides',
-          text:
-            'Learn and the MCP server for AI assistants never flash, deploy, force, or start and stop a program. A person does, ' +
-            'with the controls of ZPLC.',
-          link: 'AI assistants and MCP',
-          to: '/docs/guides/ai-and-mcp',
-        },
-        {
-          title: 'Modbus and MQTT from your program',
-          text:
-            'Function blocks for Modbus, MQTT with Sparkplug B, and cloud services. They are checked against servers written for ' +
-            'the tests on this computer, not yet against a live broker or a device on a wire.',
-          link: 'Communication function blocks',
-          to: '/docs/runtime/communication-function-blocks',
-        },
-        {
-          title: 'In English and in Spanish',
-          text: 'The application, the 33 lessons and this documentation, in English and in neutral Spanish.',
-          link: 'Getting started',
-          to: '/docs/getting-started',
-        },
       ],
-      timing: {
-        caption: 'The order of one scan, not to scale',
-        rows: ['Read inputs', 'Run tasks', 'Write outputs'],
+      port: {
+        title: 'Bring your own microcontroller',
+        text:
+          'A new port implements the 18 functions of the hardware abstraction layer. The port conformance suite then checks every ' +
+          'instruction, the scheduler, the I/O and the storage on it.',
+      },
+      links: [
+        { label: 'Port to a board', to: '/docs/guides/port-to-a-board' },
+        { label: 'Port interface', to: '/docs/runtime/port-interface' },
+      ],
+      strip: {
+        title: 'Hardware abstraction layer',
+        count: '18 functions, 2 optional',
+        groups: {
+          clock: { label: 'Clock', terminals: ['tick', 'sleep'] },
+          io: {
+            label: 'Inputs and outputs',
+            terminals: ['digital in', 'digital out', 'analog in', 'analog out', 'I/O table', 'channel count'],
+          },
+          storage: { label: 'Storage', terminals: ['save', 'load', 'delete'] },
+          locks: { label: 'Locks', terminals: ['create', 'lock', 'unlock', 'destroy'] },
+          life: { label: 'Log and life cycle', terminals: ['log', 'start', 'shut down'] },
+          network: { label: 'Network, optional', terminals: ['start network', 'IP address'] },
+        },
       },
     },
-    languages: {
-      title: 'Ladder or text: all five IEC 61131-3 languages',
+    boards: {
+      title: 'Seven boards to start from',
       lead:
-        'Draw rungs, wire blocks, chart steps or type code. Every language compiles to the same `.zplc` bytecode, which one C99 ' +
-        'runtime executes.',
+        'Board profiles for RP2040, STM32 and ESP32-S3 chips, from serial boards to Ethernet and Wi-Fi. Each one builds on every ' +
+        'change and fits its flash and RAM budget. Two of them are the learner boards of the course.',
+      artAlt: 'Illustration: generic microcontroller boards of different sizes on one DIN rail, wired to one terminal block.',
+      columns: { board: 'Board', target: 'Zephyr target', network: 'Network' },
+      learner: 'Course board',
+      report: 'Using ZPLC on a board of your own? Tell the project what happened, with the image you flashed.',
+      links: [
+        { label: 'All boards', to: '/docs/reference/boards' },
+        { label: 'Report your board', href: boardReportUrl },
+      ],
+    },
+    languages: {
+      title: 'Five IEC 61131-3 languages, an editor for each',
+      lead:
+        'Draw ladder rungs, wire function blocks, chart a sequence, or write Structured Text and Instruction List. Each language ' +
+        'has its own editor, and all five compile for the same runtime.',
       tabsLabel: 'IEC 61131-3 languages',
-      evidenceLabel: 'How this is checked',
-      evidence:
-        'For each language, an end-to-end test of ZPLC edits, builds, simulates, debugs, forces and deploys a program. Deploy goes ' +
-        'to the native runtime behind an emulated board; no physical board takes part.',
-      evidenceLink: 'Languages and their evidence',
-      evidenceTo: '/docs/languages',
+      features: [
+        {
+          title: 'Completion and navigation',
+          text: 'Structured Text gets completion, go to definition, find references and rename across the whole project.',
+        },
+        { title: 'Diagrams from the keyboard', text: 'Rungs, blocks and steps can be placed and wired without the mouse.' },
+        { title: 'One command palette', text: 'Every command of the application is a search away, with Ctrl+Shift+P.' },
+      ],
       items: [
         {
           code: 'ST',
@@ -208,11 +184,64 @@ const landingPageContent = {
         },
       ],
     },
+    debug: {
+      title: 'Simulate and debug before you wire anything',
+      lead:
+        'The simulator is the ZPLC runtime itself, built for your computer and bundled with the application. Run your program, ' +
+        'stop it, step it and watch every value, with no board on the desk.',
+      shotAlt:
+        'Two details of the ZPLC application running the motor lesson in the simulator: the code with its live values, and the ' +
+        'Live I/O faceplate with a switch and a push button for each input.',
+      caption: 'The motor lesson in the simulator: live values on the code, and the Live I/O faceplate under it.',
+      rungs: [
+        {
+          title: 'Breakpoints in every language',
+          text:
+            'Stop on a line of Structured Text or Instruction List, a ladder rung, a function block or a step of a chart, and read ' +
+            'the values of that scan.',
+          link: 'Simulate and debug',
+          to: '/docs/guides/simulate-and-debug',
+        },
+        {
+          title: 'One scan at a time',
+          text: 'Pause between scans, step one cycle, and resume where the program stopped.',
+          link: 'Pause, step and resume',
+          to: '/docs/ide/features#pause-resume-step-and-stop',
+          timing: true,
+        },
+        {
+          title: 'Watch and force',
+          text:
+            'Watch any variable in decimal, hexadecimal, binary or as a time. A forced value stays marked as forced until you ' +
+            'release it.',
+          link: 'Force a value',
+          to: '/docs/guides/force-values',
+        },
+        {
+          title: 'A live I/O faceplate',
+          text:
+            'Every input of the program gets a switch, a push button or a slider under its own name, and the change reaches the ' +
+            'program at the next scan.',
+          link: 'Live I/O',
+          to: '/docs/ide/features#live-io',
+        },
+        {
+          title: 'Scenario tests',
+          text: 'Write the inputs over time and the outputs you expect, then run them in the Tests tab or with `zplc-cli` in a CI job.',
+          link: 'Scenario tests',
+          to: '/docs/guides/scenario-tests',
+        },
+      ],
+      timing: {
+        caption: 'One scan: read the inputs, run the tasks, write the outputs. Not to scale.',
+        rows: ['Read inputs', 'Run tasks', 'Write outputs'],
+      },
+    },
     learn: {
       title: 'Learn PLC programming without buying a PLC',
       lead:
-        'A free course of 33 lessons in 12 modules, from the scan cycle to a small machine, in English and Spanish. ZPLC grades every ' +
-        'lesson, and all but one run in the simulator with no board and no network.',
+        'A free course of 33 lessons in 12 modules, from the scan cycle to a small machine, in English and Spanish. ZPLC checks ' +
+        'your program in every lesson and tells you what to fix.',
       facts: [
         {
           title: 'Feedback on every attempt',
@@ -223,13 +252,12 @@ const landingPageContent = {
         {
           title: 'Simulator first, board when you are ready',
           text:
-            'All lessons but one run in simulation. 21 of them also take the lesson to a learner board, with the wiring as a diagram and ' +
-            'a pin ' +
-            'map; no check on a board has been recorded yet.',
+            'All lessons but one run in the simulator, so you need no hardware. 21 of them have a track for a learner board, ' +
+            'with the wiring as a diagram and a pin map.',
         },
         {
-          title: 'Drive four simulated machines',
-          text: 'A tank, a conveyor, a motor and a pedestrian crossing answer the outputs of your program.',
+          title: 'Four machines to drive',
+          text: 'A tank, a conveyor, a motor and a pedestrian crossing react to the outputs of your program, with faults you can trigger.',
         },
         {
           title: 'Hints before the solution',
@@ -273,214 +301,167 @@ const landingPageContent = {
         { label: 'For educators', to: '/docs/learn/educators' },
       ],
     },
-    architecture: {
-      title: 'From a rung to a pin',
-      lead:
-        'ZPLC compiles every language to `.zplc` bytecode. A C99 virtual machine runs it, and the hardware abstraction layer ' +
-        'connects it to the platform.',
-      app: 'ZPLC application: edit, build, simulate, test, deploy, monitor',
-      stages: [
-        { title: 'Source', items: ['ST', 'IL', 'LD', 'FBD', 'SFC'] },
-        { title: 'Compiler', items: ['TypeScript', '`packages/zplc-compiler`'] },
-        { title: 'Bytecode', items: ['`.zplc`', 'verified by the loader'] },
-        { title: 'Runtime', items: ['C99 virtual machine', 'scheduler, process image'] },
-        { title: 'HAL', items: ['18 functions', '2 optional'] },
-      ],
-      ports: [
-        { name: 'Zephyr RTOS', note: '7 board profiles, cross-build' },
-        { name: 'POSIX host', note: 'the simulator of ZPLC' },
-        { name: 'FreeRTOS', note: 'POSIX simulator, in CI' },
-      ],
-      links: [
-        { label: 'Runtime', to: '/docs/runtime' },
-        { label: 'Instruction set', to: '/docs/runtime/isa' },
-        { label: 'HAL contract', to: '/docs/runtime/hal-contract' },
-        { label: 'System architecture', to: '/docs/architecture' },
-      ],
-    },
-    boards: {
-      title: 'Have a board? Be the first to try ZPLC on it',
-      lead:
-        'Seven Zephyr board profiles build in CI and fit their flash and RAM budgets. None has been flashed, booted or run on ' +
-        'hardware yet, so your report is the lead the project follows: tell us what happened, with the image you ran.',
-      levels: [
-        { id: 'cross-build', text: 'The firmware builds for the board and fits its flash and RAM budget.' },
-        { id: 'community-reported', text: 'A user reported what happened on their own board, with the image it ran.' },
-        { id: 'human-hil', text: 'A person ran a recorded procedure on the exact board, with the image named by commit and hash.' },
-        { id: 'production-qualified', text: 'A separately governed production evidence package exists.' },
-      ],
-      columns: { board: 'Board', target: 'Zephyr target', network: 'Network', level: 'Level' },
-      learner: 'Learner board of the course',
-      links: [
-        { label: 'Report your board', href: boardReportUrl },
-        { label: 'Boards', to: '/docs/reference/boards' },
-        { label: 'Hardware support', to: '/docs/reference/capabilities-evidence' },
+    specs: {
+      title: 'Technical data',
+      rows: [
+        {
+          label: 'Languages',
+          value: 'IEC 61131-3 Structured Text, Instruction List, Ladder Diagram, Function Block Diagram and Sequential Function Chart.',
+        },
+        { label: 'Runtime', value: 'A virtual machine in portable C99, with a scheduler and a process image.' },
+        { label: 'Platforms', value: 'Zephyr RTOS, FreeRTOS, and the simulator on your computer.' },
+        { label: 'Boards', value: 'Seven board profiles with RP2040, STM32 and ESP32-S3 chips.' },
+        { label: 'Tasks', value: 'Up to 16 tasks in a program, each with its own interval and priority.' },
+        {
+          label: 'Library',
+          value:
+            '34 standard function blocks (timers, counters, edges, bistables, pulse generators, process control, buffers and ' +
+            'communication) and 297 standard functions, 240 of them type conversions.',
+        },
+        { label: 'Communication', value: 'Function blocks for Modbus, MQTT with Sparkplug B, and Azure and AWS cloud services.' },
+        { label: 'Debugging', value: 'Breakpoints, pause, one-cycle step, watch, force, and the live I/O faceplate.' },
+        { label: 'Testing', value: 'Scenario tests in the application and in `zplc-cli` for a CI job.' },
+        { label: 'Examples', value: '46 example projects bundled on the Welcome screen.' },
+        { label: 'Application', value: 'A desktop application for Windows, macOS and Linux, in English and Spanish.' },
+        {
+          label: 'AI assistants',
+          value: 'An MCP server lets an assistant build and test a project. It never flashes, deploys, forces, starts or stops.',
+        },
+        { label: 'Licence', value: 'MIT, free and open source.' },
       ],
     },
-    limits: {
-      title: 'What ZPLC is not',
-      items: [
-        'It is not a safety PLC, and no part of it has been certified or assessed against a functional-safety standard.',
-        'It must not control machinery or protect people: not as an emergency stop, an interlock or a guard.',
-        'It does not guarantee timing: no board has a measured scan time, jitter or worst-case execution time.',
-        'Version 2.0 is a prerelease for evaluation, and no board is past the level its records give.',
-      ],
-      link: 'Safety and limitations',
-      to: '/docs/safety-and-limitations',
-    },
-    get: {
-      title: 'Run your first program today',
-      lead:
-        'Free and MIT-licensed, for Windows, macOS and Linux. The installers are files of a GitHub release, the only channel ' +
-        'today. Check the file against `SHA256SUMS`, then open it.',
-      systems: [
-        { name: 'Windows', text: 'The `setup-unsigned.exe` installer. It is unsigned: choose More info, then Run anyway.' },
-        { name: 'macOS', text: 'The `.dmg` or `.zip` for your chip. It is signed ad hoc and not notarized.' },
-        { name: 'Linux', text: 'The `.deb` or `.rpm`, or the AppImage. They are unsigned, so the checksum is your check.' },
-      ],
-      download: 'Download from GitHub',
-      install: 'Install ZPLC',
-      installTo: '/docs/getting-started/install',
-      sourceTitle: 'Open source',
-      source: 'ZPLC is MIT-licensed. The runtime, the compiler, the application, the course and this site are in one repository.',
+    close: {
+      title: 'Start building, or start learning',
+      sourceTitle: 'Free and open source',
+      source: 'ZPLC is MIT-licensed. The runtime, the compiler, the application, the course and this site live in one public repository.',
       sourceLinks: [
-        { label: 'Repository', href: 'https://github.com/eduardojvieira/ZPLC' },
+        { label: 'Repository', href: repositoryUrl },
         { label: 'Contributing', to: '/docs/contributing' },
-        { label: 'Release notes', to: '/docs/release-notes' },
         { label: 'Discussions', href: 'https://github.com/eduardojvieira/ZPLC/discussions' },
+        { label: 'Release notes', to: '/docs/release-notes' },
       ],
     },
   },
   es: {
     home: {
-      metaTitle: 'El PLC de código abierto que puede llevar a cualquier microcontrolador',
+      metaTitle: 'El PLC de código abierto para el microcontrolador que usted elija',
       metaDescription:
-        'ZPLC compila los cinco lenguajes IEC 61131-3 a un solo bytecode. Su runtime en C99 se compila para placas Zephyr y se ' +
-        'ejecuta como simulador en su equipo, y su aplicación de escritorio edita, simula y prueba programas.',
+        'ZPLC es un PLC IEC 61131-3 de código abierto: prográmelo en cinco lenguajes, simúlelo y depúrelo en su equipo, compile ' +
+        'su runtime portable para su placa y aprenda a programar PLC con el curso incluido en la aplicación.',
     },
     hero: {
-      title: 'El PLC de código abierto que puede llevar a cualquier microcontrolador.',
-      subtitle: 'Runtime y entorno de desarrollo de PLC IEC 61131-3, de código abierto, sobre Zephyr RTOS.',
-      lead: 'Empiece sin placa: la aplicación de escritorio ejecuta su programa en el simulador incluido.',
-      download: 'Descargar',
-      downloadHref: releasesUrl,
-      start: 'Primeros pasos',
-      startTo: '/docs/getting-started',
+      title: 'El PLC de código abierto para el microcontrolador que usted elija.',
+      lead:
+        'Prográmelo en los cinco lenguajes IEC 61131-3, simúlelo y depúrelo en su equipo, y luego compile el mismo runtime para ' +
+        'su placa. Gratuito y de código abierto.',
       artAlt:
         'Ilustración: un peldaño de diagrama de escalera dibujado como esquema, cableado a los bornes de un módulo controlador ' +
         'genérico sobre un riel DIN; el camino hasta una salida está resaltado.',
-      statusLabel: 'Versión preliminar',
-      status: 'La versión 2.0 es para evaluación. Ninguna placa se ha probado con hardware, y ZPLC no debe controlar maquinaria.',
-      statusLink: 'Seguridad y limitaciones',
-      statusTo: '/docs/safety-and-limitations',
     },
-    different: {
-      title: 'Todo lo que necesita un PLC, en el chip que usted elija',
-      lead:
-        'Porte el runtime una vez y luego edite, simule, depure y pruebe en una sola aplicación. Cada afirmación enlaza con la ' +
-        'página que muestra cómo se comprueba.',
-      port: {
-        title: 'Pórtelo con 18 funciones',
-        text:
-          'El runtime es C99 portable detrás de una capa de abstracción de hardware. Un port implementa sus 18 funciones y dos ' +
-          'llamadas de red opcionales, y luego pasa la suite de conformidad de ports: cada código de operación, los rechazos del ' +
-          'cargador, las fases y fallas del planificador, la temporización, la E/S y el almacenamiento.',
-        targetsTitle: 'Ports en el repositorio',
-        targets: [
-          {
-            name: 'Zephyr RTOS',
-            text:
-              'Siete perfiles de placa con chips RP2040, STM32 y ESP32-S3 se compilan en CI. La suite de conformidad se ejecuta ' +
-              'en `native_sim` y en QEMU Cortex-M3 y M0. Ninguna placa se ha probado todavía con hardware.',
-          },
-          {
-            name: 'Host POSIX',
-            text: 'El simulador de la aplicación ZPLC es este port, compilado desde las mismas fuentes en C.',
-          },
-          { name: 'FreeRTOS', text: 'Compilado y probado con la suite de conformidad en el simulador POSIX de FreeRTOS, en CI.' },
-        ],
-        stripTitle: 'La capa de abstracción de hardware',
-        groups: {
-          clock: 'Reloj',
-          io: 'Tabla de E/S',
-          storage: 'Almacenamiento',
-          locks: 'Bloqueos',
-          life: 'Registro y ciclo de vida',
-          network: 'Red, opcional',
-        },
-        links: [
-          { label: 'Interfaz de port y suite de conformidad', to: '/docs/runtime/port-interface' },
-          { label: 'Portar a una placa', to: '/docs/guides/port-to-a-board' },
-        ],
+    paths: {
+      label: 'Dos maneras de empezar',
+      build: {
+        title: 'Construya un controlador',
+        text: 'Programe, simule y depure en la aplicación ZPLC, y luego compile el runtime para su placa.',
+        action: 'Descargar ZPLC',
+        note: 'Para Windows, macOS y Linux.',
+        more: 'Primeros pasos',
       },
-      rungs: [
+      learn: {
+        title: 'Aprenda a programar PLC',
+        text: 'Un curso gratuito de 33 lecciones dentro de la misma aplicación. ZPLC comprueba su programa en cada lección.',
+        action: 'Empezar a aprender',
+        note: 'En inglés y en español.',
+        more: 'Para docentes',
+      },
+    },
+    portability: {
+      title: 'Escriba el programa una vez. Elija el hardware.',
+      lead:
+        'Su programa se ejecuta en el mismo runtime de ZPLC en todas partes: en placas con Zephyr RTOS, en el port para FreeRTOS ' +
+        'y en el simulador de su equipo. Si su placa todavía no está en la lista, puede traerla.',
+      wiring: {
+        label: 'Un programa, un runtime, tres plataformas',
+        program: { name: 'Su programa', text: 'ST · IL · LD · FBD · SFC' },
+        runtime: { name: 'Runtime de ZPLC', text: 'El mismo núcleo en cada plataforma.' },
+      },
+      platforms: [
         {
-          title: 'Pruébelo antes de comprar una placa',
-          text:
-            'El simulador es el mismo runtime en C, compilado para su equipo e incluido con ZPLC. Las pruebas de escenario fijan ' +
-            'entradas y verifican salidas en el tiempo, desde la pestaña Pruebas o con `zplc-cli` en un trabajo de CI.',
-          link: 'Pruebas de escenario',
-          to: '/docs/guides/scenario-tests',
+          name: 'Zephyr RTOS',
+          text: 'Siete perfiles de placa con chips RP2040, STM32 y ESP32-S3, desde placas serie hasta Ethernet y Wi-Fi.',
+          to: '/docs/reference/boards',
         },
         {
-          title: 'Vea cada valor mientras se ejecuta',
-          text:
-            'En los cinco lenguajes: valores sobre el programa mientras se ejecuta, puntos de interrupción, pausa y avance de un ' +
-            'ciclo, y valores forzados que siguen marcados como forzados.',
-          link: 'Simular y depurar',
+          name: 'FreeRTOS',
+          text: 'Un segundo port a un RTOS, comprobado con la suite de conformidad de ports en CI.',
+          to: '/docs/runtime/port-interface',
+        },
+        {
+          name: 'Su equipo',
+          text: 'El simulador de la aplicación ZPLC, compilado para Windows, macOS y Linux.',
           to: '/docs/guides/simulate-and-debug',
         },
-        {
-          title: 'Las tareas se ejecutan en un orden predecible',
-          text:
-            'Las tareas liberadas juntas se ejecutan por instante de liberación, luego por prioridad y luego por ID de tarea, ' +
-            'sobre una sola instantánea de las entradas. Un programa tiene hasta 16 tareas, cada una con su intervalo. El ' +
-            'intervalo es un plazo; ninguna placa tiene todavía un tiempo de ciclo medido.',
-          link: 'Planificador',
-          to: '/docs/runtime/scheduler',
-          timing: true,
-        },
-        {
-          title: 'La IA asiste, una persona decide',
-          text:
-            'Learn y el servidor MCP para asistentes de IA nunca graban firmware, despliegan, fuerzan, ni inician o detienen un ' +
-            'programa. Lo hace una persona, con los controles de ZPLC.',
-          link: 'Asistentes de IA y MCP',
-          to: '/docs/guides/ai-and-mcp',
-        },
-        {
-          title: 'Modbus y MQTT desde su programa',
-          text:
-            'Bloques de función para Modbus, MQTT con Sparkplug B y servicios en la nube. Se comprueban contra servidores ' +
-            'escritos para las pruebas en este equipo, todavía no contra un broker real ni un dispositivo en un cable.',
-          link: 'Bloques de función de comunicación',
-          to: '/docs/runtime/communication-function-blocks',
-        },
-        {
-          title: 'En inglés y en español',
-          text: 'La aplicación, las 33 lecciones y esta documentación, en inglés y en español neutro.',
-          link: 'Primeros pasos',
-          to: '/docs/getting-started',
-        },
       ],
-      timing: {
-        caption: 'El orden de un ciclo, sin escala',
-        rows: ['Leer entradas', 'Ejecutar tareas', 'Escribir salidas'],
+      port: {
+        title: 'Traiga su propio microcontrolador',
+        text:
+          'Un port nuevo implementa las 18 funciones de la capa de abstracción de hardware. Luego la suite de conformidad de ports ' +
+          'comprueba en él cada instrucción, el planificador, la E/S y el almacenamiento.',
+      },
+      links: [
+        { label: 'Portar a una placa', to: '/docs/guides/port-to-a-board' },
+        { label: 'Interfaz de port', to: '/docs/runtime/port-interface' },
+      ],
+      strip: {
+        title: 'Capa de abstracción de hardware',
+        count: '18 funciones, 2 opcionales',
+        groups: {
+          clock: { label: 'Reloj', terminals: ['tick', 'espera'] },
+          io: {
+            label: 'Entradas y salidas',
+            terminals: ['entrada digital', 'salida digital', 'entrada analógica', 'salida analógica', 'tabla de E/S', 'canales'],
+          },
+          storage: { label: 'Almacenamiento', terminals: ['guardar', 'cargar', 'borrar'] },
+          locks: { label: 'Bloqueos', terminals: ['crear', 'bloquear', 'desbloquear', 'destruir'] },
+          life: { label: 'Registro y ciclo de vida', terminals: ['registro', 'inicio', 'apagado'] },
+          network: { label: 'Red, opcional', terminals: ['iniciar la red', 'dirección IP'] },
+        },
       },
     },
-    languages: {
-      title: 'Ladder o texto: los cinco lenguajes IEC 61131-3',
+    boards: {
+      title: 'Siete placas para empezar',
       lead:
-        'Dibuje peldaños, conecte bloques, encadene pasos o escriba código. Todos los lenguajes se compilan al mismo bytecode `.zplc`, ' +
-        'que ejecuta un único ' +
-        'runtime en C99.',
+        'Perfiles de placa para chips RP2040, STM32 y ESP32-S3, desde placas serie hasta Ethernet y Wi-Fi. Cada uno se compila con ' +
+        'cada cambio y cabe en su presupuesto de flash y RAM. Dos de ellos son las placas del estudiante del curso.',
+      artAlt: 'Ilustración: placas de microcontrolador genéricas de distinto tamaño sobre un riel DIN, cableadas a un bloque de bornes.',
+      columns: { board: 'Placa', target: 'Destino de Zephyr', network: 'Red' },
+      learner: 'Placa del curso',
+      report: '¿Usa ZPLC en una placa propia? Cuéntele al proyecto qué ocurrió, con la imagen que grabó.',
+      links: [
+        { label: 'Todas las placas', to: '/docs/reference/boards' },
+        { label: 'Informar sobre su placa', href: boardReportUrl },
+      ],
+    },
+    languages: {
+      title: 'Cinco lenguajes IEC 61131-3, un editor para cada uno',
+      lead:
+        'Dibuje peldaños de escalera, conecte bloques de función, encadene una secuencia o escriba texto estructurado y lista de ' +
+        'instrucciones. Cada lenguaje tiene su propio editor, y los cinco se compilan para el mismo runtime.',
       tabsLabel: 'Lenguajes IEC 61131-3',
-      evidenceLabel: 'Cómo se comprueba',
-      evidence:
-        'Para cada lenguaje, una prueba de extremo a extremo de ZPLC edita, compila, simula, depura, fuerza y despliega un ' +
-        'programa. El despliegue va al runtime nativo detrás de una placa emulada; no interviene ninguna placa física.',
-      evidenceLink: 'Los lenguajes y su evidencia',
-      evidenceTo: '/docs/languages',
+      features: [
+        {
+          title: 'Autocompletado y navegación',
+          text: 'El texto estructurado tiene autocompletado, ir a la definición, buscar referencias y renombrar en todo el proyecto.',
+        },
+        {
+          title: 'Diagramas desde el teclado',
+          text: 'Peldaños, bloques y etapas se colocan y conectan sin el ratón.',
+        },
+        {
+          title: 'Una paleta de comandos',
+          text: 'Cada comando de la aplicación está a una búsqueda, con Ctrl+Shift+P.',
+        },
+      ],
       items: [
         {
           code: 'ST',
@@ -531,12 +512,66 @@ const landingPageContent = {
         },
       ],
     },
+    debug: {
+      title: 'Simule y depure antes de cablear nada',
+      lead:
+        'El simulador es el propio runtime de ZPLC, compilado para su equipo e incluido con la aplicación. Ejecute su programa, ' +
+        'deténgalo, avance paso a paso y observe cada valor, sin ninguna placa sobre la mesa.',
+      shotAlt:
+        'Dos detalles de la aplicación ZPLC con la lección del motor en el simulador: el código con sus valores en vivo y el ' +
+        'panel de E/S en vivo, con un interruptor y un pulsador para cada entrada.',
+      caption: 'La lección del motor en el simulador: valores en vivo sobre el código y, debajo, el panel de E/S en vivo.',
+      rungs: [
+        {
+          title: 'Puntos de interrupción en cada lenguaje',
+          text:
+            'Deténgase en una línea de texto estructurado o de lista de instrucciones, en un peldaño, en un bloque de función o en ' +
+            'una etapa de un diagrama, y lea los valores de ese ciclo.',
+          link: 'Simular y depurar',
+          to: '/docs/guides/simulate-and-debug',
+        },
+        {
+          title: 'Un ciclo a la vez',
+          text: 'Pause entre ciclos, avance un ciclo y reanude donde se detuvo el programa.',
+          link: 'Pausar, avanzar y reanudar',
+          to: '/docs/ide/features#pausa-reanudación-paso-y-stop',
+          timing: true,
+        },
+        {
+          title: 'Observar y forzar',
+          text:
+            'Observe cualquier variable en decimal, hexadecimal, binario o como tiempo. Un valor forzado sigue marcado como ' +
+            'forzado hasta que usted lo libera.',
+          link: 'Forzar un valor',
+          to: '/docs/guides/force-values',
+        },
+        {
+          title: 'Un panel de E/S en vivo',
+          text:
+            'Cada entrada del programa tiene un interruptor, un pulsador o un deslizador con su propio nombre, y el cambio llega ' +
+            'al programa en el ciclo siguiente.',
+          link: 'E/S en vivo',
+          to: '/docs/ide/features#es-en-vivo',
+        },
+        {
+          title: 'Pruebas de escenario',
+          text:
+            'Escriba las entradas en el tiempo y las salidas que espera, y ejecútelas desde la pestaña Pruebas o con `zplc-cli` en ' +
+            'un trabajo de CI.',
+          link: 'Pruebas de escenario',
+          to: '/docs/guides/scenario-tests',
+        },
+      ],
+      timing: {
+        caption: 'Un ciclo: leer las entradas, ejecutar las tareas, escribir las salidas. Sin escala.',
+        rows: ['Leer entradas', 'Ejecutar tareas', 'Escribir salidas'],
+      },
+    },
     learn: {
       title: 'Aprenda a programar PLC sin comprar un PLC',
       lead:
         'Un curso gratuito de 33 lecciones en 12 módulos, del ciclo de un PLC a una máquina pequeña, en inglés y en español. ZPLC ' +
-        'califica ' +
-        'cada lección, y todas menos una se ejecutan en el simulador, sin placa y sin red.',
+        'comprueba su programa en cada lección y le dice qué corregir.',
       facts: [
         {
           title: 'Una devolución en cada intento',
@@ -547,13 +582,14 @@ const landingPageContent = {
         {
           title: 'Primero el simulador, la placa cuando esté listo',
           text:
-            'Todas las lecciones menos una se ejecutan en simulación. 21 de ellas llevan además la lección a una placa del estudiante, ' +
-            'con el cableado en un ' +
-            'diagrama y un mapa de pines; todavía no se ha registrado ninguna comprobación en una placa.',
+            'Todas las lecciones menos una se ejecutan en el simulador, así que no necesita hardware. 21 de ellas tienen un ' +
+            'recorrido para una placa del estudiante, con el cableado en un diagrama y un mapa de pines.',
         },
         {
-          title: 'Controle cuatro máquinas simuladas',
-          text: 'Un tanque, una cinta transportadora, un motor y un cruce peatonal responden a las salidas de su programa.',
+          title: 'Cuatro máquinas para controlar',
+          text:
+            'Un tanque, una cinta transportadora, un motor y un cruce peatonal responden a las salidas de su programa, con fallas ' +
+            'que usted puede provocar.',
         },
         {
           title: 'Pistas antes de la solución',
@@ -605,89 +641,55 @@ const landingPageContent = {
         { label: 'Para docentes', to: '/docs/learn/educators' },
       ],
     },
-    architecture: {
-      title: 'De un peldaño a un pin',
-      lead:
-        'ZPLC compila cada lenguaje a bytecode `.zplc`. Una máquina virtual en C99 lo ejecuta, y la capa de abstracción de ' +
-        'hardware lo conecta con la plataforma.',
-      app: 'Aplicación ZPLC: editar, compilar, simular, probar, desplegar, monitorear',
-      stages: [
-        { title: 'Fuente', items: ['ST', 'IL', 'LD', 'FBD', 'SFC'] },
-        { title: 'Compilador', items: ['TypeScript', '`packages/zplc-compiler`'] },
-        { title: 'Bytecode', items: ['`.zplc`', 'verificado por el cargador'] },
-        { title: 'Runtime', items: ['máquina virtual en C99', 'planificador, imagen de proceso'] },
-        { title: 'HAL', items: ['18 funciones', '2 opcionales'] },
-      ],
-      ports: [
-        { name: 'Zephyr RTOS', note: '7 perfiles de placa, cross-build' },
-        { name: 'Host POSIX', note: 'el simulador de ZPLC' },
-        { name: 'FreeRTOS', note: 'simulador POSIX, en CI' },
-      ],
-      links: [
-        { label: 'Runtime', to: '/docs/runtime' },
-        { label: 'Conjunto de instrucciones', to: '/docs/runtime/isa' },
-        { label: 'Contrato de la HAL', to: '/docs/runtime/hal-contract' },
-        { label: 'Arquitectura del sistema', to: '/docs/architecture' },
-      ],
-    },
-    boards: {
-      title: '¿Tiene una placa? Pruebe ZPLC en ella antes que nadie',
-      lead:
-        'Siete perfiles de placa de Zephyr se compilan en CI y caben en sus presupuestos de flash y RAM. Ninguno se ha grabado, ' +
-        'arrancado ni ejecutado todavía en hardware, así que su informe es la pista que sigue el proyecto: cuente qué ocurrió, ' +
-        'con la imagen que ejecutó.',
-      levels: [
-        { id: 'cross-build', text: 'El firmware compila para la placa y cabe en su presupuesto de flash y RAM.' },
-        { id: 'community-reported', text: 'Un usuario informó qué ocurrió en su propia placa, con la imagen que ejecutó.' },
+    specs: {
+      title: 'Datos técnicos',
+      rows: [
         {
-          id: 'human-hil',
-          text: 'Una persona ejecutó un procedimiento registrado en la placa exacta, con la imagen identificada por commit y hash.',
+          label: 'Lenguajes',
+          value:
+            'IEC 61131-3: texto estructurado, lista de instrucciones, diagrama de escalera, diagrama de bloques de función y ' +
+            'diagrama funcional secuencial.',
         },
-        { id: 'production-qualified', text: 'Existe un paquete de evidencia de producción gobernado por separado.' },
-      ],
-      columns: { board: 'Placa', target: 'Destino de Zephyr', network: 'Red', level: 'Nivel' },
-      learner: 'Placa del estudiante del curso',
-      links: [
-        { label: 'Informar sobre su placa', href: boardReportUrl },
-        { label: 'Placas', to: '/docs/reference/boards' },
-        { label: 'Compatibilidad de hardware', to: '/docs/reference/capabilities-evidence' },
-      ],
-    },
-    limits: {
-      title: 'Lo que ZPLC no es',
-      items: [
-        'No es un PLC de seguridad, y ninguna de sus partes se ha certificado ni evaluado frente a una norma de seguridad funcional.',
-        'No debe controlar maquinaria ni proteger personas: ni como parada de emergencia, ni como enclavamiento, ni como resguardo.',
-        'No garantiza tiempos: ninguna placa tiene un tiempo de ciclo, una fluctuación ni un peor caso de ejecución medidos.',
-        'La versión 2.0 es preliminar, para evaluación, y ninguna placa supera el nivel que dan sus registros.',
-      ],
-      link: 'Seguridad y limitaciones',
-      to: '/docs/safety-and-limitations',
-    },
-    get: {
-      title: 'Ejecute su primer programa hoy',
-      lead:
-        'Gratuito y con licencia MIT, para Windows, macOS y Linux. Los instaladores son archivos de una versión publicada en GitHub, el ' +
-        'único canal hoy. Verifique el archivo con ' +
-        '`SHA256SUMS` y luego ábralo.',
-      systems: [
+        { label: 'Runtime', value: 'Una máquina virtual en C99 portable, con planificador e imagen de proceso.' },
+        { label: 'Plataformas', value: 'Zephyr RTOS, FreeRTOS y el simulador de su equipo.' },
+        { label: 'Placas', value: 'Siete perfiles de placa con chips RP2040, STM32 y ESP32-S3.' },
+        { label: 'Tareas', value: 'Hasta 16 tareas por programa, cada una con su intervalo y su prioridad.' },
         {
-          name: 'Windows',
-          text: 'El instalador `setup-unsigned.exe`. No está firmado: elija Más información y luego Ejecutar de todas formas.',
+          label: 'Biblioteca',
+          value:
+            '34 bloques de función estándar (temporizadores, contadores, flancos, biestables, generadores de pulsos, control de ' +
+            'procesos, búferes y comunicación) y 297 funciones estándar, 240 de ellas conversiones de tipo.',
         },
-        { name: 'macOS', text: 'El `.dmg` o el `.zip` para su chip. Tiene una firma ad hoc y no está notarizado.' },
-        { name: 'Linux', text: 'El `.deb` o el `.rpm`, o la AppImage. No están firmados, así que la suma de verificación es su control.' },
+        {
+          label: 'Comunicación',
+          value: 'Bloques de función para Modbus, MQTT con Sparkplug B y los servicios en la nube de Azure y AWS.',
+        },
+        {
+          label: 'Depuración',
+          value: 'Puntos de interrupción, pausa, avance de un ciclo, observación, forzado y el panel de E/S en vivo.',
+        },
+        { label: 'Pruebas', value: 'Pruebas de escenario en la aplicación y en `zplc-cli` para un trabajo de CI.' },
+        { label: 'Ejemplos', value: '46 proyectos de ejemplo incluidos en la pantalla de bienvenida.' },
+        { label: 'Aplicación', value: 'Una aplicación de escritorio para Windows, macOS y Linux, en inglés y en español.' },
+        {
+          label: 'Asistentes de IA',
+          value:
+            'Un servidor MCP permite que un asistente compile y pruebe un proyecto. Nunca graba, despliega, fuerza, inicia ni detiene.',
+        },
+        { label: 'Licencia', value: 'MIT, gratuito y de código abierto.' },
       ],
-      download: 'Descargar desde GitHub',
-      install: 'Instalar ZPLC',
-      installTo: '/docs/getting-started/install',
-      sourceTitle: 'Código abierto',
-      source: 'ZPLC tiene licencia MIT. El runtime, el compilador, la aplicación, el curso y este sitio están en un solo repositorio.',
+    },
+    close: {
+      title: 'Empiece a construir, o empiece a aprender',
+      sourceTitle: 'Gratuito y de código abierto',
+      source:
+        'ZPLC tiene licencia MIT. El runtime, el compilador, la aplicación, el curso y este sitio están en un solo repositorio ' +
+        'público.',
       sourceLinks: [
-        { label: 'Repositorio', href: 'https://github.com/eduardojvieira/ZPLC' },
+        { label: 'Repositorio', href: repositoryUrl },
         { label: 'Contribuir', to: '/docs/contributing' },
-        { label: 'Notas de la versión', to: '/docs/release-notes' },
         { label: 'Discusiones', href: 'https://github.com/eduardojvieira/ZPLC/discussions' },
+        { label: 'Notas de la versión', to: '/docs/release-notes' },
       ],
     },
   },
@@ -697,13 +699,19 @@ const landingPageContent = {
 export function getLandingPageContent(locale) {
   const lang = locale in landingPageContent ? locale : 'en';
   const content = landingPageContent[lang];
+  const { strip } = content.portability;
   return {
     ...content,
-    different: {
-      ...content.different,
-      port: {
-        ...content.different.port,
-        groups: halGroups.map((group) => ({ ...group, label: content.different.port.groups[group.key] })),
+    paths: {
+      ...content.paths,
+      build: { ...content.paths.build, href: releasesUrl, moreTo: '/docs/getting-started' },
+      learn: { ...content.paths.learn, to: '/docs/learn', moreTo: '/docs/learn/educators' },
+    },
+    portability: {
+      ...content.portability,
+      strip: {
+        ...strip,
+        groups: halGroups.map((group) => ({ ...group, ...strip.groups[group.key] })),
       },
     },
     languages: {
@@ -715,6 +723,11 @@ export function getLandingPageContent(locale) {
         shotDark: `editors/${languageIds[index]}-${lang}-dark.png`,
         to: `/docs/reference/language-${languageIds[index]}`,
       })),
+    },
+    debug: {
+      ...content.debug,
+      // a recorded capture of the application (docs/static/img/screen-reader-check/2026-10-20/results.json)
+      shot: `screen-reader-check/2026-10-20/${lang}-9-plant-at-speed.png`,
     },
     learn: {
       ...content.learn,
