@@ -21,6 +21,8 @@ const COPY_TARGETS = [
   { path: 'examples', directory: true },
   // the USB identifiers of the boards: the serial port picker (src/config/serialBoards.ts) and the udev rule read them
   { path: 'tools/hil/usb-ids.json', directory: false },
+  // the WebAssembly runtime the Vite build embeds (scripts/wasmRuntimePlugin.ts runs tools/wasm-core/build.ts)
+  { path: 'tools/wasm-core', directory: true },
   { path: 'scripts/release-version.ts', directory: false },
   // the licence notices are generated while electron-builder packs (scripts/before-pack.mjs, REL-019)
   { path: 'scripts/release', directory: true },
