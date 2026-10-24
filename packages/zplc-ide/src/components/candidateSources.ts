@@ -7,8 +7,3 @@ export async function sha256Text(value: string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
-
-/** A file the review may propose a change to: a Structured Text file directly in `src`. */
-export function isCandidateSTPath(path: string): boolean {
-  return path.length <= 512 && /^src\/[^/\\\0\r\n]+\.st$/.test(path);
-}

@@ -40,7 +40,7 @@ import { useConsoleState } from '../store/regionSubscriptions';
 import { sha256Text } from './candidateSources';
 import { isCandidateSourcePath } from '../ai/candidatePaths';
 import { presentAgentResponse } from './agent/agentResponse';
-import { changeSetIsCurrent, reviewChangeSet, saveChangeSet, type ChangeSetReviewBridge } from './agent/changeSetReview';
+import { changeSetIsCurrent, reviewChangeSet, saveChangeSet } from './agent/changeSetReview';
 import type { ConsoleTab } from '../types';
 import { TerminalTab } from './TerminalTab';
 import { WatchTab } from './WatchTab';
@@ -762,7 +762,7 @@ export function Console({ debugController }: ConsoleProps) {
       // every file of the proposal is read from the disk and checked against what the host read, then the whole set is reviewed on a copy
       const outcome = await reviewChangeSet(changes, {
         workspaceId: link.workspaceId,
-        bridge: candidateChangeSet as unknown as ChangeSetReviewBridge,
+        bridge: candidateChangeSet,
         getState: useIDEStore.getState,
         isCurrent: () => generation === candidateReviewGeneration.current,
       });

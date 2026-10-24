@@ -85,7 +85,11 @@ declare global {
         open: (lessonId: string) => Promise<unknown>;
       };
       candidateChangeSet?: {
-        review: (request: { workspaceId: string; edit: { path: string; content: string } }) => Promise<unknown>;
+        review: (
+          request:
+            | { workspaceId: string; edit: { path: string; content: string } }
+            | { workspaceId: string; edits: Array<{ path: string; content: string }> },
+        ) => Promise<unknown>;
       };
       aiProvider?: {
         getStatus: () => Promise<unknown>;
