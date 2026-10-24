@@ -297,6 +297,25 @@ export function navigationReplacesDocument(
   return details.isMainFrame && !details.isSameDocument && isExpectedRendererDocument(details.url, expectedRendererUrl);
 }
 
+/**
+ * The renderer document of a packaged build, under the canonical name of its resources folder. The portable Windows
+ * build unpacks into %TEMP%, which Windows can name by its short 8.3 form (C:\Users\RUNNER~1\...) while the document
+ * commits under the long one: loaded and expected by this one name, the document's URL is the same on both sides of
+ * `isExpectedRendererDocument`. A folder that cannot be read keeps the name it was given.
+ */
+export function canonicalRendererFile(
+  file: string,
+  resourcesPath: string,
+  realpath: (folder: string) => string,
+  paths: { join(...parts: string[]): string; relative(from: string, to: string): string },
+): string {
+  try {
+    return paths.join(realpath(resourcesPath), paths.relative(resourcesPath, file));
+  } catch {
+    return file;
+  }
+}
+
 export function isTrustedRenderer(event: RendererEvent, mainWindow: MainWindowLike | null, expectedRendererUrl: string): boolean {
   if (!mainWindow || event.sender !== mainWindow.webContents) return false;
   if (!event.senderFrame || event.senderFrame !== event.sender.mainFrame) return false;

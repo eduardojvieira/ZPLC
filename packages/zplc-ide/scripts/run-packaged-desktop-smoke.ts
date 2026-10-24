@@ -375,7 +375,10 @@ async function main(): Promise<void> {
         (await cdp!.evaluate(
           'window.electronAPI?.getAppInfo ? Promise.all([location.protocol, window.electronAPI.getAppInfo()]) : undefined',
         )) as [string, { isPackaged?: unknown; platform?: unknown; arch?: unknown }] | undefined,
-    );
+    ).catch(async (error: Error) => {
+      // the main process trusts one renderer document by its URL: the one the renderer holds tells a refusal apart
+      throw new Error(`${error.message} (the renderer document is ${String(await cdp!.evaluate('location.href').catch(() => 'unknown'))})`);
+    });
     assert(identity[0] === 'file:', `Packaged renderer origin is not file:: ${identity[0]}`);
     assert(
       identity[1].isPackaged === true && identity[1].platform === process.platform && identity[1].arch === process.arch,

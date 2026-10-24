@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
+import { posix, win32 } from 'node:path';
 
 import { ZPLC_CONTRACT } from '@zplc/compiler';
 
@@ -26,6 +27,7 @@ import {
   sanitizeToolExecution,
   sanitizeCandidateChangeSetReview,
   sanitizeWorkspaceSafetyCheck,
+  canonicalRendererFile,
   isExpectedRendererDocument,
   isTrustedRenderer,
   parseTrustedDevelopmentRendererPort,
@@ -850,5 +852,32 @@ describe('which navigation revokes the authority of a document (IDE-016)', () =>
   it('is not a navigation inside the same document, nor one of a subframe', () => {
     expect(navigationReplacesDocument(navigation({ isSameDocument: true }), expected)).toBe(false);
     expect(navigationReplacesDocument(navigation({ isMainFrame: false }), expected)).toBe(false);
+  });
+});
+
+// Release rehearsal 40118359942: the portable Windows build, which unpacks into %TEMP% (C:\Users\RUNNER~1\...), was
+// denied every IPC call while the installed build was not. The document is loaded and expected under one name, the
+// canonical name of the resources folder, so Windows' short and long forms of a folder cannot tell them apart.
+describe('the packaged renderer document is named by its canonical folder', () => {
+  const short = 'C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\2abc\\resources';
+  const long = 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\2abc\\resources';
+  const realpath = (folder: string) => (folder === short ? long : folder);
+
+  it('names a document under a short folder by the long one', () => {
+    expect(canonicalRendererFile(`${short}\\app.asar\\dist\\index.html`, short, realpath, win32)).toBe(
+      `${long}\\app.asar\\dist\\index.html`,
+    );
+  });
+
+  it('keeps the name of a document whose folder has no other name, and the one it was given when the folder cannot be read', () => {
+    expect(canonicalRendererFile('/opt/ZPLC/resources/app.asar/dist/index.html', '/opt/ZPLC/resources', (folder) => folder, posix)).toBe(
+      '/opt/ZPLC/resources/app.asar/dist/index.html',
+    );
+    const unreadable = () => {
+      throw new Error('ENOENT');
+    };
+    expect(canonicalRendererFile(`${short}\\app.asar\\dist\\index.html`, short, unreadable, win32)).toBe(
+      `${short}\\app.asar\\dist\\index.html`,
+    );
   });
 });

@@ -19,6 +19,7 @@ import {
   type WebContents,
 } from 'electron';
 import { randomUUID } from 'node:crypto';
+import { realpathSync } from 'node:fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { NativeSimulationSupervisor } from '../shared/nativeSimulationSupervisor.js';
@@ -50,6 +51,7 @@ import { CLOSE_GUARD_CHANNEL, MENU_CHANNEL, PORT_CHOICE_CHANNEL, NATIVE_SIMULATI
 import { createProjectWatcher } from './projectWatcher.js';
 import {
   DEFAULT_DEVELOPMENT_RENDERER_PORT,
+  canonicalRendererFile,
   createContentSecurityPolicy,
   isExpectedRendererDocument,
   isTrustedRenderer,
@@ -162,8 +164,16 @@ const rendererDevelopmentPort = developmentRendererPort();
 
 const appVersion = app.getVersion();
 
+// The built document is loaded and expected under one name (see canonicalRendererFile).
+const packagedRendererFile = canonicalRendererFile(
+  path.join(__dirname, '../../dist/index.html'),
+  process.resourcesPath,
+  (folder) => realpathSync.native(folder),
+  path,
+);
+
 function expectedRendererUrl(): string {
-  return isDev ? trustedDevelopmentRendererUrl(rendererDevelopmentPort) : pathToFileURL(path.join(__dirname, '../../dist/index.html')).href;
+  return isDev ? trustedDevelopmentRendererUrl(rendererDevelopmentPort) : pathToFileURL(packagedRendererFile).href;
 }
 
 function rendererOwnerIsCurrent(owner: RendererOwner): boolean {
@@ -385,7 +395,7 @@ function createWindow(): void {
     }
   } else {
     // In production, load the built index.html
-    const rendererFile = mainWindow.loadFile(path.join(__dirname, '../../dist/index.html'));
+    const rendererFile = mainWindow.loadFile(packagedRendererFile);
     rendererFile.catch((error: unknown) => {
       console.error('Unable to load the renderer', error);
     });
