@@ -12,7 +12,8 @@ export const AI_SENSITIVE_MANIFEST_PATHS = [
 ] as const;
 
 // the key names the project parser also refuses (projectModel.ts): a credential by its name
-const CREDENTIAL_KEY = /(?:password|passwd|secret|secretkey|token|apikey|accesskey|privatekey(?:path)?|saskey|credential(?:s)?|bearer|psk)$/;
+const CREDENTIAL_KEY =
+  /(?:password|passwd|secret|secretkey|token|apikey|accesskey|privatekey(?:path)?|saskey|credential(?:s)?|bearer|psk)$/;
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);

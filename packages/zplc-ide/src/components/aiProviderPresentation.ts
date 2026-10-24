@@ -20,7 +20,7 @@ export type AiProviderResponsePresentation =
 export type AiProviderMutationPresentation = { kind: 'ok' } | { kind: 'error'; code: string } | { kind: 'invalid' };
 
 type ExpectedEdit = { workspaceId: string; fileId: string; path: string; baselineSha256: string };
-const ERROR_CODES = new Set([
+export const ERROR_CODES = new Set([
   'AI_UNCONFIGURED',
   'AI_VAULT_UNAVAILABLE',
   'AI_TIMEOUT',
@@ -32,7 +32,7 @@ const ERROR_CODES = new Set([
 ]);
 const SHA256 = /^[a-f0-9]{64}$/;
 
-function record(value: unknown): Record<string, unknown> | null {
+export function record(value: unknown): Record<string, unknown> | null {
   try {
     if (
       typeof value !== 'object' ||
@@ -56,7 +56,7 @@ function exact(value: unknown, keys: readonly string[]): Record<string, unknown>
   return item && Object.keys(item).length === keys.length && keys.every((key) => Object.hasOwn(item, key)) ? item : null;
 }
 
-function text(value: unknown, maximum: number): value is string {
+export function text(value: unknown, maximum: number): value is string {
   return typeof value === 'string' && value.length > 0 && value.length <= maximum;
 }
 

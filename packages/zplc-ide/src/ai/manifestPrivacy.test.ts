@@ -11,7 +11,9 @@ describe('the manifest an assistant reads or proposes (IDE-030)', () => {
     const manifest = {
       name: 'Plant',
       network: { wifi: { ssid: 'lab', password: 'hunter2' } },
-      communication: { mqtt: { broker: 'b.example', password: '', azureSasKey: 'k', clientKeyPath: '/k', awsClaimKeyPath: '/c', apiToken: 'x' } },
+      communication: {
+        mqtt: { broker: 'b.example', password: '', azureSasKey: 'k', clientKeyPath: '/k', awsClaimKeyPath: '/c', apiToken: 'x' },
+      },
       tasks: [{ name: 'Main', programs: ['Main.st'] }],
     };
     const shown = manifestForAssistant(manifest) as typeof manifest;
