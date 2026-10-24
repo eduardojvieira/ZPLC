@@ -47,9 +47,9 @@ sentence runs across the ends of strings. A chip name (RP2040, STM32, ESP32) mus
   debug on your computer, build the same runtime for your board, free and open source. Source: `docs/PRODUCT.md`
   (Positioning).
 - The two ways in, the same size, each with a primary action: **Build a controller** (Download ZPLC, the releases page;
-  Windows, macOS and Linux; Get started) and **Learn PLC programming** (33 lessons, ZPLC checks the program in every lesson;
+  Windows, macOS and Linux; Get started) and **Learn PLC programming** (56 lessons, ZPLC checks the program in every lesson;
   Start learning, `/docs/learn`; For educators). Sources: `README.md` (download), `packages/zplc-ide/src/generated/
-lessonIndex.json` (33 lessons, the count the guard holds), `docs/docs/learn/index.md` (Check).
+lessonIndex.json` (56 lessons, the count the guard holds), `docs/docs/learn/index.md` (Check).
 - The generated image H1, kept from the previous rewrite.
 
 ### 2. Portability: "Write the program once. Choose the hardware."
@@ -97,7 +97,7 @@ lessonIndex.json` (33 lessons, the count the guard holds), `docs/docs/learn/inde
 
 | Fact                                                                                  | Evidence                                                                                    |
 | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| 33 lessons in 12 modules, from the scan cycle to a small machine, English and Spanish | `packages/zplc-ide/lessons/*/lesson.json`; `docs/docs/learn/course-outline.md`              |
+| 56 lessons in 12 modules, from the scan cycle to a small machine, English and Spanish | `packages/zplc-ide/lessons/*/lesson.json`; `docs/docs/learn/course-outline.md`              |
 | Check lists each failed assertion with time, expected and seen value                  | `docs/docs/ide/features.md` (Learn); `packages/zplc-ide/src/learn/lessonCheck.ts`           |
 | All lessons but one run in the simulator; 21 have a track for a learner board         | `lesson.json` (`tracks`: 20 both, 12 simulation only, 1 hardware only); `wiring.json` in 21 |
 | Four plants, with faults you can trigger                                              | `LESSON_PLANTS` in `lessonPackage.ts`; `docs/docs/ide/features.md` (Live plants)            |

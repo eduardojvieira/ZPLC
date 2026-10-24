@@ -63,7 +63,7 @@ const landingPageContent = {
       },
       learn: {
         title: 'Learn PLC programming',
-        text: 'A free course of 33 lessons inside the same application. ZPLC checks your program in every lesson.',
+        text: 'A free course of 56 lessons inside the same application. ZPLC checks your program in every lesson.',
         action: 'Start learning',
         note: 'In English and Spanish.',
         more: 'For educators',
@@ -240,7 +240,7 @@ const landingPageContent = {
     learn: {
       title: 'Learn PLC programming without buying a PLC',
       lead:
-        'A free course of 33 lessons in 12 modules, from the scan cycle to a small machine, in English and Spanish. ZPLC checks ' +
+        'A free course of 56 lessons in 12 modules, from the scan cycle to a small machine, in English and Spanish. ZPLC checks ' +
         'your program in every lesson and tells you what to fix.',
       facts: [
         {
@@ -252,7 +252,7 @@ const landingPageContent = {
         {
           title: 'Simulator first, board when you are ready',
           text:
-            'All lessons but one run in the simulator, so you need no hardware. 21 of them have a track for a learner board, ' +
+            'All lessons but one run in the simulator, so you need no hardware. 34 of them have a track for a learner board, ' +
             'with the wiring as a diagram and a pin map.',
         },
         {
@@ -321,7 +321,7 @@ const landingPageContent = {
         { label: 'Communication', value: 'Function blocks for Modbus, MQTT with Sparkplug B, and Azure and AWS cloud services.' },
         { label: 'Debugging', value: 'Breakpoints, pause, one-cycle step, watch, force, and the live I/O faceplate.' },
         { label: 'Testing', value: 'Scenario tests in the application and in `zplc-cli` for a CI job.' },
-        { label: 'Examples', value: '46 example projects bundled on the Welcome screen.' },
+        { label: 'Examples', value: '69 example projects bundled on the Welcome screen.' },
         { label: 'Application', value: 'A desktop application for Windows, macOS and Linux, in English and Spanish.' },
         {
           label: 'AI assistants',
@@ -369,7 +369,7 @@ const landingPageContent = {
       },
       learn: {
         title: 'Aprenda a programar PLC',
-        text: 'Un curso gratuito de 33 lecciones dentro de la misma aplicación. ZPLC comprueba su programa en cada lección.',
+        text: 'Un curso gratuito de 56 lecciones dentro de la misma aplicación. ZPLC comprueba su programa en cada lección.',
         action: 'Empezar a aprender',
         note: 'En inglés y en español.',
         more: 'Para docentes',
@@ -570,7 +570,7 @@ const landingPageContent = {
     learn: {
       title: 'Aprenda a programar PLC sin comprar un PLC',
       lead:
-        'Un curso gratuito de 33 lecciones en 12 módulos, del ciclo de un PLC a una máquina pequeña, en inglés y en español. ZPLC ' +
+        'Un curso gratuito de 56 lecciones en 12 módulos, del ciclo de un PLC a una máquina pequeña, en inglés y en español. ZPLC ' +
         'comprueba su programa en cada lección y le dice qué corregir.',
       facts: [
         {
@@ -582,7 +582,7 @@ const landingPageContent = {
         {
           title: 'Primero el simulador, la placa cuando esté listo',
           text:
-            'Todas las lecciones menos una se ejecutan en el simulador, así que no necesita hardware. 21 de ellas tienen un ' +
+            'Todas las lecciones menos una se ejecutan en el simulador, así que no necesita hardware. 34 de ellas tienen un ' +
             'recorrido para una placa del estudiante, con el cableado en un diagrama y un mapa de pines.',
         },
         {
@@ -669,7 +669,7 @@ const landingPageContent = {
           value: 'Puntos de interrupción, pausa, avance de un ciclo, observación, forzado y el panel de E/S en vivo.',
         },
         { label: 'Pruebas', value: 'Pruebas de escenario en la aplicación y en `zplc-cli` para un trabajo de CI.' },
-        { label: 'Ejemplos', value: '46 proyectos de ejemplo incluidos en la pantalla de bienvenida.' },
+        { label: 'Ejemplos', value: '69 proyectos de ejemplo incluidos en la pantalla de bienvenida.' },
         { label: 'Aplicación', value: 'Una aplicación de escritorio para Windows, macOS y Linux, en inglés y en español.' },
         {
           label: 'Asistentes de IA',

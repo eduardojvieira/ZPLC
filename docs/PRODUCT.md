@@ -67,7 +67,7 @@ under `docs/`, deployed to GitHub Pages; the landing page is `docs/src/pages/ind
 - Real application captures from the capture tool (`tools/docs/capture-screenshots.ts`, `docs/static/img/`, manifest
   `docs/static/img/manifest.json`), in light and dark.
 - Generated illustrative images under `docs/static/img/generated/`.
-- The board manifest, the conformance matrix behind the language reference, the Learn course (33 lessons in 12
+- The board manifest, the conformance matrix behind the language reference, the Learn course (56 lessons in 12
   modules, four lesson plants) and the host runtime functions (18) are the backed facts.
 - There are no customers, testimonials, certifications, benchmarks or hardware test records; the site must not invent
   any.
