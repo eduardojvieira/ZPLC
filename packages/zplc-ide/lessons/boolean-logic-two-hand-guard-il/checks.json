@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [
+    {
+      "intent": "De Morgan form of the same condition, with STN and a bracketed XOR",
+      "files": {
+        "src/TwoHand.il": "PROGRAM TwoHand\nVAR_INPUT\n    LeftHand AT %I0.0 : BOOL;\n    RightHand AT %I0.1 : BOOL;\n    GuardClosed AT %I0.2 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    PressEnable AT %Q0.0 : BOOL;\n    GuardLamp AT %Q0.1 : BOOL;\n    OneHandWarning AT %Q0.2 : BOOL;\nEND_VAR\n\n        LDN   LeftHand\n        ORN   RightHand\n        ORN   GuardClosed\n        STN   PressEnable\n        LDN   GuardClosed\n        ST    GuardLamp\n        LD    LeftHand\n        ANDN  RightHand\n        OR(   RightHand\n        ANDN  LeftHand\n        )\n        ST    OneHandWarning\nEND_PROGRAM\n"
+      }
+    }
+  ],
+  "wrong": [
+    {
+      "intent": "enables the press with either hand (OR instead of AND)",
+      "files": {
+        "src/TwoHand.il": "PROGRAM TwoHand\nVAR_INPUT\n    LeftHand AT %I0.0 : BOOL;\n    RightHand AT %I0.1 : BOOL;\n    GuardClosed AT %I0.2 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    PressEnable AT %Q0.0 : BOOL;\n    GuardLamp AT %Q0.1 : BOOL;\n    OneHandWarning AT %Q0.2 : BOOL;\nEND_VAR\n\n        LD    LeftHand\n        OR    RightHand\n        AND   GuardClosed\n        ST    PressEnable\n        LDN   GuardClosed\n        ST    GuardLamp\n        LD    LeftHand\n        XOR   RightHand\n        ST    OneHandWarning\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "forgets the guard in PressEnable",
+      "files": {
+        "src/TwoHand.il": "PROGRAM TwoHand\nVAR_INPUT\n    LeftHand AT %I0.0 : BOOL;\n    RightHand AT %I0.1 : BOOL;\n    GuardClosed AT %I0.2 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    PressEnable AT %Q0.0 : BOOL;\n    GuardLamp AT %Q0.1 : BOOL;\n    OneHandWarning AT %Q0.2 : BOOL;\nEND_VAR\n\n        LD    LeftHand\n        AND   RightHand\n        ST    PressEnable\n        LDN   GuardClosed\n        ST    GuardLamp\n        LD    LeftHand\n        XOR   RightHand\n        ST    OneHandWarning\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "warns whenever any hand is on (OR instead of XOR)",
+      "files": {
+        "src/TwoHand.il": "PROGRAM TwoHand\nVAR_INPUT\n    LeftHand AT %I0.0 : BOOL;\n    RightHand AT %I0.1 : BOOL;\n    GuardClosed AT %I0.2 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    PressEnable AT %Q0.0 : BOOL;\n    GuardLamp AT %Q0.1 : BOOL;\n    OneHandWarning AT %Q0.2 : BOOL;\nEND_VAR\n\n        LD    LeftHand\n        AND   RightHand\n        AND   GuardClosed\n        ST    PressEnable\n        LDN   GuardClosed\n        ST    GuardLamp\n        LD    LeftHand\n        OR    RightHand\n        ST    OneHandWarning\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}
