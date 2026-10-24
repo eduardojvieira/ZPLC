@@ -331,6 +331,82 @@ describe('the assistant proposes a change set that a person reviews and saves (I
     expect(ctx.reviews).toHaveLength(0);
   });
 
+  it('offers editor actions and settings as buttons that run only when clicked, and not a proposal the project cannot honour', async () => {
+    const { bindCommands, publishCommandState, resetCommandsForTest } = await import('../commands/bus');
+    const { useAppSettings } = await import('../store/useAppSettings');
+    resetCommandsForTest();
+    publishCommandState({ projectOpen: true });
+    const ran: string[] = [];
+    bindCommands({ 'build.compile': () => void ran.push('build.compile') });
+    restores.push(resetCommandsForTest);
+    const ctx = assistant(
+      {
+        ok: true,
+        answer: 'Try this',
+        proposals: [
+          { type: 'compile' },
+          { type: 'setting', name: 'theme', value: 'dark' },
+          { type: 'setting', name: 'editorFontSize', value: 20 },
+          { type: 'openFile', path: 'src/Gone.st' },
+        ],
+      },
+      async () => ({}),
+    );
+    dom.patchStore(useIDEStore, { theme: 'light' } as never);
+    open('agent', ctx.state);
+    const { user } = dom.render(<Console />);
+    await ready(user);
+    await user.type(panel().getByRole('textbox', { name: dom.t('console.request') }), 'Help me');
+    await dom.waitFor(() =>
+      expect((panel().getByRole('button', { name: dom.t('console.sendRequest') }) as HTMLButtonElement).disabled).toBe(false),
+    );
+    await user.click(panel().getByRole('button', { name: dom.t('console.sendRequest') }));
+    const actions = await dom.screen.findByRole('region', { name: dom.t('console.proposedActions') });
+    // nothing has run yet
+    expect(ran).toEqual([]);
+    expect(useIDEStore.getState().theme).toBe('light');
+    const missing = dom
+      .within(actions)
+      .getByRole('button', { name: dom.t('console.proposalOpenFile', { path: 'src/Gone.st' }) }) as HTMLButtonElement;
+    expect(missing.disabled).toBe(true);
+    expect(dom.within(actions).getByText(dom.t('console.proposalWhyFile'))).toBeTruthy();
+    await user.click(dom.within(actions).getByRole('button', { name: dom.t('console.proposalCompile') }));
+    await dom.waitFor(() => expect(ran).toEqual(['build.compile']));
+    await user.click(
+      dom
+        .within(actions)
+        .getByRole('button', { name: dom.t('console.proposalSetting', { setting: dom.t('console.settingTheme'), value: 'dark' }) }),
+    );
+    await dom.waitFor(() => expect(useIDEStore.getState().theme).toBe('dark'));
+    await user.click(
+      dom
+        .within(actions)
+        .getByRole('button', { name: dom.t('console.proposalSetting', { setting: dom.t('console.settingFontSize'), value: '20' }) }),
+    );
+    await dom.waitFor(() => expect(useAppSettings.getState().settings.editorFontSize).toBe(20));
+    // the settings that stay out of its reach did not move
+    expect(useAppSettings.getState().settings).toMatchObject({
+      autosaveSeconds: 0,
+      checkForUpdates: false,
+      unlockAllLessons: false,
+      hideSolutions: false,
+    });
+  });
+
+  it('shows an answer that proposes something physical as not trusted, with no button', async () => {
+    const ctx = assistant({ ok: true, answer: 'Deploy it', proposals: [{ type: 'deploy' }] }, async () => ({}));
+    open('agent', ctx.state);
+    const { user } = dom.render(<Console />);
+    await ready(user);
+    await user.type(panel().getByRole('textbox', { name: dom.t('console.request') }), 'Deploy');
+    await dom.waitFor(() =>
+      expect((panel().getByRole('button', { name: dom.t('console.sendRequest') }) as HTMLButtonElement).disabled).toBe(false),
+    );
+    await user.click(panel().getByRole('button', { name: dom.t('console.sendRequest') }));
+    await dom.screen.findByText(dom.t('console.providerResponseCouldNot'));
+    expect(dom.screen.queryByRole('region', { name: dom.t('console.proposedActions') })).toBeNull();
+  });
+
   it('sends the open program with a plain question as well, in any language', async () => {
     const ctx = assistant({ ok: true, answer: 'It latches.' }, async () => ({}));
     open('agent', ctx.state);

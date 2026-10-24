@@ -5,11 +5,12 @@
  * person reads), and the result is a proposal, never a write.
  */
 import { CANDIDATE_CHANGE_CAP, isCandidateChangePath } from '../../ai/candidatePaths';
+import { parseProposals, type AiProposal } from '../../ai/proposals';
 import { prepareChangeSet, type ProposedChange } from '../../ai/changeSetPrepare';
 import { ERROR_CODES, record, text } from '../aiProviderPresentation';
 
 export type AgentResponsePresentation =
-  | { kind: 'answer'; answer: string; changes?: ProposedChange[] }
+  | { kind: 'answer'; answer: string; changes?: ProposedChange[]; proposals?: AiProposal[] }
   | { kind: 'refused'; answer: string; reason: 'invalid-file' | 'sensitive-field'; path: string; violations: string[] }
   | { kind: 'error'; code: string }
   | { kind: 'invalid' };
@@ -57,7 +58,7 @@ export function presentAgentResponse(value: unknown, expected?: AgentSentProgram
     return { kind: 'error', code: item.code };
   const keys = Object.keys(item);
   const hasIdentity = IDENTITY.some((key) => keys.includes(key));
-  const allowed = new Set<string>(['ok', 'answer', ...IDENTITY, 'changes']);
+  const allowed = new Set<string>(['ok', 'answer', ...IDENTITY, 'changes', 'proposals']);
   if (item.ok !== true || !text(item.answer, 16 * 1024) || !keys.every((key) => allowed.has(key))) return { kind: 'invalid' };
   if (hasIdentity) {
     if (
@@ -72,11 +73,15 @@ export function presentAgentResponse(value: unknown, expected?: AgentSentProgram
     )
       return { kind: 'invalid' };
   }
-  if (!keys.includes('changes')) return { kind: 'answer', answer: item.answer };
+  // editor actions and display settings: validated again here, a button each, never run by the answer itself
+  const proposals = keys.includes('proposals') ? parseProposals(item.proposals) : [];
+  if (!proposals) return { kind: 'invalid' };
+  const withProposals = proposals.length > 0 ? { proposals } : {};
+  if (!keys.includes('changes')) return { kind: 'answer', answer: item.answer, ...withProposals };
   const changes = hasIdentity && expected?.baselineSha256 !== undefined ? proposedChanges(item.changes) : null;
   if (!changes) return { kind: 'invalid' };
   const prepared = prepareChangeSet(changes);
   return prepared.ok
-    ? { kind: 'answer', answer: item.answer, changes: prepared.changes }
+    ? { kind: 'answer', answer: item.answer, changes: prepared.changes, ...withProposals }
     : { kind: 'refused', answer: item.answer, reason: prepared.reason, path: prepared.path, violations: prepared.violations };
 }

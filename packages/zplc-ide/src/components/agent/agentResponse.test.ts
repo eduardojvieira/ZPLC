@@ -85,4 +85,16 @@ describe("what the host answers is shown as the assistant's answer and a change 
     });
     expect(presentAgentResponse({ ok: true, answer: 'x', ...open, baselineSha256: 'nope' }, open).kind).toBe('invalid');
   });
+
+  it('carries the proposals of an answer, validated again, with or without a change set', () => {
+    const proposals = [{ type: 'compile' as const }, { type: 'setting' as const, name: 'theme' as const, value: 'dark' as const }];
+    expect(presentAgentResponse({ ok: true, answer: 'x', proposals })).toEqual({ kind: 'answer', answer: 'x', proposals });
+    expect(presentAgentResponse({ ok: true, answer: 'x', ...identity, changes: [create('src/A.st')], proposals }, expected)).toMatchObject({
+      kind: 'answer',
+      proposals,
+      changes: [{ path: 'src/A.st' }],
+    });
+    for (const bad of [[{ type: 'deploy' }], [{ type: 'setting', name: 'hideSolutions', value: true }], [], 'compile'])
+      expect(presentAgentResponse({ ok: true, answer: 'x', proposals: bad }).kind, JSON.stringify(bad)).toBe('invalid');
+  });
 });

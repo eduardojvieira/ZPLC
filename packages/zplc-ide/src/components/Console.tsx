@@ -40,6 +40,7 @@ import { useConsoleState } from '../store/regionSubscriptions';
 import { sha256Text } from './candidateSources';
 import { isCandidateSourcePath } from '../ai/candidatePaths';
 import { presentAgentResponse } from './agent/agentResponse';
+import { AgentProposals } from './agent/AgentProposals';
 import { changeSetIsCurrent, reviewChangeSet, saveChangeSet } from './agent/changeSetReview';
 import type { ConsoleTab } from '../types';
 import { TerminalTab } from './TerminalTab';
@@ -1375,6 +1376,9 @@ export function Console({ debugController }: ConsoleProps) {
                           </ul>
                         )}
                       </div>
+                    )}
+                    {agentState.presentation.kind === 'answer' && agentState.presentation.proposals && (
+                      <AgentProposals proposals={agentState.presentation.proposals} />
                     )}
                     {agentState.presentation.kind === 'answer' && agentState.presentation.changes && (
                       <ul aria-label={t('console.proposedFiles')} className="list-disc pl-4 text-xs text-[var(--color-surface-300)]">

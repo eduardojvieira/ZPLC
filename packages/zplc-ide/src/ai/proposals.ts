@@ -40,7 +40,8 @@ const ELEMENT_KINDS: Record<string, readonly string[]> = { 'ld.json': ['rung'], 
 
 function exact(value: unknown, keys: readonly string[]): Record<string, unknown> | null {
   try {
-    if (typeof value !== 'object' || value === null || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype) return null;
+    if (typeof value !== 'object' || value === null || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype)
+      return null;
     const names = Object.getOwnPropertyNames(value);
     if (names.length !== keys.length || !keys.every((key) => names.includes(key))) return null;
     const record: Record<string, unknown> = {};
@@ -71,7 +72,11 @@ function parseOne(value: unknown): AiProposal | null {
   }
   if (type === 'goToLine') {
     const item = exact(value, ['type', 'path', 'line']);
-    return item && isCandidateSourcePath(item.path) && Number.isSafeInteger(item.line) && (item.line as number) >= 1 && (item.line as number) <= LINE_MAX
+    return item &&
+      isCandidateSourcePath(item.path) &&
+      Number.isSafeInteger(item.line) &&
+      (item.line as number) >= 1 &&
+      (item.line as number) <= LINE_MAX
       ? { type, path: item.path, line: item.line as number }
       : null;
   }
@@ -104,7 +109,8 @@ function parseOne(value: unknown): AiProposal | null {
 export function parseProposals(value: unknown): AiProposal[] | null {
   if (value === undefined) return [];
   try {
-    if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype || value.length < 1 || value.length > AI_PROPOSAL_CAP) return null;
+    if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype || value.length < 1 || value.length > AI_PROPOSAL_CAP)
+      return null;
     const proposals: AiProposal[] = [];
     for (let index = 0; index < value.length; index += 1) {
       const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
