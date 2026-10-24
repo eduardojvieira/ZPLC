@@ -1,0 +1,207 @@
+{
+  "name": "PressCell",
+  "description": "A feed and press cycle that stops on a fault and returns to IDLE on a reset.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Start pushbutton"
+      },
+      {
+        "name": "Fault",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Fault sensor, TRUE while the fault is present"
+      },
+      {
+        "name": "Reset",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "Reset pushbutton"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Feeder",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Feeder"
+      },
+      {
+        "name": "Press",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Press"
+      },
+      {
+        "name": "Alarm",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "Alarm lamp"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "step_idle",
+      "name": "IDLE",
+      "isInitial": true,
+      "position": {
+        "x": 200,
+        "y": 50
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_IDLE",
+          "comment": "Everything off"
+        }
+      ]
+    },
+    {
+      "id": "step_feed",
+      "name": "FEEDING",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 250
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_FEED",
+          "comment": "Run the feeder"
+        }
+      ]
+    },
+    {
+      "id": "step_press",
+      "name": "PRESSING",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 450
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_PRESS",
+          "comment": "Run the press"
+        }
+      ]
+    },
+    {
+      "id": "step_fault",
+      "name": "FAULTED",
+      "isInitial": false,
+      "position": {
+        "x": 450,
+        "y": 350
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_FAULT",
+          "comment": "Everything off, alarm on"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t_start",
+      "fromStep": "step_idle",
+      "toStep": "step_feed",
+      "condition": "Start AND NOT Fault",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 150
+      }
+    },
+    {
+      "id": "t_fault_feed",
+      "fromStep": "step_feed",
+      "toStep": "step_fault",
+      "priority": 1,
+      "condition": "Fault",
+      "comment": "A fault wins over the timer",
+      "position": {
+        "x": 325,
+        "y": 300
+      }
+    },
+    {
+      "id": "t_feed_done",
+      "fromStep": "step_feed",
+      "toStep": "step_press",
+      "priority": 2,
+      "condition": "step_feed.T >= T#30ms",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 350
+      }
+    },
+    {
+      "id": "t_fault_press",
+      "fromStep": "step_press",
+      "toStep": "step_fault",
+      "priority": 1,
+      "condition": "Fault",
+      "comment": "A fault wins over the timer",
+      "position": {
+        "x": 325,
+        "y": 550
+      }
+    },
+    {
+      "id": "t_press_done",
+      "fromStep": "step_press",
+      "toStep": "step_idle",
+      "priority": 2,
+      "condition": "step_press.T >= T#30ms",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 550
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "A_IDLE",
+      "name": "A_IDLE",
+      "type": "ST",
+      "body": "Feeder := FALSE; Press := FALSE; Alarm := FALSE;"
+    },
+    {
+      "id": "A_FEED",
+      "name": "A_FEED",
+      "type": "ST",
+      "body": "Feeder := TRUE; Press := FALSE; Alarm := FALSE;"
+    },
+    {
+      "id": "A_PRESS",
+      "name": "A_PRESS",
+      "type": "ST",
+      "body": "Feeder := FALSE; Press := TRUE; Alarm := FALSE;"
+    },
+    {
+      "id": "A_FAULT",
+      "name": "A_FAULT",
+      "type": "ST",
+      "body": "Feeder := FALSE; Press := FALSE; Alarm := TRUE;"
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-24",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

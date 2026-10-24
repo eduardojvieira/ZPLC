@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "conveyor-sorting-sfc",
+  "version": 1,
+  "order": 64,
+  "module": 5,
+  "level": "intermediate",
+  "prerequisites": ["sfc-fill-mix-sequence"],
+  "languages": ["SFC"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The chart reads seven inputs where the learner boards have four, and its parts and its jam come from the simulated conveyor plant.",
+        "es": "El diagrama lee siete entradas cuando las placas del estudiante tienen cuatro, y sus piezas y su atasco provienen de la planta simulada del transportador."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the conveyor and the jam are part of the scenario.",
+        "es": "Complétela en Simulación, donde el transportador y el atasco forman parte del escenario."
+      }
+    }
+  },
+  "plant": "conveyor-v1",
+  "estimatedMinutes": 30,
+  "starter": {
+    "project": "sfc_conveyor_sorting_starter",
+    "program": "src/Conveyor.sfc.json"
+  },
+  "solution": {
+    "project": "sfc_conveyor_sorting",
+    "program": "src/Conveyor.sfc.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "ConveyorSfc",
+    "path": "tests/conveyor-sfc.scenario.json",
+    "sha256": "0cb610ab3f754cf939fe1b80356d9629134beeed93a2900b1996000d596562d0"
+  },
+  "regressionScenarios": []
+}

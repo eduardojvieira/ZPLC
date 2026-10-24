@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Faults, stop and reset in a chart",
+  "summary": "Stop a feed and press cycle the moment a fault appears, and return it to IDLE only after the fault is gone and Reset is pressed.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish a safe stop, a safety function, press behaviour, HIL, or certification.",
+  "objectives": [
+    "Add a fault step that every working step can reach, with a transition of higher priority than the timers.",
+    "Return the chart to its initial step with a Reset that works only once the fault is gone."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/PressCell.sfc.json the steps IDLE, FEEDING, PRESSING and FAULTED, their actions and the transitions that run the cycle and enter FAULTED on Fault are drawn. Add the missing transition from FAULTED to IDLE with the condition Reset AND NOT Fault.",
+      "checkpoint": "A fault stops the cycle at once and lights Alarm, a Reset while the fault is present changes nothing, and a Reset after it returns the chart to IDLE and allows a new cycle."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Start is pressed at {{t:10}} ms and a fault appears at {{t:80}} ms, during the press. Reset is pressed at {{t:110}} ms with the fault still present, the fault clears at {{t:130}} ms and Reset is pressed again at {{t:150}} ms. Predict Alarm at {{t:90}}, {{t:150}} and {{t:160}} ms.",
+      "checkpoint": "{{v:PressCell.Feeder=false,PressCell.Press=false,PressCell.Alarm=true@90|Alarm ON, feeder and press OFF}} at {{t:90}} ms; {{v:PressCell.Alarm=true@150|Alarm still ON}} at {{t:150}} ms, because the first Reset changed nothing; {{v:PressCell.Feeder=false,PressCell.Press=false,PressCell.Alarm=false@160|everything OFF}} at {{t:160}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter enters FAULTED on Fault but has no way out, so Alarm stays on forever and no new cycle can start; add a transition from FAULTED to IDLE whose condition is Reset AND NOT Fault.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named PressCell and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:80}}, {{t:90}}, {{t:110}} and {{t:160}} ms: the fault appears at {{t:80}} ms while the press is still on, the chart is in FAULTED one scan later with the press and the feeder off, and the Reset at {{t:110}} ms is ignored because Fault is still true. After the second Reset, the Start at {{t:180}} ms runs a full cycle again: the feeder from {{t:190}} ms and the press at {{t:230}} ms.",
+      "checkpoint": "Feeder, Press and Alarm are never on together, and the second cycle repeats the first."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Why is the condition Reset AND NOT Fault and not only Reset? Use only Reset and see which assertion fails.",
+      "checkpoint": "A reset that works while the fault is present would hide it: the cycle could restart with the cause still there. The fault transitions have priority 1, ahead of the timers (priority 2), so a fault that arrives in the same scan as a timer wins. The scenario shows the logic only; it is not a safe-stop design."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "The way out of a fault step is a transition like any other: a source step, a target step and a condition. The transition from IDLE to FEEDING shows the shape."
+    },
+    {
+      "level": 2,
+      "text": "Add a transition with fromStep step_fault, toStep step_idle and the condition Reset AND NOT Fault."
+    }
+  ],
+  "faultCases": [
+    "The starter enters FAULTED on Fault but has no way out, so Alarm stays on forever and no new cycle can start; add a transition from FAULTED to IDLE whose condition is Reset AND NOT Fault."
+  ]
+}

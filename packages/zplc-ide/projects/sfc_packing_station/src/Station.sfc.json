@@ -1,0 +1,315 @@
+{
+  "name": "Station",
+  "description": "A packing station as a chart: run, count three parts, stop on a full batch or a blocked sensor.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Count",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "Parts counted in this batch"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Start pushbutton"
+      },
+      {
+        "name": "Stop",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Stop pushbutton"
+      },
+      {
+        "name": "EStop",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "Emergency stop"
+      },
+      {
+        "name": "Part",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "Part sensor"
+      },
+      {
+        "name": "Reset",
+        "type": "BOOL",
+        "address": "%I0.4",
+        "comment": "Reset pushbutton"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Belt",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Belt motor"
+      },
+      {
+        "name": "BatchFull",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Batch full lamp"
+      },
+      {
+        "name": "Fault",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "Fault lamp"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "step_idle",
+      "name": "IDLE",
+      "isInitial": true,
+      "position": {
+        "x": 300,
+        "y": 50
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_IDLE",
+          "comment": "Everything off"
+        }
+      ]
+    },
+    {
+      "id": "step_run",
+      "name": "RUN",
+      "isInitial": false,
+      "position": {
+        "x": 300,
+        "y": 250
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_RUN",
+          "comment": "Belt on"
+        }
+      ]
+    },
+    {
+      "id": "step_seen",
+      "name": "SEEN",
+      "isInitial": false,
+      "position": {
+        "x": 300,
+        "y": 450
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_RUN",
+          "comment": "The belt keeps running"
+        },
+        {
+          "qualifier": "P1",
+          "actionName": "A_COUNT",
+          "comment": "Count the part once"
+        }
+      ]
+    },
+    {
+      "id": "step_full",
+      "name": "BATCH_FULL",
+      "isInitial": false,
+      "position": {
+        "x": 150,
+        "y": 650
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_FULL",
+          "comment": "Belt off, batch lamp on"
+        },
+        {
+          "qualifier": "P0",
+          "actionName": "A_CLEAR",
+          "comment": "Clear the count when the step is left"
+        }
+      ]
+    },
+    {
+      "id": "step_fault",
+      "name": "JAMMED",
+      "isInitial": false,
+      "position": {
+        "x": 450,
+        "y": 650
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_FAULT",
+          "comment": "Belt off, fault lamp on"
+        },
+        {
+          "qualifier": "P0",
+          "actionName": "A_CLEAR",
+          "comment": "Clear the count when the step is left"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t_start",
+      "fromStep": "step_idle",
+      "toStep": "step_run",
+      "condition": "Start AND NOT EStop",
+      "comment": "",
+      "position": {
+        "x": 300,
+        "y": 150
+      }
+    },
+    {
+      "id": "t_stop_run",
+      "fromStep": "step_run",
+      "toStep": "step_idle",
+      "priority": 1,
+      "condition": "Stop OR EStop",
+      "comment": "Stop or emergency stop",
+      "position": {
+        "x": 300,
+        "y": 350
+      }
+    },
+    {
+      "id": "t_part",
+      "fromStep": "step_run",
+      "toStep": "step_seen",
+      "priority": 2,
+      "condition": "Part",
+      "comment": "A part reaches the sensor",
+      "position": {
+        "x": 300,
+        "y": 350
+      }
+    },
+    {
+      "id": "t_stop_seen",
+      "fromStep": "step_seen",
+      "toStep": "step_idle",
+      "priority": 1,
+      "condition": "Stop OR EStop",
+      "comment": "Stop or emergency stop",
+      "position": {
+        "x": 300,
+        "y": 550
+      }
+    },
+    {
+      "id": "t_jam",
+      "fromStep": "step_seen",
+      "toStep": "step_fault",
+      "priority": 2,
+      "condition": "step_seen.T >= T#50ms",
+      "comment": "The sensor is blocked",
+      "position": {
+        "x": 375,
+        "y": 550
+      }
+    },
+    {
+      "id": "t_full",
+      "fromStep": "step_seen",
+      "toStep": "step_full",
+      "priority": 3,
+      "condition": "NOT Part AND Count >= 3",
+      "comment": "The third part has passed",
+      "position": {
+        "x": 225,
+        "y": 550
+      }
+    },
+    {
+      "id": "t_next",
+      "fromStep": "step_seen",
+      "toStep": "step_run",
+      "priority": 4,
+      "condition": "NOT Part",
+      "comment": "The part has passed",
+      "position": {
+        "x": 300,
+        "y": 550
+      }
+    },
+    {
+      "id": "t_reset_full",
+      "fromStep": "step_full",
+      "toStep": "step_idle",
+      "condition": "Reset",
+      "comment": "",
+      "position": {
+        "x": 225,
+        "y": 750
+      }
+    },
+    {
+      "id": "t_reset_fault",
+      "fromStep": "step_fault",
+      "toStep": "step_idle",
+      "condition": "Reset AND NOT Part",
+      "comment": "Reset works only once the sensor is clear",
+      "position": {
+        "x": 375,
+        "y": 750
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "A_IDLE",
+      "name": "A_IDLE",
+      "type": "ST",
+      "body": "Belt := FALSE; BatchFull := FALSE; Fault := FALSE;"
+    },
+    {
+      "id": "A_RUN",
+      "name": "A_RUN",
+      "type": "ST",
+      "body": "Belt := TRUE; BatchFull := FALSE; Fault := FALSE;"
+    },
+    {
+      "id": "A_COUNT",
+      "name": "A_COUNT",
+      "type": "ST",
+      "body": "Count := Count + 1;"
+    },
+    {
+      "id": "A_FULL",
+      "name": "A_FULL",
+      "type": "ST",
+      "body": "Belt := FALSE; BatchFull := TRUE; Fault := FALSE;"
+    },
+    {
+      "id": "A_FAULT",
+      "name": "A_FAULT",
+      "type": "ST",
+      "body": "Belt := FALSE; BatchFull := FALSE; Fault := TRUE;"
+    },
+    {
+      "id": "A_CLEAR",
+      "name": "A_CLEAR",
+      "type": "ST",
+      "body": "Count := 0;"
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-24",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

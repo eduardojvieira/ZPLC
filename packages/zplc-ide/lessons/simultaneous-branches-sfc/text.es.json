@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Ramas simultáneas: llenar y calentar a la vez",
+  "summary": "Inicie dos ramas a la vez, deje que cada una termine a su tiempo y únalas para que el mezclador arranque solo cuando ambas hayan terminado.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran velocidades de calentamiento, volúmenes de llenado, calidad de mezcla, HIL ni certificación.",
+  "objectives": [
+    "Lea una divergencia simultánea como una transición que activa varios pasos a la vez, de modo que se ejecuten en paralelo.",
+    "Escriba una convergencia como una transición que sale de todos los pasos que espera y se activa solo cuando todos están activos."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/MixCell.sfc.json están dibujados los pasos IDLE, FILL, HEAT, FILL_DONE, HEAT_DONE y MIX, sus acciones, la transición que inicia las dos ramas (toSteps), las dos transiciones que terminan una rama y el regreso a IDLE. Agregue la unión que falta: una transición a MIX con la condición TRUE que sale de FILL_DONE y de HEAT_DONE (fromSteps), de modo que se active solo cuando ambos estén activos.",
+      "checkpoint": "El llenado y el calentamiento se ejecutan a la vez, cada uno termina a su tiempo, y el mezclador arranca solo después de ambos."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Start se pulsa a los {{t:10}} ms. El llenado termina antes que el calentamiento. Prediga Valve, Heater y Mixer a los {{t:20}}, {{t:60}}, {{t:80}} y {{t:90}} ms.",
+      "checkpoint": "{{v:MixCell.Valve=true,MixCell.Heater=true@20|Valve y Heater en ON}} a los {{t:20}} ms; {{v:MixCell.Valve=false,MixCell.Heater=true@60|solo Heater en ON}} a los {{t:60}} ms; {{v:MixCell.Valve=false,MixCell.Heater=false,MixCell.Mixer=false@80|todo en OFF}} a los {{t:80}} ms, cuando el calentador acaba de apagarse y la unión se activa; {{v:MixCell.Mixer=true,MixCell.Heater=false@90|Mixer en ON}} a los {{t:90}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial inicia las dos ramas pero no tiene unión, así que el diagrama espera en FILL_DONE y HEAT_DONE y el mezclador nunca se ejecuta; agregue una transición a MIX con la condición TRUE que liste FILL_DONE y HEAT_DONE en fromSteps.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama MixCell y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:50}}, {{t:60}}, {{t:70}} y {{t:90}} ms: la válvula se cierra a los {{t:60}} ms mientras el calentador sigue hasta los {{t:70}} ms, y el mezclador no funciona mientras cualquiera de los dos esté encendido.",
+      "checkpoint": "Valve y Mixer nunca están en ON a la vez, ni tampoco Heater y Mixer. Un segundo Start a los {{t:170}} ms repite el ciclo."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Para qué existen FILL_DONE y HEAT_DONE? Deje HEAT_DONE fuera de fromSteps y vea qué aserción falla.",
+      "checkpoint": "Un paso de espera deja que la rama que termina primero permanezca terminada hasta que la otra la alcance, y su acción apaga su salida. Una unión que listara un solo paso arrancaría el mezclador con el calentador todavía encendido. El escenario muestra solo la lógica de la secuencia; no es un modelo de calentamiento ni de llenado."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Una divergencia simultánea lista varios pasos en toSteps; una convergencia lista varios pasos en fromSteps. El primero de la lista es también el fromStep o el toStep."
+    },
+    {
+      "level": 2,
+      "text": "Agregue una transición con fromStep step_fill_done, fromSteps [\"step_fill_done\", \"step_heat_done\"], toStep step_mix y la condición TRUE."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial inicia las dos ramas pero no tiene unión, así que el diagrama espera en FILL_DONE y HEAT_DONE y el mezclador nunca se ejecuta; agregue una transición a MIX con la condición TRUE que liste FILL_DONE y HEAT_DONE en fromSteps."
+  ]
+}

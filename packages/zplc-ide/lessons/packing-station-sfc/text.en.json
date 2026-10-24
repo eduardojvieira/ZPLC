@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Capstone: a packing station as a chart",
+  "summary": "Build a packing station as a Sequential Function Chart from a written description, with a seal-in belt, a count of three parts, an emergency stop and a latched fault, and prove it with a scenario that also checks what must not happen.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish packing-line requirements, safety function behaviour, sensor timing or any real machine behaviour, HIL, or certification.",
+  "objectives": [
+    "Turn five written requirements into a chart of steps, transitions and actions, and decide which behaviour is a step and which is a transition.",
+    "Read a scenario that checks both what must happen and what must not happen, and use its failed assertions to find the requirement you missed."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "A packing station has a belt, a part sensor and five buttons. Complete the chart in src/Station.sfc.json so that: (1) Start turns Belt on, and Stop or EStop turns it off and returns the chart to IDLE. (2) Each part that reaches the sensor is counted once, and three parts make a batch: BatchFull lights and the belt stops. (3) If Part stays on for {{t:50}} ms or more, the sensor is blocked: Fault lights and the belt stops. (4) Reset clears the count and BatchFull, and clears Fault only when Part is no longer on. (5) After any stop, the belt runs again only after a new Start. The starter has the steps IDLE and RUN; add SEEN (a part is at the sensor), BATCH_FULL and JAMMED, with their transitions and actions.",
+      "checkpoint": "The belt runs after Start, stops for Stop, EStop, a full batch and a blocked sensor, and never restarts without a new Start."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Parts pass the sensor at {{t:50}}, {{t:90}} and {{t:150}} ms. Predict BatchFull at {{t:140}} ms and at {{t:180}} ms, and Belt at {{t:180}} ms. Start is pressed again at {{t:200}} ms: predict Belt at {{t:230}} ms.",
+      "checkpoint": "{{v:Station.BatchFull=false@140|OFF}} at {{t:140}} ms, after two parts; {{v:Station.BatchFull=true@180|ON}} at {{t:180}} ms, with {{v:Station.Belt=false@180|the belt stopped}}; {{v:Station.Belt=false@230|the belt stays off}} at {{t:230}} ms, because the chart waits in BATCH_FULL and only Reset leaves it."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter only has IDLE and RUN and lets Stop drop the belt. Add the step SEEN, with the action A_RUN and a P1 action that counts, the steps BATCH_FULL and JAMMED, the transitions between them with priorities, and EStop in the stop transitions.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named PackingStationSfc and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:270}}, {{t:320}}, {{t:330}} and {{t:400}} ms: Reset empties the batch at {{t:240}} ms but the belt stays off until a new Start at {{t:280}} ms, and the emergency stop at {{t:320}} ms stops the belt at {{t:330}} ms, where it stays until Start is pressed at {{t:370}} ms. The part that blocks the sensor from {{t:410}} ms raises the fault, and Reset at {{t:480}} ms does not clear it while the sensor is blocked; it clears only after Part falls at {{t:510}} ms and Reset is pressed at {{t:530}} ms.",
+      "checkpoint": "At {{t:490}} ms Fault is on and the belt is off even though Reset was pressed; at {{t:550}} ms Fault is off and the belt is still off."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Which of the five requirements did the first failed assertion point to, and which ones did you only find by reading the scenario? Think of one more thing the station should never do, and whether the scenario would catch it.",
+      "checkpoint": "Most of the assertions check what must not happen: a belt that restarts by itself, a fault cleared too early, a batch lamp that stays on. A chart that only does what is asked passes the happy path and still fails these. The scenario shows the logic only; it is not a packing line and not a safety function."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Decide first what is a step: waiting, running, a part at the sensor, a full batch, a jam. Then write the transitions between them, and give a priority to the ones that leave the same step so that Stop and EStop come first."
+    },
+    {
+      "level": 2,
+      "text": "SEEN runs A_RUN with N and A_COUNT (Count := Count + 1;) with P1. From SEEN: Stop OR EStop to IDLE (priority 1); step_seen.T >= T#50ms to JAMMED (2); NOT Part AND Count >= 3 to BATCH_FULL (3); NOT Part to RUN (4). RUN goes to SEEN on Part. Reset leaves BATCH_FULL, and Reset AND NOT Part leaves JAMMED; both steps clear Count with a P0 action."
+    }
+  ],
+  "faultCases": [
+    "The starter only has IDLE and RUN and lets Stop drop the belt. Add the step SEEN, with the action A_RUN and a P1 action that counts, the steps BATCH_FULL and JAMMED, the transitions between them with priorities, and EStop in the stop transitions."
+  ]
+}

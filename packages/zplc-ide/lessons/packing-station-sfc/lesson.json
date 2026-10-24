@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "packing-station-sfc",
+  "version": 1,
+  "order": 66,
+  "module": 11,
+  "level": "advanced",
+  "prerequisites": ["capstone-packing-station", "sfc-fill-mix-sequence"],
+  "languages": ["SFC"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The chart reads five digital inputs (Start, Stop, EStop, Part and Reset) where the learner boards have four.",
+        "es": "El diagrama lee cinco entradas digitales (Start, Stop, EStop, Part y Reset) cuando las placas del estudiante tienen cuatro."
+      },
+      "instead": {
+        "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita placa."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 60,
+  "starter": {
+    "project": "sfc_packing_station_starter",
+    "program": "src/Station.sfc.json"
+  },
+  "solution": {
+    "project": "sfc_packing_station",
+    "program": "src/Station.sfc.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "PackingStationSfc",
+    "path": "tests/packing-station-sfc.scenario.json",
+    "sha256": "8b7de7731e341dc387764f6f5574fe496ee57bf5ba4f9440d7eb4176292ee446"
+  },
+  "regressionScenarios": []
+}

@@ -1,0 +1,148 @@
+{
+  "name": "PartRouter",
+  "description": "A part router: one of two branches is chosen by the transitions that leave IDLE.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "A part is ready"
+      },
+      {
+        "name": "IsLarge",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "The part is large"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "SmallBay",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Gate to the small-part bay"
+      },
+      {
+        "name": "LargeBay",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Gate to the large-part bay"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "step_idle",
+      "name": "IDLE",
+      "isInitial": true,
+      "position": {
+        "x": 300,
+        "y": 50
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_IDLE",
+          "comment": "Both gates closed"
+        }
+      ]
+    },
+    {
+      "id": "step_small",
+      "name": "SMALL",
+      "isInitial": false,
+      "position": {
+        "x": 150,
+        "y": 300
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_SMALL",
+          "comment": "Open the small-part gate"
+        }
+      ]
+    },
+    {
+      "id": "step_large",
+      "name": "LARGE",
+      "isInitial": false,
+      "position": {
+        "x": 450,
+        "y": 300
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_LARGE",
+          "comment": "Open the large-part gate"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t_large",
+      "fromStep": "step_idle",
+      "toStep": "step_large",
+      "priority": 1,
+      "condition": "Start AND IsLarge",
+      "comment": "Large parts first",
+      "position": {
+        "x": 375,
+        "y": 175
+      }
+    },
+    {
+      "id": "t_small_done",
+      "fromStep": "step_small",
+      "toStep": "step_idle",
+      "condition": "step_small.T >= T#30ms",
+      "comment": "",
+      "position": {
+        "x": 225,
+        "y": 400
+      }
+    },
+    {
+      "id": "t_large_done",
+      "fromStep": "step_large",
+      "toStep": "step_idle",
+      "condition": "step_large.T >= T#30ms",
+      "comment": "",
+      "position": {
+        "x": 375,
+        "y": 400
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "A_IDLE",
+      "name": "A_IDLE",
+      "type": "ST",
+      "body": "SmallBay := FALSE; LargeBay := FALSE;"
+    },
+    {
+      "id": "A_SMALL",
+      "name": "A_SMALL",
+      "type": "ST",
+      "body": "SmallBay := TRUE; LargeBay := FALSE;"
+    },
+    {
+      "id": "A_LARGE",
+      "name": "A_LARGE",
+      "type": "ST",
+      "body": "SmallBay := FALSE; LargeBay := TRUE;"
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-24",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

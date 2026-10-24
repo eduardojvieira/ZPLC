@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Clasificación en un transportador como diagrama",
+  "summary": "Describa un transportador clasificador como un diagrama de pasos de detenido, en marcha y falla: clasifique las piezas metálicas en marcha y bloquee la banda cuando la planta informe un atasco.",
+  "scope": "Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX, que no es evidencia de transportador físico, liberación de atascos, hardware, HIL ni certificación.",
+  "objectives": [
+    "Describa un transportador con tres pasos, con la memoria de clasificación en una variable local que actualiza la acción de marcha.",
+    "Pase de RUNNING a FAULT con el sensor de atasco, y salga de FAULT solo cuando se pulse Reset y el atasco haya desaparecido."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/Conveyor.sfc.json están dibujados los pasos STOPPED, RUNNING y FAULT, sus acciones y las transiciones de STOPPED a RUNNING (Start), de RUNNING a STOPPED (Stop) y de FAULT a STOPPED (Reset AND NOT JamDetected); los sensores pertenecen a la planta. Agregue la transición que falta de RUNNING a FAULT con JamDetected y prioridad 1, de modo que un atasco gane sobre Stop.",
+      "checkpoint": "La banda funciona tras Start, el desviador actúa una vez para la pieza metálica, y un atasco detiene la banda y enciende FaultLamp."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Start se pulsa a los {{t:10}} ms. La planta lleva una pieza metálica al clasificador y luego al desviador, y activa JamDetected más tarde. Prediga BeltCommand, DiverterCommand y FaultLamp a los {{t:40}}, {{t:50}} y {{t:70}} ms.",
+      "checkpoint": "{{v:Conveyor.BeltCommand=true,Conveyor.DiverterCommand=true@40|Belt y Diverter en ON}} a los {{t:40}} ms; {{v:Conveyor.BeltCommand=true,Conveyor.DiverterCommand=false@50|Diverter en OFF}} a los {{t:50}} ms; {{v:Conveyor.BeltCommand=false,Conveyor.FaultLamp=true@70|Belt en OFF y FaultLamp en ON}} a los {{t:70}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene transición de RUNNING a FAULT, así que un atasco no cambia nada: la banda sigue en marcha y FaultLamp queda apagada; agregue una transición de RUNNING a FAULT cuya condición sea JamDetected y cuya prioridad sea 1.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama ConveyorSfc y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:60}}, {{t:70}} y {{t:90}} ms: la planta activa JamDetected a los {{t:60}} ms, el diagrama sale de RUNNING en ese ciclo y FAULT muestra sus salidas un ciclo después, a los {{t:70}} ms. Reset se pulsa a los {{t:70}} ms con el atasco todavía presente, y FaultLamp sigue encendida.",
+      "checkpoint": "BeltCommand está en OFF y FaultLamp en ON de {{t:70}} a {{t:100}} ms, aunque se pulsó Reset."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Por qué el desviador actúa a los {{t:40}} ms y no cuando la pieza metálica está en el clasificador? Reemplace la memoria MetalLatched por una prueba solo del clasificador y vea qué aserción falla.",
+      "checkpoint": "El clasificador y el desviador ven la pieza en momentos distintos, así que el resultado metálico se guarda en MetalLatched hasta que la pieza llega al desviador. El escenario muestra solo la lógica; no demuestra un transportador físico, la liberación de atascos, tiempos de hardware, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Una transición tiene un paso de origen, un paso de destino y una condición. La transición de FAULT a STOPPED ya está; copie su forma para RUNNING a FAULT."
+    },
+    {
+      "level": 2,
+      "text": "Agregue una transición con fromStep step_running, toStep step_fault, la condición JamDetected y prioridad 1."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial no tiene transición de RUNNING a FAULT, así que un atasco no cambia nada: la banda sigue en marcha y FaultLamp queda apagada; agregue una transición de RUNNING a FAULT cuya condición sea JamDetected y cuya prioridad sea 1."
+  ]
+}

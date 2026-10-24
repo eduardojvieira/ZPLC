@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Cruce peatonal como diagrama funcional secuencial",
+  "summary": "Dibuje el cruce peatonal como un diagrama funcional secuencial con un paso por combinación de luces, y compruebe que WALK se muestra solo mientras los vehículos están en rojo.",
+  "scope": "Las pruebas aportan solo evidencia determinista del host con el runtime nativo POSIX, que no es evidencia de cruce físico, hardware, HIL ni certificación.",
+  "objectives": [
+    "Convierta las fases de un cruce peatonal en los pasos de un diagrama, cada uno con una acción que escribe todas las luces.",
+    "Salga del paso verde con una transición sobre la solicitud de la planta y recorra las demás fases con transiciones temporizadas."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/PedestrianCrossing.sfc.json están dibujados los pasos GREEN, YELLOW, RED, WALK y RECOVERY, sus acciones y las cuatro transiciones temporizadas. Agregue la transición que falta de GREEN a YELLOW, que se activa con PedRequest; la planta activa PedRequest a partir de los {{t:10}} ms.",
+      "checkpoint": "Cada paso escribe las cinco luces, así que se muestra exactamente una combinación a la vez."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Antes de ejecutar, prediga las luces a los {{t:0}}, {{t:20}}, {{t:40}}, {{t:60}}, {{t:90}} y {{t:110}} ms. Un paso muestra sus luces un ciclo después de que se activa la transición que lo alcanza.",
+      "checkpoint": "{{v:PedestrianCrossing.VehicleGreen=true,PedestrianCrossing.PedStop=true@0|verde+STOP}} a los {{t:0}} ms; amarillo+STOP a los {{t:20}}; rojo+STOP a los {{t:40}}; {{v:PedestrianCrossing.VehicleRed=true,PedestrianCrossing.PedWalk=true@60|rojo+WALK}} a los {{t:60}}; rojo+STOP a los {{t:90}}; verde+STOP a los {{t:110}}."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene salida desde GREEN, así que el cruce nunca deja el verde de los vehículos; agregue una transición de GREEN a YELLOW cuya condición sea PedRequest.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama PedestrianCrossingSfc y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:40}}, {{t:60}}, {{t:80}} y {{t:90}} ms: WALK se muestra de {{t:60}} a {{t:80}} ms y solo junto con la luz roja, y a los {{t:90}} ms el rojo sigue encendido mientras STOP vuelve.",
+      "checkpoint": "WALK nunca está encendido junto con el verde ni con STOP, y el diagrama vuelve a GREEN a los {{t:110}} ms."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Por qué cada acción escribe las cinco luces en lugar de solo la que cambia? Cambie la acción de WALK para que deje VehicleGreen encendida y vea qué aserción falla.",
+      "checkpoint": "Un paso define todo el estado de salida, así que ninguna fase puede dejar una luz encendida por descuido. El escenario comprueba la secuencia lógica; no demuestra un cruce físico, duraciones reales de las fases, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Una transición tiene un paso de origen, un paso de destino y una condición. Las cuatro transiciones temporizadas ya están; copie su forma para GREEN a YELLOW."
+    },
+    {
+      "level": 2,
+      "text": "Agregue una transición con fromStep step_green, toStep step_yellow y la condición PedRequest."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial no tiene salida desde GREEN, así que el cruce nunca deja el verde de los vehículos; agregue una transición de GREEN a YELLOW cuya condición sea PedRequest."
+  ]
+}

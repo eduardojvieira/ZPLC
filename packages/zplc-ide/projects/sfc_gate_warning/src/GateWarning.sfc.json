@@ -1,0 +1,141 @@
+{
+  "name": "GateWarning",
+  "description": "A gate that sounds a horn for a time before it opens, and opens for a time.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Open request"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Horn",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Warning horn"
+      },
+      {
+        "name": "GateMotor",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Gate motor"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "step_idle",
+      "name": "IDLE",
+      "isInitial": true,
+      "position": {
+        "x": 200,
+        "y": 50
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_IDLE",
+          "comment": "Everything off"
+        }
+      ]
+    },
+    {
+      "id": "step_warn",
+      "name": "WARN",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 250
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_WARN",
+          "comment": "Sound the horn"
+        }
+      ]
+    },
+    {
+      "id": "step_open",
+      "name": "OPEN",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 450
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_OPEN",
+          "comment": "Run the gate motor"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t_start",
+      "fromStep": "step_idle",
+      "toStep": "step_warn",
+      "condition": "Start",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 150
+      }
+    },
+    {
+      "id": "t_warn_done",
+      "fromStep": "step_warn",
+      "toStep": "step_open",
+      "condition": "step_warn.T >= T#30ms",
+      "comment": "The horn sounds for a time",
+      "position": {
+        "x": 200,
+        "y": 350
+      }
+    },
+    {
+      "id": "t_open_done",
+      "fromStep": "step_open",
+      "toStep": "step_idle",
+      "condition": "step_open.T >= T#40ms",
+      "comment": "The gate motor runs for a time",
+      "position": {
+        "x": 200,
+        "y": 550
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "A_IDLE",
+      "name": "A_IDLE",
+      "type": "ST",
+      "body": "Horn := FALSE; GateMotor := FALSE;"
+    },
+    {
+      "id": "A_WARN",
+      "name": "A_WARN",
+      "type": "ST",
+      "body": "Horn := TRUE; GateMotor := FALSE;"
+    },
+    {
+      "id": "A_OPEN",
+      "name": "A_OPEN",
+      "type": "ST",
+      "body": "Horn := FALSE; GateMotor := TRUE;"
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-24",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "pedestrian-crossing-sfc",
+  "version": 1,
+  "order": 60,
+  "module": 5,
+  "level": "intermediate",
+  "prerequisites": ["pedestrian-crossing-states", "sfc-fill-mix-sequence"],
+  "languages": ["SFC"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The chart drives five lamps and the learner boards have four LED outputs; its pedestrian requests come from the simulated crossing plant.",
+        "es": "El diagrama maneja cinco lámparas y las placas del estudiante tienen cuatro salidas para LED; sus solicitudes de peatones provienen de la planta simulada del cruce."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, which models the crossing and gives the same result each time.",
+        "es": "Complétela en Simulación, que modela el cruce y da el mismo resultado cada vez."
+      }
+    }
+  },
+  "plant": "pedestrian-v1",
+  "estimatedMinutes": 25,
+  "starter": {
+    "project": "sfc_pedestrian_crossing_starter",
+    "program": "src/PedestrianCrossing.sfc.json"
+  },
+  "solution": {
+    "project": "sfc_pedestrian_crossing",
+    "program": "src/PedestrianCrossing.sfc.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "PedestrianCrossingSfc",
+    "path": "tests/pedestrian-crossing-sfc.scenario.json",
+    "sha256": "5198bc53be8c78281c0b7f9afaa653e04a7c0bc310bb3efaa95012fb303eda71"
+  },
+  "regressionScenarios": []
+}

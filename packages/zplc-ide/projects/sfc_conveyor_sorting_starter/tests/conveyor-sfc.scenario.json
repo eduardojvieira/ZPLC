@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "id": "ConveyorSfc",
+  "plant": "conveyor-v1",
+  "tickMs": 10,
+  "durationMs": 100,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "Conveyor.Start": false,
+        "Conveyor.Stop": false,
+        "Conveyor.Reset": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "Conveyor.Start": true
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "Conveyor.Start": false
+      }
+    },
+    {
+      "atMs": 70,
+      "set": {
+        "Conveyor.Reset": true
+      }
+    },
+    {
+      "atMs": 80,
+      "set": {
+        "Conveyor.Reset": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "Conveyor.BeltCommand": false,
+        "Conveyor.DiverterCommand": false,
+        "Conveyor.FaultLamp": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 20,
+      "condition": {
+        "Conveyor.BeltCommand": true,
+        "Conveyor.DiverterCommand": false,
+        "Conveyor.FaultLamp": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 40,
+      "condition": {
+        "Conveyor.BeltCommand": true,
+        "Conveyor.DiverterCommand": true,
+        "Conveyor.FaultLamp": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "Conveyor.BeltCommand": true,
+        "Conveyor.DiverterCommand": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 70,
+      "condition": {
+        "Conveyor.BeltCommand": false,
+        "Conveyor.DiverterCommand": false,
+        "Conveyor.FaultLamp": true
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 20,
+      "forMs": 40,
+      "condition": {
+        "Conveyor.BeltCommand": true
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 30,
+      "withinMs": 10,
+      "condition": {
+        "Conveyor.DiverterCommand": true
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 70,
+      "forMs": 30,
+      "condition": {
+        "Conveyor.BeltCommand": false,
+        "Conveyor.FaultLamp": true
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "Conveyor.DiverterCommand": true,
+        "Conveyor.BeltCommand": false
+      }
+    }
+  ]
+}

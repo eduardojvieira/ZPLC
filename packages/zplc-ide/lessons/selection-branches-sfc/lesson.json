@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "selection-branches-sfc",
+  "version": 1,
+  "order": 61,
+  "module": 5,
+  "level": "intermediate",
+  "prerequisites": ["sfc-fill-mix-sequence"],
+  "languages": ["SFC"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The part router reads a part-ready button and a size signal and drives two gates; its sequence is graded in the native simulator, and this lesson ships no wiring for the learner boards.",
+        "es": "El clasificador de piezas lee un botón de pieza lista y una señal de tamaño y maneja dos compuertas; su secuencia se califica en el simulador nativo, y esta lección no incluye cableado para las placas del estudiante."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, which gives the same result each time and needs no board.",
+        "es": "Complétela en Simulación, que da el mismo resultado cada vez y no necesita placa."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 25,
+  "starter": {
+    "project": "sfc_part_router_starter",
+    "program": "src/PartRouter.sfc.json"
+  },
+  "solution": {
+    "project": "sfc_part_router",
+    "program": "src/PartRouter.sfc.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "PartRouter",
+    "path": "tests/part-router.scenario.json",
+    "sha256": "184af5047707f6d28379eeb74cb42e5dd86ca601f601ec80316f2ccdf6e29044"
+  },
+  "regressionScenarios": []
+}

@@ -1,0 +1,206 @@
+{
+  "schemaVersion": 1,
+  "id": "PressCell",
+  "tickMs": 10,
+  "durationMs": 280,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "PressCell.Start": false,
+        "PressCell.Fault": false,
+        "PressCell.Reset": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "PressCell.Start": true
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "PressCell.Start": false
+      }
+    },
+    {
+      "atMs": 80,
+      "set": {
+        "PressCell.Fault": true
+      }
+    },
+    {
+      "atMs": 110,
+      "set": {
+        "PressCell.Reset": true
+      }
+    },
+    {
+      "atMs": 120,
+      "set": {
+        "PressCell.Reset": false
+      }
+    },
+    {
+      "atMs": 130,
+      "set": {
+        "PressCell.Fault": false
+      }
+    },
+    {
+      "atMs": 150,
+      "set": {
+        "PressCell.Reset": true
+      }
+    },
+    {
+      "atMs": 160,
+      "set": {
+        "PressCell.Reset": false
+      }
+    },
+    {
+      "atMs": 180,
+      "set": {
+        "PressCell.Start": true
+      }
+    },
+    {
+      "atMs": 190,
+      "set": {
+        "PressCell.Start": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "PressCell.Feeder": false,
+        "PressCell.Press": false,
+        "PressCell.Alarm": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 20,
+      "condition": {
+        "PressCell.Feeder": true,
+        "PressCell.Press": false,
+        "PressCell.Alarm": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "PressCell.Feeder": true,
+        "PressCell.Press": false,
+        "PressCell.Alarm": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 60,
+      "condition": {
+        "PressCell.Feeder": false,
+        "PressCell.Press": true,
+        "PressCell.Alarm": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 80,
+      "condition": {
+        "PressCell.Feeder": false,
+        "PressCell.Press": true,
+        "PressCell.Alarm": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 90,
+      "condition": {
+        "PressCell.Feeder": false,
+        "PressCell.Press": false,
+        "PressCell.Alarm": true
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 90,
+      "forMs": 60,
+      "condition": {
+        "PressCell.Feeder": false,
+        "PressCell.Press": false,
+        "PressCell.Alarm": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 160,
+      "condition": {
+        "PressCell.Feeder": false,
+        "PressCell.Press": false,
+        "PressCell.Alarm": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 190,
+      "condition": {
+        "PressCell.Feeder": true,
+        "PressCell.Press": false,
+        "PressCell.Alarm": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 230,
+      "condition": {
+        "PressCell.Feeder": false,
+        "PressCell.Press": true,
+        "PressCell.Alarm": false
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 80,
+      "withinMs": 10,
+      "condition": {
+        "PressCell.Alarm": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 150,
+      "withinMs": 10,
+      "condition": {
+        "PressCell.Alarm": false
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "PressCell.Feeder": true,
+        "PressCell.Press": true
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "PressCell.Alarm": true,
+        "PressCell.Feeder": true
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "PressCell.Alarm": true,
+        "PressCell.Press": true
+      }
+    }
+  ]
+}

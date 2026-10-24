@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Selection branches: one path out of two",
+  "summary": "Send a part to the small or to the large bay with two transitions that leave the same step, and let their priority decide which one fires.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish part sizing, gate timing on real equipment, HIL, or certification.",
+  "objectives": [
+    "Read a selection divergence as several transitions that leave one step, of which at most one fires.",
+    "Use the priority of a transition to decide which branch wins when more than one condition holds."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/PartRouter.sfc.json the steps IDLE, SMALL and LARGE, their actions, the transition from IDLE to LARGE (Start AND IsLarge, priority 1) and the two return transitions are drawn. Add the missing transition from IDLE to SMALL with the condition Start and priority 2, so that every part that is not large goes to the small bay.",
+      "checkpoint": "A large part opens only the large-part gate, any other part opens only the small-part gate, and no part opens both."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "A part arrives when Start is pressed at {{t:10}} ms with IsLarge off, and another when Start is pressed at {{t:110}} ms with IsLarge on. Predict SmallBay and LargeBay at {{t:20}} and {{t:120}} ms.",
+      "checkpoint": "{{v:PartRouter.SmallBay=true,PartRouter.LargeBay=false@20|SmallBay ON}} at {{t:20}} ms; {{v:PartRouter.SmallBay=false,PartRouter.LargeBay=true@120|LargeBay ON}} at {{t:120}} ms, although the condition of the small transition (Start) is true as well."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter has the large branch but no transition to SMALL, so a part that is not large leaves the chart in IDLE and no gate opens; add a transition from IDLE to SMALL whose condition is Start and whose priority is 2.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named PartRouter and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:50}}, {{t:60}} and {{t:120}} ms: SmallBay is on from {{t:20}} to {{t:50}} ms and closed at {{t:60}} ms; at {{t:110}} ms both transitions could fire, but only the one with priority 1 does.",
+      "checkpoint": "The two gates are never open together, and each part opens exactly one of them."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "What would happen if the small transition had priority 1? Swap the two numbers and see which assertion fails.",
+      "checkpoint": "The transition with the lowest priority number is evaluated first, and the others that leave the same step do not fire in that scan. Without a number the order of the transitions in the file decides, so a number makes the rule visible. The scenario shows the sequence logic only; it does not establish part sizing or gate behaviour on real equipment."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "A selection divergence is two or more transitions with the same fromStep. The LARGE transition is already there; copy its shape for SMALL, with a higher priority number."
+    },
+    {
+      "level": 2,
+      "text": "Add a transition with fromStep step_idle, toStep step_small, the condition Start and priority 2."
+    }
+  ],
+  "faultCases": [
+    "The starter has the large branch but no transition to SMALL, so a part that is not large leaves the chart in IDLE and no gate opens; add a transition from IDLE to SMALL whose condition is Start and whose priority is 2."
+  ]
+}
