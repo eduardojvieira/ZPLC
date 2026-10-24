@@ -27,8 +27,8 @@ type Builder = {
   };
   dmg: { sign?: boolean };
   win: Record<string, unknown>;
-  deb: Record<string, unknown> & { fpm?: string[] };
-  rpm: Record<string, unknown> & { fpm?: string[] };
+  deb: Record<string, unknown> & { fpm?: string[]; depends?: string[] };
+  rpm: Record<string, unknown> & { fpm?: string[]; depends?: string[] };
   nsis: { artifactName: string };
   portable: { artifactName: string };
 };
@@ -182,13 +182,44 @@ describe('the AppImage stays published beside the .deb and the .rpm (REL-012)', 
   });
 });
 
-describe('Linux packages use electron-builder defaults and are installed in clean containers (REL-011)', () => {
+describe('Linux packages declare what Electron needs and are installed in clean containers (REL-011)', () => {
   const job = workflow.jobs['build-linux']!;
   const script = new URL('./check-linux-package.sh', import.meta.url).pathname;
 
-  it('overrides no package dependency, so the defaults for current distributions apply', () => {
-    expect(builder.deb.depends).toBeUndefined();
-    expect(builder.rpm.depends).toBeUndefined();
+  // electron-builder's defaults (getDefaultDepends of app-builder-lib 26) leave out ALSA, which Electron links: a clean
+  // Debian 13 or Ubuntu 24.04 has no libasound.so.2 (release rehearsal 40109115910). Since t64 the Debian package is
+  // libasound2t64, and libasound2 before it.
+  it('declares the dependencies electron-builder would, and the ALSA library that Electron links', () => {
+    expect(builder.deb.depends).toEqual([
+      'libgtk-3-0',
+      'libnotify4',
+      'libnss3',
+      'libxss1',
+      'libxtst6',
+      'xdg-utils',
+      'libatspi2.0-0',
+      'libuuid1',
+      'libsecret-1-0',
+      'libasound2t64 | libasound2',
+    ]);
+    expect(builder.rpm.depends).toEqual([
+      'gtk3',
+      'libnotify',
+      'nss',
+      'libXScrnSaver',
+      '(libXtst or libXtst6)',
+      'xdg-utils',
+      'at-spi2-core',
+      '(libuuid or libuuid1)',
+      'alsa-lib',
+    ]);
+  });
+
+  it('gives the AppImage, in its Ubuntu 24.04 container, the libraries that the .deb declares', () => {
+    const install = readFileSync(script, 'utf8')
+      .split('\n')
+      .find((line) => line.includes('apt-get install -y libgtk-3-0'));
+    expect(install?.trim().split(/\s+/).slice(3)).toEqual(builder.deb.depends!.map((name) => name.split(' | ')[0]));
   });
 
   it('installs the .deb on Debian 13 and Ubuntu 24.04 and the .rpm on Fedora, after the build and before the upload', () => {

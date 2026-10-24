@@ -140,18 +140,41 @@ linux:
 appImage:
   artifactName: "zplc-${version}-${os}-${arch}.${ext}"
 
-# No `depends` override: electron-builder's defaults track current Debian, Ubuntu and Fedora (REL-011).
+# `depends` (REL-011): electron-builder's defaults (app-builder-lib getDefaultDepends) and ALSA, which Electron links and
+# the defaults leave out; a clean Debian 13 or Ubuntu 24.04 lacks libasound.so.2 without it. Since t64 the Debian package
+# is libasound2t64. scripts/check-linux-package.sh installs the same list for the AppImage.
 # The udev rule (REL-013) is written by scripts/release/udev-rules.ts in the beforePack hook, from the USB identifiers of
 # tools/hil/usb-ids.json, and fpm installs it in the vendor rules folder of the package: `source=destination`.
 deb:
   # The package name of decision D-03 (scripts/release/identity.json): electron-builder would take the product name.
   packageName: zplc
   artifactName: "zplc-${version}-${os}-${arch}.${ext}"
+  depends:
+    - libgtk-3-0
+    - libnotify4
+    - libnss3
+    - libxss1
+    - libxtst6
+    - xdg-utils
+    - libatspi2.0-0
+    - libuuid1
+    - libsecret-1-0
+    - "libasound2t64 | libasound2"
   fpm:
     - "build/linux/70-zplc-boards.rules=/usr/lib/udev/rules.d/70-zplc-boards.rules"
 
 rpm:
   packageName: zplc
   artifactName: "zplc-${version}-${os}-${arch}.${ext}"
+  depends:
+    - gtk3
+    - libnotify
+    - nss
+    - libXScrnSaver
+    - "(libXtst or libXtst6)"
+    - xdg-utils
+    - at-spi2-core
+    - "(libuuid or libuuid1)"
+    - alsa-lib
   fpm:
     - "build/linux/70-zplc-boards.rules=/usr/lib/udev/rules.d/70-zplc-boards.rules"

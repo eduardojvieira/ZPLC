@@ -36,7 +36,7 @@ case "$package" in
     cp "$package" /tmp/zplc.AppImage && chmod 755 /tmp/zplc.AppImage
     export DEBIAN_FRONTEND=noninteractive
     apt-get update
-    apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0
+    apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libuuid1 libsecret-1-0 libasound2t64
     (cd /tmp && ./zplc.AppImage --appimage-extract > /dev/null)
     appimage_dir=/tmp/squashfs-root
     install_display() { apt-get install -y xvfb xauth; }
