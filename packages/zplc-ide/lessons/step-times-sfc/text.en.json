@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Step times: a horn before the gate opens",
+  "summary": "Use the time a step has been active in a transition, so that a horn sounds for a fixed time before the gate motor runs for another.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish warning times required for a real gate, safety function behaviour, HIL, or certification.",
+  "objectives": [
+    "Use the elapsed time of a step, written step.T, as the condition of a transition.",
+    "Check that the time of a step restarts at zero each time the step becomes active, so that two cycles take the same time."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/GateWarning.sfc.json the steps IDLE, WARN and OPEN, their actions and the transitions from IDLE to WARN (Start) and from OPEN to IDLE (step_open.T >= T#40ms) are drawn. Make the transition from WARN to OPEN wait until the horn has sounded for T#30ms: its condition must be step_warn.T >= T#30ms.",
+      "checkpoint": "The horn sounds for a fixed time, then the gate motor runs for another fixed time, and the two never run together."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Start is pressed at {{t:10}} ms. Predict Horn and GateMotor at {{t:20}}, {{t:50}}, {{t:60}} and {{t:100}} ms.",
+      "checkpoint": "{{v:GateWarning.Horn=true,GateWarning.GateMotor=false@20|Horn ON}} from {{t:20}} to {{t:50}} ms; {{v:GateWarning.Horn=false,GateWarning.GateMotor=true@60|GateMotor ON}} from {{t:60}} to {{t:100}} ms; everything OFF at {{t:110}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter's transition from WARN to OPEN has the condition TRUE, so the horn sounds for a single scan and the gate opens at once; change the condition to step_warn.T >= T#30ms.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named GateWarning and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:50}} and {{t:60}} ms: the horn is still on at {{t:50}} ms, the scan in which the condition becomes true, and the gate motor starts one scan later, at {{t:60}} ms. The second cycle, from the Start at {{t:150}} ms, shows the same times.",
+      "checkpoint": "Horn is on from {{t:20}} to {{t:50}} ms and again from {{t:160}} ms: the time of WARN restarts at zero each time the step becomes active."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Why does the condition read step_warn.T and not step_open.T? Try the wrong step and see what happens.",
+      "checkpoint": "The time of a step is zero while the step is not active, so a condition on another step's time never becomes true and the chart waits forever. The times here are scan-exact examples for the {{t:10}} ms task; a real gate takes its warning times from its safety requirements."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "step_warn.T is how long the step WARN has been active. A condition can compare it with a time literal such as T#30ms."
+    },
+    {
+      "level": 2,
+      "text": "Set the condition of the transition t_warn_done to step_warn.T >= T#30ms."
+    }
+  ],
+  "faultCases": [
+    "The starter's transition from WARN to OPEN has the condition TRUE, so the horn sounds for a single scan and the gate opens at once; change the condition to step_warn.T >= T#30ms."
+  ]
+}

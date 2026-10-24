@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Simultaneous branches: fill and heat together",
+  "summary": "Start two branches at once, let each finish in its own time, and join them so that the mixer starts only when both are done.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish heating rates, fill volumes, mixing quality, HIL, or certification.",
+  "objectives": [
+    "Read a simultaneous divergence as one transition that activates several steps at once, so that they run side by side.",
+    "Write a convergence as one transition that leaves every step it waits for and fires only when all of them are active."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/MixCell.sfc.json the steps IDLE, FILL, HEAT, FILL_DONE, HEAT_DONE and MIX, their actions, the transition that starts both branches (toSteps), the two transitions that end a branch and the return to IDLE are drawn. Add the missing join: a transition to MIX with the condition TRUE that leaves both FILL_DONE and HEAT_DONE (fromSteps), so that it fires only when both are active.",
+      "checkpoint": "The fill and the heat run together, each ends in its own time, and the mixer starts only after both."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Start is pressed at {{t:10}} ms. The fill ends before the heat. Predict Valve, Heater and Mixer at {{t:20}}, {{t:60}}, {{t:80}} and {{t:90}} ms.",
+      "checkpoint": "{{v:MixCell.Valve=true,MixCell.Heater=true@20|Valve and Heater ON}} at {{t:20}} ms; {{v:MixCell.Valve=false,MixCell.Heater=true@60|only Heater ON}} at {{t:60}} ms; {{v:MixCell.Valve=false,MixCell.Heater=false,MixCell.Mixer=false@80|everything OFF}} at {{t:80}} ms, when the heater has just been switched off and the join fires; {{v:MixCell.Mixer=true,MixCell.Heater=false@90|Mixer ON}} at {{t:90}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter starts both branches but has no join, so the chart waits in FILL_DONE and HEAT_DONE and the mixer never runs; add a transition to MIX with the condition TRUE that lists both FILL_DONE and HEAT_DONE in fromSteps.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named MixCell and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:50}}, {{t:60}}, {{t:70}} and {{t:90}} ms: the valve closes at {{t:60}} ms while the heater runs on until {{t:70}} ms, and the mixer does not run while either is on.",
+      "checkpoint": "Valve and Mixer are never ON together, and neither are Heater and Mixer. A second Start at {{t:170}} ms repeats the cycle."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Why do FILL_DONE and HEAT_DONE exist? Leave HEAT_DONE out of fromSteps and see which assertion fails.",
+      "checkpoint": "A waiting step lets the branch that finishes first stay finished until the other catches up, and its action switches its output off. A join that listed one step would start the mixer while the heater is still on. The scenario shows the sequence logic only; it is not a model of heating or filling."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "A simultaneous divergence lists several steps in toSteps; a convergence lists several steps in fromSteps. The first of the list is also the fromStep or the toStep."
+    },
+    {
+      "level": 2,
+      "text": "Add a transition with fromStep step_fill_done, fromSteps [\"step_fill_done\", \"step_heat_done\"], toStep step_mix and the condition TRUE."
+    }
+  ],
+  "faultCases": [
+    "The starter starts both branches but has no join, so the chart waits in FILL_DONE and HEAT_DONE and the mixer never runs; add a transition to MIX with the condition TRUE that lists both FILL_DONE and HEAT_DONE in fromSteps."
+  ]
+}

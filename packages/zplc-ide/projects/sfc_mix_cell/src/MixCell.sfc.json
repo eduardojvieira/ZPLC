@@ -1,0 +1,237 @@
+{
+  "name": "MixCell",
+  "description": "A mix cell: fill and heat run together, and the mix starts when both are done.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Start pushbutton"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Valve",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Fill valve"
+      },
+      {
+        "name": "Heater",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Heater"
+      },
+      {
+        "name": "Mixer",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "Mixer motor"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "step_idle",
+      "name": "IDLE",
+      "isInitial": true,
+      "position": {
+        "x": 300,
+        "y": 50
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_IDLE",
+          "comment": "Everything off"
+        }
+      ]
+    },
+    {
+      "id": "step_fill",
+      "name": "FILL",
+      "isInitial": false,
+      "position": {
+        "x": 150,
+        "y": 250
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_FILL",
+          "comment": "Open the fill valve"
+        }
+      ]
+    },
+    {
+      "id": "step_heat",
+      "name": "HEAT",
+      "isInitial": false,
+      "position": {
+        "x": 450,
+        "y": 250
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_HEAT",
+          "comment": "Switch the heater on"
+        }
+      ]
+    },
+    {
+      "id": "step_fill_done",
+      "name": "FILL_DONE",
+      "isInitial": false,
+      "position": {
+        "x": 150,
+        "y": 450
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_FILL_DONE",
+          "comment": "Close the fill valve"
+        }
+      ]
+    },
+    {
+      "id": "step_heat_done",
+      "name": "HEAT_DONE",
+      "isInitial": false,
+      "position": {
+        "x": 450,
+        "y": 450
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_HEAT_DONE",
+          "comment": "Switch the heater off"
+        }
+      ]
+    },
+    {
+      "id": "step_mix",
+      "name": "MIX",
+      "isInitial": false,
+      "position": {
+        "x": 300,
+        "y": 650
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_MIX",
+          "comment": "Run the mixer"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t_start",
+      "fromStep": "step_idle",
+      "toStep": "step_fill",
+      "toSteps": ["step_fill", "step_heat"],
+      "condition": "Start",
+      "comment": "Both branches start together",
+      "position": {
+        "x": 300,
+        "y": 150
+      }
+    },
+    {
+      "id": "t_fill_done",
+      "fromStep": "step_fill",
+      "toStep": "step_fill_done",
+      "condition": "step_fill.T >= T#30ms",
+      "comment": "",
+      "position": {
+        "x": 150,
+        "y": 350
+      }
+    },
+    {
+      "id": "t_heat_done",
+      "fromStep": "step_heat",
+      "toStep": "step_heat_done",
+      "condition": "step_heat.T >= T#50ms",
+      "comment": "",
+      "position": {
+        "x": 450,
+        "y": 350
+      }
+    },
+    {
+      "id": "t_join",
+      "fromStep": "step_fill_done",
+      "toStep": "step_mix",
+      "fromSteps": ["step_fill_done", "step_heat_done"],
+      "condition": "TRUE",
+      "comment": "Wait for both branches",
+      "position": {
+        "x": 300,
+        "y": 550
+      }
+    },
+    {
+      "id": "t_mix_done",
+      "fromStep": "step_mix",
+      "toStep": "step_idle",
+      "condition": "step_mix.T >= T#30ms",
+      "comment": "",
+      "position": {
+        "x": 300,
+        "y": 750
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "A_IDLE",
+      "name": "A_IDLE",
+      "type": "ST",
+      "body": "Valve := FALSE; Heater := FALSE; Mixer := FALSE;"
+    },
+    {
+      "id": "A_FILL",
+      "name": "A_FILL",
+      "type": "ST",
+      "body": "Valve := TRUE;"
+    },
+    {
+      "id": "A_HEAT",
+      "name": "A_HEAT",
+      "type": "ST",
+      "body": "Heater := TRUE;"
+    },
+    {
+      "id": "A_FILL_DONE",
+      "name": "A_FILL_DONE",
+      "type": "ST",
+      "body": "Valve := FALSE;"
+    },
+    {
+      "id": "A_HEAT_DONE",
+      "name": "A_HEAT_DONE",
+      "type": "ST",
+      "body": "Heater := FALSE;"
+    },
+    {
+      "id": "A_MIX",
+      "name": "A_MIX",
+      "type": "ST",
+      "body": "Mixer := TRUE;"
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-24",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

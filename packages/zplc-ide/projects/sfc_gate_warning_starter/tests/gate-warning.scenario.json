@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "id": "GateWarning",
+  "tickMs": 10,
+  "durationMs": 260,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "GateWarning.Start": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "GateWarning.Start": true
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "GateWarning.Start": false
+      }
+    },
+    {
+      "atMs": 150,
+      "set": {
+        "GateWarning.Start": true
+      }
+    },
+    {
+      "atMs": 160,
+      "set": {
+        "GateWarning.Start": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "GateWarning.Horn": false,
+        "GateWarning.GateMotor": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 20,
+      "condition": {
+        "GateWarning.Horn": true,
+        "GateWarning.GateMotor": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "GateWarning.Horn": true,
+        "GateWarning.GateMotor": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 60,
+      "condition": {
+        "GateWarning.Horn": false,
+        "GateWarning.GateMotor": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 100,
+      "condition": {
+        "GateWarning.Horn": false,
+        "GateWarning.GateMotor": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 110,
+      "condition": {
+        "GateWarning.Horn": false,
+        "GateWarning.GateMotor": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 20,
+      "forMs": 30,
+      "condition": {
+        "GateWarning.Horn": true
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 60,
+      "forMs": 40,
+      "condition": {
+        "GateWarning.GateMotor": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 60,
+      "withinMs": 0,
+      "condition": {
+        "GateWarning.Horn": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 160,
+      "condition": {
+        "GateWarning.Horn": true,
+        "GateWarning.GateMotor": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 200,
+      "condition": {
+        "GateWarning.Horn": false,
+        "GateWarning.GateMotor": true
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "GateWarning.Horn": true,
+        "GateWarning.GateMotor": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "id": "MixCell",
+  "tickMs": 10,
+  "durationMs": 300,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "MixCell.Start": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "MixCell.Start": true
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "MixCell.Start": false
+      }
+    },
+    {
+      "atMs": 170,
+      "set": {
+        "MixCell.Start": true
+      }
+    },
+    {
+      "atMs": 180,
+      "set": {
+        "MixCell.Start": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "MixCell.Valve": false,
+        "MixCell.Heater": false,
+        "MixCell.Mixer": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 20,
+      "condition": {
+        "MixCell.Valve": true,
+        "MixCell.Heater": true,
+        "MixCell.Mixer": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "MixCell.Valve": true,
+        "MixCell.Heater": true,
+        "MixCell.Mixer": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 60,
+      "condition": {
+        "MixCell.Valve": false,
+        "MixCell.Heater": true,
+        "MixCell.Mixer": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 70,
+      "condition": {
+        "MixCell.Valve": false,
+        "MixCell.Heater": true,
+        "MixCell.Mixer": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 80,
+      "condition": {
+        "MixCell.Valve": false,
+        "MixCell.Heater": false,
+        "MixCell.Mixer": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 90,
+      "condition": {
+        "MixCell.Valve": false,
+        "MixCell.Heater": false,
+        "MixCell.Mixer": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 120,
+      "condition": {
+        "MixCell.Valve": false,
+        "MixCell.Heater": false,
+        "MixCell.Mixer": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 130,
+      "condition": {
+        "MixCell.Valve": false,
+        "MixCell.Heater": false,
+        "MixCell.Mixer": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 190,
+      "condition": {
+        "MixCell.Valve": true,
+        "MixCell.Heater": true,
+        "MixCell.Mixer": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 20,
+      "forMs": 50,
+      "condition": {
+        "MixCell.Heater": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 50,
+      "withinMs": 10,
+      "condition": {
+        "MixCell.Valve": false
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 70,
+      "withinMs": 10,
+      "condition": {
+        "MixCell.Heater": false
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 80,
+      "withinMs": 10,
+      "condition": {
+        "MixCell.Mixer": true
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "MixCell.Mixer": true,
+        "MixCell.Heater": true
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "MixCell.Mixer": true,
+        "MixCell.Valve": true
+      }
+    }
+  ]
+}

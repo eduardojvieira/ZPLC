@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Tiempos de paso: una bocina antes de abrir la puerta",
+  "summary": "Use el tiempo que un paso lleva activo en una transición, de modo que una bocina suene un tiempo fijo antes de que el motor de la puerta funcione otro tiempo fijo.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran los tiempos de aviso de una puerta real, el comportamiento de una función de seguridad, HIL ni certificación.",
+  "objectives": [
+    "Use el tiempo transcurrido de un paso, escrito step.T, como condición de una transición.",
+    "Compruebe que el tiempo de un paso vuelve a cero cada vez que el paso se activa, de modo que dos ciclos duren lo mismo."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/GateWarning.sfc.json están dibujados los pasos IDLE, WARN y OPEN, sus acciones y las transiciones de IDLE a WARN (Start) y de OPEN a IDLE (step_open.T >= T#40ms). Haga que la transición de WARN a OPEN espere a que la bocina haya sonado T#30ms: su condición debe ser step_warn.T >= T#30ms.",
+      "checkpoint": "La bocina suena un tiempo fijo, luego el motor de la puerta funciona otro tiempo fijo, y los dos nunca funcionan a la vez."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Start se pulsa a los {{t:10}} ms. Prediga Horn y GateMotor a los {{t:20}}, {{t:50}}, {{t:60}} y {{t:100}} ms.",
+      "checkpoint": "{{v:GateWarning.Horn=true,GateWarning.GateMotor=false@20|Horn en ON}} de {{t:20}} a {{t:50}} ms; {{v:GateWarning.Horn=false,GateWarning.GateMotor=true@60|GateMotor en ON}} de {{t:60}} a {{t:100}} ms; todo en OFF a los {{t:110}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: La transición de WARN a OPEN del programa inicial tiene la condición TRUE, así que la bocina suena durante un solo ciclo y la puerta se abre de inmediato; cambie la condición a step_warn.T >= T#30ms.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama GateWarning y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:50}} y {{t:60}} ms: la bocina sigue encendida a los {{t:50}} ms, el ciclo en que la condición se hace verdadera, y el motor de la puerta arranca un ciclo después, a los {{t:60}} ms. El segundo ciclo, desde el Start de los {{t:150}} ms, muestra los mismos tiempos.",
+      "checkpoint": "Horn está encendida de {{t:20}} a {{t:50}} ms y otra vez desde los {{t:160}} ms: el tiempo de WARN vuelve a cero cada vez que el paso se activa."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Por qué la condición lee step_warn.T y no step_open.T? Pruebe con el paso equivocado y vea qué ocurre.",
+      "checkpoint": "El tiempo de un paso es cero mientras el paso no está activo, así que una condición sobre el tiempo de otro paso nunca se hace verdadera y el diagrama espera para siempre. Los tiempos de aquí son ejemplos exactos en ciclos para la tarea de {{t:10}} ms; una puerta real toma sus tiempos de aviso de sus requisitos de seguridad."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "step_warn.T es el tiempo que el paso WARN lleva activo. Una condición puede compararlo con un literal de tiempo como T#30ms."
+    },
+    {
+      "level": 2,
+      "text": "Escriba en la condición de la transición t_warn_done step_warn.T >= T#30ms."
+    }
+  ],
+  "faultCases": [
+    "La transición de WARN a OPEN del programa inicial tiene la condición TRUE, así que la bocina suena durante un solo ciclo y la puerta se abre de inmediato; cambie la condición a step_warn.T >= T#30ms."
+  ]
+}

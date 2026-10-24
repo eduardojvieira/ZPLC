@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "id": "PartRouter",
+  "tickMs": 10,
+  "durationMs": 200,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "PartRouter.Start": false,
+        "PartRouter.IsLarge": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "PartRouter.Start": true
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "PartRouter.Start": false
+      }
+    },
+    {
+      "atMs": 100,
+      "set": {
+        "PartRouter.IsLarge": true
+      }
+    },
+    {
+      "atMs": 110,
+      "set": {
+        "PartRouter.Start": true
+      }
+    },
+    {
+      "atMs": 120,
+      "set": {
+        "PartRouter.Start": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "PartRouter.SmallBay": false,
+        "PartRouter.LargeBay": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 20,
+      "condition": {
+        "PartRouter.SmallBay": true,
+        "PartRouter.LargeBay": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "PartRouter.SmallBay": true,
+        "PartRouter.LargeBay": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 60,
+      "condition": {
+        "PartRouter.SmallBay": false,
+        "PartRouter.LargeBay": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 120,
+      "condition": {
+        "PartRouter.SmallBay": false,
+        "PartRouter.LargeBay": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 150,
+      "condition": {
+        "PartRouter.SmallBay": false,
+        "PartRouter.LargeBay": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 160,
+      "condition": {
+        "PartRouter.SmallBay": false,
+        "PartRouter.LargeBay": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 20,
+      "forMs": 30,
+      "condition": {
+        "PartRouter.SmallBay": true
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 120,
+      "forMs": 30,
+      "condition": {
+        "PartRouter.LargeBay": true
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 10,
+      "withinMs": 10,
+      "condition": {
+        "PartRouter.SmallBay": true
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 110,
+      "withinMs": 10,
+      "condition": {
+        "PartRouter.LargeBay": true
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "PartRouter.SmallBay": true,
+        "PartRouter.LargeBay": true
+      }
+    }
+  ]
+}

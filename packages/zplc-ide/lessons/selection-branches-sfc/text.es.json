@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Ramas de selección: un camino entre dos",
+  "summary": "Envíe una pieza a la bahía pequeña o a la grande con dos transiciones que salen del mismo paso, y deje que su prioridad decida cuál se activa.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el dimensionado de piezas, los tiempos de compuertas en equipos reales, HIL ni certificación.",
+  "objectives": [
+    "Lea una divergencia de selección como varias transiciones que salen de un paso, de las cuales se activa como máximo una.",
+    "Use la prioridad de una transición para decidir qué rama gana cuando se cumple más de una condición."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/PartRouter.sfc.json están dibujados los pasos IDLE, SMALL y LARGE, sus acciones, la transición de IDLE a LARGE (Start AND IsLarge, prioridad 1) y las dos transiciones de regreso. Agregue la transición que falta de IDLE a SMALL con la condición Start y prioridad 2, de modo que toda pieza que no sea grande vaya a la bahía pequeña.",
+      "checkpoint": "Una pieza grande abre solo la compuerta grande, cualquier otra pieza abre solo la compuerta pequeña, y ninguna pieza abre las dos."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Llega una pieza cuando se pulsa Start a los {{t:10}} ms con IsLarge apagada, y otra cuando se pulsa Start a los {{t:110}} ms con IsLarge encendida. Prediga SmallBay y LargeBay a los {{t:20}} y {{t:120}} ms.",
+      "checkpoint": "{{v:PartRouter.SmallBay=true,PartRouter.LargeBay=false@20|SmallBay en ON}} a los {{t:20}} ms; {{v:PartRouter.SmallBay=false,PartRouter.LargeBay=true@120|LargeBay en ON}} a los {{t:120}} ms, aunque la condición de la transición pequeña (Start) también es verdadera."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial tiene la rama grande pero ninguna transición a SMALL, así que una pieza que no es grande deja el diagrama en IDLE y no se abre ninguna compuerta; agregue una transición de IDLE a SMALL cuya condición sea Start y cuya prioridad sea 2.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama PartRouter y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:50}}, {{t:60}} y {{t:120}} ms: SmallBay está encendida de {{t:20}} a {{t:50}} ms y cerrada a los {{t:60}} ms; a los {{t:110}} ms las dos transiciones podrían activarse, pero solo lo hace la de prioridad 1.",
+      "checkpoint": "Las dos compuertas nunca están abiertas a la vez, y cada pieza abre exactamente una."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Qué pasaría si la transición pequeña tuviera prioridad 1? Intercambie los dos números y vea qué aserción falla.",
+      "checkpoint": "La transición con el número de prioridad más bajo se evalúa primero, y las demás que salen del mismo paso no se activan en ese ciclo. Sin número decide el orden de las transiciones en el archivo, así que un número hace visible la regla. El escenario muestra solo la lógica de la secuencia; no demuestra el dimensionado de piezas ni el comportamiento de las compuertas en equipos reales."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Una divergencia de selección son dos o más transiciones con el mismo fromStep. La transición de LARGE ya está; copie su forma para SMALL, con un número de prioridad mayor."
+    },
+    {
+      "level": 2,
+      "text": "Agregue una transición con fromStep step_idle, toStep step_small, la condición Start y prioridad 2."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial tiene la rama grande pero ninguna transición a SMALL, así que una pieza que no es grande deja el diagrama en IDLE y no se abre ninguna compuerta; agregue una transición de IDLE a SMALL cuya condición sea Start y cuya prioridad sea 2."
+  ]
+}
