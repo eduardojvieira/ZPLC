@@ -19,6 +19,8 @@ const config = {
   title: 'ZPLC',
   tagline: 'Open-source IEC 61131-3 PLC runtime and development environment on Zephyr RTOS.',
   favicon: 'img/favicon.png',
+  // read by src/theme/Footer/Copyright, which names the release in the translated footer too
+  customFields: { releaseTag },
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {

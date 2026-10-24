@@ -1,39 +1,44 @@
 import Link from '@docusaurus/Link';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import boards from '@site/src/data/boards.json';
 import styles from './LandingPage.module.css';
 import { useLandingPageContent } from './content';
 
-// The boards of the manifest at the level their evidence gives. src/data/boards.json is written by
-// tools/docs/generate_board_reference.py from firmware/app/boards/boards.json, so no board or level is typed here. The
-// levels are drawn as a ladder of steps, each with the number of boards that stand on it.
+// The supported boards: the generated illustration of boards on one rail, then the boards of the manifest.
+// src/data/boards.json is written by tools/docs/generate_board_reference.py from firmware/app/boards/boards.json, so no board
+// is typed here.
 export default function Boards() {
   const { boards: text } = useLandingPageContent();
   const { i18n } = useDocusaurusContext();
   const locale = i18n.currentLocale === 'es' ? 'es' : 'en';
+  const art = useBaseUrl('/img/generated/boards-on-rail');
 
   return (
     <section className={styles.section} aria-labelledby="boards-title">
       <div className={styles.wrap}>
-        <h2 id="boards-title" className={styles.sectionTitle}>
-          {text.title}
-        </h2>
-        <p className={styles.sectionLead}>{text.lead}</p>
-
-        <ol className={styles.levels}>
-          {text.levels.map((level) => {
-            const count = boards.filter((board) => board.level === level.id).length;
-            return (
-              <li key={level.id} className={styles.level} data-reached={count > 0 || undefined}>
-                <span className={styles.levelCount} aria-hidden="true">
-                  {count}
-                </span>
-                <code className={styles.levelName}>{level.id}</code>
-                <span className={styles.levelText}>{level.text}</span>
-              </li>
-            );
-          })}
-        </ol>
+        <div className={styles.boardsGrid}>
+          <div>
+            <h2 id="boards-title" className={styles.sectionTitle}>
+              {text.title}
+            </h2>
+            <p className={styles.sectionLead}>{text.lead}</p>
+          </div>
+          <span className={styles.boardsArt}>
+            {['light', 'dark'].map((theme) => (
+              <img
+                key={theme}
+                className={`zplc-${theme}-only`}
+                src={`${art}-${theme}.avif`}
+                alt={text.artAlt}
+                width="1200"
+                height="896"
+                loading="lazy"
+                decoding="async"
+              />
+            ))}
+          </span>
+        </div>
 
         <div className={styles.boardTable} role="region" aria-labelledby="boards-title" tabIndex={0}>
           <table>
@@ -42,7 +47,6 @@ export default function Boards() {
                 <th scope="col">{text.columns.board}</th>
                 <th scope="col">{text.columns.target}</th>
                 <th scope="col">{text.columns.network}</th>
-                <th scope="col">{text.columns.level}</th>
               </tr>
             </thead>
             <tbody>
@@ -56,15 +60,13 @@ export default function Boards() {
                     <code>{board.zephyr_board}</code>
                   </td>
                   <td>{board.network[locale]}</td>
-                  <td>
-                    <code>{board.level}</code>
-                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
+        <p className={styles.boardsReport}>{text.report}</p>
         <p className={styles.links}>
           {text.links.map((link) => (
             <Link key={link.label} {...(link.href ? { href: link.href } : { to: link.to })}>

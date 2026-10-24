@@ -1,10 +1,12 @@
 import Link from '@docusaurus/Link';
 import useBaseUrl from '@docusaurus/useBaseUrl';
+import Crop from './Crop';
 import styles from './LandingPage.module.css';
 import { useLandingPageContent } from './content';
 
-// Learn as a headline feature: the facts of the course beside a capture of a lesson, the course drawn as a sequential
-// function chart (each module a step, each level a branch of steps), and the four simulated plants.
+// Learn, the second way in, with the weight of the first: the facts of the course beside a capture of a lesson, the course
+// drawn as a sequential function chart (each module a step, each level a branch of steps), and the four simulated plants. It
+// sits on the band material so that it reads as its own part of the page.
 export default function Learn() {
   const { learn } = useLandingPageContent();
   const shot = useBaseUrl(`/img/${learn.shot}`);
@@ -12,7 +14,7 @@ export default function Learn() {
   const generated = useBaseUrl('/img/generated/');
 
   return (
-    <section className={styles.section} aria-labelledby="learn-title">
+    <section className={`${styles.section} ${styles.learnSection}`} aria-labelledby="learn-title">
       <div className={styles.wrap}>
         <h2 id="learn-title" className={styles.sectionTitle}>
           {learn.title}
@@ -28,21 +30,20 @@ export default function Learn() {
               </div>
             ))}
           </dl>
-          {/* The capture in the theme of the page: the dark one is the application in its dark theme. */}
-          <span className={styles.learnShot}>
+          {/* The capture in the theme of the page (the dark one is the application in its dark theme), shown at the region of
+              the lesson panel that says the check passed and the code beside it. */}
+          <span className={styles.shotFigure}>
             {[
               ['light', shot],
               ['dark', shotDark],
             ].map(([theme, src]) => (
-              <img
+              <Crop
                 key={theme}
                 className={`zplc-${theme}-only`}
                 src={src}
                 alt={learn.captureAlt}
-                width="1440"
-                height="900"
-                loading="lazy"
-                decoding="async"
+                box={[40, 60, 900, 395]}
+                size={[1440, 900]}
               />
             ))}
           </span>
