@@ -41,6 +41,7 @@ type Step = {
   if?: string;
   'working-directory'?: string;
   with?: Record<string, string>;
+  env?: Record<string, string>;
 };
 type Job = {
   needs?: string | string[];
@@ -59,6 +60,16 @@ const indexOfStep = (job: Job, text: string) => job.steps.findIndex((step) => st
 // ponytail: reads only the flat `<key>..</key><true/>` pairs of the entitlements file; a nested or typed
 // value would need a real plist parser.
 const entitlementKeys = (file: string) => [...read(`../${file}`).matchAll(/<key>([^<]+)<\/key>\s*<true\/>/g)].map((match) => match[1]!);
+
+// 7-Zip picks its ARM64 filter for arm64 executables, which the extractor inside the NSIS setup does not know: the arm64
+// setup exited 0 and installed no executable (rehearsals 40109115910, 40118359942 and 40125534053).
+describe('the Windows arm64 setup installs its executables', () => {
+  it('packs the arm64 application with BCJ, a filter the setup can extract, and leaves x64 as it was', () => {
+    const job = workflow.jobs['build-windows']!;
+    const step = job.steps[indexOfStep(job, 'electron-builder --win')]!;
+    expect(step.env?.ELECTRON_BUILDER_7Z_FILTER).toBe("${{ matrix.arch == 'arm64' && 'BCJ' || '' }}");
+  });
+});
 
 describe('the macOS bundle is named ZPLC.app (REL-016)', () => {
   // electron-builder names the bundle, and the executable inside it, after the platform's executableName, then the global

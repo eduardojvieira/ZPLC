@@ -575,6 +575,10 @@ jobs:
       - name: Build Electron app (Windows ${{ matrix.arch }})
         working-directory: packages/zplc-ide
         shell: pwsh
+        env:
+          # 7-Zip picks its ARM64 filter for arm64 executables, which the extractor inside the NSIS setup does not know: the
+          # arm64 setup then exits 0 and installs no executable. BCJ is a filter it knows; x64 keeps the default.
+          ELECTRON_BUILDER_7Z_FILTER: ${{ matrix.arch == 'arm64' && 'BCJ' || '' }}
         run: |
           bun run build:assets
           bun run build
