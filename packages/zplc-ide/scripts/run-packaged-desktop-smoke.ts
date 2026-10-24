@@ -340,9 +340,11 @@ async function main(): Promise<void> {
   const executable = installed
     ? installedExecutable(installed)
     : discoverPackagedExecutable(process.env.ZPLC_PACKAGED_DIST ?? join(packageRoot, 'dist-electron'));
-  // VF-008: the folder dialog test hook never ships. Checked on the archive itself, before anything is launched. The
-  // portable Windows executable unpacks itself at run time, so it has no archive beside it to read.
-  if (!installed || existsSync(packagedAsarPath(executable))) assertAsarHasNoDevOnlyCode(readFileSync(packagedAsarPath(executable)));
+  // The portable Windows executable unpacks itself at run time and runs the application as a child: it has no archive
+  // beside it, and it does not forward the application's output.
+  const portable = Boolean(installed) && !existsSync(packagedAsarPath(executable));
+  // VF-008: the folder dialog test hook never ships. Checked on the archive itself, before anything is launched.
+  if (!portable) assertAsarHasNoDevOnlyCode(readFileSync(packagedAsarPath(executable)));
   const tempRoot = mkdtempSync(join(tmpdir(), 'zplc-packaged-smoke-'));
   const output: string[] = [];
   let electron: OwnedProcess | undefined;
@@ -473,24 +475,29 @@ async function main(): Promise<void> {
     );
     // IDE-005: no reload or developer-tools entry exists in a packaged build. Key events injected over the DevTools protocol
     // never reach native menus, so the app reports the roles and accelerators it registered and the smoke reads that line.
-    const menuReport = await waitFor('packaged application menu report', async () =>
-      output
-        .join('')
-        .split('\n')
-        .find((line) => line.includes('[zplc] application menu')),
-    );
-    const reported = /roles=(\S*) accelerators=(\S*)/.exec(menuReport);
-    assert(reported && reported[1].length > 0, `Unreadable packaged application menu report: ${menuReport}`);
-    const registeredRoles = reported[1].split(',').map((role) => role.toLowerCase());
-    const registeredAccelerators = reported[2].split(',').filter(Boolean);
-    assert(
-      ['reload', 'forcereload', 'toggledevtools'].every((role) => !registeredRoles.includes(role)),
-      `Packaged application menu has a reload or developer-tools entry: ${menuReport}`,
-    );
-    assert(
-      !registeredAccelerators.some(isReloadOrDevToolsAccelerator),
-      `Packaged application menu has a reload or developer-tools accelerator: ${menuReport}`,
-    );
+    // The portable executable does not forward that line (release rehearsal 40125534053); the installed application of the
+    // same build is checked for it.
+    if (portable) console.log('The portable executable does not forward the application output: its menu is checked on the installed one.');
+    else {
+      const menuReport = await waitFor('packaged application menu report', async () =>
+        output
+          .join('')
+          .split('\n')
+          .find((line) => line.includes('[zplc] application menu')),
+      );
+      const reported = /roles=(\S*) accelerators=(\S*)/.exec(menuReport);
+      assert(reported && reported[1].length > 0, `Unreadable packaged application menu report: ${menuReport}`);
+      const registeredRoles = reported[1].split(',').map((role) => role.toLowerCase());
+      const registeredAccelerators = reported[2].split(',').filter(Boolean);
+      assert(
+        ['reload', 'forcereload', 'toggledevtools'].every((role) => !registeredRoles.includes(role)),
+        `Packaged application menu has a reload or developer-tools entry: ${menuReport}`,
+      );
+      assert(
+        !registeredAccelerators.some(isReloadOrDevToolsAccelerator),
+        `Packaged application menu has a reload or developer-tools accelerator: ${menuReport}`,
+      );
+    }
     const closeGuard = (await cdp.evaluate(
       `(async () => { const guard = window.electronAPI.closeGuard; return { keys: Object.keys(guard).sort(), accepted: await ` +
         `guard.setDirty(false).then(() => true, () => false), rejected: await guard.setDirty('yes').then(() => false, () => true) }; })()`,
