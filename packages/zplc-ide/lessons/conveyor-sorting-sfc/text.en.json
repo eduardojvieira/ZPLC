@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Conveyor sorting as a chart",
+  "summary": "Describe a sorting conveyor as a chart of stopped, running and fault steps: sort metal parts while running, and lock the belt out when the plant reports a jam.",
+  "scope": "Tests provide deterministic native POSIX host evidence only; they are not physical conveyor, jam clearance, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Describe a conveyor as three steps, with the sorting memory kept in a local variable that the running action updates.",
+    "Move from RUNNING to FAULT on the jam sensor, and leave FAULT only when Reset is pressed and the jam is gone."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/Conveyor.sfc.json the steps STOPPED, RUNNING and FAULT, their actions and the transitions from STOPPED to RUNNING (Start), from RUNNING to STOPPED (Stop) and from FAULT to STOPPED (Reset AND NOT JamDetected) are drawn; the sensors belong to the plant. Add the missing transition from RUNNING to FAULT on JamDetected with priority 1, so that a jam wins over Stop.",
+      "checkpoint": "The belt runs after Start, the diverter fires once for the metal part, and a jam stops the belt and lights FaultLamp."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Start is pressed at {{t:10}} ms. The plant brings a metal part to the classifier and then to the diverter, and raises JamDetected later. Predict BeltCommand, DiverterCommand and FaultLamp at {{t:40}}, {{t:50}} and {{t:70}} ms.",
+      "checkpoint": "{{v:Conveyor.BeltCommand=true,Conveyor.DiverterCommand=true@40|Belt and Diverter ON}} at {{t:40}} ms; {{v:Conveyor.BeltCommand=true,Conveyor.DiverterCommand=false@50|Diverter OFF}} at {{t:50}} ms; {{v:Conveyor.BeltCommand=false,Conveyor.FaultLamp=true@70|Belt OFF and FaultLamp ON}} at {{t:70}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter has no transition from RUNNING to FAULT, so a jam changes nothing: the belt keeps running and FaultLamp stays off; add a transition from RUNNING to FAULT whose condition is JamDetected and whose priority is 1.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named ConveyorSfc and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:60}}, {{t:70}} and {{t:90}} ms: the plant raises JamDetected at {{t:60}} ms, the chart leaves RUNNING in that scan and FAULT shows its outputs one scan later, at {{t:70}} ms. Reset is pressed at {{t:70}} ms while the jam is still present, and FaultLamp stays on.",
+      "checkpoint": "BeltCommand is OFF and FaultLamp is ON from {{t:70}} to {{t:100}} ms, even though Reset was pressed."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Why does the diverter fire at {{t:40}} ms and not when the metal part is at the classifier? Replace the memory MetalLatched with a test of the classifier alone and see which assertion fails.",
+      "checkpoint": "The classifier and the diverter see the part at different times, so the metal result is kept in MetalLatched until the part reaches the diverter. The scenario shows the logic only; it does not establish a physical conveyor, jam clearance, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "A transition has a source step, a target step and a condition. The transition from FAULT to STOPPED is already there; copy its shape for RUNNING to FAULT."
+    },
+    {
+      "level": 2,
+      "text": "Add a transition with fromStep step_running, toStep step_fault, the condition JamDetected and priority 1."
+    }
+  ],
+  "faultCases": [
+    "The starter has no transition from RUNNING to FAULT, so a jam changes nothing: the belt keeps running and FaultLamp stays off; add a transition from RUNNING to FAULT whose condition is JamDetected and whose priority is 1."
+  ]
+}

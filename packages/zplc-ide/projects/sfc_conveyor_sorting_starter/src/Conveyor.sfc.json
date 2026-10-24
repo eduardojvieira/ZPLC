@@ -1,0 +1,191 @@
+{
+  "name": "Conveyor",
+  "description": "A sorting conveyor as a chart: stopped, running with a metal diverter, and a jam fault.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "MetalLatched",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "A metal part was seen and has not reached the diverter"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Start pushbutton"
+      },
+      {
+        "name": "Stop",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Stop pushbutton"
+      },
+      {
+        "name": "Reset",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "Fault reset"
+      },
+      {
+        "name": "PartAtClassifier",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "Part at the classifier"
+      },
+      {
+        "name": "MetalDetected",
+        "type": "BOOL",
+        "address": "%I0.4",
+        "comment": "Metal seen at the classifier"
+      },
+      {
+        "name": "PartAtDiverter",
+        "type": "BOOL",
+        "address": "%I0.5",
+        "comment": "Part at the diverter"
+      },
+      {
+        "name": "JamDetected",
+        "type": "BOOL",
+        "address": "%I0.6",
+        "comment": "Jam sensor"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "BeltCommand",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Belt motor"
+      },
+      {
+        "name": "DiverterCommand",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Metal diverter"
+      },
+      {
+        "name": "FaultLamp",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "Fault lamp"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "step_stopped",
+      "name": "STOPPED",
+      "isInitial": true,
+      "position": {
+        "x": 300,
+        "y": 50
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_STOPPED",
+          "comment": "Everything off"
+        }
+      ]
+    },
+    {
+      "id": "step_running",
+      "name": "RUNNING",
+      "isInitial": false,
+      "position": {
+        "x": 300,
+        "y": 250
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_RUN",
+          "comment": "Run the belt and sort metal parts"
+        }
+      ]
+    },
+    {
+      "id": "step_fault",
+      "name": "FAULT",
+      "isInitial": false,
+      "position": {
+        "x": 300,
+        "y": 450
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_FAULT",
+          "comment": "Belt off, fault lamp on"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t_start",
+      "fromStep": "step_stopped",
+      "toStep": "step_running",
+      "condition": "Start",
+      "comment": "",
+      "position": {
+        "x": 300,
+        "y": 150
+      }
+    },
+    {
+      "id": "t_stop",
+      "fromStep": "step_running",
+      "toStep": "step_stopped",
+      "priority": 2,
+      "condition": "Stop",
+      "comment": "",
+      "position": {
+        "x": 300,
+        "y": 350
+      }
+    },
+    {
+      "id": "t_reset",
+      "fromStep": "step_fault",
+      "toStep": "step_stopped",
+      "condition": "Reset AND NOT JamDetected",
+      "comment": "Reset works only once the jam is gone",
+      "position": {
+        "x": 300,
+        "y": 550
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "A_STOPPED",
+      "name": "A_STOPPED",
+      "type": "ST",
+      "body": "BeltCommand := FALSE; DiverterCommand := FALSE; FaultLamp := FALSE;"
+    },
+    {
+      "id": "A_RUN",
+      "name": "A_RUN",
+      "type": "ST",
+      "body": "BeltCommand := TRUE; FaultLamp := FALSE;\nIF PartAtClassifier AND MetalDetected THEN MetalLatched := TRUE; END_IF;\nDiverterCommand := PartAtDiverter AND MetalLatched;\nIF PartAtDiverter THEN MetalLatched := FALSE; END_IF;"
+    },
+    {
+      "id": "A_FAULT",
+      "name": "A_FAULT",
+      "type": "ST",
+      "body": "BeltCommand := FALSE; DiverterCommand := FALSE; FaultLamp := TRUE; MetalLatched := FALSE;"
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-24",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

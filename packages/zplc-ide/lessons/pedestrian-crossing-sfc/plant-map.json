@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "plant": "pedestrian-v1",
+  "reads": {
+    "vehicleRed": "PedestrianCrossing.VehicleRed",
+    "vehicleYellow": "PedestrianCrossing.VehicleYellow",
+    "vehicleGreen": "PedestrianCrossing.VehicleGreen",
+    "pedWalk": "PedestrianCrossing.PedWalk",
+    "pedStop": "PedestrianCrossing.PedStop"
+  },
+  "drives": {
+    "pedRequest": "PedestrianCrossing.PedRequest"
+  }
+}

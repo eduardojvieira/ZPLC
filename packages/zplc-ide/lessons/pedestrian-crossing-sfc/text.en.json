@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Pedestrian crossing as a chart",
+  "summary": "Draw the pedestrian crossing as a Sequential Function Chart with one step per light combination, and check that WALK shows only while the vehicles are red.",
+  "scope": "Tests provide deterministic native POSIX host evidence only; they are not physical crossing, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Turn the phases of a pedestrian crossing into the steps of a chart, each with an action that sets every light.",
+    "Leave the green step with a transition on the plant's request and move through the other phases with timed transitions."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/PedestrianCrossing.sfc.json the steps GREEN, YELLOW, RED, WALK and RECOVERY, their actions and the four timed transitions are drawn. Add the missing transition from GREEN to YELLOW that fires on PedRequest; the plant raises PedRequest from {{t:10}} ms.",
+      "checkpoint": "Each step sets all five lights, so exactly one combination is shown at a time."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, predict the lights at {{t:0}}, {{t:20}}, {{t:40}}, {{t:60}}, {{t:90}} and {{t:110}} ms. A step shows its lights one scan after the transition that enters it fires.",
+      "checkpoint": "{{v:PedestrianCrossing.VehicleGreen=true,PedestrianCrossing.PedStop=true@0|green+STOP}} at {{t:0}} ms; yellow+STOP at {{t:20}}; red+STOP at {{t:40}}; {{v:PedestrianCrossing.VehicleRed=true,PedestrianCrossing.PedWalk=true@60|red+WALK}} at {{t:60}}; red+STOP at {{t:90}}; green+STOP at {{t:110}}."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter has no way out of GREEN, so the crossing never leaves the vehicle green; add a transition from GREEN to YELLOW whose condition is PedRequest.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named PedestrianCrossingSfc and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:40}}, {{t:60}}, {{t:80}} and {{t:90}} ms: WALK shows from {{t:60}} to {{t:80}} ms and only together with the red lamp, and at {{t:90}} ms the red lamp stays on while STOP returns.",
+      "checkpoint": "WALK is never on together with the green lamp or with STOP, and the chart is back in GREEN at {{t:110}} ms."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Why does every action set all five lights instead of only the one that changes? Change the WALK action to leave VehicleGreen on and see which assertion fails.",
+      "checkpoint": "A step defines the whole output state, so no phase can leave a lamp on by omission. The scenario checks the logical sequence; it does not establish a physical crossing, real phase durations, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "A transition has a source step, a target step and a condition. The four timed transitions are already there; copy their shape for GREEN to YELLOW."
+    },
+    {
+      "level": 2,
+      "text": "Add a transition with fromStep step_green, toStep step_yellow and the condition PedRequest."
+    }
+  ],
+  "faultCases": [
+    "The starter has no way out of GREEN, so the crossing never leaves the vehicle green; add a transition from GREEN to YELLOW whose condition is PedRequest."
+  ]
+}

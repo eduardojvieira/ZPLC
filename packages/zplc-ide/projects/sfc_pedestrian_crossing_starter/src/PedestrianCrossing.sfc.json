@@ -1,0 +1,214 @@
+{
+  "name": "PedestrianCrossing",
+  "description": "The pedestrian crossing as a chart: green, yellow, red, walk, red recovery.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "PedRequest",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Pedestrian request from the crossing plant"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "VehicleRed",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Vehicle red lamp"
+      },
+      {
+        "name": "VehicleYellow",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Vehicle yellow lamp"
+      },
+      {
+        "name": "VehicleGreen",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "Vehicle green lamp"
+      },
+      {
+        "name": "PedWalk",
+        "type": "BOOL",
+        "address": "%Q0.3",
+        "comment": "Pedestrian WALK signal"
+      },
+      {
+        "name": "PedStop",
+        "type": "BOOL",
+        "address": "%Q0.4",
+        "comment": "Pedestrian STOP signal"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "step_green",
+      "name": "GREEN",
+      "isInitial": true,
+      "position": {
+        "x": 200,
+        "y": 50
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_GREEN",
+          "comment": "Vehicles go, pedestrians wait"
+        }
+      ]
+    },
+    {
+      "id": "step_yellow",
+      "name": "YELLOW",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 250
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_YELLOW",
+          "comment": "Vehicles get ready to stop"
+        }
+      ]
+    },
+    {
+      "id": "step_red",
+      "name": "RED",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 450
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_RED",
+          "comment": "Red clearance"
+        }
+      ]
+    },
+    {
+      "id": "step_walk",
+      "name": "WALK",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 650
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_WALK",
+          "comment": "Pedestrians cross"
+        }
+      ]
+    },
+    {
+      "id": "step_recovery",
+      "name": "RECOVERY",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 850
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_RECOVERY",
+          "comment": "Red recovery"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t_yellow_done",
+      "fromStep": "step_yellow",
+      "toStep": "step_red",
+      "condition": "step_yellow.T >= T#10ms",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 350
+      }
+    },
+    {
+      "id": "t_clear",
+      "fromStep": "step_red",
+      "toStep": "step_walk",
+      "condition": "step_red.T >= T#10ms",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 550
+      }
+    },
+    {
+      "id": "t_walk_done",
+      "fromStep": "step_walk",
+      "toStep": "step_recovery",
+      "condition": "step_walk.T >= T#20ms",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 750
+      }
+    },
+    {
+      "id": "t_recovered",
+      "fromStep": "step_recovery",
+      "toStep": "step_green",
+      "condition": "step_recovery.T >= T#10ms",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 950
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "A_GREEN",
+      "name": "A_GREEN",
+      "type": "ST",
+      "body": "VehicleRed := FALSE; VehicleYellow := FALSE; VehicleGreen := TRUE; PedWalk := FALSE; PedStop := TRUE;"
+    },
+    {
+      "id": "A_YELLOW",
+      "name": "A_YELLOW",
+      "type": "ST",
+      "body": "VehicleRed := FALSE; VehicleYellow := TRUE; VehicleGreen := FALSE; PedWalk := FALSE; PedStop := TRUE;"
+    },
+    {
+      "id": "A_RED",
+      "name": "A_RED",
+      "type": "ST",
+      "body": "VehicleRed := TRUE; VehicleYellow := FALSE; VehicleGreen := FALSE; PedWalk := FALSE; PedStop := TRUE;"
+    },
+    {
+      "id": "A_WALK",
+      "name": "A_WALK",
+      "type": "ST",
+      "body": "VehicleRed := TRUE; VehicleYellow := FALSE; VehicleGreen := FALSE; PedWalk := TRUE; PedStop := FALSE;"
+    },
+    {
+      "id": "A_RECOVERY",
+      "name": "A_RECOVERY",
+      "type": "ST",
+      "body": "VehicleRed := TRUE; VehicleYellow := FALSE; VehicleGreen := FALSE; PedWalk := FALSE; PedStop := TRUE;"
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-10-24",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
