@@ -48,6 +48,7 @@ function project(options: { open?: string[] } = {}) {
     ],
   });
   const calls: string[] = [];
+  const entries: string[] = [];
   const loaded = new Map<string, { content: string; isModified: boolean; handle?: FileSystemFileHandle }>();
   for (const path of options.open ?? []) loaded.set(`file:${path}`, { content: disk.get(path)!, isModified: false, handle: handle(path) });
   const state = {
@@ -63,6 +64,9 @@ function project(options: { open?: string[] } = {}) {
     projectConfig: config as ZPLCProjectConfig | null,
     projectConfigDirty: false,
     failSave: false,
+    addConsoleEntry(entry: { message: string }) {
+      entries.push(entry.message);
+    },
     async createFile(name: string) {
       calls.push(`createFile:${name}`);
       const path = `src/${name}${/\.il$/.test(name) ? '' : '.st'}`;
@@ -96,7 +100,7 @@ function project(options: { open?: string[] } = {}) {
       state.projectConfigDirty = false;
     },
   };
-  return { disk, state: state as unknown as ChangeSetStore & { failSave: boolean }, calls, handle };
+  return { disk, state: state as unknown as ChangeSetStore & { failSave: boolean }, calls, handle, entries };
 }
 
 /** The host: a run that passes for exactly the edits it was given, as sanitizeCandidateChangeSetReview reduces it. */
@@ -293,6 +297,38 @@ describe('the review and the save of an assistant change set (S5, IDE-030)', () 
     p.state.failSave = true;
     expect(await saveChangeSet(outcome.snapshot, () => p.state)).toBe('error');
     expect(p.calls).not.toContain('saveProjectConfig');
+  });
+
+  it('says in Output which file stopped the save and how many were written, also for a file that is not open', async () => {
+    const p = project();
+    const { bridge } = host(p.disk);
+    const changes = await proposal(p.disk);
+    const outcome = await reviewChangeSet(changes, { workspaceId: WORKSPACE, bridge, getState: () => p.state });
+    if (outcome.kind !== 'result') throw new Error('no review');
+    // the replaced program is not open: its write goes straight to the file, which fails
+    outcome.snapshot.files.find((file) => file.path === 'src/Main.st')!.handle = {
+      getFile: async () => ({ text: async () => MAIN }),
+      createWritable: async () => {
+        throw new Error('disk full');
+      },
+    } as unknown as FileSystemFileHandle;
+    expect(await saveChangeSet(outcome.snapshot, () => p.state)).toBe('error');
+    expect(p.entries).toHaveLength(1);
+    expect(p.entries[0]).toContain('src/Main.st');
+    expect(p.entries[0]).toContain('1');
+    expect(p.entries[0]).toContain('3');
+    expect(p.calls).not.toContain('saveProjectConfig');
+
+    const q = project({ open: ['src/Main.st'] });
+    const second = await reviewChangeSet(await proposal(q.disk), {
+      workspaceId: WORKSPACE,
+      bridge: host(q.disk).bridge,
+      getState: () => q.state,
+    });
+    if (second.kind !== 'result') throw new Error('no review');
+    q.state.failSave = true;
+    expect(await saveChangeSet(second.snapshot, () => q.state)).toBe('error');
+    expect(q.entries.at(-1)).toContain('src/Lamp.st');
   });
 
   it('shows a review the host refused, and reports an error when the bridge fails', async () => {

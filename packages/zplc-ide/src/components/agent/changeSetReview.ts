@@ -9,6 +9,7 @@ import { fileNameForNewFile, findFileInTree, readFileContent, writeFileContent }
 import type { FileTreeNode, ZPLCProjectConfig } from '../../types';
 import { sha256Text } from '../candidateSources';
 import type { CandidateChangeSetReviewPresentation } from '../workspaceTestPresentation';
+import { t } from '../../i18n';
 import { presentChangeSetReview } from './changeSetPresentation';
 
 export interface ChangeSetFileSnapshot {
@@ -49,6 +50,7 @@ export interface ChangeSetStore {
   saveFile(fileId: string, options?: { quiet?: boolean }): Promise<boolean>;
   updateProjectConfig(updates: Partial<ZPLCProjectConfig>): void;
   saveProjectConfig(): Promise<void>;
+  addConsoleEntry(entry: { type: 'error'; message: string; source: 'system' }): void;
 }
 export interface ChangeSetReviewBridge {
   review(request: { workspaceId: string; edits: Array<{ path: string; content: string }> }): Promise<unknown>;
@@ -217,7 +219,15 @@ function newFileName(path: string): { typed: string; language: NonNullable<Retur
 }
 
 /** The person's save of a reviewed set: the disk is read again, then new programs, replaced programs and the settings are written. */
-export async function saveChangeSet(snapshot: ChangeSetSnapshot, getState: () => ChangeSetStore): Promise<'saved' | 'stale' | 'error'> {
+async function writeChangeSet(
+  snapshot: ChangeSetSnapshot,
+  getState: () => ChangeSetStore,
+  progress: { written: number; stoppedAt: string },
+): Promise<'saved' | 'stale' | 'error'> {
+  const stop = (path: string): 'error' => {
+    progress.stoppedAt = path;
+    return 'error';
+  };
   try {
     if (!changeSetIsCurrent(snapshot, getState())) return 'stale';
     for (const file of snapshot.files) {
@@ -227,28 +237,48 @@ export async function saveChangeSet(snapshot: ChangeSetSnapshot, getState: () =>
     }
     const order = (file: ChangeSetFileSnapshot) => (file.kind === 'create' ? 0 : file.path === 'zplc.json' ? 2 : 1);
     for (const file of [...snapshot.files].sort((left, right) => order(left) - order(right))) {
+      progress.stoppedAt = file.path;
       if (file.path === 'zplc.json') {
         const state = getState();
         const merged = state.projectConfig && mergedConfig(state.projectConfig, JSON.parse(file.candidate) as ZPLCProjectConfig);
-        if (!merged || merged.content !== file.candidate) return 'error';
+        if (!merged || merged.content !== file.candidate) return stop(file.path);
         state.updateProjectConfig(merged.updates);
         await getState().saveProjectConfig();
-        if (getState().projectConfigDirty) return 'error';
+        if (getState().projectConfigDirty) return stop(file.path);
       } else if (file.kind === 'create') {
         const name = newFileName(file.path);
-        if (!name) return 'error';
+        if (!name) return stop(file.path);
         const fileId = await getState().createFile(name.typed, name.language, 'src');
-        if (fileId !== fileIdOf(file.path)) return 'error';
+        if (fileId !== fileIdOf(file.path)) return stop(file.path);
         getState().updateFileContent(fileId, file.candidate);
-        if (!(await getState().saveFile(fileId))) return 'error';
+        if (!(await getState().saveFile(fileId))) return stop(file.path);
       } else if (file.fileId) {
         getState().updateFileContent(file.fileId, file.candidate);
-        if (!(await getState().saveFile(file.fileId))) return 'error';
+        if (!(await getState().saveFile(file.fileId))) return stop(file.path);
       } else if (file.handle) await writeFileContent(file.handle, file.candidate);
-      else return 'error';
+      else return stop(file.path);
+      progress.written += 1;
     }
     return 'saved';
   } catch {
     return 'error';
   }
+}
+
+/** The person's save of a reviewed set. When it stops, Output says at which file and how many were written: there is no rollback. */
+export async function saveChangeSet(snapshot: ChangeSetSnapshot, getState: () => ChangeSetStore): Promise<'saved' | 'stale' | 'error'> {
+  const progress = { written: 0, stoppedAt: '' };
+  const outcome = await writeChangeSet(snapshot, getState, progress);
+  if (outcome === 'error') {
+    try {
+      getState().addConsoleEntry({
+        type: 'error',
+        source: 'system',
+        message: t('console.changeSetStopped', { path: progress.stoppedAt, written: progress.written, total: snapshot.files.length }),
+      });
+    } catch {
+      /* the log is a courtesy: the outcome is what the caller needs */
+    }
+  }
+  return outcome;
 }

@@ -573,6 +573,30 @@ describe('optional AI provider (IDE-030)', () => {
       }
     });
 
+    it('classifies a file by what is on the disk, not by the capped list of the summary, and refuses a link', async () => {
+      const directory = await fixture();
+      const src = join(directory, 'workspace', 'src');
+      for (let index = 0; index < 130; index += 1)
+        await writeFile(join(src, `P${String(index).padStart(3, '0')}.st`), 'PROGRAM A\nEND_PROGRAM\n');
+      await writeFile(join(src, 'Zeta.st'), 'PROGRAM Zeta\nEND_PROGRAM\n');
+      await writeFile(join(directory, 'outside.st'), 'PROGRAM Out\nEND_PROGRAM\n');
+      await symlink(join(directory, 'outside.st'), join(src, 'Zlink.st'));
+      const beyond = await configured(directory, {
+        answer: 'x',
+        changes: [{ path: 'src/Zeta.st', content: 'PROGRAM Zeta\nEND_PROGRAM\n// y\n' }],
+      });
+      expect(await ask(directory, beyond)).toMatchObject({
+        ok: true,
+        changes: [{ path: 'src/Zeta.st', kind: 'modify', baselineSha256: expect.any(String) }],
+      });
+      const clash = await configured(directory, { answer: 'x', changes: [{ path: 'src/zeta.st', content: 'PROGRAM A\nEND_PROGRAM\n' }] });
+      expect(await ask(directory, clash)).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+      const link = await configured(directory, { answer: 'x', changes: [{ path: 'src/Zlink.st', content: 'PROGRAM A\nEND_PROGRAM\n' }] });
+      expect(await ask(directory, link)).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+      const fresh = await configured(directory, { answer: 'x', changes: [{ path: 'src/Znew.st', content: 'PROGRAM A\nEND_PROGRAM\n' }] });
+      expect(await ask(directory, fresh)).toMatchObject({ ok: true, changes: [{ path: 'src/Znew.st', kind: 'create' }] });
+    });
+
     it('accepts a change set only in edit mode', async () => {
       const directory = await fixture();
       const provider = await configured(directory, {

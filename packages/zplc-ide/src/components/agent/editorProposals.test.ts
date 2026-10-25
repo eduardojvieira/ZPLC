@@ -55,6 +55,7 @@ function deps(over: Partial<ProposalDeps> = {}) {
   };
   const value: ProposalDeps = {
     isProjectOpen: true,
+    deviceConnected: false,
     fileTree: tree,
     loadedFiles: new Map(),
     openFile: async (id) => void log.push(`openFile:${id}`),
@@ -161,5 +162,17 @@ describe('the proposals of an assistant are checked against the project and run 
     expect(lost.log).toEqual([]);
     const stuck = deps({ applySetting: () => undefined });
     expect(await runProposal({ type: 'setting', name: 'density', value: 'compact' }, stuck.value)).toBe('unavailable');
+  });
+
+  it('does not offer the switch to the simulator while a device is connected, and its click does nothing (COM-030)', async () => {
+    const { value, log } = deps({ deviceConnected: true });
+    const [check] = await checkProposals([{ type: 'startSimulation' }], value);
+    expect(check!.state).toBe('device-connected');
+    expect(await runProposal({ type: 'startSimulation' }, value)).toBe('unavailable');
+    expect(log).toEqual([]);
+    // the other commands do not depend on the connection
+    expect((await checkProposals([{ type: 'compile' }], value))[0]!.state).toBe('ready');
+    const free = deps();
+    expect((await checkProposals([{ type: 'startSimulation' }], free.value))[0]!.state).toBe('ready');
   });
 });

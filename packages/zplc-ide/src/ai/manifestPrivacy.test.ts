@@ -31,4 +31,35 @@ describe('the manifest an assistant reads or proposes (IDE-030)', () => {
     expect(manifestSensitivePaths({ network: { wifi: { password: '  ' } }, name: 'x' })).toEqual([]);
     expect(manifestSensitivePaths({ name: 'x', tasks: [] })).toEqual([]);
   });
+
+  test('a key that holds a credential word anywhere, in any case, is a credential; an innocent key stays', () => {
+    for (const key of [
+      'password2',
+      'wifiPass',
+      'WIFI_PASS',
+      'userPwd',
+      'db-passwd',
+      'mySecretValue',
+      'authToken2',
+      'credentialsFile',
+      'api_key',
+      'apiKeyId',
+      'private_key_pem',
+      'sas_key',
+      'clientKeyPath',
+      'bypass',
+      'compass',
+    ]) {
+      const manifest = { custom: { [key]: 'x' } };
+      expect(manifestSensitivePaths(manifest), key).toEqual([`custom.${key}`]);
+      expect(manifestForAssistant(manifest), key).toEqual({ custom: {} });
+    }
+    // bypass and compass end in "pass" and is taken for a credential on purpose: the rule is a suffix on pass, and a false positive only
+    // hides a field
+    for (const key of ['keyboardLayout', 'passive', 'compassion', 'clientId', 'passes', 'interval_ms']) {
+      const manifest = { custom: { [key]: 'x' } };
+      expect(manifestSensitivePaths(manifest), key).toEqual([]);
+      expect(manifestForAssistant(manifest), key).toEqual(manifest);
+    }
+  });
 });

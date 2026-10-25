@@ -11,9 +11,9 @@ export const AI_SENSITIVE_MANIFEST_PATHS = [
   'communication.mqtt.awsClaimKeyPath',
 ] as const;
 
-// the key names the project parser also refuses (projectModel.ts): a credential by its name
-const CREDENTIAL_KEY =
-  /(?:password|passwd|secret|secretkey|token|apikey|accesskey|privatekey(?:path)?|saskey|credential(?:s)?|bearer|psk)$/;
+// A credential by its name, stricter than the project parser (projectModel.ts, which only looks at the end of the key): the words
+// anywhere in the key, and "pass" at its end (wifiPass, and bypass with it). A false positive only hides a field from the assistant.
+const CREDENTIAL_KEY = /(?:password|passwd|pwd|secret|token|credential|apikey|accesskey|privatekey|saskey|clientkey|bearer|psk)|pass$/;
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);

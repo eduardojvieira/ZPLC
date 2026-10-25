@@ -393,6 +393,30 @@ describe('the assistant proposes a change set that a person reviews and saves (I
     });
   });
 
+  it('does not let a click switch to the simulator while a device is connected', async () => {
+    const { bindCommands, publishCommandState, resetCommandsForTest } = await import('../commands/bus');
+    resetCommandsForTest();
+    publishCommandState({ projectOpen: true, connected: true, mode: 'hardware' });
+    const ran: string[] = [];
+    bindCommands({ 'online.simulation': () => void ran.push('online.simulation') });
+    restores.push(resetCommandsForTest);
+    const ctx = assistant({ ok: true, answer: 'Switch', proposals: [{ type: 'startSimulation' }] }, async () => ({}));
+    open('agent', ctx.state);
+    const { user } = dom.render(<Console />);
+    await ready(user);
+    await user.type(panel().getByRole('textbox', { name: dom.t('console.request') }), 'Simulate');
+    await dom.waitFor(() =>
+      expect((panel().getByRole('button', { name: dom.t('console.sendRequest') }) as HTMLButtonElement).disabled).toBe(false),
+    );
+    await user.click(panel().getByRole('button', { name: dom.t('console.sendRequest') }));
+    const actions = await dom.screen.findByRole('region', { name: dom.t('console.proposedActions') });
+    const button = dom.within(actions).getByRole('button', { name: dom.t('console.proposalStartSimulation') }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(dom.within(actions).getByText(dom.t('console.proposalWhyConnected'))).toBeTruthy();
+    await user.click(button);
+    expect(ran).toEqual([]);
+  });
+
   it('shows an answer that proposes something physical as not trusted, with no button', async () => {
     const ctx = assistant({ ok: true, answer: 'Deploy it', proposals: [{ type: 'deploy' }] }, async () => ({}));
     open('agent', ctx.state);

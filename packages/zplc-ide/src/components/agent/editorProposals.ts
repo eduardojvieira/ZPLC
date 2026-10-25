@@ -7,7 +7,7 @@ import { AI_COMMAND_PROPOSALS, type AiProposal } from '../../ai/proposals';
 import type { FileTreeNode } from '../../types';
 import { findFileInTree, readFileContent } from '../../utils/fileSystem';
 
-export type ProposalState = 'ready' | 'no-project' | 'missing-file' | 'missing-line' | 'missing-element' | 'same';
+export type ProposalState = 'ready' | 'device-connected' | 'no-project' | 'missing-file' | 'missing-line' | 'missing-element' | 'same';
 export interface ProposalCheck {
   proposal: AiProposal;
   state: ProposalState;
@@ -18,6 +18,8 @@ export interface ProposalCheck {
 /** What checking and running a proposal need of the application; the shell passes its store, its commands and its settings. */
 export interface ProposalDeps {
   isProjectOpen: boolean;
+  /** A device is connected: the switch to the simulator would disconnect it, which only the person does (COM-030). */
+  deviceConnected: boolean;
   fileTree: FileTreeNode | null;
   loadedFiles: Map<string, { content: string }>;
   openFile(fileId: string): Promise<void>;
@@ -73,6 +75,7 @@ async function checkOne(proposal: AiProposal, deps: ProposalDeps): Promise<Propo
     return { proposal, state: current === proposal.value ? 'same' : 'ready', current };
   }
   if (!deps.isProjectOpen) return { proposal, state: 'no-project' };
+  if (proposal.type === 'startSimulation' && deps.deviceConnected) return { proposal, state: 'device-connected' };
   if (proposal.type === 'openFile' || proposal.type === 'goToLine' || proposal.type === 'selectElement') {
     const text = await textOf(proposal.path, deps);
     if (text === null) return { proposal, state: 'missing-file' };
@@ -90,6 +93,7 @@ export function checkProposals(proposals: readonly AiProposal[], deps: ProposalD
 
 /** The person's click: runs one proposal through the path a person would use; 'unavailable' when the application does not offer it now. */
 export async function runProposal(proposal: AiProposal, deps: ProposalDeps): Promise<'ran' | 'unavailable'> {
+  if (proposal.type === 'startSimulation' && deps.deviceConnected) return 'unavailable';
   switch (proposal.type) {
     case 'openFile':
       await deps.openFile(`file:${proposal.path}`);

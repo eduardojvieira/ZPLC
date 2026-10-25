@@ -83,7 +83,7 @@ const SYSTEM_POLICY =
   'You may also add "proposals" (at most 6): {"type":"openFile","path"}, {"type":"goToLine","path","line"}, ' +
   '{"type":"selectElement","path","element"} ' +
   'with element rung:<id>, block:<id>, step:<id> or transition:<id>, {"type":"compile"}, {"type":"generateSt"}, ' +
-  '{"type":"startSimulation"}, or ' +
+  '{"type":"startSimulation"} (switch to the simulator), or ' +
   '{"type":"setting","name":"theme|language|density|editorFontSize|editorTabSize","value"}; each is a button the person may click. ' +
   'Never put credentials, keys or passwords in any file. A person reviews every difference and saves it; nothing you propose takes ' +
   'effect before that.';
@@ -341,14 +341,27 @@ export function createAiProvider(options: { userDataPath: string; vault: SafeSto
     }
   }
   /** Where the proposed files stand: the sha256 of the one each replaces, or that it is new; null when the set cannot be one. */
+  async function programEntries(root: string): Promise<Map<string, 'file' | 'link' | 'other'> | null> {
+    try {
+      if (!(await sourceFolderIsReal(root))) return null;
+      const found = new Map<string, 'file' | 'link' | 'other'>();
+      for (const entry of await readdir(join(root, 'src'), { withFileTypes: true }))
+        if (isCandidateSourcePathPattern.test(`src/${entry.name}`))
+          found.set(`src/${entry.name}`, entry.isSymbolicLink() ? 'link' : entry.isFile() ? 'file' : 'other');
+      return found;
+    } catch {
+      return null;
+    }
+  }
   async function resolveChanges(
     root: string,
     value: unknown,
   ): Promise<Array<{ path: string; kind: 'modify' | 'create'; content: string; baselineSha256?: string }> | null> {
     if (!Array.isArray(value) || value.length < 1 || value.length > CANDIDATE_CHANGE_CAP) return null;
-    const existing = await listPrograms(root);
-    if (!existing) return null;
-    const taken = new Set(existing.map(sourceKey));
+    // what is on the disk decides modify or create, not the capped list of the summary; a link counts as taken and is never replaced
+    const entries = await programEntries(root);
+    if (!entries) return null;
+    const taken = new Set([...entries.keys()].map(sourceKey));
     const seen = new Set<string>();
     const resolved: Array<{ path: string; kind: 'modify' | 'create'; content: string; baselineSha256?: string }> = [];
     for (const item of value as unknown[]) {
@@ -369,7 +382,8 @@ export function createAiProvider(options: { userDataPath: string; vault: SafeSto
         const before = await readProjectFile(root, path, MAX_MANIFEST);
         if (before === null || before === content) return null;
         resolved.push({ path, kind: 'modify', content, baselineSha256: sha256(before) });
-      } else if (existing.includes(path)) {
+      } else if (entries.has(path)) {
+        if (entries.get(path) !== 'file') return null;
         const before = await readProjectFile(root, path, MAX_REPLACE_BASE);
         if (before === null || before === content) return null;
         resolved.push({ path, kind: 'modify', content, baselineSha256: sha256(before) });

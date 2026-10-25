@@ -3,7 +3,7 @@
  * and its proposed value. Each is checked against the project and offered only when it can run; nothing runs until the person clicks it.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { runCommand } from '../../commands/bus';
+import { getCommandState, runCommand } from '../../commands/bus';
 import { requestElementSelection } from '../../editors/elementSelectionRequests';
 import { useT } from '../../i18n';
 import type { AiProposal } from '../../ai/proposals';
@@ -18,6 +18,7 @@ function liveDeps(): ProposalDeps {
   const store = useIDEStore.getState();
   return {
     isProjectOpen: store.isProjectOpen,
+    deviceConnected: getCommandState().connected,
     fileTree: store.fileTree,
     loadedFiles: store.loadedFiles,
     openFile: store.openFile,
@@ -89,9 +90,11 @@ export function AgentProposals({ proposals }: { proposals: readonly AiProposal[]
         ? t('console.proposalWhyLine')
         : check.state === 'missing-element'
           ? t('console.proposalWhyElement')
-          : check.state === 'same'
-            ? t('console.proposalWhySame')
-            : t('console.proposalWhyProject');
+          : check.state === 'device-connected'
+            ? t('console.proposalWhyConnected')
+            : check.state === 'same'
+              ? t('console.proposalWhySame')
+              : t('console.proposalWhyProject');
 
   if (proposals.length === 0) return null;
   return (
