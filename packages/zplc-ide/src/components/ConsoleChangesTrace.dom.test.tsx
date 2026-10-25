@@ -145,6 +145,312 @@ describe('Changes tab contents in a DOM (VF-007)', () => {
   );
 });
 
+/** The assistant: a provider that answers `reply`, and a saved project with Main.st open and unmodified (the disk is `written`). */
+function assistant(reply: unknown, review: (request: unknown) => Promise<unknown>) {
+  const reviews = desktop(review);
+  const requests: unknown[] = [];
+  const written: string[] = [];
+  const main = 'PROGRAM Main\nEND_PROGRAM\n';
+  (window as unknown as { electronAPI: Record<string, unknown> }).electronAPI.aiProvider = {
+    getStatus: async () => ({ configured: true, enabled: true, keyStored: true, vaultAvailable: true }),
+    getConfig: async () => ({ enabled: true, endpoint: 'https://api.example.test', model: 'gpt-test' }),
+    request: async (request: unknown) => {
+      requests.push(request);
+      return typeof reply === 'function' ? (reply as (request: unknown) => unknown)(request) : reply;
+    },
+    cancel: async () => ({ requested: false }),
+  };
+  const handle = {
+    getFile: async () => ({ text: async () => main }),
+    createWritable: async () => ({
+      write: async (text: string) => written.push(text),
+      close: async () => undefined,
+    }),
+  };
+  const file = {
+    id: 'file:src/Main.st',
+    name: 'Main.st',
+    path: 'src/Main.st',
+    language: 'ST',
+    content: main,
+    isModified: false,
+    parentPath: 'src',
+    handle,
+  };
+  const tree = {
+    id: 'dir:/',
+    name: 'p',
+    type: 'directory',
+    path: '',
+    children: [
+      {
+        id: 'dir:src',
+        name: 'src',
+        type: 'directory',
+        path: 'src',
+        children: [{ id: file.id, name: 'Main.st', type: 'file', path: file.path, handle }],
+      },
+    ],
+  };
+  return {
+    reviews,
+    requests,
+    written,
+    state: {
+      projectSession: 7,
+      workspaceScenarioLink: { workspaceId: 'w1', projectSession: 7 },
+      activeFileId: file.id,
+      loadedFiles: new Map([[file.id, file]]),
+      fileTree: tree,
+    },
+    sha: async (text: string) => {
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+    },
+    main,
+  };
+}
+
+describe('the assistant proposes a change set that a person reviews and saves (IDE-030, S5)', () => {
+  const ready = async (user: ReturnType<typeof dom.render>['user']) => {
+    await user.click(panel().getByRole('button', { name: dom.t('console.refreshStatus') }));
+    await dom.waitFor(() => expect(panel().getByText(/Provider enabled/i)).toBeTruthy());
+  };
+  const ask = async (user: ReturnType<typeof dom.render>['user']) => {
+    await ready(user);
+    await user.click(dom.screen.getByRole('radio', { name: 'edit' }));
+    await user.type(panel().getByRole('textbox', { name: dom.t('console.request') }), 'Add a lamp');
+    await dom.waitFor(() =>
+      expect((panel().getByRole('button', { name: dom.t('console.sendRequest') }) as HTMLButtonElement).disabled).toBe(false),
+    );
+    await user.click(panel().getByRole('button', { name: dom.t('console.sendRequest') }));
+  };
+
+  it('lists the files of the proposal, reviews them together, and writes and changes nothing until the person saves', async () => {
+    const ctx = assistant(
+      async () => ({
+        ok: true,
+        answer: 'Added a lamp',
+        workspaceId: 'w1',
+        fileId: 'file:src/Main.st',
+        path: 'src/Main.st',
+        baselineSha256: await ctx.sha(ctx.main),
+        changes: [
+          { path: 'src/Main.st', kind: 'modify', content: `${ctx.main}(* lamp *)\n`, baselineSha256: await ctx.sha(ctx.main) },
+          { path: 'src/Lamp.st', kind: 'create', content: 'PROGRAM Lamp\nEND_PROGRAM\n' },
+        ],
+      }),
+      async (request) => {
+        const { edits } = request as { edits: Array<{ path: string; content: string }> };
+        const sha = 'f'.repeat(64);
+        const digest = async (text: string) => ctx.sha(text);
+        return {
+          schemaVersion: 1,
+          accepted: true,
+          evidenceScope: 'native-posix-host',
+          changeSet: {
+            sha256: sha,
+            changes: await Promise.all(
+              edits.map(async (edit) => ({
+                path: edit.path,
+                ...(edit.path === 'src/Main.st'
+                  ? { kind: 'modify', before: { sha256: await digest(ctx.main), byteLength: ctx.main.length } }
+                  : { kind: 'create' }),
+                after: { sha256: await digest(edit.content), byteLength: edit.content.length },
+              })),
+            ),
+          },
+          evidence: {
+            schemaVersion: 1,
+            operation: 'test',
+            outcome: 'passed',
+            diagnostics: [],
+            artifacts: [
+              { kind: 'zplc', sha256: sha, byteLength: 4 },
+              { kind: 'trace', sha256: sha, byteLength: 4 },
+            ],
+          },
+          savedTestInputIdentity: { schemaVersion: 1, sha256: sha, fileCount: 3 },
+        };
+      },
+    );
+    open('agent', ctx.state);
+    const { user } = dom.render(<Console />);
+    await ask(user);
+    const files = await dom.screen.findByRole('list', { name: dom.t('console.proposedFiles') });
+    expect(
+      dom
+        .within(files)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual([`src/Main.st · ${dom.t('console.changedFile')}`, `src/Lamp.st · ${dom.t('console.newFile')}`]);
+    // the program that is open goes with the request, in edit mode as in the others
+    expect(ctx.requests[0]).toMatchObject({ mode: 'edit', activeFile: { fileId: 'file:src/Main.st', path: 'src/Main.st' } });
+
+    await user.click(panel().getByRole('button', { name: dom.t('console.reviewProposedChange') }));
+    await dom.waitFor(() => expect(ctx.reviews).toHaveLength(1));
+    expect(ctx.reviews[0]).toEqual({
+      workspaceId: 'w1',
+      edits: [
+        { path: 'src/Main.st', content: `${ctx.main}(* lamp *)\n` },
+        { path: 'src/Lamp.st', content: 'PROGRAM Lamp\nEND_PROGRAM\n' },
+      ],
+    });
+    // the review is a result in the Changes tab: a difference per file, and no write happened
+    await user.click(dom.screen.getByRole('tab', { name: new RegExp(dom.t('console.tab.changes')) }));
+    const result = await dom.screen.findByRole('region', { name: dom.t('console.changeReviewResult') });
+    expect(dom.within(result).getByRole('heading', { name: tn('console.reviewChangeSet', 2) })).toBeTruthy();
+    expect(dom.within(result).getByText('src/Lamp.st')).toBeTruthy();
+    expect(dom.within(result).getByText(dom.t('console.newFile'))).toBeTruthy();
+    expect(dom.within(result).getByRole('button', { name: dom.t('console.saveReviewedChange') })).toBeTruthy();
+    expect(ctx.written).toEqual([]);
+    expect(useIDEStore.getState().loadedFiles.get('file:src/Main.st')!.isModified).toBe(false);
+    expect(useIDEStore.getState().loadedFiles.get('file:src/Main.st')!.content).toBe(ctx.main);
+  });
+
+  it('shows a proposed ladder that does not load as a refusal with its violations, and offers no review', async () => {
+    const ctx = assistant(
+      async () => ({
+        ok: true,
+        answer: 'A ladder',
+        workspaceId: 'w1',
+        fileId: 'file:src/Main.st',
+        path: 'src/Main.st',
+        baselineSha256: await ctx.sha(ctx.main),
+        changes: [{ path: 'src/Seal.ld.json', kind: 'create', content: '{ nope' }],
+      }),
+      async () => ({}),
+    );
+    open('agent', ctx.state);
+    const { user } = dom.render(<Console />);
+    await ask(user);
+    const alert = await dom.screen.findByRole('alert');
+    expect(alert.textContent).toContain(dom.t('console.proposalRefusedInvalid', { path: 'src/Seal.ld.json' }));
+    expect(alert.textContent).toContain('not valid JSON');
+    expect(panel().queryByRole('button', { name: dom.t('console.reviewProposedChange') })).toBeNull();
+    expect(ctx.reviews).toHaveLength(0);
+  });
+
+  it('offers editor actions and settings as buttons that run only when clicked, and not a proposal the project cannot honour', async () => {
+    const { bindCommands, publishCommandState, resetCommandsForTest } = await import('../commands/bus');
+    const { useAppSettings } = await import('../store/useAppSettings');
+    resetCommandsForTest();
+    publishCommandState({ projectOpen: true });
+    const ran: string[] = [];
+    bindCommands({ 'build.compile': () => void ran.push('build.compile') });
+    restores.push(resetCommandsForTest);
+    const ctx = assistant(
+      {
+        ok: true,
+        answer: 'Try this',
+        proposals: [
+          { type: 'compile' },
+          { type: 'setting', name: 'theme', value: 'dark' },
+          { type: 'setting', name: 'editorFontSize', value: 20 },
+          { type: 'openFile', path: 'src/Gone.st' },
+        ],
+      },
+      async () => ({}),
+    );
+    dom.patchStore(useIDEStore, { theme: 'light' } as never);
+    open('agent', ctx.state);
+    const { user } = dom.render(<Console />);
+    await ready(user);
+    await user.type(panel().getByRole('textbox', { name: dom.t('console.request') }), 'Help me');
+    await dom.waitFor(() =>
+      expect((panel().getByRole('button', { name: dom.t('console.sendRequest') }) as HTMLButtonElement).disabled).toBe(false),
+    );
+    await user.click(panel().getByRole('button', { name: dom.t('console.sendRequest') }));
+    const actions = await dom.screen.findByRole('region', { name: dom.t('console.proposedActions') });
+    // nothing has run yet
+    expect(ran).toEqual([]);
+    expect(useIDEStore.getState().theme).toBe('light');
+    const missing = dom
+      .within(actions)
+      .getByRole('button', { name: dom.t('console.proposalOpenFile', { path: 'src/Gone.st' }) }) as HTMLButtonElement;
+    expect(missing.disabled).toBe(true);
+    expect(dom.within(actions).getByText(dom.t('console.proposalWhyFile'))).toBeTruthy();
+    await user.click(dom.within(actions).getByRole('button', { name: dom.t('console.proposalCompile') }));
+    await dom.waitFor(() => expect(ran).toEqual(['build.compile']));
+    await user.click(
+      dom
+        .within(actions)
+        .getByRole('button', { name: dom.t('console.proposalSetting', { setting: dom.t('console.settingTheme'), value: 'dark' }) }),
+    );
+    await dom.waitFor(() => expect(useIDEStore.getState().theme).toBe('dark'));
+    await user.click(
+      dom
+        .within(actions)
+        .getByRole('button', { name: dom.t('console.proposalSetting', { setting: dom.t('console.settingFontSize'), value: '20' }) }),
+    );
+    await dom.waitFor(() => expect(useAppSettings.getState().settings.editorFontSize).toBe(20));
+    // the settings that stay out of its reach did not move
+    expect(useAppSettings.getState().settings).toMatchObject({
+      autosaveSeconds: 0,
+      checkForUpdates: false,
+      unlockAllLessons: false,
+      hideSolutions: false,
+    });
+  });
+
+  it('does not let a click switch to the simulator while a device is connected', async () => {
+    const { bindCommands, publishCommandState, resetCommandsForTest } = await import('../commands/bus');
+    resetCommandsForTest();
+    publishCommandState({ projectOpen: true, connected: true, mode: 'hardware' });
+    const ran: string[] = [];
+    bindCommands({ 'online.simulation': () => void ran.push('online.simulation') });
+    restores.push(resetCommandsForTest);
+    const ctx = assistant({ ok: true, answer: 'Switch', proposals: [{ type: 'startSimulation' }] }, async () => ({}));
+    open('agent', ctx.state);
+    const { user } = dom.render(<Console />);
+    await ready(user);
+    await user.type(panel().getByRole('textbox', { name: dom.t('console.request') }), 'Simulate');
+    await dom.waitFor(() =>
+      expect((panel().getByRole('button', { name: dom.t('console.sendRequest') }) as HTMLButtonElement).disabled).toBe(false),
+    );
+    await user.click(panel().getByRole('button', { name: dom.t('console.sendRequest') }));
+    const actions = await dom.screen.findByRole('region', { name: dom.t('console.proposedActions') });
+    const button = dom.within(actions).getByRole('button', { name: dom.t('console.proposalStartSimulation') }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(dom.within(actions).getByText(dom.t('console.proposalWhyConnected'))).toBeTruthy();
+    await user.click(button);
+    expect(ran).toEqual([]);
+  });
+
+  it('shows an answer that proposes something physical as not trusted, with no button', async () => {
+    const ctx = assistant({ ok: true, answer: 'Deploy it', proposals: [{ type: 'deploy' }] }, async () => ({}));
+    open('agent', ctx.state);
+    const { user } = dom.render(<Console />);
+    await ready(user);
+    await user.type(panel().getByRole('textbox', { name: dom.t('console.request') }), 'Deploy');
+    await dom.waitFor(() =>
+      expect((panel().getByRole('button', { name: dom.t('console.sendRequest') }) as HTMLButtonElement).disabled).toBe(false),
+    );
+    await user.click(panel().getByRole('button', { name: dom.t('console.sendRequest') }));
+    await dom.screen.findByText(dom.t('console.providerResponseCouldNot'));
+    expect(dom.screen.queryByRole('region', { name: dom.t('console.proposedActions') })).toBeNull();
+  });
+
+  it('sends the open program with a plain question as well, in any language', async () => {
+    const ctx = assistant({ ok: true, answer: 'It latches.' }, async () => ({}));
+    open('agent', ctx.state);
+    const { user } = dom.render(<Console />);
+    await ready(user);
+    await user.type(panel().getByRole('textbox', { name: dom.t('console.request') }), 'What does it do?');
+    await dom.waitFor(() =>
+      expect((panel().getByRole('button', { name: dom.t('console.sendRequest') }) as HTMLButtonElement).disabled).toBe(false),
+    );
+    await user.click(panel().getByRole('button', { name: dom.t('console.sendRequest') }));
+    await dom.screen.findByText('It latches.');
+    expect(ctx.requests[0]).toEqual({
+      workspaceId: 'w1',
+      mode: 'ask',
+      prompt: 'What does it do?',
+      activeFile: { fileId: 'file:src/Main.st', path: 'src/Main.st' },
+    });
+  });
+});
+
 const sample = (uptimeMs: number, cycles: number, over: Record<string, unknown> = {}) => ({
   source: 'native',
   uptimeMs,

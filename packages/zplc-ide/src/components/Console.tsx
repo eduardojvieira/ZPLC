@@ -37,7 +37,11 @@ import { shownProjectBridge } from '../ipc/shownProjectBridge';
 import { trackTestRun } from './workspaceTestNotifications';
 import { useIDEStore } from '../store/useIDEStore';
 import { useConsoleState } from '../store/regionSubscriptions';
-import { isCandidateSTPath, sha256Text } from './candidateSources';
+import { sha256Text } from './candidateSources';
+import { isCandidateSourcePath } from '../ai/candidatePaths';
+import { presentAgentResponse } from './agent/agentResponse';
+import { AgentProposals } from './agent/AgentProposals';
+import { changeSetIsCurrent, reviewChangeSet, saveChangeSet } from './agent/changeSetReview';
 import type { ConsoleTab } from '../types';
 import { TerminalTab } from './TerminalTab';
 import { WatchTab } from './WatchTab';
@@ -68,7 +72,6 @@ import { useProjectBlocks } from '../editors/useProjectBlocks';
 import {
   presentAiProviderConfig,
   presentAiProviderMutation,
-  presentAiProviderResponse,
   presentAiProviderStatus,
   type AiProviderMode,
   type AiProviderStatusPresentation,
@@ -141,7 +144,6 @@ export function Console({ debugController }: ConsoleProps) {
     saveAllFiles,
     saveProjectConfig,
     saveFile,
-    updateFileContent,
   } = useConsoleState();
   // a request for a view that left this panel (the explorer, the inspector, the lessons) is shown by the sidebars; this panel keeps its own
   // tab
@@ -207,21 +209,23 @@ export function Console({ debugController }: ConsoleProps) {
     isProjectOpen &&
     hasCurrentWorkspaceLink &&
     activeFile &&
-    activeFile.language === 'ST' &&
-    isCandidateSTPath(activeFile.path) &&
+    isCandidateSourcePath(activeFile.path) &&
     activeFile.isModified &&
     activeFile.handle,
   );
+  // an assistant's change set is bound to its own files; the person's buffer review to the active file
   const candidateReviewStateForCurrent =
     candidateReviewState.kind === 'result' &&
-    (candidateReviewState.snapshot.projectSession !== projectSession ||
-      candidateReviewState.snapshot.compilerRunId !== compilerRunId ||
-      candidateReviewState.snapshot.workspaceId !== workspaceScenarioLink?.workspaceId ||
-      candidateReviewState.snapshot.fileId !== activeFileId ||
-      candidateReviewState.snapshot.path !== activeFile?.path ||
-      candidateReviewState.snapshot.editorContent !== activeFile?.content ||
-      candidateReviewState.snapshot.handle !== activeFile?.handle ||
-      (candidateReviewState.snapshot.origin === 'manual' ? !activeFile?.isModified : activeFile?.isModified))
+    ('files' in candidateReviewState.snapshot
+      ? !changeSetIsCurrent(candidateReviewState.snapshot, useIDEStore.getState())
+      : candidateReviewState.snapshot.projectSession !== projectSession ||
+        candidateReviewState.snapshot.compilerRunId !== compilerRunId ||
+        candidateReviewState.snapshot.workspaceId !== workspaceScenarioLink?.workspaceId ||
+        candidateReviewState.snapshot.fileId !== activeFileId ||
+        candidateReviewState.snapshot.path !== activeFile?.path ||
+        candidateReviewState.snapshot.editorContent !== activeFile?.content ||
+        candidateReviewState.snapshot.handle !== activeFile?.handle ||
+        !activeFile?.isModified)
       ? ({ kind: 'stale' } as CandidateReviewState)
       : candidateReviewState;
   useEffect(() => {
@@ -494,7 +498,7 @@ export function Console({ debugController }: ConsoleProps) {
       file?.path === snapshot.path &&
       file.content === snapshot.editorContent &&
       file.handle === snapshot.handle &&
-      (snapshot.origin === 'manual' ? file.isModified : !file.isModified)
+      file.isModified
     );
   };
 
@@ -509,8 +513,7 @@ export function Console({ debugController }: ConsoleProps) {
       !file ||
       !file.handle ||
       !file.isModified ||
-      file.language !== 'ST' ||
-      !isCandidateSTPath(file.path) ||
+      !isCandidateSourcePath(file.path) ||
       workspaceTestBusy ||
       !current.isProjectOpen ||
       !link ||
@@ -575,6 +578,17 @@ export function Console({ debugController }: ConsoleProps) {
     if (candidateReviewBusy.current || candidateReviewState.kind !== 'result' || candidateReviewState.presentation.kind !== 'accepted')
       return;
     const { snapshot } = candidateReviewState;
+    if ('files' in snapshot) {
+      // the assistant's change set: the person's click is the only thing that writes it
+      candidateReviewBusy.current = true;
+      setWorkspaceTestBusy(true);
+      setCandidateReviewState({ kind: 'saving' });
+      const saved = await saveChangeSet(snapshot, useIDEStore.getState);
+      setCandidateReviewState({ kind: saved === 'saved' ? 'saved' : saved });
+      candidateReviewBusy.current = false;
+      setWorkspaceTestBusy(false);
+      return;
+    }
     if (!candidateSnapshotIsCurrent(snapshot)) {
       setCandidateReviewState({ kind: 'stale' });
       return;
@@ -587,14 +601,6 @@ export function Console({ debugController }: ConsoleProps) {
       if (diskHash !== snapshot.beforeSha256 || !candidateSnapshotIsCurrent(snapshot)) {
         setCandidateReviewState({ kind: 'stale' });
         return;
-      }
-      if (snapshot.origin === 'agent') {
-        updateFileContent(snapshot.fileId, snapshot.candidate);
-        const changed = useIDEStore.getState().loadedFiles.get(snapshot.fileId);
-        if (!changed || changed.content !== snapshot.candidate || !changed.isModified) {
-          setCandidateReviewState({ kind: 'stale' });
-          return;
-        }
       }
       if (await saveFile(snapshot.fileId)) setCandidateReviewState({ kind: 'saved' });
       else setCandidateReviewState({ kind: 'error' });
@@ -626,10 +632,9 @@ export function Console({ debugController }: ConsoleProps) {
     }
   }, [aiProvider, setAgentState, setAgentStatus, setAgentConfig]);
 
-  const agentEditFile =
-    activeFile && activeFile.language === 'ST' && isCandidateSTPath(activeFile.path) && activeFile.handle && !activeFile.isModified
-      ? activeFile
-      : undefined;
+  // the open program, in any of the five languages, goes with a request in every mode; an edit also needs it saved and unmodified
+  const agentContextFile = activeFile && isCandidateSourcePath(activeFile.path) && activeFile.handle ? activeFile : undefined;
+  const agentEditFile = agentContextFile && !agentContextFile.isModified ? agentContextFile : undefined;
   const agentBusy = agentState === 'sending' || agentState === 'cancelling';
   const agentProposalCurrent =
     typeof agentState === 'object' &&
@@ -680,11 +685,12 @@ export function Console({ debugController }: ConsoleProps) {
     setCandidateReviewState((state) => (state.kind === 'result' ? { kind: 'stale' } : state));
     setAgentState('sending');
     try {
+      const sentFile = agentMode === 'edit' ? file : file && isCandidateSourcePath(file.path) && file.handle ? file : undefined;
       const request = {
         workspaceId: link.workspaceId,
         mode: agentMode,
         prompt: agentPrompt.trim(),
-        ...(agentMode === 'edit' && file ? { activeFile: { fileId: file.id, path: file.path } } : {}),
+        ...(sentFile ? { activeFile: { fileId: sentFile.id, path: sentFile.path } } : {}),
         ...(agentMode === 'debug' ? { diagnostics: agentDiagnostics, trace: agentTrace } : {}),
       };
       const response = await aiProvider.request(request);
@@ -714,7 +720,15 @@ export function Console({ debugController }: ConsoleProps) {
               baselineSha256,
             }
           : undefined;
-      const presentation = presentAiProviderResponse(response, expectedEdit);
+      const sent = sentFile
+        ? {
+            workspaceId: link.workspaceId,
+            fileId: sentFile.id,
+            path: sentFile.path,
+            ...(baselineSha256 ? { baselineSha256 } : {}),
+          }
+        : undefined;
+      const presentation = presentAgentResponse(response, sent);
       setAgentState({ kind: 'response', presentation, ...(expectedEdit ? { expectedEdit } : {}) });
     } catch {
       setAgentState('error');
@@ -724,32 +738,21 @@ export function Console({ debugController }: ConsoleProps) {
   const reviewAgentProposal = async () => {
     const current = useIDEStore.getState();
     const link = current.workspaceScenarioLink;
-    const file = current.activeFileId ? current.loadedFiles.get(current.activeFileId) : undefined;
     const response = typeof agentState === 'object' && agentState.kind === 'response' ? agentState : undefined;
     const expectedEdit = response?.expectedEdit;
+    const changes = response?.presentation.kind === 'answer' ? response.presentation.changes : undefined;
     if (
       !candidateChangeSet ||
       !workspaceTests ||
       candidateReviewBusy.current ||
-      !response ||
-      response.presentation.kind !== 'answer' ||
-      !response.presentation.replacement ||
+      !changes ||
       !expectedEdit ||
-      !file ||
-      !file.handle ||
-      file.isModified ||
-      file.language !== 'ST' ||
-      !isCandidateSTPath(file.path) ||
       !link ||
       link.projectSession !== current.projectSession ||
       workspaceTestBusy ||
       expectedEdit.projectSession !== current.projectSession ||
       expectedEdit.compilerRunId !== current.compilerRunId ||
-      expectedEdit.workspaceId !== link.workspaceId ||
-      expectedEdit.fileId !== file.id ||
-      expectedEdit.path !== file.path ||
-      expectedEdit.content !== file.content ||
-      expectedEdit.handle !== file.handle
+      expectedEdit.workspaceId !== link.workspaceId
     )
       return;
     const generation = ++candidateReviewGeneration.current;
@@ -757,39 +760,14 @@ export function Console({ debugController }: ConsoleProps) {
     setWorkspaceTestBusy(true);
     setCandidateReviewState({ kind: 'running' });
     try {
-      const baseline = await readFileContent(file.handle);
-      const [beforeSha256, afterSha256] = await Promise.all([sha256Text(baseline), sha256Text(response.presentation.replacement.content)]);
-      if (
-        baseline !== file.content ||
-        beforeSha256 !== expectedEdit.baselineSha256 ||
-        generation !== candidateReviewGeneration.current ||
-        file.content !== useIDEStore.getState().loadedFiles.get(file.id)?.content ||
-        beforeSha256 !== (await sha256Text(file.content))
-      ) {
-        setCandidateReviewState({ kind: 'stale' });
-        return;
-      }
-      const snapshot: CandidateReviewSnapshot = {
-        origin: 'agent',
-        projectSession: current.projectSession,
-        compilerRunId: current.compilerRunId,
+      // every file of the proposal is read from the disk and checked against what the host read, then the whole set is reviewed on a copy
+      const outcome = await reviewChangeSet(changes, {
         workspaceId: link.workspaceId,
-        fileId: file.id,
-        path: file.path,
-        editorContent: file.content,
-        candidate: response.presentation.replacement.content,
-        handle: file.handle,
-        beforeSha256,
-        afterSha256,
-        baseline,
-      };
-      if (!candidateSnapshotIsCurrent(snapshot)) return;
-      const result = await candidateChangeSet.review({
-        workspaceId: snapshot.workspaceId,
-        edit: { path: snapshot.path, content: snapshot.candidate },
+        bridge: candidateChangeSet,
+        getState: useIDEStore.getState,
+        isCurrent: () => generation === candidateReviewGeneration.current,
       });
-      if (generation !== candidateReviewGeneration.current || !candidateSnapshotIsCurrent(snapshot)) return;
-      setCandidateReviewState({ kind: 'result', snapshot, presentation: presentCandidateChangeSetReview(result, snapshot) });
+      if (generation === candidateReviewGeneration.current) setCandidateReviewState(outcome);
     } catch {
       if (generation === candidateReviewGeneration.current) setCandidateReviewState({ kind: 'error' });
     } finally {
@@ -1212,6 +1190,10 @@ export function Console({ debugController }: ConsoleProps) {
               </div>
               <div role="status" aria-live="polite" className="mt-3">
                 {candidateReviewStateForCurrent.kind === 'matches-disk' && <p>{t('console.theActiveBufferMatches')}</p>}
+                {candidateReviewStateForCurrent.kind === 'no-change' && <p>{t('console.proposalNoChange')}</p>}
+                {candidateReviewStateForCurrent.kind === 'unsaved' && (
+                  <p>{t('console.proposalUnsaved', { path: candidateReviewStateForCurrent.path })}</p>
+                )}
                 {candidateReviewStateForCurrent.kind === 'running' && (
                   <p className="flex items-center gap-2">
                     <LoaderCircle size={15} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
@@ -1326,17 +1308,19 @@ export function Console({ debugController }: ConsoleProps) {
                   <ul className="mt-1 list-disc space-y-1 pl-4">
                     <li>{t('console.modePromptLength', { agentMode, length: agentPrompt.trim().length })}</li>
                     <li>{hasCurrentWorkspaceLink ? t('console.workspaceLinkedSavedWorkspace') : t('console.workspaceChooseZplcJson')}</li>
-                    {agentMode === 'edit' && (
-                      <li>
-                        {agentEditFile
+                    <li>
+                      {agentMode === 'edit'
+                        ? agentEditFile
                           ? t('console.hostWillRereadSaved', { path: agentEditFile.path })
-                          : t('console.editRequiresTheActive')}
-                      </li>
-                    )}
+                          : t('console.editRequiresTheActive')
+                        : agentContextFile
+                          ? t('console.hostWillRereadSaved', { path: agentContextFile.path })
+                          : t('console.noProgramOpen')}
+                    </li>
+                    <li>{t('console.projectSummarySent')}</li>
                     {agentMode === 'debug' && (
                       <li>{t('console.boundedDiagnosticsHostTrace', { length: agentDiagnostics.length, length2: agentTrace.length })}</li>
                     )}
-                    {(agentMode === 'ask' || agentMode === 'plan') && <li>{t('console.noSourceFileOr')}</li>}
                     <li>{t('console.doNotPutSecrets')}</li>
                   </ul>
                 </section>
@@ -1370,15 +1354,43 @@ export function Console({ debugController }: ConsoleProps) {
                 {typeof agentState === 'object' && agentState.kind === 'response' && (
                   <section className="space-y-2 border-t border-[var(--color-surface-600)] pt-2">
                     <p className="whitespace-pre-wrap text-[var(--color-surface-100)]">
-                      {agentState.presentation.kind === 'answer'
+                      {agentState.presentation.kind === 'answer' || agentState.presentation.kind === 'refused'
                         ? agentState.presentation.answer
                         : agentState.presentation.kind === 'error'
                           ? t('console.providerRequestFailed', { code: agentState.presentation.code })
                           : t('console.providerResponseCouldNot')}
                     </p>
                     <p className="text-xs text-[var(--color-surface-400)]">{t('console.providerResponseNotEvidence2')}</p>
+                    {agentState.presentation.kind === 'refused' && (
+                      <div role="alert" className="text-xs text-[var(--color-accent-yellow)]">
+                        <p>
+                          {agentState.presentation.reason === 'sensitive-field'
+                            ? t('console.proposalRefusedSensitive', { path: agentState.presentation.path })
+                            : t('console.proposalRefusedInvalid', { path: agentState.presentation.path })}
+                        </p>
+                        {agentState.presentation.violations.length > 0 && (
+                          <ul className="list-disc pl-4">
+                            {agentState.presentation.violations.map((violation) => (
+                              <li key={violation}>{violation}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                    {agentState.presentation.kind === 'answer' && agentState.presentation.proposals && (
+                      <AgentProposals proposals={agentState.presentation.proposals} />
+                    )}
+                    {agentState.presentation.kind === 'answer' && agentState.presentation.changes && (
+                      <ul aria-label={t('console.proposedFiles')} className="list-disc pl-4 text-xs text-[var(--color-surface-300)]">
+                        {agentState.presentation.changes.map((change) => (
+                          <li key={change.path}>
+                            {change.path} · {change.kind === 'create' ? t('console.newFile') : t('console.changedFile')}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                     {agentState.presentation.kind === 'answer' &&
-                      agentState.presentation.replacement &&
+                      agentState.presentation.changes &&
                       (agentProposalCurrent ? (
                         <Button
                           variant="secondary"
@@ -1389,7 +1401,7 @@ export function Console({ debugController }: ConsoleProps) {
                           disabled={workspaceTestBusy || !agentEditFile}
                         >
                           <FileDiff size={14} aria-hidden="true" />
-                          {t('console.reviewProposedStChange')}
+                          {t('console.reviewProposedChange')}
                         </Button>
                       ) : (
                         <p role="status" className="text-xs text-[var(--color-accent-yellow)]">

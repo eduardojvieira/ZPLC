@@ -222,7 +222,7 @@ describe('optional AI provider (IDE-030)', () => {
                 message: {
                   content: JSON.stringify({
                     answer: 'Done',
-                    replacement: { path: 'src/Main.st', content: 'PROGRAM Main\nEND_PROGRAM\n// fixed\n' },
+                    changes: [{ path: 'src/Main.st', content: 'PROGRAM Main\nEND_PROGRAM\n// fixed\n' }],
                   }),
                 },
               },
@@ -237,10 +237,11 @@ describe('optional AI provider (IDE-030)', () => {
     expect(result).toMatchObject({
       ok: true,
       answer: 'Done',
-      replacement: { path: 'src/Main.st' },
+      changes: [{ path: 'src/Main.st', kind: 'modify', baselineSha256: expect.stringMatching(/^[0-9a-f]{64}$/) }],
       fileId: 'file:src/Main.st',
       baselineSha256: expect.stringMatching(/^[0-9a-f]{64}$/),
     });
+    expect((result as { changes: Array<{ content: string }> }).changes[0]!.content).toContain('// fixed');
     expect(String(seen?.body)).toContain('"stream":false');
     expect(String(seen?.body)).toContain('Never claim hardware action');
     expect(String(seen?.body)).not.toContain('tool_choice');
@@ -248,7 +249,7 @@ describe('optional AI provider (IDE-030)', () => {
     expect((seen?.headers as Record<string, string>).Authorization).toBe('Bearer secret');
   });
 
-  it('rejects provider tool calls, extra replacement fields, and over-limit streamed data', async () => {
+  it('rejects provider tool calls, extra change fields, and over-limit streamed data', async () => {
     const directory = await fixture();
     const setup = async (body: string) => {
       const provider = createAiProvider({ userDataPath: directory, vault: vault(), fetch: async () => new Response(body) });
@@ -264,7 +265,7 @@ describe('optional AI provider (IDE-030)', () => {
     const invalid = await setup(
       JSON.stringify({
         choices: [
-          { message: { content: JSON.stringify({ answer: 'x', replacement: { path: 'src/Main.st', content: 'changed', extra: true } }) } },
+          { message: { content: JSON.stringify({ answer: 'x', changes: [{ path: 'src/Main.st', content: 'changed', extra: true }] }) } },
         ],
       }),
     );
@@ -378,5 +379,336 @@ describe('optional AI provider (IDE-030)', () => {
     expect((await lstat(join(directory, 'ai-provider.json'))).mode & 0o077).toBe(0);
     expect(await provider.storeKey('bad key')).toEqual({ ok: false, code: 'AI_CONTEXT_REJECTED' });
     expect(await provider.storeKey('bad\nkey')).toEqual({ ok: false, code: 'AI_CONTEXT_REJECTED' });
+  });
+
+  describe('read in every mode, in the five languages (S4)', () => {
+    async function configured(directory: string, fetchImpl: (url: string, init: RequestInit) => Promise<Response>) {
+      const provider = createAiProvider({ userDataPath: directory, vault: vault(), fetch: fetchImpl });
+      await provider.saveConfig({ enabled: true, endpoint: 'https://api.example.test', model: 'gpt-test' });
+      await provider.storeKey('secret');
+      return provider;
+    }
+    const reply = (content: unknown) =>
+      new Response(
+        JSON.stringify({ choices: [{ message: { content: typeof content === 'string' ? content : JSON.stringify(content) } }] }),
+      );
+    const sent = (init?: RequestInit) => {
+      const messages = (JSON.parse(String(init?.body)) as { messages: Array<{ content: string }> }).messages;
+      return JSON.parse(messages[1]!.content) as Record<string, unknown>;
+    };
+    const ladder = '{"name":"Lamp","variables":{"local":[],"outputs":[]},"rungs":[]}\n';
+
+    it('sends the open program of every language in every mode, with its language', async () => {
+      const directory = await fixture();
+      const root = join(directory, 'workspace');
+      const files: Record<string, string> = {
+        'Main.il': 'LD 1\nST Q\n',
+        'Lamp.ld.json': ladder,
+        'Flow.fbd.json': '{"name":"Flow"}',
+        'Seq.sfc.json': '{"name":"Seq"}',
+      };
+      for (const [name, text] of Object.entries(files)) await writeFile(join(root, 'src', name), text);
+      let seen: RequestInit | undefined;
+      const provider = await configured(directory, async (_url, init) => {
+        seen = init;
+        return reply('ok');
+      });
+      for (const mode of ['ask', 'plan', 'edit', 'debug'] as const)
+        for (const [name, text] of Object.entries(files)) {
+          const path = `src/${name}`;
+          const answer = await provider.request(
+            root,
+            { workspaceId: request.workspaceId, mode, prompt: 'Explain', activeFile: { fileId: `file:${path}`, path } },
+            new AbortController().signal,
+          );
+          expect(answer, `${mode} ${path}`).toMatchObject({ ok: true, answer: 'ok', path, fileId: `file:${path}` });
+          expect(sent(seen).activeFile).toEqual({
+            path,
+            language: path.endsWith('.il') ? 'IL' : path.endsWith('.ld.json') ? 'LD' : path.endsWith('.fbd.json') ? 'FBD' : 'SFC',
+            source: text,
+          });
+        }
+    });
+
+    it('answers without the open program, and without failing, when a non-edit request names one it may not send', async () => {
+      const directory = await fixture();
+      const root = join(directory, 'workspace');
+      await writeFile(join(root, 'src', 'Main.st'), "api_key := 'secret';");
+      let seen: RequestInit | undefined;
+      const provider = await configured(directory, async (_url, init) => {
+        seen = init;
+        return reply('ok');
+      });
+      const answer = await provider.request(root, { ...request, mode: 'ask' }, new AbortController().signal);
+      expect(answer).toEqual({ ok: true, answer: 'ok' });
+      expect(sent(seen).activeFile).toBeUndefined();
+      expect(String(seen?.body)).not.toContain('secret');
+    });
+
+    it('sends the list of programs and tasks and the manifest without a sensitive field, and none of the values', async () => {
+      const directory = await fixture();
+      const root = join(directory, 'workspace');
+      await writeFile(join(root, 'src', 'Lamp.ld.json'), ladder);
+      await writeFile(join(root, 'src', 'globals.gvl'), 'VAR_GLOBAL END_VAR');
+      await writeFile(
+        join(root, 'zplc.json'),
+        JSON.stringify({
+          name: 'Plant',
+          version: '1.0.0',
+          tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }],
+          network: { wifi: { ssid: 'lab', password: 'hunter2-wifi' } },
+          communication: { mqtt: { broker: 'b.example', password: 'hunter2-mqtt', clientKeyPath: '/home/me/key.pem' } },
+        }),
+      );
+      let seen: RequestInit | undefined;
+      const provider = await configured(directory, async (_url, init) => {
+        seen = init;
+        return reply('ok');
+      });
+      await provider.request(root, { workspaceId: request.workspaceId, mode: 'plan', prompt: 'Review' }, new AbortController().signal);
+      const context = sent(seen) as { project: { programs: unknown[]; tasks: unknown[]; manifest: Record<string, unknown> } };
+      expect(context.project.programs).toEqual([
+        { path: 'src/Lamp.ld.json', language: 'LD' },
+        { path: 'src/Main.st', language: 'ST' },
+      ]);
+      expect(context.project.tasks).toEqual([{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }]);
+      expect(context.project.manifest.name).toBe('Plant');
+      for (const text of ['hunter2-wifi', 'hunter2-mqtt', 'key.pem', 'password', 'clientKeyPath'])
+        expect(JSON.stringify(context)).not.toContain(text);
+    });
+
+    it('sends a project without a readable manifest as its list of programs, and never reads a symlinked manifest', async () => {
+      const directory = await fixture();
+      const root = join(directory, 'workspace');
+      await writeFile(join(directory, 'outside.json'), '{"name":"Outside","tasks":[]}');
+      await symlink(join(directory, 'outside.json'), join(root, 'zplc.json'));
+      let seen: RequestInit | undefined;
+      const provider = await configured(directory, async (_url, init) => {
+        seen = init;
+        return reply('ok');
+      });
+      await provider.request(root, { workspaceId: request.workspaceId, mode: 'ask', prompt: 'Hi' }, new AbortController().signal);
+      expect((sent(seen) as { project: unknown }).project).toEqual({ programs: [{ path: 'src/Main.st', language: 'ST' }] });
+      expect(String(seen?.body)).not.toContain('Outside');
+    });
+  });
+
+  describe('write: one candidate change set (S5)', () => {
+    async function configured(directory: string, content: unknown) {
+      const provider = createAiProvider({
+        userDataPath: directory,
+        vault: vault(),
+        fetch: async () => new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(content) } }] })),
+      });
+      await provider.saveConfig({ enabled: true, endpoint: 'https://api.example.test', model: 'gpt-test' });
+      await provider.storeKey('secret');
+      return provider;
+    }
+    const manifest = JSON.stringify({ name: 'Plant', version: '1.0.0', tasks: [{ name: 'Main', programs: ['Main.st'] }] });
+    const ask = (directory: string, provider: Awaited<ReturnType<typeof configured>>, over: Record<string, unknown> = {}) =>
+      provider.request(join(directory, 'workspace'), { ...request, ...over }, new AbortController().signal);
+
+    it('returns a replacement, a new program and a manifest change, each with what it replaces', async () => {
+      const directory = await fixture();
+      await writeFile(join(directory, 'workspace', 'zplc.json'), manifest);
+      const next = JSON.stringify({ name: 'Plant', version: '1.0.0', tasks: [{ name: 'Main', programs: ['Main.st', 'Lamp.ld.json'] }] });
+      const provider = await configured(directory, {
+        answer: 'Added a lamp',
+        changes: [
+          { path: 'src/Main.st', content: 'PROGRAM Main\nEND_PROGRAM\n// x\n' },
+          { path: 'src/Lamp.ld.json', content: '{"name":"Lamp"}' },
+          { path: 'zplc.json', content: next },
+        ],
+      });
+      const answer = (await ask(directory, provider)) as { ok: boolean; changes: Array<Record<string, unknown>> };
+      expect(answer.ok).toBe(true);
+      expect(answer.changes.map(({ path, kind }) => [path, kind])).toEqual([
+        ['src/Main.st', 'modify'],
+        ['src/Lamp.ld.json', 'create'],
+        ['zplc.json', 'modify'],
+      ]);
+      expect(answer.changes[0]!.baselineSha256).toMatch(/^[0-9a-f]{64}$/);
+      expect(answer.changes[1]).not.toHaveProperty('baselineSha256');
+      expect(answer.changes[2]!.content).toBe(next);
+    });
+
+    it('refuses, as an invalid response, every change set that is not one', async () => {
+      const directory = await fixture();
+      await writeFile(join(directory, 'workspace', 'zplc.json'), manifest);
+      await writeFile(join(directory, 'workspace', 'src', 'Pump.ST.bak'), 'x');
+      const file = (name: string) => ({ path: `src/${name}`, content: 'PROGRAM A\nEND_PROGRAM\n' });
+      const cases: Array<[string, unknown]> = [
+        ['over the cap', ['A.st', 'B.st', 'C.st', 'D.st', 'E.st'].map(file)],
+        ['empty', []],
+        ['the same file twice', [file('A.st'), file('A.st')]],
+        ['the same file by case', [file('A.st'), file('a.st')]],
+        ['a path outside src', [{ path: 'src/sub/A.st', content: 'x' }]],
+        ['a scenario', [{ path: 'tests/a.scenario.json', content: '{}' }]],
+        ['a traversal', [{ path: 'src/../zplc.json', content: '{}' }]],
+        ['an empty file', [{ path: 'src/A.st', content: '' }]],
+        ['a file that does not change', [{ path: 'src/Main.st', content: 'PROGRAM Main\nEND_PROGRAM\n' }]],
+        ['a manifest that is not JSON', [{ path: 'zplc.json', content: '{' }]],
+        ['a manifest that is not an object', [{ path: 'zplc.json', content: '[]' }]],
+        [
+          'a manifest with a password',
+          [{ path: 'zplc.json', content: JSON.stringify({ name: 'P', network: { wifi: { password: 'x' } } }) }],
+        ],
+        [
+          'a manifest with a key path',
+          [{ path: 'zplc.json', content: JSON.stringify({ name: 'P', communication: { mqtt: { clientKeyPath: '/k' } } }) }],
+        ],
+      ];
+      for (const [label, changes] of cases) {
+        const provider = await configured(directory, { answer: 'x', changes });
+        expect(await ask(directory, provider), label).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+      }
+    });
+
+    it('refuses a new program whose name an existing file already takes, by case or as the same ladder', async () => {
+      const directory = await fixture();
+      await writeFile(join(directory, 'workspace', 'src', 'Lamp.ld.json'), '{"name":"Lamp"}');
+      for (const path of ['src/lamp.ld.json', 'src/MAIN.st']) {
+        const provider = await configured(directory, { answer: 'x', changes: [{ path, content: 'PROGRAM A\nEND_PROGRAM\n' }] });
+        expect(await ask(directory, provider), path).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+      }
+    });
+
+    it('classifies a file by what is on the disk, not by the capped list of the summary, and refuses a link', async () => {
+      const directory = await fixture();
+      const src = join(directory, 'workspace', 'src');
+      for (let index = 0; index < 130; index += 1)
+        await writeFile(join(src, `P${String(index).padStart(3, '0')}.st`), 'PROGRAM A\nEND_PROGRAM\n');
+      await writeFile(join(src, 'Zeta.st'), 'PROGRAM Zeta\nEND_PROGRAM\n');
+      await writeFile(join(directory, 'outside.st'), 'PROGRAM Out\nEND_PROGRAM\n');
+      await symlink(join(directory, 'outside.st'), join(src, 'Zlink.st'));
+      const beyond = await configured(directory, {
+        answer: 'x',
+        changes: [{ path: 'src/Zeta.st', content: 'PROGRAM Zeta\nEND_PROGRAM\n// y\n' }],
+      });
+      expect(await ask(directory, beyond)).toMatchObject({
+        ok: true,
+        changes: [{ path: 'src/Zeta.st', kind: 'modify', baselineSha256: expect.any(String) }],
+      });
+      const clash = await configured(directory, { answer: 'x', changes: [{ path: 'src/zeta.st', content: 'PROGRAM A\nEND_PROGRAM\n' }] });
+      expect(await ask(directory, clash)).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+      const link = await configured(directory, { answer: 'x', changes: [{ path: 'src/Zlink.st', content: 'PROGRAM A\nEND_PROGRAM\n' }] });
+      expect(await ask(directory, link)).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+      const fresh = await configured(directory, { answer: 'x', changes: [{ path: 'src/Znew.st', content: 'PROGRAM A\nEND_PROGRAM\n' }] });
+      expect(await ask(directory, fresh)).toMatchObject({ ok: true, changes: [{ path: 'src/Znew.st', kind: 'create' }] });
+    });
+
+    it('accepts a change set only in edit mode', async () => {
+      const directory = await fixture();
+      const provider = await configured(directory, {
+        answer: 'x',
+        changes: [{ path: 'src/Main.st', content: 'PROGRAM Main\nEND_PROGRAM\n// y\n' }],
+      });
+      for (const mode of ['ask', 'plan', 'debug'] as const)
+        expect(await ask(directory, provider, { mode }), mode).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+    });
+
+    it('still takes a plain explanation, and the old single replacement is no longer a field', async () => {
+      const directory = await fixture();
+      const plain = await configured(directory, { answer: 'Only words' });
+      expect(await ask(directory, plain)).toMatchObject({ ok: true, answer: 'Only words' });
+      const old = await configured(directory, { answer: 'x', replacement: { path: 'src/Main.st', content: 'y' } });
+      expect(await ask(directory, old)).toEqual({ ok: false, code: 'AI_RESPONSE_INVALID' });
+    });
+  });
+
+  describe('editor actions and display settings as proposals (S6, S7)', () => {
+    async function configured(directory: string, content: unknown) {
+      const provider = createAiProvider({
+        userDataPath: directory,
+        vault: vault(),
+        fetch: async () => new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(content) } }] })),
+      });
+      await provider.saveConfig({ enabled: true, endpoint: 'https://api.example.test', model: 'gpt-test' });
+      await provider.storeKey('secret');
+      return provider;
+    }
+    const proposals = [
+      { type: 'openFile', path: 'src/Main.st' },
+      { type: 'goToLine', path: 'src/Main.st', line: 2 },
+      { type: 'compile' },
+      { type: 'setting', name: 'theme', value: 'dark' },
+    ];
+
+    it('returns the proposals of an answer in every mode, bounded and validated', async () => {
+      const directory = await fixture();
+      const provider = await configured(directory, { answer: 'Open it and compile', proposals });
+      for (const mode of ['ask', 'plan', 'edit', 'debug'] as const) {
+        const answer = await provider.request(
+          join(directory, 'workspace'),
+          { ...request, mode, ...(mode === 'edit' ? {} : { activeFile: request.activeFile }) },
+          new AbortController().signal,
+        );
+        expect(answer, mode).toMatchObject({ ok: true, answer: 'Open it and compile', proposals });
+      }
+    });
+
+    it('takes proposals together with a change set', async () => {
+      const directory = await fixture();
+      const provider = await configured(directory, {
+        answer: 'x',
+        changes: [{ path: 'src/Main.st', content: 'PROGRAM Main\nEND_PROGRAM\n// z\n' }],
+        proposals: [{ type: 'compile' }],
+      });
+      expect(await provider.request(join(directory, 'workspace'), request, new AbortController().signal)).toMatchObject({
+        ok: true,
+        changes: [{ path: 'src/Main.st' }],
+        proposals: [{ type: 'compile' }],
+      });
+    });
+
+    it('refuses an answer that proposes anything physical, a setting out of reach, too many, or a tool call', async () => {
+      const directory = await fixture();
+      for (const bad of [
+        [{ type: 'deploy' }],
+        [{ type: 'setting', name: 'autosaveSeconds', value: 5 }],
+        [{ type: 'setting', name: 'unlockAllLessons', value: true }],
+        [{ type: 'setting', name: 'theme', value: 'neon' }],
+        [{ type: 'openFile', path: 'zplc.json' }],
+        Array.from({ length: 7 }, () => ({ type: 'compile' })),
+        [],
+      ]) {
+        const provider = await configured(directory, { answer: 'x', proposals: bad });
+        expect(await provider.request(join(directory, 'workspace'), request, new AbortController().signal), JSON.stringify(bad)).toEqual({
+          ok: false,
+          code: 'AI_RESPONSE_INVALID',
+        });
+      }
+      const tools = await configured(directory, { answer: 'x', tool_calls: [{ name: 'deploy' }] });
+      expect(await tools.request(join(directory, 'workspace'), request, new AbortController().signal)).toEqual({
+        ok: false,
+        code: 'AI_RESPONSE_INVALID',
+      });
+    });
+
+    it('sends no application setting and no provider configuration to the provider', async () => {
+      const directory = await fixture();
+      let body = '';
+      const provider = createAiProvider({
+        userDataPath: directory,
+        vault: vault(),
+        fetch: async (_url, init) => {
+          body = String(init.body);
+          return new Response(JSON.stringify({ choices: [{ message: { content: 'ok' } }] }));
+        },
+      });
+      await provider.saveConfig({ enabled: true, endpoint: 'https://api.example.test', model: 'gpt-test' });
+      await provider.storeKey('secret-key-value');
+      await provider.request(join(directory, 'workspace'), request, new AbortController().signal);
+      const user = (JSON.parse(body) as { messages: Array<{ content: string }> }).messages[1]!.content;
+      for (const forbidden of [
+        'autosaveSeconds',
+        'checkForUpdates',
+        'unlockAllLessons',
+        'hideSolutions',
+        'secret-key-value',
+        'api.example.test',
+      ])
+        expect(user).not.toContain(forbidden);
+    });
   });
 });

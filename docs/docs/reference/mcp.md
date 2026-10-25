@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/mcp. Do not edit. >>> */}
 
-`zplc-mcp` is a local server of the Model Context Protocol over standard input and output. It exposes 15 tools and 13 resources for one workspace. Every tool is read-only except `firmware_build`, which runs a local ephemeral cross-build: no tool flashes, deploys, forces, starts, stops or opens a serial port or a shell. The results are evidence of a recorded host run, not of hardware.
+`zplc-mcp` is a local server of the Model Context Protocol over standard input and output. It exposes 15 tools and 15 resources for one workspace. Every tool is read-only except `firmware_build`, which runs a local ephemeral cross-build: no tool flashes, deploys, forces, starts, stops or opens a serial port or a shell. The results are evidence of a recorded host run, not of hardware.
 
 This table is read off the source file `packages/zplc-ide/src/mcp/server.ts`; its text is the source's own, so it is the same in English and in Spanish.
 
@@ -48,6 +48,7 @@ The server speaks protocol revision 2026-07-28 and no older one: its entry point
 | Resource | Kind |
 | --- | --- |
 | `zplc://project/manifest` | fixed |
+| `zplc://project/programs` | fixed |
 | `zplc://project/symbols` | fixed |
 | `zplc://project/io-map` | fixed |
 | `zplc://project/diagnostics` | fixed |
@@ -58,6 +59,7 @@ The server speaks protocol revision 2026-07-28 and no older one: its entry point
 | `zplc://docs/evidence` | fixed |
 | `zplc://docs/safety` | fixed |
 | `zplc://docs/testing` | fixed |
+| `zplc://project/source/{name}` | template |
 | `zplc://runtime/trace/{scenarioId}` | template |
 | `zplc://runtime/snapshot/{scenarioId}/{cursor}/{traceSha256}` | template |
 

@@ -10,7 +10,7 @@ tags: [how-to, ai, mcp, safety]
 # Usar un asistente de IA y MCP con seguridad
 
 `zplc-mcp` es un servidor local del Model Context Protocol. Permite que un asistente de
-IA inspeccione un proyecto, lo compile, ejecute sus pruebas de escenario y lea la
+IA inspeccione un proyecto, lea el código fuente de sus programas, lo compile, ejecute sus pruebas de escenario y lea la
 evidencia, de modo que el asistente trabaje con lo que dicen la compilación y el
 simulador y no con una conjetura. Se ejecuta en su computadora y habla con el asistente
 por la entrada y la salida estándar; no abre ningún puerto de red ni serie.
@@ -115,21 +115,22 @@ actualizarse es el cliente; el servidor no cambia.
 Pida lo que devuelve una herramienta, de modo que cada afirmación del asistente tenga un
 resultado detrás:
 
-| Pida                                   | Herramienta                      | Qué devuelve                                                     |
-| -------------------------------------- | -------------------------------- | ---------------------------------------------------------------- |
-| «¿Es válido este archivo de proyecto?» | `project_validate`               | `ok` y los diagnósticos                                          |
-| «¿Compila y qué necesita?»             | `compiler_check`, `symbols_list` | El tamaño del programa, los diagnósticos y los símbolos públicos |
-| «¿Pasan sus escenarios?»               | `tests_run`, `scenario_run`      | Un resultado por escenario, con el resumen de su traza           |
-| «¿Qué pasó en el ciclo 40?»            | `trace_get`, `runtime_snapshot`  | Una traza acotada y saneada de una ejecución registrada          |
-| «¿Qué placas están descritas?»         | `boards_list`                    | Las placas del manifiesto y su nivel, sin sondear hardware       |
+| Pida                                   | Herramienta                                               | Qué devuelve                                                                                 |
+| -------------------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| «¿Es válido este archivo de proyecto?» | `project_validate`                                        | `ok` y los diagnósticos                                                                      |
+| «¿Compila y qué necesita?»             | `compiler_check`, `symbols_list`                          | El tamaño del programa, los diagnósticos y los símbolos públicos                             |
+| «¿Pasan sus escenarios?»               | `tests_run`, `scenario_run`                               | Un resultado por escenario, con el resumen de su traza                                       |
+| «¿Qué pasó en el ciclo 40?»            | `trace_get`, `runtime_snapshot`                           | Una traza acotada y saneada de una ejecución registrada                                      |
+| «Muéstreme el programa»                | `zplc://project/programs`, `zplc://project/source/{name}` | La lista de los programas de `src` con su lenguaje, y el texto y el lenguaje de uno de ellos |
+| «¿Qué placas están descritas?»         | `boards_list`                                             | Las placas del manifiesto y su nivel, sin sondear hardware                                   |
 
-[La referencia de MCP](../reference/mcp.md) lista las 15 herramientas y los 13 recursos.
+[La referencia de MCP](../reference/mcp.md) lista las 15 herramientas y los 15 recursos. Los dos recursos de programas son de solo lectura: devuelven el código fuente guardado de un programa en cualquiera de los cinco lenguajes, dentro de los límites del lector de proyectos, y nada en el servidor escribe un programa. `zplc://project/source/{name}` toma el nombre del archivo como se escribe en el URI (un espacio es `%20`); un nombre que no está en `src` responde `MCP_NOT_FOUND`, un nombre con separador responde `MCP_INVALID_ARGUMENTS` y un proyecto que el lector rechaza responde `MCP_WORKSPACE_UNREADABLE`.
 Un escenario se ejecuta en el simulador de su computadora, así que su resultado es
 evidencia de una ejecución simulada, no de la planta.
 
 ## 4. Revisar lo que propone el asistente
 
-1. Ninguna herramienta del servidor cambia su proyecto: todas son de solo lectura y
+1. Ninguna herramienta ni recurso del servidor cambia su proyecto: todas son de solo lectura y
    `firmware_build` compila en un lugar efímero. Cuando el cliente del asistente edita
    archivos, lea el cambio como una diferencia antes de conservarlo.
 2. Compílelo y ejecute usted los escenarios, o pida `compiler_check` y `tests_run` y lea
@@ -139,8 +140,10 @@ evidencia de una ejecución simulada, no de la planta.
    proyecto declara, antes de que el cambio se acerque a una placa.
 4. Ponga un programa en una placa solo desde ZPLC, donde una persona elige la acción.
 
-La IA dentro de ZPLC sigue el mismo límite y tiene sus propias reglas de datos:
-[IA, privacidad y revisión humana](../ide/ai-privacy.md).
+La IA dentro de ZPLC sigue el mismo límite y tiene sus propias reglas de datos. Su asistente lee el
+programa abierto y un resumen del proyecto, propone un conjunto de cambios de hasta cuatro archivos que usted revisa
+y guarda, y propone acciones del editor y ajustes de pantalla que usted aplica con un clic; un guardado de varios
+archivos no tiene reversión. Todo eso está en [IA, privacidad y revisión humana](../ide/ai-privacy.md).
 
 ## Qué está verificado y qué no
 
@@ -149,6 +152,7 @@ La IA dentro de ZPLC sigue el mismo límite y tiene sus propias reglas de datos:
 | El servidor lista 15 herramientas cuando se le pide; `project_validate`, `compiler_check` y `tests_run` pasan en un proyecto incluido; `boards_list` responde con `--repository`; un `initialize` de la revisión 2025-06-18 y una solicitud sin revisión se rechazan con `-32022`, y una sin `clientCapabilities` con `-32602` | Ejecutado a mano con un script que envía las solicitudes por la entrada y la salida estándar, con `bun run --cwd=packages/zplc-ide mcp`, sobre el proyecto incluido `pico_blinky_ton`; CI no lo repite | Host    |
 | El ejecutable construido arranca y lista sus herramientas como lo pide un cliente 2026-07-28                                                                                                                                                                                                                                   | La compilación de la versión arranca el ejecutable y cuenta las herramientas                                                                                                                           | Host    |
 | Ninguna herramienta llega a un dispositivo, un socket o un puerto serie                                                                                                                                                                                                                                                        | Una prueba lista las herramientas y los recursos registrados del servidor activo y atrapa cada punto de entrada de sockets y de puerto serie                                                           | Host    |
+| Los dos recursos de programas devuelven el texto y el lenguaje de cada uno de los cinco lenguajes, rechazan un nombre que no es un programa de `src`, un enlace y un archivo demasiado grande, y el servidor no tiene ninguna herramienta que escriba                                                                          | `packages/zplc-ide/src/mcp/server.test.ts` y `deviceLink.test.ts`                                                                                                                                      | Host    |
 | Un producto de asistente concreto funciona con la entrada de arriba                                                                                                                                                                                                                                                            | No verificado: no se ejecutó ningún producto cliente para esta página                                                                                                                                  | Ninguno |
 | El cambio de un asistente es correcto                                                                                                                                                                                                                                                                                          | Nunca se da por supuesto: solo lo dicen la compilación y los escenarios                                                                                                                                | Ninguno |
 

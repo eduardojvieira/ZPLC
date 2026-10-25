@@ -475,6 +475,127 @@ describe('Electron security boundary', () => {
     expect(isAllowedCandidateChangeSetReviewRequest(revoked.proxy)).toBe(false);
   });
 
+  it('admits a change set of at most four program files and the manifest, and refuses everything else (S5)', () => {
+    const workspaceId = '0f2ce877-e0d6-43ca-89a7-df17a4927f51';
+    const edit = (path: string, content = 'x') => ({ path, content });
+    for (const edits of [
+      [edit('src/Motor.il')],
+      [edit('src/Lamp.ld.json'), edit('src/Flow.fbd.json'), edit('src/Seq.sfc.json'), edit('zplc.json', '{"name":"P"}')],
+      [edit('zplc.json', '{"name":"P"}')],
+    ])
+      expect(isAllowedCandidateChangeSetReviewRequest({ workspaceId, edits }), JSON.stringify(edits.map((e) => e.path))).toBe(true);
+    for (const edits of [
+      [],
+      [edit('src/A.st'), edit('src/B.st'), edit('src/C.st'), edit('src/D.st'), edit('src/E.st')],
+      [edit('src/A.st'), edit('src/A.st')],
+      [edit('src/A.st'), edit('src/a.st')],
+      [edit('src/A.ld.json'), edit('src/a.ld')],
+      [edit('tests/a.scenario.json', '{}')],
+      [edit('src/sub/A.st')],
+      [edit('zplc.json', '{')],
+      [edit('zplc.json', '[]')],
+      [edit('zplc.json', 'x'.repeat(128 * 1024 + 1))],
+      [edit('zplc.json', JSON.stringify({ name: 'P', network: { wifi: { password: 'x' } } }))],
+      [edit('zplc.json', JSON.stringify({ name: 'P', communication: { mqtt: { azureSasKey: 'k' } } }))],
+      [edit('src/A.st', 'x'.repeat(256 * 1024 + 1))],
+      [{ path: 'src/A.st', content: 'x', extra: true }],
+    ])
+      expect(isAllowedCandidateChangeSetReviewRequest({ workspaceId, edits }), JSON.stringify(edits.map((e) => e.path))).toBe(false);
+    // the request names one shape or the other, never both
+    expect(isAllowedCandidateChangeSetReviewRequest({ workspaceId, edit: edit('src/A.st'), edits: [edit('src/A.st')] })).toBe(false);
+    expect(isAllowedCandidateChangeSetReviewRequest({ workspaceId, edit: edit('src/Lamp.sfc.json') })).toBe(true);
+    const sparse = new Array(1);
+    expect(isAllowedCandidateChangeSetReviewRequest({ workspaceId, edits: sparse })).toBe(false);
+  });
+
+  it('admits the open program of every language in every mode, and only one that is a program (S4)', () => {
+    const workspaceId = '0f2ce877-e0d6-43ca-89a7-df17a4927f51';
+    for (const path of ['src/Main.st', 'src/Main.il', 'src/Main.ld.json', 'src/Main.fbd.json', 'src/Main.sfc.json'])
+      for (const mode of ['ask', 'plan', 'edit'])
+        expect(
+          isAllowedAiProviderRequest({ workspaceId, mode, prompt: 'x', activeFile: { fileId: `file:${path}`, path } }),
+          `${mode} ${path}`,
+        ).toBe(true);
+    const debug = { workspaceId, mode: 'debug', prompt: 'x', diagnostics: [{ code: 'E' }] };
+    expect(isAllowedAiProviderRequest({ ...debug, activeFile: { fileId: 'file:src/Main.sfc.json', path: 'src/Main.sfc.json' } })).toBe(
+      true,
+    );
+    for (const path of ['zplc.json', 'src/Main.gvl', 'src/Main.ld', 'tests/a.scenario.json', 'src/x/Main.st', '../src/Main.st'])
+      for (const mode of ['ask', 'edit'])
+        expect(
+          isAllowedAiProviderRequest({ workspaceId, mode, prompt: 'x', activeFile: { fileId: `file:${path}`, path } }),
+          `${mode} ${path}`,
+        ).toBe(false);
+    expect(
+      isAllowedAiProviderRequest({
+        workspaceId,
+        mode: 'ask',
+        prompt: 'x',
+        activeFile: { fileId: 'file:src/Other.st', path: 'src/Main.st' },
+      }),
+    ).toBe(false);
+    expect(isAllowedAiProviderRequest({ workspaceId, mode: 'edit', prompt: 'x' })).toBe(false);
+  });
+
+  it('projects a verified change set of several files, creations included, and nothing it was not asked for (S5)', () => {
+    const sha = 'a'.repeat(64);
+    const entry = (path: string, kind: 'modify' | 'create') => ({
+      path,
+      kind,
+      ...(kind === 'modify' ? { before: { sha256: sha, byteLength: 1 } } : {}),
+      after: { sha256: sha, byteLength: 2 },
+    });
+    const source = (changes: unknown[]) => ({
+      schemaVersion: 1,
+      accepted: true,
+      evidenceScope: 'native-posix-host',
+      changeSet: { sha256: sha, changes },
+      evidence: {
+        schemaVersion: 1,
+        operation: 'test',
+        outcome: 'passed',
+        diagnostics: [],
+        artifacts: [
+          { kind: 'zplc', sha256: sha, byteLength: 3 },
+          { kind: 'trace', sha256: sha, byteLength: 4 },
+        ],
+      },
+      savedTestInputIdentity: { schemaVersion: 1, sha256: sha, fileCount: 3 },
+    });
+    const paths = ['src/Lamp.ld.json', 'src/Main.st', 'zplc.json'];
+    const set = [entry('src/Lamp.ld.json', 'create'), entry('src/Main.st', 'modify'), entry('zplc.json', 'modify')];
+    const safe = sanitizeCandidateChangeSetReview(source(set), paths) as {
+      accepted: boolean;
+      changeSet: { changes: Array<{ path: string; kind: string }> };
+    };
+    expect(safe.accepted).toBe(true);
+    expect(safe.changeSet.changes.map(({ path, kind }) => [path, kind])).toEqual([
+      ['src/Lamp.ld.json', 'create'],
+      ['src/Main.st', 'modify'],
+      ['zplc.json', 'modify'],
+    ]);
+    // a file that was not asked for, one missing, or one with another kind of before/after is not a review of this request
+    expect(sanitizeCandidateChangeSetReview(source([...set, entry('src/Extra.st', 'create')]), paths)).toBeNull();
+    expect(sanitizeCandidateChangeSetReview(source(set.slice(0, 2)), paths)).toBeNull();
+    expect(
+      sanitizeCandidateChangeSetReview(
+        source([entry('src/Lamp.ld.json', 'modify'), set[1], set[2]].map((item, i) => (i === 0 ? { ...item, before: undefined } : item))),
+        paths,
+      ),
+    ).toBeNull();
+    expect(
+      sanitizeCandidateChangeSetReview(source([{ ...set[0], before: { sha256: sha, byteLength: 1 } }, set[1], set[2]]), paths),
+    ).toBeNull();
+    expect(sanitizeCandidateChangeSetReview(source([set[0], set[0], set[2]]), paths)).toBeNull();
+    expect(sanitizeCandidateChangeSetReview(source(set), ['src/Lamp.ld.json', 'src/Main.st'])).toBeNull();
+    expect(
+      sanitizeCandidateChangeSetReview({ ...source(set), diagnostics: [{ code: 'CHANGESET_SENSITIVE_FIELD' }], accepted: false }, paths),
+    ).toMatchObject({
+      accepted: false,
+      diagnostics: [{ code: 'CHANGESET_SENSITIVE_FIELD' }],
+    });
+  });
+
   it('admits only bounded inert AI context and rejects renderer-controlled provider or physical fields', () => {
     const workspaceId = '0f2ce877-e0d6-43ca-89a7-df17a4927f51';
     expect(isAllowedAiProviderRequest({ workspaceId, mode: 'ask', prompt: 'Explain this' })).toBe(true);

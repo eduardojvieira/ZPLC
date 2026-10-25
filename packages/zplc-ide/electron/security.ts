@@ -1,6 +1,8 @@
 import { parseRecoveryDiscard, parseRecoveryList, parseRecoveryWrite, type RecoveryRequests } from './recoveryStoreProtocol.js';
 import { ERROR_CODE_MIRROR } from './errorCodes.generated.js';
 import { parseSessionState } from './sessionStoreProtocol.js';
+import { CANDIDATE_CHANGE_CAP, isCandidateChangePath, isCandidateSourcePath } from '../src/ai/candidatePaths.js';
+import { manifestSensitivePaths } from '../src/ai/manifestPrivacy.js';
 
 const NATIVE_SIMULATION_METHODS = new Set([
   'program.load',
@@ -30,7 +32,6 @@ const WORKSPACE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0
 const SCENARIO_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const FIRMWARE_BUILD_ID = /^[a-z0-9][a-z0-9_]{0,63}$/;
 const SHA256 = /^[0-9a-f]{64}$/;
-const CANDIDATE_PATH = /^src\/[^/\\\0\r\n]+\.st$/;
 const AI_MODE = new Set(['ask', 'plan', 'edit', 'debug']);
 const DIAGNOSTIC_CODE = /^[A-Z][A-Z0-9_]{0,95}$/;
 const EVIDENCE_SCOPE = 'native-posix-host';
@@ -89,6 +90,7 @@ const SAFETY_DIAGNOSTIC_CODES = new Set([
   ...ERROR_CODE_MIRROR,
 ]);
 const CANDIDATE_CONTENT_MAX_LENGTH = 256 * 1024;
+const CANDIDATE_MANIFEST_MAX_LENGTH = 128 * 1024;
 /**
  * The largest program the native runtime loads, in bytes of the .zplc artifact (header and tables included):
  * ZPLC_MEM_CODE_SIZE in firmware/lib/zplc_core/include/zplc_isa.h. security.test.ts reads that header and fails
@@ -441,26 +443,54 @@ export function isAllowedFirmwareBuildRequest(value: unknown): value is { ideId:
   return isPlainObject(value) && hasExactKeys(value, ['ideId']) && typeof value.ideId === 'string' && FIRMWARE_BUILD_ID.test(value.ideId);
 }
 
-/** Validates the sole renderer request that may review, never apply, one existing ST replacement. */
+/** The name the build reads a program under: case does not tell two programs apart, and main.ld is main.ld.json. */
+function candidateKey(path: string): string {
+  return path.toLowerCase().replace(/\.(ld|fbd|sfc)$/, '$&.json');
+}
+
+function safeCandidateEdit(value: unknown): { path: string; content: string } | null {
+  const edit = safeExactRecord(value, ['path', 'content']);
+  if (!edit) return null;
+  const path = ownValue(edit, 'path');
+  const content = ownValue(edit, 'content');
+  if (!isCandidateChangePath(path) || typeof content !== 'string') return null;
+  if (path === 'zplc.json') {
+    // the manifest is a JSON object, and a proposal never adds or changes a sensitive field of it (IDE-030)
+    if (content.length > CANDIDATE_MANIFEST_MAX_LENGTH) return null;
+    try {
+      const parsed = JSON.parse(content) as unknown;
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed) || manifestSensitivePaths(parsed).length > 0) return null;
+    } catch {
+      return null;
+    }
+  } else if (content.length > CANDIDATE_CONTENT_MAX_LENGTH) return null;
+  return { path, content };
+}
+
+/**
+ * Validates the sole renderer request that may review, never apply, a candidate change: one `edit` of a program (a person's
+ * own buffer), or `edits`, a change set of at most four files that are programs of `src` or the manifest.
+ */
 export function isAllowedCandidateChangeSetReviewRequest(
   value: unknown,
-): value is { workspaceId: string; edit: { path: string; content: string } } {
-  const request = safeExactRecord(value, ['workspaceId', 'edit']);
+): value is
+  | { workspaceId: string; edit: { path: string; content: string } }
+  | { workspaceId: string; edits: Array<{ path: string; content: string }> } {
+  const single = safeExactRecord(value, ['workspaceId', 'edit']);
+  const several = single ? null : safeExactRecord(value, ['workspaceId', 'edits']);
+  const request = single ?? several;
   if (!request) return false;
   const workspaceId = ownValue(request, 'workspaceId');
-  const edit = safeExactRecord(ownValue(request, 'edit'), ['path', 'content']);
-  if (!edit) return false;
-  const candidatePath = ownValue(edit, 'path');
-  const content = ownValue(edit, 'content');
-  return (
-    typeof workspaceId === 'string' &&
-    WORKSPACE_ID.test(workspaceId) &&
-    typeof candidatePath === 'string' &&
-    candidatePath.length <= 512 &&
-    CANDIDATE_PATH.test(candidatePath) &&
-    typeof content === 'string' &&
-    content.length <= CANDIDATE_CONTENT_MAX_LENGTH
-  );
+  if (typeof workspaceId !== 'string' || !WORKSPACE_ID.test(workspaceId)) return false;
+  if (single) {
+    const edit = safeCandidateEdit(ownValue(single, 'edit'));
+    return edit !== null && edit.path !== 'zplc.json';
+  }
+  const items = safeDenseArray(ownValue(several!, 'edits'), CANDIDATE_CHANGE_CAP);
+  if (!items || items.length < 1) return false;
+  const edits = items.map(safeCandidateEdit);
+  if (edits.some((edit) => edit === null)) return false;
+  return new Set(edits.map((edit) => candidateKey(edit!.path))).size === edits.length;
 }
 
 function safeAiDiagnostic(value: unknown): boolean {
@@ -527,12 +557,13 @@ export function isAllowedAiProviderRequest(value: unknown): value is {
   const activeFile = ownValue(request, 'activeFile');
   const diagnostics = ownValue(request, 'diagnostics');
   const trace = ownValue(request, 'trace');
-  if (mode === 'edit') {
+  // the open program, in any of the five languages, may come with a request in every mode; edit mode needs it
+  if (activeFile !== undefined || mode === 'edit') {
     const file = safeExactRecord(activeFile, ['fileId', 'path']);
     const path = file && ownValue(file, 'path');
     const fileId = file && ownValue(file, 'fileId');
-    if (!file || typeof path !== 'string' || !CANDIDATE_PATH.test(path) || fileId !== `file:${path}`) return false;
-  } else if (activeFile !== undefined) return false;
+    if (!file || !isCandidateSourcePath(path) || fileId !== `file:${path}`) return false;
+  }
   const allowedDiagnostics = diagnostics === undefined ? [] : safeDenseArray(diagnostics, 32);
   const allowedTrace = trace === undefined ? [] : safeDenseArray(trace, 32);
   if (!allowedDiagnostics || !allowedTrace || !allowedDiagnostics.every(safeAiDiagnostic) || !allowedTrace.every(safeAiTrace)) return false;
@@ -702,10 +733,55 @@ function safeEvidence(value: unknown): {
   };
 }
 
-/** Removes private candidate-workspace data and derives acceptance solely from verified host evidence. */
-export function sanitizeCandidateChangeSetReview(value: unknown, requestedPath: string): unknown | null {
+type SafeCandidateChange = {
+  path: string;
+  kind: 'modify' | 'create';
+  before?: { sha256: string; byteLength: number };
+  after: { sha256: string; byteLength: number };
+};
+
+function safeCandidateChange(value: unknown): SafeCandidateChange | null {
+  const record = safeRecord(value);
+  const kind = record && ownValue(record, 'kind');
+  const change =
+    kind === 'modify'
+      ? safeExactRecord(value, ['path', 'kind', 'before', 'after'])
+      : kind === 'create'
+        ? safeExactRecord(value, ['path', 'kind', 'after'])
+        : null;
+  if (!change) return null;
+  const path = ownValue(change, 'path');
+  const after = safeExactRecord(ownValue(change, 'after'), ['sha256', 'byteLength']);
+  const afterSha = after && safeSha256(ownValue(after, 'sha256'));
+  const afterByteLength = after ? safeByteLength(ownValue(after, 'byteLength')) : undefined;
+  if (!isCandidateChangePath(path) || !afterSha || afterByteLength === undefined) return null;
+  if (kind === 'create') return { path, kind, after: { sha256: afterSha, byteLength: afterByteLength } };
+  const before = safeExactRecord(ownValue(change, 'before'), ['sha256', 'byteLength']);
+  const beforeSha = before && safeSha256(ownValue(before, 'sha256'));
+  const beforeByteLength = before ? safeByteLength(ownValue(before, 'byteLength')) : undefined;
+  if (!beforeSha || beforeByteLength === undefined) return null;
+  return {
+    path,
+    kind: 'modify',
+    before: { sha256: beforeSha, byteLength: beforeByteLength },
+    after: { sha256: afterSha, byteLength: afterByteLength },
+  };
+}
+
+/**
+ * Removes private candidate-workspace data and derives acceptance solely from verified host evidence. `requested` is the one
+ * path of a single edit (which only modifies) or the paths of a change set, whose review must name exactly those files.
+ */
+export function sanitizeCandidateChangeSetReview(value: unknown, requested: string | readonly string[]): unknown | null {
   try {
-    if (typeof requestedPath !== 'string' || requestedPath.length > 512 || !CANDIDATE_PATH.test(requestedPath)) return null;
+    const wanted = typeof requested === 'string' ? [requested] : [...requested];
+    if (
+      wanted.length < 1 ||
+      wanted.length > CANDIDATE_CHANGE_CAP ||
+      !wanted.every((path) => isCandidateChangePath(path)) ||
+      new Set(wanted).size !== wanted.length
+    )
+      return null;
     const result = safeRecord(value);
     if (!result || ownValue(result, 'schemaVersion') !== 1 || ownValue(result, 'evidenceScope') !== EVIDENCE_SCOPE) return null;
     const evidence = safeEvidence(ownValue(result, 'evidence'));
@@ -715,35 +791,18 @@ export function sanitizeCandidateChangeSetReview(value: unknown, requestedPath: 
     const diagnostics = diagnosticItems?.map(safeCandidateDiagnostic);
     if (diagnostics?.some((diagnostic) => diagnostic === null)) return null;
     const changeSet = safeRecord(ownValue(result, 'changeSet'));
-    const changes = changeSet && safeDenseArray(ownValue(changeSet, 'changes'), 1);
-    const change = changes?.length === 1 ? safeExactRecord(changes[0], ['path', 'kind', 'before', 'after']) : null;
-    const before = change && safeExactRecord(ownValue(change, 'before'), ['sha256', 'byteLength']);
-    const after = change && safeExactRecord(ownValue(change, 'after'), ['sha256', 'byteLength']);
+    const changes = changeSet && safeDenseArray(ownValue(changeSet, 'changes'), CANDIDATE_CHANGE_CAP);
+    const projected = changes?.map(safeCandidateChange);
     const changeSetSha = changeSet && safeSha256(ownValue(changeSet, 'sha256'));
-    const beforeSha = before && safeSha256(ownValue(before, 'sha256'));
-    const beforeByteLength = before && safeByteLength(ownValue(before, 'byteLength'));
-    const afterSha = after && safeSha256(ownValue(after, 'sha256'));
-    const afterByteLength = after && safeByteLength(ownValue(after, 'byteLength'));
     const candidate =
-      change &&
-      ownValue(change, 'path') === requestedPath &&
-      ownValue(change, 'kind') === 'modify' &&
+      projected &&
       changeSetSha &&
-      beforeSha &&
-      beforeByteLength !== undefined &&
-      afterSha &&
-      afterByteLength !== undefined
-        ? {
-            sha256: changeSetSha,
-            changes: [
-              {
-                path: requestedPath,
-                kind: 'modify' as const,
-                before: { sha256: beforeSha, byteLength: beforeByteLength },
-                after: { sha256: afterSha, byteLength: afterByteLength },
-              },
-            ],
-          }
+      projected.length === wanted.length &&
+      projected.every((change) => change !== null) &&
+      new Set(projected.map((change) => change!.path)).size === wanted.length &&
+      wanted.every((path) => projected.some((change) => change!.path === path)) &&
+      (typeof requested !== 'string' || projected[0]!.kind === 'modify')
+        ? { sha256: changeSetSha, changes: projected as SafeCandidateChange[] }
         : undefined;
     const identity = safeExactRecord(ownValue(result, 'savedTestInputIdentity'), ['schemaVersion', 'sha256', 'fileCount']);
     const savedTestInputIdentity =

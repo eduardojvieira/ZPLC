@@ -5,13 +5,16 @@
 
 import { DiffEditor } from './monacoRuntime';
 import { type CandidateChangeSetReviewPresentation } from './workspaceTestPresentation';
-import { type AiProviderResponsePresentation, type AiProviderStatusPresentation } from './aiProviderPresentation';
+import { type AiProviderStatusPresentation } from './aiProviderPresentation';
+import { type AgentResponsePresentation } from './agent/agentResponse';
+import { type ChangeSetSnapshot } from './agent/changeSetReview';
 import { MONACO_THEME_ID } from '../utils/monaco-themes';
 import { Badge, Button, Tooltip } from '../ui';
 import { useT } from '../i18n';
 
+/** The review of the person's own modified buffer: one program, saved by the same click. */
 export type CandidateReviewSnapshot = {
-  origin: 'manual' | 'agent';
+  origin: 'manual';
   projectSession: number;
   compilerRunId: number;
   workspaceId: string;
@@ -25,8 +28,10 @@ export type CandidateReviewSnapshot = {
   baseline: string;
 };
 export type CandidateReviewState =
-  | { kind: 'idle' | 'matches-disk' | 'running' | 'cancelling' | 'saving' | 'stale' | 'error' | 'saved' }
-  | { kind: 'result'; snapshot: CandidateReviewSnapshot; presentation: CandidateChangeSetReviewPresentation };
+  | { kind: 'idle' | 'matches-disk' | 'running' | 'cancelling' | 'saving' | 'stale' | 'error' | 'saved' | 'no-change' }
+  | { kind: 'unsaved'; path: string }
+  /** `snapshot` is a change set of the assistant when it has `files`: every difference is shown, and one click saves them all. */
+  | { kind: 'result'; snapshot: CandidateReviewSnapshot | ChangeSetSnapshot; presentation: CandidateChangeSetReviewPresentation };
 export type AgentEditIdentity = {
   projectSession: number;
   compilerRunId: number;
@@ -44,7 +49,7 @@ export type AgentState =
   | 'cancelling'
   | 'unavailable'
   | 'error'
-  | { kind: 'response'; presentation: AiProviderResponsePresentation; expectedEdit?: AgentEditIdentity };
+  | { kind: 'response'; presentation: AgentResponsePresentation; expectedEdit?: AgentEditIdentity };
 
 export function CandidateReviewResult({
   state,
@@ -60,12 +65,19 @@ export function CandidateReviewResult({
   const { t, tn } = useT();
   const { presentation, snapshot } = state;
   const accepted = presentation.kind === 'accepted';
+  // the person's own buffer is one file; a change set of the assistant is several, each with its difference
+  const files =
+    'files' in snapshot
+      ? snapshot.files.map(({ path, kind, baseline, candidate }) => ({ path, kind, original: baseline, modified: candidate }))
+      : [{ path: snapshot.path, kind: 'modify' as const, original: snapshot.baseline, modified: snapshot.candidate }];
   return (
     <section
       className="space-y-3 border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] p-3"
       aria-label={t('console.changeReviewResult')}
     >
-      <h2 className="font-medium text-[var(--color-surface-100)]">{t('console.review', { path: snapshot.path })}</h2>
+      <h2 className="font-medium text-[var(--color-surface-100)]">
+        {'files' in snapshot ? tn('console.reviewChangeSet', files.length) : t('console.review', { path: snapshot.path })}
+      </h2>
       <p
         className={
           accepted
@@ -124,25 +136,35 @@ export function CandidateReviewResult({
       </dl>
       <div className="grid gap-1 text-xs text-[var(--color-surface-300)] sm:grid-cols-2">
         <span>{t('console.savedOnDisk')}</span>
-        <span>{snapshot.origin === 'agent' ? t('console.proposedStChange') : t('console.currentEditorBuffer')}</span>
+        <span>{'files' in snapshot ? t('console.proposedChange') : t('console.currentEditorBuffer')}</span>
       </div>
-      <div className="h-72 border border-[var(--color-surface-600)]">
-        <DiffEditor
-          original={snapshot.baseline}
-          modified={snapshot.candidate}
-          language="st"
-          theme={MONACO_THEME_ID[effectiveTheme]}
-          options={{
-            readOnly: true,
-            automaticLayout: true,
-            minimap: { enabled: false },
-            wordWrap: 'on',
-            accessibilitySupport: 'on',
-            scrollBeyondLastLine: false,
-            renderSideBySide: true,
-          }}
-        />
-      </div>
+      {files.map((file) => (
+        <div key={file.path} className="space-y-1">
+          {'files' in snapshot && (
+            <h3 className="flex items-center gap-2 text-xs font-medium text-[var(--color-surface-200)]">
+              <span className="break-all">{file.path}</span>
+              <Badge tone="neutral">{file.kind === 'create' ? t('console.newFile') : t('console.changedFile')}</Badge>
+            </h3>
+          )}
+          <div className="h-72 border border-[var(--color-surface-600)]">
+            <DiffEditor
+              original={file.original}
+              modified={file.modified}
+              language={file.path.endsWith('.json') ? 'json' : file.path.endsWith('.st') ? 'st' : 'plaintext'}
+              theme={MONACO_THEME_ID[effectiveTheme]}
+              options={{
+                readOnly: true,
+                automaticLayout: true,
+                minimap: { enabled: false },
+                wordWrap: 'on',
+                accessibilitySupport: 'on',
+                scrollBeyondLastLine: false,
+                renderSideBySide: true,
+              }}
+            />
+          </div>
+        </div>
+      ))}
       <p className="text-xs text-[var(--color-surface-400)]">
         <Tooltip content={t('console.nativePosixHostEvidence')}>
           <span tabIndex={0}>

@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/mcp. Do not edit. >>> */}
 
-`zplc-mcp` es un servidor local del Model Context Protocol sobre entrada y salida estándar. Expone 15 herramientas y 13 recursos para un espacio de trabajo. Todas las herramientas son de solo lectura salvo `firmware_build`, que ejecuta una compilación cruzada local y efímera: ninguna herramienta graba, despliega, fuerza, arranca, detiene ni abre un puerto serie o una consola. Los resultados son evidencia de una ejecución registrada en el host, no del hardware.
+`zplc-mcp` es un servidor local del Model Context Protocol sobre entrada y salida estándar. Expone 15 herramientas y 15 recursos para un espacio de trabajo. Todas las herramientas son de solo lectura salvo `firmware_build`, que ejecuta una compilación cruzada local y efímera: ninguna herramienta graba, despliega, fuerza, arranca, detiene ni abre un puerto serie o una consola. Los resultados son evidencia de una ejecución registrada en el host, no del hardware.
 
 Esta tabla se lee del archivo fuente `packages/zplc-ide/src/mcp/server.ts`; su texto es el de la propia fuente, por eso es igual en inglés y en español.
 
@@ -48,6 +48,7 @@ El servidor habla la revisión 2026-07-28 del protocolo y ninguna anterior: su p
 | Recurso | Clase |
 | --- | --- |
 | `zplc://project/manifest` | fijo |
+| `zplc://project/programs` | fijo |
 | `zplc://project/symbols` | fijo |
 | `zplc://project/io-map` | fijo |
 | `zplc://project/diagnostics` | fijo |
@@ -58,6 +59,7 @@ El servidor habla la revisión 2026-07-28 del protocolo y ninguna anterior: su p
 | `zplc://docs/evidence` | fijo |
 | `zplc://docs/safety` | fijo |
 | `zplc://docs/testing` | fijo |
+| `zplc://project/source/{name}` | plantilla |
 | `zplc://runtime/trace/{scenarioId}` | plantilla |
 | `zplc://runtime/snapshot/{scenarioId}/{cursor}/{traceSha256}` | plantilla |
 

@@ -17,7 +17,9 @@ import {
   openMcpRepository,
   openMcpUserData,
   openMcpWorkspace,
+  programsResource,
   projectResource,
+  sourceResource,
   toMcpToolResult,
   type McpOperations,
 } from './server';
@@ -120,6 +122,7 @@ describe('local MCP adapter', () => {
     ]);
     expect(MCP_RESOURCE_URIS).toEqual([
       'zplc://project/manifest',
+      'zplc://project/programs',
       'zplc://project/symbols',
       'zplc://project/io-map',
       'zplc://project/diagnostics',
@@ -1097,5 +1100,84 @@ describe('local MCP adapter', () => {
     const projected = projectResource('compiler_check', hostile, 'diagnostics');
     expect(projected).toEqual({ ok: false, error: 'MCP_INTERNAL_ERROR' });
     expect(JSON.stringify(projected)).not.toContain('/private');
+  });
+});
+
+describe('read-only program source resources (IDE-030)', () => {
+  const files: Record<string, string> = {
+    'Main.st': 'PROGRAM Main\nEND_PROGRAM\n',
+    'Boot.il': 'LD 1\nST Q\n',
+    'Lamp.ld.json': '{"name":"Lamp"}',
+    'Flow.fbd.json': '{"name":"Flow"}',
+    'Seq.sfc.json': '{"name":"Seq"}',
+  };
+  async function projectWithAllLanguages() {
+    const root = await workspace();
+    for (const [name, text] of Object.entries(files)) await writeFile(join(root, 'src', name), text);
+    const bound = await openMcpWorkspace(root);
+    expect(bound).toBeDefined();
+    return { root, bound: bound! };
+  }
+
+  test('lists the programs of src with their language, and nothing of the manifest or the tests', async () => {
+    const { bound } = await projectWithAllLanguages();
+    const listed = await programsResource(bound);
+    expect(listed).toEqual({
+      ok: true,
+      programs: [
+        { name: 'Boot.il', path: 'src/Boot.il', language: 'IL' },
+        { name: 'Flow.fbd.json', path: 'src/Flow.fbd.json', language: 'FBD' },
+        { name: 'Lamp.ld.json', path: 'src/Lamp.ld.json', language: 'LD' },
+        { name: 'Main.st', path: 'src/Main.st', language: 'ST' },
+        { name: 'Seq.sfc.json', path: 'src/Seq.sfc.json', language: 'SFC' },
+      ],
+    });
+    expect(JSON.stringify(listed)).not.toContain('smoke.scenario');
+  });
+
+  test('returns the text and the language of a program in each of the five languages', async () => {
+    const { bound } = await projectWithAllLanguages();
+    for (const [name, source] of Object.entries(files)) {
+      const language = name.endsWith('.il')
+        ? 'IL'
+        : name.endsWith('.ld.json')
+          ? 'LD'
+          : name.endsWith('.fbd.json')
+            ? 'FBD'
+            : name.endsWith('.sfc.json')
+              ? 'SFC'
+              : 'ST';
+      expect(await sourceResource(bound, name)).toEqual({ ok: true, name, path: `src/${name}`, language, source });
+    }
+  });
+
+  test('refuses a name that is not a program of src, whatever it tries to reach', async () => {
+    const { bound } = await projectWithAllLanguages();
+    for (const name of ['Missing.st', 'zplc.json', 'smoke.scenario.json'])
+      expect(await sourceResource(bound, name), name).toEqual({ ok: false, error: 'MCP_NOT_FOUND' });
+    for (const name of [
+      '',
+      '../zplc.json',
+      'src/Main.st',
+      'a/b.st',
+      '..',
+      'Main.st\0',
+      'Main.st/',
+      'x'.repeat(300),
+      'tests/smoke.scenario.json',
+    ])
+      expect(await sourceResource(bound, name), JSON.stringify(name)).toEqual({ ok: false, error: 'MCP_INVALID_ARGUMENTS' });
+  });
+
+  test('reads through the workspace reader, so a link or an oversized file is refused, and the root is still checked', async () => {
+    const { root, bound } = await projectWithAllLanguages();
+    await writeFile(join(root, 'tests', 'outside.st'), 'PROGRAM Outside\nEND_PROGRAM\n');
+    await symlink(join(root, 'tests', 'outside.st'), join(root, 'src', 'Link.st'));
+    expect(await sourceResource(bound, 'Main.st')).toEqual({ ok: false, error: 'MCP_WORKSPACE_UNREADABLE' });
+    expect(await programsResource(bound)).toEqual({ ok: false, error: 'MCP_WORKSPACE_UNREADABLE' });
+  });
+
+  test('is a read of the project: no tool writes a program, and the tool names did not change', () => {
+    expect(MCP_TOOL_NAMES.filter((name) => /write|save|edit|create|apply|propose/.test(name))).toEqual([]);
   });
 });

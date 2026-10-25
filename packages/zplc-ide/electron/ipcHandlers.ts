@@ -473,7 +473,15 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
 
     [CANDIDATE_CHANGE_SET_CHANNEL.REVIEW]: handler(
       oneArgument(isAllowedCandidateChangeSetReviewRequest),
-      async (owner, [request]: [{ workspaceId: string; edit: { path: string; content: string } }]) => {
+      async (
+        owner,
+        [request]: [
+          | { workspaceId: string; edit: { path: string; content: string } }
+          | { workspaceId: string; edits: Array<{ path: string; content: string }> },
+        ],
+      ) => {
+        // one edit of a person's own buffer, or a change set of up to four files: either way the base is never written
+        const edits = 'edits' in request ? request.edits : [request.edit];
         const result = await deps.workspaceGateway.run(
           owner.ownerId,
           { workspaceId: request.workspaceId },
@@ -482,7 +490,7 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
             let value: unknown;
             try {
               value = await deps.toolWorker.run(
-                { operation: 'change-set-review', root, edits: [{ path: request.edit.path, content: request.edit.content }] },
+                { operation: 'change-set-review', root, edits: edits.map(({ path, content }) => ({ path, content })) },
                 options.signal,
               );
             } catch {
@@ -494,7 +502,10 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
           },
           deps.projectFiles.currentRoot(owner.ownerId),
         );
-        const safe = sanitizeCandidateChangeSetReview(result, request.edit.path);
+        const safe = sanitizeCandidateChangeSetReview(
+          result,
+          edits.map(({ path }) => path),
+        );
         if (!safe) throw new Error(WORKSPACE_FAILED);
         return safe;
       },

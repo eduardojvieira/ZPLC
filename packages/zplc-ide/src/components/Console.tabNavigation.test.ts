@@ -67,8 +67,10 @@ describe('Console tab boundary', () => {
     expect(source).toContain('presentCandidateChangeSetReview(result, snapshot)');
     expect(source).toContain('candidateReviewBusy.current || !file');
     expect(source).toContain('current.activeFileId === snapshot.fileId');
-    expect(source).toContain('isCandidateSTPath(file.path)');
-    expect(source).toContain('isCandidateSTPath(activeFile.path)');
+    // one definition of a candidate path for the five languages (IDE-030), not the Structured Text rule
+    expect(source).toContain('isCandidateSourcePath(file.path)');
+    expect(source).toContain('isCandidateSourcePath(activeFile.path)');
+    expect(source).not.toContain('isCandidateSTPath');
     expect(source).toContain('candidateChangeSet && workspaceTests');
     expect(source).toContain('const candidateDesktopReady = Boolean(candidateChangeSet && workspaceTests);');
     expect(source).toContain('!candidateDesktopReady');
@@ -93,13 +95,14 @@ describe('Console tab boundary', () => {
     expect(source).toContain('Provider response — not evidence');
     expect(source).toContain('Send request');
     expect(source).toContain('Cancel request');
-    expect(source).toContain('Review proposed ST change');
+    expect(source).toContain('Review proposed change');
     expect(source).toContain('aiProvider.request(request)');
     expect(source).toContain('aiProvider.cancel()');
     expect(source).toContain('onClick={() => { void sendAgentRequest(); }}');
     expect(source).not.toContain('useEffect(() => { void sendAgentRequest(); }');
-    expect(source).toContain('updateFileContent(snapshot.fileId, snapshot.candidate)');
-    expect(source).toContain("snapshot.origin === 'agent'");
+    // an assistant's change set is saved only by the person's click, through the same store actions as their own save
+    expect(source).toContain('saveChangeSet(snapshot, useIDEStore.getState)');
+    expect(source).toContain("'files' in snapshot");
     expect(source).toContain('Proposed change is stale. Send a new request.');
     expect(source).toContain("const agentBusy = agentState === 'sending' || agentState === 'cancelling';");
     expect(source).toContain('disabled={agentBusy}');
