@@ -140,6 +140,12 @@ linux:
 appImage:
   artifactName: "zplc-${version}-${os}-${arch}.${ext}"
 
+# The legacy AppImage toolset starts with a runtime linked against libz.so on arm64, which only zlib1g-dev provides (release
+# rehearsal 40188578977). 1.0.3 carries a static runtime (AppImage type2-runtime 20251108): neither zlib nor libfuse2 is
+# needed, and its AppRun passes --no-sandbox only where user namespaces are unavailable.
+toolsets:
+  appimage: "1.0.3"
+
 # `depends` (REL-011): electron-builder's defaults (app-builder-lib getDefaultDepends) and ALSA, which Electron links and
 # the defaults leave out; a clean Debian 13 or Ubuntu 24.04 lacks libasound.so.2 without it. Since t64 the Debian package
 # is libasound2t64. scripts/check-linux-package.sh installs the same list for the AppImage.

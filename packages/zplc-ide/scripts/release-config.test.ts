@@ -31,6 +31,7 @@ type Builder = {
   rpm: Record<string, unknown> & { fpm?: string[]; depends?: string[] };
   nsis: { artifactName: string };
   portable: { artifactName: string };
+  toolsets?: { appimage?: string };
 };
 
 type Step = {
@@ -68,6 +69,15 @@ describe('the Windows arm64 setup installs its executables', () => {
     const job = workflow.jobs['build-windows']!;
     const step = job.steps[indexOfStep(job, 'electron-builder --win')]!;
     expect(step.env?.ELECTRON_BUILDER_7Z_FILTER).toBe("${{ matrix.arch == 'arm64' && 'BCJ' || '' }}");
+  });
+});
+
+// The legacy AppImage toolset (appimage-12.0.1) starts with a runtime linked against libz.so on arm64, a file only zlib1g-dev
+// provides: the arm64 AppImage did not start on a clean Ubuntu 24.04 (rehearsal 40188578977). The 1.0.x toolsets carry a
+// static runtime, which needs neither zlib nor libfuse2 on the user's system.
+describe('the AppImage starts on a system without development packages', () => {
+  it('builds the AppImage with a toolset whose runtime is static', () => {
+    expect(builder.toolsets?.appimage).toBe('1.0.3');
   });
 });
 
