@@ -327,8 +327,8 @@ class Cdp {
 }
 
 async function press(cdp: Cdp, key: string, code = key): Promise<void> {
-  const keyCode = key === 'Enter' ? 13 : key === 'Escape' ? 27 : key === 'End' ? 35 : 0;
-  const text = key === 'Enter' ? '\r' : undefined;
+  const keyCode = key === 'Enter' ? 13 : key === 'Escape' ? 27 : key.length === 1 ? key.toUpperCase().charCodeAt(0) : 0;
+  const text = key === 'Enter' ? '\r' : key.length === 1 ? key : undefined;
   await cdp.command('Input.dispatchKeyEvent', { type: 'keyDown', key, code, text, unmodifiedText: text, windowsVirtualKeyCode: keyCode });
   await cdp.command('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode: keyCode });
 }
@@ -529,7 +529,12 @@ async function main(): Promise<void> {
       ),
       'Packaged Welcome theme control is not keyboard focusable.',
     );
-    await press(cdp, 'End'); // the last option of the theme select is High contrast
+    // The last option of the theme select is High contrast. A closed select on macOS ignores Home and End (release rehearsal
+    // 40188578977), so the smoke types the option's first letter, which selects it on every platform.
+    const initial = (await cdp.evaluate(
+      `document.querySelector('select[data-theme-control]').lastElementChild.textContent.trim().charAt(0).toLowerCase()`,
+    )) as string;
+    await press(cdp, initial, `Key${initial.toUpperCase()}`);
     await waitFor('packaged high-contrast keyboard activation', async () =>
       (await cdp!.evaluate(
         `document.documentElement.classList.contains('high-contrast') && getComputedStyle(document.body).backgroundColor === 'rgb(0, 0, ` +
