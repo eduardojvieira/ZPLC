@@ -4682,10 +4682,17 @@ export const JOURNEYS: Journey[] = [
       app.answer(folder);
       await app.click(button('Choose a folder and import'), 'the import button');
       await app.until('the imported project open', async () => (await app.visible(toolbar)) || undefined);
-      assert(
-        JSON.stringify(tree(folder)) === JSON.stringify(tree(project)),
-        'The imported folder is not equal to the project that was exported.',
-      );
+      // Compared path by path: the order a folder lists its files in is the file system's, not the project's. On a tmpfs
+      // /tmp (the ubuntu-26.04 runner of release rehearsal 40193321230) it is the order the files were created in, which
+      // differs between the copied example and the imported archive. The failure names each file that differs.
+      const imported = tree(folder);
+      const exported = tree(project);
+      const side = (files: Record<string, string>, file: string) =>
+        file in files ? JSON.stringify(Buffer.from(files[file]!, 'base64').toString('utf8').slice(0, 300)) : 'missing';
+      const differing = [...new Set([...Object.keys(imported), ...Object.keys(exported)])]
+        .filter((file) => imported[file] !== exported[file])
+        .map((file) => `${file}: imported ${side(imported, file)}, exported ${side(exported, file)}`);
+      assert(differing.length === 0, `The imported folder is not equal to the project that was exported:\n${differing.join('\n')}`);
       assert(disk(join(folder, 'zplc.json')) === disk(join(project, 'zplc.json')), 'zplc.json is not byte-equal after the round trip.');
       await openFile(app, 'src/Motor.st');
       assert(hasProgram(await editorText(app), 'Motor'), 'The imported project does not open Motor.st.');
