@@ -84,6 +84,15 @@ describe('the course view', () => {
     expect(gap.modules.find((module) => module.lessons.length === 0)!.objectives).toEqual([]);
   });
 
+  // Lessons of one topic in two languages can share an objective (function-block-pump-pair and function-block-call-il in
+  // module 7): the module states it once, which the list in Learn also needs as its key.
+  it('states an objective that two lessons of a module share once, in each language', () => {
+    for (const locale of ['en', 'es'] as const) {
+      const modules = buildCourseView(LESSON_INDEX, emptyProgress(), { locale, unlockAll: false }).modules;
+      for (const module of modules) expect([module.id, module.objectives]).toEqual([module.id, [...new Set(module.objectives)]]);
+    }
+  });
+
   it('reads Spanish titles in the Spanish locale', () => {
     const spanish = buildCourseView(LESSON_INDEX, emptyProgress(), { locale: 'es', unlockAll: false });
     expect(spanish.modules[3]!.title).toBe('Temporizadores, flancos y contadores');

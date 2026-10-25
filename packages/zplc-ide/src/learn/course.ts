@@ -31,7 +31,7 @@ export interface CourseModuleView {
   tracks: readonly string[];
   /** The sum of the lessons placed in the module; 0 for a module that has none yet. */
   estimatedMinutes: number;
-  /** The objectives of the lessons placed in the module, in lesson order. */
+  /** The objectives of the lessons placed in the module, in lesson order, each once (two languages can teach the same one). */
   objectives: readonly string[];
   lessons: readonly CourseLessonView[];
 }
@@ -123,7 +123,7 @@ export function buildCourseView(
       requires: module.requires,
       tracks: module.tracks,
       estimatedMinutes: placed.reduce((sum, lesson) => sum + lesson.estimatedMinutes, 0),
-      objectives: ordered.filter((entry) => entry.module === module.id).flatMap((entry) => entry.text[locale].objectives),
+      objectives: [...new Set(ordered.filter((entry) => entry.module === module.id).flatMap((entry) => entry.text[locale].objectives))],
       lessons: placed,
     };
   });
