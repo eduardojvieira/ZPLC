@@ -2,103 +2,103 @@
   "schemaVersion": 1,
   "command": "bun run docs:screenshots",
   "journey": "56 Blink without hardware (the tutorial)",
-  "commit": "74fa2254fad0d3fbf2515849d7a3fe16f88d5b59",
+  "commit": "1748f8d9a5afddb8a494bf71f1b4b8bdd4b6cb8d",
   "worktreeClean": true,
   "productVersion": "2.0.0-rc.3",
   "images": [
     {
       "file": "tutorials/blink-1-welcome.png",
       "step": "The Welcome screen with the example list",
-      "sha256": "8482419e435ec104b37bd1d40711ec6ea8affbc03062f9f4bdd5542e68295893",
-      "bytes": 144078,
+      "sha256": "8ffb19e1bbad82d166890e5116f9369580cc23a3ddceea33d7eceffb62aaf71e",
+      "bytes": 120621,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-2-program.png",
       "step": "The program open in the editor",
-      "sha256": "226dfb4f96d8cc2447d376ff2563558b55ff16aa31606f0f2ef1dabb2fc00908",
-      "bytes": 139984,
+      "sha256": "6e1d1f98c71557dcadadcb64c892442995561e78aa4d9cc2b93afbbeb2db3015",
+      "bytes": 140168,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-3-built.png",
       "step": "The build succeeded",
-      "sha256": "0cde047eb86a71398a31fdc3993bfed2cf4e37725cb76a3f71218d45f8551ac3",
-      "bytes": 160891,
+      "sha256": "f970cebd1375f4852b038573a1aa223da65e400226a5c3416774ddc8d685a724",
+      "bytes": 161163,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-4-output-true.png",
       "step": "The simulator runs and the output is TRUE",
-      "sha256": "2778420076540609956d643a5ee4dc4a8a4e088b9b88162bb72b83659b11833d",
-      "bytes": 122385,
+      "sha256": "d67461d563a3fa57450dc854381cef12db6500de46a50a8e2ea72afac2ab8338",
+      "bytes": 122439,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-5-output-false.png",
       "step": "The output is FALSE half a second later",
-      "sha256": "f96bf528102f5503e9ad0a2090450d9812ae4194ad8ecdef4c287e2d32e7ed47",
-      "bytes": 122553,
+      "sha256": "c2a24bf48d9580db240156b9d59ea79348df75031e335295b432e32c75779f16",
+      "bytes": 122459,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-6-scenario.png",
       "step": "The scenario test passed",
-      "sha256": "8389fccec26cacb7fd09b38092bac57c5860238db8624c56254a72da521e2675",
-      "bytes": 151088,
+      "sha256": "578bf18299a2a1a6f89c3712880228927f5d26c26098facb7f848eba43fed775",
+      "bytes": 151056,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-1-welcome-es.png",
       "step": "The Welcome screen with the example list, interface in Spanish",
-      "sha256": "291efefcd8bed91ec9ef87683f10af9cada9db19accf561e435ca65698f3bb6b",
-      "bytes": 149424,
+      "sha256": "16f9e66bd4a18fb29f130a97602eefc53a05fc1b52fa20a06e84395268e26b93",
+      "bytes": 5854,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-2-program-es.png",
       "step": "The program open in the editor, interface in Spanish",
-      "sha256": "31301a5818f554cbde21b10826947cf2653da5a51286b980598165df4730eebf",
-      "bytes": 141858,
+      "sha256": "4e172f84c9e22174c5f15eb224c75e28f9260aa03f529c53836f89bc7e5dfe5e",
+      "bytes": 142657,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-3-built-es.png",
       "step": "The build succeeded, interface in Spanish",
-      "sha256": "4fcc5b69e6e609cfffb2aa21c0d31df34ff25adeda2ff659ad2b765630902d8d",
-      "bytes": 165366,
+      "sha256": "00504bad9b80a2ff8a270a3bfd54139e293ff9519ffd46798c2424963f8100bc",
+      "bytes": 166293,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-4-output-true-es.png",
       "step": "The simulator runs and the output is TRUE, interface in Spanish",
-      "sha256": "be841f8d5fe9f1ed74566273c4c4b8920e55a73ce91f8ea2f2865d2a8539fa1a",
-      "bytes": 128507,
+      "sha256": "d35ecac7322b41766aef82cf36bf966526ca4493a3d99ffb5fcb5aecc4f6405e",
+      "bytes": 128599,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-5-output-false-es.png",
       "step": "The output is FALSE half a second later, interface in Spanish",
-      "sha256": "58b39560597d8033ee256f5e61d34b839983825f90de1d3dc2a4756d0bcab114",
-      "bytes": 128389,
+      "sha256": "6653b42b5fdfb9764240dd94fdc7fde0bc8fa30cb988818751cba3094ade570d",
+      "bytes": 128354,
       "width": 1440,
       "height": 900
     },
     {
       "file": "tutorials/blink-6-scenario-es.png",
       "step": "The scenario test passed, interface in Spanish",
-      "sha256": "d0b78991ea06e8ebbf6e7b2c9d12d1014bc7f1b1fe3381a5066e88dbd3335390",
-      "bytes": 163048,
+      "sha256": "16d151f5c6921fdc12a2fe944fbb23eec35a982cfb8eef223661938044bb6178",
+      "bytes": 163388,
       "width": 1440,
       "height": 900
     },
