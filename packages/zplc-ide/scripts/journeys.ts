@@ -2237,9 +2237,15 @@ export const JOURNEYS: Journey[] = [
             clientWidth: number;
             scrollHeight: number;
             clientHeight: number;
+            contentScrollWidth: number;
+            contentClientWidth: number;
+            spilling: string[];
           }>(
-            `(() => { const page = document.documentElement; return { innerWidth, scrollWidth: page.scrollWidth, clientWidth: ` +
-              `page.clientWidth, scrollHeight: page.scrollHeight, clientHeight: page.clientHeight }; })()`,
+            `(() => { const page = document.documentElement; const content = document.querySelector('main'); return { innerWidth, ` +
+              `scrollWidth: page.scrollWidth, clientWidth: page.clientWidth, scrollHeight: page.scrollHeight, clientHeight: ` +
+              `page.clientHeight, contentScrollWidth: content.scrollWidth, contentClientWidth: content.clientWidth, spilling: ` +
+              `[...document.querySelectorAll('[data-welcome-example]')].filter((card) => card.scrollWidth > card.clientWidth + 1)` +
+              `.map((card) => card.getAttribute('data-welcome-example')) }; })()`,
           );
           return found.innerWidth === width ? found : undefined;
         });
@@ -2247,6 +2253,13 @@ export const JOURNEYS: Journey[] = [
           measure.scrollWidth <= measure.clientWidth,
           `At ${width} px the Welcome page is wider than the window ` +
             `(${JSON.stringify(measure)}): a horizontal scrollbar shows at the bottom.`,
+        );
+        // The content area scrolls, so text that runs out of a card shows there as a sideways scrollbar, not on the window:
+        // each example card wraps its text inside its own box (seen on a MacBook Air, in Spanish, on 2026-10-26).
+        assert(
+          measure.spilling.length === 0 && measure.contentScrollWidth <= measure.contentClientWidth,
+          `At ${width} px the text of an example card runs out of it (${measure.spilling.slice(0, 5).join(', ')}): the Welcome ` +
+            `content is ${measure.contentScrollWidth} px wide in ${measure.contentClientWidth} px.`,
         );
         assert(
           measure.scrollHeight <= measure.clientHeight,
