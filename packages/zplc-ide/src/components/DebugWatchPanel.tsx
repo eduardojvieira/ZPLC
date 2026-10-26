@@ -337,7 +337,7 @@ export function DebugWatchPanel({
             aria-label={t('panel.watch.format')}
             value={format}
             onChange={(e) => setFormat(e.target.value as WatchFormat)}
-            className="w-24 text-[11px]"
+            className="w-auto text-[11px]"
           >
             {WATCH_FORMATS.map((entry) => (
               <option key={entry} value={entry}>

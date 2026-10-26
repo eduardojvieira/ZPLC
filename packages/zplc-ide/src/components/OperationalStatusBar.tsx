@@ -114,7 +114,8 @@ export function OperationalStatusView({
       className="min-h-[34px] border-b border-[var(--color-surface-700)] bg-[var(--color-surface-900)] px-3 py-1.5"
     >
       <div className="overflow-x-auto [scrollbar-width:thin]">
-        <div className="flex min-w-max items-center gap-3 whitespace-nowrap">
+        {/* each detail stays on one line; in a narrow window the row goes on to a second line instead of scrolling sideways */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 whitespace-nowrap">
           <ConnectionIndicator indicator={indicator} />
           <span className="h-3.5 w-px bg-[var(--color-surface-700)]" aria-hidden="true" />
           <Detail

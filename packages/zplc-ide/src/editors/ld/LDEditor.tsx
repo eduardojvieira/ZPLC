@@ -867,23 +867,24 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
 
         {/* Legend */}
         <div className="px-4 py-2 bg-[var(--color-surface-800)] border-t border-[var(--border-color)]">
-          <div className="flex items-center gap-4 text-[length:var(--font-size-caption)] text-[var(--text-tertiary)]">
-            <span className="flex items-center gap-1">
+          {/* a symbol and its name stay on one line; the keyboard hint goes to a second line when the row is too narrow */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[length:var(--font-size-caption)] text-[var(--text-tertiary)]">
+            <span className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <span className="font-mono text-[var(--text-primary)]">| |</span> {t('ld.noContact')}
             </span>
-            <span className="flex items-center gap-1">
+            <span className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <span className="font-mono text-[var(--text-primary)]">|/|</span> {t('ld.ncContact')}
             </span>
-            <span className="flex items-center gap-1">
+            <span className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <span className="font-mono text-[var(--text-primary)]">( )</span> {t('commtags.coil')}
             </span>
-            <span className="flex items-center gap-1">
+            <span className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <span className="font-mono text-[var(--text-primary)]">{t('ld.s')}</span> {t('ld.set')}
             </span>
-            <span className="flex items-center gap-1">
+            <span className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <span className="font-mono text-[var(--text-primary)]">{t('ld.r')}</span> {t('ld.reset')}
             </span>
-            <span className="flex items-center gap-1 ml-auto text-[var(--text-tertiary)]">{t('ld.arrowsMoveTheCursor')}</span>
+            <span className="ml-auto text-[var(--text-tertiary)]">{t('ld.arrowsMoveTheCursor')}</span>
           </div>
         </div>
 

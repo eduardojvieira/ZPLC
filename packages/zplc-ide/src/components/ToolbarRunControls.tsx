@@ -65,7 +65,7 @@ export function RunControls({
       <div
         role="group"
         aria-label={t('toolbar.mode.label')}
-        className="flex items-center bg-[var(--color-surface-700)] rounded overflow-hidden"
+        className="flex shrink-0 items-center bg-[var(--color-surface-700)] rounded overflow-hidden"
       >
         <Button
           variant="bare"
@@ -74,7 +74,7 @@ export function RunControls({
             void onExecutionModeChange(EXECUTION_MODE.SIMULATE);
           }}
           disabled={controlsBusy}
-          className={`focus-ring flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${
+          className={`focus-ring flex items-center gap-1 whitespace-nowrap px-2.5 py-1.5 text-xs font-medium transition-colors ${
             executionMode === EXECUTION_MODE.SIMULATE
               ? 'bg-[var(--color-accent-blue)] text-[var(--color-on-accent)]'
               : 'text-[var(--color-surface-300)] hover:bg-[var(--menu-item-bg-active)]'
@@ -93,7 +93,7 @@ export function RunControls({
             void onExecutionModeChange(EXECUTION_MODE.HARDWARE);
           }}
           disabled={controlsBusy}
-          className={`focus-ring flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${
+          className={`focus-ring flex items-center gap-1 whitespace-nowrap px-2.5 py-1.5 text-xs font-medium transition-colors ${
             executionMode === EXECUTION_MODE.HARDWARE
               ? 'bg-[var(--color-accent-blue)] text-[var(--color-on-accent)]'
               : 'text-[var(--color-surface-300)] hover:bg-[var(--menu-item-bg-active)]'
@@ -172,16 +172,17 @@ export function RunControls({
             type="button"
             onClick={toggleMpeek}
             disabled={controlsBusy}
-            className={`focus-ring flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${
-              mpeekEnabled
+            className={
+              'focus-ring flex shrink-0 items-center gap-1 whitespace-nowrap rounded px-2 py-1.5 text-xs font-medium transition-colors ' +
+              (mpeekEnabled
                 ? 'bg-[var(--color-accent-yellow)] hover:brightness-110 text-[var(--color-on-accent)]'
-                : 'bg-[var(--color-surface-700)] hover:bg-[var(--menu-item-bg-active)] text-[var(--color-surface-400)]'
-            }`}
+                : 'bg-[var(--color-surface-700)] hover:bg-[var(--menu-item-bg-active)] text-[var(--color-surface-400)]')
+            }
             aria-label={mpeekEnabled ? t('toolbar.live.disable') : t('toolbar.live.enable')}
             tooltip={mpeekEnabled ? t('toolbar.live.enabledTitle') : t('toolbar.live.disabledTitle')}
           >
             <Zap size={13} />
-            <span className="hidden lg:inline">{t('toolbar.live.text')}</span>
+            <span className="hidden xl:inline">{t('toolbar.live.text')}</span>
           </Button>
         )}
 

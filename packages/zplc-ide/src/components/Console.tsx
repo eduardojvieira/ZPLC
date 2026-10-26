@@ -42,7 +42,7 @@ import { isCandidateSourcePath } from '../ai/candidatePaths';
 import { presentAgentResponse } from './agent/agentResponse';
 import { AgentProposals } from './agent/AgentProposals';
 import { changeSetIsCurrent, reviewChangeSet, saveChangeSet } from './agent/changeSetReview';
-import type { ConsoleTab } from '../types';
+import { ConsoleTabStrip, type ConsoleTabFace } from './ConsoleTabStrip';
 import { TerminalTab } from './TerminalTab';
 import { WatchTab } from './WatchTab';
 import type { DebugController } from '../hooks/useDebugController';
@@ -104,16 +104,6 @@ type WorkspaceSafetyState =
 
 interface ConsoleProps {
   debugController?: DebugController;
-}
-
-function consoleTabAfterKey(tabs: ConsoleTab[], activeTab: ConsoleTab, key: string): ConsoleTab | null {
-  const index = tabs.indexOf(activeTab);
-  if (index < 0) return null;
-  if (key === 'Home') return tabs[0] ?? null;
-  if (key === 'End') return tabs.at(-1) ?? null;
-  if (key === 'ArrowLeft') return tabs[(index - 1 + tabs.length) % tabs.length] ?? null;
-  if (key === 'ArrowRight') return tabs[(index + 1) % tabs.length] ?? null;
-  return null;
 }
 
 export function Console({ debugController }: ConsoleProps) {
@@ -279,18 +269,14 @@ export function Console({ debugController }: ConsoleProps) {
           ariaLabel: t('console.tab.unseenOutput', { count }),
         }
       : {};
-  const tabs: { id: ConsoleTab; label: string; icon: React.ReactNode; count?: React.ReactNode; ariaLabel?: string }[] = [
+  const tabs: ConsoleTabFace[] = [
     { id: 'output', label: t('panel.output'), icon: <Terminal size={14} />, ...unseenTab(unseen.output) },
     {
       id: 'problems',
       label: t('panel.problems'),
       icon: <AlertTriangle size={14} />,
-      count: (
-        <>
-          <span className="text-xs tabular-nums">{problemSummary}</span>
-          {unseenTab(unseen.problems).count}
-        </>
-      ),
+      summary: problemSummary,
+      count: unseenTab(unseen.problems).count,
       ariaLabel:
         t('console.tab.problemsAria', { summary: problemSummary }) +
         (unseen.problems ? `, ${t('console.tab.unseen', { count: unseen.problems })}` : ''),
@@ -882,48 +868,14 @@ export function Console({ debugController }: ConsoleProps) {
           className="mr-2"
         />
 
-        <div role="tablist" aria-label={t('console.workbenchPanels')} className="flex h-full min-w-0 items-center overflow-x-auto">
-          {tabs.map((tab) => (
-            <Button
-              variant="bare"
-              key={tab.id}
-              id={`console-tab-${tab.id}`}
-              role="tab"
-              aria-selected={activeConsoleTab === tab.id}
-              aria-controls={`console-panel-${tab.id}`}
-              aria-label={tab.ariaLabel}
-              tabIndex={activeConsoleTab === tab.id ? 0 : -1}
-              onClick={() => {
-                setActiveConsoleTab(tab.id);
-                if (tab.id === 'agent') void refreshAiProvider();
-              }}
-              onKeyDown={(event) => {
-                const nextTab = consoleTabAfterKey(
-                  tabs.map(({ id }) => id),
-                  activeConsoleTab,
-                  event.key,
-                );
-                if (!nextTab) return;
-                event.preventDefault();
-                setActiveConsoleTab(nextTab);
-                if (nextTab === 'agent') void refreshAiProvider();
-                document.getElementById(`console-tab-${nextTab}`)?.focus();
-              }}
-              className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-1 text-sm transition-colors ${
-                activeConsoleTab === tab.id
-                  ? 'text-[var(--color-surface-100)] border-b-2 border-[var(--color-accent-blue)]'
-                  : 'text-[var(--color-surface-300)] hover:text-[var(--color-surface-100)]'
-              }`}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-              {tab.count !== undefined && <span className={tab.id === 'problems' ? 'ml-1 hidden md:inline' : 'ml-1'}>{tab.count}</span>}
-            </Button>
-          ))}
-        </div>
-
-        {/* Spacer */}
-        <div className="flex-1" />
+        <ConsoleTabStrip
+          tabs={tabs}
+          activeConsoleTab={activeConsoleTab}
+          onSelect={(tab) => {
+            setActiveConsoleTab(tab);
+            if (tab === 'agent') void refreshAiProvider();
+          }}
+        />
 
         {(activeConsoleTab === 'output' || activeConsoleTab === 'problems' || activeConsoleTab === 'trace') && (
           <IconButton
@@ -971,8 +923,8 @@ export function Console({ debugController }: ConsoleProps) {
                 consoleEntries.map((entry) => (
                   <div key={entry.id} className="flex items-start gap-2 py-0.5 hover:bg-[var(--color-surface-700)] px-1 rounded">
                     {getEntryIcon(entry.type)}
-                    <span className="text-[var(--color-surface-400)] text-xs min-w-[60px]">[{formatTime(entry.timestamp)}]</span>
-                    {entry.source && <span className="text-[var(--text-muted)] text-xs">[{entry.source}]</span>}
+                    <span className="shrink-0 text-[var(--color-surface-400)] text-xs">[{formatTime(entry.timestamp)}]</span>
+                    {entry.source && <span className="shrink-0 text-[var(--text-muted)] text-xs">[{entry.source}]</span>}
                     <span className={getEntryColor(entry.type)}>{entry.message}</span>
                   </div>
                 ))

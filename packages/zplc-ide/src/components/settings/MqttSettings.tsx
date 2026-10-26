@@ -18,7 +18,7 @@ export function MqttSettings({
   return (
     <div>
       <h3 className="block text-xs text-[var(--color-surface-400)] mb-2">{t('mqtt.mqtt')}</h3>
-      <div className="grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3">
         <Checkbox
           checked={mqtt.enabled}
           onChange={(e) => updateCommunication({ mqtt: { ...mqtt, enabled: e.target.checked } })}
@@ -78,7 +78,7 @@ export function MqttSettings({
       {boardNetworkType === 'none' && mqtt.enabled && (
         <p className="mt-2 text-xs text-[var(--color-accent-yellow)]">{t('mqtt.thisBoardProfileDoes')}</p>
       )}
-      <div className="grid grid-cols-3 gap-3 mt-2">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3 mt-2">
         <TextField
           value={mqtt.clientId}
           onChange={(e) => updateCommunication({ mqtt: { ...mqtt, clientId: e.target.value } })}
@@ -232,7 +232,7 @@ export function MqttSettings({
           <option value="tls-mutual">{t('mqtt.mutualTls')}</option>
         </Select>
       </div>
-      <div className="grid grid-cols-4 gap-3 mt-2">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3 mt-2">
         <NumberField
           min={5}
           max={3600}
@@ -267,7 +267,7 @@ export function MqttSettings({
           <option value={2}>{t('mqtt.subscribeQos2')}</option>
         </Select>
       </div>
-      <div className="grid grid-cols-4 gap-3 mt-2">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3 mt-2">
         <Checkbox
           checked={mqtt.publishRetain}
           onChange={(e) => updateCommunication({ mqtt: { ...mqtt, publishRetain: e.target.checked } })}
@@ -287,7 +287,7 @@ export function MqttSettings({
         <TextField type="password" value="" disabled placeholder={t('mqtt.password')} aria-label={t('mqtt.password')} />
       </div>
       <p className="text-xs text-[var(--color-surface-300)]">{t('mqtt.credentialsAndPrivateKey')}</p>
-      <div className="grid grid-cols-4 gap-3 mt-2">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3 mt-2">
         <TextField
           value={mqtt.websocketPath || ''}
           onChange={(e) => updateCommunication({ mqtt: { ...mqtt, websocketPath: e.target.value || undefined } })}
@@ -314,7 +314,7 @@ export function MqttSettings({
         />
         <TextField value="" disabled placeholder={t('mqtt.clientKeyPath')} aria-label={t('mqtt.clientKeyPath')} />
       </div>
-      <div className="grid grid-cols-5 gap-3 mt-2">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3 mt-2">
         <Checkbox
           checked={mqtt.lwtEnabled}
           onChange={(e) => updateCommunication({ mqtt: { ...mqtt, lwtEnabled: e.target.checked } })}

@@ -328,7 +328,13 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
 
         <LearnBoardLesson lessonId={lesson.id} />
         <section aria-label={t('learn.lessonActions')} className="border-t border-[var(--color-surface-600)] pt-3">
-          <div className="flex flex-wrap gap-2">
+          {/* in a narrow sidebar a button wider than the row wraps its own text instead of running out of the panel */}
+          <div
+            className={
+              'flex flex-wrap gap-2 [&>button]:h-auto [&>button]:max-w-full [&>button]:py-1 ' +
+              '[&>button]:whitespace-normal [&>button]:text-left'
+            }
+          >
             {workspaceOpen ? (
               <Button
                 ref={resetButton}

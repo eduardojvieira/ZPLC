@@ -150,15 +150,16 @@ export function ProjectDeclarations() {
       data-project-declarations
       className="max-h-[45%] shrink-0 overflow-y-auto border-t border-[var(--color-surface-700)] text-xs"
     >
-      <div className="flex items-center justify-between gap-2 px-3 py-1.5">
-        <h2 className="font-semibold uppercase tracking-[0.08em] text-[var(--color-surface-200)]">
+      {/* in a narrow sidebar the folder button goes under the title, and its text wraps */}
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-3 py-1.5">
+        <h2 className="min-w-0 font-semibold uppercase tracking-[0.08em] text-[var(--color-surface-200)]">
           <Button
             variant="ghost"
             size="sm"
             aria-expanded={expanded}
             aria-controls="project-declarations-body"
             onClick={() => setExpanded((value) => !value)}
-            className="uppercase"
+            className="max-w-full uppercase"
             icon={
               <>
                 {expanded ? <ChevronDown size={ICON_SIZES.sm} /> : <ChevronRight size={ICON_SIZES.sm} />}
@@ -166,8 +167,12 @@ export function ProjectDeclarations() {
               </>
             }
           >
-            {t('workbench.declarations.title')}
-            <span className="rounded-full bg-[var(--tone-neutral-bg)] px-1.5 font-normal normal-case text-[var(--tone-neutral-fg)]">
+            <span className="min-w-0 truncate">{t('workbench.declarations.title')}</span>
+            <span
+              className={
+                'shrink-0 rounded-full bg-[var(--tone-neutral-bg)] px-1.5 font-normal normal-case ' + 'text-[var(--tone-neutral-fg)]'
+              }
+            >
               {total}
             </span>
             {unlisted.length > 0 && (
@@ -193,6 +198,7 @@ export function ProjectDeclarations() {
           tooltip={migrating ? t('workbench.declarations.migrateFirst') : t('workbench.declarations.addTitle')}
           aria-label={t('workbench.declarations.addFolderLabel')}
           icon={<FolderPlus size={ICON_SIZES.sm} />}
+          className="h-auto min-w-0 whitespace-normal text-left"
         >
           {t('workbench.declarations.libraryFolder')}
         </Button>

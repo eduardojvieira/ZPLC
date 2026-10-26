@@ -90,15 +90,17 @@ interface ToolboxSectionProps {
   title: string;
   items: LDToolboxItem[];
   onInsert?: (item: LDToolboxItem) => void;
+  /** One item per row, for names too long to share a row without breaking a word (HYSTERESIS, AZURE_C2D_RECV). */
+  wide?: boolean;
 }
 
-function ToolboxSection({ title, items, onInsert }: ToolboxSectionProps) {
+function ToolboxSection({ title, items, onInsert, wide = false }: ToolboxSectionProps) {
   if (items.length === 0) return null;
 
   return (
     <div className="mb-3">
       <h3 className={`${CAPTION} font-semibold text-[var(--color-surface-300)] uppercase tracking-wider mb-1.5 px-1`}>{title}</h3>
-      <div className="grid grid-cols-2 gap-1.5">
+      <div className={`grid ${wide ? 'grid-cols-1' : 'grid-cols-2'} gap-1.5`}>
         {items.map((item, idx) => (
           <ToolboxItem key={`${item.type}-${item.fbType || idx}`} item={item} onInsert={onInsert} />
         ))}
@@ -140,7 +142,7 @@ export default function LDToolbox({ onInsert }: LDToolboxProps) {
 
   return (
     <div
-      className="w-40 h-full bg-[var(--color-surface-800)] border-r border-[var(--color-surface-600)] p-2 overflow-y-auto flex-shrink-0"
+      className="w-48 h-full bg-[var(--color-surface-800)] border-r border-[var(--color-surface-600)] p-2 overflow-y-auto flex-shrink-0"
       data-ld-toolbox
     >
       <h2 className="text-xs font-bold text-[var(--color-surface-100)] mb-2 px-1">{t('editors.ld.toolbox')}</h2>
@@ -156,7 +158,7 @@ export default function LDToolbox({ onInsert }: LDToolboxProps) {
       <ToolboxSection title={t('editors.ld.contacts')} items={contacts} onInsert={onInsert} />
       <ToolboxSection title={t('editors.ld.coils')} items={coils} onInsert={onInsert} />
       <ToolboxSection title={t('editors.ld.structure')} items={structure} onInsert={onInsert} />
-      <ToolboxSection title={t('editors.ld.functionBlocks')} items={functionBlocks} onInsert={onInsert} />
+      <ToolboxSection title={t('editors.ld.functionBlocks')} items={functionBlocks} onInsert={onInsert} wide />
       {allItems.length === 0 ? <p className={`px-1 ${CAPTION} text-[var(--color-surface-300)]`}>{t('editors.nothingMatches')}</p> : null}
 
       {/* Instructions */}

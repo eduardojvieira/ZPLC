@@ -5,7 +5,13 @@ import { compactSource, withEnglishMessages } from '../i18n/inlineMessages';
 import { claimMotorInputCommand, shouldClearMotorInputFailure } from './liveNativeMotorPanel';
 
 // Console.tsx and the modules split out of it (IDE-014): the pins below read the text of all of them, as they did of the one file.
-const CONSOLE_MODULES = ['Console.tsx', 'ConsoleReviewPanels.tsx', 'LiveNativeMotorControls.tsx', 'WorkspaceTestResult.tsx'];
+const CONSOLE_MODULES = [
+  'Console.tsx',
+  'ConsoleTabStrip.tsx',
+  'ConsoleReviewPanels.tsx',
+  'LiveNativeMotorControls.tsx',
+  'WorkspaceTestResult.tsx',
+];
 const consoleSources = (): string =>
   CONSOLE_MODULES.map((file) => compactSource(readFileSync(join(import.meta.dir, file), 'utf8'))).join('\n');
 

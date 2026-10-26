@@ -19,6 +19,7 @@ export function TestsView() {
       <Button
         variant="primary"
         size="sm"
+        className="h-auto py-1 whitespace-normal text-left"
         onClick={() => {
           runCommand('view.tests');
         }}

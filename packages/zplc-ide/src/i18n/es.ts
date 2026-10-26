@@ -599,7 +599,7 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   'command.view.showSearch': 'Buscar en el proyecto',
   'command.view.showLearn': 'Mostrar las lecciones',
   'search.query': 'Texto a buscar',
-  'search.placeholder': 'Buscar en los archivos del proyecto',
+  'search.placeholder': 'Buscar en el proyecto',
   'search.matchCase': 'Distinguir mayúsculas',
   'search.scope':
     'Busca en los archivos de texto estructurado y de lista de instrucciones, con los cambios sin guardar. No se busca en los diagramas.',

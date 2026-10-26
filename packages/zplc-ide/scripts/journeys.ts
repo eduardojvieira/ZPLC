@@ -32,6 +32,7 @@ import { assert, MONACO_MODULE, packageRoot } from './run-desktop-smoke';
 import { button, css, launchPackagedApp, menuItem, notPossible, tab, type App, type Target } from './journeyApp';
 import { domAuditExpression, type DomAuditResult } from './domAudit';
 import { attachEmulatedDevice } from './emulatedDevice';
+import { findTextOutOfBox } from './textFit';
 
 export interface JourneyContext {
   root: string;
@@ -7992,6 +7993,97 @@ export const JOURNEYS: Journey[] = [
       await app.eval(`document.querySelector('[data-learn-grade="passed"]').scrollIntoView({ block: 'center' })`);
       await app.until('the passed grade in view', async () => (await app.visible(css('[data-learn-grade="passed"]'))) || undefined);
       await docShot(app, `lesson-checked-${locale}${theme === 'dark' ? '-dark' : ''}`);
+    },
+  },
+  {
+    // The Welcome cards of rc.3 ran out of their boxes on a MacBook Air in Spanish (2026-10-26), and a sweep of the other
+    // screens found the same in ten more places. Spanish labels are the longest, and 1024 by 768 is the smallest window
+    // the shell supports (journey 45).
+    name: '65 Text stays inside its box on the main screens, in English and in Spanish, at 1440 by 900 and 1024 by 768',
+    example: 'blinky_st',
+    proves: [],
+    partly: [],
+    run: async (app, { project }) => {
+      mkdirSync(join(project, 'extra'));
+      cpSync(join(packageRoot, 'projects', 'blinky', 'src', 'main.ld.json'), join(project, 'extra', 'blink.ld.json'));
+      // the deliberate sideways scroll strips: the editor tabs (one per open file), a Ladder rung wider than the view
+      const strips = [
+        inEither('workbench.editor.views', (label) => `[role="tablist"][aria-label=${JSON.stringify(label)}]`),
+        '[data-ld-rung-id] .overflow-x-auto',
+      ];
+      // each problem once, with the language, width and screen it was seen in
+      const found = new Map<string, string[]>();
+      const check = async (state: string) => {
+        for (const [width, height] of [
+          [1440, 900],
+          [1024, 768],
+        ] as const) {
+          await app.cdp.command('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
+          await app.until(
+            `the window to be ${width} wide`,
+            async () => (await app.eval<number>('window.innerWidth')) === width || undefined,
+          );
+          await new Promise((resolve) => setTimeout(resolve, 400)); // the layout that follows a resize (a strip that turns compact)
+          const problems = await app.eval<string[]>(`(${findTextOutOfBox.toString()})(${JSON.stringify(strips)})`);
+          for (const problem of problems) found.set(problem, [...(found.get(problem) ?? []), `${journeyLocale} ${width} ${state}`]);
+        }
+        await app.cdp.command('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+      };
+      try {
+        for (const locale of ['en', 'es'] as const) {
+          journeyLocale = locale;
+          if (locale === 'es') {
+            await app.eval(
+              `(() => { const key = 'zplc-ide-settings'; const stored = JSON.parse(localStorage.getItem(key) || '{}'); const target = ` +
+                `stored.settings ?? stored; target.language = 'es'; localStorage.setItem(key, JSON.stringify(stored)); })()`,
+            );
+            await app.cdp.command('Page.reload');
+          }
+          await app.until('the Welcome screen', async () => (await app.visible(button(ui('welcome.open.title'), 'contains'))) || undefined);
+          app.answer(project);
+          await app.click(button(ui('welcome.open.title'), 'contains'), 'the Open project button');
+          await app.until('the project workbench to appear', async () => (await app.visible(toolbar)) || undefined);
+          await showExplorer(app);
+          await check('the shell with the Files of the project');
+          await openDiagram(app, 'extra/blink.ld.json', '[data-ld-rung-id]');
+          await check('the Ladder editor');
+          await openFile(app, 'src/main.st');
+          await compile(app);
+          await app.click(css('#console-tab-output'), 'the Output tab');
+          await check('Output after a build');
+          await app.click(css('#console-tab-problems'), 'the Problems tab');
+          await check('Problems');
+          await app.click(button(ui('toolbar.settings')), 'the Project settings button');
+          await app.click(css('[data-open-config-editor="communication"]'), 'the communication editor');
+          await app.until(
+            'the communication editor',
+            async () => (await app.visible(css('[data-config-editor="communication"]'))) || undefined,
+          );
+          await check('the communication settings');
+          for (const activity of ['search', 'tests', 'learn']) {
+            await app.click(css(`[data-activity="${activity}"]`), `the ${activity} activity`);
+            await new Promise((resolve) => setTimeout(resolve, 600));
+            await check(`the ${activity} sidebar`);
+          }
+          await showExplorer(app);
+          await connectAndRun(app);
+          await watch(app, 'LED_Output');
+          await check('a running program with a watched variable');
+          await app.click(button(`${ui('toolbar.pause.label')} (F6)`, 'prefix'), 'the Pause button');
+          await app.until(
+            'the program to pause',
+            async () => (await app.visible(button(ui('toolbar.resume.label'), 'prefix'))) || undefined,
+            60_000,
+          );
+          await check('a paused program');
+          await app.click(button(ui('toolbar.disconnect')), 'the Disconnect button');
+          await app.until('the simulation to disconnect', async () => (await app.visible(button(ui('toolbar.connect')))) || undefined);
+        }
+      } finally {
+        journeyLocale = 'en';
+      }
+      const report = [...found].map(([problem, seen]) => `${problem} (${[...new Set(seen)].slice(0, 4).join('; ')})`);
+      assert(report.length === 0, `Text runs out of its box in ${report.length} places:\n${report.slice(0, 60).join('\n')}`);
     },
   },
 ];
