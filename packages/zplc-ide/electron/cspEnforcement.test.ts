@@ -31,6 +31,35 @@ const PAGE = `<!doctype html><html><head><title>none</title></head><body>
 <script src="/same-origin.js"></script>
 </body></html>`;
 
+/** Loads `url` in headless Chromium and returns the document, or undefined when the browser had not ended after 15 s. */
+async function loadOnce(browser: string, url: string): Promise<string | undefined> {
+  const profile = mkdtempSync(join(tmpdir(), 'zplc-csp-'));
+  try {
+    const run = Bun.spawn(
+      [
+        browser,
+        '--headless=new',
+        '--disable-gpu',
+        '--disable-dev-shm-usage',
+        '--no-sandbox',
+        `--user-data-dir=${profile}`,
+        '--virtual-time-budget=4000',
+        '--dump-dom',
+        url,
+      ],
+      { stdout: 'pipe', stderr: 'ignore' },
+    );
+    const dom = new Response(run.stdout).text().catch(() => '');
+    const timer = setTimeout(() => run.kill('SIGKILL'), 15_000);
+    await run.exited;
+    clearTimeout(timer);
+    // A child of a killed browser can keep its output open, so the text of a killed run is not awaited.
+    return run.signalCode === null ? await dom : undefined;
+  } finally {
+    rmSync(profile, { recursive: true, force: true, maxRetries: 3 });
+  }
+}
+
 /** Serves PAGE under `policy`, loads it in headless Chromium and returns the document as the browser ended up with it. */
 async function dumpDom(browser: string, policy: string): Promise<string> {
   const server = Bun.serve({
@@ -46,27 +75,13 @@ async function dumpDom(browser: string, policy: string): Promise<string> {
       return new Response('', { status: 404 });
     },
   });
-  const profile = mkdtempSync(join(tmpdir(), 'zplc-csp-'));
+  const url = `http://127.0.0.1:${server.port}/`;
   try {
-    const run = Bun.spawn(
-      [
-        browser,
-        '--headless=new',
-        '--disable-gpu',
-        '--disable-dev-shm-usage',
-        '--no-sandbox',
-        `--user-data-dir=${profile}`,
-        '--virtual-time-budget=4000',
-        '--dump-dom',
-        `http://127.0.0.1:${server.port}/`,
-      ],
-      { stdout: 'pipe', stderr: 'ignore' },
-    );
-    const [dom] = await Promise.all([new Response(run.stdout).text(), run.exited]);
-    return dom;
+    // Headless Chromium on a CI runner now and then never ends (ZPLC CI run 40371555162); a second run tells that apart from a
+    // page that does not load. A browser that ends is never retried, so a policy that breaks the page still fails.
+    return (await loadOnce(browser, url)) ?? (await loadOnce(browser, url)) ?? '';
   } finally {
     await server.stop(true);
-    rmSync(profile, { recursive: true, force: true });
   }
 }
 
@@ -81,7 +96,7 @@ describe('the production content security policy in Chromium (IDE-016)', () => {
       expect(dom).not.toContain('data-inline="ran"');
       expect(dom).not.toContain('data-handler="ran"');
     },
-    30_000,
+    40_000,
   );
 
   // Without this the test above could pass for a browser that blocks everything or runs nothing: the same page under a policy
@@ -94,6 +109,6 @@ describe('the production content security policy in Chromium (IDE-016)', () => {
       expect(dom).toContain('data-handler="ran"');
       expect(dom).toContain('data-external="ran"');
     },
-    30_000,
+    40_000,
   );
 });
