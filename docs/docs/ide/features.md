@@ -417,7 +417,7 @@ Native POSIX simulation is the way to run a program on your computer. It needs
 the desktop app, which includes the native runtime. Where the native runtime
 cannot start, the simulation runs on the WebAssembly
 runtime, and the status bar says so and lists what it does not have (no
-communication blocks, no serial, no pins, the timing of a browser): see [Browser
+communication blocks, no serial, no pins, the timing of the app window): see [Software
 runtime](../runtime/browser-runtime.md). Hardware actions are separate:
 build runtime firmware, flash runtime firmware, deploy a compiled program, then
 run/debug. A person starts each of them.

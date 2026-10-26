@@ -280,7 +280,7 @@ const baseEs: Record<keyof typeof baseEn, string> = {
   // Operational status bar
   'connection.disconnected': 'Sin conexión',
   'connection.simulation.native': 'Simulación · runtime nativo',
-  'connection.simulation.wasm': 'Simulación · runtime del navegador',
+  'connection.simulation.wasm': 'Simulación · runtime de software',
   'connection.hardware.connecting': 'Conectando con el hardware',
   'connection.hardware.connected': 'Hardware real',
   'connection.hardware.faulted': 'Falla del hardware',

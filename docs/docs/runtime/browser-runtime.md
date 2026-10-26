@@ -2,14 +2,14 @@
 sidebar_position: 4
 slug: /runtime/browser-runtime
 id: browser-runtime
-title: Browser Runtime (WebAssembly)
-sidebar_label: Browser runtime
+title: Software Runtime (WebAssembly)
+sidebar_label: Software runtime
 description: 'The WebAssembly runtime of the ZPLC application: when it runs instead of the native simulation, what it shares with the firmware, what it does not have, and the evidence for each statement.'
 ---
 
-# Browser Runtime (WebAssembly)
+# Software Runtime (WebAssembly)
 
-The ZPLC application simulates a program on the native runtime of the desktop app. When that runtime cannot start, the simulation runs on the **browser runtime**: the same session code, built to WebAssembly. It is a degraded simulation, and the application says so wherever it shows the runtime.
+The ZPLC application simulates a program on the native runtime of the desktop app. When that runtime cannot start, the simulation runs on the **software runtime**: the same session code, built to WebAssembly. It is a degraded simulation, and the application says so wherever it shows the runtime.
 
 ## What it is
 
@@ -23,13 +23,13 @@ The module is built from the files of the native runtime and of the firmware, no
 | The session                             | `firmware/apps/posix_host/src/native_runtime_session.c` | The same requests and the same answers as the native runtime: load, start, pause, step, breakpoints, forces, simulation inputs |
 | The HAL port                            | `firmware/lib/zplc_core/src/hal/wasm/zplc_hal_wasm.c`   | Five calls into the page: a clock, three persistence calls and a log line                                                      |
 
-`tools/wasm-core/build.ts` builds it with `clang` and `wasm-ld`, with no C library and no Emscripten. The build of the ZPLC application runs it (the Vite build of `packages/zplc-ide`): the module is embedded in the bundle, and its manifest (size, SHA-256, commit, product version and compiler) is written to `dist/wasm-runtime.json`. Nothing built is committed. A machine without `clang` and `wasm-ld` makes an application with no browser runtime and says why; where `CI` is set the build fails instead.
+`tools/wasm-core/build.ts` builds it with `clang` and `wasm-ld`, with no C library and no Emscripten. The build of the ZPLC application runs it (the Vite build of `packages/zplc-ide`): the module is embedded in the bundle, and its manifest (size, SHA-256, commit, product version and compiler) is written to `dist/wasm-runtime.json`. Nothing built is committed. A machine without `clang` and `wasm-ld` makes an application with no software runtime and says why; where `CI` is set the build fails instead.
 
 ## When it runs
 
 - In the desktop app when the native runtime does not start: its binary is missing, it was not built for the platform, or its handshake failed. The console says that the native simulation could not start and that the WebAssembly runtime runs instead.
 
-An unpackaged build of ZPLC switches the native runtime off with `ZPLC_RUNTIME=wasm`, so that a test can show the browser runtime on a machine that has the native one. An installed copy of ZPLC ignores the variable.
+An unpackaged build of ZPLC switches the native runtime off with `ZPLC_RUNTIME=wasm`, so that a test can show the software runtime on a machine that has the native one. An installed copy of ZPLC ignores the variable.
 
 ## What the ZPLC application shows
 
@@ -39,7 +39,7 @@ The status bar shows **Runtime: WASM fallback · degraded**, and under it the li
 | ---------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pause`, `resume`, `step`, `breakpoints` | supported   | The session code is the native runtime's: a breakpoint stops the scan, a step runs one, a resume continues from where it stopped                                                                                                                                                                      |
 | `simulation-inputs`                      | supported   | The motor start, stop and emergency stop inputs stage one batch, as in the native runtime                                                                                                                                                                                                             |
-| `tasks`                                  | degraded    | Cyclic tasks run on the scheduler core of the firmware, released from the timers of the browser; event and interrupt tasks do not exist in simulation                                                                                                                                                 |
+| `tasks`                                  | degraded    | Cyclic tasks run on the scheduler core of the firmware, released from the timers of the app window; event and interrupt tasks do not exist in simulation                                                                                                                                              |
 | `timing`                                 | degraded    | The scan period follows the clock of the page and its timers, which are throttled in a background tab and have no real-time guarantee. What is deterministic is the result of each scan, not when it happens                                                                                          |
 | `retentive-memory`                       | degraded    | The rules are the firmware's. The records go to the `build/retain` folder of the open project after the scan that saves them, so a page closed between the save and the write can lose that one record, and the previous record stays valid. With no project open they live in the memory of the page |
 | `modbus`, `mqtt`, `cloud`                | unavailable | A module has no network: every communication block answers `STATUS` 10 (UNAVAILABLE) and never reports success                                                                                                                                                                                        |
@@ -66,5 +66,5 @@ Evidence level: host. The module runs under Bun and, in journey 8b, in the Elect
 - The interval between periodic retain saves is 30 seconds. A module has no environment, so `ZPLC_RETAIN_SAVE_INTERVAL_MS` does not exist here; a `STOP` and a shutdown still store.
 - The program store of the session is in memory: a program is loaded from the project every time, and only the `RETAIN` records are kept with it.
 - A sleep of the HAL port waits by reading the clock of the page in a loop, because a module cannot give its one thread back to the page. The runtime never sleeps (the page polls it when the next scan is due), so the loop serves only the timing self-test of the port.
-- The signal trace and the live view of the motor example are features of the native simulation, and they stay off on the browser runtime.
+- The signal trace and the live view of the motor example are features of the native simulation, and they stay off on the software runtime.
 - The persistence of the page is asynchronous. A failure to write is shown in the console of ZPLC as a warning; the session goes on.

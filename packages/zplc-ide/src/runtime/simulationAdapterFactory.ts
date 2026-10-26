@@ -59,7 +59,7 @@ export async function connectSimulationAdapter(options: SimulationOptions = {}):
   if (nativeFailure !== null) {
     report(
       `Native simulation could not start: ${nativeFailure} Running the WebAssembly runtime instead: it is a degraded simulation with no ` +
-        `network blocks and no serial, and its timing is the browser's.`,
+        `network blocks and no serial, and its timing follows the app window.`,
     );
   }
   return browser;

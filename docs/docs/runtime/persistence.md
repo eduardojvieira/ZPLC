@@ -19,11 +19,11 @@ issue `zplc start`.
 
 The ZPLC runtime core relies on an abstract Hardware Abstraction Layer (HAL) for persistence operations. This allows the system to seamlessly adapt to the storage capabilities of different environments:
 
-| Platform                 | Storage Backend                                                                                                                                                                                                                                                                                                                              |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Zephyr profile**       | Program-store backend when enabled and operational: NVS, or ZMS on a board whose flash sectors are above the 64 KB that NVS accepts (the Nucleo-H743ZI). The `RETAIN` records, the settings keys and the credentials use the same HAL calls.                                                                                                 |
-| **Native Sim (Desktop)** | Files in the persistence directory (`ZPLC_PERSIST_ROOT`, default `~/.zplc`): the program store and the `RETAIN` records.                                                                                                                                                                                                                     |
-| **WASM simulator**       | The records of the retain module (`retain_a0` to `retain_b7`) go through the HAL calls of the module to the host page, which keeps them in the `build/retain` folder of the open project, and in the memory of the page when no project is open. The program store of the session is in memory. See [Browser runtime](./browser-runtime.md). |
+| Platform                 | Storage Backend                                                                                                                                                                                                                                                                                                                               |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Zephyr profile**       | Program-store backend when enabled and operational: NVS, or ZMS on a board whose flash sectors are above the 64 KB that NVS accepts (the Nucleo-H743ZI). The `RETAIN` records, the settings keys and the credentials use the same HAL calls.                                                                                                  |
+| **Native Sim (Desktop)** | Files in the persistence directory (`ZPLC_PERSIST_ROOT`, default `~/.zplc`): the program store and the `RETAIN` records.                                                                                                                                                                                                                      |
+| **WASM simulator**       | The records of the retain module (`retain_a0` to `retain_b7`) go through the HAL calls of the module to the host page, which keeps them in the `build/retain` folder of the open project, and in the memory of the page when no project is open. The program store of the session is in memory. See [Software runtime](./browser-runtime.md). |
 
 ## Program Persistence on Hardware
 
@@ -194,7 +194,7 @@ the records in the `build/retain` folder of the open project (the files
 project is open. The periodic interval is 30 seconds, because a module has no
 environment variable to change it. The write to the folder follows the call that
 saves, so a page closed between the two can lose that one record, and the
-previous one stays valid because two records alternate. [Browser
+previous one stays valid because two records alternate. [Software
 runtime](./browser-runtime.md) lists the scenarios that hold it to the host's.
 
 ### Enabling it on a firmware board

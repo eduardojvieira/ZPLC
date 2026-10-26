@@ -2,14 +2,14 @@
 sidebar_position: 4
 slug: /runtime/browser-runtime
 id: browser-runtime
-title: Runtime del navegador (WebAssembly)
-sidebar_label: Runtime del navegador
+title: Runtime de software (WebAssembly)
+sidebar_label: Runtime de software
 description: 'El runtime WebAssembly de la aplicación ZPLC: cuándo se ejecuta en lugar de la simulación nativa, qué comparte con el firmware, qué no tiene y la evidencia de cada afirmación.'
 ---
 
-# Runtime del navegador (WebAssembly)
+# Runtime de software (WebAssembly)
 
-La aplicación ZPLC simula un programa en el runtime nativo de la aplicación de escritorio. Cuando ese runtime no puede arrancar, la simulación se ejecuta en el **runtime del navegador**: el mismo código de sesión, compilado a WebAssembly. Es una simulación degradada, y la aplicación lo dice dondequiera que muestra el runtime.
+La aplicación ZPLC simula un programa en el runtime nativo de la aplicación de escritorio. Cuando ese runtime no puede arrancar, la simulación se ejecuta en el **runtime de software**: el mismo código de sesión, compilado a WebAssembly. Es una simulación degradada, y la aplicación lo dice dondequiera que muestra el runtime.
 
 ## Qué es
 
@@ -23,13 +23,13 @@ El módulo se compila a partir de los archivos del runtime nativo y del firmware
 | La sesión                              | `firmware/apps/posix_host/src/native_runtime_session.c` | Las mismas solicitudes y respuestas que el runtime nativo: cargar, iniciar, pausar, paso, puntos de parada, forzados, entradas de simulación |
 | El puerto del HAL                      | `firmware/lib/zplc_core/src/hal/wasm/zplc_hal_wasm.c`   | Cinco llamadas hacia la página: un reloj, tres de persistencia y una línea de log                                                            |
 
-`tools/wasm-core/build.ts` lo compila con `clang` y `wasm-ld`, sin biblioteca C y sin Emscripten. La compilación de la aplicación ZPLC lo ejecuta (la compilación Vite de `packages/zplc-ide`): el módulo queda embebido en el bundle y su manifiesto (tamaño, SHA-256, confirmación, versión del producto y compilador) se escribe en `dist/wasm-runtime.json`. Nada de lo compilado se versiona. Una máquina sin `clang` y `wasm-ld` produce una aplicación sin runtime del navegador y dice por qué; donde `CI` está definido, la compilación falla.
+`tools/wasm-core/build.ts` lo compila con `clang` y `wasm-ld`, sin biblioteca C y sin Emscripten. La compilación de la aplicación ZPLC lo ejecuta (la compilación Vite de `packages/zplc-ide`): el módulo queda embebido en el bundle y su manifiesto (tamaño, SHA-256, confirmación, versión del producto y compilador) se escribe en `dist/wasm-runtime.json`. Nada de lo compilado se versiona. Una máquina sin `clang` y `wasm-ld` produce una aplicación sin runtime de software y dice por qué; donde `CI` está definido, la compilación falla.
 
 ## Cuándo se ejecuta
 
 - En la aplicación de escritorio cuando el runtime nativo no arranca: falta su binario, no fue compilado para la plataforma o falló su handshake. La consola dice que la simulación nativa no pudo arrancar y que en su lugar se ejecuta el runtime WebAssembly.
 
-Una compilación de ZPLC sin empaquetar apaga el runtime nativo con `ZPLC_RUNTIME=wasm`, para que una prueba muestre el runtime del navegador en una máquina que tiene el nativo. Una copia instalada de ZPLC ignora la variable.
+Una compilación de ZPLC sin empaquetar apaga el runtime nativo con `ZPLC_RUNTIME=wasm`, para que una prueba muestre el runtime de software en una máquina que tiene el nativo. Una copia instalada de ZPLC ignora la variable.
 
 ## Qué muestra la aplicación ZPLC
 
@@ -39,7 +39,7 @@ La barra de estado muestra **Runtime: WASM fallback · degraded** y, debajo, la 
 | ---------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pause`, `resume`, `step`, `breakpoints` | supported   | El código de sesión es el del runtime nativo: un punto de parada detiene el ciclo, un paso ejecuta uno, reanudar continúa desde donde se detuvo                                                                                                                                                                             |
 | `simulation-inputs`                      | supported   | Las entradas de arranque, parada y paro de emergencia del motor preparan un lote, como en el runtime nativo                                                                                                                                                                                                                 |
-| `tasks`                                  | degraded    | Las tareas cíclicas corren sobre el núcleo del planificador del firmware, pero el navegador las libera desde sus propios temporizadores; las tareas de evento e interrupción no existen en simulación                                                                                                                       |
+| `tasks`                                  | degraded    | Las tareas cíclicas corren sobre el núcleo del planificador del firmware, pero la ventana de la aplicación las libera desde sus propios temporizadores; las tareas de evento e interrupción no existen en simulación                                                                                                        |
 | `timing`                                 | degraded    | El período del ciclo sigue el reloj de la página y sus temporizadores, que se frenan en una pestaña en segundo plano y no ofrecen garantía de tiempo real. Lo determinista es el resultado de cada ciclo, no el momento en que ocurre                                                                                       |
 | `retentive-memory`                       | degraded    | Las reglas son las del firmware. Los registros van a la carpeta `build/retain` del proyecto abierto después del ciclo que los guarda, así que una página que se cierra entre el guardado y la escritura puede perder ese registro, y el anterior sigue siendo válido. Sin proyecto abierto viven en la memoria de la página |
 | `modbus`, `mqtt`, `cloud`                | unavailable | Un módulo no tiene red: todo bloque de comunicación responde `STATUS` 10 (UNAVAILABLE) y nunca informa éxito                                                                                                                                                                                                                |
@@ -66,5 +66,5 @@ Nivel de evidencia: host. El módulo corre bajo Bun y, en la jornada 8b, en el r
 - El intervalo entre guardados periódicos de retención es de 30 segundos. Un módulo no tiene entorno, así que `ZPLC_RETAIN_SAVE_INTERVAL_MS` no existe aquí; un `STOP` y un cierre siguen guardando.
 - El almacén de programas de la sesión está en memoria: el programa se carga desde el proyecto cada vez, y solo los registros `RETAIN` se guardan con él.
 - Una espera del puerto de la HAL lee el reloj de la página en un bucle, porque un módulo no puede devolverle a la página su único hilo. El runtime nunca espera (la página lo consulta cuando corresponde el siguiente ciclo), de modo que el bucle solo sirve a la autoprueba de tiempos del puerto.
-- La traza de señales y la vista en vivo del ejemplo del motor son funciones de la simulación nativa, y siguen apagadas en el runtime del navegador.
+- La traza de señales y la vista en vivo del ejemplo del motor son funciones de la simulación nativa, y siguen apagadas en el runtime de software.
 - La persistencia de la página es asíncrona. Una falla de escritura se muestra en la consola de ZPLC como advertencia; la sesión continúa.

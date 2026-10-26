@@ -15,7 +15,7 @@ export const statusTextEn = {
   'statusText.force.unconfirmed': 'Force state unconfirmed — verify and reconnect before operating.',
   'statusText.force.active.one': '{count} active force',
   'statusText.force.active.other': '{count} active forces',
-  'statusText.browserLimits': 'Browser runtime. Not available: {unavailable}. Degraded: {degraded}. Timing follows the browser clock.',
+  'statusText.browserLimits': 'Software runtime. Not available: {unavailable}. Degraded: {degraded}. Timing follows the app window.',
   'statusText.group.timers': 'Timers',
   'statusText.group.counters': 'Counters',
   'statusText.group.edgeDetection': 'Edge detection',
@@ -61,7 +61,7 @@ export const statusTextEs: Record<keyof typeof statusTextEn, string> = {
   'statusText.force.active.one': '{count} forzado activo',
   'statusText.force.active.other': '{count} forzados activos',
   'statusText.browserLimits':
-    'Runtime del navegador. No disponible: {unavailable}. Degradado: {degraded}. El tiempo sigue el reloj del navegador.',
+    'Runtime de software. No disponible: {unavailable}. Degradado: {degraded}. El tiempo sigue la ventana de la aplicación.',
   'statusText.group.timers': 'Temporizadores',
   'statusText.group.counters': 'Contadores',
   'statusText.group.edgeDetection': 'Detección de flancos',

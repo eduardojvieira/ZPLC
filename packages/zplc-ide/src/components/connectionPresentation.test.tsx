@@ -29,7 +29,7 @@ describe('UX-018 connection indicator presentation', () => {
     });
     expect(present({ adapterType: 'wasm', connected: true })).toMatchObject({
       state: 'simulation-wasm',
-      label: 'Simulation · browser runtime',
+      label: 'Simulation · software runtime',
       tone: 'info',
       icon: 'globe',
     });

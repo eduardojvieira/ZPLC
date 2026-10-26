@@ -23,14 +23,14 @@ son cuatro operaciones distintas. La IA y MCP nunca las inician.
 
 La barra de estado bajo la barra de herramientas indica siempre a qué está conectado ZPLC, con texto, un icono y un color. El color nunca es la única señal.
 
-| Indicador                          | Icono y color                  | Significado                                                                                                                                             |
-| ---------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Sin conexión                       | Enchufe desconectado, gris     | No hay nada en ejecución.                                                                                                                               |
-| Simulación · runtime nativo        | Monitor, azul                  | El programa se ejecuta en el simulador nativo de este equipo.                                                                                           |
-| Simulación · runtime del navegador | Globo, azul                    | El programa se ejecuta en el runtime del navegador, que es limitado; la barra indica qué le falta.                                                      |
-| Conectando con el hardware         | Indicador de carga, ámbar      | ZPLC está abriendo el enlace con un dispositivo.                                                                                                        |
-| Hardware real · placa · enlace     | Chip, ámbar                    | ZPLC está conectado a un dispositivo real. La placa es la que informó el dispositivo, y el enlace es el enlace con tramas o la shell de texto anterior. |
-| Falla del hardware · placa         | Triángulo de advertencia, rojo | El dispositivo conectado informa una falla.                                                                                                             |
+| Indicador                        | Icono y color                  | Significado                                                                                                                                             |
+| -------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sin conexión                     | Enchufe desconectado, gris     | No hay nada en ejecución.                                                                                                                               |
+| Simulación · runtime nativo      | Monitor, azul                  | El programa se ejecuta en el simulador nativo de este equipo.                                                                                           |
+| Simulación · runtime de software | Globo, azul                    | El programa se ejecuta en el runtime de software (WebAssembly), que es limitado; la barra indica qué le falta.                                          |
+| Conectando con el hardware       | Indicador de carga, ámbar      | ZPLC está abriendo el enlace con un dispositivo.                                                                                                        |
+| Hardware real · placa · enlace   | Chip, ámbar                    | ZPLC está conectado a un dispositivo real. La placa es la que informó el dispositivo, y el enlace es el enlace con tramas o la shell de texto anterior. |
+| Falla del hardware · placa       | Triángulo de advertencia, rojo | El dispositivo conectado informa una falla.                                                                                                             |
 
 Mientras haya forzados activos se mantiene un aviso ámbar bajo el indicador, y una alerta roja lo reemplaza cuando no se puede confirmar un forzado (reconecte y verifique antes de operar).
 

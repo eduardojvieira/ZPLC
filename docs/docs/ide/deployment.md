@@ -23,14 +23,14 @@ separate operations. They are never initiated by AI or MCP.
 
 The status bar under the toolbar always says what ZPLC is attached to, with words, an icon and a colour. The colour is never the only signal.
 
-| Indicator                    | Icon and colour       | Meaning                                                                                                                               |
-| ---------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Not connected                | Unplugged, grey       | Nothing is running.                                                                                                                   |
-| Simulation · native runtime  | Monitor, blue         | The program runs in the native simulator on this computer.                                                                            |
-| Simulation · browser runtime | Globe, blue           | The program runs in the browser runtime, which is degraded; the bar lists what it lacks.                                              |
-| Connecting to hardware       | Spinner, amber        | ZPLC is opening the link to a device.                                                                                                 |
-| Real hardware · board · link | Chip, amber           | ZPLC is attached to a real device. The board is the one the device reported, and the link is the framed link or the older text shell. |
-| Hardware fault · board       | Warning triangle, red | The attached device reports a fault.                                                                                                  |
+| Indicator                     | Icon and colour       | Meaning                                                                                                                               |
+| ----------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Not connected                 | Unplugged, grey       | Nothing is running.                                                                                                                   |
+| Simulation · native runtime   | Monitor, blue         | The program runs in the native simulator on this computer.                                                                            |
+| Simulation · software runtime | Globe, blue           | The program runs in the software runtime (WebAssembly), which is degraded; the bar lists what it lacks.                               |
+| Connecting to hardware        | Spinner, amber        | ZPLC is opening the link to a device.                                                                                                 |
+| Real hardware · board · link  | Chip, amber           | ZPLC is attached to a real device. The board is the one the device reported, and the link is the framed link or the older text shell. |
+| Hardware fault · board        | Warning triangle, red | The attached device reports a fault.                                                                                                  |
 
 An amber banner stays under the indicator while forces are active, and a red alert replaces it when a force cannot be confirmed (reconnect and verify before operating).
 

@@ -19,11 +19,11 @@ evidencia registrada. Una persona debe ejecutar explícitamente `zplc start`.
 
 El núcleo del runtime ZPLC depende de una Capa de Abstracción de Hardware (HAL) abstracta para las operaciones de persistencia. Esto permite que el sistema se adapte sin problemas a las capacidades de almacenamiento de distintos entornos:
 
-| Plataforma                 | Backend de Almacenamiento                                                                                                                                                                                                                                                                                                                                      |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Perfil Zephyr**          | Backend de almacén de programas cuando está habilitado y operativo: NVS, o ZMS en una placa cuyos sectores de flash superan los 64 KB que NVS acepta (la Nucleo-H743ZI). Los registros `RETAIN`, las claves de configuración y las credenciales usan las mismas llamadas HAL.                                                                                  |
-| **Simulación Nativa (PC)** | Archivos en el directorio de persistencia (`ZPLC_PERSIST_ROOT`, por defecto `~/.zplc`): el almacén de programas y los registros `RETAIN`.                                                                                                                                                                                                                      |
-| **Simulador WASM**         | Los registros del módulo de retención (`retain_a0` a `retain_b7`) pasan por las llamadas HAL del módulo a la página anfitriona, que los guarda en la carpeta `build/retain` del proyecto abierto y, sin proyecto abierto, en la memoria de la página. El almacén de programas de la sesión está en memoria. Ver [Runtime del navegador](./browser-runtime.md). |
+| Plataforma                 | Backend de Almacenamiento                                                                                                                                                                                                                                                                                                                                    |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Perfil Zephyr**          | Backend de almacén de programas cuando está habilitado y operativo: NVS, o ZMS en una placa cuyos sectores de flash superan los 64 KB que NVS acepta (la Nucleo-H743ZI). Los registros `RETAIN`, las claves de configuración y las credenciales usan las mismas llamadas HAL.                                                                                |
+| **Simulación Nativa (PC)** | Archivos en el directorio de persistencia (`ZPLC_PERSIST_ROOT`, por defecto `~/.zplc`): el almacén de programas y los registros `RETAIN`.                                                                                                                                                                                                                    |
+| **Simulador WASM**         | Los registros del módulo de retención (`retain_a0` a `retain_b7`) pasan por las llamadas HAL del módulo a la página anfitriona, que los guarda en la carpeta `build/retain` del proyecto abierto y, sin proyecto abierto, en la memoria de la página. El almacén de programas de la sesión está en memoria. Ver [Runtime de software](./browser-runtime.md). |
 
 ## Persistencia del programa en hardware
 
@@ -204,7 +204,7 @@ memoria de la página. El intervalo periódico es de 30 segundos, porque un mód
 no tiene una variable de entorno para cambiarlo. La escritura en la carpeta
 sigue a la llamada que guarda, así que una página que se cierra entre ambas
 puede perder ese registro, y el anterior sigue siendo válido porque se alternan
-dos registros. [Runtime del navegador](./browser-runtime.md) lista los
+dos registros. [Runtime de software](./browser-runtime.md) lista los
 escenarios que lo comparan con el del host.
 
 ### Activarlo en una placa de firmware

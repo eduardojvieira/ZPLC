@@ -278,7 +278,7 @@ export const baseEn = {
   // Operational status bar
   'connection.disconnected': 'Not connected',
   'connection.simulation.native': 'Simulation · native runtime',
-  'connection.simulation.wasm': 'Simulation · browser runtime',
+  'connection.simulation.wasm': 'Simulation · software runtime',
   'connection.hardware.connecting': 'Connecting to hardware',
   'connection.hardware.connected': 'Real hardware',
   'connection.hardware.faulted': 'Hardware fault',
