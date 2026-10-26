@@ -264,7 +264,10 @@ export function WelcomeScreen() {
                             onClick={() => startCopy(() => copyExampleProjectToFolder(example.id))}
                             disabled={unavailable || isCopyingExample}
                             data-welcome-example={example.id}
-                            className="h-auto w-full flex-col items-start justify-start gap-2 whitespace-normal px-3 py-2.5 text-left duration-150"
+                            className={
+                              'h-auto w-full flex-col items-start justify-start gap-2 whitespace-normal px-3 py-2.5 text-left ' +
+                              'duration-150'
+                            }
                           >
                             <span className="font-medium">{example.title}</span>
                             <ExampleBadges example={example} />
