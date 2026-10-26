@@ -198,6 +198,7 @@
     "added": "2026-10-10",
     "reads": [
       "packages/zplc-ide/src/components/Console.tsx",
+      "packages/zplc-ide/src/components/ConsoleTabStrip.tsx",
       "packages/zplc-ide/src/components/ConsoleReviewPanels.tsx",
       "packages/zplc-ide/src/components/LiveNativeMotorControls.tsx",
       "packages/zplc-ide/src/components/WorkspaceTestResult.tsx"
