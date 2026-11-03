@@ -71,12 +71,19 @@ async function assertSmokePortAvailable(port: number): Promise<void> {
   });
 }
 async function waitFor<T>(description: string, check: () => Promise<T | undefined> | T | undefined): Promise<T> {
-  const deadline = Date.now() + TIMEOUT_MS;
+  const started = Date.now();
+  const deadline = started + TIMEOUT_MS;
   let last: unknown;
   while (Date.now() < deadline) {
     try {
       const value = await check();
-      if (value !== undefined) return value;
+      if (value !== undefined) {
+        // On hosted CI this smoke went from about 100 s to 190 s with no step named; a slow step names itself.
+        const seconds = (Date.now() - started) / 1000;
+        const at = (performance.now() / 1000).toFixed(1);
+        if (seconds > 1) console.log(`Slow step: ${description} took ${seconds.toFixed(1)} s (at ${at} s)`);
+        return value;
+      }
     } catch (error) {
       last = error;
     }
@@ -196,6 +203,9 @@ class Cdp {
     return new Cdp(socket);
   }
   async command(method: string, params: Record<string, unknown> = {}): Promise<unknown> {
+    // A command sent on a closed socket gets no answer and no close event, so it used to wait out TIMEOUT_MS: the
+    // Browser.close of the clean-up kept every passing run alive 90 s after its last step.
+    if (this.#socket.readyState !== WebSocket.OPEN) throw new Error(`CDP ${method}: the WebSocket is closed`);
     const id = this.#id++;
     const response = new Promise<unknown>((resolve, reject) => {
       const timeout = setTimeout(() => {
