@@ -9,6 +9,12 @@
 // controller, the deploy flow and the uploader) and must not call an operation that changes a device or a session: connect,
 // disconnect, load a program (deploy), start, stop, pause, resume, step, reset, force or write, raw serial, a port request, or a
 // flash. Reading a session (the watch read of the hardware recorder) is allowed. There is no offender list: the rule holds.
+//
+// One seam is allowed: the try-it lab of a reading page (LRN-041) runs a small program on a WASM virtual machine of its own, in
+// the renderer, with no device and no workspace session. Only packages/zplc-ide/src/runtime/tryLab.ts creates that session, and
+// Learn reaches it through verbs that name the lab (run, hold, restart, press, close), never through the adapter. The seam itself
+// is guarded too: it may import the WASM adapter and drive it, but it must not import a module that reaches a device or the IDE
+// store, and must not force, write a virtual input, open a port or flash.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, posix, resolve } from 'node:path';
 
@@ -46,6 +52,27 @@ export function violationsOf(file: SourceFile): Violation[] {
   });
 }
 
+/** The one module that may open a WASM session for Learn: the try-it lab of a reading page (LRN-041). */
+export const TRY_LAB = `${IDE_SRC}/runtime/tryLab.ts`;
+
+const SEAM_DEVICE_MODULE = new RegExp(
+  String.raw`(?:from|import\()\s*['"][^'"]*(?:connectionManager|serialAdapter|framedSerialAdapter|nativeAdapter|` +
+    String.raw`hooks\/useDebugController\w*|store\/useIDEStore|deployFlow|deployConfirm|hardwareDeployConfirmation|uploader\/[^'"]*)['"]`,
+);
+const SEAM_PHYSICAL_CALL = new RegExp(
+  String.raw`\.(?:forceValue|clearForcedValue|clearAllForcedValues|setVirtualInput|setIPI|sendRaw|requestPort|getPorts|` +
+    String.raw`enablePassthrough|triggerNetworkBringUp|flash\w*)\s*\(|\bconnectionManager\b|\bnavigator\.serial\b|` +
+    String.raw`\bperformHardwareDeploy\b|\buseDebugController\b`,
+);
+
+/** The violations of the try-it lab seam: it drives its own WASM session and nothing that reaches a device. */
+export function seamViolationsOf(file: SourceFile): Violation[] {
+  return file.text.split('\n').flatMap((text, index): Violation[] => {
+    const rule = SEAM_DEVICE_MODULE.test(text) ? 'device-module' : SEAM_PHYSICAL_CALL.test(text) ? 'physical-call' : null;
+    return rule ? [{ file: file.path, line: index + 1, rule, snippet: text.trim().slice(0, 160) }] : [];
+  });
+}
+
 export function readSources(root: string): SourceFile[] {
   const files: SourceFile[] = [];
   const walk = (path: string): void => {
@@ -58,14 +85,13 @@ export function readSources(root: string): SourceFile[] {
 
 /** One line per violation: the requirement, where, and what. Empty when Learn reaches no device. */
 export function checkRepository(root = resolve(dirname(new URL(import.meta.url).pathname), '../..')): string[] {
-  return readSources(root)
-    .flatMap(violationsOf)
-    .map(
-      (violation) =>
-        `LRN-015: ${violation.file}:${violation.line} ${
-          violation.rule === 'device-module' ? 'imports a module that reaches a device' : 'calls a physical operation'
-        }: ${violation.snippet}`,
-    );
+  const seam = existsSync(join(root, TRY_LAB)) ? seamViolationsOf({ path: TRY_LAB, text: readFileSync(join(root, TRY_LAB), 'utf8') }) : [];
+  return [...readSources(root).flatMap(violationsOf), ...seam].map(
+    (violation) =>
+      `LRN-015: ${violation.file}:${violation.line} ${
+        violation.rule === 'device-module' ? 'imports a module that reaches a device' : 'calls a physical operation'
+      }: ${violation.snippet}`,
+  );
 }
 
 if (import.meta.main) {
