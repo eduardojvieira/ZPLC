@@ -165,7 +165,7 @@ describe('check-expected-failures command (VF-027)', () => {
     );
     expect(result.stderr).toBe('');
     expect(result.code).toBe(0);
-    expect(result.stdout).toMatch(/requirements: \d+ of 387 covered by an executed check, \d+ partial, \d+ decided, \d+ uncovered/);
+    expect(result.stdout).toMatch(/requirements: \d+ of 393 covered by an executed check, \d+ partial, \d+ decided, \d+ uncovered/);
   });
 
   it('fails when the report cannot be read', () => {

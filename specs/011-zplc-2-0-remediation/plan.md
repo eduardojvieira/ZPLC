@@ -733,6 +733,7 @@ Each phase has two tables with the same rows.
 | ID | Package | Workstream | Owns | Also advances | Depends on | Size (estimate) |
 |---|---|---|---|---|---|---|
 | WP-113 | GA audit, front door and release | DOC, REL | DOC-012, DOC-019, DOC-030 | HIL-010, DOC-025 | Every other package | M |
+| WP-114 | Reading pages and the Ladder path | LRN | LRN-039, LRN-040, LRN-041, LRN-042, LRN-043, LRN-044 | None | WP-62, WP-102 | L |
 
 | ID | Main risk | Verified by execution | Failing test first | Bench hardware | Only the owner can |
 |---|---|---|---|---|---|
@@ -1471,6 +1472,12 @@ One row per requirement of the spec. "Owning package" is the package that delive
 | LRN-036 | WP-66 | 4 |  |
 | LRN-037 | WP-102 | 7 |  |
 | LRN-038 | WP-62 | 4 |  |
+| LRN-039 | WP-114 | 8 |  |
+| LRN-040 | WP-114 | 8 |  |
+| LRN-041 | WP-114 | 8 |  |
+| LRN-042 | WP-114 | 8 |  |
+| LRN-043 | WP-114 | 8 |  |
+| LRN-044 | WP-114 | 8 |  |
 | HIL-001 | WP-83 | 5 |  |
 | HIL-002 | WP-83 | 5 |  |
 | HIL-003 | WP-83 | 5 |  |

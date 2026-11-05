@@ -125,11 +125,11 @@ describe('the committed index (VF-027)', () => {
 
   it('is well formed', () => expect(validateIndex(index)).toEqual([]));
 
-  it('lists the 387 requirements of the plan appendix, per workstream', () => {
+  it('lists the 393 requirements of the plan appendix, per workstream', () => {
     const counts: Record<string, number> = {};
     for (const entry of index) counts[entry.workstream] = (counts[entry.workstream] ?? 0) + 1;
-    expect(counts).toEqual({ VF: 27, CMP: 61, LNG: 27, RT: 34, IO: 18, COM: 30, IDE: 33, UX: 34, LRN: 38, HIL: 17, REL: 38, DOC: 30 });
-    expect(index.length).toBe(387);
+    expect(counts).toEqual({ VF: 27, CMP: 61, LNG: 27, RT: 34, IO: 18, COM: 30, IDE: 33, UX: 34, LRN: 44, HIL: 17, REL: 38, DOC: 30 });
+    expect(index.length).toBe(393);
   });
 
   it('gives every requirement an owning package and a phase', () => {
