@@ -7,8 +7,8 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
 import { normalizeAddress } from '../boards/boardIoMapping';
-import { compileProject } from '../compiler';
 import { loadLDFile } from '../models/visualFileLoad';
+import { planTryLab } from '../runtime/tryLab';
 import { joinLearnerBoards, validateKit, type LearnerKit } from '../boards/wiring/kit';
 import {
   WIRING_FILE,
@@ -168,7 +168,8 @@ function loadReading(directory: string, id: string, problems: string[]): Reading
 
 /**
  * The checks of a reading page that need the compiler, the Ladder loader and the starter: every `ld-figure` file loads as a
- * Ladder model, every `ld-try` program compiles with `compileProject`, and the files the prose cites exist in the starter.
+ * Ladder model, every `ld-try` program compiles and names only its own variables, as the try-it lab plans it, and the files
+ * the prose cites exist in the starter.
  */
 function readingFileProblems(source: ReadingSource, scenario: ScenarioFile, starterRoot: string): string[] {
   const problems: string[] = [];
@@ -182,11 +183,12 @@ function readingFileProblems(source: ReadingSource, scenario: ScenarioFile, star
       if (!loaded.ok) problems.push(`${directive.data.src} is not a Ladder file: ${loaded.error.violations.join('; ')}`);
       continue;
     }
-    try {
-      compileProject(text, 'LD');
-    } catch (error) {
-      problems.push(`${directive.data.src} does not compile: ${error instanceof Error ? error.message.split('\n', 1)[0] : String(error)}`);
-    }
+    // The lab's own plan: the same compilation and the same name resolution the reading page will run (LRN-041).
+    const planned = planTryLab(text, directive.data);
+    if (planned.ok) continue;
+    if (planned.reason === 'compile') problems.push(`${directive.data.src} does not compile: ${planned.message.split('\n', 1)[0]}`);
+    else if (planned.reason === 'input') problems.push(`${directive.data.src} has no BOOL input ${planned.name} for its ld-try`);
+    else problems.push(`${directive.data.src} has no output ${planned.name} for its ld-try`);
   }
   for (const locale of LOCALES)
     for (const file of readingCitedFiles(checked.expanded[locale]))

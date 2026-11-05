@@ -325,7 +325,8 @@ describe('the reading parity shape (LRN-042)', () => {
       fence('ld-figure', `src: reading/f.ld.json\ncaption: ${lang === 'en' ? 'Fig' : 'Fig es'}`),
       fence(
         'quiz',
-        `question: ${lang === 'en' ? 'Q?' : '¿P?'}\noptions:\n  - { text: A, correct: true, feedback: ${lang} }\n  - { text: B, feedback: ${lang} }`,
+        `question: ${lang === 'en' ? 'Q?' : '¿P?'}\noptions:\n` +
+          `  - { text: A, correct: true, feedback: ${lang} }\n  - { text: B, feedback: ${lang} }`,
       ),
       fence('timing', `span: 100\nsignals:\n  - { name: A, edges: [10] }\ncaption: ${lang}`),
       '---',
@@ -338,7 +339,7 @@ describe('the reading parity shape (LRN-042)', () => {
     expect(JSON.parse(JSON.stringify(en))).toEqual(en as object);
   });
 
-  it('differs for another block kind, heading depth, list nesting, item count, table size, alignment, callout kind, code lang or image', () => {
+  it('differs for another block kind, heading depth, list nesting, item count, table size, alignment, callout, code lang or image', () => {
     const base = JSON.stringify(readingShape(clean(page('en'))));
     const changed = (from: string, to: string): string => JSON.stringify(readingShape(clean(page('en').replace(from, to))));
     for (const [from, to] of [

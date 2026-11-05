@@ -33,7 +33,8 @@ async function mount(app: BrowserApp, data: LdTryData = DATA, program = OFF_DELA
 /** The centre of the control `[data-lab-input=name]`, in page coordinates. */
 const centreOf = (app: BrowserApp, selector: string) =>
   app.eval<{ x: number; y: number }>(
-    `(() => { const r = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`,
+    `(() => { const r = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect(); ` +
+      'return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()',
   );
 
 async function press(app: BrowserApp, selector: string): Promise<void> {
@@ -117,7 +118,8 @@ describe('try-it lab on the WebAssembly runtime (LRN-041)', () => {
     await app.until('the lamp off', `${LAMP} === 'off'`);
     await app.until(
       'the Light edges in the table',
-      `[...document.querySelectorAll('[data-reading-block="timing"] tbody tr')].filter((row) => row.cells[0].textContent === 'Light').length >= 3`,
+      `[...document.querySelectorAll('[data-reading-block="timing"] tbody tr')]` +
+        ".filter((row) => row.cells[0].textContent === 'Light').length >= 3",
     );
     expect(await app.eval<number>(`document.querySelectorAll('[data-reading-block="timing"] svg path').length`)).toBeGreaterThanOrEqual(2);
   });

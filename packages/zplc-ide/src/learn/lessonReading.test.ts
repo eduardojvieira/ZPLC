@@ -131,7 +131,29 @@ describe('a lesson package with a reading page (LRN-042)', () => {
     expect(problem).toStartWith(`${LESSON}: reading/fig.ld.json is not a Ladder file`);
   });
 
-  it('refuses an ld-try program that does not compile with compileProject', () => {
+  it('refuses an ld-try that names an input or an output its program does not have, as the lab would', () => {
+    const renamed = (changes: Array<[string, string]>) =>
+      problemsOf(
+        lessons((directory) => {
+          for (const page of ['reading.en.md', 'reading.es.md'])
+            edit(directory, page, (text) => changes.reduce((changed, [from, to]) => changed.replace(from, to), text));
+        }),
+      );
+    expect(
+      renamed([
+        ['{ name: Ack, kind: push }', '{ name: Missing, kind: push }'],
+        ['timing: [Ack, SetFirst]', 'timing: [SetFirst]'],
+      ]),
+    ).toEqual([`${LESSON}: reading/try.ld.json has no BOOL input Missing for its ld-try`]);
+    expect(
+      renamed([
+        ['outputs: [SetFirst]', 'outputs: [Nowhere]'],
+        ['timing: [Ack, SetFirst]', 'timing: [Ack]'],
+      ]),
+    ).toEqual([`${LESSON}: reading/try.ld.json has no output Nowhere for its ld-try`]);
+  });
+
+  it('refuses an ld-try program that does not compile the way the try-it lab compiles it', () => {
     const broken = lessons((directory) =>
       edit(directory, 'reading/try.ld.json', (text) => text.replace('"variable": "Ack"', '"variable": "Nope"')),
     );
@@ -148,7 +170,8 @@ describe('a lesson package with a reading page (LRN-042)', () => {
       `${LESSON}: the English and Spanish reading pages do not quote the same facts`,
     ]);
     expect(quoted((text) => text.replace('{{assertions}}', '{{nope}}'))).toEqual([
-      `${LESSON}/reading.en.md: unresolved markup in "The scenario has {{nope}} assertions and the lamp changes at {{t:500}} ms. Open src/FirstBlink.st first."`,
+      `${LESSON}/reading.en.md: unresolved markup in "The scenario has {{nope}} assertions and the lamp changes at {{t:500}} ms. ` +
+        'Open src/FirstBlink.st first."',
       `${LESSON}: the English and Spanish reading pages do not quote the same facts`,
     ]);
     expect(quoted((text) => text.replace('at {{t:500}} ms', 'at 500 ms'))).toEqual([
