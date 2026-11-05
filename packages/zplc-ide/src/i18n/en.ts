@@ -17,6 +17,7 @@ import { interlockEn } from './catalog/interlock';
 import { learnEn } from './catalog/learn';
 import { learnHomeEn } from './catalog/learnHome';
 import { learnHardwareEn } from './catalog/learnHardware';
+import { learnReadingEn } from './catalog/learnReading';
 import { toolbarMsgEn } from './catalog/toolbarMsg';
 import { examplesEn } from './catalog/examples';
 import { noticesEn } from './catalog/notices';
@@ -634,6 +635,7 @@ export const en = {
   ...learnEn,
   ...learnHomeEn,
   ...learnHardwareEn,
+  ...learnReadingEn,
   ...toolbarMsgEn,
   ...examplesEn,
   ...noticesEn,
