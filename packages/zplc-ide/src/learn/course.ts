@@ -5,6 +5,7 @@
  * shut out of work they have in a workspace. Progress that has not loaded is the empty document, never an error.
  */
 import { emptyProgress, type LearnProgress } from '../../shared/learnProgressModel';
+import type { CoursePath } from './courseDefinition';
 import type { LessonIndex, LessonIndexEntry, LessonLevel, LessonLocale } from './lessonPackage';
 
 export type LessonState = 'locked' | 'available' | 'in-progress' | 'passed';
@@ -35,11 +36,24 @@ export interface CourseModuleView {
   objectives: readonly string[];
   lessons: readonly CourseLessonView[];
 }
+/** A learning path as the Learn home shows it (LRN-043): its lessons in path order, each locked by the path. */
+export interface CoursePathView {
+  id: string;
+  title: string;
+  summary: string;
+  rationale: string;
+  language: CoursePath['language'];
+  lessons: readonly CourseLessonView[];
+  passed: number;
+  total: number;
+}
 export interface CourseView {
   /** Why the course is in this order (LRN-006). */
   rationale: string;
   tracks: ReadonlyArray<{ id: string; title: string; summary: string }>;
   modules: readonly CourseModuleView[];
+  /** The learning paths, in the order the course file lists them; empty for a course that has none (LRN-043). */
+  paths: readonly CoursePathView[];
   /** Titles of every lesson by id, so a locked lesson can name what it waits for. */
   titles: Readonly<Record<string, string>>;
   passed: number;
@@ -59,19 +73,26 @@ export function passedIn(index: LessonIndex, id: string, document: LearnProgress
   return entry !== undefined && !entry.tracks.includes('simulation') && recorded?.hardware != null;
 }
 
+/**
+ * The state of a lesson. With a `path`, a lesson of that path is available once the lesson before it in the path is passed
+ * (the first one always), and the path order replaces its prerequisites; a lesson that is not in the path, or no path, keeps
+ * the prerequisites of the full course (LRN-043).
+ */
 export function lessonStateOf(
   index: LessonIndex,
   id: string,
   progress: LearnProgress | null,
   unlockAll: boolean,
+  path?: Pick<CoursePath, 'lessons'>,
 ): { state: LessonState; missing: readonly string[] } {
   const document = progress ?? emptyProgress();
   const recorded = document.lessons[id];
   if (passedIn(index, id, document)) return { state: 'passed', missing: [] };
   if (recorded?.state === 'in-progress') return { state: 'in-progress', missing: [] };
-  const missing = unlockAll
-    ? []
-    : (entryOf(index, id)?.prerequisites ?? []).filter((prerequisite) => !passedIn(index, prerequisite, document));
+  const position = path?.lessons.indexOf(id) ?? -1;
+  const required =
+    path && position >= 0 ? path.lessons.slice(Math.max(0, position - 1), position) : (entryOf(index, id)?.prerequisites ?? []);
+  const missing = unlockAll ? [] : required.filter((prerequisite) => !passedIn(index, prerequisite, document));
   return missing.length > 0 ? { state: 'locked', missing } : { state: 'available', missing: [] };
 }
 
@@ -113,6 +134,23 @@ export function buildCourseView(
     plant: entry.plant,
     estimatedMinutes: entry.estimatedMinutes,
   }));
+  const lessonViews = new Map(lessons.map((lesson) => [lesson.id, lesson]));
+  const paths = (index.course.paths ?? []).map((path): CoursePathView => {
+    const shown = path.lessons.flatMap((id) => {
+      const lesson = lessonViews.get(id);
+      return lesson ? [{ ...lesson, ...lessonStateOf(index, id, progress, unlockAll, path) }] : [];
+    });
+    return {
+      id: path.id,
+      title: path.title[locale],
+      summary: path.summary[locale],
+      rationale: path.rationale[locale],
+      language: path.language,
+      lessons: shown,
+      passed: shown.filter((lesson) => lesson.state === 'passed').length,
+      total: shown.length,
+    };
+  });
   const modules = index.course.modules.map((module): CourseModuleView => {
     const placed = lessons.filter((lesson) => lesson.module === module.id);
     return {
@@ -131,6 +169,7 @@ export function buildCourseView(
     rationale: index.course.rationale[locale],
     tracks: index.course.tracks.map((track) => ({ id: track.id, title: track.title[locale], summary: track.summary[locale] })),
     modules,
+    paths,
     titles: Object.fromEntries(lessons.map((lesson) => [lesson.id, lesson.title])),
     passed: lessons.filter((lesson) => lesson.state === 'passed').length,
     total: lessons.length,
@@ -146,6 +185,11 @@ export function continueTarget(view: CourseView, progress: LearnProgress | null)
   if (lastLesson && resumable(lastLesson)) return lastLesson.id;
   // A lesson without a simulation grade (verify my board) is opened on purpose, never offered by Continue (LRN-011).
   return all.find((lesson) => resumable(lesson) && lesson.tracks.includes('simulation'))?.id ?? null;
+}
+
+/** The lesson Continue resumes in a path: the first lesson of the path that is not passed, or none when all are (LRN-043). */
+export function pathContinueTarget(path: CoursePathView): string | null {
+  return path.lessons.find((lesson) => lesson.state !== 'passed')?.id ?? null;
 }
 
 export type TrackSupport = { supported: true } | { supported: false; reason: string; instead: string };

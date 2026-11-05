@@ -7,7 +7,7 @@
  * No Node import: the generator, the tests and the application share this validator. Nothing here is repaired; a file that is
  * not exactly the format is reported by every problem it has.
  */
-import { LESSON_LEVELS, LESSON_LOCALES, LESSON_TRACKS, type LessonLevel, type LessonLocale } from './lessonPackage';
+import { LESSON_LANGUAGES, LESSON_LEVELS, LESSON_LOCALES, LESSON_TRACKS, type LessonLevel, type LessonLocale } from './lessonPackage';
 
 export const COURSE_SCHEMA_VERSION = 1 as const;
 
@@ -28,12 +28,27 @@ export interface CourseModule {
   title: LocalizedText;
   why: LocalizedText;
 }
+/**
+ * A learning path (LRN-043): the lessons of one language in the order to take them. Inside a path a lesson opens when the
+ * one before it in the path is passed; the path order replaces the prerequisites of the lessons in that context.
+ */
+export interface CoursePath {
+  id: string;
+  title: LocalizedText;
+  summary: LocalizedText;
+  /** Why the path is in this order, in the learner's words. */
+  rationale: LocalizedText;
+  language: (typeof LESSON_LANGUAGES)[number];
+  lessons: readonly string[];
+}
 /** `rationale` is the short "why this order" of the whole course that Learn and the course outline show (LRN-006). */
 export interface CourseDefinition {
   schemaVersion: typeof COURSE_SCHEMA_VERSION;
   rationale: LocalizedText;
   tracks: readonly CourseTrack[];
   modules: readonly CourseModule[];
+  /** The learning paths; absent from a course that has none (LRN-043). */
+  paths?: readonly CoursePath[];
 }
 /** The part of a lesson manifest the placement rules read. */
 export interface PlacedLesson {
@@ -58,11 +73,46 @@ function checkText(value: unknown, where: string, problems: string[]): void {
     if (typeof value[locale] !== 'string' || value[locale].trim() === '') problems.push(`${where}: the ${locale} text is missing`);
 }
 
+const SLUG = /^[a-z0-9][a-z0-9-]*$/;
+
+function validatePaths(paths: unknown, problems: string[]): void {
+  if (!Array.isArray(paths)) {
+    problems.push('paths must be a list');
+    return;
+  }
+  const seen: string[] = [];
+  for (const path of paths as unknown[]) {
+    if (!isObject(path)) {
+      problems.push('a path must be an object');
+      continue;
+    }
+    const where = `path ${typeof path.id === 'string' ? path.id : '?'}`;
+    for (const key of unknownKeys(path, ['id', 'title', 'summary', 'rationale', 'language', 'lessons']))
+      problems.push(`${where}: unknown key "${key}"`);
+    if (typeof path.id !== 'string' || !SLUG.test(path.id))
+      problems.push(`${where}: id must be a slug (lowercase letters, digits and hyphens)`);
+    else if (seen.includes(path.id)) problems.push(`${where}: defined twice`);
+    else seen.push(path.id);
+    checkText(path.title, `${where} title`, problems);
+    checkText(path.summary, `${where} summary`, problems);
+    checkText(path.rationale, `${where} rationale`, problems);
+    if (!(LESSON_LANGUAGES as readonly unknown[]).includes(path.language))
+      problems.push(`${where}: language must be one of ${LESSON_LANGUAGES.join(', ')}`);
+    const lessons = path.lessons;
+    if (!Array.isArray(lessons) || lessons.length === 0 || !lessons.every((id) => typeof id === 'string' && id !== ''))
+      problems.push(`${where}: lessons must be a non-empty list of lesson ids`);
+    else
+      lessons.forEach((id: string, index) => {
+        if (lessons.indexOf(id) < index) problems.push(`${where}: lesson "${id}" appears twice`);
+      });
+  }
+}
+
 /** Every problem of a course file as read from disk; empty when it is exactly the format. */
 export function validateCourseDefinition(value: unknown): string[] {
   const problems: string[] = [];
   if (!isObject(value)) return ['the course file must be an object'];
-  for (const key of unknownKeys(value, ['schemaVersion', 'rationale', 'tracks', 'modules'])) problems.push(`unknown key "${key}"`);
+  for (const key of unknownKeys(value, ['schemaVersion', 'rationale', 'tracks', 'modules', 'paths'])) problems.push(`unknown key "${key}"`);
   if (value.schemaVersion !== COURSE_SCHEMA_VERSION) problems.push(`schemaVersion must be ${COURSE_SCHEMA_VERSION}`);
   checkText(value.rationale, 'course rationale', problems);
   const trackIds: string[] = [];
@@ -91,6 +141,7 @@ export function validateCourseDefinition(value: unknown): string[] {
       checkText(unsupported.reason, `${where} reason`, problems);
       checkText(unsupported.instead, `${where} instead`, problems);
     }
+  if (value.paths !== undefined) validatePaths(value.paths, problems);
   if (!Array.isArray(value.modules) || value.modules.length === 0) {
     problems.push('modules must be a non-empty list');
     return problems;
@@ -133,6 +184,8 @@ export function validateCoursePlacement(course: CourseDefinition, lessons: reado
   const problems: string[] = [];
   const modules = new Map(course.modules.map((module) => [module.id, module]));
   const moduleOf = new Map(lessons.map((lesson) => [lesson.id, lesson.module]));
+  for (const path of course.paths ?? [])
+    for (const id of path.lessons) if (!moduleOf.has(id)) problems.push(`path ${path.id}: lesson "${id}" is not a lesson`);
   for (const lesson of lessons) {
     const module = modules.get(lesson.module);
     if (!module) {

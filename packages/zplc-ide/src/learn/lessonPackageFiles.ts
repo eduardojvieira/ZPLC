@@ -4,9 +4,11 @@
  */
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative, sep } from 'node:path';
 
 import { normalizeAddress } from '../boards/boardIoMapping';
+import { compileProject } from '../compiler';
+import { loadLDFile } from '../models/visualFileLoad';
 import { joinLearnerBoards, validateKit, type LearnerKit } from '../boards/wiring/kit';
 import {
   WIRING_FILE,
@@ -21,9 +23,12 @@ import { validatePlantMap, type PlantMap } from '../plants/plantMap';
 import { validateCourseDefinition, validateCoursePlacement, type CourseDefinition } from './courseDefinition';
 import {
   canonicalJson,
+  checkReading,
   expandText,
   hardwareToleranceProblems,
   parseScenarioFile,
+  readingCitedFiles,
+  readingOf,
   textShape,
   validateChecks,
   validateManifest,
@@ -34,6 +39,7 @@ import {
   type LessonLocale,
   type LessonManifest,
   type LessonText,
+  type ReadingSource,
   type ScenarioFile,
 } from './lessonPackage';
 
@@ -59,6 +65,8 @@ export interface LessonPackage {
   plantMap: PlantMap | null;
   /** The parts of a lesson on the hardware track (LRN-014); null for any other lesson. */
   wiring: WiringFile | null;
+  /** The reading page and the files it uses (LRN-039, LRN-042); null for a lesson without one. */
+  reading: ReadingSource | null;
 }
 
 /**
@@ -121,6 +129,69 @@ function readJson(path: string, problems: string[]): unknown {
     problems.push(`${path}: ${error instanceof Error ? error.message : String(error)}`);
     return undefined;
   }
+}
+
+/** The files under `directory/<name>` as package-relative paths, one level of subdirectories included, in a stable order. */
+function filesUnder(directory: string, name: string): string[] {
+  const base = join(directory, name);
+  if (!existsSync(base)) return [];
+  return readdirSync(base, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => `${name}/${relative(base, join(entry.parentPath, entry.name)).split(sep).join('/')}`)
+    .sort();
+}
+
+/** Reads the reading page of a package, or reports why it cannot be: the two pages come together, the files belong to a page. */
+function loadReading(directory: string, id: string, problems: string[]): ReadingSource | null {
+  const pages = LOCALES.map((locale) => existsSync(join(directory, `reading.${locale}.md`)));
+  const files = [...filesUnder(directory, 'reading'), ...filesUnder(directory, 'images')];
+  if (pages.some(Boolean) && !pages.every(Boolean)) {
+    problems.push(`${id}: reading.en.md and reading.es.md must both exist or neither`);
+    return null;
+  }
+  if (!pages.every(Boolean)) {
+    if (files.length > 0) problems.push(`${id}: the reading/ and images/ files belong to a lesson with a reading page`);
+    return null;
+  }
+  const page = (locale: LessonLocale): string => readFileSync(join(directory, `reading.${locale}.md`), 'utf8');
+  return {
+    en: page('en'),
+    es: page('es'),
+    files: Object.fromEntries(
+      files.filter((path) => path.startsWith('reading/')).map((path) => [path, readFileSync(join(directory, path), 'utf8')]),
+    ),
+    images: Object.fromEntries(
+      files.filter((path) => path.startsWith('images/')).map((path) => [path, new Uint8Array(readFileSync(join(directory, path)))]),
+    ),
+  };
+}
+
+/**
+ * The checks of a reading page that need the compiler, the Ladder loader and the starter: every `ld-figure` file loads as a
+ * Ladder model, every `ld-try` program compiles with `compileProject`, and the files the prose cites exist in the starter.
+ */
+function readingFileProblems(source: ReadingSource, scenario: ScenarioFile, starterRoot: string): string[] {
+  const problems: string[] = [];
+  const checked = checkReading(source, scenario);
+  if (checked.problems.length > 0) return checked.problems;
+  for (const directive of checked.directives) {
+    if (directive.kind !== 'ld-figure' && directive.kind !== 'ld-try') continue;
+    const text = source.files[directive.data.src]!;
+    if (directive.kind === 'ld-figure') {
+      const loaded = loadLDFile(directive.data.src, text);
+      if (!loaded.ok) problems.push(`${directive.data.src} is not a Ladder file: ${loaded.error.violations.join('; ')}`);
+      continue;
+    }
+    try {
+      compileProject(text, 'LD');
+    } catch (error) {
+      problems.push(`${directive.data.src} does not compile: ${error instanceof Error ? error.message.split('\n', 1)[0] : String(error)}`);
+    }
+  }
+  for (const locale of LOCALES)
+    for (const file of readingCitedFiles(checked.expanded[locale]))
+      if (!existsSync(join(starterRoot, file))) problems.push(`reading.${locale}.md: cites ${file}, which the starter does not have`);
+  return problems;
 }
 
 /** Loads and validates every package. A broken package is reported by its problems and left out. */
@@ -224,6 +295,13 @@ export function loadLessonPackages(lessonsDirectory = LESSONS_DIRECTORY, project
           here.push(`${id}: "${part.program}" does not exist in example project "${part.project}"`);
       }
     }
+    const reading = loadReading(directory, id, here);
+    if (reading && scenario)
+      here.push(
+        ...readingFileProblems(reading, scenario, join(projectsDirectory, typed.starter.project)).map((problem) =>
+          /^(?:reading\.(?:en|es)\.md|images\/)/.test(problem) ? `${id}/${problem}` : `${id}: ${problem}`,
+        ),
+      );
     problems.push(...here);
     if (here.length === 0 && scenario && texts.en && texts.es) {
       packages.push({
@@ -236,6 +314,7 @@ export function loadLessonPackages(lessonsDirectory = LESSONS_DIRECTORY, project
         checks,
         plantMap,
         wiring,
+        reading,
       });
     }
   }
@@ -286,7 +365,7 @@ export function buildIndex(packages: readonly LessonPackage[], course: CourseDef
   const problems: string[] = [];
   const lessons: LessonIndexEntry[] = [...packages]
     .sort((left, right) => left.manifest.order - right.manifest.order)
-    .map(({ id, manifest, scenario, scenarioBytes, texts, plantMap, wiring }) => {
+    .map(({ id, manifest, scenario, scenarioBytes, texts, plantMap, wiring, reading }) => {
       const expanded = Object.fromEntries(
         LOCALES.map((locale) => {
           const result = expandText(texts[locale], scenario);
@@ -294,6 +373,8 @@ export function buildIndex(packages: readonly LessonPackage[], course: CourseDef
           return [locale, result.text];
         }),
       ) as unknown as LessonIndexEntry['text'];
+      const bundled = reading ? readingOf(reading, scenario) : undefined;
+      problems.push(...(bundled?.problems ?? []).map((problem) => `${id}/${problem}`));
       return {
         id: manifest.id,
         version: manifest.version,
@@ -321,6 +402,7 @@ export function buildIndex(packages: readonly LessonPackage[], course: CourseDef
         regressionScenarios: manifest.regressionScenarios,
         hardware: manifest.hardware && wiring ? { wiring, tolerances: manifest.hardware.tolerances } : null,
         text: expanded,
+        ...(bundled ? { reading: bundled.reading } : {}),
       };
     });
   return { index: { schemaVersion: 1, lessons, course }, problems };

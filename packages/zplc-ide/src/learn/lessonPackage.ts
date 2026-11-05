@@ -9,6 +9,8 @@
  *   plant-map.json  a lesson that names a plant: the explicit binding of the plant's signals to the starter's I/O (LRN-021)
  *   wiring.json     a lesson on the hardware track: the parts and the board channels they connect to (src/boards/wiring)
  *   checks.json     optional: wrong programs that must stay RED and other correct programs that must be GREEN
+ *   reading.en.md   optional, with reading.es.md (both or neither): the reading page, Markdown in the subset of readingMarkdown.ts
+ *   reading/        the files its live blocks use (Ladder programs as .ld.json); images/ holds its .svg and .png images
  *
  * The starter and the reference solution are example projects of `projects/` that the manifest names, because the
  * example loader and the workspace copy already serve them from there.
@@ -28,6 +30,8 @@
 import type { PlantMap } from '../plants/plantMap';
 import { WIRING_FILE, type WiringFile } from '../boards/wiring/wiring';
 import type { CourseDefinition } from './courseDefinition';
+import { parseReading, readingShape } from './readingMarkdown';
+import type { LessonReading, ReadingBlock, ReadingDirective } from './readingTypes';
 
 export const LESSON_SCHEMA_VERSION = 1 as const;
 export const LESSON_STAGE_KEYS = ['objective', 'predict', 'edit', 'run', 'observe', 'reflect'] as const;
@@ -544,6 +548,182 @@ export function citedFiles(text: string): string[] {
   return [...new Set(text.match(FILE_CITATION) ?? [])];
 }
 
+/** Applies `change` to the prose of a Markdown page: every line outside a fenced block, outside its inline code. */
+export function mapProse(markdown: string, change: (segment: string) => string): string {
+  let open: { mark: string; length: number } | undefined;
+  return markdown
+    .split('\n')
+    .map((line) => {
+      const fence = /^ {0,3}(`{3,}|~{3,})/.exec(line);
+      if (open) {
+        if (fence && fence[1]![0] === open.mark && fence[1]!.length >= open.length && line.trim() === fence[1]) open = undefined;
+        return line;
+      }
+      if (fence) {
+        open = { mark: fence[1]![0]!, length: fence[1]!.length };
+        return line;
+      }
+      return line
+        .split(/(``[^`\n]*``|`[^`\n]*`)/)
+        .map((part, index) => (index % 2 === 1 ? part : change(part)))
+        .join('');
+    })
+    .join('\n');
+}
+
+/** The prose segments of a Markdown page (see `mapProse`). */
+const proseOf = (markdown: string): string[] => {
+  const segments: string[] = [];
+  mapProse(markdown, (segment) => (segments.push(segment), segment));
+  return segments;
+};
+
+/**
+ * Expands the quoted-fact markup of a reading page against the reference scenario, in the prose only, with the same rules
+ * as the lesson text: a time or value that the scenario lacks, markup left unresolved and a bare "N ms" are problems.
+ */
+export function expandReading(markdown: string, scenario: ScenarioFile): { text: string; problems: string[] } {
+  const problems: string[] = [];
+  const text = mapProse(markdown, (segment) => {
+    const result = expandQuotes(segment, scenario);
+    problems.push(...result.problems);
+    for (const time of unmarkedTimes(segment)) problems.push(`quoted time "${time}" is not marked with {{t:N}}`);
+    return result.text;
+  });
+  return { text, problems };
+}
+
+/** The quoted-fact markup of the prose of a page, without the shown text: it has to be the same in every language. */
+const readingMarkup = (markdown: string): string[] =>
+  proseOf(markdown).flatMap((segment) => (segment.match(MARKUP) ?? []).map((item) => item.replace(/\|.*$/, '')));
+
+/** The project files the prose of a page cites (`src/...`, `tests/...`). */
+export const readingCitedFiles = (markdown: string): string[] => [...new Set(proseOf(markdown).flatMap(citedFiles))];
+
+/** The largest image of a reading page. */
+export const MAX_READING_IMAGE_BYTES = 300 * 1024;
+const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+
+/** What makes an SVG unsafe to show: a script, a foreignObject, an event attribute, or an href that leaves the document. */
+export function svgProblems(svg: string): string[] {
+  const problems: string[] = [];
+  if (/<script/i.test(svg)) problems.push('contains <script');
+  if (/<foreignObject/i.test(svg)) problems.push('contains <foreignObject');
+  for (const match of svg.matchAll(/[\s"'/]on[a-z]+\s*=/gi))
+    problems.push(`has the event attribute ${match[0].replace(/^[\s"'/]/, '').replace(/\s*=$/, '')}=`);
+  for (const match of svg.matchAll(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)')/gi)) {
+    const target = match[1] ?? match[2] ?? '';
+    if (!target.startsWith('#')) problems.push(`has an href that leaves the file ("${target}")`);
+  }
+  return problems;
+}
+
+/** What a reading page is made of, as read from the package: the pages, the files under `reading/` and the images. */
+export interface ReadingSource {
+  en: string;
+  es: string;
+  /** Package-relative path (`reading/x.ld.json`) to text. */
+  files: Readonly<Record<string, string>>;
+  /** Package-relative path (`images/x.svg`) to bytes. */
+  images: Readonly<Record<string, Uint8Array>>;
+}
+
+export interface ReadingWalk {
+  directives: ReadingDirective[];
+  images: string[];
+}
+
+/** Every live block and image of a page, in reading order, inside lists and callouts too. */
+export function walkReading(blocks: readonly ReadingBlock[]): ReadingWalk {
+  const found: ReadingWalk = { directives: [], images: [] };
+  const visit = (block: ReadingBlock): void => {
+    if (block.type === 'directive') found.directives.push(block.directive);
+    else if (block.type === 'image') found.images.push(block.src);
+    else if (block.type === 'callout') block.children.forEach(visit);
+    else if (block.type === 'list') block.items.forEach((item) => item.forEach(visit));
+  };
+  blocks.forEach(visit);
+  return found;
+}
+
+/** The files under `reading/` that the live blocks of a page name. */
+export const directiveFiles = (directives: readonly ReadingDirective[]): string[] => [
+  ...new Set(
+    directives.filter((each) => each.kind === 'ld-figure' || each.kind === 'ld-try').map((each) => (each.data as { src: string }).src),
+  ),
+];
+
+export interface ReadingChecked {
+  problems: string[];
+  /** The pages after the expansion of the quoted facts. */
+  expanded: { en: string; es: string };
+  /** The live blocks of the English page, which the Spanish one equals in shape. */
+  directives: ReadingDirective[];
+  /** The files under `reading/` and the images that the pages use. */
+  files: string[];
+  images: string[];
+}
+
+/**
+ * The checks of a reading page that need no file system and no compiler: the Markdown subset, the quoted facts, the same
+ * shape in English and Spanish, the files and images that the pages use, and the safety of the images (LRN-040, LRN-042).
+ * Problems are relative to the lesson package directory.
+ */
+export function checkReading(source: ReadingSource, scenario: ScenarioFile): ReadingChecked {
+  const problems: string[] = [];
+  const expanded = { en: '', es: '' };
+  const walks: Record<LessonLocale, ReadingWalk> = { en: { directives: [], images: [] }, es: { directives: [], images: [] } };
+  const shapes: Partial<Record<LessonLocale, string>> = {};
+  for (const locale of LESSON_LOCALES) {
+    const file = `reading.${locale}.md`;
+    const result = expandReading(source[locale], scenario);
+    problems.push(...result.problems.map((problem) => `${file}: ${problem}`));
+    expanded[locale] = result.text;
+    const parsed = parseReading(result.text);
+    problems.push(...parsed.errors.map((error) => `${file}:${error.line}: ${error.message}`));
+    if (parsed.errors.length > 0) continue;
+    shapes[locale] = JSON.stringify(readingShape(parsed.blocks));
+    walks[locale] = walkReading(parsed.blocks);
+    const wanted = [...directiveFiles(walks[locale].directives), ...walks[locale].images];
+    for (const path of new Set(wanted)) {
+      const there = path.startsWith('images/') ? path in source.images : path in source.files;
+      if (!there) problems.push(`${file}: "${path}" is not in the package`);
+    }
+  }
+  if (shapes.en !== undefined && shapes.es !== undefined) {
+    if (shapes.en !== shapes.es) problems.push('the English and Spanish reading pages do not have the same structure');
+    else if (readingMarkup(source.en).join(' ') !== readingMarkup(source.es).join(' '))
+      problems.push('the English and Spanish reading pages do not quote the same facts');
+  }
+  for (const [path, bytes] of Object.entries(source.images)) {
+    if (bytes.length > MAX_READING_IMAGE_BYTES) problems.push(`${path}: is over the ${MAX_READING_IMAGE_BYTES / 1024} KB limit`);
+    if (path.endsWith('.png') && !PNG_SIGNATURE.every((byte, index) => bytes[index] === byte)) problems.push(`${path}: is not a PNG file`);
+    if (path.endsWith('.svg')) problems.push(...svgProblems(new TextDecoder().decode(bytes)).map((problem) => `${path}: ${problem}`));
+  }
+  const used = [...walks.en.directives, ...walks.es.directives];
+  return {
+    problems,
+    expanded,
+    directives: walks.en.directives,
+    files: [...new Set(directiveFiles(used))].sort(),
+    images: [...new Set([...walks.en.images, ...walks.es.images])].sort(),
+  };
+}
+
+/** The reading of a package as the generated index carries it. */
+export function readingOf(source: ReadingSource, scenario: ScenarioFile): { reading: LessonReading; problems: string[] } {
+  const checked = checkReading(source, scenario);
+  return {
+    reading: {
+      en: checked.expanded.en,
+      es: checked.expanded.es,
+      files: Object.fromEntries(checked.files.filter((path) => path in source.files).map((path) => [path, source.files[path]!])),
+      images: checked.images,
+    },
+    problems: checked.problems,
+  };
+}
+
 /** The structure of a text that has to be the same in every language: stage keys, hint levels, counts and markup. */
 export function textShape(text: LessonText): string {
   const markup = (value: string): string => (value.match(MARKUP) ?? []).map((item) => item.replace(/\|.*$/, '')).join(' ');
@@ -629,6 +809,8 @@ export interface LessonIndexEntry {
   /** The wiring and the tolerances of the board check (LRN-013, LRN-024); null for a lesson without the hardware track. */
   hardware: { readonly wiring: WiringFile; readonly tolerances: LessonHardware['tolerances'] } | null;
   text: Readonly<Record<LessonLocale, LessonTextExpanded>>;
+  /** The reading page (LRN-039, LRN-042); absent for a lesson that has none. */
+  reading?: LessonReading;
 }
 
 /** The generated index: every lesson, and the course (tracks and modules in order) the lessons are placed in (LRN-005). */

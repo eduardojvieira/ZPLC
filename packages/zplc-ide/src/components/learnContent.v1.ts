@@ -1,5 +1,7 @@
 import type { LearnLesson, LearnLocale } from './learnLesson';
 import type { LessonIndexEntry, LessonLevel, ScenarioFile } from '../learn/lessonPackage';
+import { parseReading } from '../learn/readingMarkdown';
+import type { LessonReading } from '../learn/readingTypes';
 
 /**
  * The Learn content contract the panel reads. It is built from the generated lesson index (`src/generated/lessonIndex.ts`,
@@ -39,6 +41,8 @@ export type VersionedLearnLesson = LearnLesson &
     stageKeys: readonly string[];
     /** The reference scenario the lesson is graded by, as the package carries it (the content `scenarioSha256` names). */
     scenario: ScenarioFile;
+    /** The reading page, in both languages, with the files and images its live blocks use (LRN-039); absent for a lesson without one. */
+    reading?: LessonReading | undefined;
   }>;
 
 /** The lesson of one index entry in one language. */
@@ -82,6 +86,7 @@ export function learnLessonOf(entry: LessonIndexEntry, locale: LearnLocale): Ver
     hints: Object.freeze(text.hints.map((hint) => hint.text)),
     stageKeys: Object.freeze(text.stages.map((stage) => stage.key)),
     scenario: JSON.parse(entry.scenario.canonical) as ScenarioFile,
+    ...(entry.reading ? { reading: entry.reading } : {}),
   });
 }
 
@@ -89,6 +94,19 @@ export function learnLessonOf(entry: LessonIndexEntry, locale: LearnLocale): Ver
 export function createLearnContentV1(locale: LearnLocale, entries: readonly LessonIndexEntry[]): readonly VersionedLearnLesson[] {
   if (new Set(entries.map((entry) => entry.id)).size !== entries.length) throw new Error(`Invalid Learn ${locale} lesson IDs`);
   return Object.freeze(entries.map((entry) => learnLessonOf(entry, locale)));
+}
+
+/** Whether a reading page is whole: both pages parse with no problem, and every file and image it names is there. */
+function readingIsValid(reading: LessonReading | undefined): boolean {
+  if (reading === undefined) return true;
+  const pages = [reading.en, reading.es];
+  if (!pages.every((page) => typeof page === 'string' && page.trim() !== '') || !reading.files || !Array.isArray(reading.images))
+    return false;
+  return (
+    pages.every((page) => parseReading(page).errors.length === 0) &&
+    Object.keys(reading.files).every((path) => path.startsWith('reading/') && typeof reading.files[path] === 'string') &&
+    reading.images.every((path) => /^images\/[^/]+\.(?:svg|png)$/.test(path))
+  );
 }
 
 /** Rejects any locale drift in technical references, rubric, and fault metadata. */
@@ -114,7 +132,9 @@ export function validateLearnContentV1(catalog: Readonly<Record<LearnLocale, rea
       lesson.hints.length === peer.hints.length &&
       JSON.stringify(lesson.visibleScenarioIds) === JSON.stringify(peer.visibleScenarioIds) &&
       JSON.stringify(lesson.authorScenarioIds) === JSON.stringify(peer.authorScenarioIds) &&
-      JSON.stringify(lesson.rubric) === JSON.stringify(peer.rubric),
+      JSON.stringify(lesson.rubric) === JSON.stringify(peer.rubric) &&
+      readingIsValid(lesson.reading) &&
+      (lesson.reading === peer.reading || JSON.stringify(lesson.reading) === JSON.stringify(peer.reading)),
     );
   });
 }

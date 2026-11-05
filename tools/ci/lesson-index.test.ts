@@ -197,3 +197,83 @@ describe('lesson ids have one source (LRN-028)', () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe('the reading pages in the generated index (LRN-042)', () => {
+  const FIXTURE = join(ROOT, 'packages/zplc-ide/src/learn/fixtures/reading/valid');
+  const LESSON = 'first-blink-simulation';
+  const withReading = (): string => {
+    const lessons = copyOfLessons();
+    cpSync(FIXTURE, join(lessons, LESSON), { recursive: true });
+    return lessons;
+  };
+
+  it('bundles the reading of a lesson that has one, and the data differs from the committed file, which `--check` refuses', () => {
+    const lessons = withReading();
+    const { problems, data } = generate(lessons);
+    expect(problems).toEqual([]);
+    const entries = (JSON.parse(data) as { lessons: Array<{ id: string; reading?: { en: string; images: string[] } }> }).lessons;
+    expect(entries.find((entry) => entry.id === LESSON)?.reading?.images).toEqual(['images/dot.png', 'images/panel.svg']);
+    expect(entries.filter((entry) => entry.reading).map((entry) => entry.id)).toEqual([LESSON]);
+    expect(readFileSync(join(ROOT, 'packages/zplc-ide/src/generated/lessonIndex.json'), 'utf8')).not.toBe(data);
+  });
+
+  it('leaves the bytes of every lesson without reading as they are', () => {
+    const plain = generate(copyOfLessons());
+    expect(plain.problems).toEqual([]);
+    expect(plain.data).toBe(readFileSync(join(ROOT, 'packages/zplc-ide/src/generated/lessonIndex.json'), 'utf8'));
+    expect(plain.data).not.toContain('"reading"');
+  });
+
+  it('reports a broken reading page through the generator, with the lesson and the line', () => {
+    const lessons = withReading();
+    const file = join(lessons, LESSON, 'reading.en.md');
+    writeFileSync(file, readFileSync(file, 'utf8').replace('## A first page', '# A first page'));
+    // The broken page drops the lesson from the packages, so its dependants also report it missing.
+    expect(generate(lessons).problems.filter((problem) => problem.startsWith(LESSON))).toEqual([
+      `${LESSON}/reading.en.md:1: level-1 headings are not allowed: the title comes from the lesson text`,
+    ]);
+  });
+
+  it('counts a change of the reading as learner-visible: the version of the lesson is raised once', () => {
+    const lessons = withReading();
+    const before = loadLessonPackages(LESSONS_DIRECTORY).packages.find((item) => item.id === LESSON)!.manifest.version;
+    expect(updateHashes(lessons)).toEqual([LESSON]);
+    expect(loadLessonPackages(lessons).packages.find((item) => item.id === LESSON)?.manifest.version).toBe(before + 1);
+    expect(updateHashes(lessons)).toEqual([]);
+  });
+});
+
+describe('the paths of the course in the generated index (LRN-043)', () => {
+  const pathOf = (lessons: string[]) => ({
+    id: 'ladder',
+    title: { en: 'Ladder', es: 'Escalera' },
+    summary: { en: 'Ladder from zero.', es: 'Escalera desde cero.' },
+    rationale: { en: 'Contacts first.', es: 'Primero los contactos.' },
+    language: 'LD',
+    lessons,
+  });
+  const withPaths = (paths: unknown[]): string => {
+    const lessons = copyOfLessons();
+    const file = join(lessons, 'course.json');
+    writeFileSync(file, JSON.stringify({ ...JSON.parse(readFileSync(file, 'utf8')), paths }));
+    return lessons;
+  };
+
+  it('embeds the paths of course.json in the index, and a course without paths adds no key', () => {
+    const { problems, data } = generate(withPaths([pathOf(['blinky-ladder-timer-feedback', 'seal-in-ladder'])]));
+    expect(problems).toEqual([]);
+    expect((JSON.parse(data) as { course: { paths: unknown[] } }).course.paths).toEqual([
+      pathOf(['blinky-ladder-timer-feedback', 'seal-in-ladder']),
+    ]);
+    expect(LESSON_INDEX.course).not.toHaveProperty('paths');
+  });
+
+  it('refuses a path that names a lesson no package has, or a path with a broken definition', () => {
+    expect(generate(withPaths([pathOf(['blinky-ladder-timer-feedback', 'ld-nope'])])).problems).toEqual([
+      'path ladder: lesson "ld-nope" is not a lesson',
+    ]);
+    expect(generate(withPaths([{ ...pathOf(['seal-in-ladder']), language: 'C' }])).problems).toEqual([
+      'course.json: path ladder: language must be one of ST, LD, FBD, SFC, IL',
+    ]);
+  });
+});
