@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Your own function block in Ladder: two pumps, one block",
+  "summary": "Call the project's function block PumpCtl from a second Ladder rung so that pump 2 has its own instance, with its own memory, beside pump 1.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish pump starting current, contactor wiring, suction line monitoring, HIL, or certification.",
+  "objectives": [
+    "Place a function block that the project declares in Structured Text in a Ladder rung, and wire its inputs and its output.",
+    "Explain that each instance of a function block keeps a memory of its own, so two pumps need two instances of one block."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "src/PumpCtl.st declares the function block PumpCtl: Start starts the pump and it keeps running after Start is released, Stop stops it, and Ready must be TRUE for the pump to run at all. In src/PumpStation.ld.json pump 1 is a rung with a PumpCtl instance named Pump1Ctl. The instance Pump2Ctl is declared but has no rung. Add a rung with the contact Start2 and a PumpCtl block for the instance Pump2Ctl, with Stop on Stop, Ready on Ready, and its Run output written to Pump2.",
+      "checkpoint": "A second rung holds a PumpCtl block for the instance Pump2Ctl, wired like the first and writing Pump2."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Start1 is pressed at {{t:10}} ms and Start2 at {{t:30}} ms; both buttons are released again. Stop is pressed at {{t:60}} ms, and Start2 is pressed again at {{t:80}} ms. Predict Pump1 and Pump2 at {{t:50}}, {{t:60}} and {{t:90}} ms.",
+      "checkpoint": "{{v:PumpStation.Pump1=true,PumpStation.Pump2=true@50|Both ON}} at {{t:50}} ms, because each instance holds its own pump; {{v:PumpStation.Pump1=false,PumpStation.Pump2=false@60|both OFF}} at {{t:60}} ms, after Stop; {{v:PumpStation.Pump1=false,PumpStation.Pump2=true@90|only Pump2 ON}} at {{t:90}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter calls only the instance Pump1Ctl, so Pump2 never turns on and stays OFF at {{t:50}} ms; add a rung with Start2 and a PumpCtl block for Pump2Ctl, with Stop on Stop and Ready on Ready, and write its Run output to Pump2. PumpCtl is in the Project category of the Ladder toolbox. The instance Pump2Ctl is already declared, so only the rung is missing.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named PumpStation and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:50}}, {{t:60}} and {{t:90}} ms. Pump1 and Pump2 run on their own after their buttons are released, Stop ends both, and a new press of Start2 starts only pump 2.",
+      "checkpoint": "Pump1 rises at {{t:10}} ms and falls at {{t:60}} ms. Pump2 rises at {{t:30}} ms and is ON again at {{t:90}} ms while Pump1 stays OFF."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Change the block of pump 2 to use the instance Pump1Ctl instead and run again. Which assertions fail, and why?",
+      "checkpoint": "Two rungs that call the same instance share one memory: the second call overwrites the Run of the first, so pump 1 no longer holds its own state. One instance is one machine of memory, so two pumps need two instances of the same block."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Pump 1 already has a rung. What does pump 2 need that pump 1's rung already shows you, and which instance name must it not reuse?"
+    },
+    {
+      "level": 2,
+      "text": "Copy the rung of pump 1. Change the contact to Start2, the instance to Pump2Ctl, and the output Run to Pump2. Keep Stop on Stop and Ready on Ready."
+    }
+  ],
+  "faultCases": [
+    "The starter calls only the instance Pump1Ctl, so Pump2 never turns on and stays OFF at {{t:50}} ms; add a rung with Start2 and a PumpCtl block for Pump2Ctl, with Stop on Stop and Ready on Ready, and write its Run output to Pump2."
+  ]
+}

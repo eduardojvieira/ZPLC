@@ -1,0 +1,577 @@
+{
+  "name": "CarWash",
+  "description": "A car wash with two step bits.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Go",
+        "type": "BOOL",
+        "comment": "Start button"
+      },
+      {
+        "name": "StepSoap",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "Soap step"
+      },
+      {
+        "name": "StepRinse",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "Rinse step"
+      },
+      {
+        "name": "SoapTimer",
+        "type": "TON",
+        "comment": "Soap time"
+      },
+      {
+        "name": "RinseTimer",
+        "type": "TON",
+        "comment": "Rinse time"
+      }
+    ],
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "Soap",
+        "type": "BOOL",
+        "comment": "Soap sprayer"
+      },
+      {
+        "name": "Rinse",
+        "type": "BOOL",
+        "comment": "Rinse sprayer"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Go starts the wash, but only when no step is active.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_Go_00",
+              "type": "contact_no",
+              "variable": "Go",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "nc_StepSoap_01",
+              "type": "contact_nc",
+              "variable": "StepSoap",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "nc_StepRinse_02",
+              "type": "contact_nc",
+              "variable": "StepRinse",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "set_StepSoap_07",
+              "type": "coil_set",
+              "variable": "StepSoap",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "Soap to rinse, part 1: when the soap time is over, the rinse step becomes active.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_StepSoap_00",
+              "type": "contact_no",
+              "variable": "StepSoap",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "no_SoapTimer_Q_01",
+              "type": "contact_no",
+              "variable": "SoapTimer.Q",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "set_StepRinse_07",
+              "type": "coil_set",
+              "variable": "StepRinse",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "Soap to rinse, part 2: the same condition ends the soap step.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_StepSoap_00",
+              "type": "contact_no",
+              "variable": "StepSoap",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "no_SoapTimer_Q_01",
+              "type": "contact_no",
+              "variable": "SoapTimer.Q",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "reset_StepSoap_07",
+              "type": "coil_reset",
+              "variable": "StepSoap",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_4",
+      "number": 4,
+      "comment": "The rinse step ends when its time is over.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_StepRinse_00",
+              "type": "contact_no",
+              "variable": "StepRinse",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "no_RinseTimer_Q_01",
+              "type": "contact_no",
+              "variable": "RinseTimer.Q",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "reset_StepRinse_07",
+              "type": "coil_reset",
+              "variable": "StepRinse",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_5",
+      "number": 5,
+      "comment": "Soap time.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_StepSoap_00",
+              "type": "contact_no",
+              "variable": "StepSoap",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "fb_SoapTimer",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "SoapTimer",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#2s"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_6",
+      "number": 6,
+      "comment": "Rinse time.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_StepRinse_00",
+              "type": "contact_no",
+              "variable": "StepRinse",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "fb_RinseTimer",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "RinseTimer",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#2s"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_7",
+      "number": 7,
+      "comment": "Soap sprayer follows its step.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_StepSoap_00",
+              "type": "contact_no",
+              "variable": "StepSoap",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_Soap_07",
+              "type": "coil",
+              "variable": "Soap",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_8",
+      "number": 8,
+      "comment": "Rinse sprayer follows its step.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_StepRinse_00",
+              "type": "contact_no",
+              "variable": "StepRinse",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_Rinse_07",
+              "type": "coil",
+              "variable": "Rinse",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-06",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

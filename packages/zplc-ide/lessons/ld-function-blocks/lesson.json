@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "ld-function-blocks",
+  "version": 2,
+  "order": 86,
+  "module": 7,
+  "level": "intermediate",
+  "prerequisites": ["tank-level-fault-reset-ladder"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The program of this lesson reads four inputs and drives two pump contactors with a permissive that comes from a suction line, which a learner board does not have.",
+        "es": "El programa de esta lección lee cuatro entradas y maneja dos contactores de bomba con un permisivo que proviene de una línea de succión, que una placa del estudiante no tiene."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where both pumps can be started, stopped and starved of water at no cost.",
+        "es": "Complétela en Simulación, donde ambas bombas se pueden arrancar, detener y dejar sin agua sin costo."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 25,
+  "starter": {
+    "project": "ld_function_blocks_starter",
+    "program": "src/PumpStation.ld.json"
+  },
+  "solution": {
+    "project": "ld_function_blocks",
+    "program": "src/PumpStation.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "PumpStation",
+    "path": "tests/pump-station.scenario.json",
+    "sha256": "c66a2f24daab922e151b64e4502a0680aacfac41b29c3a2775af921f913f8bc4"
+  },
+  "regressionScenarios": []
+}

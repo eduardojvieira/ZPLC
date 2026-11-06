@@ -1,0 +1,136 @@
+{
+  "name": "PumpStation",
+  "description": "Two pumps, each commanded by its own instance of the project function block PumpCtl.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Pump1Ctl",
+        "type": "PumpCtl",
+        "comment": "Instance of PumpCtl for pump 1: it keeps the memory of pump 1"
+      },
+      {
+        "name": "Pump2Ctl",
+        "type": "PumpCtl",
+        "comment": "Instance of PumpCtl for pump 2: it keeps the memory of pump 2"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start1",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Start pushbutton of pump 1, normally open"
+      },
+      {
+        "name": "Start2",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Start pushbutton of pump 2, normally open"
+      },
+      {
+        "name": "Stop",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "Stop pushbutton, normally open: stops both pumps"
+      },
+      {
+        "name": "Ready",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "Permissive: the suction line has water, so the pumps may run"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Pump1",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Pump 1 contactor"
+      },
+      {
+        "name": "Pump2",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Pump 2 contactor"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Pump 1: when Start1 is pressed the block Pump1Ctl starts the pump, and its Run output is written to Pump1.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_Start1_00",
+              "type": "contact_no",
+              "variable": "Start1",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "fb_Pump1Ctl",
+              "type": "function_block",
+              "fbType": "PumpCtl",
+              "instance": "Pump1Ctl",
+              "parameters": {
+                "Start": "CONNECTED",
+                "Stop": "Stop",
+                "Ready": "Ready"
+              },
+              "outputs": {
+                "Run": "Pump1"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-05",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

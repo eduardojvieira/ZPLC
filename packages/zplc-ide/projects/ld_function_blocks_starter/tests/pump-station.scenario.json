@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "id": "PumpStation",
+  "tickMs": 10,
+  "durationMs": 120,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "PumpStation.Start1": false,
+        "PumpStation.Start2": false,
+        "PumpStation.Stop": false,
+        "PumpStation.Ready": true
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "PumpStation.Start1": true
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "PumpStation.Start1": false
+      }
+    },
+    {
+      "atMs": 30,
+      "set": {
+        "PumpStation.Start2": true
+      }
+    },
+    {
+      "atMs": 40,
+      "set": {
+        "PumpStation.Start2": false
+      }
+    },
+    {
+      "atMs": 60,
+      "set": {
+        "PumpStation.Stop": true
+      }
+    },
+    {
+      "atMs": 70,
+      "set": {
+        "PumpStation.Stop": false
+      }
+    },
+    {
+      "atMs": 80,
+      "set": {
+        "PumpStation.Start2": true
+      }
+    },
+    {
+      "atMs": 90,
+      "set": {
+        "PumpStation.Start2": false
+      }
+    },
+    {
+      "atMs": 110,
+      "set": {
+        "PumpStation.Ready": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "PumpStation.Pump1": false,
+        "PumpStation.Pump2": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 20,
+      "condition": {
+        "PumpStation.Pump1": true,
+        "PumpStation.Pump2": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "PumpStation.Pump1": true,
+        "PumpStation.Pump2": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 60,
+      "condition": {
+        "PumpStation.Pump1": false,
+        "PumpStation.Pump2": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 90,
+      "condition": {
+        "PumpStation.Pump1": false,
+        "PumpStation.Pump2": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 110,
+      "condition": {
+        "PumpStation.Pump1": false,
+        "PumpStation.Pump2": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 30,
+      "forMs": 20,
+      "condition": {
+        "PumpStation.Pump1": true
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 10,
+      "withinMs": 0,
+      "condition": {
+        "PumpStation.Pump1": true
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 30,
+      "withinMs": 0,
+      "condition": {
+        "PumpStation.Pump2": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 60,
+      "withinMs": 0,
+      "condition": {
+        "PumpStation.Pump1": false
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 60,
+      "withinMs": 0,
+      "condition": {
+        "PumpStation.Pump2": false
+      }
+    }
+  ]
+}

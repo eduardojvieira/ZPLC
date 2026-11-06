@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "ld-sequence-step-bits",
+  "version": 2,
+  "order": 85,
+  "module": 5,
+  "level": "intermediate",
+  "prerequisites": ["edge-counter-pulses-ladder"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The sequence of this lesson drives a fill valve, a mixer and a drain valve that a learner board does not have, and the program uses three outputs where the boards have two.",
+        "es": "La secuencia de esta lección maneja una válvula de llenado, un mezclador y una válvula de vaciado que una placa del estudiante no tiene, y el programa usa tres salidas cuando las placas tienen dos."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the whole tank sequence can be repeated at no cost.",
+        "es": "Complétela en Simulación, donde toda la secuencia del tanque se puede repetir sin costo."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 25,
+  "starter": {
+    "project": "ld_tank_sequence_starter",
+    "program": "src/TankSequence.ld.json"
+  },
+  "solution": {
+    "project": "ld_tank_sequence",
+    "program": "src/TankSequence.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "TankSequence",
+    "path": "tests/tank-sequence.scenario.json",
+    "sha256": "bc5ad5f146613cb6b6b9b6f5ab82f1228b4394b4208332f91b4c5829e2323dae"
+  },
+  "regressionScenarios": []
+}

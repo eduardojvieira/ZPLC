@@ -1,0 +1,233 @@
+{
+  "name": "OvenLatch",
+  "description": "An oven overheat latch.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Overheat",
+        "type": "BOOL",
+        "comment": "Overheat sensor"
+      },
+      {
+        "name": "Reset",
+        "type": "BOOL",
+        "comment": "Reset button"
+      },
+      {
+        "name": "Locked",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "Fault latch"
+      }
+    ],
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "Alarm",
+        "type": "BOOL",
+        "comment": "Alarm lamp"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Any overheat reading sets the latch.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_Overheat_00",
+              "type": "contact_no",
+              "variable": "Overheat",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "set_Locked_07",
+              "type": "coil_set",
+              "variable": "Locked",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "The latch clears only when the overheat is gone and Reset is pressed.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_Locked_00",
+              "type": "contact_no",
+              "variable": "Locked",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "nc_Overheat_01",
+              "type": "contact_nc",
+              "variable": "Overheat",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "no_Reset_02",
+              "type": "contact_no",
+              "variable": "Reset",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "reset_Locked_07",
+              "type": "coil_reset",
+              "variable": "Locked",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "The alarm lamp shows the latch.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_Locked_00",
+              "type": "contact_no",
+              "variable": "Locked",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_Alarm_07",
+              "type": "coil",
+              "variable": "Alarm",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-06",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

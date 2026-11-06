@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "id": "TankSequence",
+  "tickMs": 10,
+  "durationMs": 160,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "TankSequence.Start": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "TankSequence.Start": true
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "TankSequence.Start": false
+      }
+    },
+    {
+      "atMs": 40,
+      "set": {
+        "TankSequence.Start": true
+      }
+    },
+    {
+      "atMs": 50,
+      "set": {
+        "TankSequence.Start": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "TankSequence.FillValve": false,
+        "TankSequence.Mixer": false,
+        "TankSequence.DrainValve": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "TankSequence.FillValve": true,
+        "TankSequence.Mixer": false,
+        "TankSequence.DrainValve": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "TankSequence.FillValve": true,
+        "TankSequence.Mixer": false,
+        "TankSequence.DrainValve": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 60,
+      "condition": {
+        "TankSequence.FillValve": false,
+        "TankSequence.Mixer": true,
+        "TankSequence.DrainValve": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 90,
+      "condition": {
+        "TankSequence.FillValve": false,
+        "TankSequence.Mixer": true,
+        "TankSequence.DrainValve": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 100,
+      "condition": {
+        "TankSequence.FillValve": false,
+        "TankSequence.Mixer": false,
+        "TankSequence.DrainValve": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 130,
+      "condition": {
+        "TankSequence.FillValve": false,
+        "TankSequence.Mixer": false,
+        "TankSequence.DrainValve": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 140,
+      "condition": {
+        "TankSequence.FillValve": false,
+        "TankSequence.Mixer": false,
+        "TankSequence.DrainValve": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 60,
+      "forMs": 30,
+      "condition": {
+        "TankSequence.Mixer": true
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 60,
+      "withinMs": 0,
+      "condition": {
+        "TankSequence.Mixer": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 140,
+      "withinMs": 0,
+      "condition": {
+        "TankSequence.DrainValve": false
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "TankSequence.FillValve": true,
+        "TankSequence.Mixer": true
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "TankSequence.Mixer": true,
+        "TankSequence.DrainValve": true
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "TankSequence.FillValve": true,
+        "TankSequence.DrainValve": true
+      }
+    }
+  ]
+}

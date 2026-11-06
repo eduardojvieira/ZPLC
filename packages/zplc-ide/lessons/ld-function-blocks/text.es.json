@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Su propio bloque de función en escalera: dos bombas, un bloque",
+  "summary": "Llame al bloque de función PumpCtl del proyecto desde un segundo peldaño de escalera para que la bomba 2 tenga su propia instancia, con su propia memoria, junto a la bomba 1.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran la corriente de arranque de las bombas, el cableado de los contactores, la supervisión de la línea de succión, HIL ni certificación.",
+  "objectives": [
+    "Coloque en un peldaño de escalera un bloque de función que el proyecto declara en texto estructurado, y conecte sus entradas y su salida.",
+    "Explique que cada instancia de un bloque de función guarda su propia memoria, por lo que dos bombas necesitan dos instancias de un mismo bloque."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "src/PumpCtl.st declara el bloque de función PumpCtl: Start arranca la bomba y esta sigue funcionando al soltar Start, Stop la detiene, y Ready debe estar en TRUE para que la bomba funcione. En src/PumpStation.ld.json la bomba 1 es un peldaño con una instancia de PumpCtl llamada Pump1Ctl. La instancia Pump2Ctl está declarada pero no tiene peldaño. Agregue un peldaño con el contacto Start2 y un bloque PumpCtl para la instancia Pump2Ctl, con Stop en Stop, Ready en Ready y su salida Run escrita en Pump2.",
+      "checkpoint": "Un segundo peldaño contiene un bloque PumpCtl para la instancia Pump2Ctl, conectado como el primero y que escribe Pump2."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Start1 se pulsa a los {{t:10}} ms y Start2 a los {{t:30}} ms; ambos botones se sueltan después. Stop se pulsa a los {{t:60}} ms y Start2 se vuelve a pulsar a los {{t:80}} ms. Prediga Pump1 y Pump2 a los {{t:50}}, {{t:60}} y {{t:90}} ms.",
+      "checkpoint": "{{v:PumpStation.Pump1=true,PumpStation.Pump2=true@50|Ambas en ON}} a los {{t:50}} ms, porque cada instancia sostiene su propia bomba; {{v:PumpStation.Pump1=false,PumpStation.Pump2=false@60|ambas en OFF}} a los {{t:60}} ms, tras Stop; {{v:PumpStation.Pump1=false,PumpStation.Pump2=true@90|solo Pump2 en ON}} a los {{t:90}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial llama solo a la instancia Pump1Ctl, así que Pump2 nunca pasa a ON y queda en OFF a los {{t:50}} ms; agregue un peldaño con Start2 y un bloque PumpCtl para Pump2Ctl, con Stop en Stop y Ready en Ready, y escriba su salida Run en Pump2. PumpCtl está en la categoría Proyecto de la caja de herramientas de escalera. La instancia Pump2Ctl ya está declarada, así que solo falta el peldaño.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama PumpStation y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:50}}, {{t:60}} y {{t:90}} ms. Pump1 y Pump2 siguen funcionando solas después de soltar sus botones, Stop termina ambas, y una nueva pulsación de Start2 arranca solo la bomba 2.",
+      "checkpoint": "Pump1 sube a los {{t:10}} ms y cae a los {{t:60}} ms. Pump2 sube a los {{t:30}} ms y está de nuevo en ON a los {{t:90}} ms mientras Pump1 sigue en OFF."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "Cambie el bloque de la bomba 2 para que use la instancia Pump1Ctl y ejecute de nuevo. ¿Qué aserciones fallan y por qué?",
+      "checkpoint": "Dos peldaños que llaman a la misma instancia comparten una sola memoria: la segunda llamada sobrescribe el Run de la primera, y la bomba 1 ya no conserva su propio estado. Una instancia es una sola memoria, así que dos bombas necesitan dos instancias del mismo bloque."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "La bomba 1 ya tiene un peldaño. ¿Qué necesita la bomba 2 que el peldaño de la bomba 1 ya le muestra, y qué nombre de instancia no debe repetir?"
+    },
+    {
+      "level": 2,
+      "text": "Copie el peldaño de la bomba 1. Cambie el contacto a Start2, la instancia a Pump2Ctl y la salida Run a Pump2. Mantenga Stop en Stop y Ready en Ready."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial llama solo a la instancia Pump1Ctl, así que Pump2 nunca pasa a ON y queda en OFF a los {{t:50}} ms; agregue un peldaño con Start2 y un bloque PumpCtl para Pump2Ctl, con Stop en Stop y Ready en Ready, y escriba su salida Run en Pump2."
+  ]
+}

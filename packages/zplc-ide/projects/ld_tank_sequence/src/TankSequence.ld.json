@@ -1,0 +1,861 @@
+{
+  "name": "TankSequence",
+  "description": "A tank sequence with step bits: fill, then mix, then drain, one step active at a time.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "StepFill",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "Step bit: the fill step is active"
+      },
+      {
+        "name": "StepMix",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "Step bit: the mix step is active"
+      },
+      {
+        "name": "StepDrain",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "Step bit: the drain step is active"
+      },
+      {
+        "name": "FillTimer",
+        "type": "TON",
+        "comment": "Time of the fill step"
+      },
+      {
+        "name": "MixTimer",
+        "type": "TON",
+        "comment": "Time of the mix step"
+      },
+      {
+        "name": "DrainTimer",
+        "type": "TON",
+        "comment": "Time of the drain step"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Start pushbutton, normally open: TRUE while pressed"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "FillValve",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Fill valve open while the fill step is active"
+      },
+      {
+        "name": "Mixer",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Mixer motor on while the mix step is active"
+      },
+      {
+        "name": "DrainValve",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "Drain valve open while the drain step is active"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Start: a press begins the sequence, but only when no step is active.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_Start_00",
+              "type": "contact_no",
+              "variable": "Start",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "nc_StepFill_01",
+              "type": "contact_nc",
+              "variable": "StepFill",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "nc_StepMix_02",
+              "type": "contact_nc",
+              "variable": "StepMix",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "nc_StepDrain_03",
+              "type": "contact_nc",
+              "variable": "StepDrain",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "set_StepFill_07",
+              "type": "coil_set",
+              "variable": "StepFill",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "Transition from fill to mix, part 1: when the fill time is over, the next step becomes active.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_StepFill_00",
+              "type": "contact_no",
+              "variable": "StepFill",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "no_FillTimer_Q_01",
+              "type": "contact_no",
+              "variable": "FillTimer.Q",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "set_StepMix_07",
+              "type": "coil_set",
+              "variable": "StepMix",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "Transition from fill to mix, part 2: the same condition ends the fill step, so that only one step stays active.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_StepFill_00",
+              "type": "contact_no",
+              "variable": "StepFill",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "no_FillTimer_Q_01",
+              "type": "contact_no",
+              "variable": "FillTimer.Q",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "reset_StepFill_07",
+              "type": "coil_reset",
+              "variable": "StepFill",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_4",
+      "number": 4,
+      "comment": "Transition from mix to drain, part 1: when the mix time is over, the next step becomes active.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_StepMix_00",
+              "type": "contact_no",
+              "variable": "StepMix",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "no_MixTimer_Q_01",
+              "type": "contact_no",
+              "variable": "MixTimer.Q",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "set_StepDrain_07",
+              "type": "coil_set",
+              "variable": "StepDrain",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_5",
+      "number": 5,
+      "comment": "Transition from mix to drain, part 2: the same condition ends the mix step.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_StepMix_00",
+              "type": "contact_no",
+              "variable": "StepMix",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "no_MixTimer_Q_01",
+              "type": "contact_no",
+              "variable": "MixTimer.Q",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "reset_StepMix_07",
+              "type": "coil_reset",
+              "variable": "StepMix",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_6",
+      "number": 6,
+      "comment": "End of the sequence: when the drain time is over, the last step ends and the machine is idle again.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_StepDrain_00",
+              "type": "contact_no",
+              "variable": "StepDrain",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "no_DrainTimer_Q_01",
+              "type": "contact_no",
+              "variable": "DrainTimer.Q",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "reset_StepDrain_07",
+              "type": "coil_reset",
+              "variable": "StepDrain",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_7",
+      "number": 7,
+      "comment": "Time of the fill step: the timer runs only while its step bit is on, so it starts from zero each time the step begins.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_StepFill_00",
+              "type": "contact_no",
+              "variable": "StepFill",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "fb_FillTimer",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "FillTimer",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#40ms"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_8",
+      "number": 8,
+      "comment": "Time of the mix step: the timer runs only while its step bit is on, so it starts from zero each time the step begins.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_StepMix_00",
+              "type": "contact_no",
+              "variable": "StepMix",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "fb_MixTimer",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "MixTimer",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#30ms"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_9",
+      "number": 9,
+      "comment": "Time of the drain step: the timer runs only while its step bit is on, so it starts from zero each time the step begins.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_StepDrain_00",
+              "type": "contact_no",
+              "variable": "StepDrain",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "fb_DrainTimer",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "DrainTimer",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#30ms"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_10",
+      "number": 10,
+      "comment": "Output: the fill valve follows its step bit.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_StepFill_00",
+              "type": "contact_no",
+              "variable": "StepFill",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_FillValve_07",
+              "type": "coil",
+              "variable": "FillValve",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_11",
+      "number": 11,
+      "comment": "Output: the mixer follows its step bit.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_StepMix_00",
+              "type": "contact_no",
+              "variable": "StepMix",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_Mixer_07",
+              "type": "coil",
+              "variable": "Mixer",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_12",
+      "number": 12,
+      "comment": "Output: the drain valve follows its step bit.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_StepDrain_00",
+              "type": "contact_no",
+              "variable": "StepDrain",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_DrainValve_07",
+              "type": "coil",
+              "variable": "DrainValve",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-05",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
