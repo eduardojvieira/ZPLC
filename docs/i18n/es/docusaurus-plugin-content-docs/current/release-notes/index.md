@@ -29,7 +29,7 @@ ZPLC 2.0.0 es para evaluación. Ninguna placa se ha grabado, arrancado ni ejecut
   cables EN y ENO.
 - **Un simulador que sigue al destino.** El mismo núcleo de planificación corre en su equipo y en el firmware.
 - **Cinco lenguajes, un solo bytecode.** Texto estructurado, lista de instrucciones, escalera, diagrama de bloques de
-  función y diagrama funcional de secuencias se compilan a un único formato.
+  función y diagrama funcional secuencial se compilan a un único formato.
 - **Documentación en la que puede confiar.** Cada número, comando y afirmación del sitio se comprueba contra el
   repositorio, en español y en inglés.
 
@@ -57,7 +57,7 @@ tiempos. Corre con la compilación WebAssembly del mismo runtime que el simulado
 
 ![El laboratorio de prueba de la primera lección, en marcha, con la luz del pórtico encendida](/img/screens/learn-lab-es.png)
 
-Usted sigue practicando y se califica en el editor: **Comprobar** ejecuta su programa guardado con el escenario de la
+Usted sigue practicando en el editor, donde **Comprobar** lo califica: ejecuta su programa guardado con el escenario de la
 lección. Vea [Aprender](../learn/index.md) y el [esquema del curso](../learn/course-outline.md).
 
 ### Cajas de función en escalera
@@ -116,7 +116,7 @@ tiene la lista y las reglas.
   comprobación pasó cada archivo, y cada archivo tiene una suma de verificación y una atestación de compilación.
 - **La documentación se reescribió.** Una página para cada tarea, un tutorial con una captura real de cada paso, guías de
   Modbus, MQTT y Sparkplug B, los bloques de nube, asignación de E/S, forzado de valores, valores retentivos, pruebas de
-  escenario, archivos de proyecto, la línea de comandos, depuración, IA y MCP, y portado. Las páginas de referencia se
+  escenario, archivos de proyecto, la línea de comandos, depuración, IA y MCP, y adaptación a otras placas. Las páginas de referencia se
   generan a partir del código fuente.
 
 ## Cambios incompatibles
@@ -184,7 +184,7 @@ tiene la lista y las reglas.
 - La IA y MCP no inician acciones de grabar, cargar, forzar, RUN/STOP, recuperación, puerto serie en bruto ni consola.
 - Una afirmación de hardware necesita una prueba física trazable de la placa y del commit exacto: compilación, grabado,
   identidad y hash, carga, un escenario de referencia, reinicio y persistencia, salidas seguras y tiempos. Vea
-  [Hardware en el bucle](../development/hardware-in-the-loop.md).
+  [Hardware en el lazo](../development/hardware-in-the-loop.md).
 
 No deduzca equivalencia de funciones, rendimiento de tiempos ni seguridad física a partir de esta página ni de la presencia
 de código fuente.
