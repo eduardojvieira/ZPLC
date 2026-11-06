@@ -51,7 +51,7 @@ Agregue una entrada a `firmware/app/boards/boards.json`. La aplicación de ZPLC,
   "docs_ref": "docs/docs/reference/capabilities-evidence.md",
   "watchdog": {
     "enabled": false,
-    "reason": "No hardware record yet (HIL-010): the hardware watchdog stays off in this profile until the reset timing and the safe outputs are recorded on this board with it enabled (RT-020).",
+    "reason": "No hardware record yet: the hardware watchdog stays off in this profile until the reset timing and the safe outputs are recorded on this board with it enabled.",
     "timeout_ms": 1000,
     "max_timeout_ms": 8000,
     "stop": "disarm",

@@ -13,7 +13,7 @@ Todas las lecciones se pueden aprobar en simulación, sin hardware. La ruta de h
 
 ## Elija su placa
 
-Al pie del inicio de Aprender, la franja **Ruta de hardware** tiene un grupo **Su placa** con las dos placas, y cada lección de hardware repite el grupo al principio de su sección **En su placa**. Elija la placa que tiene. Con el teclado, Tab llega al grupo, las flechas pasan de una placa a otra y Intro o Espacio eligen. ZPLC dice qué placa eligió y guarda la elección en este equipo.
+Al pie del inicio de Aprender, la franja **Ruta de hardware** tiene un grupo **Su placa** con las dos placas, y cada lección de hardware repite el grupo al principio de su sección **En su placa**. Elija la placa que tiene. Con el teclado, Tab llega al grupo, las flechas pasan de una placa a otra y Intro o Espacio eligen. ZPLC dice qué placa eligió y guarda la elección en esta computadora.
 
 ## Qué muestra una lección para su placa
 
@@ -57,7 +57,7 @@ Una lección declara `timeMs`, cuánto puede alejarse una muestra, hacia uno u o
 
 Una placa cuyo firmware no tiene traza del dispositivo se lee con la misma lectura que llena la tabla Observación, cada 100 ms. Una lectura equivale, como máximo, a dos comandos `zplc dbg peek` de unos 96 caracteres cada uno, 2 × 96 × 10 bits / 115200 bit/s, unos 17 ms, y la comprobación reserva 20 ms, así que una muestra sigue a la anterior en a lo sumo 120 ms. La comprobación amplía entonces la tolerancia de la lección en ese periodo menos el margen de fluctuación: 20 ms pasan a ser 130 ms, nunca menos que un periodo de muestreo más un ciclo.
 
-Estos números se derivan del firmware y de la configuración serie. No se midieron en una placa, y todavía no existe un registro de fluctuación del ciclo del plan de hardware en el lazo (HIL-010) que confirme o reemplace el margen de 10 ms. `analogPercent` es para los valores analógicos; hoy los escenarios solo tienen condiciones de encendido y apagado, así que todavía no tiene nada que comparar.
+Estos números se derivan del firmware y de la configuración serie. No se midieron en una placa, y todavía no existe un registro de fluctuación del ciclo del plan de hardware en el lazo que confirme o reemplace el margen de 10 ms. `analogPercent` es para los valores analógicos; hoy los escenarios solo tienen condiciones de encendido y apagado, así que todavía no tiene nada que comparar.
 
 ### Cómo se alinea el escenario con lo que usted hizo
 
@@ -91,5 +91,5 @@ Su progreso guarda la aprobación en hardware más reciente de cada lección apa
 
 ## Lo que está probado y lo que todavía no está
 
-- La comprobación está probada en el equipo de desarrollo con trazas sintéticas, que las pruebas construyen para que se parezcan a lo que informa una placa. El registrador y los pasos de la comprobación están probados con sesiones simuladas. La elección de placa, el cableado de cada placa, las etiquetas y la comprobación desactivada con su motivo están probados en ZPLC en Linux. Nivel de evidencia: host.
+- La comprobación está probada en la computadora de desarrollo con trazas sintéticas, que las pruebas construyen para que se parezcan a lo que informa una placa. El registrador y los pasos de la comprobación están probados con sesiones simuladas. La elección de placa, el cableado de cada placa, las etiquetas y la comprobación desactivada con su motivo están probados en ZPLC en Linux. Nivel de evidencia: host.
 - Esta evidencia no incluye ninguna traza de una placa real ni ninguna ejecución en una placa física. Las ejecuciones en las dos placas son evidencia de hardware en el lazo que todavía falta registrar.

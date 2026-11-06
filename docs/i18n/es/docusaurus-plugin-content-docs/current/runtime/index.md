@@ -26,7 +26,7 @@ flowchart TD
   Loader[Cargador y verificador] --> VM[VM]
   VM --> Sched[Núcleo del planificador]
   Sched --> HAL[Puerto del HAL]
-  HAL --> Platform[Equipo anfitrión, página WebAssembly, placa Zephyr]
+  HAL --> Platform[Computadora anfitriona, página WebAssembly, placa Zephyr]
 ```
 
 ## Dónde se ejecuta
@@ -41,10 +41,10 @@ flowchart TD
 ## De la compilación a la máquina en marcha
 
 1. **Compile** el proyecto en un artefacto `.zplc`.
-2. **Cargue o despliegue** el artefacto. El cargador lo verifica, y una carga correcta deja el runtime detenido y listo. Cargar nunca arranca la máquina.
-3. **Inspeccione** el destino y luego **arránquelo** con una orden humana explícita, `zplc start` en un dispositivo. Nada inicia un programa por un reinicio ni por un despliegue.
+2. **Cargue** el artefacto. El cargador lo verifica, y una carga correcta deja el runtime detenido y listo. Cargar nunca arranca la máquina.
+3. **Inspeccione** el destino y luego **arránquelo** con una orden humana explícita, `zplc start` en un dispositivo. Nada inicia un programa por un reinicio ni por una carga.
 
-Compilar el firmware, grabarlo, desplegar un programa y ejecutarlo o depurarlo son cuatro operaciones distintas, y un despliegue nunca inicia el programa. Véase [Seguridad y limitaciones](../safety-and-limitations.md).
+Compilar el firmware, grabarlo, cargar un programa y ejecutarlo o depurarlo son cuatro operaciones distintas, y una carga nunca inicia el programa. Véase [Seguridad y limitaciones](../safety-and-limitations.md).
 
 ## Las páginas de esta sección
 

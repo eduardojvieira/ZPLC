@@ -67,7 +67,7 @@ Lo usan tres adaptadores: la sesión POSIX del runtime de host (`native_runtime_
 
 En un destino un lote son tres pasos. Las entradas se leen del HAL sin ningún cerrojo. Después, bajo el cerrojo de la imagen de proceso, se aplican las escrituras que otros hilos dejaron en cola, las muestras pasan a la imagen de entradas, las tareas corren y la imagen se publica como instantánea. Por último, con el cerrojo de la imagen liberado y bajo un cerrojo aparte para la E/S de salida, se escriben los pines y se alimenta el watchdog de hardware. El cerrojo de la imagen nunca se mantiene mientras se escribe un pin, se imprime una línea o corre una llamada que pueda bloquear.
 
-Un hilo ajeno al ciclo lee la instantánea de la última confirmación y deja sus escrituras en cola para la siguiente captura de entradas; véase [Acceso desde fuera del ciclo](./memory-model.md#acceso-desde-fuera-del-ciclo-rt-010-rt-011). Un cerrojo que no se puede crear o tomar es un error que ve quien llama: una llamada de control devuelve `ZPLC_SCHED_ERR_LOCK` y no cambia nada, y un ciclo que no puede tomar el cerrojo de la imagen lleva los pines a su estado seguro y retiene la falla.
+Un hilo ajeno al ciclo lee la instantánea de la última confirmación y deja sus escrituras en cola para la siguiente captura de entradas; véase [Acceso desde fuera del ciclo](./memory-model.md#acceso-desde-fuera-del-ciclo). Un cerrojo que no se puede crear o tomar es un error que ve quien llama: una llamada de control devuelve `ZPLC_SCHED_ERR_LOCK` y no cambia nada, y un ciclo que no puede tomar el cerrojo de la imagen lleva los pines a su estado seguro y retiene la falla.
 
 ### Prioridades y orden de arranque
 
@@ -138,7 +138,7 @@ El runtime separa dos cosas: las **salidas físicas** (los pines) y el **estado 
 
 ## Estado seguro de una salida
 
-Una salida está **apagada** siempre que el programa no la controla: en STOP, en pausa o en un punto de parada, en una falla retenida, desde el arranque hasta el primer ciclo y mientras un despliegue está en curso. Una sola función, `zplc_io_drive_safe`, decide el nivel:
+Una salida está **apagada** siempre que el programa no la controla: en STOP, en pausa o en un punto de parada, en una falla retenida, desde el arranque hasta el primer ciclo y mientras una carga está en curso. Una sola función, `zplc_io_drive_safe`, decide el nivel:
 
 1. El valor que **declara el programa cargado** para esa salida, cuando declara uno.
 2. Si no, **apagado**, salvo que la descripción de la placa (`firmware/app/boards/boards.json`) dé a ese canal otro nivel seguro, como necesita un relé activo en bajo.
@@ -156,13 +156,13 @@ Un proyecto declara el valor en `zplc.json`, en una fila de `io.outputs`:
 }
 ```
 
-Aquí `Brake` está energizada siempre que el programa no la maneja, y `Valve` está apagada. La declaración viaja dentro del artefacto, en su segmento `SAFE`, de modo que un programa y su estado seguro son una sola unidad: un dispositivo que restaura el programa restaura la declaración, y un despliegue interrumpido no puede dejar el programa de una compilación con los valores seguros de otra (véase [Valores seguros declarados](./isa.md#valores-seguros-declarados)). La confirmación del despliegue muestra cada salida declarada con el valor que toma, o dice que toda salida está apagada, antes de que se escriba el programa.
+Aquí `Brake` está energizada siempre que el programa no la maneja, y `Valve` está apagada. La declaración viaja dentro del artefacto, en su segmento `SAFE`, de modo que un programa y su estado seguro son una sola unidad: un dispositivo que restaura el programa restaura la declaración, y una carga interrumpida no puede dejar el programa de una compilación con los valores seguros de otra (véase [Valores seguros declarados](./isa.md#valores-seguros-declarados)). La confirmación de la carga muestra cada salida declarada con el valor que toma, o dice que toda salida está apagada, antes de que se escriba el programa.
 
 | Dónde | Qué se rechaza |
 | --- | --- |
-| La compilación (la aplicación ZPLC, la línea de comandos, MCP) | Un `safe` que no es `true` ni `false`; uno en una fila que no es un bit de salida digital (`%QW0`, `%QB0`), en una entrada o en una fila `virtual`; dos filas para una salida; una salida para la que la placa elegida no tiene un canal digital. El mensaje nombra la salida, la dirección y la placa, y no hay artefacto que desplegar. |
+| La compilación (la aplicación ZPLC, la línea de comandos, MCP) | Un `safe` que no es `true` ni `false`; uno en una fila que no es un bit de salida digital (`%QW0`, `%QB0`), en una entrada o en una fila `virtual`; dos filas para una salida; una salida para la que la placa elegida no tiene un canal digital. El mensaje nombra la salida, la dirección y la placa, y no hay artefacto que cargar. |
 | El cargador | Un segmento que no son entradas completas, una entrada fuera de la imagen de salidas, un valor distinto de 0 o 1, una salida dos veces, o más de 64 entradas. |
-| El firmware, al desplegar y al restaurar en el arranque | Una declaración para una salida que no es un canal de salida digital de la tabla de E/S de la placa, es decir, un proyecto de otra placa. El programa no se guarda ni se ejecuta. |
+| El firmware, al cargar y al restaurar en el arranque | Una declaración para una salida que no es un canal de salida digital de la tabla de E/S de la placa, es decir, un proyecto de otra placa. El programa no se guarda ni se ejecuta. |
 
 Los valores declarados rigen desde la carga que confirma el programa, antes del primer ciclo: un programa restaurado espera en STOP con sus salidas declaradas encendidas. La imagen de salidas es el estado lógico del programa y se pone en cero en STOP, sea cual sea el valor que muestre el pin. El tiempo entre el encendido y el instante en que el firmware maneja los pines es el estado de reinicio del componente; una placa que necesita un pin en uno ahí necesita hardware que lo haga (véase [Placas](../reference/boards.md)).
 
@@ -174,7 +174,7 @@ Las decisiones que no dependen de una plataforma están en `zplc_failsafe` y se 
 
 **Por qué se reinició el runtime.** `zplc sys reset` (con `--json`) informa la causa del último reinicio: `power_on`, `brown_out`, `pin`, `software`, `watchdog`, `fault` o `unknown`, con el registro crudo, el registro de falla de la ejecución anterior y la política de arranque. Cuando un procesador informa varios bits el orden es fijo: primero un registro de falla, luego watchdog, encendido, brown-out, lock-up, software y, al final, el pin, porque casi todo reinicio lo activa. La causa es también la clave `reset_cause` de `zplc sched status --json`.
 
-**Tras un reinicio el runtime espera en STOP.** Sea cual sea la causa, el programa guardado se restaura en STOP con las salidas en sus valores seguros, y **RUN es una orden de una persona**: la función `zplc_reset_may_run` vale 0 para toda causa. Las variables retentivas se restauran solo cuando `CONFIG_ZPLC_RETAIN_PERSIST` está activado, y lo está en el perfil de cada placa distribuida. Un despliegue detiene el programa en ejecución antes de transferir un solo byte.
+**Tras un reinicio el runtime espera en STOP.** Sea cual sea la causa, el programa guardado se restaura en STOP con las salidas en sus valores seguros, y **RUN es una orden de una persona**: la función `zplc_reset_may_run` vale 0 para toda causa. Las variables retentivas se restauran solo cuando `CONFIG_ZPLC_RETAIN_PERSIST` está activado, y lo está en el perfil de cada placa distribuida. Una carga detiene el programa en ejecución antes de transferir un solo byte.
 
 **El watchdog de hardware.** La entrada `watchdog` de cada placa en `boards.json` dice si está habilitado, el tiempo de espera con el que se registró su tiempo de reinicio, el tiempo de espera más largo que acepta el componente y qué hace en STOP, en pausa y en una falla retenida. **Ninguna placa lo tiene habilitado**, y las opciones siguen desactivadas hasta que una placa y revisión exactas tengan un registro de hardware de su tiempo de reinicio y de sus pines. Cuando está habilitado:
 

@@ -9,7 +9,7 @@ tags: [learn, lessons, educators, classroom]
 
 # Docentes
 
-Esta página es para un docente que da el curso de Aprender a un grupo. Ofrece tres herramientas: un ajuste que oculta las soluciones de referencia, un comando que revisa el archivo de progreso exportado por un estudiante y un esquema imprimible del curso. Todo se ejecuta en su propio equipo. Aprender no necesita cuenta ni servidor, y nada de lo que sigue envía datos de un estudiante a ninguna parte.
+Esta página es para un docente que da el curso de Aprender a un grupo. Ofrece tres herramientas: un ajuste que oculta las soluciones de referencia, un comando que revisa el archivo de progreso exportado por un estudiante y un esquema imprimible del curso. Todo se ejecuta en su propia computadora. Aprender no necesita cuenta ni servidor, y nada de lo que sigue envía datos de un estudiante a ninguna parte.
 
 Los dos comandos se ejecutan desde una copia del repositorio con [Bun](https://bun.sh). Leen el índice de lecciones que viene con ZPLC.
 
@@ -18,7 +18,7 @@ Los dos comandos se ejecutan desde una copia del repositorio con [Bun](https://b
 1. Abra el inicio de Aprender.
 2. Active **Aula: ocultar las soluciones de referencia**.
 
-Mientras el ajuste está activo, el panel de la lección no ofrece ninguna solución de referencia y dice que el ajuste de aula la oculta. Las pistas siguen disponibles. El ajuste pertenece a ese equipo y viene desactivado; se desactiva en el mismo lugar.
+Mientras el ajuste está activo, el panel de la lección no ofrece ninguna solución de referencia y dice que el ajuste de aula la oculta. Las pistas siguen disponibles. El ajuste pertenece a esa computadora y viene desactivado; se desactiva en el mismo lugar.
 
 ## Revisar el archivo de progreso de un estudiante
 
@@ -51,7 +51,7 @@ El comando imprime una línea por lección, con la forma `<id de la lección>: <
 Agregue `--strict` para que una lección `unverified` también falle (código 1).
 
 :::note Lo que demuestra la revisión
-Compara los registros de calificación con los hashes de las lecciones. No protege contra un estudiante que edita el archivo a mano: un registro de calificación es evidencia de lo que ZPLC registró en el equipo del estudiante. Cuando el resultado importe, pida al estudiante que pulse **Comprobar** en su presencia.
+Compara los registros de calificación con los hashes de las lecciones. No protege contra un estudiante que edita el archivo a mano: un registro de calificación es evidencia de lo que ZPLC registró en la computadora del estudiante. Cuando el resultado importe, pida al estudiante que pulse **Comprobar** en su presencia.
 :::
 
 ## Imprimir el esquema del curso

@@ -16,7 +16,7 @@ ZPLC es la aplicación de escritorio para escribir, compilar, probar, simular y 
 1. Abra una carpeta de proyecto, o cree una con **Nuevo proyecto**. También puede copiar un ejemplo incluido a una carpeta.
 2. Edite un archivo de texto estructurado, lista de instrucciones, escalera, diagrama de bloques de función o diagrama funcional secuencial, y compile el proyecto.
 3. Ejecute las pruebas de escenario y la simulación nativa, y lea el resultado en el panel que está bajo el editor.
-4. Para una placa, compile el firmware, grábelo, despliegue el programa y ejecútelo. Una persona inicia cada uno de estos pasos; vea [Desplegar un programa](./deployment.md).
+4. Para una placa, compile el firmware, grábelo, carga el programa y ejecútelo. Una persona inicia cada uno de estos pasos; vea [Cargar un programa](./deployment.md).
 
 ## Qué gestiona la aplicación
 
@@ -26,11 +26,11 @@ ZPLC es la aplicación de escritorio para escribir, compilar, probar, simular y 
 | Editores | Un editor de texto para texto estructurado y lista de instrucciones, y un editor de modelos para cada lenguaje gráfico. |
 | Validación | Diagnósticos del compilador, pruebas de escenario, comprobaciones de seguridad, trazas y la simulación nativa. |
 | Evidencia | Registra cada resultado con su alcance, y nunca presenta un resultado de host como un resultado de hardware. |
-| Hardware | Conectar y desplegar son acciones explícitas de una persona, después de una comprobación de compatibilidad. |
+| Hardware | Conectar y cargar son acciones explícitas de una persona, después de una comprobación de compatibilidad. |
 
 ## Límites
 
-La simulación nativa valida el comportamiento en el equipo anfitrión. No muestra el tiempo de un destino, la E/S eléctrica, el comportamiento con hardware en el lazo ni la calificación de producción. Los perfiles de placa llevan solo evidencia de compilación cruzada; vea la [evidencia de hardware](../reference/capabilities-evidence.md).
+La simulación nativa valida el comportamiento en la computadora anfitriona. No muestra el tiempo de un destino, la E/S eléctrica, el comportamiento con hardware en el lazo ni la calificación de producción. Los perfiles de placa llevan solo evidencia de compilación cruzada; vea la [evidencia de hardware](../reference/capabilities-evidence.md).
 
 Un asistente de IA puede preparar un cambio candidato aislado, pero solo una persona puede guardarlo o iniciar una operación física. Lea [IA y privacidad](./ai-privacy.md) antes de activar un proveedor de IA.
 
@@ -41,9 +41,9 @@ La aplicación mantiene el acceso privilegiado fuera de la ventana. Los editores
 | Capa | Responsabilidad |
 | --- | --- |
 | Renderizador | El entorno de trabajo, los modelos visuales, los diagnósticos y las vistas de evidencia. No tiene por sí mismo acceso al sistema de archivos, al shell ni a dispositivos. |
-| Preload y proceso principal | Operaciones validadas y estrechas de sistema de archivos y del entorno de ejecución supervisado. |
+| Preload y proceso principal | Operaciones validadas y estrechas de sistema de archivos y del runtime supervisado. |
 | Compilador | Compila el código fuente y los modelos visuales a `.zplc`. |
-| Adaptadores del entorno de ejecución | La simulación nativa, o un entorno de ejecución compatible conectado. |
+| Adaptadores del runtime | La simulación nativa, o un runtime compatible conectado. |
 
 ### Cómo se comunican las capas
 
@@ -54,13 +54,13 @@ El renderizador llega al proceso principal solo a través del preload, y solo po
 - **Un preload estrecho.** Expone un método por operación y nada genérico: ningún `send`, ningún acceso a canales sin procesar y ninguna ruta de la máquina.
 - **Procesos fijos.** Los procesos que se inician para compilar, probar y compilar el firmware salen de una lista cerrada de vectores de argumentos fijos, se inician sin shell y nunca toman un comando ni un argumento del renderizador.
 
-Nivel de evidencia: host. `packages/zplc-ide/electron/ipcRegistry.test.ts` ejecuta la tabla real de manejadores contra sustitutos de Electron y de los almacenes, `packages/zplc-ide/electron/preload.test.ts` ejecuta el preload real y compara lo que invoca con el contrato, y `packages/zplc-ide/shared/spawnAllowList.test.ts` muestra los vectores de argumentos (requisito IDE-017). No es evidencia de la aplicación empaquetada.
+Nivel de evidencia: host. `packages/zplc-ide/electron/ipcRegistry.test.ts` ejecuta la tabla real de manejadores contra sustitutos de Electron y de los almacenes, `packages/zplc-ide/electron/preload.test.ts` ejecuta el preload real y compara lo que invoca con el contrato, y `packages/zplc-ide/shared/spawnAllowList.test.ts` muestra los vectores de argumentos. No es evidencia de la aplicación empaquetada.
 
 ### Trabajo que no bloquea la ventana
 
-La compilación, la comprobación de seguridad, las pruebas de escenario y la revisión del candidato se ejecutan cada una en un proceso propio, iniciado para la solicitud desde una lista fija y detenido cuando la solicitud termina, de modo que una compilación o una ejecución larga no puede congelar la ventana. **Cancelar escenarios** en el panel Pruebas pide al trabajador que se detenga; un trabajador ocupado que no responde se mata tras un breve plazo de gracia, y un plazo límite mata al que nunca termina. Matar al trabajador también termina el entorno de ejecución nativo que inició. Una ejecución cancelada se muestra y se registra como cancelada, y nada de ella se conserva como una compilación.
+La compilación, la comprobación de seguridad, las pruebas de escenario y la revisión del candidato se ejecutan cada una en un proceso propio, iniciado para la solicitud desde una lista fija y detenido cuando la solicitud termina, de modo que una compilación o una ejecución larga no puede congelar la ventana. **Cancelar escenarios** en el panel Pruebas pide al trabajador que se detenga; un trabajador ocupado que no responde se mata tras un breve plazo de gracia, y un plazo límite mata al que nunca termina. Matar al trabajador también termina el runtime nativo que inició. Una ejecución cancelada se muestra y se registra como cancelada, y nada de ella se conserva como una compilación.
 
-Nivel de evidencia: host. `packages/zplc-ide/electron/toolWorkerHost.test.ts` ejecuta procesos hijo reales: un trabajador atascado en un bucle ocupado se mata mientras quien llama sigue ejecutándose, y el trabajador real compila un proyecto y cancela una ejecución de escenarios en el entorno de ejecución nativo. El recorrido 35 de `bun run test:journeys` cancela una ejecución larga en la aplicación real (requisito IDE-012).
+Nivel de evidencia: host. `packages/zplc-ide/electron/toolWorkerHost.test.ts` ejecuta procesos hijo reales: un trabajador atascado en un bucle ocupado se mata mientras quien llama sigue ejecutándose, y el trabajador real compila un proyecto y cancela una ejecución de escenarios en el runtime nativo. El recorrido 35 de `bun run test:journeys` cancela una ejecución larga en la aplicación real.
 
 ### Un solo proyecto de referencia
 

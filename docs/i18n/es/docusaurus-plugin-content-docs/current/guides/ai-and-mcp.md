@@ -9,7 +9,7 @@ tags: [how-to, ai, mcp, safety]
 
 # Usar un asistente de IA y MCP con seguridad
 
-`zplc-mcp` es un servidor local del Model Context Protocol. Permite que un asistente de IA inspeccione un proyecto, lea el código fuente de sus programas, lo compile, ejecute sus pruebas de escenario y lea la evidencia, de modo que el asistente trabaja con lo que dicen la compilación y el simulador y no con una conjetura. Se ejecuta en su computador y habla con el asistente por la entrada y la salida estándar. No abre ningún puerto de red ni puerto serie.
+`zplc-mcp` es un servidor local del Model Context Protocol. Permite que un asistente de IA inspeccione un proyecto, lea el código fuente de sus programas, lo compile, ejecute sus pruebas de escenario y lea la evidencia, de modo que el asistente trabaja con lo que dicen la compilación y el simulador y no con una conjetura. Se ejecuta en su computadora y habla con el asistente por la entrada y la salida estándar. No abre ningún puerto de red ni puerto serie.
 
 :::danger El asistente no puede tocar una máquina
 Ninguna herramienta del servidor graba una placa, carga un programa, fuerza un valor, inicia o detiene un dispositivo, abre un puerto serie ni ejecuta un shell (regla 7 de AGENTS.md). Esas acciones quedan en ZPLC, donde las elige una persona. La única herramienta que no es de solo lectura, `firmware_build`, ejecuta una compilación cruzada local y se detiene ahí.
@@ -112,8 +112,8 @@ Pida lo que devuelve una herramienta, para que cada afirmación del asistente te
 [La referencia de MCP](../reference/mcp.md) enumera las 15 herramientas y los 15 recursos.
 
 - **Recursos de programas.** Ambos son de solo lectura. Devuelven el código fuente guardado de un programa en cualquiera de los cinco lenguajes, dentro de los límites de tamaño del lector de proyectos. `zplc://project/source/{name}` recibe el nombre de archivo tal como se escribe en el URI (un espacio es `%20`). Un nombre que no está en `src` responde `MCP_NOT_FOUND`, un nombre con un separador responde `MCP_INVALID_ARGUMENTS`, y un proyecto que el lector rechaza responde `MCP_WORKSPACE_UNREADABLE`.
-- **Progreso del curso.** El recurso lee el archivo de progreso que guarda ZPLC y responde qué lecciones están aprobadas (LRN-034). No tiene ninguna operación que escriba el progreso, y un archivo de progreso de la primera versión se migra solo en memoria, sin escribirse de nuevo. Sin `--user-data` responde `MCP_CAPABILITY_UNAVAILABLE`.
-- **Escenarios.** Un escenario se ejecuta en el simulador de su computador, así que su resultado es evidencia de una ejecución simulada, no de la planta.
+- **Progreso del curso.** El recurso lee el archivo de progreso que guarda ZPLC y responde qué lecciones están aprobadas. No tiene ninguna operación que escriba el progreso, y un archivo de progreso de la primera versión se migra solo en memoria, sin escribirse de nuevo. Sin `--user-data` responde `MCP_CAPABILITY_UNAVAILABLE`.
+- **Escenarios.** Un escenario se ejecuta en el simulador de su computadora, así que su resultado es evidencia de una ejecución simulada, no de la planta.
 
 ## 4. Revisar lo que propone el asistente
 

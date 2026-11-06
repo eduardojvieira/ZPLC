@@ -7,7 +7,7 @@ description: La verificación registrada del camino principal de ZPLC con el tec
 
 # Verificación con lector de pantalla
 
-Esta página registra cómo se comprobó el camino principal de ZPLC para los requisitos UX-028 y LRN-037, y conserva el guion para quien quiera repetir la comprobación con un lector de pantalla. El registro se hizo el **2026-10-20** en un equipo Linux. El guion es para quien tenga NVDA, Narrator o VoiceOver.
+Esta página registra cómo se comprobó el camino principal de ZPLC para los requisitos UX-028 y LRN-037, y conserva el guion para quien quiera repetir la comprobación con un lector de pantalla. El registro se hizo el **2026-10-20** en una computadora Linux. El guion es para quien tenga NVDA, Narrator o VoiceOver.
 
 :::warning Qué es este registro y qué no es
 El 2026-10-20 el dueño del proyecto decidió que esta comprobación registrada en Linux se acepta en lugar de una persona con NVDA o JAWS en Windows y VoiceOver en macOS. **No** es una ejecución de un producto lector de pantalla. No se inició ningún lector de pantalla. Lo que se registró es lo que Chromium entrega a un lector de pantalla: el rol, el nombre accesible, la descripción y el estado del elemento con el foco, leídos de su propio árbol de accesibilidad, y el texto de las regiones vivas. No se probó cómo NVDA, JAWS o VoiceOver convierten eso en voz, ni se probó un sistema Windows o macOS.
@@ -85,7 +85,7 @@ Cada imagen es la ventana al terminar el paso, tomada por el script.
 
 ![La fila de LED_Output en Observación y el botón Agregar variable enfocado](/img/screen-reader-check/2026-10-20/es-5-watch-row.png)
 
-![El diálogo de despliegue](/img/screen-reader-check/2026-10-20/es-7-deploy-dialog.png)
+![El diálogo de carga](/img/screen-reader-check/2026-10-20/es-7-deploy-dialog.png)
 
 ![Una lección después de aprobar la comprobación](/img/screen-reader-check/2026-10-20/es-8-check-passed.png)
 
@@ -112,7 +112,7 @@ Use el mismo ejemplo y los mismos pasos en ambos sistemas, una vez por lector de
 ZPLC tiene dos regiones vivas, montadas una vez para la ventana y presentes antes del primer mensaje (`packages/zplc-ide/src/ui/LiveRegions.tsx`):
 
 - una región de estado **cortés** (polite), para resultados: una compilación terminada, una conexión, ejecutar y detener, una variable forzada o liberada, una lección restaurada;
-- una región de alertas **asertiva**, para fallas: una compilación o un despliegue que falló, y un forzado que ya no está confirmado.
+- una región de alertas **asertiva**, para fallas: una compilación o una carga que falló, y un forzado que ya no está confirmado.
 
 Los mensajes vienen de `announce()` en `packages/zplc-ide/src/utils/announce.ts` y del almacén de notificaciones, que dice el título y el detalle de cada notificación, de forma asertiva cuando es un error. Si llegan dos mensajes con la misma urgencia antes de que se lea el primero, gana el último. Si nota un mensaje perdido, anote cuáles dos y cuándo: esa evidencia decide si hace falta una cola.
 
@@ -165,12 +165,12 @@ Escuche la fila nueva anunciada con su nombre y valor, y el valor cambiando entr
 
 Escuche «Forzado LED_Output» y luego «Se liberó el forzado de LED_Output». Cuando se liberan varios forzados juntos en un dispositivo, se oye «Se liberaron todos los forzados». Si se pierde la conexión con un dispositivo mientras hay un forzado activo, la región de alertas dice «Un forzado no está confirmado: verifique y vuelva a conectar antes de operar». Ninguno de esos dos es alcanzable en el simulador, que borra sus forzados al terminar la conexión.
 
-#### 7. Diálogo de despliegue
+#### 7. Diálogo de carga
 
-El diálogo de despliegue se muestra para un dispositivo, no para el simulador. Sin una placa no puede abrirlo, así que este paso queda **no ejecutado** en una comprobación en un banco sin hardware. Anótelo, y no lo marque como aprobado. Si una persona en el banco tiene una placa conectada:
+El diálogo de carga se muestra para un dispositivo, no para el simulador. Sin una placa no puede abrirlo, así que este paso queda **no ejecutado** en una comprobación en un banco sin hardware. Anótelo, y no lo marque como aprobado. Si una persona en el banco tiene una placa conectada:
 
 1. Elija **Cargar**.
-2. Escuche el título «¿Cargar en el dispositivo?», la descripción (dice que desplegar deja el PLC detenido y que Ejecutar es una acción aparte) y la tabla de comparación con su título y los encabezados de columna.
+2. Escuche el título «¿Cargar en el dispositivo?», la descripción (dice que cargar deja el PLC detenido y que Ejecutar es una acción aparte) y la tabla de comparación con su título y los encabezados de columna.
 3. Cierre el diálogo con Escape.
 
 Escuche que el foco entre al diálogo al abrirse, permanezca dentro con Tab y vuelva al botón **Cargar** al cerrarse.

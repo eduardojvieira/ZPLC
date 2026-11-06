@@ -1,13 +1,13 @@
 ---
 slug: /integration
 id: index
-title: Integración y despliegue
+title: Integración y carga
 sidebar_label: Integración
 description: Cómo llega un programa de ZPLC compilado a un destino y cómo incorporar el runtime en su propio hardware Zephyr.
 tags: [integration, runtime]
 ---
 
-# Integración y despliegue
+# Integración y carga
 
 Esta página traza el camino de un programa compilado a un destino en marcha y dice qué debe hacer cuando su hardware no es una de las placas que ZPLC ya compila.
 
@@ -18,12 +18,12 @@ El compilador convierte un proyecto en un archivo `.zplc`. Usted elige dónde se
 ```mermaid
 flowchart LR
   A[Compilar el proyecto a .zplc] --> B{Destino de ejecución}
-  B --> D[Simulación nativa en este equipo]
+  B --> D[Simulación nativa en esta computadora]
   B --> E[Runtime de hardware Zephyr]
   E --> F[Depuración en línea en la aplicación ZPLC]
 ```
 
-La simulación no necesita placa. Para hardware, grabe el runtime una vez ([Grabar el firmware](../guides/flash-firmware.md)) y despliegue después los programas desde la aplicación ([Despliegue](../ide/deployment.md)). Son dos operaciones distintas, y usted inicia ambas.
+La simulación no necesita placa. Para hardware, grabe el runtime una vez ([Grabar el firmware](../guides/flash-firmware.md)) y carga después los programas desde la aplicación ([Carga en el dispositivo](../ide/deployment.md)). Son dos operaciones distintas, y usted inicia ambas.
 
 ## Use una placa que ZPLC ya compila
 

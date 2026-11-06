@@ -10,7 +10,7 @@ tags: [quickstart]
 # Primeros pasos
 
 ZPLC es una forma libre y de código abierto de escribir, probar y ejecutar programas de PLC. Esta página dice qué es,
-le ayuda a elegir un camino y deja un programa funcionando en su equipo en unos diez minutos. No necesita un PLC ni una
+le ayuda a elegir un camino y deja un programa funcionando en su computadora en unos diez minutos. No necesita un PLC ni una
 placa.
 
 :::warning Versión de evaluación
@@ -25,7 +25,7 @@ ZPLC tiene tres partes, en el orden en que las conocerá:
 
 1. **La aplicación ZPLC**, un programa de escritorio para Windows, macOS y Linux. En ella escribe programas, los compila,
    los prueba y los ejecuta en un simulador. Es la única parte que necesita para empezar.
-2. **El runtime**, un programa pequeño en C99 que ejecuta el bytecode compilado. En la aplicación corre en su equipo como
+2. **El runtime**, un programa pequeño en C99 que ejecuta el bytecode compilado. En la aplicación corre en su computadora como
    simulador. En una placa con microcontrolador corre como módulo de Zephyr RTOS.
 3. **Las placas**: siete placas Zephyr tienen un perfil de compilación. Todas están en el nivel de compilación cruzada:
    el firmware se compila en integración continua y nadie lo ha grabado ni ejecutado en una placa física
@@ -60,7 +60,7 @@ con una prueba de escenario.
 5. Abra la pestaña **Observación**, pulse **+** y escriba `LED_Output`. Su valor cambia entre verdadero y falso
    aproximadamente cada medio segundo.
 
-El simulador es el runtime de ZPLC construido para su equipo. Ejecuta su programa con un temporizador y no modela el lado
+El simulador es el runtime de ZPLC construido para su computadora. Ejecuta su programa con un temporizador y no modela el lado
 eléctrico de una placa ni sus tiempos reales, así que un resultado en él es un resultado de host.
 
 ## Haga el curso en su lugar

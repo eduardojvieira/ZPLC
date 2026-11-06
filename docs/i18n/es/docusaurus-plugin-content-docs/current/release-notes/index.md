@@ -27,7 +27,7 @@ ZPLC 2.0.0 es para evaluación. Ninguna placa se ha grabado, arrancado ni ejecut
   puede probar sin salir de ella.
 - **Cajas de función en escalera.** Las comparaciones, las operaciones matemáticas y otras funciones van en un peldaño con
   cables EN y ENO.
-- **Un simulador que sigue al destino.** El mismo núcleo de planificación corre en su equipo y en el firmware.
+- **Un simulador que sigue al destino.** El mismo núcleo de planificación corre en su computadora y en el firmware.
 - **Cinco lenguajes, un solo bytecode.** Texto estructurado, lista de instrucciones, escalera, diagrama de bloques de
   función y diagrama funcional secuencial se compilan a un único formato.
 - **Documentación en la que puede confiar.** Los nombres de funciones, ajustes, comandos de shell, rutas de archivo, cifras y ejemplos de código del sitio los comprueba CI contra el

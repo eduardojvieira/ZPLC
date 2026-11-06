@@ -9,7 +9,7 @@ tags: [how-to, debugging, simulation, breakpoints]
 
 # Simular y depurar un programa
 
-Ejecute un programa en su computador, observe cómo cambian sus variables, deténgalo en una línea y avance un ciclo a la vez. El simulador usa la misma máquina virtual y el mismo planificador que una placa, así que lo que aprende aquí es lo que hace la lógica.
+Ejecute un programa en su computadora, observe cómo cambian sus variables, deténgalo en una línea y avance un ciclo a la vez. El simulador usa la misma máquina virtual y el mismo planificador que una placa, así que lo que aprende aquí es lo que hace la lógica.
 
 :::note Un resultado en el host
 El simulador muestra lo que hace la lógica. No modela los pines, los controladores ni el tiempo real de una placa. Un programa que se comporta bien en el simulador no ha demostrado comportarse bien en una placa.
@@ -21,10 +21,10 @@ ZPLC elige el simulador por usted.
 
 | Simulador | Cuándo | Qué es |
 | --- | --- | --- |
-| Entorno de ejecución nativo | Es el predeterminado, siempre que pueda iniciar | Un programa aparte que la aplicación de escritorio supervisa. El ciclo de escaneo, la memoria retentiva y los bloques de comunicación siguen las reglas del firmware |
+| Runtime nativo | Es el predeterminado, siempre que pueda iniciar | Un programa aparte que la aplicación de escritorio supervisa. El ciclo de escaneo, la memoria retentiva y los bloques de comunicación siguen las reglas del firmware |
 | Respaldo WASM | Solo cuando el runtime nativo no puede iniciar (falta su binario o falló su protocolo de enlace inicial) | El mismo código de sesión compilado a WebAssembly. Es degradado: la barra de estado dice **Runtime: WASM fallback · degraded** y enumera lo que falta |
 
-El respaldo conserva la pausa, la reanudación, el avance por ciclo y los puntos de parada, pero no tiene bloques de red, ni puerto serie, ni pines, y su tiempo sigue la ventana de la aplicación. Los detalles y la evidencia están en [Entorno de ejecución de software](../runtime/browser-runtime.md). Una copia de ZPLC compilada desde el código fuente necesita que el entorno de ejecución nativo se compile una vez con `bun run build:runtime`.
+El respaldo conserva la pausa, la reanudación, el avance por ciclo y los puntos de parada, pero no tiene bloques de red, ni puerto serie, ni pines, y su tiempo sigue la ventana de la aplicación. Los detalles y la evidencia están en [Runtime de software](../runtime/browser-runtime.md). Una copia de ZPLC compilada desde el código fuente necesita que el runtime nativo se compile una vez con `bun run build:runtime`.
 
 ## 1. Compilar y ejecutar
 

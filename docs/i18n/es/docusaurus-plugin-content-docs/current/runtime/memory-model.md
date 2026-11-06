@@ -48,9 +48,9 @@ Esa separación permite que varias tareas intercambien datos mediante variables 
 
 ## Inicio de un programa
 
-Cargar un programa es un arranque en frío en todos los runtimes (RT-016). IPI, OPI, WORK y RETAIN se ponen a cero y la tabla de forzados se vacía antes de publicar el programa nuevo, de modo que un programa nunca arranca sobre las variables del que reemplazó. Un runtime que tiene un registro `RETAIN` almacenado lo restaura después. `zplc_core_cold_start()` es esa operación, y `zplc_core_warm_start()` es lo mismo sin tocar RETAIN, para un reinicio que conserva los valores retentivos. Ninguna de las dos toca la región de código ni las etiquetas, que son el programa.
+Cargar un programa es un arranque en frío en todos los runtimes. IPI, OPI, WORK y RETAIN se ponen a cero y la tabla de forzados se vacía antes de publicar el programa nuevo, de modo que un programa nunca arranca sobre las variables del que reemplazó. Un runtime que tiene un registro `RETAIN` almacenado lo restaura después. `zplc_core_cold_start()` es esa operación, y `zplc_core_warm_start()` es lo mismo sin tocar RETAIN, para un reinicio que conserva los valores retentivos. Ninguna de las dos toca la región de código ni las etiquetas, que son el programa.
 
-## Acceso desde fuera del ciclo (RT-010, RT-011)
+## Acceso desde fuera del ciclo {#acceso-desde-fuera-del-ciclo}
 
 Mientras los ciclos corren, solo el ciclo escribe la imagen de proceso. Un hilo ajeno, como el servidor y los clientes Modbus, MQTT o los comandos de depuración del shell, pasa por el intercambio (`zplc_exchange.h`):
 

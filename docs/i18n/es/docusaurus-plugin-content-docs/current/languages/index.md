@@ -27,7 +27,7 @@ El texto estructurado va directamente al compilador. Los otros cuatro se traduce
 
 Cada fila nombra un recorrido de la aplicación ZPLC que muestra la capacidad de principio a fin, en una ventana real; la integración continua los ejecuta todos, y la tabla se genera a partir de esa lista, no se escribe a mano. Al generar la página se rechaza una capacidad sin recorrido, o con solo una prueba unitaria o un caso de conformidad.
 
-La compilación, la simulación y la carga salen de una sola cadena por lenguaje: se crea un programa en un proyecto nuevo, se edita un ejemplo, se guarda, se reabre y se compila, se simula con una pausa y un solo paso, y se observa. Después se pulsa Cargar y se confirma contra el entorno de ejecución nativo detrás del shell de una placa emulada, y se observa cómo cambia allí el mismo valor. La placa es emulada y nada se ejecuta en una física: lo que se ejecutó en placas reales está en la [página de evidencia de hardware](../reference/capabilities-evidence.md). El perfil de capacidades que informa el entorno de ejecución decide cuáles de estas capacidades habilita la aplicación.
+La compilación, la simulación y la carga salen de una sola cadena por lenguaje: se crea un programa en un proyecto nuevo, se edita un ejemplo, se guarda, se reabre y se compila, se simula con una pausa y un solo paso, y se observa. Después se pulsa Cargar y se confirma contra el runtime nativo detrás del shell de una placa emulada, y se observa cómo cambia allí el mismo valor. La placa es emulada y nada se ejecuta en una física: lo que se ejecutó en placas reales está en la [página de evidencia de hardware](../reference/capabilities-evidence.md). El perfil de capacidades que informa el runtime decide cuáles de estas capacidades habilita la aplicación.
 
 {/* >>> GENERATED (tools/docs/generate_language_capabilities.ts): language-capabilities. Do not edit. >>> */}
 
@@ -36,7 +36,7 @@ La compilación, la simulación y la carga salen de una sola cadena por lenguaje
 | Texto estructurado | Editar | Recorrido de la aplicación ZPLC en la simulación nativa | `3 Edit Structured Text, save, reopen` |
 | Texto estructurado | Compilar | Recorrido de la aplicación ZPLC en la simulación nativa | `64a Structured Text from a new project to a deployed program that is watched` |
 | Texto estructurado | Simular | Recorrido de la aplicación ZPLC en la simulación nativa | `64a Structured Text from a new project to a deployed program that is watched` |
-| Texto estructurado | Depurar (punto de interrupción) | Recorrido de la aplicación ZPLC en la simulación nativa | `7 Breakpoint stops execution` |
+| Texto estructurado | Depurar (punto de parada) | Recorrido de la aplicación ZPLC en la simulación nativa | `7 Breakpoint stops execution` |
 | Texto estructurado | Pausar, avanzar un ciclo, reanudar | Recorrido de la aplicación ZPLC en la simulación nativa | `53e Pause, step one cycle and resume a Structured Text program` |
 | Texto estructurado | Observar valores en línea | Recorrido de la aplicación ZPLC en la simulación nativa | `28e Inline values in Structured Text come from the debug map` |
 | Texto estructurado | Forzar | Recorrido de la aplicación ZPLC en la simulación nativa | `8 Force an input and release it` |
@@ -44,7 +44,7 @@ La compilación, la simulación y la carga salen de una sola cadena por lenguaje
 | Lista de instrucciones | Editar | Recorrido de la aplicación ZPLC en la simulación nativa | `54 Instruction List is edited, saved and reopened` |
 | Lista de instrucciones | Compilar | Recorrido de la aplicación ZPLC en la simulación nativa | `64b Instruction List from a new project to a deployed program that is watched` |
 | Lista de instrucciones | Simular | Recorrido de la aplicación ZPLC en la simulación nativa | `64b Instruction List from a new project to a deployed program that is watched` |
-| Lista de instrucciones | Depurar (punto de interrupción) | Recorrido de la aplicación ZPLC en la simulación nativa | `28kc A breakpoint on an IL line stops execution` |
+| Lista de instrucciones | Depurar (punto de parada) | Recorrido de la aplicación ZPLC en la simulación nativa | `28kc A breakpoint on an IL line stops execution` |
 | Lista de instrucciones | Pausar, avanzar un ciclo, reanudar | Recorrido de la aplicación ZPLC en la simulación nativa | `53d Pause, step one cycle and resume an Instruction List program` |
 | Lista de instrucciones | Observar valores en línea | Recorrido de la aplicación ZPLC en la simulación nativa | `54b Instruction List values are watched and a variable is forced and released` |
 | Lista de instrucciones | Forzar | Recorrido de la aplicación ZPLC en la simulación nativa | `54b Instruction List values are watched and a variable is forced and released` |
@@ -52,7 +52,7 @@ La compilación, la simulación y la carga salen de una sola cadena por lenguaje
 | Diagrama de escalera | Editar | Recorrido de la aplicación ZPLC en la simulación nativa | `28f A rung is built from the keyboard` |
 | Diagrama de escalera | Compilar | Recorrido de la aplicación ZPLC en la simulación nativa | `64c Ladder Diagram from a new project to a deployed program that is watched` |
 | Diagrama de escalera | Simular | Recorrido de la aplicación ZPLC en la simulación nativa | `64c Ladder Diagram from a new project to a deployed program that is watched` |
-| Diagrama de escalera | Depurar (punto de interrupción) | Recorrido de la aplicación ZPLC en la simulación nativa | `28 A breakpoint on a rung stops execution` |
+| Diagrama de escalera | Depurar (punto de parada) | Recorrido de la aplicación ZPLC en la simulación nativa | `28 A breakpoint on a rung stops execution` |
 | Diagrama de escalera | Pausar, avanzar un ciclo, reanudar | Recorrido de la aplicación ZPLC en la simulación nativa | `53a Pause, step one cycle and resume a Ladder program` |
 | Diagrama de escalera | Observar valores en línea | Recorrido de la aplicación ZPLC en la simulación nativa | `28b Online values of a rung come from the debug map` |
 | Diagrama de escalera | Forzar | Recorrido de la aplicación ZPLC en la simulación nativa | `51d A forced variable is shown as forced in the Ladder` |
@@ -60,7 +60,7 @@ La compilación, la simulación y la carga salen de una sola cadena por lenguaje
 | Diagrama de bloques de función | Editar | Recorrido de la aplicación ZPLC en la simulación nativa | `28g A function block diagram is edited from the keyboard` |
 | Diagrama de bloques de función | Compilar | Recorrido de la aplicación ZPLC en la simulación nativa | `64d Function Block Diagram from a new project to a deployed program that is watched` |
 | Diagrama de bloques de función | Simular | Recorrido de la aplicación ZPLC en la simulación nativa | `64d Function Block Diagram from a new project to a deployed program that is watched` |
-| Diagrama de bloques de función | Depurar (punto de interrupción) | Recorrido de la aplicación ZPLC en la simulación nativa | `28ka A breakpoint on an FBD block stops execution` |
+| Diagrama de bloques de función | Depurar (punto de parada) | Recorrido de la aplicación ZPLC en la simulación nativa | `28ka A breakpoint on an FBD block stops execution` |
 | Diagrama de bloques de función | Pausar, avanzar un ciclo, reanudar | Recorrido de la aplicación ZPLC en la simulación nativa | `53b Pause, step one cycle and resume a function block diagram` |
 | Diagrama de bloques de función | Observar valores en línea | Recorrido de la aplicación ZPLC en la simulación nativa | `28c Online values of an FBD come from the debug map` |
 | Diagrama de bloques de función | Forzar | Recorrido de la aplicación ZPLC en la simulación nativa | `51 A forced variable is shown as forced in the function block diagram` |
@@ -68,7 +68,7 @@ La compilación, la simulación y la carga salen de una sola cadena por lenguaje
 | Diagrama funcional secuencial | Editar | Recorrido de la aplicación ZPLC en la simulación nativa | `28h A sequential function chart is edited from the keyboard` |
 | Diagrama funcional secuencial | Compilar | Recorrido de la aplicación ZPLC en la simulación nativa | `64e Sequential Function Chart from a new project to a deployed program that is watched` |
 | Diagrama funcional secuencial | Simular | Recorrido de la aplicación ZPLC en la simulación nativa | `64e Sequential Function Chart from a new project to a deployed program that is watched` |
-| Diagrama funcional secuencial | Depurar (punto de interrupción) | Recorrido de la aplicación ZPLC en la simulación nativa | `28kb A breakpoint on an SFC step stops execution` |
+| Diagrama funcional secuencial | Depurar (punto de parada) | Recorrido de la aplicación ZPLC en la simulación nativa | `28kb A breakpoint on an SFC step stops execution` |
 | Diagrama funcional secuencial | Pausar, avanzar un ciclo, reanudar | Recorrido de la aplicación ZPLC en la simulación nativa | `53c Pause, step one cycle and resume a sequential function chart` |
 | Diagrama funcional secuencial | Observar valores en línea | Recorrido de la aplicación ZPLC en la simulación nativa | `28d Online state of an SFC comes from the debug map` |
 | Diagrama funcional secuencial | Forzar | Recorrido de la aplicación ZPLC en la simulación nativa | `51b A forced variable is shown as forced in the sequential function chart` |
@@ -78,13 +78,13 @@ La compilación, la simulación y la carga salen de una sola cadena por lenguaje
 
 ## Un solo modelo de compilación
 
-Todos los lenguajes convergen en la ruta del compilador que produce bytecode `.zplc`. Ese destino común no promete conversiones de ida y vuelta entre representaciones, funciones de editor idénticas, cobertura completa de la biblioteca estándar ni un rendimiento idéntico en cada entorno de ejecución. Valide el código fuente, la representación generada, los diagnósticos y el perfil del destino como un solo flujo ([Flujo del compilador](../ide/compiler.md)).
+Todos los lenguajes convergen en la ruta del compilador que produce bytecode `.zplc`. Ese destino común no promete conversiones de ida y vuelta entre representaciones, funciones de editor idénticas, cobertura completa de la biblioteca estándar ni un rendimiento idéntico en cada runtime. Valide el código fuente, la representación generada, los diagnósticos y el perfil del destino como un solo flujo ([Flujo del compilador](../ide/compiler.md)).
 
 ## Depuración y evidencia
 
-La aplicación ofrece inspección, simulación y depuración según el perfil de capacidades que informa el entorno de ejecución. En la simulación nativa sobre un host Linux, los recorridos detienen el programa en un punto de parada en una línea de texto estructurado, una línea de lista de instrucciones, un peldaño de escalera, un bloque de diagrama de bloques de función y un paso de diagrama funcional secuencial, y marcan el elemento donde se detuvo. Las mismas ejecuciones pulsan Pausa, Avanzar un ciclo y Reanudar en cada lenguaje y leen el contador de ciclos: se mantiene mientras está en pausa, avanza exactamente uno con cada paso y vuelve a correr después de Reanudar.
+La aplicación ofrece inspección, simulación y depuración según el perfil de capacidades que informa el runtime. En la simulación nativa sobre un host Linux, los recorridos detienen el programa en un punto de parada en una línea de texto estructurado, una línea de lista de instrucciones, un peldaño de escalera, un bloque de diagrama de bloques de función y un paso de diagrama funcional secuencial, y marcan el elemento donde se detuvo. Las mismas ejecuciones pulsan Pausa, Avanzar un ciclo y Reanudar en cada lenguaje y leen el contador de ciclos: se mantiene mientras está en pausa, avanza exactamente uno con cada paso y vuelve a correr después de Reanudar.
 
-La simulación nativa es un entorno de ejecución lógico del lado del host. No prueba el tiempo de hardware ni el comportamiento del destino, y un punto de parada en una placa necesita una ejecución con hardware en el lazo en esa placa.
+La simulación nativa es un runtime lógico del lado del host. No prueba el tiempo de hardware ni el comportamiento del destino, y un punto de parada en una placa necesita una ejecución con hardware en el lazo en esa placa.
 
 ## Leer a continuación
 

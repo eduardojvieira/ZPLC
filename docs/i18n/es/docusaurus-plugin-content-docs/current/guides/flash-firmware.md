@@ -3,13 +3,13 @@ slug: /guides/flash-firmware
 id: flash-firmware
 title: Grabar el firmware
 sidebar_label: Grabar el firmware
-description: 'Escriba la imagen del entorno de ejecución de ZPLC en una placa: los pasos del modo de arranque de la Raspberry Pi Pico y del ESP32-S3, y la línea de comandos para cada placa.'
+description: 'Escriba la imagen del runtime de ZPLC en una placa: los pasos del modo de arranque de la Raspberry Pi Pico y del ESP32-S3, y la línea de comandos para cada placa.'
 tags: [how-to, hardware, firmware]
 ---
 
 # Grabar el firmware
 
-Grabar escribe el entorno de ejecución de ZPLC en una placa. **Usted lo inicia.** El asistente de ZPLC y el servidor MCP nunca graban, despliegan, fuerzan, arrancan ni detienen un dispositivo, y nada de esta página lo hace por usted. Compilar la imagen, grabarla, desplegar un programa y ejecutarlo son cuatro operaciones separadas ([Despliegue](../ide/deployment.md)).
+Grabar escribe el runtime de ZPLC en una placa. **Usted lo inicia.** El asistente de ZPLC y el servidor MCP nunca graban, cargan, fuerzan, arrancan ni detienen un dispositivo, y nada de esta página lo hace por usted. Compilar la imagen, grabarla, cargar un programa y ejecutarlo son cuatro operaciones separadas ([Carga en el dispositivo](../ide/deployment.md)).
 
 :::caution No hay una grabación registrada en una placa
 El firmware de cada placa compila en integración continua y cabe en su presupuesto. Nadie ha registrado una grabación en una placa, así que los pasos de abajo se leyeron de las herramientas de cada placa y no son un resultado. Todas las placas están en el nivel `cross-build` ([Compatibilidad de hardware](../reference/capabilities-evidence.md)). Si los sigue, informe lo que vio con el formulario de informe de placa de las incidencias del repositorio.
@@ -63,7 +63,7 @@ Para una imagen compilada por usted, el archivo es `build/zephyr/zephyr.bin`. La
 
 ### El grabador en el navegador
 
-En Chrome o Edge en un computador, el grabador de abajo escribe la imagen del ESP32-S3 por Web Serial con [ESP Web Tools](https://esphome.github.io/esp-web-tools/). Firefox y Safari no tienen Web Serial, y entonces la página muestra la línea de comandos de arriba. Usted hace cada paso:
+En Chrome o Edge en una computadora, el grabador de abajo escribe la imagen del ESP32-S3 por Web Serial con [ESP Web Tools](https://esphome.github.io/esp-web-tools/). Firefox y Safari no tienen Web Serial, y entonces la página muestra la línea de comandos de arriba. Usted hace cada paso:
 
 1. Descargue `zplc-runtime-<versión>-esp32-s3-devkitc.bin` y `SHA256SUMS` de la versión. El sitio no puede descargarlos por usted, porque los archivos de las versiones de GitHub no llevan encabezados de origen cruzado.
 2. Ponga la placa en modo de descarga y elija el archivo.
@@ -92,7 +92,7 @@ Nadie ha registrado una grabación del ESP32-S3 con este grabador en una placa. 
 | STM32 Nucleo-H743ZI    | `stm32cubeprogrammer`, `openocd`, `jlink`, `pyocd`    | `west flash --runner stm32cubeprogrammer` por el ST-LINK integrado    |
 | STM32F746G Discovery   | `stm32cubeprogrammer`, `openocd`, `jlink`             | `west flash --runner stm32cubeprogrammer` por el ST-LINK integrado    |
 
-Un runner necesita su propia herramienta en el computador: `esptool`, `dfu-util`, OpenOCD o el programador de STM32. Si no se encuentra la herramienta o la placa, el mensaje de `west flash` dice cuál. Si una placa no responde tras grabarla, siga su procedimiento de recuperación: [Límites de recuperación](../operations/recovery.md).
+Un runner necesita su propia herramienta en la computadora: `esptool`, `dfu-util`, OpenOCD o el programador de STM32. Si no se encuentra la herramienta o la placa, el mensaje de `west flash` dice cuál. Si una placa no responde tras grabarla, siga su procedimiento de recuperación: [Límites de recuperación](../operations/recovery.md).
 
 ## Después de grabar
 

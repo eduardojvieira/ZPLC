@@ -93,4 +93,4 @@ Los pines de operandos son `IN1` e `IN2` para las comparaciones, las operaciones
 
 Mientras un programa se ejecuta en la simulación, un elemento se ilumina cuando le llega energía, y una caja muestra el valor de cada operando que es una variable, de su salida, y de EN y ENO. Un valor que no se leyó se muestra como no disponible, nunca como FALSE. Vea [Editores de texto y visuales](../ide/editors.md#valores-en-línea-desde-el-mapa-de-depuración) para saber qué muestra cada editor, y [El entorno de trabajo de ZPLC](../ide/features.md#pausa-reanudación-paso-y-stop) para pausar y avanzar paso a paso.
 
-Nivel de evidencia: host. `packages/zplc-ide/src/transpiler/ldFunctions.test.ts` comprueba las instrucciones de cada caja, las reglas de escritura y los rechazos, y los casos de conformidad de la referencia ejecutan las cajas en el entorno de ejecución nativo. No se usó ninguna placa.
+Nivel de evidencia: host. `packages/zplc-ide/src/transpiler/ldFunctions.test.ts` comprueba las instrucciones de cada caja, las reglas de escritura y los rechazos, y los casos de conformidad de la referencia ejecutan las cajas en el runtime nativo. No se usó ninguna placa.

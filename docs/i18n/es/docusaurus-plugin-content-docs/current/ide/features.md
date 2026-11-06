@@ -54,11 +54,11 @@ Cada separador entre dos regiones se ilumina bajo el puntero, se rellena mientra
 
 La ruta principal (abrir un proyecto, editar, compilar, simular, observar) cabe en una ventana de 1366 por 768 píxeles sin ningún control recortado. La ventana puede ser tan pequeña como 1024 por 768: por debajo de 1100 píxeles de ancho la barra de actividades muestra solo iconos, la barra lateral secundaria se oculta sola, y los comandos de tema, configuración y atajos pasan al menú **Más comandos** de la barra de comandos.
 
-Nivel de evidencia: host. Las pruebas unitarias de los requisitos UX-011, UX-012, UX-013 y UX-017 (`packages/zplc-ide/src/layout/separatorSteps.test.ts`, `packages/zplc-ide/src/store/useShellLayout.test.ts`) y un recorrido de `bun run test:journeys` los cubren en el host de desarrollo. No se midió ninguna ventana empaquetada, de macOS ni de Windows.
+Nivel de evidencia: host. Las pruebas unitarias (`packages/zplc-ide/src/layout/separatorSteps.test.ts`, `packages/zplc-ide/src/store/useShellLayout.test.ts`) y un recorrido de `bun run test:journeys` los cubren en el host de desarrollo. No se midió ninguna ventana empaquetada, de macOS ni de Windows.
 
 ## Crear y abrir proyectos
 
-**Nuevo proyecto**, en la pantalla de bienvenida y en el menú Archivo, pide cuatro cosas: el nombre del proyecto, la carpeta donde va, el destino (la simulación en este equipo, o una placa del manifiesto) y el lenguaje del primer programa. El nombre empieza siendo el de la carpeta que usted elige, hasta que escriba otro. La carpeta contiene el proyecto mismo: ZPLC no crea ninguna carpeta dentro de ella, y rechaza una carpeta que ya contenga un `zplc.json`, un `.gitignore` o el primer programa. El proyecto nuevo tiene `src/main` en el lenguaje elegido, una lista de variables globales, una tarea principal que ejecuta ese programa y el destino elegido, y se compila sin ningún cambio.
+**Nuevo proyecto**, en la pantalla de bienvenida y en el menú Archivo, pide cuatro cosas: el nombre del proyecto, la carpeta donde va, el destino (la simulación en esta computadora, o una placa del manifiesto) y el lenguaje del primer programa. El nombre empieza siendo el de la carpeta que usted elige, hasta que escriba otro. La carpeta contiene el proyecto mismo: ZPLC no crea ninguna carpeta dentro de ella, y rechaza una carpeta que ya contenga un `zplc.json`, un `.gitignore` o el primer programa. El proyecto nuevo tiene `src/main` en el lenguaje elegido, una lista de variables globales, una tarea principal que ejecuta ese programa y el destino elegido, y se compila sin ningún cambio.
 
 La pantalla de bienvenida ofrece además **Abrir proyecto**, **Aprender** y los ejemplos incluidos, agrupados por tema y, dentro de un tema con varios niveles, por nivel (Principiante, Intermedio, Avanzado). Un proyecto que no se puede abrir se informa en la pantalla, junto a la acción, nunca en un cuadro de mensaje del sistema.
 
@@ -70,7 +70,7 @@ En **Recientes**, la pantalla de bienvenida lista hasta diez carpetas que usted 
 
 Para cada proyecto, ZPLC recuerda además las pestañas abiertas, la pestaña activa, la posición del cursor y del desplazamiento de cada archivo, y el tamaño de los paneles del editor y el inferior, y los restablece la próxima vez que se abre la carpeta. En la sesión solo se guardan rutas y posiciones; el texto sin guardar se conserva aparte y solo se ofrece de vuelta después de un cierre inesperado. Una pestaña cuyo archivo ya no existe se descarta sin ningún mensaje. La lista y las sesiones viven en el directorio privado de datos de usuario de ZPLC, nunca en la carpeta del proyecto, y la sesión de un proyecto que sale de la lista se borra la próxima vez que se inicia ZPLC.
 
-Nivel de evidencia: host. `packages/zplc-ide/electron/recentProjects.test.ts` y `packages/zplc-ide/src/utils/sessionState.test.ts` cubren la lista y el formato de la sesión (IDE-008), y los recorridos 12 y 14 de `bun run test:journeys` controlan la aplicación real.
+Nivel de evidencia: host. `packages/zplc-ide/electron/recentProjects.test.ts` y `packages/zplc-ide/src/utils/sessionState.test.ts` cubren la lista y el formato de la sesión, y los recorridos 12 y 14 de `bun run test:journeys` controlan la aplicación real.
 
 ## Archivos y carpetas en el árbol del proyecto
 
@@ -94,7 +94,7 @@ Nivel de evidencia: host. `packages/zplc-ide/src/project/treeOperations.test.ts`
 
 Bajo el árbol de archivos, el modo Archivos tiene una sección **Declaraciones**, cerrada hasta que usted la abre. Su encabezado muestra cuántas declaraciones hay y cuántos archivos no se compilan. Lista los programas, bloques de función, funciones, interfaces y tipos de datos que declaran los archivos de texto estructurado, agrupados bajo su archivo, y al elegir uno se abre su archivo con el cursor sobre su nombre.
 
-La compilación lee los archivos de texto estructurado que están directamente en `src` y directamente en cada **carpeta de biblioteca** que `zplc.json` lista en `libraries` (CMP-046), y todo lo que declaran es visible para todos los programas:
+La compilación lee los archivos de texto estructurado que están directamente en `src` y directamente en cada **carpeta de biblioteca** que `zplc.json` lista en `libraries`, y todo lo que declaran es visible para todos los programas:
 
 ```json
 { "libraries": ["lib", "vendor/acme"] }
@@ -129,7 +129,7 @@ Si ZPLC se cerró de golpe o falló, abra el proyecto otra vez. Un diálogo **Re
 
 Límites: un proyecto conserva copias de 64 archivos como máximo y de unos 64 MB de texto, y los cambios de la configuración del proyecto (`zplc.json`) todavía no se copian.
 
-Nivel de evidencia: host. `packages/zplc-ide/electron/recoveryStore.test.ts` cubre el almacén, los mensajes y los tiempos (IDE-006), y el recorrido 19 de `bun run test:journeys` mata la aplicación real con SIGKILL, la inicia de nuevo y restaura el archivo.
+Nivel de evidencia: host. `packages/zplc-ide/electron/recoveryStore.test.ts` cubre el almacén, los mensajes y los tiempos, y el recorrido 19 de `bun run test:journeys` mata la aplicación real con SIGKILL, la inicia de nuevo y restaura el archivo.
 
 ## Preferencias
 
@@ -149,7 +149,7 @@ El guardado automático escribe los archivos modificados con el mismo guardado q
 
 La búsqueda de actualizaciones consulta las versiones de GitHub de este proyecto para obtener la última versión publicada e indica si es más reciente que la compilación en ejecución. No envía nada sobre usted, no descarga nada y no instala nada; la respuesta es una versión y un enlace. No se ejecuta nunca hasta que usted la activa o pulsa **Buscar ahora**.
 
-Nivel de evidencia: host. `packages/zplc-ide/src/utils/appSettings.test.ts`, `packages/zplc-ide/src/store/autosave.test.ts` y `packages/zplc-ide/electron/updateCheck.test.ts` cubren los ajustes, el guardado automático y la búsqueda de actualizaciones (IDE-007, IDE-010), y el recorrido 21 de `bun run test:journeys` los cambia en la aplicación real y la reinicia.
+Nivel de evidencia: host. `packages/zplc-ide/src/utils/appSettings.test.ts`, `packages/zplc-ide/src/store/autosave.test.ts` y `packages/zplc-ide/electron/updateCheck.test.ts` cubren los ajustes, el guardado automático y la búsqueda de actualizaciones, y el recorrido 21 de `bun run test:journeys` los cambia en la aplicación real y la reinicia.
 
 ## Idioma de la interfaz
 
@@ -157,7 +157,7 @@ La preferencia **Idioma** elige el idioma de ZPLC: **Automático**, **English** 
 
 El idioma y el tema se guardan además en un archivo pequeño del directorio privado de datos de usuario de ZPLC, de modo que el siguiente arranque ya tiene el idioma del menú y el color de ventana correctos. Un archivo ausente o dañado vuelve al inglés y al tema del sistema.
 
-Nivel de evidencia: host. `packages/zplc-ide/src/i18n/i18n.test.tsx` y `packages/zplc-ide/electron/shellPreferences.test.ts` cubren los catálogos, el ajuste y las preferencias guardadas (UX-029, UX-031).
+Nivel de evidencia: host. `packages/zplc-ide/src/i18n/i18n.test.tsx` y `packages/zplc-ide/electron/shellPreferences.test.ts` cubren los catálogos, el ajuste y las preferencias guardadas.
 
 ## Menú de la aplicación, paleta de comandos y atajos
 
@@ -175,21 +175,21 @@ ZPLC mantiene una sola lista de comandos, y cada forma de iniciar un comando la 
 | `Mayús+F5` | Detener |
 | `F6` | Pausar |
 | `F10` | Avanzar un ciclo |
-| `F8` | Reiniciar el entorno de ejecución |
+| `F8` | Reiniciar el runtime |
 | `Ctrl+Mayús+P` | Paleta de comandos |
 | `Ctrl+K`, luego `Ctrl+S` | Atajos de teclado |
 
 `Cmd` reemplaza a `Ctrl` en macOS. Los atajos que actúan sobre un programa (`F5`, `F6`, `F10`, `F8`, `Mayús+F5`) dejan a un campo de texto sus propias teclas.
 
-**Comandos que actúan sobre un dispositivo.** Conectar, Desconectar, Cargar, Ejecutar, Pausar, Detener, Avanzar y Reiniciar ejecutan la misma acción que el botón de la barra de herramientas del mismo nombre, con las mismas comprobaciones y la misma confirmación: Cargar sigue preguntando antes de enviar un programa. Son controles para la persona que está ante el teclado. Las herramientas MCP y el proveedor de IA opcional no tienen acceso a ellos, y no pueden grabar firmware, desplegar, forzar, ejecutar ni detener nada.
+**Comandos que actúan sobre un dispositivo.** Conectar, Desconectar, Cargar, Ejecutar, Pausar, Detener, Avanzar y Reiniciar ejecutan la misma acción que el botón de la barra de herramientas del mismo nombre, con las mismas comprobaciones y la misma confirmación: Cargar sigue preguntando antes de enviar un programa. Son controles para la persona que está ante el teclado. Las herramientas MCP y el proveedor de IA opcional no tienen acceso a ellos, y no pueden grabar firmware, cargar, forzar, ejecutar ni detener nada.
 
-Nivel de evidencia: host. `packages/zplc-ide/src/commands/commands.test.ts` y `packages/zplc-ide/electron/appMenu.test.ts` (UX-014, UX-015) comprueban que ningún par de comandos comparte un atajo, que cada elemento de menú y cada entrada de la paleta es un comando registrado, que cada comando tiene un título en ambos idiomas, y la forma del menú en Windows, Linux y macOS con un sustituto de la plataforma. El menú nativo no se ha ejecutado en Windows ni en macOS.
+Nivel de evidencia: host. `packages/zplc-ide/src/commands/commands.test.ts` y `packages/zplc-ide/electron/appMenu.test.ts` comprueban que ningún par de comandos comparte un atajo, que cada elemento de menú y cada entrada de la paleta es un comando registrado, que cada comando tiene un título en ambos idiomas, y la forma del menú en Windows, Linux y macOS con un sustituto de la plataforma. El menú nativo no se ha ejecutado en Windows ni en macOS.
 
 ## Simulación y hardware
 
-La simulación nativa es la forma de ejecutar un programa en su equipo. Necesita la aplicación de escritorio, que incluye el entorno de ejecución nativo. Donde el entorno de ejecución nativo no puede arrancar, la simulación se ejecuta en el entorno de ejecución WebAssembly; la barra de estado lo dice y lista lo que no tiene (sin bloques de comunicación, sin serie, sin pines, el tiempo de la ventana de la aplicación). Vea [Entorno de ejecución de software](../runtime/browser-runtime.md).
+La simulación nativa es la forma de ejecutar un programa en su computadora. Necesita la aplicación de escritorio, que incluye el runtime nativo. Donde el runtime nativo no puede arrancar, la simulación se ejecuta en el runtime WebAssembly; la barra de estado lo dice y lista lo que no tiene (sin bloques de comunicación, sin serie, sin pines, el tiempo de la ventana de la aplicación). Vea [Runtime de software](../runtime/browser-runtime.md).
 
-Las acciones de hardware son aparte: compilar el firmware del entorno de ejecución, grabarlo, desplegar un programa compilado, y luego ejecutar y depurar. Una persona inicia cada una de ellas. Vea [Desplegar un programa](./deployment.md).
+Las acciones de hardware son aparte: compilar el firmware del runtime, grabarlo, cargar un programa compilado, y luego ejecutar y depurar. Una persona inicia cada una de ellas. Vea [Cargar un programa](./deployment.md).
 
 ## Pausa, reanudación, paso y Stop
 
@@ -221,11 +221,11 @@ Una entrada se opera con el control que corresponde a su tipo:
 - Cada otro tipo numérico tiene una casilla numérica con **Aplicar**.
 - Un valor que no cabe en el tipo se rechaza con un mensaje antes de escribir nada.
 
-Un cambio llega al programa en un límite de ciclo, nunca dentro de uno: el entorno de ejecución pone la escritura en cola y la aplica cuando empieza el ciclo siguiente. La fila dice **Pendiente hasta el próximo ciclo** desde que usted actúa hasta que el entorno de ejecución tiene el valor, y luego **Aplicado** un momento. Cuando el entorno de ejecución no puede aplicar un cambio (la simulación está detenida, en pausa o en falla, o el simulador no informa la capacidad), los controles se deshabilitan y el panel dice por qué. Un programa en pausa se edita desde la tabla de observación, cuya escritura se toma al instante. **Forzar** mantiene una entrada en su valor actual, y **Aplicar** cambia entonces el valor forzado, en los tipos de hasta 32 bits; liberar el forzado devuelve la entrada.
+Un cambio llega al programa en un límite de ciclo, nunca dentro de uno: el runtime pone la escritura en cola y la aplica cuando empieza el ciclo siguiente. La fila dice **Pendiente hasta el próximo ciclo** desde que usted actúa hasta que el runtime tiene el valor, y luego **Aplicado** un momento. Cuando el runtime no puede aplicar un cambio (la simulación está detenida, en pausa o en falla, o el simulador no informa la capacidad), los controles se deshabilitan y el panel dice por qué. Un programa en pausa se edita desde la tabla de observación, cuya escritura se toma al instante. **Forzar** mantiene una entrada en su valor actual, y **Aplicar** cambia entonces el valor forzado, en los tipos de hasta 32 bits; liberar el forzado devuelve la entrada.
 
 Ni el agente ni el servidor MCP pueden operar el panel de E/S en vivo. En hardware, las entradas se fuerzan desde la tabla de observación.
 
-Nivel de evidencia: host, simulación POSIX nativa, no hardware. `packages/zplc-ide/src/runtime/declaredInputs.test.ts` y `packages/zplc-ide/src/components/Faceplate.test.tsx` cubren las listas, la codificación de cada tipo numérico y lo que dice el panel, `test_native_runtime_session.c` demuestra que una escritura espera al inicio del ciclo siguiente, y el recorrido 50 de `bun run test:journeys` opera un interruptor, un pulsador y un control deslizante en la aplicación real (LRN-017, IDE-024).
+Nivel de evidencia: host, simulación POSIX nativa, no hardware. `packages/zplc-ide/src/runtime/declaredInputs.test.ts` y `packages/zplc-ide/src/components/Faceplate.test.tsx` cubren las listas, la codificación de cada tipo numérico y lo que dice el panel, `test_native_runtime_session.c` demuestra que una escritura espera al inicio del ciclo siguiente, y el recorrido 50 de `bun run test:journeys` opera un interruptor, un pulsador y un control deslizante en la aplicación real.
 
 ## Plantas en vivo
 
@@ -237,7 +237,7 @@ Una planta se asocia al programa mediante una asignación explícita, un archivo
 
 La planta es determinista: usa aritmética entera en milésimas con un paso fijo, y ningún reloj, número aleatorio ni coma flotante, así que el mismo programa y el mismo guion de entradas dan la misma traza en todas las plataformas. La ejecución registrada de un escenario sigue estando en **Repetición de una ejecución registrada**, que dice que es una repetición de una ejecución registrada del host POSIX nativo.
 
-Nivel de evidencia: host, simulación POSIX nativa, no hardware. `packages/zplc-ide/src/plants/plantEngine.test.ts` cubre cada planta y las trazas de referencia, y el recorrido 51 de `bun run test:journeys` ejecuta la lección del motor en la aplicación real solo con el teclado (LRN-018). Los hashes de las trazas se compararon solo en Linux.
+Nivel de evidencia: host, simulación POSIX nativa, no hardware. `packages/zplc-ide/src/plants/plantEngine.test.ts` cubre cada planta y las trazas de referencia, y el recorrido 51 de `bun run test:journeys` ejecuta la lección del motor en la aplicación real solo con el teclado. Los hashes de las trazas se compararon solo en Linux.
 
 ## Límite de la depuración
 
@@ -251,29 +251,29 @@ Nivel de evidencia: host. `packages/zplc-ide/src/components/InterlockCoverage.te
 
 ## Un resultado desde la aplicación, la CLI y las herramientas MCP
 
-Una prueba de escenario da el mismo resultado se ejecute donde se ejecute. La pestaña **Pruebas**, `zplc-cli test`, `zplc-cli scenario-run` y las herramientas MCP `tests_run` y `scenario_run` llaman todas a la misma API de herramientas sobre el mismo entorno de ejecución nativo con el mismo reloj virtual, de modo que una aserción temporal (`AT`, `WITHIN`, `FOR`, `EVENTUALLY`, `ALWAYS`, `NEVER`, `UNTIL`, `RISING`, `FALLING`) se juzga sobre las mismas muestras. El veredicto, el hash del programa compilado y el hash y la longitud de la traza registrada de cada escenario son iguales, y una aserción que falla falla igual desde cada una, con la CLI saliendo con el código 1.
+Una prueba de escenario da el mismo resultado se ejecute donde se ejecute. La pestaña **Pruebas**, `zplc-cli test`, `zplc-cli scenario-run` y las herramientas MCP `tests_run` y `scenario_run` llaman todas a la misma API de herramientas sobre el mismo runtime nativo con el mismo reloj virtual, de modo que una aserción temporal (`AT`, `WITHIN`, `FOR`, `EVENTUALLY`, `ALWAYS`, `NEVER`, `UNTIL`, `RISING`, `FALLING`) se juzga sobre las mismas muestras. El veredicto, el hash del programa compilado y el hash y la longitud de la traza registrada de cada escenario son iguales, y una aserción que falla falla igual desde cada una, con la CLI saliendo con el código 1.
 
 Nivel de evidencia: host. `packages/zplc-ide/src/cli/scenarioParity.test.ts` ejecuta cada proyecto incluido por la API de herramientas, la CLI, el despachador MCP y el presentador, y compara los resultados. No cubre una placa.
 
 ## Notificaciones, mensajes y fallas
 
-- **Notificaciones.** El resultado de una compilación, un guardado, un despliegue, un cambio de conexión y una ejecución de pruebas aparece abajo a la derecha como una notificación. Cada una dice qué pasó y tiene **Detalles**, que abre el panel con la evidencia: **Salida** para un guardado, una compilación correcta, un despliegue y una conexión, **Problemas** para una compilación fallida, **Pruebas** para una ejecución de pruebas. Una operación larga muestra una barra de progreso, y una compilación y una ejecución de pruebas muestran además **Cancelar**: una compilación cancelada no conserva ningún artefacto, y una ejecución cancelada detiene su entorno de ejecución nativo. Un éxito desaparece solo tras unos segundos; una falla, una advertencia y una cancelación permanecen hasta que usted las descarta.
+- **Notificaciones.** El resultado de una compilación, un guardado, una carga, un cambio de conexión y una ejecución de pruebas aparece abajo a la derecha como una notificación. Cada una dice qué pasó y tiene **Detalles**, que abre el panel con la evidencia: **Salida** para un guardado, una compilación correcta, una carga y una conexión, **Problemas** para una compilación fallida, **Pruebas** para una ejecución de pruebas. Una operación larga muestra una barra de progreso, y una compilación y una ejecución de pruebas muestran además **Cancelar**: una compilación cancelada no conserva ningún artefacto, y una ejecución cancelada detiene su runtime nativo. Un éxito desaparece solo tras unos segundos; una falla, una advertencia y una cancelación permanecen hasta que usted las descarta.
 - **Problemas.** La vista Problemas lista primero los errores, luego las advertencias y luego la información, y al activar un problema se abre su archivo en su línea y su columna. Un mensaje escrito en **Salida**, o un problema hallado, mientras otra vista está visible pone un contador en la pestaña de esa vista hasta que usted la abre.
 - **Estados vacío, de carga y de error.** Un panel sin nada que mostrar dice por qué y ofrece el paso siguiente. Un indicador de carga aparece solo cuando una operación tarda más de 300 ms. Un estado de error nombra lo que salió mal y tiene un botón de recuperación.
 - **Una falla se queda en su región.** Si el editor, el panel inferior o la barra de herramientas lanzan una excepción al dibujarse, esa región muestra qué se detuvo y un botón **Reintentar**, y el resto de la ventana sigue funcionando, así que todavía puede guardar. Si la falla está fuera de toda región, la ventana entera muestra el mismo mensaje con **Reintentar** y una forma de cerrar el proyecto.
 
-Nivel de evidencia: host. `packages/zplc-ide/src/store/notifications.test.ts` y `packages/zplc-ide/src/components/ErrorBoundary.test.tsx` cubren los modelos, y los recorridos 20 y 36 de `bun run test:journeys` rompen regiones y compilaciones en la aplicación real y siguen **Detalles** hasta su panel (IDE-021). Una notificación de despliegue necesita un dispositivo y ningún recorrido la cubre.
+Nivel de evidencia: host. `packages/zplc-ide/src/store/notifications.test.ts` y `packages/zplc-ide/src/components/ErrorBoundary.test.tsx` cubren los modelos, y los recorridos 20 y 36 de `bun run test:journeys` rompen regiones y compilaciones en la aplicación real y siguen **Detalles** hasta su panel. Una notificación de carga necesita un dispositivo y ningún recorrido la cubre.
 
 ## Accesibilidad
 
 ZPLC está construido para que su ruta principal pueda usarse con un teclado y un lector de pantalla. Esto es lo que demuestran las comprobaciones automáticas, y lo que no.
 
 - **Nombres.** Cada campo de un formulario tiene una etiqueta que un lector de pantalla lee con él, y cada botón que solo muestra un icono tiene un nombre. Una regla de integración continua hace fallar la compilación ante un campo o un botón de solo icono sin nombre.
-- **Anuncios.** Dos regiones vivas ocultas, una cortés para los resultados y una asertiva para las fallas, anuncian el resultado de una compilación, un guardado, un despliegue, una ejecución de pruebas, un cambio de conexión y una variable forzada o liberada. Si el programa está en ejecución se lee en la barra de estado.
-- **Teclado.** La ruta desde abrir un proyecto hasta una lección de Aprender se puede completar solo con el teclado: abrir, editar, compilar, simular, observar, forzar, la pregunta de despliegue y la comprobación de la lección. Tab y Mayús+Tab recorren la pantalla en el orden de lectura, y la paleta de comandos llega a todos los comandos. En el editor de código Tab escribe un tabulador; pulse `Ctrl+M` para que Tab saque el foco, y otra vez para volver. Escape cierra un diálogo y devuelve el foco al control que lo abrió.
+- **Anuncios.** Dos regiones vivas ocultas, una cortés para los resultados y una asertiva para las fallas, anuncian el resultado de una compilación, un guardado, una carga, una ejecución de pruebas, un cambio de conexión y una variable forzada o liberada. Si el programa está en ejecución se lee en la barra de estado.
+- **Teclado.** La ruta desde abrir un proyecto hasta una lección de Aprender se puede completar solo con el teclado: abrir, editar, compilar, simular, observar, forzar, la pregunta de carga y la comprobación de la lección. Tab y Mayús+Tab recorren la pantalla en el orden de lectura, y la paleta de comandos llega a todos los comandos. En el editor de código Tab escribe un tabulador; pulse `Ctrl+M` para que Tab saque el foco, y otra vez para volver. Escape cierra un diálogo y devuelve el foco al control que lo abrió.
 - **Controles y densidad.** Todos los controles salen de un solo kit de componentes, y una regla de integración continua hace fallar la compilación ante un control nativo ajeno al kit, una descripción emergente nativa, un color suelto o un texto de menos de 11 píxeles. La preferencia **Densidad** cambia el tamaño de los controles, las filas y el espaciado de toda la ventana.
 - **Zoom.** `Ctrl` y más, menos y 0 (`Cmd` en macOS) agrandan, reducen y restablecen la página, desde el menú **Ver**.
-- **Qué se comprueba.** El contraste se calcula a partir de los colores de los temas claro, oscuro y de alto contraste, y se ejecuta una comprobación en la aplicación real en Bienvenida, los cuatro editores, cada pestaña del panel de resultados, las barras laterales, la configuración, la paleta, la referencia de atajos y la pregunta de despliegue, en cada tema. Falla ante un texto por debajo de 4,5 a 1 (3 a 1 para texto grande), un control sin nombre, un control que no muestra nada con el foco, un identificador repetido, una pantalla sin región principal y un diálogo sin nombre. Estas comprobaciones son estructurales y calculadas, no una prueba con un lector de pantalla. Comprobar la ruta principal con un lector de pantalla en Windows y en macOS es una tarea manual que se hace antes de la versión general, y su resultado se registra en la lista de verificación de la versión.
+- **Qué se comprueba.** El contraste se calcula a partir de los colores de los temas claro, oscuro y de alto contraste, y se ejecuta una comprobación en la aplicación real en Bienvenida, los cuatro editores, cada pestaña del panel de resultados, las barras laterales, la configuración, la paleta, la referencia de atajos y la pregunta de carga, en cada tema. Falla ante un texto por debajo de 4,5 a 1 (3 a 1 para texto grande), un control sin nombre, un control que no muestra nada con el foco, un identificador repetido, una pantalla sin región principal y un diálogo sin nombre. Estas comprobaciones son estructurales y calculadas, no una prueba con un lector de pantalla. Comprobar la ruta principal con un lector de pantalla en Windows y en macOS es una tarea manual que se hace antes de la versión general, y su resultado se registra en la lista de verificación de la versión.
 
 El nivel de evidencia de estas comprobaciones es host: una ventana en Linux, no en Windows ni en macOS.
 

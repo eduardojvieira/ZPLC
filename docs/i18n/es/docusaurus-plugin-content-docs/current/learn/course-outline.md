@@ -15,7 +15,7 @@ La página sigue `packages/zplc-ide/lessons/course.json` y los paquetes de lecci
 
 Cómo leer las tablas:
 
-- **Simulación.** Toda lección puede completarse en esta ruta, en su equipo y sin placa.
+- **Simulación.** Toda lección puede completarse en esta ruta, en su computadora y sin placa.
 - **Hardware.** Una lección indica esta ruta cuando tiene una página de cableado para cada placa del estudiante y su verificación en placa está definida. Todavía no se ha registrado en una placa ninguna ejecución en hardware.
 - **Sin ruta.** Una lección que no ofrece una ruta dice por qué y qué hacer en su lugar.
 - **Etapas.** Cada lección tiene seis etapas (Objetivo, Prediga, Edite, Ejecute, Observe, Reflexione), dos niveles de pista y una solución de referencia que puede pedir ver. ZPLC registra que vio la solución.
@@ -298,7 +298,7 @@ Las comunicaciones llegan al final porque necesitan todo lo anterior. En simulac
 | `mqtt-publish-subscribe` MQTT: publicar un mensaje y recibirlo                                    | Disponible | ST        | Simulación | -      | 25      | `modbus-register-round-trip`                      |
 | `modbus-coil-fbd` Modbus en diagrama de bloques de función: escribir una bobina y volver a leerla | Disponible | FBD       | Simulación | -      | 25      | `modbus-register-round-trip`, `counter-batch-fbd` |
 
-Las lecciones de este módulo se califican con un servidor Modbus TCP y un broker MQTT que ZPLC inicia dentro de la sesión de simulación, en este equipo, así que no hace falta red, broker instalado ni placa. Son dobles de protocolo: muestran cómo se comportan los bloques y su protocolo de intercambio, y no muestran que un dispositivo, un broker o un servicio en la nube reales acepten el mismo intercambio. No tienen pista de hardware porque no se ha registrado una traza de un dispositivo real.
+Las lecciones de este módulo se califican con un servidor Modbus TCP y un broker MQTT que ZPLC inicia dentro de la sesión de simulación, en esta computadora, así que no hace falta red, broker instalado ni placa. Son dobles de protocolo: muestran cómo se comportan los bloques y su protocolo de intercambio, y no muestran que un dispositivo, un broker o un servicio en la nube reales acepten el mismo intercambio. No tienen pista de hardware porque no se ha registrado una traza de un dispositivo real.
 
 Objetivos de las lecciones disponibles:
 

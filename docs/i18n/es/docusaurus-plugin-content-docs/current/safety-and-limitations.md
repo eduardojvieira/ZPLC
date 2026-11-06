@@ -58,7 +58,7 @@ Las funciones del lenguaje que todavía no funcionan se enumeran, con los casos 
 
 ## Operaciones sobre un dispositivo
 
-- Compilar el firmware, grabarlo, desplegar un programa y ejecutarlo o depurarlo son cuatro operaciones separadas, y una persona inicia cada una que toque un dispositivo físico. Los asistentes de IA y el servidor MCP no pueden grabar, desplegar, forzar un valor, iniciar o detener un programa, abrir un puerto serie ni ejecutar una shell ([IA, privacidad y revisión humana](./ide/ai-privacy.md)).
+- Compilar el firmware, grabarlo, cargar un programa y ejecutarlo o depurarlo son cuatro operaciones separadas, y una persona inicia cada una que toque un dispositivo físico. Los asistentes de IA y el servidor MCP no pueden grabar, cargar, forzar un valor, iniciar o detener un programa, abrir un puerto serie ni ejecutar una shell ([IA, privacidad y revisión humana](./ide/ai-privacy.md)).
 - Ningún mensaje que llegue por Modbus, MQTT o un servicio de nube cambia el estado de ejecución, activa o quita un forzado, ni descarga un programa ([Conectividad](./runtime/connectivity.md#qué-puede-hacer-un-mensaje-de-la-red)).
 
 ## Secretos y seguridad

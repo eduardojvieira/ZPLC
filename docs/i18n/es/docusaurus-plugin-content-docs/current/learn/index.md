@@ -9,7 +9,7 @@ tags: [learn, lessons, examples]
 
 # Aprender
 
-Aprender es un curso de programación de PLC que se ejecuta dentro de la aplicación ZPLC, en español y en inglés. No necesita ninguna placa, ninguna red ni conocimientos previos: todas las lecciones se ejecutan en el simulador de su equipo y ninguna inicia una operación física. Si tiene una placa de aprendizaje compatible, una [ruta de hardware](./hardware-track.md) opcional repite la mayoría de las lecciones en ella.
+Aprender es un curso de programación de PLC que se ejecuta dentro de la aplicación ZPLC, en español y en inglés. No necesita ninguna placa, ninguna red ni conocimientos previos: todas las lecciones se ejecutan en el simulador de su computadora y ninguna inicia una operación física. Si tiene una placa de aprendizaje compatible, una [ruta de hardware](./hardware-track.md) opcional repite la mayoría de las lecciones en ella.
 
 ## Qué es el curso
 
@@ -47,7 +47,7 @@ Todas las lecciones menos una se pueden completar así, sin placa: el índice de
 
 ## Sin conexión
 
-La ruta de simulación no necesita red, y eso incluye el módulo 10: sus bloques Modbus y MQTT hablan con un servidor y un broker que la simulación inicia en su equipo y detiene con ella. La ventana no carga ninguna fuente, script ni hoja de estilo de otro host, y la única solicitud que ZPLC puede hacer por su cuenta, la comprobación de una versión más nueva, está desactivada hasta que usted la active en las preferencias.
+La ruta de simulación no necesita red, y eso incluye el módulo 10: sus bloques Modbus y MQTT hablan con un servidor y un broker que la simulación inicia en su computadora y detiene con ella. La ventana no carga ninguna fuente, script ni hoja de estilo de otro host, y la única solicitud que ZPLC puede hacer por su cuenta, la comprobación de una versión más nueva, está desactivada hasta que usted la active en las preferencias.
 
 Nivel de evidencia: host. Una ejecución guionada de la aplicación en el host de desarrollo en Linux (el recorrido 58 del mismo archivo) inicia, ejecuta y comprueba la primera lección y una lección de Comunicaciones mientras se rechaza toda solicitud a otro host, y una prueba de la compilación de producción no encuentra en ella ninguna carga remota. No se ejecutó un paquete instalado sin red.
 

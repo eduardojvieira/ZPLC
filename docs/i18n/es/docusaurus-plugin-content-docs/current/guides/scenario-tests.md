@@ -71,7 +71,7 @@ La comprobación de la documentación ejecuta este escenario contra el programa 
 
 ![La pestaña Tests después de Run host scenarios (interfaz en inglés)](/img/screens/guide-scenario-tests.png)
 
-**Desde una terminal**, con la línea de comandos del proyecto (compile el entorno de ejecución una vez con `bun run setup`):
+**Desde una terminal**, con la línea de comandos del proyecto (compile el runtime una vez con `bun run setup`):
 
 ```bash
 bun run simulate path/to/your/project
@@ -90,7 +90,7 @@ Ejecuta sin interfaz todos los escenarios del proyecto, imprime `test passed` o 
 
 | Parte | Verificado | Nivel |
 | --- | --- | --- |
-| El escenario de arriba pasa contra el programa de arriba, y la comprobación falla cuando una expectativa no se cumple | La comprobación de la documentación lo ejecuta en el entorno de ejecución nativo | Host |
+| El escenario de arriba pasa contra el programa de arriba, y la comprobación falla cuando una expectativa no se cumple | La comprobación de la documentación lo ejecuta en el runtime nativo | Host |
 | El lector de escenarios rechaza un archivo mal formado y aplica sus límites | Pruebas unitarias del motor de pruebas | Host |
 | El tiempo de ciclo real de una placa, una entrada física, una validación de seguridad | Sin probar | Ninguno |
 

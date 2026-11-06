@@ -9,7 +9,7 @@ tags: [operations]
 
 # Operación
 
-Esta página es la lista de comprobación para trabajar en un sistema ZPLC que ya está en marcha: qué mirar primero, qué conservar y qué acciones quedan en manos de una persona. No deduzca el estado físico de una máquina a partir de un resultado en el anfitrión, y no trate un despliegue de programa como una recuperación de firmware.
+Esta página es la lista de comprobación para trabajar en un sistema ZPLC que ya está en marcha: qué mirar primero, qué conservar y qué acciones quedan en manos de una persona. No deduzca el estado físico de una máquina a partir de un resultado en el anfitrión, y no trate una carga de programa como una recuperación de firmware.
 
 ## Una secuencia de rutina
 
@@ -22,7 +22,7 @@ Esta página es la lista de comprobación para trabajar en un sistema ZPLC que y
 
 - Diagnósticos del compilador, resultados de pruebas, la traza de una simulación en el anfitrión y el estado que informa un runtime conectado.
 - El perfil de placa seleccionado y su nivel de evidencia.
-- Una confirmación de despliegue que identifica el artefacto y si el runtime es compatible con él.
+- Una confirmación de carga que identifica el artefacto y si el runtime es compatible con él.
 
 La consola del dispositivo muestra el mismo estado desde una terminal: vea [Use la consola del dispositivo](./shell.md).
 
@@ -30,7 +30,7 @@ La consola del dispositivo muestra el mismo estado desde una terminal: vea [Use 
 
 - Confirme que la máquina está bajo el procedimiento de trabajo seguro aprobado por el sitio.
 - Confirme la placa seleccionada, el perfil, la identidad del runtime, la ABI y el hash del artefacto.
-- Trate grabar, desplegar, forzar, RUN, STOP y recuperar como decisiones humanas separadas.
+- Trate grabar, cargar, forzar, RUN, STOP y recuperar como decisiones humanas separadas.
 
 ## Qué sigue necesitando evidencia del destino o HIL
 

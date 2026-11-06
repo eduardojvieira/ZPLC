@@ -56,7 +56,7 @@ west build -b rpi_pico/rp2040 firmware/app --pristine
 
 ## Grabación y recuperación
 
-Compilar, grabar, desplegar un programa y ejecutar son cuatro operaciones distintas, y usted inicia cada una. Una compilación no dice si `west flash` o un procedimiento de recuperación es seguro en su dispositivo. Lea antes el procedimiento de la placa: [Grabe el firmware](../guides/flash-firmware.md) y [Límites de recuperación](../operations/recovery.md).
+Compilar, grabar, cargar un programa y ejecutar son cuatro operaciones distintas, y usted inicia cada una. Una compilación no dice si `west flash` o un procedimiento de recuperación es seguro en su dispositivo. Lea antes el procedimiento de la placa: [Grabe el firmware](../guides/flash-firmware.md) y [Límites de recuperación](../operations/recovery.md).
 
 ## Páginas relacionadas
 

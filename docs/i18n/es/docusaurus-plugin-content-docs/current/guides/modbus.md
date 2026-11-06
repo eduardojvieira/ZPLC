@@ -94,7 +94,7 @@ zplc config save
 
 ### 4. Qué puede y qué no puede hacer un maestro
 
-Una escritura de un maestro pasa por la interfaz que respeta los forzados y por el intercambio del entorno de ejecución. Una variable que usted forzó conserva su valor forzado, y el ciclo siguiente aplica la escritura. Ningún mensaje Modbus puede iniciar ni detener el programa, definir ni quitar un forzado, ni descargar un programa ([Qué puede hacer un mensaje de la red](../runtime/connectivity.md#qué-puede-hacer-un-mensaje-de-la-red)).
+Una escritura de un maestro pasa por la interfaz que respeta los forzados y por el intercambio del runtime. Una variable que usted forzó conserva su valor forzado, y el ciclo siguiente aplica la escritura. Ningún mensaje Modbus puede iniciar ni detener el programa, definir ni quitar un forzado, ni descargar un programa ([Qué puede hacer un mensaje de la red](../runtime/connectivity.md#qué-puede-hacer-un-mensaje-de-la-red)).
 
 Las cuatro áreas son cuatro espacios de direcciones, y una variable se sirve en un solo área. Una solicitud de una dirección que ninguna variable tiene en el área solicitada recibe la excepción 2 (dirección de datos ilegal). Las entradas discretas y los registros de entrada se pueden leer y no escribir. Toda variable de WORK y RETAIN se puede vincular, y el servidor sirve todo el rango del cable hasta la dirección 65535 para las direcciones que tienen una variable ([Áreas y direcciones Modbus](../runtime/connectivity.md#áreas-y-direcciones-modbus)).
 
@@ -116,13 +116,13 @@ Code := Link.STATUS;
 END_PROGRAM
 ```
 
-La comprobación de la documentación ejecuta este programa en el entorno de ejecución nativo sin configurar, que no tiene manejador para el bloque, así que termina con `ERROR` en TRUE y `STATUS` 3. Eso muestra que el bloque compila, se ejecuta e informa un estado. En una sesión de ZPLC la misma solicitud llega al servidor Modbus de loopback, porque la sesión enciende los bloques de comunicación. Lea `STATUS` después de `ERROR`: 0 es OK, 2 tiempo agotado, 4 no conectado, 5 todas las ranuras de solicitud en uso, 6 dirección no válida, 8 error de protocolo y 10 no disponible. El resto está en los [códigos de estado](../runtime/communication-function-blocks.md#códigos-de-estado).
+La comprobación de la documentación ejecuta este programa en el runtime nativo sin configurar, que no tiene manejador para el bloque, así que termina con `ERROR` en TRUE y `STATUS` 3. Eso muestra que el bloque compila, se ejecuta e informa un estado. En una sesión de ZPLC la misma solicitud llega al servidor Modbus de loopback, porque la sesión enciende los bloques de comunicación. Lea `STATUS` después de `ERROR`: 0 es OK, 2 tiempo agotado, 4 no conectado, 5 todas las ranuras de solicitud en uso, 6 dirección no válida, 8 error de protocolo y 10 no disponible. El resto está en los [códigos de estado](../runtime/communication-function-blocks.md#códigos-de-estado).
 
 El bloque sigue el único handshake de los doce bloques de comunicación ([Bloques de función de comunicación](../runtime/communication-function-blocks.md#el-handshake)):
 
 - Un flanco de subida de `EN` hace una solicitud. Mientras `EN` sigue en TRUE después del resultado, el resultado se mantiene y nada se repite. Deje que `EN` baje un ciclo para pedir de nuevo.
 - Una solicitud en curso termina aunque `EN` baje, y un flanco de subida mientras `BUSY` es TRUE no inicia nada.
-- Solo el entorno de ejecución escribe `BUSY`, `DONE`, `ERROR` y `STATUS`. Llame al bloque en cada ciclo, porque solo avanza cuando se lo llama.
+- Solo el runtime escribe `BUSY`, `DONE`, `ERROR` y `STATUS`. Llame al bloque en cada ciclo, porque solo avanza cuando se lo llama.
 - Una solicitud corre fuera del ciclo. El cliente espera como máximo el doble del tiempo límite configurado, y el bloque informa `ERROR` con `STATUS` 2 a más tardar `(2 x tiempo límite + 100 ms) x 8` después de la solicitud: 8,8 s con el tiempo límite por defecto de 500 ms.
 - `COUNT` es 1. Una solicitud de más registros o bobinas se rechaza con `STATUS` 6.
 
@@ -137,7 +137,7 @@ Una solicitud Modbus RTU en simulación no tiene dispositivo serie y responde `S
 | Una variable forzada conserva su valor ante una escritura de un maestro | Una prueba con un intercambio que registra | Host y `native_sim` |
 | Las cuatro áreas son cuatro espacios de direcciones, y se sirve todo WORK y RETAIN | Una prueba del firmware que carga un programa con las etiquetas de las cuatro áreas, los bordes de WORK y RETAIN y la dirección 65535, y las lee y escribe por las costuras en que terminan ambos servidores | `native_sim` |
 | Manejadores de los bloques de función: pines, handshake, códigos de estado, reinicio con una solicitud en curso | Pruebas con un cliente sustituto | Host y `native_sim` |
-| El cliente Modbus TCP: éxito, una respuesta en partes, excepción, silencio, una conexión cerrada, un puerto rechazado, reinicio con el bloque ocupado | Su código de transacción es un solo archivo compilado en el controlador y en el entorno de ejecución de simulación, y corre contra un servidor escrito para la prueba en loopback en ambos | `native_sim` y host |
+| El cliente Modbus TCP: éxito, una respuesta en partes, excepción, silencio, una conexión cerrada, un puerto rechazado, reinicio con el bloque ocupado | Su código de transacción es un solo archivo compilado en el controlador y en el runtime de simulación, y corre contra un servidor escrito para la prueba en loopback en ambos | `native_sim` y host |
 | El cliente Modbus RTU | Solo se comprueban sus parámetros de interfaz (el tiempo límite está en la unidad que lee el cliente Modbus de Zephyr); no se usa ningún dispositivo serie | `native_sim` |
 | Un intercambio con un dispositivo real, un cable serie, un maestro de terceros | No probado | Ninguno |
 | Temporización de una solicitud en una línea real, comportamiento ante errores de línea | No probado | Ninguno |

@@ -34,7 +34,7 @@ flowchart TD
 | Sincronización | `zplc_hal_mutex_create()`, `zplc_hal_mutex_lock()`, `zplc_hal_mutex_unlock()`, `zplc_hal_mutex_destroy()` | Cerrojos de la plataforma para la imagen de proceso compartida. |
 | Ciclo de vida y registro | `zplc_hal_init()`, `zplc_hal_shutdown()`, `zplc_hal_log()` | |
 
-El encabezado declara 18 funciones, y cada una tiene un llamador (IO-007): se quitaron una función de DNS y cuatro de socket que nadie llamaba.
+El encabezado declara 18 funciones, y cada una tiene un llamador: se quitaron una función de DNS y cuatro de socket que nadie llamaba.
 
 Una operación que una plataforma no puede realizar devuelve `ZPLC_HAL_NOT_IMPL`, el resultado definido para "no admitido". El planificador lo omite si viene de un canal opcional, lo trata como error si viene de un canal obligatorio y nunca acepta una función que un puerto deje sin definir: eso es una falla de compilación o de prueba, no un sustituto silencioso.
 
@@ -51,7 +51,7 @@ La compilación de Zephyr convierte la entrada de la placa en una tabla constant
 - **Ningún puerto maneja una salida analógica**, así que ninguna descripción lista una, y `zplc_hal_dac_write()` responde `ZPLC_HAL_NOT_IMPL`.
 - **Los tamaños de imagen** son los que necesitan los canales, y `CONFIG_ZPLC_IO_INPUT_IMAGE_BYTES` y `CONFIG_ZPLC_IO_OUTPUT_IMAGE_BYTES` reservan más. La memoria detrás de las imágenes sigue siendo los 4 KB del conjunto de instrucciones.
 
-El firmware informa la identidad de su descripción con `sys io --json` (id de placa, hash, cantidad de canales y bytes de imagen). La aplicación ZPLC se niega a desplegar un programa que usa E/S en un firmware cuya descripción no es la que ella tiene, o en una placa que no tiene canal para lo que el programa toca.
+El firmware informa la identidad de su descripción con `sys io --json` (id de placa, hash, cantidad de canales y bytes de imagen). La aplicación ZPLC se niega a cargar un programa que usa E/S en un firmware cuya descripción no es la que ella tiene, o en una placa que no tiene canal para lo que el programa toca.
 
 ## Los cuatro puertos
 

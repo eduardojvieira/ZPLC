@@ -15,14 +15,14 @@ Esta página indica qué terminó ZPLC 2.0, qué falta para publicarlo y qué no
 
 Cada punto está integrado y cubierto por una verificación que ejecuta CI o un comando local repetible.
 
-- **Cinco lenguajes.** Texto estructurado, lista de instrucciones, diagrama de escalera, diagrama de bloques de función y diagrama funcional secuencial se compilan para el mismo runtime, cada uno con su editor, valores en línea y puntos de interrupción. La [matriz de conformidad](../reference/capabilities-evidence.md) registra qué elementos funcionan, cuáles se rechazan a propósito y cuáles no están probados.
+- **Cinco lenguajes.** Texto estructurado, lista de instrucciones, diagrama de escalera, diagrama de bloques de función y diagrama funcional secuencial se compilan para el mismo runtime, cada uno con su editor, valores en línea y puntos de parada. La [matriz de conformidad](../reference/capabilities-evidence.md) registra qué elementos funcionan, cuáles se rechazan a propósito y cuáles no están probados.
 - **Simulación y depuración.** El simulador es el propio runtime nativo, incluido en la aplicación. Admite pausa, paso de un ciclo, observación, forzado, un panel de E/S en vivo y pruebas de escenario que también se ejecutan con `zplc-cli` en CI.
 - **Aprender.** Un curso de 68 lecciones en 12 módulos, en inglés y en español, con una ruta de escalera desde cero cuyas lecciones abren con páginas de lectura con figuras y laboratorios que puede probar. Vea [Aprender](../learn/index.md).
 - **Placas.** Siete perfiles de placa se compilan de forma cruzada con un presupuesto de flash y RAM cada uno, y una suite de conformidad de puertos comprueba la capa de abstracción de hardware. El nivel de cada placa es `cross-build`; vea [Compatibilidad de hardware](../reference/capabilities-evidence.md).
 - **Un método de pruebas de firmware en Linux.** Las suites de Zephyr se ejecutan en `native_sim` y en destinos QEMU Cortex-M. Vea [Pruebas del firmware en Linux](../development/firmware-testing.md).
 - **Una sola fuente generada para el contrato binario**, con un contador de borrador que comparan el compilador, el cargador, el runtime y la aplicación.
 - **Una canalización de publicación.** Un flujo de trabajo compila los instaladores de Linux, macOS y Windows, reúne las sumas de verificación y los sube a un borrador de versión; un modo de ensayo lo ejecuta de punta a punta sin publicar.
-- **Ayuda de IA dentro del espacio de trabajo.** Un servidor MCP permite que un asistente lea, edite, compile y pruebe un proyecto. Nunca carga firmware, despliega, fuerza, inicia ni detiene nada.
+- **Ayuda de IA dentro del espacio de trabajo.** Un servidor MCP permite que un asistente lea, edite, compile y pruebe un proyecto. Nunca carga firmware, carga, fuerza, inicia ni detiene nada.
 - **Texto público veraz.** Las verificaciones de la documentación hacen fallar la compilación ante un nombre, una ruta, una cifra o una capacidad que nada respalda.
 
 ## Antes de publicar 2.0

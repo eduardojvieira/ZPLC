@@ -27,7 +27,7 @@ Lea esta página antes de su primer commit. Enumera el formateador de cada lengu
 | C y encabezados                               | clang-format (Apache-2.0 con excepciones de LLVM) | 23.1.3, el paquete de PyPI (unos 2 MB); `pipx install clang-format==23.1.3`       | `.clang-format`    |
 | Editores                                    | EditorConfig                                      |                                                                                   | `.editorconfig`    |
 
-La salida de ambas herramientas cambia entre versiones, por eso las versiones son exactas. `tools/ci/format.ts` rechaza cualquier otro clang-format, y el trabajo `format` de `.github/workflows/ci.yml` instala el mismo paquete. Si su equipo tiene otro clang-format, instale el fijado con `pipx` antes de ejecutar `bun run format:check`, o la comprobación se detendrá en la versión.
+La salida de ambas herramientas cambia entre versiones, por eso las versiones son exactas. `tools/ci/format.ts` rechaza cualquier otro clang-format, y el trabajo `format` de `.github/workflows/ci.yml` instala el mismo paquete. Si su computadora tiene otro clang-format, instale el fijado con `pipx` antes de ejecutar `bun run format:check`, o la comprobación se detendrá en la versión.
 
 El estilo es el que el código ya tenía. TypeScript usa comillas simples, punto y coma, comas finales y dos espacios, y cuatro espacios en `packages/zplc-compiler`. C usa la base LLVM: dos espacios, llaves en la misma línea, sin ordenar los includes, y comentarios que nunca se reacomodan.
 

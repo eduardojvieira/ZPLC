@@ -41,7 +41,7 @@ const CAPABILITY_NAME: Record<(typeof CAPABILITIES)[number], L10n> = {
   edit: { en: 'Edit', es: 'Editar' },
   build: { en: 'Build', es: 'Compilar' },
   simulate: { en: 'Simulate', es: 'Simular' },
-  debug: { en: 'Debug (breakpoint)', es: 'Depurar (punto de interrupción)' },
+  debug: { en: 'Debug (breakpoint)', es: 'Depurar (punto de parada)' },
   pause: { en: 'Pause, step one cycle, resume', es: 'Pausar, avanzar un ciclo, reanudar' },
   watch: { en: 'Watch online values', es: 'Observar valores en línea' },
   force: { en: 'Force', es: 'Forzar' },

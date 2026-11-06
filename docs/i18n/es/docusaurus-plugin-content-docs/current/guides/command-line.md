@@ -47,7 +47,7 @@ zplc-cli compile packages/zplc-ide/projects/blinky_st --output blinky.zplc
 zplc-cli compile packages/zplc-ide/projects/blinky_st --emit asm
 ```
 
-El primer comando escribe el programa e imprime `compile passed (contract draft 6)`. El número es el borrador del contrato binario, y un entorno de ejecución de otro borrador rechaza el programa. El segundo imprime en cambio el listado de ensamblador, o lo escribe en `--output`. Un diagnóstico nombra el archivo, la línea y la columna.
+El primer comando escribe el programa e imprime `compile passed (contract draft 6)`. El número es el borrador del contrato binario, y un runtime de otro borrador rechaza el programa. El segundo imprime en cambio el listado de ensamblador, o lo escribe en `--output`. Un diagnóstico nombra el archivo, la línea y la columna.
 
 `compile` también acepta un solo archivo fuente en lugar de un proyecto, y `--language ST|IL|LD|FBD|SFC` indica su lenguaje.
 
@@ -58,9 +58,9 @@ zplc-cli test packages/zplc-ide/projects/blinky_st
 zplc-cli scenario-run packages/zplc-ide/projects/blinky_st BlinkyST
 ```
 
-`test` ejecuta todos los escenarios del proyecto en el entorno de ejecución nativo, sin interfaz y con un reloj virtual. Imprime `test passed` o la aserción fallida. `scenario-run` ejecuta un escenario por su `id`. Agregue `--output <trace.json>` para escribir la traza de la ejecución.
+`test` ejecuta todos los escenarios del proyecto en el runtime nativo, sin interfaz y con un reloj virtual. Imprime `test passed` o la aserción fallida. `scenario-run` ejecuta un escenario por su `id`. Agregue `--output <trace.json>` para escribir la traza de la ejecución.
 
-El entorno de ejecución debe estar compilado (`bun run build:runtime`) o indicado en `ZPLC_NATIVE_SIM_BIN`. [Pruebas de escenario](./scenario-tests.md) muestra cómo escribir un escenario.
+El runtime debe estar compilado (`bun run build:runtime`) o indicado en `ZPLC_NATIVE_SIM_BIN`. [Pruebas de escenario](./scenario-tests.md) muestra cómo escribir un escenario.
 
 ## Otros comandos
 
@@ -89,7 +89,7 @@ La [referencia de la línea de comandos](../reference/cli.md) enumera cada coman
 | --- | --- | --- |
 | Los comandos imprimen lo que dice esta página y terminan como ella dice | Los comandos se ejecutaron sobre el ejemplo de esta página; pruebas unitarias cubren cada operación | Host |
 | Un escenario da el mismo resultado desde la línea de comandos, ZPLC y el servidor MCP | Una prueba ejecuta cada proyecto incluido, cada escenario por separado, por las tres vías | Host |
-| El ejecutable independiente funciona sin Bun, Node ni copia del repositorio | Una prueba lo compila y lo ejecuta sin ningún entorno de ejecución de JavaScript en la ruta | Host |
+| El ejecutable independiente funciona sin Bun, Node ni copia del repositorio | Una prueba lo compila y lo ejecuta sin ningún runtime de JavaScript en la ruta | Host |
 | `firmware-build` produce una imagen que funciona | Sin probar: es una compilación cruzada | Ninguno |
 
 ## Vea también

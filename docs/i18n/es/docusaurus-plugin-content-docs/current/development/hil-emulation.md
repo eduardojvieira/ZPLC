@@ -114,10 +114,10 @@ Las primeras ejecuciones emuladas de la cadena, el 2026-10-20, fallaron cinco pa
    - *Registro:* ninguna solicitud llegó al host, error 10.
    - *Causa:* el cliente Modbus RTU del dispositivo está apagado por omisión y arranca solo al iniciar, de modo que el bloque falló de inmediato con `UNAVAILABLE`. El lado del host de la línea también se abrió a 115200 baudios, mientras el dispositivo funciona a 19200.
    - *Corrección:* el paso enciende el cliente a 19200 baudios, lo guarda y reinicia la placa. El intercambio emulado leyó 0x5A17.
-4. **Despliegue, ESP32-S3.**
+4. **Carga, ESP32-S3.**
    - *Registro:* "Not in loading state" después de que se envió un fragmento otra vez.
    - *Causa:* el cargador rechazó el fixture con `ZPLC_LOADER_ERR_MEMORY` (-13), porque la cadena compilaba los fixtures para 8 KB de memoria de trabajo y la ESP32-S3 tiene 2 KB. El probador volvió entonces a enviar el último fragmento, a una carga que había terminado. Una placa hace lo mismo.
-   - *Corrección:* la cadena compila los fixtures para la placa, y el probador eleva el rechazo del dispositivo en lugar de reenviar el fragmento. El banco de la ESP32-S3 también da a los programas diez veces el tiempo del host, por el reloj lento de QEMU. El despliegue y los seis fixtures de parpadeo pasan entonces.
+   - *Corrección:* la cadena compila los fixtures para la placa, y el probador eleva el rechazo del dispositivo en lugar de reenviar el fragmento. El banco de la ESP32-S3 también da a los programas diez veces el tiempo del host, por el reloj lento de QEMU. La carga y los seis fixtures de parpadeo pasan entonces.
 5. **Falla fatal, ESP32-S3.**
    - *Registro:* sigue en ejecución, sin falla, después de 1 s.
    - *Causa:* la ruta de falla funciona en Xtensa (división por cero, error de VM 3, salidas apagadas), pero con el reloj lento de QEMU un segundo de tiempo del host no alcanzó para los 21 ciclos que necesita el programa.

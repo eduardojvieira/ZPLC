@@ -53,7 +53,7 @@ Un ciclo se ejecuta en este orden, de modo que una secuencia cruza como máximo 
 3. Todas las transiciones se evalúan con ese mismo estado. Entre las transiciones que salen de un paso, gana la primera que se cumple; su orden es el número de prioridad si lo tiene, y el orden del archivo en caso contrario.
 4. Las transiciones que se dispararon se aplican juntas: todos los pasos que dejan quedan inactivos y después todos los pasos en que entran quedan activos.
 
-Un diagrama de más de 14 pasos se compila y se ejecuta en el entorno de ejecución nativo.
+Un diagrama de más de 14 pasos se compila y se ejecuta en el runtime nativo.
 
 ## Errores comunes
 
@@ -73,4 +73,4 @@ Un diagrama de más de 14 pasos se compila y se ejecuta en el entorno de ejecuci
 
 Mientras un programa se ejecuta en la simulación, el editor muestra qué pasos están activos y durante cuánto tiempo, y de cada transición si su condición se cumple y si se disparó en este ciclo. Un punto de parada en un paso detiene la ejecución donde entra una transición, y uno en una transición, donde se dispara; `F9` lo alterna en el elemento seleccionado. Un estado que el mapa de depuración no da se muestra como no disponible, nunca como inactivo. Vea [Editores de texto y visuales](../ide/editors.md) para los detalles.
 
-Nivel de evidencia: host. Los casos de conformidad de la referencia ejecutan pasos, calificadores, ramas y un diagrama de más de 14 pasos en el entorno de ejecución nativo, y `packages/zplc-ide/src/transpiler/transpiler.test.ts` cubre la traducción y sus rechazos. No se usó ninguna placa.
+Nivel de evidencia: host. Los casos de conformidad de la referencia ejecutan pasos, calificadores, ramas y un diagrama de más de 14 pasos en el runtime nativo, y `packages/zplc-ide/src/transpiler/transpiler.test.ts` cubre la traducción y sus rechazos. No se usó ninguna placa.

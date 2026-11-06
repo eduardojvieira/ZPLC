@@ -117,12 +117,12 @@ Code := Register.STATUS;
 END_PROGRAM
 ```
 
-La comprobación de la documentación ejecuta este programa en el entorno de ejecución nativo sin configurar, que no tiene manejador para el bloque, así que termina con `ERROR` en TRUE y `STATUS` 3. En una sesión de ZPLC los bloques de comunicación están encendidos, y todo bloque de nube responde `STATUS` 10 (no disponible), porque una simulación no tiene servicio de nube. En ambos casos la ejecución muestra que el bloque compila e informa un estado, y nada más.
+La comprobación de la documentación ejecuta este programa en el runtime nativo sin configurar, que no tiene manejador para el bloque, así que termina con `ERROR` en TRUE y `STATUS` 3. En una sesión de ZPLC los bloques de comunicación están encendidos, y todo bloque de nube responde `STATUS` 10 (no disponible), porque una simulación no tiene servicio de nube. En ambos casos la ejecución muestra que el bloque compila e informa un estado, y nada más.
 
 Los bloques siguen el único handshake de los doce bloques de comunicación ([Bloques de función de comunicación](../runtime/communication-function-blocks.md#el-handshake)):
 
 - Un flanco de subida de `EN` es una operación. `AZURE_DPS_PROV`, `AZURE_EG_PUB`, `AWS_FLEET_PROV` y `SPB_REBIRTH` no se repiten mientras `EN` sigue en TRUE. El resultado (`DONE`, o `ERROR` con un código de estado) se mantiene mientras `EN` sigue en TRUE y se borra cuando baja. Para repetirlo, deje que `EN` baje un ciclo.
-- Una solicitud en curso termina aunque `EN` baje, y un flanco de subida mientras `BUSY` es TRUE no inicia nada. Solo el entorno de ejecución escribe `BUSY`, `DONE`, `ERROR` y `STATUS`.
+- Una solicitud en curso termina aunque `EN` baje, y un flanco de subida mientras `BUSY` es TRUE no inicia nada. Solo el runtime escribe `BUSY`, `DONE`, `ERROR` y `STATUS`.
 - Un bloque nunca espera al servicio dentro del ciclo. Los dos bloques de aprovisionamiento corren en un hilo de trabajo propio (8 KB de RAM en una placa que tiene un perfil de nube). Se espera al servicio 30 s en cada paso, y el bloque informa `ERROR` con `STATUS` 2 a los 90 s. `ASSIGNED_HUB` y `THING_NAME` guardan lo que se asignó.
 - Un `DEVICE_ID` no vacío de `AZURE_DPS_PROV` es el identificador de registro usado en la solicitud, y un `TEMPLATE_NAME` no vacío de `AWS_FLEET_PROV` es la plantilla. Un `TOPIC` o `EVENT_TYPE` vacío de `AZURE_EG_PUB` significa el valor configurado por defecto.
 - `AZURE_C2D_RECV` es un bloque de servicio. Mientras `EN` es TRUE informa el estado de la sesión en cada ciclo, y `VALID` es TRUE durante exactamente un ciclo por cada mensaje nuevo, que `PAYLOAD` conserva.

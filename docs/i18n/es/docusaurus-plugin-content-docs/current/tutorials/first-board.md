@@ -11,7 +11,7 @@ tags: [tutorial, hardware, raspberry-pi-pico, esp32-s3]
 
 Esta página enumera los pasos desde el firmware hasta un LED que parpadea en una
 Raspberry Pi Pico o en una ESP32-S3. Está escrita a partir del manifiesto de placas
-y del flujo de despliegue de ZPLC, y **nadie la ha ejecutado en una placa**.
+y del flujo de carga de ZPLC, y **nadie la ha ejecutado en una placa**.
 
 :::danger No ejecutado en una placa
 El firmware de ambas placas compila en integración continua y cabe en su
@@ -123,10 +123,10 @@ nadie ha ejecutado esos pasos en una placa, y esta página no muestra ninguna im
 tomar.
 :::
 
-## 4. Despliegue y ejecute (lo hace una persona)
+## 4. Cargue y ejecute (lo hace una persona)
 
 1. Pulse **Cargar**. ZPLC muestra el SHA-256 del programa, su tamaño, la
-   cantidad de tareas y la placa del dispositivo, y le pide confirmar. Un despliegue
+   cantidad de tareas y la placa del dispositivo, y le pide confirmar. Una carga
    detiene el programa actual y deja el runtime **detenido**: no lo ejecuta.
 2. Compruebe que la máquina está en un estado en el que una salida puede cambiar.
 3. Pulse **Ejecutar** (F5) usted mismo. El LED debería conmutar cada medio segundo si
@@ -146,7 +146,7 @@ su estado seguro, apagado
 | 1. Obtenga el firmware  | La integración continua ejecuta `west build` y la misma comprobación del presupuesto de flash y RAM que el script de compilación | Compila en integración continua: `cross-build` |
 | 2. Grábelo              | Ninguna                                                                                                                          | Aún no verificado en hardware                  |
 | 3. Conecte ZPLC         | El diálogo se muestra arriba sin ninguna placa; el tutorial Blink ejercita la conexión en el simulador                           | Aún no verificado en hardware                  |
-| 4. Despliegue y ejecute | El tutorial Blink ejercita la ejecución en el simulador; ninguna placa ha recibido un programa                                   | Aún no verificado en hardware                  |
+| 4. Cargue y ejecute | El tutorial Blink ejercita la ejecución en el simulador; ninguna placa ha recibido un programa                                   | Aún no verificado en hardware                  |
 | 5. Observe              | La tabla de observación se ejercita en el simulador; nadie ha visto cambiar una salida física                                    | Aún no verificado en hardware                  |
 
 ## Qué informar
@@ -160,5 +160,5 @@ imagen es lo que lleva a una placa de `cross-build` a `human-hil`.
 
 - [Compatibilidad de hardware](../reference/capabilities-evidence.md): los niveles y el nivel de cada placa hoy.
 - [Placas](../reference/boards.md): los canales, pines y valores seguros.
-- [Despliegue y sesiones de runtime](../ide/deployment.md): las cuatro operaciones separadas.
+- [Carga y sesiones de runtime](../ide/deployment.md): las cuatro operaciones separadas.
 - [Seguridad y limitaciones](../safety-and-limitations.md).

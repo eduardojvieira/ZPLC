@@ -12,7 +12,7 @@ tags: [tutorial, simulation, structured-text]
 En unos diez minutos copiará un programa pequeño en texto estructurado, lo compilará, lo ejecutará en el simulador y
 observará una salida que se enciende y se apaga cada medio segundo. Después ejecutará la prueba de escenario que lo
 acompaña, romperá el programa a propósito y verá fallar la prueba. No necesita un PLC ni una placa: todo ocurre en su
-equipo.
+computadora.
 
 :::note Antes de empezar
 Necesita ZPLC instalado. Si todavía no lo hizo, siga primero [Instalar ZPLC](../getting-started/install.md).
@@ -99,7 +99,7 @@ Si la compilación falla, **Problemas** enumera cada error con su línea y su co
 2. Pulse **Ejecutar** (F5).
 
 La línea de estado muestra **En marcha** y el contador de ciclos sube. El simulador es el runtime de ZPLC construido para su
-equipo. Ejecuta su programa con un temporizador, y no modela el lado eléctrico de una placa ni sus tiempos reales.
+computadora. Ejecuta su programa con un temporizador, y no modela el lado eléctrico de una placa ni sus tiempos reales.
 
 ![La barra de herramientas y la línea de estado con el simulador conectado y el programa en marcha](/img/tutorials/blink-running-es.png)
 
@@ -125,10 +125,10 @@ enumera cada campo.
 1. Abra la pestaña **Pruebas**. ZPLC vincula por sí mismo el `zplc.json` del proyecto abierto.
 2. Pulse **Ejecutar escenarios en el host**.
 
-La pestaña dice **Los escenarios POSIX del equipo pasaron.** y `1 escenario superado.` La prueba ejecutó su programa guardado
+La pestaña dice **Los escenarios POSIX de la computadora pasaron.** y `1 escenario superado.` La prueba ejecutó su programa guardado
 en el simulador, sin interfaz y con un reloj virtual, así que tarda un momento y no espera 2,1 segundos.
 
-![La pestaña Pruebas informando que los escenarios POSIX del equipo pasaron](/img/tutorials/blink-6-scenario-es.png)
+![La pestaña Pruebas informando que los escenarios POSIX de la computadora pasaron](/img/tutorials/blink-6-scenario-es.png)
 
 Puede ejecutar la misma prueba sin la aplicación, desde una terminal en la raíz de una copia del repositorio, una vez que
 `bun run setup` haya construido el runtime:
@@ -184,6 +184,6 @@ Un resultado aprobado aquí es un resultado de host con el reloj virtual del sim
 
 - [Su primera placa](./first-board.md): el mismo programa en una Raspberry Pi Pico o una ESP32-S3.
 - [Escribir y ejecutar pruebas de escenario](../guides/scenario-tests.md): escriba un escenario propio.
-- [La aplicación ZPLC](../ide/index.md): los editores, la tabla Observación, los forzados y los puntos de interrupción.
+- [La aplicación ZPLC](../ide/index.md): los editores, la tabla Observación, los forzados y los puntos de parada.
 - [Aprender](../learn/index.md): lecciones que califican su programa contra un escenario.
 - [Seguridad y limitaciones](../safety-and-limitations.md): antes de confiar en ZPLC para algo real.

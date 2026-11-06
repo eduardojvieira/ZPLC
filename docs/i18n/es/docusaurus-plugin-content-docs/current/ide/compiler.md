@@ -7,7 +7,7 @@ Esta página explica qué ocurre cuando usted compila un proyecto de ZPLC: la ca
 1. Compile el proyecto (`Ctrl+B`, o `zplc-cli compile <workspace> --output <file>` desde una terminal).
 2. Lea los diagnósticos y la identidad del artefacto que produjo.
 3. Ejecute las pruebas de escenario y la simulación nativa con ese artefacto.
-4. Solo después considere el flujo de hardware, que inicia una persona por separado ([Desplegar un programa](./deployment.md)).
+4. Solo después considere el flujo de hardware, que inicia una persona por separado ([Cargar un programa](./deployment.md)).
 
 ## Canalización
 
@@ -56,7 +56,7 @@ Una compilación que termina bien aún puede señalar algo que merece una revisi
 | `WRITE_ONLY_VARIABLE` | una variable `VAR` o `VAR_TEMP` se escribe y no se lee nunca | `all` |
 | `OPTION_IGNORED` | una opción de `zplc.json` tiene un valor que no cambia nada | `default` |
 | `SOURCE_NOT_COMPILED` | un archivo de texto estructurado de la carpeta del proyecto no está en `src` ni en una biblioteca listada | `default` |
-| `WATCHDOG_RESET_NO_EFFECT` | se llama a `WATCHDOG_RESET()`: no hace nada, porque el entorno de ejecución alimenta por sí mismo el watchdog de hardware después de cada ciclo completado | `default` |
+| `WATCHDOG_RESET_NO_EFFECT` | se llama a `WATCHDOG_RESET()`: no hace nada, porque el runtime alimenta por sí mismo el watchdog de hardware después de cada ciclo completado | `default` |
 
 Una rama que una condición constante deshabilita (`IF FALSE THEN`) no es código inalcanzable: IEC 61131-3 no define ninguna regla para ella y el compilador no evalúa ninguna condición. Las variables que no se comprueban son las entradas, salidas y variables de entrada/salida de una unidad, las globales, las variables con dirección directa (`AT %Q0.0`) y las que tienen una etiqueta de comunicación; un miembro de bloque de función que otra unidad lee como `instance.member` cuenta como usado.
 
@@ -126,4 +126,4 @@ El generador de código escribe solo instrucciones de la tabla de códigos de op
 
 ## Lo que demuestra el artefacto
 
-El artefacto se verifica antes de que el entorno de ejecución lo cargue. Una compilación correcta en el host no demuestra que una placa pueda recibir el firmware, que se restaure el estado, que se cumpla el tiempo ni que se maneje una salida. Eso necesita una ejecución en esa placa; vea [Desplegar un programa](./deployment.md).
+El artefacto se verifica antes de que el runtime lo cargue. Una compilación correcta en el host no demuestra que una placa pueda recibir el firmware, que se restaure el estado, que se cumpla el tiempo ni que se maneje una salida. Eso necesita una ejecución en esa placa; vea [Cargar un programa](./deployment.md).

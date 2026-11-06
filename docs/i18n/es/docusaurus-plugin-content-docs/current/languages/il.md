@@ -61,7 +61,7 @@ El mapa de depuración de un archivo IL indica líneas IL, así que usted pone u
 
 ## Límites
 
-IL comparte el destino del compilador con todos los lenguajes, pero el costo de ejecución, la disponibilidad de los bloques de la biblioteca, y el avance paso a paso, las observaciones, los puntos de parada y el comportamiento en una placa dependen del entorno de ejecución y de su perfil de capacidades. La simulación nativa es solo evidencia de host; una afirmación sobre un dispositivo físico necesita una ejecución en el destino o con hardware en el lazo.
+IL comparte el destino del compilador con todos los lenguajes, pero el costo de ejecución, la disponibilidad de los bloques de la biblioteca, y el avance paso a paso, las observaciones, los puntos de parada y el comportamiento en una placa dependen del runtime y de su perfil de capacidades. La simulación nativa es solo evidencia de host; una afirmación sobre un dispositivo físico necesita una ejecución en el destino o con hardware en el lazo.
 
 ## Páginas relacionadas
 

@@ -9,7 +9,7 @@ tags: [learn, hardware, boards]
 
 Esta página indica qué placa y qué piezas necesita el curso, qué debe declarar una lección de hardware y qué límites de seguridad repite cada página de cableado. Léala antes de comprar piezas o de escribir una lección de hardware.
 
-Todas las lecciones de simulación se califican en su equipo. Las 34 lecciones de la ruta **Hardware** tienen además un archivo de cableado para las placas del estudiante, la Raspberry Pi Pico (RP2040) y la ESP32-S3-DevKitC-1, que comparten las mismas piezas de protoboard. Nivel de evidencia: host. Las verificaciones de cableado de abajo se ejecutan en CI, pero todavía no se ha registrado en una placa ninguna ejecución en hardware de una lección, así que la ruta de hardware es un plan respaldado por esas verificaciones, no por una placa.
+Todas las lecciones de simulación se califican en su computadora. Las 34 lecciones de la ruta **Hardware** tienen además un archivo de cableado para las placas del estudiante, la Raspberry Pi Pico (RP2040) y la ESP32-S3-DevKitC-1, que comparten las mismas piezas de protoboard. Nivel de evidencia: host. Las verificaciones de cableado de abajo se ejecutan en CI, pero todavía no se ha registrado en una placa ninguna ejecución en hardware de una lección, así que la ruta de hardware es un plan respaldado por esas verificaciones, no por una placa.
 
 ## Los dos kits
 

@@ -21,7 +21,7 @@ Esta página es para quienes modifican ZPLC. Indica qué verificación ejecutar 
 
 ## Verificaciones por capa
 
-Ejecute cada comando desde la raíz del repositorio. Los tiempos se midieron el 2026-10-10 en un equipo de escritorio Linux x86-64 con cachés calientes y otros trabajos en marcha, así que tómelos como un orden de magnitud.
+Ejecute cada comando desde la raíz del repositorio. Los tiempos se midieron el 2026-10-10 en una computadora de escritorio Linux x86-64 con cachés calientes y otros trabajos en marcha, así que tómelos como un orden de magnitud.
 
 | Capa                                    | Comando                                                                                     | Tiempo típico                                 | Qué demuestra un resultado correcto                                                                                                                                                                                                                                                                                                                                                          |
 | --------------------------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -56,7 +56,7 @@ Que pase un nivel nunca demuestra uno superior: una prueba en el host no dice na
 | Operaciones físicas    | Separe compilar, grabar, cargar y ejecutar o depurar; no automatice el control físico mediante IA o MCP.                                                                                    |
 | Pruebas de hardware    | Una persona inicia todo comando que maneje una placa, en una terminal interactiva, y un registro dice qué imagen probó. Vea [Hardware en el lazo](../development/hardware-in-the-loop.md). |
 
-Nunca publique, grabe hardware, despliegue un programa de PLC ni accione equipos sin autorización explícita.
+Nunca publique, grabe hardware, cargue un programa de PLC ni accione equipos sin autorización explícita.
 
 ## Agregar una lección
 

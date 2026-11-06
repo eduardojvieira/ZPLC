@@ -197,11 +197,11 @@ El compilador mide lo que el cargador va a verificar y lo registra en el artefac
 
 ## Valores seguros declarados
 
-Mientras el programa no controla una salida (STOP, una pausa, una falla enclavada, el arranque, un despliegue en curso), la salida está apagada, salvo que el proyecto declare otro valor para ella. La declaración viaja dentro del artefacto, en el segmento `ZPLC_SEG_SAFE`, de modo que un programa y su estado seguro forman una unidad: un dispositivo que restaura el programa restaura su declaración, y un despliegue interrumpido no puede dejar el programa de una compilación con los valores seguros de otra.
+Mientras el programa no controla una salida (STOP, una pausa, una falla enclavada, el arranque, una carga en curso), la salida está apagada, salvo que el proyecto declare otro valor para ella. La declaración viaja dentro del artefacto, en el segmento `ZPLC_SEG_SAFE`, de modo que un programa y su estado seguro forman una unidad: un dispositivo que restaura el programa restaura su declaración, y una carga interrumpida no puede dejar el programa de una compilación con los valores seguros de otra.
 
 - Cada entrada es un `zplc_safe_entry_t` de `ZPLC_SAFE_ENTRY_SIZE` (4) bytes: el `offset` en bytes de la salida dentro de la imagen de salida, el `bit` (0 a 7) y el `value` (0 o 1).
 - El cargador rechaza el artefacto con `ZPLC_LOADER_ERR_SAFE` cuando el segmento no es un número entero de entradas, una entrada nombra un bit fuera de la imagen de salida o un valor distinto de 0 y 1, una salida se declara dos veces, o hay más de `ZPLC_LOADER_MAX_SAFE` (64) entradas. Un segundo segmento `ZPLC_SEG_SAFE` se rechaza como error de segmento. Un artefacto sin el segmento no declara nada.
-- Al desplegar y al restaurar en el arranque, el runtime rechaza una declaración para una salida que la placa no tiene: cada entrada debe nombrar un canal de salida digital de la descripción de la placa por su desplazamiento de imagen y su bit. Un programa de otra placa nunca se ejecuta con un estado seguro que no existe.
+- Al cargar y al restaurar en el arranque, el runtime rechaza una declaración para una salida que la placa no tiene: cada entrada debe nombrar un canal de salida digital de la descripción de la placa por su desplazamiento de imagen y su bit. Un programa de otra placa nunca se ejecuta con un estado seguro que no existe.
 - Un valor declarado reemplaza el nivel que la descripción de la placa da a esa salida en el estado seguro, en ambos sentidos. Rige desde la carga que confirmó el programa, antes del primer ciclo.
 
 ## Páginas relacionadas

@@ -32,7 +32,7 @@
     "description": "The label for category 'Work with projects' in sidebar 'docsSidebar'"
   },
   "sidebar.docsSidebar.category.Connect and deploy": {
-    "message": "Conectar y desplegar",
+    "message": "Conectar y cargar",
     "description": "The label for category 'Connect and deploy' in sidebar 'docsSidebar'"
   },
   "sidebar.docsSidebar.category.Boards and firmware": {
@@ -40,7 +40,7 @@
     "description": "The label for category 'Boards and firmware' in sidebar 'docsSidebar'"
   },
   "sidebar.docsSidebar.category.Deploy and operate": {
-    "message": "Desplegar y operar",
+    "message": "Cargar y operar",
     "description": "The label for category 'Deploy and operate' in sidebar 'docsSidebar'"
   },
   "sidebar.docsSidebar.category.Communications": {

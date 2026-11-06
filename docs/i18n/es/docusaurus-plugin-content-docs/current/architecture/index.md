@@ -24,7 +24,7 @@ flowchart LR
     ARTIFACT[Artefacto .zplc]
     CORE[Núcleo: VM, cargador, planificador]
     HAL[HAL]
-    TARGET[Equipo anfitrión nativo, WebAssembly, placa Zephyr]
+    TARGET[Computadora anfitriona nativa, WebAssembly, placa Zephyr]
   end
 
   APP --> COMPILER
@@ -43,7 +43,7 @@ flowchart LR
 
 ## Quién posee qué
 
-**La aplicación ZPLC** es donde trabaja una persona: edita los cinco lenguajes, compila, simula, observa, fuerza, despliega y ejecuta lecciones. Los pasos de compilación y de prueba también están en la línea de comandos, de modo que un proyecto se puede compilar y comprobar sin ventana. Véanse [las guías de lenguaje](../languages/index.md).
+**La aplicación ZPLC** es donde trabaja una persona: edita los cinco lenguajes, compila, simula, observa, fuerza, carga y ejecuta lecciones. Los pasos de compilación y de prueba también están en la línea de comandos, de modo que un proyecto se puede compilar y comprobar sin ventana. Véanse [las guías de lenguaje](../languages/index.md).
 
 **El compilador** convierte cada lenguaje en un único artefacto. La lista de instrucciones, el diagrama de escalera, el diagrama de bloques de función y el diagrama funcional secuencial se transpilan a texto estructurado con los transpiladores de `packages/zplc-ide/src/compiler/transpilers`, y el compilador lo convierte en bytecode. Como el formato del artefacto es uno solo, un programa se comporta igual sin importar el lenguaje en que se escribió. El artefacto se vuelve a comprobar al cargarlo; no se confía en él por haberlo generado el compilador.
 
@@ -55,11 +55,11 @@ flowchart LR
 
 | Runtime | Se compila a partir de | Evidencia que aporta |
 | --- | --- | --- |
-| Simulación nativa (`zplc_runtime`) | El núcleo y el puerto POSIX | Host: el resultado de cada ciclo, en un procesador y un reloj de equipo anfitrión |
+| Simulación nativa (`zplc_runtime`) | El núcleo y el puerto POSIX | Host: el resultado de cada ciclo, en un procesador y un reloj de la computadora anfitriona |
 | Runtime de software (WebAssembly) | El mismo código de sesión y el mismo núcleo del planificador, compilados con el puerto WebAssembly | Host, degradada: sin bloques de red, sin puerto serie, sin pines. Véase [el runtime de software](../runtime/browser-runtime.md) |
 | Firmware Zephyr | El núcleo y el puerto Zephyr, una imagen por placa | Destino emulado o `cross-build` por ahora; véase [compatibilidad de hardware](../reference/capabilities-evidence.md) |
 
-Los tres cargan los mismos artefactos `.zplc` y responden las mismas solicitudes de sesión, de modo que un escenario que pasa en simulación ejercita la lógica que usted desplegará. No ejercita los tiempos ni el comportamiento eléctrico de una placa.
+Los tres cargan los mismos artefactos `.zplc` y responden las mismas solicitudes de sesión, de modo que un escenario que pasa en simulación ejercita la lógica que usted cargará. No ejercita los tiempos ni el comportamiento eléctrico de una placa.
 
 ## Reglas que respeta el diseño
 
@@ -73,4 +73,4 @@ Los tres cargan los mismos artefactos `.zplc` y responden las mismas solicitudes
 
 - [Descripción de la plataforma](../platform-overview/index.md) explica qué es ZPLC y qué no es.
 - [Descripción del runtime](../runtime/index.md) entra en el núcleo.
-- [Integración y despliegue](../integration/index.md) conecta un dispositivo con otros sistemas.
+- [Integración y carga](../integration/index.md) conecta un dispositivo con otros sistemas.

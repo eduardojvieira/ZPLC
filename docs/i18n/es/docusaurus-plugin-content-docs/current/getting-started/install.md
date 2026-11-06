@@ -9,7 +9,7 @@ tags: [install, download, verify]
 
 # Instalar ZPLC
 
-Esta página deja ZPLC en su equipo: qué archivo descargar, cómo comprobarlo, qué le pide su sistema la primera vez que lo
+Esta página deja ZPLC en su computadora: qué archivo descargar, cómo comprobarlo, qué le pide su sistema la primera vez que lo
 abre y cómo actualizarlo y quitarlo. ZPLC es una aplicación de escritorio para Windows, macOS y Linux. No hay una versión
 alojada ni para navegador.
 
@@ -178,7 +178,7 @@ ZPLC abre un puerto serie solo cuando usted conecta una placa. En Linux, una pla
 
 **El `.deb` y el `.rpm` lo hacen por usted** para las placas cuyo identificador USB el proyecto ha registrado. Instalan
 `/usr/lib/udev/rules.d/70-zplc-boards.rules`, que indica a `systemd-logind` que dé al usuario que tiene la sesión iniciada
-en el equipo acceso a esos dispositivos serie mientras dure la sesión, sin grupo y sin reinicio. La regla se genera a partir
+en la computadora acceso a esos dispositivos serie mientras dure la sesión, sin grupo y sin reinicio. La regla se genera a partir
 de la lista de identificadores USB de placas del proyecto (`tools/hil/usb-ids.json`), de modo que cubre exactamente las
 placas que esa lista nombra. Hoy son las dos placas RP2040, Raspberry Pi Pico y Waveshare RP2040-Zero (`2e8a:000a`), y la
 ESP32-S3-DevKitC-1 en su puerto nativo marcado USB (`303a:1001`). Las demás placas aún no tienen un identificador registrado

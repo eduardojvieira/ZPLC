@@ -2,13 +2,13 @@
 id: publishing
 title: Publicación de la documentación
 sidebar_label: Publicación
-description: Cómo se comprueba, se construye y se despliega la documentación de ZPLC en GitHub Pages, y cómo guardar una instantánea de una versión.
+description: Cómo se comprueba, se construye y se publica la documentación de ZPLC en GitHub Pages, y cómo guardar una instantánea de una versión.
 tags: [operations, docs, github-pages]
 ---
 
 # Publicación de la documentación
 
-La documentación se construye con Docusaurus y GitHub Actions la despliega en GitHub Pages. Esta página indica qué verificaciones debe pasar el cambio de una página, cómo llega al sitio, cómo guardar una instantánea de una versión y cómo deshacer un despliegue defectuoso.
+La documentación se construye con Docusaurus y GitHub Actions la publica en GitHub Pages. Esta página indica qué verificaciones debe pasar el cambio de una página, cómo llega al sitio, cómo guardar una instantánea de una versión y cómo deshacer una publicación defectuosa.
 
 ## Verifique un cambio antes de abrir el pull request
 
@@ -37,16 +37,16 @@ Es la cadena completa que CI reparte en dos flujos de trabajo: los generadores e
 
 `.github/workflows/deploy-docs.yml` se ejecuta en un pull request, un push o un inicio manual cuando el cambio toca `docs/`, `tools/docs/`, `tools/hil/validate_docs_parity.py`, los encabezados del núcleo o `firmware/app/boards/boards.json`. Regenera y valida las referencias, construye el sitio y sube `docs/build` como artefacto.
 
-### Pushes a las ramas principales: despliegue
+### Pushes a las ramas principales: publicación
 
-En un push a `master`, `main` o `zplc-2.0-candidate`, o al iniciarlo a mano, un segundo trabajo despliega ese artefacto en el entorno `github-pages`, en `https://eduardojvieira.github.io/ZPLC/`. Un pull request nunca despliega.
+En un push a `master`, `main` o `zplc-2.0-candidate`, o al iniciarlo a mano, un segundo trabajo publica ese artefacto en el entorno `github-pages`, en `https://eduardojvieira.github.io/ZPLC/`. Un pull request nunca publica.
 
 ## Publicar documentación nueva
 
 1. Haga su cambio en una rama de funcionalidad, en inglés y en español a la vez.
 2. Ejecute `bun run check:docs`.
 3. Abra un pull request y espere a que pasen el trabajo `docs-and-truth` de CI y el trabajo de compilación de Deploy Documentation.
-4. Fusiónelo. El trabajo de despliegue publica el sitio.
+4. Fusiónelo. El trabajo de publicación sube el sitio.
 
 ## Retirar o renombrar una página
 
@@ -61,8 +61,8 @@ El sitio publica una sola versión, sin selector de versión, hasta que exista l
 3. Confirme lo que escribió el comando: `docs/versions.json`, las carpetas `versioned_docs` y `versioned_sidebars` de `docs/`, y la carpeta `version-2.0.0` de `docs/i18n/es/docusaurus-plugin-content-docs/`.
 4. Agregue el selector de versión (`type: 'docsVersionDropdown'`) a los elementos de la barra de navegación de `docs/docusaurus.config.js`, ejecute `bun run check:docs` y abra el pull request.
 
-## Deshacer un despliegue defectuoso
+## Deshacer una publicación defectuosa
 
-1. Busque el commit de la última documentación correcta en la rama desplegada.
+1. Busque el commit de la última documentación correcta en la rama publicada.
 2. Ejecute `git revert <hash-del-commit-defectuoso>`.
-3. Suba la reversión o abra un pull request rápido. La canalización reconstruye y despliega el estado anterior.
+3. Suba la reversión o abra un pull request rápido. La canalización reconstruye y publica el estado anterior.

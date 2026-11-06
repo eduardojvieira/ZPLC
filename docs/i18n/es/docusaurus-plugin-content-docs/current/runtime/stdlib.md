@@ -156,4 +156,4 @@ La tabla se genera a partir de los casos de conformidad que esperan el comportam
 Ningún caso de conformidad de esta área figura en la lista de fallas esperadas: no hay un límite registrado.
 {/* <<< END GENERATED: known-limits-library <<< */}
 
-Un bloque o una función que no está en la tabla no se sabe que difiera. Cada función estándar y cada bloque de biblioteca fuera de los de comunicación tiene un caso ejecutado en `conformance/cmp/` (requisito CMP-058).
+Un bloque o una función que no está en la tabla no se sabe que difiera. Cada función estándar y cada bloque de biblioteca fuera de los de comunicación tiene un caso ejecutado en `conformance/cmp/`.

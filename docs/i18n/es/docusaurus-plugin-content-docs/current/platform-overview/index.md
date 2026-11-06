@@ -20,7 +20,7 @@ flowchart LR
   Compiler[Compilador]
   Bytecode[Bytecode .zplc]
   Core[Núcleo del runtime]
-  Sim[Simulador en su equipo]
+  Sim[Simulador en su computadora]
   Board[Firmware de la placa sobre Zephyr]
 
   App --> Compiler
@@ -42,7 +42,7 @@ flowchart LR
 1. Usted escribe el programa en la aplicación, en cualquiera de los cinco lenguajes.
 2. El compilador lo comprueba y escribe un único archivo `.zplc`, con las tareas y los valores seguros declarados de las
    salidas.
-3. El **simulador** carga ese archivo en su equipo. Es el mismo núcleo del runtime, construido para el host.
+3. El **simulador** carga ese archivo en su computadora. Es el mismo núcleo del runtime, construido para el host.
 4. Para una placa, usted compila el firmware, lo graba, se conecta, carga el archivo `.zplc` y lo ejecuta. Una persona
    inicia cada uno de estos pasos, y las herramientas de IA y MCP no pueden iniciar ninguno.
 
@@ -55,7 +55,7 @@ ZPLC indica el nivel de evidencia de cada afirmación. Un resultado en un nivel 
 
 | Nivel                  | Qué demuestra                                                                                  |
 | ---------------------- | ---------------------------------------------------------------------------------------------- |
-| Host                   | La lógica es correcta en su equipo, con el reloj virtual del simulador.                        |
+| Host                   | La lógica es correcta en su computadora, con el reloj virtual del simulador.                        |
 | QEMU y `native_sim`    | El runtime y el planificador corren en un procesador emulado. Sin placa.                       |
 | Compilación de destino | El firmware de una placa compila y cabe en su presupuesto de flash y RAM (`cross-build`).      |
 | Banco y manual         | Una persona lo ejecutó en una placa física y lo registró. Hoy ninguna placa tiene un registro. |
@@ -67,7 +67,7 @@ tiempos y no debe controlar maquinaria.
 ## Reglas de diseño
 
 - **Memoria acotada.** El núcleo usa regiones de memoria fijas y declaradas, y cada perfil de placa fija sus propios tamaños.
-- **La HAL es la única puerta al hardware.** El núcleo nunca toca un dispositivo, así que una plataforma puede probarse aparte de la lógica.
+- **El HAL es la única puerta al hardware.** El núcleo nunca toca un dispositivo, así que una plataforma puede probarse aparte de la lógica.
 - **Las salidas fallan en modo seguro.** Cada salida tiene un valor seguro, normalmente apagado. Una parada, una falla o un programa inválido nunca se reanudan solos.
 - **Un único núcleo de planificación.** El simulador y el firmware toman las mismas decisiones de planificación con el mismo código.
 

@@ -13,9 +13,9 @@ ZPLC controla máquinas, de modo que un cambio se juzga por algo más que por si
 
 ## Las reglas
 
-### 1. El núcleo es C99 portable y pasa por la HAL
+### 1. El núcleo es C99 portable y pasa por el HAL
 
-El núcleo del runtime, `firmware/lib/zplc_core/src/core/`, es ANSI C99 estricto. Nunca llama a un controlador, a un registro ni a una función del sistema operativo; solo llega al exterior mediante las funciones `zplc_hal_*`. Las herramientas de escritorio y el front end del lenguaje obedecen la misma regla: ninguna alcanza el hardware sin pasar por la HAL. CMake compila el núcleo como C99 con `-pedantic` y `-Werror`, y el código de cada plataforma vive en `firmware/lib/zplc_core/src/hal/`.
+El núcleo del runtime, `firmware/lib/zplc_core/src/core/`, es ANSI C99 estricto. Nunca llama a un controlador, a un registro ni a una función del sistema operativo; solo llega al exterior mediante las funciones `zplc_hal_*`. Las herramientas de escritorio y el front end del lenguaje obedecen la misma regla: ninguna alcanza el hardware sin pasar por el HAL. CMake compila el núcleo como C99 con `-pedantic` y `-Werror`, y el código de cada plataforma vive en `firmware/lib/zplc_core/src/hal/`.
 
 ### 2. Un cambio de comportamiento trae una prueba que puede fallar
 
@@ -31,7 +31,7 @@ Cada salida tiene un estado seguro documentado, normalmente apagado, y ese estad
 
 ### 5. Compilar, grabar, cargar y ejecutar son pasos separados, y una persona inicia cada uno
 
-Compilar el firmware, grabarlo, desplegar un programa de PLC y ejecutarlo o depurarlo son cuatro operaciones con cuatro piezas de evidencia. Cada operación física requiere autorización humana explícita.
+Compilar el firmware, grabarlo, cargar un programa de PLC y ejecutarlo o depurarlo son cuatro operaciones con cuatro piezas de evidencia. Cada operación física requiere autorización humana explícita.
 
 ### 6. Electron niega por defecto
 
@@ -47,7 +47,7 @@ La documentación pública existe en ambos idiomas y cambia en ambos a la vez. U
 
 ### 9. La IA y MCP ayudan dentro del espacio de trabajo y nunca actúan sobre el hardware
 
-Un asistente de IA o un cliente MCP puede inspeccionar, planificar, compilar, probar y simular dentro del espacio de trabajo aprobado. No debe grabar, desplegar en hardware, forzar E/S, cambiar RUN o STOP, abrir un puerto serie directo ni ejecutar una shell. ZPLC funciona por completo sin IA.
+Un asistente de IA o un cliente MCP puede inspeccionar, planificar, compilar, probar y simular dentro del espacio de trabajo aprobado. No debe grabar, cargar en hardware, forzar E/S, cambiar RUN o STOP, abrir un puerto serie directo ni ejecutar una shell. ZPLC funciona por completo sin IA.
 
 ## Páginas en español
 

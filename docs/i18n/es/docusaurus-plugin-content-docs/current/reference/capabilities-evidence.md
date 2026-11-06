@@ -19,11 +19,11 @@ Se usa un solo vocabulario en todas partes: en la documentación, en la aplicaci
 
 | Nivel | Qué establece | Qué no establece | Dónde se ve |
 | --- | --- | --- | --- |
-| Host | Pasó una prueba unitaria, de conformidad o en C en el equipo de desarrollo. | Tiempos, E/S ni alimentación de un dispositivo. | Las líneas de evidencia de la documentación |
+| Host | Pasó una prueba unitaria, de conformidad o en C en la computadora de desarrollo. | Tiempos, E/S ni alimentación de un dispositivo. | Las líneas de evidencia de la documentación |
 | Simulación nativa | El runtime nativo del host ejecutó el escenario con un reloj virtual. | Equivalencia con el destino Zephyr ni con una placa. | El modo **Simulate** de ZPLC |
 | Host empaquetado | Un instalador de escritorio empaquetado se inició en su propio sistema en la ejecución de la versión. | Firma del instalador, notarización ni comportamiento del hardware. | Las notas de cada versión |
 | Destino emulado | Una suite de Zephyr pasó en `native_sim` o en un destino QEMU Cortex-M. | La placa exacta, su sonda, el cableado ni la salida eléctrica. | La página de pruebas de firmware |
-| `cross-build` | El firmware compila para la placa y cabe en su presupuesto de flash y RAM. | Grabar, arrancar, desplegar, persistencia ni ninguna salida. | **Nivel de compatibilidad** de una placa, más abajo |
+| `cross-build` | El firmware compila para la placa y cabe en su presupuesto de flash y RAM. | Grabar, arrancar, cargar, persistencia ni ninguna salida. | **Nivel de compatibilidad** de una placa, más abajo |
 | `community-reported` | Un usuario informó qué ocurrió en su propia placa, con la imagen exacta que ejecutó, mediante la plantilla de informe de placa. | Que el proyecto lo reprodujo, que se siguió un procedimiento ni ningún nivel de compatibilidad: un informe nunca cambia el nivel de una placa. | La columna de evidencia de una placa, más abajo |
 | `human-hil` | Una persona ejecutó un procedimiento registrado en la placa exacta, con la imagen de firmware identificada por su commit y su hash, y pasó. | Calificación de producción fuera del procedimiento registrado. | **Nivel de compatibilidad** de una placa, más abajo |
 | Calificado para producción | Existe un paquete de evidencia de producción gobernado aparte. | Certificación de seguridad, salvo que lo diga. | Ninguna placa lo tiene |
@@ -32,7 +32,7 @@ Un resultado que una persona observó en un banco es una pista, no una calificac
 
 ## Cómo declara una página su evidencia
 
-Cada página que dice que algo funciona nombra el nivel junto a la afirmación, con las palabras "Nivel de evidencia" seguidas del nombre de la primera columna de arriba, y nombra la prueba o el registro que lo demuestra. Cuando lea "Nivel de evidencia: host", la afirmación vale en el equipo de desarrollo y no dice nada de una placa. Una afirmación sin nivel es una afirmación sobre el diseño, no sobre un resultado.
+Cada página que dice que algo funciona nombra el nivel junto a la afirmación, con las palabras "Nivel de evidencia" seguidas del nombre de la primera columna de arriba, y nombra la prueba o el registro que lo demuestra. Cuando lea "Nivel de evidencia: host", la afirmación vale en la computadora de desarrollo y no dice nada de una placa. Una afirmación sin nivel es una afirmación sobre el diseño, no sobre un resultado.
 
 ## Placas
 
@@ -71,4 +71,4 @@ Una placa sube de nivel solo cuando existe un registro, y un registro lo hace un
 2. Un mantenedor agrega el registro a las referencias de evidencia de la placa en el manifiesto.
 3. La siguiente generación de esta tabla deriva el nivel nuevo de los registros. Nadie edita el nivel.
 
-El resultado de otra persona entra en la misma lista en el nivel inferior `community-reported`, mediante la plantilla de informe de placa de las incidencias del repositorio. Los registros de hardware nunca los hace un asistente de IA ni el servidor MCP. Compilar el firmware, grabarlo, desplegar un programa y ejecutarlo siguen siendo operaciones distintas: [Pruebas de firmware](../development/firmware-testing.md) explica qué muestran las suites automáticas y qué no.
+El resultado de otra persona entra en la misma lista en el nivel inferior `community-reported`, mediante la plantilla de informe de placa de las incidencias del repositorio. Los registros de hardware nunca los hace un asistente de IA ni el servidor MCP. Compilar el firmware, grabarlo, cargar un programa y ejecutarlo siguen siendo operaciones distintas: [Pruebas de firmware](../development/firmware-testing.md) explica qué muestran las suites automáticas y qué no.

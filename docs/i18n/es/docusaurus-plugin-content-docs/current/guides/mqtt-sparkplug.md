@@ -12,7 +12,7 @@ tags: [how-to, mqtt, sparkplug, communication]
 Siga esta página para hacer que un controlador publique variables de su programa en un broker MQTT y reciba valores de él. Muestra cómo marcar las variables, configurar la sesión y leer lo que envía el controlador, para un perfil de broker genérico y para Sparkplug B.
 
 :::warning Nivel de evidencia: host y `native_sim`
-Se ejercitó en el host y en `native_sim`: el cliente frente a temas y contenidos hostiles bajo cada uno de sus cinco perfiles, la decodificación de los contenidos de comandos, los manejadores de los bloques de función contra sustitutos y los clientes MQTT del entorno de ejecución de simulación y del controlador contra brokers escritos para las pruebas en un socket de loopback. No hay registro de una sesión con un broker real, de un handshake TLS en una placa ni de una aplicación anfitriona de Sparkplug B. La evidencia de banco y la manual siguen abiertas.
+Se ejercitó en el host y en `native_sim`: el cliente frente a temas y contenidos hostiles bajo cada uno de sus cinco perfiles, la decodificación de los contenidos de comandos, los manejadores de los bloques de función contra sustitutos y los clientes MQTT del runtime de simulación y del controlador contra brokers escritos para las pruebas en un socket de loopback. No hay registro de una sesión con un broker real, de un handshake TLS en una placa ni de una aplicación anfitriona de Sparkplug B. La evidencia de banco y la manual siguen abiertas.
 :::
 
 ## Qué necesita
@@ -128,7 +128,7 @@ Code := Send.STATUS;
 END_PROGRAM
 ```
 
-La comprobación de la documentación ejecuta este programa en el entorno de ejecución nativo sin configurar, que no tiene manejador para el bloque, así que termina con `ERROR` en TRUE y `STATUS` 3. Eso muestra que el bloque compila e informa un estado, no que un mensaje se haya entregado. En una sesión de ZPLC el bloque usa el broker de loopback. Con los bloques de comunicación encendidos y sin broker disponible, el bloque responde `STATUS` 10 (no disponible). `STATUS` 4 significa que la sesión no está conectada, y 5 que todas las ranuras de solicitud están en uso.
+La comprobación de la documentación ejecuta este programa en el runtime nativo sin configurar, que no tiene manejador para el bloque, así que termina con `ERROR` en TRUE y `STATUS` 3. Eso muestra que el bloque compila e informa un estado, no que un mensaje se haya entregado. En una sesión de ZPLC el bloque usa el broker de loopback. Con los bloques de comunicación encendidos y sin broker disponible, el bloque responde `STATUS` 10 (no disponible). `STATUS` 4 significa que la sesión no está conectada, y 5 que todas las ranuras de solicitud están en uso.
 
 Los bloques siguen el único handshake de los doce bloques de comunicación ([Bloques de función de comunicación](../runtime/communication-function-blocks.md#el-handshake)):
 
@@ -146,7 +146,7 @@ Los bloques siguen el único handshake de los doce bloques de comunicación ([Bl
 | Los contenidos de comandos de cada tipo admitido se decodifican, y uno malformado se rechaza | Prueba unitaria del decodificador | Host y `native_sim` |
 | Manejadores de bloques: pines, handshake, códigos de estado, límites, entrega al hilo del cliente | Prueba con un cliente sustituto | Host y `native_sim` |
 | El cliente MQTT del controlador: sesión, publicación una vez por solicitud, suscripción, conexión rechazada, sesión perdida, reinicio con el bloque ocupado | Ejecutado en `native_sim` contra un broker escrito para la prueba en loopback | `native_sim` |
-| El cliente MQTT del entorno de ejecución de simulación: sesión, publicación, suscripción, pérdida de la sesión, reconexión, pérdida silenciosa, un mensaje publicado con la sesión caída | Ejecutado contra un broker escrito para la prueba en loopback, en sockets reales, bajo los sanitizadores de direcciones, de comportamiento indefinido y de hilos | Host |
+| El cliente MQTT del runtime de simulación: sesión, publicación, suscripción, pérdida de la sesión, reconexión, pérdida silenciosa, un mensaje publicado con la sesión caída | Ejecutado contra un broker escrito para la prueba en loopback, en sockets reales, bajo los sanitizadores de direcciones, de comportamiento indefinido y de hilos | Host |
 | TLS rechaza un generador aleatorio no criptográfico al compilar | Regla de compilación | Compilación para el destino |
 | Una sesión con un broker real, un handshake TLS, una aplicación anfitriona Sparkplug B, entrega QoS 1 | No probado | Ninguno |
 

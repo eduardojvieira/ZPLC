@@ -76,7 +76,7 @@ El ajuste de seguridad solo tiene sentido en un transporte TLS. Con TCP simple o
 
 ### TLS y el generador de números aleatorios
 
-TLS necesita números aleatorios que nadie pueda predecir. Una compilación de firmware que habilita TLS junto con `CONFIG_TEST_RANDOM_GENERATOR`, o sin una fuente aleatoria criptográfica, se detiene al configurar (`zplc_rule_tls_with_test_random_generator`). Las imágenes de la Nucleo-H743ZI y de la Arduino Opta solían definir esa opción. Ahora usan el generador aleatorio de hardware del STM32 para la pila de red, y **TLS está apagado en ellas** hasta que el generador tenga un registro en la placa (HIL-011). MQTT en esas dos placas corre solo sobre TCP simple, y un transporte TLS se rechaza en lugar de degradarse. La imagen del ESP32-S3 mantiene TLS encendido, con su generador de hardware.
+TLS necesita números aleatorios que nadie pueda predecir. Una compilación de firmware que habilita TLS junto con `CONFIG_TEST_RANDOM_GENERATOR`, o sin una fuente aleatoria criptográfica, se detiene al configurar (`zplc_rule_tls_with_test_random_generator`). Las imágenes de la Nucleo-H743ZI y de la Arduino Opta solían definir esa opción. Ahora usan el generador aleatorio de hardware del STM32 para la pila de red, y **TLS está apagado en ellas** hasta que el generador tenga un registro en la placa. MQTT en esas dos placas corre solo sobre TCP simple, y un transporte TLS se rechaza en lugar de degradarse. La imagen del ESP32-S3 mantiene TLS encendido, con su generador de hardware.
 
 ## Credenciales
 
@@ -103,7 +103,7 @@ Dos comprobaciones sostienen esto. Los archivos objeto de los manejadores de cad
 
 `zplc config save` escribe cada ajuste que informa `zplc config get`, y las anulaciones del mapeo Modbus, en el mismo almacén no volátil que el programa, una entrada por ajuste. Informa un error cuando una entrada no se pudo escribir, y un reinicio las lee de vuelta sobre los valores por defecto. Una prueba del firmware define cada ajuste por la consola, guarda, reinicia la configuración como lo hace un reinicio y compara cada uno. Quedan dos límites:
 
-- Una placa cuyo almacén no se puede montar no puede guardar ajustes. La Nucleo-H743ZI guarda su almacenamiento en un solo sector de 128 KB que el almacén no puede usar (IO-008), así que ahí `config save` informa un error y ya no dice `OK`.
+- Una placa cuyo almacén no se puede montar no puede guardar ajustes. La Nucleo-H743ZI guarda su almacenamiento en un solo sector de 128 KB que el almacén no puede usar, así que ahí `config save` informa un error y ya no dice `OK`.
 - El guardado escribe las entradas una tras otra. Un corte de energía a la mitad deja algunos ajustes nuevos y otros antiguos, cada uno válido por sí solo.
 
 ## Qué se ha ejercitado

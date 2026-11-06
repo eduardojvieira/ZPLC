@@ -18,8 +18,8 @@ Los mismos escenarios están en `tools/hil/software-review/scenarios.json`. Ese 
 ## Cómo leer un escenario
 
 - **Placas** son las placas de aprendizaje `rpi_pico` y `esp32s3_devkitc`, u otras placas de `firmware/app/boards/boards.json` cuando el requisito las abarca.
-- **Código** lista los puntos de entrada como archivo y línea: la función del firmware, la HAL y el nodo del devicetree.
-- **Simulación** nombra la prueba existente, el paso del banco emulado, la ejecución en native_sim o QEMU, o la prueba en el equipo, con su comando. Los comandos que necesitan el espacio de trabajo de Zephyr usan una vista privada de él, como indica [Pruebas del firmware](./firmware-testing.md). "ninguna todavía" significa que hoy ninguna simulación cubre el escenario.
+- **Código** lista los puntos de entrada como archivo y línea: la función del firmware, el HAL y el nodo del devicetree.
+- **Simulación** nombra la prueba existente, el paso del banco emulado, la ejecución en native_sim o QEMU, o la prueba en la computadora, con su comando. Los comandos que necesitan el espacio de trabajo de Zephyr usan una vista privada de él, como indica [Pruebas del firmware](./firmware-testing.md). "ninguna todavía" significa que hoy ninguna simulación cubre el escenario.
 - **Solo el silicio** es lo que queda fuera de un veredicto de software: electrónica de los pines, exactitud analógica, oscilador, desgaste de la flash, radio.
 
 Hay 116 escenarios.
@@ -36,14 +36,14 @@ Hay 116 escenarios.
 | LRN-013   | Elegir una placa en Learn                         | 6          |
 | LRN-024   | Verificación en hardware, rotulada aparte         | 7          |
 | RT-025    | RETAIN tras un ciclo de energía                   | 8          |
-| LNG-004   | Puntos de interrupción en elementos del fuente    | 8          |
+| LNG-004   | Puntos de parada en elementos del fuente    | 8          |
 | IO-006    | Entrada y salida analógica                        | 6          |
 | COM-016   | TLS y el generador aleatorio                      | 5          |
 | DOC-004   | Primera placa y compilar desde el código          | 6          |
 
 ## Resultados de la revisión
 
-Dos revisores juzgaron los 116 escenarios el 2026-10-20 leyendo el código y ejecutando lo que corre en un equipo de desarrollo (pruebas unitarias, de C y de native_sim, el runtime nativo, el banco emulado, QEMU y compilaciones del firmware). Los escenarios juzgados "no debería pasar" se corrigieron cuando la corrección era pequeña y una prueba podía demostrarla, y se juzgaron de nuevo sobre el árbol corregido: los veredictos de abajo son los finales. Los veredictos, con su razonamiento y el comando ejecutado, están en `tools/hil/software-review/verdicts.json`.
+Dos revisores juzgaron los 116 escenarios el 2026-10-20 leyendo el código y ejecutando lo que corre en una computadora de desarrollo (pruebas unitarias, de C y de native_sim, el runtime nativo, el banco emulado, QEMU y compilaciones del firmware). Los escenarios juzgados "no debería pasar" se corrigieron cuando la corrección era pequeña y una prueba podía demostrarla, y se juzgaron de nuevo sobre el árbol corregido: los veredictos de abajo son los finales. Los veredictos, con su razonamiento y el comando ejecutado, están en `tools/hil/software-review/verdicts.json`.
 
 | Veredicto                       | Escenarios |
 | ------------------------------- | ---------- |
@@ -84,7 +84,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 - **Solo el silicio:** nada mas alla del software; el veredicto es completo en software
 - **Veredicto:** debería pasar
 
-### HIL-001.02 El ejecutor despliega por el protocolo de control
+### HIL-001.02 El ejecutor carga por el protocolo de control
 
 - **Placas:** Raspberry Pi Pico, ESP32-S3-DevKitC-1
 - **Código:** `packages/zplc-hil/src/runner.ts:70` TestRunner; `packages/zplc-hil/src/shellLink.ts`; `packages/zplc-hil/src/link.ts`; `firmware/app/src/shell_cmds.c:4881` sched load / sched data
@@ -113,7 +113,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 - **Solo el silicio:** nada mas alla del software; el veredicto es completo en software
 - **Veredicto:** debería pasar
 
-### HIL-001.05 Un despliegue que el dispositivo rechaza se informa, no se reenvia
+### HIL-001.05 Una carga que el dispositivo rechaza se informa, no se reenvia
 
 - **Placas:** Raspberry Pi Pico, ESP32-S3-DevKitC-1
 - **Código:** `packages/zplc-hil/src/runner.ts:70` TestRunner; `tools/hil/language_tester.py`; `firmware/lib/zplc_core/src/core/zplc_loader.c:818` zplc_loader_verify
@@ -150,7 +150,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 - **Código:** `packages/zplc-hil/src/hardwarePort.ts:33` ScenarioTimingError; `packages/zplc-hil/src/cli.ts:68` main; `tools/hil/run-record.schema.json`
 - **Simulación:**
   - hardwarePort.test.ts: a sample taken later than the declared tolerance voids the run: `cd packages/zplc-hil && bun test tests/hardwarePort.test.ts`
-- **Solo el silicio:** la distribucion real de muestras tardias del enlace USB bajo carga del equipo
+- **Solo el silicio:** la distribucion real de muestras tardias del enlace USB bajo carga de la computadora
 - **Veredicto:** debería pasar
 
 ### HIL-002.04 Las entradas se fuerzan, no se escriben
@@ -270,7 +270,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 - **Solo el silicio:** nada mas alla del software; el veredicto es completo en software
 - **Veredicto:** debería pasar
 
-### HIL-010.04 Despliegue de un programa por el enlace del dispositivo
+### HIL-010.04 Carga de un programa por el enlace del dispositivo
 
 - **Placas:** Raspberry Pi Pico, ESP32-S3-DevKitC-1
 - **Código:** `firmware/app/src/shell_cmds.c:4881` sched load/data; `firmware/lib/zplc_core/src/core/zplc_loader.c:818` zplc_loader_verify; `tools/hil/hil_steps.py:277` deploy_program
@@ -462,7 +462,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 - **Simulación:**
   - firmware/tests/app_device_link; firmware/lib/zplc_core/tests test_proto_session: `bun run test:core  (ctest --test-dir build/core-sanitized -R test_proto_session)`
   - tools/hil/test_hil_bench.py StepTests: `python3 -B -m unittest discover -s tools/hil -p 'test_hil_bench.py' -k link_loss_with_forces_active`
-- **Solo el silicio:** la enumeracion USB real, el comportamiento de DTR del controlador del equipo anfitrion y el momento de desconectar el cable
+- **Solo el silicio:** la enumeracion USB real, el comportamiento de DTR del controlador de la computadora anfitriona y el momento de desconectar el cable
 - **Veredicto:** debería pasar
 
 ### HIL-010.23 Los forzados se liberan al perder el enlace (ESP32-S3: tiempo de inactividad)
@@ -518,7 +518,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 - **Solo el silicio:** comportamiento real de la flash: tiempo de borrado y programacion, un corte a mitad de sector, desgaste y retencion
 - **Veredicto:** debería pasar
 
-### HIL-010.28 Veinte interrupciones de energia durante el despliegue dejan un programa completo
+### HIL-010.28 Veinte interrupciones de energia durante la carga dejan un programa completo
 
 - **Placas:** Raspberry Pi Pico, ESP32-S3-DevKitC-1
 - **Código:** `tools/hil/hil_steps.py:640` deploy_interruptions; `firmware/lib/zplc_core/src/core/zplc_program_store.c:512` zplc_pstore_commit; `firmware/lib/zplc_core/src/core/zplc_program_store.c:702` zplc_pstore_restore; `firmware/lib/zplc_core/src/core/zplc_program_store.c:184` read_active
@@ -803,7 +803,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 - **Solo el silicio:** que el diagrama coincida con una placa de pruebas real y con los nombres de pin impresos en la placa real
 - **Veredicto:** debería pasar
 
-### LRN-013.04 Verificar en la placa esta desactivado hasta que placa, conexion, despliegue e identidad coincidan
+### LRN-013.04 Verificar en la placa esta desactivado hasta que placa, conexion, carga e identidad coincidan
 
 - **Placas:** Raspberry Pi Pico, ESP32-S3-DevKitC-1
 - **Código:** `packages/zplc-ide/src/learn/boardCheck.ts:51` boardCheckReadiness; `packages/zplc-ide/src/components/LearnBoardLesson.tsx`
@@ -824,7 +824,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 - **Solo el silicio:** una traza de una placa real: aun no existe ninguna y las tolerancias son derivadas, no medidas
 - **Veredicto:** debería pasar
 
-### LRN-013.06 Learn nunca conecta, despliega, ejecuta, detiene, fuerza ni flashea por si mismo
+### LRN-013.06 Learn nunca conecta, carga, ejecuta, detiene, fuerza ni flashea por si mismo
 
 - **Placas:** Raspberry Pi Pico, ESP32-S3-DevKitC-1
 - **Código:** `packages/zplc-ide/src/learn/boardCheck.ts:42` needsRunStart; `packages/zplc-ide/src/learn/boardCheck.ts:146` runBoardCheck; `packages/zplc-ide/src/components/LearnBoardLesson.tsx`
@@ -980,9 +980,9 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 - **Solo el silicio:** comportamiento del controlador de flash de cada placa, ninguno medido
 - **Veredicto:** debería pasar
 
-## LNG-004 Puntos de interrupción en elementos del fuente
+## LNG-004 Puntos de parada en elementos del fuente
 
-### LNG-004.01 Un punto de interrupcion en una linea IL
+### LNG-004.01 Un punto de parada en una linea IL
 
 - **Placas:** Raspberry Pi Pico, ESP32-S3-DevKitC-1
 - **Código:** `packages/zplc-ide/src/compiler/debugElements.ts:38` annotateDebugMapElements; `packages/zplc-ide/src/compiler/debugElements.ts:117` elementBreakpointLine; `packages/zplc-ide/src/editors/elementBreakpoints.ts:55` toggleElementBreakpoint
@@ -992,7 +992,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 - **Solo el silicio:** nada mas alla del software; el veredicto es completo en software
 - **Veredicto:** debería pasar
 
-### LNG-004.02 Un punto de interrupcion en un escalon de Ladder
+### LNG-004.02 Un punto de parada en un escalon de Ladder
 
 - **Placas:** Raspberry Pi Pico, ESP32-S3-DevKitC-1
 - **Código:** `packages/zplc-ide/src/compiler/debugElements.ts:38` annotateDebugMapElements; `packages/zplc-ide/src/compiler/debugElements.ts:126` breakpointLineElement
@@ -1001,7 +1001,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 - **Solo el silicio:** nada mas alla del software; el veredicto es completo en software
 - **Veredicto:** debería pasar
 
-### LNG-004.03 Un punto de interrupcion en un bloque FBD
+### LNG-004.03 Un punto de parada en un bloque FBD
 
 - **Placas:** Raspberry Pi Pico, ESP32-S3-DevKitC-1
 - **Código:** `packages/zplc-ide/src/compiler/debugElements.ts:38` annotateDebugMapElements; `packages/zplc-ide/src/compiler/debugElements.ts:131` breakpointElements
@@ -1010,7 +1010,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 - **Solo el silicio:** nada mas alla del software; el veredicto es completo en software
 - **Veredicto:** debería pasar
 
-### LNG-004.04 Un punto de interrupcion en un paso SFC y en una transicion SFC
+### LNG-004.04 Un punto de parada en un paso SFC y en una transicion SFC
 
 - **Placas:** Raspberry Pi Pico, ESP32-S3-DevKitC-1
 - **Código:** `packages/zplc-ide/src/compiler/debugElements.ts:38` annotateDebugMapElements; `packages/zplc-ide/src/models/sourceElements.ts`; `packages/zplc-ide/src/compiler/debugElements.ts:140` elementAtPc
@@ -1029,7 +1029,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 - **Solo el silicio:** nada mas alla del software; el veredicto es completo en software
 - **Veredicto:** debería pasar
 
-### LNG-004.06 El punto de interrupcion se arma en una placa por contador de programa y detiene el planificador
+### LNG-004.06 El punto de parada se arma en una placa por contador de programa y detiene el planificador
 
 - **Placas:** Raspberry Pi Pico, ESP32-S3-DevKitC-1
 - **Código:** `firmware/app/src/shell_cmds.c:4705` dbg bp add/remove/clear/list; `firmware/lib/zplc_core/src/hal/zephyr/zplc_scheduler_zephyr.c:2444` zplc_sched_debug_add_breakpoint; `firmware/lib/zplc_core/src/hal/zephyr/zplc_scheduler_zephyr.c:2166` zplc_sched_pause; `packages/zplc-ide/src/runtime/serialAdapter.ts`
@@ -1038,7 +1038,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 - **Solo el silicio:** una detencion en un chip real por el enlace serie; la ruta de la placa no tiene ejecucion en hardware
 - **Veredicto:** debería pasar
 
-### LNG-004.07 Una placa en pausa o en un punto de interrupcion mantiene alimentado su watchdog y sus salidas definidas
+### LNG-004.07 Una placa en pausa o en un punto de parada mantiene alimentado su watchdog y sus salidas definidas
 
 - **Placas:** Raspberry Pi Pico, ESP32-S3-DevKitC-1
 - **Código:** `firmware/lib/zplc_core/src/hal/zephyr/zplc_scheduler_zephyr.c:619` wait under a feeding profile; `firmware/lib/zplc_core/src/core/zplc_failsafe.c:114` zplc_wdt_action; `firmware/lib/zplc_core/src/hal/zephyr/zplc_scheduler_zephyr.c:442` watchdog_policy
@@ -1048,7 +1048,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 - **Solo el silicio:** el contador real del watchdog: su tolerancia de tiempo y que los pines caen de verdad al nivel seguro mientras el chip se reinicia
 - **Veredicto:** debería pasar
 
-### LNG-004.08 Un punto de interrupcion sigue a su elemento de una compilacion a otra
+### LNG-004.08 Un punto de parada sigue a su elemento de una compilacion a otra
 
 - **Placas:** Raspberry Pi Pico, ESP32-S3-DevKitC-1
 - **Código:** `packages/zplc-ide/src/editors/elementBreakpoints.ts:78` reconcileElementBreakpoints; `packages/zplc-ide/src/compiler/debugElements.ts:131` breakpointElements

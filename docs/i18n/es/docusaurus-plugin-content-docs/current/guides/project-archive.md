@@ -3,13 +3,13 @@ slug: /guides/project-archive
 id: project-archive
 title: Exportar e importar un archivo de proyecto
 sidebar_label: Archivos de proyecto
-description: 'Lleve un proyecto a otro computador como un solo archivo, y abra un proyecto que alguien le envió, con las comprobaciones que ZPLC hace antes de escribir nada.'
+description: 'Lleve un proyecto a otra computadora como un solo archivo, y abra un proyecto que alguien le envió, con las comprobaciones que ZPLC hace antes de escribir nada.'
 tags: [how-to, projects, archive]
 ---
 
 # Exportar e importar un archivo de proyecto
 
-Un proyecto es una carpeta. Un archivo de proyecto es esa carpeta como un solo archivo, para poder enviarla, guardarla o abrirla en otro computador y recuperar el mismo proyecto byte por byte.
+Un proyecto es una carpeta. Un archivo de proyecto es esa carpeta como un solo archivo, para poder enviarla, guardarla o abrirla en otra computadora y recuperar el mismo proyecto byte por byte.
 
 ## Exportar
 
@@ -19,7 +19,7 @@ Un proyecto es una carpeta. Un archivo de proyecto es esa carpeta como un solo a
 
 **Salida** dice cuántos archivos se escribieron. El archivo omite lo que oculta el árbol del proyecto (`node_modules`, `.git`, `build`, `dist` y `.vscode`) y los enlaces.
 
-El mismo proyecto da los mismos bytes en cualquier computador: las entradas van ordenadas por ruta, almacenadas sin compresión, con fecha 1980-01-01 y nombres en UTF-8. Para ver qué contiene un archivo, use cualquier herramienta zip o Python en cualquier sistema:
+El mismo proyecto da los mismos bytes en cualquier computadora: las entradas van ordenadas por ruta, almacenadas sin compresión, con fecha 1980-01-01 y nombres en UTF-8. Para ver qué contiene un archivo, use cualquier herramienta zip o Python en cualquier sistema:
 
 ```bash
 python3 -m zipfile -l my-project.zip

@@ -37,7 +37,7 @@ El panel **E/S en vivo**, al comienzo de la pestaña Observación, enumera cada 
 | Un mensaje Modbus, MQTT o de nube escribe la variable | El valor forzado permanece |
 | Pausa, paso y reanudación | Se conservan |
 | Detención | Se borran, y la imagen de salida se pone en cero |
-| Una falla del entorno de ejecución | Se borran, como con la detención |
+| Una falla del runtime | Se borran, como con la detención |
 | Carga de un programa nuevo | Se borran: una carga es un arranque en frío |
 | Una prueba de escenario | Se rechaza mientras haya un forzado activo: libérelo antes |
 
@@ -56,13 +56,13 @@ zplc dbg force clear_all
 
 `zplc dbg force set` mantiene una dirección en los bytes que usted indica, en hexadecimal, y prevalece sobre las asignaciones del propio programa. `zplc stop` borra la tabla de forzados. Nunca deje un forzado en un controlador que nadie vigila.
 
-Un forzado siempre pertenece a una sesión (COM-020). Un forzado escrito en la consola abre la sesión del enlace de la consola, o se une a la que la aplicación ZPLC mantiene en él, y termina con esa sesión:
+Un forzado siempre pertenece a una sesión. Un forzado escrito en la consola abre la sesión del enlace de la consola, o se une a la que la aplicación ZPLC mantiene en él, y termina con esa sesión:
 
 - cuando la sesión se cierra o la toma otro enlace;
 - tras el tiempo de inactividad (`CONFIG_ZPLC_PROTO_SESSION_IDLE_S`, 30 s por defecto; otro comando de forzado cuenta como actividad);
 - de inmediato cuando se pierde el enlace.
 
-En una consola USB CDC ACM (la Raspberry Pi Pico), el dispositivo ve caer el enlace cuando baja DTR, lo que ocurre cuando el computador cierra el puerto o se desconecta el cable. Una consola que no informa de la línea (el puerto USB-Serial/JTAG del ESP32-S3, una UART simple) se libera por el tiempo de inactividad. Mientras otro enlace mantenga la sesión, el forzado se rechaza. Un forzado liberado da a cada byte el valor que el programa le dio por última vez, o el valor que tenía antes del forzado si el programa nunca lo escribió, de modo que las salidas siguen al programa.
+En una consola USB CDC ACM (la Raspberry Pi Pico), el dispositivo ve caer el enlace cuando baja DTR, lo que ocurre cuando la computadora cierra el puerto o se desconecta el cable. Una consola que no informa de la línea (el puerto USB-Serial/JTAG del ESP32-S3, una UART simple) se libera por el tiempo de inactividad. Mientras otro enlace mantenga la sesión, el forzado se rechaza. Un forzado liberado da a cada byte el valor que el programa le dio por última vez, o el valor que tenía antes del forzado si el programa nunca lo escribió, de modo que las salidas siguen al programa.
 
 ## Qué está verificado y qué no
 

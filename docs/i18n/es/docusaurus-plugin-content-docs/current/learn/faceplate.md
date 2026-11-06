@@ -51,4 +51,4 @@ Los controles se deshabilitan, y el panel explica el motivo con palabras, en est
 
 ## Evidencia
 
-Nivel de evidencia: host. Dos ejecuciones guionadas de Studio, los recorridos 50 y 57 de `packages/zplc-ide/scripts/journeys.ts`, manejan el panel en Linux contra la simulación nativa. El recorrido 50 opera un interruptor, un botón **Mantener**, un control deslizante y un cuadro numérico con el puntero y solo con el teclado, y comprueba que cada salida sigue el cambio. El recorrido 57 comprueba que la salida de la primera lección se enciende y se apaga. Ninguno es evidencia de una placa.
+Nivel de evidencia: host. Dos ejecuciones guionadas de la aplicación ZPLC, los recorridos 50 y 57 de `packages/zplc-ide/scripts/journeys.ts`, manejan el panel en Linux contra la simulación nativa. El recorrido 50 opera un interruptor, un botón **Mantener**, un control deslizante y un cuadro numérico con el puntero y solo con el teclado, y comprueba que cada salida sigue el cambio. El recorrido 57 comprueba que la salida de la primera lección se enciende y se apaga. Ninguno es evidencia de una placa.

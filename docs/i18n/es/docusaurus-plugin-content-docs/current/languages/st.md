@@ -6,7 +6,7 @@ sidebar_position: 1
 
 El texto estructurado es el lenguaje principal de ZPLC y el primero que conviene aprender. Esta página enseña a escribirlo y expone las reglas que aplica el compilador: tipos, conversiones, tiempo, datos, funciones, bloques de función y organización del proyecto. Qué funciona, elemento por elemento, y los casos ejecutados que lo respaldan, está en la [referencia generada del texto estructurado](../reference/language-st.md).
 
-ST es el único lenguaje que el compilador lee directamente. La lista de instrucciones, la escalera, el diagrama de bloques de función y el diagrama funcional secuencial se traducen primero a ST (`packages/zplc-ide/src/compiler/index.ts`), así que las reglas de abajo son también las reglas de todos los demás lenguajes. El entorno de ejecución ejecuta el bytecode `.zplc` compilado, nunca el código fuente.
+ST es el único lenguaje que el compilador lee directamente. La lista de instrucciones, la escalera, el diagrama de bloques de función y el diagrama funcional secuencial se traducen primero a ST (`packages/zplc-ide/src/compiler/index.ts`), así que las reglas de abajo son también las reglas de todos los demás lenguajes. El runtime ejecuta el bytecode `.zplc` compilado, nunca el código fuente.
 
 ## Escribir y ejecutar un programa
 
@@ -72,7 +72,7 @@ Los nombres no distinguen mayúsculas de minúsculas: `MyVar`, `myvar` y `MYVAR`
 
 ## Tipos numéricos
 
-El caso nombrado en una fila o en una regla es un programa de conformidad bajo `conformance/cmp/` que se ejecuta en el entorno de ejecución nativo. Los casos de los tipos de 64 bits y de `LREAL` dan los mismos resultados en una compilación de 64 bits y en una de 32 bits del entorno de ejecución.
+El caso nombrado en una fila o en una regla es un programa de conformidad bajo `conformance/cmp/` que se ejecuta en el runtime nativo. Los casos de los tipos de 64 bits y de `LREAL` dan los mismos resultados en una compilación de 64 bits y en una de 32 bits del runtime.
 
 | Tipo    | Bits | Rango                                       | Orden                     | Caso de conformidad                  |
 | ------- | ---- | ------------------------------------------- | ------------------------- | ------------------------------------ |
@@ -145,7 +145,7 @@ END_PROGRAM
 
 ### Tipos de 64 bits y `LREAL`
 
-`LINT`, `ULINT`, `LWORD` y `LREAL` ocupan dos celdas de la pila de evaluación. Cada operación es una instrucción de la VM, o una secuencia corta fija, igual en todas las plataformas: los códigos de operación de doble precisión se calculan con aritmética entera, de modo que un resultado es el mismo patrón de bits en un host de 64 bits, en uno de 32 bits y en un destino. Los resultados que define la VM están en el [conjunto de instrucciones del entorno de ejecución](../runtime/isa.md#valores-de-dos-palabras-enteros-de-64-bits-y-lreal).
+`LINT`, `ULINT`, `LWORD` y `LREAL` ocupan dos celdas de la pila de evaluación. Cada operación es una instrucción de la VM, o una secuencia corta fija, igual en todas las plataformas: los códigos de operación de doble precisión se calculan con aritmética entera, de modo que un resultado es el mismo patrón de bits en un host de 64 bits, en uno de 32 bits y en un destino. Los resultados que define la VM están en el [conjunto de instrucciones del runtime](../runtime/isa.md#valores-de-dos-palabras-enteros-de-64-bits-y-lreal).
 
 - **Funciona:** aritmética, comparación, desplazamientos, `ABS`, un contador `FOR` y un selector `CASE` con etiquetas de 64 bits, literales en todo el rango y en cualquier base, y `LREAL` en arreglos, estructuras, parámetros y resultados de funciones y en `RETAIN` (`cmp-015-lint-extreme-values`, `cmp-015-lint-for-counter-crosses-32-bits`, `cmp-015-lreal-and-lint-in-arrays-structures-and-calls`).
 - **Funciones de `LREAL`:** `ABS`, `NEG`, `MAX`, `MIN`, `LIMIT`, `SEL`, `MUX`, `SQRT`, `TRUNC` y `ROUND` son exactas. `SIN`, `COS`, `TAN`, `EXP`, `LN`, `LOG`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`, `EXPT` y `**` calculan en precisión simple: el argumento se redondea a `REAL` y el resultado se vuelve a ampliar, así que tienen unas siete cifras significativas (`cmp-015-lreal-transcendental-functions-compute-in-real`).
@@ -167,7 +167,7 @@ END_PROGRAM
 - La comparación, la suma, la resta y la división son de 32 bits sin signo: `T#30d > T#1d` es TRUE. Un valor preestablecido de temporizador superior a 24,8 días funciona.
 - **Una duración negativa no se puede representar.** Una resta por debajo de cero se desborda módulo 2^32: `T#0s - T#1s` vale 4294966296 ms, y la compilación no da ninguna advertencia. Compruebe que el minuendo no sea menor antes de restar.
 - La tabla de observación muestra un `TIME` superior a 2147483647 ms (24d20h31m23s647ms) como un número negativo, porque los adaptadores de observación leen sus 32 bits como con signo. El valor que guarda el programa es la cuenta sin signo.
-- Si `TIME` sigue siendo una cuenta de 32 bits sin signo o pasa a ser un valor de 64 bits con signo es una decisión abierta de la persona propietaria, registrada en el requisito CMP-017. Esta página no anuncia ningún cambio.
+- Si `TIME` sigue siendo una cuenta de 32 bits sin signo o pasa a ser un valor de 64 bits con signo es una decisión abierta de la persona propietaria. Esta página no anuncia ningún cambio.
 
 ### DATE, TOD y DT
 
@@ -179,7 +179,7 @@ END_PROGRAM
 
 `LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` y `WCHAR` no forman parte de ZPLC 2.0. La declaración de uno de ellos, como la de cualquier nombre de tipo desconocido, es un error de compilación que nombra el tipo y su posición (`cmp-003-*` en `conformance/cmp/`).
 
-Nivel de evidencia: host. Los casos `cmp-017-*` se compilan con el compilador del repositorio y se ejecutan en el entorno de ejecución nativo, y `packages/zplc-compiler/src/compiler/time.test.ts` cubre la gramática de los literales y sus rechazos. El desbordamiento por debajo de cero, la zona horaria de `DT#` y la visualización en la tabla de observación se observaron o se leyeron del código, y ningún caso las fija todavía.
+Nivel de evidencia: host. Los casos `cmp-017-*` se compilan con el compilador del repositorio y se ejecutan en el runtime nativo, y `packages/zplc-compiler/src/compiler/time.test.ts` cubre la gramática de los literales y sus rechazos. El desbordamiento por debajo de cero, la zona horaria de `DT#` y la visualización en la tabla de observación se observaron o se leyeron del código, y ningún caso las fija todavía.
 
 ## Literales, operadores y declaraciones
 

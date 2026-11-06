@@ -3,13 +3,13 @@ slug: /guides/build-firmware
 id: build-firmware
 title: Compilar el firmware desde el código fuente
 sidebar_label: Compilar el firmware
-description: 'Compile la imagen del entorno de ejecución de ZPLC para una placa con el script del repositorio, compruebe su presupuesto de tamaño y sepa qué demuestra una compilación terminada.'
+description: 'Compile la imagen del runtime de ZPLC para una placa con el script del repositorio, compruebe su presupuesto de tamaño y sepa qué demuestra una compilación terminada.'
 tags: [how-to, hardware, firmware]
 ---
 
 # Compilar el firmware desde el código fuente
 
-Siga esta página para producir la imagen del entorno de ejecución de una placa. Compilar es un paso aparte de [grabar](./flash-firmware.md), desplegar y ejecutar. Usted inicia cada uno: el asistente de ZPLC y el servidor MCP nunca graban, despliegan, fuerzan, arrancan ni detienen un dispositivo.
+Siga esta página para producir la imagen del runtime de una placa. Compilar es un paso aparte de [grabar](./flash-firmware.md), cargar y ejecutar. Usted inicia cada uno: el asistente de ZPLC y el servidor MCP nunca graban, cargan, fuerzan, arrancan ni detienen un dispositivo.
 
 :::note Nivel de evidencia: compilación para el destino
 La integración continua compila cada placa del manifiesto con `west build -p always` y comprueba su presupuesto de flash y RAM con `fwtest.py size`, el verificador que llama `run.sh size`. Esta página se escribió sin ejecutar una compilación de Zephyr en la máquina de quien la redactó, así que los pasos se leyeron de los scripts y no de una ejecución en una máquina limpia.

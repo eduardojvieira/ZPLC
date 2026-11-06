@@ -112,7 +112,7 @@ Agregue el alias al overlay de devicetree de la placa y una entrada a su descrip
 | --- | --- | --- |
 | Las descripciones son coherentes con el devicetree de cada placa | La compilación del firmware falla si no | Compilación |
 | Una dirección sin asignar es un error en el editor, la compilación y la carga | Pruebas unitarias, y el recorrido 40 en la aplicación real | Host |
-| Un bit y una palabra en un mismo byte lo comparten, y el compilador no lo rechaza | El ejemplo de arriba se ejecuta en el entorno de ejecución nativo; `zplc-cli check` acepta el programa | Host |
+| Un bit y una palabra en un mismo byte lo comparten, y el compilador no lo rechaza | El ejemplo de arriba se ejecuta en el runtime nativo; `zplc-cli check` acepta el programa | Host |
 | El escalado analógico de un canal, y la tabla de E/S del firmware | Pruebas en `native_sim` | Destino emulado |
 | Que un pin controle la señal que dice la descripción, y el nivel de una salida | Sin probar | Ninguno |
 

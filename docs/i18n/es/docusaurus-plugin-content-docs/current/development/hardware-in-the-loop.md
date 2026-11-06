@@ -10,7 +10,7 @@ description: Cómo una persona ejecuta en el banco las pruebas de hardware de ZP
 Use esta página cuando trabaje en un banco con una placa ZPLC. Dice qué comando ejecutar, qué le pide hacer la herramienta, qué registra y qué demuestra o no demuestra un registro.
 
 :::warning Una persona inicia cada acción sobre una placa
-Las herramientas de IA y MCP no graban, despliegan, fuerzan, inician ni detienen una placa, ni abren su shell serie, y ninguna opción permite que un script lo haga por ellas. Cada comando de esta página que toca una placa lo inicia usted.
+Las herramientas de IA y MCP no graban, cargan, fuerzan, inician ni detienen una placa, ni abren su shell serie, y ninguna opción permite que un script lo haga por ellas. Cada comando de esta página que toca una placa lo inicia usted.
 :::
 
 Nada de lo que sigue es evidencia de hardware hasta que existe un registro para una placa y una imagen de firmware (vea [Registros de ejecución](#registros-de-ejecución)). Todo lo que ejecuta la integración continua es evidencia de host: demuestra las herramientas, no una placa.
@@ -76,11 +76,11 @@ Una herramienta iniciada sin terminal interactiva termina con estado 2 y dice po
 5. **Opción de traza.** Las opciones de la imagen dicen si la traza HIL está activa. La ejecución falla cuando no es lo que pidió: el firmware de versión no lleva traza, y `--hil-trace` pide la imagen que la lleva.
 6. **Confirmar la placa.** Usted escribe la identidad que informó el dispositivo. Pulsar Enter solo no confirma.
 7. **Las salidas son seguras de manejar.** Usted escribe la identidad otra vez, para decir que nada conectado a las salidas puede dañar a nadie.
-8. **Desplegar y ejecutar.** Se carga un programa y el contador de ciclos debe avanzar.
+8. **Cargar y ejecutar.** Se carga un programa y el contador de ciclos debe avanzar.
 9. **Fixtures.** Se ejecuta el parpadeo de cada uno de los cinco lenguajes (cada fixture marcado para hardware con `--all-fixtures`), con las entradas forzadas y liberadas.
 10. **Forzar y liberar.** Se fija un forzado, se lista y se borra, y no queda ninguno.
 11. **Detener.** El dispositivo no está en ejecución y la imagen de salida es cero.
-12. **Los pasos de medición de HIL-010.** Lazo digital, lectura analógica, exactitud de temporizador, diez minutos de fluctuación de ciclo, salidas apagadas tras una sobrecarga y tras una falla fatal, salidas seguras tras STOP y tras la pérdida del enlace con forzados activos, tiempo de reinicio del perro guardián, un ciclo de energía con RETAIN, veinte cortes de energía durante despliegues, una escritura atómica y un intercambio de bus de campo. Cada uno escribe sus mediciones y su veredicto en el registro; la [guía de banco](#guía-de-banco) los enumera con su cableado y sus reglas de aprobación.
+12. **Los pasos de medición de HIL-010.** Lazo digital, lectura analógica, exactitud de temporizador, diez minutos de fluctuación de ciclo, salidas apagadas tras una sobrecarga y tras una falla fatal, salidas seguras tras STOP y tras la pérdida del enlace con forzados activos, tiempo de reinicio del perro guardián, un ciclo de energía con RETAIN, veinte cortes de energía durante cargas, una escritura atómica y un intercambio de bus de campo. Cada uno escribe sus mediciones y su veredicto en el registro; la [guía de banco](#guía-de-banco) los enumera con su cableado y sus reglas de aprobación.
 
 La cadena escribe un registro tanto si aprueba como si falla, y antes de empezar dice cuánto tarda (unos 31 minutos en el banco de una persona). Un paso que el banco no puede hacer se registra como `skipped` (o `not-emulable` en un emulador), nunca como aprobado. Una ejecución en seco o con un sustituto ejecuta los pasos de medición solo cuando `--steps` los nombra.
 
@@ -98,7 +98,7 @@ La cadena escribe un registro tanto si aprueba como si falla, y antes de empezar
 | `--steps`                       | Pasos de medición de HIL-010, separados por comas, que se ejecutan en lugar de todos.                                                               |
 | `--no-watchdog-build`           | Imprime el comando de compilación simple del manifiesto; el paso del perro guardián falla entonces y dice que la imagen no lo tiene.                |
 | `--rtu-port`                    | El lado del host de la línea Modbus RTU de la Pico: el adaptador USB-serie conectado a UART1.                                                       |
-| `--host-ip`                     | La dirección de este equipo que alcanza la ESP32-S3 por Wi-Fi. Por omisión se obtiene de la ruta predeterminada.                                    |
+| `--host-ip`                     | La dirección de esta computadora que alcanza la ESP32-S3 por Wi-Fi. Por omisión se obtiene de la ruta predeterminada.                                    |
 | `--loopback-bin`                | El binario `zplc_loopback` de este árbol. Por omisión es el que está junto a `ZPLC_NATIVE_SIM_BIN`.                                                 |
 | `--bench`                       | `human` (predeterminado) o `emulated`.                                                                                                              |
 | `--dry-run`, `--device`         | Ejecuta en un dispositivo falso (`host` o `null`). Con `--dry-run` no se pregunta a nadie; sin él se pregunta a una persona, como ensayo. El registro dice que no es hardware. |
@@ -164,7 +164,7 @@ El kit del curso (`packages/zplc-ide/lessons/kit.json`: la placa, un cable USB d
 
 - cuatro resistencias de 1 kΩ, una en serie en cada cable del lazo;
 - solo Raspberry Pi Pico: un adaptador USB-serie con lógica de 3,3 V (por ejemplo CP2102, CH340 o FT232 configurado a 3,3 V) para el intercambio Modbus RTU;
-- solo ESP32-S3: una red Wi-Fi a la que este equipo también esté conectado;
+- solo ESP32-S3: una red Wi-Fi a la que esta computadora también esté conectada;
 - un multímetro, útil para el punto de 50 % del paso analógico pero no obligatorio.
 
 ### Límites de tensión
@@ -198,10 +198,10 @@ El procedimiento es la cadena, un comando por placa:
 
 ```bash
 python3 tools/hil/run_chain.py rpi_pico --firmware-image <zephyr.uf2> --rtu-port <adaptador USB-serie>
-python3 tools/hil/run_chain.py esp32s3_devkitc --firmware-image <zephyr.bin> [--host-ip <este equipo en la red Wi-Fi>]
+python3 tools/hil/run_chain.py esp32s3_devkitc --firmware-image <zephyr.bin> [--host-ip <esta computadora en la red Wi-Fi>]
 ```
 
-Antes de empezar, la cadena dice cuánto tarda en este banco: unos 31 minutos, de los cuales diez corresponden al paso de fluctuación de ciclo y unos ocho a los veinte cortes de energía. El paso de fluctuación corre solo, porque todos los demás pasos detienen, despliegan o cortan la energía. Por omisión la cadena ejecuta el parpadeo de los cinco lenguajes; `--all-fixtures` agrega cada fixture marcado para hardware (HIL-005), unos siete minutos más.
+Antes de empezar, la cadena dice cuánto tarda en este banco: unos 31 minutos, de los cuales diez corresponden al paso de fluctuación de ciclo y unos ocho a los veinte cortes de energía. El paso de fluctuación corre solo, porque todos los demás pasos detienen, cargan o cortan la energía. Por omisión la cadena ejecuta el parpadeo de los cinco lenguajes; `--all-fixtures` agrega cada fixture marcado para hardware (HIL-005), unos siete minutos más.
 
 **La imagen bajo prueba es la imagen HIL**: el comando de compilación de la placa con `-DCONFIG_ZPLC_HIL_IMAGE=y`, que la cadena imprime, porque RT-020 pide que el registro se haga con el perro guardián activo.
 
@@ -239,9 +239,9 @@ Grabar es cosa suya:
 | 18 | Tiempo de reinicio del perro guardián | Ejecuta un ciclo que nunca termina | Causa de reinicio `watchdog`, el reinicio entre el 90 % del tiempo límite y el tiempo límite más 500 ms, de vuelta en STOP con salidas apagadas | Todavía no se ejecutó | Se completa con los registros emulados |
 | 19 | Falla fatal | Divide por cero tras 20 ciclos de un programa que acciona DO0 | Se enclava la falla `vm_fault` en menos de 10 s y las salidas quedan apagadas | Todavía no se ejecutó | Se completa con los registros emulados |
 | 20 | Ciclo de energía y RETAIN | Comprueba que la imagen se compiló con persistencia de RETAIN, cuenta en una variable RETAIN, detiene (lo que la guarda) y le pide desconectar y volver a conectar la placa | STOP tras el encendido, el valor RETAIN conservado, el programa presente | Todavía no se ejecutó | Se completa con los registros emulados |
-| 21 | 20 cortes de energía durante el despliegue | Carga el programa A, envía una parte del programa B (desde una vigésima parte hasta todo) y le pide desconectar de inmediato | Tras cada corte la placa está en STOP y ejecuta A o B completo | Todavía no se ejecutó | Se completa con los registros emulados |
+| 21 | 20 cortes de energía durante la carga | Carga el programa A, envía una parte del programa B (desde una vigésima parte hasta todo) y le pide desconectar de inmediato | Tras cada corte la placa está en STOP y ejecuta A o B completo | Todavía no se ejecutó | Se completa con los registros emulados |
 | 22 | Escritura atómica | Escribe 100 veces un valor de cuatro bytes por el enlace del dispositivo mientras el programa cuenta valores partidos | Ningún ciclo vio un valor escrito a medias | Todavía no se ejecutó | Se completa con los registros emulados |
-| 23 | Intercambio de bus de campo | Pico: activa el cliente Modbus RTU del dispositivo a 19200 baudios, lo guarda y reinicia la placa (el cliente solo arranca al iniciar), y luego lee el registro de retención 100 de un servidor Modbus RTU en este equipo, en una línea abierta a 19200 baudios. ESP32-S3: espera a que la placa informe una dirección IP (`zplc net status`; el firmware se une por sí solo a la red guardada al arrancar y de nuevo después de una caída), y luego escribe y vuelve a leer un registro en el servidor Modbus TCP y recibe de vuelta una publicación MQTT a través del broker de `zplc_loopback`, alcanzado en la dirección de red local de este equipo. Los resultados se leen como una sola instantánea: primero `done`, luego los valores, y solo cuando una segunda lectura coincide | El valor leído es 0x5A17, sin error | Todavía no se ejecutó | Se completa con los registros emulados |
+| 23 | Intercambio de bus de campo | Pico: activa el cliente Modbus RTU del dispositivo a 19200 baudios, lo guarda y reinicia la placa (el cliente solo arranca al iniciar), y luego lee el registro de retención 100 de un servidor Modbus RTU en esta computadora, en una línea abierta a 19200 baudios. ESP32-S3: espera a que la placa informe una dirección IP (`zplc net status`; el firmware se une por sí solo a la red guardada al arrancar y de nuevo después de una caída), y luego escribe y vuelve a leer un registro en el servidor Modbus TCP y recibe de vuelta una publicación MQTT a través del broker de `zplc_loopback`, alcanzado en la dirección de red local de esta computadora. Los resultados se leen como una sola instantánea: primero `done`, luego los valores, y solo cuando una segunda lectura coincide | El valor leído es 0x5A17, sin error | Todavía no se ejecutó | Se completa con los registros emulados |
 
 Una persona no puede cortar la energía en el momento exacto en que se escribe el programa en la flash, así que en una placa el paso 21 prueba los cortes en los puntos que una mano alcanza. El banco emulado corta en puntos programados.
 
