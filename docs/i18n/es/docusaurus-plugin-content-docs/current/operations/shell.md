@@ -40,15 +40,15 @@ Normalmente la aplicación lo hace por usted. A mano, `zplc load <tamaño>` prep
 
 ## Depure un programa
 
-`zplc dbg` da acceso directo al estado de ejecución, la memoria y los puntos de interrupción.
+`zplc dbg` da acceso directo al estado de ejecución, la memoria y los puntos de parada.
 
-- **Puntos de interrupción.** `zplc dbg bp add <pc>`, `bp remove <pc>`, `bp list` y `bp clear`.
-- **Pausa y paso.** `zplc dbg pause` detiene el planificador entre ciclos, pone las salidas físicas en su estado seguro y conserva la imagen de salida y la tabla de forzados. `zplc dbg resume` continúa un ciclo detenido en un punto de interrupción, y la primera confirmación de ciclo vuelve a manejar las salidas desde la imagen conservada. `zplc dbg step` termina ese ciclo, o ejecuta un ciclo completo, y hace pausa en el siguiente límite de ciclo o en el siguiente punto de interrupción.
+- **Puntos de parada.** `zplc dbg bp add <pc>`, `bp remove <pc>`, `bp list` y `bp clear`.
+- **Pausa y paso.** `zplc dbg pause` detiene el planificador entre ciclos, pone las salidas físicas en su estado seguro y conserva la imagen de salida y la tabla de forzados. `zplc dbg resume` continúa un ciclo detenido en un punto de parada, y la primera confirmación de ciclo vuelve a manejar las salidas desde la imagen conservada. `zplc dbg step` termina ese ciclo, o ejecuta un ciclo completo, y hace pausa en el siguiente límite de ciclo o en el siguiente punto de parada.
 - **Forzados.** `zplc dbg force set <dir> <bytes_hex>` anula las asignaciones del propio programa a una dirección. `force list` los muestra, `force clear <dir>` quita uno y `force clear_all` los quita todos.
 - **Memoria.** `zplc dbg mpeek dir:largo[,dir:largo...]` lee bloques, `zplc dbg poke <dir> <valor>` escribe, `zplc dbg mem <ipi|opi|work|retain> [desplazamiento]` vuelca una región y `zplc dbg info` muestra el estado de la máquina y el PC actual. `zplc dbg watch <dir> [tipo]` imprime un valor como `bool`, `i8`, `i16`, `i32`, `u8` (el valor por defecto), `u16`, `u32` o `f32`. Es una instantánea, no un flujo.
 - **Temporizadores y tareas.** `zplc dbg ticks` imprime el contador de ticks en milisegundos, `zplc dbg task <id_tarea>` muestra una tarea y `zplc dbg timer <dir>` decodifica la instancia `TON`, `TOF` o `TP` de una dirección en `IN`, `Q`, `PT` y `ET`.
 
-Todo comando que recibe una dirección trabaja dentro de las cuatro regiones del PLC (imagen de entrada, imagen de salida, trabajo y retentiva) y rechaza cualquier otra dirección. Las lecturas salen de la instantánea que publicó el último ciclo, así que un valor es completo y de un solo ciclo, y una lectura nunca espera a un ciclo. Un `poke` se encola y se aplica en el latch de entradas del ciclo siguiente por la interfaz que respeta los forzados, así que una dirección forzada conserva su valor forzado. Mientras el runtime está detenido no hay ciclo, y la escritura se aplica de inmediato.
+Todo comando que recibe una dirección trabaja dentro de las cuatro regiones del PLC (imagen de entrada, imagen de salida, trabajo y retentiva) y rechaza cualquier otra dirección. Las lecturas salen de la instantánea que publicó el último ciclo, así que un valor es completo y de un solo ciclo, y una lectura nunca espera a un ciclo. Un `poke` se encola y se aplica en la captura de entradas del ciclo siguiente por la interfaz que respeta los forzados, así que una dirección forzada conserva su valor forzado. Mientras el runtime está detenido no hay ciclo, y la escritura se aplica de inmediato.
 
 ### Memoria cruda (solo firmware de diagnóstico)
 
@@ -72,7 +72,7 @@ Un dispositivo que nunca se configuró tiene MQTT apagado, sin broker, y TLS con
 ## Conéctese a una red
 
 - `zplc net status` muestra la dirección IPv4, la puerta de enlace y la dirección MAC en una placa con hardware de red.
-- `zplc wifi connect` se une a la red Wi-Fi con las credenciales guardadas por `zplc config set wifi_ssid`, `wifi_pass` y `wifi_security`, y nunca las guarda. Una placa con un SSID guardado también se une sola al arrancar y después de una caída, en un elemento de trabajo en segundo plano que nunca retrasa un ciclo. Espera 2 s tras la primera falla, duplicando hasta 60 s. `zplc status --json` informa el enlace como `wifi.state` (`unconfigured`, `connecting`, `connected`, `retrying`, o `unsupported` en una placa sin Wi-Fi) y `wifi.ip`. Ni el SSID ni la contraseña se registran.
+- `zplc wifi connect` se une a la red Wi-Fi con las credenciales guardadas por `zplc config set wifi_ssid`, `wifi_pass` y `wifi_security`, y nunca las guarda. Una placa con un SSID guardado también se une sola al arrancar y después de perder la conexión, en un elemento de trabajo en segundo plano que nunca retrasa un ciclo. Espera 2 s tras la primera falla, duplicando hasta 60 s. `zplc status --json` informa el enlace como `wifi.state` (`unconfigured`, `connecting`, `connected`, `retrying`, o `unsupported` en una placa sin Wi-Fi) y `wifi.ip`. Ni el SSID ni la contraseña se registran.
 - `zplc ntp status`, `enable`, `disable`, `server <nombre_de_host>` y `sync` controlan la sincronización de hora por SNTP.
 
 ## Inspeccione MQTT y Modbus
@@ -86,4 +86,4 @@ Un broker protegido, como AWS IoT Core, necesita certificados en la placa. `zplc
 
 ## Comprobaciones de hardware
 
-Los comandos `zplc adc` existen solo cuando el firmware se compila con `CONFIG_ADC`: `zplc adc temp` lee la temperatura del procesador cuando la placa tiene el sensor, y `zplc adc read <canal>` lee un canal. `zplc hil mode`, `status`, `watch` y `reset` son los ganchos de hardware en el lazo, y `zplc dbg trace` registra por ciclo las imágenes de entrada y salida para la comprobación de hardware del curso.
+Los comandos `zplc adc` existen solo cuando el firmware se compila con `CONFIG_ADC`: `zplc adc temp` lee la temperatura del procesador cuando la placa tiene el sensor, y `zplc adc read <canal>` lee un canal. `zplc hil mode`, `status`, `watch` y `reset` son los ganchos de hardware en el bucle, y `zplc dbg trace` registra por ciclo las imágenes de entrada y salida para la comprobación de hardware del curso.
