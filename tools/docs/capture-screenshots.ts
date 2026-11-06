@@ -71,6 +71,29 @@ export const SCREEN_JOURNEYS = [
     pictures: [{ name: 'ld-function-box', step: 'A Ladder function box with its operands in the editor' }],
   },
 ] as const;
+/** The pictures for the guides (journeys 68 to 71): the controls are named in English, so these are English only. */
+export const GUIDE_JOURNEYS = [
+  {
+    journey: '68 The Watch table, a force and a scenario run, for the pictures of the guides',
+    pictures: [
+      { file: 'guide-watch.png', step: 'The Watch tab with a variable, while the program runs' },
+      { file: 'guide-force.png', step: 'The Watch table with one forced variable and the banner of one active force' },
+      { file: 'guide-scenario-tests.png', step: 'The Tests tab after Run host scenarios' },
+    ],
+  },
+  {
+    journey: '69 A breakpoint and the Trace row, for the pictures of the guides',
+    pictures: [{ file: 'guide-breakpoint.png', step: 'The editor stopped at a breakpoint, with the Trace row that says paused' }],
+  },
+  {
+    journey: '70 The I/O mapping section of Project settings, for the pictures of the guides',
+    pictures: [{ file: 'guide-io-mapping.png', step: 'The I/O Mapping section of Project settings' }],
+  },
+  {
+    journey: '71 The Import archive dialog, for the pictures of the guides',
+    pictures: [{ file: 'guide-import-archive.png', step: 'The dialog of Import a project archive' }],
+  },
+] as const;
 export const LEARN_JOURNEY = '59 The first lesson of Learn is checked and passes';
 export const LEARN_PICTURES = [
   { file: 'lesson-checked-en.png', locale: 'en', theme: 'light' },
@@ -409,6 +432,19 @@ function captureScreens(): void {
         }
       }
     }
+    for (const { journey } of GUIDE_JOURNEYS) {
+      const run = spawnSync('bun', ['run', 'scripts/run-journeys.ts'], {
+        cwd: join(ROOT, 'packages/zplc-ide'),
+        env: { ...process.env, ZPLC_JOURNEY_ONLY: journey, ZPLC_DOC_SHOTS: scratch },
+        stdio: ['ignore', 'pipe', 'pipe'],
+        encoding: 'utf8',
+      });
+      if (run.status !== 0 || !journeyPassed(run.stdout, journey)) {
+        process.stderr.write(`${run.stdout}\n${run.stderr}\n`);
+        throw new Error(`the journey "${journey}" did not pass, so no picture is written`);
+      }
+    }
+    const guides = GUIDE_JOURNEYS.flatMap(({ pictures }) => pictures.map(({ file, step }) => ({ file, step })));
     const wanted = SCREEN_JOURNEYS.flatMap(({ pictures }) =>
       pictures.flatMap(({ name, step }) =>
         EDITOR_LOCALES.map((locale) => ({
@@ -416,7 +452,7 @@ function captureScreens(): void {
           step: `${step}, interface in ${locale === 'en' ? 'English' : 'Spanish'}`,
         })),
       ),
-    );
+    ).concat(guides);
     const taken = readdirSync(scratch)
       .filter((name) => name.endsWith('.png'))
       .sort();
