@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Analog scaling in Ladder: counts to percent with MUL, DIV and LIMIT",
+  "summary": "Scale the raw counts of an analog input to a level in percent with a MUL box and then a DIV box, keep the result in range with LIMIT, and drive two level lamps with comparison boxes.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task and blocks that stand in for the sensor; they do not establish the accuracy, noise or calibration of a real analog input, wiring, HIL, or certification.",
+  "objectives": [
+    "Scale raw analog counts to engineering units by multiplying by the span of the units and then dividing by the span of the counts, in a type that the product fits.",
+    "Keep a value inside its range with a LIMIT box, and compare the scaled value, not the raw counts, with the thresholds of the alarms."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "The scenario sets only BOOL inputs, so this lesson does not read a real analog input. In src/AnalogLevel.ld.json the blocks at the top stand in for a potentiometer: while Enable is ON, Ramp grows by 410 counts on each scan, and Raw is Ramp limited to 0..4095. Level must be Raw in percent, from 0 to 100, and Warn and HighLevel must light at 50 and 75 percent. The rung that turns Raw into a percentage is missing. Add it.",
+      "checkpoint": "Level follows Raw in percent, Warn turns ON at 50 percent and HighLevel at 75 percent."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Enable is pressed at {{t:10}} ms, so Raw is 410 after that scan and 410 more after each following scan. Work out Level on each scan, rounded down, and predict Warn and HighLevel at {{t:40}}, {{t:50}}, {{t:70}} and {{t:80}} ms.",
+      "checkpoint": "{{v:AnalogLevel.Warn=false,AnalogLevel.HighLevel=false@40|both OFF}} at {{t:40}} ms, with Level at 40; {{v:AnalogLevel.Warn=true,AnalogLevel.HighLevel=false@50|Warn ON and HighLevel OFF}} at {{t:50}} ms; {{v:AnalogLevel.Warn=true,AnalogLevel.HighLevel=false@70|Warn ON and HighLevel OFF}} at {{t:70}} ms, with Level at 70; {{v:AnalogLevel.Warn=true,AnalogLevel.HighLevel=true@80|both ON}} at {{t:80}} ms, with Level at 80."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter has no rung between Raw and Level, so Level stays 0 and Warn and HighLevel never turn ON at {{t:50}} ms and {{t:80}} ms; add one rung with a MUL box (Raw, 100, into Scaled) and a DIV box (Scaled, 4095, into Quot), in that order. Insert each box from the Functions group of the Ladder palette and type its operands: a declared variable or a number.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named AnalogLevel and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Open the Watch tab and compare Ramp, Raw and Level at {{t:80}} and {{t:100}} ms. Level climbs by about 10 percent per scan, and HighLevel rises at {{t:80}} ms. At {{t:100}} ms Ramp is 4100 but Raw is limited to 4095, and Level is 100. Enable falls at {{t:120}} ms, but nothing writes to Ramp, so the stand-in keeps its position and the lamps stay ON.",
+      "checkpoint": "Warn rises once at {{t:50}} ms and HighLevel rises once at {{t:80}} ms; both stay ON until the end, because the stand-in does not go back down."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Why multiply by 100 before dividing by 4095, and why is Scaled a DINT? Work out Raw / 4095 * 100 for Raw = 3280, with whole numbers, and compare it with Raw * 100 / 4095. What would the LIMIT box protect against if the sensor reported a value outside 0..4095?",
+      "checkpoint": "Raw / 4095 is 0 for every Raw below 4095, so the level would stay 0 until full scale. The product 4095 times 100 is 409500, more than the 32767 that an INT holds, and an INT would wrap with no error. LIMIT keeps the value inside 0..100 whatever the input does; the scenario checks the two lamps only, not the clamp, the rounding or a real potentiometer."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "The level in percent is Raw times 100 divided by 4095. Which two boxes are missing from the program, and in which order do they go?"
+    },
+    {
+      "level": 2,
+      "text": "Insert a MUL box with Raw and 100 into Scaled, and a DIV box with Scaled and 4095 into Quot, both in the same rung and in that order. The rungs below it already read Quot."
+    }
+  ],
+  "faultCases": [
+    "The starter has no rung between Raw and Level, so Level stays 0 and Warn and HighLevel never turn ON at {{t:50}} ms and {{t:80}} ms; add one rung with a MUL box (Raw, 100, into Scaled) and a DIV box (Scaled, 4095, into Quot), in that order."
+  ]
+}

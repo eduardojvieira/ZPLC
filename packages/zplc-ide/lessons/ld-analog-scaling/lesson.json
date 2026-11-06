@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "ld-analog-scaling",
+  "version": 1,
+  "order": 90,
+  "module": 4,
+  "level": "intermediate",
+  "prerequisites": [
+    "ld-compare-math"
+  ],
+  "languages": [
+    "LD"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson stands in for the analog input with blocks in the program and the lamps are graded in the native simulator, and it ships no wiring for the learner boards.",
+        "es": "La lección reemplaza la entrada analógica con bloques del programa y las lámparas se califican en el simulador nativo, y no incluye cableado para las placas del estudiante."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, which gives the same result each time and needs no board.",
+        "es": "Complétela en Simulación, que da el mismo resultado cada vez y no necesita placa."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 25,
+  "starter": {
+    "project": "ld_analog_scaling_starter",
+    "program": "src/AnalogLevel.ld.json"
+  },
+  "solution": {
+    "project": "ld_analog_scaling",
+    "program": "src/AnalogLevel.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "AnalogLevel",
+    "path": "tests/analog-level.scenario.json",
+    "sha256": "1c79ded03c95f60b0a72988152d8dfbde8a2e8bce72fa3035133bbcf8f1ba9af"
+  },
+  "regressionScenarios": []
+}
