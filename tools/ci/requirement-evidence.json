@@ -1327,7 +1327,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 the function box: the monitor entries"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 the function box: what stays as it was"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 the source map gives the statements of a box to its rung and cell"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 two plain coils on one variable stay refused"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 two plain coils on one variable stay refused"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"67 A Ladder function box in the editor, for the pictures of the site","partial":true}
   ],
   "RT-001": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_run_program.c","test":"RT-001/COM-001 are open, so that a long run can look for other findings); ZPLC_FUZZ_DUMP=<path> writes the"},
@@ -3596,6 +3597,7 @@
   "DOC-004": [
     {"kind":"unit","ref":"tools/ci/hw-software-review.test.ts","test":"the software review of the hardware requirements (HIL-001, HIL-002, HIL-010, RT-025, COM-016, IO-006, DOC-004)"},
     {"kind":"unit","ref":"tools/docs/install_and_status_pages.test.ts","test":"first board page: written from the manifest, and honest that no board has run it (DOC-004, stopgap: the steps have not been executed on a board)","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"72 The Pico example with Hardware chosen and the port dialog, for the pictures of the first board tutorial","partial":true},
     {"kind":"manual","ref":"tools/ci/hw-software-review.test.ts","test":"every scenario has exactly one verdict, and no verdict names a scenario that does not exist","note":"Owner decision 2026-10-20: the software and simulation review in tools/hil/software-review/verdicts.json is accepted instead of a bench run: 6 of 6 scenarios should pass; no physical bench run is recorded"}
   ],
   "DOC-005": [
@@ -3647,7 +3649,14 @@
     {"kind":"unit","ref":"tools/docs/capture-screenshots.test.ts","test":"the pictures of the recorded screen-reader check are captured ones too (UX-028, DOC-013)"},
     {"kind":"unit","ref":"tools/docs/generate_hardware_pages.test.ts","test":"DOC-013 the wiring diagrams are generated drawings, not pictures of the product"},
     {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"keeps the editor images within the DOC-013 rules: a PNG of the fixed frame, small, in the manifest with its hash"},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"56 Blink without hardware (the tutorial)","partial":true}
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"56 Blink without hardware (the tutorial)","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"66 The Learn reading page and its try-it lab, for the pictures of the site","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"67 A Ladder function box in the editor, for the pictures of the site","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"68 The Watch table, a force and a scenario run, for the pictures of the guides","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"69 A breakpoint and the Trace row, for the pictures of the guides","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"70 The I/O mapping section of Project settings, for the pictures of the guides","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"71 The Import archive dialog, for the pictures of the guides","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"72 The Pico example with Hardware chosen and the port dialog, for the pictures of the first board tutorial","partial":true}
   ],
   "DOC-014": [
     {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: a claim holds only when the source has the thing (DOC-014)"},

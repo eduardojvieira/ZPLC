@@ -8018,7 +8018,8 @@ export const JOURNEYS: Journey[] = [
         `the Welcome screen in ${locale}`,
         async () =>
           (await app.eval<boolean>(
-            `(document.querySelector('[data-welcome-learn]')?.textContent?.trim().startsWith('Learn') ?? false) === ${locale === 'en'} && ` +
+            `(document.querySelector('[data-welcome-learn]')?.textContent?.trim().startsWith('Learn') ?? false) ` +
+              `=== ${locale === 'en'} && ` +
               `document.querySelector('[data-welcome-learn]') !== null`,
           )) || undefined,
         45_000,
