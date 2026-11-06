@@ -1,50 +1,47 @@
 ---
 slug: /operations
 id: index
-title: Operaciones
-sidebar_label: Operaciones
-description: Observe, recupere y cambie sistemas ZPLC sin cruzar límites de evidencia ni autoridad.
+title: Operación
+sidebar_label: Operación
+description: Observe, recupere y cambie un sistema ZPLC sin cruzar un límite de evidencia ni de autoridad.
 tags: [operations]
 ---
 
-# Operaciones
+# Operación
 
-Las operaciones de ZPLC empiezan con trabajo seguro y evidencia clara. No deduzca
-el estado físico a partir de un resultado de host ni convierta una carga de programa
-en una recuperación de firmware.
+Esta página es la lista de comprobación para trabajar en un sistema ZPLC que ya está en marcha: qué mirar primero, qué conservar y qué acciones quedan en manos de una persona. No deduzca el estado físico de una máquina a partir de un resultado en el anfitrión, y no trate un despliegue de programa como una recuperación de firmware.
 
-## Secuencia rutinaria
+## Una secuencia de rutina
 
-1. Inspeccione el estado del runtime, el perfil seleccionado, los diagnósticos y la fuente de la evidencia.
-2. Conserve el hash del artefacto y la traza antes de cambiar algo.
-3. Mantenga las acciones físicas bajo autoridad humana explícita y el procedimiento del sitio.
-4. Use los [límites de recuperación](./recovery.md) cuando falle la conexión, el programa o el firmware.
+1. Revise el estado del runtime, el perfil de placa seleccionado, los diagnósticos y de dónde viene la evidencia.
+2. Conserve el hash del artefacto y la traza antes de cambiar nada.
+3. Deje toda acción física a una persona, bajo el procedimiento de trabajo seguro del sitio.
+4. Cuando falle una conexión, un programa o el firmware, vaya a [Límites de recuperación](./recovery.md).
 
-## Qué puede mostrar ZPLC
+## Qué le muestra ZPLC
 
-- Los diagnósticos del compilador, los resultados de las pruebas, la traza de la simulación en el host y el estado que informa un runtime conectado.
-- El perfil de la placa seleccionada y su nivel de evidencia.
-- Una confirmación de carga que identifica el artefacto y la compatibilidad del runtime.
+- Diagnósticos del compilador, resultados de pruebas, la traza de una simulación en el anfitrión y el estado que informa un runtime conectado.
+- El perfil de placa seleccionado y su nivel de evidencia.
+- Una confirmación de despliegue que identifica el artefacto y si el runtime es compatible con él.
+
+La consola del dispositivo muestra el mismo estado desde una terminal: vea [Use la consola del dispositivo](./shell.md).
 
 ## Antes de una acción física
 
-- Confirme que la máquina está bajo el procedimiento de trabajo seguro que el sitio aprobó.
-- Confirme la placa, el perfil, la identidad del runtime, la ABI y el hash del artefacto seleccionados.
-- Mantenga la grabación, la carga, el forzado, RUN/STOP y la recuperación como decisiones humanas separadas.
+- Confirme que la máquina está bajo el procedimiento de trabajo seguro aprobado por el sitio.
+- Confirme la placa seleccionada, el perfil, la identidad del runtime, la ABI y el hash del artefacto.
+- Trate grabar, desplegar, forzar, RUN, STOP y recuperar como decisiones humanas separadas.
 
-## Qué todavía necesita evidencia en el destino o HIL
+## Qué sigue necesitando evidencia del destino o HIL
 
-- El estado eléctrico de las salidas, los tiempos y el WCET, el comportamiento físico del watchdog, la persistencia ante un corte de energía, la recuperación del programa de grabación y la calificación para producción.
-- Cualquier afirmación de que el perfil de una placa funciona más allá de su nivel de evidencia registrado.
+- El estado eléctrico de una salida, la temporización y el WCET, el watchdog físico, la persistencia tras un corte de energía, la recuperación con el programador y la calificación de producción.
+- Cualquier afirmación de que un perfil de placa hace más de lo que indica su nivel de evidencia registrado.
 
-Vea [Compatibilidad de hardware](../reference/capabilities-evidence.md) para los niveles y
-[Seguridad y limitaciones](../safety-and-limitations.md) para lo que ZPLC no es.
+[Compatibilidad de hardware](../reference/capabilities-evidence.md) define los niveles, y [Seguridad y limitaciones](../safety-and-limitations.md) dice qué no es ZPLC.
 
-## Registro de escalamiento
+## Cuando escala un caso
 
-- Conserve los diagnósticos, la traza, la identidad del artefacto, el perfil seleccionado y la decisión de quien opera.
-- No copie credenciales ni material sensible del puerto serie en tickets ni en consultas a la IA.
+- Adjunte los diagnósticos, la traza, la identidad del artefacto, el perfil seleccionado y la decisión del operador.
+- Deje fuera de tickets y prompts las credenciales y la salida serie sensible sin filtrar.
 
-Como referencia de diagnóstico de bajo nivel, consulte [la shell de ZPLC](./shell.md).
-El puerto serie sin procesar, la grabación, el forzado, RUN/STOP y la recuperación no
-son operaciones de la IA ni del MCP.
+La conexión serie directa, grabar, forzar, RUN, STOP y la recuperación nunca son operaciones de IA ni de MCP.

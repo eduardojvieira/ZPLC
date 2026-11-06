@@ -2,38 +2,40 @@
 id: native-c
 title: Integrar código nativo en C
 sidebar_label: Código C nativo
-description: Cómo extender el comportamiento de ZPLC compilando tareas propias en C dentro del firmware.
+description: Agregue su propio código C al firmware de ZPLC como un hilo de Zephyr y decida cuándo es la herramienta adecuada.
 tags: [runtime, zephyr, native-c]
 ---
 
 # Integrar código nativo en C
 
-ZPLC separa la lógica IEC editable por el usuario (el bytecode `.zplc`) de las operaciones de bajo nivel del firmware. Sin embargo, quien trabaja en integraciones OEM complejas suele necesitar controladores de alto rendimiento, SDK propietarios de proveedores o funciones de hardware complejas que no se corresponden con la lógica estándar.
+Lea esta página cuando una parte de su máquina necesite código que la lógica IEC no puede expresar: un controlador de pantalla, un SDK de proveedor, un algoritmo de movimiento propietario o un protocolo heredado. Ese código se agrega al firmware en C, junto al runtime, y la lógica de control se mantiene en bytecode `.zplc`.
 
-Para esos casos, ZPLC permite extender el sistema embebido directamente en C con Zephyr RTOS.
+## Elija la capa
 
-## La separación arquitectónica
+| Póngalo en lógica IEC (ST, LD, FBD, SFC)                  | Póngalo en C nativo de Zephyr                                      |
+| --------------------------------------------------------- | ------------------------------------------------------------------ |
+| Secuencias, enclavamientos, lazos PID, estados de máquina | Controladores I2C o SPI para una pieza que Zephyr no cubre         |
+| Todo lo que un integrador deba cambiar sin recompilar     | Un SDK de proveedor, un servicio criptográfico, un algoritmo propietario |
+| Lógica que desea simular y probar en un computador        | Un protocolo que el firmware no implementa                         |
 
-Es importante mantener la separación de responsabilidades:
+:::note C nativo es un hilo aparte, no un bloque
+Una tarea en C nativo no es un bloque de función de su programa. Se ejecuta como un hilo de Zephyr propio junto al planificador, así que la lógica IEC no puede llamarla y el simulador no la ejecuta. Además cambia la imagen del firmware, por lo que exige compilar, grabar y registrar nueva evidencia de la placa donde se ejecuta.
+:::
 
-- **Use la lógica estándar de ZPLC (ST, SFC, LD)** para la automatización de planta, las operaciones generales, la lógica de secuencias, el control PID y la lógica de negocio.
-- **Use C nativo de Zephyr** para operaciones muy rígidas, como los controladores I2C de pantallas, los algoritmos propietarios de control de movimiento, los servicios criptográficos de hardware y los protocolos heredados.
+## Agregue el código
 
-_Las tareas en C nativo no se enlazan directamente al flujo de la lógica programable de ZPLC._ Se ejecutan como hilos independientes, en paralelo, dentro del ecosistema de Zephyr.
+Para esto compila el firmware desde el código fuente ([Compilar el firmware](../guides/build-firmware.md)).
 
-## Flujo de trabajo estándar
-
-Si necesita la integración nativa, debe compilar el firmware de ZPLC desde su código fuente:
-
-1. Cree un archivo fuente en C dentro de `firmware/app` (se recomienda `src/custom/`).
-2. Implemente su lógica como un servicio nativo de Zephyr o como un hilo independiente.
-3. Intégrelo mediante CMake en el archivo `CMakeLists.txt` del espacio de trabajo `firmware/app`.
-4. Si hace falta, interactúe con el runtime de ZPLC mediante las funciones `zplc_hal_*` desde su código en C.
-
-**Ejemplo de extensión de `CMakeLists.txt`:**
+1. Cree un archivo C dentro de `firmware/app`. Una carpeta nueva como `src/custom/` lo mantiene separado de las fuentes del runtime.
+2. Escriba la lógica como un hilo o servicio de Zephyr. Cuando deba tocar el PLC o el hardware, use las funciones `zplc_hal_*` del [contrato de la HAL](./hal-contract.md), nunca las rodee.
+3. Agregue el archivo a la compilación en `firmware/app/CMakeLists.txt`:
 
 ```cmake
 target_sources(app PRIVATE src/custom/custom_sensor_driver.c)
 ```
 
-Mantenga la lógica del PLC en los lenguajes IEC y ponga el código específico del hardware en archivos nativos de Zephyr.
+4. Compile la placa de nuevo y compruebe su presupuesto de flash y RAM con `tools/firmware-test/run.sh size <placa>`. Su código cuenta contra el mismo presupuesto que el runtime.
+
+## Mantenga el límite limpio
+
+Mantenga la lógica del PLC en los lenguajes IEC y el código específico del hardware en archivos nativos. Un hilo nativo que escribe salidas o se bloquea por mucho tiempo puede romper la temporización del ciclo, y nada en el runtime lo comprueba por usted. Mídalo en la placa antes de depender de él.

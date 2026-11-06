@@ -3,52 +3,50 @@ slug: /integration
 id: index
 title: Integración y despliegue
 sidebar_label: Integración
-description: El proceso para incorporar el runtime de ZPLC en hardware Zephyr propio.
+description: Cómo llega un programa de ZPLC compilado a un destino y cómo incorporar el runtime en su propio hardware Zephyr.
 tags: [integration, runtime]
 ---
 
 # Integración y despliegue
 
-Esta página describe cómo llevar aplicaciones ZPLC funcionales a hardware Zephyr real, tanto en despliegues estándar como en integraciones profundas para fabricantes (OEM).
+Esta página traza el camino de un programa compilado a un destino en marcha y dice qué debe hacer cuando su hardware no es una de las placas que ZPLC ya compila.
 
-## Destinos de ejecución
+## A dónde va un programa
 
-Cuando el compilador emite una carga útil de bytecode `.zplc`, esta se envía al destino de ejecución elegido:
+El compilador convierte un proyecto en un archivo `.zplc`. Usted elige dónde se ejecuta:
 
 ```mermaid
 flowchart LR
-  A[Compilar el proyecto a .zplc] --> B{Destino de ejecución}
-  B --> D[Simulación SoftPLC nativa en el equipo]
-  B --> E[Runtime de hardware Zephyr]
-  E --> F[Depuración en línea desde la aplicación ZPLC]
+  A[Compile project to .zplc] --> B{Execution target}
+  B --> D[Native simulation on this computer]
+  B --> E[Zephyr hardware runtime]
+  E --> F[Online debugging in the ZPLC application]
 ```
 
-## Integrar ZPLC en un firmware propio
+La simulación no necesita placa. Para hardware, grabe el runtime una vez ([Grabar el firmware](../guides/flash-firmware.md)) y despliegue después los programas desde la aplicación ([Despliegue](../ide/deployment.md)). Son dos operaciones distintas, y usted inicia ambas.
 
-Si fabrica hardware propio o usa una placa que no viene en las imágenes estándar de ZPLC para Zephyr, debe incorporar el núcleo de ZPLC manualmente. Integrarlo en una configuración propia de Zephyr implica:
+## Use una placa que ZPLC ya compila
 
-1. **Incluir la biblioteca del núcleo.** Enlace el motor C99 de ZPLC en el árbol de compilación CMake.
-2. **Implementar el contrato de la HAL.** Escriba las funciones en C de `zplc_hal_tick`, `zplc_hal_gpio_read`, `zplc_hal_gpio_write` y el resto del [contrato HAL](../runtime/hal-contract.md), según la distribución de GPIO y los controladores de su destino.
-3. **Iniciar el planificador.** Llame a `zplc_sched_init()`, cargue un programa con `zplc_sched_load()` e inícielo con `zplc_sched_start()` desde el hilo `main()` de Zephyr. Consulte la [API del runtime](../reference/runtime-api.md).
+Hay siete placas en el manifiesto, todas en el nivel `cross-build`: el firmware compila y cabe en su presupuesto en integración continua, y ninguna placa tiene un registro de hardware. La lista, con el comando de compilación de cada una, está en [Placas](../reference/boards.md). Para agregar una, siga [Portar ZPLC a una placa nueva](../guides/port-to-a-board.md).
 
-Al cumplir la HAL, se puede portar ZPLC a casi cualquier microcontrolador compatible con POSIX o con Zephyr.
+## Incorpore el runtime en firmware propio
 
-## Capacidades de protocolo
+Si fabrica su propio hardware, o no quiere la imagen de la aplicación de ZPLC, incorpore el núcleo usted mismo:
 
-Al llevar la lógica de automatización a una red, compruebe que su plataforma de hardware admita las capas físicas necesarias:
+1. **Enlace el núcleo.** Agregue la biblioteca ANSI C99 `firmware/lib/zplc_core` a su compilación con CMake.
+2. **Implemente la HAL.** Provea las funciones C del [contrato de la HAL](../runtime/hal-contract.md) para sus pines y controladores, como `zplc_hal_tick`, `zplc_hal_gpio_read` y `zplc_hal_gpio_write`.
+3. **Inicie el planificador.** Desde su hilo `main()`, llame a `zplc_sched_init()`, cargue un programa con `zplc_sched_load()` e inícielo con `zplc_sched_start()`. Las llamadas están en la [API del runtime](../reference/runtime-api.md).
 
-- **MQTT:** requiere una placa con una pila Wi-Fi o Ethernet activa en Zephyr.
-- **Modbus TCP:** funciona sobre los sockets Ethernet estándar.
-- **Modbus RTU:** requiere al menos un transceptor UART/RS-485 implementado físicamente en la placa.
+El núcleo solo toca el hardware a través de la HAL, así que el port es la HAL. La compilación cruzada de un port propio demuestra que compila. No demuestra su temporización ni su E/S.
 
-Como ZPLC resuelve la lógica de los protocolos dentro del motor de la máquina virtual, la configuración entre familias de microcontroladores depende solo de hacer coincidir las rutas de E/S de la HAL.
+## Compruebe el hardware para los protocolos que necesita
 
-## Grabar el hardware
+Un protocolo necesita la capa inferior en la placa:
 
-Para poner en marcha un microcontrolador nuevo, debe grabar el firmware base de ZPLC para Zephyr antes de que la aplicación ZPLC pueda transmitir bytecode `.zplc` por el puerto serie.
+| Protocolo  | La placa necesita                                                    |
+| ---------- | -------------------------------------------------------------------- |
+| MQTT       | Una interfaz Wi-Fi o Ethernet en la configuración de Zephyr          |
+| Modbus TCP | Una interfaz Ethernet o Wi-Fi y sus sockets                          |
+| Modbus RTU | Un UART con un transceptor RS-485 en la placa                        |
 
-En general, ZPLC se apoya en los procedimientos estándar de grabación de Zephyr:
-
-- Muchas placas con núcleo ARM aceptan la grabación directa con ST-Link o J-Link mediante `west flash`.
-- Las placas de desarrollo estándar, como las ESP32, pueden grabarse directamente por USB.
-- En los procesos con RP2040 se puede copiar el binario UF2 generado a la unidad de almacenamiento que aparece al conectar la placa.
+La clase de red de cada placa está en [Placas](../reference/boards.md). Qué se ejercitó de cada protocolo, y con qué nivel de evidencia, está en [Conectividad](../runtime/connectivity.md).

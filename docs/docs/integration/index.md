@@ -3,52 +3,50 @@ slug: /integration
 id: index
 title: Integration & Deployment
 sidebar_label: Integration
-description: Process for embedding the ZPLC runtime into custom Zephyr hardware.
+description: How a compiled ZPLC program reaches a target, and how to embed the runtime in your own Zephyr hardware.
 tags: [integration, runtime]
 ---
 
 # Integration & Deployment
 
-This page outlines the processes for migrating functional ZPLC applications into real-world Zephyr hardware targets, addressing both standard deployments and deep custom OEM integrations.
+This page maps the road from a compiled program to a running target, and says what you must do when your hardware is not one of the boards ZPLC already builds.
 
-## Target Execution
+## Where a program goes
 
-Once the compiler emits a `.zplc` bytecode payload, it is routed immediately to the selected execution target:
+The compiler turns a project into one `.zplc` file. You choose where it runs:
 
 ```mermaid
 flowchart LR
-  A[Compile project to .zplc] --> B{Execution Target}
-  B --> D[Native PC SoftPLC Simulation]
-  B --> E[Zephyr Hardware Runtime]
-  E --> F[Online Debugging via the ZPLC application]
+  A[Compile project to .zplc] --> B{Execution target}
+  B --> D[Native simulation on this computer]
+  B --> E[Zephyr hardware runtime]
+  E --> F[Online debugging in the ZPLC application]
 ```
 
-## Integrating ZPLC into Custom Firmwares
+Simulation needs no board. For hardware, flash the runtime once ([Flash the firmware](../guides/flash-firmware.md)), then deploy programs to it from the application ([Deployment](../ide/deployment.md)). The two steps are different operations, and you start both.
 
-If you are manufacturing custom hardware or using a board not built into the standard ZPLC Zephyr images, you must embed the ZPLC core manually. Integrating ZPLC into a proprietary Zephyr setup involves:
+## Use a board ZPLC already builds
 
-1. **Including the Core Library**: Link the ZPLC C99 Engine to your CMake build tree.
-2. **Implementing the HAL Contract**: Supply concrete C functions for `zplc_hal_tick`, `zplc_hal_gpio_read`, `zplc_hal_gpio_write` and the rest of the [HAL contract](../runtime/hal-contract.md), specific to your target's GPIO layout and driver framework.
-3. **Starting the Scheduler**: Call `zplc_sched_init()`, load a program with `zplc_sched_load()` and start it with `zplc_sched_start()` from your Zephyr `main()` thread. See the [Runtime API](../reference/runtime-api.md).
+Seven boards are in the manifest, all at the `cross-build` level: the firmware compiles and fits its budget in continuous integration, and no board has a hardware record. The list, with the build command of each, is in [Boards](../reference/boards.md). To add one, follow [Port ZPLC to a new board](../guides/port-to-a-board.md).
 
-By conforming to the HAL, you can port ZPLC onto virtually any microcontroller supporting POSIX or Zephyr footprints.
+## Embed the runtime in custom firmware
 
-## Protocol Capabilities
+If you make your own hardware, or you do not want the ZPLC application image, embed the core yourself:
 
-When deploying automation logic across networks, ensure your hardware platform supports the underlying physical layers:
+1. **Link the core.** Add the ANSI C99 library `firmware/lib/zplc_core` to your CMake build.
+2. **Implement the HAL.** Supply the C functions of the [HAL contract](../runtime/hal-contract.md) for your pins and drivers, such as `zplc_hal_tick`, `zplc_hal_gpio_read` and `zplc_hal_gpio_write`.
+3. **Start the scheduler.** From your `main()` thread, call `zplc_sched_init()`, load a program with `zplc_sched_load()` and start it with `zplc_sched_start()`. The calls are in the [Runtime API](../reference/runtime-api.md).
 
-- **MQTT**: Requires a board manifesting an active Wi-Fi or Ethernet stack in Zephyr.
-- **Modbus TCP**: Operates seamlessly over standard Ethernet sockets.
-- **Modbus RTU**: Requires at least one capable UART/RS-485 transceiver physically implemented on the board.
+The core does not touch hardware except through the HAL, so the port is the HAL. The cross-build of a custom port proves that it compiles. It does not prove its timing or its I/O.
 
-Because ZPLC handles the protocol logic abstractly inside the VM engine, configuration across different MCU families relies solely on matching the appropriate HAL I/O paths internally.
+## Check the hardware for the protocols you need
 
-## Flashing the Hardware
+A protocol needs the layer under it on the board:
 
-To bootstrap a new microcontroller, you must flash the core ZPLC Zephyr firmware before the ZPLC application can safely transmit `.zplc` bytecode over serial.
+| Protocol   | The board needs                                                    |
+| ---------- | ------------------------------------------------------------------ |
+| MQTT       | A Wi-Fi or Ethernet interface in the Zephyr configuration          |
+| Modbus TCP | An Ethernet or Wi-Fi interface and its sockets                     |
+| Modbus RTU | A UART with an RS-485 transceiver on the board                     |
 
-Generally speaking, ZPLC leans on standardized Zephyr flash processes:
-
-- Many ARM-based boards accept direct ST-Link or J-Link flashing via `west flash`.
-- Standard development boards (like ESP32) can flash natively over USB.
-- Custom RP2040 pipelines may specify dragging UF2 generated binaries to mounted storage drives.
+Each board's network class is in [Boards](../reference/boards.md). What was exercised for each protocol, and at which evidence level, is in [Connectivity](../runtime/connectivity.md).

@@ -1,185 +1,89 @@
 ---
 slug: /operations/shell
 id: shell
-title: Consola ZPLC Shell
-sidebar_label: ZPLC Shell
-description: Referencia de los comandos de shell de Zephyr incorporados en ZPLC.
+title: Use la consola del dispositivo
+sidebar_label: Consola del dispositivo
+description: Revise, depure y configure una placa ZPLC desde una terminal serie con los comandos de la consola zplc, agrupados por tarea.
 tags: [operations, debugging, shell]
 ---
 
-# La consola (ZPLC Shell)
+# Use la consola del dispositivo
 
-ZPLC agrega un conjunto de comandos `zplc` al shell de Zephyr, en la UART interactiva de la placa (normalmente a 115200 baudios).
+El firmware agrega un conjunto de comandos `zplc` a la consola de Zephyr en el UART de consola de la placa. Úselo para leer el estado de una placa, depurar un programa y definir la configuración del dispositivo desde una terminal, sin la aplicación de ZPLC. Esta página agrupa los comandos por lo que se quiere hacer. [Comandos de la consola](../reference/shell-commands.md) es la tabla generada de cada subcomando, con sus argumentos y el símbolo Kconfig que lo habilita; búsquelo allí si un comando no aparece en esta página.
 
-Cada subcomando, con sus argumentos y el símbolo de Kconfig que lo habilita, está en la [referencia de comandos de la consola](../reference/shell-commands.md) generada.
+## Abra la consola
 
-Desde un terminal puede inspeccionar la memoria, revisar la red, leer los errores de ejecución y controlar la máquina virtual sin la aplicación de escritorio de ZPLC.
+Conecte una terminal serie (PuTTY, `screen`, Minicom) al puerto COM virtual de la placa, normalmente a 115200 baudios, y empiece cada comando con `zplc`. Una simulación de escritorio no tiene consola. Habla el [protocolo de sesión](../reference/runtime-protocol.md).
 
-## Acceso a la consola
+:::note Nivel de evidencia: compilación para el destino
+Los comandos se leen de la tabla de comandos del firmware, de la que se genera la página de referencia. No hay una sesión en una placa real registrada.
+:::
 
-Conecte un programa de terminal serie (como PuTTY, screen o Minicom) al puerto COM virtual de su placa Zephyr.
+## Compruebe qué es la placa
 
-Inicie cada comando con `zplc`.
+- `zplc version` imprime la versión, el commit desde el que se compiló la imagen (y si el árbol tenía cambios sin confirmar), la placa, la ABI del bytecode, el borrador del contrato y las opciones de compilación con su hash. No imprime fecha de compilación, así que dos compilaciones del mismo commit son la misma imagen. `zplc sys build` imprime el mismo texto y, con `--json`, lo imprime como un solo objeto.
+- `zplc status` muestra el estado del runtime. Mientras MQTT corre sobre TLS con la verificación de certificado desactivada, también muestra `WARNING: MQTT tls-verify: OFF` (`"warnings":["mqtt_tls_verify_off"]` con `--json`).
+- `zplc sys info` muestra el sistema, la compilación y el hardware. Con `--json` informa además el contador de borrador y el programa más grande que acepta la placa (`CONFIG_ZPLC_CODE_SIZE_MAX`). Un programa compilado para otro borrador se rechaza ([Contribuir](../contributing/index.md#contador-de-borrador-del-contrato)).
+- `zplc sys io` muestra la identidad de la descripción de E/S de la placa con la que se compiló la imagen. La aplicación de ZPLC compara su hash con la descripción que tiene y rechaza un programa que usa E/S que la placa no tiene ([Placas](../reference/boards.md)).
+- `zplc sys reset` dice por qué se reinició el procesador por última vez y qué falla dejó.
 
----
+## Controle el runtime
 
-## Control del runtime (`zplc`)
+- `zplc start` y `zplc stop` inician y detienen el planificador. Detener no es pausar: también pone en cero la imagen de salida, borra la tabla de forzados y devuelve cada tarea a su punto de entrada ([Pausa, reanudación, paso y parada](../runtime/scheduler.md#pausa-reanudación-paso-y-parada)).
+- `zplc reset` recarga el programa desde el almacén de programas y deja el planificador detenido. El almacén guarda la única copia residente, así que una carga en curso se cancela. Sin programa cargado, solo detiene el planificador y borra sus tareas.
+- `zplc sys reboot` reinicia la placa con un reinicio por software.
+- `zplc sched status` y `zplc sched tasks` muestran el estado del planificador y las tareas configuradas, con su prioridad y sus mediciones de tiempo de ciclo, cuando el firmware se compila con `CONFIG_ZPLC_SCHEDULER`.
 
-- `zplc load <size>` - Prepara el runtime para recibir un programa `.zplc` del tamaño indicado, en bytes. Se rechaza mientras el runtime esté en falla; ejecute antes `zplc reset`.
-- `zplc data <hex>` - Envía el siguiente fragmento del programa, en hexadecimal. Úselo solo después de `zplc load`.
-- `zplc start` - Inicia el planificador.
-- `zplc stop` - Detiene el planificador.
-- `zplc status` - Muestra el estado del runtime. Mientras MQTT esté habilitado sobre TLS con la verificación del certificado apagada, muestra además `WARNING: MQTT tls-verify: OFF` (`"warnings":["mqtt_tls_verify_off"]` en `--json`).
-- `zplc reset` - Recarga el programa cargado desde el almacén de programas y deja el planificador detenido. El almacén es la única copia residente del programa, así que una carga en curso se cancela. Sin programa cargado solo detiene el planificador y limpia sus tareas.
-- `zplc version` - Muestra qué compilación es: la versión, la confirmación desde la que se construyó la imagen (y si el árbol de trabajo tenía cambios sin confirmar), la placa, la ABI del bytecode, el borrador del contrato y las opciones de compilación con su hash. No imprime fecha de compilación, de modo que dos compilaciones de la misma confirmación son la misma imagen. El mismo texto es `zplc sys build`.
+## Cargue un programa a mano
 
----
+Normalmente la aplicación lo hace por usted. A mano, `zplc load <tamaño>` prepara el runtime para recibir un archivo `.zplc` de esa cantidad de bytes, y `zplc data <hex>` envía el siguiente fragmento en hexadecimal. Se niega a continuar mientras el runtime está en falla: ejecute antes `zplc reset`. `zplc sched load` y `zplc sched data` son el mismo par bajo el planificador.
 
-## Máquina virtual y depuración (`zplc dbg`)
+## Depure un programa
 
-Los comandos `dbg` dan acceso directo al estado de ejecución, a la memoria y a los puntos de parada.
+`zplc dbg` da acceso directo al estado de ejecución, la memoria y los puntos de interrupción.
 
-### Puntos de parada (`bp`)
+- **Puntos de interrupción.** `zplc dbg bp add <pc>`, `bp remove <pc>`, `bp list` y `bp clear`.
+- **Pausa y paso.** `zplc dbg pause` detiene el planificador entre ciclos, pone las salidas físicas en su estado seguro y conserva la imagen de salida y la tabla de forzados. `zplc dbg resume` continúa un ciclo detenido en un punto de interrupción, y la primera confirmación de ciclo vuelve a manejar las salidas desde la imagen conservada. `zplc dbg step` termina ese ciclo, o ejecuta un ciclo completo, y hace pausa en el siguiente límite de ciclo o en el siguiente punto de interrupción.
+- **Forzados.** `zplc dbg force set <dir> <bytes_hex>` anula las asignaciones del propio programa a una dirección. `force list` los muestra, `force clear <dir>` quita uno y `force clear_all` los quita todos.
+- **Memoria.** `zplc dbg mpeek dir:largo[,dir:largo...]` lee bloques, `zplc dbg poke <dir> <valor>` escribe, `zplc dbg mem <ipi|opi|work|retain> [desplazamiento]` vuelca una región y `zplc dbg info` muestra el estado de la máquina y el PC actual. `zplc dbg watch <dir> [tipo]` imprime un valor como `bool`, `i8`, `i16`, `i32`, `u8` (el valor por defecto), `u16`, `u32` o `f32`. Es una instantánea, no un flujo.
+- **Temporizadores y tareas.** `zplc dbg ticks` imprime el contador de ticks en milisegundos, `zplc dbg task <id_tarea>` muestra una tarea y `zplc dbg timer <dir>` decodifica la instancia `TON`, `TOF` o `TP` de una dirección en `IN`, `Q`, `PT` y `ET`.
 
-- `zplc dbg bp list` - Lista los puntos de parada activos.
-- `zplc dbg bp add <pc>` - Agrega un punto de parada en la dirección indicada del contador de programa (PC).
-- `zplc dbg bp remove <pc>` - Elimina el punto de parada de la dirección indicada.
-- `zplc dbg bp clear` - Elimina todos los puntos de parada.
-
-### Forzado de variables (`force`)
-
-- `zplc dbg force list` - Lista las direcciones de memoria forzadas.
-- `zplc dbg force set <addr> <hexbytes>` - Fuerza una dirección de memoria a mantener los bytes indicados, por encima de las asignaciones del propio programa.
-- `zplc dbg force clear <addr>` - Quita el forzado de una dirección.
-- `zplc dbg force clear_all` - Quita todos los forzados, de modo que el programa vuelve a controlar todas las direcciones.
-
-### Control de la ejecución
-
-- `zplc dbg pause` - Pausa el planificador entre ciclos. Las salidas físicas pasan a su estado seguro; la imagen de salidas y la tabla de forzados se conservan.
-- `zplc dbg resume` - Reanuda. Un ciclo detenido en un punto de parada continúa desde donde se detuvo, y la primera confirmación de ciclo vuelve a energizar las salidas desde la imagen conservada.
-- `zplc dbg step` - Termina el ciclo detenido en un punto de parada, o ejecuta un ciclo completo, y se detiene en el siguiente límite de ciclo o en el siguiente punto de parada. La imagen muestra el ciclo ejecutado; las salidas quedan seguras.
-
-`zplc stop` no es una pausa: además pone a cero la imagen de salidas, borra la tabla de forzados y devuelve cada tarea a su punto de entrada. Véase [Pausa, reanudación, paso y parada](../runtime/scheduler.md#pausa-reanudación-paso-y-parada).
-
-### Inspección de memoria
-
-- `zplc dbg info` - Muestra el estado de la máquina virtual y el PC actual.
-- `zplc dbg mpeek addr:len[,addr:len...]` - Lee uno o más bloques de memoria en las direcciones hexadecimales indicadas.
-- `zplc dbg poke <addr> <value>` - Escribe un valor en una dirección de memoria.
-- `zplc dbg mem <ipi|opi|work|retain> [offset]` - Vuelca una región de memoria en la consola, a partir del desplazamiento opcional.
-- `zplc dbg watch <addr> [type]` - Lee un valor de una región de memoria del PLC y lo imprime en el tipo indicado: `bool`, `i8`, `i16`, `i32`, `u8` (por defecto), `u16`, `u32` o `f32`. Es una instantánea, no un flujo: la pestaña Watch de la aplicación ZPLC consulta la misma memoria.
-
-Todo comando del conjunto `zplc` que recibe una dirección trabaja dentro de las cuatro regiones del PLC (imagen de entradas, imagen de salidas, WORK y RETAIN) y rechaza una dirección fuera de ellas. Leer o escribir cualquier otra dirección del dispositivo es el comando `devmem` del shell de Zephyr, que el firmware de versión no tiene: véase [Memoria cruda](#memoria-cruda-solo-firmware-de-diagnóstico).
-
-Las lecturas (`mpeek`, `mem`, `info`) salen de la instantánea que el ciclo publicó en su última confirmación, de modo que un
-valor es entero y de un solo ciclo, y una lectura nunca espera a un ciclo. Un `poke` se encola y se aplica en la captura
-de entradas del siguiente ciclo por la interfaz que respeta los forzados: una dirección forzada conserva su valor
-forzado. Mientras el runtime está detenido no hay ciclo y la escritura se aplica de inmediato.
-
-### Ticks, tareas y temporizadores
-
-- `zplc dbg ticks` - Imprime el conteo de ticks del sistema, en milisegundos.
-- `zplc dbg task <task_id>` - Muestra la definición y los límites de una tarea.
-- `zplc dbg timer <addr>` - Lee la instancia de 16 bytes de un `TON`, `TOF` o `TP` en la dirección e imprime `IN`, `Q`, `PT` y `ET` (en milisegundos) y si el temporizador está corriendo.
-
----
-
-## Planificador (`zplc sched`)
-
-El planificador decide cuándo se ejecuta cada tarea. Estos comandos están disponibles cuando el firmware se compila con `CONFIG_ZPLC_SCHEDULER`. Sirven para revisar los tiempos de las tareas o para cargar un programa a mano.
-
-- `zplc sched status` - Muestra el estado del planificador, como `RUNNING` o `HALTED`.
-- `zplc sched tasks` - Lista las tareas configuradas con su prioridad y las mediciones de tiempo de ciclo.
-- `zplc sched load <size>` - Prepara el runtime para recibir un programa `.zplc` del tamaño indicado, en bytes.
-- `zplc sched data <hex>` - Envía el siguiente fragmento del programa, en hexadecimal, sin pasar por la aplicación ZPLC.
-
----
-
-## Configuración y persistencia (`zplc config`)
-
-Estos comandos administran los ajustes que ZPLC guarda en el almacenamiento no volátil de la placa.
-
-- `zplc config get` - Muestra la configuración actual. Una contraseña, una clave o un nombre de usuario se muestra como `(set)` o `(not set)`; ningún comando ni línea del registro imprime su valor.
-- `zplc config set <key> <val>` - Cambia un ajuste, como un intervalo o una dirección de red. El cambio queda en memoria hasta que se guarda.
-- `zplc config save` - Escribe todos los ajustes que `config get` informa, y las sustituciones de la asignación Modbus, en el almacén no volátil donde se guarda el programa. Imprime `OK: Config saved` solo después de haber escrito todas las entradas; si alguna no se escribió, imprime `ERROR: Failed to save config: <código>` y termina con ese código (`-134` significa que este firmware no guarda ajustes).
-- `zplc config reset` - Pone los ajustes por defecto en memoria y los guarda, de modo que también se aplican después del siguiente reinicio. Informa un error cuando no pudo guardar los valores por defecto.
-
-Los ajustes de un dispositivo que nunca se configuró son los valores por defecto: MQTT apagado, sin broker, y MQTT con TLS y el certificado del broker verificado (véase [Valores por defecto seguros](../runtime/connectivity.md#valores-por-defecto-seguros)).
-
-`zplc config set mqtt_security 1` apaga la verificación del certificado. Una imagen de versión lo rechaza (`ERROR: this firmware cannot turn TLS certificate verification off`); una imagen compilada con `CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS=y` lo acepta, imprime una advertencia y muestra `tls-verify: OFF` en `zplc mqtt status` y en `zplc status` mientras siga así.
+Todo comando que recibe una dirección trabaja dentro de las cuatro regiones del PLC (imagen de entrada, imagen de salida, trabajo y retentiva) y rechaza cualquier otra dirección. Las lecturas salen de la instantánea que publicó el último ciclo, así que un valor es completo y de un solo ciclo, y una lectura nunca espera a un ciclo. Un `poke` se encola y se aplica en el latch de entradas del ciclo siguiente por la interfaz que respeta los forzados, así que una dirección forzada conserva su valor forzado. Mientras el runtime está detenido no hay ciclo, y la escritura se aplica de inmediato.
 
 ### Memoria cruda (solo firmware de diagnóstico)
 
-El shell de Zephyr tiene un comando `devmem` que lee y escribe cualquier dirección del dispositivo, no solo las regiones del PLC. El firmware de versión no lo compila (`CONFIG_DEVMEM_SHELL=n`). La imagen de diagnóstico sí:
+El comando `devmem` de Zephyr lee y escribe cualquier dirección del dispositivo. El firmware de versión no lo compila (`CONFIG_DEVMEM_SHELL=n`). La imagen de diagnóstico sí:
 
 ```bash
 west build -b <board> firmware/app -- -DEXTRA_CONF_FILE=diagnostic.conf
 ```
 
-`diagnostic.conf` activa `CONFIG_ZPLC_SHELL_RAW_MEMORY=y` junto con `CONFIG_DEVMEM_SHELL=y`, y la compilación de la aplicación se detiene con un error cuando solo uno de los dos está activo, de modo que el comando no aparece en una imagen de versión por accidente. Use una imagen de diagnóstico en un banco de pruebas, nunca en un controlador conectado a una planta.
+`diagnostic.conf` define `CONFIG_ZPLC_SHELL_RAW_MEMORY=y` junto con `CONFIG_DEVMEM_SHELL=y`. La compilación de la aplicación se detiene con un error cuando solo una de las dos está definida, así que el comando no puede llegar a una imagen de versión por accidente. Use una imagen de diagnóstico en un banco de pruebas, nunca en un controlador conectado a una planta.
 
----
+## Lea y cambie la configuración
 
-## Integración de hardware (`zplc hil` / `adc`)
+- `zplc config get` muestra la configuración. Una contraseña, una clave o un nombre de usuario aparece como `(set)` o `(not set)`, y ningún comando ni línea de registro imprime su valor.
+- `zplc config set <clave> <valor>` cambia un ajuste en memoria.
+- `zplc config save` escribe cada ajuste que informa `config get`, y las anulaciones del mapeo Modbus, en el almacén no volátil que usa el programa. Imprime `OK: Config saved` solo después de escribir todas las entradas. Si no, imprime `ERROR: Failed to save config: <código>` y termina con ese código, donde `-134` significa que el firmware no guarda ajustes.
+- `zplc config reset` pone los valores por defecto en memoria y los guarda, así que también rigen después del próximo reinicio.
 
-Los comandos `adc` existen solo cuando el firmware se compila con `CONFIG_ADC`.
+Un dispositivo que nunca se configuró tiene MQTT apagado, sin broker, y TLS con certificado verificado cuando se enciende MQTT ([Valores por defecto seguros](../runtime/connectivity.md#valores-por-defecto-seguros)). `zplc config set mqtt_security 1` desactiva la verificación. Una imagen de versión la rechaza con `ERROR: this firmware cannot turn TLS certificate verification off`. Una imagen compilada con `CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS=y` la acepta, imprime una advertencia y muestra `tls-verify: OFF` en `zplc mqtt status` y en `zplc status` mientras siga activa.
 
-- `zplc hil mode <mode>` - Cambia el modo de hardware en el lazo (HIL).
-- `zplc hil status` - Muestra el estado de HIL.
-- `zplc hil reset` - Reinicia la máquina virtual.
-- `zplc hil watch <id> <addr>` - Registra un watch de HIL.
-- `zplc adc temp` - Lee la temperatura interna del procesador, si la placa lo permite.
-- `zplc adc read <channel>` - Lee un canal del ADC.
+## Conéctese a una red
 
----
+- `zplc net status` muestra la dirección IPv4, la puerta de enlace y la dirección MAC en una placa con hardware de red.
+- `zplc wifi connect` se une a la red Wi-Fi con las credenciales guardadas por `zplc config set wifi_ssid`, `wifi_pass` y `wifi_security`, y nunca las guarda. Una placa con un SSID guardado también se une sola al arrancar y después de una caída, en un elemento de trabajo en segundo plano que nunca retrasa un ciclo. Espera 2 s tras la primera falla, duplicando hasta 60 s. `zplc status --json` informa el enlace como `wifi.state` (`unconfigured`, `connecting`, `connected`, `retrying`, o `unsupported` en una placa sin Wi-Fi) y `wifi.ip`. Ni el SSID ni la contraseña se registran.
+- `zplc ntp status`, `enable`, `disable`, `server <nombre_de_host>` y `sync` controlan la sincronización de hora por SNTP.
 
-## Red (`zplc net` / `wifi`)
+## Inspeccione MQTT y Modbus
 
-Para las placas con hardware de red, como la ESP32-S3 o las placas STM32F7.
+- `zplc mqtt status` muestra el broker, el identificador de cliente y `tls-verify`: `on` (TLS, certificado verificado), `OFF` (TLS, sin verificar, con una línea de advertencia) o `n/a` (TCP simple). Con `--json` agrega `"tls_verify"`. `zplc mqtt reset_backoff` reinicia la demora de reconexión.
+- `zplc comm map` muestra los enlaces de comunicación y los mapeos del servidor Modbus. `zplc comm set modbus <índice> <dirección>` anula un mapeo del servidor y `zplc comm clear modbus <índice>` quita la anulación.
 
-- `zplc net status` - Muestra la dirección IPv4, la puerta de enlace y la dirección MAC.
-- `zplc wifi connect` - Se conecta a la red Wi-Fi con las credenciales guardadas por `zplc config set wifi_ssid`, `wifi_pass` y `wifi_security` (nunca las guarda). Una placa con un SSID guardado también se une por sí sola al arrancar y de nuevo después de una caída, en un elemento de trabajo en segundo plano que nunca retrasa un ciclo: espera 2 s después de la primera falla y duplica la espera hasta 60 s. `zplc status --json` informa el enlace como `wifi.state` (`unconfigured`, `connecting`, `connected`, `retrying`, o `unsupported` en una placa sin Wi-Fi) y `wifi.ip`. Ni el SSID ni la contraseña se registran.
+## Instale certificados TLS
 
----
+Un broker protegido, como AWS IoT Core, necesita certificados en la placa. `zplc cert status` muestra si el certificado de la CA, el certificado de cliente y la clave privada están instalados, y sus tamaños. Para guardar uno, ejecute `zplc cert begin <ca|client|key> <tamaño>`, envíe los datos con `zplc cert chunk <hex>` las veces que haga falta y luego `zplc cert commit`. `zplc cert erase <ca|client|key>` quita uno. Ningún comando imprime un certificado o una clave guardados.
 
-## MQTT y comunicación (`zplc mqtt` / `comm`)
+## Comprobaciones de hardware
 
-- `zplc mqtt status` - Muestra el estado del cliente MQTT, incluidos el broker y el identificador de cliente, y `tls-verify`: `on` (TLS, se verifica el certificado del broker), `OFF` (TLS, no se verifica, con una línea de advertencia) o `n/a` (TCP plano, sin TLS). `--json` agrega `"tls_verify"`.
-- `zplc mqtt reset_backoff` - Restablece la espera de reconexión a su valor inicial.
-- `zplc comm map` - Muestra los enlaces de comunicación y las asignaciones del servidor Modbus.
-- `zplc comm set modbus <index> <address>` - Sustituye una asignación del servidor Modbus.
-- `zplc comm clear modbus <index>` - Quita la sustitución de una asignación del servidor Modbus.
-
----
-
-## Certificados y seguridad (`zplc cert`)
-
-Un broker MQTT seguro, como AWS IoT Core, requiere certificados TLS guardados en la placa.
-
-- `zplc cert status` - Muestra si están instalados el certificado de la CA, el certificado del cliente y la clave privada, y sus tamaños.
-- `zplc cert begin <ca|client|key> <size>` - Inicia una carga del tamaño indicado.
-- `zplc cert chunk <hex>` - Envía el siguiente fragmento de la carga, en hexadecimal.
-- `zplc cert commit` - Escribe en el almacenamiento los datos cargados.
-- `zplc cert erase <ca|client|key>` - Borra el certificado o la clave guardados.
-
----
-
-## Servicios de hora (`zplc ntp`)
-
-ZPLC puede sincronizar el reloj mediante SNTP.
-
-- `zplc ntp status` - Muestra el estado de sincronización y el desfase respecto de la hora Unix.
-- `zplc ntp enable` / `zplc ntp disable` - Activa o desactiva el servicio SNTP.
-- `zplc ntp server <hostname>` - Define el servidor de hora.
-- `zplc ntp sync` - Solicita la hora de inmediato.
-
----
-
-## Sistema (`zplc sys`)
-
-Estos comandos están disponibles cuando el firmware se compila con `CONFIG_ZPLC_SCHEDULER`.
-
-- `zplc sys info` - Muestra la información del sistema, incluidos datos de la compilación y del hardware. Con `--json` informa también el `draft_counter` de la imagen y, en `memory`, `code_size` y `max_artifact_size`, el mayor programa que acepta la placa (`CONFIG_ZPLC_CODE_SIZE_MAX`); un programa construido para otro borrador se rechaza (véase [Contribuir](../contributing/index.md#contador-de-borrador-del-contrato)).
-- `zplc sys build` - Muestra la identidad de la imagen de firmware, igual que `zplc version`. Con `--json` la imprime como un objeto con `version`, `commit`, `dirty`, `board`, `abi_major`, `abi_minor`, `draft_counter`, `options_hash` y `options`. `commit` vale `unknown` cuando la imagen se construyó desde un archivo de fuentes sin historial de git. Es un comando aparte porque el saludo de la aplicación ZPLC acepta exactamente las claves de `zplc sys info --json`.
-- `zplc sys io` - Muestra la identidad de la descripción de E/S de la placa con la que se construyó la imagen. Con `--json` la imprime como un objeto con `schema`, `board_id`, `hash`, `channels`, `input_bytes` y `output_bytes`. La aplicación ZPLC compara el hash con la descripción que tiene para la placa y rechaza un programa que usa E/S en un firmware que informa otra o ninguna, o que toca una dirección para la que la placa no tiene canal (véase [Placas](../reference/boards.md)). Es un comando aparte por la misma razón que `zplc sys build`: las claves de `zplc sys info --json` no cambian.
-- `zplc sys reboot` - Reinicia la placa con un reinicio por software.
+Los comandos `zplc adc` existen solo cuando el firmware se compila con `CONFIG_ADC`: `zplc adc temp` lee la temperatura del procesador cuando la placa tiene el sensor, y `zplc adc read <canal>` lee un canal. `zplc hil mode`, `status`, `watch` y `reset` son los ganchos de hardware en el lazo, y `zplc dbg trace` registra por ciclo las imágenes de entrada y salida para la comprobación de hardware del curso.
