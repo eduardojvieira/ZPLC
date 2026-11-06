@@ -3,139 +3,81 @@ slug: /ide
 id: index
 title: La aplicación ZPLC
 sidebar_label: Aplicación ZPLC
-description: Creación de proyectos PLC en una carpeta, validación, simulación y flujos de hardware controlados por una persona.
+description: Qué hace la aplicación de escritorio ZPLC, cómo está construida y dónde están sus límites.
 tags: [ide, tooling]
 ---
 
 # La aplicación ZPLC
 
-ZPLC es el entorno de trabajo de escritorio para crear, compilar, probar,
-simular y revisar proyectos PLC en una carpeta que usted elige.
+ZPLC es la aplicación de escritorio para escribir, compilar, probar, simular y revisar proyectos PLC. Un proyecto es una carpeta que usted elige, y la aplicación lee y escribe los archivos que contiene. Esta página da la visión general y explica cómo está construida la aplicación; las demás páginas de esta sección cubren el [entorno de trabajo](./features.md), los [editores](./editors.md), el [compilador](./compiler.md) y la [migración desde la versión 1](./migration-v1-to-v2.md).
 
 ## Camino rápido
 
-1. Cree un proyecto o copie un ejemplo a una carpeta.
-2. Edite ST, LD, FBD o SFC y compile con el compilador canónico.
-3. Ejecute pruebas temporales y la simulación POSIX nativa; revise los resultados en el panel inferior.
-4. Para hardware, use los flujos separados de compilación, grabación, despliegue y RUN/STOP, que inicia una persona.
+1. Abra una carpeta de proyecto, o cree una con **Nuevo proyecto**. También puede copiar un ejemplo incluido a una carpeta.
+2. Edite un archivo de texto estructurado, lista de instrucciones, escalera, diagrama de bloques de función o diagrama funcional secuencial, y compile el proyecto.
+3. Ejecute las pruebas de escenario y la simulación nativa, y lea el resultado en el panel que está bajo el editor.
+4. Para una placa, compile el firmware, grábelo, despliegue el programa y ejecútelo. Una persona inicia cada uno de estos pasos; vea [Desplegar un programa](./deployment.md).
 
-## Qué ofrece el entorno de trabajo
+## Qué gestiona la aplicación
 
-| Superficie | Función actual                                                                                                      |
-| ---------- | ------------------------------------------------------------------------------------------------------------------- |
-| Proyecto   | Archivos en una carpeta, exportación al esquema v2 y diferencias de migración.                                      |
-| Editores   | ST es la vía de texto principal; LD, FBD y SFC conservan sus modelos visuales.                                      |
-| Validación | Diagnósticos del compilador, pruebas temporales, reglas de seguridad, traza y simulación POSIX.                     |
-| Evidencia  | Registra los resultados de las herramientas y su alcance; no convierte un resultado en host en uno de HIL.          |
-| Hardware   | Connect y deploy siguen siendo acciones explícitas de una persona, después de las verificaciones de compatibilidad. |
+| Área | Qué hace |
+| --- | --- |
+| Proyecto | Lee y escribe los archivos de la carpeta, `zplc.json` incluido, y exporta un proyecto de la versión 2 revisado. |
+| Editores | Un editor de texto para texto estructurado y lista de instrucciones, y un editor de modelos para cada lenguaje gráfico. |
+| Validación | Diagnósticos del compilador, pruebas de escenario, comprobaciones de seguridad, trazas y la simulación nativa. |
+| Evidencia | Registra cada resultado con su alcance, y nunca presenta un resultado de host como un resultado de hardware. |
+| Hardware | Conectar y desplegar son acciones explícitas de una persona, después de una comprobación de compatibilidad. |
 
-## Límites importantes
+## Límites
 
-La simulación POSIX nativa valida el comportamiento en el equipo anfitrión. No
-afirma tiempos exactos de la placa, E/S eléctrica, HIL ni calificación para
-producción. Los perfiles de placa solo tienen resultados de cross-build; consulte
-[compatibilidad de hardware](../reference/capabilities-evidence.md).
+La simulación nativa valida el comportamiento en el equipo anfitrión. No muestra el tiempo de un destino, la E/S eléctrica, el comportamiento con hardware en el lazo ni la calificación de producción. Los perfiles de placa llevan solo evidencia de compilación cruzada; vea la [evidencia de hardware](../reference/capabilities-evidence.md).
 
-La IA puede preparar un cambio candidato aislado, pero solo una persona puede
-guardarlo o iniciar una operación física. Lea [IA y privacidad](./ai-privacy.md)
-antes de activar un proveedor de IA.
+Un asistente de IA puede preparar un cambio candidato aislado, pero solo una persona puede guardarlo o iniciar una operación física. Lea [IA y privacidad](./ai-privacy.md) antes de activar un proveedor de IA.
 
-## Arquitectura de la aplicación y modelo de proyecto
+## Cómo está construida la aplicación
 
-ZPLC presenta a los editores y a las herramientas un proyecto guardado en una
-carpeta; el renderer no tiene acceso privilegiado al sistema de archivos, a la
-shell ni a los dispositivos.
+La aplicación mantiene el acceso privilegiado fuera de la ventana. Los editores y los paneles ven un proyecto respaldado por una carpeta a través de una interfaz estrecha, y el trabajo del sistema operativo ocurre en otro lugar.
 
-### Camino rápido
-
-Abra una carpeta de proyecto, revise su destino y sus tareas, edite un archivo
-fuente y compile con la Tool API. Exporte una carpeta v2 ya revisada, en lugar de
-depender de una reescritura implícita del proyecto antiguo.
-
-### Límites
-
-| Capa                   | Responsabilidad                                                                       |
-| ---------------------- | ------------------------------------------------------------------------------------- |
-| Renderer               | Entorno de trabajo, modelos visuales, diagnósticos y presentación de resultados.      |
-| Preload/main           | Operaciones acotadas y validadas sobre archivos, y ejecución supervisada del runtime. |
-| Compilador             | Compilación canónica de fuentes y modelos visuales a `.zplc`.                         |
-| Adaptadores de runtime | Simulación POSIX nativa o un runtime compatible conectado.                            |
+| Capa | Responsabilidad |
+| --- | --- |
+| Renderizador | El entorno de trabajo, los modelos visuales, los diagnósticos y las vistas de evidencia. No tiene por sí mismo acceso al sistema de archivos, al shell ni a dispositivos. |
+| Preload y proceso principal | Operaciones validadas y estrechas de sistema de archivos y del entorno de ejecución supervisado. |
+| Compilador | Compila el código fuente y los modelos visuales a `.zplc`. |
+| Adaptadores del entorno de ejecución | La simulación nativa, o un entorno de ejecución compatible conectado. |
 
 ### Cómo se comunican las capas
 
-El renderer llega al proceso principal solo a través del preload, y solo por los
-canales que nombra `packages/zplc-ide/electron/ipcContract.ts`. Ese módulo es la
-única definición: el proceso principal, el preload y el renderer toman de él los
-nombres de canal, de modo que no hay una segunda copia que se desalinee.
+El renderizador llega al proceso principal solo a través del preload, y solo por los canales que nombra `packages/zplc-ide/electron/ipcContract.ts`. Ese módulo es la definición única: el proceso principal, el preload y el renderizador toman de él los nombres de sus canales.
 
-- **Un manejador por canal.** El proceso principal responde a cada canal del
-  contrato con exactamente un manejador, y se niega a arrancar si a un canal le
-  falta o si un manejador no tiene canal.
-- **Primero el emisor y el mensaje.** Cada llamada se comprueba antes de que corra
-  su manejador: el emisor debe ser el documento de confianza de ZPLC de la
-  ventana y los argumentos deben ajustarse al esquema de ese canal. Cualquier otra
-  cosa se deniega con un mensaje fijo.
-- **Un preload estrecho.** El preload expone un método por operación y nada
-  genérico (ni `send`, ni acceso a un canal arbitrario, ni una ruta de la
-  máquina). Se construye como un solo script que no requiere nada salvo `electron`.
-- **Procesos fijos.** Los procesos que se lanzan para compilar, probar y construir
-  firmware (el runtime nativo, `west build`, las sondas de la cadena de
-  herramientas) salen de una lista cerrada de vectores de argumentos fijos, se
-  lanzan sin shell y nunca toman un comando ni un argumento del renderer.
+- **Un manejador por canal.** El proceso principal se niega a arrancar si un canal no tiene manejador o un manejador no tiene canal.
+- **Primero el remitente y el mensaje.** Cada llamada se comprueba antes de que se ejecute su manejador: el remitente debe ser el documento ZPLC de confianza de la ventana, y los argumentos deben ajustarse al esquema del canal. Cualquier otra cosa se deniega con un único mensaje fijo.
+- **Un preload estrecho.** Expone un método por operación y nada genérico: ningún `send`, ningún acceso a canales sin procesar y ninguna ruta de la máquina.
+- **Procesos fijos.** Los procesos que se inician para compilar, probar y compilar el firmware salen de una lista cerrada de vectores de argumentos fijos, se inician sin shell y nunca toman un comando ni un argumento del renderizador.
 
-Nivel de evidencia: host. `electron/ipcRegistry.test.ts` ejecuta la tabla real de
-manejadores y el registro real contra sustitutos de Electron y de los almacenes,
-`electron/preload.test.ts` ejecuta el preload real contra un sustituto y compara lo
-que invoca con el contrato, y `shared/spawnAllowList.test.ts` muestra los
-vectores de argumentos (requisito IDE-017). No es evidencia de la aplicación
-empaquetada.
+Nivel de evidencia: host. `packages/zplc-ide/electron/ipcRegistry.test.ts` ejecuta la tabla real de manejadores contra sustitutos de Electron y de los almacenes, `packages/zplc-ide/electron/preload.test.ts` ejecuta el preload real y compara lo que invoca con el contrato, y `packages/zplc-ide/shared/spawnAllowList.test.ts` muestra los vectores de argumentos (requisito IDE-017). No es evidencia de la aplicación empaquetada.
 
 ### Trabajo que no bloquea la ventana
 
-Compilar, la comprobación de seguridad, las pruebas de escenarios y la revisión de
-candidatos se ejecutan en un proceso propio, que se lanza para cada petición desde
-una lista fija y se detiene cuando la petición termina. El proceso principal solo
-envía la petición y espera, de modo que una compilación o una ejecución larga no
-puede dejar la ventana sin respuesta. **Cancelar escenarios**, en el panel de pruebas,
-pide al proceso que se detenga; un proceso ocupado en una compilación que no
-responde se mata tras un breve periodo de gracia, y un plazo mata al que nunca
-termina. Matar el proceso también termina el runtime nativo que había lanzado. Una
-ejecución cancelada se muestra como cancelada y se registra como cancelada en el
-registro de ejecuciones; nada de ella se conserva como compilación.
+La compilación, la comprobación de seguridad, las pruebas de escenario y la revisión del candidato se ejecutan cada una en un proceso propio, iniciado para la solicitud desde una lista fija y detenido cuando la solicitud termina, de modo que una compilación o una ejecución larga no puede congelar la ventana. **Cancelar escenarios** en el panel Pruebas pide al trabajador que se detenga; un trabajador ocupado que no responde se mata tras un breve plazo de gracia, y un plazo límite mata al que nunca termina. Matar al trabajador también termina el entorno de ejecución nativo que inició. Una ejecución cancelada se muestra y se registra como cancelada, y nada de ella se conserva como una compilación.
 
-Nivel de evidencia: host. `electron/toolWorkerHost.test.ts` ejecuta procesos hijo
-reales: un proceso atascado en un bucle se mata y desaparece de verdad mientras el
-llamador sigue funcionando, y el proceso real compila un proyecto y cancela una
-ejecución de escenarios sobre el runtime nativo. El recorrido 35 de
-`bun run test:journeys` cancela una ejecución larga en la aplicación real, ve que
-la ventana responde todo el tiempo y no encuentra ningún proceso de la ejecución
-(requisito IDE-012). Las pruebas empaquetadas de más abajo también compilan el
-proyecto y ejecutan sus escenarios en la aplicación empaquetada, que arranca el
-proceso desde su archivo y el runtime nativo desde sus recursos.
+Nivel de evidencia: host. `packages/zplc-ide/electron/toolWorkerHost.test.ts` ejecuta procesos hijo reales: un trabajador atascado en un bucle ocupado se mata mientras quien llama sigue ejecutándose, y el trabajador real compila un proyecto y cancela una ejecución de escenarios en el entorno de ejecución nativo. El recorrido 35 de `bun run test:journeys` cancela una ejecución larga en la aplicación real (requisito IDE-012).
 
-### Propiedades de seguridad, demostradas por comportamiento
+### Un solo proyecto de referencia
 
-El renderer no tiene privilegios, y esto es lo que hace la aplicación en
-ejecución, no lo que dice su código fuente:
+Compilar, probar, simular y la revisión del candidato actúan sobre la carpeta que muestra la ventana, y sobre ninguna otra. El proceso principal es dueño de esa carpeta: el diálogo nativo de carpetas entrega a la ventana una carpeta y un identificador opaco para ella. Una compilación, una comprobación de seguridad o una ejecución de pruebas nombra el espacio de trabajo y ese identificador, y el proceso principal rechaza la llamada cuando el identificador no es la carpeta actual de la ventana, o cuando el espacio de trabajo pertenece a otra carpeta. Abrir otra carpeta deja inservibles, por tanto, todos los espacios de trabajo anteriores, sin ningún paso de enlace intermedio.
 
-- un script en línea, y un manejador de evento en línea, que inyecta una página se
-  bloquean por la política de seguridad de contenido (`script-src 'self'` en una
-  compilación empaquetada), y una petición a otro origen la rechaza `connect-src`;
-- un permiso distinto de serial (notificaciones, ubicación, cámara, micrófono,
-  lectura del portapapeles, MIDI) se rechaza, mientras que serial sigue disponible
-  para el documento de ZPLC;
-- `window.open`, un enlace que abre una ventana nueva y la navegación a otro origen
-  se rechazan, y la ventana conserva después su documento, su carpeta y su IPC;
-- una operación de proyecto con una ruta con `..`, una ruta absoluta o de unidad,
-  un enlace a un archivo o a una carpeta que sale del proyecto, una escritura de
-  tamaño excesivo o el identificador de carpeta de otra ventana se rechaza, y nada
-  fuera del proyecto cambia.
+Nivel de evidencia: host. `packages/zplc-ide/electron/workspaceTestGateway.test.ts` cubre la regla, y el recorrido 34 de `bun run test:journeys` envía mensajes manipulados por el puente de la aplicación real después de abrir otra carpeta y comprueba que cada uno se rechaza (requisito IDE-002).
 
-Nivel de evidencia: host. El recorrido 38 de `bun run test:journeys` hace estas
-pruebas en el host de desarrollo (que sirve sus propios scripts en línea para la
-recarga en caliente, así que allí no se hace la prueba del script en línea). Para
-hacerlas todas sobre una aplicación empaquetada en Linux, construya un paquete
-desempaquetado y ejecute las pruebas contra él:
+### Propiedades de seguridad
+
+El renderizador no tiene privilegios. Esto es lo que hace la aplicación en ejecución, no lo que dice su código fuente:
+
+- un script en línea o un manejador de eventos en línea que inyecta una página queda bloqueado por la política de seguridad de contenido (`script-src 'self'` en una compilación empaquetada), y una solicitud a otro origen es rechazada por `connect-src`;
+- se rechaza un permiso distinto del serial (notificaciones, ubicación, cámara, micrófono, lectura del portapapeles, MIDI), mientras que el serial sigue disponible para el documento ZPLC;
+- se rechazan `window.open`, un enlace que abre una ventana nueva y la navegación a otro origen, y la ventana conserva después su documento, su carpeta y su IPC;
+- se rechaza una operación de proyecto con una ruta con `..`, una ruta absoluta o de unidad, un enlace que sale del proyecto, una escritura demasiado grande o el identificador de carpeta de otra ventana, y nada fuera del proyecto cambia.
+
+Nivel de evidencia: host. El recorrido 38 de `bun run test:journeys` hace estas pruebas en el host de desarrollo, que sirve sus propios scripts en línea para la recarga en caliente, así que allí no se hace la prueba del script en línea. Para hacerlas todas en una aplicación empaquetada en Linux, construya un paquete sin empaquetar y ejecute las pruebas contra él:
 
 ```bash
 bun run --cwd packages/zplc-ide build:assets
@@ -145,38 +87,8 @@ bun run --cwd packages/zplc-ide electron:compile
 ZPLC_PACKAGED_DIST="$PWD/packages/zplc-ide/dist-electron" bun run test:journeys
 ```
 
-El archivo empaquetado no tiene diálogo de carpetas, así que las pruebas llegan al
-proyecto mediante una lista de proyectos recientes escrita antes en el directorio
-de datos de usuario de la aplicación. Cubren solo Linux: la aplicación empaquetada
-en macOS y Windows no se prueba (el requisito IDE-016 pide las tres).
-
-### Un solo proyecto de referencia
-
-La compilación, las pruebas, la simulación y la revisión de candidatos actúan sobre la carpeta que
-muestra la ventana, y sobre ninguna otra. El proceso principal es el dueño de esa
-carpeta: el diálogo nativo de carpetas le da a la ventana una carpeta y un
-identificador opaco para ella. Una compilación, una comprobación de seguridad o
-una ejecución de pruebas nombra el espacio de trabajo y ese identificador, y el
-proceso principal rechaza la llamada cuando el identificador no es la carpeta
-actual de la ventana, o cuando el espacio de trabajo pertenece a otra carpeta (un
-espacio de trabajo hecho para un proyecto anterior, o un `zplc.json` elegido en
-otro lugar). Abrir otra carpeta deja por tanto inservible todo espacio de trabajo
-anterior, sin un paso de enlace de por medio.
-
-Nivel de evidencia: host. `electron/workspaceTestGateway.test.ts`,
-`electron/ipcRegistry.test.ts` y `electron/security.test.ts` cubren la regla, y el
-recorrido 34 de `bun run test:journeys` envía por el puente de la aplicación real
-mensajes de compilación, de comprobación de seguridad y de pruebas fabricados,
-después de abrir otra carpeta, y comprueba que cada uno es rechazado (requisito
-IDE-002).
+El archivo empaquetado no tiene diálogo de carpetas, así que las pruebas llegan al proyecto mediante una lista de proyectos recientes escrita antes en el directorio de datos de usuario. Cubren solo Linux: la aplicación empaquetada en macOS y Windows no se prueba (el requisito IDE-016 pide las tres).
 
 ### Configuración del proyecto
 
-`zplc.json` define los metadatos del proyecto, el destino, las tareas y las
-fuentes. La placa elegida se compara con el perfil del catálogo durante cada
-operación; no importa por sí sola un modelo de capacidades ni certifica un
-cableado.
-
-Los ejemplos se copian a una carpeta de destino que usted elige. No existe un
-modo de proyecto virtual o en memoria. Consulte la [migración](./migration-v1-to-v2.md)
-para saber cómo llevar a una carpeta un proyecto de la versión 1.
+`zplc.json` nombra los metadatos del proyecto, el destino, las tareas y los archivos fuente. Una elección de placa se comprueba contra el perfil catalogado durante una operación; no importa un modelo de capacidades ni certifica una configuración de cableado. Los ejemplos se copian a una carpeta que usted elige, y no existe un proyecto virtual ni solo en memoria. Para llevar un proyecto de la versión 1 a una carpeta, vea [Migrar un proyecto v1 a v2](./migration-v1-to-v2.md).

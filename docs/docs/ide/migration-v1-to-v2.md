@@ -9,68 +9,50 @@ tags: [ide, migration]
 
 # Migrate a v1 Project to v2
 
-ZPLC 2.0 previews a v1 project as v2 and shows the resulting diff. The source
-folder stays unchanged until you explicitly save; that save updates its
-`zplc.json` in the selected workspace to schema v2.
+ZPLC 2.0 shows you what a version 1 project becomes as a version 2 project before it changes anything. The folder stays as it is until you save; the save rewrites only `zplc.json` in that folder to schema version 2, and your programs are not touched.
 
-## Quick path
+## Migrate in the application
 
-1. Open the existing project folder in ZPLC, or import its archive from the Welcome screen: the import dialog
-   shows the same difference before it writes anything.
-2. Choose **Review the difference** in the migration notice of the Explorer. The dialog lists the lines of
-   `zplc.json` that migrating removes and adds; only `zplc.json` changes, and your programs are not touched.
-3. Choose **Apply migration** (the same as **Save**) to write the reviewed v2 configuration to that workspace, or
-   **Close** to leave the folder as it is.
-4. Compile and run the project’s scenario again after saving.
+1. Open the version 1 project folder in ZPLC, or import its archive from the Welcome screen. The import dialog shows the same difference before it writes anything.
+2. In the migration notice of the Explorer, choose **Review the difference**. The dialog lists the lines of `zplc.json` that the migration removes and adds.
+3. Choose **Apply migration** (the same as **Save**) to write the reviewed version 2 configuration to the folder, or **Close** to leave it as it is.
+4. Build the project and run its scenario again.
 
-## From a terminal
+## Migrate from a terminal
 
-To see what the migration would change without opening the ZPLC application, and to write the
-version 2 project file where you choose, use the command line
-([Use the command line](../guides/command-line.md)):
+To see what the migration would change without opening the application, and to write the version 2 project file where you choose, use the command line ([Use the command line](../guides/command-line.md)):
 
 ```bash
 zplc-cli migrate-preview path/to/project
 zplc-cli migrate path/to/project --output zplc.v2.json
 ```
 
-`migrate-preview` writes nothing and prints `migrate-preview passed`; add `--json` for
-the list of changes. `migrate` writes the version 2 project file to `--output`, which
-cannot be the project file or a file in `src` or `tests`, and leaves the project folder
-as it was. Review the file, then copy it over `zplc.json` when you accept it.
+`migrate-preview` writes nothing and prints `migrate-preview passed`; add `--json` for the list of changes. `migrate` writes the version 2 project file to `--output`, which cannot be the project file or a file in `src` or `tests`, and leaves the project folder as it was. Review the file, then copy it over `zplc.json` when you accept it.
 
 ## What changes
 
-| Area            | v2 behavior                                                                                          |
-| --------------- | ---------------------------------------------------------------------------------------------------- |
-| Project model   | An explicit Save writes `schemaVersion: 2` to the workspace’s `zplc.json`.                           |
-| Original folder | Stays unchanged during preview; Save updates the selected workspace’s original `zplc.json`.          |
-| Preview         | The ZPLC view is a preview; it is not a promise that every legacy construct is supported.            |
-| Evidence        | Compile, test, and POSIX simulation results apply to the saved workspace and are host evidence only. |
+| Area | Version 2 behavior |
+| --- | --- |
+| Project model | An explicit Save writes `schemaVersion: 2` to the `zplc.json` of the folder. |
+| Original folder | Unchanged during the preview. Save updates its `zplc.json`. |
+| Preview | The application's view is a preview. It does not promise that every legacy construct is supported. |
+| Evidence | Build, test and native simulation results apply to the saved project and are host evidence only. |
 
-## Golden scope
+## Before you save
 
-The migration gate covers the repository’s golden v1 projects: their saved v2
-form must compile and preserve the tested observable behavior in the native POSIX
-runtime. This is not a target, electrical, timing, or HIL equivalence claim.
+Back up the folder or commit it to version control, then review the difference. If a diagnostic reports unsupported source or configuration, resolve it before you adopt the migration. Do not edit the generated visual model JSON by hand to get around a diagnostic.
 
-## If the migration is not acceptable
+## What is verified
 
-Back up the project folder or commit it to version control before saving, then
-review the diff. Use diagnostics to resolve unsupported source or configuration
-before adopting the migration. Do not hand-edit generated visual model JSON to
-bypass a diagnostic.
+The migration gate covers the repository's golden version 1 projects: their saved version 2 form must compile and keep the tested observable behavior on the native runtime. It is not a claim of equivalence on a target, in electrical behavior, in timing or in hardware-in-the-loop runs.
 
-## What is verified, and what is not
-
-| Part                                                                                                                          | Verified                                                                                                                                            | Level |
-| ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| `migrate-preview` writes nothing, and `migrate` writes only the file named by `--output` and leaves the folder byte-identical | Unit tests of the command line, and the two commands above run on a copy of the bundled project `motor_start_stop` with its `schemaVersion` removed | Host  |
-| ZPLC shows the difference before it writes, and applies it on **Apply migration**                                             | Journey 31 in the real application                                                                                                                  | Host  |
-| The saved version 2 form keeps what the project does                                                                          | A test exports the migration of the motor start/stop project and checks that its golden scenario gives the same observable on the native runtime    | Host  |
-| The migrated project behaves the same on a board                                                                              | Not claimed: no target, electrical or timing equivalence                                                                                            | None  |
+| Part | Verified by | Level |
+| --- | --- | --- |
+| `migrate-preview` writes nothing, and `migrate` writes only the file named by `--output` and leaves the folder byte-identical | Unit tests of the command line, and both commands run on a copy of the bundled project `motor_start_stop` with its `schemaVersion` removed | Host |
+| The application shows the difference before it writes, and applies it on **Apply migration** | Journey 31 in the real application | Host |
+| The saved version 2 form keeps what the project does | A test exports the migration of the motor start/stop project and checks that its golden scenario gives the same observable on the native runtime | Host |
+| The migrated project behaves the same on a board | Not claimed: no target, electrical or timing equivalence | None |
 
 ## Next step
 
-Continue with [the compiler workflow](./compiler.md) and record a fresh test or
-simulation result for the saved project.
+Continue with the [compiler workflow](./compiler.md), and record a fresh test or simulation result for the saved project.
