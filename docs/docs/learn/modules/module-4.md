@@ -25,6 +25,7 @@ Real signals are numbers, not only on and off. Types, arithmetic, comparison and
 | [Analog scaling in Function Block Diagram: a high level alarm](../lessons/analog-scaling-fbd.md) | `analog-scaling-fbd` | FBD | 20 |
 | [Types, arithmetic and comparison in Function Block Diagram: a total and three bands](../lessons/types-arithmetic-comparison-fbd.md) | `types-arithmetic-comparison-fbd` | FBD | 25 |
 | [Instruction List: arithmetic, comparison and a jump on a rising edge](../lessons/types-arithmetic-comparison-il.md) | `types-arithmetic-comparison-il` | IL | 20 |
+| [Variables, types and addresses in Ladder: memory bits, TIME values and the I/O map](../lessons/ld-variables-and-types.md) | `ld-variables-and-types` | LD | 20 |
 
 {/* <<< END GENERATED: learn/modules/module-4 <<< */}
 

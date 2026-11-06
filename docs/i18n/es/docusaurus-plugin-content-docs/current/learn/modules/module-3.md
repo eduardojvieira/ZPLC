@@ -28,6 +28,7 @@ El tiempo y los eventos vienen después de la lógica: los temporizadores retras
 | [Temporizadores en diagrama de bloques de función: una luz con retardo a la desconexión y un filtro con retardo a la conexión](../lessons/timers-on-delay-off-delay-fbd.md) | `timers-on-delay-off-delay-fbd` | FBD | 20 |
 | [Lista de instrucciones: llamar a un temporizador de retardo a la desconexión y a la conexión](../lessons/timers-on-delay-off-delay-il.md) | `timers-on-delay-off-delay-il` | IL | 15 |
 | [Lista de instrucciones: contar pulsos con un CTU](../lessons/edge-counter-pulses-il.md) | `edge-counter-pulses-il` | IL | 15 |
+| [Flancos en escalera: contactos P y N y pulsos de un escaneo](../lessons/ld-edges.md) | `ld-edges` | LD | 15 |
 
 {/* <<< END GENERATED: learn/modules/module-3 <<< */}
 

@@ -23,6 +23,7 @@ Testing comes once you have programs worth testing. Scenario tests, temporal ass
 | [Conveyor classification and safe jam](../lessons/conveyor-classification-jam.md) | `conveyor-classification-jam` | ST | 25 |
 | [Temporal assertions and jam fault](../lessons/temporal-assertions-jam-fault.md) | `temporal-assertions-jam-fault` | ST | 25 |
 | [Reproducible diagnosis: two parts, one decision](../lessons/conveyor-two-parts-diagnosis.md) | `conveyor-two-parts-diagnosis` | ST | 20 |
+| [Diagnosing a Ladder program in simulation: watch, breakpoint, force and trace](../lessons/ld-diagnosis-debugger.md) | `ld-diagnosis-debugger` | LD | 40 |
 
 {/* <<< END GENERATED: learn/modules/module-8 <<< */}
 

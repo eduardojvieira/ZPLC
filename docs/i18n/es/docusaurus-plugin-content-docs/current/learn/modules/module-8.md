@@ -23,6 +23,7 @@ Las pruebas llegan cuando ya hay programas que vale la pena probar. Las pruebas 
 | [Cinta de clasificación y atasco seguro](../lessons/conveyor-classification-jam.md) | `conveyor-classification-jam` | ST | 25 |
 | [Aserciones temporales y falla por atasco](../lessons/temporal-assertions-jam-fault.md) | `temporal-assertions-jam-fault` | ST | 25 |
 | [Diagnóstico reproducible: dos piezas, una decisión](../lessons/conveyor-two-parts-diagnosis.md) | `conveyor-two-parts-diagnosis` | ST | 20 |
+| [Diagnóstico de un programa en escalera en simulación: observación, punto de interrupción, forzado y traza](../lessons/ld-diagnosis-debugger.md) | `ld-diagnosis-debugger` | LD | 40 |
 
 {/* <<< END GENERATED: learn/modules/module-8 <<< */}
 

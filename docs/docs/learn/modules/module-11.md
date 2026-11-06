@@ -22,6 +22,7 @@ The course ends with a small machine taken from a written description to a teste
 | --- | --- | --- | --- |
 | [Capstone: a packing station, from description to tested program](../lessons/capstone-packing-station.md) | `capstone-packing-station` | ST | 60 |
 | [Capstone: a packing station as a chart](../lessons/packing-station-sfc.md) | `packing-station-sfc` | SFC | 60 |
+| [Final project in Ladder: a packing station, from description to tested program](../lessons/ld-final-project.md) | `ld-final-project` | LD | 60 |
 
 {/* <<< END GENERATED: learn/modules/module-11 <<< */}
 

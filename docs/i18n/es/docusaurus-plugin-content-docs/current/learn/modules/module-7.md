@@ -24,6 +24,7 @@ Los programas crecen. Cuando ya se trabaja con datos, las funciones, los bloques
 | [Estructuras y arreglos: un panel de tres llamadas](../lessons/structures-arrays-call-panel.md) | `structures-arrays-call-panel` | ST | 25 |
 | [Su propio bloque de función en diagrama de bloques de función: dos válvulas, un bloque](../lessons/function-block-valves-fbd.md) | `function-block-valves-fbd` | FBD | 20 |
 | [Lista de instrucciones: llamar a un bloque de función y leer sus salidas](../lessons/function-block-call-il.md) | `function-block-call-il` | IL | 25 |
+| [Su propio bloque de función en escalera: dos bombas, un bloque](../lessons/ld-function-blocks.md) | `ld-function-blocks` | LD | 25 |
 
 {/* <<< END GENERATED: learn/modules/module-7 <<< */}
 

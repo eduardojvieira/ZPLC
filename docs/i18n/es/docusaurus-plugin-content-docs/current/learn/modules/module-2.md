@@ -29,6 +29,8 @@ La lógica booleana es el vocabulario de todo programa. Se enseña en diagrama d
 | [Diagrama de bloques de función: un mando a dos manos con protección](../lessons/boolean-logic-two-hand-guard-fbd.md) | `boolean-logic-two-hand-guard-fbd` | FBD | 20 |
 | [Lista de instrucciones: el resultado actual en un mando a dos manos](../lessons/boolean-logic-two-hand-guard-il.md) | `boolean-logic-two-hand-guard-il` | IL | 15 |
 | [Lista de instrucciones: S y R, y la línea que va al final](../lessons/set-reset-alarm-latch-il.md) | `set-reset-alarm-latch-il` | IL | 15 |
+| [Contactos NA y NC: un botón de parada que falla en modo seguro](../lessons/ld-no-nc-contacts.md) | `ld-no-nc-contacts` | LD | 20 |
+| [Serie y paralelo: AND y OR con contactos](../lessons/ld-series-parallel.md) | `ld-series-parallel` | LD | 20 |
 
 {/* <<< END GENERATED: learn/modules/module-2 <<< */}
 
