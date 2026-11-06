@@ -5,7 +5,7 @@ sidebar_label: Verificación con lector de pantalla
 description: La verificación registrada del camino principal de ZPLC con el teclado y el árbol de accesibilidad de Chromium en Linux, sus resultados en inglés y en español, y el guion para una persona con NVDA, Narrator o VoiceOver. No se ha ejecutado ningún lector de pantalla.
 ---
 
-# Revisión con lector de pantalla
+# Verificación con lector de pantalla
 
 Esta página registra cómo se comprobó el camino principal de ZPLC para los requisitos UX-028 y LRN-037, y conserva el guion para quien quiera repetir la comprobación con un lector de pantalla. El registro se hizo el **2026-10-20** en un equipo Linux. El guion es para quien tenga NVDA, Narrator o VoiceOver.
 
@@ -15,7 +15,7 @@ El 2026-10-20 el dueño del proyecto decidió que esta comprobación registrada 
 
 ## La comprobación registrada, 2026-10-20
 
-**Método.** El script `packages/zplc-ide/scripts/screen-reader-capture.ts` inicia la aplicación Electron real de esta copia de trabajo (Electron 43.4.1 en ese momento, con el simulador POSIX nativo y sin dispositivo) en una pantalla privada. Abre el ejemplo **Blinky (Structured Text)** y recorre los pasos siguientes solo con pulsaciones de teclas, una vez en inglés y otra con el idioma de la aplicación en español. En cada parada guarda una captura de pantalla, el registro de accesibilidad del elemento con el foco y todo lo que dijeron las regiones vivas.
+**Método.** El script `packages/zplc-ide/scripts/screen-reader-capture.ts` inicia la aplicación Electron real de esta copia de trabajo (Electron 43.4.1 en ese momento, con el simulador POSIX nativo y sin dispositivo) en una pantalla privada. Abre el ejemplo **Blinky (texto estructurado)** y recorre los pasos siguientes solo con pulsaciones de teclas, una vez en inglés y otra con el idioma de la aplicación en español. En cada parada guarda una captura de pantalla, el registro de accesibilidad del elemento con el foco y todo lo que dijeron las regiones vivas.
 
 Un paso aprueba cuando todo control alcanzado tiene nombre, el foco nunca se pierde hacia la página, nada atrapa el teclado y cada cambio de estado que hace el paso se anuncia.
 
@@ -38,7 +38,7 @@ Las opciones son `--date`, `--out`, `--language en|es`, `--only` y `--strict`. L
 | 3 Compilar | Aprobado | Aprobado | «Compilación correcta. Blinky (Structured Text): 302 bytes, 1 tarea» en la región cortés. Con un programa roto, «La compilación falló. src/main.st: Compilation of 'main.st' failed: …» en la región asertiva, y **Problemas** dice «Problemas, 6 errores · 0 advertencias, pestaña, seleccionada» con cada diagnóstico como «Error: … src/main.st:61:9». |
 | 4 Simular | Aprobado | Aprobado | Tab llega a «Conectar, botón» en la barra de herramientas. Al conectar dice «Iniciando el simulador», «Simulación · runtime nativo», «Listo», «Simulador listo». F5 lleva el foco a «Pausar (F6), botón» y la región de la barra de estado dice «En ejecución». |
 | 5 Observar | Aprobado | Aprobado | «Observación, pestaña, seleccionada»; «Agregar variable, botón»; el campo es un cuadro combinado llamado «Ruta de la variable…». Intro dice «LED_Output agregada a la tabla de observación.» y el foco vuelve a **Agregar variable**. La fila lee TRUE y FALSE alternadamente. Un valor que cambia no se anuncia, a propósito: se lee yendo a su fila. |
-| 6 Forzar | Aprobado | Aprobado | «Forzar LED_Output, casilla»; Espacio dice «Forzado LED_Output» y la casilla queda marcada; al desmarcarla dice «Se liberó el forzado de LED_Output». Terminar la conexión con un forzado activo dice «Se liberó el forzado de LED_Output». |
+| 6 Forzar | Aprobado | Aprobado | «Forzar LED_Output, casilla»; Espacio dice «Forzado LED_Output» y la casilla queda marcada, con la descripción «Forced until cleared»; al desmarcarla dice «Se liberó el forzado de LED_Output». Terminar la conexión con un forzado activo dice «Se liberó el forzado de LED_Output». |
 | 7 Diálogo de carga | Aprobado, con un límite | Aprobado, con un límite | El diálogo es «¿Cargar en el dispositivo?», un diálogo de alerta. El foco empieza en **Cancelar**, Tab circula dentro, la tabla tiene el título «El proyecto comparado con el dispositivo» y Escape lo cierra y devuelve el foco a **Conectar**. Se abrió con el diálogo del propio producto y datos fijos de un dispositivo, no con una placa. |
 | 8 Una lección de Aprender | Aprobado | Aprobado | Inicio de Aprender: «Aprender, encabezado», luego Cerrar, **Comenzar el curso**, los dos interruptores (activar uno dice «Todas las lecciones están desbloqueadas.»), Exportar, Importar. La lección tiene un encabezado y uno por etapa (Objetivo, Prediga, Edite, Ejecute, Observe, Reflexione) en una lista llamada «Pasos de la lección». Una pista dice «Pista 2, expandida». **Comprobar** dice «Escenario verificado. FirstBlink pasó 10 aserciones registradas.»; **Restaurar el proyecto inicial** abre un diálogo de alerta y luego dice «Se restauró el proyecto inicial.» |
 | 9 Una lección con planta (LRN-037) | Aprobado | Aprobado | La planta es una imagen con el equivalente en texto de su estado, por ejemplo «Dibujo de la planta: Motor detenido. ○ ORDEN OFF, ○ A VELOCIDAD OFF, ○ ATASCO OFF». El interruptor del panel frontal se opera con Espacio y el cambio se anuncia: «Motor a velocidad, 1000 milésimas.» Pausar dice «Planta en pausa»; la acción de atasco dice «Atascar el motor, botón, presionado» y anuncia «Motor atascado a 0 milésimas: no gira, sea cual sea la orden.», y el dibujo dice «▲ ATASCO FAULT». |
@@ -67,7 +67,7 @@ La comprobación encontró estos defectos, y cada uno se corrigió en el mismo c
 
 - El mensaje propio de Monaco sobre Tab ("Pressing Tab will now move focus…") y los diagnósticos del compilador están en inglés en una sesión en español.
 - El editor muestra la línea fija de Monaco como una parada de tabulación adicional ("PROGRAM Blinky, list item") cuando se desplaza un programa.
-- Un valor cambiante de Watch no se anuncia.
+- Un valor cambiante de la tabla de observación no se anuncia.
 
 ### Capturas de pantalla
 
@@ -83,7 +83,7 @@ Cada imagen es la ventana al terminar el paso, tomada por el script.
 
 ![El simulador en ejecución](/img/screen-reader-check/2026-10-20/es-4-simulating.png)
 
-![La fila de LED_Output en Watch y el botón Agregar variable enfocado](/img/screen-reader-check/2026-10-20/es-5-watch-row.png)
+![La fila de LED_Output en Observación y el botón Agregar variable enfocado](/img/screen-reader-check/2026-10-20/es-5-watch-row.png)
 
 ![El diálogo de despliegue](/img/screen-reader-check/2026-10-20/es-7-deploy-dialog.png)
 
@@ -153,14 +153,14 @@ Escuche «Simulador listo» (cortés) y luego la barra de estado diciendo «En e
 
 #### 5. Observar
 
-1. Abra **Watch**, pulse **+** y escriba `LED_Output`.
+1. Abra **Observación**, pulse **+** y escriba `LED_Output`.
 2. Espere unos segundos.
 
 Escuche la fila nueva anunciada con su nombre y valor, y el valor cambiando entre TRUE y FALSE. La tabla no anuncia cada cambio por sí sola, así que vaya a la fila y léala dos veces con un segundo de diferencia. Anote si puede darse cuenta de que el valor cambia.
 
 #### 6. Forzar
 
-1. En **Watch**, marque **Force** en `LED_Output` y fije un valor.
+1. En **Observación**, marque **Forzar** en `LED_Output` y fije un valor.
 2. Libérelo. Luego fuércelo otra vez y use el comando de liberar todos.
 
 Escuche «Forzado LED_Output» y luego «Se liberó el forzado de LED_Output». Cuando se liberan varios forzados juntos en un dispositivo, se oye «Se liberaron todos los forzados». Si se pierde la conexión con un dispositivo mientras hay un forzado activo, la región de alertas dice «Un forzado no está confirmado: verifique y vuelva a conectar antes de operar». Ninguno de esos dos es alcanzable en el simulador, que borra sus forzados al terminar la conexión.
@@ -200,7 +200,7 @@ Copie esta tabla en la lista de verificación de la versión, una fila por lecto
 
 Un paso fallido es un defecto: regístrelo con el número del paso, lo que oyó y lo que esperaba. La versión no declara compatibilidad con lectores de pantalla hasta que cada fila de ambos sistemas esté **Aprobada**, o una fila **No ejecutada** esté explicada en las notas de la versión.
 
-## Véase también
+## Vea también
 
 - [Referencia de teclado de los editores visuales](../reference/visual-editor-keyboard.md)
 - [Entorno de trabajo de ZPLC](../ide/features.md)

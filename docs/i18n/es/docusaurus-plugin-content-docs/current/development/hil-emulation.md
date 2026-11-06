@@ -49,7 +49,7 @@ tools/hil/emulator/build.sh pico      # $ZPLC_FW_WS/out/emu-pico
 tools/hil/emulator/build.sh esp32s3   # $ZPLC_FW_WS/out/emu-esp32s3 (solo emulación)
 ```
 
-No grabe nunca la imagen de emulación del ESP32-S3 en una placa: su consola está en UART0 y no tiene entrada analógica.
+No grabe nunca la imagen de emulación de la ESP32-S3 en una placa: su consola está en UART0 y no tiene entrada analógica.
 
 ## Ejecutar la cadena
 
@@ -76,7 +76,7 @@ Imprime el pty del shell (`port`) y, para la Pico, el pty de UART1 (`rtu_port`),
 - **Puertos.** El banco es dueño de los ptys del host, así que sus rutas se mantienen a través de una grabación y de un ciclo de energía. Entrega la placa cuando el shell imprimió su indicador y luego estuvo en silencio 300 ms, como espera una persona tras un reinicio.
 - **Tiempo.** `now_ms()` es el tiempo simulado del emulador. El emulador nunca se adelanta al reloj de pared, de modo que los programas del host (el enlace con el dispositivo, un extremo Modbus) ven los mismos tiempos de espera que en una placa; cuando el emulador es más lento que el chip, es el tiempo simulado el que se atrasa.
 
-El banco del ESP32-S3 usa el tiempo del host, pero QEMU no mantiene el reloj de la placa sincronizado con él. En las ejecuciones del 2026-10-20 la placa contó entre un sexto y un tercio del tiempo del host, según la carga de la máquina. Un paso de tiempo en QEMU (un TON de 3 s tardó 8 s) mide a QEMU, no al firmware, y los pasos de falla esperan la falla, no un tiempo fijo.
+El banco de la ESP32-S3 usa el tiempo del host, pero QEMU no mantiene el reloj de la placa sincronizado con él. En las ejecuciones del 2026-10-20 la placa contó entre un sexto y un tercio del tiempo del host, según la carga de la máquina. Un paso de tiempo en QEMU (un TON de 3 s tardó 8 s) mide a QEMU, no al firmware, y los pasos de falla esperan la falla, no un tiempo fijo.
 
 ## Manejar native_sim con el mapa de canales de la Pico
 
@@ -104,7 +104,7 @@ Las primeras ejecuciones emuladas de la cadena, el 2026-10-20, fallaron cinco pa
 
 1. **Ciclo de energía y RETAIN, ambas placas.**
    - *Registro:* RETAIN 102 antes del ciclo de energía, 0 después.
-   - *Causa:* las imágenes no tenían persistencia de RETAIN. `CONFIG_ZPLC_RETAIN_PERSIST` estaba apagada en todos los perfiles distribuidos (ahora está activa en todos, RT-025), y en la Pico no cabe en la partición de almacenamiento de 64 KB, así que la compilación se detiene. Con la opción activa, la imagen del ESP32-S3 conservó el valor (16 antes y después), y también lo hizo una imagen de la Pico compilada para la prueba con una partición de almacenamiento de 128 KB (101 antes y después).
+   - *Causa:* las imágenes no tenían persistencia de RETAIN. `CONFIG_ZPLC_RETAIN_PERSIST` estaba apagada en todos los perfiles distribuidos (ahora está activa en todos, RT-025), y en la Pico no cabe en la partición de almacenamiento de 64 KB, así que la compilación se detiene. Con la opción activa, la imagen de la ESP32-S3 conservó el valor (16 antes y después), y también lo hizo una imagen de la Pico compilada para la prueba con una partición de almacenamiento de 128 KB (101 antes y después).
    - *Corrección:* el paso comprueba la opción de la imagen y dice por qué no puede aprobar. La imagen HIL activa la opción, y la Pico y la RP2040-Zero mantienen una partición de almacenamiento de 128 KB. La imagen HIL de la Pico conservó el valor (102 antes y después).
 2. **Sobrecarga, ambas placas.**
    - *Registro:* `vm_fault` con error de VM 8, no `deadline_miss`; salidas apagadas.
@@ -116,8 +116,8 @@ Las primeras ejecuciones emuladas de la cadena, el 2026-10-20, fallaron cinco pa
    - *Corrección:* el paso enciende el cliente a 19200 baudios, lo guarda y reinicia la placa. El intercambio emulado leyó 0x5A17.
 4. **Despliegue, ESP32-S3.**
    - *Registro:* "Not in loading state" después de que se envió un fragmento otra vez.
-   - *Causa:* el cargador rechazó el fixture con `ZPLC_LOADER_ERR_MEMORY` (-13), porque la cadena compilaba los fixtures para 8 KB de memoria de trabajo y el ESP32-S3 tiene 2 KB. El probador volvió entonces a enviar el último fragmento, a una carga que había terminado. Una placa hace lo mismo.
-   - *Corrección:* la cadena compila los fixtures para la placa, y el probador eleva el rechazo del dispositivo en lugar de reenviar el fragmento. El banco del ESP32-S3 también da a los programas diez veces el tiempo del host, por el reloj lento de QEMU. El despliegue y los seis fixtures de parpadeo pasan entonces.
+   - *Causa:* el cargador rechazó el fixture con `ZPLC_LOADER_ERR_MEMORY` (-13), porque la cadena compilaba los fixtures para 8 KB de memoria de trabajo y la ESP32-S3 tiene 2 KB. El probador volvió entonces a enviar el último fragmento, a una carga que había terminado. Una placa hace lo mismo.
+   - *Corrección:* la cadena compila los fixtures para la placa, y el probador eleva el rechazo del dispositivo en lugar de reenviar el fragmento. El banco de la ESP32-S3 también da a los programas diez veces el tiempo del host, por el reloj lento de QEMU. El despliegue y los seis fixtures de parpadeo pasan entonces.
 5. **Falla fatal, ESP32-S3.**
    - *Registro:* sigue en ejecución, sin falla, después de 1 s.
    - *Causa:* la ruta de falla funciona en Xtensa (división por cero, error de VM 3, salidas apagadas), pero con el reloj lento de QEMU un segundo de tiempo del host no alcanzó para los 21 ciclos que necesita el programa.
