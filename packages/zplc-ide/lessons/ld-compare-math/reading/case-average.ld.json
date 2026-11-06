@@ -1,0 +1,464 @@
+{
+  "name": "CaseAverage",
+  "description": "The average weight of the bottles in a case, with a guard against an empty case.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Lights",
+        "type": "DINT",
+        "initialValue": 0,
+        "comment": "Light bottles in the case"
+      },
+      {
+        "name": "Heavies",
+        "type": "DINT",
+        "initialValue": 0,
+        "comment": "Heavy bottles in the case"
+      },
+      {
+        "name": "LightGrams",
+        "type": "DINT",
+        "initialValue": 0,
+        "comment": "Weight of the light bottles in grams"
+      },
+      {
+        "name": "HeavyGrams",
+        "type": "DINT",
+        "initialValue": 0,
+        "comment": "Weight of the heavy bottles in grams"
+      },
+      {
+        "name": "Weight",
+        "type": "DINT",
+        "initialValue": 0,
+        "comment": "Total weight of the case in grams"
+      },
+      {
+        "name": "Bottles",
+        "type": "DINT",
+        "initialValue": 0,
+        "comment": "Bottles in the case"
+      },
+      {
+        "name": "Average",
+        "type": "DINT",
+        "initialValue": 0,
+        "comment": "Average weight of a bottle in grams"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "AddLight",
+        "type": "BOOL",
+        "comment": "A light bottle (280 g) enters the case"
+      },
+      {
+        "name": "AddHeavy",
+        "type": "BOOL",
+        "comment": "A heavy bottle (360 g) enters the case"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Heavy",
+        "type": "BOOL",
+        "comment": "Lamp: the average is above 300 g"
+      },
+      {
+        "name": "Empty",
+        "type": "BOOL",
+        "comment": "Lamp: no bottle in the case"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "A light bottle: count one more.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "type": "contact_p",
+              "variable": "AddLight",
+              "id": "r1_0",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "type": "function",
+              "functionName": "ADD",
+              "operands": ["Lights", "1"],
+              "output": "Lights",
+              "id": "r1_1",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "A heavy bottle: count one more.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "type": "contact_p",
+              "variable": "AddHeavy",
+              "id": "r2_0",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "type": "function",
+              "functionName": "ADD",
+              "operands": ["Heavies", "1"],
+              "output": "Heavies",
+              "id": "r2_1",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "Three boxes in series, with no contact: each runs on every scan, from left to right.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "type": "function",
+              "functionName": "MUL",
+              "operands": ["Lights", "280"],
+              "output": "LightGrams",
+              "id": "r3_0",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "type": "function",
+              "functionName": "MUL",
+              "operands": ["Heavies", "360"],
+              "output": "HeavyGrams",
+              "id": "r3_1",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "type": "function",
+              "functionName": "ADD",
+              "operands": ["LightGrams", "HeavyGrams"],
+              "output": "Weight",
+              "id": "r3_2",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_4",
+      "number": 4,
+      "comment": "The number of bottles in the case.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "type": "function",
+              "functionName": "ADD",
+              "operands": ["Lights", "Heavies"],
+              "output": "Bottles",
+              "id": "r4_0",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_5",
+      "number": 5,
+      "comment": "The guard: NE conducts only when Bottles is not zero, so the DIV never receives a zero divisor.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "type": "function",
+              "functionName": "NE",
+              "operands": ["Bottles", "0"],
+              "id": "r5_0",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "type": "function",
+              "functionName": "DIV",
+              "operands": ["Weight", "Bottles"],
+              "output": "Average",
+              "id": "r5_1",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_6",
+      "number": 6,
+      "comment": "Heavy while the average is above 300 g.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "type": "function",
+              "functionName": "GT",
+              "operands": ["Average", "300"],
+              "id": "r6_0",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "type": "coil",
+              "variable": "Heavy",
+              "id": "r6_5",
+              "row": 0,
+              "col": 5
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_7",
+      "number": 7,
+      "comment": "Empty while there is no bottle.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Bottles", "0"],
+              "id": "r7_0",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "type": "coil",
+              "variable": "Empty",
+              "id": "r7_5",
+              "row": 0,
+              "col": 5
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-06",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

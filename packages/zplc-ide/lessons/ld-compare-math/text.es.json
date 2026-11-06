@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Bloques de comparación y de cálculo en escalera: una alarma de tanque y una división segura",
+  "summary": "Use bloques de comparación como condiciones y bloques matemáticos como cálculos en escalera, y proteja una división para que un divisor en cero nunca llegue a ella.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el comportamiento de un sensor de nivel real, su cableado, los tiempos de un tanque real, HIL ni certificación.",
+  "objectives": [
+    "Use un bloque de comparación como condición en serie y elija entre GT y GE para un límite.",
+    "Calcule con bloques matemáticos que se ejecutan solo mientras su peldaño tiene energía, y proteja una división con una comparación NE para que el divisor nunca sea cero."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/TankMonitor.ld.json el programa guarda los litros de un tanque en Level, que son los litros que entraron con Fill (25 en cada ciclo) menos los que salieron con Drain. Setup copia la capacidad, 200 litros, en Capacity. Falta el peldaño que convierte Level en un porcentaje de Capacity. Agréguelo con una protección, de modo que HighAlarm pase a ON cuando el tanque llegue al 75 por ciento.",
+      "checkpoint": "Percent sigue a Level, ninguna división recibe nunca una Capacity en cero, y HighAlarm pasa a ON al 75 por ciento."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Setup se pulsa a los {{t:10}} ms y se suelta a los {{t:20}} ms. Fill se pulsa a los {{t:30}} ms y se suelta a los {{t:90}} ms, así que Level crece 25 en cada ciclo. Drain se pulsa a los {{t:110}} ms. Prediga Configured a los {{t:20}} ms y HighAlarm a los {{t:70}}, {{t:80}}, {{t:90}} y {{t:110}} ms.",
+      "checkpoint": "{{v:TankMonitor.Configured=true@20|ON}} a los {{t:20}} ms; HighAlarm {{v:TankMonitor.HighAlarm=false@70|OFF}} a los {{t:70}} ms, {{v:TankMonitor.HighAlarm=true@80|ON}} a los {{t:80}} ms, {{v:TankMonitor.HighAlarm=true@90|ON}} a los {{t:90}} ms y {{v:TankMonitor.HighAlarm=false@110|OFF}} a los {{t:110}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene peldaño para Percent, así que Percent se queda en 0 y HighAlarm nunca pasa a ON a los {{t:80}} ms; agregue un peldaño con una caja NE (Capacity, 0), una caja MUL (Level, 100, hacia Scaled) y una caja DIV (Scaled, Capacity, hacia Percent), en ese orden. Inserte cada caja desde el grupo Funciones de la paleta de escalera y escriba sus operandos: una variable declarada o un número.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama TankMonitor y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Abra la pestaña Watch y compare los {{t:80}}, {{t:90}} y {{t:110}} ms. Fill se suelta a los {{t:90}} ms y, aun así, HighAlarm sigue en ON: la caja ADD no tiene energía, así que el total conserva su valor. Drain lleva Level de vuelta a 125 litros a los {{t:110}} ms, que es el 62 por ciento, y la alarma cae.",
+      "checkpoint": "HighAlarm sube una vez a los {{t:80}} ms y cae una vez a los {{t:110}} ms; Configured permanece en ON desde los {{t:10}} ms, aunque Setup se soltó a los {{t:20}} ms."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "Capacity vale 0 hasta que se pulsa Setup. ¿Qué haría la caja DIV en el primer ciclo sin la caja NE, y por qué lo evita una comparación en serie? ¿Qué cambiaría si usara GT en lugar de GE para la alarma?",
+      "checkpoint": "La máquina virtual dividiría entre cero y fallaría, y el ciclo terminaría. NE conduce solo cuando Capacity no es cero, así que DIV no recibe energía y Percent conserva su valor. Sin la protección Comprobar no puede calificar el programa, porque la ejecución falla en el primer ciclo, cuando Capacity todavía vale 0. Con GT la alarma esperaría a que el nivel supere el 75 por ciento, y el escenario fallaría a los {{t:80}} ms."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "El porcentaje necesita tres cajas en un mismo peldaño, en serie. ¿Qué comparación debe ir primero para que la división nunca vea un divisor en cero?"
+    },
+    {
+      "level": 2,
+      "text": "Inserte NE con Capacity y 0, luego MUL con Level y 100 hacia Scaled, y luego DIV con Scaled y Capacity hacia Percent. Deje el peldaño de la alarma y los demás peldaños como están."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial no tiene peldaño para Percent, así que Percent se queda en 0 y HighAlarm nunca pasa a ON a los {{t:80}} ms; agregue un peldaño con una caja NE (Capacity, 0), una caja MUL (Level, 100, hacia Scaled) y una caja DIV (Scaled, Capacity, hacia Percent), en ese orden."
+  ]
+}

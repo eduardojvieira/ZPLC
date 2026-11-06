@@ -1,0 +1,403 @@
+{
+  "name": "TankMonitor",
+  "description": "A tank level in liters, its percentage of the capacity and a high level alarm.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Filled",
+        "type": "DINT",
+        "initialValue": 0,
+        "comment": "Liters that have come in so far"
+      },
+      {
+        "name": "Drained",
+        "type": "DINT",
+        "initialValue": 0,
+        "comment": "Liters that have gone out so far"
+      },
+      {
+        "name": "Level",
+        "type": "DINT",
+        "initialValue": 0,
+        "comment": "Liters in the tank: Filled minus Drained"
+      },
+      {
+        "name": "Capacity",
+        "type": "DINT",
+        "initialValue": 0,
+        "comment": "Capacity of the tank in liters: 0 until Setup copies it"
+      },
+      {
+        "name": "Scaled",
+        "type": "DINT",
+        "initialValue": 0,
+        "comment": "Level times 100, the intermediate product"
+      },
+      {
+        "name": "Percent",
+        "type": "DINT",
+        "initialValue": 0,
+        "comment": "Level as a percentage of Capacity"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Setup",
+        "type": "BOOL",
+        "address": "%IX0.0",
+        "comment": "Setup pushbutton: TRUE while pressed"
+      },
+      {
+        "name": "Fill",
+        "type": "BOOL",
+        "address": "%IX0.1",
+        "comment": "Inlet valve open: TRUE adds 25 liters per scan"
+      },
+      {
+        "name": "Drain",
+        "type": "BOOL",
+        "address": "%IX0.2",
+        "comment": "Outlet valve open: TRUE removes 25 liters per scan"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Configured",
+        "type": "BOOL",
+        "address": "%QX0.0",
+        "comment": "Lamp: the capacity is known"
+      },
+      {
+        "name": "HighAlarm",
+        "type": "BOOL",
+        "address": "%QX0.1",
+        "comment": "Lamp: the tank is at least 75 percent full"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Setup copies the capacity once. Capacity keeps 200 after Setup is released.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "type": "contact_no",
+              "variable": "Setup",
+              "id": "r1_0",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["200"],
+              "output": "Capacity",
+              "id": "r1_1",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "While Fill has power the box adds 25 liters each scan; without power Filled keeps its value.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "type": "contact_no",
+              "variable": "Fill",
+              "id": "r2_0",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "type": "function",
+              "functionName": "ADD",
+              "operands": ["Filled", "25"],
+              "output": "Filled",
+              "id": "r2_1",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "While Drain has power the box adds 25 liters to the total that went out.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "type": "contact_no",
+              "variable": "Drain",
+              "id": "r3_0",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "type": "function",
+              "functionName": "ADD",
+              "operands": ["Drained", "25"],
+              "output": "Drained",
+              "id": "r3_1",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_4",
+      "number": 4,
+      "comment": "No contact: the box has power on every scan, so Level always follows the two totals.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "type": "function",
+              "functionName": "SUB",
+              "operands": ["Filled", "Drained"],
+              "output": "Level",
+              "id": "r4_0",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_5",
+      "number": 5,
+      "comment": "The lamp is on while Capacity is not zero.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "type": "function",
+              "functionName": "NE",
+              "operands": ["Capacity", "0"],
+              "id": "r5_0",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "type": "coil",
+              "variable": "Configured",
+              "id": "r5_5",
+              "row": 0,
+              "col": 5
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_6",
+      "number": 6,
+      "comment": "The alarm is a comparison in series with the coil.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "type": "function",
+              "functionName": "GE",
+              "operands": ["Percent", "75"],
+              "id": "r6_0",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "type": "coil",
+              "variable": "HighAlarm",
+              "id": "r6_5",
+              "row": 0,
+              "col": 5
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-06",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
