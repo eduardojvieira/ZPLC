@@ -9,35 +9,28 @@ tags: [learn, lessons, course]
 
 # Course outline
 
-This page lists the whole course: every module in order, with its 68 lessons. Read
-it to choose where to start, or to see what a module needs before you take it. If
-you have never programmed a PLC, start with the Ladder path of 21 of these lessons, *Ladder diagram
-from zero*, described in [Learn](./index.md). The page matches `packages/zplc-ide/lessons/course.json`
-and the lesson packages next to it; a CI check fails when a lesson is missing here or
-when a row disagrees with its lesson.
+This page is the map of the whole course: every module in order, with its 68 lessons, and for each lesson the languages, tracks, plant, time and prerequisites. Use it to pick where to start or to see what a module needs first. If you have never programmed a PLC, take the Ladder path of 21 lessons, *Ladder diagram from zero*, described in [Learn](./index.md).
 
-Each module and each lesson has its own page, generated from the lesson packages: start from the [course modules](./modules/index.md), and see the [lesson plants](./plants.md) for the simulated machines.
+The page follows `packages/zplc-ide/lessons/course.json` and the lesson packages beside it. A CI check fails when a lesson is missing here or a row disagrees with its lesson. Each module and each lesson also has its own generated page: start from the [course modules](./modules/index.md), and see the [lesson plants](./plants.md) for the simulated machines.
 
-Every lesson is completed in the **Simulation** track, on this computer, with no
-board. A lesson lists **Hardware** when it has a wiring page for each learner board
-and its board check is defined; no hardware run has been recorded on a board yet.
-A lesson that does not offer a track says why and what to do instead.
+How to read the tables:
 
-Each lesson has six stages (Objective, Predict, Edit, Run, Observe, Reflect), two
-levels of hint and a reference solution you may ask to see. ZPLC records that
-you looked at the solution.
+- **Simulation.** Every lesson can be completed in this track, on your computer, with no board.
+- **Hardware.** A lesson lists this track when it has a wiring page for each learner board and its board check is defined. No hardware run has been recorded on a board yet.
+- **No track.** A lesson that does not offer a track says why and what to do instead.
+- **Stages.** Each lesson has six stages (Objective, Predict, Edit, Run, Observe, Reflect), two levels of hint and a reference solution you may ask to see. ZPLC records that you looked at the solution.
 
 ## Why this order
 
 You see a result first: the tour of module 0 ends in a blinking output in simulation. The scan cycle comes next, because seal-in, edges and timers cannot be understood without it, and a first blink in Ladder and in Structured Text follows at once. Every later module builds on the ones before it, and communications and the capstone come last because they need everything before them.
 
-Each module below says why it sits where it does. The Learn home of ZPLC shows the same words, taken from the same course file.
+Each module below says why it sits where it does. The Learn home shows the same words, because both read the same course file.
 
 Available today: **68**. Planned: **0**. In all: **68**.
 
 ## Languages
 
-Each of the five languages is introduced by a lesson whose objective names it, and each is the language of the program you edit, and that is graded, in at least one lesson. The first blink is offered twice in module 1: in Ladder and in Structured Text. A test of the lesson packages (LRN-008) keeps this table true.
+Each of the five languages is introduced by one lesson whose objective names it, and each is the language of a program you edit and that is graded in at least one lesson. The first blink is offered twice in module 1, in Ladder and in Structured Text. A test of the lesson packages keeps this table true.
 
 | Language | Introduced by                      | Name                      |
 | -------- | ---------------------------------- | ------------------------- |
@@ -82,6 +75,8 @@ Objectives of the available lessons:
 - **Scan cycle and one-scan memory**: See that a variable keeps its value from one scan to the next. Build a one-scan delay and a one-scan pulse from a single memory.
 - **TON oscillator and output feedback**: Read a two-timer Ladder oscillator: each timer runs in one half period and starts the next. Complete it with a SET coil and a RESET coil driven by the timers' Q outputs.
 - **Write a blinker in Structured Text**: Write the timer-and-memory pattern that makes an output change state at a fixed interval. Gate an output with an input so that it stops at once when the input drops.
+- **What a PLC is: your first rung**: Name the three parts of a PLC system: inputs that read the world, a program that decides, and outputs that act on the world. Complete a Ladder rung in which a pressed button lights a lamp, and read the result in the simulated lab.
+- **The scan cycle: why the order of the rungs matters**: Describe the scan cycle: read the inputs, solve the rungs from top to bottom, write the outputs, and repeat. Reorder two rungs so that a value is calculated before the rung that uses it, and see the difference of one scan in the recorded trace.
 
 ## Module 2: Boolean logic and latching: contacts, coils, seal-in, set and reset, safe stop
 
@@ -114,6 +109,8 @@ Objectives of the available lessons:
 - **Function Block Diagram: a two-hand control with a guard**: Read a Function Block Diagram: blocks are joined by wires from an output port to an input port, and each output shows the result of the blocks wired to it. Wire AND, NOT and XOR blocks so that an output is ON only when several inputs are ON together, when one input is OFF, or when exactly one of two inputs is ON.
 - **Instruction List: the current result in a two-hand control**: Read an Instruction List (IL) program as one current result that each instruction combines with an operand, from top to bottom. Use LD, LDN, AND, XOR and ST to turn three inputs into three outputs.
 - **Instruction List: S and R, and the line that comes last**: Hold an alarm after the fault has gone, until it is acknowledged, with the IL instructions S and R. Use the order of two lines to decide whether set or reset wins, and tell it from the SR and RS blocks.
+- **NO and NC contacts: a stop button that fails safe**: Explain why a stop button is wired normally closed, and what a field NC button looks like to the program: TRUE at rest, FALSE when pressed or when the wire breaks. Choose the right kind of contact in a rung: a normally open contact passes power when its variable is TRUE, a normally closed contact when it is FALSE.
+- **Series and parallel: AND and OR with contacts**: Explain that contacts in series pass power only when all of them conduct (AND), and contacts in parallel pass power when any of them conducts (OR). Add a parallel path to a rung so that a horn sounds when the door is open or the motor is overheated, and check it against every row of a truth table.
 
 ## Module 3: Timers, edges and counters
 
@@ -143,6 +140,7 @@ Objectives of the available lessons:
 - **Timers in Function Block Diagram: an off-delay light and an on-delay filter**: Keep an output ON for a fixed time after its input drops, with a TOF block whose PT input is wired to a TIME constant. Ignore an input that is ON for less than a fixed time, with a TON block, and say which timer delays the start and which one delays the end.
 - **Instruction List: calling an off-delay and an on-delay timer**: Call a timer instance with CAL, passing its input and its preset, and read its output with LD. Keep an output on for a fixed time after its input drops, using TOF, and ignore an input that is on for less than a fixed time, using TON.
 - **Instruction List: counting pulses with a CTU**: Call a CTU counter with CAL and read its output with LD Count.Q. Count the rising edges of PulseInput up to a preset of 3, and clear the count with Reset.
+- **Edges in Ladder: P and N contacts and one-scan pulses**: Use a positive transition contact (P) and a negative transition contact (N) to turn a level into a pulse of one scan. Explain why a held input must be counted once, and which scan sees the pulse.
 
 ## Module 4: Data: types, arithmetic, comparison, analog scaling
 
@@ -168,6 +166,9 @@ Objectives of the available lessons:
 - **Analog scaling in Function Block Diagram: a high level alarm**: Scale raw analog counts to engineering units with arithmetic blocks: multiply by the span of the units, then divide by the span of the counts. Keep a scaled value inside its range with a LIMIT block, and compare the value in engineering units, not in raw counts, with a threshold.
 - **Types, arithmetic and comparison in Function Block Diagram: a total and three bands**: Use an INT variable for a number: an ADD block builds the next value, SEL blocks choose between the old total, the new one and zero, and LT, EQ and GT blocks turn the number into BOOL results. Add to a number only on the rising edge of an input, with an R_TRIG block, so that a button held for several scans counts once.
 - **Instruction List: arithmetic, comparison and a jump on a rising edge**: Use ADD on a number in the current result, and LT, EQ and GT to turn a number into a BOOL. Skip a group of lines with JMPCN so that a number changes only on the rising edge of an input.
+- **Variables, types and addresses in Ladder: memory bits, TIME values and the I/O map**: Tell a memory bit from a variable that is wired to a physical input or output through its address. Choose the type that fits a value (BOOL, INT, REAL, TIME) and set the value of a TIME variable.
+- **Comparison and math boxes in Ladder: a tank alarm and a safe division**: Use a comparison box as a condition in series, and choose between GT and GE for a limit. Calculate with math boxes that run only while their rung has power, and guard a division with an NE comparison so that the divisor is never zero.
+- **Analog scaling in Ladder: counts to percent with MUL, DIV and LIMIT**: Scale raw analog counts to engineering units by multiplying by the span of the units and then dividing by the span of the counts, in a type that the product fits. Keep a value inside its range with a LIMIT box, and compare the scaled value, not the raw counts, with the thresholds of the alarms.
 
 ## Module 5: State machines and sequences
 
@@ -195,6 +196,7 @@ Objectives of the available lessons:
 - **Simultaneous branches: fill and heat together**: Read a simultaneous divergence as one transition that activates several steps at once, so that they run side by side. Write a convergence as one transition that leaves every step it waits for and fires only when all of them are active.
 - **Step times: a horn before the gate opens**: Use the elapsed time of a step, written step.T, as the condition of a transition. Check that the time of a step restarts at zero each time the step becomes active, so that two cycles take the same time.
 - **Conveyor sorting as a chart**: Describe a conveyor as three steps, with the sorting memory kept in a local variable that the running action updates. Move from RUNNING to FAULT on the jam sensor, and leave FAULT only when Reset is pressed and the jam is gone.
+- **A sequence in Ladder: step bits move a tank from fill to mix to drain**: Explain a sequence as step bits, where exactly one bit is on at a time and a transition moves the sequence to the next one. Write a transition in Ladder as two actions in the same scan: set the next step bit and reset the current one.
 
 ## Module 6: Feedback, faults and interlocks
 
@@ -246,6 +248,7 @@ Objectives of the available lessons:
 - **Structures and arrays: a panel of three calls**: Declare a structure with named members and an array of that structure, and reach an element with an index and a member name. Replace three copies of the same code with one FOR loop over the array.
 - **Your own function block in Function Block Diagram: two valves, one block**: Place a function block that the project declares in Structured Text in a Function Block Diagram, and read its ports from the declaration. Wire a second instance of the same function block, and see that each instance keeps a memory of its own.
 - **Instruction List: calling a function block and reading its outputs**: Call a function block instance with CAL, passing its inputs by name, and read its output with LD Instance.Output. See that two instances of the same function block keep separate memories.
+- **Your own function block in Ladder: two pumps, one block**: Place a function block that the project declares in Structured Text in a Ladder rung, and wire its inputs and its output. Explain that each instance of a function block keeps a memory of its own, so two pumps need two instances of one block.
 
 ## Module 8: Testing and diagnosis: scenario tests, temporal assertions, trace, breakpoints
 
@@ -265,6 +268,7 @@ Objectives of the available lessons:
 - **Conveyor classification and safe jam**: Stop the belt and light FaultLamp while the plant reports JamDetected. Keep Reset from releasing the fault while the jam is still present.
 - **Temporal assertions and jam fault**: Latch the jam fault and prove its timing with temporal assertions. Require a new Start before the belt moves again after the fault is released.
 - **Reproducible diagnosis: two parts, one decision**: Distinguish a metal part from a non-metal part with one memory that lives between two sensors. Read a scheduled input timeline and predict the outputs before running it.
+- **Diagnosing a Ladder program in simulation: watch, breakpoint, force and trace**: Use the Watch table, a breakpoint on a rung, a forced input and the trace to find the cause of a Ladder program that does not behave as described. Fix the rung so that Stop and the overload both drop the motor, and release every force before you check.
 
 ## Module 9: Instruction List, and one logic in five languages
 
@@ -298,8 +302,8 @@ The lessons of this module are graded against a Modbus TCP server and an MQTT br
 
 Objectives of the available lessons:
 
-- **Modbus TCP: write a register and read it back**: Write a holding register with MB_WRITE_HREG and read it back with MB_READ_HREG, using the DONE output of the first block as the trigger of the second. Compare the value read with the value written, report an ERROR from either block, and say what a loopback double shows and what it does not.
-- **MQTT: publish a message and receive it**: Tell a service block (MQTT_CONNECT, MQTT_SUBSCRIBE) from a request block (MQTT_PUBLISH), publish only after the subscription holds, and keep a message that VALID reports for one scan only.
+- **Modbus TCP: write a register and read it back**: Write a holding register with MB_WRITE_HREG and read it back with MB_READ_HREG, in that order, using the DONE output of the first block as the trigger of the second. Compare the value read with the value written, and report an ERROR from either block. Say what a loopback double shows and what it does not show.
+- **MQTT: publish a message and receive it**: Tell a service block (MQTT_CONNECT, MQTT_SUBSCRIBE), which reports its state on every scan, from a request block (MQTT_PUBLISH), which sends once for each rising edge of EN. Publish only after the subscription holds, because a message sent earlier is not delivered to it. Keep a message that VALID reports for one scan only, and compare its PAYLOAD. Say what a loopback broker shows and what it does not show.
 - **Modbus in Function Block Diagram: write a coil and read it back**: Call a Modbus client block in a Function Block Diagram, with its inputs fed from constants that both blocks share, so that the write and the read name the same server and coil. Chain two requests with a wire from the DONE output of the first block to the EN input of the second.
 
 ## Module 11: Capstone: a small machine from description to tested program
@@ -318,7 +322,8 @@ Objectives of the available lessons:
 
 - **Capstone: a packing station, from description to tested program**: Turn five written requirements into one Structured Text program that combines a seal-in, an emergency stop, a counter, a timer and a latched fault. Read a scenario that checks both what must happen and what must not happen, and use its failed assertions to find the requirement you missed.
 - **Capstone: a packing station as a chart**: Turn five written requirements into a chart of steps, transitions and actions, and decide which behaviour is a step and which is a transition. Read a scenario that checks both what must happen and what must not happen, and use its failed assertions to find the requirement you missed.
+- **Final project in Ladder: a packing station, from description to tested program**: Turn five written requirements into one Ladder program that combines a seal-in, normally closed stops, a counter, a timer and a latched fault. Read a scenario that checks both what must happen and what must not happen, and use its failed assertions to find the requirement you missed.
 
 ## Hardware wiring pages
 
-Each learner board has a kit page with its pin map, the bill of materials, the firmware and the voltage limit: the [Raspberry Pi Pico (RP2040)](../reference/learner-kits/rpi-pico-rp2040.md) and the [ESP32-S3-DevKitC-1 (N8R8)](../reference/learner-kits/esp32-s3-devkitc.md). Every lesson on the Hardware track has a wiring page for each board, with a diagram and a wiring card, linked from the kit page and from the page of the lesson. The pages are generated from `firmware/app/boards/boards.json`, `packages/zplc-ide/lessons/kit.json` and the wiring file of each lesson; the [learner kits](../reference/learner-kits/index.md) page explains how a lesson declares its wiring. No hardware run has been recorded on a board yet.
+Each learner board has a kit page with its pin map, bill of materials, firmware and voltage limit: the [Raspberry Pi Pico (RP2040)](../reference/learner-kits/rpi-pico-rp2040.md) and the [ESP32-S3-DevKitC-1 (N8R8)](../reference/learner-kits/esp32-s3-devkitc.md). Every lesson on the Hardware track has a wiring page for each board, with a diagram and a wiring card, linked from the kit page and from the page of the lesson. Those pages are generated from `firmware/app/boards/boards.json`, `packages/zplc-ide/lessons/kit.json` and the wiring file of each lesson. The [learner kits](../reference/learner-kits/index.md) page explains how a lesson declares its wiring. No hardware run has been recorded on a board yet.

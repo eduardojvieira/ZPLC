@@ -9,36 +9,28 @@ tags: [learn, lessons, course]
 
 # Esquema del curso
 
-Esta página enumera el curso completo: cada módulo en orden, con sus 68 lecciones. Léala
-para elegir por dónde empezar, o para ver qué requiere un módulo antes de tomarlo. Si
-nunca programó un PLC, empiece con la ruta de escalera de 21 de estas lecciones, *Diagrama de escalera
-desde cero*, descrita en [Aprender](./index.md). La página coincide con `packages/zplc-ide/lessons/course.json`
-y con los paquetes de lección que lo acompañan; una verificación de CI falla
-cuando falta una lección aquí o cuando una fila no coincide con su lección.
+Esta página es el mapa de todo el curso: cada módulo en orden, con sus 68 lecciones, y para cada lección los lenguajes, las rutas, la planta, el tiempo y los requisitos. Úsela para elegir por dónde empezar o para ver qué necesita un módulo antes. Si nunca programó un PLC, tome la ruta de escalera de 21 lecciones, *Diagrama de escalera desde cero*, descrita en [Aprender](./index.md).
 
-Cada módulo y cada lección tiene su propia página, generada de los paquetes de lecciones: empiece por los [módulos del curso](./modules/index.md) y vea las [plantas de las lecciones](./plants.md) para las máquinas simuladas.
+La página sigue `packages/zplc-ide/lessons/course.json` y los paquetes de lección que lo acompañan. Una verificación de CI falla cuando falta una lección o cuando una fila no coincide con su lección. Cada módulo y cada lección tiene además su propia página generada: empiece por los [módulos del curso](./modules/index.md) y vea las [plantas de las lecciones](./plants.md) para las máquinas simuladas.
 
-Toda lección se completa en la ruta **Simulación**, en este equipo y sin placa.
-Una lección indica **Hardware** cuando tiene una página de cableado para cada placa
-del estudiante y su verificación en placa está definida; todavía no se ha registrado
-ninguna ejecución en hardware en una placa. Una lección que no ofrece una ruta dice
-por qué y qué hacer en su lugar.
+Cómo leer las tablas:
 
-Cada lección tiene seis etapas (Objetivo, Prediga, Edite, Ejecute,
-Observe y Reflexione), dos niveles de pista y una solución de referencia que
-puede pedir ver. ZPLC registra que vio la solución.
+- **Simulación.** Toda lección puede completarse en esta ruta, en su equipo y sin placa.
+- **Hardware.** Una lección indica esta ruta cuando tiene una página de cableado para cada placa del estudiante y su verificación en placa está definida. Todavía no se ha registrado en una placa ninguna ejecución en hardware.
+- **Sin ruta.** Una lección que no ofrece una ruta dice por qué y qué hacer en su lugar.
+- **Etapas.** Cada lección tiene seis etapas (Objetivo, Prediga, Edite, Ejecute, Observe, Reflexione), dos niveles de pista y una solución de referencia que puede pedir ver. ZPLC registra que vio la solución.
 
 ## Por qué este orden
 
 Primero se ve un resultado: el recorrido del módulo 0 termina con una salida que parpadea en simulación. Luego viene el ciclo de escaneo, porque sin él no se entienden la autorretención, los flancos ni los temporizadores, y enseguida sigue un primer parpadeo en diagrama de escalera y en texto estructurado. Cada módulo posterior se apoya en los anteriores, y las comunicaciones y el proyecto final llegan al final porque necesitan todo lo anterior.
 
-Cada módulo indica a continuación por qué está donde está. La página de inicio de Aprender en ZPLC muestra las mismas palabras, tomadas del mismo archivo del curso.
+Cada módulo indica a continuación por qué está donde está. La página de inicio de Aprender muestra las mismas palabras, porque ambas leen el mismo archivo del curso.
 
 Disponibles hoy: **68**. Planeadas: **0**. En total: **68**.
 
 ## Lenguajes
 
-Cada uno de los cinco lenguajes se presenta en una lección cuyo objetivo lo nombra, y cada uno es el lenguaje del programa que usted edita, y que se califica, en al menos una lección. El primer parpadeo se ofrece dos veces en el módulo 1: en diagrama de escalera y en texto estructurado. Una prueba de los paquetes de lecciones (LRN-008) mantiene esta tabla al día.
+Cada uno de los cinco lenguajes se presenta en una lección cuyo objetivo lo nombra, y cada uno es el lenguaje de un programa que usted edita y que se califica en al menos una lección. El primer parpadeo se ofrece dos veces en el módulo 1, en diagrama de escalera y en texto estructurado. Una prueba de los paquetes de lecciones mantiene esta tabla al día.
 
 | Lenguaje | Se presenta en                     | Nombre                         |
 | -------- | ---------------------------------- | ------------------------------ |
@@ -83,6 +75,8 @@ Objetivos de las lecciones disponibles:
 - **Ciclo de escaneo y memoria de un ciclo**: Compruebe que una variable conserva su valor de un ciclo al siguiente. Construya un retardo de un ciclo y un pulso de un ciclo con una única memoria.
 - **Oscilador TON y realimentación de salida**: Lea un oscilador de dos temporizadores en diagrama de escalera: cada temporizador cuenta durante un semiperíodo y pone en marcha al siguiente. Complételo con una bobina SET y una bobina RESET accionadas por las salidas Q de los temporizadores.
 - **Escriba un parpadeador en texto estructurado**: Escriba el patrón de temporizador y memoria que hace cambiar una salida a intervalos fijos. Condicione una salida a una entrada para que se detenga de inmediato cuando la entrada cae.
+- **Qué es un PLC: su primer peldaño**: Nombre las tres partes de un sistema con PLC: las entradas que leen el mundo, un programa que decide y las salidas que actúan sobre el mundo. Complete un peldaño en diagrama de escalera en el que un botón pulsado enciende una lámpara, y lea el resultado en el laboratorio simulado.
+- **El ciclo de escaneo: por qué importa el orden de los peldaños**: Describa el ciclo de escaneo: leer las entradas, resolver los peldaños de arriba hacia abajo, escribir las salidas y repetir. Reordene dos peldaños para que un valor se calcule antes del peldaño que lo usa, y vea en la traza registrada la diferencia de un ciclo.
 
 ## Módulo 2: Lógica booleana y retención: contactos, bobinas, autorretención, set y reset, parada segura
 
@@ -115,6 +109,8 @@ Objetivos de las lecciones disponibles:
 - **Diagrama de bloques de función: un mando a dos manos con protección**: Lea un diagrama de bloques de función (FBD): los bloques se unen con cables desde un puerto de salida hasta un puerto de entrada, y cada salida muestra el resultado de los bloques conectados a ella. Conecte bloques AND, NOT y XOR para que una salida esté en ON solo cuando varias entradas estén en ON a la vez, cuando una entrada esté en OFF o cuando exactamente una de dos entradas esté en ON.
 - **Lista de instrucciones: el resultado actual en un mando a dos manos**: Lea un programa en lista de instrucciones (IL) como un resultado actual que cada instrucción combina con un operando, de arriba hacia abajo. Use LD, LDN, AND, XOR y ST para convertir tres entradas en tres salidas.
 - **Lista de instrucciones: S y R, y la línea que va al final**: Retenga una alarma después de que la falla desaparece, hasta que se reconozca, con las instrucciones IL S y R. Use el orden de dos líneas para decidir si gana set o reset, y distíngalo de los bloques SR y RS.
+- **Contactos NA y NC: un botón de parada que falla en modo seguro**: Explique por qué un botón de parada se cablea normalmente cerrado, y cómo ve el programa un botón NC de campo: TRUE en reposo, FALSE al pulsarlo o si se rompe el cable. Elija el tipo correcto de contacto en un peldaño: un contacto normalmente abierto deja pasar la energía cuando su variable es TRUE, y uno normalmente cerrado cuando es FALSE.
+- **Serie y paralelo: AND y OR con contactos**: Explique que los contactos en serie dejan pasar la energía solo cuando todos conducen (AND), y los contactos en paralelo cuando alguno conduce (OR). Agregue un camino en paralelo a un peldaño para que una bocina suene cuando la puerta está abierta o el motor se sobrecalienta, y compruébelo con cada fila de una tabla de verdad.
 
 ## Módulo 3: Temporizadores, flancos y contadores
 
@@ -144,6 +140,7 @@ Objetivos de las lecciones disponibles:
 - **Temporizadores en diagrama de bloques de función: una luz con retardo a la desconexión y un filtro con retardo a la conexión**: Mantenga una salida en ON durante un tiempo fijo después de que su entrada cae, con un bloque TOF cuya entrada PT está conectada a una constante TIME. Ignore una entrada que está en ON menos de un tiempo fijo, con un bloque TON, y diga qué temporizador retrasa el inicio y cuál retrasa el final.
 - **Lista de instrucciones: llamar a un temporizador de retardo a la desconexión y a la conexión**: Llame a una instancia de temporizador con CAL, pasándole su entrada y su valor preestablecido, y lea su salida con LD. Mantenga una salida encendida un tiempo fijo después de que su entrada baja, con TOF, e ignore una entrada que está en ON menos de un tiempo fijo, con TON.
 - **Lista de instrucciones: contar pulsos con un CTU**: Llame a un contador CTU con CAL y lea su salida con LD Count.Q. Cuente los flancos ascendentes de PulseInput hasta un valor preestablecido de 3, y borre la cuenta con Reset.
+- **Flancos en escalera: contactos P y N y pulsos de un escaneo**: Use un contacto de transición positiva (P) y un contacto de transición negativa (N) para convertir un nivel en un pulso de un escaneo. Explique por qué una entrada retenida debe contarse una sola vez y qué escaneo ve el pulso.
 
 ## Módulo 4: Datos: tipos, aritmética, comparación y escalado analógico
 
@@ -169,6 +166,9 @@ Objetivos de las lecciones disponibles:
 - **Escalado analógico en diagrama de bloques de función: una alarma de nivel alto**: Escale cuentas analógicas en bruto a unidades de ingeniería con bloques aritméticos: multiplique por el rango de las unidades y luego divida por el rango de las cuentas. Mantenga un valor escalado dentro de su rango con un bloque LIMIT, y compare con un umbral el valor en unidades de ingeniería, no en cuentas en bruto.
 - **Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres bandas**: Use una variable INT para un número: un bloque ADD calcula el valor siguiente, los bloques SEL eligen entre el total anterior, el nuevo y cero, y los bloques LT, EQ y GT convierten el número en resultados BOOL. Sume a un número solo en el flanco ascendente de una entrada, con un bloque R_TRIG, de modo que un botón mantenido durante varios ciclos cuente una sola vez.
 - **Lista de instrucciones: aritmética, comparación y un salto en un flanco ascendente**: Use ADD sobre un número en el resultado actual, y LT, EQ y GT para convertir un número en un BOOL. Salte un grupo de líneas con JMPCN para que un número cambie solo en el flanco ascendente de una entrada.
+- **Variables, tipos y direcciones en escalera: bits de memoria, valores TIME y el mapa de E/S**: Distinga un bit de memoria de una variable conectada a una entrada o salida física mediante su dirección. Elija el tipo que corresponde a un valor (BOOL, INT, REAL, TIME) y fije el valor de una variable TIME.
+- **Bloques de comparación y de cálculo en escalera: una alarma de tanque y una división segura**: Use un bloque de comparación como condición en serie y elija entre GT y GE para un límite. Calcule con bloques matemáticos que se ejecutan solo mientras su peldaño tiene energía, y proteja una división con una comparación NE para que el divisor nunca sea cero.
+- **Escalado analógico en escalera: de cuentas a porcentaje con MUL, DIV y LIMIT**: Escale cuentas analógicas crudas a unidades de ingeniería multiplicando por el rango de las unidades y luego dividiendo entre el rango de las cuentas, en un tipo donde quepa el producto. Mantenga un valor dentro de su rango con una caja LIMIT y compare el valor escalado, no las cuentas crudas, con los umbrales de las alarmas.
 
 ## Módulo 5: Máquinas de estado y secuencias
 
@@ -196,6 +196,7 @@ Objetivos de las lecciones disponibles:
 - **Ramas simultáneas: llenar y calentar a la vez**: Lea una divergencia simultánea como una transición que activa varios pasos a la vez, de modo que se ejecuten en paralelo. Escriba una convergencia como una transición que sale de todos los pasos que espera y se activa solo cuando todos están activos.
 - **Tiempos de paso: una bocina antes de abrir la puerta**: Use el tiempo transcurrido de un paso, escrito step.T, como condición de una transición. Compruebe que el tiempo de un paso vuelve a cero cada vez que el paso se activa, de modo que dos ciclos duren lo mismo.
 - **Clasificación en un transportador como diagrama**: Describa un transportador con tres pasos, con la memoria de clasificación en una variable local que actualiza la acción de marcha. Pase de RUNNING a FAULT con el sensor de atasco, y salga de FAULT solo cuando se pulse Reset y el atasco haya desaparecido.
+- **Una secuencia en escalera: los bits de paso llevan un tanque de llenado a mezcla y a vaciado**: Explique una secuencia como bits de paso, de los cuales exactamente uno está en ON a la vez y una transición pasa la secuencia al siguiente. Escriba una transición en escalera como dos acciones en el mismo ciclo: activar el bit del paso siguiente y desactivar el del paso actual.
 
 ## Módulo 6: Realimentación, fallas y enclavamientos
 
@@ -247,6 +248,7 @@ Objetivos de las lecciones disponibles:
 - **Estructuras y arreglos: un panel de tres llamadas**: Declare una estructura con miembros con nombre y un arreglo de esa estructura, y llegue a un elemento con un índice y un nombre de miembro. Reemplace tres copias del mismo código por un solo bucle FOR sobre el arreglo.
 - **Su propio bloque de función en diagrama de bloques de función: dos válvulas, un bloque**: Coloque en un diagrama de bloques de función un bloque de función que el proyecto declara en texto estructurado, y lea sus puertos en la declaración. Conecte una segunda instancia del mismo bloque de función, y vea que cada instancia conserva una memoria propia.
 - **Lista de instrucciones: llamar a un bloque de función y leer sus salidas**: Llame a una instancia de bloque de función con CAL, pasando sus entradas por nombre, y lea su salida con LD Instancia.Salida. Vea que dos instancias del mismo bloque de función guardan memorias separadas.
+- **Su propio bloque de función en escalera: dos bombas, un bloque**: Coloque en un peldaño de escalera un bloque de función que el proyecto declara en texto estructurado, y conecte sus entradas y su salida. Explique que cada instancia de un bloque de función guarda su propia memoria, por lo que dos bombas necesitan dos instancias de un mismo bloque.
 
 ## Módulo 8: Pruebas y diagnóstico: pruebas de escenario, aserciones temporales, traza y puntos de interrupción
 
@@ -266,6 +268,7 @@ Objetivos de las lecciones disponibles:
 - **Cinta de clasificación y atasco seguro**: Detenga la cinta y encienda FaultLamp mientras la planta informa JamDetected. Evite que Reset libere la falla mientras el atasco siga presente.
 - **Aserciones temporales y falla por atasco**: Retenga la falla por atasco y compruebe su temporización con aserciones temporales. Exija un nuevo Start antes de que la cinta vuelva a moverse tras liberar la falla.
 - **Diagnóstico reproducible: dos piezas, una decisión**: Distinga una pieza metálica de una no metálica con una memoria que se conserva entre dos sensores. Lea una línea de tiempo de entradas programadas y prediga las salidas antes de ejecutarla.
+- **Diagnóstico de un programa en escalera en simulación: observación, punto de interrupción, forzado y traza**: Usar la tabla de observación, un punto de interrupción en un peldaño, una entrada forzada y la traza para encontrar la causa de un programa en escalera que no se comporta como se describe. Corregir el peldaño para que el paro y la sobrecarga detengan el motor, y liberar todos los forzados antes de comprobar.
 
 ## Módulo 9: Lista de instrucciones y una misma lógica en cinco lenguajes
 
@@ -319,7 +322,8 @@ Objetivos de las lecciones disponibles:
 
 - **Proyecto final: una estación de empaque, de la descripción al programa probado**: Convierta cinco requisitos escritos en un solo programa en texto estructurado que combine una autorretención, una parada de emergencia, un contador, un temporizador y una falla retenida. Lea un escenario que comprueba tanto lo que debe ocurrir como lo que no debe ocurrir, y use sus aserciones fallidas para encontrar el requisito que pasó por alto.
 - **Proyecto final: una estación de empaque como diagrama**: Convierta cinco requisitos escritos en un diagrama de pasos, transiciones y acciones, y decida qué comportamiento es un paso y cuál es una transición. Lea un escenario que comprueba tanto lo que debe ocurrir como lo que no debe ocurrir, y use sus aserciones fallidas para encontrar el requisito que omitió.
+- **Proyecto final en escalera: una estación de empaque, de la descripción al programa probado**: Convertir cinco requisitos escritos en un programa en escalera que combine una autorretención, paros normalmente cerrados, un contador, un temporizador y una falla retenida. Leer un escenario que verifica tanto lo que debe ocurrir como lo que no debe ocurrir, y usar sus aserciones fallidas para encontrar el requisito que omitió.
 
 ## Páginas de cableado por placa
 
-Cada placa del estudiante tiene una página de kit con su mapa de pines, la lista de materiales, el firmware y el límite de tensión: la [Raspberry Pi Pico (RP2040)](../reference/learner-kits/rpi-pico-rp2040.md) y la [ESP32-S3-DevKitC-1 (N8R8)](../reference/learner-kits/esp32-s3-devkitc.md). Cada lección de la ruta Hardware tiene una página de cableado para cada placa, con un diagrama y una tarjeta de cableado, enlazada desde la página del kit y desde la página de la lección. Las páginas se generan a partir de `firmware/app/boards/boards.json`, `packages/zplc-ide/lessons/kit.json` y el archivo de cableado de cada lección; la página [kits del estudiante](../reference/learner-kits/index.md) explica cómo una lección declara su cableado. Todavía no se ha registrado ninguna ejecución en hardware en una placa.
+Cada placa del estudiante tiene una página de kit con su mapa de pines, lista de materiales, firmware y límite de tensión: la [Raspberry Pi Pico (RP2040)](../reference/learner-kits/rpi-pico-rp2040.md) y la [ESP32-S3-DevKitC-1 (N8R8)](../reference/learner-kits/esp32-s3-devkitc.md). Cada lección de la ruta Hardware tiene una página de cableado para cada placa, con un diagrama y una tarjeta de cableado, enlazada desde la página del kit y desde la página de la lección. Esas páginas se generan a partir de `firmware/app/boards/boards.json`, `packages/zplc-ide/lessons/kit.json` y el archivo de cableado de cada lección. La página de [kits del estudiante](../reference/learner-kits/index.md) explica cómo una lección declara su cableado. Todavía no se ha registrado ninguna ejecución en hardware en una placa.
