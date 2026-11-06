@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Una secuencia en escalera: los bits de paso llevan un tanque de llenado a mezcla y a vaciado",
+  "summary": "Agregue en una secuencia en escalera la transición del paso de mezcla al paso de vaciado, para que haya exactamente un bit de paso en ON a la vez y el tanque se vacíe después de la mezcla.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el tiempo de recorrido de las válvulas, el comportamiento del motor del mezclador, la medición de nivel del tanque, HIL ni certificación.",
+  "objectives": [
+    "Explique una secuencia como bits de paso, de los cuales exactamente uno está en ON a la vez y una transición pasa la secuencia al siguiente.",
+    "Escriba una transición en escalera como dos acciones en el mismo ciclo: activar el bit del paso siguiente y desactivar el del paso actual."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/TankSequence.ld.json la secuencia tiene tres bits de paso, StepFill, StepMix y StepDrain, y un temporizador para cada uno. La transición de llenado a mezcla ya está escrita, con un peldaño que activa StepMix y otro que desactiva StepFill. Falta la transición de mezcla a vaciado. Agregue dos peldaños después de la transición de llenado a mezcla: uno que active StepDrain y otro que desactive StepMix, ambos cuando StepMix esté en ON y MixTimer.Q esté en ON.",
+      "checkpoint": "Dos peldaños nuevos siguen a la transición de llenado a mezcla, uno con una bobina set sobre StepDrain y otro con una bobina reset sobre StepMix."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Start se pulsa a los {{t:10}} ms y se vuelve a pulsar a los {{t:40}} ms. Prediga qué salida está en ON a los {{t:50}}, {{t:60}}, {{t:100}} y {{t:140}} ms.",
+      "checkpoint": "{{v:TankSequence.FillValve=true,TankSequence.Mixer=false@50|FillValve en ON}} a los {{t:50}} ms; {{v:TankSequence.Mixer=true,TankSequence.FillValve=false@60|Mixer en ON y FillValve en OFF}} a los {{t:60}} ms; {{v:TankSequence.DrainValve=true,TankSequence.Mixer=false@100|DrainValve en ON y Mixer en OFF}} a los {{t:100}} ms; {{v:TankSequence.DrainValve=false,TankSequence.Mixer=false@140|todo en OFF}} a los {{t:140}} ms. La segunda pulsación a los {{t:40}} ms no cambia nada, porque ya hay un paso activo."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial no tiene transición de salida del paso de mezcla: Mixer sigue en ON a los {{t:100}} ms y DrainValve sigue en OFF; agregue un peldaño que active StepDrain y otro que desactive StepMix cuando StepMix y MixTimer.Q estén ambos en ON. En el editor de escalera copie los dos peldaños de la transición de llenado a mezcla, cambie sus contactos a StepMix y MixTimer.Q y sus bobinas a una bobina set sobre StepDrain y una bobina reset sobre StepMix.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama TankSequence y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:50}}, {{t:60}}, {{t:90}} y {{t:100}} ms. En cada límite una salida pasa a OFF y la siguiente pasa a ON en el mismo ciclo, así que no hay ningún ciclo en que dos salidas estén en ON.",
+      "checkpoint": "Mixer sube una vez a los {{t:60}} ms. DrainValve está en ON a los {{t:100}} ms y en OFF a los {{t:140}} ms. Las tres aserciones NEVER confirman que nunca hay dos salidas en ON a la vez."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "Elimine solo el peldaño que desactiva StepMix y ejecute de nuevo. ¿Qué aserciones fallan y por qué?",
+      "checkpoint": "StepMix queda activo después de la transición, así que el mezclador sigue funcionando junto a la válvula de vaciado: fallan las aserciones que prohíben dos salidas a la vez y también la que espera Mixer en OFF a los {{t:100}} ms. Una transición son dos acciones, activar el paso siguiente y desactivar el actual, y ambas deben ocurrir en el mismo ciclo."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Una transición tiene dos partes: algo debe activar el paso siguiente y algo debe desactivar el paso actual. ¿Cuál de las dos falta en el programa inicial?"
+    },
+    {
+      "level": 2,
+      "text": "Copie los dos peldaños de transición de arriba. Use StepMix y MixTimer.Q como contactos, con una bobina set sobre StepDrain en un peldaño y una bobina reset sobre StepMix en el otro."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial no tiene transición de salida del paso de mezcla: Mixer sigue en ON a los {{t:100}} ms y DrainValve sigue en OFF; agregue un peldaño que active StepDrain y otro que desactive StepMix cuando StepMix y MixTimer.Q estén ambos en ON."
+  ]
+}

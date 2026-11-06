@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "A sequence in Ladder: step bits move a tank from fill to mix to drain",
+  "summary": "Add the transition from the mix step to the drain step in a Ladder sequence, so that exactly one step bit is on at a time and the tank drains after the mix.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish valve travel time, mixer motor behavior, tank level measurement, HIL, or certification.",
+  "objectives": [
+    "Explain a sequence as step bits, where exactly one bit is on at a time and a transition moves the sequence to the next one.",
+    "Write a transition in Ladder as two actions in the same scan: set the next step bit and reset the current one."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/TankSequence.ld.json the sequence has three step bits, StepFill, StepMix and StepDrain, and a timer for each one. The transition from fill to mix is already written, with one rung that sets StepMix and one that resets StepFill. The transition from mix to drain is missing. Add two rungs after the fill-to-mix transition: one that sets StepDrain and one that resets StepMix, both when StepMix is on and MixTimer.Q is on.",
+      "checkpoint": "Two new rungs follow the fill-to-mix transition, one with a set coil on StepDrain and one with a reset coil on StepMix."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Start is pressed at {{t:10}} ms and pressed again at {{t:40}} ms. Predict which output is on at {{t:50}}, {{t:60}}, {{t:100}} and {{t:140}} ms.",
+      "checkpoint": "{{v:TankSequence.FillValve=true,TankSequence.Mixer=false@50|FillValve ON}} at {{t:50}} ms; {{v:TankSequence.Mixer=true,TankSequence.FillValve=false@60|Mixer ON and FillValve OFF}} at {{t:60}} ms; {{v:TankSequence.DrainValve=true,TankSequence.Mixer=false@100|DrainValve ON and Mixer OFF}} at {{t:100}} ms; {{v:TankSequence.DrainValve=false,TankSequence.Mixer=false@140|everything OFF}} at {{t:140}} ms. The second press at {{t:40}} ms changes nothing, because a step is already active."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter has no transition out of the mix step: Mixer stays ON at {{t:100}} ms and DrainValve stays OFF; add one rung that sets StepDrain and one that resets StepMix when StepMix and MixTimer.Q are both on. In the Ladder editor, copy the two rungs of the fill-to-mix transition, then change their contacts to StepMix and MixTimer.Q and their coils to a set coil on StepDrain and a reset coil on StepMix.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named TankSequence and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:50}}, {{t:60}}, {{t:90}} and {{t:100}} ms. At each boundary one output goes OFF and the next goes ON in the same scan, so there is no scan in which two outputs are on.",
+      "checkpoint": "Mixer rises once at {{t:60}} ms. DrainValve is ON at {{t:100}} ms and OFF at {{t:140}} ms. The three NEVER assertions confirm that no two outputs are ever on together."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Delete only the rung that resets StepMix and run again. Which assertions fail, and why?",
+      "checkpoint": "StepMix stays on after the transition, so the mixer keeps running next to the drain valve: the assertions that forbid two outputs together fail, and so does the one that expects Mixer OFF at {{t:100}} ms. A transition is two actions, setting the next step and resetting the current one, and both must happen in the same scan."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "A transition has two parts: something must turn the next step on, and something must turn the current step off. Which of the two is missing in the starter?"
+    },
+    {
+      "level": 2,
+      "text": "Copy the two transition rungs above. Use StepMix and MixTimer.Q as the contacts, with a set coil on StepDrain in one rung and a reset coil on StepMix in the other."
+    }
+  ],
+  "faultCases": [
+    "The starter has no transition out of the mix step: Mixer stays ON at {{t:100}} ms and DrainValve stays OFF; add one rung that sets StepDrain and one that resets StepMix when StepMix and MixTimer.Q are both on."
+  ]
+}
