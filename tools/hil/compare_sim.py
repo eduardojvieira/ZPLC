@@ -7,7 +7,7 @@ Each reference project of Studio (the LD, FBD and SFC blinkies and the LD motor 
 (`target.board`), run on the native runtime of this tree and on the bench, with the same input stimulus at the same
 times; the output image is sampled on both sides and each trace is reduced to its changes. Any difference (another
 sequence of output values, or a change more than --tolerance-ms away from its twin) is written to a comparison record in
-build/hil-records, and printed for the simulator capability profile (spec 009 FR-009, docs/docs/runtime/intro.md),
+build/hil-records, and printed for the simulator capability profile (spec 009 FR-009, docs/docs/runtime/index.md),
 where a difference found on hardware has to be reflected.
 
 The bench is a person at a real board (`--bench human`: an interactive terminal, and the person types the board's
@@ -176,7 +176,7 @@ def run(args, io, stdout=None, opener=open_fake, bench=None) -> int:
     path.write_text(json.dumps(record, indent=2) + "\n")
     print(f"{record['result'].upper()}: {path}", file=out)
     if record["result"] == "different" and level == "hardware":
-        print("a difference on hardware belongs in the simulator capability profile (spec 009 FR-009): docs/docs/runtime/intro.md", file=out)
+        print("a difference on hardware belongs in the simulator capability profile (spec 009 FR-009): docs/docs/runtime/index.md", file=out)
     return 0 if record["result"] == "same" else 1
 
 

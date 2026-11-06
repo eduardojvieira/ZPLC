@@ -1926,7 +1926,7 @@
           "given": "a recorded hardware difference",
           "when": "the capability profile is read",
           "then": "the profile of the native session and of the WebAssembly runtime lists the behaviour that differs, with a degraded-mode label (spec 009)",
-          "code_paths": ["packages/zplc-ide/src/runtime/wasmCapabilities.ts", "docs/docs/runtime/intro.md (native session contract)"],
+          "code_paths": ["packages/zplc-ide/src/runtime/wasmCapabilities.ts", "docs/docs/runtime/index.md (native session contract)"],
           "simulation_evidence": [
             {
               "ref": "packages/zplc-ide/src/runtime/wasmRuntime.test.ts",
