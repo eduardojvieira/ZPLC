@@ -5,7 +5,14 @@
 import { BookOpen, Circle, CircleCheck, CircleDot, Lock, X } from 'lucide-react';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useT, type MessageKey } from '../i18n';
-import { trackSupport, type CourseLessonView, type CourseModuleView, type CourseView, type LessonState } from '../learn/course';
+import {
+  pathContinueTarget,
+  trackSupport,
+  type CourseLessonView,
+  type CourseModuleView,
+  type CourseView,
+  type LessonState,
+} from '../learn/course';
 import type { LessonIndex, LessonLocale } from '../learn/lessonPackage';
 import type { TransferStatus } from '../learn/progressState';
 import { Button, FileInput, Switch, cx } from '../ui';
@@ -112,7 +119,7 @@ export function LearnHomeView(props: LearnHomeViewProps) {
       </>
     );
   };
-  const actionFor = (lesson: CourseLessonView) => {
+  const actionFor = (lesson: CourseLessonView, marker: 'data-learn-start' | 'data-learn-path-start' = 'data-learn-start') => {
     const label =
       lesson.state === 'passed' ? t('learn.home.review') : lesson.state === 'in-progress' ? t('learn.home.resume') : t('learn.home.start');
     const full =
@@ -126,7 +133,7 @@ export function LearnHomeView(props: LearnHomeViewProps) {
         variant={lesson.state === 'passed' ? 'secondary' : 'primary'}
         size="sm"
         aria-label={full}
-        data-learn-start={lesson.id}
+        {...{ [marker]: lesson.id }}
         disabled={lesson.state === 'locked' || busy || !folderAccess}
         onClick={() => onStart(lesson.id)}
       >
@@ -191,6 +198,73 @@ export function LearnHomeView(props: LearnHomeViewProps) {
             </p>
           )}
         </div>
+
+        {view.paths.length > 0 && (
+          <section aria-labelledby="learn-paths-title" data-learn-paths>
+            <h2 id="learn-paths-title" className="font-semibold text-[var(--color-surface-100)]">
+              {t('learnReading.path.heading')}
+            </h2>
+            {view.paths.map((path) => {
+              const next = pathContinueTarget(path);
+              return (
+                <section
+                  key={path.id}
+                  aria-labelledby={`learn-path-${path.id}`}
+                  data-learn-path={path.id}
+                  className="mt-3 space-y-2 rounded border border-[var(--color-surface-600)] p-3"
+                >
+                  <h3 id={`learn-path-${path.id}`} className="font-medium text-[var(--color-surface-100)]">
+                    {path.title}
+                  </h3>
+                  <p className="max-w-[68ch] leading-5 text-[var(--color-surface-300)]">{path.summary}</p>
+                  <p className="max-w-[68ch] text-xs leading-5 text-[var(--color-surface-300)]">{path.rationale}</p>
+                  <p className="text-xs text-[var(--color-surface-400)]">
+                    {t('learnReading.path.progress', { passed: path.passed, total: path.total })}
+                  </p>
+                  {next && (
+                    <Button
+                      variant="primary"
+                      data-learn-path-continue
+                      disabled={busy || !folderAccess || !loaded}
+                      onClick={() => onStart(next)}
+                    >
+                      {t('learnReading.path.continue', { title: view.titles[next] ?? next })}
+                    </Button>
+                  )}
+                  <ol aria-label={t('learnReading.path.lessons', { title: path.title })} className="space-y-2">
+                    {path.lessons.map((lesson) => (
+                      <li
+                        key={lesson.id}
+                        data-learn-path-lesson={lesson.id}
+                        data-state={lesson.state}
+                        className="flex flex-wrap items-center justify-between gap-2 rounded border border-[var(--color-surface-700)] p-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="flex items-center gap-2 font-medium text-[var(--color-surface-100)]">
+                            {STATE_ICON[lesson.state]}
+                            {lesson.title}
+                            <span className="text-xs font-normal text-[var(--color-surface-300)]">
+                              {t(`learn.state.${lesson.state}` as MessageKey)}
+                            </span>
+                          </p>
+                          <p className="mt-1 text-xs text-[var(--color-surface-400)]">
+                            {t('learnReading.path.module', { number: lesson.module })}
+                          </p>
+                          {lesson.state === 'locked' && (
+                            <p className="mt-1 text-xs leading-5 text-[var(--color-surface-300)]">
+                              {t('learn.home.lockedBecause', { lessons: lesson.missing.map((id) => view.titles[id] ?? id).join(', ') })}
+                            </p>
+                          )}
+                        </div>
+                        {actionFor(lesson, 'data-learn-path-start')}
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              );
+            })}
+          </section>
+        )}
 
         <section aria-labelledby="learn-order-title">
           <h2 id="learn-order-title" className="font-semibold text-[var(--color-surface-100)]">

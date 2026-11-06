@@ -21,11 +21,16 @@ export interface LearnUiState {
   selected: string | null;
   showHome(): void;
   hideHome(): void;
+  /** The lesson whose reading page is showing full screen (LRN-039); null when none is. It never shows together with the home. */
+  reading: string | null;
+  openReading(id: string): void;
+  closeReading(): void;
   select(id: string | null): void;
   /** A lesson is being started: the workspace is being made or reopened. */
   starting: boolean;
   /**
-   * Starts a lesson: its workspace opens, the lesson is noted as started, the home closes and the sidebar shows it. False when it did not
+   * Starts a lesson: its workspace opens, the lesson is noted as started, the home closes, the sidebar shows it and, when
+   * the lesson has a reading page, that page opens (LRN-039). False when it did not
    * open.
    */
   startLesson(id: string): Promise<boolean>;
@@ -71,8 +76,11 @@ const workspaceDeps = (): WorkspaceDeps => ({
 export const useLearnUi = create<LearnUiState>()((set, get) => ({
   homeOpen: false,
   selected: null,
-  showHome: () => set({ homeOpen: true }),
+  showHome: () => set({ homeOpen: true, reading: null }),
   hideHome: () => set({ homeOpen: false }),
+  reading: null,
+  openReading: (id) => set({ reading: id, homeOpen: false }),
+  closeReading: () => set({ reading: null }),
   select: (selected) => set({ selected }),
   starting: false,
   async startLesson(id) {
@@ -83,7 +91,12 @@ export const useLearnUi = create<LearnUiState>()((set, get) => ({
       const outcome = await openLessonWorkspace(workspaceDeps(), id, entry.starter.project);
       if (outcome === 'cancelled') return false;
       void useLearnProgress.getState().note({ lessonId: id, started: true, last: true });
-      set({ selected: id, homeOpen: false, workspace: { lessonId: id, session: useIDEStore.getState().projectSession } });
+      set({
+        selected: id,
+        homeOpen: false,
+        reading: entry.reading ? id : null,
+        workspace: { lessonId: id, session: useIDEStore.getState().projectSession },
+      });
       useShellLayout.getState().showActivity('learn');
       return true;
     } finally {

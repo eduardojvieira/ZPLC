@@ -49,6 +49,16 @@ export const learnReadingEn = {
   'learnReading.quiz.correct': 'Correct.',
   'learnReading.quiz.incorrect': 'Not quite.',
   'learnReading.quiz.notStored': 'This question is not graded or saved.',
+  'learnReading.view.practice': 'Practice',
+  'learnReading.view.back': 'Back to course',
+  'learnReading.view.readAgain': 'Read again',
+  'learnReading.view.minutes': 'About {minutes} min',
+  'learnReading.view.error': 'This reading page could not be shown.',
+  'learnReading.path.heading': 'Learning paths',
+  'learnReading.path.progress': '{passed} of {total} lessons passed.',
+  'learnReading.path.continue': 'Continue the path: {title}',
+  'learnReading.path.lessons': 'Lessons of the path {title}',
+  'learnReading.path.module': 'Module {number}',
 } as const;
 
 export const learnReadingEs: Record<keyof typeof learnReadingEn, string> = {
@@ -101,4 +111,14 @@ export const learnReadingEs: Record<keyof typeof learnReadingEn, string> = {
   'learnReading.quiz.correct': 'Correcto.',
   'learnReading.quiz.incorrect': 'No del todo.',
   'learnReading.quiz.notStored': 'Esta pregunta no se califica ni se guarda.',
+  'learnReading.view.practice': 'Practicar',
+  'learnReading.view.back': 'Volver al curso',
+  'learnReading.view.readAgain': 'Volver a leer',
+  'learnReading.view.minutes': 'Unos {minutes} min',
+  'learnReading.view.error': 'No se pudo mostrar esta página de lectura.',
+  'learnReading.path.heading': 'Rutas de aprendizaje',
+  'learnReading.path.progress': '{passed} de {total} lecciones aprobadas.',
+  'learnReading.path.continue': 'Continuar la ruta: {title}',
+  'learnReading.path.lessons': 'Lecciones de la ruta {title}',
+  'learnReading.path.module': 'Módulo {number}',
 };

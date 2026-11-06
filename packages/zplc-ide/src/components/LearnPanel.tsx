@@ -70,6 +70,7 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
   const lesson = lessons.find((candidate) => candidate.id === lessonId) ?? lessons[0]!;
   const lessonView = ordered.find((candidate) => candidate.id === lesson.id);
   const locked = lessonView?.state === 'locked';
+  const lessonEntry = LESSON_INDEX.lessons.find((candidate) => candidate.id === lesson.id);
   const folderAccess = isFileSystemAccessSupported();
   // A run recorded in Tests still grades where the host has no lesson check; on the desktop the lesson check grades (LRN-022).
   const grade = gradeRecordedScenarioLesson(lesson, workspaceTestPresentation);
@@ -158,7 +159,11 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
         <header className="border-b border-[var(--color-surface-600)] pb-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <h2 id="learn-title" className="flex items-center gap-2 text-base font-semibold text-[var(--color-surface-100)]">
+              <h2
+                id="learn-title"
+                tabIndex={-1}
+                className="flex items-center gap-2 text-base font-semibold text-[var(--color-surface-100)]"
+              >
                 <BookOpen size={17} aria-hidden="true" />
                 {lesson.title}
               </h2>
@@ -357,6 +362,12 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
               >
                 <Copy size={14} aria-hidden="true" />
                 {starting ? t('learn.workspacePreparing') : t('learn.openWorkspace')}
+              </Button>
+            )}
+            {lessonEntry?.reading && (
+              <Button variant="secondary" size="sm" data-learn-read-again onClick={() => useLearnUi.getState().openReading(lesson.id)}>
+                <BookOpen size={14} aria-hidden="true" />
+                {t('learnReading.view.readAgain')}
               </Button>
             )}
             {checkAvailable && (

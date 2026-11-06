@@ -7,6 +7,7 @@ import { useEffect, useRef, type ComponentType } from 'react';
 import { Group, Panel, useGroupCallbackRef, usePanelCallbackRef, type PanelSize } from 'react-resizable-panels';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { LearnHome } from '../components/LearnHome';
+import { LearnReadingView } from '../components/LearnReadingView';
 import { PanelSeparator } from '../components/PanelSeparator';
 import { useT } from '../i18n';
 import type { DebugController } from '../hooks/useDebugController';
@@ -161,6 +162,9 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
                     </ErrorBoundary>
                   </div>
                 )}
+                <ErrorBoundary region="Editor">
+                  <LearnReadingView />
+                </ErrorBoundary>
               </main>
             </Panel>
             <PanelSeparator id="workspace-separator" label={t('app.resize')} group={groupPanel} leading="editor" trailing="console" />
