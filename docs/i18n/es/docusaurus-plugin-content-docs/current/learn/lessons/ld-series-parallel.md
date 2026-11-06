@@ -19,6 +19,7 @@ Combine contactos en serie para AND y en paralelo para OR, lea una tabla de verd
 - Tiempo estimado: 20 minutos
 - Lenguajes: LD
 - Rutas: Simulación
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [ld-no-nc-contacts](./ld-no-nc-contacts.md)
 

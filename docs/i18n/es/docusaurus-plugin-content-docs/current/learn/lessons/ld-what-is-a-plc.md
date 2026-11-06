@@ -19,6 +19,7 @@ Conozca las tres partes de toda máquina con PLC, entradas, un programa y salida
 - Tiempo estimado: 15 minutos
 - Lenguajes: LD
 - Rutas: Simulación
+- Página de lectura: sí
 - Planta: ninguna
 
 ## Objetivos

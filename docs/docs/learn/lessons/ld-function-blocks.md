@@ -19,6 +19,7 @@ Call the project's function block PumpCtl from a second Ladder rung so that pump
 - Estimated time: 25 minutes
 - Languages: LD
 - Tracks: Simulation
+- Reading page: yes
 - Plant: none
 - Prerequisites: [tank-level-fault-reset-ladder](./tank-level-fault-reset-ladder.md)
 

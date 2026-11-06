@@ -19,6 +19,7 @@ Separe la orden del motor de la confirmación de marcha usando la planta Motor P
 - Tiempo estimado: 20 minutos
 - Lenguajes: ST
 - Rutas: Simulación
+- Página de lectura: no
 - Planta: [`motor-v1`](../plants.md)
 - Requisitos previos: [pedestrian-crossing-states](./pedestrian-crossing-states.md)
 

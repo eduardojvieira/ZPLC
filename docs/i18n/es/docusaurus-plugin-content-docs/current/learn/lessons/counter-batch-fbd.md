@@ -19,6 +19,7 @@ Edite un diagrama de bloques de función para que un contador CTU cuente tres pi
 - Tiempo estimado: 20 minutos
 - Lenguajes: FBD
 - Rutas: Simulación, Hardware
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [edge-counter-pulses](./edge-counter-pulses.md)
 

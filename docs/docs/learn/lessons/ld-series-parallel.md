@@ -19,6 +19,7 @@ Combine contacts in series for AND and in parallel for OR, read a truth table, a
 - Estimated time: 20 minutes
 - Languages: LD
 - Tracks: Simulation
+- Reading page: yes
 - Plant: none
 - Prerequisites: [ld-no-nc-contacts](./ld-no-nc-contacts.md)
 

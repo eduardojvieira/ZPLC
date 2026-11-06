@@ -19,6 +19,7 @@ Conéctese al broker de la simulación, suscríbase a un tema, publique un mensa
 - Tiempo estimado: 25 minutos
 - Lenguajes: ST
 - Rutas: Simulación
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [modbus-register-round-trip](./modbus-register-round-trip.md)
 

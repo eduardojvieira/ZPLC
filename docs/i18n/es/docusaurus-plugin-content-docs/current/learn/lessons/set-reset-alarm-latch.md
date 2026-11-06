@@ -19,6 +19,7 @@ Mantenga una falla en memoria con los bloques SR y RS y vea qué hace cada uno c
 - Tiempo estimado: 15 minutos
 - Lenguajes: ST
 - Rutas: Simulación, Hardware
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [seal-in-ladder](./seal-in-ladder.md)
 

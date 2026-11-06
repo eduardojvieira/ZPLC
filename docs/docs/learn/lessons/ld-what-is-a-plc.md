@@ -19,6 +19,7 @@ Meet the three parts of every PLC machine, inputs, a program and outputs, and fi
 - Estimated time: 15 minutes
 - Languages: LD
 - Tracks: Simulation
+- Reading page: yes
 - Plant: none
 
 ## Objectives

@@ -19,6 +19,7 @@ Retenga la falla por atasco y compruebe su temporización con aserciones AT, WIT
 - Tiempo estimado: 25 minutos
 - Lenguajes: ST
 - Rutas: Simulación
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [conveyor-classification-jam](./conveyor-classification-jam.md)
 

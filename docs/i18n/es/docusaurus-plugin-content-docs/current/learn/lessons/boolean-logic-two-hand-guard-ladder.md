@@ -19,6 +19,7 @@ Dibuje AND, NOT y OR exclusivo como contactos en serie y en paralelo, y habilite
 - Tiempo estimado: 20 minutos
 - Lenguajes: LD
 - Rutas: Simulación, Hardware
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [boolean-logic-two-hand-guard](./boolean-logic-two-hand-guard.md), [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
 

@@ -19,6 +19,7 @@ Guarde tres botones de llamada en un arreglo de estructuras y escriba un solo bu
 - Tiempo estimado: 25 minutos
 - Lenguajes: ST
 - Rutas: Simulación, Hardware
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [function-block-pump-pair](./function-block-pump-pair.md)
 

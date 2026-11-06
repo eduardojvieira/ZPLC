@@ -19,6 +19,7 @@ Place a TOF and a TON between a contact and a coil, and see that an off-delay ke
 - Estimated time: 20 minutes
 - Languages: LD
 - Tracks: Simulation, Hardware
+- Reading page: yes
 - Plant: none
 - Prerequisites: [timers-on-delay-off-delay](./timers-on-delay-off-delay.md), [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
 

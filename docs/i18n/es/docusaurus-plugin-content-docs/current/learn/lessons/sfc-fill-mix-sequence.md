@@ -19,6 +19,7 @@ Complete un diagrama funcional secuencial de tres pasos agregando la transición
 - Tiempo estimado: 25 minutos
 - Lenguajes: SFC
 - Rutas: Simulación, Hardware
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [edge-counter-pulses](./edge-counter-pulses.md)
 

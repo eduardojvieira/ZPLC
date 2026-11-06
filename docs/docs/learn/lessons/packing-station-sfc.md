@@ -19,6 +19,7 @@ Build a packing station as a Sequential Function Chart from a written descriptio
 - Estimated time: 60 minutes
 - Languages: SFC
 - Tracks: Simulation
+- Reading page: no
 - Plant: none
 - Prerequisites: [capstone-packing-station](./capstone-packing-station.md), [sfc-fill-mix-sequence](./sfc-fill-mix-sequence.md)
 

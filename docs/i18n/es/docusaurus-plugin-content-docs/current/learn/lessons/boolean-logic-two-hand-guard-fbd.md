@@ -19,6 +19,7 @@ Lea un diagrama de bloques de función (FBD) y conecte bloques AND, NOT y XOR pa
 - Tiempo estimado: 20 minutos
 - Lenguajes: FBD
 - Rutas: Simulación, Hardware
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [boolean-logic-two-hand-guard](./boolean-logic-two-hand-guard.md)
 

@@ -19,6 +19,7 @@ Keep a running total in an INT variable with ADD, SEL and R_TRIG blocks, and tur
 - Estimated time: 25 minutes
 - Languages: FBD
 - Tracks: Simulation, Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [types-arithmetic-comparison](./types-arithmetic-comparison.md), [boolean-logic-two-hand-guard-fbd](./boolean-logic-two-hand-guard-fbd.md)
 

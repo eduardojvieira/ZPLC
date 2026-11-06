@@ -19,6 +19,7 @@ Hold a fault in memory with SET and RESET coils, and see that in Ladder the rung
 - Estimated time: 20 minutes
 - Languages: LD
 - Tracks: Simulation, Hardware
+- Reading page: yes
 - Plant: none
 - Prerequisites: [set-reset-alarm-latch](./set-reset-alarm-latch.md), [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
 

@@ -19,6 +19,7 @@ Complete a Sequential Function Chart with three steps by adding the missing time
 - Estimated time: 25 minutes
 - Languages: SFC
 - Tracks: Simulation, Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [edge-counter-pulses](./edge-counter-pulses.md)
 

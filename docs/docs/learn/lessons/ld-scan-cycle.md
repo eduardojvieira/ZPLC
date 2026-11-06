@@ -19,6 +19,7 @@ Learn that a PLC reads its inputs, solves the rungs from top to bottom and then 
 - Estimated time: 15 minutes
 - Languages: LD
 - Tracks: Simulation
+- Reading page: yes
 - Plant: none
 - Prerequisites: [ld-what-is-a-plc](./ld-what-is-a-plc.md)
 

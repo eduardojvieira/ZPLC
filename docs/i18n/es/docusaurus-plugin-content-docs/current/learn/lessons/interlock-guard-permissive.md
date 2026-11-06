@@ -19,6 +19,7 @@ Agregue un permisivo al arranque y a la parada de un motor para que funcione sol
 - Tiempo estimado: 20 minutos
 - Lenguajes: ST
 - Rutas: Simulación
+- Página de lectura: no
 - Planta: [`motor-v1`](../plants.md)
 - Requisitos previos: [pedestrian-crossing-states](./pedestrian-crossing-states.md)
 

@@ -19,6 +19,7 @@ Use a positive transition contact and a negative transition contact so that a bo
 - Estimated time: 15 minutes
 - Languages: LD
 - Tracks: Simulation
+- Reading page: yes
 - Plant: none
 - Prerequisites: [set-reset-alarm-latch-ladder](./set-reset-alarm-latch-ladder.md)
 

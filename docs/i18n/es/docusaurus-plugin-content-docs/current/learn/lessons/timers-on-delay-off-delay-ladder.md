@@ -19,6 +19,7 @@ Coloque un TOF y un TON entre un contacto y una bobina, y compruebe que un retar
 - Tiempo estimado: 20 minutos
 - Lenguajes: LD
 - Rutas: Simulación, Hardware
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [timers-on-delay-off-delay](./timers-on-delay-off-delay.md), [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
 

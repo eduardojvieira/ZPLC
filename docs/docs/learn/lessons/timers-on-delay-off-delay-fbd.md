@@ -19,6 +19,7 @@ Wire a TOF block to keep a light on after a button is released, and a TON block 
 - Estimated time: 20 minutes
 - Languages: FBD
 - Tracks: Simulation, Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [timers-on-delay-off-delay](./timers-on-delay-off-delay.md), [boolean-logic-two-hand-guard-fbd](./boolean-logic-two-hand-guard-fbd.md)
 

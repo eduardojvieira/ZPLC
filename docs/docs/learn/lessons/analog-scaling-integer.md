@@ -19,6 +19,7 @@ Scale a raw count from 0 to 1000 into a percentage with integer arithmetic, and 
 - Estimated time: 20 minutes
 - Languages: ST
 - Tracks: Simulation, Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [types-arithmetic-comparison](./types-arithmetic-comparison.md)
 

@@ -19,6 +19,7 @@ Write one holding register through a Modbus TCP block, read it back once the wri
 - Estimated time: 25 minutes
 - Languages: ST
 - Tracks: Simulation
+- Reading page: no
 - Plant: none
 - Prerequisites: [structures-arrays-call-panel](./structures-arrays-call-panel.md)
 

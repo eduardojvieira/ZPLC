@@ -19,6 +19,7 @@ Stop a feed and press cycle the moment a fault appears, and return it to IDLE on
 - Estimated time: 25 minutes
 - Languages: SFC
 - Tracks: Simulation
+- Reading page: no
 - Plant: none
 - Prerequisites: [sfc-fill-mix-sequence](./sfc-fill-mix-sequence.md), [tank-level-fault-reset](./tank-level-fault-reset.md)
 

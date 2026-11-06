@@ -19,6 +19,7 @@ Write the body of a function block that holds a start and stop latch, then use i
 - Estimated time: 25 minutes
 - Languages: ST
 - Tracks: Simulation, Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [types-arithmetic-comparison](./types-arithmetic-comparison.md)
 

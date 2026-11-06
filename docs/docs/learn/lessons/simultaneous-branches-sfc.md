@@ -19,6 +19,7 @@ Start two branches at once, let each finish in its own time, and join them so th
 - Estimated time: 30 minutes
 - Languages: SFC
 - Tracks: Simulation
+- Reading page: no
 - Plant: none
 - Prerequisites: [sfc-fill-mix-sequence](./sfc-fill-mix-sequence.md)
 

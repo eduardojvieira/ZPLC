@@ -19,6 +19,7 @@ Walk through part classification and the safe jam lockout in the Conveyor 01 exa
 - Estimated time: 25 minutes
 - Languages: ST
 - Tracks: Simulation
+- Reading page: no
 - Plant: [`conveyor-v1`](../plants.md)
 - Prerequisites: [motor-plant-feedback](./motor-plant-feedback.md), [tank-level-fault-reset](./tank-level-fault-reset.md)
 

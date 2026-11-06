@@ -19,6 +19,7 @@ Latch the jam fault and prove its timing with AT, WITHIN, FOR, UNTIL, RISING, an
 - Estimated time: 25 minutes
 - Languages: ST
 - Tracks: Simulation
+- Reading page: no
 - Plant: none
 - Prerequisites: [conveyor-classification-jam](./conveyor-classification-jam.md)
 

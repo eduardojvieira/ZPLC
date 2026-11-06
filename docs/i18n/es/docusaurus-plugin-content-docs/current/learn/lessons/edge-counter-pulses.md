@@ -19,6 +19,7 @@ Use un contador CTU para contar tres pulsos discretos y poner la cuenta a cero.
 - Tiempo estimado: 15 minutos
 - Lenguajes: ST
 - Rutas: Simulación, Hardware
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [timers-on-delay-off-delay](./timers-on-delay-off-delay.md)
 

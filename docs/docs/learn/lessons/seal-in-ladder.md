@@ -19,6 +19,7 @@ Edit a Ladder rung so that a Start press keeps the motor on after the button is 
 - Estimated time: 20 minutes
 - Languages: LD
 - Tracks: Simulation, Hardware
+- Reading page: yes
 - Plant: none
 - Prerequisites: [boolean-logic-two-hand-guard](./boolean-logic-two-hand-guard.md)
 

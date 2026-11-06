@@ -19,6 +19,7 @@ Complete un programa en lista de instrucciones para que una alarma de puerta se 
 - Tiempo estimado: 20 minutos
 - Lenguajes: IL
 - Rutas: Simulación, Hardware
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [function-block-pump-pair](./function-block-pump-pair.md)
 

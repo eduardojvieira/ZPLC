@@ -19,6 +19,7 @@ Use a TOF timer to keep a light on after a button is released, and a TON timer t
 - Estimated time: 15 minutes
 - Languages: ST
 - Tracks: Simulation, Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [motor-start-stop-safe](./motor-start-stop-safe.md)
 

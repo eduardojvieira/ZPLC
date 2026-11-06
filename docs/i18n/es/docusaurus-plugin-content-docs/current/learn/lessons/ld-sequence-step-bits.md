@@ -19,6 +19,7 @@ Agregue en una secuencia en escalera la transición del paso de mezcla al paso d
 - Tiempo estimado: 25 minutos
 - Lenguajes: LD
 - Rutas: Simulación
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [ld-analog-scaling](./ld-analog-scaling.md)
 

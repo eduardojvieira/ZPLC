@@ -19,6 +19,7 @@ Complete an Instruction List program so that a door alarm holds itself on after 
 - Estimated time: 20 minutes
 - Languages: IL
 - Tracks: Simulation, Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [function-block-pump-pair](./function-block-pump-pair.md)
 

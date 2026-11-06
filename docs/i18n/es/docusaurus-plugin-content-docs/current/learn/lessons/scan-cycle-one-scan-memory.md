@@ -19,6 +19,7 @@ Siga cómo una entrada produce la salida actual y una copia demorada un ciclo.
 - Tiempo estimado: 10 minutos
 - Lenguajes: ST
 - Rutas: Simulación, Hardware
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [first-blink-simulation](./first-blink-simulation.md)
 

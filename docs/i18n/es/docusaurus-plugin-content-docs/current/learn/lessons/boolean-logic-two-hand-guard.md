@@ -19,6 +19,7 @@ Combine AND, NOT y XOR para que una prensa solo se habilite con las dos manos en
 - Tiempo estimado: 15 minutos
 - Lenguajes: ST
 - Rutas: Simulación, Hardware
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
 

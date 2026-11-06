@@ -19,6 +19,7 @@ Inicie dos ramas a la vez, deje que cada una termine a su tiempo y únalas para 
 - Tiempo estimado: 30 minutos
 - Lenguajes: SFC
 - Rutas: Simulación
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [sfc-fill-mix-sequence](./sfc-fill-mix-sequence.md)
 

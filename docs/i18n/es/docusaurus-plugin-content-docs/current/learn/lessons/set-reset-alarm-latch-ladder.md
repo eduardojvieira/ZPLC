@@ -19,6 +19,7 @@ Mantenga una falla en memoria con bobinas SET y RESET, y compruebe que en escale
 - Tiempo estimado: 20 minutos
 - Lenguajes: LD
 - Rutas: Simulación, Hardware
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [set-reset-alarm-latch](./set-reset-alarm-latch.md), [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
 

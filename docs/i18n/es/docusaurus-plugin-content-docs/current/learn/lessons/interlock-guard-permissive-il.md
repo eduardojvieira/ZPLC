@@ -19,6 +19,7 @@ Agregue un permisivo al arranque y la parada de un motor en lista de instruccion
 - Tiempo estimado: 20 minutos
 - Lenguajes: IL
 - Rutas: Simulación
+- Página de lectura: no
 - Planta: [`motor-v1`](../plants.md)
 - Requisitos previos: [interlock-guard-permissive](./interlock-guard-permissive.md), [boolean-logic-two-hand-guard-il](./boolean-logic-two-hand-guard-il.md)
 

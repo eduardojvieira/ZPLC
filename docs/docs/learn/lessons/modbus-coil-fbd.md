@@ -19,6 +19,7 @@ Edit a Function Block Diagram so that MB_READ_COIL reads coil 4 back once MB_WRI
 - Estimated time: 25 minutes
 - Languages: FBD
 - Tracks: Simulation
+- Reading page: no
 - Plant: none
 - Prerequisites: [modbus-register-round-trip](./modbus-register-round-trip.md), [counter-batch-fbd](./counter-batch-fbd.md)
 

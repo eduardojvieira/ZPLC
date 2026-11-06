@@ -19,6 +19,7 @@ Send a part to the small or to the large bay with two transitions that leave the
 - Estimated time: 25 minutes
 - Languages: SFC
 - Tracks: Simulation
+- Reading page: no
 - Plant: none
 - Prerequisites: [sfc-fill-mix-sequence](./sfc-fill-mix-sequence.md)
 

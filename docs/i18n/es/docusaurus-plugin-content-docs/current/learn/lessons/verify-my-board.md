@@ -19,6 +19,7 @@ Verifique que su placa sea la que eligió, que haga parpadear un LED y que lea u
 - Tiempo estimado: 30 minutos
 - Lenguajes: ST
 - Rutas: Hardware
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [first-blink-simulation](./first-blink-simulation.md)
 

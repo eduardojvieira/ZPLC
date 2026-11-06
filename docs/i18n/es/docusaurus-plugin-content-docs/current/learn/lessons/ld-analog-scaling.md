@@ -19,6 +19,7 @@ Escale las cuentas crudas de una entrada analógica a un nivel en porcentaje con
 - Tiempo estimado: 25 minutos
 - Lenguajes: LD
 - Rutas: Simulación
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [ld-compare-math](./ld-compare-math.md)
 

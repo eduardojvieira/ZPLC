@@ -19,6 +19,7 @@ Mantenga un total acumulado en una variable INT, súmele un valor en cada pulsac
 - Tiempo estimado: 20 minutos
 - Lenguajes: ST
 - Rutas: Simulación, Hardware
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [edge-counter-pulses](./edge-counter-pulses.md)
 

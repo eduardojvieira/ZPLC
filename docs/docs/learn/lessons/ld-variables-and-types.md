@@ -19,6 +19,7 @@ Keep a request in a memory bit, store a duration in a TIME variable, and see whi
 - Estimated time: 20 minutes
 - Languages: LD
 - Tracks: Simulation
+- Reading page: yes
 - Plant: none
 - Prerequisites: [edge-counter-pulses-ladder](./edge-counter-pulses-ladder.md)
 

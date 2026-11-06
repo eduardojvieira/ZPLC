@@ -19,6 +19,7 @@ Wire a permissive into the reset of an RS bistable so that the motor runs only w
 - Estimated time: 25 minutes
 - Languages: FBD
 - Tracks: Simulation
+- Reading page: no
 - Plant: [`motor-v1`](../plants.md)
 - Prerequisites: [interlock-guard-permissive](./interlock-guard-permissive.md), [boolean-logic-two-hand-guard-fbd](./boolean-logic-two-hand-guard-fbd.md)
 

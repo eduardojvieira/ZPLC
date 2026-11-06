@@ -19,6 +19,7 @@ Recorra un motor con autorretención, parada y protección por sobrecarga usando
 - Tiempo estimado: 20 minutos
 - Lenguajes: ST
 - Rutas: Simulación, Hardware
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [set-reset-alarm-latch](./set-reset-alarm-latch.md)
 

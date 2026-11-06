@@ -19,6 +19,7 @@ Controle la bomba de un tanque con una autorretención, enclave una falla con bo
 - Tiempo estimado: 30 minutos
 - Lenguajes: LD
 - Rutas: Simulación
+- Página de lectura: sí
 - Planta: [`tank-v1`](../plants.md)
 - Requisitos previos: [tank-level-fault-reset](./tank-level-fault-reset.md), [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
 

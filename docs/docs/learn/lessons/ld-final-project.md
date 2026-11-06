@@ -19,6 +19,7 @@ Turn the written description of a small packing station into a Ladder program wi
 - Estimated time: 60 minutes
 - Languages: LD
 - Tracks: Simulation
+- Reading page: yes
 - Plant: none
 - Prerequisites: [ld-diagnosis-debugger](./ld-diagnosis-debugger.md)
 

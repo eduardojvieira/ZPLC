@@ -19,6 +19,7 @@ Edite un peldaño en diagrama de escalera para que una pulsación de Start mante
 - Tiempo estimado: 20 minutos
 - Lenguajes: LD
 - Rutas: Simulación, Hardware
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [boolean-logic-two-hand-guard](./boolean-logic-two-hand-guard.md)
 

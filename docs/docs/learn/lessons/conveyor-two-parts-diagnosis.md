@@ -19,6 +19,7 @@ Use the versioned schedule to distinguish one metal part from one non-metal part
 - Estimated time: 20 minutes
 - Languages: ST
 - Tracks: Simulation
+- Reading page: no
 - Plant: none
 - Prerequisites: [conveyor-classification-jam](./conveyor-classification-jam.md)
 

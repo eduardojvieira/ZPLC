@@ -19,6 +19,7 @@ Escale una cuenta en bruto de 0 a 1000 a un porcentaje con aritmética entera, y
 - Tiempo estimado: 20 minutos
 - Lenguajes: ST
 - Rutas: Simulación, Hardware
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [types-arithmetic-comparison](./types-arithmetic-comparison.md)
 

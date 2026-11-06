@@ -19,6 +19,7 @@ Join the broker of the simulation, subscribe to a topic, publish a message on it
 - Estimated time: 25 minutes
 - Languages: ST
 - Tracks: Simulation
+- Reading page: no
 - Plant: none
 - Prerequisites: [modbus-register-round-trip](./modbus-register-round-trip.md)
 

@@ -19,6 +19,7 @@ Add a permissive to a motor start and stop in Instruction List so that the motor
 - Estimated time: 20 minutes
 - Languages: IL
 - Tracks: Simulation
+- Reading page: no
 - Plant: [`motor-v1`](../plants.md)
 - Prerequisites: [interlock-guard-permissive](./interlock-guard-permissive.md), [boolean-logic-two-hand-guard-il](./boolean-logic-two-hand-guard-il.md)
 

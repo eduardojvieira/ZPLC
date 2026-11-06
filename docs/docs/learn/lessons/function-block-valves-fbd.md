@@ -19,6 +19,7 @@ Edit a Function Block Diagram so that a second instance of the project's functio
 - Estimated time: 20 minutes
 - Languages: FBD
 - Tracks: Simulation, Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [function-block-pump-pair](./function-block-pump-pair.md), [counter-batch-fbd](./counter-batch-fbd.md)
 

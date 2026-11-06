@@ -19,6 +19,7 @@ Llame a un contador CTU desde lista de instrucciones para contar tres pulsos dis
 - Tiempo estimado: 15 minutos
 - Lenguajes: IL
 - Rutas: Simulación, Hardware
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [edge-counter-pulses](./edge-counter-pulses.md), [boolean-logic-two-hand-guard-il](./boolean-logic-two-hand-guard-il.md)
 

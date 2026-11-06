@@ -19,6 +19,7 @@ Add a permissive to a motor start and stop so that the motor runs only while a g
 - Estimated time: 20 minutes
 - Languages: ST
 - Tracks: Simulation
+- Reading page: no
 - Plant: [`motor-v1`](../plants.md)
 - Prerequisites: [pedestrian-crossing-states](./pedestrian-crossing-states.md)
 

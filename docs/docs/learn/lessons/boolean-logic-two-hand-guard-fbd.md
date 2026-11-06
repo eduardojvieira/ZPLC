@@ -19,6 +19,7 @@ Read a Function Block Diagram and wire AND, NOT and XOR blocks so a press can on
 - Estimated time: 20 minutes
 - Languages: FBD
 - Tracks: Simulation, Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [boolean-logic-two-hand-guard](./boolean-logic-two-hand-guard.md)
 

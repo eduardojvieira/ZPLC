@@ -5,7 +5,7 @@
 //
 // The source is packages/zplc-ide/src/generated/lessonIndex.ts, itself generated from the packages under
 // packages/zplc-ide/lessons (tools/ci/generate-lesson-index.ts --check holds it fresh). The pages are unlisted from the
-// sidebar (there are 40 of them) and reached from the course outline, which links the module index.
+// sidebar (there are over a hundred of them) and reached from the course outline, which links the module index.
 import { LESSON_INDEX } from '../../packages/zplc-ide/src/generated/lessonIndex.ts';
 import { courseOrder } from '../../packages/zplc-ide/src/learn/course.ts';
 import { code, outputsOf, prose, runGenerator, table, type L10n, type Lang, type ReferencePage } from './reference-lib';
@@ -37,6 +37,9 @@ const T = {
   languages: { en: 'Languages', es: 'Lenguajes' },
   tracks: { en: 'Tracks', es: 'Rutas' },
   plant: { en: 'Plant', es: 'Planta' },
+  reading: { en: 'Reading page', es: 'Página de lectura' },
+  yes: { en: 'yes', es: 'sí' },
+  no: { en: 'no', es: 'no' },
   none: { en: 'none', es: 'ninguna' },
   prerequisites: { en: 'Prerequisites', es: 'Requisitos previos' },
   objectives: { en: 'Objectives', es: 'Objetivos' },
@@ -58,6 +61,7 @@ function lessonBody(lesson: Lesson, lang: Lang): string {
     `- ${T.time[lang]}: ${lesson.estimatedMinutes} ${T.minutes[lang]}`,
     `- ${T.languages[lang]}: ${lesson.languages.join(', ')}`,
     `- ${T.tracks[lang]}: ${trackNames(lesson.tracks, lang)}`,
+    `- ${T.reading[lang]}: ${('reading' in lesson && lesson.reading ? T.yes : T.no)[lang]}`,
     `- ${T.plant[lang]}: ${lesson.plant ? `[${code(lesson.plant)}](../plants.md)` : T.none[lang]}`,
     ...(lesson.prerequisites.length > 0
       ? [`- ${T.prerequisites[lang]}: ${lesson.prerequisites.map((id) => `[${id}](./${id}.md)`).join(', ')}`]
