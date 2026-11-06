@@ -20,7 +20,7 @@ Agregue en una secuencia en escalera la transición del paso de mezcla al paso d
 - Lenguajes: LD
 - Rutas: Simulación
 - Planta: ninguna
-- Requisitos previos: [ld-variables-and-types](./ld-variables-and-types.md)
+- Requisitos previos: [ld-analog-scaling](./ld-analog-scaling.md)
 
 ## Objetivos
 

@@ -26,6 +26,8 @@ Las señales reales son números, no solo encendido y apagado. Los tipos, la ari
 | [Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres bandas](../lessons/types-arithmetic-comparison-fbd.md) | `types-arithmetic-comparison-fbd` | FBD | 25 |
 | [Lista de instrucciones: aritmética, comparación y un salto en un flanco ascendente](../lessons/types-arithmetic-comparison-il.md) | `types-arithmetic-comparison-il` | IL | 20 |
 | [Variables, tipos y direcciones en escalera: bits de memoria, valores TIME y el mapa de E/S](../lessons/ld-variables-and-types.md) | `ld-variables-and-types` | LD | 20 |
+| [Bloques de comparación y de cálculo en escalera: una alarma de tanque y una división segura](../lessons/ld-compare-math.md) | `ld-compare-math` | LD | 25 |
+| [Escalado analógico en escalera: de cuentas a porcentaje con MUL, DIV y LIMIT](../lessons/ld-analog-scaling.md) | `ld-analog-scaling` | LD | 25 |
 
 {/* <<< END GENERATED: learn/modules/module-4 <<< */}
 

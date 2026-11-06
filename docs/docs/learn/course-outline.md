@@ -31,7 +31,7 @@ You see a result first: the tour of module 0 ends in a blinking output in simula
 
 Each module below says why it sits where it does. The Learn home of ZPLC shows the same words, taken from the same course file.
 
-Available today: **66**. Planned: **0**. In all: **66**.
+Available today: **68**. Planned: **0**. In all: **68**.
 
 ## Languages
 
@@ -156,6 +156,8 @@ Real signals are numbers, not only on and off. Types, arithmetic, comparison and
 | `types-arithmetic-comparison-fbd` Types, arithmetic and comparison in Function Block Diagram: a total and three bands | Available | FBD       | Simulation, Hardware | -     | 25      | `types-arithmetic-comparison`, `boolean-logic-two-hand-guard-fbd` |
 | `types-arithmetic-comparison-il` Instruction List: arithmetic, comparison and a jump on a rising edge                 | Available | IL        | Simulation, Hardware | -     | 20      | `types-arithmetic-comparison`, `edge-counter-pulses-il`           |
 | `ld-variables-and-types` Variables, types and addresses in Ladder: memory bits, TIME values and the I/O map           | Available | LD        | Simulation           | -     | 20      | `edge-counter-pulses-ladder`                                      |
+| `ld-compare-math` Comparison and math boxes in Ladder: a tank alarm and a safe division                               | Available | LD        | Simulation           | -     | 25      | `ld-variables-and-types`                                          |
+| `ld-analog-scaling` Analog scaling in Ladder: counts to percent with MUL, DIV and LIMIT                               | Available | LD        | Simulation           | -     | 25      | `ld-compare-math`                                                 |
 
 Objectives of the available lessons:
 
@@ -180,7 +182,7 @@ A machine that does things in order is a state machine. Sequences are written as
 | `simultaneous-branches-sfc` Simultaneous branches: fill and heat together                     | Available | SFC       | Simulation           | -             | 30      | `sfc-fill-mix-sequence`                               |
 | `step-times-sfc` Step times: a horn before the gate opens                                     | Available | SFC       | Simulation           | -             | 20      | `sfc-fill-mix-sequence`                               |
 | `conveyor-sorting-sfc` Conveyor sorting as a chart                                            | Available | SFC       | Simulation           | conveyor-v1   | 30      | `sfc-fill-mix-sequence`                               |
-| `ld-sequence-step-bits` A sequence in Ladder: step bits move a tank from fill to mix to drain | Available | LD        | Simulation           | -             | 25      | `ld-variables-and-types`                              |
+| `ld-sequence-step-bits` A sequence in Ladder: step bits move a tank from fill to mix to drain | Available | LD        | Simulation           | -             | 25      | `ld-analog-scaling`                                   |
 
 Objectives of the available lessons:
 

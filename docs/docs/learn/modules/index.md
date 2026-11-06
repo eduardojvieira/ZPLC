@@ -16,7 +16,7 @@ unlisted: true
 | [1: How a PLC thinks: the scan cycle, then a first blink](./module-1.md) | Foundation | 5 |
 | [2: Boolean logic and latching: contacts, coils, seal-in, set and reset, safe stop](./module-2.md) | Foundation | 11 |
 | [3: Timers, edges and counters](./module-3.md) | Foundation | 9 |
-| [4: Data: types, arithmetic, comparison, analog scaling](./module-4.md) | Intermediate | 6 |
+| [4: Data: types, arithmetic, comparison, analog scaling](./module-4.md) | Intermediate | 8 |
 | [5: State machines and sequences](./module-5.md) | Intermediate | 8 |
 | [6: Feedback, faults and interlocks](./module-6.md) | Intermediate | 8 |
 | [7: Structuring programs: functions, function blocks, structures, arrays, tasks](./module-7.md) | Intermediate | 5 |

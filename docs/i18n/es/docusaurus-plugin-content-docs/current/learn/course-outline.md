@@ -32,7 +32,7 @@ Primero se ve un resultado: el recorrido del módulo 0 termina con una salida qu
 
 Cada módulo indica a continuación por qué está donde está. La página de inicio de Aprender en ZPLC muestra las mismas palabras, tomadas del mismo archivo del curso.
 
-Disponibles hoy: **66**. Planeadas: **0**. En total: **66**.
+Disponibles hoy: **68**. Planeadas: **0**. En total: **68**.
 
 ## Lenguajes
 
@@ -157,6 +157,8 @@ Las señales reales son números, no solo encendido y apagado. Los tipos, la ari
 | `types-arithmetic-comparison-fbd` Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres bandas | Disponible | FBD       | Simulación, Hardware | -      | 25      | `types-arithmetic-comparison`, `boolean-logic-two-hand-guard-fbd` |
 | `types-arithmetic-comparison-il` Lista de instrucciones: aritmética, comparación y un salto en un flanco ascendente         | Disponible | IL        | Simulación, Hardware | -      | 20      | `types-arithmetic-comparison`, `edge-counter-pulses-il`           |
 | `ld-variables-and-types` Variables, tipos y direcciones en escalera: bits de memoria, valores TIME y el mapa de E/S         | Disponible | LD        | Simulación           | -      | 20      | `edge-counter-pulses-ladder`                                      |
+| `ld-compare-math` Bloques de comparación y de cálculo en escalera: una alarma de tanque y una división segura               | Disponible | LD        | Simulación           | -      | 25      | `ld-variables-and-types`                                          |
+| `ld-analog-scaling` Escalado analógico en escalera: de cuentas a porcentaje con MUL, DIV y LIMIT                            | Disponible | LD        | Simulación           | -      | 25      | `ld-compare-math`                                                 |
 
 Objetivos de las lecciones disponibles:
 
@@ -181,7 +183,7 @@ Una máquina que hace cosas en orden es una máquina de estados. Las secuencias 
 | `simultaneous-branches-sfc` Ramas simultáneas: llenar y calentar a la vez                                            | Disponible | SFC       | Simulación           | -             | 30      | `sfc-fill-mix-sequence`                               |
 | `step-times-sfc` Tiempos de paso: una bocina antes de abrir la puerta                                                | Disponible | SFC       | Simulación           | -             | 20      | `sfc-fill-mix-sequence`                               |
 | `conveyor-sorting-sfc` Clasificación en un transportador como diagrama                                               | Disponible | SFC       | Simulación           | conveyor-v1   | 30      | `sfc-fill-mix-sequence`                               |
-| `ld-sequence-step-bits` Una secuencia en escalera: los bits de paso llevan un tanque de llenado a mezcla y a vaciado | Disponible | LD        | Simulación           | -             | 25      | `ld-variables-and-types`                              |
+| `ld-sequence-step-bits` Una secuencia en escalera: los bits de paso llevan un tanque de llenado a mezcla y a vaciado | Disponible | LD        | Simulación           | -             | 25      | `ld-analog-scaling`                                   |
 
 Objetivos de las lecciones disponibles:
 

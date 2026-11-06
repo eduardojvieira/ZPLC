@@ -20,7 +20,7 @@ Add the transition from the mix step to the drain step in a Ladder sequence, so 
 - Languages: LD
 - Tracks: Simulation
 - Plant: none
-- Prerequisites: [ld-variables-and-types](./ld-variables-and-types.md)
+- Prerequisites: [ld-analog-scaling](./ld-analog-scaling.md)
 
 ## Objectives
 
