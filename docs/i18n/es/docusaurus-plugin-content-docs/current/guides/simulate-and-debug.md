@@ -32,11 +32,15 @@ El respaldo conserva la pausa, la reanudación, el avance por ciclo y los puntos
 2. En la barra de herramientas, compruebe que **Simular** esté seleccionado. Pulse **Conectar** y luego **Ejecutar** (F5). La línea de estado dice **En marcha** y el contador de ciclos sube.
 3. Abra la pestaña **Observación**, pulse **+** y escriba el nombre de una variable. Su valor sigue al programa. Haga doble clic en un valor para escribirlo.
 
+![La pestaña Watch de ZPLC con una variable del programa en ejecución (interfaz en inglés)](/img/screens/guide-watch.png)
+
 [Blink sin hardware](../tutorials/blink-without-hardware.md) hace esto con un primer proyecto.
 
 ## 2. Detenerse en un punto de parada
 
 Cualquier programa sirve. Este cuenta sus ciclos, así que una detención muestra el valor del ciclo que la alcanzó.
+
+![El editor detenido en un punto de parada, con la fila Trace en paused (interfaz en inglés)](/img/screens/guide-breakpoint.png)
 
 ```st runnable
 PROGRAM Counter

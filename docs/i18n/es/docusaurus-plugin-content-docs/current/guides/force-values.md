@@ -25,6 +25,8 @@ Los asistentes de IA y el servidor MCP nunca fuerzan un valor, ni en un simulado
 4. Haga doble clic en la celda **Valor**, escriba el valor y pulse Enter. El programa lee el valor forzado a partir del siguiente ciclo.
 5. Desmarque **Forzar** para devolver la variable al programa.
 
+![La tabla Watch con una variable forzada y el estado 1 active force (interfaz en inglés)](/img/screens/guide-force.png)
+
 El panel **E/S en vivo**, al comienzo de la pestaña Observación, enumera cada entrada que declara el programa en ejecución. Cada una tiene un interruptor (**Poner TRUE** y **Poner FALSE**) o un cuadro numérico con **Aplicar**. **Forzar** allí mantiene la entrada en su valor actual, y **Aplicar** cambia entonces el valor forzado. En el simulador, una entrada que usted forzó conserva su último valor forzado cuando libera el forzado, hasta que usted la fija de nuevo.
 
 ## Qué hace un forzado

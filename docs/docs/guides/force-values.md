@@ -25,6 +25,8 @@ AI assistants and the MCP server never force a value, on a simulator or on a dev
 4. Double-click the **Value** cell, type the value and press Enter. The program reads the forced value from the next cycle on.
 5. Untick **Force** to give the variable back to the program.
 
+![The Watch table with one forced variable and the 1 active force status](/img/screens/guide-force.png)
+
 The **Live I/O** panel at the top of the Watch tab lists every input the running program declares. Each has a switch (**Set TRUE** and **Set FALSE**) or a number box with **Set**. **Force** there holds the input at its present value, and **Set** then changes the forced value. In the simulator, an input you forced keeps its last forced value after you release the force, until you set it again.
 
 ## What a force does

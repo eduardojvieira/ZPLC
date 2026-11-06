@@ -69,6 +69,8 @@ The documentation check runs this scenario against the program above, so it is a
 
 **In ZPLC**, open the **Tests** tab and press **Run host scenarios**. Each scenario is listed as passed or failed, with its assertions and their times. A failed assertion shows the instant, the value expected and the value observed. A scenario does not run while a value is forced, so release your forces first ([Force a value](./force-values.md)).
 
+![The Tests tab after Run host scenarios](/img/screens/guide-scenario-tests.png)
+
 **From a terminal**, with the command line of the project (build the runtime once with `bun run setup`):
 
 ```bash

@@ -32,6 +32,8 @@ python3 -m zipfile -l my-project.zip
 1. On the Welcome screen, choose **Import a project archive** and select the file. Nothing is written yet. A dialog says what the archive holds (its files, folders and size), whose project it is and, for a version 1 project, the lines that migrating it changes in `zplc.json`.
 2. Choose **Choose a folder and import** and select an empty folder. ZPLC writes the files there byte for byte and opens the project.
 
+![The Import archive dialog of ZPLC](/img/screens/guide-import-archive.png)
+
 A folder that is not empty is refused, and an import that fails leaves the folder empty again.
 
 ## What ZPLC refuses

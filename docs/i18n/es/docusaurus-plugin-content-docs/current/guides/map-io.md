@@ -78,6 +78,8 @@ Mantenga las direcciones de bit y las de palabra de un área en bytes distintos.
 
 La misma ubicación se registra en `zplc.json` bajo `io`. En ZPLC, abra **Configuración del proyecto**. La sección **Mapeo de E/S** enumera los canales de la placa seleccionada con los nombres de pin impresos en ella, y cada fila ofrece solo los canales de esa placa, así que una fila no puede quedar donde la placa no tiene nada.
 
+![La sección I/O Mapping de la configuración del proyecto (interfaz en inglés)](/img/screens/guide-io-mapping.png)
+
 ```json zplc-fragment board=rpi_pico
 {
   "io": {

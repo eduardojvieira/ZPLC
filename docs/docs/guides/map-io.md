@@ -78,6 +78,8 @@ Keep the bit addresses and the word addresses of one area in different bytes. Th
 
 The same placement is recorded in `zplc.json` under `io`. In ZPLC, open **Project Settings**. The **I/O Mapping** section lists the channels of the selected board with the pin names printed on it, and each row offers only the channels of that board, so a row cannot land where the board has nothing.
 
+![The I/O Mapping section of Project Settings](/img/screens/guide-io-mapping.png)
+
 ```json zplc-fragment board=rpi_pico
 {
   "io": {

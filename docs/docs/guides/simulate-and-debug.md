@@ -32,11 +32,15 @@ The fallback keeps pause, resume, step and breakpoints, but it has no network bl
 2. In the toolbar, check that **Simulate** is selected. Press **Connect**, then **Run** (F5). The status line says **Running** and the cycle count rises.
 3. Open the **Watch** tab, press **+** and type a variable name. Its value follows the program. Double-click a value to write it.
 
+![The Watch tab of ZPLC showing a variable of the running program](/img/screens/guide-watch.png)
+
 [Blink without hardware](../tutorials/blink-without-hardware.md) does this on a first project.
 
 ## 2. Stop on a breakpoint
 
 Any program will do. This one counts its cycles, so a stop shows the value of the cycle that reached it.
+
+![The editor stopped at a breakpoint, with the Trace row showing paused](/img/screens/guide-breakpoint.png)
 
 ```st runnable
 PROGRAM Counter
