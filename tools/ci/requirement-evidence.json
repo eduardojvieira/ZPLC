@@ -1290,6 +1290,7 @@
   ],
   "LNG-028": [
     {"kind":"conformance","ref":"conformance/lng/lng-028-ld-comparison-passes-power-when-it-holds.expect.json","test":"LNG-028 a Ladder comparison box passes power only while the power reaching it is on and its comparison holds"},
+    {"kind":"conformance","ref":"conformance/lng/lng-028-ld-counter-with-a-reset-box-shares-one-variable.expect.json","test":"LNG-028 two Ladder boxes may write one variable: ADD counts on one rung, a MOVE 0 on a later rung resets it, and the last in scan order wins"},
     {"kind":"conformance","ref":"conformance/lng/lng-028-ld-division-by-zero-faults-the-vm.expect.json","test":"LNG-028 a Ladder DIV box with a divisor of zero ends the scan in a VM fault: the box detects no error"},
     {"kind":"conformance","ref":"conformance/lng/lng-028-ld-limit-min-and-max.expect.json","test":"LNG-028 Ladder LIMIT, MIN and MAX boxes select a value while the power reaches them and keep it when it does not"},
     {"kind":"conformance","ref":"conformance/lng/lng-028-ld-math-runs-only-while-power-reaches-the-box.expect.json","test":"LNG-028 Ladder arithmetic boxes store their result while the power reaches them, keep it when it does not, and pass the power on"},
@@ -1313,15 +1314,18 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-021 LNG-028 logic placed after a box follows the ENO of that box"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 LNG-002 LNG-003 the function box: every fault names its rung and cell"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 LNG-021 comparisons in parallel branches compose like contacts: an OR of their terms"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 a coil and a box on one variable are refused, naming both positions"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 a comparison is a term of the power: ENO is the power that reached it AND the comparison"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 a negative literal is written in parentheses, and a TIME literal stays as it is"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 any other function runs only while the power reaches it, and passes that power on (ENO = EN)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 each comparison has its own operator"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 every function of the set has its statement"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 several boxes may write one variable: each writes while its EN is on, the last in scan order wins"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 the function box in a rung: the statements"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 the function box: the monitor entries"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 the function box: what stays as it was"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 the source map gives the statements of a box to its rung and cell"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 the source map gives the statements of a box to its rung and cell"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 two plain coils on one variable stay refused"}
   ],
   "RT-001": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_run_program.c","test":"RT-001/COM-001 are open, so that a long run can look for other findings); ZPLC_FUZZ_DUMP=<path> writes the"},
@@ -3253,6 +3257,11 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/coursePaths.test.ts","test":"the paths of the course file (LRN-043)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/coursePaths.test.ts","test":"the state of a lesson inside a path (LRN-043)"},
     {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"the paths of the course in the generated index (LRN-043)"}
+  ],
+  "LRN-044": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/coursePaths.test.ts","test":"LRN-044 gives every lesson a reading page in English and Spanish, a Simulation track and the language LD"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/coursePaths.test.ts","test":"LRN-044 holds the 21 lessons of the outline, in order, and names a lesson for each topic"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/coursePaths.test.ts","test":"the Ladder path teaches from zero (LRN-044)"}
   ],
   "HIL-001": [
     {"kind":"unit","ref":"packages/zplc-hil/tests/blocks/timers.test.ts","test":"HIL cases: timer blocks (HIL-001)"},
