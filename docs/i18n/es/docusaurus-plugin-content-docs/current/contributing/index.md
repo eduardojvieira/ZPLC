@@ -89,6 +89,8 @@ falla ante una lista de identificadores escrita a mano (LRN-028).
 | `scenario.json`                | El escenario de referencia con el que se califica la lección. Mantenga una copia en la carpeta `tests/` del proyecto inicial para que el alumno lo ejecute desde Pruebas; CI falla cuando la copia difiere.               |
 | `text.en.json`, `text.es.json` | El texto: título, resumen, alcance, objetivos, las seis etapas (`objective`, `predict`, `edit`, `run`, `observe`, `reflect`), dos niveles de pista y la falla a corregir. Ambos archivos deben tener la misma estructura. |
 | `checks.json`                  | Opcional: programas incorrectos que deben seguir en rojo, y otros programas correctos que deben pasar.                                                                                                                    |
+| `reading.en.md`, `reading.es.md` | Opcional, y siempre en los dos idiomas: la página de lectura con la que abre la lección, en Markdown. Además del texto lleva bloques vivos: `ld-figure` (un peldaño de escalera de solo lectura), `ld-try` (un laboratorio que ejecuta un programa de escalera en el simulador, con entradas que el lector puede accionar), `timing` y `quiz`. El subconjunto de Markdown no admite enlaces ni HTML. |
+| `reading/`                     | Los archivos de escalera (`*.ld.json`) que los bloques `ld-figure` y `ld-try` nombran con `src:`. |
 
 El texto marca cada tiempo y valor que cita, para que CI lo compare con el escenario. El generador
 expande la marca una sola vez; ninguna cadena de la lección se reemplaza cuando la aplicación corre

@@ -76,7 +76,7 @@ documentación, en un mensaje de commit y en un pull request. Véase
 La documentación pública existe en ambos idiomas y cambia en ambos a la vez. Una
 dependencia nueva necesita una necesidad concreta y una justificación
 arquitectónica registrada.
-Las páginas en español se revisaron contra el texto en inglés en la remediación de la versión 2.0, en el registro de la decisión D-10 (2026-10-20). Las páginas generadas citan el texto fuente en inglés por diseño.
+Las páginas en español se escriben a partir del texto en inglés, en español neutro con formas impersonales o de «usted» (decisión D-10). Las páginas generadas citan el texto fuente en inglés por diseño.
 
 ### 9. La IA y MCP ayudan dentro del espacio de trabajo y nunca actúan sobre el hardware
 
