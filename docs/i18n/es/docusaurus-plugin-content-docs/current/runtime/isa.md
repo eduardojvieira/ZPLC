@@ -8,28 +8,15 @@ tags: [runtime, isa, bytecode]
 
 # ISA del runtime
 
-La fuente canónica para esta página es `firmware/lib/zplc_core/include/zplc_isa.h`.
+Esta página describe el contrato entre el compilador, el cargador y la máquina virtual: el mapa de memoria, los registros reservados, las familias de instrucciones y el archivo `.zplc`. Sirve para escribir una herramienta que genere o inspeccione bytecode, o para averiguar por qué se rechazó un programa. La fuente única es `firmware/lib/zplc_core/include/zplc_isa.h`; si ambos difieren, manda el encabezado.
 
-En ZPLC 2.0, ese encabezado público define el contrato binario/ISA para:
+## Versiones
 
-- la disposición de la memoria de la VM
-- los registros reservados del sistema
-- la familia de opcodes válidos
-- los identificadores de tipos compartidos y sus límites
-- el formato binario `.zplc`
+El encabezado define `ZPLC_VERSION_MAJOR = 1` y `ZPLC_VERSION_MINOR = 0`. Numeran el contrato binario, no la versión del producto ZPLC. Un segundo número, el contador de borrador, sigue los cambios del contrato mientras este aún se mueve (véase [Contador de borrador](#contador-de-borrador)).
 
-## Qué fija el encabezado hoy
+## Mapa de memoria
 
-`zplc_isa.h` expone actualmente estas constantes de versión del contrato ISA:
-
-- `ZPLC_VERSION_MAJOR = 1`
-- `ZPLC_VERSION_MINOR = 0`
-
-Eso describe la **versión del contrato binario/ISA**, no la versión comercial completa del producto.
-
-## Disposición de la memoria de la VM
-
-La ISA reserva cinco regiones lógicas con bases públicas y tamaños definidos por contrato:
+La VM ve cinco regiones con bases fijas. WORK, RETAIN y CODE toman su tamaño de la configuración de la placa; la tabla indica los valores por defecto del encabezado.
 
 | Región                     |     Base |                             Tamaño | Fuente canónica                                |
 | -------------------------- | -------: | ---------------------------------: | ---------------------------------------------- |
@@ -51,9 +38,11 @@ flowchart LR
   OPI --> HALOUT[HAL publica salidas]
 ```
 
+Un ciclo lee la imagen de entrada, ejecuta el programa y escribe la imagen de salida. El [modelo de memoria](./memory-model.md) explica cómo se ubican las variables en estas regiones.
+
 ## Registros de sistema reservados
 
-Los últimos 16 bytes de la IPI (`0x0FF0` a `0x0FFF`) están reservados para información del planificador/runtime:
+El runtime es dueño de los últimos 16 bytes de la imagen de entrada, de `0x0FF0` a `0x0FFF`. Los reescribe antes de cada ciclo, de modo que el programa los lee y no gana nada escribiéndolos.
 
 | Registro              | Dirección | Propósito                                       |
 | --------------------- | --------: | ----------------------------------------------- |
@@ -62,19 +51,19 @@ Los últimos 16 bytes de la IPI (`0x0FF0` a `0x0FFF`) están reservados para inf
 | `ZPLC_SYS_TASK_ID`    |  `0x0FF8` | identificador de la tarea actual                |
 | `ZPLC_SYS_FLAGS`      |  `0x0FF9` | indicadores de estado del runtime               |
 
-Indicadores públicos definidos hoy:
+El byte de `ZPLC_SYS_FLAGS` combina estos bits:
 
-- `ZPLC_SYS_FLAG_FIRST_SCAN`
-- `ZPLC_SYS_FLAG_WDG_WARN` (reservado; los runtimes actuales no lo producen)
-- `ZPLC_SYS_FLAG_RUNNING`
+- `ZPLC_SYS_FLAG_FIRST_SCAN` (`0x01`) se activa durante el primer ciclo.
+- `ZPLC_SYS_FLAG_WDG_WARN` (`0x02`) está reservado. Hoy ningún runtime lo activa.
+- `ZPLC_SYS_FLAG_RUNNING` (`0x04`) se activa mientras el programa se ejecuta.
 
-`ZPLC_SYS_FLAG_WDG_WARN` no es evidencia de un watchdog, monitor de tiempos ni
-mecanismo de estado seguro. El presupuesto de instrucciones del runtime es un
-límite lógico de ejecución separado.
+:::note
+`ZPLC_SYS_FLAG_WDG_WARN` no es evidencia de un watchdog, de un monitor de tiempos ni de un mecanismo de estado seguro. El presupuesto de instrucciones de la VM es otra cosa: un límite lógico para un ciclo, no un límite de tiempo.
+:::
 
 ## Familias de opcodes
 
-La enumeración `zplc_opcode_t` agrupa las instrucciones públicas en familias claras:
+Los opcodes de `zplc_opcode_t` se agrupan en las familias siguientes. Para el efecto exacto de cada opcode sobre la pila, use la tabla de la [API del runtime](../reference/runtime-api.md).
 
 | Familia                        | Ejemplos                                                                                                                                                                         | Rol                                                                     |
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
@@ -92,41 +81,24 @@ La enumeración `zplc_opcode_t` agrupa las instrucciones públicas en familias c
 | Conversión                     | `OP_I2F`, `OP_F2I`, `OP_I2B`, `OP_EXT8`, `OP_EXT16`, `OP_ZEXT8`, `OP_ZEXT16`, `OP_F2D`, `OP_D2F`, `OP_I2D`, `OP_D2I`, `OP_L2D`, `OP_D2L`, `OP_U2D`, `OP_D2U`, `OP_L2F`, `OP_U2F` | adaptación de tipos, incluidos `LREAL` y los enteros de 64 bits         |
 | Comunicación                   | `OP_COMM_EXEC`, `OP_COMM_STATUS`, `OP_COMM_RESET`                                                                                                                                | ejecución de bloques de función de comunicación                         |
 
-Un acceso indirecto (`OP_LOADI*`, `OP_STOREI*`) a una dirección que ninguna región de datos
-contiene, como `0xFFFF` o cualquier dirección de la región CODE, termina el ciclo con
-`ZPLC_VM_OUT_OF_BOUNDS` (violación de acceso a memoria). El compilador se apoya en esa falla:
-una variable `REF_TO` empieza en `0xFFFF`, así que desreferenciar una referencia nula falla, y
-un índice de arreglo fuera de los límites en ejecución lee desde la dirección base de CODE
-(CMP-023, CMP-024). Una prueba de host fija el comportamiento.
+Los dos bits superiores de un opcode fijan el tamaño de su operando:
 
-La ISA también fija el tamaño del operando por rango de opcode:
+- `0x00-0x3F`: sin operando.
+- `0x40-0x7F`: operando de 8 bits.
+- `0x80-0xBF`: operando de 16 bits.
+- `0xC0-0xFF`: operando de 32 bits.
 
-- `0x00-0x3F`: sin operando
-- `0x40-0x7F`: operando de 8 bits
-- `0x80-0xBF`: operando de 16 bits
-- `0xC0-0xFF`: operando de 32 bits
+`OP_RET` y los opcodes de `OP_I2F` (`0xA0`) a `OP_GED` (`0xBE`) son la excepción: están en el rango de 16 bits pero no llevan operando.
 
-`OP_RET` y los opcodes de conversión, de doble precisión y de comparación de doble
-precisión, de `OP_I2F` (`0xA0`) a `OP_GED` (`0xBE`), no llevan operando aunque estén en el
-rango de 16 bits.
+Un acceso indirecto (`OP_LOADI*`, `OP_STOREI*`) a una dirección que ninguna región de datos contiene termina el ciclo con `ZPLC_VM_OUT_OF_BOUNDS`, la violación de acceso a memoria. Es el caso de `0xFFFF` y de toda dirección de la región CODE. El compilador se apoya en ello: una variable `REF_TO` arranca en `0xFFFF`, así que desreferenciar una referencia nula provoca la falla, y un índice de arreglo fuera de los límites en tiempo de ejecución lee desde la dirección base de CODE y falla igual. Una prueba en el host fija este comportamiento.
 
 ## Valores de dos palabras: enteros de 64 bits y `LREAL`
 
-La pila de evaluación tiene palabras de 32 bits. Un valor `LINT`, `ULINT`, `LWORD` o `LREAL`
-ocupa dos palabras: la **palabra baja queda más abajo** en la pila y la alta arriba, tal como
-la deja `OP_LOAD64` y la toma `OP_STORE64`. Un `LREAL` es el patrón de bits IEEE 754 binary64
-en esas dos palabras.
+La pila de evaluación guarda palabras de 32 bits, de modo que un `LINT`, `ULINT`, `LWORD` o `LREAL` ocupa dos. La palabra baja queda más al fondo y la alta arriba, tal como las deja `OP_LOAD64` y las toma `OP_STORE64`. Un `LREAL` es el patrón de bits IEEE 754 binary64 en esas dos palabras.
 
-Los opcodes de las familias de 64 bits y de doble precisión están en la tabla de la
-[Runtime API](../reference/runtime-api.md), con sus efectos sobre la pila. El cargador demuestra
-la profundidad de la pila de cada camino a partir de esa tabla, así que un programa que usa
-uno de ellos con muy pocas palabras se rechaza (`ZPLC_LOADER_ERR_STACK`). Son parte del
-núcleo en C: todos los runtimes los tienen a la vez.
+El cargador demuestra la profundidad de pila de cada camino a partir de los efectos de la tabla de la [API del runtime](../reference/runtime-api.md), así que un programa que aplica uno de estos opcodes a muy pocas palabras se rechaza con `ZPLC_LOADER_ERR_STACK`. Todos forman parte del núcleo en C: todo runtime los tiene.
 
-La VM calcula cada resultado de doble precisión con aritmética entera. Por eso un resultado no
-depende de la biblioteca de C, del punto flotante de hardware ni de la precisión extendida de
-x87, y es el mismo patrón de bits en el host de 64 bits, en una compilación de 32 bits y en
-todos los destinos. Los resultados que define la VM:
+La VM calcula cada resultado de doble precisión con aritmética entera. Por eso el resultado no depende de la biblioteca de C, del punto flotante del hardware ni de la precisión extendida x87, y es el mismo patrón de bits en el host de 64 bits, en una compilación de 32 bits y en todo destino. Los resultados que la VM define:
 
 | Operación                                        | Operandos                   | Resultado                                                                                                              |
 | ------------------------------------------------ | --------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
@@ -160,46 +132,37 @@ todos los destinos. Los resultados que define la VM:
 |                                                  | en otro caso                | truncado hacia cero                                                                                                    |
 | `OP_I2D`, `OP_L2D`, `OP_U2D`, `OP_L2F`, `OP_U2F` | cualquiera                  | un solo redondeo, al par más cercano                                                                                   |
 
-Todo NaN que produce una operación de doble precisión es el NaN silencioso
-`0x7FF8000000000000` (`0x7FC00000` como `REAL`), así que dos plataformas nunca difieren en el
-contenido.
+Todo NaN que produce una operación de doble precisión es el NaN silencioso `0x7FF8000000000000` (`0x7FC00000` como `REAL`), de modo que dos plataformas nunca difieren en la carga útil.
 
-Una cuenta se lee como una palabra de 32 bits sin signo, así que una cuenta negativa es una
-cuenta de 64 o más. El redondeo al entero más cercano de las conversiones del lenguaje
-(`LREAL_TO_DINT(2.5) = 2`) es `OP_RNDD` seguido de una conversión que trunca, como en las
-conversiones de `REAL`.
+Una cuenta de desplazamiento se lee como una palabra de 32 bits sin signo, así que una cuenta negativa vale como 64 o más. Las conversiones del lenguaje redondean al entero más cercano (`LREAL_TO_DINT(2.5) = 2`) con `OP_RNDD` seguido de una conversión por truncamiento, igual que las conversiones de `REAL`.
 
 ## Contador de borrador
 
-Hasta que el contrato se congele (CMP-052), la palabra 28 del encabezado de cada artefacto
-`.zplc` guarda el contador de borrador (`ZPLC_DRAFT_COUNTER`) y el cargador rechaza un artefacto
-con otro valor, mostrando ambos números. Cada cambio de un opcode, de una disposición o de un tamaño
-lo incrementa. El contador es **6** desde los valores seguros declarados (el segmento
-`ZPLC_SEG_SAFE`): los programas compilados antes se rechazan y hay que recompilarlos (era 5
-con la disposición de las cadenas de los bloques de comunicación, 4 con la profundidad de llamadas
-de una tarea y la identidad de compilación, y 3 con los opcodes de 64 bits y de doble
-precisión). La herramienta
-`tools/contract/restamp_artifacts.py` lleva los artefactos versionados en el repositorio al
-contador actual.
+Mientras el contrato no esté congelado, la palabra 28 del encabezado de todo artefacto `.zplc` guarda `ZPLC_DRAFT_COUNTER`, y el cargador rechaza un artefacto con otro valor, informando ambos números. Todo cambio de un opcode, de una disposición o de un tamaño aumenta el contador.
 
-## Tipos y límites públicos
+Hoy el contador vale **6**. El historial, del más reciente al más antiguo:
 
-El encabezado también publica límites que la toolchain y el runtime comparten:
+- 6: los valores seguros declarados (el segmento `ZPLC_SEG_SAFE`).
+- 5: la disposición de las cadenas de los bloques de comunicación.
+- 4: la profundidad de llamadas de una tarea y la identidad de compilación.
+- 3: los opcodes de 64 bits y de doble precisión.
 
-- `ZPLC_STACK_MAX_DEPTH` para la pila de evaluación
-- `ZPLC_CALL_STACK_MAX` para la pila de llamadas
-- `ZPLC_MAX_BREAKPOINTS` para la capacidad de depuración
-- identificadores de tipos IEC como `ZPLC_TYPE_BOOL`, `ZPLC_TYPE_INT`, `ZPLC_TYPE_DINT`, `ZPLC_TYPE_REAL`, `ZPLC_TYPE_TIME` y `ZPLC_TYPE_STRING`
+Un programa compilado antes de un aumento se rechaza y debe recompilarse. Para llevar al contador actual los artefactos versionados en el repositorio, ejecute `tools/contract/restamp_artifacts.py`.
 
-Para `STRING`, la ISA fija una disposición segura con:
+## Tipos y límites compartidos
 
-- longitud actual en desplazamiento `0`
-- capacidad máxima en desplazamiento `2`
-- datos en desplazamiento `4`
+El encabezado publica los límites que comparten la cadena de herramientas y el runtime:
 
-## Contrato del archivo `.zplc`
+- `ZPLC_STACK_MAX_DEPTH` para la pila de evaluación (256, salvo que la configuración de la placa lo cambie).
+- `ZPLC_CALL_STACK_MAX` para la pila de llamadas (32, salvo cambio).
+- `ZPLC_MAX_BREAKPOINTS` para el depurador (16, salvo cambio).
+- Los identificadores de tipos IEC: `ZPLC_TYPE_BOOL`, `ZPLC_TYPE_INT`, `ZPLC_TYPE_DINT`, `ZPLC_TYPE_REAL`, `ZPLC_TYPE_TIME`, `ZPLC_TYPE_STRING` y los demás.
 
-El binario `.zplc` usa estructuras públicas empaquetadas en el mismo encabezado:
+Un `STRING` tiene una disposición fija: la longitud actual en el desplazamiento `0`, la capacidad en el `2` y los caracteres desde el `4`.
+
+## El archivo `.zplc`
+
+El archivo se construye con estructuras empaquetadas declaradas en el mismo encabezado:
 
 - `zplc_file_header_t`
 - `zplc_segment_entry_t`
@@ -209,7 +172,7 @@ El binario `.zplc` usa estructuras públicas empaquetadas en el mismo encabezado
 - `zplc_build_info_t`
 - `zplc_safe_entry_t`
 
-Segmentos públicos definidos hoy:
+Los segmentos que puede llevar:
 
 - `ZPLC_SEG_CODE`
 - `ZPLC_SEG_DATA`
@@ -225,51 +188,26 @@ Segmentos públicos definidos hoy:
 
 ## Profundidad de las tareas e identidad de compilación
 
-El compilador mide lo que el cargador va a demostrar y lo registra en el artefacto
-(CMP-050, CMP-056):
+El compilador mide lo que el cargador va a verificar y lo registra en el artefacto.
 
-- `stack_size` de la definición de una tarea es la mayor cantidad de valores que la tarea
-  tiene a la vez en la pila de evaluación, y `call_depth` la mayor cantidad de marcos de
-  llamada activos a la vez, con su propio cuerpo incluido (1 para una tarea que no llama a
-  nada; 0 significa que el artefacto no lo declara). El cargador rechaza una tarea que necesita
-  más de lo que declara, y una tarea cuya profundidad de llamadas supera la pila de llamadas
-  de la VM más su cuerpo. El compilador falla la compilación cuando una tarea necesita una
-  pila más profunda que `ZPLC_VERIFY_MAX_DEPTH` (127) o que la que tiene el destino, o
-  llamadas anidadas más profundas que `ZPLC_CALL_STACK_MAX`.
-- El segmento `ZPLC_SEG_BUILD` guarda un valor de 32 bits, la identidad de compilación: el
-  CRC-32 del segmento CODE seguido del segmento TASK tal como se escribe, nunca 0. El mapa de
-  depuración de la misma compilación la registra como `buildId` en 8 dígitos hexadecimales,
-  para que una herramienta distinga un mapa que no pertenece al programa que se ejecuta. Un
-  artefacto sin el segmento se lee como no identificado.
+- La definición de una tarea lleva `stack_size`, la mayor cantidad de valores que la tarea tiene a la vez en la pila de evaluación, y `call_depth`, la mayor cantidad de marcos de llamada activos a la vez, contando su propio cuerpo. Una tarea que no llama a nada tiene profundidad de llamadas 1; 0 significa que el artefacto no la declara.
+- El cargador rechaza una tarea que necesita más de lo que declara, y una tarea cuya profundidad de llamadas supera la pila de llamadas de la VM más su propio cuerpo.
+- El compilador falla la compilación cuando una tarea necesita una pila más profunda que `ZPLC_VERIFY_MAX_DEPTH` (127) o que la que ofrece el destino, o anida llamadas más allá de `ZPLC_CALL_STACK_MAX`.
+- El segmento `ZPLC_SEG_BUILD` guarda un valor de 32 bits, la identidad de compilación: el CRC-32 del segmento CODE seguido del segmento TASK tal como se escriben, nunca 0. El mapa de depuración de la misma compilación la registra como `buildId`, en 8 dígitos hexadecimales, para que una herramienta detecte que un mapa no pertenece al programa en ejecución. Un artefacto sin el segmento se lee como no identificado.
 
 ## Valores seguros declarados
 
-El estado de una salida mientras el programa no la controla (STOP, una pausa, una falla
-retenida, el arranque, un despliegue en curso) es apagado, salvo que el proyecto declare otro
-valor para ella (RT-023). La declaración viaja en el artefacto, en el segmento
-`ZPLC_SEG_SAFE`, de modo que un programa y su estado seguro son una sola unidad: un
-dispositivo que restaura el programa restaura su declaración, y un despliegue interrumpido no
-puede dejar el programa de una compilación con los valores seguros de otra.
+Mientras el programa no controla una salida (STOP, una pausa, una falla enclavada, el arranque, un despliegue en curso), la salida está apagada, salvo que el proyecto declare otro valor para ella. La declaración viaja dentro del artefacto, en el segmento `ZPLC_SEG_SAFE`, de modo que un programa y su estado seguro forman una unidad: un dispositivo que restaura el programa restaura su declaración, y un despliegue interrumpido no puede dejar el programa de una compilación con los valores seguros de otra.
 
-- Cada entrada es un `zplc_safe_entry_t` de `ZPLC_SAFE_ENTRY_SIZE` (4) bytes: el `offset` en
-  bytes de la salida en la imagen de salidas, el `bit` (0 a 7) y el `value` (0 o 1).
-- El cargador rechaza el artefacto con `ZPLC_LOADER_ERR_SAFE` cuando el segmento no son
-  entradas completas, una entrada nombra un bit fuera de la imagen de salidas o un valor que
-  no es 0 ni 1, una salida está declarada dos veces, o hay más de `ZPLC_LOADER_MAX_SAFE`
-  (64) entradas; un segundo segmento `ZPLC_SEG_SAFE` se rechaza como error de segmento. Un
-  artefacto sin el segmento no declara nada.
-- El runtime rechaza, al desplegar y al restaurar en el arranque, una declaración para una
-  salida que la placa no tiene (una entrada tiene que nombrar un canal de salida digital de
-  la descripción de la placa por su desplazamiento de imagen y su bit). El programa de otra placa no
-  se ejecuta con un estado seguro que no existe.
-- Un valor declarado para una salida reemplaza el nivel que la descripción de la placa le da
-  en el estado seguro, en ambos sentidos. Rige desde la carga que confirmó el programa, antes
-  del primer ciclo.
+- Cada entrada es un `zplc_safe_entry_t` de `ZPLC_SAFE_ENTRY_SIZE` (4) bytes: el `offset` en bytes de la salida dentro de la imagen de salida, el `bit` (0 a 7) y el `value` (0 o 1).
+- El cargador rechaza el artefacto con `ZPLC_LOADER_ERR_SAFE` cuando el segmento no es un número entero de entradas, una entrada nombra un bit fuera de la imagen de salida o un valor distinto de 0 y 1, una salida se declara dos veces, o hay más de `ZPLC_LOADER_MAX_SAFE` (64) entradas. Un segundo segmento `ZPLC_SEG_SAFE` se rechaza como error de segmento. Un artefacto sin el segmento no declara nada.
+- Al desplegar y al restaurar en el arranque, el runtime rechaza una declaración para una salida que la placa no tiene: cada entrada debe nombrar un canal de salida digital de la descripción de la placa por su desplazamiento de imagen y su bit. Un programa de otra placa nunca se ejecuta con un estado seguro que no existe.
+- Un valor declarado reemplaza el nivel que la descripción de la placa da a esa salida en el estado seguro, en ambos sentidos. Rige desde la carga que confirmó el programa, antes del primer ciclo.
 
 ## Páginas relacionadas
 
-- [Descripción del runtime](./index.md)
+- [Resumen del runtime](./index.md)
 - [Modelo de memoria](./memory-model.md)
-- [Runtime API](../reference/runtime-api.md)
-- [Persistencia](./persistence.md)
+- [Persistencia y memoria retentiva](./persistence.md)
+- [API del runtime](../reference/runtime-api.md)
 - [Runtime nativo en C](./native-c.md)

@@ -128,3 +128,17 @@ bun test packages/zplc-ide/scripts/welcomeBundle.test.ts
 ```
 
 `bun run lint:ide` ejecuta ESLint, la comprobación de estructura, la de tokens de diseño, la del kit de interfaz y la guardia de i18n. La prueba del paquete de Bienvenida compila la aplicación, por lo que tarda más que las demás.
+
+## Probar una compilación empaquetada
+
+Las pruebas de seguridad de la [página de la aplicación](../ide/index.md#propiedades-de-seguridad) se ejecutan en el host de desarrollo con `bun run test:journeys`. Para ejecutarlas todas contra una aplicación empaquetada en Linux, genere un paquete desempaquetado y apunte los recorridos hacia él:
+
+```bash
+bun run --cwd packages/zplc-ide build:assets
+bun run --cwd packages/zplc-ide build
+bun run --cwd packages/zplc-ide electron:compile
+(cd packages/zplc-ide && bunx electron-builder --linux --dir)
+ZPLC_PACKAGED_DIST="$PWD/packages/zplc-ide/dist-electron" bun run test:journeys
+```
+
+El archivo empaquetado no tiene diálogo de carpetas, así que las pruebas llegan al proyecto mediante una lista de proyectos recientes escrita antes en el directorio de datos de usuario. Cubren solo Linux. La aplicación empaquetada en macOS y Windows no se prueba, aunque el requisito pide las tres.

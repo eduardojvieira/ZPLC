@@ -128,3 +128,17 @@ bun test packages/zplc-ide/scripts/welcomeBundle.test.ts
 ```
 
 `bun run lint:ide` runs ESLint, the structure check, the design-token check, the UI-kit check and the i18n guard. The Welcome bundle test builds the application, so it takes longer than the others.
+
+## Probe a packaged build
+
+The security probes of the [application page](../ide/index.md#security-properties) run on the development host with `bun run test:journeys`. To run all of them against a packaged application on Linux, build an unpacked package and point the journeys at it:
+
+```bash
+bun run --cwd packages/zplc-ide build:assets
+bun run --cwd packages/zplc-ide build
+bun run --cwd packages/zplc-ide electron:compile
+(cd packages/zplc-ide && bunx electron-builder --linux --dir)
+ZPLC_PACKAGED_DIST="$PWD/packages/zplc-ide/dist-electron" bun run test:journeys
+```
+
+The packaged archive has no folder dialog, so the probes reach the project through a recent-projects list written to the user-data directory first. They cover Linux only. The packaged application on macOS and Windows is not probed, although the requirement asks for all three.

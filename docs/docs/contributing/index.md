@@ -9,29 +9,19 @@ tags: [contributing, open-source]
 
 # Contributing
 
-Contributions target `master` and must leave the repository more trustworthy
-than they found it. The repository guide, with copy-and-paste commands for every
-layer, is [CONTRIBUTING.md](https://github.com/eduardojvieira/ZPLC/blob/master/CONTRIBUTING.md).
-This page is its short form for readers of the site.
+This page is for people who change ZPLC. It tells you which check to run for the layer you touched, which rules a change must keep, and how to add a lesson, a documentation sample or a change to the binary contract. The long guide, with commands to copy for every layer, is [CONTRIBUTING.md](https://github.com/eduardojvieira/ZPLC/blob/master/CONTRIBUTING.md). Changes go to `master`, and each one should leave the repository easier to trust than it was.
 
 ## Quick path
 
-1. Read the [engineering principles](./principles.md) and
-   [VERSIONING.md](https://github.com/eduardojvieira/ZPLC/blob/master/VERSIONING.md).
-2. Run `bun run setup` once, then the check of the layer you change (next
-   section).
-3. Add or strengthen a focused test for a behaviour change, and run the checks of
-   the layer before you open the pull request.
-4. Update the English and Spanish public docs together when a user-visible claim,
-   workflow or limitation changes.
-5. Open the pull request with its template: the checks you ran and the evidence
-   level that backs each claim.
+1. Read the [engineering principles](./principles.md) and [VERSIONING.md](https://github.com/eduardojvieira/ZPLC/blob/master/VERSIONING.md).
+2. Run `bun run setup` once. Then run the check for the layer you change, from the next section.
+3. For a change of behaviour, add or strengthen one focused test, and run the checks of the layer before you open the pull request.
+4. When a claim, a workflow or a limitation that users see changes, update the English and the Spanish documentation together.
+5. Fill in the pull request template: the checks you ran, and the evidence level that backs each claim.
 
 ## Checks by layer
 
-Run every command from the repository root. The times were measured on
-2026-10-10 on a Linux x86-64 desktop with warm caches while other jobs were
-running, so read them as an order of magnitude.
+Run every command from the repository root. The times were measured on 2026-10-10 on a Linux x86-64 desktop with warm caches while other jobs were running, so read them as an order of magnitude.
 
 | Layer                         | Command                                                                             | Typical time                        | What a pass shows                                                                                                                                                                                                                                                                                                                               |
 | ----------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -52,9 +42,7 @@ running, so read them as an order of magnitude.
 | Brand assets                  | `bun tools/ci/brand/generate-icons.ts --check`                                      | under 1 s                           | Every icon and the social card were generated from the one mark, `tools/brand/mark.svg`; regenerate them without `--check` (needs `rsvg-convert` and Python with Pillow)                                                                                                                                                                        |
 | Release output checks         | `bun test ./tools/ci`                                                               | about 5 s                           | The installer names and containers, the launch records, the run outcome and the cask and AUR package renderers behave as their fixtures say; the workflow that runs them on produced files has not run in CI yet                                                                                                                                |
 
-A pass at one level never proves a higher one: a host test says nothing about a
-board. [Firmware testing](../development/firmware-testing.md) explains what each
-firmware mode shows and what it does not.
+A pass at one level never proves a higher one: a host test says nothing about a board. [Firmware testing](../development/firmware-testing.md) explains what each firmware mode shows and what it does not.
 
 ## Contribution rules
 
@@ -68,18 +56,14 @@ firmware mode shows and what it does not.
 | Physical operations  | Keep build, flash, deploy, and run/debug separate; do not automate physical control through AI or MCP.                                                                                      |
 | Hardware tests       | A person starts every command that drives a board, at an interactive terminal, and a record says which image it tested. See [Hardware in the Loop](../development/hardware-in-the-loop.md). |
 
-Do not publish, flash hardware, deploy a PLC program, or actuate equipment
-without explicit authorization.
+Never publish, flash hardware, deploy a PLC program or actuate equipment without explicit authorization.
 
 ## Adding a lesson
 
-A lesson is a data package, so adding one needs no change to application code (LRN-027). Lesson ids
-have one source, the manifests: the ZPLC application, the progress store and the MCP course resource read an index
-generated from them, and CI fails on a hand-written list of ids (LRN-028).
+A lesson is a data package, so adding one needs no change to application code. Lesson ids have one source, the manifests: the application, the progress store and the MCP course resource read an index generated from them, and CI fails on a hand-written list of ids.
 
-1. Make the exercise as two example projects under `packages/zplc-ide/projects/`: a starter that
-   builds and fails the scenario, and a solution that passes it.
-2. Create `packages/zplc-ide/lessons/<id>/` with the files below.
+1. Make the exercise as two example projects under `packages/zplc-ide/projects/`: a starter that builds and fails the scenario, and a solution that passes it.
+2. Create `packages/zplc-ide/lessons/<id>/` with the files in the table below.
 3. Run the generator, then the lesson CI.
 
 | File                           | What it holds                                                                                                                                                                                             |
@@ -91,8 +75,7 @@ generated from them, and CI fails on a hand-written list of ids (LRN-028).
 | `reading.en.md`, `reading.es.md` | Optional, and always in both languages: the reading page the lesson opens on, in Markdown. Besides text it holds live blocks: `ld-figure` (a read-only ladder rung), `ld-try` (a lab that runs a ladder program on the simulator, with inputs the reader can press), `timing` and `quiz`. The Markdown subset has no links and no raw HTML. |
 | `reading/`                     | The ladder files (`*.ld.json`) that the `ld-figure` and `ld-try` blocks name through `src:`. |
 
-The text marks every time and value it quotes, so that CI can check it against the scenario. The
-generator expands the markup once; no lesson string is replaced when the application runs (LRN-038).
+The text marks every time and value it quotes, so CI can check it against the scenario. The generator expands the markup once; no lesson string is rewritten while the application runs.
 
 | Markup                    | Shows                    | CI checks                                                                                         |
 | ------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------- |
@@ -107,14 +90,16 @@ bun tools/ci/generate-lesson-index.ts --check          # what CI runs: the file 
 bun run --cwd packages/zplc-ide test src/learn         # lesson CI; set ZPLC_NATIVE_SIM_BIN for the runtime proofs
 ```
 
-The lesson CI runs every package in both languages: the starter fails the reference scenario because
-an assertion fails, the solution passes it, each wrong program stays red, every time and value the
-text quotes exists in the scenario, and every file it cites exists in the starter (LRN-025).
+The lesson CI runs every package in both languages. It requires that:
+
+- the starter fails the reference scenario because an assertion fails, and the solution passes it;
+- each wrong program in `checks.json` stays red;
+- every time and value the text quotes exists in the scenario;
+- every file the text cites exists in the starter.
 
 ## Runnable documentation samples
 
-A code sample in the docs is checked in CI when its fence says so. The first word of the
-fence names the language; the words after it say what to check:
+CI checks a code sample in the docs when its fence asks for it. The first word of the fence is the language; the words after it say what to check:
 
 ````text
 ```st runnable
@@ -144,16 +129,11 @@ END_PROGRAM
 | `fragment`                | The block is a bare body (variables and statements): it is wrapped in `PROGRAM DocSample ... END_PROGRAM` before it is compiled.                                                                                                                                                                                                     |
 | `language=il`             | The sample is Instruction List, written in an `iecst` fence.                                                                                                                                                                                                                                                                         |
 
-The English page and its Spanish twin mark the same samples the same way, with the same
-result. The sample is written in code and so it is the same in both languages. The check
-is `bun run check:docs-samples`; it needs `bun run build:compiler` and, for a sample with
-`expect`, `bun run build:runtime`, and it fails rather than skips when the runtime is
-missing.
+The English page and its Spanish twin mark the same samples the same way and state the same result. The code is identical in both languages. The check is `bun run check:docs-samples`. It needs `bun run build:compiler` and, for a sample with `expect`, `bun run build:runtime`; when the runtime is missing it fails instead of skipping.
 
 ## Configuration fragments, scenarios and images
 
-A page that shows a piece of `zplc.json`, a scenario or a picture of the application is
-checked the same way, by what the fence says:
+A page that shows a piece of `zplc.json`, a scenario, a board entry or a picture of the application is checked by what its fence says:
 
 | Fence                | What the check does                                                                                                                                                                                                                                                                                                                                                                     |
 | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -162,33 +142,22 @@ checked the same way, by what the fence says:
 | `json zplc-board`    | The entry is checked by the validator of the board manifest (`firmware/zephyr/scripts/zplc_boards.py`) together with the manifest of this repository: a missing key, a wrong address, a channel that the rules refuse or a name that another board already has is an error.                                                                                                             |
 | `![alt](/img/...)`   | The image must be listed in `docs/static/img/manifest.json`, which `bun run docs:screenshots` writes with the commit the application was built from: a page shows no picture that automation did not capture.                                                                                                                                                                           |
 
-The English page and its Spanish twin show the same fragments and scenarios. The checks
-are `bun run check:docs-config` and `bun tools/docs/capture-screenshots.ts --check`.
+The English page and its Spanish twin show the same fragments and scenarios. The checks are `bun run check:docs-config` and `bun tools/docs/capture-screenshots.ts --check`.
 
 ## Project documents
 
 - [Roadmap](./roadmap.md): what is done, what is next and what comes later.
 - [Engineering principles](./principles.md): the constitution in plain language.
-- [Source of truth](../reference/source-of-truth.md): which file is the authority
-  for each kind of fact.
-- [Code of conduct](https://github.com/eduardojvieira/ZPLC/blob/master/CODE_OF_CONDUCT.md)
-  and [security policy](https://github.com/eduardojvieira/ZPLC/blob/master/SECURITY.md).
+- [Source of truth](../reference/source-of-truth.md): which file is the authority for each kind of fact.
+- [Code of conduct](https://github.com/eduardojvieira/ZPLC/blob/master/CODE_OF_CONDUCT.md) and [security policy](https://github.com/eduardojvieira/ZPLC/blob/master/SECURITY.md).
 
 ## Changing the binary contract
 
-The opcodes, the container layout, the sizes, the error codes and the
-identifiers of the `.zplc` format are defined once, in
-`tools/contract/contract.json`. The C headers, the TypeScript tables, the Python
-tools and the [reference tables](../reference/runtime-api.md) are generated from it,
-and CI fails when a generated file is stale.
+The opcodes, the container layout, the sizes, the error codes and the identifiers of the `.zplc` format are defined once, in `tools/contract/contract.json`. The C headers, the TypeScript tables, the Python tools and the [reference tables](../reference/runtime-api.md) are generated from it, and CI fails when a generated file is stale.
 
 ### Draft contract counter
 
-Until the contract is frozen, every change to it increments a **draft counter**
-(`abi.draftCounter`). The compiler and the assembler write it in header word 28
-of every artifact (the field that used to be reserved), under the CRC, and each
-runtime and firmware image reports its own. A different number is refused, and
-the refusal shows both:
+Until the contract is frozen, every change to it raises a **draft counter** (`abi.draftCounter`). The compiler and the assembler write it in header word 28 of every artifact (the field that used to be reserved), under the CRC, and each runtime and firmware image reports its own. A different number is refused, and the refusal shows both:
 
 > Program was built for contract draft 2, this runtime is draft 3
 
@@ -200,27 +169,13 @@ the refusal shows both:
 | Hardware deploy from the ZPLC application | The preflight compares the artifact with the `draft_counter` of the connected board and refuses before anything is sent.                                                                                                                      |
 | CLI                                       | `zplc-cli compile` states the counter of what it built.                                                                                                                                                                                       |
 
-An artifact built before the counter carries 0, and a firmware image that does
-not report one has none: both are refused, and the sentence says `none`. After
-an update that changes the counter, rebuild the programs and reflash the boards.
-A program that a board saved under another draft is rejected at boot and the
-runtime stays latched safe until a verified replacement is uploaded.
-The counter is not the product version: the one final version integer is
-assigned and frozen when the conformance matrix is closed.
+An artifact built before the counter carries 0, and a firmware image that does not report one has none. Both are refused, and the sentence says `none`. After an update that changes the counter, rebuild the programs and reflash the boards. A program that a board saved under another draft is rejected at boot, and the runtime stays latched safe until a verified replacement is uploaded. The counter is not the product version: the single final version integer is assigned and frozen when the conformance matrix is closed.
 
 ### To change the contract
 
-1. Edit `tools/contract/contract.json` and increase `abi.draftCounter` by one.
-2. Run `python3 tools/contract/generate.py --record-draft "why it changed"`.
-   It writes every generated file and appends the counter, the fingerprint of
-   the contract and the reason to `tools/contract/golden/draft-ledger.json`.
-3. Move the changed numbers in `tools/contract/golden/contract.golden.json`
-   (`python3 tools/contract/test_contract.py` names each one), rebuild the
-   artifacts committed to the repository (`examples/*.zplc`, the `.hex`
-   fixtures) and fix any test that builds a header by hand.
+1. Edit `tools/contract/contract.json` and raise `abi.draftCounter` by one.
+2. Run `python3 tools/contract/generate.py --record-draft "why it changed"`. It writes every generated file and appends the counter, the fingerprint of the contract and the reason to `tools/contract/golden/draft-ledger.json`.
+3. Update the changed numbers in `tools/contract/golden/contract.golden.json` (`python3 tools/contract/test_contract.py` names each one), rebuild the artifacts committed to the repository (`examples/*.zplc` and the `.hex` fixtures), and fix any test that builds a header by hand.
 4. Run `bun run contract:check` and state the reason in the commit message.
 
-`generate.py --check` fails when the contract no longer matches the fingerprint
-recorded for its own counter, so a change cannot be committed under the old
-number. Prose (`doc` strings, group titles) is not part of the fingerprint. Never
-edit or remove a ledger entry that was committed.
+`generate.py --check` fails when the contract no longer matches the fingerprint recorded for its own counter, so a change cannot be committed under the old number. Prose (the `doc` strings and group titles) is not part of the fingerprint. Never edit or remove a ledger entry that was committed.

@@ -11,7 +11,7 @@ A Ladder file is a model of rungs, not text. The build checks it and translates 
 
 ## Build a rung
 
-1. Open a Ladder file of the project, or create one with **New File**. A new project can also start with a Ladder program.
+1. Open a Ladder file of the project, or create one with **New file**. A new project can also start with a Ladder program.
 2. Declare the variables the rung uses in the variable table of the file, with their type and, for a physical input or output, their address (`%IX0.0`, `%QX0.0`; see the [address table](../reference/language-ld.md#io-addressing)).
 3. Choose **Add rung**. The cursor is a blue frame on a cell of the rung.
 4. Put a contact on the left and a coil on the right. Press an item of the toolbox to insert it at the cursor, drag it onto the grid, or use the keys: `C` inserts a contact, `N` an inverted contact and `O` a coil; `Insert` or `I` opens the palette as a search list.

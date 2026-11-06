@@ -9,29 +9,19 @@ tags: [contributing, open-source]
 
 # Contribuir
 
-Las contribuciones apuntan a `master` y deben dejar el repositorio más
-confiable de lo que estaba. La guía del repositorio, con comandos para copiar y
-pegar de cada capa, es [CONTRIBUTING.md](https://github.com/eduardojvieira/ZPLC/blob/master/CONTRIBUTING.md).
-Esta página es su versión corta para quienes leen el sitio.
+Esta página es para quienes modifican ZPLC. Indica qué verificación ejecutar según la capa que se toca, qué reglas debe respetar un cambio y cómo agregar una lección, un ejemplo de documentación o un cambio al contrato binario. La guía extensa, con comandos para copiar de cada capa, es [CONTRIBUTING.md](https://github.com/eduardojvieira/ZPLC/blob/master/CONTRIBUTING.md). Los cambios van a `master`, y cada uno debe dejar el repositorio más fácil de confiar que antes.
 
 ## Camino rápido
 
-1. Lea los [principios de ingeniería](./principles.md) y
-   [VERSIONING.md](https://github.com/eduardojvieira/ZPLC/blob/master/VERSIONING.md).
-2. Ejecute `bun run setup` una vez y luego la verificación de la capa que cambia
-   (sección siguiente).
-3. Agregue o refuerce una prueba específica para un cambio de comportamiento, y
-   ejecute las verificaciones de la capa antes de abrir el pull request.
-4. Actualice la documentación pública en inglés y español a la vez cuando cambie
-   una afirmación, un flujo o una limitación visible para el usuario.
-5. Abra el pull request con su plantilla: las verificaciones que ejecutó y el
-   nivel de evidencia que respalda cada afirmación.
+1. Lea los [principios de ingeniería](./principles.md) y [VERSIONING.md](https://github.com/eduardojvieira/ZPLC/blob/master/VERSIONING.md).
+2. Ejecute `bun run setup` una vez. Luego ejecute la verificación de la capa que cambia, de la sección siguiente.
+3. Para un cambio de comportamiento, agregue o refuerce una prueba específica y ejecute las verificaciones de la capa antes de abrir el pull request.
+4. Cuando cambie una afirmación, un flujo o una limitación que los usuarios ven, actualice juntas la documentación en inglés y en español.
+5. Complete la plantilla del pull request: las verificaciones que ejecutó y el nivel de evidencia que respalda cada afirmación.
 
 ## Verificaciones por capa
 
-Ejecute cada comando desde la raíz del repositorio. Los tiempos se midieron el
-2026-10-10 en un equipo de escritorio Linux x86-64 con cachés calientes mientras
-corrían otros trabajos, así que léalos como un orden de magnitud.
+Ejecute cada comando desde la raíz del repositorio. Los tiempos se midieron el 2026-10-10 en un equipo de escritorio Linux x86-64 con cachés calientes y otros trabajos en marcha, así que tómelos como un orden de magnitud.
 
 | Capa                                    | Comando                                                                                     | Tiempo típico                                 | Qué demuestra un resultado correcto                                                                                                                                                                                                                                                                                                                                                          |
 | --------------------------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -52,9 +42,7 @@ corrían otros trabajos, así que léalos como un orden de magnitud.
 | Recursos de marca                       | `bun tools/ci/brand/generate-icons.ts --check`                                              | menos de 1 s                                  | Cada icono y la tarjeta social se generaron desde la única marca, `tools/brand/mark.svg`; regenérelos sin `--check` (necesita `rsvg-convert` y Python con Pillow)                                                                                                                                                                                                                            |
 | Verificaciones de salida de publicación | `bun test ./tools/ci`                                                                       | unos 5 s                                      | Los nombres y contenedores de los instaladores, los registros de lanzamiento, el resultado de la ejecución y los generadores del cask y del paquete de AUR se comportan como dicen sus datos de prueba; el flujo de trabajo que los ejecuta sobre archivos producidos todavía no se ha ejecutado en CI                                                                                       |
 
-Un resultado correcto en un nivel nunca prueba uno superior: una prueba de host no
-dice nada sobre una placa. [Pruebas del firmware en Linux](../development/firmware-testing.md)
-explica qué muestra cada modo del firmware y qué no.
+Que pase un nivel nunca demuestra uno superior: una prueba en el host no dice nada sobre una placa. Las [pruebas del firmware](../development/firmware-testing.md) explican qué muestra cada modo del firmware y qué no.
 
 ## Reglas de contribución
 
@@ -68,19 +56,14 @@ explica qué muestra cada modo del firmware y qué no.
 | Operaciones físicas    | Separe compilar, grabar, cargar y ejecutar o depurar; no automatice el control físico mediante IA o MCP.                                                                                    |
 | Pruebas de hardware    | Una persona inicia todo comando que maneje una placa, en una terminal interactiva, y un registro dice qué imagen probó. Vea [Hardware en el lazo](../development/hardware-in-the-loop.md). |
 
-No publique, no grabe hardware, no cargue un programa PLC ni accione equipos
-sin autorización explícita.
+Nunca publique, grabe hardware, despliegue un programa de PLC ni accione equipos sin autorización explícita.
 
 ## Agregar una lección
 
-Una lección es un paquete de datos, de modo que agregar una no requiere cambiar el código de la
-aplicación (LRN-027). Los identificadores de lección tienen una sola fuente, los manifiestos: la aplicación ZPLC,
-el almacén de progreso y el recurso de curso de MCP leen un índice generado a partir de ellos, y CI
-falla ante una lista de identificadores escrita a mano (LRN-028).
+Una lección es un paquete de datos, de modo que agregar una no exige cambiar código de la aplicación. Los identificadores de lección tienen una única fuente, los manifiestos: la aplicación, el almacén de progreso y el recurso de curso del MCP leen un índice generado a partir de ellos, y el CI falla ante una lista de identificadores escrita a mano.
 
-1. Arme el ejercicio como dos proyectos de ejemplo en `packages/zplc-ide/projects/`: un proyecto inicial que
-   compila y falla el escenario, y una solución que lo pasa.
-2. Cree `packages/zplc-ide/lessons/<id>/` con los archivos de abajo.
+1. Cree el ejercicio como dos proyectos de ejemplo en `packages/zplc-ide/projects/`: un proyecto inicial que compila y falla el escenario, y una solución que lo pasa.
+2. Cree `packages/zplc-ide/lessons/<id>/` con los archivos de la tabla siguiente.
 3. Ejecute el generador y luego el CI de lecciones.
 
 | Archivo                        | Qué contiene                                                                                                                                                                                                              |
@@ -92,9 +75,7 @@ falla ante una lista de identificadores escrita a mano (LRN-028).
 | `reading.en.md`, `reading.es.md` | Opcional, y siempre en los dos idiomas: la página de lectura con la que abre la lección, en Markdown. Además del texto lleva bloques vivos: `ld-figure` (un peldaño de escalera de solo lectura), `ld-try` (un laboratorio que ejecuta un programa de escalera en el simulador, con entradas que el lector puede accionar), `timing` y `quiz`. El subconjunto de Markdown no admite enlaces ni HTML. |
 | `reading/`                     | Los archivos de escalera (`*.ld.json`) que los bloques `ld-figure` y `ld-try` nombran con `src:`. |
 
-El texto marca cada tiempo y valor que cita, para que CI lo compare con el escenario. El generador
-expande la marca una sola vez; ninguna cadena de la lección se reemplaza cuando la aplicación corre
-(LRN-038).
+El texto marca cada tiempo y cada valor que cita, para que el CI pueda compararlo con el escenario. El generador expande el marcado una sola vez; ninguna cadena de la lección se reescribe mientras la aplicación se ejecuta.
 
 | Marca                      | Muestra                   | CI verifica                                                                                         |
 | -------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------- |
@@ -109,15 +90,16 @@ bun tools/ci/generate-lesson-index.ts --check          # lo que corre CI: el arc
 bun run --cwd packages/zplc-ide test src/learn         # CI de lecciones; defina ZPLC_NATIVE_SIM_BIN para las pruebas con runtime
 ```
 
-El CI de lecciones ejecuta cada paquete en ambos idiomas: el proyecto inicial falla el escenario de
-referencia porque una aserción falla, la solución lo pasa, cada programa incorrecto sigue en rojo,
-cada tiempo y valor que cita el texto existe en el escenario, y cada archivo que cita existe en el
-proyecto inicial (LRN-025).
+El CI de lecciones ejecuta cada paquete en ambos idiomas. Exige que:
+
+- el proyecto inicial falle el escenario de referencia porque una aserción falla, y que la solución lo pase;
+- cada programa incorrecto de `checks.json` siga en rojo;
+- cada tiempo y cada valor que cita el texto exista en el escenario;
+- cada archivo que cita el texto exista en el proyecto inicial.
 
 ## Ejemplos de código ejecutables
 
-Un ejemplo de código de la documentación se verifica en CI cuando su bloque de código lo indica. La primera
-palabra del bloque de código nombra el lenguaje; las palabras siguientes dicen qué verificar:
+El CI comprueba un ejemplo de código de la documentación cuando su bloque lo pide. La primera palabra del bloque es el lenguaje; las palabras siguientes indican qué comprobar:
 
 ````text
 ```st runnable
@@ -147,15 +129,11 @@ END_PROGRAM
 | `fragment`                  | El bloque es un cuerpo sin encabezado (variables y sentencias): se envuelve en `PROGRAM DocSample ... END_PROGRAM` antes de compilarlo.                                                                                                                                                                                                                   |
 | `language=il`               | El ejemplo es lista de instrucciones (IL), escrita en un bloque de código `iecst`.                                                                                                                                                                                                                                                                                   |
 
-La página en inglés y su gemela en español marcan los mismos ejemplos de la misma manera, con el
-mismo resultado. El ejemplo está escrito en código y por eso es igual en ambos idiomas. La
-verificación es `bun run check:docs-samples`; necesita `bun run build:compiler` y, para un ejemplo
-con `expect`, `bun run build:runtime`, y falla en vez de omitirse cuando falta el runtime.
+La página en inglés y su gemela en español marcan los mismos ejemplos del mismo modo y declaran el mismo resultado. El código es idéntico en ambos idiomas. La comprobación es `bun run check:docs-samples`. Requiere `bun run build:compiler` y, para un ejemplo con `expect`, `bun run build:runtime`; si falta el runtime, falla en lugar de omitirse.
 
 ## Fragmentos de configuración, escenarios e imágenes
 
-Una página que muestra un fragmento de `zplc.json`, un escenario o una captura de la
-aplicación se comprueba de la misma manera, según lo que indica el bloque de código:
+Una página que muestra un fragmento de `zplc.json`, un escenario, una entrada de placa o una captura de la aplicación se comprueba según lo que dice su bloque:
 
 | Bloque              | Qué hace la comprobación                                                                                                                                                                                                                                                                                                                                                                          |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -164,33 +142,22 @@ aplicación se comprueba de la misma manera, según lo que indica el bloque de c
 | `json zplc-board`    | La entrada la comprueba el validador del manifiesto de placas (`firmware/zephyr/scripts/zplc_boards.py`) junto con el manifiesto de este repositorio: una clave que falta, una dirección errónea, un canal que las reglas rechazan o un nombre que ya tiene otra placa es un error.                                                                                                               |
 | `![alt](/img/...)`   | La imagen debe figurar en `docs/static/img/manifest.json`, que escribe `bun run docs:screenshots` con el commit del que se construyó la aplicación: una página no muestra ninguna imagen que la automatización no haya capturado.                                                                                                                                                                 |
 
-La página en inglés y su gemela en español muestran los mismos fragmentos y escenarios.
-Las comprobaciones son `bun run check:docs-config` y `bun tools/docs/capture-screenshots.ts --check`.
+La página en inglés y su gemela en español muestran los mismos fragmentos y escenarios. Las comprobaciones son `bun run check:docs-config` y `bun tools/docs/capture-screenshots.ts --check`.
 
 ## Documentos del proyecto
 
 - [Hoja de ruta](./roadmap.md): qué está hecho, qué sigue y qué viene después.
 - [Principios de ingeniería](./principles.md): la constitución en lenguaje llano.
-- [Fuente de verdad](../reference/source-of-truth.md): qué archivo es la autoridad
-  para cada tipo de dato.
-- [Código de conducta](https://github.com/eduardojvieira/ZPLC/blob/master/CODE_OF_CONDUCT.md)
-  y [política de seguridad](https://github.com/eduardojvieira/ZPLC/blob/master/SECURITY.md).
+- [Fuente de verdad](../reference/source-of-truth.md): qué archivo es la autoridad para cada tipo de dato.
+- [Código de conducta](https://github.com/eduardojvieira/ZPLC/blob/master/CODE_OF_CONDUCT.md) y [política de seguridad](https://github.com/eduardojvieira/ZPLC/blob/master/SECURITY.md).
 
 ## Cambiar el contrato binario
 
-Los opcodes, la disposición del contenedor, los tamaños, los códigos de error y los
-identificadores del formato `.zplc` se definen una sola vez, en
-`tools/contract/contract.json`. Los encabezados de C, las tablas TypeScript, las
-herramientas Python y las [tablas de referencia](../reference/runtime-api.md) se
-generan de ese archivo, y CI falla cuando un archivo generado quedó viejo.
+Los opcodes, la disposición del contenedor, los tamaños, los códigos de error y los identificadores del formato `.zplc` se definen una sola vez, en `tools/contract/contract.json`. Los encabezados de C, las tablas de TypeScript, las herramientas de Python y las [tablas de referencia](../reference/runtime-api.md) se generan a partir de él, y el CI falla cuando un archivo generado está desactualizado.
 
 ### Contador de borrador del contrato
 
-Hasta que el contrato se congele, cada cambio incrementa un **contador de
-borrador** (`abi.draftCounter`). El compilador y el ensamblador lo escriben en
-la palabra 28 del encabezado de cada artefacto (el campo que antes era
-reservado), bajo el CRC, y cada runtime e imagen de firmware informa el suyo.
-Un número distinto se rechaza y el rechazo muestra los dos:
+Mientras el contrato no esté congelado, cada cambio suyo aumenta un **contador de borrador** (`abi.draftCounter`). El compilador y el ensamblador lo escriben en la palabra 28 del encabezado de todo artefacto (el campo que antes estaba reservado), bajo el CRC, y cada imagen de runtime y de firmware informa el suyo. Un número distinto se rechaza, y el rechazo muestra ambos:
 
 > Program was built for contract draft 2, this runtime is draft 3
 
@@ -202,28 +169,13 @@ Un número distinto se rechaza y el rechazo muestra los dos:
 | Carga a hardware desde la aplicación ZPLC | La verificación previa compara el artefacto con el `draft_counter` de la placa conectada y rechaza antes de enviar nada.                                                                                                                |
 | CLI                                       | `zplc-cli compile` indica el contador de lo que construyó.                                                                                                                                                                              |
 
-Un artefacto construido antes del contador lleva 0, y una imagen de firmware
-que no lo informa no tiene ninguno: ambos se rechazan y la frase dice `none`.
-Después de una actualización que cambia el contador, reconstruya los programas y
-vuelva a grabar las placas. Un programa que una placa guardó bajo otro borrador se
-rechaza al arrancar y el runtime queda trabado en estado seguro hasta que se
-suba un reemplazo verificado. El contador no es la versión del producto: el único
-entero de versión final se asigna y congela al cerrar la matriz de conformidad.
+Un artefacto compilado antes del contador lleva 0, y una imagen de firmware que no informa ninguno carece de contador. Ambos se rechazan, y la frase dice `none`. Después de una actualización que cambia el contador, recompile los programas y vuelva a grabar las placas. Un programa que una placa guardó bajo otro borrador se rechaza en el arranque, y el runtime queda enclavado en estado seguro hasta que se cargue un reemplazo verificado. El contador no es la versión del producto: el entero de versión final se asigna y se congela al cerrar la matriz de conformidad.
 
 ### Para cambiar el contrato
 
-1. Edite `tools/contract/contract.json` y suba `abi.draftCounter` en uno.
-2. Ejecute `python3 tools/contract/generate.py --record-draft "por qué cambió"`.
-   Escribe todos los archivos generados y agrega el contador, la huella del
-   contrato y el motivo al registro `tools/contract/golden/draft-ledger.json`.
-3. Actualice los números que cambiaron en
-   `tools/contract/golden/contract.golden.json` (`python3
-tools/contract/test_contract.py` nombra cada uno), reconstruya los artefactos
-   versionados en el repositorio (`examples/*.zplc`, los fixtures `.hex`) y
-   corrija cualquier prueba que arme un encabezado a mano.
-4. Ejecute `bun run contract:check` y deje el motivo en el mensaje del commit.
+1. Edite `tools/contract/contract.json` y aumente `abi.draftCounter` en uno.
+2. Ejecute `python3 tools/contract/generate.py --record-draft "why it changed"`. Escribe todos los archivos generados y agrega el contador, la huella del contrato y el motivo a `tools/contract/golden/draft-ledger.json`.
+3. Actualice los números que cambiaron en `tools/contract/golden/contract.golden.json` (`python3 tools/contract/test_contract.py` nombra cada uno), recompile los artefactos versionados en el repositorio (`examples/*.zplc` y los archivos `.hex` de prueba) y corrija toda prueba que arme un encabezado a mano.
+4. Ejecute `bun run contract:check` e indique el motivo en el mensaje del commit.
 
-`generate.py --check` falla cuando el contrato ya no coincide con la huella
-registrada para su propio contador, así que un cambio no se puede confirmar
-bajo el número viejo. La prosa (cadenas `doc`, títulos de grupo) no forma parte
-de la huella. Nunca edite ni quite una entrada de `draft-ledger.json` que ya se confirmó.
+`generate.py --check` falla cuando el contrato ya no coincide con la huella registrada para su propio contador, de modo que un cambio no puede confirmarse con el número anterior. La prosa (las cadenas `doc` y los títulos de grupo) no forma parte de la huella. Nunca edite ni elimine una entrada del registro que ya se confirmó.

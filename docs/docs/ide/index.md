@@ -66,7 +66,7 @@ Evidence level: host. `packages/zplc-ide/electron/toolWorkerHost.test.ts` runs r
 
 Build, Test, Simulate and the candidate review all act on the folder that the window shows, and on nothing else. The main process owns that folder: the native folder dialog gives the window one folder and one opaque id for it. A build, a safety check or a test run names the workspace and that id, and the main process refuses the call when the id is not the window's folder now, or when the workspace belongs to another folder. Opening another folder therefore makes every earlier workspace unusable, with no linking step in between.
 
-Evidence level: host. `packages/zplc-ide/electron/workspaceTestGateway.test.ts` covers the rule, and journey 34 of `bun run test:journeys` sends crafted messages through the bridge of the real application after another folder was opened and sees each of them refused (requirement IDE-002).
+Evidence level: host. `packages/zplc-ide/electron/workspaceTestGateway.test.ts` covers the rule, and a scripted run of the real application sends crafted messages through the bridge of the real application after another folder was opened and sees each of them refused.
 
 ### Security properties
 
@@ -77,17 +77,7 @@ The renderer is unprivileged. These are what the running application does, not w
 - `window.open`, a link that opens a new window and navigation to another origin are refused, and the window keeps its document, its folder and its IPC afterwards;
 - a project operation given a path with `..`, an absolute path or a drive path, a link that leaves the project, an over-size write, or the folder id of another window is refused, and nothing outside the project changes.
 
-Evidence level: host. Journey 38 of `bun run test:journeys` makes these probes on the development host, which serves its own scripts inline for hot reload, so the inline-script probe is not made there. To make all of them on a packaged application on Linux, build an unpacked package and run the probes against it:
-
-```bash
-bun run --cwd packages/zplc-ide build:assets
-bun run --cwd packages/zplc-ide build
-bun run --cwd packages/zplc-ide electron:compile
-(cd packages/zplc-ide && bunx electron-builder --linux --dir)
-ZPLC_PACKAGED_DIST="$PWD/packages/zplc-ide/dist-electron" bun run test:journeys
-```
-
-The packaged archive has no folder dialog, so the probes reach the project through a recent-projects list written to the user-data directory first. They cover Linux only: the packaged application on macOS and Windows is not probed (requirement IDE-016 asks for all three).
+Evidence level: host. A scripted run of the real application makes these probes on the development host. That host serves its own scripts inline for hot reload, so the inline-script probe is not made there, and the probes cover Linux only: the packaged application on macOS and Windows is not probed. Contributors can run the probes against a packaged Linux build; see [Probe a packaged build](../development/ide-internals.md#probe-a-packaged-build).
 
 ### Project configuration
 

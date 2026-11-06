@@ -82,8 +82,8 @@ A manual run shows one path. A [scenario test](./scenario-tests.md) says what th
 
 | Part | Verified | Level |
 | --- | --- | --- |
-| A breakpoint binds and stops the cycle, and Resume finishes the interrupted cycle | Journeys 7 and 16 in the real application, and the scheduler suites | Host and `native_sim` |
-| A force set at a breakpoint is seen by the rest of the cycle | Journey 18 in the real application | Host |
+| A breakpoint binds and stops the cycle, and Resume finishes the interrupted cycle | Scripted runs of the real application, and the scheduler suites | Host and `native_sim` |
+| A force set at a breakpoint is seen by the rest of the cycle | A scripted run of the real application | Host |
 | Pause, step and stop keep and clear what the table says | The Zephyr suites on `native_sim` and QEMU | Emulated target |
 | The same stops on a board | Not tested | None |
 

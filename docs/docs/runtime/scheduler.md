@@ -50,7 +50,7 @@ Five rules follow:
 
 ## One scheduler core
 
-Every decision above is made in one place, `zplc_sched_core` (`firmware/lib/zplc_core/src/core/zplc_sched_core.c`), and each runtime supplies only what depends on its platform (RT-008, RT-018):
+Every decision above is made in one place, `zplc_sched_core` (`firmware/lib/zplc_core/src/core/zplc_sched_core.c`), and each runtime supplies only what depends on its platform:
 
 | In the core, the same everywhere | In the adapter |
 | --- | --- |
@@ -63,13 +63,13 @@ Three adapters use the core: the POSIX session of the host runtime (`native_runt
 
 **Single-task firmware.** A build with `CONFIG_ZPLC_SCHEDULER=n` runs one task of one interval on the same core, with the same latch, deadline check (`CONFIG_ZPLC_DEADLINE_MISS_LIMIT`), fault latch and safe state. Two things differ: its loop holds the runtime lock for the whole scan, so a shell command waits for the scan to end, and it has no snapshot exchange, so another thread reads and writes the process image under that lock.
 
-### The locks around a scan (RT-010, RT-012)
+### The locks around a scan
 
 On a target a batch is three steps. The inputs are read from the HAL with no lock held. Then, under the process-image lock, the writes other threads queued are applied, the samples go to the input image, the tasks run and the image is published as a snapshot. Last, with the image lock released and under a separate lock for the output I/O, the pins are written and the hardware watchdog is fed. The image lock is never held while a pin is written, a line is printed or any call that can block runs.
 
-A thread outside the scan reads the snapshot of the last commit and queues its writes for the next input latch; see [Access from outside the scan](./memory-model.md#access-from-outside-the-scan-rt-010-rt-011). A lock that cannot be created or taken is an error the caller sees (RT-030): a control call returns `ZPLC_SCHED_ERR_LOCK` and changes nothing, and a scan that cannot take the image lock drives the pins to their safe state and latches the fault.
+A thread outside the scan reads the snapshot of the last commit and queues its writes for the next input latch; see [Access from outside the scan](./memory-model.md#access-from-outside-the-scan-rt-010-rt-011). A lock that cannot be created or taken is an error the caller sees: a control call returns `ZPLC_SCHED_ERR_LOCK` and changes nothing, and a scan that cannot take the image lock drives the pins to their safe state and latches the fault.
 
-### Priorities and start-up order (RT-013, RT-024)
+### Priorities and start-up order
 
 The scan coordinator runs at a lower priority number than every communication thread (`CONFIG_ZPLC_COMM_THREAD_PRIORITY`, 8 by default) and than the shell and log threads, and the build fails otherwise. Boards with a network stack set `CONFIG_NET_TC_THREAD_PREEMPTIVE=y`, because Zephyr's network threads are cooperative by default and would outrank the scan.
 
@@ -115,12 +115,12 @@ The five rules are the same in simulation and on a target. These points are not,
 | Next release | Tasks of different intervals keep a fixed grid from the common start. Tasks of one interval are released an interval after the previous dispatch, so a late dispatch moves the releases that follow it. | A periodic timer on a fixed grid: a late batch does not move the next release. |
 | First release | Every task is released at the start itself. | Each task is first released one interval after the start or the resume. |
 | Two tasks of one tick | Released at the same instant, so ordered by priority, then task ID. | The comparison is the same, but each timer stamps its own release; the order of two timers of one tick on a board is not stated. |
-| A write to the input image while the program runs | Queued (32 writes at most) and applied at the start of the next scan, in order and through the force-aware write, so no scan sees the image change. A full queue refuses the write with `RUNTIME_FAILURE`; a stop, a reset or a load drops the queue. While the program is stopped or paused, the write is applied at once. | The write queue of the exchange applies every queued write, in order, at the input latch of the next scan (RT-010). |
+| A write to the input image while the program runs | Queued (32 writes at most) and applied at the start of the next scan, in order and through the force-aware write, so no scan sees the image change. When a breakpoint holds a scan that has not ended, the queue waits for the end of that scan. A write over bytes that an earlier queued write covers waits one scan more, so a press and a release written between two scans are each seen by a whole scan. A full queue refuses the write with `RUNTIME_FAILURE`; a stop, a reset or a load drops the queue. While the program is stopped or paused, the write is applied at once. | The write queue of the exchange applies every queued write, in order, at the input latch of the next scan. |
 | Speed and jitter | The VM runs on a host processor under a general-purpose operating system. | The VM runs on the board's processor. A program that is in time in simulation can miss on a target, and the reverse. |
 
 ## Pause, resume, step and stop
 
-The runtime keeps two things apart: the **physical outputs** (the pins) and the **logical state of the program** (the output image, the force table and each task's program counter and stacks). A pause makes the pins safe and keeps the logical state, so a resume or a step continues from where the program stopped (RT-017). `STOP` ends the run and discards both.
+The runtime keeps two things apart: the **physical outputs** (the pins) and the **logical state of the program** (the output image, the force table and each task's program counter and stacks). A pause makes the pins safe and keeps the logical state, so a resume or a step continues from where the program stopped. `STOP` ends the run and discards both.
 
 | Operation | Physical outputs | Output image | Force table | Task scans |
 | --- | --- | --- | --- | --- |
@@ -138,7 +138,7 @@ The runtime keeps two things apart: the **physical outputs** (the pins) and the 
 
 ## Safe state of an output
 
-An output is **off** whenever the program does not control it: in STOP, while paused or at a breakpoint, in a latched fault, from boot until the first scan and while a deploy is in progress. One function, `zplc_io_drive_safe`, decides the level (RT-023):
+An output is **off** whenever the program does not control it: in STOP, while paused or at a breakpoint, in a latched fault, from boot until the first scan and while a deploy is in progress. One function, `zplc_io_drive_safe`, decides the level:
 
 1. The value the **loaded program declares** for that output, when it declares one.
 2. Otherwise **off**, unless the board description (`firmware/app/boards/boards.json`) gives that channel another safe level, as an active-low relay needs.
@@ -168,15 +168,15 @@ The declared values are in force from the load that commits the program, before 
 
 ## Faults, reset cause and the watchdog
 
-These are requirements RT-019 to RT-022. The decisions that do not depend on a platform are in `zplc_failsafe` and are tested on the host; what a platform does (the reset-cause register, a RAM record a reset does not clear, the reboot, the watchdog) is `zplc_failsafe_zephyr.c`.
+The decisions that do not depend on a platform are in `zplc_failsafe` and are tested on the host; what a platform does (the reset-cause register, a RAM record a reset does not clear, the reboot, the watchdog) is `zplc_failsafe_zephyr.c`.
 
-**A processor fault (RT-019).** A processor fault, a stack overflow, an assertion or a kernel panic does not leave the outputs where the last scan left them. The fatal-error handler (`CONFIG_ZPLC_FATAL_HANDLER`, on by default) takes no lock and allocates nothing: it drives every digital output to its safe level, keeps the reason in a 24-byte RAM record that a reset does not clear and reboots. The next boot reports the record and consumes it, so the following reset is not called a fault. A record that is not whole, or not ours, is ignored.
+**A processor fault.** A processor fault, a stack overflow, an assertion or a kernel panic does not leave the outputs where the last scan left them. The fatal-error handler (`CONFIG_ZPLC_FATAL_HANDLER`, on by default) takes no lock and allocates nothing: it drives every digital output to its safe level, keeps the reason in a 24-byte RAM record that a reset does not clear and reboots. The next boot reports the record and consumes it, so the following reset is not called a fault. A record that is not whole, or not ours, is ignored.
 
-**Why the runtime was reset (RT-021).** `zplc sys reset` (with `--json`) reports the cause of the last reset: `power_on`, `brown_out`, `pin`, `software`, `watchdog`, `fault` or `unknown`, with the raw register, the fault record of the previous run and the start policy. When a processor reports several bits the order is fixed: a fault record first, then watchdog, power-on, brown-out, lock-up, software and, last, the pin, because almost every reset sets it. The cause is also the `reset_cause` key of `zplc sched status --json`.
+**Why the runtime was reset.** `zplc sys reset` (with `--json`) reports the cause of the last reset: `power_on`, `brown_out`, `pin`, `software`, `watchdog`, `fault` or `unknown`, with the raw register, the fault record of the previous run and the start policy. When a processor reports several bits the order is fixed: a fault record first, then watchdog, power-on, brown-out, lock-up, software and, last, the pin, because almost every reset sets it. The cause is also the `reset_cause` key of `zplc sched status --json`.
 
-**After a reset the runtime waits in STOP (RT-022).** Whatever the cause, the stored program is restored into STOP with the outputs at their safe values, and **RUN is a person's command**: the function `zplc_reset_may_run` is 0 for every cause. The retained variables are restored only when `CONFIG_ZPLC_RETAIN_PERSIST` is on, which it is in the profile of every shipped board. A deploy stops the running program before it transfers a byte.
+**After a reset the runtime waits in STOP.** Whatever the cause, the stored program is restored into STOP with the outputs at their safe values, and **RUN is a person's command**: the function `zplc_reset_may_run` is 0 for every cause. The retained variables are restored only when `CONFIG_ZPLC_RETAIN_PERSIST` is on, which it is in the profile of every shipped board. A deploy stops the running program before it transfers a byte.
 
-**The hardware watchdog (RT-020).** The `watchdog` entry of each board in `boards.json` says whether it is enabled, the timeout its reset timing was recorded at, the longest timeout the part accepts and what it does in STOP, while paused and in a latched fault. **No board has it enabled**, and the options stay off until an exact board and revision has a hardware record of its reset timing and pins (HIL-010). When it is enabled:
+**The hardware watchdog.** The `watchdog` entry of each board in `boards.json` says whether it is enabled, the timeout its reset timing was recorded at, the longest timeout the part accepts and what it does in STOP, while paused and in a latched fault. **No board has it enabled**, and the options stay off until an exact board and revision has a hardware record of its reset timing and pins. When it is enabled:
 
 - It is fed from the completion of a scan, never from a timer, an interrupt, the shell or the idle thread, so a stalled scan stops the feed and the board resets.
 - Its timeout is the profile's, made longer when the task set needs it (more than two intervals of the slowest task, up to the longest the part accepts); a task set that does not fit is refused at start.

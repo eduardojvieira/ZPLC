@@ -82,8 +82,8 @@ Una ejecución manual muestra un solo camino. Una [prueba de escenario](./scenar
 
 | Parte | Verificado | Nivel |
 | --- | --- | --- |
-| Un punto de parada se enlaza y detiene el ciclo, y Reanudar termina el ciclo interrumpido | Recorridos 7 y 16 en la aplicación real, y las suites del planificador | Host y `native_sim` |
-| Un forzado fijado en un punto de parada lo ve el resto del ciclo | Recorrido 18 en la aplicación real | Host |
+| Un punto de parada se enlaza y detiene el ciclo, y Reanudar termina el ciclo interrumpido | Ejecuciones guionadas de la aplicación real, y las suites del planificador | Host y `native_sim` |
+| Un forzado fijado en un punto de parada lo ve el resto del ciclo | Una ejecución guionada de la aplicación real | Host |
 | Pausar, avanzar y detener conservan y borran lo que dice la tabla | Las suites de Zephyr en `native_sim` y QEMU | Destino emulado |
 | Las mismas detenciones en una placa | Sin probar | Ninguno |
 

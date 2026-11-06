@@ -50,7 +50,7 @@ De ahí salen cinco reglas:
 
 ## Un solo núcleo del planificador
 
-Todas las decisiones anteriores se toman en un solo lugar, `zplc_sched_core` (`firmware/lib/zplc_core/src/core/zplc_sched_core.c`), y cada runtime aporta solo lo que depende de su plataforma (RT-008, RT-018):
+Todas las decisiones anteriores se toman en un solo lugar, `zplc_sched_core` (`firmware/lib/zplc_core/src/core/zplc_sched_core.c`), y cada runtime aporta solo lo que depende de su plataforma:
 
 | En el núcleo, igual en todas partes | En el adaptador |
 | --- | --- |
@@ -63,13 +63,13 @@ Lo usan tres adaptadores: la sesión POSIX del runtime de host (`native_runtime_
 
 **Firmware de una sola tarea.** Una compilación con `CONFIG_ZPLC_SCHEDULER=n` ejecuta una tarea de un intervalo sobre el mismo núcleo, con la misma captura, el mismo control de plazo (`CONFIG_ZPLC_DEADLINE_MISS_LIMIT`), la misma retención de la falla y el mismo estado seguro. Dos cosas difieren: su bucle mantiene el cerrojo del runtime durante todo el ciclo, así que una orden del shell espera a que el ciclo termine, y no tiene intercambio de instantáneas, así que otro hilo lee y escribe la imagen de proceso bajo ese cerrojo.
 
-### Los cerrojos alrededor de un ciclo (RT-010, RT-012)
+### Los cerrojos alrededor de un ciclo
 
 En un destino un lote son tres pasos. Las entradas se leen del HAL sin ningún cerrojo. Después, bajo el cerrojo de la imagen de proceso, se aplican las escrituras que otros hilos dejaron en cola, las muestras pasan a la imagen de entradas, las tareas corren y la imagen se publica como instantánea. Por último, con el cerrojo de la imagen liberado y bajo un cerrojo aparte para la E/S de salida, se escriben los pines y se alimenta el watchdog de hardware. El cerrojo de la imagen nunca se mantiene mientras se escribe un pin, se imprime una línea o corre una llamada que pueda bloquear.
 
-Un hilo ajeno al ciclo lee la instantánea de la última confirmación y deja sus escrituras en cola para la siguiente captura de entradas; véase [Acceso desde fuera del ciclo](./memory-model.md#acceso-desde-fuera-del-ciclo-rt-010-rt-011). Un cerrojo que no se puede crear o tomar es un error que ve quien llama (RT-030): una llamada de control devuelve `ZPLC_SCHED_ERR_LOCK` y no cambia nada, y un ciclo que no puede tomar el cerrojo de la imagen lleva los pines a su estado seguro y retiene la falla.
+Un hilo ajeno al ciclo lee la instantánea de la última confirmación y deja sus escrituras en cola para la siguiente captura de entradas; véase [Acceso desde fuera del ciclo](./memory-model.md#acceso-desde-fuera-del-ciclo-rt-010-rt-011). Un cerrojo que no se puede crear o tomar es un error que ve quien llama: una llamada de control devuelve `ZPLC_SCHED_ERR_LOCK` y no cambia nada, y un ciclo que no puede tomar el cerrojo de la imagen lleva los pines a su estado seguro y retiene la falla.
 
-### Prioridades y orden de arranque (RT-013, RT-024)
+### Prioridades y orden de arranque
 
 El coordinador del ciclo corre con un número de prioridad menor que todos los hilos de comunicación (`CONFIG_ZPLC_COMM_THREAD_PRIORITY`, 8 por defecto) y que los hilos del shell y del registro, y la compilación falla si no se cumple. Las placas con pila de red fijan `CONFIG_NET_TC_THREAD_PREEMPTIVE=y`, porque los hilos de red de Zephyr son cooperativos por defecto y superarían en prioridad al ciclo.
 
@@ -115,12 +115,12 @@ Las cinco reglas son las mismas en simulación y en un destino. Estos puntos no 
 | Siguiente liberación | Las tareas de intervalos distintos mantienen una cuadrícula fija desde el arranque común. Las tareas de un mismo intervalo se liberan un intervalo después del despacho anterior, así que un despacho tardío desplaza las liberaciones que le siguen. | Un temporizador periódico sobre una cuadrícula fija: un lote tardío no desplaza la siguiente liberación. |
 | Primera liberación | Todas las tareas se liberan en el arranque mismo. | Cada tarea se libera por primera vez un intervalo después del arranque o de la reanudación. |
 | Dos tareas del mismo tick | Se liberan en el mismo instante, así que se ordenan por prioridad y luego por ID de tarea. | La comparación es la misma, pero cada temporizador marca su propia liberación; no se afirma qué orden obtienen dos temporizadores de un mismo tick en una placa. |
-| Una escritura en la imagen de entradas mientras corre el programa | Se encola (32 escrituras como máximo) y se aplica al inicio del ciclo siguiente, en orden y con la escritura que respeta los forzados, de modo que ningún ciclo ve cambiar la imagen. Una cola llena rechaza la escritura con `RUNTIME_FAILURE`; una parada, un reinicio o una carga vacían la cola. Mientras el programa está detenido o en pausa, la escritura se aplica de inmediato. | La cola de escrituras del intercambio aplica todas las escrituras en cola, en orden, en la captura de entradas del ciclo siguiente (RT-010). |
+| Una escritura en la imagen de entradas mientras corre el programa | Se encola (32 escrituras como máximo) y se aplica al inicio del ciclo siguiente, en orden y con la escritura que respeta los forzados, de modo que ningún ciclo ve cambiar la imagen. Cuando un punto de parada retiene un ciclo que no ha terminado, la cola espera a que ese ciclo termine. Una escritura sobre bytes que cubre una escritura anterior en cola espera un ciclo más, de modo que una pulsación y una liberación escritas entre dos ciclos las vea cada una un ciclo completo. Una cola llena rechaza la escritura con `RUNTIME_FAILURE`; una parada, un reinicio o una carga vacían la cola. Mientras el programa está detenido o en pausa, la escritura se aplica de inmediato. | La cola de escrituras del intercambio aplica todas las escrituras en cola, en orden, en la captura de entradas del ciclo siguiente. |
 | Velocidad y jitter | La VM corre en un procesador de host bajo un sistema operativo de propósito general. | La VM corre en el procesador de la placa. Un programa que cumple a tiempo en simulación puede incumplir en un destino, y a la inversa. |
 
 ## Pausa, reanudación, paso y parada
 
-El runtime separa dos cosas: las **salidas físicas** (los pines) y el **estado lógico del programa** (la imagen de salidas, la tabla de forzados y el contador de programa y las pilas de cada tarea). Una pausa deja seguros los pines y conserva el estado lógico, de modo que una reanudación o un paso continúan donde el programa se detuvo (RT-017). `STOP` termina la ejecución y descarta ambos.
+El runtime separa dos cosas: las **salidas físicas** (los pines) y el **estado lógico del programa** (la imagen de salidas, la tabla de forzados y el contador de programa y las pilas de cada tarea). Una pausa deja seguros los pines y conserva el estado lógico, de modo que una reanudación o un paso continúan donde el programa se detuvo. `STOP` termina la ejecución y descarta ambos.
 
 | Operación | Salidas físicas | Imagen de salidas | Tabla de forzados | Ciclos de las tareas |
 | --- | --- | --- | --- | --- |
@@ -138,7 +138,7 @@ El runtime separa dos cosas: las **salidas físicas** (los pines) y el **estado 
 
 ## Estado seguro de una salida
 
-Una salida está **apagada** siempre que el programa no la controla: en STOP, en pausa o en un punto de parada, en una falla retenida, desde el arranque hasta el primer ciclo y mientras un despliegue está en curso. Una sola función, `zplc_io_drive_safe`, decide el nivel (RT-023):
+Una salida está **apagada** siempre que el programa no la controla: en STOP, en pausa o en un punto de parada, en una falla retenida, desde el arranque hasta el primer ciclo y mientras un despliegue está en curso. Una sola función, `zplc_io_drive_safe`, decide el nivel:
 
 1. El valor que **declara el programa cargado** para esa salida, cuando declara uno.
 2. Si no, **apagado**, salvo que la descripción de la placa (`firmware/app/boards/boards.json`) dé a ese canal otro nivel seguro, como necesita un relé activo en bajo.
@@ -168,15 +168,15 @@ Los valores declarados rigen desde la carga que confirma el programa, antes del 
 
 ## Fallas, causa de reinicio y watchdog
 
-Son los requisitos RT-019 a RT-022. Las decisiones que no dependen de una plataforma están en `zplc_failsafe` y se prueban en el host; lo que hace una plataforma (el registro de causa de reinicio, un registro en RAM que un reinicio no borra, el reinicio, el watchdog) es `zplc_failsafe_zephyr.c`.
+Las decisiones que no dependen de una plataforma están en `zplc_failsafe` y se prueban en el host; lo que hace una plataforma (el registro de causa de reinicio, un registro en RAM que un reinicio no borra, el reinicio, el watchdog) es `zplc_failsafe_zephyr.c`.
 
-**Una falla del procesador (RT-019).** Una falla del procesador, un desbordamiento de pila, una aserción o un pánico del kernel no deja las salidas donde las dejó el último ciclo. El manejador de error fatal (`CONFIG_ZPLC_FATAL_HANDLER`, activado por defecto) no toma ningún cerrojo ni reserva memoria: lleva cada salida digital a su nivel seguro, guarda la causa en un registro de 24 bytes en una RAM que un reinicio no borra y reinicia. El arranque siguiente informa el registro y lo consume, de modo que el reinicio que sigue no se llama falla. Un registro incompleto, o que no es de ZPLC, se ignora.
+**Una falla del procesador.** Una falla del procesador, un desbordamiento de pila, una aserción o un pánico del kernel no deja las salidas donde las dejó el último ciclo. El manejador de error fatal (`CONFIG_ZPLC_FATAL_HANDLER`, activado por defecto) no toma ningún cerrojo ni reserva memoria: lleva cada salida digital a su nivel seguro, guarda la causa en un registro de 24 bytes en una RAM que un reinicio no borra y reinicia. El arranque siguiente informa el registro y lo consume, de modo que el reinicio que sigue no se llama falla. Un registro incompleto, o que no es de ZPLC, se ignora.
 
-**Por qué se reinició el runtime (RT-021).** `zplc sys reset` (con `--json`) informa la causa del último reinicio: `power_on`, `brown_out`, `pin`, `software`, `watchdog`, `fault` o `unknown`, con el registro crudo, el registro de falla de la ejecución anterior y la política de arranque. Cuando un procesador informa varios bits el orden es fijo: primero un registro de falla, luego watchdog, encendido, brown-out, lock-up, software y, al final, el pin, porque casi todo reinicio lo activa. La causa es también la clave `reset_cause` de `zplc sched status --json`.
+**Por qué se reinició el runtime.** `zplc sys reset` (con `--json`) informa la causa del último reinicio: `power_on`, `brown_out`, `pin`, `software`, `watchdog`, `fault` o `unknown`, con el registro crudo, el registro de falla de la ejecución anterior y la política de arranque. Cuando un procesador informa varios bits el orden es fijo: primero un registro de falla, luego watchdog, encendido, brown-out, lock-up, software y, al final, el pin, porque casi todo reinicio lo activa. La causa es también la clave `reset_cause` de `zplc sched status --json`.
 
-**Tras un reinicio el runtime espera en STOP (RT-022).** Sea cual sea la causa, el programa guardado se restaura en STOP con las salidas en sus valores seguros, y **RUN es una orden de una persona**: la función `zplc_reset_may_run` vale 0 para toda causa. Las variables retentivas se restauran solo cuando `CONFIG_ZPLC_RETAIN_PERSIST` está activado, y lo está en el perfil de cada placa distribuida. Un despliegue detiene el programa en ejecución antes de transferir un solo byte.
+**Tras un reinicio el runtime espera en STOP.** Sea cual sea la causa, el programa guardado se restaura en STOP con las salidas en sus valores seguros, y **RUN es una orden de una persona**: la función `zplc_reset_may_run` vale 0 para toda causa. Las variables retentivas se restauran solo cuando `CONFIG_ZPLC_RETAIN_PERSIST` está activado, y lo está en el perfil de cada placa distribuida. Un despliegue detiene el programa en ejecución antes de transferir un solo byte.
 
-**El watchdog de hardware (RT-020).** La entrada `watchdog` de cada placa en `boards.json` dice si está habilitado, el tiempo de espera con el que se registró su tiempo de reinicio, el tiempo de espera más largo que acepta el componente y qué hace en STOP, en pausa y en una falla retenida. **Ninguna placa lo tiene habilitado**, y las opciones siguen desactivadas hasta que una placa y revisión exactas tengan un registro de hardware de su tiempo de reinicio y de sus pines (HIL-010). Cuando está habilitado:
+**El watchdog de hardware.** La entrada `watchdog` de cada placa en `boards.json` dice si está habilitado, el tiempo de espera con el que se registró su tiempo de reinicio, el tiempo de espera más largo que acepta el componente y qué hace en STOP, en pausa y en una falla retenida. **Ninguna placa lo tiene habilitado**, y las opciones siguen desactivadas hasta que una placa y revisión exactas tengan un registro de hardware de su tiempo de reinicio y de sus pines. Cuando está habilitado:
 
 - Se alimenta desde la finalización de un ciclo, nunca desde un temporizador, una interrupción, el shell o el hilo inactivo, de modo que un ciclo detenido corta la alimentación y la placa se reinicia.
 - Su tiempo de espera es el del perfil, alargado cuando el conjunto de tareas lo necesita (más de dos intervalos de la tarea más lenta, hasta el máximo que acepta el componente); un conjunto de tareas que no cabe se rechaza al iniciar.

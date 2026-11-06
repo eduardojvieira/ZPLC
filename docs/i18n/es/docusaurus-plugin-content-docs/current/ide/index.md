@@ -66,7 +66,7 @@ Nivel de evidencia: host. `packages/zplc-ide/electron/toolWorkerHost.test.ts` ej
 
 Compilar, probar, simular y la revisión del candidato actúan sobre la carpeta que muestra la ventana, y sobre ninguna otra. El proceso principal es el propietario de esa carpeta: el diálogo nativo de carpetas entrega a la ventana una carpeta y un identificador opaco para ella. Una compilación, una comprobación de seguridad o una ejecución de pruebas nombra el espacio de trabajo y ese identificador, y el proceso principal rechaza la llamada cuando el identificador no es la carpeta actual de la ventana, o cuando el espacio de trabajo pertenece a otra carpeta. Abrir otra carpeta deja inservibles, por tanto, todos los espacios de trabajo anteriores, sin ningún paso de enlace intermedio.
 
-Nivel de evidencia: host. `packages/zplc-ide/electron/workspaceTestGateway.test.ts` cubre la regla, y el recorrido 34 de `bun run test:journeys` envía mensajes manipulados por el puente de la aplicación real después de abrir otra carpeta y comprueba que cada uno se rechaza (requisito IDE-002).
+Nivel de evidencia: host. `packages/zplc-ide/electron/workspaceTestGateway.test.ts` cubre la regla, y una ejecución guionada de la aplicación real envía mensajes manipulados por el puente de la aplicación real después de abrir otra carpeta y comprueba que cada uno se rechaza.
 
 ### Propiedades de seguridad
 
@@ -77,17 +77,7 @@ El renderizador no tiene privilegios. Esto es lo que hace la aplicación en ejec
 - se rechazan `window.open`, un enlace que abre una ventana nueva y la navegación a otro origen, y la ventana conserva después su documento, su carpeta y su IPC;
 - se rechaza una operación de proyecto con una ruta con `..`, una ruta absoluta o de unidad, un enlace que sale del proyecto, una escritura demasiado grande o el identificador de carpeta de otra ventana, y nada fuera del proyecto cambia.
 
-Nivel de evidencia: host. El recorrido 38 de `bun run test:journeys` hace estas pruebas en el host de desarrollo, que sirve sus propios scripts en línea para la recarga en caliente, así que allí no se hace la prueba del script en línea. Para hacerlas todas en una aplicación empaquetada en Linux, genere un paquete desempaquetado y ejecute las pruebas contra él:
-
-```bash
-bun run --cwd packages/zplc-ide build:assets
-bun run --cwd packages/zplc-ide build
-bun run --cwd packages/zplc-ide electron:compile
-(cd packages/zplc-ide && bunx electron-builder --linux --dir)
-ZPLC_PACKAGED_DIST="$PWD/packages/zplc-ide/dist-electron" bun run test:journeys
-```
-
-El archivo empaquetado no tiene diálogo de carpetas, así que las pruebas llegan al proyecto mediante una lista de proyectos recientes escrita antes en el directorio de datos de usuario. Cubren solo Linux: la aplicación empaquetada en macOS y Windows no se prueba (el requisito IDE-016 pide las tres).
+Nivel de evidencia: host. Una ejecución guionada de la aplicación real hace estas pruebas en el host de desarrollo. Ese host sirve sus propios scripts en línea para la recarga en caliente, así que allí no se hace la prueba del script en línea, y las pruebas cubren solo Linux: la aplicación empaquetada en macOS y Windows no se prueba. Quienes contribuyen pueden ejecutar las pruebas contra una compilación empaquetada de Linux; vea [Probar una compilación empaquetada](../development/ide-internals.md#probar-una-compilación-empaquetada).
 
 ### Configuración del proyecto
 
