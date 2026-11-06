@@ -17,10 +17,10 @@ El compilador convierte un proyecto en un archivo `.zplc`. Usted elige dónde se
 
 ```mermaid
 flowchart LR
-  A[Compile project to .zplc] --> B{Execution target}
-  B --> D[Native simulation on this computer]
-  B --> E[Zephyr hardware runtime]
-  E --> F[Online debugging in the ZPLC application]
+  A[Compilar el proyecto a .zplc] --> B{Destino de ejecución}
+  B --> D[Simulación nativa en este equipo]
+  B --> E[Runtime de hardware Zephyr]
+  E --> F[Depuración en línea en la aplicación ZPLC]
 ```
 
 La simulación no necesita placa. Para hardware, grabe el runtime una vez ([Grabar el firmware](../guides/flash-firmware.md)) y despliegue después los programas desde la aplicación ([Despliegue](../ide/deployment.md)). Son dos operaciones distintas, y usted inicia ambas.
@@ -34,10 +34,10 @@ Hay siete placas en el manifiesto, todas en el nivel `cross-build`: el firmware 
 Si fabrica su propio hardware, o no quiere la imagen de la aplicación de ZPLC, incorpore el núcleo usted mismo:
 
 1. **Enlace el núcleo.** Agregue la biblioteca ANSI C99 `firmware/lib/zplc_core` a su compilación con CMake.
-2. **Implemente la HAL.** Provea las funciones C del [contrato de la HAL](../runtime/hal-contract.md) para sus pines y controladores, como `zplc_hal_tick`, `zplc_hal_gpio_read` y `zplc_hal_gpio_write`.
+2. **Implemente el HAL.** Provea las funciones C del [contrato del HAL](../runtime/hal-contract.md) para sus pines y controladores, como `zplc_hal_tick`, `zplc_hal_gpio_read` y `zplc_hal_gpio_write`.
 3. **Inicie el planificador.** Desde su hilo `main()`, llame a `zplc_sched_init()`, cargue un programa con `zplc_sched_load()` e inícielo con `zplc_sched_start()`. Las llamadas están en la [API del runtime](../reference/runtime-api.md).
 
-El núcleo solo toca el hardware a través de la HAL, así que el port es la HAL. La compilación cruzada de un port propio demuestra que compila. No demuestra su temporización ni su E/S.
+El núcleo solo toca el hardware a través del HAL, así que el puerto es el HAL. La compilación cruzada de un puerto propio demuestra que compila. No demuestra su temporización ni su E/S.
 
 ## Compruebe el hardware para los protocolos que necesita
 
@@ -49,4 +49,4 @@ Un protocolo necesita la capa inferior en la placa:
 | Modbus TCP | Una interfaz Ethernet o Wi-Fi y sus sockets                          |
 | Modbus RTU | Un UART con un transceptor RS-485 en la placa                        |
 
-La clase de red de cada placa está en [Placas](../reference/boards.md). Qué se ejercitó de cada protocolo, y con qué nivel de evidencia, está en [Conectividad](../runtime/connectivity.md).
+La clase de red de cada placa está en [Placas](../reference/boards.md). Qué se probó de cada protocolo, y con qué nivel de evidencia, está en [Conectividad](../runtime/connectivity.md).

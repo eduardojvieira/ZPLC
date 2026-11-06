@@ -1,7 +1,9 @@
 ---
+id: isa
 title: ISA del runtime
 sidebar_label: ISA
 description: Contrato público de instrucciones, memoria y formato .zplc del runtime ZPLC 2.0.
+tags: [runtime, isa, bytecode]
 ---
 
 # ISA del runtime
@@ -142,7 +144,7 @@ todos los destinos. Los resultados que define la VM:
 | `OP_SAR64`                                       | cuenta de 64 o más          | `-1` para un valor negativo, `0` en otro caso                                                                          |
 | `OP_ADDD`, `OP_SUBD`, `OP_MULD`, `OP_DIVD`       | cualquiera                  | el resultado IEEE 754 binary64, al par más cercano; el desbordamiento es un infinito y el subdesbordamiento es gradual |
 | `OP_DIVD`                                        | divisor `0.0` o `-0.0`      | falla `ZPLC_VM_DIV_BY_ZERO`, sea cual sea el dividendo (como `OP_DIVF`)                                                |
-| `OP_NEGD`, `OP_ABSD`                             | cualquiera                  | el bit de signo invertido o borrado; un NaN conserva su carga                                                          |
+| `OP_NEGD`, `OP_ABSD`                             | cualquiera                  | el bit de signo invertido o borrado; un NaN conserva su contenido                                                          |
 | `OP_SQRTD`                                       | `0.0`, `-0.0` o menor       | `0.0` (la regla de `SQRT` sobre un `REAL`)                                                                             |
 |                                                  | `+Inf`                      | `+Inf`                                                                                                                 |
 |                                                  | en otro caso                | la raíz cuadrada correctamente redondeada                                                                              |
@@ -159,8 +161,8 @@ todos los destinos. Los resultados que define la VM:
 | `OP_I2D`, `OP_L2D`, `OP_U2D`, `OP_L2F`, `OP_U2F` | cualquiera                  | un solo redondeo, al par más cercano                                                                                   |
 
 Todo NaN que produce una operación de doble precisión es el NaN silencioso
-`0x7FF8000000000000` (`0x7FC00000` como `REAL`), así que dos plataformas nunca difieren en la
-carga.
+`0x7FF8000000000000` (`0x7FC00000` como `REAL`), así que dos plataformas nunca difieren en el
+contenido.
 
 Una cuenta se lee como una palabra de 32 bits sin signo, así que una cuenta negativa es una
 cuenta de 64 o más. El redondeo al entero más cercano de las conversiones del lenguaje
@@ -174,7 +176,7 @@ Hasta que el contrato se congele (CMP-052), la palabra 28 del encabezado de cada
 con otro valor, mostrando ambos números. Cada cambio de un opcode, de una disposición o de un tamaño
 lo incrementa. El contador es **6** desde los valores seguros declarados (el segmento
 `ZPLC_SEG_SAFE`): los programas compilados antes se rechazan y hay que recompilarlos (era 5
-con la disposición de los textos de los bloques de comunicación, 4 con la profundidad de llamadas
+con la disposición de las cadenas de los bloques de comunicación, 4 con la profundidad de llamadas
 de una tarea y la identidad de compilación, y 3 con los opcodes de 64 bits y de doble
 precisión). La herramienta
 `tools/contract/restamp_artifacts.py` lleva los artefactos versionados en el repositorio al
@@ -232,7 +234,7 @@ El compilador mide lo que el cargador va a demostrar y lo registra en el artefac
   nada; 0 significa que el artefacto no lo declara). El cargador rechaza una tarea que necesita
   más de lo que declara, y una tarea cuya profundidad de llamadas supera la pila de llamadas
   de la VM más su cuerpo. El compilador falla la compilación cuando una tarea necesita una
-  pila más profundo que `ZPLC_VERIFY_MAX_DEPTH` (127) o que el que tiene el destino, o
+  pila más profunda que `ZPLC_VERIFY_MAX_DEPTH` (127) o que la que tiene el destino, o
   llamadas anidadas más profundas que `ZPLC_CALL_STACK_MAX`.
 - El segmento `ZPLC_SEG_BUILD` guarda un valor de 32 bits, la identidad de compilación: el
   CRC-32 del segmento CODE seguido del segmento TASK tal como se escribe, nunca 0. El mapa de
@@ -243,10 +245,10 @@ El compilador mide lo que el cargador va a demostrar y lo registra en el artefac
 ## Valores seguros declarados
 
 El estado de una salida mientras el programa no la controla (STOP, una pausa, una falla
-retenida, el arranque, una carga en curso) es apagado, salvo que el proyecto declare otro
+retenida, el arranque, un despliegue en curso) es apagado, salvo que el proyecto declare otro
 valor para ella (RT-023). La declaración viaja en el artefacto, en el segmento
 `ZPLC_SEG_SAFE`, de modo que un programa y su estado seguro son una sola unidad: un
-dispositivo que restaura el programa restaura su declaración, y una carga interrumpida no
+dispositivo que restaura el programa restaura su declaración, y un despliegue interrumpido no
 puede dejar el programa de una compilación con los valores seguros de otra.
 
 - Cada entrada es un `zplc_safe_entry_t` de `ZPLC_SAFE_ENTRY_SIZE` (4) bytes: el `offset` en
@@ -256,7 +258,7 @@ puede dejar el programa de una compilación con los valores seguros de otra.
   no es 0 ni 1, una salida está declarada dos veces, o hay más de `ZPLC_LOADER_MAX_SAFE`
   (64) entradas; un segundo segmento `ZPLC_SEG_SAFE` se rechaza como error de segmento. Un
   artefacto sin el segmento no declara nada.
-- El runtime rechaza, en la carga y en la restauración de arranque, una declaración para una
+- El runtime rechaza, al desplegar y al restaurar en el arranque, una declaración para una
   salida que la placa no tiene (una entrada tiene que nombrar un canal de salida digital de
   la descripción de la placa por su desplazamiento de imagen y su bit). El programa de otra placa no
   se ejecuta con un estado seguro que no existe.
@@ -266,7 +268,7 @@ puede dejar el programa de una compilación con los valores seguros de otra.
 
 ## Páginas relacionadas
 
-- [Visión general del runtime](./index.md)
+- [Descripción del runtime](./index.md)
 - [Modelo de memoria](./memory-model.md)
 - [Runtime API](../reference/runtime-api.md)
 - [Persistencia](./persistence.md)

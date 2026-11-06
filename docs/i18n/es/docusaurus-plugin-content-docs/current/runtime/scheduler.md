@@ -42,7 +42,7 @@ Las tareas se declaran en `zplc.json` y se compilan dentro del programa `.zplc`.
 
 De ahí salen cinco reglas:
 
-1. **Liberación.** Un arranque o una reanudación inicia el calendario de todas las tareas en el mismo instante, y después una tarea se libera una vez por intervalo. Una liberación que llega mientras la tarea sigue ejecutándose no se encola, y un host que despacha tarde ejecuta la tarea una vez, no una vez por cada liberación perdida.
+1. **Liberación.** Un arranque o una reanudación inicia la programación de todas las tareas en el mismo instante, y después una tarea se libera una vez por intervalo. Una liberación que llega mientras la tarea sigue ejecutándose no se encola, y un host que despacha tarde ejecuta la tarea una vez, no una vez por cada liberación perdida.
 2. **Orden.** Un lote corre por liberación más temprana primero, luego por prioridad (el número menor primero) y luego por ID de tarea (el menor primero).
 3. **Sin apropiación.** Las tareas de un lote corren una tras otra, cada una hasta el final de su ciclo. Solo un punto de parada detiene un ciclo antes de su final; véase [Pausa, reanudación, paso y parada](#pausa-reanudación-paso-y-parada).
 4. **Una captura y una confirmación por lote.** Una tarea que no se libera en un lote no se ejecuta, y la imagen de proceso conserva lo que escribió.
@@ -112,7 +112,7 @@ Las cinco reglas son las mismas en simulación y en un destino. Estos puntos no 
 | --- | --- | --- |
 | Fuente de tiempo | El reloj monotónico del host en milisegundos enteros, de modo que un plazo y un exceso son múltiplos de 1 ms. | El contador de ciclos, leído en microsegundos. |
 | Instante de una liberación | El instante en que el host despacha el lote. La espera entre el vencimiento y el despacho se informa en `host_cadence` y no es un incumplimiento. | El temporizador marca la liberación cuando expira, así que un coordinador que inicia el lote tarde gasta el plazo de sus tareas. |
-| Siguiente liberación | Las tareas de intervalos distintos mantienen una grilla fija desde el arranque común. Las tareas de un mismo intervalo se liberan un intervalo después del despacho anterior, así que un despacho tardío desplaza las liberaciones que le siguen. | Un temporizador periódico sobre una grilla fija: un lote tardío no desplaza la siguiente liberación. |
+| Siguiente liberación | Las tareas de intervalos distintos mantienen una cuadrícula fija desde el arranque común. Las tareas de un mismo intervalo se liberan un intervalo después del despacho anterior, así que un despacho tardío desplaza las liberaciones que le siguen. | Un temporizador periódico sobre una cuadrícula fija: un lote tardío no desplaza la siguiente liberación. |
 | Primera liberación | Todas las tareas se liberan en el arranque mismo. | Cada tarea se libera por primera vez un intervalo después del arranque o de la reanudación. |
 | Dos tareas del mismo tick | Se liberan en el mismo instante, así que se ordenan por prioridad y luego por ID de tarea. | La comparación es la misma, pero cada temporizador marca su propia liberación; no se afirma qué orden obtienen dos temporizadores de un mismo tick en una placa. |
 | Una escritura en la imagen de entradas mientras corre el programa | Se encola (32 escrituras como máximo) y se aplica al inicio del ciclo siguiente, en orden y con la escritura que respeta los forzados, de modo que ningún ciclo ve cambiar la imagen. Una cola llena rechaza la escritura con `RUNTIME_FAILURE`; una parada, un reinicio o una carga vacían la cola. Mientras el programa está detenido o en pausa, la escritura se aplica de inmediato. | La cola de escrituras del intercambio aplica todas las escrituras en cola, en orden, en la captura de entradas del ciclo siguiente (RT-010). |
@@ -138,7 +138,7 @@ El runtime separa dos cosas: las **salidas físicas** (los pines) y el **estado 
 
 ## Estado seguro de una salida
 
-Una salida está **apagada** siempre que el programa no la controla: en STOP, en pausa o en un punto de parada, en una falla retenida, desde el arranque hasta el primer ciclo y mientras una carga está en curso. Una sola función, `zplc_io_drive_safe`, decide el nivel (RT-023):
+Una salida está **apagada** siempre que el programa no la controla: en STOP, en pausa o en un punto de parada, en una falla retenida, desde el arranque hasta el primer ciclo y mientras un despliegue está en curso. Una sola función, `zplc_io_drive_safe`, decide el nivel (RT-023):
 
 1. El valor que **declara el programa cargado** para esa salida, cuando declara uno.
 2. Si no, **apagado**, salvo que la descripción de la placa (`firmware/app/boards/boards.json`) dé a ese canal otro nivel seguro, como necesita un relé activo en bajo.
@@ -156,13 +156,13 @@ Un proyecto declara el valor en `zplc.json`, en una fila de `io.outputs`:
 }
 ```
 
-Aquí `Brake` está energizada siempre que el programa no la maneja, y `Valve` está apagada. La declaración viaja dentro del artefacto, en su segmento `SAFE`, de modo que un programa y su estado seguro son una sola unidad: un dispositivo que restaura el programa restaura la declaración, y una carga interrumpida no puede dejar el programa de una compilación con los valores seguros de otra (véase [Valores seguros declarados](./isa.md#valores-seguros-declarados)). La confirmación de la carga muestra cada salida declarada con el valor que toma, o dice que toda salida está apagada, antes de que se escriba el programa.
+Aquí `Brake` está energizada siempre que el programa no la maneja, y `Valve` está apagada. La declaración viaja dentro del artefacto, en su segmento `SAFE`, de modo que un programa y su estado seguro son una sola unidad: un dispositivo que restaura el programa restaura la declaración, y un despliegue interrumpido no puede dejar el programa de una compilación con los valores seguros de otra (véase [Valores seguros declarados](./isa.md#valores-seguros-declarados)). La confirmación del despliegue muestra cada salida declarada con el valor que toma, o dice que toda salida está apagada, antes de que se escriba el programa.
 
 | Dónde | Qué se rechaza |
 | --- | --- |
 | La compilación (la aplicación ZPLC, la línea de comandos, MCP) | Un `safe` que no es `true` ni `false`; uno en una fila que no es un bit de salida digital (`%QW0`, `%QB0`), en una entrada o en una fila `virtual`; dos filas para una salida; una salida para la que la placa elegida no tiene un canal digital. El mensaje nombra la salida, la dirección y la placa, y no hay artefacto que desplegar. |
 | El cargador | Un segmento que no son entradas completas, una entrada fuera de la imagen de salidas, un valor distinto de 0 o 1, una salida dos veces, o más de 64 entradas. |
-| El firmware, en la carga y en la restauración de arranque | Una declaración para una salida que no es un canal de salida digital de la tabla de E/S de la placa, es decir, un proyecto de otra placa. El programa no se guarda ni se ejecuta. |
+| El firmware, al desplegar y al restaurar en el arranque | Una declaración para una salida que no es un canal de salida digital de la tabla de E/S de la placa, es decir, un proyecto de otra placa. El programa no se guarda ni se ejecuta. |
 
 Los valores declarados rigen desde la carga que confirma el programa, antes del primer ciclo: un programa restaurado espera en STOP con sus salidas declaradas encendidas. La imagen de salidas es el estado lógico del programa y se pone en cero en STOP, sea cual sea el valor que muestre el pin. El tiempo entre el encendido y el instante en que el firmware maneja los pines es el estado de reinicio del componente; una placa que necesita un pin en uno ahí necesita hardware que lo haga (véase [Placas](../reference/boards.md)).
 
@@ -174,11 +174,11 @@ Son los requisitos RT-019 a RT-022. Las decisiones que no dependen de una plataf
 
 **Por qué se reinició el runtime (RT-021).** `zplc sys reset` (con `--json`) informa la causa del último reinicio: `power_on`, `brown_out`, `pin`, `software`, `watchdog`, `fault` o `unknown`, con el registro crudo, el registro de falla de la ejecución anterior y la política de arranque. Cuando un procesador informa varios bits el orden es fijo: primero un registro de falla, luego watchdog, encendido, brown-out, lock-up, software y, al final, el pin, porque casi todo reinicio lo activa. La causa es también la clave `reset_cause` de `zplc sched status --json`.
 
-**Tras un reinicio el runtime espera en STOP (RT-022).** Sea cual sea la causa, el programa guardado se restaura en STOP con las salidas en sus valores seguros, y **RUN es una orden de una persona**: la función `zplc_reset_may_run` vale 0 para toda causa. Las variables retentivas se restauran solo cuando `CONFIG_ZPLC_RETAIN_PERSIST` está activado, y lo está en el perfil de cada placa distribuida. Una carga detiene el programa en ejecución antes de transferir un solo byte.
+**Tras un reinicio el runtime espera en STOP (RT-022).** Sea cual sea la causa, el programa guardado se restaura en STOP con las salidas en sus valores seguros, y **RUN es una orden de una persona**: la función `zplc_reset_may_run` vale 0 para toda causa. Las variables retentivas se restauran solo cuando `CONFIG_ZPLC_RETAIN_PERSIST` está activado, y lo está en el perfil de cada placa distribuida. Un despliegue detiene el programa en ejecución antes de transferir un solo byte.
 
 **El watchdog de hardware (RT-020).** La entrada `watchdog` de cada placa en `boards.json` dice si está habilitado, el tiempo de espera con el que se registró su tiempo de reinicio, el tiempo de espera más largo que acepta el componente y qué hace en STOP, en pausa y en una falla retenida. **Ninguna placa lo tiene habilitado**, y las opciones siguen desactivadas hasta que una placa y revisión exactas tengan un registro de hardware de su tiempo de reinicio y de sus pines (HIL-010). Cuando está habilitado:
 
-- Se alimenta desde la finalización de un ciclo, nunca desde un temporizador, una interrupción, el shell o el hilo ocioso, de modo que un ciclo detenido corta la alimentación y la placa se reinicia.
+- Se alimenta desde la finalización de un ciclo, nunca desde un temporizador, una interrupción, el shell o el hilo inactivo, de modo que un ciclo detenido corta la alimentación y la placa se reinicia.
 - Su tiempo de espera es el del perfil, alargado cuando el conjunto de tareas lo necesita (más de dos intervalos de la tarea más lenta, hasta el máximo que acepta el componente); un conjunto de tareas que no cabe se rechaza al iniciar.
 - La política por defecto es desarmado en STOP, alimentado desde la ruta de control en pausa para que un punto de parada largo no reinicie la placa, y dejado expirar en una falla retenida, de modo que la placa se reinicia en STOP con la causa registrada.
 

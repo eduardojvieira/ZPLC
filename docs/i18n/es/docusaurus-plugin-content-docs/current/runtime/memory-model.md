@@ -57,7 +57,7 @@ Mientras los ciclos corren, solo el ciclo escribe la imagen de proceso. Un hilo 
 - **Las lecturas** salen de la instantánea de IPI, OPI, WORK y RETAIN que el ciclo publica en su confirmación. Un valor es íntegro y de un solo ciclo, y una lectura nunca espera a un ciclo.
 - **Las escrituras** se encolan completas y el ciclo las aplica en la captura de entradas de su siguiente ciclo, por la interfaz del núcleo que respeta los forzados: una variable forzada conserva su valor forzado escriba lo que escriba un cliente. Mientras no corre ningún ciclo (detenido, en pausa o con falla) no hay captura que esperar, y la escritura se aplica de inmediato.
 - **Una escritura que no cabe** en la cola (`CONFIG_ZPLC_EXCHANGE_QUEUE_BYTES`, 1024 bytes por defecto) se rechaza completa y quien llama recibe un error. Un cliente Modbus TCP recibe la excepción 6 (dispositivo servidor ocupado) y puede reintentar.
-- **Una etiqueta Modbus de dos registros** se escribe una mitad cada vez, de modo que dos clientes que escriben las dos mitades nunca se pisan con un valor viejo de la otra mitad.
+- **Una etiqueta Modbus de dos registros** se escribe una mitad cada vez, de modo que dos clientes que escriben las dos mitades nunca se pisan con un valor obsoleto de la otra mitad.
 
 La instantánea es una copia de las cuatro regiones, así que cuesta en RAM su tamaño total: 20 KB con los tamaños por defecto.
 

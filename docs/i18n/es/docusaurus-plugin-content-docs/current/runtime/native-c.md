@@ -24,10 +24,10 @@ Una tarea en C nativo no es un bloque de función de su programa. Se ejecuta com
 
 ## Agregue el código
 
-Para esto compila el firmware desde el código fuente ([Compilar el firmware](../guides/build-firmware.md)).
+Para ello se compila el firmware desde el código fuente ([Compilar el firmware](../guides/build-firmware.md)).
 
 1. Cree un archivo C dentro de `firmware/app`. Una carpeta nueva como `src/custom/` lo mantiene separado de las fuentes del runtime.
-2. Escriba la lógica como un hilo o servicio de Zephyr. Cuando deba tocar el PLC o el hardware, use las funciones `zplc_hal_*` del [contrato de la HAL](./hal-contract.md), nunca las rodee.
+2. Escriba la lógica como un hilo o servicio de Zephyr. Cuando deba tocar el PLC o el hardware, use las funciones `zplc_hal_*` del [contrato del HAL](./hal-contract.md), nunca las evite.
 3. Agregue el archivo a la compilación en `firmware/app/CMakeLists.txt`:
 
 ```cmake

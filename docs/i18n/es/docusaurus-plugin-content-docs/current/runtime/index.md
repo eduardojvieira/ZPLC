@@ -50,7 +50,7 @@ Compilar el firmware, grabarlo, desplegar un programa y ejecutarlo o depurarlo s
 
 | Página | Léala para saber |
 | --- | --- |
-| [Planificador](./scheduler.md) | Cómo funciona un ciclo de escaneo, cómo se ordenan las tareas, qué hace un plazo incumplido y qué hacen las salidas cuando el programa se detiene |
+| [Planificador](./scheduler.md) | Cómo funciona un ciclo, cómo se ordenan las tareas, qué hace un plazo incumplido y qué hacen las salidas cuando el programa se detiene |
 | [Modelo de memoria](./memory-model.md) | Las cinco regiones, qué comparte una tarea y qué le pertenece, cómo llega a los datos un hilo ajeno al ciclo |
 | [Persistencia](./persistence.md) | Qué se almacena, qué restaura un reinicio y el presupuesto de desgaste de la flash de cada placa |
 | [Contrato del HAL](./hal-contract.md) | Qué pide el núcleo a una plataforma y qué hace con ello cada uno de los cuatro puertos |

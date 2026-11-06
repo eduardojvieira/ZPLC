@@ -36,7 +36,7 @@ flowchart TD
 
 El encabezado declara 18 funciones, y cada una tiene un llamador (IO-007): se quitaron una función de DNS y cuatro de socket que nadie llamaba.
 
-Una operación que una plataforma no puede realizar devuelve `ZPLC_HAL_NOT_IMPL`, el resultado definido para "no soportado". El planificador lo omite si viene de un canal opcional, lo trata como error si viene de un canal obligatorio y nunca acepta una función que un puerto deje sin definir: eso es una falla de compilación o de prueba, no un sustituto silencioso.
+Una operación que una plataforma no puede realizar devuelve `ZPLC_HAL_NOT_IMPL`, el resultado definido para "no admitido". El planificador lo omite si viene de un canal opcional, lo trata como error si viene de un canal obligatorio y nunca acepta una función que un puerto deje sin definir: eso es una falla de compilación o de prueba, no un sustituto silencioso.
 
 ## Cómo describe una placa su E/S
 
@@ -80,7 +80,7 @@ CONFIG_ZPLC_RETAIN_MEMORY_SIZE=4096
 # default 45056
 CONFIG_ZPLC_CODE_SIZE_MAX=24576
 
-# Persistence: NVS needs the flash driver, the partition map and a storage_partition
+# Persistencia: NVS necesita el controlador de flash, el mapa de particiones y una storage_partition
 CONFIG_FLASH=y
 CONFIG_FLASH_PAGE_LAYOUT=y
 CONFIG_FLASH_MAP=y
@@ -99,7 +99,7 @@ El overlay de la placa define `storage_partition` salvo que la placa original ya
    python3 tools/ci/check_hal_contract.py
    ```
 
-   Falla cuando una función declarada no tiene definición en un puerto, no tiene llamador fuera de los puertos y de las pruebas, o tiene una entrada vieja en `tools/ci/hal-contract.json`.
+   Falla cuando una función declarada no tiene definición en un puerto, no tiene llamador fuera de los puertos y de las pruebas, o tiene una entrada obsoleta en `tools/ci/hal-contract.json`.
 4. Ejecute las pruebas del núcleo (`bun run test:core`), que compilan el núcleo con los saneadores de direcciones y de comportamiento indefinido. Un puerto que no es la compilación de host ejecuta la suite de conformidad en su propia compilación, como hace el puerto FreeRTOS con `bash tools/freertos/test.sh`.
 
 Para portar ZPLC a una placa y no a una plataforma, véase [Portar ZPLC a una placa nueva](../guides/port-to-a-board.md).

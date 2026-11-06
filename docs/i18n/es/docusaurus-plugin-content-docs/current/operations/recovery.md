@@ -34,7 +34,7 @@ El comportamiento de estado seguro y de restauración del runtime está respalda
 
 ## Qué conservar
 
-Conserve el hash de compilación, los diagnósticos, la traza, la identidad del runtime, el perfil seleccionado y la confirmación de despliegue de la persona junto con el registro del incidente. Deje fuera de los tickets de soporte y de los prompts de IA las credenciales y la salida serie sensible sin filtrar.
+Conserve el hash de compilación, los diagnósticos, la traza, la identidad del runtime, el perfil seleccionado y la confirmación de despliegue de la persona junto con el registro del incidente. Deje fuera de los tickets de soporte y de las instrucciones a una IA las credenciales y la salida serie sensible sin filtrar.
 
 ## Siguiente paso
 

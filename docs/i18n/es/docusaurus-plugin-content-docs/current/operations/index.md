@@ -42,6 +42,6 @@ La consola del dispositivo muestra el mismo estado desde una terminal: vea [Use 
 ## Cuando escala un caso
 
 - Adjunte los diagnósticos, la traza, la identidad del artefacto, el perfil seleccionado y la decisión del operador.
-- Deje fuera de tickets y prompts las credenciales y la salida serie sensible sin filtrar.
+- Deje fuera de los tickets y de las instrucciones a una IA las credenciales y la salida serie sensible sin filtrar.
 
 La conexión serie directa, grabar, forzar, RUN, STOP y la recuperación nunca son operaciones de IA ni de MCP.
