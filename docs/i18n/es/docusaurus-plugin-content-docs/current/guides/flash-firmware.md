@@ -3,37 +3,21 @@ slug: /guides/flash-firmware
 id: flash-firmware
 title: Grabar el firmware
 sidebar_label: Grabar el firmware
-description: 'Cómo escribir la imagen del runtime ZPLC en una placa: los pasos del modo de arranque de la Raspberry Pi Pico y del ESP32-S3, y la línea de comandos para cada placa.'
+description: 'Escriba la imagen del runtime de ZPLC en una placa: los pasos del modo de arranque de la Raspberry Pi Pico y del ESP32-S3, y la línea de comandos para cada placa.'
 tags: [how-to, hardware, firmware]
 ---
 
 # Grabar el firmware
 
-Grabar escribe el runtime de ZPLC en una placa. **Usted lo inicia.** El asistente de
-ZPLC y el servidor MCP nunca graban, despliegan, fuerzan, arrancan ni detienen un
-dispositivo, y nada de esta página lo hace por usted. Compilar la imagen, grabarla,
-cargar un programa y ejecutarlo son cuatro operaciones separadas
-([Despliegue](../ide/deployment.md)).
+Grabar escribe el runtime de ZPLC en una placa. **Usted lo inicia.** El asistente de ZPLC y el servidor MCP nunca graban, despliegan, fuerzan, arrancan ni detienen un dispositivo, y nada de esta página lo hace por usted. Compilar la imagen, grabarla, desplegar un programa y ejecutarlo son cuatro operaciones separadas ([Despliegue](../ide/deployment.md)).
 
-:::caution No ejecutado en una placa
-El firmware de cada placa compila en integración continua y cabe en su presupuesto.
-Nadie ha registrado una grabación en una placa, así que los pasos de abajo están
-escritos a partir de las herramientas de cada placa y no son un resultado: el nivel de
-todas las placas es `cross-build`
-([Compatibilidad de hardware](../reference/capabilities-evidence.md)). Si los sigue, informe
-lo que vio con el plantilla de informe de placa de las incidencias del repositorio.
+:::caution No hay una grabación registrada en una placa
+El firmware de cada placa compila en integración continua y cabe en su presupuesto. Nadie ha registrado una grabación en una placa, así que los pasos de abajo se leyeron de las herramientas de cada placa y no son un resultado. Todas las placas están en el nivel `cross-build` ([Compatibilidad de hardware](../reference/capabilities-evidence.md)). Si los sigue, informe lo que vio con el formulario de informe de placa de las incidencias del repositorio.
 :::
 
-## 1. Obtener la imagen y comprobarla
+## 1. Obtenga la imagen y compruébela
 
-Una versión del canal lleva una imagen del runtime para cada placa del manifiesto,
-con el nombre `zplc-runtime-<versión>-<placa>.<ext>`, con las sumas de verificación en
-`SHA256SUMS` y un manifiesto, `zplc-runtime-<versión>.manifest.json`, que nombra para
-cada imagen el runner de grabación, la dirección en la que se escribe y el nivel de
-evidencia de la placa. Los instaladores de ZPLC llevan las imágenes de las dos placas
-de aprendizaje: **Configuración del proyecto**, **Destino** muestra el archivo, su SHA-256 y estos
-pasos. Hasta la primera versión que las tenga, compile usted la imagen con los pasos de
-[Su primera placa](../tutorials/first-board.md#1-obtenga-el-firmware).
+Una versión lleva una imagen por placa del manifiesto, con el nombre `zplc-runtime-<versión>-<placa>.<ext>`. `SHA256SUMS` guarda las sumas de verificación. El manifiesto `zplc-runtime-<versión>.manifest.json` indica, para cada imagen, el programador de flash, la dirección donde se escribe y el nivel de evidencia de la placa. Los instaladores de ZPLC incluyen las imágenes de las dos placas del curso: **Ajustes del proyecto**, **Destino** muestra el archivo, su SHA-256 y estos pasos. Hasta la primera versión que las incluya, compile la imagen con [Su primera placa](../tutorials/first-board.md#1-obtenga-el-firmware).
 
 Compruebe el archivo antes de escribirlo:
 
@@ -41,115 +25,84 @@ Compruebe el archivo antes de escribirlo:
 sha256sum --check --ignore-missing SHA256SUMS
 ```
 
-| Placa                  | Id del manifiesto       | Imagen de la versión                               | La escribe                                 |
-| ---------------------- | ----------------------- | -------------------------------------------------- | ------------------------------------------ |
+| Placa                  | Id del manifiesto       | Imagen de la versión                               | La escribe                           |
+| ---------------------- | ----------------------- | -------------------------------------------------- | ------------------------------------ |
 | Raspberry Pi Pico      | `rpi-pico-rp2040`       | `zplc-runtime-<versión>-rpi-pico-rp2040.uf2`       | la ROM de arranque: usted copia el archivo |
 | Waveshare RP2040-Zero  | `waveshare-rp2040-zero` | `zplc-runtime-<versión>-waveshare-rp2040-zero.uf2` | la ROM de arranque: usted copia el archivo |
-| ESP32-S3-DevKitC-1     | `esp32-s3-devkitc`      | `zplc-runtime-<versión>-esp32-s3-devkitc.bin`      | `esptool` o `west flash`                   |
-| Arduino GIGA R1 (M7)   | `arduino-giga-r1-m7`    | `zplc-runtime-<versión>-arduino-giga-r1-m7.bin`    | `dfu-util` o `west flash`                  |
-| Arduino Opta WiFi (M7) | `arduino-opta-wifi-m7`  | `zplc-runtime-<versión>-arduino-opta-wifi-m7.bin`  | `dfu-util` o `west flash`                  |
-| STM32 Nucleo-H743ZI    | `nucleo-h743zi`         | `zplc-runtime-<versión>-nucleo-h743zi.bin`         | `west flash`                               |
-| STM32F746G Discovery   | `stm32f746g-disco`      | `zplc-runtime-<versión>-stm32f746g-disco.bin`      | `west flash`                               |
+| ESP32-S3-DevKitC-1     | `esp32-s3-devkitc`      | `zplc-runtime-<versión>-esp32-s3-devkitc.bin`      | `esptool` o `west flash`             |
+| Arduino GIGA R1 (M7)   | `arduino-giga-r1-m7`    | `zplc-runtime-<versión>-arduino-giga-r1-m7.bin`    | `dfu-util` o `west flash`            |
+| Arduino Opta WiFi (M7) | `arduino-opta-wifi-m7`  | `zplc-runtime-<versión>-arduino-opta-wifi-m7.bin`  | `dfu-util` o `west flash`            |
+| STM32 Nucleo-H743ZI    | `nucleo-h743zi`         | `zplc-runtime-<versión>-nucleo-h743zi.bin`         | `west flash`                         |
+| STM32F746G Discovery   | `stm32f746g-disco`      | `zplc-runtime-<versión>-stm32f746g-disco.bin`      | `west flash`                         |
 
-## 2. Raspberry Pi Pico y Waveshare RP2040-Zero: descarga y modo de arranque
+## 2. Raspberry Pi Pico y Waveshare RP2040-Zero: modo de arranque
 
-La ROM de arranque del RP2040 muestra la placa como una unidad USB cuando arranca en
-modo de arranque, y acepta un archivo UF2 copiado en ella. Usted realiza cada paso:
-ZPLC nunca escribe en una placa.
+En modo de arranque, la ROM del RP2040 presenta la placa como una unidad USB y acepta un archivo UF2 copiado en ella.
 
-1. Desconecte la placa. Mantenga pulsado su botón BOOT (BOOTSEL en la Pico) y, con el
-   botón pulsado, conecte el cable USB. Suelte el botón.
-2. Aparece una unidad llamada `RPI-RP2`. Si no aparece, desconecte la placa y empiece
-   de nuevo; una placa que no arrancó en modo de arranque no muestra ninguna unidad, y
-   tampoco la muestra un cable que solo carga.
-3. Copie a la unidad el archivo `.uf2` de su placa: la imagen de la versión
-   (`zplc-runtime-<versión>-rpi-pico-rp2040.uf2` para la Pico), o `build/zephyr/zephyr.uf2`
-   cuando compiló la imagen usted mismo. La placa lo escribe y se reinicia sola, y la
-   unidad desaparece.
+1. Desconecte la placa. Mantenga pulsado su botón BOOT (BOOTSEL en la Pico), conecte el cable USB con el botón pulsado y luego suéltelo.
+2. Aparece una unidad llamada `RPI-RP2`. Si no aparece, desconecte la placa y empiece de nuevo. Una placa que no arrancó en modo de arranque no muestra unidad, y tampoco un cable que solo carga.
+3. Copie el `.uf2` de su placa a la unidad: la imagen de la versión (`zplc-runtime-<versión>-rpi-pico-rp2040.uf2` para la Pico) o `build/zephyr/zephyr.uf2` para una imagen compilada por usted. La placa la escribe y se reinicia sola, y la unidad desaparece.
 
-La imagen de la Pico es para la Raspberry Pi Pico (RP2040). En una Pico W el LED de la
-placa no está en GP25, y una Pico 2 (RP2350) no ejecuta esta imagen.
+La imagen de la Pico es para la Raspberry Pi Pico (RP2040). En una Pico W el LED integrado no está en GP25, y una Pico 2 (RP2350) no acepta esta imagen.
 
 ## 3. ESP32-S3-DevKitC-1: modo de descarga y esptool
 
-El cargador de arranque en ROM del ESP32-S3 acepta una imagen por USB cuando la placa
-arranca en modo de descarga. La imagen es para la placa N8R8 (8 MB de flash, 8 MB de PSRAM
-octal): no arranca en la N8 ni en la N8R2 ([Referencia de placas](../reference/boards.md)).
+La ROM de arranque del ESP32-S3 acepta una imagen por USB cuando la placa arranca en modo de descarga. La imagen es para la placa N8R8 (8 MB de flash, 8 MB de PSRAM octal). No arranca en la N8 ni en la N8R2 ([Placas](../reference/boards.md)).
 
-1. Conecte el cable al puerto marcado **USB**, el puerto USB propio del ESP32-S3, no al
-   marcado UART: la consola de ZPLC y la conexión de la aplicación ZPLC usan el puerto **USB**. En
-   Linux es `/dev/ttyACM<n>`, en macOS `/dev/cu.usbmodem<n>` y en Windows un puerto
-   `COM<n>`.
-2. Mantenga pulsado BOOT, pulse y suelte RST, y suelte BOOT. La placa está en modo de
-   descarga.
-3. Escriba la imagen en la dirección `0x0`, la que el manifiesto nombra para ella
-   (`images[].flash.address` de `zplc-runtime-<versión>.manifest.json`). Con esptool v5:
+1. Conecte el cable al puerto marcado **USB**, el USB propio del chip, no al marcado UART. La consola de ZPLC y la conexión de la aplicación de ZPLC usan el puerto **USB**. Es `/dev/ttyACM<n>` en Linux, `/dev/cu.usbmodem<n>` en macOS y un puerto `COM<n>` en Windows.
+2. Mantenga pulsado BOOT, pulse y suelte RST, y suelte BOOT. La placa queda en modo de descarga.
+3. Escriba la imagen en la dirección `0x0`, la que el manifiesto indica para ella (`images[].flash.address` de `zplc-runtime-<versión>.manifest.json`). Con esptool v5:
 
 ```bash
-esptool --chip esp32s3 --port <puerto serie> write-flash 0x0 zplc-runtime-<versión>-esp32-s3-devkitc.bin
+esptool --chip esp32s3 --port <serial port> write-flash 0x0 zplc-runtime-<version>-esp32-s3-devkitc.bin
 ```
 
-Para una imagen que compiló usted mismo, el archivo es `build/zephyr/zephyr.bin`. La
-versión 4 de esptool escribe el mismo comando como `esptool.py ... write_flash`.
+Para una imagen compilada por usted, el archivo es `build/zephyr/zephyr.bin`. La versión 4 de esptool escribe el comando como `esptool.py ... write_flash`.
 
-4. Pulse RST para salir del modo de descarga y arrancar el programa que escribió. Si la
-   consola sigue en silencio, la placa sigue en modo de descarga: pulse RST otra vez.
+4. Pulse RST para salir del modo de descarga e iniciar el programa que desplegó. Si la consola sigue en silencio, la placa aún está en modo de descarga: pulse RST otra vez.
 
 ### El grabador en el navegador
 
-Si usa Chrome o Edge en una computadora, el grabador de abajo escribe la imagen del ESP32-S3
-desde el navegador, sobre Web Serial, con [ESP Web Tools](https://esphome.github.io/esp-web-tools/).
-Funciona solo en esos dos navegadores: Firefox y Safari no tienen Web Serial, y entonces la
-página muestra la línea de comandos de arriba como el camino. Usted hace cada paso. Descargue la
-imagen `zplc-runtime-<versión>-esp32-s3-devkitc.bin` y `SHA256SUMS` de la versión (el sitio no
-puede descargarla por usted: los archivos de las versiones de GitHub no llevan cabeceras de
-origen cruzado), ponga la placa en modo de descarga, elija el archivo, compare el SHA-256 que
-muestra la página con `SHA256SUMS` y pulse **Instalar**. El navegador le pide elegir el puerto
-serie, y el grabador escribe la imagen en la dirección `0x0`, la del manifiesto de la versión. La
-memoria flash no se borra salvo que usted marque la casilla del diálogo.
+En Chrome o Edge en un computador, el grabador de abajo escribe la imagen del ESP32-S3 por Web Serial con [ESP Web Tools](https://esphome.github.io/esp-web-tools/). Firefox y Safari no tienen Web Serial, y entonces la página muestra la línea de comandos de arriba. Usted hace cada paso:
+
+1. Descargue `zplc-runtime-<versión>-esp32-s3-devkitc.bin` y `SHA256SUMS` de la versión. El sitio no puede descargarlos por usted, porque los archivos de las versiones de GitHub no llevan encabezados de origen cruzado.
+2. Ponga la placa en modo de descarga y elija el archivo.
+3. Compare el SHA-256 que muestra la página con `SHA256SUMS` y pulse **Install**.
+4. Elija el puerto serie en el diálogo del navegador. El grabador escribe la imagen en la dirección `0x0` y no borra el flash salvo que marque la casilla del diálogo.
 
 import FirmwareFlasher from '@site/src/components/FirmwareFlasher';
 
 <FirmwareFlasher lang="es" />
 
 :::caution El grabador no ha escrito una placa
-Nadie ha registrado una grabación del ESP32-S3 con este grabador en una placa. La página y su
-manifiesto se prueban en el repositorio; la escritura sobre Web Serial no.
+Nadie ha registrado una grabación del ESP32-S3 con este grabador en una placa. La página y su manifiesto se prueban en el repositorio (anfitrión). La escritura por Web Serial no se prueba.
 :::
 
 ## 4. La línea de comandos para cada placa
 
-Desde el directorio de compilación de la imagen, o desde la raíz del espacio de trabajo
-de Zephyr con `--build-dir`, `west flash` escribe la imagen con el runner de la placa.
-Los runners que cada placa nombra en su definición de Zephyr son los de esta tabla; elija
-uno con `--runner <nombre>`.
+`west flash` escribe la imagen con el programador de la placa, desde el directorio de compilación o desde la raíz del espacio de trabajo con `--build-dir`. La tabla lista los programadores que cada placa nombra en su definición de Zephyr. Elija uno con `--runner <nombre>`.
 
-| Placa                  | Runners                                               | Un comando                                                             |
-| ---------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------- |
-| Raspberry Pi Pico      | `uf2`, `openocd`, `jlink`, `pyocd`, `blackmagicprobe` | `west flash --runner uf2` con la placa en modo de arranque             |
-| Waveshare RP2040-Zero  | `uf2`                                                 | `west flash --runner uf2` con la placa en modo de arranque             |
-| ESP32-S3-DevKitC-1     | `esp32`, `openocd`                                    | `west flash --runner esp32` con la placa en modo de descarga           |
+| Placa                  | Programadores                                         | Un comando                                                            |
+| ---------------------- | ----------------------------------------------------- | --------------------------------------------------------------------- |
+| Raspberry Pi Pico      | `uf2`, `openocd`, `jlink`, `pyocd`, `blackmagicprobe` | `west flash --runner uf2` con la placa en modo de arranque            |
+| Waveshare RP2040-Zero  | `uf2`                                                 | `west flash --runner uf2` con la placa en modo de arranque            |
+| ESP32-S3-DevKitC-1     | `esp32`, `openocd`                                    | `west flash --runner esp32` con la placa en modo de descarga          |
 | Arduino GIGA R1 (M7)   | `dfu-util`, `openocd`, `jlink`, `blackmagicprobe`     | `west flash --runner dfu-util` con la placa en su modo de arranque DFU |
 | Arduino Opta WiFi (M7) | `dfu-util`, `stm32cubeprogrammer`, `openocd`          | `west flash --runner dfu-util` con la placa en su modo de arranque DFU |
-| STM32 Nucleo-H743ZI    | `stm32cubeprogrammer`, `openocd`, `jlink`, `pyocd`    | `west flash --runner stm32cubeprogrammer` por el ST-LINK de la placa   |
-| STM32F746G Discovery   | `stm32cubeprogrammer`, `openocd`, `jlink`             | `west flash --runner stm32cubeprogrammer` por el ST-LINK de la placa   |
+| STM32 Nucleo-H743ZI    | `stm32cubeprogrammer`, `openocd`, `jlink`, `pyocd`    | `west flash --runner stm32cubeprogrammer` por el ST-LINK integrado    |
+| STM32F746G Discovery   | `stm32cubeprogrammer`, `openocd`, `jlink`             | `west flash --runner stm32cubeprogrammer` por el ST-LINK integrado    |
 
-Un runner necesita su propia herramienta en su computadora (`esptool`, `dfu-util`,
-OpenOCD, el programador de STM32). Si no se encuentra la herramienta o la placa, el
-mensaje de `west flash` lo dice. Si una placa no vuelve después de grabarla, use el
-procedimiento de recuperación de su perfil: [Límites de recuperación](../operations/recovery.md).
+Un programador necesita su propia herramienta en el computador: `esptool`, `dfu-util`, OpenOCD o el programador de STM32. Si no se encuentra la herramienta o la placa, el mensaje de `west flash` dice cuál. Si una placa no responde tras grabarla, siga su procedimiento de recuperación: [Límites de recuperación](../operations/recovery.md).
 
 ## Después de grabar
 
-Abra la consola serie de la placa y ejecute `zplc version`: imprime la versión, el
-commit, la placa y las opciones de compilación de la imagen. Deben ser las del archivo
-que escribió. Luego [conecte ZPLC](../tutorials/first-board.md#3-conecte-zplc).
+Abra la consola serie de la placa y ejecute `zplc version`. Imprime la versión, el commit, la placa y las opciones de compilación de la imagen, que deben coincidir con el archivo que escribió. Después [conecte ZPLC](../tutorials/first-board.md#3-conecte-zplc).
 
 ## Qué está verificado y qué no
 
-| Parte                                                                          | Verificado                                                         | Nivel       |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------ | ----------- |
-| El firmware de cada placa compila y cabe en su presupuesto                     | Compilación en integración continua                                | Compilación |
-| Los nombres, direcciones y sumas de verificación de las imágenes de la versión | Los comprueba el canal de versiones                                | Host        |
-| Los pasos del modo de arranque y los comandos del programador                  | Escritos a partir de las herramientas de cada placa, no ejecutados | Ninguno     |
-| Una grabación en una placa real                                                | Nadie la ha registrado                                             | Ninguno     |
+| Parte                                                         | Verificado                                           | Nivel                       |
+| ------------------------------------------------------------- | ---------------------------------------------------- | --------------------------- |
+| El firmware de cada placa compila y cabe en su presupuesto    | Compilación en integración continua                  | Compilación para el destino |
+| Los nombres, direcciones y sumas de las imágenes de la versión | La canalización de versiones los comprueba          | Anfitrión                   |
+| Los pasos del modo de arranque y los comandos de los programadores | Leídos de las herramientas de cada placa, no ejecutados | Ninguno                 |
+| Una grabación en una placa real                               | Nadie la ha registrado                               | Ninguno                     |

@@ -3,44 +3,28 @@ slug: /guides/modbus
 id: modbus
 title: Use Modbus RTU and TCP
 sidebar_label: Modbus RTU and TCP
-description: 'Make a controller answer a Modbus master, and read or write another Modbus device from the program, with the contract that exists today.'
+description: 'Make a controller answer a Modbus master, and read or write another Modbus device from the program, with the evidence level of each part.'
 tags: [how-to, modbus, communication]
 ---
 
 # Use Modbus RTU and TCP
 
-ZPLC uses Modbus in two roles. As a **server**, the controller answers a master (a
-SCADA system, an HMI, a test tool) and exposes variables of your program. As a
-**client**, your program asks another device for registers with function blocks.
-This page covers both with the contract that is documented today.
+ZPLC uses Modbus in two roles. As a **server**, the controller answers a master (a SCADA system, an HMI, a test tool) and exposes variables of your program. As a **client**, your program asks another device for registers with function blocks. This page covers both and says, for each part, what was exercised.
 
-:::warning Status of this page
-Verified on the host and on `native_sim` only: the server framing and mapping, the
-function-block handlers against stand-ins, and the Modbus TCP client against a server
-written for the test on a loopback socket. No Modbus exchange with a real device, a
-serial wire or a third-party master has been recorded, and the RTU client was checked
-at its interface parameters only.
+:::warning Evidence level: host and `native_sim`
+The server framing and mapping, the function-block handlers against stand-ins, and the Modbus TCP client against a server written for the test on a loopback socket were exercised on the host and on `native_sim`. No Modbus exchange with a real device, a serial wire or a third-party master is recorded, and the RTU client was checked at its interface parameters only. Bench and manual evidence is still open.
 :::
 
 ## What you need
 
-- A board with the interface you want: Modbus TCP needs a network interface
-  (Wi-Fi or Ethernet), and Modbus RTU needs a serial interface that the board's
-  profile provides. [Hardware support](../reference/capabilities-evidence.md) lists
-  the boards and their network class.
-- A project, in ZPLC or by hand. The ZPLC simulator starts the native runtime
-  without the communication blocks, so a Modbus block answers `STATUS` 3 there: the
-  program is written and checked in ZPLC, and the exchange is possible on a board.
-  The native runtime can also run the Modbus TCP client against a server on the
-  loopback interface ([In simulation](../runtime/communication-function-blocks.md#in-simulation));
-  ZPLC does not start those endpoints yet.
+- A board with the interface you want. Modbus TCP needs a network interface (Wi-Fi or Ethernet), and Modbus RTU needs a serial interface that the board's profile provides. [Boards](../reference/boards.md) lists the network class of each one.
+- A project. In ZPLC's simulator you can write and check the program, and the application and `zplc-cli test` also start a Modbus TCP server on the loopback interface, so a client block can make a request ([In simulation](../runtime/communication-function-blocks.md#in-simulation)). Real Modbus traffic needs a board.
 
 ## Make the controller a server
 
 ### 1. Bind variables to Modbus addresses
 
-Mark a variable of the program with `{modbus:<address>}` after its type. The
-master reads and writes the variable at that address.
+Put `{modbus:<address>}` after the type of a variable. The master reads and writes the variable at that address.
 
 ```st runnable expect="Pressure=1.5 PumpRun=TRUE" scans=2 scan_ms=10
 PROGRAM Plant
@@ -56,9 +40,7 @@ Pressure := 1.5;
 END_PROGRAM
 ```
 
-A variable of 32 bits (`REAL`, `DINT`, `UDINT`, `DWORD`) occupies two consecutive
-registers; the others occupy one. The number of the tag says the area, in the notation
-of the Modbus world:
+A 32-bit variable (`REAL`, `DINT`, `UDINT`, `DWORD`) takes two consecutive registers, and the others take one. The number of the tag says the area, in the notation of the Modbus world:
 
 | `N`                            | Area             | Address on the wire | A master can                              |
 | ------------------------------ | ---------------- | ------------------- | ----------------------------------------- |
@@ -68,14 +50,9 @@ of the Modbus world:
 | any other number, a `BOOL`     | Coil             | `N`                 | read it (function 1) and write it (5, 15) |
 | any other number, another type | Holding register | `N`                 | read it (function 3) and write it (6, 16) |
 
-In the example, `Pressure` is the holding register at address 0 and `PumpRun` is the
-coil at address 1. Keep the ranges of two variables of the same area apart.
+In the example, `Pressure` is the holding register at address 0 and `PumpRun` is the coil at address 1. Keep the ranges of two variables of the same area apart.
 
-In ZPLC you can make the same bindings without editing the source: the
-**Communication** section of **Project Settings** lists them as **Communication
-Tags**, and each one is a `communication.bindings` entry of `zplc.json`. A tag has an
-area and an address on the wire, and the build writes the number of the table: a holding
-register at address 5 is `{modbus:40006}`.
+You can make the same bindings without editing the source. The **Communication** section of **Project Settings** lists them as **Communication Tags**, and each one is a `communication.bindings` entry of `zplc.json`. A tag has an area and an address on the wire, and the build writes the number of the table: a holding register at address 5 is `{modbus:40006}`.
 
 ### 2. Configure the server in the project
 
@@ -100,15 +77,11 @@ register at address 5 is `{modbus:40006}`.
 }
 ```
 
-The documentation check merges this fragment into a project and builds it, so it
-is a configuration that ZPLC accepts. `unitId` is the Modbus unit identifier, 1
-to 247. Turn on only the interfaces you use.
+The documentation check merges this fragment into a project and builds it, so ZPLC accepts it. `unitId` is the Modbus unit identifier, 1 to 247. Turn on only the interfaces you use.
 
 ### 3. Put the settings on the board
 
-Provisioning a board is a human action in ZPLC: it sends the settings of the
-project to the device over the serial link. These are the commands it sends for
-the fragment above, which you can also type in the device shell:
+Provisioning a board is a human action: ZPLC sends the settings of the project to the device over the serial link. These are the commands it sends for the fragment above, and you can type them in the device shell:
 
 ```bash
 zplc config set modbus_id 1
@@ -117,35 +90,17 @@ zplc config set modbus_tcp_port 502
 zplc config save
 ```
 
-`zplc config save` writes the settings to the device's store; a board whose store
-cannot be mounted reports an error instead of `OK`
-([Connectivity](../runtime/connectivity.md#saved-settings)). For RTU the keys are
-`modbus_rtu_enabled`, `modbus_rtu_baud` and `modbus_rtu_parity`, where the parity
-is `0` for none, `1` for even and `2` for odd.
+`zplc config save` writes the settings to the device's store. A board whose store cannot be mounted reports an error instead of `OK` ([Connectivity](../runtime/connectivity.md#saved-settings)). For RTU the keys are `modbus_rtu_enabled`, `modbus_rtu_baud` and `modbus_rtu_parity`, where the parity is `0` for none, `1` for even and `2` for odd.
 
 ### 4. What a master can and cannot do
 
-A write from a master goes through the force-aware interface and the exchange of
-the runtime: a variable that you forced keeps its forced value, and a write is
-applied by the next scan. No Modbus message can start or stop the program, set or
-clear a force, or download a program
-([What a message from the network can do](../runtime/connectivity.md#what-a-message-from-the-network-can-do)).
+A write from a master goes through the force-aware interface and the exchange of the runtime. A variable you forced keeps its forced value, and the next scan applies the write. No Modbus message can start or stop the program, set or clear a force, or download a program ([What a message from the network can do](../runtime/connectivity.md#what-a-message-from-the-network-can-do)).
 
-The four areas are four address spaces: a coil, a discrete input, an input register
-and a holding register with the same number are four different variables, and a
-variable is served in one area only. A request for an address that no variable has in
-the area it asks for is answered with exception 2 (illegal data address), even when
-another area has a variable at that number. Discrete inputs and input registers can be
-read and not written. Every variable of WORK and RETAIN can be bound, and the server
-serves the whole of the wire range, up to address 65535, for the addresses that have a
-variable ([Modbus areas and addresses](../runtime/connectivity.md#modbus-areas-and-addresses)).
+The four areas are four address spaces, and a variable is served in one area only. A request for an address that no variable has in the area it asks for gets exception 2 (illegal data address). Discrete inputs and input registers can be read and not written. Every variable of WORK and RETAIN can be bound, and the server serves the whole wire range up to address 65535 for the addresses that have a variable ([Modbus areas and addresses](../runtime/connectivity.md#modbus-areas-and-addresses)).
 
 ## Read or write another device (client)
 
-Use the blocks `MB_READ_HREG`, `MB_WRITE_HREG`, `MB_READ_COIL` and `MB_WRITE_COIL`.
-Each takes the transport (`PROTO` 0 for RTU, 1 for TCP), the unit identifier, the
-address, the count and, for TCP, the host and port; and each reports `BUSY`, `DONE`,
-`ERROR` and a `STATUS` code.
+Use `MB_READ_HREG`, `MB_WRITE_HREG`, `MB_READ_COIL` and `MB_WRITE_COIL`. Each takes the transport (`PROTO` 0 for RTU, 1 for TCP), the unit identifier, the address, the count and, for TCP, the host and port. Each reports `BUSY`, `DONE`, `ERROR` and a `STATUS` code.
 
 ```st runnable expect="Failed=TRUE Code=3" scans=3 scan_ms=10
 PROGRAM Poll
@@ -161,32 +116,17 @@ Code := Link.STATUS;
 END_PROGRAM
 ```
 
-In the ZPLC simulator the runtime has no handler for the block, so it ends with
-`ERROR` TRUE and `STATUS` 3. That proves that the block compiles, runs and reports a
-status; the exchange with a device is possible on a board. Read `STATUS` after
-`ERROR`: 0 is OK, 2 a timeout, 4 not connected, 5 every request slot in use, 6 invalid
-address, 8 protocol error, 10 not available, and the rest are in the
-[status codes](../runtime/communication-function-blocks.md#status-codes).
+The documentation check runs this program on the bare native runtime, which has no handler for the block, so it ends with `ERROR` TRUE and `STATUS` 3. That shows that the block compiles, runs and reports a status. In a ZPLC session the same request reaches the loopback Modbus server, because the session turns the communication blocks on. Read `STATUS` after `ERROR`: 0 is OK, 2 a timeout, 4 not connected, 5 every request slot in use, 6 invalid address, 8 protocol error and 10 not available. The rest are in the [status codes](../runtime/communication-function-blocks.md#status-codes).
 
-The block follows the one handshake of the twelve communication blocks
-([Communication function blocks](../runtime/communication-function-blocks.md#the-handshake)):
+The block follows the one handshake of the twelve communication blocks ([Communication function blocks](../runtime/communication-function-blocks.md#the-handshake)):
 
-- A rising edge of `EN` makes one request. While `EN` stays TRUE after the result, the
-  result is held and nothing is repeated; let `EN` fall for one scan to ask again.
-- A request in flight completes even if `EN` falls, and a rising edge while `BUSY` is
-  TRUE starts nothing.
-- `BUSY`, `DONE`, `ERROR` and `STATUS` are written by the runtime only. Call the block
-  on every scan, because it advances only when it is called.
-- A request runs outside the scan, so a block never waits for the network inside it.
-  The client waits at most twice the configured timeout, and the block reports `ERROR`
-  with `STATUS` 2 at the latest `(2 x timeout + 100 ms) x 8` after the request: 8.8 s
-  with the default timeout of 500 ms.
-- `COUNT` is 1: a request for more registers or coils is refused with `STATUS` 6.
+- A rising edge of `EN` makes one request. While `EN` stays TRUE after the result, the result is held and nothing repeats. Let `EN` fall for one scan to ask again.
+- A request in flight completes even if `EN` falls, and a rising edge while `BUSY` is TRUE starts nothing.
+- The runtime alone writes `BUSY`, `DONE`, `ERROR` and `STATUS`. Call the block on every scan, because it advances only when it is called.
+- A request runs outside the scan. The client waits at most twice the configured timeout, and the block reports `ERROR` with `STATUS` 2 at the latest `(2 x timeout + 100 ms) x 8` after the request: 8.8 s with the default timeout of 500 ms.
+- `COUNT` is 1. A request for more registers or coils is refused with `STATUS` 6.
 
-On the native runtime started with `ZPLC_NATIVE_COMM=1`, with a Modbus TCP server on the
-loopback interface, the same program makes the request; a Modbus RTU request there, with
-no serial device, answers `STATUS` 10. ZPLC does not start that configuration or the
-endpoints yet.
+A Modbus RTU request in simulation has no serial device and answers `STATUS` 10.
 
 ## What is verified, and what is not
 

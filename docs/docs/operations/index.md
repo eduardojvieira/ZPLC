@@ -3,46 +3,45 @@ slug: /operations
 id: index
 title: Operations
 sidebar_label: Operations
-description: Observe, recover, and change ZPLC systems without crossing evidence or authority boundaries.
+description: Observe, recover and change a ZPLC system without crossing an evidence or authority boundary.
 tags: [operations]
 ---
 
 # Operations
 
-ZPLC operations start with safe work and clear evidence. Do not infer physical
-state from a host result or turn a deploy into a firmware recovery procedure.
+This page is the checklist for working on a ZPLC system that is already running: what to look at first, what to keep, and which actions stay with a person. Do not infer the physical state of a machine from a host result, and do not treat a program deploy as a firmware recovery.
 
-## Routine sequence
+## A routine sequence
 
-1. Inspect runtime status, selected profile, diagnostics, and evidence source.
-2. Preserve the artifact hash and trace before changing anything.
-3. Keep physical actions under explicit human authority and the site procedure.
-4. Use [Recovery Boundaries](./recovery.md) when a connection, program, or firmware path fails.
+1. Inspect the runtime status, the selected board profile, the diagnostics and where the evidence comes from.
+2. Keep the hash of the artifact and the trace before you change anything.
+3. Leave every physical action to a person, under the site's safe-work procedure.
+4. When a connection, a program or the firmware fails, go to [Recovery boundaries](./recovery.md).
 
-## What ZPLC can show
+## What ZPLC shows you
 
-- Compiler diagnostics, test results, host simulation trace, and a connected runtime’s reported status.
-- The selected board profile and its evidence tier.
-- A deploy confirmation that identifies artifact and runtime compatibility.
+- Compiler diagnostics, test results, the trace of a host simulation and the status a connected runtime reports.
+- The selected board profile and its evidence level.
+- A deploy confirmation that identifies the artifact and whether the runtime is compatible with it.
+
+The device shell shows the same status from a terminal: see [Use the device shell](./shell.md).
 
 ## Before a physical action
 
-- Confirm the machine is under the site’s approved safe-work procedure.
-- Confirm the selected board, profile, runtime identity, ABI, and artifact hash.
-- Keep flash, deploy, force, RUN/STOP, and recovery as separate human decisions.
+- Confirm the machine is under the site's approved safe-work procedure.
+- Confirm the selected board, the profile, the runtime identity, the ABI and the artifact hash.
+- Treat flash, deploy, force, RUN, STOP and recovery as separate human decisions.
 
-## What still needs target/HIL evidence
+## What still needs target or HIL evidence
 
-- Electrical output state, timing/WCET, physical watchdog behavior, power-cut persistence, runner recovery, and production qualification.
-- Any assertion that a board profile works beyond its recorded evidence tier.
+- The electrical state of an output, timing and WCET, the physical watchdog, persistence across a power cut, runner recovery and production qualification.
+- Any statement that a board profile does more than its recorded evidence level.
 
-See [Hardware support](../reference/capabilities-evidence.md) for the tiers and
-[Safety and limitations](../safety-and-limitations.md) for what ZPLC is not.
+[Hardware support](../reference/capabilities-evidence.md) defines the levels, and [Safety and limitations](../safety-and-limitations.md) says what ZPLC is not.
 
-## Escalation record
+## When you escalate
 
-- Preserve diagnostics, trace, artifact identity, selected profile, and operator decision.
-- Do not copy credentials or raw sensitive serial material into tickets or prompts.
+- Attach the diagnostics, the trace, the artifact identity, the selected profile and the decision of the operator.
+- Leave credentials and raw sensitive serial output out of tickets and prompts.
 
-For low-level diagnostic reference, see [the ZPLC Shell](./shell.md). Raw serial,
-flash, force, RUN/STOP, and recovery are not AI or MCP operations.
+Raw serial, flash, force, RUN, STOP and recovery are never AI or MCP operations.

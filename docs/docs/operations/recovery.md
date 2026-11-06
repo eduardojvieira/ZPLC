@@ -3,48 +3,39 @@ slug: /operations/recovery
 id: recovery
 title: Recovery Boundaries
 sidebar_label: Recovery
-description: Recover a ZPLC session without confusing host evidence with target or HIL proof.
+description: Recover a ZPLC session layer by layer, without mistaking host evidence for target or HIL proof.
 tags: [operations, recovery]
 ---
 
 # Recovery Boundaries
 
-Recover the smallest layer first: return control logic to a safe state, inspect
-the connection and artifact, then deliberately choose program or firmware
-recovery. ZPLC does not fabricate a universal hardware recovery procedure.
+When something fails, recover the smallest layer first. Return the control logic to a safe state, inspect the connection and the artifact, and only then choose a program recovery or a firmware recovery. ZPLC has no universal hardware recovery procedure, and this page does not invent one.
 
-## Quick path
+## The short path
 
-1. Stop commissioning and place the machine under the site’s approved safe-work procedure.
-2. Reconnect, inspect the runtime identity and status, and save the diagnostic evidence.
-3. Recompile and validate the intended `.zplc` artifact before a human confirms deploy.
-4. Use the exact board profile’s Zephyr recovery instructions for firmware work.
+1. Stop commissioning and put the machine under the site's approved safe-work procedure.
+2. Reconnect, inspect the runtime identity and status, and save the diagnostics.
+3. Recompile and validate the `.zplc` artifact you intend to run. A person confirms the deploy.
+4. For firmware work, follow the Zephyr recovery steps of the exact board profile.
 
-## Recovery decision
+## Pick the recovery
 
-| Situation                 | Safe action                                                              | Evidence limit                                                       |
-| ------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------- |
-| Runtime or program fault  | Keep outputs in the runtime safe state; inspect status and trace.        | Host trace is not electrical proof.                                  |
-| Lost connection           | Reconnect and verify board/profile/ABI before any deploy.                | A serial identity is not HIL qualification.                          |
-| Program replacement       | Compile, test, simulate, then use the human-confirmed deploy flow.       | Deploy changes control logic; it is not firmware flash.              |
-| Firmware failure          | Stop and follow the exact board/runner recovery procedure.               | Current profiles have no HIL evidence references.                    |
-| Persisted program concern | Reboot only under the site procedure; inspect restored state before RUN. | Power-cut and target persistence claims require target/HIL evidence. |
+| Situation                 | Safe action                                                               | Evidence limit                                                       |
+| ------------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Runtime or program fault  | Keep the outputs in the runtime safe state, then inspect status and trace. | A host trace is not electrical proof.                                |
+| Lost connection           | Reconnect and verify board, profile and ABI before any deploy.            | A serial identity is not HIL qualification.                          |
+| Program replacement       | Compile, test and simulate, then use the deploy dialog and confirm it.    | A deploy changes control logic. It is not a firmware flash.          |
+| Firmware failure          | Stop, and follow the exact board and runner recovery procedure.           | The catalogued profiles have no HIL evidence references.             |
+| Persisted program concern | Reboot only under the site procedure, and inspect the restored state before RUN. | Power-cut and target persistence need target or HIL evidence. |
 
 ## Safe state and restart
 
-The runtime’s safe-state and restore behavior are code and host-test evidence.
-Before energizing machinery after a fault or restart, verify the actual output
-state on the exact device under the commissioning procedure. A human must
-authorize flash, deploy, force, RUN, STOP, and recovery; AI and MCP do not
-provide those controls.
+The safe-state and restore behaviour of the runtime is backed by code and host tests. Before you energize machinery after a fault or a restart, check the real output state on the exact device, under the commissioning procedure. A person must authorize flash, deploy, force, RUN, STOP and recovery. AI and MCP have no controls for them.
 
-## What to retain
+## What to keep
 
-Keep the compile hash, diagnostics, trace, runtime identity, selected profile,
-and the person’s deploy confirmation with the incident record. Avoid placing
-credentials or raw sensitive serial output in support tickets or AI prompts.
+Keep the compile hash, the diagnostics, the trace, the runtime identity, the selected profile and the person's deploy confirmation with the incident record. Leave credentials and raw sensitive serial output out of support tickets and AI prompts.
 
-## Next step
+## Next
 
-Read [the deployment boundary](../ide/deployment.md) and the board’s documented
-Zephyr runner procedure before changing firmware.
+Read [Deployment](../ide/deployment.md) and the runner procedure of the board in [Flash the firmware](../guides/flash-firmware.md) before you change firmware.
