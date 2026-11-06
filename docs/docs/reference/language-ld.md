@@ -46,7 +46,7 @@ A rung can hold the IEC functions below as boxes with EN and ENO. The left wire 
 
 - **EN and ENO.** A comparison is a condition in series: power passes through it when the power that reaches it is on and the comparison holds. Every other function runs while EN is on, writes its result to the output and passes the power on; while EN is off, it does not run, its output keeps its value and ENO is off. No error is detected, so ENO does not report one.
 - **Operands.** Each operand is a declared variable, chosen from the list of declared symbols, or a literal that you type. The output is a declared variable that is not an input.
-- **Division by zero.** `DIV` and `MOD` with a divisor of zero are not detected by the box: the VM of the ZPLC runtime faults, the scan ends in a fault and the output is not written. This holds for integers and for `REAL` with `0.0` or `-0.0`.
+- **Division by zero.** `DIV` and `MOD` with a divisor of zero are not detected by the box: the VM of the ZPLC runtime faults, the scan ends in a fault and the output is not written. This holds for integers and for `REAL` with `0.0` or `-0.0`. The fault also clears the `%Q` output image, so a mapped output reads 0 afterwards.
 - **Overflow.** An integer result that does not fit its type wraps around; the box does not report it.
 - **Online.** While you monitor, the box shows the value of each variable operand and of the output, and its two wires show EN and ENO.
 

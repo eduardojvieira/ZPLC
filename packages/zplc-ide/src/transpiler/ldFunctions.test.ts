@@ -218,6 +218,23 @@ describe('LNG-028 LNG-002 LNG-003 the function box: every fault names its rung a
     ]);
   });
 
+  it('LNG-028 a set/reset pair plus a box is refused at the box, which the message names (LNG-003)', () => {
+    const result = transpileLDToST(
+      rungsFile({ ...declared, local: [variable('Flag', 'BOOL')] }, [
+        { cols: 1, grid: [[{ id: 's1', type: 'coil_set', variable: 'Flag' }]] },
+        { cols: 1, grid: [[{ id: 'r1', type: 'coil_reset', variable: 'Flag' }]] },
+        { cols: 1, grid: [[box('f1', 'MOVE', ['Start'], 'Flag')]] },
+      ]),
+    );
+    expect(result.success).toBe(false);
+    expect(result.diagnostics).toEqual([
+      {
+        message: "Multiple writers target 'FLAG': a coil (rung:r1/cell:0,0) and a function box (rung:r3/cell:0,0)",
+        element: 'rung:r3/cell:0,0',
+      },
+    ]);
+  });
+
   it('LNG-028 two plain coils on one variable stay refused', () => {
     const result = transpileLDToST(
       rungsFile(declared, [

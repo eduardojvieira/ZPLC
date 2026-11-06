@@ -14,7 +14,7 @@ Un bloque de comparación se comporta como un contacto. Está en serie con los d
 
 ```ld-figure
 src: reading/tank-alarm.ld.json
-caption: La caja GT del peldaño 3 es una condición en serie con la bobina
+caption: La caja GT del peldaño 4 es una condición en serie con la bobina
 ```
 
 ## Pruébelo

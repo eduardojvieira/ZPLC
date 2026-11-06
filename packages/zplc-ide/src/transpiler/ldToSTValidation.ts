@@ -616,7 +616,9 @@ export function validateLDForTranspilation(input: unknown): Problems {
     // the second writer is the one that is wrong: the first was there before it
     if (writerTypes.length < 2 || allowedSetReset || onlyBoxes) continue;
     const named = coil && box ? `: a coil (${String(coil.element)}) and a function box (${String(box.element)})` : '';
-    errors.push(`Multiple writers target '${destination}'${named}`, writerTypes[1]!.element);
+    // a coil and a box: report at the later of the two the message names, so Studio selects an element it mentions (LNG-003)
+    const anchor = coil && box ? (writerTypes.indexOf(box) > writerTypes.indexOf(coil) ? box : coil) : writerTypes[1]!;
+    errors.push(`Multiple writers target '${destination}'${named}`, anchor.element);
   }
   return errors;
 }

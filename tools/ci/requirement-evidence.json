@@ -1020,6 +1020,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/diagnosticElement.test.ts","test":"LNG-003 the element that came with the diagnostic wins over the one the open file gives"},
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"LNG-003 carries the element a diagnostic is about, and only an element"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 LNG-002 LNG-003 the function box: every fault names its rung and cell"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 a set/reset pair plus a box is refused at the box, which the message names (LNG-003)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"25 Problems select the block of a diagram","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"26 Problems select the cell of a rung","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"27 Problems select the step of an action","partial":true}
@@ -1317,6 +1318,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 a coil and a box on one variable are refused, naming both positions"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 a comparison is a term of the power: ENO is the power that reached it AND the comparison"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 a negative literal is written in parentheses, and a TIME literal stays as it is"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 a set/reset pair plus a box is refused at the box, which the message names (LNG-003)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 any other function runs only while the power reaches it, and passes that power on (ENO = EN)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 each comparison has its own operator"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/ldFunctions.test.ts","test":"LNG-028 every function of the set has its statement"},

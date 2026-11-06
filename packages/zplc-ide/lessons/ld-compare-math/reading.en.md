@@ -14,7 +14,7 @@ A comparison box behaves like a contact. It sits in series with the other elemen
 
 ```ld-figure
 src: reading/tank-alarm.ld.json
-caption: The GT box of rung 3 is a condition in series with the coil
+caption: The GT box of rung 4 is a condition in series with the coil
 ```
 
 ## Try it

@@ -435,7 +435,8 @@ const LD_BOXES: Record<Lang, { heading: string; intro: string; head: string[]; r
       '**Operands.** Each operand is a declared variable, chosen from the list of declared symbols, or a literal that you type. The ' +
         'output is a declared variable that is not an input.',
       '**Division by zero.** `DIV` and `MOD` with a divisor of zero are not detected by the box: the VM of the ZPLC runtime faults, the ' +
-        'scan ends in a fault and the output is not written. This holds for integers and for `REAL` with `0.0` or `-0.0`.',
+        'scan ends in a fault and the output is not written. This holds for integers and for `REAL` with `0.0` or `-0.0`. ' +
+        'The fault also clears the `%Q` output image, so a mapped output reads 0 afterwards.',
       '**Overflow.** An integer result that does not fit its type wraps around; the box does not report it.',
       '**Online.** While you monitor, the box shows the value of each variable operand and of the output, and its two wires show ' +
         'EN and ENO.',
@@ -467,7 +468,8 @@ const LD_BOXES: Record<Lang, { heading: string; intro: string; head: string[]; r
       '**Operandos.** Cada operando es una variable declarada, elegida de la lista de símbolos declarados, o un literal que usted ' +
         'escribe. La salida es una variable declarada que no es una entrada.',
       '**División por cero.** La caja no detecta `DIV` ni `MOD` con divisor cero: la VM del entorno de ejecución de ZPLC entra en falla, ' +
-        'el ciclo termina en falla y la salida no se escribe. Esto vale para enteros y para `REAL` con `0.0` o `-0.0`.',
+        'el ciclo termina en falla y la salida no se escribe. Esto vale para enteros y para `REAL` con `0.0` o `-0.0`. ' +
+        'La falla también borra la imagen de salidas `%Q`, así que una salida asignada lee 0 después.',
       '**Desbordamiento.** Un resultado entero que no cabe en su tipo se desborda en círculo; la caja no lo informa.',
       '**En línea.** Mientras se monitorea, la caja muestra el valor de cada operando que es una variable y de la salida, y sus dos ' +
         'cables muestran EN y ENO.',

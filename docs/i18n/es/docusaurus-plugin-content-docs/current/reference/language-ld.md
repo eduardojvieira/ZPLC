@@ -46,7 +46,7 @@ Un peldaño puede contener como cajas con EN y ENO las funciones IEC siguientes.
 
 - **EN y ENO.** Una comparación es una condición en serie: la energía pasa por ella cuando la energía que llega está activa y la comparación se cumple. Cualquier otra función se ejecuta mientras EN está activo, escribe su resultado en la salida y deja pasar la energía; mientras EN está inactivo, no se ejecuta, su salida conserva el valor y ENO está inactivo. No se detecta ningún error, por eso ENO no informa de ninguno.
 - **Operandos.** Cada operando es una variable declarada, elegida de la lista de símbolos declarados, o un literal que usted escribe. La salida es una variable declarada que no es una entrada.
-- **División por cero.** La caja no detecta `DIV` ni `MOD` con divisor cero: la VM del entorno de ejecución de ZPLC entra en falla, el ciclo termina en falla y la salida no se escribe. Esto vale para enteros y para `REAL` con `0.0` o `-0.0`.
+- **División por cero.** La caja no detecta `DIV` ni `MOD` con divisor cero: la VM del entorno de ejecución de ZPLC entra en falla, el ciclo termina en falla y la salida no se escribe. Esto vale para enteros y para `REAL` con `0.0` o `-0.0`. La falla también borra la imagen de salidas `%Q`, así que una salida asignada lee 0 después.
 - **Desbordamiento.** Un resultado entero que no cabe en su tipo se desborda en círculo; la caja no lo informa.
 - **En línea.** Mientras se monitorea, la caja muestra el valor de cada operando que es una variable y de la salida, y sus dos cables muestran EN y ENO.
 
