@@ -5,15 +5,9 @@
   "order": 85,
   "module": 5,
   "level": "intermediate",
-  "prerequisites": [
-    "ld-analog-scaling"
-  ],
-  "languages": [
-    "LD"
-  ],
-  "tracks": [
-    "simulation"
-  ],
+  "prerequisites": ["ld-analog-scaling"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
   "unsupported": {
     "hardware": {
       "reason": {
