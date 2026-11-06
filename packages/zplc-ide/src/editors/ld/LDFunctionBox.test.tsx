@@ -57,3 +57,23 @@ describe('LNG-028 LNG-006 a function box in a read-only rung', () => {
     expect(renderToStaticMarkup(<LDRungGrid rung={loaded.model.rungs[0]} readOnly />)).toContain('data-ld-function="GT"');
   });
 });
+
+describe('LNG-028 LNG-006 live values in a function box', () => {
+  const rung = rungOf(box('f1', 'ADD', ['Level', '3'], 'Sum'));
+  const at = (pins: ElementState['pins']) =>
+    new Map([['rung:' + rung.id + '/cell:0,0', { power: true, powerOut: true, pins, pinFlags: {} }]]);
+
+  it('shows the value of a variable operand and of the output in place of its name, and a literal as typed', () => {
+    const markup = renderToStaticMarkup(<LDRungGrid rung={rung} readOnly elementStates={at({ IN1: 12, OUT: 15 })} />);
+    expect(markup).toMatch(/data-ld-operand="IN1"[^>]*><title>Level = 12<\/title>12</);
+    expect(markup).toMatch(/data-ld-operand="IN2"[^>]*>(<title>[^<]*<\/title>)?3</);
+    expect(markup).toMatch(/data-ld-output=""[^>]*><title>Sum = 15<\/title>15</);
+  });
+
+  it('shows a value that was not read as a question mark, never as zero, and the names when not monitoring', () => {
+    expect(renderToStaticMarkup(<LDRungGrid rung={rung} readOnly elementStates={at({ IN1: undefined })} />)).toMatch(
+      /Level = \?<\/title>\?</,
+    );
+    expect(renderToStaticMarkup(<LDRungGrid rung={rung} readOnly />)).toMatch(/data-ld-operand="IN1"[^>]*>(<title>[^<]*<\/title>)?Level</);
+  });
+});

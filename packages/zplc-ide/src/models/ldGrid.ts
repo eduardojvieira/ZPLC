@@ -126,8 +126,9 @@ export function getElementDescription(type: LDElementType): string {
     case 'coil_n':
       return t('ld.desc.coil_n');
     case 'function_block':
-    case 'function':
       return t('ld.desc.function_block');
+    case 'function':
+      return t('ld.desc.function');
     default:
       return t('ld.desc.unknown');
   }

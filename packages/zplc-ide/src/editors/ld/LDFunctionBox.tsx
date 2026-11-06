@@ -9,6 +9,7 @@
 
 import { ldFunctionLabel, ldFunctionSpec } from '../../models/ldSupport';
 import type { LDElement as LDElementModel } from '../../models/ld';
+import type { Reading } from '../../monitoring/elementStates';
 import { SIGNAL_PAINT } from '../../theme/signalTone';
 import { CELL_HEIGHT, CELL_WIDTH, COLORS, WIRE_Y } from './LDElement';
 
@@ -30,10 +31,16 @@ export interface LDFunctionBoxProps {
   energized?: boolean;
   /** ENO: power leaves the box. */
   energizedOut?: boolean;
+  /** Online, the value each variable operand and the output hold, by pin (IN1, IN2, …, OUT): they replace the names (LNG-006). */
+  pins?: Readonly<Record<string, Reading>>;
   onClick?: () => void;
   onDragStart?: (element: LDElementModel) => void;
   draggable?: boolean;
 }
+
+/** A value read online as the box shows it; one that was not read is a question mark. */
+const valueText = (value: Reading): string =>
+  value === undefined ? '?' : typeof value === 'boolean' ? (value ? 'TRUE' : 'FALSE') : String(value);
 
 /** An operand or output as it fits the box. */
 const clip = (text: string): string => (text.length > MAX_NAME ? `${text.slice(0, MAX_NAME - 1)}…` : text);
@@ -50,12 +57,14 @@ export default function LDFunctionBox({
   selected,
   energized,
   energizedOut,
+  pins: live,
   onClick,
   onDragStart,
   draggable = false,
 }: LDFunctionBoxProps) {
   const pins = ldFunctionSpec(element.functionName)?.pins ?? [];
   const operands = element.operands ?? [];
+  const pin = (index: number) => pins[index] ?? `IN${index + 1}`;
   const stroke = selected ? COLORS.selected : COLORS.fb;
   const left = wireOf(energized);
   const right = wireOf(energizedOut);
@@ -100,16 +109,16 @@ export default function LDFunctionBox({
       <line x1={BOX_X + 2} y1={BOX_Y + 15} x2={BOX_X + BOX_WIDTH - 2} y2={BOX_Y + 15} stroke={COLORS.wire} strokeWidth={0.5} />
       {operands.map((operand, index) => (
         <text
-          key={`${pins[index] ?? index}`}
+          key={pin(index)}
           x={BOX_X + 4}
           y={BOX_Y + 26 + index * 10}
           fill={operand === '' ? COLORS.wire : COLORS.textDim}
           fontSize={8}
           fontFamily="monospace"
-          data-ld-operand={pins[index] ?? `IN${index + 1}`}
+          data-ld-operand={pin(index)}
         >
-          <title>{operand}</title>
-          {operand === '' ? '—' : clip(operand)}
+          <title>{live && pin(index) in live ? `${operand} = ${valueText(live[pin(index)])}` : operand}</title>
+          {operand === '' ? '—' : live && pin(index) in live ? clip(valueText(live[pin(index)])) : clip(operand)}
         </text>
       ))}
       {element.output ? (
@@ -122,8 +131,8 @@ export default function LDFunctionBox({
           textAnchor="end"
           data-ld-output=""
         >
-          <title>{element.output}</title>
-          {clip(element.output)}
+          <title>{live && 'OUT' in live ? `${element.output} = ${valueText(live.OUT)}` : element.output}</title>
+          {live && 'OUT' in live ? clip(valueText(live.OUT)) : clip(element.output)}
         </text>
       ) : null}
       {/* foreignObject overlay for selection, keyboard and drag, as the other elements have */}

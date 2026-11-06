@@ -481,6 +481,7 @@ export default function LDRungGrid({
                         selected={cell.element.id === selectedElementId}
                         energized={isElementEnergized(cell.element, rowIdx, colIdx)}
                         energizedOut={isElementEnergizedOut(rowIdx, colIdx)}
+                        pins={elementStates?.get(cellElement(rung.id, rowIdx, colIdx))?.pins}
                         onClick={readOnly ? undefined : () => handleElementClick(cell.element!)}
                         draggable={!readOnly}
                         onDragStart={handleElementDragStart}

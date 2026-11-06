@@ -88,5 +88,4 @@ export function ldPaletteFunctionBlocks(projectBlocks: readonly ProjectBlock[] =
 }
 
 /** How an element is named to someone who cannot see it: the label of its button and what the keyboard editor says (LNG-012). */
-// A `function` element has no catalogue key of its own yet, so it reads as a function block until the catalogue names it
-export const ldElementKind = (type: LDElementType): string => t(`ld.kind.${type === 'function' ? 'function_block' : type}`);
+export const ldElementKind = (type: LDElementType): string => t(`ld.kind.${type}`);

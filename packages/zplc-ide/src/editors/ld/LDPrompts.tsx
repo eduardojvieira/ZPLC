@@ -13,7 +13,7 @@ import { freeTextOf, type PickerItem } from '../picker';
 import { bindingChoices, type LDInsert } from './keyboard';
 import { paletteItems } from './palette';
 
-export type LDAsk = { kind: 'palette' } | { kind: 'bind'; elementId: string } | { kind: 'commands' };
+export type LDAsk = { kind: 'palette' } | { kind: 'bind'; elementId: string; slot?: number } | { kind: 'commands' };
 
 interface LDPromptsProps {
   ask: LDAsk;
@@ -37,6 +37,7 @@ export default function LDPrompts({ ask, model, element, projectBlocks, onInsert
   if (ask.kind === 'palette') {
     return (
       <SearchList
+        key="palette"
         title={t('editors.ld.insertElement')}
         items={palette}
         placeholder={t('editors.ld.searchElements')}
@@ -48,6 +49,7 @@ export default function LDPrompts({ ask, model, element, projectBlocks, onInsert
   if (ask.kind === 'commands') {
     return (
       <SearchList
+        key="commands"
         title={t('editors.ld.commands')}
         items={commands}
         placeholder={t('editors.ld.searchCommands')}
@@ -57,9 +59,11 @@ export default function LDPrompts({ ask, model, element, projectBlocks, onInsert
     );
   }
   if (!element) return null;
-  const choices = bindingChoices(model, element, projectBlocks);
+  const choices = bindingChoices(model, element, projectBlocks, ask.slot);
   return (
+    // one list for each question: what was typed to answer the last one is not the start of the next (a palette, then an operand)
     <SearchList
+      key={`bind-${ask.elementId}-${ask.slot ?? 0}`}
       title={choices.title}
       items={choices.items}
       allowFreeText={choices.free}
