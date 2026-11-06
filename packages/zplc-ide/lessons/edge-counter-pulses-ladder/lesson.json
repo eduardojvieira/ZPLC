@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "edge-counter-pulses-ladder",
-  "version": 2,
+  "version": 3,
   "order": 43,
   "module": 3,
   "level": "foundation",

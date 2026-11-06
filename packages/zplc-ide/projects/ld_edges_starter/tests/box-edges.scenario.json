@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "id": "BoxEdges",
+  "tickMs": 10,
+  "durationMs": 120,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "BoxEdges.BoxSensor": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "BoxEdges.BoxSensor": true
+      }
+    },
+    {
+      "atMs": 70,
+      "set": {
+        "BoxEdges.BoxSensor": false
+      }
+    },
+    {
+      "atMs": 100,
+      "set": {
+        "BoxEdges.BoxSensor": true
+      }
+    },
+    {
+      "atMs": 110,
+      "set": {
+        "BoxEdges.BoxSensor": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "BoxEdges.BoxArrived": false,
+        "BoxEdges.BoxLeft": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "BoxEdges.BoxArrived": true,
+        "BoxEdges.BoxLeft": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 20,
+      "condition": {
+        "BoxEdges.BoxArrived": false,
+        "BoxEdges.BoxLeft": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 60,
+      "condition": {
+        "BoxEdges.BoxArrived": false,
+        "BoxEdges.BoxLeft": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 70,
+      "condition": {
+        "BoxEdges.BoxArrived": false,
+        "BoxEdges.BoxLeft": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 80,
+      "condition": {
+        "BoxEdges.BoxArrived": false,
+        "BoxEdges.BoxLeft": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 100,
+      "condition": {
+        "BoxEdges.BoxArrived": true,
+        "BoxEdges.BoxLeft": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 110,
+      "condition": {
+        "BoxEdges.BoxArrived": false,
+        "BoxEdges.BoxLeft": true
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 10,
+      "withinMs": 0,
+      "condition": {
+        "BoxEdges.BoxArrived": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 20,
+      "withinMs": 0,
+      "condition": {
+        "BoxEdges.BoxArrived": false
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "BoxEdges.BoxArrived": true,
+        "BoxEdges.BoxLeft": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,158 @@
+{
+  "name": "BoxEdges",
+  "description": "Detect the arrival and the departure of a box with edge contacts.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "BoxSensor",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Photo sensor at the conveyor entry: TRUE while a box blocks the beam"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "BoxArrived",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "TRUE for one scan when a box arrives"
+      },
+      {
+        "name": "BoxLeft",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "TRUE for one scan when the box leaves"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "BoxArrived: TRUE for one scan when BoxSensor goes from OFF to ON.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "p_BoxSensor_00",
+              "type": "contact_p",
+              "variable": "BoxSensor",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_BoxArrived_07",
+              "type": "coil",
+              "variable": "BoxArrived",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "BoxLeft: TRUE for one scan when BoxSensor goes from ON to OFF.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "n_BoxSensor_00",
+              "type": "contact_n",
+              "variable": "BoxSensor",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_BoxLeft_07",
+              "type": "coil",
+              "variable": "BoxLeft",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-05",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Variables, tipos y direcciones en escalera: bits de memoria, valores TIME y el mapa de E/S",
+  "summary": "Guarde una solicitud en un bit de memoria, almacene una duración en una variable TIME y vea qué variables están conectadas a la máquina mediante el mapa de E/S.",
+  "scope": "Las pruebas aportan evidencia del host con el runtime nativo POSIX y una tarea de 10 ms; no demuestran el cableado, los niveles eléctricos ni los tiempos de entradas y salidas reales, HIL ni certificación.",
+  "objectives": [
+    "Distinga un bit de memoria de una variable conectada a una entrada o salida física mediante su dirección.",
+    "Elija el tipo que corresponde a un valor (BOOL, INT, REAL, TIME) y fije el valor de una variable TIME."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/StartupWarning.ld.json una solicitud se guarda en el bit de memoria Requested. Tras un arranque, WarningLamp debe encenderse de inmediato y Motor debe encenderse solo después del período de aviso guardado en la variable TIME WarnTime. Stop apaga ambas.",
+      "checkpoint": "WarnTime contiene el período de aviso y Motor lo gobierna WarnTimer.Q."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Start se pulsa a los {{t:10}} ms y se suelta a los {{t:20}} ms. Stop se pulsa a los {{t:130}} ms. El período de aviso es T#50ms. Prediga WarningLamp y Motor a los {{t:40}}, {{t:100}} y {{t:130}} ms.",
+      "checkpoint": "{{v:StartupWarning.WarningLamp=true,StartupWarning.Motor=false@40|Lámpara en ON y Motor en OFF}} a los {{t:40}} ms; {{v:StartupWarning.WarningLamp=true,StartupWarning.Motor=true@100|ambos en ON}} a los {{t:100}} ms; {{v:StartupWarning.WarningLamp=false,StartupWarning.Motor=false@130|ambos en OFF}} a los {{t:130}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial deja WarnTime en T#500ms y no tiene bobina para Motor: Motor está en OFF a los {{t:100}} ms en lugar de ON; asigne a WarnTime el valor T#50ms en la tabla de variables y conecte Motor a WarnTimer.Q. En el editor de escalera, abra la tabla de variables del programa para cambiar el valor de WarnTime, y agregue un peldaño con un contacto sobre WarnTimer.Q y una bobina sobre Motor.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama StartupWarning y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare los {{t:40}} y {{t:100}} ms: WarningLamp sigue al bit de memoria de inmediato, mientras que Motor espera al temporizador. Abra la tabla E/S en vivo en la pestaña Watch: Requested no aparece, porque no tiene dirección.",
+      "checkpoint": "WarningLamp sube a los {{t:10}} ms; Motor sube más tarde, dentro del período de aviso, y ambas bajan a los {{t:130}} ms."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "Asigne al bit de memoria Requested una dirección de salida como %QX0.2 y ejecute de nuevo. ¿Qué cambia en la tabla E/S en vivo y por qué el escenario sigue pasando?",
+      "checkpoint": "La variable pasa a formar parte de la imagen de salida y aparece en el mapa de E/S, pero la lógica no cambió, así que el escenario sigue pasando. Un bit de memoria es una decisión sobre dónde vive el valor, no sobre lo que hace el programa."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "El temporizador lee su duración de una variable de tipo TIME. ¿Con qué valor está esa variable y qué salida todavía no tiene peldaño?"
+    },
+    {
+      "level": 2,
+      "text": "Cambie el valor de WarnTime a T#50ms. Luego agregue un peldaño con un contacto normalmente abierto sobre WarnTimer.Q y una bobina sobre Motor."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial deja WarnTime en T#500ms y no tiene bobina para Motor: Motor está en OFF a los {{t:100}} ms en lugar de ON; asigne a WarnTime el valor T#50ms en la tabla de variables y conecte Motor a WarnTimer.Q."
+  ]
+}

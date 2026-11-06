@@ -1,0 +1,381 @@
+{
+  "name": "ElevatorHeld",
+  "description": "A floor indicator that moves up one floor when the up button acts.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Floor1",
+        "type": "BOOL",
+        "initialValue": true,
+        "comment": "Floor 1 lamp state, ON at start"
+      },
+      {
+        "name": "Floor2",
+        "type": "BOOL",
+        "comment": "Floor 2 lamp state"
+      },
+      {
+        "name": "Floor3",
+        "type": "BOOL",
+        "comment": "Floor 3 lamp state"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "UpButton",
+        "type": "BOOL",
+        "comment": "Up button: TRUE while pressed"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Lamp1",
+        "type": "BOOL",
+        "comment": "Floor 1 indicator"
+      },
+      {
+        "name": "Lamp2",
+        "type": "BOOL",
+        "comment": "Floor 2 indicator"
+      },
+      {
+        "name": "Lamp3",
+        "type": "BOOL",
+        "comment": "Floor 3 indicator"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Floor 2 to floor 3 when the up button acts.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_UpButton_00",
+              "type": "contact_no",
+              "variable": "UpButton",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "no_Floor2_01",
+              "type": "contact_no",
+              "variable": "Floor2",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "set_Floor3_06",
+              "type": "coil_set",
+              "variable": "Floor3",
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "reset_Floor2_07",
+              "type": "coil_reset",
+              "variable": "Floor2",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "Floor 1 to floor 2 when the up button acts.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_UpButton_00",
+              "type": "contact_no",
+              "variable": "UpButton",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "no_Floor1_01",
+              "type": "contact_no",
+              "variable": "Floor1",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "set_Floor2_06",
+              "type": "coil_set",
+              "variable": "Floor2",
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "reset_Floor1_07",
+              "type": "coil_reset",
+              "variable": "Floor1",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "Lamp 1.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_Floor1_00",
+              "type": "contact_no",
+              "variable": "Floor1",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_Lamp1_07",
+              "type": "coil",
+              "variable": "Lamp1",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_4",
+      "number": 4,
+      "comment": "Lamp 2.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_Floor2_00",
+              "type": "contact_no",
+              "variable": "Floor2",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_Lamp2_07",
+              "type": "coil",
+              "variable": "Lamp2",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_5",
+      "number": 5,
+      "comment": "Lamp 3.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_Floor3_00",
+              "type": "contact_no",
+              "variable": "Floor3",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_Lamp3_07",
+              "type": "coil",
+              "variable": "Lamp3",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-05",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

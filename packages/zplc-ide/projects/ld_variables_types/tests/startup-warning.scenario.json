@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "id": "StartupWarning",
+  "tickMs": 10,
+  "durationMs": 160,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "StartupWarning.StartButton": false,
+        "StartupWarning.StopButton": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "StartupWarning.StartButton": true
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "StartupWarning.StartButton": false
+      }
+    },
+    {
+      "atMs": 130,
+      "set": {
+        "StartupWarning.StopButton": true
+      }
+    },
+    {
+      "atMs": 140,
+      "set": {
+        "StartupWarning.StopButton": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "StartupWarning.WarningLamp": false,
+        "StartupWarning.Motor": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "StartupWarning.WarningLamp": true,
+        "StartupWarning.Motor": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 40,
+      "condition": {
+        "StartupWarning.WarningLamp": true,
+        "StartupWarning.Motor": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 100,
+      "condition": {
+        "StartupWarning.WarningLamp": true,
+        "StartupWarning.Motor": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 120,
+      "condition": {
+        "StartupWarning.WarningLamp": true,
+        "StartupWarning.Motor": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 130,
+      "condition": {
+        "StartupWarning.WarningLamp": false,
+        "StartupWarning.Motor": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 150,
+      "condition": {
+        "StartupWarning.WarningLamp": false,
+        "StartupWarning.Motor": false
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 40,
+      "withinMs": 40,
+      "condition": {
+        "StartupWarning.Motor": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 130,
+      "withinMs": 0,
+      "condition": {
+        "StartupWarning.Motor": false
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "StartupWarning.Motor": true,
+        "StartupWarning.WarningLamp": false
+      }
+    }
+  ]
+}
