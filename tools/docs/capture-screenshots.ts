@@ -71,7 +71,7 @@ export const SCREEN_JOURNEYS = [
     pictures: [{ name: 'ld-function-box', step: 'A Ladder function box with its operands in the editor' }],
   },
 ] as const;
-/** The pictures for the guides (journeys 68 to 71): the controls are named in English, so these are English only. */
+/** The pictures for the guides (journeys 68 to 72): the controls are named in English, so these are English only. */
 export const GUIDE_JOURNEYS = [
   {
     journey: '68 The Watch table, a force and a scenario run, for the pictures of the guides',
@@ -88,6 +88,13 @@ export const GUIDE_JOURNEYS = [
   {
     journey: '70 The I/O mapping section of Project settings, for the pictures of the guides',
     pictures: [{ file: 'guide-io-mapping.png', step: 'The I/O Mapping section of Project settings' }],
+  },
+  {
+    journey: '72 The Pico example with Hardware chosen and the port dialog, for the pictures of the first board tutorial',
+    pictures: [
+      { file: 'first-board-hardware.png', step: 'The Raspberry Pi Pico example built, with Hardware chosen and no board connected' },
+      { file: 'first-board-connect.png', step: 'The Connect dialog that lists serial ports, with no board chosen' },
+    ],
   },
   {
     journey: '71 The Import archive dialog, for the pictures of the guides',

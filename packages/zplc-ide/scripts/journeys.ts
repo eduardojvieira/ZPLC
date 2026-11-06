@@ -8213,6 +8213,26 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
+    // DOC-013: the pictures for the tutorial "Your first board" that need no board: the Raspberry Pi Pico example built, with
+    // Hardware chosen, and the dialog of Connect. No port is chosen and nothing is sent: a physical board is not pictured.
+    name: '72 The Pico example with Hardware chosen and the port dialog, for the pictures of the first board tutorial',
+    example: 'pico_blinky',
+    proves: [],
+    partly: ['DOC-013', 'DOC-004'],
+    run: async (app, { project }) => {
+      await app.cdp.command('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+      await openFolder(app, project);
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Pico example does not build: ${result.message}`);
+      await app.click(button('Hardware'), 'the Hardware mode');
+      await docShot(app, 'first-board-hardware');
+      await app.click(button('Connect'), 'Connect');
+      await app.until('the port dialog', async () => (await app.visible(css('[data-serial-port-dialog]'))) || undefined);
+      await docShot(app, 'first-board-connect');
+      await app.click(button('Cancel'), 'Cancel');
+    },
+  },
+  {
     // The Welcome cards of rc.3 ran out of their boxes on a MacBook Air in Spanish (2026-10-26), and a sweep of the other
     // screens found the same in ten more places. Spanish labels are the longest, and 1024 by 768 is the smallest window
     // the shell supports (journey 45).
