@@ -13,7 +13,7 @@ Todas las lecciones se pueden aprobar en simulación, sin hardware. La ruta de h
 
 ## Elija su placa
 
-Al pie del inicio de Aprender, la franja **Ruta de hardware** tiene un grupo **Su placa** con las dos placas, y cada lección de hardware repite el grupo al principio de su sección **En su placa**. Elija la placa que tiene. Con el teclado, Tab llega al grupo, las flechas pasan de una placa a otra y Intro o Espacio eligen. ZPLC dice qué placa eligió y guarda la elección en esta computadora.
+Al pie del inicio de Aprender, la franja **Ruta de hardware** tiene un grupo **Su placa** con las dos placas, y cada lección de hardware repite el grupo al principio de su sección **En su placa**. Elija la placa que tiene. Con el teclado, Tab llega al grupo, las flechas pasan de una placa a otra y Intro o Espacio eligen. ZPLC dice qué placa eligió y guarda la elección en este equipo.
 
 ## Qué muestra una lección para su placa
 
@@ -45,19 +45,19 @@ La comprobación usa el escenario de referencia de la lección, el mismo archivo
 
 ### Preparar y luego pulsar Ejecutar
 
-Si el programa está detenido cuando usted pulsa **Comprobar en la placa**, la comprobación queda lista para registrar y le pide que pulse **Ejecutar** en la barra de herramientas. Usted pone en marcha el programa; la comprobación nunca lo hace. El primer escaneo después de que usted pulsa **Ejecutar** es el tiempo 0 del escenario, como en simulación, así que un parpadeo o un temporizador que empieza con el programa queda alineado con el escenario, y las entradas que el escenario fija en el tiempo 0 son las entradas de ese primer escaneo.
+Si el programa está detenido cuando usted pulsa **Comprobar en la placa**, la comprobación queda lista para registrar y le pide que pulse **Ejecutar** en la barra de herramientas. Usted pone en marcha el programa; la comprobación nunca lo hace. El primer ciclo después de que usted pulsa **Ejecutar** es el tiempo 0 del escenario, como en simulación, así que un parpadeo o un temporizador que empieza con el programa queda alineado con el escenario, y las entradas que el escenario fija en el tiempo 0 son las entradas de ese primer ciclo.
 
 Si el programa ya está en marcha, la comprobación empieza a registrar de inmediato y su tiempo 0 es la primera muestra que lee. Una lección que comprueba algo del programa antes de su primera acción, fuera del tiempo 0, no se puede comprobar así, porque su resultado depende de cuándo arrancó el programa. Para una lección así, entre ellas `blinky-ladder-timer-feedback` y `verify-my-board`, el panel le pide que primero detenga el programa y luego pulse **Comprobar en la placa** y **Ejecutar**.
 
 ### Cómo se lee la placa, y la tolerancia de tiempo
 
-Una placa grabada con el firmware de aprendizaje guarda una traza de sus propios escaneos (`zplc dbg trace`, véanse los [comandos de la consola](../reference/shell-commands.md)). Al final de cada escaneo guarda el momento en que el escaneo leyó sus entradas, el número del escaneo desde **Ejecutar** y los bytes de las imágenes de entradas y salidas que contienen las señales de la lección, en un anillo de 2048 bytes. ZPLC lee el anillo cada 100 ms aproximadamente, no en cada escaneo, y califica una muestra por escaneo. Guardar la traza nunca cambia el programa: no escribe memoria, no fuerza un valor y no pone en marcha ni detiene nada.
+Una placa grabada con el firmware de aprendizaje guarda una traza de sus propios ciclos (`zplc dbg trace`, véanse los [comandos de la consola](../reference/shell-commands.md)). Al final de cada ciclo guarda el momento en que el ciclo leyó sus entradas, el número del ciclo desde **Ejecutar** y los bytes de las imágenes de entradas y salidas que contienen las señales de la lección, en un anillo de 2048 bytes. ZPLC lee el anillo cada 100 ms aproximadamente, no en cada ciclo, y califica una muestra por ciclo. Guardar la traza nunca cambia el programa: no escribe memoria, no fuerza un valor y no pone en marcha ni detiene nada.
 
-Una lección declara `timeMs`, cuánto puede alejarse una muestra, hacia uno u otro lado, del tiempo que nombra una aserción. Con la traza del dispositivo debe ser al menos un escaneo de la tarea más lenta del proyecto inicial más un margen de fluctuación supuesto de 10 ms: una salida cambia hasta un escaneo después de su entrada, y el margen cubre la resolución de 1 ms de las marcas de tiempo, el tick del núcleo que libera un escaneo y el tiempo que tarda un escaneo antes de escribir sus salidas. Todas las lecciones de hardware ejecutan una tarea de 10 ms, así que cada una declara 20 ms, y ZPLC rechaza una lección que declare menos.
+Una lección declara `timeMs`, cuánto puede alejarse una muestra, hacia uno u otro lado, del tiempo que nombra una aserción. Con la traza del dispositivo debe ser al menos un ciclo de la tarea más lenta del proyecto inicial más un margen de fluctuación supuesto de 10 ms: una salida cambia hasta un ciclo después de su entrada, y el margen cubre la resolución de 1 ms de las marcas de tiempo, el tick del núcleo que libera un ciclo y el tiempo que tarda un ciclo antes de escribir sus salidas. Todas las lecciones de hardware ejecutan una tarea de 10 ms, así que cada una declara 20 ms, y ZPLC rechaza una lección que declare menos.
 
-Una placa cuyo firmware no tiene traza del dispositivo se lee con la misma lectura que llena la tabla Watch, cada 100 ms. Una lectura son a lo sumo dos comandos `zplc dbg peek` de unos 96 caracteres cada uno, 2 × 96 × 10 bits / 115200 bit/s, unos 17 ms, y la comprobación reserva 20 ms, así que una muestra sigue a la anterior en a lo sumo 120 ms. La comprobación amplía entonces la tolerancia de la lección en ese periodo menos el margen de fluctuación: 20 ms pasan a ser 130 ms, nunca menos que un periodo de muestreo más un escaneo.
+Una placa cuyo firmware no tiene traza del dispositivo se lee con la misma lectura que llena la tabla Observación, cada 100 ms. Una lectura son a lo sumo dos comandos `zplc dbg peek` de unos 96 caracteres cada uno, 2 × 96 × 10 bits / 115200 bit/s, unos 17 ms, y la comprobación reserva 20 ms, así que una muestra sigue a la anterior en a lo sumo 120 ms. La comprobación amplía entonces la tolerancia de la lección en ese periodo menos el margen de fluctuación: 20 ms pasan a ser 130 ms, nunca menos que un periodo de muestreo más un ciclo.
 
-Estos números se derivan del firmware y de la configuración serie. No se midieron en una placa, y todavía no existe un registro de fluctuación del escaneo del plan de hardware en el lazo (HIL-010) que confirme o reemplace el margen de 10 ms. `analogPercent` es para los valores analógicos; hoy los escenarios solo tienen condiciones de encendido y apagado, así que todavía no tiene nada que comparar.
+Estos números se derivan del firmware y de la configuración serie. No se midieron en una placa, y todavía no existe un registro de fluctuación del ciclo del plan de hardware en el lazo (HIL-010) que confirme o reemplace el margen de 10 ms. `analogPercent` es para los valores analógicos; hoy los escenarios solo tienen condiciones de encendido y apagado, así que todavía no tiene nada que comparar.
 
 ### Cómo se alinea el escenario con lo que usted hizo
 
@@ -71,7 +71,7 @@ En simulación, el escenario cambia las entradas en tiempos exactos. En una plac
 
 ### Lo que una comprobación en la placa no puede distinguir
 
-- Una comprobación registrada por sondeo tiene 130 ms de margen hacia cada lado, y todas las lecciones de hardware comprueban sus salidas en tiempos separados por uno o dos escaneos, 10 o 20 ms. Esa comprobación no puede distinguir esas aserciones, así que es más débil que la comprobación en simulación. Con la traza del dispositivo el margen es de 20 ms y la comprobación ve cada escaneo.
+- Una comprobación registrada por sondeo tiene 130 ms de margen hacia cada lado, y todas las lecciones de hardware comprueban sus salidas en tiempos separados por uno o dos ciclos, 10 o 20 ms. Esa comprobación no puede distinguir esas aserciones, así que es más débil que la comprobación en simulación. Con la traza del dispositivo el margen es de 20 ms y la comprobación ve cada ciclo.
 - Después de que usted pulsa o suelta un botón, el escenario traslada sus tiempos a su acción. Una aserción posterior que depende del propio temporizador del programa, y no de su acción, se cumple solo si usted actuó cerca del tiempo que nombra el escenario. `verify-my-board` comprueba el parpadeo 100 ms y 230 ms después de que usted suelta su botón, así que su comprobación solo aprueba cuando usted suelta el botón unos 1,35 s después de **Ejecutar**, con la tolerancia hacia uno u otro lado.
 - Las aserciones no se aflojan para la placa, y la comprobación en simulación sigue siendo la aprobación del curso.
 
@@ -85,7 +85,7 @@ Su progreso guarda la aprobación en hardware más reciente de cada lección apa
 
 - Los pines de entrada y salida trabajan solo con lógica de 3,3 V.
 - Nunca conecte 5 V (incluidos los pines 5V, VBUS y VSYS), una batería de más de 3,3 V ni nada de la red eléctrica a un pin GPIO, ADC o 3V3.
-- Alimente las piezas solo desde el pin 3V3 y una las masas.
+- Alimente las piezas solo desde el pin 3V3 y conecte las masas entre sí.
 - Mantenga cada salida por debajo de 10 mA: un LED con una resistencia de 330 Ω consume unos 4 mA. En la Pico, mantenga el total por debajo de 50 mA.
 - Cablee con el cable USB desconectado y revise dos veces antes de conectarlo.
 
