@@ -48,9 +48,9 @@ That split is why several tasks can exchange data through global variables witho
 
 ## Start of a program
 
-A program load is a cold start on every runtime (RT-016). IPI, OPI, WORK and RETAIN are set to zero and the force table is emptied before the new program is published, so a program never starts on the variables of the one it replaced. A runtime that holds a stored `RETAIN` record restores it afterwards. `zplc_core_cold_start()` is that operation, and `zplc_core_warm_start()` is the same without touching RETAIN, for a restart that keeps the retained values. Neither touches the code region or the tags, which are the program.
+A program load is a cold start on every runtime. IPI, OPI, WORK and RETAIN are set to zero and the force table is emptied before the new program is published, so a program never starts on the variables of the one it replaced. A runtime that holds a stored `RETAIN` record restores it afterwards. `zplc_core_cold_start()` is that operation, and `zplc_core_warm_start()` is the same without touching RETAIN, for a restart that keeps the retained values. Neither touches the code region or the tags, which are the program.
 
-## Access from outside the scan (RT-010, RT-011)
+## Access from outside the scan {#access-from-outside-the-scan}
 
 While scans run, the scan is the only writer of the process image. A thread outside it, such as the Modbus server and clients, MQTT or the shell debug commands, goes through the exchange (`zplc_exchange.h`):
 

@@ -14,7 +14,7 @@ Visual models are validated and translated before the canonical compilation ([Co
 
 ## The Structured Text language service
 
-The Structured Text editor reads the whole project, not only the file in front of you (LNG-015, LNG-016).
+The Structured Text editor reads the whole project, not only the file in front of you.
 
 | Feature | What it does |
 | --- | --- |
@@ -35,7 +35,7 @@ Evidence level: host. `packages/zplc-compiler/src/compiler/check.test.ts` runs t
 
 ## Project blocks in the palettes
 
-The block palette of Function Block Diagram and Ladder shows, besides the standard blocks, a **Project** group with the function blocks and functions that the Structured Text files of the project declare (LNG-008). A block of the group has the ports of its declaration: for a function block, its `VAR_INPUT` and `VAR_IN_OUT` are inputs and its `VAR_OUTPUT` are outputs, and for a function the inputs are the inputs and the result is the output `OUT`. The generated Structured Text calls the block with named arguments, so the order in which you wire the inputs does not matter.
+The block palette of Function Block Diagram and Ladder shows, besides the standard blocks, a **Project** group with the function blocks and functions that the Structured Text files of the project declare. A block of the group has the ports of its declaration: for a function block, its `VAR_INPUT` and `VAR_IN_OUT` are inputs and its `VAR_OUTPUT` are outputs, and for a function the inputs are the inputs and the result is the output `OUT`. The generated Structured Text calls the block with named arguments, so the order in which you wire the inputs does not matter.
 
 - **Function Block Diagram** places both function blocks (with an instance name) and functions. A function whose result nothing uses is still called.
 - **Ladder** places function blocks in a rung, like a timer: the element names the type and the instance, and the parameters name the inputs of the declaration. A function is not placed in a rung; call it from a Function Block Diagram or from Structured Text.
@@ -44,7 +44,7 @@ The block palette of Function Block Diagram and Ladder shows, besides the standa
 
 ## What the palettes offer
 
-A palette offers only what its translator translates (LNG-007), and every element it offers is run in the test suite: placed in a program, built, loaded into the virtual machine and scanned.
+A palette offers only what its translator translates, and every element it offers is run in the test suite: placed in a program, built, loaded into the virtual machine and scanned.
 
 - **Ladder** offers four contacts (normally open, normally closed, rising and falling edge), six coils (normal, negated, set, reset, rising and falling edge), the branch, the function blocks of the library and of the project, and the fifteen IEC function boxes of the **Functions** group. The communication blocks `COMM_CONNECT`, `COMM_PUBLISH`, `COMM_SUBSCRIBE` and `COMM_MODBUS` are not offered: no Ladder file can declare an instance of them.
 - **Function Block Diagram** offers the gates, the comparisons, `ADD`, `SUB`, `MUL`, `DIV`, `MOD`, `ABS`, `MAX`, `MIN`, `LIMIT` and `SEL`, the function blocks of the library and of the project, and the blocks that carry a value (`constant`, `variable`, `input`, `output`). The functions of the library (`SQRT`, `SIN`, `LEN`, `CONCAT`, the conversions) are not offered: a diagram cannot call them, and the build refuses them by name.
@@ -52,13 +52,13 @@ A palette offers only what its translator translates (LNG-007), and every elemen
 
 ## Visual files on disk
 
-A Ladder, FBD or SFC file is JSON. ZPLC checks it against the shape its editor reads when you open it (LNG-011). A file that is not JSON, or that is JSON of another shape, shows an error panel that names the file and its first five violations by path (`rungs[0].grid[1][2].element.type: ...`), counts the rest, and leaves the window and every other tab as they were. Correct the file and open it again; the build refuses the same file for the same reason.
+A Ladder, FBD or SFC file is JSON. ZPLC checks it against the shape its editor reads when you open it. A file that is not JSON, or that is JSON of another shape, shows an error panel that names the file and its first five violations by path (`rungs[0].grid[1][2].element.type: ...`), counts the rest, and leaves the window and every other tab as they were. Correct the file and open it again; the build refuses the same file for the same reason.
 
-Opening a visual file and saving it without a change leaves it byte for byte as it was (LNG-014), whatever layout it was written in. A change that ends where it started, such as dragging an element away and back, does not rewrite the file either. The first real edit writes the whole file in the one form ZPLC uses: two-space JSON with a newline at the end.
+Opening a visual file and saving it without a change leaves it byte for byte as it was, whatever layout it was written in. A change that ends where it started, such as dragging an element away and back, does not rewrite the file either. The first real edit writes the whole file in the one form ZPLC uses: two-space JSON with a newline at the end.
 
 ## Editing from the keyboard
 
-Every editing action of the Ladder, Function Block Diagram and Sequential Function Chart editors can be done from the keyboard (LNG-012): moving a cursor, inserting an element, binding a variable from the declared symbols, connecting and deleting. The [keyboard reference](../reference/visual-editor-keyboard.md) lists every key. It is generated from the table the editors read their keys from, so a key that is in it works, and a key that works is in it.
+Every editing action of the Ladder, Function Block Diagram and Sequential Function Chart editors can be done from the keyboard: moving a cursor, inserting an element, binding a variable from the declared symbols, connecting and deleting. The [keyboard reference](../reference/visual-editor-keyboard.md) lists every key. It is generated from the table the editors read their keys from, so a key that is in it works, and a key that works is in it.
 
 - **The cursor.** In Ladder it is a cell of a rung, drawn as a blue frame; a click on a cell puts it there. In the function block and chart editors it is the selected block or element, and `Alt` with an arrow key moves it to the nearest one in that direction. The arrow keys without `Alt` nudge the selected block on the canvas.
 - **Inserting.** A letter inserts the common elements at the cursor: `C` a contact, `N` an inverted contact and `O` a coil in Ladder, `T` a transition and `S` a step in a chart. `Insert` or `I` opens the palette as a search list: type to search, Up and Down choose, Enter inserts. The toolbox is reached with Tab, its items are buttons that insert at the cursor, and it has a search box. Dragging an item still works and inserts through the same command as the key.
@@ -72,7 +72,7 @@ Evidence level: host, and the real application on the development host. The test
 
 ## Undo, redo and selection
 
-One gesture of yours is one undo step (LNG-010): a drag, a paste, a delete (the nodes and the wires that went with them), a drop from the palette, a wire drawn, or an edit of a name or a condition. A drag of 300 pixels reaches the canvas as about thirty position changes, but the file is written, and the history gets an entry, once, when you put the node down. Letters typed into one field within a second of each other are one step. The history keeps the last 100 gestures of each file for the session; the Undo and Redo buttons, `Ctrl+Z` and `Ctrl+Shift+Z` (`Ctrl+Y`) use it.
+One gesture of yours is one undo step: a drag, a paste, a delete (the nodes and the wires that went with them), a drop from the palette, a wire drawn, or an edit of a name or a condition. A drag of 300 pixels reaches the canvas as about thirty position changes, but the file is written, and the history gets an entry, once, when you put the node down. Letters typed into one field within a second of each other are one step. The history keeps the last 100 gestures of each file for the session; the Undo and Redo buttons, `Ctrl+Z` and `Ctrl+Shift+Z` (`Ctrl+Y`) use it.
 
 The selection is not part of the file, and it survives the edit. Undo and redo give the selection back with the content: undoing a delete puts the deleted blocks back and selects them, and undoing a paste selects what was selected before the paste.
 
@@ -80,11 +80,11 @@ Evidence level: host. `packages/zplc-ide/src/editors/gesture.test.ts` and `packa
 
 ## Pin types in FBD
 
-The Function Block Diagram canvas refuses a wire between pins whose types do not match, and says why in a message over the canvas (LNG-013). The rules are the ones the compiler applies to an assignment: integers, bit strings and `REAL` are one family of numbers (an integer goes into a `REAL` or an `LREAL`, a `REAL` and an `LREAL` go into each other with the build warning when an `LREAL` is narrowed, and a `REAL` never goes into an integer), and `BOOL`, `TIME`, `DATE`, `TOD`, `DT` and the strings take only their own type. A variable block has the type its variable is declared with and a constant the type it is written as (`T#2s` is a `TIME`, `0.5` a `REAL`); a pin declared `ANY` is not judged. A `BOOL` output therefore cannot feed a numeric input, a `REAL` cannot feed a `BOOL` or an integer input, and a number cannot feed a `TIME` input; convert it with a conversion function such as `REAL_TO_INT` first. An input has one source, so a second wire into it is refused, and a wire may be started at either end.
+The Function Block Diagram canvas refuses a wire between pins whose types do not match, and says why in a message over the canvas. The rules are the ones the compiler applies to an assignment: integers, bit strings and `REAL` are one family of numbers (an integer goes into a `REAL` or an `LREAL`, a `REAL` and an `LREAL` go into each other with the build warning when an `LREAL` is narrowed, and a `REAL` never goes into an integer), and `BOOL`, `TIME`, `DATE`, `TOD`, `DT` and the strings take only their own type. A variable block has the type its variable is declared with and a constant the type it is written as (`T#2s` is a `TIME`, `0.5` a `REAL`); a pin declared `ANY` is not judged. A `BOOL` output therefore cannot feed a numeric input, a `REAL` cannot feed a `BOOL` or an integer input, and a number cannot feed a `TIME` input; convert it with a conversion function such as `REAL_TO_INT` first. An input has one source, so a second wire into it is refused, and a wire may be started at either end.
 
 ## Fit, zoom and alignment
 
-Ladder, FBD and SFC share these gestures (UX-033). Every one is a command of the key table, so it is also in the command list (`F1`) of the editor, and each says what it did through the shared announcer.
+Ladder, FBD and SFC share these gestures. Every one is a command of the key table, so it is also in the command list (`F1`) of the editor, and each says what it did through the shared announcer.
 
 - **Fit to view** (`Ctrl+Alt+0`, or the Fit to view button). FBD and SFC fit the whole diagram in the window with a margin and never zoom in past 100%. Ladder has no zoom: its rungs already use the width of the view, so fit shows every rung from its left edge.
 - **Zoom range.** FBD and SFC zoom from 10% to 400%. At 10% a diagram nine times wider than the window is still whole on the screen; at 400% a pin is as large as a button.
@@ -96,7 +96,7 @@ Evidence level: host. `packages/zplc-ide/src/editors/arrange.test.ts`, `packages
 
 ## Where a diagnostic points
 
-A diagnostic of a visual or IL file names the element it is about (LNG-003, LNG-026), not a line of the generated Structured Text that you never wrote. The build reports it in the `element` field next to `path`, and the Problems panel selects it when you activate the problem:
+A diagnostic of a visual or IL file names the element it is about, not a line of the generated Structured Text that you never wrote. The build reports it in the `element` field next to `path`, and the Problems panel selects it when you activate the problem:
 
 | Language | Element | Selected |
 | --- | --- | --- |
@@ -111,7 +111,7 @@ Evidence level: host. `packages/zplc-ide/src/editors/diagnosticElement.test.ts` 
 
 ## Breakpoints on a diagram
 
-A breakpoint can be set on the element of the diagram or the IL line you edited (LNG-004). The debug map relates each instruction range to that element, and the runtime stops at the first instruction of it. Like the dot on a line of a text file, it can be set before the program is loaded and is armed when Run or Deploy loads it.
+A breakpoint can be set on the element of the diagram or the IL line you edited. The debug map relates each instruction range to that element, and the runtime stops at the first instruction of it. Like the dot on a line of a text file, it can be set before the program is loaded and is armed when Run or Deploy loads it.
 
 | Language | Where | How |
 | --- | --- | --- |
@@ -124,7 +124,7 @@ A breakpoint is kept on the element, not on a generated line, so it follows its 
 
 ## Online values from the debug map
 
-While a program runs under ZPLC, each editor shows what the program holds (LNG-006), read through the debug map of the build of its file. The build records, for each element of a Ladder, FBD or SFC source, which variable of the generated program holds its state, so no editor guesses a name. A state that the map does not give is shown as unavailable (a dash, `UNAVAILABLE`), never as FALSE or IDLE.
+While a program runs under ZPLC, each editor shows what the program holds, read through the debug map of the build of its file. The build records, for each element of a Ladder, FBD or SFC source, which variable of the generated program holds its state, so no editor guesses a name. A state that the map does not give is shown as unavailable (a dash, `UNAVAILABLE`), never as FALSE or IDLE.
 
 | Language | What is shown | Where it comes from |
 | --- | --- | --- |
@@ -164,7 +164,7 @@ A variable is drawn as forced in Ladder, FBD and SFC when the force table holds 
 | FBD | The pin of a block whose variable is forced or unreadable (an input pin takes the state of the output wired to it), the wire from that pin, and a variable block, which also says FORCED or FAULT in words. |
 | SFC | A step whose flag is forced or unreadable; a transition when its own condition variable is, or when a variable named in its condition is forced. |
 
-Nothing in the visual editors, the controller view, the Watch table or the notification list glows, pulses or animates continuously (UX-010). A loading spinner may turn, and it stops under reduced motion.
+Nothing in the visual editors, the controller view, the Watch table or the notification list glows, pulses or animates continuously. A loading spinner may turn, and it stops under reduced motion.
 
 Evidence level: host. `packages/zplc-ide/src/editors/signalVocabulary.test.tsx` renders each state in each editor and checks the token and the glyph, and journeys 51 and 51b force a variable from the Watch table against the native simulator and read the cue in the FBD and the SFC. A read fault cannot be made to happen in the simulator, so the fault cue is checked by the render tests only.
 

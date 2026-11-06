@@ -67,7 +67,7 @@ Three adapters use the core: the POSIX session of the host runtime (`native_runt
 
 On a target a batch is three steps. The inputs are read from the HAL with no lock held. Then, under the process-image lock, the writes other threads queued are applied, the samples go to the input image, the tasks run and the image is published as a snapshot. Last, with the image lock released and under a separate lock for the output I/O, the pins are written and the hardware watchdog is fed. The image lock is never held while a pin is written, a line is printed or any call that can block runs.
 
-A thread outside the scan reads the snapshot of the last commit and queues its writes for the next input latch; see [Access from outside the scan](./memory-model.md#access-from-outside-the-scan-rt-010-rt-011). A lock that cannot be created or taken is an error the caller sees: a control call returns `ZPLC_SCHED_ERR_LOCK` and changes nothing, and a scan that cannot take the image lock drives the pins to their safe state and latches the fault.
+A thread outside the scan reads the snapshot of the last commit and queues its writes for the next input latch; see [Access from outside the scan](./memory-model.md#access-from-outside-the-scan). A lock that cannot be created or taken is an error the caller sees: a control call returns `ZPLC_SCHED_ERR_LOCK` and changes nothing, and a scan that cannot take the image lock drives the pins to their safe state and latches the fault.
 
 ### Priorities and start-up order
 

@@ -76,7 +76,7 @@ The security setting only means something on a TLS transport. With plain TCP or 
 
 ### TLS and the random number generator
 
-TLS needs random numbers nobody can predict. A firmware build that enables TLS together with `CONFIG_TEST_RANDOM_GENERATOR`, or with no cryptographic random source, stops at configuration time (`zplc_rule_tls_with_test_random_generator`). The Nucleo-H743ZI and Arduino Opta images used to set that option. They now use the STM32 hardware random generator for the network stack, and **TLS is off in them** until the generator has a record on the board (HIL-011). MQTT on those two boards runs over plain TCP only, and a TLS transport is refused instead of being downgraded. The ESP32-S3 image keeps TLS on, with its hardware generator.
+TLS needs random numbers nobody can predict. A firmware build that enables TLS together with `CONFIG_TEST_RANDOM_GENERATOR`, or with no cryptographic random source, stops at configuration time (`zplc_rule_tls_with_test_random_generator`). The Nucleo-H743ZI and Arduino Opta images used to set that option. They now use the STM32 hardware random generator for the network stack, and **TLS is off in them** until the generator has a record on the board. MQTT on those two boards runs over plain TCP only, and a TLS transport is refused instead of being downgraded. The ESP32-S3 image keeps TLS on, with its hardware generator.
 
 ## Credentials
 
@@ -103,7 +103,7 @@ Two checks hold this. The object files of the handlers of every board image are 
 
 `zplc config save` writes every setting that `zplc config get` reports, and the Modbus mapping overrides, into the same non-volatile store as the program, one entry per setting. It reports an error when an entry could not be written, and a reboot reads the entries back over the defaults. A firmware test sets each setting through the shell, saves, restarts the configuration the way a reboot does, and compares each one. Two limits remain:
 
-- A board whose store cannot be mounted cannot save settings. The Nucleo-H743ZI keeps its storage in one 128 KB sector that the store cannot use (IO-008), so `config save` there reports an error and no longer says `OK`.
+- A board whose store cannot be mounted cannot save settings. The Nucleo-H743ZI keeps its storage in one 128 KB sector that the store cannot use, so `config save` there reports an error and no longer says `OK`.
 - The save writes the entries one after the other. A power loss in the middle leaves some settings new and some old, each valid by itself.
 
 ## What has been exercised

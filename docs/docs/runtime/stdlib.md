@@ -156,4 +156,4 @@ The table is generated from the conformance cases that expect IEC 61131-3 behavi
 No conformance case of this area is on the expected-failures list: no limit is recorded.
 {/* <<< END GENERATED: known-limits-library <<< */}
 
-A block or function that is not in the table is not known to differ. Every standard function and every library block outside the communication blocks has an executed case under `conformance/cmp/` (requirement CMP-058).
+A block or function that is not in the table is not known to differ. Every standard function and every library block outside the communication blocks has an executed case under `conformance/cmp/`.

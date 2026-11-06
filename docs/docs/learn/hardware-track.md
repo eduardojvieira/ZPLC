@@ -57,7 +57,7 @@ A lesson declares `timeMs`, how far in either direction a sample may sit from th
 
 A board whose firmware has no device trace is read through the same read that fills the Watch table, every 100 ms. One read is at most two `zplc dbg peek` commands of about 96 characters each, 2 × 96 × 10 bits / 115200 bit/s, about 17 ms, and the check allows 20 ms, so a sample follows the one before it by at most 120 ms. The check then widens the tolerance of the lesson by that period less the jitter margin: 20 ms becomes 130 ms, never less than one sampling period plus one scan.
 
-These numbers are derived from the firmware and the serial settings. They were not measured on a board, and no scan-jitter record of the hardware-in-the-loop plan (HIL-010) exists yet to confirm or replace the 10 ms margin. `analogPercent` is for analog values; scenarios hold on/off conditions only today, so it has nothing to compare yet.
+These numbers are derived from the firmware and the serial settings. They were not measured on a board, and no scan-jitter record of the hardware-in-the-loop plan exists yet to confirm or replace the 10 ms margin. `analogPercent` is for analog values; scenarios hold on/off conditions only today, so it has nothing to compare yet.
 
 ### How the scenario is aligned on what you did
 

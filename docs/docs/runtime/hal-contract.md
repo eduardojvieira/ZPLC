@@ -34,7 +34,7 @@ flowchart TD
 | Synchronisation | `zplc_hal_mutex_create()`, `zplc_hal_mutex_lock()`, `zplc_hal_mutex_unlock()`, `zplc_hal_mutex_destroy()` | Platform-owned locks for the shared process image. |
 | Lifecycle and log | `zplc_hal_init()`, `zplc_hal_shutdown()`, `zplc_hal_log()` | |
 
-The header declares 18 functions, and every one has a caller (IO-007): an earlier DNS function and four socket functions that nothing called were removed.
+The header declares 18 functions, and every one has a caller: an earlier DNS function and four socket functions that nothing called were removed.
 
 An operation a platform cannot perform returns `ZPLC_HAL_NOT_IMPL`, the defined result for "not supported". The scheduler skips it from an optional channel, treats it as an error from a required channel, and never accepts a function that a port leaves undefined: that is a build or test failure, not a silent stub.
 

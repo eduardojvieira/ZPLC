@@ -51,4 +51,4 @@ The controls are disabled, and the panel says why in words, in these cases:
 
 ## Evidence
 
-Evidence level: host. Two scripted runs of Studio, journeys 50 and 57 in `packages/zplc-ide/scripts/journeys.ts`, drive the panel on Linux against the native simulation. Journey 50 operates a switch, a **Hold** button, a slider and a number box with the pointer and with the keyboard alone, and sees each output follow. Journey 57 sees the output of the first lesson turn on and off. Neither is evidence of a board.
+Evidence level: host. Two scripted runs of the ZPLC application, journeys 50 and 57 in `packages/zplc-ide/scripts/journeys.ts`, drive the panel on Linux against the native simulation. Journey 50 operates a switch, a **Hold** button, a slider and a number box with the pointer and with the keyboard alone, and sees each output follow. Journey 57 sees the output of the first lesson turn on and off. Neither is evidence of a board.

@@ -112,7 +112,7 @@ Ask for what a tool returns, so every claim of the assistant has a result behind
 [The MCP reference](../reference/mcp.md) lists all 15 tools and 15 resources.
 
 - **Program resources.** Both are read-only. They return the saved source of a program in any of the five languages, within the size limits of the project reader. `zplc://project/source/{name}` takes the file name as written in the URI (a space is `%20`). A name that is not in `src` answers `MCP_NOT_FOUND`, a name with a separator answers `MCP_INVALID_ARGUMENTS`, and a project the reader refuses answers `MCP_WORKSPACE_UNREADABLE`.
-- **Course progress.** The resource reads the progress file ZPLC keeps and answers which lessons are passed (LRN-034). It has no operation that writes progress, and a progress file of the first release is migrated in memory only, never written back. Without `--user-data` it answers `MCP_CAPABILITY_UNAVAILABLE`.
+- **Course progress.** The resource reads the progress file ZPLC keeps and answers which lessons are passed. It has no operation that writes progress, and a progress file of the first release is migrated in memory only, never written back. Without `--user-data` it answers `MCP_CAPABILITY_UNAVAILABLE`.
 - **Scenarios.** A scenario runs on the simulator of your computer, so its result is evidence of a simulated run, not of the plant.
 
 ## 4. Review what the assistant proposes

@@ -56,7 +56,7 @@ zplc dbg force clear_all
 
 `zplc dbg force set` holds an address at the bytes you give, in hexadecimal, and overrides the program's own assignments. `zplc stop` clears the force table. Never leave a force on a controller that nobody is watching.
 
-A force always belongs to a session (COM-020). A force typed at the console opens the session of the console's link, or joins the one the ZPLC application holds on it, and it ends with that session:
+A force always belongs to a session. A force typed at the console opens the session of the console's link, or joins the one the ZPLC application holds on it, and it ends with that session:
 
 - when the session is closed or taken over;
 - after the idle time (`CONFIG_ZPLC_PROTO_SESSION_IDLE_S`, 30 s by default; another force command counts as activity);

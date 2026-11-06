@@ -54,7 +54,7 @@ Each separator between two regions lights up under the pointer, fills while you 
 
 The main path (open a project, edit, build, simulate, watch) fits a window of 1366 by 768 pixels with no clipped control. The window can be as small as 1024 by 768: below 1100 pixels wide the rail shows icons only, the secondary sidebar hides itself, and the theme, settings and shortcut commands move into the **More commands** menu of the command bar.
 
-Evidence level: host. Unit tests of requirements UX-011, UX-012, UX-013 and UX-017 (`packages/zplc-ide/src/layout/separatorSteps.test.ts`, `packages/zplc-ide/src/store/useShellLayout.test.ts`) and a journey of `bun run test:journeys` cover them on the development host. No packaged, macOS or Windows window was measured.
+Evidence level: host. Unit tests (`packages/zplc-ide/src/layout/separatorSteps.test.ts`, `packages/zplc-ide/src/store/useShellLayout.test.ts`) and a journey of `bun run test:journeys` cover them on the development host. No packaged, macOS or Windows window was measured.
 
 ## Create and open projects
 
@@ -70,7 +70,7 @@ Under **Recent**, the Welcome screen lists up to ten folders you opened before, 
 
 For each project, ZPLC also remembers the open tabs, the active tab, the cursor and scroll position of each file, and the size of the editor and lower panels, and puts them back the next time the folder opens. Only paths and positions are stored in the session; unsaved text is kept separately and offered back only after a crash. A tab whose file no longer exists is dropped without a message. The list and the sessions live in ZPLC's private user-data directory, never in the project folder, and the session of a project that leaves the list is deleted the next time ZPLC starts.
 
-Evidence level: host. `packages/zplc-ide/electron/recentProjects.test.ts` and `packages/zplc-ide/src/utils/sessionState.test.ts` cover the list and the session format (IDE-008), and journeys 12 and 14 of `bun run test:journeys` drive the real application.
+Evidence level: host. `packages/zplc-ide/electron/recentProjects.test.ts` and `packages/zplc-ide/src/utils/sessionState.test.ts` cover the list and the session format, and journeys 12 and 14 of `bun run test:journeys` drive the real application.
 
 ## Files and folders in the project tree
 
@@ -94,7 +94,7 @@ Evidence level: host. `packages/zplc-ide/src/project/treeOperations.test.ts` and
 
 Under the file tree, the Files mode has a **Declarations** section, closed until you open it. Its heading shows how many declarations there are and how many files are not compiled. It lists the programs, function blocks, functions, interfaces and data types that the Structured Text files declare, grouped under their file, and choosing one opens its file with the cursor on its name.
 
-The build reads the Structured Text files directly in `src` and directly in each **library folder** that `zplc.json` lists under `libraries` (CMP-046), and everything they declare is visible to every program:
+The build reads the Structured Text files directly in `src` and directly in each **library folder** that `zplc.json` lists under `libraries`, and everything they declare is visible to every program:
 
 ```json
 { "libraries": ["lib", "vendor/acme"] }
@@ -129,7 +129,7 @@ If ZPLC was killed or crashed, open the project again. A **Recover unsaved chang
 
 Limits: a project keeps copies of at most 64 files and about 64 MB of text, and changes to the project settings (`zplc.json`) are not copied yet.
 
-Evidence level: host. `packages/zplc-ide/electron/recoveryStore.test.ts` covers the store, the messages and the timing (IDE-006), and journey 19 of `bun run test:journeys` kills the real application with SIGKILL, starts it again and restores the file.
+Evidence level: host. `packages/zplc-ide/electron/recoveryStore.test.ts` covers the store, the messages and the timing, and journey 19 of `bun run test:journeys` kills the real application with SIGKILL, starts it again and restores the file.
 
 ## Preferences
 
@@ -149,7 +149,7 @@ Autosave writes the modified files with the same save as **Save all**, without a
 
 The update check asks the GitHub releases of this project for the latest published release and says whether it is newer than the running build. It sends nothing about you, downloads nothing and installs nothing; the answer is a version and a link. It never runs until you turn it on or press **Check now**.
 
-Evidence level: host. `packages/zplc-ide/src/utils/appSettings.test.ts`, `packages/zplc-ide/src/store/autosave.test.ts` and `packages/zplc-ide/electron/updateCheck.test.ts` cover the settings, autosave and the update check (IDE-007, IDE-010), and journey 21 of `bun run test:journeys` changes them in the real application and restarts it.
+Evidence level: host. `packages/zplc-ide/src/utils/appSettings.test.ts`, `packages/zplc-ide/src/store/autosave.test.ts` and `packages/zplc-ide/electron/updateCheck.test.ts` cover the settings, autosave and the update check, and journey 21 of `bun run test:journeys` changes them in the real application and restarts it.
 
 ## Interface language
 
@@ -157,7 +157,7 @@ The **Language** preference chooses the language of ZPLC: **Automatic**, **Engli
 
 The language and the theme are also kept in a small file in ZPLC's private user-data directory, so the next start already has the right menu language and window colour. A missing or damaged file falls back to English and the system theme.
 
-Evidence level: host. `packages/zplc-ide/src/i18n/i18n.test.tsx` and `packages/zplc-ide/electron/shellPreferences.test.ts` cover the catalogs, the setting and the stored preferences (UX-029, UX-031).
+Evidence level: host. `packages/zplc-ide/src/i18n/i18n.test.tsx` and `packages/zplc-ide/electron/shellPreferences.test.ts` cover the catalogs, the setting and the stored preferences.
 
 ## Application menu, command palette and shortcuts
 
@@ -183,7 +183,7 @@ ZPLC keeps one list of commands, and every way to start a command reads it: the 
 
 **Commands that act on a device.** Connect, Disconnect, Deploy, Run, Pause, Stop, Step and Reset run the same action as the toolbar button of the same name, with the same checks and the same confirmation: Deploy still asks before it sends a program. They are controls for the person at the keyboard. The MCP tools and the optional AI provider have no access to them, and cannot flash, deploy, force, run or stop anything.
 
-Evidence level: host. `packages/zplc-ide/src/commands/commands.test.ts` and `packages/zplc-ide/electron/appMenu.test.ts` (UX-014, UX-015) check that no two commands share a shortcut, that every menu item and palette entry is a registered command, that every command has a title in both languages, and the shape of the menu on Windows, Linux and macOS with a stand-in for the platform. The native menu has not been run on Windows or macOS.
+Evidence level: host. `packages/zplc-ide/src/commands/commands.test.ts` and `packages/zplc-ide/electron/appMenu.test.ts` check that no two commands share a shortcut, that every menu item and palette entry is a registered command, that every command has a title in both languages, and the shape of the menu on Windows, Linux and macOS with a stand-in for the platform. The native menu has not been run on Windows or macOS.
 
 ## Simulation and hardware
 
@@ -225,7 +225,7 @@ A change reaches the program at a scan boundary, never inside a scan: the runtim
 
 Neither the agent nor the MCP server can operate the faceplate. On hardware, inputs are forced from the Watch table.
 
-Evidence level: host, native POSIX simulation, not hardware. `packages/zplc-ide/src/runtime/declaredInputs.test.ts` and `packages/zplc-ide/src/components/Faceplate.test.tsx` cover the lists, the encoding of every numeric type and what the faceplate says, `test_native_runtime_session.c` proves that a write waits for the start of the next scan, and journey 50 of `bun run test:journeys` operates a switch, a push button and a slider in the real application (LRN-017, IDE-024).
+Evidence level: host, native POSIX simulation, not hardware. `packages/zplc-ide/src/runtime/declaredInputs.test.ts` and `packages/zplc-ide/src/components/Faceplate.test.tsx` cover the lists, the encoding of every numeric type and what the faceplate says, `test_native_runtime_session.c` proves that a write waits for the start of the next scan, and journey 50 of `bun run test:journeys` operates a switch, a push button and a slider in the real application.
 
 ## Live plants
 
@@ -237,7 +237,7 @@ A plant is bound to the program by an explicit mapping, a data file `plant-map.j
 
 The plant is deterministic: it uses integer arithmetic in permille with a fixed step, and no clock, random number or floating point, so the same program and input script give the same trace on every platform. The recorded run of a scenario is still under **Replay of a recorded run**, which says it is a replay of a recorded native POSIX host run.
 
-Evidence level: host, native POSIX simulation, not hardware. `packages/zplc-ide/src/plants/plantEngine.test.ts` covers each plant and the golden traces, and journey 51 of `bun run test:journeys` runs the motor lesson in the real application with the keyboard alone (LRN-018). The trace hashes were compared on Linux only.
+Evidence level: host, native POSIX simulation, not hardware. `packages/zplc-ide/src/plants/plantEngine.test.ts` covers each plant and the golden traces, and journey 51 of `bun run test:journeys` runs the motor lesson in the real application with the keyboard alone. The trace hashes were compared on Linux only.
 
 ## Debugging boundary
 
@@ -262,7 +262,7 @@ Evidence level: host. `packages/zplc-ide/src/cli/scenarioParity.test.ts` runs ev
 - **Empty, loading and error states.** A panel with nothing to show says why and offers the next step. A loading indicator appears only when an operation takes longer than 300 ms. An error state names what went wrong and has a recovery button.
 - **A failure stays in its region.** If the editor, the lower panel or the toolbar throws while it draws, that region shows what stopped and a **Retry** button, and the rest of the window keeps working, so you can still save. If the failure is outside every region, the whole window shows the same message with **Retry** and a way to close the project.
 
-Evidence level: host. `packages/zplc-ide/src/store/notifications.test.ts` and `packages/zplc-ide/src/components/ErrorBoundary.test.tsx` cover the models, and journeys 20 and 36 of `bun run test:journeys` break regions and builds in the real application and follow **Details** to its panel (IDE-021). A deploy notification needs a device and is not covered by a journey.
+Evidence level: host. `packages/zplc-ide/src/store/notifications.test.ts` and `packages/zplc-ide/src/components/ErrorBoundary.test.tsx` cover the models, and journeys 20 and 36 of `bun run test:journeys` break regions and builds in the real application and follow **Details** to its panel. A deploy notification needs a device and is not covered by a journey.
 
 ## Accessibility
 

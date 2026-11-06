@@ -167,7 +167,7 @@ END_PROGRAM
 - Comparison, addition, subtraction and division are unsigned 32-bit: `T#30d > T#1d` is TRUE. A timer preset above 24.8 days works.
 - **A negative duration cannot be represented.** A subtraction below zero wraps modulo 2^32: `T#0s - T#1s` is 4294966296 ms, and the build gives no warning. Check that the minuend is not smaller before you subtract.
 - The Watch table shows a `TIME` above 2147483647 ms (24d20h31m23s647ms) as a negative number, because the watch adapters read its 32 bits as signed. The value the program holds is the unsigned count.
-- Whether `TIME` stays an unsigned 32-bit count or becomes a signed 64-bit value is an open owner decision, tracked under requirement CMP-017. This page announces no change.
+- Whether `TIME` stays an unsigned 32-bit count or becomes a signed 64-bit value is an open owner decision. This page announces no change.
 
 ### DATE, TOD and DT
 

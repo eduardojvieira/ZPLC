@@ -54,13 +54,13 @@ The renderer reaches the main process only through the preload, and only through
 - **A narrow preload.** It exposes one method per operation and nothing generic: no `send`, no raw channel access and no path of the machine.
 - **Fixed processes.** The processes started for compile, test and firmware build come from a closed list of fixed argument vectors, start without a shell and never take a command or an argument from the renderer.
 
-Evidence level: host. `packages/zplc-ide/electron/ipcRegistry.test.ts` runs the real handler table against stand-ins for Electron and the stores, `packages/zplc-ide/electron/preload.test.ts` runs the real preload and compares what it invokes with the contract, and `packages/zplc-ide/shared/spawnAllowList.test.ts` shows the argument vectors (requirement IDE-017). It is not packaged-application evidence.
+Evidence level: host. `packages/zplc-ide/electron/ipcRegistry.test.ts` runs the real handler table against stand-ins for Electron and the stores, `packages/zplc-ide/electron/preload.test.ts` runs the real preload and compares what it invokes with the contract, and `packages/zplc-ide/shared/spawnAllowList.test.ts` shows the argument vectors. It is not packaged-application evidence.
 
 ### Work that does not block the window
 
 Compile, safety check, scenario tests and the candidate review each run in a process of their own, started for the request from a fixed list and stopped when the request ends, so a long compile or run cannot freeze the window. **Cancel scenarios** in the Tests panel asks the worker to stop; a worker that is busy and does not answer is killed after a short grace period, and a deadline kills a worker that never finishes. Killing the worker also ends the native runtime that it started. A cancelled run is shown and recorded as cancelled, and nothing of it is kept as a build.
 
-Evidence level: host. `packages/zplc-ide/electron/toolWorkerHost.test.ts` runs real child processes: a worker stuck in a busy loop is killed while the caller keeps running, and the real worker compiles a project and cancels a run of scenarios on the native runtime. Journey 35 of `bun run test:journeys` cancels a long run in the real application (requirement IDE-012).
+Evidence level: host. `packages/zplc-ide/electron/toolWorkerHost.test.ts` runs real child processes: a worker stuck in a busy loop is killed while the caller keeps running, and the real worker compiles a project and cancels a run of scenarios on the native runtime. Journey 35 of `bun run test:journeys` cancels a long run in the real application.
 
 ### One project of record
 
