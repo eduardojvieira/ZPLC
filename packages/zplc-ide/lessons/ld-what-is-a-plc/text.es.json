@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Qué es un PLC: su primer peldaño",
   "summary": "Conozca las tres partes de toda máquina con PLC, entradas, un programa y salidas, y termine un programa de un peldaño que enciende una lámpara mientras se pulsa un botón.",
-  "scope": "Las pruebas aportan evidencia determinista del host con el runtime nativo POSIX, solo en su computador; no son evidencia de hardware, eléctrica, HIL ni de seguridad.",
+  "scope": "Las pruebas aportan evidencia determinista del host con el runtime nativo POSIX, solo en su computadora; no son evidencia de hardware, eléctrica, HIL ni de seguridad.",
   "objectives": [
     "Nombre las tres partes de un sistema con PLC: las entradas que leen el mundo, un programa que decide y las salidas que actúan sobre el mundo.",
     "Complete un peldaño en diagrama de escalera en el que un botón pulsado enciende una lámpara, y lea el resultado en el laboratorio simulado."
@@ -29,7 +29,7 @@
     {
       "key": "run",
       "title": "Ejecute",
-      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado en el laboratorio simulado de este computador y compara lo que hizo con el escenario de esta lección.",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado en el laboratorio simulado de esta computadora y compara lo que hizo con el escenario de esta lección.",
       "checkpoint": "El escenario se llama WhatIsPlc y contiene {{assertions}} aserciones."
     },
     {

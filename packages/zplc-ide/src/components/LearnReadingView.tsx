@@ -27,6 +27,7 @@ function ReadingSurface({ lessonId }: { lessonId: string }) {
   const leaving = useRef<'panel' | 'home'>('panel');
   const entry = LESSON_INDEX.lessons.find((lesson) => lesson.id === lessonId);
   const page = entry?.reading?.[locale];
+  // The React Compiler memoizes this on `page`; the lab does not depend on it, since it is told apart by content (useLdTry.ts).
   const parsed = page === undefined ? null : parseReading(page);
   const moduleTitle = LESSON_INDEX.course.modules.find((module) => module.id === entry?.module)?.title[locale] ?? '';
 

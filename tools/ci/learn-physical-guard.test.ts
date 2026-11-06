@@ -62,6 +62,36 @@ describe('Learn starts no physical operation by itself (LRN-015)', () => {
     expect(rulesOf("import { openTryLab } from '../../runtime/tryLab'; lab.run(); lab.press('Button', true); lab.close();")).toEqual([]);
   });
 
+  it('LRN-015 closes the ways round the try-it lab seam', () => {
+    const seamRules = (text: string): string[] => seamViolationsOf({ path: TRY_LAB, text }).map((violation) => violation.rule);
+    // inside the seam: the factory that returns the native session under Electron, and the runtime barrel
+    expect(seamRules("import { createSimulationAdapter as make } from './simulationAdapterFactory';")).toEqual(['device-module']);
+    expect(seamRules("import { createSimulationAdapter } from '.';")).toEqual(['device-module']);
+    expect(seamRules("import { createSerialAdapter } from './index';")).toEqual(['device-module']);
+    expect(seamRules("import { createWASMAdapter } from './wasmAdapter';")).toEqual([]);
+    // from Learn: the factory, the barrel, and the open call that takes an adapter of its own
+    const evil = 'packages/zplc-ide/src/learn/reading/Evil.tsx';
+    const learnRules = (text: string): string[] => violationsOf({ path: evil, text }).map((violation) => violation.rule);
+    expect(learnRules("import { createSimulationAdapter } from '../../runtime/simulationAdapterFactory';")).toEqual(['device-module']);
+    expect(learnRules("import { createSerialAdapter } from '../../runtime';")).toEqual(['device-module']);
+    expect(learnRules("import { createSerialAdapter } from '../../runtime/index';")).toEqual(['device-module']);
+    expect(learnRules("import { openTryLabWith } from '../../runtime/tryLab';")).toEqual(['physical-call']);
+    expect(learnRules('const opened = openTryLabWith(text, spec, make);')).toEqual(['physical-call']);
+    expect(learnRules("import { openTryLab } from '../../runtime/tryLab'; const o = openTryLab(text, spec);")).toEqual([]);
+  });
+
+  it('LRN-015 catches every spelling of the runtime barrel, inside the seam and from Learn', () => {
+    const seamRules = (text: string): string[] => seamViolationsOf({ path: TRY_LAB, text }).map((violation) => violation.rule);
+    for (const spelling of ['./', './index.ts', '../runtime', '../runtime/', '../runtime/index']) {
+      expect([spelling, seamRules(`import { NativeAdapter } from '${spelling}';`)]).toEqual([spelling, ['device-module']]);
+    }
+    const learn = 'packages/zplc-ide/src/learn/reading/Evil.tsx';
+    for (const spelling of ['../../runtime/', '../../runtime/index.ts']) {
+      const rules = violationsOf({ path: learn, text: `import { NativeAdapter } from '${spelling}';` }).map((violation) => violation.rule);
+      expect([spelling, rules]).toEqual([spelling, ['device-module']]);
+    }
+  });
+
   it('LRN-015 holds for every Learn source of the repository', () => {
     expect(checkRepository()).toEqual([]);
   });

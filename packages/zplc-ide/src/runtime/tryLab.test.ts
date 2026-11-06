@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'bun:test';
-import { openTryLab, planTryLab, readingsOf, type TryLab, type TryLabAdapter, type TryLabSpec } from './tryLab';
+import { openTryLabWith, planTryLab, readingsOf, type TryLab, type TryLabAdapter, type TryLabSpec } from './tryLab';
 
 const SRC = 'reading/off-delay.ld.json';
 const OFF_DELAY = readFileSync(join(import.meta.dir, '..', 'learn', 'reading', 'fixtures', 'off-delay.ld.json'), 'utf8');
@@ -26,7 +26,7 @@ function fakeAdapter(values: Record<string, boolean> = {}) {
   return { adapter, calls, values };
 }
 function open(fake = fakeAdapter(), spec = SPEC): TryLab {
-  const opened = openTryLab(OFF_DELAY, spec, () => fake.adapter);
+  const opened = openTryLabWith(OFF_DELAY, spec, () => fake.adapter);
   if (!opened.ok) throw new Error('the lab did not open');
   return opened.lab;
 }
@@ -73,7 +73,7 @@ describe('try-it lab session (LRN-041, LRN-015)', () => {
   test('makes no adapter and starts nothing until the learner asks to run', async () => {
     let made = 0;
     const fake = fakeAdapter();
-    const opened = openTryLab(OFF_DELAY, SPEC, () => (made++, fake.adapter));
+    const opened = openTryLabWith(OFF_DELAY, SPEC, () => (made++, fake.adapter));
     expect(opened.ok).toBe(true);
     expect(made).toBe(0);
     expect(fake.calls).toEqual([]);

@@ -38,7 +38,7 @@ Aprenda los contactos normalmente abierto y normalmente cerrado, por qué un bot
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia determinista del host con el runtime nativo POSIX, solo en su computador. El escenario ajusta la señal de parada; no demuestran una función de parada segura, el cableado, los tiempos del hardware, HIL ni certificación.
+Las pruebas aportan evidencia determinista del host con el runtime nativo POSIX, solo en su computadora. El escenario ajusta la señal de parada; no demuestran una función de parada segura, el cableado, los tiempos del hardware, HIL ni certificación.
 
 ## En una placa
 

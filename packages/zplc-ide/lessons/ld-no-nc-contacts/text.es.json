@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "title": "Contactos NA y NC: un botón de parada que falla en modo seguro",
   "summary": "Aprenda los contactos normalmente abierto y normalmente cerrado, por qué un botón de parada se cablea normalmente cerrado, y lea correctamente una señal de parada de campo en un programa que además enciende una lámpara cuando el circuito de parada está abierto.",
-  "scope": "Las pruebas aportan evidencia determinista del host con el runtime nativo POSIX, solo en su computador. El escenario ajusta la señal de parada; no demuestran una función de parada segura, el cableado, los tiempos del hardware, HIL ni certificación.",
+  "scope": "Las pruebas aportan evidencia determinista del host con el runtime nativo POSIX, solo en su computadora. El escenario ajusta la señal de parada; no demuestran una función de parada segura, el cableado, los tiempos del hardware, HIL ni certificación.",
   "objectives": [
     "Explique por qué un botón de parada se cablea normalmente cerrado, y cómo ve el programa un botón NC de campo: TRUE en reposo, FALSE al pulsarlo o si se rompe el cable.",
     "Elija el tipo correcto de contacto en un peldaño: un contacto normalmente abierto deja pasar la energía cuando su variable es TRUE, y uno normalmente cerrado cuando es FALSE."

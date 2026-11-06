@@ -30,10 +30,12 @@ export function LdTry({
   const { t } = useT();
   const lab = useLdTry(files[data.src], data, open);
   const rungs = useLdRungs(files, data.src);
-  const holds = useRef(new Map<string, Hold>());
+  // the holds are bound to the lab they were made for: a new lab starts with none
+  const holds = useRef<{ owner: unknown; byName: Map<string, Hold> }>({ owner: undefined, byName: new Map() });
   const hold = (name: string): Hold => {
-    let found = holds.current.get(name);
-    if (!found) holds.current.set(name, (found = createHold((down) => lab.setInput(name, down))));
+    if (holds.current.owner !== lab.setInput) holds.current = { owner: lab.setInput, byName: new Map() };
+    let found = holds.current.byName.get(name);
+    if (!found) holds.current.byName.set(name, (found = createHold((down) => lab.setInput(name, down))));
     return found;
   };
   const operable = lab.status === 'running' || lab.status === 'paused';

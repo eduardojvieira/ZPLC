@@ -38,7 +38,7 @@ Combine contactos en serie para AND y en paralelo para OR, lea una tabla de verd
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia determinista del host con el runtime nativo POSIX, solo en su computador; no son evidencia de hardware, eléctrica, HIL ni de seguridad.
+Las pruebas aportan evidencia determinista del host con el runtime nativo POSIX, solo en su computadora; no son evidencia de hardware, eléctrica, HIL ni de seguridad.
 
 ## En una placa
 

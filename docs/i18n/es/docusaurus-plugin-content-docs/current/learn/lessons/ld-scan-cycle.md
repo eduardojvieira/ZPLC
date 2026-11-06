@@ -38,7 +38,7 @@ Aprenda que un PLC lee sus entradas, resuelve los peldaños de arriba hacia abaj
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia determinista del host con el runtime nativo POSIX y una tarea de 10 ms, solo en su computador; no son evidencia de tiempos en una placa, HIL ni de seguridad.
+Las pruebas aportan evidencia determinista del host con el runtime nativo POSIX y una tarea de 10 ms, solo en su computadora; no son evidencia de tiempos en una placa, HIL ni de seguridad.
 
 ## En una placa
 

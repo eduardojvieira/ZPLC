@@ -132,11 +132,11 @@ export function readingsOf(results: readonly WatchVariable[]): Read {
   return (variable) => values.get(variable);
 }
 
-/**
- * Opens a lab: compiles its program and returns the session, which has made no adapter yet. `createAdapter` is for a test;
- * a page runs on the WebAssembly runtime.
- */
-export function openTryLab(content: string, spec: TryLabSpec, createAdapter: () => TryLabAdapter = createWASMAdapter): TryLabOpening {
+/** Opens a lab: compiles its program and returns the session, which has made no adapter yet. It runs on the WebAssembly runtime. */
+export const openTryLab = (content: string, spec: TryLabSpec): TryLabOpening => openTryLabWith(content, spec, createWASMAdapter);
+
+/** Opens a lab on an adapter of the caller's. For tests only: the Learn guard (LRN-015) refuses it in Learn sources. */
+export function openTryLabWith(content: string, spec: TryLabSpec, createAdapter: () => TryLabAdapter): TryLabOpening {
   const planned = planTryLab(content, spec);
   if (!planned.ok) return planned;
   const { plan } = planned;

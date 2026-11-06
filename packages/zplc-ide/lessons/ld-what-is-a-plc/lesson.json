@@ -12,11 +12,11 @@
     "hardware": {
       "reason": {
         "en": "This lesson is about the simulated lab on your computer: the button and the lamp exist only in the simulation, so there is no board wiring to check.",
-        "es": "Esta lección trata del laboratorio simulado en su computador: el botón y la lámpara existen solo en la simulación, así que no hay cableado de placa que verificar."
+        "es": "Esta lección trata del laboratorio simulado en su computadora: el botón y la lámpara existen solo en la simulación, así que no hay cableado de placa que verificar."
       },
       "instead": {
         "en": "Complete it in Simulation, which needs only your computer.",
-        "es": "Complétela en Simulación, que solo necesita su computador."
+        "es": "Complétela en Simulación, que solo necesita su computadora."
       }
     }
   },

@@ -1,6 +1,7 @@
 /**
- * The images of the lesson reading pages (LRN-040), resolved by Vite as `?url` assets so they load from the app itself
- * (CSP `img-src 'self'`). Outside Vite (bun tests) the glob does not exist and no image resolves.
+ * The images of the lesson reading pages (LRN-040), resolved by Vite as `?url` assets. Vite serves a large one from the app
+ * itself (CSP `img-src 'self'`) and inlines one under 4 KB as a `data:` URL, which renders because the CSP allows `img-src data:`.
+ * Outside Vite (bun tests) the glob does not exist and no image resolves.
  */
 let urls: Record<string, string> = {};
 try {
