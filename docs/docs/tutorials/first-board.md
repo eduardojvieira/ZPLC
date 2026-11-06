@@ -3,30 +3,25 @@ slug: /tutorials/first-board
 id: first-board
 title: Your first board
 sidebar_label: Your first board
-description: 'The steps to build the firmware, flash it, connect ZPLC, deploy a program and observe an output on a Raspberry Pi Pico or an ESP32-S3, not yet executed on a board.'
+description: 'The steps to build the firmware, flash it, connect ZPLC, deploy a program and observe an output on a Raspberry Pi Pico or an ESP32-S3. Not yet executed on a board.'
 tags: [tutorial, hardware, raspberry-pi-pico, esp32-s3]
 ---
 
 # Your first board
 
-This page lists the steps from firmware to a blinking LED on a Raspberry Pi Pico
-or an ESP32-S3. It is written from the board manifest and the deploy flow of
-ZPLC, and **nobody has executed it on a board**.
+This page lists the steps from firmware to a blinking LED on a Raspberry Pi Pico or an ESP32-S3. It is written from the
+board manifest and from the deploy flow of ZPLC, and **nobody has executed it on a board**.
 
 :::danger Not executed on a board
-The firmware of both boards builds in continuous integration and fits its flash
-and RAM budget. No one has flashed it, booted it, deployed a program to it or seen
-an output change: the level of both boards is `cross-build`
-([Hardware support](../reference/capabilities-evidence.md)). Nothing here says that
-a step works. If you follow it, you are the first, and your result is a lead until
-it is recorded with the firmware version, the commit and the hash of the image: use
-the board report template of the repository's issues and do not put credentials or
-device identifiers in it.
+The firmware of both boards builds in continuous integration and fits its flash and RAM budget. No one has flashed it,
+booted it, deployed a program to it or seen an output change: the level of both boards is `cross-build`
+([Hardware support](../reference/capabilities-evidence.md)). Nothing here says that a step works. If you follow it, you
+are the first, and your result is a lead until it is recorded with the firmware version, the commit and the hash of the
+image: use the board report template of the repository's issues, and do not put credentials or device identifiers in it.
 :::
 
-First finish [Blink without hardware](./blink-without-hardware.md): every step below
-assumes that you can build and run a program in the simulator, which has been
-checked.
+Finish [Blink without hardware](./blink-without-hardware.md) first. Every step below assumes that you can build and run a
+program in the simulator, which has been checked.
 
 ## What you need
 
@@ -37,91 +32,90 @@ checked.
 | Example project      | `pico_blinky`                                                  | `esp32s3_blinky`                                                   |
 | First digital output | `DO0`, `%QX0.0`, pin GP0 (header pin 1)                        | `DO0`, `%QX0.0`, pin GPIO15 (header J1 pin 8)                      |
 | What to wire         | An LED and a 330 Ω resistor from the pin to GND (header pin 3) | An LED and a 330 Ω resistor from the pin to GND (header J1 pin 22) |
-| Interface to ZPLC    | The USB cable of the board                                     | The USB cable, on the port marked USB (not UART)                   |
+| Link to ZPLC         | The USB cable of the board                                     | The USB cable, on the port marked USB (not UART)                   |
 
-The channels and the safe value of every output, the electrical notes and which
-pins the board's devicetree proves are in [Supported boards](../reference/boards.md).
-Read the notes of your board before you wire anything: the pins are 3.3 V logic and
-are not 5 V tolerant. The inputs and the analog input are there too: on the Pico,
-`DI0` to `DI3` are GP15 to GP12 and `AI0` is GP26; on the DevKitC-1, `DI0` to `DI3`
-are GPIO5 to GPIO8 (header J1 pins 5 to 7 and 12) and `AI0` is GPIO4 (header J1
-pin 4). The BOOT button of the DevKitC-1 is the extra input `DI4`: do not hold it
-while the board resets, or the board starts in download mode.
+[Supported boards](../reference/boards.md) lists the channels and the safe value of every output, the electrical notes, and
+which pins the devicetree of the board proves. Read the notes of your board before you wire anything: the pins are 3.3 V
+logic and are not 5 V tolerant. The inputs and the analog input are there too. On the Pico, `DI0` to `DI3` are GP15 to
+GP12 and `AI0` is GP26. On the DevKitC-1, `DI0` to `DI3` are GPIO5 to GPIO8 (header J1 pins 5 to 7 and 12) and `AI0` is
+GPIO4 (header J1 pin 4). The BOOT button of the DevKitC-1 is the extra input `DI4`: do not hold it while the board
+resets, or the board starts in download mode.
 
 ## 1. Get the firmware
 
-The rc.3 release has no prebuilt firmware: it was uploaded by hand. The release
-pipeline builds one image of the runtime for every board of the manifest for each
-release it makes, named `zplc-runtime-<version>-<board>.<ext>`, with the checksum
-in `SHA256SUMS` and the evidence level of the board in the release notes. Its
-installers carry the images of the Raspberry Pi Pico and the ESP32-S3: in ZPLC,
-open **Project settings**, **Target**, choose the board, and ZPLC shows the file,
-its SHA-256, where it is and the steps to flash it. ZPLC only shows them: you
-flash (step 2). The pipeline has not made a release yet, so today you build the
-firmware from the source, with the repository script, which wraps the same `west build` and size check as the continuous integration job.
-Set up the Zephyr workspace once
-(about 6.6 GB, or about 15 GB with the Zephyr SDK and the build outputs; see [Firmware testing](../development/firmware-testing.md#one-time-setup)),
-then build the board:
+The release pipeline builds one image of the runtime for every board of the manifest, for each release it makes, named
+`zplc-runtime-<version>-<board>.<ext>`, with its checksum in `SHA256SUMS` and the evidence level of the board in the
+release notes. The installers carry the images of the Raspberry Pi Pico and the ESP32-S3: in ZPLC, open **Project
+settings**, **Target**, choose the board, and ZPLC shows the file, its SHA-256, where it is and the steps to flash it.
+ZPLC only shows them; you flash (step 2). That path has not been exercised on a release yet, so build the firmware from
+the source with the repository script, which wraps the same `west build` and the same size check as the continuous
+integration job.
+
+Set up the Zephyr workspace once (about 6.6 GB, or about 15 GB with the Zephyr SDK and the build outputs; see
+[Firmware testing](../development/firmware-testing.md#one-time-setup)), then build the board:
 
 ```bash
 tools/firmware-test/setup.sh
 tools/firmware-test/run.sh size rpi-pico-rp2040
 ```
 
-The script runs `west build` for the board of the manifest and checks its flash and
-RAM against the recorded budget. The image is in `$ZPLC_FW_WS/out/size/rpi-pico-rp2040/zephyr/`
-(`zephyr.elf` and, for the Pico, `zephyr.uf2`; for the ESP32-S3, `zephyr.bin`). For the ESP32-S3 the board
-identifier is `esp32-s3-devkitc`. To build one board without the script, run the
-command of its profile from the root of the Zephyr workspace:
+The script runs `west build` for the board of the manifest and checks its flash and RAM against the recorded budget. The
+image is in `$ZPLC_FW_WS/out/size/rpi-pico-rp2040/zephyr/`: `zephyr.elf` and, for the Pico, `zephyr.uf2`; for the
+ESP32-S3, `zephyr.bin`. For the ESP32-S3 the board identifier of the script is `esp32-s3-devkitc`. To build one board
+without the script, run the command of its profile from the root of the Zephyr workspace:
 
 ```bash
 west build -b rpi_pico/rp2040 firmware/app --pristine
 ```
 
-A build that finishes proves only that the firmware builds for the board.
+A build that finishes shows only that the firmware builds for the board. [Build the firmware](../guides/build-firmware.md)
+has the details.
 
 ## 2. Flash it (a person does this)
 
-Flashing writes the firmware to the device and is **never done by ZPLC's AI or MCP
-features**. [Flash the firmware](../guides/flash-firmware.md) has the steps of every
-board and the command line; in short, use the board's own Zephyr procedure:
+Flashing writes the firmware to the device. **ZPLC's AI and MCP features never do it.** [Flash the firmware](../guides/flash-firmware.md)
+has the steps of every board and the command line. In short, use the board's own Zephyr procedure:
 
-- **Raspberry Pi Pico:** the RP2040 boot loader accepts a UF2 file. Hold the BOOTSEL
-  button while you plug the USB cable in, and copy `zephyr.uf2` to the drive that
-  appears.
-- **ESP32-S3:** hold BOOT, press and release RST, and release BOOT to enter the
-  download mode; then flash with `west flash` from the build directory, or write
-  `zephyr.bin` at `0x0` with `esptool`, and press RST.
+- **Raspberry Pi Pico:** the RP2040 boot loader accepts a UF2 file. Hold the BOOTSEL button while you plug the USB cable
+  in, and copy `zephyr.uf2` to the drive that appears.
+- **ESP32-S3:** hold BOOT, press and release RST, and release BOOT to enter the download mode. Then flash with
+  `west flash` from the build directory, or write `zephyr.bin` at `0x0` with `esptool`, and press RST.
 
-If a board does not come back, use the recovery procedure of its profile:
-[Recovery boundaries](../operations/recovery.md).
+If a board does not come back, use the recovery procedure of its profile: [Recovery boundaries](../operations/recovery.md).
 
 ## 3. Connect ZPLC
 
-1. Open the project of the example, build it (**Build**, **Compile**) and choose
-   **Hardware** in the toolbar instead of **Simulate**.
-2. Press **Connect**. A dialog of ZPLC lists each serial port with its name and
-   its USB identifiers and marks the boards it knows. If the board is not listed,
-   plug it in and press **Refresh**. Choose its port and press **Use this port**:
-   ZPLC uses only that port, and choosing it sends nothing to the board. On Linux
-   your user needs the serial group: [Install ZPLC](../getting-started/install.md#linux-serial-port-access).
-3. The ZPLC application reads the identity of the runtime: board, profile and ABI. A project built
-   for another board is refused.
+1. Open the project of the example, build it (**Build**, **Compile**) and choose **Hardware** in the toolbar instead of
+   **Simulate**.
+
+   ![The Raspberry Pi Pico example built, with Hardware chosen and no board connected](/img/screens/first-board-hardware.png)
+
+2. Press **Connect**. A dialog lists each serial port with its name and its USB identifiers and marks the boards it
+   knows. If the board is not listed, plug it in and press **Refresh**. Choose its port and press **Use this port**: ZPLC
+   uses only that port, and choosing it sends nothing to the board. On Linux your user needs the serial group:
+   [Install ZPLC](../getting-started/install.md#linux-serial-port-access).
+
+   ![The Connect dialog of ZPLC, with no board plugged in](/img/screens/first-board-connect.png)
+
+3. ZPLC reads the identity of the runtime: board, profile and ABI. A project built for another board is refused.
+
+:::note About the pictures
+The two pictures above are real captures of the application, taken with no board attached, so the dialog is empty. The
+pictures of a board that answers, of the deploy question and of an output that changes are missing on purpose: no one
+has run those steps on a board, and this page shows no picture that the capture tool cannot take.
+:::
 
 ## 4. Deploy and run (a person does this)
 
-1. Press **Deploy**. ZPLC shows the program's SHA-256, its size, the number of
-   tasks and the board of the device, and asks you to confirm. A deploy stops the
-   current program and leaves the runtime **stopped**: it does not run it.
+1. Press **Deploy**. ZPLC shows the SHA-256 of the program, its size, the number of tasks and the board of the device,
+   and asks you to confirm. A deploy stops the current program and leaves the runtime **stopped**: it does not run it.
 2. Check that the machine is in a state where an output may change.
-3. Press **Run** (F5) yourself. The LED should switch every half second if the
-   program is the example.
+3. Press **Run** (F5) yourself. The LED should switch every half second if the program is the example.
 
 ## 5. Observe
 
-Open the **Watch** tab and add `LED_Output`: its value follows the LED. Press
-**Stop** (Shift+F5): on a board a stop also drives the physical outputs to their
-safe state, off ([Scheduler](../runtime/scheduler.md#pause-resume-step-and-stop)).
+Open the **Watch** tab and add `LED_Output`: its value follows the LED. Press **Stop** (Shift+F5). On a board, a stop also
+drives the physical outputs to their safe state, off ([Scheduler](../runtime/scheduler.md#pause-resume-step-and-stop)).
 
 ## What is verified
 
@@ -129,20 +123,19 @@ safe state, off ([Scheduler](../runtime/scheduler.md#pause-resume-step-and-stop)
 | ------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------- |
 | 1. Get the firmware | Continuous integration runs `west build` and the same flash and RAM budget check as the build script | Builds in CI: `cross-build`  |
 | 2. Flash it         | None                                                                                                 | Not yet verified on hardware |
-| 3. Connect ZPLC     | The Blink tutorial exercises connecting in the simulator; no board has been connected                | Not yet verified on hardware |
+| 3. Connect ZPLC     | The dialog is pictured above with no board; the Blink tutorial exercises connecting in the simulator | Not yet verified on hardware |
 | 4. Deploy and run   | The Blink tutorial exercises running in the simulator; no board has received a program               | Not yet verified on hardware |
 | 5. Observe          | The Watch table is exercised in the simulator; no physical output has been seen to change            | Not yet verified on hardware |
 
 ## What you can report
 
-Whatever happens, the result is useful: report which step you reached, the board
-and the firmware version (`zplc version` in the shell prints the commit, the board
-and the build options), and what you saw. A record that names the commit and the
+Whatever happens, the result is useful. Report which step you reached, the board, the firmware version (`zplc version` in
+the shell prints the commit, the board and the build options) and what you saw. A record that names the commit and the
 hash of the image is what moves a board from `cross-build` to `human-hil`.
 
 ## See also
 
-- [Hardware support](../reference/capabilities-evidence.md): the levels and the level of every board today.
+- [Hardware support](../reference/capabilities-evidence.md): the levels, and the level of every board today.
 - [Supported boards](../reference/boards.md): the channels, pins and safe values.
 - [Deployment and runtime sessions](../ide/deployment.md): the four separate operations.
 - [Safety and limitations](../safety-and-limitations.md).

@@ -10,9 +10,9 @@ C99 runtime executes it: on microcontroller boards as a Zephyr module, and on
 your computer as a simulator. The ZPLC desktop application edits, compiles,
 tests and simulates projects.
 
-> **Status:** 2.0.0-rc.3 is a preview for evaluation. Seven boards cross-build in
-> CI and none has been tested on hardware yet. It is not a safety PLC and must
-> not be used to control machinery: [Safety and limitations](docs/docs/safety-and-limitations.md).
+> **Status:** ZPLC 2.0 is for evaluation. Seven boards cross-build in CI and none
+> has been tested on hardware yet. It is not a safety PLC and must not be used
+> to control machinery: [Safety and limitations](docs/docs/safety-and-limitations.md).
 
 [Download ZPLC](https://github.com/eduardojvieira/ZPLC/releases) ·
 [Getting started](docs/docs/getting-started/index.md) ·
@@ -41,14 +41,15 @@ the only channel that exists today. Check the file against `SHA256SUMS`, then op
 - Write programs in Structured Text, Instruction List, Ladder, FBD or SFC in ZPLC.
 - Compile them to `.zplc` bytecode and run them in the simulator, with no hardware.
 - Test them with scenarios: scripted inputs and timed checks on outputs, run from the Tests tab.
-- Start from one of 69 example projects, such as a tank level controller, a conveyor, motor start/stop and a pedestrian crossing. They are in [`packages/zplc-ide/projects/`](packages/zplc-ide/projects/) and on the Welcome screen.
+- Start from one of 81 example projects, such as a tank level controller, a conveyor, motor start/stop and a pedestrian crossing. They are in [`packages/zplc-ide/projects/`](packages/zplc-ide/projects/) and on the Welcome screen.
+- Learn PLC programming from zero with the built-in course: 68 lessons in English and Spanish, with a Ladder path whose lessons open on a reading page with a try-it lab.
 - Build the runtime for seven Zephyr boards.
 
 ## What it runs on
 
 | Part                | Runs on                                                                                                                                                                                                                                                                                                          |
 | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Desktop application | Windows, macOS and Linux. The rc.3 installers are unsigned.                                                                                                                                                                                                                                                      |
+| Desktop application | Windows, macOS and Linux. The installers are unsigned.                                                                                                                                                                                                                                                           |
 | Simulator           | Your computer, as a host build of the same C runtime. The desktop application bundles it.                                                                                                                                                                                                                        |
 | Boards              | Raspberry Pi Pico (RP2040), Arduino GIGA R1, ESP32-S3 DevKitC, STM32F746G Discovery, STM32 Nucleo-H743ZI, Arduino Opta WiFi and Waveshare RP2040-Zero. All seven cross-build only: the firmware builds in CI and has not been run on a board ([Hardware support](docs/docs/reference/capabilities-evidence.md)). |
 

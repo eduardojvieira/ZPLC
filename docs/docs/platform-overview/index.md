@@ -3,50 +3,75 @@ slug: /platform-overview
 id: index
 title: Platform Overview
 sidebar_label: Platform Overview
-description: Product-level map of ZPLC engineering surfaces and execution targets.
+description: The parts of ZPLC, what each one does, and how a program travels from the editor to the simulator and to a board.
 tags: [architecture, introduction]
 ---
 
 # Platform Overview
 
-ZPLC (Zephyr PLC) combines a portable ANSI C99 execution core with TypeScript engineering tools. Its capabilities are evidence-gated: host simulation, target builds, and HIL results answer different questions.
+This page is the map of ZPLC. It names the four parts, shows the path a program takes, and says what kind of evidence
+each part has, so you know what to trust before you read the detailed pages.
 
-## The ZPLC ecosystem
+## The parts
 
 ```mermaid
-flowchart TB
-  IDE[ZPLC application]
+flowchart LR
+  App[ZPLC application]
   Compiler[Compiler]
-  Runtime[Runtime core]
-  Boards[Board profiles]
+  Bytecode[.zplc bytecode]
+  Core[Runtime core]
+  Sim[Simulator on your computer]
+  Board[Board firmware on Zephyr]
 
-  IDE --> Compiler
-  Compiler --> Runtime
-  Runtime --> Boards
+  App --> Compiler
+  Compiler --> Bytecode
+  Bytecode --> Core
+  Core --> Sim
+  Core --> Board
 ```
 
-## Core principles
+| Part                                 | What it is                                                                                                                   | Where it lives                                        |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| **ZPLC application**                 | The desktop program in which you write, compile, test and simulate. It also holds the Learn course.                          | `packages/zplc-ide/`                                  |
+| **Compiler**                         | Turns Structured Text, Instruction List, Ladder, Function Block Diagram and Sequential Function Chart into `.zplc` bytecode. | `packages/zplc-ide/src/compiler/` and the transpilers |
+| **Runtime core**                     | A C99 bytecode interpreter with program validation, runtime state and a portable scheduler. The same code runs everywhere.   | `firmware/lib/zplc_core/`                             |
+| **Hardware abstraction layer (HAL)** | The small interface that the core uses for clocks, storage, I/O and transports. A port implements it for a platform.         | `firmware/lib/zplc_core/` and the board ports         |
 
-- **Bounded runtime memory**: the C99 core uses defined memory boundaries; validation remains part of every target profile.
-- **HAL separation**: the core and hardware adapters are separate so platform behavior can be inspected and tested independently.
-- **Evidence before claims**: scheduler timing, I/O behavior, persistence, protocols, and board support are stated only for the profile/revision with matching evidence. [Hardware support](../reference/capabilities-evidence.md) lists the levels, and [Safety and limitations](../safety-and-limitations.md) says what ZPLC is not.
+## How a program travels
 
-## Product boundaries
+1. You write the program in the application, in any of the five languages.
+2. The compiler checks it and writes one `.zplc` file, with the tasks and the declared safe values of the outputs.
+3. The **simulator** loads that file on your computer. It is the same runtime core, built for the host.
+4. For a board, you build the firmware, flash it, connect, deploy the `.zplc` file and run it. A person starts each of
+   these steps, and AI and MCP tools cannot start any of them.
 
-1. **Core VM (`libzplc_core`)**: C99 bytecode interpreter, program validation, runtime state, and scheduler interfaces.
-2. **Hardware Abstraction Layer (HAL)**: adapters for platform facilities such as clocks, storage, I/O, and configured transports.
-3. **Compiler**: turns supported project workflows—centered on Structured Text—into `.zplc` bytecode.
-4. **ZPLC application**: desktop engineering surface for authoring, diagnostics, and capability-aware runtime workflows.
+The loader on the runtime refuses a program that was built for another version of the contract, so you rebuild a program
+when you update ZPLC.
 
-## Typical workflow
+## What to trust, and why
 
-1. Select a project target and inspect its board/capability profile.
-2. Author logic in a supported language workflow, then compile it to `.zplc`.
-3. Use native POSIX simulation for repeatable host-side logical checks within its declared capabilities.
-4. Build firmware, flash it, deploy the PLC program, and operate it as separate human actions.
-5. Use target or HIL evidence from the exact board/revision before relying on timing or physical behavior.
+ZPLC states the evidence level of every claim. A result at one level never proves a higher one.
+
+| Level                 | What it shows                                                                      |
+| --------------------- | ---------------------------------------------------------------------------------- |
+| Host                  | The logic is right on your computer, on the simulator's virtual clock.             |
+| QEMU and `native_sim` | The runtime and scheduler run on an emulated processor. No board.                  |
+| Target build          | The firmware for a board builds and fits its flash and RAM budget (`cross-build`). |
+| Bench and manual      | A person ran it on a physical board and recorded it. No board has a record today.  |
+
+[Hardware support](../reference/capabilities-evidence.md) lists the level of every board, and
+[Safety and limitations](../safety-and-limitations.md) says what ZPLC is not: not a safety PLC, no timing guarantee, not
+for controlling machinery.
+
+## Design rules
+
+- **Bounded memory.** The core uses fixed, declared memory regions, and each board profile sets its own sizes.
+- **The HAL is the only door to hardware.** The core never touches a device, so a platform can be tested apart from the logic.
+- **Outputs fail safe.** Every output has a safe value, normally off. A stop, a fault or an invalid program never resumes by itself.
+- **One scheduler core.** The simulator and the firmware make the same scheduling decisions from the same code.
 
 ## Continue with
 
-- [Getting Started](../getting-started/index.md)
-- [System Architecture](../architecture/index.md)
+- [Getting Started](../getting-started/index.md): install ZPLC and run a program.
+- [System Architecture](../architecture/index.md): the boundaries in detail.
+- [Runtime](../runtime/index.md) and the [scheduler](../runtime/scheduler.md): how a program runs.

@@ -10,7 +10,14 @@ ZPLC and not for one who changes it:
   sentence each. No requirement identifiers, no file names unless the user types them.
 - `### Breaking changes`: what stops working or must be done differently. Say
   what, and what to do instead. `None.` when nothing breaks.
-- `### Migration`: the steps to move from the previous release, in order.
+- `
+- **There is no hosted browser build.** ZPLC is the desktop application only; the WebAssembly simulation fallback of the
+  application stays.
+- **A fault latches after 3 consecutive deadline misses instead of 1** on every runtime
+  (`CONFIG_ZPLC_DEADLINE_MISS_LIMIT`; set it to 1 for the earlier behavior).
+
+### Migration`: the steps to move from the previous release, in order.
+
 - `### Known limits`: what does not work or has not been verified in this release,
   at the evidence level it is known to hold at.
 - `### Details for contributors`: the engineering record, with the requirement
@@ -22,45 +29,7 @@ and version when the release is cut (see `RELEASING.md`).
 
 ## Unreleased
 
-- Removed: the hosted browser build; ZPLC is the desktop application only (REL-037, decision D-07).
-  The `build:web` and `smoke:web` scripts, the `/app/` deploy of the docs site and the page
-  "ZPLC in the browser" are gone. The WebAssembly simulation fallback of the desktop app stays.
-- The scheduler is one portable core, and the firmware fails safe (RT-008, RT-014, RT-018 to
-  RT-022). Task order, the deadline check, the fault latch and the safe state are decided in
-  `zplc_sched_core` and used by the host runtime, the Zephyr scheduler and the single-task
-  configuration, which is now a one-task configuration of the core (the same input latch, deadline
-  check and status) and no longer a loop of its own; one trace of decisions holds the host and
-  the firmware to the same answers (`test_sched_equivalence`, `scheduler_equivalence`).
-  **Changed defaults**: the consecutive deadline misses that latch the fault are 3 instead of 1 on
-  every runtime (`CONFIG_ZPLC_DEADLINE_MISS_LIMIT`, `ZPLC_DEADLINE_MISS_LIMIT`; 1 restores the
-  earlier behaviour), the target reports the warning, the miss run, the limit, the last overrun
-  and the fault reason (`zplc sched status`), and a deploy stops the running program before it
-  transfers a byte. The time a scan reads is latched once per scan and the string opcodes are
-  charged to the instruction budget by their bytes (RT-006). A processor fault, a stack overflow
-  or a kernel panic drives the outputs safe, records the reason in RAM that a reset does not
-  clear and reboots; `zplc sys reset [--json]` reports why the part was reset (power-on,
-  brown-out, pin, software, watchdog, fault or unknown) and what the previous run left, and the
-  runtime waits in STOP after every reset. Each board profile in `boards.json` has a `watchdog`
-  object (policy in STOP, paused and in a fault, timeout and its maximum); no board has the
-  hardware watchdog enabled, because none has the hardware record of its reset timing (HIL-010).
-  The WebAssembly runtime runs the same core and the same session (see the entry on the browser runtime below);
-  nothing here was run on a board.
-- A project declares the value an output takes in the safe state, and the artifact carries it (RT-023).
-  An output is still off whenever the program does not control it (STOP, a pause, a latched
-  fault, the boot, a deploy in progress); a row of `io.outputs` with `"safe": true` is on instead,
-  and the board's own level for the channel is replaced in both directions. The declaration is a
-  new `SAFE` segment (`0x41`, entries of offset, bit and value) so that a program and its safe
-  state are one unit: a restored program restores its declaration, and a replaced program
-  replaces it. **Contract change, draft counter 5 to 6**: artifacts built before are refused and
-  must be rebuilt, the committed ones and the fuzz seeds are restamped, and `ZPLC_LOADER_ERR_SAFE`
-  (`-19`) and `ZPLC_LOADER_MAX_SAFE` (64) are new. The build refuses a `safe` that is not `true` or
-  `false`, one on a row that is not a digital output bit or is an input, a duplicate, and an output
-  the selected board has no digital channel for, naming the output and the board; the firmware
-  refuses the same declaration at deploy and at boot restore. The compile result lists the declared
-  values (`declaredSafe`) for a deploy confirmation; the screen is not part of this change.
-  `tools/contract/safe_cross.py` has the C loader read what the compiler writes. The hardware
-  state of a pin between power-on and the first instruction of the firmware is the part's own and
-  is not claimed.
+This section becomes the entry of 2.0.0 when the release is cut (`RELEASING.md`).
 
 ### What changed for you
 
@@ -69,6 +38,13 @@ and version when the release is cut (see `RELEASING.md`).
   and test result as a notification that opens its details, can cancel a long
   operation, and keeps the preferences you set. A project exports to one archive
   and imports back byte for byte.
+- **Learn teaches with reading pages and a lab.** A lesson that has a reading page opens it first, full screen: an
+  explanation, drawings of Ladder rungs and a try-it lab that you run inside the page. **Practice** opens the lesson beside
+  the editor. The first path of the Learn home is the **Ladder path**, _Ladder diagram from zero_, a course for someone who
+  has never programmed a PLC, and every lesson of it has a reading page.
+- **A Ladder rung can hold function boxes.** Comparison, math and scaling functions sit in a rung as boxes with EN and ENO
+  wires, are inserted and bound from the palette, show their values while you monitor, and several boxes may write one
+  variable.
 - **The project tree does more.** New folder, rename, move and duplicate keep the
   open tabs and breakpoints, a change made outside ZPLC is picked up, and a
   folder of library blocks is offered to every editor.
@@ -136,7 +112,7 @@ and version when the release is cut (see `RELEASING.md`).
 ### Breaking changes
 
 - **Rebuild every program and reflash every board.** The binary contract has a draft
-  counter (now 4), and a program or a firmware image of another draft is refused
+  counter (now 6), and a program or a firmware image of another draft is refused
   by the loader, the runtime, the firmware shell and the ZPLC application, with both numbers.
 - **A `VAR_IN_OUT` of a function block is passed by reference.** A block called
   without binding it faults; rebuild programs that declare one.
@@ -196,6 +172,46 @@ and version when the release is cut (see `RELEASING.md`).
   ([Safety and limitations](docs/docs/safety-and-limitations.md)).
 
 ### Details for contributors
+
+- Removed: the hosted browser build; ZPLC is the desktop application only (REL-037, decision D-07).
+  The `build:web` and `smoke:web` scripts, the `/app/` deploy of the docs site and the page
+  "ZPLC in the browser" are gone. The WebAssembly simulation fallback of the desktop app stays.
+- The scheduler is one portable core, and the firmware fails safe (RT-008, RT-014, RT-018 to
+  RT-022). Task order, the deadline check, the fault latch and the safe state are decided in
+  `zplc_sched_core` and used by the host runtime, the Zephyr scheduler and the single-task
+  configuration, which is now a one-task configuration of the core (the same input latch, deadline
+  check and status) and no longer a loop of its own; one trace of decisions holds the host and
+  the firmware to the same answers (`test_sched_equivalence`, `scheduler_equivalence`).
+  **Changed defaults**: the consecutive deadline misses that latch the fault are 3 instead of 1 on
+  every runtime (`CONFIG_ZPLC_DEADLINE_MISS_LIMIT`, `ZPLC_DEADLINE_MISS_LIMIT`; 1 restores the
+  earlier behaviour), the target reports the warning, the miss run, the limit, the last overrun
+  and the fault reason (`zplc sched status`), and a deploy stops the running program before it
+  transfers a byte. The time a scan reads is latched once per scan and the string opcodes are
+  charged to the instruction budget by their bytes (RT-006). A processor fault, a stack overflow
+  or a kernel panic drives the outputs safe, records the reason in RAM that a reset does not
+  clear and reboots; `zplc sys reset [--json]` reports why the part was reset (power-on,
+  brown-out, pin, software, watchdog, fault or unknown) and what the previous run left, and the
+  runtime waits in STOP after every reset. Each board profile in `boards.json` has a `watchdog`
+  object (policy in STOP, paused and in a fault, timeout and its maximum); no board has the
+  hardware watchdog enabled, because none has the hardware record of its reset timing (HIL-010).
+  The WebAssembly runtime runs the same core and the same session (see the entry on the browser runtime below);
+  nothing here was run on a board.
+- A project declares the value an output takes in the safe state, and the artifact carries it (RT-023).
+  An output is still off whenever the program does not control it (STOP, a pause, a latched
+  fault, the boot, a deploy in progress); a row of `io.outputs` with `"safe": true` is on instead,
+  and the board's own level for the channel is replaced in both directions. The declaration is a
+  new `SAFE` segment (`0x41`, entries of offset, bit and value) so that a program and its safe
+  state are one unit: a restored program restores its declaration, and a replaced program
+  replaces it. **Contract change, draft counter 5 to 6**: artifacts built before are refused and
+  must be rebuilt, the committed ones and the fuzz seeds are restamped, and `ZPLC_LOADER_ERR_SAFE`
+  (`-19`) and `ZPLC_LOADER_MAX_SAFE` (64) are new. The build refuses a `safe` that is not `true` or
+  `false`, one on a row that is not a digital output bit or is an input, a duplicate, and an output
+  the selected board has no digital channel for, naming the output and the board; the firmware
+  refuses the same declaration at deploy and at boot restore. The compile result lists the declared
+  values (`declaredSafe`) for a deploy confirmation; the screen is not part of this change.
+  `tools/contract/safe_cross.py` has the C loader read what the compiler writes. The hardware
+  state of a pin between power-on and the first instruction of the firmware is the part's own and
+  is not claimed.
 
 - The WebAssembly runtime is built and shipped, and runs the shared core (IDE-025, RT-008, RT-009, RT-027).
   `tools/wasm-core/build.ts` builds one module with `clang` and `wasm-ld` from the sources of

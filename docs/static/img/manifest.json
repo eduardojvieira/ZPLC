@@ -325,7 +325,7 @@
       "bytes": 124248,
       "width": 1440,
       "height": 900,
-      "commit": "59b667bde5f76d34d48c452c18902ba1f4d47018"
+      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
     },
     {
       "file": "screens/learn-path-es.png",
@@ -334,106 +334,124 @@
       "bytes": 135599,
       "width": 1440,
       "height": 900,
-      "commit": "59b667bde5f76d34d48c452c18902ba1f4d47018"
+      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
     },
     {
       "file": "screens/learn-reading-en.png",
       "step": "The reading page of the first lesson of the Ladder path, interface in English",
-      "sha256": "97242aa888bf3905dd3a5aae1ec0fc4e62f0c5e773d12251a3b7abeb3cffa994",
-      "bytes": 232179,
+      "sha256": "73860d4214e19eabb5c5f64f12f8914cd4461f08a7c8b0b192699af4013b2ca3",
+      "bytes": 232182,
       "width": 1440,
       "height": 900,
-      "commit": "59b667bde5f76d34d48c452c18902ba1f4d47018"
+      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
     },
     {
       "file": "screens/learn-reading-es.png",
       "step": "The reading page of the first lesson of the Ladder path, interface in Spanish",
-      "sha256": "1973bbb55d0999c6adc92162637544f8a3279c37bcfce9e43138a0c067e90854",
-      "bytes": 247356,
+      "sha256": "96d8472b25001132758dadb9bdaa0ef3950f566fd5ee89ea2ed81e3f4e31a135",
+      "bytes": 247748,
       "width": 1440,
       "height": 900,
-      "commit": "59b667bde5f76d34d48c452c18902ba1f4d47018"
+      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
     },
     {
       "file": "screens/learn-lab-en.png",
       "step": "The try-it lab of the reading page, running, with its lamp lit, interface in English",
-      "sha256": "404168681670fbf5818036fa85b24e61c878f73f99d6d7f290589ef593b28e31",
+      "sha256": "72d4f4e83ea0fd985745f00d360c18dc690f5d7db9beef2a7d50066deb6be9fe",
       "bytes": 191327,
       "width": 1440,
       "height": 900,
-      "commit": "59b667bde5f76d34d48c452c18902ba1f4d47018"
+      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
     },
     {
       "file": "screens/learn-lab-es.png",
       "step": "The try-it lab of the reading page, running, with its lamp lit, interface in Spanish",
-      "sha256": "e9816f0766ac1572f3c7b30991dcfce62cff9f6c33f9c46711a9538fe629b47f",
-      "bytes": 208742,
+      "sha256": "d0c5ae0f092fabccc029cafc4d63ad2af13f71cd8c430de19c2318ce856dd270",
+      "bytes": 209132,
       "width": 1440,
       "height": 900,
-      "commit": "59b667bde5f76d34d48c452c18902ba1f4d47018"
+      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
     },
     {
       "file": "screens/ld-function-box-en.png",
       "step": "A Ladder function box with its operands in the editor, interface in English",
-      "sha256": "adb6b416ad02e002958cb0ad44a54eb4d1aa23b0227caf03bc7d63900cc6b6dc",
-      "bytes": 131943,
+      "sha256": "86b98a0434cb45b4cd57cfb635795d90178e62ea83a10f15feb900efbcab1e89",
+      "bytes": 132120,
       "width": 1440,
       "height": 900,
-      "commit": "59b667bde5f76d34d48c452c18902ba1f4d47018"
+      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
     },
     {
       "file": "screens/ld-function-box-es.png",
       "step": "A Ladder function box with its operands in the editor, interface in Spanish",
-      "sha256": "c73b6a9389e9ac3b14c9dabedc071981fc37e2475aa36de3c40bb2c46dc8be06",
-      "bytes": 142549,
+      "sha256": "a70bef76d4f77f7745d5e7510e1e7beadc794467cf82b22389473e266bc2d607",
+      "bytes": 142842,
       "width": 1440,
       "height": 900,
-      "commit": "59b667bde5f76d34d48c452c18902ba1f4d47018"
+      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
     },
     {
       "file": "screens/guide-watch.png",
       "step": "The Watch tab with a variable, while the program runs",
-      "sha256": "602d14e5eaa8fce6a975e36283cf81cc82b7f5c4e11bf8346e26ca194d2b68eb",
-      "bytes": 156935,
+      "sha256": "5e8ea65da92ede101d104b75e6cd47ebdeec1f69c851a59fdc0ee001ceeba527",
+      "bytes": 156957,
       "width": 1440,
       "height": 900,
-      "commit": "59b667bde5f76d34d48c452c18902ba1f4d47018"
+      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
     },
     {
       "file": "screens/guide-force.png",
       "step": "The Watch table with one forced variable and the banner of one active force",
-      "sha256": "55b4f2f7e5dded28432fbdcb733f60573252e012dccb4d14a8bac955616eacbd",
-      "bytes": 167295,
+      "sha256": "0fa002e42ecaccff6fe319c8ee7ff607d18d8f48677cc40fad42aff1dd617177",
+      "bytes": 167289,
       "width": 1440,
       "height": 900,
-      "commit": "59b667bde5f76d34d48c452c18902ba1f4d47018"
+      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
     },
     {
       "file": "screens/guide-scenario-tests.png",
       "step": "The Tests tab after Run host scenarios",
-      "sha256": "e480bd733c9343521ffa68951944fd94011f2a0aa302ddc19c47928559a4fd7e",
-      "bytes": 186719,
+      "sha256": "64bfc799dea6a943fd74776c5bb10054cc28bfd68c1f524037a3b698d3f5acd8",
+      "bytes": 186624,
       "width": 1440,
       "height": 900,
-      "commit": "59b667bde5f76d34d48c452c18902ba1f4d47018"
+      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
     },
     {
       "file": "screens/guide-breakpoint.png",
       "step": "The editor stopped at a breakpoint, with the Trace row that says paused",
-      "sha256": "cae701a5a256e38d9e9d39c8c2adce5139ba680a1c0a7886930533b296a935d2",
-      "bytes": 188211,
+      "sha256": "6c5a80f67d8d3a0aafe2d765cea51353f0149a69e7e2b3224c29f9e63cd6a0f4",
+      "bytes": 188255,
       "width": 1440,
       "height": 900,
-      "commit": "59b667bde5f76d34d48c452c18902ba1f4d47018"
+      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
     },
     {
       "file": "screens/guide-io-mapping.png",
       "step": "The I/O Mapping section of Project settings",
-      "sha256": "805ffee4c0b8b02486161fec7b5573653e993c96358a25fd10e2cfdaeb33c5dd",
-      "bytes": 157485,
+      "sha256": "c00bf168567b9b01918b2c3a5db696638435fde635943a335d302f9fdae6df52",
+      "bytes": 157395,
       "width": 1440,
       "height": 900,
-      "commit": "59b667bde5f76d34d48c452c18902ba1f4d47018"
+      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
+    },
+    {
+      "file": "screens/first-board-hardware.png",
+      "step": "The Raspberry Pi Pico example built, with Hardware chosen and no board connected",
+      "sha256": "9ce3b9acf7e99d78709fe7da5b4799b50675b8860f202da9b387afe44d17d1c4",
+      "bytes": 111644,
+      "width": 1440,
+      "height": 900,
+      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
+    },
+    {
+      "file": "screens/first-board-connect.png",
+      "step": "The Connect dialog that lists serial ports, with no board chosen",
+      "sha256": "7102e8a5df34a013168afb571332146e8d7463fd5a8789c5b894061e65100f80",
+      "bytes": 125719,
+      "width": 1440,
+      "height": 900,
+      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
     },
     {
       "file": "screens/guide-import-archive.png",
@@ -442,7 +460,7 @@
       "bytes": 106197,
       "width": 1440,
       "height": 900,
-      "commit": "59b667bde5f76d34d48c452c18902ba1f4d47018"
+      "commit": "49214ca1c749182042b1bcb7095d311fc30ab51e"
     }
   ]
 }
