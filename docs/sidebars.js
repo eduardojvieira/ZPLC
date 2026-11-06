@@ -196,6 +196,7 @@ const sidebars = {
         'contributing/principles',
         'contributing/roadmap',
         'development/code-style',
+        'development/ide-internals',
         'development/firmware-testing',
         'development/hardware-in-the-loop',
         'development/hil-emulation',

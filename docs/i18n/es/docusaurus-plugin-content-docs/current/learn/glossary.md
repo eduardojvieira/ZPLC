@@ -9,23 +9,15 @@ tags: [learn, lessons, glossary, spanish]
 
 # Glosario del curso
 
-El curso existe en inglés y en español. Esta página fija la palabra que cada
-idioma usa para cada concepto que enseñan las lecciones, de modo que una
-lección, sus pistas, las etiquetas de las plantas y los controles de ZPLC que
-nombra una lección digan lo mismo.
+Use esta página al escribir o revisar una lección, una pista o una etiqueta de planta, en cualquiera de los dos idiomas. Fija la palabra que cada idioma usa para cada concepto que enseña el curso de Aprender, de modo que una lección, sus pistas, las etiquetas de las plantas y los controles de ZPLC que nombra digan lo mismo.
 
 ## El registro del español
 
-El texto en español está en español latinoamericano neutro, como en los
-manuales industriales. Se dirige a quien aprende con _usted_ o con formas
-impersonales ("Pulse Comprobar", "se pulsa Start"), nunca con _tú_ ni con _vos_.
-Las lecciones en inglés y en español tienen las mismas etapas, las mismas pistas
-y los mismos tiempos y valores citados.
-
-Los valores de las señales conservan la notación del programa: `ON`, `OFF`,
-`TRUE` y `FALSE` se escriben tal cual, y una frase en español dice "pasa a ON" o
-"queda en OFF". Los nombres de variables, de archivos y de bloques, y el código,
-quedan en inglés en los dos idiomas, porque son lo que contiene el programa.
+- **Variedad.** Español latinoamericano neutro, como en los manuales industriales.
+- **Trato.** A quien aprende se le trata de _usted_ o con formas impersonales ("Pulse Comprobar", "se pulsa Start"), nunca de _tú_ ni de _vos_.
+- **Paridad.** Las lecciones en inglés y en español tienen las mismas etapas, las mismas pistas y los mismos tiempos y valores citados.
+- **Señales.** `ON`, `OFF`, `TRUE` y `FALSE` se escriben como los escribe el programa. Una frase en español dice "pasa a ON" o "queda en OFF".
+- **Código.** Los nombres de variables, de archivos y de bloques, y el código, quedan en inglés en los dos idiomas, porque son lo que contiene el programa.
 
 ## Términos
 
@@ -46,6 +38,12 @@ quedan en inglés en los dos idiomas, porque son lo que contiene el programa.
 | rising edge, falling edge               | flanco ascendente, flanco descendente                        |                                                                 |
 | counter                                 | contador                                                     |                                                                 |
 | function block                          | bloque de función                                            |                                                                 |
+| function box | caja de función | Una función (ADD, MUL, LIMIT...) dibujada como caja en un peldaño. La fila "bloque de función" de arriba es un bloque con memoria. |
+| EN, ENO | EN, ENO | La entrada y la salida de habilitación de una caja de función. Las dos siglas quedan en inglés. |
+| comparison box | caja de comparación | Una caja como GT o EQ cuya salida conduce cuando se cumple la comparación. |
+| analog input | entrada analógica | Una palabra como `%IW0`, no un bit. |
+| raw counts | cuentas, valor crudo | El entero que entrega el conversor, antes del escalado. |
+| scaling | escalado | Convertir cuentas en unidades de ingeniería (milímetros, porcentaje). |
 | structured text                         | texto estructurado (ST)                                      |                                                                 |
 | ladder diagram                          | diagrama de escalera (LD)                                    |                                                                 |
 | function block diagram                  | diagrama de bloques de función (FBD)                         |                                                                 |
@@ -80,14 +78,8 @@ quedan en inglés en los dos idiomas, porque son lo que contiene el programa.
 | slot                                    | ranura                                                       |                                                                 |
 | issue (del repositorio)                 | incidencia                                                   |                                                                 |
 
-Los controles de ZPLC que nombra una lección se escriben como los muestra
-ZPLC en español: **Check** es **Comprobar**, y el panel Tests es **Pruebas**.
+Las filas de "function box" a "scaling" son las palabras que usan las lecciones de escalera; las demás son anteriores. Los controles de ZPLC que nombra una lección se escriben como ZPLC los muestra: **Check** es **Comprobar** y el panel Tests es **Pruebas**.
 
-## Cómo se mantiene
+## Cómo lo hace cumplir el curso
 
-Una prueba de las lecciones lee el español de cada lección, pista y etiqueta de
-Aprender, y falla ante una forma con _tú_ o con _vos_, o ante una variante
-incorrecta conocida de un término de la tabla, como "ciclo de scan", un "rung" o
-un "starter" sin traducir, o "fallo" por una falla. La lista es corta y
-explícita: cuando una revisión encuentra una forma incorrecta nueva, se agrega a
-la prueba. La prueba es `packages/zplc-ide/src/learn/lessonLanguage.test.ts`.
+Una prueba lee el español de cada lección, pista y etiqueta de Aprender y falla ante una forma de _tú_ o de _vos_, o ante una variante incorrecta conocida de un término de la tabla: "ciclo de scan", un "rung" o un "starter" sin traducir, o "fallo" para una falla. La lista de variantes incorrectas es corta y explícita. Cuando una revisión encuentre una nueva, se agrega a la prueba, que es `packages/zplc-ide/src/learn/lessonLanguage.test.ts`. Las páginas de la documentación en español se someten a los mismos términos con `tools/docs/docs_structure.test.ts`.
