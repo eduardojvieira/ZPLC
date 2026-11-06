@@ -5,39 +5,26 @@ sidebar_label: Pruebas del firmware
 description: Ejecute las suites del firmware de ZPLC en una máquina Linux, en native_sim de 64 y 32 bits y en QEMU Cortex-M3 y Cortex-M0, y compruebe los presupuestos de flash y RAM.
 ---
 
+
 # Pruebas del firmware en Linux
 
-Esta página describe el método único que una persona colaboradora usa para
-probar el firmware en una máquina Linux: los scripts de `tools/firmware-test/`.
-Ejecutan las mismas suites que los trabajos Zephyr de integración continua, en
-más destinos, contra un espacio de trabajo de Zephyr que vive fuera del
-repositorio.
+Use esta página para ejecutar las pruebas del firmware de ZPLC en su propia máquina Linux. Un solo script, `tools/firmware-test/run.sh`, compila y ejecuta las mismas suites que los trabajos Zephyr de integración continua, en más objetivos, contra un espacio de trabajo de Zephyr que vive fuera del repositorio.
 
-Todo lo que se describe aquí es evidencia de host, de simulador o de
-compilación. Una ejecución correcta no demuestra que una placa arranque, que
-sus pines se comporten ni que un ciclo de escaneo mantenga su período en silicio
-real. Esas afirmaciones requieren los procedimientos de hardware en el lazo
-descritos en [Compatibilidad de hardware](../reference/capabilities-evidence.md).
+:::warning Qué significa un resultado correcto
+Todo lo de esta página es evidencia de host, de simulador o de compilación. Una ejecución correcta no demuestra que una placa arranque, que sus pines se comporten ni que un ciclo mantenga su período en silicio real. Esas afirmaciones requieren los procedimientos de banco de [Hardware en el lazo](./hardware-in-the-loop.md) y los niveles de [Soporte de hardware](../reference/capabilities-evidence.md).
+:::
 
 ## Qué necesita
 
-- Linux sobre x86-64 con unos 15 GB libres: el espacio de trabajo de Zephyr fijado ocupa
-  unos 6,6 GB (medido con `du`, sin sus salidas de compilación), el SDK de Zephyr unos 7 GB instalado completo, y las
-  salidas de compilación suman algunos más.
-- `git`, `cmake` 3.20 o superior, `ninja`, `dtc`, `gperf`, `python3` 3.10 o
-  superior y un compilador de C. Los modos de 32 bits requieren además el
-  runtime C de 32 bits (`lib32-glibc` y `lib32-gcc-libs` en Arch,
-  `gcc-multilib` en Debian y Ubuntu).
-- El SDK de Zephyr 1.0.1 con la toolchain `arm-zephyr-eabi` y las
-  herramientas de host del SDK, que incluyen `qemu-system-arm`. La fila de
-  tamaño de la ESP32-S3 requiere además la toolchain
-  `xtensa-espressif_esp32s3_zephyr-elf`.
-- Acceso a la red la primera vez, para `west update`.
+| Necesidad           | Detalle                                                                                                                                                                              |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Máquina             | Linux en x86-64 con unos 15 GB libres: el espacio de trabajo fijado de Zephyr ocupa unos 6,6 GB (medido con `du`, sin salidas de compilación) y el SDK de Zephyr unos 7 GB instalado completo. |
+| Herramientas        | `git`, `cmake` 3.20 o posterior, `ninja`, `dtc`, `gperf`, `python3` 3.10 o posterior y un compilador de C.                                                                           |
+| Modos de 32 bits    | El runtime de C de 32 bits: `lib32-glibc` y `lib32-gcc-libs` en Arch, `gcc-multilib` en Debian y Ubuntu.                                                                              |
+| SDK de Zephyr 1.0.1 | La cadena de herramientas `arm-zephyr-eabi` y las herramientas de host del SDK, que incluyen `qemu-system-arm`. La fila de tamaño del ESP32-S3 requiere además `xtensa-espressif_esp32s3_zephyr-elf`. |
+| Red                 | Solo la primera vez, para `west update`.                                                                                                                                             |
 
-Los scripts leen el SDK desde `~/zephyr-sdk-1.0.1`. Defina
-`ZEPHYR_SDK_INSTALL_DIR` para usar otra ubicación. Si falta el SDK, el script
-de preparación imprime la línea `west sdk install` que debe ejecutar y no la
-ejecuta.
+Los scripts leen el SDK de `~/zephyr-sdk-1.0.1`; defina `ZEPHYR_SDK_INSTALL_DIR` para usar otro lugar. Si falta el SDK, el script de preparación imprime la línea `west sdk install` que debe ejecutar y no la ejecuta.
 
 ## Preparación única
 
@@ -45,32 +32,17 @@ ejecuta.
 tools/firmware-test/setup.sh
 ```
 
-El script se puede repetir sin riesgo. Crea o verifica, en `~/zplc-zephyr-ws`
-(se cambia con `ZPLC_FW_WS`):
+El script se puede repetir sin riesgo. Crea o verifica, en `~/zplc-zephyr-ws` (se cambia con `ZPLC_FW_WS`):
 
-- un entorno virtual de Python con `west` 1.5.0 y los paquetes de Python que
-  Zephyr necesita;
-- un enlace simbólico `zplc` a su copia de trabajo, de modo que west trate esa copia
-  como su repositorio de manifiesto y las pruebas siempre ejecuten su árbol de
-  trabajo;
-- el árbol de Zephyr y sus módulos en la revisión fijada en `west.yml`,
-  descargados con historial superficial, y una comprobación de que la revisión
-  obtenida es esa fijación.
+- un entorno virtual de Python con `west` 1.5.0 y los paquetes que Zephyr necesita;
+- un enlace simbólico `zplc` a su copia de trabajo, de modo que west trate la copia como su repositorio de manifiesto y las pruebas ejecuten siempre su árbol de trabajo;
+- el árbol de Zephyr y sus módulos en la revisión fijada en `west.yml`, descargados de forma superficial (`ZPLC_FW_FULL_CLONE=1` descarga el historial), y una comprobación de que la revisión obtenida es esa fijación.
 
-Hay dos decisiones deliberadas. El espacio de trabajo se escribe a mano en
-lugar de usar `west init -l`, porque `west init -l` resuelve el enlace
-simbólico y crearía `.west` junto a su copia de trabajo real. Y se omite
-`west zephyr-export`, porque registra el espacio de trabajo en
-`~/.cmake/packages`, donde cualquier otro proyecto CMake de su usuario lo
-encontraría; `ZEPHYR_BASE` basta para estas compilaciones. Defina
-`ZPLC_FW_ZEPHYR_EXPORT=1` si quiere la exportación.
+Hay dos decisiones deliberadas. El espacio de trabajo se escribe a mano en lugar de usar `west init -l`, porque `west init -l` resuelve el enlace simbólico y pondría `.west` junto a su copia real. Y se omite `west zephyr-export`, porque registra el espacio de trabajo en `~/.cmake/packages`, donde lo encontraría cualquier otro proyecto CMake de su usuario; `ZEPHYR_BASE` basta para estas compilaciones. Defina `ZPLC_FW_ZEPHYR_EXPORT=1` si quiere la exportación.
 
-Varias copias de trabajo o worktrees pueden compartir un espacio de trabajo.
-`run.sh` apunta el enlace `zplc` a la copia de trabajo desde la que se ejecuta, así que
-ejecute una copia a la vez. Use otro `ZPLC_FW_WS` para ejecuciones
-simultáneas.
+Varias copias de trabajo o worktrees pueden compartir un espacio de trabajo, porque `run.sh` apunta el enlace `zplc` a la copia desde la que se ejecuta. Ejecute una copia a la vez, o dé a cada ejecución concurrente su propio `ZPLC_FW_WS`.
 
-## Comandos diarios
+## Ejecutar las pruebas
 
 ```bash
 tools/firmware-test/run.sh native
@@ -80,28 +52,24 @@ tools/firmware-test/run.sh tidy
 tools/firmware-test/run.sh all
 ```
 
-Cada modo compila lo que necesita, lo ejecuta sin pedir confirmación y termina
-con estado distinto de cero ante cualquier falla. Las últimas líneas son una
-línea de resumen por escenario o por placa. Toda la salida queda bajo
-`$ZPLC_FW_WS/out`, con un registro por modo.
+`run.sh --help` enumera los modos. Cada modo compila lo que necesita, se ejecuta sin preguntar y termina con código distinto de cero ante cualquier falla. Las últimas líneas son una línea de resumen por escenario o placa. Toda la salida va a `$ZPLC_FW_WS/out`, con un registro por modo. `all` ejecuta todos los modos salvo `tidy` y `app-native`.
 
-| Modo         | Qué se ejecuta                                                                                                                                                                                                                                                               | Qué muestra un resultado correcto                                                                                                                                                                                                     | Qué no muestra                                                                                                                                          |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `host`       | Las suites CMake de `firmware/lib/zplc_core` bajo ctest, compiladas con los sanitizadores de direcciones y de comportamiento indefinido                                                                                                                                      | La VM, el cargador, el despacho y el runtime de host se comportan en un host de 64 bits sin comportamiento indefinido                                                                                                                 | Nada sobre un destino de 32 bits ni Cortex-M                                                                                                            |
-| `host32`     | Las mismas suites compiladas con `-m32`                                                                                                                                                                                                                                      | Lo mismo, con `int`, `long` y punteros de 32 bits                                                                                                                                                                                     | El comportamiento de Cortex-M: x86 tolera el acceso no alineado y no tiene enums cortos                                                                 |
-| `native`     | Las suites Zephyr de `firmware/tests` en `native_sim/native/64`, como hace CI                                                                                                                                                                                                | La lógica de la aplicación de firmware, el HAL de Zephyr y el planificador contra el kernel de Zephyr en el host                                                                                                                      | Tiempos, interrupciones y controladores de una placa real                                                                                               |
-| `native32`   | Lo mismo en `native_sim/native`, la variante de 32 bits                                                                                                                                                                                                                      | Lo mismo, con un modelo de datos de 32 bits                                                                                                                                                                                           | Lo mismo                                                                                                                                                |
-| `qemu-m3`    | Las suites Zephyr en `qemu_cortex_m3`, más las suites del núcleo                                                                                                                                                                                                             | Comportamiento sobre un conjunto de instrucciones Cortex-M real con 64 KB de RAM, enums cortos y una pila de hilo de 1 KB por defecto                                                                                                 | Tiempos: QEMU no es exacto por ciclo. Las regiones de memoria de la VM se reducen para caber                                                            |
-| `qemu-m0`    | El subconjunto Cortex-M0 en `qemu_cortex_m0` (16 KB de RAM)                                                                                                                                                                                                                  | División, desplazamientos, conversión de float y acceso no alineado en un núcleo ARMv6-M sin división por hardware ni acceso no alineado                                                                                              | La suite completa de la VM: no cabe, vea los límites más abajo                                                                                          |
-| `app`        | La prueba de host del codificador Sparkplug en `firmware/app/tests`, contra los archivos nanopb generados por una compilación del Arduino Opta                                                                                                                               | El codificador produce las cargas esperadas en un host de 64 bits                                                                                                                                                                     | El cliente MQTT, TLS ni ningún comportamiento de red                                                                                                    |
-| `app-native` | Solo emulación: `firmware/app` en `native_sim/native/64` con el mapa de canales de la Raspberry Pi Pico sobre GPIO y ADC emulados, arrancado y manejado por su shell; una protección comprueba que el comando de shell de emulación no puede habilitarse para una placa real | La aplicación, el shell, el despliegue y el almacenamiento del programa funcionan sobre el núcleo de Zephyr, y los mismos proyectos de referencia dan las mismas trazas que el runtime nativo ([Banco HIL emulado](hil-emulation.md)) | Pines, controladores, tiempos o cualquier aspecto de una placa física; nunca es un registro de hardware                                                 |
-| `size`       | `firmware/app` compilado para cada placa soportada                                                                                                                                                                                                                           | Flash y RAM de la imagen frente al presupuesto registrado, y que cada almacén de la imagen tenga una partición de flash propia (IO-008)                                                                                               | Uso de pila y de heap en ejecución, ni que la imagen corra                                                                                              |
-| `tidy`       | `clang-tidy` con el `.clang-tidy` del repositorio, cada hallazgo es un error, sobre el núcleo, el HAL POSIX y la aplicación de host; también el HAL de Zephyr y `firmware/app` cuando existe la compilación del Arduino Opta de `size` o `app`                               | Los archivos analizados no tienen ninguno de los defectos que buscan las comprobaciones habilitadas                                                                                                                                   | Que el código sea correcto, ni nada sobre compilaciones Xtensa, que clang no puede apuntar. `tidy` no forma parte de `all` porque necesita `clang-tidy` |
+| Modo         | Qué se ejecuta                                                                                                                                                                                              | Qué demuestra un resultado correcto                                                                                                              | Qué no demuestra                                                                                         |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `host`       | Las suites CMake de `firmware/lib/zplc_core` con ctest, con los saneadores de direcciones y de comportamiento indefinido                                                                                     | La VM, el cargador, el despacho y el runtime de host se comportan en un host de 64 bits sin comportamiento indefinido                            | Nada sobre un objetivo de 32 bits o Cortex-M                                                             |
+| `host32`     | Las mismas suites compiladas con `-m32`                                                                                                                                                                     | Lo mismo, con `int`, `long` y punteros de 32 bits                                                                                                | El comportamiento de Cortex-M: x86 tolera el acceso desalineado y no tiene enums cortos                  |
+| `native`     | Las suites Zephyr de `firmware/tests` en `native_sim/native/64`                                                                                                                                             | La lógica de la aplicación, el HAL de Zephyr y el planificador contra el kernel de Zephyr en el host                                             | Tiempos, interrupciones y controladores de una placa real                                                |
+| `native32`   | Lo mismo en `native_sim/native`, la variante de 32 bits                                                                                                                                                     | Lo mismo, con un modelo de datos de 32 bits                                                                                                      | Lo mismo                                                                                                 |
+| `qemu-m3`    | Las suites Zephyr en `qemu_cortex_m3`, más las suites del núcleo                                                                                                                                            | El comportamiento en un conjunto de instrucciones Cortex-M real con un presupuesto de 64 KB de RAM, enums cortos y una pila de hilo de 1 KB     | El tiempo: QEMU no es exacto por ciclo, y las regiones de memoria de la VM se reducen para que quepan    |
+| `qemu-m0`    | El subconjunto Cortex-M0 en `qemu_cortex_m0` (16 KB de RAM)                                                                                                                                                 | División, desplazamientos, conversión de punto flotante y acceso desalineado en un núcleo ARMv6-M sin división por hardware                      | La suite completa de la VM, que no cabe (vea [Límites conocidos](#límites-conocidos))                    |
+| `app`        | La prueba de host del codificador Sparkplug en `firmware/app/tests`, contra los archivos nanopb generados por una compilación Arduino Opta                                                                  | El codificador produce los contenidos esperados en un host de 64 bits                                                                            | El cliente MQTT, TLS o cualquier comportamiento de red                                                   |
+| `app-native` | Solo emulación: `firmware/app` en `native_sim/native/64` con el mapa de canales de la Raspberry Pi Pico sobre GPIO y ADC emulados, arrancado y manejado por su shell                                         | La aplicación, el shell, el despliegue y el almacén de programas funcionan sobre el kernel de Zephyr, y los proyectos de referencia dan las mismas trazas que el runtime nativo (vea [Banco HIL emulado](./hil-emulation.md)) | Pines, controladores, tiempos o cualquier placa física. Nunca es un registro de hardware |
+| `size`       | `firmware/app` compilado para cada placa de `boards.json`; los ids de placa después de `size` lo restringen                                                                                                 | Flash y RAM frente al presupuesto registrado, y que cada almacén de la imagen tiene su propia partición de flash (IO-008)                        | El uso de pila y de heap en ejecución, o que la imagen se ejecute                                        |
+| `tidy`       | `clang-tidy` con el `.clang-tidy` del repositorio, con cada hallazgo como error, sobre el núcleo, el HAL POSIX y la aplicación de host; también el HAL de Zephyr y `firmware/app` cuando existe una compilación Opta | Los archivos analizados no tienen ninguno de los defectos que buscan las comprobaciones habilitadas                                              | Que el código sea correcto, ni nada sobre compilaciones Xtensa, que clang no puede apuntar               |
 
-## Cómo leer el resultado
+### Leer el resultado
 
-Una ejecución termina con un bloque como este, producido por
-`run.sh native32`:
+Una ejecución termina con un bloque como este, de `run.sh native32`:
 
 ```text
 PASS native32  zplc.core.vm_core                              1/1 cases
@@ -110,165 +78,85 @@ PASS native32  zplc.scheduler_run_control                     9/9 cases
 PASS native32  19/19 scenarios passed, 0 filtered out
 ```
 
-Para mirar un escenario, abra su registro bajo el directorio de salida de
-Twister del modo, o ejecútelo solo desde el espacio de trabajo:
+Para examinar un escenario, abra su registro en el directorio de salida de Twister del modo, o ejecútelo solo desde el espacio de trabajo:
 
 ```bash
 cd ~/zplc-zephyr-ws && west twister -T zplc/firmware/tests -p qemu_cortex_m3 -s zplc.program_store --inline-logs
 ```
 
-Un escenario que Twister marca como `skipped`, por ejemplo por un desborde de
-RAM, se informa aquí como falla. Un escenario filtrado, que no lista la
-plataforma, no se cuenta.
+Un escenario que Twister marca como `skipped`, por ejemplo por un desborde de RAM, cuenta aquí como una falla. Un escenario filtrado, que no lista la plataforma, no se cuenta.
 
 ## Qué cubren las suites
 
-Las suites Zephyr viven en `firmware/tests`. Cada una tiene un
-`testcase.yaml` que lista las plataformas en las que se permite. Las suites C
-planas de `firmware/lib/zplc_core/tests` también se ejecutan en destinos
-Zephyr mediante `firmware/tests/core_suites`, que compila los mismos archivos
-fuente y llama a cada suite desde un caso de prueba.
+Las suites Zephyr están en `firmware/tests`, y cada una tiene un `testcase.yaml` que lista las plataformas permitidas. Las suites en C simple de `firmware/lib/zplc_core/tests` también se ejecutan en objetivos Zephyr mediante `firmware/tests/core_suites`, que compila los mismos archivos fuente y llama a cada suite desde un caso de prueba.
 
-Los bloques de comunicación tienen suites propias (COM-006). `mqtt_broker_double` ejecuta el cliente MQTT del controlador
-(`zplc_mqtt.c`, como lo enlaza una placa) y los manejadores de `MQTT_CONNECT`, `MQTT_PUBLISH`, `MQTT_SUBSCRIBE`,
-`AZURE_C2D_RECV`, `AZURE_EG_PUB` y `SPB_REBIRTH` contra un broker que es un hilo de la prueba en la interfaz de loopback de
-la pila de red: éxito, ausencia de `CONNACK`, conexión rechazada, sesión perdida y reset estando ocupado. `comm_cloud_fb` y
-`comm_modbus_fb` ejecutan los manejadores con un servicio sustituto, y `modbus_client_tcp` el cliente Modbus TCP contra un
-servidor escrito para la prueba. Los bloques de aprovisionamiento `AZURE_DPS_PROV` y `AWS_FLEET_PROV` se verifican solo en el
-manejador. Un doble de prueba verifica el comportamiento del protocolo, no que un servicio real lo acepte. En el host, `test_host_loopback`
-muestra los extremos que una sesión de la aplicación ZPLC inicia dentro de su runtime (COM-009), y `test_io_unsupported` muestra que un
-canal que la placa no puede atender se cuenta y se informa (IO-007).
+Un escenario de la VM nombra un perfil de memoria, de modo que un resultado siempre dice con qué tamaños se obtuvo:
 
-Las suites de la VM nombran un perfil de memoria en el escenario, de modo que
-un resultado siempre dice con qué tamaños se obtuvo:
+| Perfil   | Tamaños                                                                     | Se usa en         |
+| -------- | --------------------------------------------------------------------------- | ----------------- |
+| (ninguno) | Los valores predeterminados del ISA: 8 KB de trabajo, 4 KB retentivos, 44 KB de código | `native_sim`      |
+| `.small` | 4 KB de trabajo, 2 KB retentivos, 16 KB de código                           | `qemu_cortex_m3`  |
+| `.tiny`  | 256 B de trabajo, 64 B retentivos, 512 B de código, cuatro etiquetas, una pila de 32 entradas | `qemu_cortex_m0`  |
 
-- sin sufijo: los tamaños por defecto del ISA (8 KB de trabajo, 4 KB
-  retentivos, 44 KB de código), usados en `native_sim`;
-- `.small`: 4 KB de trabajo, 2 KB retentivos y 16 KB de código, usado en
-  `qemu_cortex_m3`;
-- `.tiny`: 256 B de trabajo, 64 B retentivos, 512 B de código, cuatro tags y
-  una pila de 32 entradas, usado en `qemu_cortex_m0`.
+Las imágenes de proceso son de 4 KB cada una en todos los perfiles, porque el ISA las fija.
 
-Las imágenes de proceso son de 4 KB cada una en todos los perfiles porque el
-ISA las fija.
+### Bloques de comunicación
 
-El endurecimiento del runtime del firmware (RT-010 a RT-034) tiene sus propias suites:
+Los bloques de comunicación tienen suites propias (COM-006):
 
-- `runtime_boot` ejecuta un plan de arranque en orden, rechaza un plan que arranca un servicio antes que el runtime
-  y sigue adelante cuando un servicio falla;
-- `program_store_nvs` ejecuta el almacén de programas sobre NVS en el simulador de flash con un artefacto tan grande como
-  la región de código, y corta la energía en cada operación de una carga;
-- `modbus_force` escribe por el servidor Modbus sobre el núcleo real y muestra que una variable forzada conserva su
-  valor forzado;
-- `scheduler_admission` retiene un ciclo en la confirmación y en la escritura de salidas, para mostrar que una escritura
-  externa espera a la captura de entradas y nunca al ciclo, y que el cerrojo de la imagen está libre mientras se escriben los
-  pines;
-- `scheduler_equivalence` conduce el planificador de Zephyr por los escenarios del núcleo común del planificador y compara sus
-  decisiones con la traza de referencia a la que se somete la sesión de host (RT-008, RT-018);
-- `single_task` ejecuta la configuración de una tarea del núcleo: la captura de entradas de los pines, el plazo, la
-  falla y el estado seguro (RT-018);
-- `failsafe` ejercita el manejador de error fatal con un reinicio interceptado y muestra las salidas llevadas al
-  estado seguro, el registro de la falla y la causa que informa el arranque siguiente; `failsafe_reboot` provoca una
-  falla real y un reinicio real en `qemu_cortex_m3` y lee el registro después (RT-019, RT-021, RT-022);
-- `scheduler_watchdog` ejecuta la política de watchdog de hardware de un perfil sobre un modelo del watchdog: la
-  alimentación desde la finalización de un ciclo, el tiempo de espera tomado del conjunto de tareas, un ciclo detenido que lo
-  deja expirar, y la política en STOP, en pausa y en una falla (RT-020);
-- `port_timing` ejecuta la autoprueba de tiempos de la suite de conformidad de puertos sobre el reloj de la HAL de
-  Zephyr: el tick nunca retrocede, una espera lo avanza y dura el tiempo que se le da. El host POSIX ejecuta la misma
-  función en `test_port_timing`, y la página de la [interfaz de puerto](../runtime/port-interface.md) lista la suite
-  completa (IO-013).
+- `mqtt_broker_double` ejecuta el cliente MQTT del controlador (`zplc_mqtt.c`, tal como lo enlaza una placa) y los manejadores de `MQTT_CONNECT`, `MQTT_PUBLISH`, `MQTT_SUBSCRIBE`, `AZURE_C2D_RECV`, `AZURE_EG_PUB` y `SPB_REBIRTH` contra un broker que es un hilo de la prueba en la interfaz de bucle local. Cubre el éxito, la falta de `CONNACK`, una conexión rechazada, una sesión perdida y un reinicio mientras está ocupado.
+- `comm_cloud_fb` y `comm_modbus_fb` ejecutan los manejadores con un servicio sustituto. `modbus_client_tcp` ejecuta el cliente Modbus TCP contra un servidor escrito para la prueba.
+- Los bloques de aprovisionamiento `AZURE_DPS_PROV` y `AWS_FLEET_PROV` se verifican solo en el manejador.
+- En el host, `test_host_loopback` muestra los extremos que una sesión de la aplicación ZPLC inicia dentro de su runtime (COM-009), y `test_io_unsupported` muestra que un canal que la placa no puede atender se cuenta y se informa (IO-007).
 
-Las suites de host del núcleo suman `test_exchange` (un escáner, lectores y escritores en hilos), `test_program_store`
-(un corte de energía y una escritura truncada en cada operación), `test_sched_core` y `test_sched_equivalence` (las
-decisiones del núcleo del planificador y la traza de referencia), `test_single_task`, `test_vm_scan` (el tiempo de un
-ciclo se lee una vez y un opcode de texto se cobra por sus bytes), `test_failsafe` (la causa de reset, el registro de
-una falla y la política de watchdog), `test_safe_state` (el valor seguro que declara un proyecto decide el nivel de un
-pin, sobre una placa propia), `test_core_start`, `test_core_lock`,
-`test_bytes_crc` y las pruebas `config_rule_*`, cada una de las cuales compila una regla de configuración con un
-valor que la rompe y espera que la compilación falle nombrando la regla. Los puntos de entrada solo para pruebas se
-declaran en `firmware/lib/zplc_core/tests/include/zplc_test_hooks.h`, nunca en un encabezado público;
-`test_public_headers` falla si un encabezado público declara uno.
+Un doble demuestra el comportamiento del protocolo, no la aceptación por un servicio real.
+
+### Endurecimiento del runtime
+
+El endurecimiento del runtime del firmware (RT-010 a RT-034) tiene estas suites:
+
+- `runtime_boot` ejecuta un plan de arranque en orden, rechaza un plan que inicia un servicio antes que el runtime y sigue adelante cuando un servicio falla.
+- `program_store_nvs` ejecuta el almacén de programas sobre NVS en el simulador de flash con un artefacto tan grande como la región de código, y corta la energía en cada operación de un despliegue.
+- `modbus_force` escribe a través del servidor Modbus sobre el núcleo real y muestra que una variable forzada conserva su valor forzado.
+- `scheduler_admission` detiene un ciclo en la confirmación y en la escritura de salidas, para mostrar que una escritura externa espera al enganche de entradas y nunca al ciclo, y que el cerrojo de la imagen está libre mientras se escriben los pines.
+- `scheduler_equivalence` maneja el planificador de Zephyr con los escenarios del núcleo de planificador compartido y compara sus decisiones con la traza de referencia a la que se somete la sesión de host (RT-008, RT-018).
+- `single_task` ejecuta la configuración de una sola tarea del núcleo: el enganche de entradas de los pines, el plazo, la falla y el estado seguro (RT-018).
+- `failsafe` toma el manejador de error fatal con un reinicio interceptado y muestra las salidas llevadas a estado seguro, el registro de la falla y la causa que informa el arranque siguiente. `failsafe_reboot` toma una falla real y un reinicio real en `qemu_cortex_m3` y lee el registro después (RT-019, RT-021, RT-022).
+- `scheduler_watchdog` ejecuta la política de perro guardián por hardware de un perfil sobre un modelo del perro guardián: la alimentación desde el fin de un ciclo, el tiempo límite tomado del conjunto de tareas, un ciclo detenido que lo deja vencer y la política en STOP, en una pausa y en una falla (RT-020).
+- `port_timing` ejecuta la autoprueba de tiempo de la suite de conformidad de puertos sobre el reloj del HAL de Zephyr: el tic nunca retrocede y una espera lo avanza en el tiempo indicado. El host POSIX ejecuta la misma función en `test_port_timing`. La página de la [interfaz de puerto](../runtime/port-interface.md) enumera toda la suite (IO-013).
+
+Las suites de host del núcleo agregan `test_exchange` (un escáner, lectores y escritores en hilos), `test_program_store` (un corte de energía y una escritura incompleta en cada operación), `test_sched_core` y `test_sched_equivalence`, `test_single_task`, `test_vm_scan`, `test_failsafe`, `test_safe_state`, `test_core_start`, `test_core_lock`, `test_bytes_crc` y las pruebas `config_rule_*`. Cada prueba `config_rule_*` construye una regla de configuración con un valor que la rompe y espera que la compilación falle nombrando la regla.
+
+Los puntos de entrada solo para pruebas se declaran en `firmware/lib/zplc_core/tests/include/zplc_test_hooks.h`, nunca en un encabezado público. `test_public_headers` falla cuando un encabezado público declara uno.
 
 ### La descripción de E/S de la placa
 
-`zplc.io_table.base` y `zplc.io_table.extended` compilan el firmware desde dos descripciones sintéticas de placa
-(`firmware/tests/io_table/io_base.json` e `io_extended.json`) sobre el emulador de GPIO de `native_sim` y ejecutan el
-mismo código de prueba en ambas. La prueba lee la tabla generada, maneja cada pin de entrada emulado, ejecuta un
-ciclo y comprueba que una entrada descrita llega a la imagen de entrada en su dirección, que una salida descrita
-llega a su pin, y que un pin que el devicetree tiene pero la descripción no lista nunca se configura ni se maneja. La
-descripción extendida lista tres salidas y una entrada más que la base, una de ellas en un segundo y otra en un
-tercer byte de imagen, y ningún fuente del firmware las nombra.
+- `zplc.io_table.base` y `zplc.io_table.extended` compilan el firmware a partir de dos descripciones sintéticas de placa (`firmware/tests/io_table/io_base.json` e `io_extended.json`) sobre el emulador de GPIO de `native_sim` y ejecutan el mismo código de prueba en ambas. La prueba maneja cada pin de entrada emulado, ejecuta un ciclo y comprueba que una entrada descrita llega a la imagen de entrada en su dirección, que una salida descrita llega a su pin y que un pin que el árbol de dispositivos tiene pero la descripción no lista nunca se configura ni se maneja. La descripción extendida lista tres salidas y una entrada más que la base, y nada en las fuentes del firmware las nombra.
+- `zplc.io_analog.ok` ejecuta dos entradas analógicas sobre el emulador de ADC y comprueba que cada valor crudo llega a su palabra de la imagen de entrada y sigue el voltaje. `zplc.io_analog.missing` nombra un canal del conversor que el emulador no tiene y comprueba que el HAL falla en la inicialización, antes de que corra cualquier tarea.
+- `zplc.hal_persist_keys` guarda, carga y borra cada clave que el runtime almacena (el almacén de programas, los fragmentos RETAIN de ambas ranuras y las credenciales) sobre el NVS del simulador de flash, y comprueba que una clave sin identificador responde con un error.
 
-`zplc.io_analog.ok` ejecuta dos entradas analógicas sobre el emulador de ADC y comprueba que cada valor crudo llega
-a su palabra de la imagen de entrada y sigue a la tensión; `zplc.io_analog.missing` nombra un canal de conversor que
-el emulador no tiene y comprueba que la HAL falla al inicializar, antes de que exista ninguna tarea.
-`zplc.hal_persist_keys` guarda, lee y borra cada clave que el runtime almacena (el almacén de programas, los chunks de
-RETAIN de ambas ranuras y las credenciales) sobre el NVS del simulador de flash, y comprueba que una clave sin
-identificador responde con un error.
-
-La compilación también comprueba que la descripción y el devicetree coinciden. Para verlo fallar, cambie un `dt.pin` o un
-`alias` en `io_base.json` y compile la prueba:
+La compilación también comprueba que la descripción y el árbol de dispositivos coincidan. Para verla fallar, cambie un `dt.pin` o un `alias` en `io_base.json` y compile la prueba:
 
 ```bash
 west build -p -b native_sim/native/64 zplc/firmware/tests/io_table
 ```
 
-La compilación se detiene con un mensaje como `I/O description: channel DO0 (P0) disagrees with the devicetree: alias led0
-is not on pin 7`. `python3 tools/hil/test_io_table_generator.py` fija el texto que emite el generador, y
-`python3 tools/ci/check_hal_contract.py` comprueba que cada función de la HAL está implementada en cada port.
+La compilación se detiene con un mensaje como `I/O description: channel DO0 (P0) disagrees with the devicetree: alias led0 is not on pin 7`. Dos comprobaciones en Python lo acompañan: `python3 tools/hil/test_io_table_generator.py` fija el texto que emite el generador, y `python3 tools/ci/check_hal_contract.py` comprueba que cada función del HAL esté implementada en cada puerto.
 
 ## Análisis estático
 
-`clang-tidy` lee `.clang-tidy` en la raíz del repositorio. Toda comprobación que habilita es un error, así que la
-lista de ese archivo es el conjunto que el código cumple. Cada comprobación desactivada figura con su motivo, y una
-línea que debe quedar como está lleva un comentario `NOLINT` con su motivo. `run.sh tidy` ejecuta
-`tools/ci/run_clang_tidy.py`, que hace dos pasadas:
+`clang-tidy` lee `.clang-tidy` en la raíz del repositorio. Toda comprobación que habilita es un error, de modo que la lista de ese archivo es el conjunto que el código satisface. Cada comprobación desactivada figura con su motivo, y una sola línea que deba quedar como está lleva un comentario `NOLINT` con su motivo. `run.sh tidy` ejecuta `tools/ci/run_clang_tidy.py`, que hace dos pasadas:
 
-- La pasada de host siempre se ejecuta. CMake escribe una base de datos de compilación de
-  `firmware/lib/zplc_core` en un directorio temporal (no se compila nada) y clang-tidy analiza el núcleo en
-  `src/core`, el HAL POSIX en `src/hal/posix`, la aplicación de host en `firmware/apps/posix_host/src` y las
-  encabezados que incluyen. No debe informar nada.
-- La pasada de Zephyr analiza lo que solo entra en una compilación de Zephyr: el HAL y el planificador de Zephyr y
-  `firmware/app`. Necesita la base de datos de compilación de un `west build`, así que se ejecuta cuando existe
-  `$ZPLC_FW_WS/out/size/arduino-opta-wifi-m7` (`run.sh size arduino-opta-wifi-m7` la crea) o cuando se pasa
-  `--zephyr-build <directorio>` al script. En otro caso se omite y la ejecución lo dice. El núcleo y el HAL de
-  Zephyr no deben informar nada. Los hallazgos que `firmware/app` ya tenía cuando se agregó la comprobación se
-  cuentan por placa, archivo y comprobación en `tools/ci/clang-tidy-app-baseline.json`: un hallazgo nuevo hace
-  fallar la pasada, y uno corregido pide bajar el conteo con `--update-baseline`.
+- **Pasada de host.** Siempre se ejecuta. CMake escribe una base de datos de compilación de `firmware/lib/zplc_core` en un directorio temporal (no se compila nada), y clang-tidy analiza `src/core`, el HAL POSIX en `src/hal/posix`, la aplicación de host en `firmware/apps/posix_host/src` y los encabezados que incluyen. No debe informar nada.
+- **Pasada de Zephyr.** Analiza lo que solo compila una compilación de Zephyr: el HAL y el planificador de Zephyr y `firmware/app`. Necesita la base de datos de compilación de un `west build`, así que se ejecuta cuando existe `$ZPLC_FW_WS/out/size/arduino-opta-wifi-m7` (lo crea `run.sh size arduino-opta-wifi-m7`) o cuando pasa `--zephyr-build <directorio>`. En otro caso se omite y la ejecución lo dice. El núcleo y el HAL de Zephyr no deben informar nada. Los hallazgos que `firmware/app` ya tenía cuando se agregó la comprobación se cuentan por placa, archivo y comprobación en `tools/ci/clang-tidy-app-baseline.json`: un hallazgo nuevo hace fallar la pasada, y uno corregido pide bajar el conteo con `--update-baseline`.
 
-`-Werror` se aplica a todo destino que el repositorio compila: los destinos de host del núcleo mediante un
-único `add_compile_options` en `firmware/lib/zplc_core/CMakeLists.txt` (con `-Wall -Wextra -pedantic`), la
-biblioteca Zephyr `zplc` mediante `firmware/CMakeLists.txt` y `app`. Las suites de prueba de Zephyr también
-compilan las fuentes del núcleo con él.
-
-## Integración continua
-
-El trabajo `host-core-sanitized` ejecuta la pasada de host después de su compilación con sanitizadores, con
-`clang-tidy` instalado desde la distribución. Cada trabajo `zephyr-cross-build` ejecuta la pasada de Zephyr
-sobre la compilación que acaba de hacer, contra la línea base de su placa (la placa Xtensa no tiene destino
-clang y se omite). El trabajo `zephyr-twister` ejecuta `native` con su propio paso de Twister y
-luego `native32`, `qemu-m3` y `qemu-m0` con `run.sh`, en el mismo espacio de
-trabajo. Cada trabajo `zephyr-cross-build` comprueba la flash y la RAM de su
-placa frente a `size-budget.json` y escribe la tabla en el resumen del
-trabajo. La herramienta de informes tiene sus propias pruebas unitarias,
-`tools/firmware-test/test_fwtest.py`, que demuestran que la compuerta falla
-cuando un tamaño excede su presupuesto en un solo byte. El mismo trabajo ejecuta
-luego la verificación de particiones de la sección siguiente sobre su
-compilación. Ese paso está escrito en `.github/workflows/ci.yml` y no se ejecutó
-aquí; `run.sh size` ejecuta la misma verificación en local.
-
-El trabajo nocturno `loader-fuzz` de `.github/workflows/nightly-quality.yml` aplica fuzzing solo a la verificación del cargador, y todavía no hay registrada ninguna ejecución suya.
+`-Werror` se aplica a todo objetivo que compila el repositorio: los objetivos de host del núcleo mediante un solo `add_compile_options` en `firmware/lib/zplc_core/CMakeLists.txt` (con `-Wall -Wextra -pedantic`), la biblioteca Zephyr `zplc` mediante `firmware/CMakeLists.txt` y `app`. Las suites de prueba de Zephyr también compilan con él las fuentes del núcleo.
 
 ## Presupuestos de tamaño
 
-`tools/firmware-test/size-budget.json` registra, para cada placa de
-`firmware/app/boards/boards.json`, la flash y la RAM medidas
-en la tabla de memoria del enlazador y el presupuesto que la compilación debe
-respetar. La política de margen está en el archivo: el presupuesto es la
-medición más 5 por ciento, redondeada hacia arriba a 256 bytes.
+`tools/firmware-test/size-budget.json` registra, para cada placa de `firmware/app/boards/boards.json`, la flash y la RAM medidas en la tabla de memoria del enlazador y el presupuesto que debe respetar la compilación. El presupuesto es la medición más 5 por ciento, redondeado hacia arriba a 256 bytes (la `margin_policy` del archivo).
 
-Cuando un cambio hace que una imagen crezca más allá de su presupuesto, la
-compilación falla. Suba el presupuesto en la misma confirmación e indique el motivo:
+Cuando un cambio hace que una imagen crezca más allá de su presupuesto, la compilación falla. Suba el presupuesto en la misma confirmación y explique por qué:
 
 ```bash
 python3 tools/firmware-test/fwtest.py size \
@@ -276,119 +164,69 @@ python3 tools/firmware-test/fwtest.py size \
   --logs ~/zplc-zephyr-ws/out/size --rebaseline
 ```
 
-Las cifras son asignación estática en tiempo de enlace. No incluyen las pilas
-ni la marca máxima del heap.
+Las cifras son asignación estática en el enlazado. No incluyen las pilas ni la marca máxima del heap.
 
-La biblioteca de ZPLC y la aplicación se compilan con optimización en tiempo de enlace (`CONFIG_ZPLC_LTO`, activa
-por defecto), que vale cerca del 3 por ciento de la flash de una imagen. El código propio de Zephyr no entra en ella.
-Los destinos `native_sim` enlazan su imagen como un objeto relocatable, del que el optimizador no puede formar parte,
-así que corren sin ella; las suites de `firmware/tests` enlazan la biblioteca del mismo modo que las placas en
-`qemu-m3` y `qemu-m0`, que es donde se ejercita el código que se entrega. Para comparar, o para depurar una falla
-sin el inlining de por medio, compile con `-DCONFIG_ZPLC_LTO=n`.
+La biblioteca ZPLC y la aplicación se compilan con optimización en el enlazado (`CONFIG_ZPLC_LTO`, activada de forma predeterminada), que vale cerca de 3 por ciento de la flash de una imagen. El código propio de Zephyr no participa. Los objetivos `native_sim` enlazan su imagen como un objeto reubicable, del que el optimizador no puede formar parte, así que se ejecutan sin ella; las suites de `firmware/tests` enlazan la biblioteca igual que las placas en `qemu-m3` y `qemu-m0`, que es donde se ejercita el código que se distribuye. Para comparar, o para depurar una falla sin el efecto del inlining, compile con `-DCONFIG_ZPLC_LTO=n`.
 
-Para ver adónde van los bytes de una placa, ejecute el informe de huella sobre
-los mismos árboles de compilación. Lee cada mapa del enlazador e imprime, por
-placa, los bytes usados de cada región de memoria, el margen frente al
-presupuesto, las secciones de entrada por tipo y por biblioteca, y las secciones
-de entrada más grandes de flash y RAM con el archivo objeto al que pertenece
-cada una. Las cadenas de la imagen son un solo bloque fusionado, así que el
-informe lo muestra una vez y muestra las cadenas de cada objeto antes de
-fusionarlas:
+### Adónde van los bytes
+
+El informe de huella lee cada mapa del enlazador en los mismos árboles de compilación e imprime, por placa, los bytes usados de cada región de memoria, el margen respecto del presupuesto, las secciones de entrada por tipo y por biblioteca, y las secciones de entrada más grandes de flash y RAM con el archivo objeto que es dueño de cada una. Las cadenas de la imagen son un solo bloque fusionado, así que informa ese bloque una vez y las cadenas de cada objeto antes de fusionar.
 
 ```bash
 python3 tools/firmware-test/footprint_report.py \
   --logs ~/zplc-zephyr-ws/out/size --board rpi-pico-rp2040 --top 25
 ```
 
-El informe solo lee archivos. Sus propias pruebas son
-`tools/firmware-test/test_footprint_report.py`.
+El informe solo lee archivos. Sus propias pruebas son `tools/firmware-test/test_footprint_report.py`.
 
 ## Particiones de flash de los almacenes
 
-`run.sh size` también ejecuta `tools/hil/check_storage_partitions.py` (IO-008)
-sobre cada placa que compiló. La verificación lee el `zephyr.dts` y el `.config`
-que cada compilación conserva en `$ZPLC_FW_WS/out/size/<id de placa>/zephyr`,
-nunca el texto de los overlays, y hace fallar una placa cuando:
+`run.sh size` también ejecuta `tools/hil/check_storage_partitions.py` (IO-008) en cada placa que compiló. La comprobación lee el `zephyr.dts` y el `.config` que cada compilación conserva en `$ZPLC_FW_WS/out/size/<id de la placa>/zephyr`, nunca el texto de la superposición, y reprueba una placa cuando:
 
-- (a) dos almacenes comparten o superponen una partición, o un almacén se
-  superpone con otra partición. Los almacenes son los registros de la HAL (en
-  `zplc_nvs_partition`, o en `storage_partition` si la placa no la tiene) y el
-  sistema de archivos de configuración (LittleFS, en `storage_partition`);
-- (b) un almacén tiene menos de dos bloques de borrado de su flash, no ocupa
-  bloques de borrado enteros o tiene bloques que su backend no puede montar
-  (NVS rechaza un sector de más de 64 KB; una NOR serie que no indica su tamaño
-  de borrado se toma con 64 KB);
-- (c) un almacén queda dentro de la ranura de la imagen, la flash que el enlazador
-  puede llenar. Donde el enlazador no acota la imagen (la ESP32-S3 ignora
-  el tamaño de carga de Zephyr), la ranura es el presupuesto de flash de la placa, que
-  la verificación de tamaño de la misma ejecución hace cumplir.
+- **(a)** dos almacenes comparten o se superponen en una partición, o un almacén se superpone con otra partición. Los almacenes son los registros del HAL (en `zplc_nvs_partition`, o en `storage_partition` donde la placa no la tiene) y el sistema de archivos de configuración (LittleFS, en `storage_partition`).
+- **(b)** un almacén tiene menos de dos bloques de borrado de su flash, no consta de bloques de borrado completos, o tiene bloques que su backend no puede montar (NVS rechaza un sector mayor de 64 KB; una NOR serie que no declara tamaño de borrado se toma como de 64 KB).
+- **(c)** un almacén queda dentro de la ranura de la imagen, la flash que el enlazador puede llenar. Donde el enlazador no acota la imagen (el ESP32-S3 ignora el tamaño de carga de Zephyr), la ranura es el presupuesto de flash de la placa, que la comprobación de tamaño de la misma ejecución hace cumplir.
 
-Una línea por placa indica PASS o FAIL con el mapa de particiones. Una placa
-cuya falla es conocida y pertenece a otro trabajo puede figurar con las
-verificaciones que fallan en `tools/hil/storage-partitions-open.json`; la lista
-está vacía y solo se reduce. Para ejecutar la verificación sola sobre árboles de
-compilación que ya existen:
+Una línea por placa dice PASS o FAIL con el mapa de particiones. Una placa cuya falla es conocida y le corresponde a otro puede figurar con las comprobaciones que fallan en `tools/hil/storage-partitions-open.json`; la lista está vacía y solo se reduce. Ejecute la comprobación sola sobre árboles de compilación que ya existan:
 
 ```bash
 python3 tools/hil/check_storage_partitions.py ~/zplc-zephyr-ws/out/size/*/
 ```
 
-Sus pruebas unitarias son `tools/hil/test_hil_storage_partitions.py`. Es
-evidencia a nivel de compilación: cómo se comporta la flash de una placa
-requiere el banco de HIL-010.
+Sus pruebas unitarias son `tools/hil/test_hil_storage_partitions.py`. Es evidencia de nivel de compilación: el comportamiento de la flash de una placa requiere el banco de HIL-010.
+
+## Integración continua
+
+| Trabajo                                      | Qué ejecuta                                                                                                                                                                                                   |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `host-core-sanitized`                        | La compilación de host con saneadores y, después, la pasada de host de `clang-tidy` (fijado en 23.1.3 con `pipx`, porque los hallazgos cambian entre versiones)                                                |
+| `zephyr-twister`                             | `native` con su propio paso de Twister y luego `native32`, `qemu-m3` y `qemu-m0` con `run.sh`, en el mismo espacio de trabajo; las pruebas unitarias de las herramientas de informe (`test_fwtest.py`, `test_footprint_report.py`) |
+| `zephyr-cross-build` (uno por placa)         | La puerta de tamaño contra `size-budget.json`, con la tabla escrita en el resumen del trabajo; la pasada de `clang-tidy` de Zephyr contra la línea base de la placa (la placa Xtensa no tiene destino clang y se omite); la comprobación de particiones |
+| `native-sim-twister` (nightly-quality.yml)   | Twister en `native_sim/native/64`, ejecutado dos veces                                                                                                                                                        |
+| `loader-fuzz` (nightly-quality.yml)          | Aplica fuzzing a la verificación del cargador (vea la nota siguiente)                                                                                                                                         |
+
+`test_fwtest.py` demuestra que la puerta de tamaño falla cuando un tamaño excede su presupuesto en un byte. El paso de particiones está escrito en `.github/workflows/ci.yml` y aquí no se ha ejecutado en CI; `run.sh size` ejecuta la misma comprobación en local.
+
+El trabajo nocturno `loader-fuzz` de `.github/workflows/nightly-quality.yml` aplica fuzzing solo a la verificación del cargador, y todavía no hay registrada ninguna ejecución suya.
 
 ## Agregar una prueba
 
-- Ponga una suite Zephyr en `firmware/tests/<nombre>` con un `testcase.yaml`
-  y liste en `platform_allow` cada plataforma en la que pasa. No liste una
-  plataforma donde el escenario pasaría por un motivo que no nombra.
-- Zephyr elige los archivos de placa por calificador exacto. Un archivo para
-  la variante de 64 bits es `boards/native_sim_native_64.overlay` y la
-  variante de 32 bits necesita `boards/native_sim_native.overlay`. Los ajustes
-  por placa van en `boards/<placa>.conf`, por ejemplo
-  `boards/qemu_cortex_m3.conf`.
-- Imprima solo ASCII. Twister decodifica la salida de QEMU byte a byte como
-  UTF-8 y falla la ejecución ante un carácter multibyte.
-- Tenga presente la pila de cada hilo. `native_sim` ejecuta los hilos en la
-  pila del host, así que una pila demasiado pequeña solo aparece en un
-  destino. La pila por defecto del hilo de pruebas en `qemu_cortex_m3` es de
-  1 KB.
+- Ponga una suite Zephyr en `firmware/tests/<nombre>` con un `testcase.yaml`, y liste en `platform_allow` cada plataforma en la que pasa. No liste una plataforma donde el escenario pasaría por un motivo que no nombra.
+- Zephyr elige los archivos de placa por calificador exacto. Un archivo para la variante de 64 bits es `boards/native_sim_native_64.overlay`, y la variante de 32 bits necesita `boards/native_sim_native.overlay`. Los ajustes por placa van en `boards/<placa>.conf`, por ejemplo `boards/qemu_cortex_m3.conf`.
+- Imprima solo ASCII. Twister decodifica la salida de QEMU de a un byte como UTF-8 y hace fallar la ejecución ante un carácter multibyte.
+- Cuide la pila de los hilos. `native_sim` ejecuta los hilos en la pila del host, así que una pila demasiado pequeña aparece solo en un objetivo. La pila predeterminada de los hilos de prueba en `qemu_cortex_m3` es de 1 KB.
 
 ## Límites conocidos
 
-- `vm_core` y `loader_verify` no se ejecutan en `qemu_cortex_m0`. La VM
-  mantiene 8 KB de imágenes de proceso fijas y unos 5 KB de estado estático
-  con la profundidad de pila por defecto, así que la suite completa excede
-  16 KB con los tamaños que necesita, y la suite del cargador construye
-  programas más grandes que la región de código `.tiny`.
-- `hal_gpio_policy.partial_required` y `post_shutdown` necesitan el emulador
-  de GPIO y el alias de LED de `native_sim`.
-- `scheduler_run_control` observa el nivel físico del canal de salida 0 con el
-  mismo emulador y alias de LED. En `qemu_cortex_m3`, que no tiene ninguno de
-  los dos, solo comprueba la imagen de salidas, la tabla de forzados y los ciclos
-  de las tareas, así que "salidas seguras durante la pausa" se observa solo en
-  `native_sim`.
-- El modo `app` todavía no forma parte de la integración continua: ningún
-  trabajo compila una placa y luego ejecuta la prueba de host.
-- La línea base de `firmware/app` de la pasada de Zephyr es la lista de
-  hallazgos que faltan por corregir allí; `tools/ci/clang-tidy-app-baseline.json`
-  guarda un conteo por placa, archivo y comprobación. La pasada se probó contra
-  compilaciones locales de placa con una versión de `clang-tidy`; la primera
-  ejecución en integración continua mostrará si las líneas base también valen
-  con la del runner.
-- La pasada de Zephyr se ejecutó en una estación de trabajo Linux, solo sobre la compilación del Arduino Opta:
-  el núcleo y el HAL de Zephyr no reportaron nada y `firmware/app` reportó 24 hallazgos, todos dentro de la línea
-  base de esa placa. Al leerlos no apareció ningún defecto: el único `strcpy` está protegido por la comprobación
-  de longitud que lo precede y el único `memcpy` escribe un registro binario, de modo que ningún archivo del
-  firmware cambió. Las líneas base de las otras placas no se midieron en esa ejecución y no hay una ejecución
-  alojada en CI de la pasada.
-- Dos casos de integración de `test_vm_core.c` se omiten en todos los
-  destinos, el host incluido, porque los binarios de ejemplo que cargan son
-  anteriores al campo CRC. Las líneas `SKIP:` están en el registro de la
-  suite y el resumen igualmente informa un resultado correcto.
+- `vm_core` y `loader_verify` no se ejecutan en `qemu_cortex_m0`. La VM mantiene 8 KB de imágenes de proceso fijas y unos 5 KB de estado estático con la profundidad de pila predeterminada, así que la suite completa excede 16 KB con los tamaños que necesita, y la suite del cargador compila programas mayores que la región de código `.tiny`.
+- `hal_gpio_policy.partial_required` y `post_shutdown` necesitan el emulador de GPIO y el alias de LED de `native_sim`.
+- `scheduler_run_control` observa el nivel físico del canal de salida 0 mediante el mismo emulador y alias de LED. En `qemu_cortex_m3`, que no tiene ninguno, comprueba solo la imagen de salida, la tabla de forzados y los ciclos de las tareas, de modo que "salidas seguras durante la pausa" se observa solo en `native_sim`.
+- El modo `app` todavía no forma parte de la integración continua: ningún trabajo compila una placa y luego ejecuta la prueba de host.
+- La línea base de la pasada de `clang-tidy` de Zephyr para `firmware/app` es la lista de hallazgos que aún faltan por corregir allí. Se comprobó contra compilaciones locales de placas con una sola versión de `clang-tidy`. En una estación de trabajo Linux, solo con la compilación del Arduino Opta, el núcleo y el HAL de Zephyr no informaron nada y `firmware/app` informó 24 hallazgos, todos dentro de la línea base de esa placa. Al leerlos no se halló ningún defecto: el único `strcpy` está protegido por la comprobación de longitud que lo precede, y el único `memcpy` escribe un registro binario. Las líneas base de las demás placas no se midieron en esa ejecución, y no hay registrada ninguna ejecución alojada en CI de la pasada.
+- Dos casos de integración de `test_vm_core.c` se omiten en todos los objetivos, el host incluido, porque los binarios de ejemplo que cargan son anteriores al campo CRC. Las líneas `SKIP:` están en el registro de la suite y el resumen sigue informando un resultado correcto.
 
 ## Páginas relacionadas
 
 - [Configuración del espacio de trabajo de Zephyr](../reference/zephyr-workspace-setup.md)
 - [Placas](../reference/boards.md)
-- [Compatibilidad de hardware](../reference/capabilities-evidence.md)
+- [Soporte de hardware](../reference/capabilities-evidence.md)

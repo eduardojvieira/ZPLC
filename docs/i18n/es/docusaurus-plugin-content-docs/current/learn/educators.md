@@ -9,46 +9,50 @@ tags: [learn, lessons, educators, classroom]
 
 # Docentes
 
-Todo lo de esta página funciona en el propio equipo del docente. Aprender no necesita
-una cuenta ni un servidor, y nada de lo que sigue envía datos de un estudiante a
-ninguna parte. Los comandos se ejecutan desde una copia del repositorio con
-[Bun](https://bun.sh) y leen el índice de lecciones que viene con ZPLC.
+Esta página es para un docente que da el curso de Aprender a un grupo. Ofrece tres herramientas: un ajuste que oculta las soluciones de referencia, un comando que revisa el archivo de progreso exportado por un estudiante y un esquema imprimible del curso. Todo se ejecuta en su propio equipo. Aprender no necesita cuenta ni servidor, y nada de lo que sigue envía datos de un estudiante a ninguna parte.
+
+Los dos comandos se ejecutan desde una copia del repositorio con [Bun](https://bun.sh). Leen el índice de lecciones que viene con ZPLC.
 
 ## Ocultar las soluciones de referencia
 
-En el inicio de Aprender, active **Aula: ocultar las soluciones de referencia**.
-Mientras está activado, el panel de la lección no ofrece ninguna solución de
-referencia y dice que el ajuste de aula la oculta. El ajuste se guarda en ese
-equipo, está desactivado de forma predeterminada y se puede desactivar en el mismo
-lugar. Las pistas no cambian.
+1. Abra el inicio de Aprender.
+2. Active **Aula: ocultar las soluciones de referencia**.
 
-## Verificar el archivo de progreso de un estudiante
+Mientras el ajuste está activo, el panel de la lección no ofrece ninguna solución de referencia y dice que el ajuste de aula la oculta. Las pistas siguen disponibles. El ajuste pertenece a ese equipo y viene desactivado; se desactiva en el mismo lugar.
 
-Un estudiante exporta su progreso con **Exportar progreso** en el inicio de Aprender y
-le entrega el archivo. Verifíquelo con:
+## Revisar el archivo de progreso de un estudiante
+
+1. El estudiante abre el inicio de Aprender y elige **Exportar progreso**.
+2. El estudiante le entrega el archivo.
+3. Usted ejecuta:
 
 ```text
 bun tools/ci/learn-educator.ts verify progreso-estudiante.json
 ```
 
-El comando imprime una línea por lección:
+El comando imprime una línea por lección, con la forma `<id de la lección>: <resultado>`, y un detalle entre paréntesis cuando hay un `mismatch`. La última línea dice `ok` o `failed`.
 
-| Resultado        | Significado                                                                                                                                                                               |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `verified`       | La lección está aprobada y su registro de calificación se tomó en simulación contra el escenario actual de la lección: mismo id de escenario, mismo SHA-256 y mismo número de aserciones. |
-| `mismatch`       | El registro de calificación se tomó contra otro escenario, otra ruta u otro número de aserciones. La línea dice cuál.                                                                     |
-| `unverified`     | La lección está aprobada sin registro de calificación, como ocurre con el progreso migrado de la primera versión.                                                                         |
-| `in-progress`    | La lección se inició y no se aprobó.                                                                                                                                                      |
-| `unknown-lesson` | El archivo nombra una lección que esta versión no tiene; se conserva y se ignora.                                                                                                         |
+| Resultado        | Significado                                                                                                                                                                              |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `verified`       | La lección está aprobada y su registro de calificación se tomó en simulación contra el escenario vigente de la lección: mismo id de escenario, mismo SHA-256 y mismo número de aserciones. |
+| `mismatch`       | El registro de calificación se tomó contra otro escenario, otra ruta u otro número de aserciones. El detalle dice cuál.                                                                  |
+| `unverified`     | La lección está aprobada sin registro de calificación, como en el progreso migrado de la primera versión.                                                                                |
+| `in-progress`    | La lección se inició y no se aprobó.                                                                                                                                                     |
+| `unknown-lesson` | El archivo nombra una lección que esta compilación no tiene. Se conserva y se ignora.                                                                                                    |
 
-El código de salida es 0 cuando ninguna lección es `mismatch`, 1 cuando alguna lo
-es o cuando el archivo no es un archivo de progreso, y 2 para una línea de comandos
-incorrecta. Agregue `--strict` para fallar también con las lecciones `unverified`.
+### Códigos de salida
 
-Es una comprobación de coherencia contra los hashes de las lecciones, no una defensa
-contra un estudiante que edita el archivo a mano: un registro de calificación es
-evidencia de lo que ZPLC registró en el equipo del estudiante. Cuando sea importante, pida al
-estudiante que pulse **Comprobar** en su presencia.
+| Código | Cuándo                                                                                                                     |
+| ------ | -------------------------------------------------------------------------------------------------------------------------- |
+| 0      | Ninguna lección es `mismatch`.                                                                                             |
+| 1      | Una lección es `mismatch`, el archivo no es un archivo de progreso o no se puede leer.                                     |
+| 2      | La línea de comandos es incorrecta: falta el nombre del archivo tras `verify`, o el comando no es `verify` ni `outline`.   |
+
+Agregue `--strict` para que una lección `unverified` también falle (código 1).
+
+:::note Lo que demuestra la revisión
+Compara los registros de calificación con los hashes de las lecciones. No protege contra un estudiante que edita el archivo a mano: un registro de calificación es evidencia de lo que ZPLC registró en el equipo del estudiante. Cuando el resultado importe, pida al estudiante que pulse **Comprobar** en su presencia.
+:::
 
 ## Imprimir el esquema del curso
 
@@ -56,18 +60,19 @@ estudiante que pulse **Comprobar** en su presencia.
 bun tools/ci/learn-educator.ts outline --locale es --format html > curso.html
 ```
 
-El esquema enumera cada módulo y, debajo, cada lección en el orden del curso con su
-duración, lenguajes, rutas, lo que requiere y sus objetivos. `--locale` es `en` o
-`es`; `--format` es `markdown` (el predeterminado) o `html`. La página HTML es
-autónoma, con estilos de impresión, sin scripts y sin archivos externos: ábrala en
-un navegador e imprímala.
+El esquema enumera cada módulo y, debajo, cada lección en el orden del curso con su duración, lenguajes, rutas, requisitos y objetivos.
 
-## Lo que esto no hace
+| Opción     | Valores                        | Valor predeterminado |
+| ---------- | ------------------------------ | -------------------- |
+| `--locale` | `en`, `es`                     | `en`                 |
+| `--format` | `markdown`, `html`             | `markdown`           |
 
-No hay lista de clase, ni panel compartido, ni recolección automática del progreso.
-El progreso de un estudiante queda en su propia carpeta de datos de usuario hasta
-que lo exporta.
+Cualquier otro valor en cualquiera de las dos opciones termina con el código 2. La página HTML es autónoma: tiene estilos de impresión, ningún script y ningún archivo externo, de modo que puede abrirla en un navegador e imprimirla.
 
-Nivel de evidencia: host. `tools/ci/learn-educator.test.ts` cubre el verificador y
-el esquema; el ajuste de aula lo cubren `src/components/LearnHomeView.test.tsx` y el
-recorrido de Aprender.
+## Lo que no existe
+
+No hay lista de clase, ni panel compartido, ni recolección automática del progreso. El progreso de un estudiante queda en su propia carpeta de datos de usuario hasta que lo exporta.
+
+## Evidencia
+
+Nivel de evidencia: host. `tools/ci/learn-educator.test.ts` cubre el verificador y el esquema. El ajuste de aula lo cubren `src/components/LearnHomeView.test.tsx` y el recorrido de Aprender.

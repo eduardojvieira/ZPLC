@@ -7,61 +7,54 @@ description: How a person runs the ZPLC hardware tests at the bench, what each t
 
 # Hardware in the Loop
 
-This page is for the person at the bench. A board is a physical thing, so a
-person starts every command that touches one: AI tools and MCP do not flash,
-deploy, force, start or stop a board, or open its serial shell, and no flag lets
-a script do it for them.
+Use this page when you sit at a bench with a ZPLC board. It says which command to run, what the tool asks you to do, what it records, and what a record does and does not prove.
 
-Nothing here is hardware evidence until a record exists for a board and a
-firmware image (see [Run records](#run-records)). Everything the continuous
-integration runs is host evidence: it proves the tools, not a board.
+:::warning A person starts every board action
+AI tools and MCP do not flash, deploy, force, start or stop a board, or open its serial shell, and no flag lets a script do it for them. Every command here that touches a board is started by you.
+:::
+
+Nothing here is hardware evidence until a record exists for a board and a firmware image (see [Run records](#run-records)). Everything the continuous integration runs is host evidence: it proves the tools, not a board.
 
 ## What runs where
 
-| Level | What it shows                                                                                                                                                                                                                                    | Where                                   |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
+| Level | What it shows                                                                                                                                                                                                                                      | Where                                   |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
 | Host  | Every language fixture compiles with the repository compiler and holds its expected values on the native runtime; the device scripts exit non-zero when a check fails; the scenario engine runs on the hardware port against the native runtime. | CI, and any machine with the repository |
-| Board | The same fixtures and scenarios on a flashed board, and the physical steps.                                                                                                                                                                      | A person, at the bench                  |
+| Board | The same fixtures and scenarios on a flashed board, and the physical steps.                                                                                                                                                                        | A person, at the bench                  |
 
-The host level does not show that a pin drives, that a timer keeps its period
-on real silicon, or that a watchdog resets in time. Those need the board level.
+The host level does not show that a pin drives, that a timer keeps its period on real silicon, or that a watchdog resets in time. Those need the board level. For a bench without a board, see the [emulated bench](./hil-emulation.md); it is a rehearsal and never raises a support level.
 
 ## The tools
 
-| Tool                                                                                    | Use                                                                                                           |
-| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `python3 tools/hil/run_chain.py <board> [--bench human\|emulated]`                      | One command per board. Prompts for each physical step, measures the HIL-010 steps and writes a run record.    |
-| `python3 tools/hil/compare_sim.py <board> [--bench human\|emulated]`                    | Runs the reference projects in native simulation and on the bench and records every difference (HIL-015).     |
-| `bun packages/zplc-hil/src/cli.ts run --board <id> --workspace <dir> --scenario <file>` | Runs a scenario file of a project on a board. The scenario is the file the ZPLC application runs on the host. |
-| `python3 tools/hil/run_all_languages.py`                                                | The IL, LD, FBD, SFC and ST fixtures and the reference projects, on the device.                               |
-| `python3 tools/hil/run_all_hil_tests.py`                                                | The opcode-level scripts. They need a firmware image that prints the HIL trace.                               |
-| `python3 tools/hil/verify_compilation.py`                                               | Compiles every fixture and reference project. No device.                                                      |
+| Tool                                                                                    | Use                                                                                                          |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `python3 tools/hil/run_chain.py <board> [--bench human\|emulated]`                      | One command per board. Prompts for each physical step, measures the HIL-010 steps and writes a run record.   |
+| `python3 tools/hil/compare_sim.py <board> [--bench human\|emulated]`                    | Runs the reference projects in native simulation and on the bench and records every difference (HIL-015).    |
+| `bun packages/zplc-hil/src/cli.ts run --board <id> --workspace <dir> --scenario <file>` | Runs a scenario file of a project on a board. It is the file the ZPLC application runs on the host.          |
+| `python3 tools/hil/run_all_languages.py`                                                | The IL, LD, FBD, SFC and ST fixtures and the reference projects, on the device.                              |
+| `python3 tools/hil/run_all_hil_tests.py`                                                | The opcode-level scripts. They need a firmware image that prints the HIL trace.                              |
+| `python3 tools/hil/verify_compilation.py`                                               | Compiles every fixture and reference project. No device.                                                     |
 
-`<board>` is the `ide_id` of the board in
-`firmware/app/boards/boards.json`, for example `rpi_pico`.
+`<board>` is the `ide_id` of the board in `firmware/app/boards/boards.json`, for example `rpi_pico`.
 
-### The serial port
+### Find the serial port
 
-The port is, in this order: `--port`, the `ZPLC_SERIAL_PORT` environment
-variable, then found from the USB identifiers of the board in
-`tools/hil/usb-ids.json`. When more than one device matches, or none does, the
-tool stops and lists what it saw; it never guesses. No port path is written in
-a script, and the tools run on Linux, macOS and Windows.
-CI runs their tests on Linux only; no run on macOS or Windows is recorded yet.
+The tools choose the port in this order: `--port`, then the `ZPLC_SERIAL_PORT` environment variable, then a search by the USB identifiers of the board in `tools/hil/usb-ids.json`. When more than one device matches, or none does, the tool stops and lists what it saw; it never guesses. No port path is written in a script, and the tools run on Linux, macOS and Windows. CI runs their tests on Linux only; no run on macOS or Windows is recorded yet.
 
-### Without a board
+### Run without a board
 
-`ZPLC_HIL_DEVICE=host` (with `ZPLC_NATIVE_SIM_BIN` naming the `zplc_runtime`
-binary) and `ZPLC_HIL_DEVICE=null` stand in for a board. A record made on a
-stand-in says `host-runtime` or `fake` as its evidence, never `hardware`.
+`ZPLC_HIL_DEVICE=host` (with `ZPLC_NATIVE_SIM_BIN` naming the `zplc_runtime` binary) and `ZPLC_HIL_DEVICE=null` stand in for a board. A record made on a stand-in says `host-runtime` or `fake` as its evidence, never `hardware`.
 
-Every record also says its evidence level: `hardware` for a person's bench,
-`emulated` for the emulated bench (with the emulator, its version and the hash
-of its patch), `community-reported` for a user's report, and none for a
-stand-in. Only `hardware` raises a board's support level; an emulated record
-never does.
+Every record also states its evidence level:
 
-## Exit status
+| Level                | Made by                                                                          | Raises a support level |
+| -------------------- | -------------------------------------------------------------------------------- | ---------------------- |
+| `hardware`           | A person's bench                                                                 | Yes                    |
+| `emulated`           | The emulated bench, with the emulator, its version and the hash of its patch     | Never                  |
+| `community-reported` | A user's report                                                                  | Never                  |
+| none                 | A stand-in                                                                       | Never                  |
+
+### Exit status
 
 | Status | Meaning                                                                                               |
 | ------ | ----------------------------------------------------------------------------------------------------- |
@@ -70,200 +63,134 @@ never does.
 | 2      | No device could be used: no port was chosen, the port would not open, or a program would not compile. |
 | 77     | Skipped: the firmware image has no HIL trace. This is not a pass.                                     |
 
-Scripts that only look at a board and judge nothing (`check_alive.py`,
-`check_hw.py`, `debug_peek.py`, `inspect_zplc.py`, `rescue.py`,
-`rescue_device.py`, `sniff.py`) are listed with their reason in
-`tools/hil/non-gating.json`.
+A tool started without an interactive terminal exits with status 2 and says why, before it opens a port. Scripts that only look at a board and judge nothing (`check_alive.py`, `check_hw.py`, `debug_peek.py`, `inspect_zplc.py`, `rescue.py`, `rescue_device.py`, `sniff.py`) are listed with their reason in `tools/hil/non-gating.json`.
 
 ## The chain
 
-`run_chain.py` does this, in order, and stops at the first step that fails:
+`run_chain.py` runs these steps in order and stops at the first one that fails.
 
-1. **Preflight.** The board is in the manifest and the fixtures of the run
-   compile with the repository compiler, for the board.
-2. **Flash.** You flash the image. The tool does not. It opens the device link
-   only after this step: a blank board has no serial port, and a flashed board
-   appears again under a new name, so the tool looks the port up again for up
-   to 30 seconds after you press Enter.
-3. **Identity handshake.** The tool asks the device who it is
-   (`zplc sys info --json`) and which image it is (`zplc sys build --json`:
-   version, commit, whether the tree was dirty, board, ABI, draft, and the build
-   options with their hash), and records both. The build command the tool told
-   you to run is in the record too.
-4. **I/O description.** The device says which board I/O description its
-   image was built from (`zplc sys io --json`: board id, hash, channel count and
-   image bytes). The tool compares it with `boards.json` for the board and
-   fails the run when they differ. An image that reports none is recorded as
-   skipped, not passed.
-5. **Trace option.** The image's options say whether the HIL trace is on.
-   The run fails when that is not what it asked for: release firmware carries
-   no trace, and `--hil-trace` asks for the image with it.
-6. **Confirm the board.** You type the identity the device reported. Enter
-   alone does not confirm.
-7. **Outputs are safe to drive.** You type the identity again, saying that
-   nothing connected to the outputs can hurt anyone.
-8. **Deploy, run.** A program is uploaded and the scan counter must advance.
-9. **Fixtures.** The blink of each of the five languages runs (every fixture
-   tagged for hardware with `--all-fixtures`), with inputs forced and released.
-10. **Force set and release.** A force is set, listed, cleared, and no force
-    remains.
+1. **Preflight.** The board is in the manifest, and the fixtures of the run compile with the repository compiler, for the board.
+2. **Flash.** You flash the image; the tool does not. It opens the device link only after this step, because a blank board has no serial port and a flashed board appears again under a new name. After you press Enter it looks the port up again for up to 30 seconds.
+3. **Identity handshake.** The tool asks the device who it is (`zplc sys info --json`) and which image it is (`zplc sys build --json`: version, commit, whether the tree was dirty, board, ABI, draft, and the build options with their hash). Both answers go in the record, with the build command the tool told you to run.
+4. **I/O description.** The device says which board I/O description its image was built from (`zplc sys io --json`: board id, hash, channel count and image bytes). The tool compares it with `boards.json` and fails the run when they differ. An image that reports none is recorded as skipped, not passed.
+5. **Trace option.** The image options say whether the HIL trace is on. The run fails when that is not what it asked for: release firmware carries no trace, and `--hil-trace` asks for the image with it.
+6. **Confirm the board.** You type the identity the device reported. Enter alone does not confirm.
+7. **Outputs are safe to drive.** You type the identity again, saying that nothing connected to the outputs can hurt anyone.
+8. **Deploy and run.** A program is uploaded and the scan counter must advance.
+9. **Fixtures.** The blink of each of the five languages runs (every fixture tagged for hardware with `--all-fixtures`), with inputs forced and released.
+10. **Force set and release.** A force is set, listed and cleared, and no force remains.
 11. **Stop.** The device is not running and the output image is zero.
+12. **The measuring steps of HIL-010.** Digital loopback, analog read, timer accuracy, ten minutes of scan jitter, outputs off after an overrun and after a fatal fault, outputs safe after STOP and after link loss with forces active, watchdog reset time, a power cycle with RETAIN, twenty power cuts during deploys, an atomic write and one fieldbus exchange. Each writes its measurements and its verdict into the record; the [bench guide](#bench-guide) lists them with their wiring and pass rules.
 
-12. **The measuring steps of HIL-010.** Digital loopback, analog read, timer
-    accuracy, ten minutes of scan jitter, outputs off after an overrun and after
-    a fatal fault, outputs safe after STOP and after link loss with forces
-    active, watchdog reset time, a power cycle with RETAIN, twenty power cuts
-    during deploys, an atomic write and one fieldbus exchange. Each writes its
-    measurements and its verdict into the record; the
-    [bench guide](#bench-guide) lists them with their wiring and pass rules.
+The chain writes a record whether it passes or fails, and says before it starts how long it takes (about 31 minutes on a person's bench). A step the bench cannot do is recorded as `skipped` (or `not-emulable` on an emulator), never as passed. A dry run or a run on a stand-in runs the measuring steps only when `--steps` names them.
 
-The chain writes a record whether it passes or fails, and says before it
-starts how long it takes (about 31 minutes on a person's bench). A step that
-the bench cannot do is recorded as `skipped` (or `not-emulable` on an
-emulator), never as passed. A dry run or a run on a stand-in runs the measuring
-steps only when `--steps` names them.
+### Options of `run_chain.py`
+
+| Option                          | Effect                                                                                                                                    |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `--port`                        | The serial port; see [Find the serial port](#find-the-serial-port).                                                                       |
+| `--out`                         | The directory of the run record. The default is `build/hil-records`.                                                                      |
+| `--operator`                    | Who is at the bench. Asked for when not given.                                                                                            |
+| `--firmware-image`              | The image that was flashed; its SHA-256 goes in the record.                                                                               |
+| `--only`                        | Comma-separated fixture ids to run instead of the blink fixtures of the five languages.                                                   |
+| `--all-fixtures`                | Run every fixture tagged for hardware (HIL-005), about seven more minutes.                                                                |
+| `--hil-trace`                   | The image under test has the HIL trace overlay. See [Fixtures](#fixtures).                                                                |
+| `--steps`                       | Comma-separated HIL-010 measuring steps to run instead of all of them.                                                                    |
+| `--no-watchdog-build`           | Print the manifest's plain build command; the watchdog step then fails and says the image has no watchdog.                                |
+| `--rtu-port`                    | The host side of the Modbus RTU line of the Pico: the USB-serial adapter wired to UART1.                                                  |
+| `--host-ip`                     | The address of this computer that the ESP32-S3 reaches over Wi-Fi. The default is found from the default route.                           |
+| `--loopback-bin`                | The `zplc_loopback` binary of this tree. The default is the one beside `ZPLC_NATIVE_SIM_BIN`.                                             |
+| `--bench`                       | `human` (the default) or `emulated`.                                                                                                      |
+| `--dry-run`, `--device`         | Run on a fake device (`host` or `null`). With `--dry-run` nobody is asked; without it a person is, as a rehearsal. The record says it is not hardware. |
+| `--keep-going`                  | Emulated bench only: report every step after a failure. A hardware run always stops at the first failure.                                 |
 
 ### The evidence record
 
-A run on real hardware that ends in pass or fail, of a firmware image named
-with `--firmware-image` whose device reports a 40-digit commit from a tree
-without uncommitted changes, also writes `<run>.evidence.json` next to the run
-record. It is the flat record `firmware/zephyr/scripts/zplc_boards.py` derives
-a board's support level from: schema `zplc.hil-record/1`, `board_id`, firmware
-version, commit, the SHA-256 of the image, and the result, with the list of what
-the run did not cover. When one of those is missing the run record says why no
-evidence record was written (log `evidence-record`). Adding the file to
-`evidence_refs` of the board in `boards.json` is your edit, after you have read
-the run record; a run on a stand-in never writes one.
+A run on real hardware that ends in pass or fail also writes `<run>.evidence.json` next to the run record, when two things hold: the image was named with `--firmware-image`, and the device reports a 40-digit commit from a tree without uncommitted changes. The file is the flat record from which `firmware/zephyr/scripts/zplc_boards.py` derives a board's support level. It has the schema `zplc.hil-record/1`, the `board_id`, the firmware version and commit, the SHA-256 of the image, and the result with the list of what the run did not cover.
+
+When one of those is missing, the run record says why no evidence record was written (log `evidence-record`). A run on a stand-in never writes one. Adding the file to `evidence_refs` of the board in `boards.json` is your edit, after you have read the run record.
 
 ### A report from a user
 
-Someone else's result on their board enters the same list at a lower level. The
-"Board report" form asks for the board, the firmware version, the commit and the
-SHA-256 of the image, and the result. A maintainer who has read the issue runs
-`python3 tools/hil/community_report.py` with those values and the address of the
-issue, which writes a `zplc.community-report/1` record, and adds the file to
-`evidence_refs` of the board. The generated board table lists it as
-`community-reported`. It is a lead: it never raises the support level, and it
-never turns the hardware watchdog of the profile on.
-
-When a tool is started without an interactive terminal it exits with status 2
-and says why, before it opens a port.
+Someone else's result on their board enters the same list at a lower level. The "Board report" form asks for the board, the firmware version, the commit, the SHA-256 of the image and the result. A maintainer who has read the issue runs `python3 tools/hil/community_report.py` with those values and the address of the issue. It writes a `zplc.community-report/1` record, and the maintainer adds the file to `evidence_refs` of the board. The generated board table lists it as `community-reported`. It is a lead: it never raises the support level and never turns the hardware watchdog of the profile on.
 
 ## Fixtures
 
-`tools/hil/il_tests`, `ld_tests`, `fbd_tests`, `sfc_tests`, `st_tests` and
-`blinky_ld_gen.st` hold the language fixtures, and `tools/hil/fixtures.json`
-holds the expected value of every phase of every one. A phase sets inputs,
-lets the program run a number of scans and checks outputs. Compiled files are
-made when a run needs them, in a temporary directory that is removed, and are
-not kept in the repository.
+`tools/hil/il_tests`, `ld_tests`, `fbd_tests`, `sfc_tests`, `st_tests` and `blinky_ld_gen.st` hold the language fixtures, and `tools/hil/fixtures.json` holds the expected value of every phase of every one. A phase sets inputs, lets the program run a number of scans and checks outputs. Compiled files are made when a run needs them, in a temporary directory that is removed, and are not kept in the repository.
 
-Values are read while the program runs. STOP puts the outputs in their safe
-state, so an output reads zero after it whatever the program computed.
+Values are read while the program runs. STOP puts the outputs in their safe state, so an output reads zero after it, whatever the program computed.
 
-The opcode-level scripts read HIL trace frames, which only a firmware image
-built with `CONFIG_ZPLC_HIL_DEBUG=y` prints. Release firmware does not carry
-the trace in its VM loop, and no board profile turns it on; on a release image
-those scripts exit 77. A HIL image is the profile plus `tools/hil/hil_debug.conf`:
+The opcode-level scripts read HIL trace frames, which only a firmware image built with `CONFIG_ZPLC_HIL_DEBUG=y` prints. Release firmware does not carry the trace in its VM loop and no board profile turns it on, so on a release image those scripts exit 77. A HIL trace image is the profile plus `tools/hil/hil_debug.conf`:
 
 ```bash
 west build -b rpi_pico/rp2040 firmware/app --pristine -- -DEXTRA_CONF_FILE=$PWD/tools/hil/hil_debug.conf
 ```
 
-`run_chain.py <board> --hil-trace` prints the command for the board and
-records it. Do not publish an image built with the overlay: its options hash
-differs from the release's, and the record says the trace is on.
+`run_chain.py <board> --hil-trace` prints the command for the board and records it. Do not publish an image built with the overlay: its options hash differs from the release's, and the record says the trace is on.
 
 ## Scenarios on a board
 
-A scenario file that runs on the host with `zplc-cli scenario-run` runs on a
-board through the hardware runtime port of the scenario engine:
+A scenario file that runs on the host with `zplc-cli scenario-run` also runs on a board, through the hardware runtime port of the scenario engine:
 
-- time is the device's clock: a tick is sampled once the device has reached it
-  and has completed a scan since the inputs were forced;
-- inputs are forced, not written, because the board rewrites its input image on
-  every scan; the forced byte replaces all eight bits of it for the run;
-- the tolerance, `--tolerance-ms` (50 ms by default), is a lateness bound and
-  not a window around the tick: a sample is never taken before its tick, the
-  assertion windows of the scenario are not widened by it, and a sample taken
-  later than the tolerance voids the run;
-- a run voided by the tolerance, or stopped by an error, still writes its
-  record: the void result, the tolerance, the lateness of every tick sampled
-  (`measurements.ticks`) and the release of the forces;
-- every force the tool set is cleared at the end and on abort, and the board is
-  left stopped. If the link is lost the device releases the forces itself.
+- Time is the device's clock. A tick is sampled once the device has reached it and has completed a scan since the inputs were forced.
+- Inputs are forced, not written, because the board rewrites its input image on every scan. The forced byte replaces all eight bits of it for the run.
+- The tolerance, `--tolerance-ms` (50 ms by default), is a lateness bound, not a window around the tick. A sample is never taken before its tick, the assertion windows of the scenario are not widened by it, and a sample taken later than the tolerance voids the run.
+- A run voided by the tolerance, or stopped by an error, still writes its record: the void result, the tolerance, the lateness of every tick sampled (`measurements.ticks`) and the release of the forces.
+- Every force the tool set is cleared at the end and on abort, and the board is left stopped. If the link is lost, the device releases the forces itself.
 
 ## Run records
 
-Every hardware run writes a JSON record, described by
-`tools/hil/run-record.schema.json`, to `build/hil-records/` or the directory of
-`--out`. It holds the board and what the device reported, the firmware commit,
-version and ABI as the image reports them, the hash of every program and of the
-image (the one you name with `--firmware-image`, else the one the device reports), each step with its result and the time you confirmed
-it, the tests, the tool versions, the operator and the raw shell log.
+Every hardware run writes a JSON record, described by `tools/hil/run-record.schema.json`, to `build/hil-records/` or the directory of `--out`. It holds:
 
-Fields that the firmware image cannot report yet are `null`: the record says it
-does not know, and it does not guess. A record is bound to the image it tested.
-Commit it afterwards, never in the commit the image was built from: the HIL
-Python tests that CI runs check that the image commit of every record the
-manifest references is a strict ancestor of the commit that added the record.
+- the board and what the device reported;
+- the firmware commit, version and ABI as the image reports them;
+- the hash of every program and of the image (the one you name with `--firmware-image`, else the one the device reports);
+- each step with its result and the time you confirmed it;
+- the tests, the tool versions, the operator and the raw shell log.
+
+Fields the firmware image cannot report yet are `null`: the record says it does not know, and it does not guess. A record is bound to the image it tested. Commit it afterwards, never in the commit the image was built from: the HIL Python tests that CI runs check that the image commit of every record the manifest references is a strict ancestor of the commit that added the record.
 
 ## Bench guide
 
-This is the bench that `run_chain.py` asks for, step by step, on the two
-learner boards. The emulated bench (`--bench emulated`)
-applies the same wiring virtually; its records say `emulated`.
+This is the bench that `run_chain.py` asks for, step by step, on the two learner boards. The emulated bench (`--bench emulated`) applies the same wiring virtually, and its records say `emulated`.
 
-**No step of this guide has been run on a physical board yet.** The
-"Hardware" column below says so for every step, and it changes only when a
-person runs the chain and commits its record.
+:::note No step has run on a physical board yet
+The "Hardware" column below says so for every step. It changes only when a person runs the chain and commits its record.
+:::
 
 ### Parts
 
-The course kit (`packages/zplc-ide/lessons/kit.json`: the board, a data USB
-cable, a breadboard, LEDs with 330 Ω resistors, buttons, a 10 kΩ linear
-potentiometer, a 100 nF capacitor and jumper wires), and for the bench:
+The course kit (`packages/zplc-ide/lessons/kit.json`: the board, a data USB cable, a breadboard, LEDs with 330 Ω resistors, buttons, a 10 kΩ linear potentiometer, a 100 nF capacitor and jumper wires), and for the bench:
 
 - four 1 kΩ resistors, one in series in each loopback wire;
-- Raspberry Pi Pico only: a USB-serial adapter with 3.3 V logic (for example
-  CP2102, CH340 or FT232 set to 3.3 V) for the Modbus RTU exchange;
+- Raspberry Pi Pico only: a USB-serial adapter with 3.3 V logic (for example CP2102, CH340 or FT232 set to 3.3 V) for the Modbus RTU exchange;
 - ESP32-S3 only: a Wi-Fi network that this computer is on too;
-- a multimeter is useful for the 50 % point of the analog step, not required.
+- a multimeter, which is useful for the 50 % point of the analog step but not required.
 
 ### Voltage limits
 
 - The I/O pins of both learner boards work at 3.3 V logic only.
-- Never connect 5 V (including the 5V, VBUS and VSYS pins), a battery above
-  3.3 V or anything from mains to a GPIO, ADC or 3V3 pin.
+- Never connect 5 V (including the 5V, VBUS and VSYS pins), a battery above 3.3 V or anything from mains to a GPIO, ADC or 3V3 pin.
 - Power the parts only from the 3V3 pin of the board, and join the grounds.
-- Keep each output under 10 mA: one LED with a 330 Ω resistor draws about
-  4 mA. On the Pico, keep the total of all pins under 50 mA.
-- Wire with the USB cable unplugged, and check the wiring twice before you
-  plug it in.
+- Keep each output under 10 mA: one LED with a 330 Ω resistor draws about 4 mA. On the Pico, keep the total of all pins under 50 mA.
+- Wire with the USB cable unplugged, and check the wiring twice before you plug it in.
 
 ### Wiring
 
-Each output is wired to the input of the same number through a 1 kΩ resistor.
-Nothing else is connected to those pins during the run. The pin map of the
-board in the ZPLC application (from `firmware/app/boards/boards.json`) is the reference when
-it differs from this table.
+Each output is wired to the input of the same number through a 1 kΩ resistor. Nothing else is connected to those pins during the run. When the pin map of the board in the ZPLC application (`firmware/app/boards/boards.json`) differs from this table, the pin map is the reference.
 
-| Wire                      | Raspberry Pi Pico                                                                     | ESP32-S3-DevKitC-1                                                                                                                          |
-| ------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| DO0 → 1 kΩ → DI0          | GP0 (pin 1) → GP15 (pin 20)                                                           | GPIO15 (J1-8) → GPIO5 (J1-5)                                                                                                                |
-| DO1 → 1 kΩ → DI1          | GP1 (pin 2) → GP14 (pin 19)                                                           | GPIO16 (J1-9) → GPIO6 (J1-6)                                                                                                                |
-| DO2 → 1 kΩ → DI2          | GP2 (pin 4) → GP13 (pin 17)                                                           | GPIO17 (J1-10) → GPIO7 (J1-7)                                                                                                               |
-| DO3 → 1 kΩ → DI3          | GP3 (pin 5) → GP12 (pin 16)                                                           | GPIO18 (J1-11) → GPIO8 (J1-12)                                                                                                              |
-| Potentiometer ends        | 3V3(OUT) (pin 36) and AGND (pin 33)                                                   | 3V3 (J1-1) and GND (J1-22)                                                                                                                  |
-| Potentiometer wiper → AI0 | GP26/ADC0 (pin 31)                                                                    | GPIO4/ADC1_CH3 (J1-4)                                                                                                                       |
-| Modbus RTU                | GP4 (pin 6, TX) → adapter RX, GP5 (pin 7, RX) ← adapter TX, GND (pin 8) → adapter GND | (none)                                                                                                                                      |
-| Network                   | (none)                                                                                | Wi-Fi: the credentials are stored with `zplc config set wifi_ssid` and `wifi_pass` (then `zplc config save`); `wifi connect` only uses them |
+| Wire | Raspberry Pi Pico | ESP32-S3-DevKitC-1 |
+| --- | --- | --- |
+| DO0 → 1 kΩ → DI0 | GP0 (pin 1) → GP15 (pin 20) | GPIO15 (J1-8) → GPIO5 (J1-5) |
+| DO1 → 1 kΩ → DI1 | GP1 (pin 2) → GP14 (pin 19) | GPIO16 (J1-9) → GPIO6 (J1-6) |
+| DO2 → 1 kΩ → DI2 | GP2 (pin 4) → GP13 (pin 17) | GPIO17 (J1-10) → GPIO7 (J1-7) |
+| DO3 → 1 kΩ → DI3 | GP3 (pin 5) → GP12 (pin 16) | GPIO18 (J1-11) → GPIO8 (J1-12) |
+| Potentiometer ends | 3V3(OUT) (pin 36) and AGND (pin 33) | 3V3 (J1-1) and GND (J1-22) |
+| Potentiometer wiper → AI0 | GP26/ADC0 (pin 31) | GPIO4/ADC1_CH3 (J1-4) |
+| Modbus RTU | GP4 (pin 6, TX) → adapter RX, GP5 (pin 7, RX) ← adapter TX, GND (pin 8) → adapter GND | (none) |
+| Network | (none) | Wi-Fi: the credentials are stored with `zplc config set wifi_ssid` and `wifi_pass` (then `zplc config save`); `wifi connect` only uses them |
 
-The inputs use their internal pull-up and are active-low in the firmware, so
-through the loopback an input reads the inverse of its output. The chain
-accepts either polarity, as long as each input follows its own output and no
-other input moves.
+The inputs use their internal pull-up and are active-low in the firmware, so through the loopback an input reads the inverse of its output. The chain accepts either polarity, as long as each input follows its own output and no other input moves.
 
 ### Procedure
 
@@ -274,75 +201,53 @@ python3 tools/hil/run_chain.py rpi_pico --firmware-image <zephyr.uf2> --rtu-port
 python3 tools/hil/run_chain.py esp32s3_devkitc --firmware-image <zephyr.bin> [--host-ip <this computer on the Wi-Fi>]
 ```
 
-Before it starts, the chain says how long it takes on this bench: about
-31 minutes, of which ten are the scan jitter step and about eight the twenty
-power cuts. The jitter step runs alone, because every other step stops,
-deploys or cuts the power. It runs the blink of the five languages by
-default; `--all-fixtures` adds every fixture tagged for hardware (HIL-005),
-about seven minutes more.
+Before it starts, the chain says how long it takes on this bench: about 31 minutes, of which ten are the scan jitter step and about eight the twenty power cuts. The jitter step runs alone, because every other step stops, deploys or cuts the power. By default the chain runs the blink of the five languages; `--all-fixtures` adds every fixture tagged for hardware (HIL-005), about seven minutes more.
 
-The image under test is the HIL image: the board's build command with
-`-DCONFIG_ZPLC_HIL_IMAGE=y`, which the chain prints, because RT-020 asks for the
-record to be made with the watchdog on. The HIL image turns the hardware watchdog
-on with the timeouts and policies of the board's `boards.json` entry, and says
-what it is: `zplc version` prints a line for it and its build options list
-`HIL_IMAGE=y`, which the handshake records. A build that turns the watchdog on by
-itself is still refused by `firmware/app/CMakeLists.txt`. The HIL image is never a
-release image: the release collection (`scripts/release/firmware-images.ts`) refuses
-a build whose configuration or options name it. `--no-watchdog-build` prints
-the plain command, and the watchdog step then fails and says why.
+**The image under test is the HIL image**: the board's build command with `-DCONFIG_ZPLC_HIL_IMAGE=y`, which the chain prints, because RT-020 asks for the record to be made with the watchdog on.
 
-The HIL image also turns RETAIN persistence on (`CONFIG_ZPLC_RETAIN_PERSIST`),
-which the shipped profiles set too, so that the RETAIN step can measure it. On an
-image without it the step fails and says that the image cannot keep RETAIN. The Pico and the RP2040-Zero keep a
-128 KB storage partition, which holds the two program slots, the two RETAIN
-records and a spare sector (RT-029).
+- The HIL image turns the hardware watchdog on with the timeouts and policies of the board's `boards.json` entry, and says what it is: `zplc version` prints a line for it, and its build options list `HIL_IMAGE=y`, which the handshake records.
+- A build that turns the watchdog on by itself is still refused by `firmware/app/CMakeLists.txt`.
+- The HIL image is never a release image: the release collection (`scripts/release/firmware-images.ts`) refuses a build whose configuration or options name it.
+- `--no-watchdog-build` prints the plain command, and the watchdog step then fails and says why.
 
-Flashing is yours. The Pico: hold BOOTSEL while you plug in the USB cable and
-copy `zephyr.uf2` to the RPI-RP2 drive. The ESP32-S3: `esptool --chip esp32s3
---port <port> write-flash 0x0 zephyr.bin` on the port labelled USB, then press
-RST if the board stays in download mode.
+The HIL image also turns RETAIN persistence on (`CONFIG_ZPLC_RETAIN_PERSIST`, which the shipped profiles set too), so that the RETAIN step can measure it. On an image without it, the step fails and says that the image cannot keep RETAIN. The Pico and the RP2040-Zero keep a 128 KB storage partition, which holds the two program slots, the two RETAIN records and a spare sector (RT-029).
 
-| #   | Step                           | What the chain does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Passes when                                                                                                                                                                                                                                                                                                                                                           | Hardware    | Emulated                            |
-| --- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ----------------------------------- |
-| 1   | Preflight                      | Compiles the fixtures for the board                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Every fixture compiles                                                                                                                                                                                                                                                                                                                                                | Not run yet | Filled in from the emulated records |
-| 2   | Flash                          | You flash the HIL build                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | The board restarts                                                                                                                                                                                                                                                                                                                                                    | Not run yet | Filled in from the emulated records |
-| 3   | Identity handshake             | Reads `zplc sys info` and `zplc sys build`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | The device answers with a board                                                                                                                                                                                                                                                                                                                                       | Not run yet | Filled in from the emulated records |
-| 4   | I/O description                | Compares `zplc sys io` with `boards.json`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | They agree                                                                                                                                                                                                                                                                                                                                                            | Not run yet | Filled in from the emulated records |
-| 5   | Trace option                   | Reads the image's options                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | The HIL trace is what the run asked for                                                                                                                                                                                                                                                                                                                               | Not run yet | Filled in from the emulated records |
-| 6   | Confirm the board              | You type the identity the device reports                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | It matches                                                                                                                                                                                                                                                                                                                                                            | Not run yet | No person on an emulator            |
-| 7   | Outputs are safe to drive      | You type the identity again                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | It matches                                                                                                                                                                                                                                                                                                                                                            | Not run yet | No person on an emulator            |
-| 8   | Deploy, run                    | Uploads a program and starts it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | The scan counter advances                                                                                                                                                                                                                                                                                                                                             | Not run yet | Filled in from the emulated records |
-| 9   | Blink in five languages        | Runs the ST, IL, LD, FBD and SFC blinks                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Each output toggles as its fixture expects                                                                                                                                                                                                                                                                                                                            | Not run yet | Filled in from the emulated records |
-| 10  | Force set and release          | Sets, lists and clears a force                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | No force remains                                                                                                                                                                                                                                                                                                                                                      | Not run yet | Filled in from the emulated records |
-| 11  | Stop                           | Stops the board                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Not running, output image zero                                                                                                                                                                                                                                                                                                                                        | Not run yet | Filled in from the emulated records |
-| 12  | Digital loopback               | Forces each output on and off alone and reads the inputs                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Each input follows its own output, no other moves                                                                                                                                                                                                                                                                                                                     | Not run yet | Filled in from the emulated records |
-| 13  | Analog read                    | Asks you to turn the potentiometer to 0 %, 50 % and 100 % and reads AI0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | The potentiometer is wired 3V3 to GND, so its top is 3.3 V. Within 5 % of the expected reading at 0 % and 100 %, 10 % in the middle. On the ESP32-S3 the converter spans 0 to 3.1 V (`raw_max` 2885), so 100 % saturates: the step expects full scale with 7 % of tolerance (a chip that stops near 2.9 V still passes), and 50 % (1.65 V) expects 53 % of full scale | Not run yet | Filled in from the emulated records |
-| 14  | Timer accuracy                 | Runs a TON of 3 s and times its output from RUN with the bench clock                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Between 3000 ms minus one scan and 3000 ms plus one scan, 100 ms and two read round trips                                                                                                                                                                                                                                                                             | Not run yet | Filled in from the emulated records |
-| 15  | Scan jitter, ten minutes       | Runs a 10 ms task for ten minutes and reads the runtime's own measure of every scan: each task's shortest and longest period (`zplc status --json`, `tasks[]`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | No overrun, no deadline miss, every scan period within 20 % of the interval                                                                                                                                                                                                                                                                                           | Not run yet | Filled in from the emulated records |
-| 16  | Overrun                        | Runs a 1 ms task that drives DO0 and loops for half of the image's VM instruction budget (a scan past the budget latches the VM watchdog fault instead)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | The `deadline_miss` fault latches within 10 s and the outputs are off                                                                                                                                                                                                                                                                                                 | Not run yet | Filled in from the emulated records |
-| 17  | STOP and link loss with forces | Forces the outputs on and stops; then forces them from the console, in the session of its link, closes the port and opens it again, with a program that holds the outputs low                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Outputs off after STOP, and the forces released when the link is lost: by DTR on the Pico, by the idle time (30 s by default) on the ESP32-S3                                                                                                                                                                                                                         | Not run yet | Filled in from the emulated records |
-| 18  | Watchdog reset time            | Runs a scan that never ends                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Reset cause `watchdog`, the reset between 90 % of the timeout and the timeout plus 500 ms, back in STOP with outputs off                                                                                                                                                                                                                                              | Not run yet | Filled in from the emulated records |
-| 19  | Fatal fault                    | Divides by zero after 20 scans of a program that drives DO0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | The `vm_fault` fault latches within 10 s and the outputs are off                                                                                                                                                                                                                                                                                                      | Not run yet | Filled in from the emulated records |
-| 20  | Power cycle and RETAIN         | Checks that the image was built with RETAIN persistence, counts in a RETAIN variable, stops (which saves it) and asks you to unplug and plug the board                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | STOP after power-up, the RETAIN value kept, the program still there                                                                                                                                                                                                                                                                                                   | Not run yet | Filled in from the emulated records |
-| 21  | 20 power cuts during deploy    | Loads program A, sends a part of program B (from one twentieth to all of it) and asks you to unplug at once                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | After every cut the board is in STOP and runs A or B whole                                                                                                                                                                                                                                                                                                            | Not run yet | Filled in from the emulated records |
-| 22  | Atomic write                   | Writes a four-byte value 100 times over the device link while the program counts torn values                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | No scan saw a half-written value                                                                                                                                                                                                                                                                                                                                      | Not run yet | Filled in from the emulated records |
-| 23  | Fieldbus exchange              | Pico: turns on the device's Modbus RTU client at 19200 baud, stores it and restarts the board (the client starts at boot only), then reads holding register 100 from a Modbus RTU server on this computer, on a line opened at 19200 baud. ESP32-S3: waits until the board reports an IP address (`zplc net status`; the firmware joins the stored network by itself at boot and again after a drop), then writes and reads back a register on the Modbus TCP server and hears an MQTT publish back through the broker of `zplc_loopback`, reached on this computer's LAN address. The results are read as one snapshot: `done` first, then the values, and only when a second read agrees | The value read is 0x5A17, with no error                                                                                                                                                                                                                                                                                                                               | Not run yet | Filled in from the emulated records |
+Flashing is yours:
 
-A person cannot cut the power at the exact moment the program is written to
-flash, so on a board step 21 tests the cuts at the points a hand can reach; the
-emulated bench cuts at scripted points.
+- **Pico.** Hold BOOTSEL while you plug in the USB cable, and copy `zephyr.uf2` to the RPI-RP2 drive.
+- **ESP32-S3.** Run `esptool --chip esp32s3 --port <port> write-flash 0x0 zephyr.bin` on the port labelled USB, then press RST if the board stays in download mode.
+
+| # | Step | What the chain does | Passes when | Hardware | Emulated |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Preflight | Compiles the fixtures for the board | Every fixture compiles | Not run yet | Filled in from the emulated records |
+| 2 | Flash | You flash the HIL build | The board restarts | Not run yet | Filled in from the emulated records |
+| 3 | Identity handshake | Reads `zplc sys info` and `zplc sys build` | The device answers with a board | Not run yet | Filled in from the emulated records |
+| 4 | I/O description | Compares `zplc sys io` with `boards.json` | They agree | Not run yet | Filled in from the emulated records |
+| 5 | Trace option | Reads the image's options | The HIL trace is what the run asked for | Not run yet | Filled in from the emulated records |
+| 6 | Confirm the board | You type the identity the device reports | It matches | Not run yet | No person on an emulator |
+| 7 | Outputs are safe to drive | You type the identity again | It matches | Not run yet | No person on an emulator |
+| 8 | Deploy, run | Uploads a program and starts it | The scan counter advances | Not run yet | Filled in from the emulated records |
+| 9 | Blink in five languages | Runs the ST, IL, LD, FBD and SFC blinks | Each output toggles as its fixture expects | Not run yet | Filled in from the emulated records |
+| 10 | Force set and release | Sets, lists and clears a force | No force remains | Not run yet | Filled in from the emulated records |
+| 11 | Stop | Stops the board | Not running, output image zero | Not run yet | Filled in from the emulated records |
+| 12 | Digital loopback | Forces each output on and off alone and reads the inputs | Each input follows its own output, no other moves | Not run yet | Filled in from the emulated records |
+| 13 | Analog read | Asks you to turn the potentiometer to 0 %, 50 % and 100 % and reads AI0 | The potentiometer is wired 3V3 to GND, so its top is 3.3 V. Within 5 % of the expected reading at 0 % and 100 %, 10 % in the middle. On the ESP32-S3 the converter spans 0 to 3.1 V (`raw_max` 2885), so 100 % saturates: the step expects full scale with 7 % of tolerance (a chip that stops near 2.9 V still passes), and 50 % (1.65 V) expects 53 % of full scale | Not run yet | Filled in from the emulated records |
+| 14 | Timer accuracy | Runs a TON of 3 s and times its output from RUN with the bench clock | Between 3000 ms minus one scan and 3000 ms plus one scan, 100 ms and two read round trips | Not run yet | Filled in from the emulated records |
+| 15 | Scan jitter, ten minutes | Runs a 10 ms task for ten minutes and reads the runtime's own measure of every scan: each task's shortest and longest period (`zplc status --json`, `tasks[]`) | No overrun, no deadline miss, every scan period within 20 % of the interval | Not run yet | Filled in from the emulated records |
+| 16 | Overrun | Runs a 1 ms task that drives DO0 and loops for half of the image's VM instruction budget (a scan past the budget latches the VM watchdog fault instead) | The `deadline_miss` fault latches within 10 s and the outputs are off | Not run yet | Filled in from the emulated records |
+| 17 | STOP and link loss with forces | Forces the outputs on and stops; then forces them from the console, in the session of its link, closes the port and opens it again, with a program that holds the outputs low | Outputs off after STOP, and the forces released when the link is lost: by DTR on the Pico, by the idle time (30 s by default) on the ESP32-S3 | Not run yet | Filled in from the emulated records |
+| 18 | Watchdog reset time | Runs a scan that never ends | Reset cause `watchdog`, the reset between 90 % of the timeout and the timeout plus 500 ms, back in STOP with outputs off | Not run yet | Filled in from the emulated records |
+| 19 | Fatal fault | Divides by zero after 20 scans of a program that drives DO0 | The `vm_fault` fault latches within 10 s and the outputs are off | Not run yet | Filled in from the emulated records |
+| 20 | Power cycle and RETAIN | Checks that the image was built with RETAIN persistence, counts in a RETAIN variable, stops (which saves it) and asks you to unplug and plug the board | STOP after power-up, the RETAIN value kept, the program still there | Not run yet | Filled in from the emulated records |
+| 21 | 20 power cuts during deploy | Loads program A, sends a part of program B (from one twentieth to all of it) and asks you to unplug at once | After every cut the board is in STOP and runs A or B whole | Not run yet | Filled in from the emulated records |
+| 22 | Atomic write | Writes a four-byte value 100 times over the device link while the program counts torn values | No scan saw a half-written value | Not run yet | Filled in from the emulated records |
+| 23 | Fieldbus exchange | Pico: turns on the device's Modbus RTU client at 19200 baud, stores it and restarts the board (the client starts at boot only), then reads holding register 100 from a Modbus RTU server on this computer, on a line opened at 19200 baud. ESP32-S3: waits until the board reports an IP address (`zplc net status`; the firmware joins the stored network by itself at boot and again after a drop), then writes and reads back a register on the Modbus TCP server and hears an MQTT publish back through the broker of `zplc_loopback`, reached on this computer's LAN address. The results are read as one snapshot: `done` first, then the values, and only when a second read agrees | The value read is 0x5A17, with no error | Not run yet | Filled in from the emulated records |
+
+A person cannot cut the power at the exact moment the program is written to flash, so on a board step 21 tests the cuts at the points a hand can reach. The emulated bench cuts at scripted points.
 
 ## Simulation and hardware (HIL-015)
 
-`python3 tools/hil/compare_sim.py <board>` compiles each reference project of
-the ZPLC application (the LD, FBD and SFC blinkies and the LD motor control) for the board,
-runs it on the native runtime and on the bench with the same inputs at the
-same times, and compares the output traces. Every difference, another sequence
-of output values or a change more than `--tolerance-ms` (100 ms) away from its
-twin, goes into a comparison record in `build/hil-records/`. A difference found
-on hardware belongs in the simulator's capability profile
-([native session contract](../runtime/index.md)).
+`python3 tools/hil/compare_sim.py <board>` compiles each reference project of the ZPLC application (the LD, FBD and SFC blinkies and the LD motor control) for the board, runs it on the native runtime and on the bench with the same inputs at the same times, and compares the output traces. Every difference goes into a comparison record in `build/hil-records/`: another sequence of output values, or a change more than `--tolerance-ms` (100 ms) away from its twin. A difference found on hardware belongs in the capability profile of the simulator ([native session contract](../runtime/index.md)).
 
 | Board              | Differences on hardware | Differences emulated                |
 | ------------------ | ----------------------- | ----------------------------------- |
