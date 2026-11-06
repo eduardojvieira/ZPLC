@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "tank-level-fault-reset-ladder",
-  "version": 2,
+  "version": 3,
   "order": 44,
   "module": 6,
   "level": "intermediate",
