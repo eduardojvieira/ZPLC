@@ -3,7 +3,7 @@ slug: /getting-started
 id: index
 title: Primeros pasos
 sidebar_label: Primeros pasos
-description: Qué es ZPLC, para quién es y las dos formas de empezar a usarlo: construir un controlador o aprender programación de PLC. No necesita hardware.
+description: 'Qué es ZPLC, para quién es y las dos formas de empezar a usarlo: construir un controlador o aprender programación de PLC. No necesita hardware.'
 tags: [quickstart]
 ---
 

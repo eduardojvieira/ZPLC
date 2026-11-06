@@ -3,7 +3,7 @@ slug: /getting-started
 id: index
 title: Getting Started
 sidebar_label: Getting Started
-description: What ZPLC is, who it is for, and the two ways to start with it: build a controller, or learn PLC programming. No hardware needed.
+description: 'What ZPLC is, who it is for, and the two ways to start with it: build a controller, or learn PLC programming. No hardware needed.'
 tags: [quickstart]
 ---
 
