@@ -319,7 +319,8 @@ export function checkSentence(
   if (!HISTORICAL.test(sentence)) {
     for (const count of registry.counts) {
       if (count.requires && !new RegExp(count.requires, 'i').test(sentence)) continue;
-      // "six Zephyr boards", "all seven board profiles", "21 example projects"; "the two boards" is a subset and is not a total, while "one of 81 example projects" names the whole set
+      // "six Zephyr boards", "all seven board profiles", "21 example projects"; "the two boards" is a subset and is not a total,
+      // while "one of 81 example projects" names the whole set
       const frame = new RegExp(`\\b(\\d+|${Object.keys(NUMBER_WORDS).join('|')})\\s+(?:([\\p{L}-]+)\\s+)?(?:${count.noun})\\b`, 'giu');
       for (const match of sentence.matchAll(frame)) {
         if (/\b(?:the|these|those|both|las|los|esas|esos|estas|estos|del)\s+$/i.test(sentence.slice(0, match.index))) continue;
