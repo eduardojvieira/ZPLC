@@ -1,0 +1,186 @@
+{
+  "name": "TwoDelays",
+  "description": "Two instances of the same timer block, each with its own memory.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "ButtonA",
+        "type": "BOOL",
+        "comment": "Button A"
+      },
+      {
+        "name": "ButtonB",
+        "type": "BOOL",
+        "comment": "Button B"
+      },
+      {
+        "name": "DelayA",
+        "type": "TON",
+        "comment": "Timer instance A"
+      },
+      {
+        "name": "DelayB",
+        "type": "TON",
+        "comment": "Timer instance B"
+      }
+    ],
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "LampA",
+        "type": "BOOL",
+        "comment": "Lamp A"
+      },
+      {
+        "name": "LampB",
+        "type": "BOOL",
+        "comment": "Lamp B"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Button A feeds its own timer instance, DelayA.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_ButtonA_00",
+              "type": "contact_no",
+              "variable": "ButtonA",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "fb_DelayA",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "DelayA",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#2s"
+              },
+              "outputs": {
+                "Q": "LampA"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "Button B feeds a second instance of the same block, DelayB.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_ButtonB_00",
+              "type": "contact_no",
+              "variable": "ButtonB",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "fb_DelayB",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "DelayB",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#2s"
+              },
+              "outputs": {
+                "Q": "LampB"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-06",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
