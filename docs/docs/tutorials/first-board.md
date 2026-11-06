@@ -47,7 +47,7 @@ The release pipeline builds one image of the runtime for every board of the mani
 `zplc-runtime-<version>-<board>.<ext>`, with its checksum in `SHA256SUMS` and the evidence level of the board in the
 release notes. The installers carry the images of the Raspberry Pi Pico and the ESP32-S3: in ZPLC, open **Project
 settings**, **Target**, choose the board, and ZPLC shows the file, its SHA-256, where it is and the steps to flash it.
-ZPLC only shows them; you flash (step 2). That path has not been exercised on a release yet, so build the firmware from
+ZPLC only shows them; you flash (step 2). The pipeline has not made a release yet, so that path is not exercised: build the firmware from
 the source with the repository script, which wraps the same `west build` and the same size check as the continuous
 integration job.
 

@@ -56,7 +56,7 @@ suma de verificación en `SHA256SUMS` y el nivel de evidencia de la placa en las
 notas de la versión. Los instaladores llevan las imágenes de la Raspberry Pi Pico y
 de la ESP32-S3: en ZPLC, abra **Configuración del proyecto**, **Destino**, elija la placa, y
 ZPLC muestra el archivo, su SHA-256, dónde está y los pasos para grabarlo. ZPLC
-solo las muestra: usted graba (paso 2). Ese camino todavía no se ha ejercitado con una versión,
+solo las muestra: usted graba (paso 2). La canalización todavía no ha publicado una versión, así que ese camino no está ejercitado:
 así que compile el firmware desde el código fuente con el script del repositorio, que envuelve el mismo `west build` y la misma
 comprobación de tamaño que el trabajo de integración continua.
 

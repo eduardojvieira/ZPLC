@@ -158,6 +158,8 @@ boxes may write one variable. The [Ladder reference](../reference/language-ld.md
   answer `STATUS` 10, and it has no serial port and no pins ([Browser runtime](../runtime/browser-runtime.md)).
 - **The installers are unsigned.** Windows asks you to confirm the first launch and macOS needs **Open Anyway**
   ([Install ZPLC](../getting-started/install.md)).
+- **The installers were not launched by a hosted run.** The release workflow installs or mounts and launches every
+  installer format on its own system before it makes the draft, but no hosted release run has executed them yet.
 - **Timing is not measured on any board**, and ZPLC is not a safety PLC.
 
 ## Evidence boundaries

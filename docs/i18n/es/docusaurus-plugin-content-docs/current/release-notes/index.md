@@ -172,6 +172,8 @@ tiene la lista y las reglas.
   bloques de comunicación responden `STATUS` 10 y no tiene puerto serie ni pines ([Runtime del navegador](../runtime/browser-runtime.md)).
 - **Los instaladores no están firmados.** Windows le pide confirmar el primer inicio y macOS necesita **Open Anyway**
   ([Instalar ZPLC](../getting-started/install.md)).
+- **Ninguna ejecución alojada inició los instaladores.** El flujo de publicación instala o monta e inicia cada formato
+  de instalador en su propio sistema antes de crear el borrador, pero todavía no lo ejecutó ninguna ejecución alojada.
 - **No se midieron los tiempos en ninguna placa**, y ZPLC no es un PLC de seguridad.
 
 ## Límites de la evidencia

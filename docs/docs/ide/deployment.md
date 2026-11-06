@@ -67,7 +67,7 @@ Run, pause and step are not confirmed, because they are your own explicit action
 
 The native POSIX adapter is a host simulation. A serial connection and a cross-build board profile do not turn it into hardware-in-the-loop evidence. The catalogued profiles have zero HIL evidence references today. Use the exact Zephyr procedure of the board, and record an HIL run before you claim behaviour on the target. See [Hardware support](../reference/capabilities-evidence.md) and [Safety and limitations](../safety-and-limitations.md).
 
-No firmware build of ZPLC on macOS or Windows is recorded yet.
+No firmware build from ZPLC on macOS or Windows is recorded yet.
 
 ## When a connection or a deploy fails
 
