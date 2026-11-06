@@ -9,7 +9,7 @@ tags: [learn, hardware, boards]
 
 This page tells you which board and parts the course needs, what a hardware lesson must declare, and which safety limits every wiring page repeats. Read it before you buy parts or write a hardware lesson.
 
-Every simulation lesson is graded on your computer. The 34 lessons on the **Hardware** track also have a wiring file for two learner boards, the Raspberry Pi Pico (RP2040) and the ESP32-S3-DevKitC-1, which use the same breadboard parts. Evidence level: host. The wiring checks below run in CI, but no hardware run of a lesson has been recorded on a board yet, so the hardware track is a plan backed by those checks, not by a board.
+Every simulation lesson is graded on your computer. The 34 lessons on the **Hardware** track also have a wiring file for the learner boards, the Raspberry Pi Pico (RP2040) and the ESP32-S3-DevKitC-1, which use the same breadboard parts. Evidence level: host. The wiring checks below run in CI, but no hardware run of a lesson has been recorded on a board yet, so the hardware track is a plan backed by those checks, not by a board.
 
 ## The two kits
 

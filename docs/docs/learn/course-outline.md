@@ -9,7 +9,7 @@ tags: [learn, lessons, course]
 
 # Course outline
 
-This page is the map of the whole course: every module in order, with its 68 lessons, and for each lesson the languages, tracks, plant, time and prerequisites. Use it to pick where to start or to see what a module needs first. If you have never programmed a PLC, take the Ladder path of 21 lessons, *Ladder diagram from zero*, described in [Learn](./index.md).
+This page is the map of the whole course: every module in order, with its 68 lessons, and for each lesson the languages, tracks, plant, time and prerequisites. Use it to pick where to start or to see what a module needs first. If you have never programmed a PLC, take the Ladder path of 21 of these lessons, *Ladder diagram from zero*, described in [Learn](./index.md).
 
 The page follows `packages/zplc-ide/lessons/course.json` and the lesson packages beside it. A CI check fails when a lesson is missing here or a row disagrees with its lesson. Each module and each lesson also has its own generated page: start from the [course modules](./modules/index.md), and see the [lesson plants](./plants.md) for the simulated machines.
 
