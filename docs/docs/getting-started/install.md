@@ -34,8 +34,8 @@ your system, check the file against `SHA256SUMS` ([Verify the download](#verify-
   fits. They are unsigned and nothing asks you, so the checksum is your check. The packages install the udev rule for
   the boards, and the AppImage needs FUSE.
 
-Release candidates are marked as prereleases on the releases page. While 2.0 is a prerelease, GitHub may still mark the
-older 1.5.0 release as Latest: scroll down to the release whose name starts with `ZPLC v2.0`.
+Release candidates are marked as prereleases on the releases page. ZPLC 2.0.0 is a stable release; if GitHub still shows
+the older 1.5.0 release as Latest, scroll to the release whose name starts with `ZPLC v2.0`.
 
 ## Channels
 

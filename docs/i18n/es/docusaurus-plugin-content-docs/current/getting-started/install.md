@@ -34,8 +34,8 @@ de su sistema, compruebe el archivo contra `SHA256SUMS` ([Verificar la descarga]
   No están firmados y nada le pregunta, así que la suma de verificación es su comprobación. Los paquetes instalan la regla
   udev de las placas, y el AppImage necesita FUSE.
 
-Las versiones candidatas aparecen como versiones preliminares en la página de versiones. Mientras 2.0 sea preliminar, GitHub
-puede seguir marcando la versión 1.5.0 como la última: baje hasta la versión cuyo nombre empieza por `ZPLC v2.0`.
+Las versiones candidatas aparecen como versiones preliminares en la página de versiones. ZPLC 2.0.0 es una versión estable; si GitHub
+sigue mostrando la versión 1.5.0 como la última, baje hasta la versión cuyo nombre empieza por `ZPLC v2.0`.
 
 ## Canales
 

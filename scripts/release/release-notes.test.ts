@@ -224,8 +224,8 @@ describe('what changed for a user, what breaks, how to migrate and what is limit
     });
   });
 
-  test('the notes of the unreleased entry carry the browser-build and deadline-miss breaking changes', () => {
-    const { breaking } = changelogParts(readFileSync(join(root, 'CHANGELOG.md'), 'utf8'), 'Unreleased');
+  test('the notes of the 2.0.0 entry carry the browser-build and deadline-miss breaking changes', () => {
+    const { breaking } = changelogParts(readFileSync(join(root, 'CHANGELOG.md'), 'utf8'), '2.0.0');
     expect(breaking.some((item) => item.startsWith('**There is no hosted browser build.**'))).toBe(true);
     expect(breaking.some((item) => item.startsWith('**A fault latches after 3 consecutive deadline misses'))).toBe(true);
   });

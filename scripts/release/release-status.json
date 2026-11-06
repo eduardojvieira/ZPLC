@@ -5,6 +5,10 @@
     "2.0.0-rc.3": {
       "completeness": "an unsigned prerelease for evaluation: no board has a hardware record and the Windows channels are not live",
       "knownIssues": []
+    },
+    "2.0.0": {
+      "completeness": "the first stable release: no board has a hardware record and the Windows channels are not live",
+      "knownIssues": []
     }
   }
 }

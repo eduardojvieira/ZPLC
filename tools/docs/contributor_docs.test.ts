@@ -18,9 +18,9 @@ function recipesIn(content: string): string[] {
   return [...new Set([...content.matchAll(/\bbun run ([A-Za-z][\w:.-]*)/g)].map((match) => match[1]!))];
 }
 
-/** The `## Unreleased` section of the changelog: from its heading line to the next version heading. */
+/** The section of the newest version of the changelog: from its heading line to the next version heading. */
 function unreleasedSection(changelog: string): string {
-  const start = changelog.search(/^## Unreleased$/m);
+  const start = changelog.search(/^## \d/m);
   const end = changelog.indexOf('\n## ', start + 5);
   return changelog.slice(start, end < 0 ? undefined : end);
 }
@@ -161,7 +161,7 @@ describe('changelog: what changed for a user, what breaks, how to migrate and wh
       'Known limits',
       'Details for contributors',
     ]);
-    const read = changelogParts(changelog, 'Unreleased');
+    const read = changelogParts(changelog, '2.0.0');
     expect(read.structured).toBe(true);
     for (const part of ['changes', 'breaking', 'migration', 'limits'] as const)
       expect({ part, items: read[part].length > 0 }).toEqual({ part, items: true });
@@ -178,7 +178,7 @@ describe('changelog: what changed for a user, what breaks, how to migrate and wh
 
   it('prints the breaking changes, the migration and the limits in the notes of a release', () => {
     const unreleased = unreleasedSection(changelog);
-    const parts = changelogParts(unreleased.replace('## Unreleased', '## 2.0.0-rc.4 - 2026-10-20'), '2.0.0-rc.4');
+    const parts = changelogParts(unreleased.replace(/^## 2\.0\.0 - .*$/m, '## 2.0.0-rc.4 - 2026-10-20'), '2.0.0-rc.4');
     const notes = renderReleaseNotes({
       ...results(),
       changes: parts.changes,
