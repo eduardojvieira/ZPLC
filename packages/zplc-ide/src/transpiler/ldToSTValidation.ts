@@ -8,7 +8,7 @@ import { DataType, getFB, parseIOAddress, parseTimeLiteral, TokenType } from '@z
 import { getFunctionBlockNamesForVisualEditors } from '../catalog/blockCatalog';
 import { getDefaultPorts } from '../models/fbd';
 import { findProjectBlock, type ProjectBlock } from '../models/projectBlocks';
-import { LD_COIL_TYPES, LD_CONTACT_TYPES, LD_MODBUS_HELPERS } from '../models/ldSupport';
+import { LD_COIL_TYPES, LD_CONTACT_TYPES, LD_MODBUS_HELPERS, ldFunctionSpec } from '../models/ldSupport';
 import { walkRung } from './ldPower';
 import { Problems, cellElement, rungElement, rungItemElement, type SourceElementId } from '../models/sourceElements';
 
@@ -54,7 +54,7 @@ export const transpilationBlocks = (): readonly ProjectBlock[] => projectBlocks;
 export function setTranspilationBlocks(blocks: readonly ProjectBlock[]): void {
   projectBlocks = blocks;
 }
-/** A function block of the project of this name; a function is not placeable in a ladder rung. */
+/** A function block of the project of this name. A project function is not placeable; the IEC ones are the `function` element. */
 function projectBlock(name: unknown): ProjectBlock | undefined {
   const found = typeof name === 'string' ? findProjectBlock(projectBlocks, name) : undefined;
   return found?.kind === 'FUNCTION_BLOCK' ? found : undefined;
@@ -324,6 +324,84 @@ function validateModbusHelper(
   }
 }
 
+/** A literal an operand of a function box may be (LNG-028): a number, a based or typed number, TRUE or FALSE. TIME is read apart. */
+const OPERAND_LITERAL = /^(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|\d{1,2}#[0-9A-Fa-f_]+|[A-Za-z_]+#-?\d+(?:\.\d+)?|TRUE|FALSE)$/;
+
+/** A function block type: its variable holds state, not a value that an operand or the output of a function can be. */
+const isBlockType = (type: unknown): boolean => typeof type === 'string' && (Boolean(getFB(type)) || Boolean(projectBlock(type)));
+
+function isTimeLiteral(value: string): boolean {
+  try {
+    parseTimeLiteral(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function validateOperand(operand: unknown, pin: string, subject: string, symbols: Map<string, SymbolInfo>, errors: Problems): void {
+  if (typeof operand !== 'string' || operand.trim() === '') {
+    errors.push(`${subject} operand ${pin} is empty`);
+    return;
+  }
+  const symbol = symbols.get(key(operand));
+  if (symbol) {
+    if (isBlockType(symbol.variable.type)) errors.push(`${subject} operand ${pin} '${operand}' must be a variable of an elementary type`);
+    return;
+  }
+  // a member of a function block instance, such as Hold.ET: the ST compiler types it
+  const member = operand.match(MEMBER_REFERENCE);
+  if (member && symbols.has(key(member[1]))) return;
+  if (OPERAND_LITERAL.test(operand) || isTimeLiteral(operand)) return;
+  errors.push(`${subject} operand ${pin} '${operand}' is neither a declared variable nor a literal`);
+}
+
+/** The `function` element (LNG-028): a known function, one operand per pin, and an output for all but a comparison. */
+function validateFunction(
+  value: UnknownRecord,
+  rung: UnknownRecord,
+  symbols: Map<string, SymbolInfo>,
+  writers: Map<string, Writer[]>,
+  errors: Problems,
+): void {
+  const subject = `Function '${String(value.id)}'`;
+  const spec = ldFunctionSpec(value.functionName);
+  if (!spec) {
+    errors.push(`${subject} names the unknown function '${String(value.functionName)}'`);
+    return;
+  }
+  const named = `${subject} (${String(value.functionName)})`;
+  if (!Array.isArray(value.operands)) {
+    errors.push(`${subject} operands must be a list`);
+    return;
+  }
+  if (value.operands.length !== spec.pins.length) {
+    errors.push(`${named} takes ${spec.pins.length} operands, found ${value.operands.length}`);
+  } else {
+    value.operands.forEach((operand, index) => validateOperand(operand, spec.pins[index], named, symbols, errors));
+  }
+  const hasOutput = value.output !== undefined && value.output !== '';
+  if (spec.kind === 'compare') {
+    if (hasOutput) errors.push(`${named} is a comparison and has no output`);
+    return;
+  }
+  if (!hasOutput) {
+    errors.push(`${named} needs an output variable`);
+    return;
+  }
+  resolveDestination(value.output, `${subject} output`, symbols, errors);
+  const target = isIdentifier(value.output) ? symbols.get(key(value.output)) : undefined;
+  // a function block instance holds state, not a value a function can store
+  if (target && target.section !== 'inputs' && isBlockType(target.variable.type))
+    errors.push(`${subject} output '${String(value.output)}' must be a variable of an elementary type`);
+  if (isIdentifier(value.output)) {
+    const output = key(value.output);
+    const writerTypes = writers.get(output) ?? [];
+    writerTypes.push({ type: 'function', rung: Number(rung.number), element: errors.element });
+    writers.set(output, writerTypes);
+  }
+}
+
 function validateElement(
   value: unknown,
   rung: UnknownRecord,
@@ -359,6 +437,10 @@ function validateElement(
     return;
   }
   if (value.type === 'left_rail' || value.type === 'right_rail') return;
+  if (value.type === 'function') {
+    validateFunction(value, rung, symbols, writers, errors);
+    return;
+  }
   if (value.type !== 'function_block') {
     errors.push(`Unsupported LD element type '${value.type}' (element '${String(value.id)}' in rung ${String(rung.number)})`);
     return;

@@ -17,6 +17,7 @@
 import type { LDModel, LDRung, LDElement } from '../models/ld';
 import { isGridBasedRung, convertToGridRung } from '../models/ld';
 import { getDefaultPorts } from '../models/fbd';
+import { ldFunctionSpec } from '../models/ldSupport';
 import type { ProjectBlock } from '../models/projectBlocks';
 import {
   POWER_OUTPUT,
@@ -235,6 +236,22 @@ function generateRungCode(rung: LDRung, rungKey: string): RungCode {
     return out ? atom(`${fb.instance}.${out}`) : flow ? atom(flow) : power;
   };
 
+  /**
+   * The box of an IEC function (LNG-028). A comparison is a condition: its result is a BOOL of the rung and ENO is the power
+   * AND that result. Any other function stores its result while the power reaches it, and ENO is that power. No error is
+   * detected: the result of an overflow is what the VM gives, and a division by zero faults it.
+   */
+  const functionBox = (box: LDElement, power: Power): Power => {
+    const spec = ldFunctionSpec(box.functionName);
+    if (!spec || !box.operands) throw new Error(`Rung '${rung.id}' function '${box.id}' needs a known function and its operands`);
+    // a negative literal is parenthesised so that `A - -5` stays one expression
+    const expression = spec.expression(box.operands.map((operand) => (operand.startsWith('-') ? `(${operand})` : operand)));
+    if (spec.kind === 'compare') return and(power, atom(stage(atom(expression))));
+    const flow = stage(power);
+    lines.push(`IF ${flow} THEN ${box.output} := ${expression}; END_IF;`, current);
+    return atom(flow);
+  };
+
   /** The statements of one element of the rung, and the power that leaves it. */
   const emit = (element: LDElement, row: number, col: number, power: Power): Power => {
     current = cellElement(rungKey, row, col);
@@ -278,6 +295,8 @@ function generateRungCode(rung: LDRung, rungKey: string): RungCode {
       }
       case 'function_block':
         return functionBlock(element, power);
+      case 'function':
+        return functionBox(element, power);
       default:
         throw new ElementError(`Rung '${rung.id}' element '${element.id}' has the unsupported type '${element.type}'`, current);
     }
@@ -306,6 +325,14 @@ function generateRungCode(rung: LDRung, rungKey: string): RungCode {
             monitor.push({ element: at, role: 'output', port: port.name, variable: `${element.instance}.${port.name}` });
           }
         }
+      } else if (element.type === 'function') {
+        // the operands that name a variable, and the output, show their value on the box (LNG-006)
+        const spec = ldFunctionSpec(element.functionName);
+        element.operands?.forEach((operand, index) => {
+          if (/^[A-Za-z_][A-Za-z0-9_.]*$/.test(operand) && operand !== 'TRUE' && operand !== 'FALSE')
+            monitor.push({ element: at, role: 'output', port: spec?.pins[index] ?? `IN${index + 1}`, variable: operand });
+        });
+        if (element.output) monitor.push({ element: at, role: 'output', port: 'OUT', variable: element.output });
       } else if (element.variable) {
         monitor.push({ element: at, role: 'value', variable: element.variable });
       }
