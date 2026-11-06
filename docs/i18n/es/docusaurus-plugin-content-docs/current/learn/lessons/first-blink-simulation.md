@@ -19,6 +19,7 @@ Haga que una lámpara simulada se encienda y se apague cada medio segundo cambia
 - Tiempo estimado: 10 minutos
 - Lenguajes: ST
 - Rutas: Simulación
+- Página de lectura: no
 - Planta: ninguna
 
 ## Objetivos

@@ -19,6 +19,7 @@ Mantenga una falla en memoria con las instrucciones S y R y vea que, cuando la f
 - Tiempo estimado: 15 minutos
 - Lenguajes: IL
 - Rutas: Simulación, Hardware
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [set-reset-alarm-latch](./set-reset-alarm-latch.md), [boolean-logic-two-hand-guard-il](./boolean-logic-two-hand-guard-il.md)
 

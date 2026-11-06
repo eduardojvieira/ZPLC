@@ -19,6 +19,7 @@ Turn a written description of a small packing station into a Structured Text pro
 - Estimated time: 60 minutes
 - Languages: ST
 - Tracks: Simulation
+- Reading page: no
 - Plant: none
 - Prerequisites: [conveyor-two-parts-diagnosis](./conveyor-two-parts-diagnosis.md)
 

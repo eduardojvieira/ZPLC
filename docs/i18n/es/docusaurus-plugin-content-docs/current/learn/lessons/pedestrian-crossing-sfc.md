@@ -19,6 +19,7 @@ Dibuje el cruce peatonal como un diagrama funcional secuencial con un paso por c
 - Tiempo estimado: 25 minutos
 - Lenguajes: SFC
 - Rutas: Simulación
+- Página de lectura: no
 - Planta: [`pedestrian-v1`](../plants.md)
 - Requisitos previos: [pedestrian-crossing-states](./pedestrian-crossing-states.md), [sfc-fill-mix-sequence](./sfc-fill-mix-sequence.md)
 

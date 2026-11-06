@@ -19,6 +19,7 @@ Make a simulated lamp turn on and off every half second by changing one number, 
 - Estimated time: 10 minutes
 - Languages: ST
 - Tracks: Simulation
+- Reading page: no
 - Plant: none
 
 ## Objectives

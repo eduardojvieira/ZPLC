@@ -19,6 +19,7 @@ Call a CTU counter from Instruction List to count three discrete pulses, read it
 - Estimated time: 15 minutes
 - Languages: IL
 - Tracks: Simulation, Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [edge-counter-pulses](./edge-counter-pulses.md), [boolean-logic-two-hand-guard-il](./boolean-logic-two-hand-guard-il.md)
 

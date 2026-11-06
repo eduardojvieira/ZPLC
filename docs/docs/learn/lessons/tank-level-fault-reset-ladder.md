@@ -19,6 +19,7 @@ Control a tank pump with a seal-in, latch a fault with SET and RESET coils, and 
 - Estimated time: 30 minutes
 - Languages: LD
 - Tracks: Simulation
+- Reading page: yes
 - Plant: [`tank-v1`](../plants.md)
 - Prerequisites: [tank-level-fault-reset](./tank-level-fault-reset.md), [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
 

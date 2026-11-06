@@ -1,42 +1,28 @@
----
-slug: /reference
-id: index
-title: Referencia
-sidebar_label: Referencia
-description: 'Consulte un dato: los lenguajes, las funciones y los bloques de función, los archivos de proyecto y de escenario, la línea de comandos, el runtime y las placas.'
-tags: [reference]
----
-
 # Referencia
 
-Use esta sección para consultar un dato. La mayoría de las páginas se generan a
-partir de la fuente que describen, por lo que no pueden separarse de ella; cada
-una dice de qué fuente se lee. Para aprender a hacer algo, empiece por las guías
-prácticas.
+Consulte aquí un dato: un nombre, un campo, un código, un pin. La mayoría de las páginas se generan a partir de la fuente que describen, y cada una indica cuál es, de modo que no pueden desviarse de ella. Para aprender a hacer algo, empiece por las [guías](../guides/simulate-and-debug.md) o por [Aprender](../learn/index.md).
 
-## Lenguajes
+## Encuentre la página según lo que necesita
 
-- [Referencia de Structured Text](./language-st.md): qué funciona, elemento por elemento, y qué no.
-- [Instruction List](./language-il.md), [Ladder Diagram](./language-ld.md), [Function Block Diagram](./language-fbd.md) y [Sequential Function Chart](./language-sfc.md): lo mismo, por lenguaje.
+| Usted necesita                                                         | Vaya a                                                                                                                                                                                       |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Qué hace un elemento del lenguaje y si el compilador lo acepta         | [Texto estructurado](./language-st.md), [Lista de instrucciones](./language-il.md), [Diagrama de escalera](./language-ld.md), [Diagrama de bloques de función](./language-fbd.md), [Diagrama funcional secuencial](./language-sfc.md) |
+| Las teclas de los editores visuales                                    | [Referencia de teclado de los editores visuales](./visual-editor-keyboard.md)                                                                                                                |
+| La firma de una función o los pines de un bloque de función            | [Funciones](./functions.md) y [bloques de función](./function-blocks.md)                                                                                                                     |
+| Un campo de `zplc.json`                                                | [Archivo de proyecto](./project-file.md)                                                                                                                                                     |
+| Cómo escribir una prueba de escenario                                  | [Formato del archivo de escenario](./scenario-file.md)                                                                                                                                       |
+| Un comando de `zplc-cli` o una herramienta del servidor MCP            | [Línea de comandos](./cli.md) y [Herramientas y recursos MCP](./mcp.md)                                                                                                                      |
+| Qué significa un código de error de compilación                        | [Códigos de diagnóstico](./diagnostic-codes.md)                                                                                                                                              |
+| Una función C, un tipo o un encabezado del runtime                     | [API del runtime](./runtime-api.md)                                                                                                                                                          |
+| Un mensaje del protocolo de sesión o del protocolo del dispositivo     | [Protocolo de sesión del runtime](./runtime-protocol.md) y [Protocolo de enlace con el dispositivo](./device-protocol.md)                                                                    |
+| Una opción del firmware                                                | [Opciones de Kconfig](./kconfig.md)                                                                                                                                                          |
+| Un comando de la consola del firmware                                  | [Comandos de la consola](./shell-commands.md)                                                                                                                                                |
+| Los pines, canales y memoria de una placa                              | [Placas](./boards.md)                                                                                                                                                                        |
+| Hasta dónde se ha demostrado que funciona una placa                    | [Compatibilidad de hardware](./capabilities-evidence.md)                                                                                                                                     |
+| Las entradas de una compilación reproducible del firmware              | [Configuración del espacio de trabajo de Zephyr](./zephyr-workspace-setup.md)                                                                                                                |
+| Las piezas y el cableado de una placa del curso                        | [Kits del estudiante](./learner-kits/index.md)                                                                                                                                               |
+| Qué archivo es la autoridad para cada tipo de dato                     | [Fuente de verdad](./source-of-truth.md)                                                                                                                                                     |
 
-## Funciones y bloques de función
+## Páginas generadas y páginas escritas a mano
 
-- [Funciones](./functions.md) y [bloques de función](./function-blocks.md): cada nombre del registro del compilador, con su firma o sus pines y un ejemplo que ejecuta la verificación de la documentación.
-
-## Proyectos y herramientas
-
-- [Archivo de proyecto (`zplc.json`)](./project-file.md): cada campo.
-- [Formato del archivo de escenario](./scenario-file.md): eventos, expectativas y límites.
-- [Línea de comandos](./cli.md) y [servidor MCP](./mcp.md): cada comando, herramienta y recurso.
-- [Códigos de diagnóstico](./diagnostic-codes.md): el código estable de cada error de una compilación, qué significa y un programa que lo provoca.
-
-## Runtime y firmware
-
-- [API del runtime](./runtime-api.md): los encabezados en C.
-- [Protocolo de sesión del runtime](./runtime-protocol.md), [opciones de Kconfig](./kconfig.md) y [comandos de la consola](./shell-commands.md).
-
-## Placas
-
-- [Compatibilidad de hardware](./capabilities-evidence.md): los niveles de evidencia y el nivel de cada placa.
-- [Placas](./boards.md): los canales de E/S, los pines y la huella de cada placa, generados desde el manifiesto de placas.
-- [Preparación del workspace de Zephyr](./zephyr-workspace-setup.md): las entradas de una compilación de firmware reproducible.
+Una página generada lleva una marca `GENERATED` que nombra su generador, y nunca se edita a mano: cambie la fuente y ejecute `bun run docs:generate`. Las páginas escritas a mano de esta sección son este índice, la [fuente de verdad](./source-of-truth.md), el índice de los [kits del estudiante](./learner-kits/index.md) y los niveles de [compatibilidad de hardware](./capabilities-evidence.md).

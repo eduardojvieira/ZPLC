@@ -19,6 +19,7 @@ Corrija un programa en texto estructurado para que un portón se mantenga abiert
 - Tiempo estimado: 30 minutos
 - Lenguajes: ST, LD, FBD, SFC, IL
 - Rutas: Simulación, Hardware
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [instruction-list-door-alarm](./instruction-list-door-alarm.md)
 

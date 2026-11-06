@@ -19,6 +19,7 @@ Scale the raw counts of an analog input to a level in percent with a MUL box and
 - Estimated time: 25 minutes
 - Languages: LD
 - Tracks: Simulation
+- Reading page: yes
 - Plant: none
 - Prerequisites: [ld-compare-math](./ld-compare-math.md)
 

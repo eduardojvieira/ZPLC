@@ -33,10 +33,10 @@ Prettier sobre los cortes, hasta que ningún archivo cambia.
 | Editores                                    | EditorConfig                                      |                                                                                   | `.editorconfig`    |
 
 La salida de ambas herramientas cambia entre versiones, por eso las versiones son
-exactas. `tools/ci/format.ts` rechaza otro clang-format. El trabajo `format` de
-`.github/workflows/ci.yml` instala el mismo paquete; ese trabajo está escrito pero
-todavía no se ejecutó en un runner alojado de este repositorio, así que la primera
-ejecución alojada es la prueba de que el paso de instalación funciona allí.
+exactas. `tools/ci/format.ts` rechaza otro clang-format, y el trabajo `format` de
+`.github/workflows/ci.yml` instala el mismo paquete. Si su equipo tiene otro
+clang-format, instale el fijado con `pipx` antes de ejecutar `bun run format:check`;
+de lo contrario la verificación se detiene en la versión.
 
 El estilo es el que el código ya tenía. TypeScript usa comillas simples, punto y
 coma, comas finales y dos espacios, y cuatro espacios en `packages/zplc-compiler`.

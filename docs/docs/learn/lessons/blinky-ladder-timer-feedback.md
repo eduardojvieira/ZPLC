@@ -19,6 +19,7 @@ Complete a 500 ms Ladder blinker made of two TON timers and SET and RESET coils,
 - Estimated time: 20 minutes
 - Languages: LD
 - Tracks: Simulation, Hardware
+- Reading page: yes
 - Plant: none
 - Prerequisites: [scan-cycle-one-scan-memory](./scan-cycle-one-scan-memory.md)
 

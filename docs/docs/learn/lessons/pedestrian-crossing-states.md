@@ -19,6 +19,7 @@ Walk through pedestrian-crossing states with mutually consistent vehicle and ped
 - Estimated time: 25 minutes
 - Languages: ST
 - Tracks: Simulation
+- Reading page: no
 - Plant: [`pedestrian-v1`](../plants.md)
 - Prerequisites: [edge-counter-pulses](./edge-counter-pulses.md)
 

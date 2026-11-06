@@ -19,6 +19,7 @@ Call a TOF timer with CAL to keep a light on after a button is released, and a T
 - Estimated time: 15 minutes
 - Languages: IL
 - Tracks: Simulation, Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [timers-on-delay-off-delay](./timers-on-delay-off-delay.md), [boolean-logic-two-hand-guard-il](./boolean-logic-two-hand-guard-il.md)
 

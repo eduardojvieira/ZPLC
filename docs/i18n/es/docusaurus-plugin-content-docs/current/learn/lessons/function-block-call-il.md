@@ -19,6 +19,7 @@ Llame con CAL a dos instancias del mismo bloque de función, pase sus entradas p
 - Tiempo estimado: 25 minutos
 - Lenguajes: IL
 - Rutas: Simulación, Hardware
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [function-block-pump-pair](./function-block-pump-pair.md), [boolean-logic-two-hand-guard-il](./boolean-logic-two-hand-guard-il.md)
 

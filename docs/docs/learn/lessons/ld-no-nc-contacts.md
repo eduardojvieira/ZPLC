@@ -19,6 +19,7 @@ Learn the normally open and normally closed contacts, why a stop button is wired
 - Estimated time: 20 minutes
 - Languages: LD
 - Tracks: Simulation
+- Reading page: yes
 - Plant: none
 - Prerequisites: [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
 

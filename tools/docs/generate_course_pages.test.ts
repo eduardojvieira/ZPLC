@@ -26,6 +26,15 @@ describe('LRN-035 course pages: a page for every module and lesson, generated fr
     expect(body).toContain(`(../modules/module-${lesson.module}.md)`);
   });
 
+  it('says whether the lesson opens on a reading page, so the Ladder path can be told from the other lessons', () => {
+    const page = (id: string) => PAGES.find((entry) => entry.path === `learn/lessons/${id}.md`)!;
+    const read = LESSON_INDEX.lessons.find((entry) => 'reading' in entry && entry.reading)!;
+    const plain = LESSON_INDEX.lessons.find((entry) => !('reading' in entry && entry.reading))!;
+    expect(page(read.id).body('en')).toContain('- Reading page: yes');
+    expect(page(plain.id).body('en')).toContain('- Reading page: no');
+    expect(page(read.id).body('es')).toContain('- Página de lectura: sí');
+  });
+
   it('writes the Spanish page from the Spanish text of the package, not the English one', () => {
     const lesson = LESSON_INDEX.lessons[0]!;
     const page = PAGES.find((entry) => entry.path === `learn/lessons/${lesson.id}.md`)!;

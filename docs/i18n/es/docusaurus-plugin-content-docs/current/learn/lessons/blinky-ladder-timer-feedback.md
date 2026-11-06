@@ -19,6 +19,7 @@ Complete un parpadeador de 500 ms en diagrama de escalera, hecho con dos tempori
 - Tiempo estimado: 20 minutos
 - Lenguajes: LD
 - Rutas: Simulación, Hardware
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [scan-cycle-one-scan-memory](./scan-cycle-one-scan-memory.md)
 

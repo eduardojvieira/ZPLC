@@ -8,80 +8,61 @@ tags: [operations, docs, github-pages]
 
 # Publicación de la documentación
 
-La documentación de ZPLC se construye con Docusaurus y GitHub Actions la despliega en GitHub Pages.
-Un cambio en una página se comprueba en dos flujos de trabajo antes de desplegarse.
+La documentación se construye con Docusaurus y GitHub Actions la despliega en GitHub Pages. Esta página indica qué verificaciones debe pasar el cambio de una página, cómo llega al sitio, cómo guardar una instantánea de una versión y cómo deshacer un despliegue defectuoso.
 
-## Las comprobaciones y el despliegue
+## Verifique un cambio antes de abrir el pull request
 
-### Cada pull request y cada push: el trabajo `docs-and-truth` de CI
+Ejecute esto una vez desde la raíz del repositorio:
 
-El trabajo de `.github/workflows/ci.yml` ejecuta el validador de páginas y sus pruebas, las
-comprobaciones de las referencias generadas, las de afirmaciones de la documentación y de
-ejemplos ejecutables, y la construcción del sitio:
+```bash
+bun run check:docs
+```
 
-1. `python3 tools/docs/validate_docs_pages.py` rechaza una página que termina a media
-   frase, una página que no está en la barra lateral y una página en inglés que no tiene
-   su gemela en español con la misma estructura (o al revés).
-2. `bun tools/docs/check_doc_claims.ts` comprueba que existan los archivos, los comandos y
-   las opciones que nombra una página.
-3. `bun tools/docs/check-docs-samples.ts` compila cada ejemplo `runnable` y ejecuta los que
-   declaran un resultado.
-4. `bun run docs:generate` y `git diff --exit-code -- docs/docs docs/i18n` fallan cuando una
-   página generada difiere de lo que escribe su generador.
-5. `bun run docs:build` construye el sitio. Docusaurus está configurado con
-   `onBrokenLinks`, `onBrokenAnchors` y `onBrokenMarkdownLinks` en `throw`, así que un
-   enlace interno roto o un enlace a un encabezado que ya no existe hace fallar la
-   construcción.
+Es la cadena completa que CI reparte en dos flujos de trabajo: los generadores en modo `--check`, las verificaciones de afirmaciones, el validador de páginas, los ejemplos ejecutables, los fragmentos de configuración, el manifiesto de capturas, la compilación del sitio y el índice de búsqueda. Un defecto aparece aquí antes de aparecer en la revisión.
 
-Las pruebas de `tools/docs` (`bun test ./tools/docs`) también se ejecutan en CI: sostienen
-los fragmentos de configuración, el manifiesto de capturas y las afirmaciones sobre capacidades.
+## Qué ejecuta CI
 
-### Pull requests que tocan la documentación: **Deploy Documentation**
+### Cada pull request y cada push: CI
 
-`.github/workflows/deploy-docs.yml` se ejecuta en un pull request o en un push a `main` (o
-`master`) que cambia `docs/`, `tools/docs/`, `tools/hil/validate_docs_parity.py`, las
-cabeceras del núcleo o `firmware/app/boards/boards.json`. Instala las dependencias, genera y
-valida las referencias (`bun run generate:docs` y `bun run validate:docs` en `docs/`),
-construye el sitio y sube `docs/build` como artefacto.
+- **`bun test ./tools/docs`** contiene las pruebas de los generadores y de las verificaciones, entre ellas los fragmentos de configuración, el manifiesto de capturas y las afirmaciones sobre capacidades (`check_capability_claims.ts`).
+- **El trabajo `docs-and-truth`** de `.github/workflows/ci.yml` ejecuta, en orden:
+  1. `python3 tools/docs/validate_docs_pages.py` rechaza una página que termina a mitad de frase, una página que no está en la barra lateral y una página en inglés cuya gemela en español tiene otra estructura (o al revés).
+  2. El modo `--check` de los generadores de límites conocidos, referencia de funciones, referencias de código fuente y referencia de lenguajes: una página generada que difiere de lo que escribe su generador falla.
+  3. `bun tools/docs/check_doc_claims.ts` verifica que existan los archivos, comandos y opciones que nombra una página.
+  4. `bun tools/docs/check-docs-samples.ts` compila cada ejemplo `runnable` y ejecuta los que declaran un resultado.
+  5. `bun run docs:generate`, `bun run docs:validate` y `git diff --exit-code -- docs/docs docs/i18n` regeneran cada referencia y fallan si algo cambió.
+  6. `bun run docs:build` construye el sitio. Docusaurus tiene `onBrokenLinks`, `onBrokenAnchors` y `onBrokenMarkdownLinks` en `throw`, así que un enlace interno roto, o un enlace a un encabezado que ya no existe, hace fallar la compilación.
 
-### Pushes a `main`: despliegue
+### Cambios bajo `docs/`: Deploy Documentation
 
-En un push a `main` (o `master`), o cuando se inicia a mano, un segundo trabajo despliega
-ese artefacto en el entorno `github-pages`. Un pull request nunca despliega.
+`.github/workflows/deploy-docs.yml` se ejecuta en un pull request, un push o un inicio manual cuando el cambio toca `docs/`, `tools/docs/`, `tools/hil/validate_docs_parity.py`, los encabezados del núcleo o `firmware/app/boards/boards.json`. Regenera y valida las referencias, construye el sitio y sube `docs/build` como artefacto.
 
-## Procedimiento de publicación
+### Pushes a las ramas principales: despliegue
 
-Para publicar documentación nueva:
+En un push a `master`, `main` o `zplc-2.0-candidate`, o al iniciarlo a mano, un segundo trabajo despliega ese artefacto en el entorno `github-pages`, en `https://eduardojvieira.github.io/ZPLC/`. Un pull request nunca despliega.
 
-1. Haga sus cambios en una rama de funcionalidad.
-2. Ejecute `bun run check:docs` desde la raíz del repositorio. Ejecuta las comprobaciones
-   anteriores y construye el sitio, de modo que un defecto aparece antes que en el pull request.
-3. Abra un pull request.
-4. Espere a que pasen el trabajo `docs-and-truth` de CI y el trabajo `build` de
-   **Deploy Documentation**.
-5. Fusione el pull request. GitHub Actions despliega `docs/build` en GitHub Pages.
+## Publicar documentación nueva
 
-## Versionar una versión
+1. Haga su cambio en una rama de funcionalidad, en inglés y en español a la vez.
+2. Ejecute `bun run check:docs`.
+3. Abra un pull request y espere a que pasen el trabajo `docs-and-truth` de CI y el trabajo de compilación de Deploy Documentation.
+4. Fusiónelo. El trabajo de despliegue publica el sitio.
 
-Cuando el proyecto ZPLC llega a un hito de versión (por ejemplo, `v2.0.0`), guarde una
-instantánea de la documentación. El sitio publica una sola versión, sin selector de
-versión, hasta que existe la primera instantánea (`docs/versions.json` está vacío).
+## Retirar o renombrar una página
+
+Una página ya publicada conserva su dirección. Cuando fusione o elimine una, agregue una entrada a la lista `redirects` de `@docusaurus/plugin-client-redirects` en `docs/docusaurus.config.js`. El complemento se ejecuta una vez por idioma, así que una entrada cubre ambos. La lista contiene las siete páginas que la reescritura de 2.0 fusionó o retiró.
+
+## Guardar una instantánea de una versión
+
+El sitio publica una sola versión, sin selector de versión, hasta que exista la primera instantánea (`docs/versions.json` está vacío). Para tomar la instantánea de una versión como `2.0.0`:
 
 1. Cree una rama para la versión.
-2. Ejecute `cd docs && bun run docusaurus docs:version 2.0.0`. Escribe la versión en inglés
-   y la versión en español.
-3. Confirme lo que escribió el comando: `docs/versions.json`, las carpetas `versioned_docs` y
-   `versioned_sidebars` de `docs/` y la carpeta `version-2.0.0` de
-   `docs/i18n/es/docusaurus-plugin-content-docs/`.
-4. Vuelva a agregar el selector de versión (`type: 'docsVersionDropdown'`) a los elementos de
-   la barra de navegación de `docs/docusaurus.config.js`, ejecute `bun run check:docs` y abra
-   el pull request.
+2. Ejecute `cd docs && bun run docusaurus docs:version 2.0.0`. Escribe la versión en inglés y en español.
+3. Confirme lo que escribió el comando: `docs/versions.json`, las carpetas `versioned_docs` y `versioned_sidebars` de `docs/`, y la carpeta `version-2.0.0` de `docs/i18n/es/docusaurus-plugin-content-docs/`.
+4. Agregue el selector de versión (`type: 'docsVersionDropdown'`) a los elementos de la barra de navegación de `docs/docusaurus.config.js`, ejecute `bun run check:docs` y abra el pull request.
 
-## Procedimiento de reversión
+## Deshacer un despliegue defectuoso
 
-Si un despliegue defectuoso llega a producción:
-
-1. Identifique el commit del último estado correcto de la documentación en la rama `main`.
-2. Use `git revert <hash-del-commit-defectuoso>` para deshacer el cambio.
-3. Haga push de la reversión a `main` (o abra un pull request rápido). La canalización
-   reconstruye y despliega el último estado que funcionaba.
+1. Busque el commit de la última documentación correcta en la rama desplegada.
+2. Ejecute `git revert <hash-del-commit-defectuoso>`.
+3. Suba la reversión o abra un pull request rápido. La canalización reconstruye y despliega el estado anterior.

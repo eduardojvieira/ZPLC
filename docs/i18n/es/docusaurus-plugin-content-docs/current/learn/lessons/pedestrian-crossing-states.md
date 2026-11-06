@@ -19,6 +19,7 @@ Recorra los estados de un cruce peatonal con salidas para vehículos y peatones 
 - Tiempo estimado: 25 minutos
 - Lenguajes: ST
 - Rutas: Simulación
+- Página de lectura: no
 - Planta: [`pedestrian-v1`](../plants.md)
 - Requisitos previos: [edge-counter-pulses](./edge-counter-pulses.md)
 

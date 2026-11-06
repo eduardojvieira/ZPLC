@@ -19,6 +19,7 @@ Recorra la clasificación de piezas y el bloqueo seguro por atasco del ejemplo C
 - Tiempo estimado: 25 minutos
 - Lenguajes: ST
 - Rutas: Simulación
+- Página de lectura: no
 - Planta: [`conveyor-v1`](../plants.md)
 - Requisitos previos: [motor-plant-feedback](./motor-plant-feedback.md), [tank-level-fault-reset](./tank-level-fault-reset.md)
 

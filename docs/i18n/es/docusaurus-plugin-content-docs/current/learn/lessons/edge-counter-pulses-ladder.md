@@ -19,6 +19,7 @@ Coloque un CTU en un peldaño para que CountReached se active en el tercer flanc
 - Tiempo estimado: 20 minutos
 - Lenguajes: LD
 - Rutas: Simulación, Hardware
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [edge-counter-pulses](./edge-counter-pulses.md), [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
 

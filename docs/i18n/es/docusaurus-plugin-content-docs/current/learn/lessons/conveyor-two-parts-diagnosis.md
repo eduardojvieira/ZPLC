@@ -19,6 +19,7 @@ Use el calendario versionado para distinguir una pieza metálica de una no metá
 - Tiempo estimado: 20 minutos
 - Lenguajes: ST
 - Rutas: Simulación
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [conveyor-classification-jam](./conveyor-classification-jam.md)
 

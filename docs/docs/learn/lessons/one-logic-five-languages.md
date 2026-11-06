@@ -19,6 +19,7 @@ Fix a Structured Text program so that a gate holds itself open and closes on com
 - Estimated time: 30 minutes
 - Languages: ST, LD, FBD, SFC, IL
 - Tracks: Simulation, Hardware
+- Reading page: yes
 - Plant: none
 - Prerequisites: [instruction-list-door-alarm](./instruction-list-door-alarm.md)
 

@@ -19,6 +19,7 @@ Use el tiempo que un paso lleva activo en una transición, de modo que una bocin
 - Tiempo estimado: 20 minutos
 - Lenguajes: SFC
 - Rutas: Simulación
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [sfc-fill-mix-sequence](./sfc-fill-mix-sequence.md)
 

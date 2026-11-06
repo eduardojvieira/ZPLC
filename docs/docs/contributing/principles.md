@@ -73,7 +73,7 @@ See [Hardware support](../reference/capabilities-evidence.md).
 
 Public documentation exists in both languages and changes in both at once. A new
 dependency needs a concrete need and a recorded architectural justification.
-The Spanish pages were reviewed against the English text in the 2.0 remediation, in the register of decision D-10 (2026-10-20). Generated pages quote English source text by design.
+The Spanish pages are written from the English text in neutral Spanish, with impersonal or "usted" forms (decision D-10). Generated pages quote English source text by design.
 
 ### 9. AI and MCP help inside the workspace and never act on hardware
 

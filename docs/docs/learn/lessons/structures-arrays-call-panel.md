@@ -19,6 +19,7 @@ Keep three call buttons in an array of structures and write one FOR loop that ho
 - Estimated time: 25 minutes
 - Languages: ST
 - Tracks: Simulation, Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [function-block-pump-pair](./function-block-pump-pair.md)
 

@@ -19,6 +19,7 @@ Construya una estación de empaque como un diagrama funcional secuencial a parti
 - Tiempo estimado: 60 minutos
 - Lenguajes: SFC
 - Rutas: Simulación
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [capstone-packing-station](./capstone-packing-station.md), [sfc-fill-mix-sequence](./sfc-fill-mix-sequence.md)
 

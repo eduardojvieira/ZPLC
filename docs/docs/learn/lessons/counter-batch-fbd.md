@@ -19,6 +19,7 @@ Edit a Function Block Diagram so that a CTU counter counts three parts, lights B
 - Estimated time: 20 minutes
 - Languages: FBD
 - Tracks: Simulation, Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [edge-counter-pulses](./edge-counter-pulses.md)
 

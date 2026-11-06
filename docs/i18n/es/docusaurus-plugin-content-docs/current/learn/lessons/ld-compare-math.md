@@ -19,6 +19,7 @@ Use bloques de comparación como condiciones y bloques matemáticos como cálcul
 - Tiempo estimado: 25 minutos
 - Lenguajes: LD
 - Rutas: Simulación
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [ld-variables-and-types](./ld-variables-and-types.md)
 

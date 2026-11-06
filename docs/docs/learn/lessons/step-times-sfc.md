@@ -19,6 +19,7 @@ Use the time a step has been active in a transition, so that a horn sounds for a
 - Estimated time: 20 minutes
 - Languages: SFC
 - Tracks: Simulation
+- Reading page: no
 - Plant: none
 - Prerequisites: [sfc-fill-mix-sequence](./sfc-fill-mix-sequence.md)
 

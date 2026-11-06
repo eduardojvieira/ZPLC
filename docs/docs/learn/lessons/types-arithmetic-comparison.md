@@ -19,6 +19,7 @@ Keep a running total in an INT variable, add to it on each press, and turn it in
 - Estimated time: 20 minutes
 - Languages: ST
 - Tracks: Simulation, Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [edge-counter-pulses](./edge-counter-pulses.md)
 

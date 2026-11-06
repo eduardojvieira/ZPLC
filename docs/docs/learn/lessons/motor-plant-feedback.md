@@ -19,6 +19,7 @@ Separate a motor command from the run confirmation using the Motor Plant.
 - Estimated time: 20 minutes
 - Languages: ST
 - Tracks: Simulation
+- Reading page: no
 - Plant: [`motor-v1`](../plants.md)
 - Prerequisites: [pedestrian-crossing-states](./pedestrian-crossing-states.md)
 

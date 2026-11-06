@@ -19,6 +19,7 @@ Envíe una pieza a la bahía pequeña o a la grande con dos transiciones que sal
 - Tiempo estimado: 25 minutos
 - Lenguajes: SFC
 - Rutas: Simulación
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [sfc-fill-mix-sequence](./sfc-fill-mix-sequence.md)
 

@@ -19,6 +19,7 @@ Detenga un ciclo de alimentación y prensa en cuanto aparece una falla, y devué
 - Tiempo estimado: 25 minutos
 - Lenguajes: SFC
 - Rutas: Simulación
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [sfc-fill-mix-sequence](./sfc-fill-mix-sequence.md), [tank-level-fault-reset](./tank-level-fault-reset.md)
 

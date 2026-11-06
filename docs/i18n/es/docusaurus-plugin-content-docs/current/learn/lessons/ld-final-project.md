@@ -19,6 +19,7 @@ Convierta la descripción escrita de una pequeña estación de empaque en un pro
 - Tiempo estimado: 60 minutos
 - Lenguajes: LD
 - Rutas: Simulación
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [ld-diagnosis-debugger](./ld-diagnosis-debugger.md)
 

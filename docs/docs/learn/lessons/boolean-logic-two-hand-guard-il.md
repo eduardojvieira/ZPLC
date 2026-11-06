@@ -19,6 +19,7 @@ Read an Instruction List program as one current result that each line combines w
 - Estimated time: 15 minutes
 - Languages: IL
 - Tracks: Simulation, Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [boolean-logic-two-hand-guard](./boolean-logic-two-hand-guard.md)
 

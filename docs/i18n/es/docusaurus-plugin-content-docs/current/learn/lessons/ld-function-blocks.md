@@ -19,6 +19,7 @@ Llame al bloque de función PumpCtl del proyecto desde un segundo peldaño de es
 - Tiempo estimado: 25 minutos
 - Lenguajes: LD
 - Rutas: Simulación
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [tank-level-fault-reset-ladder](./tank-level-fault-reset-ladder.md)
 

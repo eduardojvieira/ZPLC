@@ -19,6 +19,7 @@ Keep a fault in memory with the SR and RS blocks and see what each one does when
 - Estimated time: 15 minutes
 - Languages: ST
 - Tracks: Simulation, Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [seal-in-ladder](./seal-in-ladder.md)
 

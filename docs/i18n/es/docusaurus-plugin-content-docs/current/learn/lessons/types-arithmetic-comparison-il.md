@@ -19,6 +19,7 @@ Mantenga un total en una variable INT, súmele en cada pulsación con ADD y un s
 - Tiempo estimado: 20 minutos
 - Lenguajes: IL
 - Rutas: Simulación, Hardware
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [types-arithmetic-comparison](./types-arithmetic-comparison.md), [edge-counter-pulses-il](./edge-counter-pulses-il.md)
 

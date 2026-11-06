@@ -19,6 +19,7 @@ Convierta la descripción escrita de una pequeña estación de empaque en un pro
 - Tiempo estimado: 60 minutos
 - Lenguajes: ST
 - Rutas: Simulación
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [conveyor-two-parts-diagnosis](./conveyor-two-parts-diagnosis.md)
 

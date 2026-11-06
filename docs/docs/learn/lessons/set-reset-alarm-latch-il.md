@@ -19,6 +19,7 @@ Keep a fault in memory with the S and R instructions and see that, when the faul
 - Estimated time: 15 minutes
 - Languages: IL
 - Tracks: Simulation, Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [set-reset-alarm-latch](./set-reset-alarm-latch.md), [boolean-logic-two-hand-guard-il](./boolean-logic-two-hand-guard-il.md)
 

@@ -19,6 +19,7 @@ Aprenda que un PLC lee sus entradas, resuelve los peldaños de arriba hacia abaj
 - Tiempo estimado: 15 minutos
 - Lenguajes: LD
 - Rutas: Simulación
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [ld-what-is-a-plc](./ld-what-is-a-plc.md)
 

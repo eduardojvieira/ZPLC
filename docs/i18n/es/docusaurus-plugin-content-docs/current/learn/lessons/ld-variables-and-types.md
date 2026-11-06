@@ -19,6 +19,7 @@ Guarde una solicitud en un bit de memoria, almacene una duración en una variabl
 - Tiempo estimado: 20 minutos
 - Lenguajes: LD
 - Rutas: Simulación
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [edge-counter-pulses-ladder](./edge-counter-pulses-ladder.md)
 

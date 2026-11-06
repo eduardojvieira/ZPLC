@@ -19,6 +19,7 @@ Place a CTU in a rung so that CountReached turns on at the third rising edge of 
 - Estimated time: 20 minutes
 - Languages: LD
 - Tracks: Simulation, Hardware
+- Reading page: yes
 - Plant: none
 - Prerequisites: [edge-counter-pulses](./edge-counter-pulses.md), [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
 

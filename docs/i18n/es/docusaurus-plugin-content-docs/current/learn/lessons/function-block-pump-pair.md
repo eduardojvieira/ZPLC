@@ -19,6 +19,7 @@ Escriba el cuerpo de un bloque de función que implementa una retención de arra
 - Tiempo estimado: 25 minutos
 - Lenguajes: ST
 - Rutas: Simulación, Hardware
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [types-arithmetic-comparison](./types-arithmetic-comparison.md)
 

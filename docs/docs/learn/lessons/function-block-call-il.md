@@ -19,6 +19,7 @@ Call two instances of the same function block with CAL, pass their inputs by nam
 - Estimated time: 25 minutes
 - Languages: IL
 - Tracks: Simulation, Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [function-block-pump-pair](./function-block-pump-pair.md), [boolean-logic-two-hand-guard-il](./boolean-logic-two-hand-guard-il.md)
 

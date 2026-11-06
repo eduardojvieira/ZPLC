@@ -19,6 +19,7 @@ Use a CTU counter to count three discrete pulses and reset the count.
 - Estimated time: 15 minutes
 - Languages: ST
 - Tracks: Simulation, Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [timers-on-delay-off-delay](./timers-on-delay-off-delay.md)
 

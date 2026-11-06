@@ -19,6 +19,7 @@ Edite un diagrama de bloques de función para que MB_READ_COIL vuelva a leer la 
 - Tiempo estimado: 25 minutos
 - Lenguajes: FBD
 - Rutas: Simulación
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [modbus-register-round-trip](./modbus-register-round-trip.md), [counter-batch-fbd](./counter-batch-fbd.md)
 

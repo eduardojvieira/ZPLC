@@ -19,6 +19,7 @@ Conecte un permisivo al reinicio de un biestable RS para que el motor funcione s
 - Tiempo estimado: 25 minutos
 - Lenguajes: FBD
 - Rutas: Simulación
+- Página de lectura: no
 - Planta: [`motor-v1`](../plants.md)
 - Requisitos previos: [interlock-guard-permissive](./interlock-guard-permissive.md), [boolean-logic-two-hand-guard-fbd](./boolean-logic-two-hand-guard-fbd.md)
 

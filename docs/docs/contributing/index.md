@@ -88,6 +88,8 @@ generated from them, and CI fails on a hand-written list of ids (LRN-028).
 | `scenario.json`                | The reference scenario the lesson is graded by. Keep a copy in the starter's `tests/` folder so that the learner can run it from Tests; CI fails when the copy differs.                                   |
 | `text.en.json`, `text.es.json` | The text: title, summary, scope, objectives, the six stages (`objective`, `predict`, `edit`, `run`, `observe`, `reflect`), two hint levels and the fault to fix. Both files must have the same structure. |
 | `checks.json`                  | Optional: wrong programs that must stay red, and other correct programs that must pass.                                                                                                                   |
+| `reading.en.md`, `reading.es.md` | Optional, and always in both languages: the reading page the lesson opens on, in Markdown. Besides text it holds live blocks: `ld-figure` (a read-only ladder rung), `ld-try` (a lab that runs a ladder program on the simulator, with inputs the reader can press), `timing` and `quiz`. The Markdown subset has no links and no raw HTML. |
+| `reading/`                     | The ladder files (`*.ld.json`) that the `ld-figure` and `ld-try` blocks name through `src:`. |
 
 The text marks every time and value it quotes, so that CI can check it against the scenario. The
 generator expands the markup once; no lesson string is replaced when the application runs (LRN-038).

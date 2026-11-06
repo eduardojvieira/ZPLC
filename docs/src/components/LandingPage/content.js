@@ -122,7 +122,8 @@ const landingPageContent = {
       title: 'Seven boards to start from',
       lead:
         'Board profiles for RP2040, STM32 and ESP32-S3 chips, from serial boards to Ethernet and Wi-Fi. Each one builds on every ' +
-        'change and fits its flash and RAM budget. Two of them are the learner boards of the course.',
+        'change and fits its flash and RAM budget, but none has a hardware test record yet. Two of them are the learner boards of the ' +
+        'course.',
       artAlt: 'Illustration: generic microcontroller boards of different sizes on one DIN rail, wired to one terminal block.',
       columns: { board: 'Board', target: 'Zephyr target', network: 'Network' },
       learner: 'Course board',
@@ -240,8 +241,9 @@ const landingPageContent = {
     learn: {
       title: 'Learn PLC programming without buying a PLC',
       lead:
-        'A free course of 68 lessons in 12 modules, from the scan cycle to a small machine, in English and Spanish. ZPLC checks ' +
-        'your program in every lesson and tells you what to fix.',
+        'A free course of 68 lessons in 12 modules, in English and Spanish. Start from zero with the Ladder path: each of its ' +
+        'lessons opens on a reading page with figures and labs you can try in place, then you practise against a simulated ' +
+        'machine. ZPLC checks your program in every lesson and tells you what to fix.',
       facts: [
         {
           title: 'Feedback on every attempt',
@@ -432,7 +434,8 @@ const landingPageContent = {
       title: 'Siete placas para empezar',
       lead:
         'Perfiles de placa para chips RP2040, STM32 y ESP32-S3, desde placas serie hasta Ethernet y Wi-Fi. Cada uno se compila con ' +
-        'cada cambio y cabe en su presupuesto de flash y RAM. Dos de ellos son las placas del estudiante del curso.',
+        'cada cambio y cabe en su presupuesto de flash y RAM, pero ninguno tiene todavía un registro de pruebas en hardware. Dos de ' +
+        'ellos son las placas del estudiante del curso.',
       artAlt: 'Ilustración: placas de microcontrolador genéricas de distinto tamaño sobre un riel DIN, cableadas a un bloque de bornes.',
       columns: { board: 'Placa', target: 'Destino de Zephyr', network: 'Red' },
       learner: 'Placa del curso',
@@ -570,8 +573,9 @@ const landingPageContent = {
     learn: {
       title: 'Aprenda a programar PLC sin comprar un PLC',
       lead:
-        'Un curso gratuito de 68 lecciones en 12 módulos, del ciclo de un PLC a una máquina pequeña, en inglés y en español. ZPLC ' +
-        'comprueba su programa en cada lección y le dice qué corregir.',
+        'Un curso gratuito de 68 lecciones en 12 módulos, en inglés y en español. Empiece desde cero con el camino de diagrama de ' +
+        'escalera: cada una de sus lecciones abre con una página de lectura con figuras y laboratorios que puede probar allí ' +
+        'mismo, y luego practica con una máquina simulada. ZPLC comprueba su programa en cada lección y le dice qué corregir.',
       facts: [
         {
           title: 'Una devolución en cada intento',

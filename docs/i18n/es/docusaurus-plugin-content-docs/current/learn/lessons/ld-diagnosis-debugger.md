@@ -19,6 +19,7 @@ Encuentre por qué un motor no se detiene observando sus variables, deteniendo e
 - Tiempo estimado: 40 minutos
 - Lenguajes: LD
 - Rutas: Simulación
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [ld-function-blocks](./ld-function-blocks.md)
 

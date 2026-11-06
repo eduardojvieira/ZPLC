@@ -19,6 +19,7 @@ Draw AND, NOT and exclusive-or as contacts in series and in parallel, and enable
 - Estimated time: 20 minutes
 - Languages: LD
 - Tracks: Simulation, Hardware
+- Reading page: yes
 - Plant: none
 - Prerequisites: [boolean-logic-two-hand-guard](./boolean-logic-two-hand-guard.md), [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
 

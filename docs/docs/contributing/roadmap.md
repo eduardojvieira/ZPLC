@@ -9,67 +9,42 @@ tags: [contributing, roadmap]
 
 # Roadmap
 
-ZPLC 2.0 is built in phases. A phase is a gate, not a calendar slot: it closes
-when its checks pass, so this page carries no dates. It tells you what exists,
-what is being worked on and what has not started, so that you can pick work or
-judge whether ZPLC fits your project today.
+This page says what ZPLC 2.0 has finished, what stands between it and the release, and what is not planned for it. A step is a gate, not a calendar slot: it closes when its checks pass, so the page carries no dates. Use it to pick work, or to judge whether ZPLC fits your project today.
 
-## Done
+## Finished
 
-These items are merged and covered by a check that CI or a repeatable local
-command runs.
+Each item is merged and backed by a check that CI or a repeatable local command runs.
 
-- **CI on the 2.0 line with one list of expected failures.** A failing test must
-  be listed with the requirement that will fix it, and the list can only shrink.
-- **A conformance suite.** Structured Text programs are compiled, loaded into the
-  real VM and their memory is asserted.
-- **Application stopgaps.** Closing a file or the window with unsaved work asks first,
-  each text file keeps its own undo history, and a failed build shows the
-  compiler's own message with its line and column.
-- **A release pipeline.** One workflow builds the Linux, macOS and Windows
-  installers, collects checksums and uploads them to a draft release.
-- **Truthful public text.** Pages that stopped mid-sentence are completed in
-  English and Spanish, and the README states what ZPLC does today.
-- **A firmware test method on Linux.** The Zephyr suites run on `native_sim` in
-  64 and 32 bits and on QEMU Cortex-M3 and M0, with a flash and RAM budget per
-  board. See [Firmware testing](../development/firmware-testing.md).
-- **One generated source for the binary contract**, and a draft counter that the
-  compiler, the loader, the runtime and the ZPLC application compare.
-- **Numeric and visual-language corrections** in the compiler: signed `INT`
-  widths, signed comparisons, `REAL` arithmetic, `TIME` literals, and the
-  Instruction List, Ladder and SFC defects that conformance cases exposed.
+- **Five languages.** Structured Text, Instruction List, Ladder Diagram, Function Block Diagram and Sequential Function Chart compile for the same runtime, each with its own editor, online values and breakpoints. The [conformance matrix](../reference/capabilities-evidence.md) records which elements work, which are rejected on purpose and which are not proven.
+- **Simulation and debugging.** The simulator is the native runtime itself, bundled with the application. It supports pause, one-cycle step, watch, force, a live I/O faceplate and scenario tests that also run from `zplc-cli` in CI.
+- **Learn.** A course of 68 lessons in 12 modules, in English and Spanish, with a Ladder path from zero whose lessons open on reading pages with figures and labs you can try. See [Learn](../learn/index.md).
+- **Boards.** Seven board profiles cross-build with a flash and RAM budget each, and a port conformance suite checks the hardware abstraction layer. The level of every board is `cross-build`; see [Hardware support](../reference/capabilities-evidence.md).
+- **A firmware test method on Linux.** The Zephyr suites run on `native_sim` and on QEMU Cortex-M targets. See [Firmware testing](../development/firmware-testing.md).
+- **One generated source for the binary contract**, with a draft counter that the compiler, the loader, the runtime and the application compare.
+- **A release pipeline.** One workflow builds the Linux, macOS and Windows installers, collects checksums and uploads them to a draft release, and a rehearsal mode runs it end to end without publishing.
+- **AI help inside the workspace.** An MCP server lets an assistant read, edit, build and test a project. It never flashes, deploys, forces, starts or stops anything.
+- **Truthful public text.** Documentation checks fail the build on a name, path, count or capability that nothing backs.
 
-## Next
+## Before 2.0 ships
 
-- **Close the rest of the verification foundation.** Sandbox closure for programs
-  that read or write outside their regions, a fuzzer that runs the programs the
-  loader accepts, opcode coverage for the VM, a render-test environment for
-  the ZPLC application, and the cost of 64-bit arithmetic measured on the Raspberry Pi Pico.
-- **Correct Structured Text across a whole project.** Types, structures,
-  enumerations, several files, errors with their position, and an open, edit,
-  build and simulate path with no hidden step.
+- **Bench records.** A person follows the recorded procedure on the Raspberry Pi Pico and on the ESP32-S3-DevKitC-1, and files a record with the image it ran. Until then every board stays at `cross-build`, and no page may claim more. See [Hardware in the loop](../development/hardware-in-the-loop.md).
+- **Distribution channels.** The installers are unsigned. A Homebrew tap, a Microsoft Store entry and similar channels need accounts that the project has not set up, so [Getting Started](../getting-started/index.md) names no channel that does not exist.
+- **The documentation rewrite**, in English and Spanish, with every docs check green.
+- **The release gates** on the tagged commit.
 
-## Later
+## Not planned for 2.0
 
-| Phase                                         | What it delivers                                                                                                                                                                          |
-| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| New shell and five languages                  | A rebuilt view layer of the application, and Instruction List, Ladder, FBD and SFC that compile correctly, debug and monitor.                                                             |
-| Learn in simulation                           | A course that opens from the Welcome screen and grades honestly, in English and Spanish, with no hardware.                                                                                |
-| Runtime trust and the first board             | The same scheduler semantics on the simulator and the target, safe outputs on a fault, retentive memory that survives a power cycle, and the first bench record on the Raspberry Pi Pico. |
-| Communications and the second board           | Modbus, MQTT, Sparkplug B and the cloud blocks repaired, and bench evidence on the ESP32-S3.                                                                                              |
-| Complete language and complete course         | The conformance matrix closed and the course finished on both tracks.                                                                                                                     |
-| Distribution, documentation and accessibility | Every installer channel delivered or submitted, the documentation finished in two languages, and accessibility closed.                                                                    |
-| General availability                          | The release gates met on the tagged commit.                                                                                                                                               |
+- A safety assessment. No part of ZPLC has been assessed against a safety standard; see [Safety and limitations](../safety-and-limitations.md).
+- Production qualification of a board.
+- Timing guarantees. No scan time or jitter has been measured on a board, so no page states one.
 
 ## When you can use it
 
-- **In simulation, to write Structured Text:** after the Structured Text
-  correctness phase.
-- **As a learner with no hardware:** after Learn in simulation.
-- **On one board, the Raspberry Pi Pico:** after the runtime trust phase, with
-  each claim pointing at its bench record.
+| You want to                              | Today                                                                                           |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Write and simulate a program             | Yes, in the desktop application on Windows, macOS and Linux (host and native simulation levels). |
+| Learn PLC programming with no hardware   | Yes, with the Learn course.                                                                     |
+| Build the runtime for a board            | Yes, at `cross-build`: the image builds and fits, and nothing more is claimed.                   |
+| Rely on a board in the field             | Not yet. Wait for a bench record of your board, and read the safety page first.                 |
 
-Until a phase closes, the claims of the current prerelease stay as the
-[release notes](../release-notes/index.md) and
-[Hardware support](../reference/capabilities-evidence.md) state
-them.
+The current prerelease keeps the claims that the [release notes](../release-notes/index.md) state.

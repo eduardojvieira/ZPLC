@@ -19,6 +19,7 @@ Mantenga un total acumulado en una variable INT con bloques ADD, SEL y R_TRIG, y
 - Tiempo estimado: 25 minutos
 - Lenguajes: FBD
 - Rutas: Simulación, Hardware
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [types-arithmetic-comparison](./types-arithmetic-comparison.md), [boolean-logic-two-hand-guard-fbd](./boolean-logic-two-hand-guard-fbd.md)
 

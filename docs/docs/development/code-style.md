@@ -32,10 +32,10 @@ changes.
 | Editors                                     | EditorConfig                                   |                                                                                    | `.editorconfig`    |
 
 The output of both tools changes between versions, so the versions are exact.
-`tools/ci/format.ts` refuses another clang-format. The `format` job of
-`.github/workflows/ci.yml` installs the same wheel; that job is authored but has
-not run on a hosted runner in this repository yet, so the first hosted run is the
-proof that the install step works there.
+`tools/ci/format.ts` refuses another clang-format, and the `format` job of
+`.github/workflows/ci.yml` installs the same wheel. If your machine has a
+different clang-format, install the pinned one with `pipx` before you run
+`bun run format:check`, or the check stops at the version.
 
 The style is the one the code already had. TypeScript uses single quotes,
 semicolons, trailing commas and two spaces, and four spaces in

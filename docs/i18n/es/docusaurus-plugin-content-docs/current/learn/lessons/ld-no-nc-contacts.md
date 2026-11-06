@@ -19,6 +19,7 @@ Aprenda los contactos normalmente abierto y normalmente cerrado, por qué un bot
 - Tiempo estimado: 20 minutos
 - Lenguajes: LD
 - Rutas: Simulación
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
 

@@ -19,6 +19,7 @@ Escriba un registro de retención con un bloque Modbus TCP, vuelva a leerlo cuan
 - Tiempo estimado: 25 minutos
 - Lenguajes: ST
 - Rutas: Simulación
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [structures-arrays-call-panel](./structures-arrays-call-panel.md)
 

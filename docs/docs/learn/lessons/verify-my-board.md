@@ -19,6 +19,7 @@ Check that your board is the one you chose, that it blinks an LED and that it re
 - Estimated time: 30 minutes
 - Languages: ST
 - Tracks: Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [first-blink-simulation](./first-blink-simulation.md)
 

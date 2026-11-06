@@ -19,6 +19,7 @@ Follow how one input produces the current output and a copy delayed by one scan.
 - Estimated time: 10 minutes
 - Languages: ST
 - Tracks: Simulation, Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [first-blink-simulation](./first-blink-simulation.md)
 

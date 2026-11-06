@@ -19,6 +19,7 @@ Recorra el control de nivel y las memorias de falla y de reset del ejemplo Tank 
 - Tiempo estimado: 25 minutos
 - Lenguajes: ST
 - Rutas: Simulación
+- Página de lectura: no
 - Planta: [`tank-v1`](../plants.md)
 - Requisitos previos: [motor-plant-feedback](./motor-plant-feedback.md)
 

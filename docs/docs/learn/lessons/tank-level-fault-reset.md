@@ -19,6 +19,7 @@ Walk through level control and the fault and reset latches in the Tank Level exa
 - Estimated time: 25 minutes
 - Languages: ST
 - Tracks: Simulation
+- Reading page: no
 - Plant: [`tank-v1`](../plants.md)
 - Prerequisites: [motor-plant-feedback](./motor-plant-feedback.md)
 

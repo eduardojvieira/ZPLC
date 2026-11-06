@@ -19,6 +19,7 @@ Draw the pedestrian crossing as a Sequential Function Chart with one step per li
 - Estimated time: 25 minutes
 - Languages: SFC
 - Tracks: Simulation
+- Reading page: no
 - Plant: [`pedestrian-v1`](../plants.md)
 - Prerequisites: [pedestrian-crossing-states](./pedestrian-crossing-states.md), [sfc-fill-mix-sequence](./sfc-fill-mix-sequence.md)
 

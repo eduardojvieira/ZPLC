@@ -19,6 +19,7 @@ Describa un transportador clasificador como un diagrama de pasos de detenido, en
 - Tiempo estimado: 30 minutos
 - Lenguajes: SFC
 - Rutas: Simulación
+- Página de lectura: no
 - Planta: [`conveyor-v1`](../plants.md)
 - Requisitos previos: [sfc-fill-mix-sequence](./sfc-fill-mix-sequence.md)
 

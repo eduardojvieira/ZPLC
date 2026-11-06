@@ -19,6 +19,7 @@ Use un contacto de transición positiva y un contacto de transición negativa pa
 - Tiempo estimado: 15 minutos
 - Lenguajes: LD
 - Rutas: Simulación
+- Página de lectura: sí
 - Planta: ninguna
 - Requisitos previos: [set-reset-alarm-latch-ladder](./set-reset-alarm-latch-ladder.md)
 

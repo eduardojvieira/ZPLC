@@ -19,6 +19,7 @@ Use comparison boxes as conditions and math boxes as calculations in Ladder, and
 - Estimated time: 25 minutes
 - Languages: LD
 - Tracks: Simulation
+- Reading page: yes
 - Plant: none
 - Prerequisites: [ld-variables-and-types](./ld-variables-and-types.md)
 

@@ -146,6 +146,11 @@ describe('capability claims: what the public text says ZPLC can do is backed by 
     expect(ids('The two boards of the STM32 family use plain TCP.')).toEqual([]);
     expect(ids(`Seis placas tienen un perfil de compilación.`)).toEqual(real.counts.boards === 6 ? [] : ['count-boards']);
     expect(ids('Start from 16 example projects.')).toEqual(['count-examples']);
+    // "of N" names the whole set when no article follows, so a stale total is caught; "of the N" stays a subset
+    expect(ids(`Start from one of ${real.counts.examples + 1} example projects.`)).toEqual(['count-examples']);
+    expect(ids(`Start from one of ${real.counts.examples} example projects.`)).toEqual([]);
+    expect(ids('Start from one of the 16 example projects.')).toEqual([]);
+    expect(ids('Pick one of two learner boards.')).toEqual([]);
     expect(ids('Release 2.0.0-rc.3 cross-built the six board profiles.')).toEqual([]);
     expect(numberOf('Seis')).toBe(6);
     expect(numberOf('12')).toBe(12);

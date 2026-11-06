@@ -19,6 +19,7 @@ Use un temporizador TOF para mantener una luz encendida después de soltar un bo
 - Tiempo estimado: 15 minutos
 - Lenguajes: ST
 - Rutas: Simulación, Hardware
+- Página de lectura: no
 - Planta: ninguna
 - Requisitos previos: [motor-start-stop-safe](./motor-start-stop-safe.md)
 

@@ -19,6 +19,7 @@ Combine AND, NOT and XOR so a press can only be enabled when both hands are on t
 - Estimated time: 15 minutes
 - Languages: ST
 - Tracks: Simulation, Hardware
+- Reading page: no
 - Plant: none
 - Prerequisites: [blinky-ladder-timer-feedback](./blinky-ladder-timer-feedback.md)
 

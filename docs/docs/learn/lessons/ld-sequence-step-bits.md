@@ -19,6 +19,7 @@ Add the transition from the mix step to the drain step in a Ladder sequence, so 
 - Estimated time: 25 minutes
 - Languages: LD
 - Tracks: Simulation
+- Reading page: yes
 - Plant: none
 - Prerequisites: [ld-analog-scaling](./ld-analog-scaling.md)
 

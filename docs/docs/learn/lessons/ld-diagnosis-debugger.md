@@ -19,6 +19,7 @@ Find why a motor will not stop by watching its variables, stopping the program o
 - Estimated time: 40 minutes
 - Languages: LD
 - Tracks: Simulation
+- Reading page: yes
 - Plant: none
 - Prerequisites: [ld-function-blocks](./ld-function-blocks.md)
 

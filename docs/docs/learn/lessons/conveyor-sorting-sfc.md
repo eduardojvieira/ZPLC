@@ -19,6 +19,7 @@ Describe a sorting conveyor as a chart of stopped, running and fault steps: sort
 - Estimated time: 30 minutes
 - Languages: SFC
 - Tracks: Simulation
+- Reading page: no
 - Plant: [`conveyor-v1`](../plants.md)
 - Prerequisites: [sfc-fill-mix-sequence](./sfc-fill-mix-sequence.md)
 
