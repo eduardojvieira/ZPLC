@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "ld-scan-cycle",
+  "version": 2,
+  "order": 78,
+  "module": 1,
+  "level": "foundation",
+  "prerequisites": ["ld-what-is-a-plc"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The order of the rungs is graded scan by scan, and a board cannot show a one-scan difference without instruments; the simulation records every scan.",
+        "es": "El orden de los peldaños se califica ciclo por ciclo, y una placa no puede mostrar una diferencia de un ciclo sin instrumentos; la simulación registra cada ciclo."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where every scan is recorded and the result is the same each time.",
+        "es": "Complétela en Simulación, donde se registra cada ciclo y el resultado es el mismo cada vez."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 15,
+  "starter": {
+    "project": "ld_scan_order_starter",
+    "program": "src/ScanOrder.ld.json"
+  },
+  "solution": {
+    "project": "ld_scan_order",
+    "program": "src/ScanOrder.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "ScanOrder",
+    "path": "tests/scan-order.scenario.json",
+    "sha256": "b182e74c939b50df2bb2f99c75918400d65227bf4cf29c4860fb0cba797a683b"
+  },
+  "regressionScenarios": []
+}

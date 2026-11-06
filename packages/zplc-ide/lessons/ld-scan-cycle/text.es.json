@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "El ciclo de escaneo: por qué importa el orden de los peldaños",
+  "summary": "Aprenda que un PLC lee sus entradas, resuelve los peldaños de arriba hacia abajo y luego escribe sus salidas, y corrija un programa cuya lámpara sigue al botón un ciclo demasiado tarde.",
+  "scope": "Las pruebas aportan evidencia determinista del host con el runtime nativo POSIX y una tarea de 10 ms, solo en su computador; no son evidencia de tiempos en una placa, HIL ni de seguridad.",
+  "objectives": [
+    "Describa el ciclo de escaneo: leer las entradas, resolver los peldaños de arriba hacia abajo, escribir las salidas y repetir.",
+    "Reordene dos peldaños para que un valor se calcule antes del peldaño que lo usa, y vea en la traza registrada la diferencia de un ciclo."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/ScanOrder.ld.json hay dos peldaños dibujados. Uno copia el botón StartButton en un bit de memoria ButtonSeen, y el otro muestra ButtonSeen en la lámpara Lamp. Están en el orden equivocado. Mueva los peldaños para que el que asigna ButtonSeen quede primero, y la lámpara siga al botón en el mismo ciclo.",
+      "checkpoint": "El peldaño que asigna ButtonSeen es el peldaño 1 y el que acciona Lamp es el peldaño 2."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Antes de ejecutar, prediga Lamp. El escenario pulsa el botón a los {{t:10}} ms y lo suelta a los {{t:30}} ms. Con los peldaños en el orden correcto, ¿cuándo se enciende la lámpara y cuándo se apaga?",
+      "checkpoint": "{{v:ScanOrder.Lamp=true@10|Lamp en ON}} a los {{t:10}} ms, en el mismo ciclo de la pulsación; {{v:ScanOrder.Lamp=false@30|lámpara en OFF}} a los {{t:30}} ms, en el mismo ciclo de la liberación."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija este orden del programa inicial, guárdelo y pulse Comprobar: El programa inicial resuelve el peldaño de la lámpara antes de actualizar ButtonSeen, así que la lámpara aún muestra el valor anterior y se enciende un ciclo tarde, a los {{t:20}} ms en vez de a los {{t:10}} ms. Mueva el peldaño de ButtonSeen por encima del peldaño de la lámpara con el botón Subir el peldaño del editor de escalera.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado y compara la lámpara, ciclo por ciclo, con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama ScanOrder y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:10}}, {{t:20}} y {{t:30}} ms en la traza: la lámpara cambia en la misma fila que el botón. Con el orden equivocado, la lámpara cambiaría una fila después.",
+      "checkpoint": "Lamp sube una vez a los {{t:10}} ms y cae una vez a los {{t:30}} ms, en el mismo ciclo que el botón."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "Un ciclo dura lo mismo, unos pocos milisegundos, cada vez. ¿Por qué un retraso de un ciclo puede ser inofensivo en una máquina y un problema en otra? ¿Qué pasaría si la lámpara fuera la entrada de un contador rápido?",
+      "checkpoint": "El escenario comprueba el orden de dos peldaños en simulación. No mide el tiempo de ciclo de ninguna placa."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Dentro de un ciclo, un peldaño solo ve lo que ya calcularon los peldaños que están arriba. ¿Qué peldaño debe calcular primero ButtonSeen?"
+    },
+    {
+      "level": 2,
+      "text": "Seleccione el peldaño que copia StartButton en ButtonSeen y pulse Subir el peldaño una vez, para que quede como peldaño 1. No cambie ningún contacto ni bobina."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial resuelve el peldaño de la lámpara antes de actualizar ButtonSeen, así que la lámpara se enciende un ciclo tarde, a los {{t:20}} ms en vez de a los {{t:10}} ms; mueva el peldaño de ButtonSeen por encima del peldaño de la lámpara."
+  ]
+}
