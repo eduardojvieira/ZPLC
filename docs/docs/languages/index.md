@@ -1,29 +1,33 @@
 ---
 slug: /languages
 id: index
-title: Languages & Programming Model
-sidebar_label: Languages Overview
-description: Overview of the IEC 61131-3 language workflows in ZPLC.
+title: Languages and the programming model
+sidebar_label: Languages overview
+description: Choose among the five IEC 61131-3 languages in ZPLC and see what each can do today.
 tags: [languages, iec61131-3]
 ---
 
-# Languages & Programming Model
+# Languages and the programming model
 
-Structured Text (ST) is ZPLC's central language frontend. The repository also has LD, FBD, SFC, and IL workflows. Their editing, conversion, debugging, and target coverage vary, so select a workflow based on its current evidence rather than assuming full IEC coverage or parity.
+ZPLC offers five IEC 61131-3 languages in one project: Structured Text, Instruction List, Ladder Diagram, Function Block Diagram and Sequential Function Chart. They all compile to the same `.zplc` bytecode, so you can pick the language that fits each program. This page helps you choose one and shows what each language can do today, with the proof behind it.
 
-## Available workflows
+## Choose a language
 
-| Language                            | Current path                                    |
-| ----------------------------------- | ----------------------------------------------- |
-| **Structured Text (ST)**            | Central textual frontend for the compiler.      |
-| **Instruction List (IL)**           | Parsed and transpiled to ST before compilation. |
-| **Ladder Diagram (LD)**             | Visual editor/transpiler workflow.              |
-| **Function Block Diagram (FBD)**    | Visual editor/transpiler workflow.              |
-| **Sequential Function Chart (SFC)** | Visual editor/transpiler workflow.              |
+| Language | Write it in | Use it for | Guide |
+| --- | --- | --- | --- |
+| Structured Text (ST) | A text editor | Calculations, data handling, loops, anything that is easier to read as code. The language every other one is translated to. | [Structured Text](./st.md) |
+| Instruction List (IL) | A text editor | Existing IL logic, and low-level sequences on an accumulator. | [Instruction List](./il.md) |
+| Ladder Diagram (LD) | A rung editor | Interlocks, relay-style logic, and conditions that an electrician reads at a glance. | [Ladder Diagram](./ld.md) |
+| Function Block Diagram (FBD) | A diagram editor | Signal flow between timers, counters, comparisons and arithmetic. | [Function Block Diagram](./fbd.md) |
+| Sequential Function Chart (SFC) | A chart editor | Machines that move through steps, such as a start, run and stop sequence. | [Sequential Function Chart](./sfc.md) |
+
+Structured Text goes to the compiler directly. The other four are translated to Structured Text first, and that generated text is read-only output. The languages are not interchangeable: an editor, a debugger or a library block may support a construct in one language and not in another, and a program does not convert back from Structured Text to a diagram. The generated [language references](../reference/language-st.md) state what works in each.
 
 ## What each language can do today
 
-Every row names the journey of the ZPLC application that shows the capability end to end, in a real window; continuous integration runs them all, and the table is generated from that list, not written by hand. A cell with no journey, or with only a unit test or a conformance case, is refused when the page is generated. Build, simulate and deploy of each language come from one chain: a program is created in a new project, an example is edited, saved, reopened and built, simulated with a pause and a single step, and watched; then Deploy is clicked and confirmed against the native runtime behind the shell of an emulated board, and the same value is watched changing there. The board is emulated and nothing runs on a physical one: what a person ran on real boards is on the hardware evidence page. Breakpoints are in the debug rows, and pause, cycle step and resume in the pause rows; the capability profile that the runtime reports decides which of them the ZPLC application enables.
+Every row names a journey of the ZPLC application that shows the capability from start to finish, in a real window; continuous integration runs them all, and the table is generated from that list, not written by hand. A capability with no journey, or with only a unit test or a conformance case, is refused when the page is generated.
+
+Build, simulate and deploy come from one chain per language: a program is created in a new project, an example is edited, saved, reopened and built, simulated with a pause and a single step, and watched. Then Deploy is clicked and confirmed against the native runtime behind the shell of an emulated board, and the same value is watched changing there. The board is emulated and nothing runs on a physical one: what was run on real boards is on the [hardware evidence page](../reference/capabilities-evidence.md). The capability profile that the runtime reports decides which of these the application enables.
 
 {/* >>> GENERATED (tools/docs/generate_language_capabilities.ts): language-capabilities. Do not edit. >>> */}
 
@@ -72,25 +76,18 @@ Every row names the journey of the ZPLC application that shows the capability en
 
 {/* <<< END GENERATED: language-capabilities <<< */}
 
-## Compilation model
+## One compilation model
 
-Supported language workflows converge on the compiler path that produces `.zplc` bytecode. This common destination does not promise arbitrary round trips between representations, identical editor features, complete standard-library coverage, or identical performance on every runtime.
+Every language converges on the compiler path that produces `.zplc` bytecode. That common destination does not promise round trips between representations, identical editor features, complete standard-library coverage or identical performance on every runtime. Validate the source, the generated representation, the diagnostics and the target profile as one workflow ([Compiler workflow](../ide/compiler.md)).
 
-Validate the source language, generated representation, diagnostics, and selected target profile as one workflow.
+## Debugging and evidence
 
-## Debugging and runtime evidence
+The application exposes inspection, simulation and debugging according to the capability profile the runtime reports. In the native simulation on a Linux host, the journeys stop the program at a breakpoint on a Structured Text line, an Instruction List line, a Ladder rung, a function block diagram block and a sequential function chart step, and mark the element where it stopped. The same runs press Pause, Step one cycle and Resume in each language and read the cycle counter: it holds while paused, advances by exactly one on a step and runs again after Resume.
 
-The ZPLC application exposes inspection, simulation, and debugging features according to the active runtime capability profile. Native POSIX is a host-side logical runtime, not proof of hardware timing or target behavior. Hardware breakpoints, forces, deploy, and run controls must be treated as capability-specific and separately evidenced.
-
-In the native simulation on a Linux host, the ZPLC application journeys stop the program at a breakpoint on a Structured Text line, an Instruction List line, a Ladder rung, a function block diagram block and a sequential function chart step, and mark the element where it stopped. A breakpoint on a board is not evidenced by these runs: it needs a hardware-in-the-loop run on that board.
-
-The same runs press Pause, Step one cycle and Resume in each of the five languages and read the cycle counter: it holds while the program is paused, advances by exactly one on a step and runs again after Resume.
-
-## Standard library
-
-The standard library is implemented through compiler and runtime paths. Check [Standard Library](../runtime/stdlib.md) and compile the selected language workflow to determine what is available today.
+The native simulation is a host-side logical runtime. It is not proof of hardware timing or target behavior, and a breakpoint on a board needs a hardware-in-the-loop run on that board.
 
 ## Read next
 
-- [Structured Text (ST)](./st.md)
-- [Instruction List (IL)](./il.md)
+- [Structured Text](./st.md), the language to learn first;
+- [Standard library](../runtime/stdlib.md), the functions and function blocks every language can call;
+- [Text and visual editors](../ide/editors.md), for the editing features of each language.

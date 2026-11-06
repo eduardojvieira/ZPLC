@@ -3,27 +3,31 @@ slug: /languages
 id: index
 title: Lenguajes y modelo de programación
 sidebar_label: Generalidades
-description: Panorama de los flujos de lenguajes IEC 61131-3 en ZPLC.
+description: Elija entre los cinco lenguajes IEC 61131-3 de ZPLC y vea qué puede hacer hoy cada uno.
 tags: [languages, iec61131-3]
 ---
 
 # Lenguajes y modelo de programación
 
-El texto estructurado (ST) es el frontend de lenguaje central de ZPLC. El repositorio también tiene flujos para LD, FBD, SFC e IL. Su edición, conversión, depuración y cobertura en destino varían, por lo que conviene elegir el flujo según su evidencia actual y no suponer cobertura IEC completa ni paridad total.
+ZPLC ofrece cinco lenguajes IEC 61131-3 en un mismo proyecto: texto estructurado, lista de instrucciones, diagrama de escalera, diagrama de bloques de función y diagrama funcional secuencial. Todos se compilan al mismo bytecode `.zplc`, de modo que puede elegir el lenguaje que mejor convenga a cada programa. Esta página ayuda a elegir uno y muestra qué puede hacer hoy cada lenguaje, con la prueba que lo respalda.
 
-## Flujos disponibles
+## Elegir un lenguaje
 
-| Lenguaje                                 | Ruta actual                                       |
-| ---------------------------------------- | ------------------------------------------------- |
-| **Texto estructurado (ST)**              | Frontend textual central del compilador.          |
-| **Lista de instrucciones (IL)**          | Se analiza y se transpila a ST antes de compilar. |
-| **Diagrama de escalera (LD)**            | Flujo de editor y transpilador visual.            |
-| **Diagrama de bloques de función (FBD)** | Flujo de editor y transpilador visual.            |
-| **Diagrama funcional secuencial (SFC)**  | Flujo de editor y transpilador visual.            |
+| Lenguaje | Se escribe en | Sirve para | Guía |
+| --- | --- | --- | --- |
+| Texto estructurado (ST) | Un editor de texto | Cálculos, manejo de datos, bucles, todo lo que se lee mejor como código. El lenguaje al que se traducen todos los demás. | [Texto estructurado](./st.md) |
+| Lista de instrucciones (IL) | Un editor de texto | Lógica IL existente y secuencias de bajo nivel sobre un acumulador. | [Lista de instrucciones](./il.md) |
+| Diagrama de escalera (LD) | Un editor de peldaños | Enclavamientos, lógica al estilo de relés y condiciones que una persona electricista lee de un vistazo. | [Diagrama de escalera](./ld.md) |
+| Diagrama de bloques de función (FBD) | Un editor de diagramas | Flujo de señales entre temporizadores, contadores, comparaciones y aritmética. | [Diagrama de bloques de función](./fbd.md) |
+| Diagrama funcional secuencial (SFC) | Un editor de diagramas de pasos | Máquinas que avanzan por pasos, como una secuencia de arranque, marcha y paro. | [Diagrama funcional secuencial](./sfc.md) |
+
+El texto estructurado va directamente al compilador. Los otros cuatro se traducen primero a texto estructurado, y ese texto generado es solo una salida de lectura. Los lenguajes no son intercambiables: un editor, un depurador o un bloque de biblioteca puede admitir una construcción en un lenguaje y no en otro, y un programa no se convierte de vuelta de texto estructurado a un diagrama. Las [referencias generadas de los lenguajes](../reference/language-st.md) indican qué funciona en cada uno.
 
 ## Qué puede hacer hoy cada lenguaje
 
-Cada fila nombra el recorrido de la aplicación ZPLC que muestra la capacidad de extremo a extremo, en una ventana real; la integración continua los ejecuta todos, y la tabla se genera a partir de esa lista, no se escribe a mano. Al generar la página se rechaza una celda sin recorrido, o con solo una prueba unitaria o un caso de conformidad. Compilar, simular y cargar de cada lenguaje salen de una misma cadena: se crea un programa en un proyecto nuevo, se edita un ejemplo, se guarda, se reabre y se compila, se simula con una pausa y un solo paso, y se observa; luego se pulsa Cargar y se confirma contra el runtime nativo detrás del intérprete de comandos de una placa emulada, y allí se observa que el mismo valor cambia. La placa es emulada y nada se ejecuta en una física: lo que una persona ejecutó en placas reales está en la página de evidencia de hardware. Los puntos de parada están en las filas de depuración, y la pausa, el paso de ciclo y la reanudación, en las filas de pausa; el perfil de capacidades que informa el runtime decide cuáles habilita la aplicación ZPLC.
+Cada fila nombra un recorrido de la aplicación ZPLC que muestra la capacidad de principio a fin, en una ventana real; la integración continua los ejecuta todos, y la tabla se genera a partir de esa lista, no se escribe a mano. Al generar la página se rechaza una capacidad sin recorrido, o con solo una prueba unitaria o un caso de conformidad.
+
+Compilar, simular y desplegar salen de una sola cadena por lenguaje: se crea un programa en un proyecto nuevo, se edita un ejemplo, se guarda, se reabre y se compila, se simula con una pausa y un solo paso, y se observa. Después se pulsa Desplegar y se confirma contra el entorno de ejecución nativo detrás del shell de una placa emulada, y se observa cómo cambia allí el mismo valor. La placa es emulada y nada se ejecuta en una física: lo que se ejecutó en placas reales está en la [página de evidencia de hardware](../reference/capabilities-evidence.md). El perfil de capacidades que informa el entorno de ejecución decide cuáles de estas capacidades habilita la aplicación.
 
 {/* >>> GENERATED (tools/docs/generate_language_capabilities.ts): language-capabilities. Do not edit. >>> */}
 
@@ -72,23 +76,18 @@ Cada fila nombra el recorrido de la aplicación ZPLC que muestra la capacidad de
 
 {/* <<< END GENERATED: language-capabilities <<< */}
 
-## Modelo de compilación
+## Un solo modelo de compilación
 
-Los flujos de lenguaje soportados convergen en la ruta del compilador que produce bytecode `.zplc`. Ese destino común no promete conversiones de ida y vuelta arbitrarias entre representaciones, funciones de editor idénticas, cobertura completa de la biblioteca estándar ni el mismo rendimiento en cada runtime.
+Todos los lenguajes convergen en la ruta del compilador que produce bytecode `.zplc`. Ese destino común no promete conversiones de ida y vuelta entre representaciones, funciones de editor idénticas, cobertura completa de la biblioteca estándar ni un rendimiento idéntico en cada entorno de ejecución. Valide el código fuente, la representación generada, los diagnósticos y el perfil del destino como un solo flujo ([Flujo del compilador](../ide/compiler.md)).
 
-Valide como un único flujo el lenguaje fuente, la representación generada, los diagnósticos y el perfil de destino elegido.
+## Depuración y evidencia
 
-## Depuración y evidencia de runtime
+La aplicación ofrece inspección, simulación y depuración según el perfil de capacidades que informa el entorno de ejecución. En la simulación nativa sobre un host Linux, los recorridos detienen el programa en un breakpoint en una línea de texto estructurado, una línea de lista de instrucciones, un peldaño de escalera, un bloque de diagrama de bloques de función y un paso de diagrama funcional secuencial, y marcan el elemento donde se detuvo. Las mismas ejecuciones pulsan Pausa, Avanzar un ciclo y Reanudar en cada lenguaje y leen el contador de ciclos: se mantiene mientras está en pausa, avanza exactamente uno con cada paso y vuelve a correr después de Reanudar.
 
-La aplicación ZPLC expone inspección, simulación y depuración según el perfil de capacidades del runtime activo. POSIX nativo es un runtime lógico de host, no evidencia de tiempos de hardware ni de comportamiento en destino. Los puntos de parada de hardware, los forzados, la carga y los controles de ejecución son específicos de capacidades y requieren evidencia separada.
+La simulación nativa es un entorno de ejecución lógico del lado del host. No prueba el tiempo de hardware ni el comportamiento del destino, y un breakpoint en una placa necesita una ejecución con hardware en el lazo en esa placa.
 
-En la simulación nativa de un host Linux, los recorridos de la aplicación ZPLC detienen el programa en un punto de parada sobre una línea de texto estructurado, una línea de lista de instrucciones, un peldaño de un diagrama de escalera, un bloque de un diagrama de bloques de función y un paso de un diagrama funcional secuencial, y marcan el elemento donde se detuvo. Estas ejecuciones no son evidencia de un punto de parada en una placa: eso requiere una ejecución de hardware en el lazo en esa placa.
+## Leer a continuación
 
-## Biblioteca estándar
-
-La biblioteca estándar se implementa mediante rutas de compilador y runtime. Consulte [Biblioteca estándar](../runtime/stdlib.md) y compile el flujo de lenguaje elegido para saber qué está disponible hoy.
-
-## Continúe leyendo
-
-- [Texto estructurado (ST)](./st.md)
-- [Lista de instrucciones (IL)](./il.md)
+- [Texto estructurado](./st.md), el lenguaje que conviene aprender primero;
+- [Biblioteca estándar](../runtime/stdlib.md), las funciones y bloques de función que puede llamar cualquier lenguaje;
+- [Editores de texto y visuales](../ide/editors.md), para las funciones de edición de cada lenguaje.

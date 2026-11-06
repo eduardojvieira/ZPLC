@@ -4,13 +4,11 @@ sidebar_position: 2
 
 # Instruction List (IL)
 
-Instruction List (IL) is a low-level textual IEC 61131-3-style workflow in ZPLC. It uses an implicit accumulator model and follows the repository's IL parser/transpiler path.
+Instruction List is a low-level textual language: one operation per line, working on an implicit accumulator. Use it when you maintain existing IL logic or want to read a program as a flat sequence of operations. For new logic, Structured Text is the better starting point. What works, operator by operator, and the executed cases behind each one, is the generated [Instruction List reference](../reference/language-il.md).
 
-What of Instruction List works today, read off the executed conformance tests, is in the generated [Instruction List reference](../reference/language-il.md).
+## How IL reaches the compiler
 
-## Compilation path
-
-The ZPLC application parses IL and transpiles it to Structured Text (ST), then sends that generated ST through the compiler to produce `.zplc` bytecode.
+ZPLC parses the IL source and translates it to Structured Text, then compiles that text to `.zplc` bytecode. The data types, functions and function blocks are therefore those of [Structured Text](./st.md).
 
 ```mermaid
 flowchart LR
@@ -20,17 +18,18 @@ flowchart LR
   Compile --> ZPLC[.zplc]
 ```
 
-This is a source-to-generated-ST workflow. Validate the generated result, diagnostics, and target capability profile; it does not establish an arbitrary IL/ST round trip or identical feature coverage with ST.
+The translation goes one way. It does not give an IL and ST round trip or the same feature coverage as Structured Text, so check the diagnostics and the target capability profile for your own program.
 
-A diagnostic of an IL file names the IL line it is about (`element: "line:12"`), also when the compiler finds it in the generated Structured Text, and each line that does not translate is its own diagnostic. The debug map of an IL file states IL lines, so a breakpoint is set on the IL line and the paused program is shown on it (LNG-004); lines of the generated code that no IL line stands behind are not places to stop.
+## Write a program
 
-## Runtime and debugging limits
+A program declares its variables and then lists instructions. The accumulator, called the current result, is typed: a `REAL` stays a `REAL` and a `BOOL` stays a `BOOL`.
 
-IL uses the common compiler destination, but execution cost, standard-library availability, stepping, watches, breakpoints, and hardware behavior depend on the active runtime and profile. POSIX simulation is host-side logical evidence only. Use target or HIL evidence for claims about a physical device.
+- **Load and store.** `LD` and `LDN` load a value, or its negation, into the accumulator. `ST` and `STN` store it, or its negation, in a variable. `S` and `R` set and reset a `BOOL` variable.
+- **Operators.** Arithmetic, logic, comparison and shift operators work on the accumulator in place. `NOT` and `NEG` change it. A parenthesised operation such as `AND( ... )` evaluates its inner instructions first.
+- **Jumps and labels.** `JMP`, `JMPC` and `JMPCN` jump to a label, always or when the accumulator is true or false.
+- **Calls and returns.** `CAL`, `CALC` and `CALCN` call a function block with named parameters, always or on a condition. `RET`, `RETC` and `RETCN` return from the program.
 
-## Example: IL timer logic
-
-This example evaluates `Start`, calls `TON`, and writes an output flag:
+This program evaluates `Start`, calls a `TON` timer and writes the output at `%Q0.0`:
 
 ```iecst runnable language=il expect="%QX0.0=TRUE" scans=30 scan_ms=10
 PROGRAM WorkflowIL
@@ -52,11 +51,20 @@ END_VAR
 END_PROGRAM
 ```
 
-After 250 ms of scans the output at `%Q0.0` is `TRUE`: CI runs this sample for 30 scans of 10 ms
-and checks `%QX0.0`.
+After 250 ms of scans the output at `%Q0.0` is `TRUE`. CI runs the sample for 30 scans of 10 ms and checks `%QX0.0`.
+
+## Diagnostics and breakpoints
+
+A diagnostic of an IL file names the IL line it is about (`element: "line:12"`), also when the compiler finds the problem in the generated Structured Text, and each line that does not translate is its own diagnostic. An unknown mnemonic is refused with a message that names its line.
+
+The debug map of an IL file states IL lines, so you set a breakpoint on the IL line in the gutter of the editor and the paused program is shown on that line. Lines of the generated code that no IL line stands behind are not places to stop.
+
+## Limits
+
+IL shares the compiler destination of every language, but the cost of execution, the availability of library blocks, and stepping, watches, breakpoints and behavior on a board depend on the runtime and its capability profile. The native simulation is host evidence only; a claim about a physical device needs a target or hardware-in-the-loop run.
 
 ## Related pages
 
-- [Languages Overview](./index.md)
-- [Structured Text (ST)](./st.md)
-- [Standard Library](../runtime/stdlib.md)
+- [Languages overview](./index.md)
+- [Structured Text](./st.md)
+- [Standard library](../runtime/stdlib.md)
