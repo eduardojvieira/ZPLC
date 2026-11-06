@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Diagnóstico de un programa en escalera en simulación: observación, punto de interrupción, forzado y traza",
+  "summary": "Encuentre por qué un motor no se detiene observando sus variables, deteniendo el programa en un peldaño, forzando una entrada en simulación y leyendo la traza; luego corrija el peldaño y libere todos los forzados.",
+  "scope": "Las pruebas aportan solo evidencia determinista del equipo anfitrión con POSIX nativo. El forzado y los puntos de interrupción de esta lección son acciones del estudiante en simulación; no son evidencia de hardware, de HIL, de seguridad ni de certificación.",
+  "objectives": [
+    "Usar la tabla de observación, un punto de interrupción en un peldaño, una entrada forzada y la traza para encontrar la causa de un programa en escalera que no se comporta como se describe.",
+    "Corregir el peldaño para que el paro y la sobrecarga detengan el motor, y liberar todos los forzados antes de comprobar."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/MotorDiag.ld.json un motor arranca con StartPB, pero no se detiene cuando se pulsa el botón de paro. StartPB es un pulsador normalmente abierto. StopOK está cableado normalmente cerrado: es TRUE en reposo y FALSE mientras se pulsa el botón de paro. OverloadOK es TRUE mientras el motor está sano. Diagnostique el programa en simulación y luego corríjalo para que el paro y la sobrecarga detengan el motor y Alarm siga a la sobrecarga.",
+      "checkpoint": "Puede nombrar el contacto que está en el lugar equivocado antes de cambiar nada."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "StartPB se pulsa a los {{t:20}} ms y se suelta a los {{t:30}} ms. El botón de paro se pulsa a los {{t:60}} ms y se suelta a los {{t:70}} ms. Prediga Motor a los {{t:40}}, {{t:50}} y {{t:80}} ms para un programa que funciona como se describe.",
+      "checkpoint": "{{v:MotorDiag.Motor=true@40|ON}} a los {{t:40}} ms; {{v:MotorDiag.Motor=true@50|ON}} a los {{t:50}} ms; y {{v:MotorDiag.Motor=false@80|OFF}} a los {{t:80}} ms, porque se pulsó el botón de paro. El programa inicial falla en el último."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta falla del programa inicial, guárdelo y luego pulse Comprobar: StopOK está dibujado en serie con StartPB dentro de la rama, de modo que el contacto de autorretención de Motor lo rodea y pulsar el paro no puede detener el motor. Antes de editar, diagnostique. Ejecute el programa inicial en Simulación y abra la tabla de observación. Agregue Motor, StartPB y StopOK. Pulse el botón de arranque y luego el de paro, y vea que Motor sigue en ON. Seleccione el peldaño 1 y pulse F9 para poner un punto de interrupción, ejecute de nuevo y lea los valores en la parada. Fuerce StopOK a FALSE desde la tabla de observación y vea que nada cambia. Abra la traza y busque dónde Motor debió caer. Después mueva StopOK fuera de la rama, a continuación de ella, en serie con toda la rama.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del equipo anfitrión, y la tabla de observación no muestra ningún forzado activo."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado contra el escenario de esta lección. Libere antes todos los forzados: un valor forzado permanece en el simulador hasta que se libera, y Comprobar juzga el programa, no sus forzados. Lea cada aserción fallida: indica el instante, el valor esperado y el valor observado.",
+      "checkpoint": "El escenario se llama MotorDiag y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare los {{t:80}}, {{t:120}}, {{t:150}} y {{t:200}} ms. El paro de los {{t:60}} ms debe detener el motor a los {{t:80}} ms. La sobrecarga de los {{t:140}} ms lo detiene de nuevo y enciende Alarm a los {{t:150}} ms. A los {{t:190}} ms se pulsan arranque y paro a la vez y el motor sigue apagado a los {{t:200}} ms: gana el paro.",
+      "checkpoint": "{{v:MotorDiag.Motor=false,MotorDiag.Alarm=true@150|Motor en OFF y Alarm en ON}} a los {{t:150}} ms, y {{v:MotorDiag.Motor=false@230|OFF}} a los {{t:230}} ms, porque el programa no vuelve a arrancar solo."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "El primer síntoma fue solo que el motor no se detenía. ¿Cuál de las cuatro herramientas le dijo más: la tabla de observación, el punto de interrupción, el forzado o la traza? ¿Por qué un forzado nunca debe quedar activo, y por qué forzar en una máquina real es muy distinto de forzar en simulación?",
+      "checkpoint": "El escenario califica solo el comportamiento corregido. No muestra cómo encontró el error, y no es una función de seguridad: el paro de emergencia de una máquina real se cablea en hardware."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Siga la corriente en el peldaño. Cuando StopOK pasa a FALSE, ¿qué caminos desde el riel izquierdo hasta la bobina Motor siguen cerrados? Compruebe si el contacto de Motor pasa por StopOK."
+    },
+    {
+      "level": 2,
+      "text": "El peldaño 1 debe leerse así: StartPB en paralelo con un contacto de Motor, luego StopOK, luego OverloadOK y luego la bobina Motor. Mueva StopOK a la derecha de la rama para que quede en serie con los dos caminos."
+    }
+  ],
+  "faultCases": [
+    "StopOK está dibujado en serie con StartPB dentro de la rama, de modo que el contacto de autorretención de Motor lo rodea: pulsar el paro a los {{t:60}} ms deja Motor en ON a los {{t:80}} ms. Mueva StopOK a la parte en serie posterior a la rama."
+  ]
+}

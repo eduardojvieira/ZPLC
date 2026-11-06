@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "ld-diagnosis-debugger",
+  "version": 1,
+  "order": 87,
+  "module": 8,
+  "level": "advanced",
+  "prerequisites": ["tank-level-fault-reset-ladder"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "This lesson uses the Watch table, breakpoints, forcing and the trace of the simulator, and the program reads three digital inputs where the learner boards have four.",
+        "es": "Esta lección usa la tabla de observación, los puntos de interrupción, el forzado y la traza del simulador, y el programa lee tres entradas digitales cuando las placas del estudiante tienen cuatro."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where forcing an input costs nothing and can be repeated.",
+        "es": "Complétela en Simulación, donde forzar una entrada no cuesta nada y se puede repetir."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 40,
+  "starter": {
+    "project": "ld_diagnosis_debugger_starter",
+    "program": "src/MotorDiag.ld.json"
+  },
+  "solution": {
+    "project": "ld_diagnosis_debugger",
+    "program": "src/MotorDiag.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "MotorDiag",
+    "path": "tests/motor-diag.scenario.json",
+    "sha256": "cacacd33e7cb68510a0d641995a1922381abce92a9d736d6ae5bb36cca5645a9"
+  },
+  "regressionScenarios": []
+}
