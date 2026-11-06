@@ -102,7 +102,7 @@ function operations(overrides: Partial<McpOperations> = {}): McpOperations {
 
 describe('local MCP adapter', () => {
   test('exposes only the fixed safe tool allowlist', () => {
-    expect(MCP_SERVER_VERSION).toBe('2.0.0-rc.3');
+    expect(MCP_SERVER_VERSION).toBe('2.0.0');
     expect(MCP_TOOL_NAMES).toEqual([
       'project_inspect',
       'project_validate',
