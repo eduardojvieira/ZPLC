@@ -1,358 +1,154 @@
 ---
 slug: /runtime/stdlib
 id: stdlib
-title: Referencia de la biblioteca estándar
+title: Biblioteca estándar
 sidebar_label: Biblioteca estándar
-description: Referencia de las funciones y bloques de la biblioteca estándar de ZPLC documentados actualmente.
+description: 'Qué contiene la biblioteca de ZPLC, cómo usar un bloque de función, las reglas que valen en toda la biblioteca (tiempo, flancos, números, cadenas, conversiones) y dónde están las tablas completas de cada función y bloque.'
 tags: [reference, stdlib, iec61131-3]
 ---
 
-# Referencia de la biblioteca estándar de ZPLC
+# Biblioteca estándar
 
-ZPLC documenta las funciones y bloques de la biblioteca estándar implementados por sus rutas de compilador/runtime. La disponibilidad depende del flujo de lenguaje y del perfil de capacidades del destino; ST es el frontend central.
+ZPLC incluye las funciones y los bloques de función en los que se apoyan los programas IEC 61131-3, además de algunos propios para control de procesos y generación de pulsos. Esta página explica qué contiene la biblioteca, cómo se comporta un bloque cuando usted lo llama y las reglas que valen en toda ella. Para la firma, los pines y un ejemplo resuelto de una función o un bloque concretos, consulte las tablas generadas: la [referencia de funciones](../reference/functions.md) y la [referencia de bloques de función](../reference/function-blocks.md).
 
-Esta página describe las funciones cubiertas hoy por la referencia. Valide el proyecto contra el flujo y el perfil seleccionados.
+La fuente de verdad es el registro del compilador en `packages/zplc-compiler/src/compiler/stdlib/index.ts`. Una función o un bloque existe para su programa solo si ese registro lo registra. Contiene 297 funciones (57 con nombre y 240 conversiones de tipo) y 34 bloques de función.
 
----
+## Qué contiene la biblioteca
 
-## 1. Temporizadores
+| Grupo | Archivo fuente en `stdlib/` | Ejemplos |
+| --- | --- | --- |
+| Temporizadores | `timers.ts` | `TON`, `TOF`, `TP` |
+| Contadores | `counters.ts` | `CTU`, `CTD`, `CTUD` |
+| Biestables y detectores de flanco | `bistables.ts` | `RS`, `SR`, `R_TRIG`, `F_TRIG` |
+| Generadores de pulsos | `generators.ts` | `BLINK`, `PWM`, `PULSE` |
+| Control de procesos | `process.ts` | `HYSTERESIS`, `DEADBAND`, `LAG_FILTER`, `RAMP_REAL`, `INTEGRAL`, `DERIVATIVE`, `PID_Compact` |
+| Búferes | `system.ts` | `FIFO`, `LIFO` |
+| Funciones matemáticas, de selección y bit a bit | `math.ts`, `functions.ts`, `bitwise.ts`, `mathlib.ts` | `ABS`, `SQRT`, `SIN`, `LIMIT`, `SEL`, `MUX`, `SHL`, `ROL` |
+| Cadenas | `strings.ts` | `LEN`, `CONCAT`, `LEFT`, `MID`, `FIND`, `REPLACE` |
+| Conversiones | `conversions.ts` | `INT_TO_REAL`, `REAL_TO_INT`, `LINT_TO_LREAL` |
+| Sistema | `system.ts` | `UPTIME`, `CYCLE_TIME`, `WATCHDOG_RESET` |
+| Bloques de comunicación | `communication.ts` | `MB_READ_HREG`, `MQTT_PUBLISH`; véase [Bloques de función de comunicación](./communication-function-blocks.md) |
 
-`PT` y `ET` son valores `TIME`: una cuenta de 32 bits sin signo en milisegundos, de 0 a 4294967295 (unos 49,7 días). Ver [Tipos de tiempo y fecha](../languages/st.md#tipos-de-tiempo-y-fecha).
+Los temporizadores, los biestables, los contadores y los detectores de flanco son los bloques estándar de IEC. `BLINK`, `PWM`, `PULSE`, los bloques de control de procesos y los búferes pertenecen a la biblioteca de ZPLC y no son bloques de IEC 61131-3.
 
-### TON (Temporizador On-Delay)
+## Usar un bloque
 
-Retrasa un flanco de subida. La salida `Q` se vuelve TRUE solo después de que `IN` haya sido TRUE durante la duración de `PT`.
+Un bloque de función conserva estado, de modo que se declara como una variable, que es su **instancia**, y se llama en cada ciclo con sus entradas. Sus salidas se leen como miembros de la instancia. Una instancia nueva empieza con todos los pines en el cero de su tipo.
 
-- **Entradas:**
-  - `IN` (BOOL): Condición de disparo.
-  - `PT` (TIME): Tiempo preestablecido (duración a esperar).
-- **Salidas:**
-  - `Q` (BOOL): High si `IN` ha sido alto continuamente durante `PT` (`cmp-058-ton-delays-output`).
-  - `ET` (TIME): Tiempo transcurrido desde que `IN` se puso en alto. Cuenta hasta `PT` y se detiene ahí; vale 0 mientras `IN` está en bajo (`cmp-057-ton-elapsed-stops-at-preset`).
-- **Comportamiento:** `IN` en bajo reinicia `Q` y `ET` de inmediato. Un preset de `T#0ms` hace que `Q` siga a `IN` en el mismo ciclo (`cmp-057-ton-zero-preset-follows-the-input`).
+```st runnable expect="Done=TRUE Elapsed=50 Pulses=8 Held=1" scans=15 scan_ms=10
+PROGRAM Example
+VAR
+    Delay : TON;
+    Rising : CTU;
+    Level : CTU;
+    Tick : INT;
+    Pulse : BOOL;
+    Done : BOOL;
+    Elapsed : UDINT;
+    Pulses : INT;
+    Held : INT;
+END_VAR
 
-### TOF (Temporizador Off-Delay)
+Delay(IN := TRUE, PT := T#50ms);
+Done := Delay.Q;
+Elapsed := TIME_TO_UDINT(Delay.ET);
 
-Conserva un estado alto durante un tiempo después de un flanco de bajada. `Q` sigue a `IN` a TRUE inmediatamente, pero retrasa su paso a FALSE hasta que haya transcurrido `PT`.
+Tick := Tick + 1;
+Pulse := (Tick MOD 2) = 1;
+Rising(CU := Pulse, R := FALSE, PV := 100);
+Pulses := Rising.CV;
 
-- **Entradas:**
-  - `IN` (BOOL): Condición de disparo.
-  - `PT` (TIME): Tiempo preestablecido (duración a mantener en alto).
-- **Salidas:**
-  - `Q` (BOOL): Verdadero mientras `IN` sea verdadero, más el tiempo `PT` después de que `IN` se vuelva falso (`cmp-058-tof-holds-output`).
-  - `ET` (TIME): Tiempo transcurrido desde que `IN` se puso en bajo. Cuenta hasta `PT` y se queda en `PT` hasta que `IN` vuelve a subir; vale 0 mientras `IN` está en alto (`cmp-057-tof-elapsed-stops-at-preset`).
+Level(CU := TRUE, R := FALSE, PV := 100);
+Held := Level.CV;
+END_PROGRAM
+```
 
-### TP (Temporizador de pulso)
+Tras 15 ciclos de 10 ms, `Done` es TRUE y `Elapsed` se detuvo en el valor preestablecido, 50. `Pulses` vale 8 porque `Pulse` subió en cada ciclo impar, del 1 al 15, y un contador cuenta flancos de subida, y `Held` vale 1 porque una entrada que permanece en TRUE cuenta una sola vez.
 
-Genera un pulso de duración fija, sin importar cuánto tiempo permanezca alta la entrada.
+## Reglas que valen en toda la biblioteca
 
-- **Entradas:**
-  - `IN` (BOOL): Condición de disparo (el flanco de subida inicia el pulso).
-  - `PT` (TIME): Tiempo de pulso.
-- **Salidas:**
-  - `Q` (BOOL): Verdadero durante `PT` después de un flanco de subida de `IN`, haga lo que haga `IN` mientras tanto (`cmp-057-tp-pulse-ignores-the-input-falling`).
-  - `ET` (TIME): Tiempo transcurrido desde que inició el pulso. Cuenta hasta `PT` y se detiene ahí; conserva `PT` mientras `IN` sigue en alto después del pulso y vale 0 cuando el pulso terminó y `IN` está en bajo (`cmp-057-tp-elapsed-resets-when-the-pulse-ends-with-input-low`).
-- **Comportamiento:** El pulso corre hasta el final haga lo que haga `IN` y no se puede redisparar: un nivel que se mantiene en alto no inicia un segundo pulso, un pulso nuevo necesita un flanco de subida nuevo después de que el anterior terminó (`cmp-057-tp-not-retriggered`, `cmp-057-tp-new-edge-starts-a-new-pulse`). Un preset de `T#0ms` no da pulso.
+### Tiempo
 
----
+Un valor `TIME`, como el `PT` de un temporizador y su `ET`, es una cuenta de 32 bits sin signo en milisegundos, de 0 a 4294967295 (unos 49,7 días). Véase [Tipos de tiempo y fecha](../languages/st.md#tipos-de-tiempo-y-fecha).
 
-## 2. Contadores
+- **TON** retrasa un flanco de subida: `Q` pasa a TRUE después de que `IN` haya sido TRUE durante `PT`. `IN` en bajo pone `Q` y `ET` a cero de inmediato, y un valor preestablecido de `T#0ms` hace que `Q` siga a `IN` en el mismo ciclo.
+- **TOF** mantiene una salida alta durante `PT` después de que `IN` baja. `Q` sigue a `IN` a TRUE de inmediato.
+- **TP** da un pulso de `PT` después de un flanco de subida, haga lo que haga `IN` entretanto. No se puede redisparar: un nivel que permanece alto no inicia un segundo pulso, y un pulso nuevo necesita un flanco de subida nuevo después de que el primero haya terminado.
+- En los tres, `ET` cuenta hasta `PT` y se detiene ahí.
 
-`CTU`, `CTD` y `CTUD` guardan su cuenta en `CV` y toman el valor de preselección de `PV`. Ambos son `INT`: 16 bits, de -32768 a 32767. Las reglas de esta lista valen para los tres bloques, y cada bloque agrega las suyas más abajo.
+### Flancos y contadores
 
-- **La cuenta es por flanco.** Se cuenta cuando la entrada es TRUE en esta llamada y era FALSE en la llamada anterior de la misma instancia. Una entrada que permanece en TRUE cuenta una sola vez, y una entrada que ya es TRUE en la primera llamada cuenta una vez. El flanco se ve entre dos llamadas, no entre dos ciclos, de modo que una llamada que un `IF` omite no ve un flanco que subió y bajó entre medio.
-- **Reset y load son niveles y tienen prioridad.** Mientras `R` (`CTU`, `CTUD`) o `LD` (`CTD`, `CTUD`) es TRUE, no se cuenta nada. En `CTUD`, `R` gana sobre `LD`.
-- **El detector de flancos sigue funcionando durante el reset y el load.** Un pulso que sube mientras `R` o `LD` es TRUE no se cuenta cuando `R` o `LD` se suelta. Un pulso que sube en la llamada en que `R` o `LD` se suelta sí se cuenta, siempre que la entrada fuera FALSE en la llamada anterior.
-- **Las salidas se recalculan en cada llamada** a partir de `CV` y `PV`, después del reset, el load o la cuenta de esa llamada.
+`CTU`, `CTD` y `CTUD` guardan su cuenta en `CV` y toman su valor preestablecido de `PV`. Ambos son `INT`: 16 bits, de -32768 a 32767, y toda comparación es con signo, de modo que un contador admite un valor preestablecido negativo y `CTD` cuenta por debajo de cero.
 
-### CTU (Contador Ascendente)
+- **La cuenta se dispara por flanco.** Se cuenta cuando la entrada es TRUE en esta llamada y era FALSE en la llamada anterior de la misma instancia. El flanco se ve entre dos llamadas, no entre dos ciclos, así que una llamada que un `IF` omite no ve un flanco que subió y bajó entretanto.
+- **El reinicio y la carga son niveles y van primero.** Mientras `R` (`CTU`, `CTUD`) o `LD` (`CTD`, `CTUD`) es TRUE, no se cuenta nada. En `CTUD`, `R` gana a `LD`.
+- **El detector de flancos sigue funcionando durante el reinicio y la carga.** Un pulso que sube mientras `R` o `LD` es TRUE no se cuenta cuando se suelta; el que sube en la llamada en que se suelta sí se cuenta, si la entrada era FALSE en la llamada anterior.
+- **Las salidas se recalculan en cada llamada** a partir de `CV` y `PV`, después del reinicio, la carga o la cuenta de esa llamada.
 
-Suma 1 en cada flanco de subida de `CU`.
+| Bloque | Cuenta | Prioridad | Límite de `CV` | Salidas |
+| --- | --- | --- | --- | --- |
+| `CTU` | +1 en un flanco de subida de `CU` | `R` pone `CV` en 0 | Se detiene en 32767; un flanco allí no se cuenta | `Q` es `CV >= PV` |
+| `CTD` | -1 en un flanco de subida de `CD` | `LD` pone `CV` en `PV` | Se detiene en -32768 | `Q` es `CV <= 0`, así que es TRUE hasta la primera carga |
+| `CTUD` | +1 con `CU`, -1 con `CD`; dos flancos en una llamada se anulan | `R`, luego `LD`, luego los flancos | Se detiene en 32767 y en -32768 | `QU` es `CV >= PV`, `QD` es `CV <= 0` |
 
-- **Entradas:**
-  - `CU` (BOOL): Entrada de cuenta ascendente.
-  - `R` (BOOL): Reset; mientras es TRUE, `CV` vale 0.
-  - `PV` (INT): Valor de preselección.
-- **Salidas:**
-  - `Q` (BOOL): TRUE cuando `CV >= PV`.
-  - `CV` (INT): Valor actual. Se detiene en 32767: un flanco ahí no se cuenta y `CV` no pasa a -32768.
+Los biestables resuelven un empate por su nombre: `RS` domina el reinicio, así que `Q1` es FALSE cuando `S` y `R1` son ambos TRUE, y `SR` domina la activación. `R_TRIG` y `F_TRIG` dan `Q` durante exactamente un ciclo en un flanco de subida o de bajada de `CLK`.
 
-### CTD (Contador Descendente)
+Nivel de evidencia: host. Los casos `cmp-058-ctu-*`, `cmp-058-ctd-*` y `cmp-058-ctud-*` de `conformance/cmp/` corren en el runtime nativo, y `packages/zplc-compiler/src/compiler/stdlib/counters.test.ts` reproduce ciclo a ciclo el código generado, incluidas las detenciones en 32767 y en -32768.
 
-Resta 1 en cada flanco de subida de `CD`.
+### Los operadores no son funciones
 
-- **Entradas:**
-  - `CD` (BOOL): Entrada de cuenta descendente.
-  - `LD` (BOOL): Load; mientras es TRUE, `CV` vale `PV`.
-  - `PV` (INT): Valor de preselección.
-- **Salidas:**
-  - `Q` (BOOL): TRUE cuando `CV <= 0`. Una instancia nueva empieza con `CV` en 0, de modo que `Q` es TRUE hasta el primer load.
-  - `CV` (INT): Valor actual. Cuenta por debajo de 0 y se detiene en -32768: un flanco ahí no se cuenta y `CV` no pasa a 32767 (`cmp-058-ctd-counts-below-zero`, `cmp-058-ctd-stops-at-the-int-minimum`).
+`+`, `-`, `*`, `/`, `MOD`, `AND`, `OR`, `XOR` y `NOT` son operadores: escriba `a MOD b` y `a AND b`. Las formas de llamada `MOD(a, b)` y `AND(a, b)`, y las formas de función `ADD(a, b)`, `SUB`, `MUL` y `DIV`, no se analizan, y la compilación nombra la función que rechaza. La división entera trunca hacia cero, y `MOD` tiene el signo de su operando izquierdo. Los anchos, el desbordamiento y el comportamiento en los límites están en los [tipos numéricos](../languages/st.md#tipos-numéricos) del texto estructurado.
 
-### CTUD (Contador Ascendente/Descendente)
+### Funciones REAL y su precisión
 
-Suma 1 en un flanco de subida de `CU` y resta 1 en un flanco de subida de `CD`.
+Las funciones trigonométricas, exponenciales y logarítmicas son subrutinas en aritmética de precisión simple, medidas contra `Math.*` sobre cuadrículas densas en la suite de pruebas del compilador (`stdlib/mathlib.test.ts`). Un argumento `LREAL` se redondea a `REAL` y el resultado se vuelve a ensanchar, así que un resultado `LREAL` tiene la precisión de un `REAL`, unas siete cifras significativas. El error nunca supera:
 
-- **Entradas:**
-  - `CU` (BOOL): Entrada de cuenta ascendente.
-  - `CD` (BOOL): Entrada de cuenta descendente.
-  - `R` (BOOL): Reset; mientras es TRUE, `CV` vale 0.
-  - `LD` (BOOL): Load; mientras es TRUE y `R` es FALSE, `CV` vale `PV`.
-  - `PV` (INT): Valor de preselección.
-- **Salidas:**
-  - `QU` (BOOL): TRUE cuando `CV >= PV`.
-  - `QD` (BOOL): TRUE cuando `CV <= 0`.
-  - `CV` (INT): Valor actual. Se detiene en 32767 igual que `CTU` y en -32768 al contar hacia abajo. Un flanco de subida de `CU` y otro de `CD` en la misma llamada se anulan entre sí.
+| Función | Rango | Error |
+| --- | --- | --- |
+| `SQRT` | todo REAL positivo, incluidos los subnormales | relativo 1,3e-7 |
+| `EXP` | -87 a 88 | relativo 1,3e-7 |
+| `LN`, `LOG` | todo REAL positivo, incluidos los subnormales | relativo 3e-7 |
+| `SIN`, `COS` | magnitud hasta 1000 | absoluto 2e-7 |
+| `SIN`, `COS` | magnitud menor que 2^40 (1,1e12) | absoluto 2e-6 |
+| `SIN`, `COS` | magnitud de 2^40 a 2^48 (2,8e14) | absoluto 1e-4 |
+| `TAN` | magnitud hasta 1000 | relativo 3e-7 |
+| `ATAN` | todo REAL | absoluto 2e-7 |
+| `ASIN`, `ACOS` | -1,0 a 1,0 | absoluto 4e-7 |
+| `ATAN2` | todos los pares REAL | absoluto 4e-7 |
 
-### Valores con signo
+Ninguna de ellas provoca una falla de la VM con ningún argumento: una división por cero se reemplaza por el valor que la función define, y un argumento NaN da un NaN. Ningún bucle depende del argumento, de modo que el número de instrucciones tiene una cota fija. Un REAL de 2 pi por 2^48 o más no lleva información de ángulo, y las funciones seno dan entonces el valor para un ángulo de 0,0, finito y sin error.
 
-`CV` y `PV` son valores de 16 bits con signo y toda comparación es con signo: un `PV` negativo es un preset negativo (un `CTU` con `PV := -3` tiene `Q` en TRUE desde la primera llamada, `cmp-058-ctu-with-a-negative-preset`), y `QU` y `QD` de `CTUD` comparan `CV` con `PV` y con 0 como números con signo por debajo de cero (`cmp-058-ctud-counts-down-through-zero-and-back`).
+### Cadenas
 
-Nivel de evidencia: host. Los casos `cmp-058-ctu-*`, `cmp-058-ctd-*` y `cmp-058-ctud-*` de `conformance/cmp/` se ejecutan en el runtime nativo, y `packages/zplc-compiler/src/compiler/stdlib/counters.test.ts` reproduce el código generado ciclo por ciclo, incluidas las detenciones en 32767 y en -32768.
+Un `STRING` guarda 80 caracteres y `STRING[n]` guarda `n`. El búfer conserva la longitud actual y la capacidad máxima, y una asignación copia tantos caracteres como caben. Una función que construye una cadena (`CONCAT`, `LEFT`, `RIGHT`, `MID`, `INSERT`, `DELETE`, `REPLACE`) devuelve una cadena nueva y nunca cambia sus argumentos, y las posiciones empiezan en 1. `COPY` y `CLEAR` escriben en su argumento, como dicen sus nombres.
 
----
+La posición va antes de la cantidad en `MID`, `DELETE` y `REPLACE`, mientras que IEC 61131-3 escribe primero la longitud (`MID(IN, L, P)`): un programa escrito con ese orden debe intercambiar los dos argumentos. Los operadores `=` y `<>` comparan dos variables `STRING` por igualdad, y `STRCMP` da -1, 0 o 1.
 
-## 3. Elementos biestables (flip-flops)
+### Conversiones
 
-### RS (Flip-Flop Dominante Reset)
+Existe una función `<FROM>_TO_<TO>` para cada par ordenado de tipos distintos entre `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `LINT`, `ULINT`, `LWORD`, `REAL`, `LREAL` y `TIME`: 240 funciones. `DATE`, `TOD` y `DT` todavía no tienen ninguna. Las reglas, en breve:
 
-- **Entradas:** `S` (BOOL, Set), `R1` (BOOL, Reset).
-- **Salidas:** `Q1` (BOOL).
-- **Comportamiento:** Enclava `Q1` a TRUE cuando `S` es TRUE. Reinicia `Q1` a FALSE cuando `R1` es TRUE. _Si tanto `S` como `R1` son TRUE, la salida es FALSE (gana el Reset)._
+| Conversión | Resultado |
+| --- | --- |
+| Entero a un entero más ancho o del mismo ancho | El mismo valor. |
+| Entero a un entero más angosto, o al otro signo | Los bits bajos en el ancho del destino: `INT_TO_SINT(300)` es 44, `INT_TO_UINT(-1)` es 65535. |
+| `REAL` o `LREAL` a entero | El entero más cercano, y una mitad exacta al par (`REAL_TO_INT(2.5)` es 2, `REAL_TO_INT(3.5)` es 4). Fuera del rango da el límite más cercano (`REAL_TO_INT(40000.0)` es 32767), y un NaN da 0. |
+| Entero o `TIME` a `BOOL` | FALSE para 0, TRUE para cualquier otro valor. |
+| `TIME` a un número | Su cuenta de milisegundos: `TIME_TO_DINT(T#2s)` es 2000. |
 
-### SR (Flip-Flop Dominante Set)
+La tabla completa, con un ejemplo para cada tipo de origen, está en la [referencia de funciones](../reference/functions.md). `TRUNC` quita la fracción hacia cero y devuelve un `REAL`; `ROUND` no es una función IEC y redondea una mitad alejándose de cero.
 
-- **Entradas:** `S1` (BOOL, Set), `R` (BOOL, Reset).
-- **Salidas:** `Q1` (BOOL).
-- **Comportamiento:** Enclava `Q1` a TRUE cuando `S1` es TRUE. Reinicia `Q1` a FALSE cuando `R` es TRUE. _Si tanto `S1` como `R` son TRUE, la salida es TRUE (gana el Set)._
+### Enteros de 64 bits
 
----
+`ABS`, `NEG`, `MAX`, `MIN`, `LIMIT`, `SEL`, `MUX`, `SQRT`, `TRUNC`, `ROUND`, `SHL`, `SHR`, `ROL` y `ROR` aceptan los enteros de 64 bits y `LREAL`. Las demás funciones los rechazan con un mensaje.
 
-## 4. Detección de flancos
+## Funciones de sistema
 
-### R_TRIG (Detector de Flanco de Subida)
+`UPTIME` devuelve el tiempo de actividad del runtime en milisegundos. `CYCLE_TIME` lee el campo de tiempo de ciclo del runtime para el ciclo anterior; su unidad, su resolución y su relación con el tiempo físico dependen del runtime y del perfil, así que no lo use como garantía de tiempo del hardware.
 
-- **Entradas:** `CLK` (BOOL).
-- **Salidas:** `Q` (BOOL).
-- **Comportamiento:** `Q` es TRUE durante un solo ciclo de ejecución cuando `CLK` transiciona de FALSE a TRUE.
+`WATCHDOG_RESET` es un sustituto de compatibilidad. Se compila a `NOP` y no alimenta, reinicia ni valida ningún watchdog: el runtime alimenta por sí mismo el watchdog de hardware después de cada ciclo completado. La compilación informa cada llamada con la advertencia `WATCHDOG_RESET_NO_EFFECT` (seleccionable con `compiler.warnings`). Quite la llamada, y nunca la use como control de seguridad.
 
-### F_TRIG (Detector de Flanco de Bajada)
-
-- **Entradas:** `CLK` (BOOL).
-- **Salidas:** `Q` (BOOL).
-- **Comportamiento:** `Q` es TRUE durante un solo ciclo de ejecución cuando `CLK` transiciona de TRUE a FALSE.
-
----
-
-## 5. Funciones matemáticas
-
-### Operadores aritméticos
-
-- **`+`, `-`, `*`, `/`**: suma, resta, multiplicación y división de los tipos numéricos. La división entera trunca hacia cero.
-- **`a MOD b`**: el residuo entero, con el signo de `a`. Es un operador: la forma `MOD(a, b)` no se analiza.
-- Las formas de función `ADD(a, b)`, `SUB`, `MUL` y `DIV` no existen; la compilación las rechaza y nombra la función (`cmp-006-operator-function-form-is-rejected`).
-
-Los anchos, el desbordamiento y el comportamiento en los límites están en los [tipos numéricos](../languages/st.md#tipos-numéricos) de Structured Text.
-
-### Matemática avanzada
-
-### ABS
-
-- **Entradas:** `IN` (ANY_NUM).
-- **Salidas:** (ANY_NUM) Valor absoluto de IN. El `DINT` y el `LINT` más negativos quedan como están; un `LREAL` tiene su bit de signo borrado (`ABS(-0.0)` es 0.0).
-
-### SQRT
-
-- **Entradas:** `IN` (REAL o LREAL).
-- **Salidas:** (el tipo de IN) Raíz cuadrada de IN; 0.0 si `IN` es 0.0 o menor. Para un `LREAL` es el doble correctamente redondeado (`SQRTD`).
-
-### SIN / COS / TAN
-
-- **Entradas:** `IN` (REAL, o LREAL: el argumento se redondea a REAL, la función calcula en REAL y el resultado se amplía de nuevo, así que un resultado LREAL tiene la precisión de un REAL, unas siete cifras significativas).
-- **Salidas:** (REAL) Seno, Coseno o Tangente de IN (en radianes) (`cmp-058-trigonometric-functions`).
-- **Dominio:** todo `IN` finito. Un NaN o un infinito da NaN (`cmp-058-sine-of-infinity-and-not-a-number`). Un ángulo de 100000 o más se reduce módulo 2 pi antes de tomar el seno, con 2 pi en 36 bits repartidos en tres partes que se multiplican sin error y una corrección aplicada una vez, de modo que el resultado es el seno del REAL mismo: tan preciso como para un ángulo pequeño hasta 2^40, y con un error que crece como `IN` por 1e-19 por encima (1e-4 en 2^48). Un REAL de 2 pi por 2^48 (1.8e15) o más tiene una separación mayor que 2^25 radianes: el ángulo no lleva información, la reducción no lo contiene y la función da el valor de un ángulo de 0.0, finito y sin error (`cmp-058-trigonometric-functions-of-negative-and-large-angles`).
-
-### EXP / LN / LOG
-
-El exponencial natural, el logaritmo natural y el logaritmo en base 10.
-
-- **Entradas:** `IN` (REAL; un entero se convierte; un LREAL se redondea a REAL y el resultado se amplía de nuevo, con la precisión de un REAL).
-- **Salidas:** (REAL) `e ** IN`, `ln(IN)` o `log10(IN)`.
-- **Rango:** `EXP` da +infinito por encima de 88.72284 y 0.0 por debajo de -103.28. `LN` y `LOG` dan -infinito para 0.0 y NaN para un número negativo.
-
-### ASIN / ACOS / ATAN / ATAN2
-
-Funciones trigonométricas inversas, en radianes.
-
-- **Entradas:** `IN` (REAL) para `ASIN`, `ACOS` y `ATAN`; `ATAN2(Y, X)` toma dos valores REAL.
-- **Salidas:** (REAL) `ASIN` en [-pi/2, pi/2] y `ACOS` en [0, pi] para un `IN` de -1.0 a 1.0, NaN fuera de ese rango; `ATAN` en (-pi/2, pi/2) para cualquier `IN`; `ATAN2` en (-pi, pi], el ángulo del punto (`X`, `Y`) medido desde el eje X positivo, y 0.0 para (0.0, 0.0).
-
-### NORM_X / SCALE_X
-
-Convierten un valor entre un rango y 0.0 a 1.0.
-
-- **NORM_X(MIN, X, MAX)**: `(X - MIN) / (MAX - MIN)`, un REAL; 0.0 cuando `MAX` es igual a `MIN`. Un valor fuera del rango no se limita (`NORM_X(0.0, 30.0, 20.0)` es 1.5).
-- **SCALE_X(MIN, X, MAX)**: `MIN + X * (MAX - MIN)`, un REAL. Los límites pueden ser negativos; los argumentos enteros se convierten.
-
-### EXPT
-
-`EXPT(BASE, EXP)` eleva `BASE` a `EXP`; es el operador `**` en forma de función. Los dos argumentos se convierten a REAL y el resultado es REAL. Un exponente entero, negativo y 0 incluidos, se calcula por cuadrados sucesivos (`EXPT(2.0, -2.0)` es 0.25 y `EXPT(x, 0.0)` es 1.0); cualquier otro exponente como `2 ** (EXP * log2(BASE))`, NaN para una base negativa.
-
-### Precisión de las funciones REAL
-
-Las funciones anteriores son subrutinas en aritmética de precisión simple, medidas contra `Math.*` sobre grillas densas en la suite de tests del compilador (`stdlib/mathlib.test.ts`). El error nunca supera:
-
-| Función        | Rango                                     | Error                                                          |
-| -------------- | ----------------------------------------- | -------------------------------------------------------------- |
-| `SQRT`         | todo REAL positivo, subnormales incluidos | relativo 1.3e-7                                                |
-| `EXP`          | -87 a 88                                  | relativo 1.3e-7                                                |
-| `LN`, `LOG`    | todo REAL positivo, subnormales incluidos | relativo 3e-7                                                  |
-| `SIN`, `COS`   | magnitud hasta 1000                       | absoluto 2e-7                                                  |
-| `SIN`, `COS`   | magnitud menor que 2^40 (1.1e12)          | absoluto 2e-6                                                  |
-| `SIN`, `COS`   | magnitud de 2^40 a 2^48 (2.8e14)          | absoluto 1e-4                                                  |
-| `TAN`          | magnitud hasta 1000                       | relativo 3e-7                                                  |
-| `TAN`          | magnitud hasta 2^40                       | el error del ángulo por `1 + TAN(x)^2`, más 5e-7 del resultado |
-| `ATAN`         | todo REAL                                 | absoluto 2e-7                                                  |
-| `ASIN`, `ACOS` | -1.0 a 1.0                                | absoluto 4e-7                                                  |
-| `ATAN2`        | todo par de REAL                          | absoluto 4e-7                                                  |
-
-Ninguna hace fallar la VM con ningún argumento: una división por cero se reemplaza por el valor que la función define, y un argumento NaN da NaN.
-
-Costo: ningún lazo depende del argumento, de modo que la cantidad de instrucciones ejecutadas tiene una cota fija: a lo sumo 40 para `SQRT`, 90 para `EXP`, `LN` y `LOG`, 105 para `ASIN` y `ACOS`, 165 para `TAN` y 75 para `SIN` y `COS` hasta 100000. Un ángulo de 100000 o más se reduce primero, con 190 a 355 instrucciones más según su tamaño: `SIN` y `COS` a lo sumo 430, `TAN` a lo sumo 520.
-
----
-
-## 6. Funciones de selección
-
-### MAX
-
-- **Entradas:** `IN1` (ANY_NUM), `IN2` (ANY_NUM).
-- **Salidas:** (ANY_NUM) El mayor de los dos.
-
-### MIN
-
-- **Entradas:** `IN1` (ANY_NUM), `IN2` (ANY_NUM).
-- **Salidas:** (ANY_NUM) El menor de los dos.
-
-### LIMIT
-
-- **Entradas:** `MN` (ANY_NUM, mínimo), `IN` (ANY_NUM, entrada), `MX` (ANY_NUM, máximo).
-- **Salidas:** (ANY_NUM) Retorna `MN` si `IN < MN`, retorna `MX` si `IN > MX`, en otro caso retorna `IN`.
-
-### SEL
-
-- **Entradas:** `G` (BOOL, condición), `IN0` (ANY, retorna si G es FALSE), `IN1` (ANY, retorna si G es TRUE).
-- **Salidas:** (ANY) `IN0` o `IN1`.
-
-### MUX
-
-- **Entradas:** `K` (INT, selector), `IN0`, `IN1`, `...` (ANY).
-- **Salidas:** (ANY) Retorna `INk`.
-
----
-
-## 7. Funciones de bits
-
-### Operadores lógicos
-
-- **`a AND b`, `a OR b`, `a XOR b`, `NOT a`**: operadores sobre `BOOL`, `BYTE`, `WORD`, `DWORD` y `LWORD`, con todo el ancho declarado. Las formas de función `AND(a, b)`, `OR(a, b)` y `XOR(a, b)` no se analizan.
-- **NAND(IN1, IN2)** / **NOR(IN1, IN2)**: la negación de AND y de OR de dos valores `BOOL`, 0 o 1 (`cmp-058-nand-and-nor-truth-tables`).
-- **AND_WORD, OR_WORD, XOR_WORD, NOT_WORD** y **AND_DWORD, OR_DWORD, XOR_DWORD, NOT_DWORD**: las mismas operaciones como funciones sobre `WORD` y `DWORD` (`cmp-014-shr-and-word-logic-functions`).
-
-### Rotación y desplazamiento
-
-### SHL
-
-- **Entradas:** `IN` (ANY_BIT), `N` (INT, número de bits).
-- **Salidas:** (ANY_BIT) `IN` desplazado a la izquierda. Un desplazamiento de 32 o más, o con una cuenta negativa, da 0 (`cmp-016-shift-by-the-width-or-more`), y un `BYTE` o un `WORD` descarta los bits desplazados más allá de su ancho (`cmp-014-shl-byte-keeps-8-bits`).
-
-### SHR
-
-- **Entradas:** `IN` (ANY_BIT), `N` (INT).
-- **Salidas:** (ANY_BIT) `IN` desplazado a la derecha. Un desplazamiento de 32 o más, o con una cuenta negativa, da 0.
-
-### ROL
-
-- **Entradas:** `IN` (ANY_BIT), `N` (INT).
-- **Salidas:** (ANY_BIT) Valor rotado a la izquierda.
-
-### ROR
-
-- **Entradas:** `IN` (ANY_BIT), `N` (INT).
-- **Salidas:** (ANY_BIT) Valor rotado a la derecha.
-
----
-
-## 8. Funciones de cadenas de texto
-
-Las cadenas son búferes acotados: `STRING` tiene 80 caracteres, `STRING[n]` tiene `n`. Una asignación copia los caracteres que entran.
-
-Una función que arma una cadena (`CONCAT`, `LEFT`, `RIGHT`, `MID`, `INSERT`, `DELETE`, `REPLACE`) devuelve una cadena nueva y nunca modifica sus argumentos. Las posiciones empiezan en 1.
-
-- **LEN(s)**: Retorna la longitud actual (INT).
-- **CONCAT(s1, s2)**: Retorna `s1` seguida de `s2`.
-- **COPY(src, dst)**: Copia `src` a `dst` (escribe en `dst`, como dice su nombre).
-- **CLEAR(s)**: Vacía la cadena a longitud 0 (escribe en `s`).
-- **LEFT(s, n)**: Retorna los `n` caracteres izquierdos de `s`.
-- **RIGHT(s, n)**: Retorna los `n` caracteres derechos de `s`.
-- **MID(s, pos, n)**: Retorna `n` caracteres de `s` desde la posición (1-based) `pos`.
-- **FIND(s1, s2)**: Retorna la posición de `s2` en `s1`, o 0 si no se encuentra.
-- **INSERT(s1, s2, pos)**: Retorna `s1` con `s2` insertada después de su carácter número `pos` (`pos` 0 inserta al frente).
-- **DELETE(s, pos, n)**: Retorna `s` sin los `n` caracteres que empiezan en `pos`.
-- **REPLACE(s1, s2, pos, n)**: Retorna `s1` con los `n` caracteres que empiezan en `pos` reemplazados por `s2`.
-- **STRCMP(s1, s2)**: Comparación léxica (-1, 0, 1).
-
-En `MID`, `DELETE` y `REPLACE` la posición va antes de la cantidad. IEC 61131-3 escribe primero el largo (`MID(IN, L, P)`): un programa escrito con ese orden debe intercambiar los dos argumentos.
-
----
-
-## 9. Conversiones de tipos
-
-Las funciones de conversión mueven valores entre tipos. Existe una función `<ORIGEN>_TO_<DESTINO>` para cada par ordenado de tipos distintos entre `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `LINT`, `ULINT`, `LWORD`, `REAL`, `LREAL` y `TIME`: `INT_TO_DINT`, `DINT_TO_REAL`, `SINT_TO_INT`, `REAL_TO_USINT`, `TIME_TO_DINT`, `LINT_TO_LREAL`, `LREAL_TO_ULINT`, etc. (240 funciones). `DATE`, `TOD` y `DT` todavía no tienen funciones de conversión.
-
-| Conversión                                      | Resultado                                                                                                                                                                                                                                                                                                                |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Entero a un entero más ancho o del mismo ancho  | El mismo valor.                                                                                                                                                                                                                                                                                                          |
-| Entero a un entero más angosto, o al otro signo | Los bits bajos del valor en el ancho del destino (módulo, complemento a dos): `INT_TO_SINT(300)` es 44, `INT_TO_UINT(-1)` es 65535, `DINT_TO_UDINT(-1)` es 4294967295.                                                                                                                                                   |
-| Entero o `TIME` a `BOOL`                        | FALSE para 0, TRUE para cualquier otro valor.                                                                                                                                                                                                                                                                            |
-| `BOOL` a un número                              | 0 o 1.                                                                                                                                                                                                                                                                                                                   |
-| Entero a `REAL`                                 | El `REAL` más cercano, con un solo redondeo (también para un entero de 64 bits); un valor mayor que 2^24 puede perder sus bits más bajos.                                                                                                                                                                                |
-| Entero a `LREAL`                                | El `LREAL` más cercano; exacto hasta 2^53, un solo redondeo por encima.                                                                                                                                                                                                                                                  |
-| `REAL` a `LREAL`, `LREAL` a `REAL`              | Ampliación exacta; al reducir, el `REAL` más cercano (un desbordamiento es un infinito).                                                                                                                                                                                                                                 |
-| `REAL` a un entero                              | El entero más cercano; una mitad exacta va al entero par (`REAL_TO_INT(2.5)` es 2, `REAL_TO_INT(3.5)` es 4, `REAL_TO_INT(-2.5)` es -2). Un valor fuera del rango del destino da su límite más cercano (`REAL_TO_INT(40000.0)` es 32767, `REAL_TO_USINT(-5.0)` es 0, el infinito da el límite de su signo) y un NaN da 0. |
-| `LREAL` a un entero                             | Igual que `REAL`: el entero más cercano, una mitad exacta al entero par, el límite más cercano del destino fuera de su rango (`LREAL_TO_LINT(1.0E30)` es 9223372036854775807, `LREAL_TO_ULINT(-2.5)` es 0), 0 para un NaN.                                                                                               |
-| `REAL` o `LREAL` a `BOOL`                       | FALSE para 0.0 y -0.0, TRUE para cualquier otro valor, un NaN incluido.                                                                                                                                                                                                                                                  |
-| `TIME`                                          | Su cantidad de milisegundos como entero sin signo de 32 bits: `TIME_TO_DINT(T#2s)` es 2000.                                                                                                                                                                                                                              |
-
-- **TRUNC(IN)**: Quita la parte fraccionaria de un `REAL` hacia cero y devuelve un `REAL` (`TRUNC(-3.7)` es -3.0). Una magnitud de 2^23 o más no tiene fracción y se devuelve igual. Para el entero, use `REAL_TO_DINT(TRUNC(x))`. Para un `LREAL` el resultado es un `LREAL`, exacto, con el límite en 2^63 (`TRUNC(-0.4)` es +0.0).
-- **ROUND(IN)**: No es una función IEC. El número entero más cercano como `REAL`, una mitad exacta se aleja de cero (`ROUND(2.5)` es 3.0, `ROUND(-2.5)` es -3.0). Para un `LREAL` el resultado es un `LREAL` y es exacto donde sumar 0.5 no lo sería (`ROUND(0.49999999999999994)` es 0.0).
-
----
-
-## 10. Funciones del sistema
-
-### UPTIME
-
-- **Entradas:** Ninguna.
-- **Salidas:** (UDINT / TIME) Campo de uptime del runtime en milisegundos (`cmp-058-uptime-follows-the-clock`).
-
-### CYCLE_TIME
-
-- **Entradas:** Ninguna.
-- **Salidas:** (UDINT / TIME) Último valor de ciclo informado. Su unidad, resolución, punto de actualización y relación con el tiempo físico dependen del runtime/perfil; no lo use como garantía de timing de hardware.
-
-### WATCHDOG_RESET
-
-Stub de compatibilidad. Compila a `NOP` y no alimenta, reinicia ni valida un watchdog de hardware o software: ningún opcode lo hace, y el runtime alimenta el watchdog de hardware por sí mismo después de cada ciclo completado (`rt-034-watchdog-reset-is-reported-and-changes-nothing`).
-
-- **Entradas:** Ninguna.
-- **Salidas:** Ninguna.
-
-La compilación informa cada llamada con la advertencia `WATCHDOG_RESET_NO_EFFECT` en la llamada (`cmp-058-uptime-follows-the-clock`); `compiler.warnings` la selecciona como cualquier otra advertencia. Quite la llamada: el programa se ejecuta como si la línea no estuviera. No debe usarse como control de seguridad.
-
----
-
-## 11. Diferencias conocidas con IEC 61131-3
+## Diferencias conocidas con IEC 61131-3 {#11-diferencias-conocidas-con-iec-61131-3}
 
 La tabla se genera a partir de los casos de conformidad que esperan el comportamiento de IEC 61131-3 y fallan hoy (`tools/ci/expected-failures.json`) y de la descripción de cada requisito en `docs/known-limits.json`. Una fila desaparece cuando pasa el último caso de su requisito.
 
@@ -361,206 +157,3 @@ Ningún caso de conformidad de esta área figura en la lista de fallas esperadas
 {/* <<< END GENERATED: known-limits-library <<< */}
 
 Un bloque o una función que no está en la tabla no se sabe que difiera. Cada función estándar y cada bloque de biblioteca fuera de los de comunicación tiene un caso ejecutado en `conformance/cmp/` (requisito CMP-058).
-
----
-
-## 12. Bloques de biblioteca fuera del estándar
-
-Estos bloques pertenecen a la biblioteca de ZPLC y no son bloques de IEC 61131-3.
-
-### BLINK (generador de pulsos asimétrico)
-
-Genera un tren de pulsos con tiempos de ON y OFF separados.
-
-- **Entradas:**
-  - `ENABLE` (BOOL): Hace correr el generador mientras es TRUE.
-  - `T_ON` (TIME): Tiempo en que `Q` es TRUE en cada ciclo.
-  - `T_OFF` (TIME): Tiempo en que `Q` es FALSE en cada ciclo.
-- **Salidas:**
-  - `Q` (BOOL): El tren de pulsos.
-- **Comportamiento:** El ciclo empieza con la fase ON en el ciclo en que `ENABLE` sube: `Q` es TRUE de inmediato, durante `T_ON`, luego FALSE durante `T_OFF`, y así sucesivamente. `ENABLE` en FALSE pone `Q` en FALSE de inmediato, y el próximo `ENABLE` inicia un ciclo nuevo con la fase ON. Una fase termina en el primer ciclo en que su tiempo transcurrió, así que con un período de ciclo mayor que `T_ON` o `T_OFF` la fase dura un ciclo.
-
-```text
-ENABLE: __/¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\____
-Q:      __/¯¯¯\______/¯¯¯\______/¯¯¯\___
-          |300|  700 |300|  700 |        (T_ON = 300 ms, T_OFF = 700 ms)
-```
-
-### PWM (modulación por ancho de pulso)
-
-- **Entradas:** `ENABLE` (BOOL), `PERIOD` (TIME), `DUTY` (REAL, 0.0 a 1.0).
-- **Salidas:** `Q` (BOOL).
-- **Comportamiento:** Mientras `ENABLE` es TRUE, `Q` es TRUE durante `PERIOD * DUTY` al comienzo de cada `PERIOD`. Un `DUTY` de 0.0 mantiene `Q` en FALSE y 1.0 lo mantiene en TRUE. `ENABLE` en FALSE pone `Q` en FALSE, y el próximo `ENABLE` inicia un período nuevo.
-
-### PULSE (generador de pulso único)
-
-- **Entradas:** `TRIG` (BOOL), `PT` (TIME).
-- **Salidas:** `Q` (BOOL).
-- **Comportamiento:** Un flanco de subida de `TRIG` inicia un pulso de `PT`. Un flanco de subida durante el pulso se ignora, y un nivel que sigue en TRUE después no inicia nada.
-
-### HYSTERESIS
-
-- **Entradas:** `IN`, `HIGH`, `LOW` (REAL).
-- **Salidas:** `Q` (BOOL).
-- **Comportamiento:** `Q` pasa a TRUE cuando `IN` está por encima de `HIGH` y a FALSE cuando está por debajo de `LOW`; entre ambos conserva su valor. Los umbrales negativos funcionan como cualquier otro.
-
-### DEADBAND
-
-- **Entradas:** `IN`, `WIDTH` (REAL).
-- **Salidas:** `OUT` (REAL).
-- **Comportamiento:** `OUT` toma el valor de `IN` cuando `IN` difiere del último valor de `OUT` en más de `WIDTH`, y en caso contrario conserva su valor.
-
-### LAG_FILTER
-
-- **Entradas:** `IN` (REAL), `GAIN` (REAL, 0.0 a 1.0).
-- **Salidas:** `OUT` (REAL).
-- **Comportamiento:** `OUT := OUT + GAIN * (IN - OUT)` en cada llamada: `GAIN` 1.0 sigue a `IN`, 0.0 nunca se mueve.
-
-### RAMP_REAL
-
-- **Entradas:** `IN` (REAL), `RATE` (REAL, el mayor cambio por llamada).
-- **Salidas:** `OUT` (REAL).
-- **Comportamiento:** `OUT` se mueve hacia `IN` como máximo `RATE` en cada llamada, hacia arriba o hacia abajo, y vale `IN` cuando está a menos de `RATE` de él.
-
-### INTEGRAL
-
-- **Entradas:** `IN` (REAL), `DT` (REAL, segundos), `RESET` (BOOL).
-- **Salidas:** `OUT` (REAL).
-- **Comportamiento:** `OUT := OUT + IN * DT` en cada llamada; `RESET` en TRUE pone `OUT` en 0.0. Un `IN` negativo resta.
-
-### DERIVATIVE
-
-- **Entradas:** `IN` (REAL), `DT` (REAL, segundos).
-- **Salidas:** `OUT` (REAL).
-- **Comportamiento:** `OUT := (IN - IN anterior) / DT`; 0.0 cuando `DT` es 0.0. La primera llamada compara con un `IN` de 0.0.
-
-### PID_Compact
-
-Un controlador PID discreto.
-
-- **Entradas:** `SP` (consigna), `PV` (valor de proceso), `KP`, `KI`, `KD` (ganancias), `DT` (tiempo de muestreo en segundos), `OUT_MIN`, `OUT_MAX` (REAL).
-- **Salidas:** `OUT` (REAL).
-- **Comportamiento:** Con `e = SP - PV`, `OUT = KP * e + KI * suma(e * DT) + KD * (e - e anterior) / DT`, limitado a `OUT_MIN` hasta `OUT_MAX`. Un `DT` de 0.0 (omitido) deja en 0.0 los términos integral y derivativo. El acumulador integral no se limita mientras la salida está limitada. La primera llamada toma el error anterior como el actual, así que no tiene salto derivativo.
-
-### FIFO (búfer primero en entrar, primero en salir)
-
-Guarda hasta 8 valores `DINT`; salen en el orden en que entraron.
-
-- **Entradas:**
-  - `PUSH` (BOOL): Un flanco de subida guarda `DATA_IN`.
-  - `POP` (BOOL): Un flanco de subida mueve el valor más antiguo a `DATA_OUT`.
-  - `RST` (BOOL): Vacía el búfer.
-  - `DATA_IN` (DINT): El valor a guardar.
-  - `SIZE` (DINT): Capacidad, de 1 a 8. Una llamada que lo omite recibe 8, igual que un valor fuera de 1 a 8: una instancia tiene lugar para 8 valores.
-- **Salidas:**
-  - `DATA_OUT` (DINT): El valor del último pop.
-  - `COUNT` (DINT): Valores guardados.
-  - `EMPTY` (BOOL): TRUE cuando `COUNT` es 0.
-  - `FULL` (BOOL): TRUE cuando `COUNT` llegó a la capacidad.
-- **Comportamiento:** Un push en un búfer lleno y un pop de uno vacío no hacen nada.
-
-### LIFO (búfer último en entrar, primero en salir)
-
-Una pila de hasta 8 valores `DINT`; el último valor guardado sale primero. Sus entradas y salidas son las de `FIFO`, con las mismas reglas de capacidad.
-
-## La biblioteca de un vistazo
-
-La fuente de referencia de la biblioteca estándar de los lenguajes es el registro
-de la stdlib del compilador en `packages/zplc-compiler/src/compiler/stdlib/index.ts`.
-
-La aplicación ZPLC y el compilador usan ese registro para resolver las funciones y los bloques integrados.
-
-Cada función y bloque de función registrado, con su firma o tabla de pines y un ejemplo que CI ejecuta, está en la [referencia de funciones](../reference/functions.md) y en la [referencia de bloques de función](../reference/function-blocks.md) generadas.
-
-### Categorías principales
-
-| Categoría                          | Fuente                                                       | Ejemplos                                                                                 |
-| ---------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| Temporizadores                     | `stdlib/timers.ts`                                           | `TON`, `TOF`, `TP`                                                                       |
-| Contadores                         | `stdlib/counters.ts`                                         | `CTU`, `CTD`, `CTUD`                                                                     |
-| Biestables y detectores de flancos | `stdlib/bistables.ts`                                        | `R_TRIG`, `F_TRIG`, `RS`, `SR`                                                           |
-| Búferes del sistema                | `stdlib/system.ts`                                           | `FIFO`, `LIFO`                                                                           |
-| Cadenas de texto                   | `stdlib/strings.ts`                                          | `LEN`, `CONCAT`, `LEFT`, `RIGHT`, `MID`, `FIND`, `INSERT`, `DELETE`, `REPLACE`, `STRCMP` |
-| Matemática y lógica                | `stdlib/math.ts`, `stdlib/functions.ts`, `stdlib/bitwise.ts` | `ABS`, `SQRT`, `LIMIT`, `SEL`, `MUX`, `SHL`, `SHR`                                       |
-| Utilidades de proceso              | `stdlib/process.ts`                                          | `HYSTERESIS`, `DEADBAND`, `PID_Compact`, `NORM_X`, `SCALE_X`                             |
-| Bloques de comunicación            | `stdlib/communication.ts`                                    | `MB_READ_HREG`, `MB_WRITE_COIL`, `MQTT_CONNECT`, `MQTT_PUBLISH`, `MQTT_SUBSCRIBE`        |
-
-### Temporizadores y contadores
-
-Los temporizadores y contadores no son solo nombres: los archivos de la stdlib definen su disposición en memoria y la generación de código que usa el compilador.
-
-Ejemplos:
-
-- temporizadores: `TON`, `TOF`, `TP`
-- contadores: `CTU`, `CTD`, `CTUD`
-
-Los contadores cuentan flancos de subida y mantienen `CV` y `PV` como `INT`. Lo que hace hoy cada bloque:
-
-| Bloque | Cuenta                                                         | Prioridad                          | Límite de `CV`                  | Salidas                               |
-| ------ | -------------------------------------------------------------- | ---------------------------------- | ------------------------------- | ------------------------------------- |
-| `CTU`  | +1 en un flanco de subida de `CU`                              | `R` pone `CV` en 0                 | se detiene en 32767             | `Q` es `CV >= PV`                     |
-| `CTD`  | -1 en un flanco de subida de `CD`                              | `LD` pone `CV` en `PV`             | se detiene en -32768            | `Q` es `CV <= 0`                      |
-| `CTUD` | +1 con `CU`, -1 con `CD`; dos flancos en una llamada se anulan | `R`, luego `LD`, luego los flancos | se detiene en 32767 y en -32768 | `QU` es `CV >= PV`, `QD` es `CV <= 0` |
-
-El detector de flancos se ejecuta en cada llamada, también mientras `R` o `LD` es TRUE. Las comparaciones son con signo, de modo que un contador cuenta por debajo de cero y acepta un valor preestablecido negativo. Las reglas completas y la evidencia están en la [sección 2 de la referencia del runtime](./stdlib.md#2-contadores).
-
-### Funciones de cadenas de texto
-
-Las funciones de cadenas de texto de `stdlib/strings.ts` incluyen:
-
-| Función                 | Descripción                             | Ejemplo                                  |
-| ----------------------- | --------------------------------------- | ---------------------------------------- |
-| `LEN(STR)`              | devuelve la longitud                    | `LEN('ABC')` -> 3                        |
-| `LEFT(STR, N)`          | primeros N caracteres                   | `LEFT('HELLO', 2)` -> 'HE'               |
-| `RIGHT(STR, N)`         | últimos N caracteres                    | `RIGHT('HELLO', 2)` -> 'LO'              |
-| `MID(STR, P, N)`        | N caracteres desde P                    | `MID('HELLO', 2, 3)` -> 'ELL'            |
-| `CONCAT(S1, S2)`        | concatena dos cadenas                   | `CONCAT('A', 'B')` -> 'AB'               |
-| `INSERT(S1, S2, P)`     | inserta S2 en S1 después del carácter P | `INSERT('AB', 'X', 1)` -> 'AXB'          |
-| `DELETE(S1, P, N)`      | elimina N caracteres desde P            | `DELETE('HELLO', 2, 2)` -> 'HLO'         |
-| `REPLACE(S1, S2, P, N)` | reemplaza N caracteres desde P por S2   | `REPLACE('HELLO', 'AB', 2, 3)` -> 'HABO' |
-| `FIND(S1, S2)`          | busca S2 dentro de S1                   | `FIND('HELLO', 'L')` -> 3                |
-
-Ninguna de estas modifica sus argumentos: cada una devuelve una cadena nueva. En `MID`,
-`DELETE` y `REPLACE` la posición va antes de la cantidad; IEC 61131-3 escribe primero el
-largo, así que un programa escrito con ese orden debe intercambiar los dos argumentos.
-
-Otras funciones auxiliares del mismo archivo:
-
-- `COPY`
-- `CLEAR`
-- `STRCMP`
-- `EQ_STRING`
-- `NE_STRING`
-
-### Matemática, lógica y selección
-
-Ejemplos registrados hoy:
-
-- aritmética: `ABS`, `ABSF`, `NEG`, `NEGF`, `SQRT`, `EXPT`, `TRUNC`, `ROUND`
-- conversión: `<ORIGEN>_TO_<DESTINO>` para cada par de tipos distintos entre `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `LINT`, `ULINT`, `LWORD`, `REAL`, `LREAL` y `TIME` (`INT_TO_REAL`, `REAL_TO_INT`, `UDINT_TO_DINT`, `LINT_TO_LREAL`...), véase [Conversiones de tipos](./stdlib.md#9-conversiones-de-tipos)
-- trigonometría y logaritmos: `SIN`, `COS`, `TAN`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`, `LN`, `LOG`, `EXP`
-- funciones de selección: `MAX`, `MIN`, `LIMIT`, `SEL`, `MUX`
-- funciones a nivel de bit: `ROL`, `ROR`, `SHL`, `SHR`, `AND_WORD`, `OR_WORD`, `XOR_WORD`, `NOT_WORD`
-
-Hoy una cosa del registro no se puede usar como la lista sugiere. `MOD` y los operadores lógicos son operadores (`a MOD b`, `a AND b`), y las formas `MOD(a, b)` y `AND(a, b)` no se analizan. `DATE`, `TOD` y `DT` todavía no tienen funciones de conversión. `ABS`, `NEG`, `MAX`, `MIN`, `LIMIT`, `SEL`, `MUX`, `SQRT`, `TRUNC`, `ROUND`, `SHL`, `SHR`, `ROL` y `ROR` aceptan los enteros de 64 bits y `LREAL`; las demás funciones los rechazan con un mensaje. La tabla de [diferencias conocidas](./stdlib.md#11-diferencias-conocidas-con-iec-61131-3) lista los casos que fallan hoy, con sus identificadores de requisito.
-
-### Bloques de función de comunicación
-
-Los bloques de comunicación también forman parte de la stdlib del compilador.
-
-El repositorio registra hoy bloques como:
-
-- Modbus: `MB_READ_HREG`, `MB_WRITE_HREG`, `MB_READ_COIL`, `MB_WRITE_COIL`
-- MQTT: `MQTT_CONNECT`, `MQTT_PUBLISH`, `MQTT_SUBSCRIBE`
-- bloques envolventes para la nube: `AZURE_C2D_RECV`, `AZURE_DPS_PROV`, `AZURE_EG_PUB`, `AWS_FLEET_PROV`, `SPB_REBIRTH`
-
-Para los detalles del contrato del runtime y los límites de la versión, continúe con:
-
-- [Bloques de función de comunicación](./communication-function-blocks.md)
-- [Conectividad](./connectivity.md)
-
-### Disponibilidad
-
-Una función o un bloque integrado está disponible para sus programas solo si la stdlib del compilador lo registra.
-
-Para la semántica específica del runtime y del perfil, consulte la [Biblioteca estándar del runtime](./stdlib.md).

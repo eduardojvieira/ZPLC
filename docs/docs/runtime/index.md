@@ -1,105 +1,63 @@
 ---
 slug: /runtime
 id: index
-title: Runtime & Execution Engine
-sidebar_label: Runtime Overview
-description: Architecture of the ZPLC Embedded Runtime Engine.
+title: Runtime overview
+sidebar_label: Runtime overview
+description: 'What the ZPLC runtime does, the four places it runs, how a program gets from a build to a running machine, and which page explains each part.'
 tags: [runtime, embedded, vm]
 ---
 
-# ZPLC Runtime Engine
+# Runtime overview
 
-The ZPLC internal runtime is the execution core of the platform. Designed specifically for deterministic performance on embedded systems, it safely executes `.zplc` bytecode, manages memory, schedules automation tasks, and integrates with platform-specific hardware.
+The runtime is the part of ZPLC that runs your program: it verifies a compiled `.zplc` artifact, gives it memory, schedules its tasks every cycle and talks to the outside world through the HAL. This page is the map; each part has its own page.
 
-## Core Responsibilities
+ZPLC is a portable C99 runtime behind a hardware-abstraction layer (HAL). It is not a certified safety PLC, and nothing on these pages says it is.
 
-The ZPLC runtime provides a comprehensive virtual environment tailored for IEC 61131-3 task execution. Its responsibilities include:
+## What the runtime does
 
-- Loading `.zplc` bytecode programs and their metadata.
-- Instantiating Virtual Machines (VMs) with isolated execution contexts.
-- Enforcing structural memory boundaries (Process Images, internal Work memory, retained data).
-- Scheduling and orchestrating cyclic PLC tasks.
-- Yielding physical I/O, networking, and storage operations to the underlying Hardware Abstraction Layer (HAL).
-
-## Subsystem Architecture
+- **Loads and verifies** a `.zplc` artifact. The loader checks the artifact before any instruction runs and refuses code it cannot prove well formed.
+- **Gives it memory**: two process images for inputs and outputs, a work region, a retentive region and the code. See the [memory model](./memory-model.md).
+- **Runs its tasks**: cyclic tasks, each with an interval and a priority, ordered by one scheduler core. See the [scheduler](./scheduler.md).
+- **Keeps what must survive a restart**: the stored program and the `RETAIN` region. See [persistence](./persistence.md).
+- **Asks the platform** for time, pins, storage, locks and network through the [HAL](./hal-contract.md), and for nothing else.
 
 ```mermaid
 flowchart TD
-  Loader[Program Loader]
-  Core[ZPLC Core VM]
-  Sched[Real-Time Scheduler]
-  ISA[ISA & Execution Engine]
-  HAL[Hardware Abstraction Layer]
-
-  Loader --> Core
-  ISA --> Core
-  Core --> Sched
-  Sched --> HAL
+  Loader[Loader and verifier] --> VM[VM]
+  VM --> Sched[Scheduler core]
+  Sched --> HAL[HAL port]
+  HAL --> Platform[Host, WebAssembly page, Zephyr board]
 ```
 
-## Shared Memory Model
+## Where it runs
 
-To guarantee both safety and performance in resource-constrained ICs, the ZPLC Runtime Memory Contract defines strict bounds for runtime elements:
+| Runtime | Role | What its results establish |
+| --- | --- | --- |
+| Native simulation (`zplc_runtime`) | Headless host runtime for compiling, testing, tracing and replaying | Host evidence: the logic, not the timing or the I/O of a board |
+| Software runtime (WebAssembly) | Fallback simulation of the ZPLC application when the native runtime cannot start | Host evidence, degraded; see [the software runtime](./browser-runtime.md) |
+| Zephyr firmware | One image per board profile, with the HAL adapters of that board | Depends on the profile; see [hardware support](../reference/capabilities-evidence.md) |
+| FreeRTOS port | A second embedded port, built against the FreeRTOS POSIX simulator | Host (simulator); no FreeRTOS board is qualified |
 
-- **IPI** (Input Process Image): Isolated memory mapped buffer for safe physical input reading.
-- **OPI** (Output Process Image): Buffer mapping logic results to hardware outputs.
-- **Work Memory**: Dynamic volatile execution stack allocated during runtime execution.
-- **Retain Memory**: Reserved retain address region and HAL persistence primitives; source-level `RETAIN` declarations are currently unsupported.
+## From a build to a running machine
 
-## Target Portability
+1. **Compile** the project into a `.zplc` artifact.
+2. **Load or deploy** it. The loader verifies it, and a successful load leaves the runtime stopped and ready. Loading never starts the machine.
+3. **Inspect** the target, then **start** it with an explicit human command, `zplc start` on a device. Nothing starts a program because of a reset or a deploy.
 
-By ensuring that the internal runtime delegates bare-metal concerns to a strictly defined HAL, ZPLC easily runs on multiple architectures:
+Building firmware, flashing it, deploying a program and running or debugging it are four separate operations, and a deploy never starts the program. See [Safety and limitations](../safety-and-limitations.md).
 
-- **Zephyr RTOS**: The primary execution platform for hardware edge controllers. Runs the firmware app natively on bare-metal hardware.
-- **Host Native Simulation**: Provides SoftPLC desktop simulation by adapting HAL primitives natively mapping to Windows, macOS, or Linux filesystems and processes.
+## The pages of this section
 
-## Introduction
+| Page | Read it to know |
+| --- | --- |
+| [Scheduler](./scheduler.md) | How a scan cycle works, how tasks are ordered, what a missed deadline does, what the outputs do when the program stops |
+| [Memory model](./memory-model.md) | The five regions, what a task shares and what it owns, how a thread outside the scan reaches the data |
+| [Persistence](./persistence.md) | What is stored, what a restart restores, the flash-wear budget of each board |
+| [HAL contract](./hal-contract.md) | What the core asks of a platform, and what each of the four ports does with it |
+| [Software runtime](./browser-runtime.md) | What the WebAssembly simulation shares with the firmware and what it lacks |
+| [Standard library](./stdlib.md) | What the built-in functions and function blocks are and where the rules for them live |
+| [Runtime API](../reference/runtime-api.md) | The public C surface, generated from the headers |
 
-ZPLC is a portable C99 PLC runtime behind a hardware-abstraction layer (HAL).
-The ZPLC application, the native host runtime, and Zephyr profiles use verified `.zplc`
-artifacts and the same runtime contracts. It is not a certified safety PLC.
+## What the evidence covers
 
-### Quick path
-
-1. Compile the project into a `.zplc` artifact.
-2. Verify and load/deploy that artifact. A successful load remains logically
-   stopped/READY.
-3. Inspect the target and explicitly issue the human `zplc start` command to
-   run it.
-
-Firmware build, firmware flash, PLC-program deploy, and RUN/debug are separate
-operations. A program load never implies an operational start.
-
-### Runtime surfaces
-
-| Surface                 | Role                                                                  | Evidence boundary                                                                                                                                                                                                     |
-| ----------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Core and loader         | C99 VM, ISA, memory model, and `.zplc` verification                   | Host/unit evidence does not qualify hardware behavior.                                                                                                                                                                |
-| POSIX native simulation | Headless/local runtime for compile, test, trace, and replay workflows | Host behavior; not target or HIL timing evidence.                                                                                                                                                                     |
-| Zephyr profiles         | Firmware runtime and HAL adapters for named board revisions           | Capability and qualification vary by profile.                                                                                                                                                                         |
-| WASM                    | Degraded fallback for simulation when the native runtime cannot start | Host evidence; the session, the scheduler core and the retain rules of the native runtime, with no network blocks, no serial, no pins and the timing of the app window. See [Software runtime](./browser-runtime.md). |
-
-### Contracts and references
-
-- [Runtime API](../reference/runtime-api.md) defines the public runtime surface.
-- [Persistence](./persistence.md) explains verified program-store behavior and
-  its profile limits.
-- [Scheduler](./scheduler.md) describes runtime scheduling semantics and
-  current evidence boundaries.
-- [Source of truth](../reference/source-of-truth.md) identifies canonical
-  versions and release contracts.
-- [Board reference](../reference/boards.md) lists profiles, capabilities, and
-  their evidence tier.
-
-### Safety and evidence boundaries
-
-- Target timing, electrical output behavior, power-cut recovery, and HIL
-  results require evidence for the exact board profile.
-- The `RETAIN` region and HAL primitives exist, but source-level RETAIN
-  declarations are currently rejected and target retention is not qualified.
-- Restore publishes the artifact as logically stopped/READY. Output behavior
-  before execution is target-profile-specific and requires recorded evidence.
-- The runtime does not claim safety-PLC certification.
-
-Use the board reference and the selected profile's recovery procedure before
-commissioning or performing a physical operation.
+Host tests, the native simulator, Zephyr suites on `native_sim` and on QEMU and the firmware cross-builds are real evidence, and each page names the one it relies on. Target timing, electrical output behaviour, power-cut recovery and hardware-in-the-loop results need a recorded run on the exact board, and none exists yet. Use the [board reference](../reference/boards.md) and the recovery procedure of the profile you chose before you commission anything or perform a physical operation.

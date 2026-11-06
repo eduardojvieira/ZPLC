@@ -1,110 +1,63 @@
 ---
 slug: /runtime
 id: index
-title: Motor de ejecución y runtime
-sidebar_label: Visión general del runtime
-description: Arquitectura del motor de ejecución embebido de ZPLC.
+title: Descripción del runtime
+sidebar_label: Descripción del runtime
+description: 'Qué hace el runtime de ZPLC, los cuatro lugares donde se ejecuta, cómo llega un programa desde la compilación hasta la máquina en marcha y qué página explica cada parte.'
 tags: [runtime, embedded, vm]
 ---
 
-# Motor de ejecución de ZPLC
+# Descripción del runtime
 
-El runtime interno de ZPLC es el núcleo de ejecución de la plataforma. Está diseñado para ofrecer un rendimiento determinista en sistemas embebidos: ejecuta con seguridad el bytecode `.zplc`, gestiona la memoria, planifica las tareas de automatización y se integra con el hardware de cada plataforma.
+El runtime es la parte de ZPLC que ejecuta su programa: verifica un artefacto `.zplc` compilado, le da memoria, planifica sus tareas en cada ciclo y se comunica con el exterior a través del HAL. Esta página es el mapa; cada parte tiene su propia página.
 
-## Responsabilidades principales
+ZPLC es un runtime portable en C99 detrás de una capa de abstracción de hardware (HAL). No es un PLC de seguridad certificado, y nada en estas páginas dice que lo sea.
 
-El runtime de ZPLC ofrece un entorno virtual completo para ejecutar las tareas de IEC 61131-3. Sus responsabilidades son:
+## Qué hace el runtime
 
-- Cargar los programas compilados `.zplc` y sus metadatos.
-- Crear máquinas virtuales (VM) con contextos de ejecución aislados.
-- Hacer cumplir los límites de memoria (imágenes de proceso, memoria de trabajo interna y datos retenidos).
-- Planificar y coordinar las tareas de PLC cíclicas.
-- Delegar las operaciones físicas de E/S, de red y de almacenamiento en la capa de abstracción de hardware (HAL).
-
-## Arquitectura de los subsistemas
+- **Carga y verifica** un artefacto `.zplc`. El cargador lo comprueba antes de ejecutar cualquier instrucción y rechaza el código que no puede demostrar bien formado.
+- **Le da memoria**: dos imágenes de proceso para entradas y salidas, una región de trabajo, una región retentiva y el código. Véase el [modelo de memoria](./memory-model.md).
+- **Ejecuta sus tareas**: tareas cíclicas, cada una con un intervalo y una prioridad, ordenadas por un único núcleo del planificador. Véase el [planificador](./scheduler.md).
+- **Conserva lo que debe sobrevivir a un reinicio**: el programa almacenado y la región `RETAIN`. Véase [persistencia](./persistence.md).
+- **Pide a la plataforma** el tiempo, los pines, el almacenamiento, los cerrojos y la red a través del [HAL](./hal-contract.md), y nada más.
 
 ```mermaid
 flowchart TD
-  Loader[Cargador de programas]
-  Core[VM del núcleo ZPLC]
-  Sched[Planificador en tiempo real]
-  ISA[Motor de ejecución y ISA]
-  HAL[Capa de abstracción de hardware]
-
-  Loader --> Core
-  ISA --> Core
-  Core --> Sched
-  Sched --> HAL
+  Loader[Cargador y verificador] --> VM[VM]
+  VM --> Sched[Núcleo del planificador]
+  Sched --> HAL[Puerto del HAL]
+  HAL --> Platform[Equipo anfitrión, página WebAssembly, placa Zephyr]
 ```
 
-## Modelo de memoria compartida
+## Dónde se ejecuta
 
-Para garantizar seguridad y rendimiento en circuitos integrados con pocos recursos, el contrato de memoria del runtime de ZPLC define límites estrictos para sus elementos:
+| Runtime | Función | Qué establecen sus resultados |
+| --- | --- | --- |
+| Simulación nativa (`zplc_runtime`) | Runtime de host sin ventana para compilar, probar, trazar y reproducir | Evidencia de host: la lógica, no los tiempos ni la E/S de una placa |
+| Runtime de software (WebAssembly) | Simulación de respaldo de la aplicación ZPLC cuando el runtime nativo no puede arrancar | Evidencia de host, degradada; véase [el runtime de software](./browser-runtime.md) |
+| Firmware Zephyr | Una imagen por perfil de placa, con los adaptadores del HAL de esa placa | Depende del perfil; véase [compatibilidad de hardware](../reference/capabilities-evidence.md) |
+| Puerto FreeRTOS | Un segundo puerto embebido, compilado contra el simulador POSIX de FreeRTOS | Host (simulador); ninguna placa FreeRTOS está calificada |
 
-- **IPI** (imagen de proceso de entradas): búfer aislado y asignado en memoria para leer las entradas físicas con seguridad.
-- **OPI** (imagen de proceso de salidas): búfer que traslada los resultados lógicos a las salidas de hardware.
-- **Memoria de trabajo:** pila de ejecución volátil y dinámica que se asigna mientras el runtime ejecuta.
-- **Memoria retenida:** región de direcciones retain reservada y primitivas de persistencia de la HAL; las declaraciones `RETAIN` a nivel de código fuente no están soportadas por ahora.
+## De la compilación a la máquina en marcha
 
-## Portabilidad a otros destinos
+1. **Compile** el proyecto en un artefacto `.zplc`.
+2. **Cargue o despliegue** el artefacto. El cargador lo verifica, y una carga correcta deja el runtime detenido y listo. Cargar nunca arranca la máquina.
+3. **Inspeccione** el destino y luego **arránquelo** con una orden humana explícita, `zplc start` en un dispositivo. Nada inicia un programa por un reinicio ni por un despliegue.
 
-Como el runtime delega los asuntos de bajo nivel en una HAL estrictamente definida, ZPLC se ejecuta con facilidad en varias arquitecturas:
+Compilar el firmware, grabarlo, desplegar un programa y ejecutarlo o depurarlo son cuatro operaciones distintas, y un despliegue nunca inicia el programa. Véase [Seguridad y limitaciones](../safety-and-limitations.md).
 
-- **Zephyr RTOS:** la plataforma de ejecución principal para los controladores de hardware en el borde. Ejecuta la aplicación de firmware de forma nativa sobre el hardware.
-- **Simulación nativa en el equipo anfitrión:** ofrece una simulación de SoftPLC de escritorio, al adaptar las primitivas de la HAL a los sistemas de archivos y procesos de Windows, macOS o Linux.
+## Las páginas de esta sección
 
-## Introducción
+| Página | Léala para saber |
+| --- | --- |
+| [Planificador](./scheduler.md) | Cómo funciona un ciclo de escaneo, cómo se ordenan las tareas, qué hace un plazo incumplido y qué hacen las salidas cuando el programa se detiene |
+| [Modelo de memoria](./memory-model.md) | Las cinco regiones, qué comparte una tarea y qué le pertenece, cómo llega a los datos un hilo ajeno al ciclo |
+| [Persistencia](./persistence.md) | Qué se almacena, qué restaura un reinicio y el presupuesto de desgaste de la flash de cada placa |
+| [Contrato del HAL](./hal-contract.md) | Qué pide el núcleo a una plataforma y qué hace con ello cada uno de los cuatro puertos |
+| [Runtime de software](./browser-runtime.md) | Qué comparte la simulación WebAssembly con el firmware y qué le falta |
+| [Biblioteca estándar](./stdlib.md) | Qué son las funciones y los bloques de función integrados y dónde están las reglas de cada uno |
+| [API del runtime](../reference/runtime-api.md) | La superficie pública en C, generada a partir de los encabezados |
 
-ZPLC es un runtime PLC portable en C99 detrás de una capa de abstracción de
-hardware (HAL). La aplicación ZPLC, el runtime nativo del host y los perfiles de Zephyr usan
-artefactos `.zplc` verificados y los mismos contratos del runtime. No es un PLC de
-seguridad certificado.
+## Qué cubre la evidencia
 
-### Camino rápido
-
-1. Compile el proyecto en un artefacto `.zplc`.
-2. Verifique y cargue ese artefacto. Una carga correcta lo deja lógicamente
-   detenido y listo (READY).
-3. Inspeccione el destino y ejecute explícitamente el comando humano `zplc start`
-   para ponerlo en marcha.
-
-La compilación del firmware, la grabación del firmware, la carga del programa PLC y
-RUN/depuración son operaciones separadas. Cargar un programa nunca implica que
-arranque.
-
-### Superficies del runtime
-
-| Superficie              | Función                                                                               | Límite de la evidencia                                                                                                                                                                                                                                    |
-| ----------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Núcleo y cargador       | Máquina virtual en C99, ISA, modelo de memoria y verificación de `.zplc`              | La evidencia de host y de pruebas unitarias no califica el comportamiento físico.                                                                                                                                                                         |
-| Simulación nativa POSIX | Runtime local sin interfaz para los flujos de compilación, prueba, traza y repetición | Comportamiento del host; no es evidencia de tiempos en el destino ni HIL.                                                                                                                                                                                 |
-| Perfiles de Zephyr      | Firmware del runtime y adaptadores de la HAL para revisiones de placa con nombre      | Las capacidades y la calificación varían según el perfil.                                                                                                                                                                                                 |
-| WASM                    | Alternativa degradada para la simulación cuando el runtime nativo no puede arrancar   | Evidencia de host; la sesión, el núcleo del planificador y las reglas de retención del runtime nativo, sin bloques de red, sin puerto serie, sin pines y con los tiempos de la ventana de la aplicación. Vea [Runtime de software](./browser-runtime.md). |
-
-### Contratos y referencias
-
-- La [API del runtime](../reference/runtime-api.md) define la superficie pública del runtime.
-- [Persistencia](./persistence.md) explica el almacén de programas verificado y sus
-  límites por perfil.
-- [Planificador](./scheduler.md) describe la semántica de planificación y los
-  límites actuales de la evidencia.
-- [Fuente de verdad](../reference/source-of-truth.md) identifica las versiones y los
-  contratos canónicos de la publicación.
-- La [referencia de placas](../reference/boards.md) lista los perfiles, sus
-  capacidades y su nivel de evidencia.
-
-### Límites de seguridad y de evidencia
-
-- Los tiempos en el destino, el comportamiento eléctrico de las salidas, la
-  recuperación ante cortes de energía y los resultados HIL requieren evidencia para
-  el perfil de placa exacto.
-- La región `RETAIN` y las primitivas de la HAL existen, pero hoy se rechazan las
-  declaraciones RETAIN a nivel de código fuente y la retención en el destino no está
-  calificada.
-- La restauración publica el artefacto como lógicamente detenido y listo (READY).
-  El comportamiento de las salidas antes de ejecutar es específico del perfil del
-  destino y requiere evidencia registrada.
-- El runtime no declara certificación como PLC de seguridad.
-
-Use la referencia de placas y el procedimiento de recuperación del perfil elegido
-antes de la puesta en marcha o de una operación física.
+Las pruebas de host, el simulador nativo, las suites de Zephyr en `native_sim` y en QEMU y las compilaciones cruzadas del firmware son evidencia real, y cada página nombra la que usa. Los tiempos del destino, el comportamiento eléctrico de las salidas, la recuperación tras un corte de energía y los resultados con hardware en el bucle requieren una ejecución registrada en la placa exacta, y todavía no existe ninguna. Use la [referencia de placas](../reference/boards.md) y el procedimiento de recuperación del perfil elegido antes de poner en servicio algo o de realizar una operación física.
