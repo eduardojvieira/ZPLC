@@ -342,7 +342,7 @@ same times, and compares the output traces. Every difference, another sequence
 of output values or a change more than `--tolerance-ms` (100 ms) away from its
 twin, goes into a comparison record in `build/hil-records/`. A difference found
 on hardware belongs in the simulator's capability profile
-([native session contract](../runtime/intro.md)).
+([native session contract](../runtime/index.md)).
 
 | Board              | Differences on hardware | Differences emulated                |
 | ------------------ | ----------------------- | ----------------------------------- |

@@ -171,8 +171,6 @@ Las comprobaciones son `bun run check:docs-config` y `bun tools/docs/capture-scr
 - [Principios de ingeniería](./principles.md): la constitución en lenguaje llano.
 - [Fuente de verdad](../reference/source-of-truth.md): qué archivo es la autoridad
   para cada tipo de dato.
-- [Manifiesto de documentación](../reference/v1-5-canonical-docs-manifest.md): las
-  páginas que deben existir en inglés y español.
 - [Código de conducta](https://github.com/eduardojvieira/ZPLC/blob/master/CODE_OF_CONDUCT.md)
   y [política de seguridad](https://github.com/eduardojvieira/ZPLC/blob/master/SECURITY.md).
 

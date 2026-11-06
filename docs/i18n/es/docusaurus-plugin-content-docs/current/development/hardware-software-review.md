@@ -758,7 +758,7 @@ Para cada uno, el hecho de silicio que una persona comprueba en un banco:
 ### HIL-015.06 Una diferencia hallada en hardware se refleja en el perfil de capacidades del simulador
 
 - **Placas:** Raspberry Pi Pico, ESP32-S3-DevKitC-1
-- **Código:** `packages/zplc-ide/src/runtime/wasmCapabilities.ts`; `docs/docs/runtime/intro.md` (native session contract)
+- **Código:** `packages/zplc-ide/src/runtime/wasmCapabilities.ts`; `docs/docs/runtime/index.md` (native session contract)
 - **Simulación:**
   - packages/zplc-ide/src/runtime/wasmRuntime.test.ts: `cd packages/zplc-ide && bun test src/runtime/wasmRuntime.test.ts`
 - **Solo el silicio:** las diferencias mismas: no se ha registrado ninguna comparacion en hardware, asi que aun no hay nada que reflejar

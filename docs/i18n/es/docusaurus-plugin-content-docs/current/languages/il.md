@@ -59,5 +59,4 @@ de 10 ms y comprueba `%QX0.0`.
 
 - [Generalidades de lenguajes](./index.md)
 - [Texto estructurado (ST)](./st.md)
-- [Biblioteca estándar](./stdlib.md)
-- [Suites y ejemplos de lenguajes](./examples/v1-5-language-suite.md)
+- [Biblioteca estándar](../runtime/stdlib.md)

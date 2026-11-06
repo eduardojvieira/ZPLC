@@ -16,8 +16,6 @@ For ZPLC 2.0:
 - `IL`, `LD`, `FBD`, and `SFC` are workflow paths when their editor, transpiler, and compiler contracts accept them
 - the runtime still executes `.zplc`, not source-language-specific code
 
-The [historical language suite](./examples/v1-5-language-suite.md) is compatibility evidence. It does not prove universal parity, target timing, hardware, or HIL behavior.
-
 ## Why ST matters architecturally
 
 `packages/zplc-ide/src/compiler/index.ts` treats ST differently from the other language paths:
@@ -267,7 +265,7 @@ Each rule below is covered by a conformance case under `conformance/cmp` (CMP-04
 
 ## Standard library entry point
 
-See [Standard Library](./stdlib.md) for the built-in functions and function blocks grounded in
+See [Standard Library](../runtime/stdlib.md) for the built-in functions and function blocks grounded in
 `packages/zplc-compiler/src/compiler/stdlib/index.ts`.
 
 ## Known limits
@@ -279,3 +277,54 @@ No conformance case of this area is on the expected-failures list: no limit is r
 {/* <<< END GENERATED: known-limits-language <<< */}
 
 Not supported in this release and rejected with a message, by decision D-04: arrays of arrays, enumerations with a base type, subranges, `POINTER TO` and `ADR` (use `REF_TO` and `REF()`), `VAR_ACCESS`, a textual `CONFIGURATION`, `NAMESPACE`, `PROPERTY`, `ACTION` blocks in a program, positional function-block calls and the function forms of operators such as `ADD(a, b)`. The cases `cmp-006-*-is-rejected` pass: they pin the rejection, so a program that uses one fails to build.
+
+## Syntax at a glance
+
+Structured Text (ST) is a high-level, block-structured language with a syntax resembling Pascal. It is the central language of the ZPLC application and of the compiler.
+
+### Basic Syntax
+
+```pascal runnable expect="Counter=3 Output_LED=FALSE" scans=3 scan_ms=10
+PROGRAM Main
+    VAR
+        Counter: INT := 0;
+        Threshold: INT := 100;
+        Output_LED: BOOL := FALSE;
+    END_VAR
+
+    Counter := Counter + 1;
+
+    IF Counter >= Threshold THEN
+        Output_LED := TRUE;
+        Counter := 0;
+    ELSE
+        Output_LED := FALSE;
+    END_IF;
+END_PROGRAM
+```
+
+Each scan adds 1 to `Counter`, and `Output_LED` stays `FALSE` until `Counter` reaches `Threshold`.
+After three scans `Counter` is 3 and `Output_LED` is `FALSE`; CI runs the sample for three scans
+and checks both values.
+
+### Data Types
+
+ZPLC supports these elementary types. [Structured Text (ST)](./st.md#numeric-types) gives the width, the range and the behaviour at the limits of each one.
+
+- `BOOL`
+- `SINT`, `INT`, `DINT`, `LINT` (signed integers of 8, 16, 32 and 64 bits)
+- `USINT`, `UINT`, `UDINT`, `ULINT` (unsigned integers of 8, 16, 32 and 64 bits)
+- `BYTE`, `WORD`, `DWORD`, `LWORD` (bit strings of 8, 16, 32 and 64 bits)
+- `REAL` (32-bit floating point) and `LREAL` (64-bit floating point, IEEE 754 double precision; requirement CMP-015)
+- `TIME`, `DATE`, `TOD`, `DT`: see [Time and date types](./st.md#time-and-date-types).
+- `STRING`, `WSTRING`
+
+`LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` and `WCHAR` are not supported: a declaration of one is a build error that names the type (requirement CMP-003).
+
+### Control Structures
+
+- `IF ... THEN ... ELSIF ... ELSE ... END_IF`
+- `CASE ... OF ... ELSE ... END_CASE`
+- `FOR ... TO ... BY ... DO ... END_FOR`
+- `WHILE ... DO ... END_WHILE`
+- `REPEAT ... UNTIL ... END_REPEAT`

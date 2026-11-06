@@ -49,5 +49,4 @@ flowchart TB
 ## Continúe con
 
 - [Primeros pasos](../getting-started/index.md)
-- [Ejemplos de lenguajes](../languages/examples/v1-5-language-suite.md)
 - [Arquitectura del sistema](../architecture/index.md)

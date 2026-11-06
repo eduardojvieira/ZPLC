@@ -59,5 +59,4 @@ and checks `%QX0.0`.
 
 - [Languages Overview](./index.md)
 - [Structured Text (ST)](./st.md)
-- [Standard Library](./stdlib.md)
-- [Language Suites & Examples](./examples/v1-5-language-suite.md)
+- [Standard Library](../runtime/stdlib.md)

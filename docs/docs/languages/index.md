@@ -88,10 +88,9 @@ The same runs press Pause, Step one cycle and Resume in each of the five languag
 
 ## Standard library
 
-The standard library is implemented through compiler and runtime paths. Check [Standard Library](./stdlib.md) and compile the selected language workflow to determine what is available today.
+The standard library is implemented through compiler and runtime paths. Check [Standard Library](../runtime/stdlib.md) and compile the selected language workflow to determine what is available today.
 
 ## Read next
 
 - [Structured Text (ST)](./st.md)
 - [Instruction List (IL)](./il.md)
-- [Language Examples Suite](./examples/v1-5-language-suite.md)

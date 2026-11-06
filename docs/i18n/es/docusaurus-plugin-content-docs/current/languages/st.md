@@ -14,8 +14,6 @@ Qué funciona hoy del lenguaje, elemento por elemento y leído de las pruebas de
 - `IL`, `LD`, `FBD` y `SFC` son rutas cuando sus contratos de editor, transpilador y compilador las aceptan
 - el runtime sigue ejecutando `.zplc`, no código fuente específico de lenguaje
 
-La [suite histórica de lenguajes](./examples/v1-5-language-suite.md) es evidencia de compatibilidad; no prueba paridad universal, tiempos en la placa, hardware ni HIL.
-
 ## Por qué ST importa arquitectónicamente
 
 `packages/zplc-ide/src/compiler/index.ts` trata a ST distinto del resto:
@@ -266,7 +264,7 @@ Cada regla de esta sección está cubierta por un caso de conformidad en `confor
 
 ## Entrada a la biblioteca estándar
 
-Véase [Biblioteca estándar](./stdlib.md).
+Véase [Biblioteca estándar](../runtime/stdlib.md).
 
 ## Límites conocidos
 
@@ -277,3 +275,54 @@ Ningún caso de conformidad de esta área figura en la lista de fallas esperadas
 {/* <<< END GENERATED: known-limits-language <<< */}
 
 No soportado en esta versión y rechazado con un mensaje, por la decisión D-04: arreglos de arreglos, enumeraciones con tipo base, subrangos, `POINTER TO` y `ADR` (use `REF_TO` y `REF()`), `VAR_ACCESS`, una `CONFIGURATION` textual, `NAMESPACE`, `PROPERTY`, bloques `ACTION` en un programa, llamadas posicionales a bloques de función y las formas de función de los operadores como `ADD(a, b)`. Los casos `cmp-006-*-is-rejected` pasan: fijan el rechazo, de modo que un programa que usa uno de ellos no compila.
+
+## La sintaxis de un vistazo
+
+El texto estructurado (ST) es un lenguaje de alto nivel, estructurado en bloques, con una sintaxis parecida a Pascal. Es el lenguaje central de la aplicación ZPLC y del compilador.
+
+### Sintaxis básica
+
+```pascal runnable expect="Counter=3 Output_LED=FALSE" scans=3 scan_ms=10
+PROGRAM Main
+    VAR
+        Counter: INT := 0;
+        Threshold: INT := 100;
+        Output_LED: BOOL := FALSE;
+    END_VAR
+
+    Counter := Counter + 1;
+
+    IF Counter >= Threshold THEN
+        Output_LED := TRUE;
+        Counter := 0;
+    ELSE
+        Output_LED := FALSE;
+    END_IF;
+END_PROGRAM
+```
+
+Cada ciclo suma 1 a `Counter`, y `Output_LED` sigue en `FALSE` hasta que `Counter` llega a `Threshold`.
+Después de tres ciclos `Counter` vale 3 y `Output_LED` es `FALSE`; CI ejecuta el ejemplo durante tres
+ciclos y comprueba ambos valores.
+
+### Tipos de datos
+
+ZPLC soporta estos tipos elementales. [Texto estructurado (ST)](./st.md#tipos-numéricos) da el ancho, el rango y el comportamiento en los límites de cada uno.
+
+- `BOOL`
+- `SINT`, `INT`, `DINT`, `LINT` (enteros con signo de 8, 16, 32 y 64 bits)
+- `USINT`, `UINT`, `UDINT`, `ULINT` (enteros sin signo de 8, 16, 32 y 64 bits)
+- `BYTE`, `WORD`, `DWORD`, `LWORD` (cadenas de bits de 8, 16, 32 y 64 bits)
+- `REAL` (punto flotante de 32 bits) y `LREAL` (punto flotante de 64 bits, doble precisión IEEE 754; requisito CMP-015)
+- `TIME`, `DATE`, `TOD`, `DT`: ver [Tipos de tiempo y fecha](./st.md#tipos-de-tiempo-y-fecha).
+- `STRING`, `WSTRING`
+
+`LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` y `WCHAR` no están soportados: la declaración de uno de ellos es un error de compilación que nombra el tipo (requisito CMP-003).
+
+### Estructuras de control
+
+- `IF ... THEN ... ELSIF ... ELSE ... END_IF`
+- `CASE ... OF ... ELSE ... END_CASE`
+- `FOR ... TO ... BY ... DO ... END_FOR`
+- `WHILE ... DO ... END_WHILE`
+- `REPEAT ... UNTIL ... END_REPEAT`

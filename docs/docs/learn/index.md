@@ -81,10 +81,8 @@ application.
 
 ## Read the language examples
 
-The [compatibility language examples](../languages/examples/v1-5-language-suite.md)
-hold the same small programs in the five IEC 61131-3 languages, and the
-[Structured Text reference](../reference/language-st.md) says, element by element,
-what works today.
+The [Structured Text reference](../reference/language-st.md) says, element by element,
+what works today, and the [language guides](../languages/index.md) cover the five IEC 61131-3 languages.
 
 ## What is not here yet
 

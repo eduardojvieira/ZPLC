@@ -33,7 +33,7 @@ An unpackaged build of ZPLC switches the native runtime off with `ZPLC_RUNTIME=w
 
 ## What the ZPLC application shows
 
-The status bar shows **Runtime: WASM fallback · degraded**, and under it the list of what the runtime does not have and has in part. The list is the capability profile that the runtime reports in its handshake, in the vocabulary of the [native session contract](./intro.md): each feature is `supported`, `degraded` or `unavailable`, and a feature that is not supported says why and what to use instead.
+The status bar shows **Runtime: WASM fallback · degraded**, and under it the list of what the runtime does not have and has in part. The list is the capability profile that the runtime reports in its handshake, in the vocabulary of the [native session contract](./index.md): each feature is `supported`, `degraded` or `unavailable`, and a feature that is not supported says why and what to use instead.
 
 | Feature                                  | Status      | What it means                                                                                                                                                                                                                                                                                         |
 | ---------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

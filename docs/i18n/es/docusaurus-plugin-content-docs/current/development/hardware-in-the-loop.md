@@ -373,7 +373,7 @@ los mismos instantes, y compara las trazas de salida. Cada diferencia, otra
 secuencia de valores de salida o un cambio a más de `--tolerance-ms` (100 ms)
 de su par, va a un registro de comparación en `build/hil-records/`. Una
 diferencia encontrada en hardware corresponde al perfil de capacidades del
-simulador ([contrato de sesión nativa](../runtime/intro.md)).
+simulador ([contrato de sesión nativa](../runtime/index.md)).
 
 | Placa              | Diferencias en hardware | Diferencias emuladas                   |
 | ------------------ | ----------------------- | -------------------------------------- |

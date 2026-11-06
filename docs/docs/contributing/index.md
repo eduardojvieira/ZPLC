@@ -169,8 +169,6 @@ are `bun run check:docs-config` and `bun tools/docs/capture-screenshots.ts --che
 - [Engineering principles](./principles.md): the constitution in plain language.
 - [Source of truth](../reference/source-of-truth.md): which file is the authority
   for each kind of fact.
-- [Documentation manifest](../reference/v1-5-canonical-docs-manifest.md): the
-  pages that must exist in English and Spanish.
 - [Code of conduct](https://github.com/eduardojvieira/ZPLC/blob/master/CODE_OF_CONDUCT.md)
   and [security policy](https://github.com/eduardojvieira/ZPLC/blob/master/SECURITY.md).
 

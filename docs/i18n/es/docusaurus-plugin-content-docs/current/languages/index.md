@@ -86,10 +86,9 @@ En la simulación nativa de un host Linux, los recorridos de la aplicación ZPLC
 
 ## Biblioteca estándar
 
-La biblioteca estándar se implementa mediante rutas de compilador y runtime. Consulte [Biblioteca estándar](./stdlib.md) y compile el flujo de lenguaje elegido para saber qué está disponible hoy.
+La biblioteca estándar se implementa mediante rutas de compilador y runtime. Consulte [Biblioteca estándar](../runtime/stdlib.md) y compile el flujo de lenguaje elegido para saber qué está disponible hoy.
 
 ## Continúe leyendo
 
 - [Texto estructurado (ST)](./st.md)
 - [Lista de instrucciones (IL)](./il.md)
-- [Suite de ejemplos de lenguajes](./examples/v1-5-language-suite.md)

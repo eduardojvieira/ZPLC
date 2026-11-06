@@ -33,7 +33,7 @@ Una compilación de ZPLC sin empaquetar apaga el runtime nativo con `ZPLC_RUNTIM
 
 ## Qué muestra la aplicación ZPLC
 
-La barra de estado muestra **Runtime: WASM fallback · degraded** y, debajo, la lista de lo que el runtime no tiene y de lo que tiene en parte. La lista es el perfil de capacidades que el runtime informa en su handshake, con el vocabulario del [contrato de sesión nativa](./intro.md): cada capacidad es `supported`, `degraded` o `unavailable`, y una capacidad que no es `supported` dice por qué y qué usar en su lugar.
+La barra de estado muestra **Runtime: WASM fallback · degraded** y, debajo, la lista de lo que el runtime no tiene y de lo que tiene en parte. La lista es el perfil de capacidades que el runtime informa en su handshake, con el vocabulario del [contrato de sesión nativa](./index.md): cada capacidad es `supported`, `degraded` o `unavailable`, y una capacidad que no es `supported` dice por qué y qué usar en su lugar.
 
 | Capacidad                                | Estado      | Qué significa                                                                                                                                                                                                                                                                                                               |
 | ---------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

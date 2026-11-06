@@ -49,5 +49,4 @@ flowchart TB
 ## Continue with
 
 - [Getting Started](../getting-started/index.md)
-- [Language Suite Examples](../languages/examples/v1-5-language-suite.md)
 - [System Architecture](../architecture/index.md)

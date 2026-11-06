@@ -85,10 +85,8 @@ aplicación ZPLC.
 
 ## Lea los ejemplos de lenguajes
 
-Los [ejemplos de lenguajes de compatibilidad](../languages/examples/v1-5-language-suite.md)
-reúnen los mismos programas pequeños en los cinco lenguajes de IEC 61131-3, y la
-[referencia de texto estructurado](../reference/language-st.md) dice, elemento por
-elemento, qué funciona hoy.
+La [referencia de texto estructurado](../reference/language-st.md) dice, elemento por
+elemento, qué funciona hoy, y las [guías de lenguajes](../languages/index.md) cubren los cinco lenguajes de IEC 61131-3.
 
 ## Lo que todavía falta
 

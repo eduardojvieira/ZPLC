@@ -966,7 +966,7 @@ For each one, the silicon fact that a person checks at a bench:
 - **Given:** a recorded hardware difference
 - **When:** the capability profile is read
 - **Then:** the profile of the native session and of the WebAssembly runtime lists the behaviour that differs, with a degraded-mode label (spec 009)
-- **Code:** `packages/zplc-ide/src/runtime/wasmCapabilities.ts`; `docs/docs/runtime/intro.md` (native session contract)
+- **Code:** `packages/zplc-ide/src/runtime/wasmCapabilities.ts`; `docs/docs/runtime/index.md` (native session contract)
 - **Simulation:**
   - packages/zplc-ide/src/runtime/wasmRuntime.test.ts: `cd packages/zplc-ide && bun test src/runtime/wasmRuntime.test.ts`
 - **Only silicon:** the differences themselves: no hardware comparison has been recorded, so there is nothing yet to reflect
