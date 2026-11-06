@@ -51,17 +51,16 @@ descarga.
 
 ## 1. Obtenga el firmware
 
-La versión rc.3 no incluye firmware precompilado: se subió a mano. El canal de
-versiones compila una imagen del runtime para cada placa del manifiesto en cada
-versión que hace, con el nombre `zplc-runtime-<versión>-<placa>.<extensión>`, con su
+El canal de publicación compila una imagen del runtime para cada placa del manifiesto, en cada versión que hace, con el nombre `zplc-runtime-<versión>-<placa>.<extensión>`, con su
 suma de verificación en `SHA256SUMS` y el nivel de evidencia de la placa en las
-notas de la versión. Sus instaladores llevan las imágenes de la Raspberry Pi Pico y
+notas de la versión. Los instaladores llevan las imágenes de la Raspberry Pi Pico y
 de la ESP32-S3: en ZPLC, abra **Configuración del proyecto**, **Destino**, elija la placa, y
 ZPLC muestra el archivo, su SHA-256, dónde está y los pasos para grabarlo. ZPLC
-solo las muestra: usted graba (paso 2). El canal todavía no ha hecho una versión,
-así que hoy usted compila el firmware desde el código fuente, con el script del repositorio, que envuelve el mismo `west build` y la misma
-comprobación de tamaño que el trabajo de integración continua. Prepare el espacio
-de trabajo de Zephyr una vez (unos 6,6 GB, o unos 15 GB con el SDK de Zephyr y las salidas de compilación; vea
+solo las muestra: usted graba (paso 2). Ese camino todavía no se ha ejercitado con una versión,
+así que compile el firmware desde el código fuente con el script del repositorio, que envuelve el mismo `west build` y la misma
+comprobación de tamaño que el trabajo de integración continua.
+
+Prepare el espacio de trabajo de Zephyr una vez (unos 6,6 GB, o unos 15 GB con el SDK de Zephyr y las salidas de compilación; vea
 [Pruebas de firmware](../development/firmware-testing.md#preparación-única)), y
 luego compile la placa:
 
@@ -81,7 +80,7 @@ del espacio de trabajo de Zephyr:
 west build -b rpi_pico/rp2040 firmware/app --pristine
 ```
 
-Una compilación que termina demuestra solo que el firmware compila para la placa.
+Una compilación que termina demuestra solo que el firmware compila para la placa. [Compilar el firmware](../guides/build-firmware.md) tiene los detalles.
 
 ## 2. Grábelo (lo hace una persona)
 
@@ -104,13 +103,25 @@ Si una placa no vuelve, use el procedimiento de recuperación de su perfil:
 
 1. Abra el proyecto del ejemplo, compílelo (**Compilación**, **Compilar**) y elija
    **Hardware** en la barra de herramientas en lugar de **Simular**.
+
+   ![El ejemplo de la Raspberry Pi Pico compilado, con Hardware elegido y ninguna placa conectada](/img/screens/first-board-hardware.png)
+
 2. Pulse **Conectar**. Un diálogo de ZPLC lista cada puerto serie con su nombre
    y sus identificadores USB, y marca las placas que conoce. Si la placa no aparece,
    conéctela y pulse **Actualizar**. Elija su puerto y pulse **Usar este puerto**:
    ZPLC usa solo ese puerto, y elegirlo no envía nada a la placa. En Linux su usuario
    necesita el grupo del puerto serie: [Instalar ZPLC](../getting-started/install.md#linux-acceso-al-puerto-serie).
-3. La aplicación ZPLC lee la identidad del runtime: placa, perfil y ABI. Un proyecto compilado
-   para otra placa se rechaza.
+
+   ![El diálogo Conectar de ZPLC, sin ninguna placa conectada](/img/screens/first-board-connect.png)
+
+3. ZPLC lee la identidad del runtime: placa, perfil y ABI. Un proyecto compilado para otra placa se rechaza.
+
+:::note Sobre las imágenes
+Las dos imágenes de arriba son capturas reales de la aplicación, tomadas sin ninguna placa conectada, por eso el diálogo
+está vacío. Faltan a propósito las imágenes de una placa que responde, de la pregunta de carga y de una salida que cambia:
+nadie ha ejecutado esos pasos en una placa, y esta página no muestra ninguna imagen que la herramienta de captura no pueda
+tomar.
+:::
 
 ## 4. Despliegue y ejecute (lo hace una persona)
 
@@ -134,7 +145,7 @@ su estado seguro, apagado
 | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
 | 1. Obtenga el firmware  | La integración continua ejecuta `west build` y la misma comprobación del presupuesto de flash y RAM que el script de compilación | Compila en integración continua: `cross-build` |
 | 2. Grábelo              | Ninguna                                                                                                                          | Aún no verificado en hardware                  |
-| 3. Conecte ZPLC         | El tutorial Blink ejercita la conexión en el simulador; ninguna placa se ha conectado                                            | Aún no verificado en hardware                  |
+| 3. Conecte ZPLC         | El diálogo se muestra arriba sin ninguna placa; el tutorial Blink ejercita la conexión en el simulador                           | Aún no verificado en hardware                  |
 | 4. Despliegue y ejecute | El tutorial Blink ejercita la ejecución en el simulador; ninguna placa ha recibido un programa                                   | Aún no verificado en hardware                  |
 | 5. Observe              | La tabla de observación se ejercita en el simulador; nadie ha visto cambiar una salida física                                    | Aún no verificado en hardware                  |
 

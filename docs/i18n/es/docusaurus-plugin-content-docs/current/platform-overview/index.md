@@ -3,50 +3,76 @@ slug: /platform-overview
 id: index
 title: Panorama de plataforma
 sidebar_label: Panorama de plataforma
-description: Mapa de producto de las superficies de ingeniería y destinos de ejecución de ZPLC.
+description: Las partes de ZPLC, qué hace cada una y cómo viaja un programa desde el editor hasta el simulador y hasta una placa.
 tags: [architecture, introduction]
 ---
 
 # Panorama de plataforma
 
-ZPLC (Zephyr PLC) combina un núcleo de ejecución portable en ANSI C99 con herramientas de ingeniería en TypeScript. Sus capacidades dependen de la evidencia: la simulación en el host, las compilaciones para un destino y los resultados HIL responden preguntas distintas.
+Esta página es el mapa de ZPLC. Nombra las cuatro partes, muestra el camino que sigue un programa y dice qué tipo de
+evidencia respalda cada parte, para que sepa en qué confiar antes de leer las páginas detalladas.
 
-## El ecosistema ZPLC
+## Las partes
 
 ```mermaid
-flowchart TB
-  IDE[Aplicación ZPLC]
+flowchart LR
+  App[Aplicación ZPLC]
   Compiler[Compilador]
-  Runtime[Núcleo del runtime]
-  Boards[Perfiles de placa]
+  Bytecode[Bytecode .zplc]
+  Core[Núcleo del runtime]
+  Sim[Simulador en su equipo]
+  Board[Firmware de la placa sobre Zephyr]
 
-  IDE --> Compiler
-  Compiler --> Runtime
-  Runtime --> Boards
+  App --> Compiler
+  Compiler --> Bytecode
+  Bytecode --> Core
+  Core --> Sim
+  Core --> Board
 ```
 
-## Principios centrales
+| Parte                                     | Qué es                                                                                                                                                 | Dónde está                                             |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| **Aplicación ZPLC**                       | El programa de escritorio en el que escribe, compila, prueba y simula. También contiene el curso Aprender.                                             | `packages/zplc-ide/`                                   |
+| **Compilador**                            | Convierte texto estructurado, lista de instrucciones, escalera, diagrama de bloques de función y diagrama funcional de secuencias en bytecode `.zplc`. | `packages/zplc-ide/src/compiler/` y los transpiladores |
+| **Núcleo del runtime**                    | Un intérprete de bytecode en C99 con validación de programas, estado del runtime y un planificador portátil. El mismo código corre en todas partes.    | `firmware/lib/zplc_core/`                              |
+| **Capa de abstracción de hardware (HAL)** | La interfaz pequeña que el núcleo usa para relojes, almacenamiento, E/S y transportes. Un port la implementa para cada plataforma.                     | `firmware/lib/zplc_core/` y los ports de las placas    |
 
-- **Memoria acotada en el runtime**: el núcleo en C99 usa límites de memoria definidos; la validación sigue siendo parte de cada perfil de destino.
-- **Separación mediante la HAL**: el núcleo y los adaptadores de hardware están separados para que cada comportamiento de la plataforma pueda inspeccionarse y probarse por su lado.
-- **Evidencia antes que afirmaciones**: los tiempos del planificador, la E/S, la persistencia, los protocolos y el soporte de placas solo se afirman para el perfil y la revisión que tienen la evidencia correspondiente. [Compatibilidad de hardware](../reference/capabilities-evidence.md) enumera los niveles, y [Seguridad y limitaciones](../safety-and-limitations.md) dice qué no es ZPLC.
+## Cómo viaja un programa
 
-## Componentes del producto
+1. Usted escribe el programa en la aplicación, en cualquiera de los cinco lenguajes.
+2. El compilador lo comprueba y escribe un único archivo `.zplc`, con las tareas y los valores seguros declarados de las
+   salidas.
+3. El **simulador** carga ese archivo en su equipo. Es el mismo núcleo del runtime, construido para el host.
+4. Para una placa, usted compila el firmware, lo graba, se conecta, carga el archivo `.zplc` y lo ejecuta. Una persona
+   inicia cada uno de estos pasos, y las herramientas de IA y MCP no pueden iniciar ninguno.
 
-1. **Máquina virtual del núcleo (`libzplc_core`)**: intérprete de bytecode en C99, validación de programas, estado del runtime e interfaces del planificador.
-2. **Capa de abstracción de hardware (HAL)**: adaptadores para los servicios de la plataforma, como relojes, almacenamiento, E/S y transportes configurados.
-3. **Compilador**: transforma los flujos de proyecto admitidos, centrados en Structured Text, en bytecode `.zplc`.
-4. **Aplicación ZPLC**: entorno de ingeniería de escritorio para escribir programas, ver diagnósticos y usar los flujos del runtime según sus capacidades.
+El cargador del runtime rechaza un programa compilado para otra versión del contrato, así que usted vuelve a compilar un
+programa cuando actualiza ZPLC.
 
-## Flujo típico
+## En qué confiar y por qué
 
-1. Elija un destino para el proyecto e inspeccione el perfil de la placa y sus capacidades.
-2. Escriba la lógica en un lenguaje admitido y compílela a `.zplc`.
-3. Use la simulación POSIX nativa para comprobaciones lógicas repetibles en el host, dentro de las capacidades declaradas.
-4. Compile el firmware, grábelo, cargue el programa PLC y opérelo como acciones humanas separadas.
-5. Use evidencia en el destino o HIL de la placa y la revisión exactas antes de depender de los tiempos o del comportamiento físico.
+ZPLC indica el nivel de evidencia de cada afirmación. Un resultado en un nivel nunca demuestra uno superior.
+
+| Nivel                  | Qué demuestra                                                                                  |
+| ---------------------- | ---------------------------------------------------------------------------------------------- |
+| Host                   | La lógica es correcta en su equipo, con el reloj virtual del simulador.                        |
+| QEMU y `native_sim`    | El runtime y el planificador corren en un procesador emulado. Sin placa.                       |
+| Compilación de destino | El firmware de una placa compila y cabe en su presupuesto de flash y RAM (`cross-build`).      |
+| Banco y manual         | Una persona lo ejecutó en una placa física y lo registró. Hoy ninguna placa tiene un registro. |
+
+[Compatibilidad de hardware](../reference/capabilities-evidence.md) enumera el nivel de cada placa, y
+[Seguridad y limitaciones](../safety-and-limitations.md) dice qué no es ZPLC: no es un PLC de seguridad, no garantiza
+tiempos y no debe controlar maquinaria.
+
+## Reglas de diseño
+
+- **Memoria acotada.** El núcleo usa regiones de memoria fijas y declaradas, y cada perfil de placa fija sus propios tamaños.
+- **La HAL es la única puerta al hardware.** El núcleo nunca toca un dispositivo, así que una plataforma puede probarse aparte de la lógica.
+- **Las salidas fallan en modo seguro.** Cada salida tiene un valor seguro, normalmente apagado. Una parada, una falla o un programa inválido nunca se reanudan solos.
+- **Un único núcleo de planificación.** El simulador y el firmware toman las mismas decisiones de planificación con el mismo código.
 
 ## Continúe con
 
-- [Primeros pasos](../getting-started/index.md)
-- [Arquitectura del sistema](../architecture/index.md)
+- [Primeros pasos](../getting-started/index.md): instale ZPLC y ejecute un programa.
+- [Arquitectura del sistema](../architecture/index.md): los límites en detalle.
+- [Runtime](../runtime/index.md) y el [planificador](../runtime/scheduler.md): cómo se ejecuta un programa.
