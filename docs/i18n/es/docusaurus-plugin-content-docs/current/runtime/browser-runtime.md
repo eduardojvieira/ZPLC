@@ -35,7 +35,7 @@ Una máquina sin `clang` ni `wasm-ld` produce una aplicación sin runtime de sof
 | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | La aplicación de escritorio, y el runtime nativo arranca                                                            | La simulación nativa                                                                                                                 |
 | La aplicación de escritorio, y el runtime nativo no arranca: falta el binario, no hay compilación para la plataforma o falló el handshake | El runtime de software. La consola dice que la simulación nativa no pudo arrancar y que en su lugar se ejecuta el runtime WebAssembly |
-| La compilación web del IDE, que no tiene runtime nativo                                                             | El runtime de software, sin aviso                                                                                                    |
+| Cualquier ejecución sin el puente de escritorio, como las suites de pruebas. ZPLC no distribuye una versión de navegador alojada | El runtime de software, sin aviso |
 
 Una compilación sin empaquetar de la aplicación de escritorio puede apagar el runtime nativo con `ZPLC_RUNTIME=wasm`, para que una prueba muestre el runtime de software en una máquina que tiene el nativo. Una copia instalada ignora la variable.
 
@@ -78,5 +78,5 @@ Nivel de evidencia: host. El módulo se ejecuta con Bun y, en el recorrido `8b`,
 - **Fallas de escritura.** La persistencia de la página es asíncrona. Una falla al escribir se muestra como advertencia en la consola de la aplicación, y la sesión continúa.
 
 :::tip ¿Necesita tiempos o red?
-Use la simulación nativa de la aplicación de escritorio para el tiempo con reloj virtual, y el hardware para tiempos, pines y redes reales. Los niveles de evidencia se explican en [Soporte de hardware](../reference/capabilities-evidence.md).
+Use la simulación nativa de la aplicación de escritorio para el tiempo con reloj virtual, y el hardware para tiempos, pines y redes reales. Los niveles de evidencia se explican en [Compatibilidad de hardware](../reference/capabilities-evidence.md).
 :::

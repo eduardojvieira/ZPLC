@@ -11,7 +11,7 @@ description: Ejecute las suites del firmware de ZPLC en una máquina Linux, en n
 Use esta página para ejecutar las pruebas del firmware de ZPLC en su propia máquina Linux. Un solo script, `tools/firmware-test/run.sh`, compila y ejecuta las mismas suites que los trabajos Zephyr de integración continua, en más objetivos, contra un espacio de trabajo de Zephyr que vive fuera del repositorio.
 
 :::warning Qué significa un resultado correcto
-Todo lo de esta página es evidencia de host, de simulador o de compilación. Una ejecución correcta no demuestra que una placa arranque, que sus pines se comporten ni que un ciclo mantenga su período en silicio real. Esas afirmaciones requieren los procedimientos de banco de [Hardware en el lazo](./hardware-in-the-loop.md) y los niveles de [Soporte de hardware](../reference/capabilities-evidence.md).
+Todo lo de esta página es evidencia de host, de simulador o de compilación. Una ejecución correcta no demuestra que una placa arranque, que sus pines se comporten ni que un ciclo mantenga su período en silicio real. Esas afirmaciones requieren los procedimientos de banco de [Hardware en el lazo](./hardware-in-the-loop.md) y los niveles de [Compatibilidad de hardware](../reference/capabilities-evidence.md).
 :::
 
 ## Qué necesita
@@ -229,4 +229,4 @@ El trabajo nocturno `loader-fuzz` de `.github/workflows/nightly-quality.yml` apl
 
 - [Configuración del espacio de trabajo de Zephyr](../reference/zephyr-workspace-setup.md)
 - [Placas](../reference/boards.md)
-- [Soporte de hardware](../reference/capabilities-evidence.md)
+- [Compatibilidad de hardware](../reference/capabilities-evidence.md)

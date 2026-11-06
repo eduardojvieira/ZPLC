@@ -35,7 +35,7 @@ A machine without `clang` and `wasm-ld` produces an application with no software
 | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | The desktop app, and the native runtime starts                                                 | The native simulation                                                                                    |
 | The desktop app, and the native runtime does not start: no binary, no build for the platform, or a failed handshake | The software runtime. The console says that the native simulation could not start and that the WebAssembly runtime runs instead |
-| The web build of the IDE, which has no native runtime                                          | The software runtime, with no notice                                                                     |
+| Any run without the desktop bridge, such as the test suites. ZPLC ships no hosted browser version | The software runtime, with no notice |
 
 An unpackaged build of the desktop app can switch the native runtime off with `ZPLC_RUNTIME=wasm`, so that a test can show the software runtime on a machine that has the native one. An installed copy ignores the variable.
 
