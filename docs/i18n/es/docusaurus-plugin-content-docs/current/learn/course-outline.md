@@ -32,7 +32,7 @@ Primero se ve un resultado: el recorrido del módulo 0 termina con una salida qu
 
 Cada módulo indica a continuación por qué está donde está. La página de inicio de Aprender en ZPLC muestra las mismas palabras, tomadas del mismo archivo del curso.
 
-Disponibles hoy: **56**. Planeadas: **0**. En total: **56**.
+Disponibles hoy: **66**. Planeadas: **0**. En total: **66**.
 
 ## Lenguajes
 
@@ -68,11 +68,13 @@ Fundamentos. Requiere el módulo: 0. Rutas: Simulación, Hardware.
 
 Un PLC repite un ciclo: leer las entradas, ejecutar el programa y escribir las salidas. Sin el ciclo de escaneo no se entienden la autorretención, los flancos ni los temporizadores, por eso va primero, y enseguida sigue un primer parpadeo en diagrama de escalera y en texto estructurado.
 
-| Lección                                                                 | Estado     | Lenguajes | Rutas                | Planta | Minutos | Requiere                     |
-| ----------------------------------------------------------------------- | ---------- | --------- | -------------------- | ------ | ------- | ---------------------------- |
-| `scan-cycle-one-scan-memory` Ciclo de escaneo y memoria de un ciclo     | Disponible | ST        | Simulación, Hardware | -      | 10      | `first-blink-simulation`     |
-| `blinky-ladder-timer-feedback` Oscilador TON y realimentación de salida | Disponible | LD        | Simulación, Hardware | -      | 20      | `scan-cycle-one-scan-memory` |
-| `blink-structured-text` Escriba un parpadeador en texto estructurado    | Disponible | ST        | Simulación, Hardware | -      | 15      | `scan-cycle-one-scan-memory` |
+| Lección                                                                       | Estado     | Lenguajes | Rutas                | Planta | Minutos | Requiere                     |
+| ----------------------------------------------------------------------------- | ---------- | --------- | -------------------- | ------ | ------- | ---------------------------- |
+| `scan-cycle-one-scan-memory` Ciclo de escaneo y memoria de un ciclo           | Disponible | ST        | Simulación, Hardware | -      | 10      | `first-blink-simulation`     |
+| `blinky-ladder-timer-feedback` Oscilador TON y realimentación de salida       | Disponible | LD        | Simulación, Hardware | -      | 20      | `scan-cycle-one-scan-memory` |
+| `blink-structured-text` Escriba un parpadeador en texto estructurado          | Disponible | ST        | Simulación, Hardware | -      | 15      | `scan-cycle-one-scan-memory` |
+| `ld-what-is-a-plc` Qué es un PLC: su primer peldaño                           | Disponible | LD        | Simulación           | -      | 15      | -                            |
+| `ld-scan-cycle` El ciclo de escaneo: por qué importa el orden de los peldaños | Disponible | LD        | Simulación           | -      | 15      | `ld-what-is-a-plc`           |
 
 Objetivos de las lecciones disponibles:
 
@@ -97,6 +99,8 @@ La lógica booleana es el vocabulario de todo programa. Se enseña en diagrama d
 | `boolean-logic-two-hand-guard-fbd` Diagrama de bloques de función: un mando a dos manos con protección          | Disponible | FBD       | Simulación, Hardware | -      | 20      | `boolean-logic-two-hand-guard`                                 |
 | `boolean-logic-two-hand-guard-il` Lista de instrucciones: el resultado actual en un mando a dos manos           | Disponible | IL        | Simulación, Hardware | -      | 15      | `boolean-logic-two-hand-guard`                                 |
 | `set-reset-alarm-latch-il` Lista de instrucciones: S y R, y la línea que va al final                            | Disponible | IL        | Simulación, Hardware | -      | 15      | `set-reset-alarm-latch`, `boolean-logic-two-hand-guard-il`     |
+| `ld-no-nc-contacts` Contactos NA y NC: un botón de parada que falla en modo seguro                              | Disponible | LD        | Simulación           | -      | 20      | `blinky-ladder-timer-feedback`                                 |
+| `ld-series-parallel` Serie y paralelo: AND y OR con contactos                                                   | Disponible | LD        | Simulación           | -      | 20      | `ld-no-nc-contacts`                                            |
 
 Objetivos de las lecciones disponibles:
 
@@ -126,6 +130,7 @@ El tiempo y los eventos vienen después de la lógica: los temporizadores retras
 | `timers-on-delay-off-delay-fbd` Temporizadores en diagrama de bloques de función: una luz con retardo a la desconexión y un filtro con retardo a la conexión | Disponible | FBD       | Simulación, Hardware | -      | 20      | `timers-on-delay-off-delay`, `boolean-logic-two-hand-guard-fbd` |
 | `timers-on-delay-off-delay-il` Lista de instrucciones: llamar a un temporizador de retardo a la desconexión y a la conexión                                  | Disponible | IL        | Simulación, Hardware | -      | 15      | `timers-on-delay-off-delay`, `boolean-logic-two-hand-guard-il`  |
 | `edge-counter-pulses-il` Lista de instrucciones: contar pulsos con un CTU                                                                                    | Disponible | IL        | Simulación, Hardware | -      | 15      | `edge-counter-pulses`, `boolean-logic-two-hand-guard-il`        |
+| `ld-edges` Flancos en escalera: contactos P y N y pulsos de un escaneo                                                                                       | Disponible | LD        | Simulación           | -      | 15      | `set-reset-alarm-latch-ladder`                                  |
 
 Objetivos de las lecciones disponibles:
 
@@ -151,6 +156,7 @@ Las señales reales son números, no solo encendido y apagado. Los tipos, la ari
 | `analog-scaling-fbd` Escalado analógico en diagrama de bloques de función: una alarma de nivel alto                         | Disponible | FBD       | Simulación, Hardware | -      | 20      | `analog-scaling-integer`, `counter-batch-fbd`                     |
 | `types-arithmetic-comparison-fbd` Tipos, aritmética y comparación en diagrama de bloques de función: un total y tres bandas | Disponible | FBD       | Simulación, Hardware | -      | 25      | `types-arithmetic-comparison`, `boolean-logic-two-hand-guard-fbd` |
 | `types-arithmetic-comparison-il` Lista de instrucciones: aritmética, comparación y un salto en un flanco ascendente         | Disponible | IL        | Simulación, Hardware | -      | 20      | `types-arithmetic-comparison`, `edge-counter-pulses-il`           |
+| `ld-variables-and-types` Variables, tipos y direcciones en escalera: bits de memoria, valores TIME y el mapa de E/S         | Disponible | LD        | Simulación           | -      | 20      | `edge-counter-pulses-ladder`                                      |
 
 Objetivos de las lecciones disponibles:
 
@@ -166,15 +172,16 @@ Intermedio. Requiere el módulo: 3. Rutas: Simulación, Hardware.
 
 Una máquina que hace cosas en orden es una máquina de estados. Las secuencias se escriben como estados en texto estructurado, y con ellas llega el diagrama funcional secuencial (SFC), como pasos.
 
-| Lección                                                                                        | Estado     | Lenguajes | Rutas                | Planta        | Minutos | Requiere                                              |
-| ---------------------------------------------------------------------------------------------- | ---------- | --------- | -------------------- | ------------- | ------- | ----------------------------------------------------- |
-| `pedestrian-crossing-states` Cruce peatonal y estados seguros                                  | Disponible | ST        | Simulación           | pedestrian-v1 | 25      | `edge-counter-pulses`                                 |
-| `sfc-fill-mix-sequence` Una secuencia en diagrama funcional secuencial: llenar y luego mezclar | Disponible | SFC       | Simulación, Hardware | -             | 25      | `edge-counter-pulses`                                 |
-| `pedestrian-crossing-sfc` Cruce peatonal como diagrama funcional secuencial                    | Disponible | SFC       | Simulación           | pedestrian-v1 | 25      | `pedestrian-crossing-states`, `sfc-fill-mix-sequence` |
-| `selection-branches-sfc` Ramas de selección: un camino entre dos                               | Disponible | SFC       | Simulación           | -             | 25      | `sfc-fill-mix-sequence`                               |
-| `simultaneous-branches-sfc` Ramas simultáneas: llenar y calentar a la vez                      | Disponible | SFC       | Simulación           | -             | 30      | `sfc-fill-mix-sequence`                               |
-| `step-times-sfc` Tiempos de paso: una bocina antes de abrir la puerta                          | Disponible | SFC       | Simulación           | -             | 20      | `sfc-fill-mix-sequence`                               |
-| `conveyor-sorting-sfc` Clasificación en un transportador como diagrama                         | Disponible | SFC       | Simulación           | conveyor-v1   | 30      | `sfc-fill-mix-sequence`                               |
+| Lección                                                                                                              | Estado     | Lenguajes | Rutas                | Planta        | Minutos | Requiere                                              |
+| -------------------------------------------------------------------------------------------------------------------- | ---------- | --------- | -------------------- | ------------- | ------- | ----------------------------------------------------- |
+| `pedestrian-crossing-states` Cruce peatonal y estados seguros                                                        | Disponible | ST        | Simulación           | pedestrian-v1 | 25      | `edge-counter-pulses`                                 |
+| `sfc-fill-mix-sequence` Una secuencia en diagrama funcional secuencial: llenar y luego mezclar                       | Disponible | SFC       | Simulación, Hardware | -             | 25      | `edge-counter-pulses`                                 |
+| `pedestrian-crossing-sfc` Cruce peatonal como diagrama funcional secuencial                                          | Disponible | SFC       | Simulación           | pedestrian-v1 | 25      | `pedestrian-crossing-states`, `sfc-fill-mix-sequence` |
+| `selection-branches-sfc` Ramas de selección: un camino entre dos                                                     | Disponible | SFC       | Simulación           | -             | 25      | `sfc-fill-mix-sequence`                               |
+| `simultaneous-branches-sfc` Ramas simultáneas: llenar y calentar a la vez                                            | Disponible | SFC       | Simulación           | -             | 30      | `sfc-fill-mix-sequence`                               |
+| `step-times-sfc` Tiempos de paso: una bocina antes de abrir la puerta                                                | Disponible | SFC       | Simulación           | -             | 20      | `sfc-fill-mix-sequence`                               |
+| `conveyor-sorting-sfc` Clasificación en un transportador como diagrama                                               | Disponible | SFC       | Simulación           | conveyor-v1   | 30      | `sfc-fill-mix-sequence`                               |
+| `ld-sequence-step-bits` Una secuencia en escalera: los bits de paso llevan un tanque de llenado a mezcla y a vaciado | Disponible | LD        | Simulación           | -             | 25      | `ld-variables-and-types`                              |
 
 Objetivos de las lecciones disponibles:
 
@@ -228,6 +235,7 @@ Las lecciones siguientes cubren bloques de función, también llamados desde un 
 | `structures-arrays-call-panel` Estructuras y arreglos: un panel de tres llamadas                                   | Disponible | ST        | Simulación, Hardware | -      | 25      | `function-block-pump-pair`                                    |
 | `function-block-valves-fbd` Su propio bloque de función en diagrama de bloques de función: dos válvulas, un bloque | Disponible | FBD       | Simulación, Hardware | -      | 20      | `function-block-pump-pair`, `counter-batch-fbd`               |
 | `function-block-call-il` Lista de instrucciones: llamar a un bloque de función y leer sus salidas                  | Disponible | IL        | Simulación, Hardware | -      | 25      | `function-block-pump-pair`, `boolean-logic-two-hand-guard-il` |
+| `ld-function-blocks` Su propio bloque de función en escalera: dos bombas, un bloque                                | Disponible | LD        | Simulación           | -      | 25      | `tank-level-fault-reset-ladder`                               |
 
 Objetivos de las lecciones disponibles:
 
@@ -242,11 +250,12 @@ Avanzado. Requiere el módulo: 6. Rutas: Simulación.
 
 Las pruebas llegan cuando ya hay programas que vale la pena probar. Las pruebas de escenario, las aserciones temporales, las trazas y los puntos de interrupción convierten una suposición en evidencia.
 
-| Lección                                                                           | Estado     | Lenguajes | Rutas      | Planta      | Minutos | Requiere                                         |
-| --------------------------------------------------------------------------------- | ---------- | --------- | ---------- | ----------- | ------- | ------------------------------------------------ |
-| `conveyor-classification-jam` Cinta de clasificación y atasco seguro              | Disponible | ST        | Simulación | conveyor-v1 | 25      | `motor-plant-feedback`, `tank-level-fault-reset` |
-| `temporal-assertions-jam-fault` Aserciones temporales y falla por atasco          | Disponible | ST        | Simulación | -           | 25      | `conveyor-classification-jam`                    |
-| `conveyor-two-parts-diagnosis` Diagnóstico reproducible: dos piezas, una decisión | Disponible | ST        | Simulación | -           | 20      | `conveyor-classification-jam`                    |
+| Lección                                                                                                                           | Estado     | Lenguajes | Rutas      | Planta      | Minutos | Requiere                                         |
+| --------------------------------------------------------------------------------------------------------------------------------- | ---------- | --------- | ---------- | ----------- | ------- | ------------------------------------------------ |
+| `conveyor-classification-jam` Cinta de clasificación y atasco seguro                                                              | Disponible | ST        | Simulación | conveyor-v1 | 25      | `motor-plant-feedback`, `tank-level-fault-reset` |
+| `temporal-assertions-jam-fault` Aserciones temporales y falla por atasco                                                          | Disponible | ST        | Simulación | -           | 25      | `conveyor-classification-jam`                    |
+| `conveyor-two-parts-diagnosis` Diagnóstico reproducible: dos piezas, una decisión                                                 | Disponible | ST        | Simulación | -           | 20      | `conveyor-classification-jam`                    |
+| `ld-diagnosis-debugger` Diagnóstico de un programa en escalera en simulación: observación, punto de interrupción, forzado y traza | Disponible | LD        | Simulación | -           | 40      | `ld-function-blocks`                             |
 
 Objetivos de las lecciones disponibles:
 
@@ -296,10 +305,11 @@ Avanzado. Requiere el módulo: 8. Rutas: Simulación, Hardware.
 
 El curso termina con una máquina pequeña, llevada de una descripción escrita a un programa probado, con todo lo anterior.
 
-| Lección                                                                                                   | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                            |
-| --------------------------------------------------------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | --------------------------------------------------- |
-| `capstone-packing-station` Proyecto final: una estación de empaque, de la descripción al programa probado | Disponible | ST        | Simulación | -      | 60      | `conveyor-two-parts-diagnosis`                      |
-| `packing-station-sfc` Proyecto final: una estación de empaque como diagrama                               | Disponible | SFC       | Simulación | -      | 60      | `capstone-packing-station`, `sfc-fill-mix-sequence` |
+| Lección                                                                                                       | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                            |
+| ------------------------------------------------------------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | --------------------------------------------------- |
+| `capstone-packing-station` Proyecto final: una estación de empaque, de la descripción al programa probado     | Disponible | ST        | Simulación | -      | 60      | `conveyor-two-parts-diagnosis`                      |
+| `packing-station-sfc` Proyecto final: una estación de empaque como diagrama                                   | Disponible | SFC       | Simulación | -      | 60      | `capstone-packing-station`, `sfc-fill-mix-sequence` |
+| `ld-final-project` Proyecto final en escalera: una estación de empaque, de la descripción al programa probado | Disponible | LD        | Simulación | -      | 60      | `ld-diagnosis-debugger`                             |
 
 Objetivos de las lecciones disponibles:
 

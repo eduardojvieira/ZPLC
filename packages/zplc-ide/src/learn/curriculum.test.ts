@@ -205,7 +205,8 @@ describe(
     }
 
     it('LRN-008 offers the first blink in module 1 in Ladder and in Structured Text, each as the program the learner edits', () => {
-      // module 1 also holds the scan cycle lessons and the first Ladder lessons of the Ladder path (LRN-043): the blinks are the ones named so
+      // module 1 also holds the scan cycle lessons and the first Ladder lessons of the Ladder path (LRN-043):
+      // the blinks are the ones named so
       const blinks = order.filter((lesson) => lesson.module === 1 && /blink/.test(lesson.id));
       expect(blinks.map((lesson) => [lesson.id, editedLanguageOf(lesson)])).toEqual([
         ['blinky-ladder-timer-feedback', 'LD'],

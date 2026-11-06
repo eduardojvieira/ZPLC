@@ -31,7 +31,7 @@ You see a result first: the tour of module 0 ends in a blinking output in simula
 
 Each module below says why it sits where it does. The Learn home of ZPLC shows the same words, taken from the same course file.
 
-Available today: **56**. Planned: **0**. In all: **56**.
+Available today: **66**. Planned: **0**. In all: **66**.
 
 ## Languages
 
@@ -67,11 +67,13 @@ Foundation. Requires module: 0. Tracks: Simulation, Hardware.
 
 A PLC repeats one cycle: read the inputs, run the program, write the outputs. Seal-in, edges and timers cannot be understood without the scan cycle, so it comes first, and a first blink in Ladder and in Structured Text follows at once.
 
-| Lesson                                                            | Status    | Languages | Tracks               | Plant | Minutes | Requires                     |
-| ----------------------------------------------------------------- | --------- | --------- | -------------------- | ----- | ------- | ---------------------------- |
-| `scan-cycle-one-scan-memory` Scan cycle and one-scan memory       | Available | ST        | Simulation, Hardware | -     | 10      | `first-blink-simulation`     |
-| `blinky-ladder-timer-feedback` TON oscillator and output feedback | Available | LD        | Simulation, Hardware | -     | 20      | `scan-cycle-one-scan-memory` |
-| `blink-structured-text` Write a blinker in Structured Text        | Available | ST        | Simulation, Hardware | -     | 15      | `scan-cycle-one-scan-memory` |
+| Lesson                                                             | Status    | Languages | Tracks               | Plant | Minutes | Requires                     |
+| ------------------------------------------------------------------ | --------- | --------- | -------------------- | ----- | ------- | ---------------------------- |
+| `scan-cycle-one-scan-memory` Scan cycle and one-scan memory        | Available | ST        | Simulation, Hardware | -     | 10      | `first-blink-simulation`     |
+| `blinky-ladder-timer-feedback` TON oscillator and output feedback  | Available | LD        | Simulation, Hardware | -     | 20      | `scan-cycle-one-scan-memory` |
+| `blink-structured-text` Write a blinker in Structured Text         | Available | ST        | Simulation, Hardware | -     | 15      | `scan-cycle-one-scan-memory` |
+| `ld-what-is-a-plc` What a PLC is: your first rung                  | Available | LD        | Simulation           | -     | 15      | -                            |
+| `ld-scan-cycle` The scan cycle: why the order of the rungs matters | Available | LD        | Simulation           | -     | 15      | `ld-what-is-a-plc`           |
 
 Objectives of the available lessons:
 
@@ -96,6 +98,8 @@ Boolean logic is the vocabulary of every program. It is taught in Ladder beside 
 | `boolean-logic-two-hand-guard-fbd` Function Block Diagram: a two-hand control with a guard                  | Available | FBD       | Simulation, Hardware | -     | 20      | `boolean-logic-two-hand-guard`                                 |
 | `boolean-logic-two-hand-guard-il` Instruction List: the current result in a two-hand control                | Available | IL        | Simulation, Hardware | -     | 15      | `boolean-logic-two-hand-guard`                                 |
 | `set-reset-alarm-latch-il` Instruction List: S and R, and the line that comes last                          | Available | IL        | Simulation, Hardware | -     | 15      | `set-reset-alarm-latch`, `boolean-logic-two-hand-guard-il`     |
+| `ld-no-nc-contacts` NO and NC contacts: a stop button that fails safe                                       | Available | LD        | Simulation           | -     | 20      | `blinky-ladder-timer-feedback`                                 |
+| `ld-series-parallel` Series and parallel: AND and OR with contacts                                          | Available | LD        | Simulation           | -     | 20      | `ld-no-nc-contacts`                                            |
 
 Objectives of the available lessons:
 
@@ -125,6 +129,7 @@ Time and events come after logic: timers delay or hold a signal, edges turn a le
 | `timers-on-delay-off-delay-fbd` Timers in Function Block Diagram: an off-delay light and an on-delay filter | Available | FBD       | Simulation, Hardware | -     | 20      | `timers-on-delay-off-delay`, `boolean-logic-two-hand-guard-fbd` |
 | `timers-on-delay-off-delay-il` Instruction List: calling an off-delay and an on-delay timer                 | Available | IL        | Simulation, Hardware | -     | 15      | `timers-on-delay-off-delay`, `boolean-logic-two-hand-guard-il`  |
 | `edge-counter-pulses-il` Instruction List: counting pulses with a CTU                                       | Available | IL        | Simulation, Hardware | -     | 15      | `edge-counter-pulses`, `boolean-logic-two-hand-guard-il`        |
+| `ld-edges` Edges in Ladder: P and N contacts and one-scan pulses                                            | Available | LD        | Simulation           | -     | 15      | `set-reset-alarm-latch-ladder`                                  |
 
 Objectives of the available lessons:
 
@@ -150,6 +155,7 @@ Real signals are numbers, not only on and off. Types, arithmetic, comparison and
 | `analog-scaling-fbd` Analog scaling in Function Block Diagram: a high level alarm                                     | Available | FBD       | Simulation, Hardware | -     | 20      | `analog-scaling-integer`, `counter-batch-fbd`                     |
 | `types-arithmetic-comparison-fbd` Types, arithmetic and comparison in Function Block Diagram: a total and three bands | Available | FBD       | Simulation, Hardware | -     | 25      | `types-arithmetic-comparison`, `boolean-logic-two-hand-guard-fbd` |
 | `types-arithmetic-comparison-il` Instruction List: arithmetic, comparison and a jump on a rising edge                 | Available | IL        | Simulation, Hardware | -     | 20      | `types-arithmetic-comparison`, `edge-counter-pulses-il`           |
+| `ld-variables-and-types` Variables, types and addresses in Ladder: memory bits, TIME values and the I/O map           | Available | LD        | Simulation           | -     | 20      | `edge-counter-pulses-ladder`                                      |
 
 Objectives of the available lessons:
 
@@ -165,15 +171,16 @@ Intermediate. Requires module: 3. Tracks: Simulation, Hardware.
 
 A machine that does things in order is a state machine. Sequences are written as states in Structured Text, and Sequential Function Chart arrives with them, as steps.
 
-| Lesson                                                                          | Status    | Languages | Tracks               | Plant         | Minutes | Requires                                              |
-| ------------------------------------------------------------------------------- | --------- | --------- | -------------------- | ------------- | ------- | ----------------------------------------------------- |
-| `pedestrian-crossing-states` Pedestrian crossing and safe states                | Available | ST        | Simulation           | pedestrian-v1 | 25      | `edge-counter-pulses`                                 |
-| `sfc-fill-mix-sequence` A sequence in Sequential Function Chart: fill, then mix | Available | SFC       | Simulation, Hardware | -             | 25      | `edge-counter-pulses`                                 |
-| `pedestrian-crossing-sfc` Pedestrian crossing as a chart                        | Available | SFC       | Simulation           | pedestrian-v1 | 25      | `pedestrian-crossing-states`, `sfc-fill-mix-sequence` |
-| `selection-branches-sfc` Selection branches: one path out of two                | Available | SFC       | Simulation           | -             | 25      | `sfc-fill-mix-sequence`                               |
-| `simultaneous-branches-sfc` Simultaneous branches: fill and heat together       | Available | SFC       | Simulation           | -             | 30      | `sfc-fill-mix-sequence`                               |
-| `step-times-sfc` Step times: a horn before the gate opens                       | Available | SFC       | Simulation           | -             | 20      | `sfc-fill-mix-sequence`                               |
-| `conveyor-sorting-sfc` Conveyor sorting as a chart                              | Available | SFC       | Simulation           | conveyor-v1   | 30      | `sfc-fill-mix-sequence`                               |
+| Lesson                                                                                        | Status    | Languages | Tracks               | Plant         | Minutes | Requires                                              |
+| --------------------------------------------------------------------------------------------- | --------- | --------- | -------------------- | ------------- | ------- | ----------------------------------------------------- |
+| `pedestrian-crossing-states` Pedestrian crossing and safe states                              | Available | ST        | Simulation           | pedestrian-v1 | 25      | `edge-counter-pulses`                                 |
+| `sfc-fill-mix-sequence` A sequence in Sequential Function Chart: fill, then mix               | Available | SFC       | Simulation, Hardware | -             | 25      | `edge-counter-pulses`                                 |
+| `pedestrian-crossing-sfc` Pedestrian crossing as a chart                                      | Available | SFC       | Simulation           | pedestrian-v1 | 25      | `pedestrian-crossing-states`, `sfc-fill-mix-sequence` |
+| `selection-branches-sfc` Selection branches: one path out of two                              | Available | SFC       | Simulation           | -             | 25      | `sfc-fill-mix-sequence`                               |
+| `simultaneous-branches-sfc` Simultaneous branches: fill and heat together                     | Available | SFC       | Simulation           | -             | 30      | `sfc-fill-mix-sequence`                               |
+| `step-times-sfc` Step times: a horn before the gate opens                                     | Available | SFC       | Simulation           | -             | 20      | `sfc-fill-mix-sequence`                               |
+| `conveyor-sorting-sfc` Conveyor sorting as a chart                                            | Available | SFC       | Simulation           | conveyor-v1   | 30      | `sfc-fill-mix-sequence`                               |
+| `ld-sequence-step-bits` A sequence in Ladder: step bits move a tank from fill to mix to drain | Available | LD        | Simulation           | -             | 25      | `ld-variables-and-types`                              |
 
 Objectives of the available lessons:
 
@@ -227,6 +234,7 @@ The lessons below cover function blocks, also called from Function Block Diagram
 | `structures-arrays-call-panel` Structures and arrays: a panel of three calls                         | Available | ST        | Simulation, Hardware | -     | 25      | `function-block-pump-pair`                                    |
 | `function-block-valves-fbd` Your own function block in Function Block Diagram: two valves, one block | Available | FBD       | Simulation, Hardware | -     | 20      | `function-block-pump-pair`, `counter-batch-fbd`               |
 | `function-block-call-il` Instruction List: calling a function block and reading its outputs          | Available | IL        | Simulation, Hardware | -     | 25      | `function-block-pump-pair`, `boolean-logic-two-hand-guard-il` |
+| `ld-function-blocks` Your own function block in Ladder: two pumps, one block                         | Available | LD        | Simulation           | -     | 25      | `tank-level-fault-reset-ladder`                               |
 
 Objectives of the available lessons:
 
@@ -241,11 +249,12 @@ Advanced. Requires module: 6. Tracks: Simulation.
 
 Testing comes once you have programs worth testing. Scenario tests, temporal assertions, traces and breakpoints turn a guess into evidence.
 
-| Lesson                                                                         | Status    | Languages | Tracks     | Plant       | Minutes | Requires                                         |
-| ------------------------------------------------------------------------------ | --------- | --------- | ---------- | ----------- | ------- | ------------------------------------------------ |
-| `conveyor-classification-jam` Conveyor classification and safe jam             | Available | ST        | Simulation | conveyor-v1 | 25      | `motor-plant-feedback`, `tank-level-fault-reset` |
-| `temporal-assertions-jam-fault` Temporal assertions and jam fault              | Available | ST        | Simulation | -           | 25      | `conveyor-classification-jam`                    |
-| `conveyor-two-parts-diagnosis` Reproducible diagnosis: two parts, one decision | Available | ST        | Simulation | -           | 20      | `conveyor-classification-jam`                    |
+| Lesson                                                                                                | Status    | Languages | Tracks     | Plant       | Minutes | Requires                                         |
+| ----------------------------------------------------------------------------------------------------- | --------- | --------- | ---------- | ----------- | ------- | ------------------------------------------------ |
+| `conveyor-classification-jam` Conveyor classification and safe jam                                    | Available | ST        | Simulation | conveyor-v1 | 25      | `motor-plant-feedback`, `tank-level-fault-reset` |
+| `temporal-assertions-jam-fault` Temporal assertions and jam fault                                     | Available | ST        | Simulation | -           | 25      | `conveyor-classification-jam`                    |
+| `conveyor-two-parts-diagnosis` Reproducible diagnosis: two parts, one decision                        | Available | ST        | Simulation | -           | 20      | `conveyor-classification-jam`                    |
+| `ld-diagnosis-debugger` Diagnosing a Ladder program in simulation: watch, breakpoint, force and trace | Available | LD        | Simulation | -           | 40      | `ld-function-blocks`                             |
 
 Objectives of the available lessons:
 
@@ -295,10 +304,11 @@ Advanced. Requires module: 8. Tracks: Simulation, Hardware.
 
 The course ends with a small machine taken from a written description to a tested program, using everything before it.
 
-| Lesson                                                                                     | Status    | Languages | Tracks     | Plant | Minutes | Requires                                            |
-| ------------------------------------------------------------------------------------------ | --------- | --------- | ---------- | ----- | ------- | --------------------------------------------------- |
-| `capstone-packing-station` Capstone: a packing station, from description to tested program | Available | ST        | Simulation | -     | 60      | `conveyor-two-parts-diagnosis`                      |
-| `packing-station-sfc` Capstone: a packing station as a chart                               | Available | SFC       | Simulation | -     | 60      | `capstone-packing-station`, `sfc-fill-mix-sequence` |
+| Lesson                                                                                            | Status    | Languages | Tracks     | Plant | Minutes | Requires                                            |
+| ------------------------------------------------------------------------------------------------- | --------- | --------- | ---------- | ----- | ------- | --------------------------------------------------- |
+| `capstone-packing-station` Capstone: a packing station, from description to tested program        | Available | ST        | Simulation | -     | 60      | `conveyor-two-parts-diagnosis`                      |
+| `packing-station-sfc` Capstone: a packing station as a chart                                      | Available | SFC       | Simulation | -     | 60      | `capstone-packing-station`, `sfc-fill-mix-sequence` |
+| `ld-final-project` Final project in Ladder: a packing station, from description to tested program | Available | LD        | Simulation | -     | 60      | `ld-diagnosis-debugger`                             |
 
 Objectives of the available lessons:
 
