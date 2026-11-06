@@ -23,6 +23,7 @@ import {
 } from '../../models/ld';
 import { LDGridBackground } from './LDGridBackground';
 import { drawnRungWidth, useAvailableWidth } from './rungWidth';
+import LDFunctionBox from './LDFunctionBox';
 import LDElement, { CELL_WIDTH, CELL_HEIGHT, WIRE_Y, COLORS, type DebugValuesMap } from './LDElement';
 import { cellElement } from '../../models/sourceElements';
 import type { ElementState } from '../../monitoring/elementStates';
@@ -91,6 +92,12 @@ export default function LDRungGrid({
       if (!element || !elementStates) return false;
       return elementStates.get(cellElement(rung.id, row, col))?.power === true;
     },
+    [elementStates, rung.id],
+  );
+
+  // Whether power leaves an element: a function box shows ENO apart from EN, since a comparison that fails passes none on
+  const isElementEnergizedOut = useCallback(
+    (row: number, col: number): boolean => elementStates?.get(cellElement(rung.id, row, col))?.powerOut === true,
     [elementStates, rung.id],
   );
 
@@ -466,17 +473,31 @@ export default function LDRungGrid({
                       transition: 'opacity 0.15s ease',
                     }}
                   >
-                    <LDElement
-                      element={cell.element}
-                      x={colIdx}
-                      y={rowIdx}
-                      selected={cell.element.id === selectedElementId}
-                      energized={isElementEnergized(cell.element, rowIdx, colIdx)}
-                      debugValues={debugValues}
-                      onClick={readOnly ? undefined : () => handleElementClick(cell.element!)}
-                      draggable={!readOnly}
-                      onDragStart={handleElementDragStart}
-                    />
+                    {cell.element.type === 'function' ? (
+                      <LDFunctionBox
+                        element={cell.element}
+                        x={colIdx}
+                        y={rowIdx}
+                        selected={cell.element.id === selectedElementId}
+                        energized={isElementEnergized(cell.element, rowIdx, colIdx)}
+                        energizedOut={isElementEnergizedOut(rowIdx, colIdx)}
+                        onClick={readOnly ? undefined : () => handleElementClick(cell.element!)}
+                        draggable={!readOnly}
+                        onDragStart={handleElementDragStart}
+                      />
+                    ) : (
+                      <LDElement
+                        element={cell.element}
+                        x={colIdx}
+                        y={rowIdx}
+                        selected={cell.element.id === selectedElementId}
+                        energized={isElementEnergized(cell.element, rowIdx, colIdx)}
+                        debugValues={debugValues}
+                        onClick={readOnly ? undefined : () => handleElementClick(cell.element!)}
+                        draggable={!readOnly}
+                        onDragStart={handleElementDragStart}
+                      />
+                    )}
                   </g>
                 ) : null,
               ),
