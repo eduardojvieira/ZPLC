@@ -41,7 +41,8 @@ const DEVICE_MODULE = new RegExp(
     String.raw`wasmAdapter|simulationAdapterFactory)|hooks\/useDebugController\w*|` +
     String.raw`components\/(?:deployFlow|deployConfirm|hardwareDeployConfirmation)|uploader\/[^'"]*)['"]|` +
     // the runtime barrel re-exports the native and serial adapters and the connection manager
-    String.raw`(?:from|import\()\s*['"][^'"]*\/runtime(?:\/index)?['"]`,
+    // the runtime barrel in every spelling that resolves to runtime/index.ts (it re-exports the native and serial adapters)
+    String.raw`(?:from|import\()\s*['"][^'"]*\/runtime(?:\/(?:index(?:\.tsx?)?)?)?['"]`,
 );
 const PHYSICAL_CALL = new RegExp(
   String.raw`\.(?:connect|disconnect|loadProgram|start|stop|pause|resume|step|reset|forceValue|clearForcedValue|` +
@@ -64,7 +65,7 @@ const SEAM_DEVICE_MODULE = new RegExp(
   String.raw`(?:from|import\()\s*['"][^'"]*(?:connectionManager|serialAdapter|framedSerialAdapter|nativeAdapter|` +
     String.raw`simulationAdapterFactory|hooks\/useDebugController\w*|store\/useIDEStore|deployFlow|deployConfirm|` +
     String.raw`hardwareDeployConfirmation|uploader\/[^'"]*)['"]|` +
-    String.raw`(?:from|import\()\s*['"]\.(?:\/index)?['"]`,
+    String.raw`(?:from|import\()\s*['"](?:\.\/?|\.\/index(?:\.tsx?)?|\.\.\/runtime(?:\/(?:index(?:\.tsx?)?)?)?)['"]`,
 );
 const SEAM_PHYSICAL_CALL = new RegExp(
   String.raw`\.(?:forceValue|clearForcedValue|clearAllForcedValues|setVirtualInput|setIPI|sendRaw|requestPort|getPorts|` +

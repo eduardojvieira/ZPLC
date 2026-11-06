@@ -80,6 +80,18 @@ describe('Learn starts no physical operation by itself (LRN-015)', () => {
     expect(learnRules("import { openTryLab } from '../../runtime/tryLab'; const o = openTryLab(text, spec);")).toEqual([]);
   });
 
+  it('LRN-015 catches every spelling of the runtime barrel, inside the seam and from Learn', () => {
+    const seamRules = (text: string): string[] => seamViolationsOf({ path: TRY_LAB, text }).map((violation) => violation.rule);
+    for (const spelling of ['./', './index.ts', '../runtime', '../runtime/', '../runtime/index']) {
+      expect([spelling, seamRules(`import { NativeAdapter } from '${spelling}';`)]).toEqual([spelling, ['device-module']]);
+    }
+    const learn = 'packages/zplc-ide/src/learn/reading/Evil.tsx';
+    for (const spelling of ['../../runtime/', '../../runtime/index.ts']) {
+      const rules = violationsOf({ path: learn, text: `import { NativeAdapter } from '${spelling}';` }).map((violation) => violation.rule);
+      expect([spelling, rules]).toEqual([spelling, ['device-module']]);
+    }
+  });
+
   it('LRN-015 holds for every Learn source of the repository', () => {
     expect(checkRepository()).toEqual([]);
   });

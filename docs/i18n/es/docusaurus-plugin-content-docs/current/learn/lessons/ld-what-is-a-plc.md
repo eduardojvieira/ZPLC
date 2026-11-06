@@ -37,11 +37,11 @@ Conozca las tres partes de toda máquina con PLC, entradas, un programa y salida
 
 ## Qué cubre la evidencia
 
-Las pruebas aportan evidencia determinista del host con el runtime nativo POSIX, solo en su computador; no son evidencia de hardware, eléctrica, HIL ni de seguridad.
+Las pruebas aportan evidencia determinista del host con el runtime nativo POSIX, solo en su computadora; no son evidencia de hardware, eléctrica, HIL ni de seguridad.
 
 ## En una placa
 
-Esta lección trata del laboratorio simulado en su computador: el botón y la lámpara existen solo en la simulación, así que no hay cableado de placa que verificar. Complétela en Simulación, que solo necesita su computador.
+Esta lección trata del laboratorio simulado en su computadora: el botón y la lámpara existen solo en la simulación, así que no hay cableado de placa que verificar. Complétela en Simulación, que solo necesita su computadora.
 
 {/* <<< END GENERATED: learn/lessons/ld-what-is-a-plc <<< */}
 

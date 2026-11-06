@@ -2891,6 +2891,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/boardSession.test.ts","test":"the read-only board session (LRN-015, LRN-024)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/tryLab.test.ts","test":"try-it lab session (LRN-041, LRN-015)"},
     {"kind":"unit","ref":"tools/ci/learn-physical-guard.test.ts","test":"LRN-015 LRN-041 lets the try-it lab seam use only its own WASM session"},
+    {"kind":"unit","ref":"tools/ci/learn-physical-guard.test.ts","test":"LRN-015 catches every spelling of the runtime barrel, inside the seam and from Learn"},
     {"kind":"unit","ref":"tools/ci/learn-physical-guard.test.ts","test":"LRN-015 closes the ways round the try-it lab seam"},
     {"kind":"unit","ref":"tools/ci/learn-physical-guard.test.ts","test":"LRN-015 finds a call that connects, deploys, runs, stops, forces, writes, opens a port or flashes"},
     {"kind":"unit","ref":"tools/ci/learn-physical-guard.test.ts","test":"LRN-015 finds an import of a module that reaches a device"},
