@@ -1,0 +1,162 @@
+{
+  "name": "FanSealIn",
+  "description": "A fan that holds itself on, with two conditions that stop it.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "OnButton",
+        "type": "BOOL",
+        "comment": "On push button: TRUE while pressed"
+      },
+      {
+        "name": "OffButton",
+        "type": "BOOL",
+        "comment": "Off push button: TRUE while pressed"
+      },
+      {
+        "name": "Overload",
+        "type": "BOOL",
+        "comment": "Overload relay: TRUE when tripped"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Fan",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Fan contactor command"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "The Fan contact under OnButton keeps the coil alive; OffButton and Overload are in series before the branch.",
+      "branches": [
+        {
+          "id": "branch_1",
+          "startCol": 2,
+          "endCol": 2,
+          "rows": [
+            0,
+            1
+          ]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "e0_0_1",
+              "type": "contact_nc",
+              "variable": "OffButton",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_1_1",
+              "type": "contact_nc",
+              "variable": "Overload",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_2_1",
+              "type": "contact_no",
+              "variable": "OnButton",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_7_1",
+              "type": "coil",
+              "variable": "Fan",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": {
+              "id": "e1_2_1",
+              "type": "contact_no",
+              "variable": "Fan",
+              "row": 1,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-05",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
