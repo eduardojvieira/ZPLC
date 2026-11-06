@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "ld-final-project",
+  "version": 1,
+  "order": 88,
+  "module": 11,
+  "level": "advanced",
+  "prerequisites": ["ld-diagnosis-debugger"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The station reads five digital inputs (Start, StopOK, EStopOK, Part and Reset), and the learner boards have four.",
+        "es": "La estación lee cinco entradas digitales (Start, StopOK, EStopOK, Part y Reset), y las placas del estudiante tienen cuatro."
+      },
+      "instead": {
+        "en": "Complete it in Simulation: its grade is the same each time and needs no board.",
+        "es": "Complétela en Simulación: su calificación es la misma cada vez y no necesita placa."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 60,
+  "starter": {
+    "project": "ld_packing_station_starter",
+    "program": "src/PackStation.ld.json"
+  },
+  "solution": {
+    "project": "ld_packing_station",
+    "program": "src/PackStation.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "PackStation",
+    "path": "tests/pack-station.scenario.json",
+    "sha256": "5c3eff36f120dc52679e0393d91962ef1c4f502a24466f1db64ff4b590495ef1"
+  },
+  "regressionScenarios": []
+}

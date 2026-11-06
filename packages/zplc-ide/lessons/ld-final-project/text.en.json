@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Final project in Ladder: a packing station, from description to tested program",
+  "summary": "Turn the written description of a small packing station into a Ladder program with a seal-in, a stop and an emergency stop wired normally closed, a counter, a timer and a latched fault, and prove it with a scenario that also checks what must not happen.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish packing-line requirements, safety function behavior, sensor timing or any real machine behavior, HIL, or certification.",
+  "objectives": [
+    "Turn five written requirements into one Ladder program that combines a seal-in, normally closed stops, a counter, a timer and a latched fault.",
+    "Read a scenario that checks both what must happen and what must not happen, and use its failed assertions to find the requirement you missed."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "A packing station has a belt, a part sensor and four buttons. Edit src/PackStation.ld.json so that: (1) Start turns Belt on and it stays on after Start is released; the stop button (StopOK) and the emergency stop (EStopOK) are wired normally closed, so each is TRUE at rest and FALSE while pressed, and either one turns Belt off. (2) Each rising edge of Part counts one part; three parts make a batch, and then BatchFull lights and the belt stops. (3) If Part stays on for `T#80ms` or more, the sensor is blocked: Fault latches and the belt stops. (4) Reset clears the count and BatchFull, and clears Fault only when Part is no longer on. (5) After any stop, whether by Stop, the emergency stop, a full batch or a fault, the belt runs again only after a new Start.",
+      "checkpoint": "The belt runs after Start, stops for Stop, the emergency stop, a full batch and a jam, and never restarts without a new Start."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Parts pass the sensor at {{t:50}}, {{t:90}} and {{t:150}} ms. Predict BatchFull at {{t:130}} ms and at {{t:190}} ms, and Belt at {{t:190}} ms. Start is pressed again at {{t:200}} ms: predict Belt at {{t:230}} ms.",
+      "checkpoint": "{{v:PackStation.BatchFull=false@130|OFF}} at {{t:130}} ms, after two parts; {{v:PackStation.BatchFull=true@190|ON}} at {{t:190}} ms, with {{v:PackStation.Belt=false@190|the belt stopped}}; {{v:PackStation.Belt=false@230|the belt stays off}} at {{t:230}} ms, because the batch is still full."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: the starter has only the belt rung with Start, Stop and the emergency stop. Plan first: write the inputs and outputs in a table, then the steps, then the tests. Then add rung 1 with the counter (CU from Part, R from Reset, preset 3) driving BatchFull, rung 2 with the timer on Part that sets Fault, rung 3 with a RESET coil on Fault under Reset and a normally closed contact of Part, and a normally closed contact of Fault and of BatchFull in the belt rung.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson. Read each failed assertion: it names the instant, the expected value and the observed value. If you want to see inside, run the program in Simulation and use the Watch table, as in the previous lesson.",
+      "checkpoint": "The scenario is named PackStation and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:270}}, {{t:310}} and {{t:360}} ms: Reset empties the batch at {{t:240}} ms but the belt stays off until a new Start at {{t:280}} ms, and after the emergency stop at {{t:320}} ms the belt stays off at {{t:360}} ms until Start is pressed at {{t:370}} ms. The part that blocks the sensor from {{t:410}} ms raises the fault, and Reset at {{t:520}} ms does not clear it while the sensor is blocked; it clears only after Part falls at {{t:550}} ms and Reset is pressed at {{t:570}} ms.",
+      "checkpoint": "At {{t:530}} ms Fault is on and the belt is off even though Reset was pressed; at {{t:590}} ms Fault is off and the belt is still off."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Which of the five requirements did the first failed assertion point to, and which ones did you only find by reading the scenario? Think of one more thing the station should never do, and whether the scenario would catch it. Then write down the three tests you would run on a real station before trusting it.",
+      "checkpoint": "Most of the assertions check what must not happen: a belt that restarts by itself, a fault cleared too early, a batch lamp that stays on. A program that only does what is asked passes the happy path and still fails these. The scenario shows the logic only; it is not a packing line and not a safety function."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Write one requirement at a time: the counter and BatchFull first, then the timer and the fault, then put every reason to stop in series in the belt rung. Which reasons are there, and which contacts read them?"
+    },
+    {
+      "level": 2,
+      "text": "Rung 1: Part, then a CTU block Count with CU connected, R set to Reset and PV set to 3, then the coil BatchFull. Rung 2: Part, then a TON block Stuck with PT set to T#80ms, then a SET coil on Fault. Rung 3: Reset in series with a normally closed contact of Part, then a RESET coil on Fault. Belt rung: Start in parallel with Belt, then StopOK, EStopOK, a normally closed Fault and a normally closed BatchFull, then the coil Belt."
+    }
+  ],
+  "faultCases": [
+    "The starter has only the belt rung, so a full batch never stops the belt and a blocked sensor never raises Fault. Add the counter with Reset on its R input, the timer on Part that sets Fault, the RESET coil that Reset reaches only when Part is clear, and a normally closed contact of Fault and of BatchFull in the belt rung."
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Proyecto final en escalera: una estación de empaque, de la descripción al programa probado",
+  "summary": "Convierta la descripción escrita de una pequeña estación de empaque en un programa en escalera con una autorretención, un paro y un paro de emergencia cableados normalmente cerrados, un contador, un temporizador y una falla retenida, y compruébelo con un escenario que también verifica lo que no debe ocurrir.",
+  "scope": "Las pruebas aportan evidencia del equipo anfitrión con POSIX nativo y una tarea de 10 ms; no establecen requisitos de una línea de empaque, el comportamiento de una función de seguridad, la temporización de sensores ni el comportamiento de ninguna máquina real, HIL ni certificación.",
+  "objectives": [
+    "Convertir cinco requisitos escritos en un programa en escalera que combine una autorretención, paros normalmente cerrados, un contador, un temporizador y una falla retenida.",
+    "Leer un escenario que verifica tanto lo que debe ocurrir como lo que no debe ocurrir, y usar sus aserciones fallidas para encontrar el requisito que omitió."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "Una estación de empaque tiene una cinta, un sensor de piezas y cuatro botones. Edite src/PackStation.ld.json para que: (1) Start encienda Belt y esta siga encendida al soltar Start; el botón de paro (StopOK) y el paro de emergencia (EStopOK) están cableados normalmente cerrados, de modo que cada uno es TRUE en reposo y FALSE mientras se pulsa, y cualquiera de los dos apaga Belt. (2) Cada flanco ascendente de Part cuente una pieza; tres piezas forman un lote, y entonces BatchFull se enciende y la cinta se detiene. (3) Si Part permanece encendido `T#80ms` o más, el sensor está bloqueado: Fault se retiene y la cinta se detiene. (4) Reset borra la cuenta y BatchFull, y borra Fault solo cuando Part ya no está encendido. (5) Tras cualquier paro, sea por Stop, por el paro de emergencia, por un lote lleno o por una falla, la cinta vuelve a funcionar solo después de un nuevo Start.",
+      "checkpoint": "La cinta funciona tras Start, se detiene por Stop, por el paro de emergencia, por un lote lleno y por un atasco, y nunca vuelve a arrancar sin un nuevo Start."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Las piezas pasan por el sensor a los {{t:50}}, {{t:90}} y {{t:150}} ms. Prediga BatchFull a los {{t:130}} ms y a los {{t:190}} ms, y Belt a los {{t:190}} ms. Start se pulsa de nuevo a los {{t:200}} ms: prediga Belt a los {{t:230}} ms.",
+      "checkpoint": "{{v:PackStation.BatchFull=false@130|OFF}} a los {{t:130}} ms, tras dos piezas; {{v:PackStation.BatchFull=true@190|ON}} a los {{t:190}} ms, con {{v:PackStation.Belt=false@190|la cinta detenida}}; {{v:PackStation.Belt=false@230|la cinta sigue apagada}} a los {{t:230}} ms, porque el lote sigue lleno."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: el programa inicial tiene solo el peldaño de la cinta con Start, Stop y el paro de emergencia. Planifique primero: escriba las entradas y salidas en una tabla, luego los pasos y luego las pruebas. Después agregue el peldaño 1 con el contador (CU desde Part, R desde Reset, valor preestablecido 3) que gobierna BatchFull, el peldaño 2 con el temporizador sobre Part que activa Fault, el peldaño 3 con una bobina RESET sobre Fault bajo Reset y un contacto normalmente cerrado de Part, y un contacto normalmente cerrado de Fault y de BatchFull en el peldaño de la cinta.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del equipo anfitrión."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta el programa guardado con el escenario de esta lección. Lea cada aserción fallida: indica el instante, el valor esperado y el valor observado. Si desea ver el interior, ejecute el programa en Simulación y use la tabla de observación, como en la lección anterior.",
+      "checkpoint": "El escenario se llama PackStation y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare los {{t:270}}, {{t:310}} y {{t:360}} ms: Reset vacía el lote a los {{t:240}} ms pero la cinta sigue apagada hasta un nuevo Start a los {{t:280}} ms, y tras el paro de emergencia de los {{t:320}} ms la cinta sigue apagada a los {{t:360}} ms hasta que se pulsa Start a los {{t:370}} ms. La pieza que bloquea el sensor desde los {{t:410}} ms provoca la falla, y Reset a los {{t:520}} ms no la borra mientras el sensor está bloqueado; solo se borra después de que Part cae a los {{t:550}} ms y se pulsa Reset a los {{t:570}} ms.",
+      "checkpoint": "A los {{t:530}} ms Fault está encendido y la cinta apagada aunque se pulsó Reset; a los {{t:590}} ms Fault está apagado y la cinta sigue apagada."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿A cuál de los cinco requisitos apuntó la primera aserción fallida, y cuáles encontró solo al leer el escenario? Piense en otra cosa que la estación nunca debería hacer, y en si el escenario la detectaría. Luego escriba las tres pruebas que haría en una estación real antes de confiar en ella.",
+      "checkpoint": "La mayoría de las aserciones comprueban lo que no debe ocurrir: una cinta que vuelve a arrancar sola, una falla borrada demasiado pronto, una lámpara de lote que sigue encendida. Un programa que solo hace lo que se pide pasa el caso normal y aun así no supera estas comprobaciones. El escenario muestra solo la lógica; no es una línea de empaque ni una función de seguridad."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Escriba un requisito a la vez: primero el contador y BatchFull, luego el temporizador y la falla, y después ponga en serie en el peldaño de la cinta cada motivo de paro. ¿Cuáles son, y qué contactos los leen?"
+    },
+    {
+      "level": 2,
+      "text": "Peldaño 1: Part, luego un bloque CTU Count con CU conectado, R en Reset y PV en 3, luego la bobina BatchFull. Peldaño 2: Part, luego un bloque TON Stuck con PT en T#80ms, luego una bobina SET sobre Fault. Peldaño 3: Reset en serie con un contacto normalmente cerrado de Part, luego una bobina RESET sobre Fault. Peldaño de la cinta: Start en paralelo con Belt, luego StopOK, EStopOK, un Fault normalmente cerrado y un BatchFull normalmente cerrado, luego la bobina Belt."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial tiene solo el peldaño de la cinta, de modo que un lote lleno nunca detiene la cinta y un sensor bloqueado nunca activa Fault. Agregue el contador con Reset en su entrada R, el temporizador sobre Part que activa Fault, la bobina RESET a la que Reset llega solo cuando Part está libre, y un contacto normalmente cerrado de Fault y de BatchFull en el peldaño de la cinta."
+  ]
+}

@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "id": "MotorDiag",
+  "tickMs": 10,
+  "durationMs": 240,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "MotorDiag.StartPB": false,
+        "MotorDiag.StopOK": true,
+        "MotorDiag.OverloadOK": true
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "MotorDiag.StartPB": true
+      }
+    },
+    {
+      "atMs": 30,
+      "set": {
+        "MotorDiag.StartPB": false
+      }
+    },
+    {
+      "atMs": 60,
+      "set": {
+        "MotorDiag.StopOK": false
+      }
+    },
+    {
+      "atMs": 70,
+      "set": {
+        "MotorDiag.StopOK": true
+      }
+    },
+    {
+      "atMs": 100,
+      "set": {
+        "MotorDiag.StartPB": true
+      }
+    },
+    {
+      "atMs": 110,
+      "set": {
+        "MotorDiag.StartPB": false
+      }
+    },
+    {
+      "atMs": 140,
+      "set": {
+        "MotorDiag.OverloadOK": false
+      }
+    },
+    {
+      "atMs": 160,
+      "set": {
+        "MotorDiag.OverloadOK": true
+      }
+    },
+    {
+      "atMs": 190,
+      "set": {
+        "MotorDiag.StartPB": true,
+        "MotorDiag.StopOK": false
+      }
+    },
+    {
+      "atMs": 210,
+      "set": {
+        "MotorDiag.StartPB": false,
+        "MotorDiag.StopOK": true
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "MotorDiag.Motor": false,
+        "MotorDiag.Alarm": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 40,
+      "condition": {
+        "MotorDiag.Motor": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "MotorDiag.Motor": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 80,
+      "condition": {
+        "MotorDiag.Motor": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 120,
+      "condition": {
+        "MotorDiag.Motor": true,
+        "MotorDiag.Alarm": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 150,
+      "condition": {
+        "MotorDiag.Motor": false,
+        "MotorDiag.Alarm": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 170,
+      "condition": {
+        "MotorDiag.Motor": false,
+        "MotorDiag.Alarm": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 200,
+      "condition": {
+        "MotorDiag.Motor": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 230,
+      "condition": {
+        "MotorDiag.Motor": false
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 20,
+      "withinMs": 20,
+      "condition": {
+        "MotorDiag.Motor": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 60,
+      "withinMs": 20,
+      "condition": {
+        "MotorDiag.Motor": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 110,
+      "forMs": 20,
+      "condition": {
+        "MotorDiag.Motor": true
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "MotorDiag.Motor": true,
+        "MotorDiag.Alarm": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "name": "DoorLamp",
+  "description": "A warning lamp that should light while the door is open.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "DoorClosed",
+        "type": "BOOL",
+        "comment": "Door switch: TRUE while the door is closed"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Lamp",
+        "type": "BOOL",
+        "comment": "Warning lamp: should be TRUE while the door is open"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "The lamp follows the door switch.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "contact_no_DoorClosed_00",
+              "type": "contact_no",
+              "variable": "DoorClosed",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_Lamp_07",
+              "type": "coil",
+              "variable": "Lamp",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-06",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

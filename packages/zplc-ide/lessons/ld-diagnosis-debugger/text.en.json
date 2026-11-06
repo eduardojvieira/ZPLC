@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Diagnosing a Ladder program in simulation: watch, breakpoint, force and trace",
+  "summary": "Find why a motor will not stop by watching its variables, stopping the program on a rung, forcing an input in simulation and reading the trace, then fix the rung and release every force.",
+  "scope": "Tests provide deterministic native POSIX host evidence only. Forcing and breakpoints here are simulation actions by the learner; they are not hardware, HIL, safety or certification evidence.",
+  "objectives": [
+    "Use the Watch table, a breakpoint on a rung, a forced input and the trace to find the cause of a Ladder program that does not behave as described.",
+    "Fix the rung so that Stop and the overload both drop the motor, and release every force before you check."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/MotorDiag.ld.json a motor starts with StartPB, but it does not stop when the stop button is pressed. StartPB is a normally open pushbutton. StopOK is wired normally closed: it is TRUE at rest and FALSE while the stop button is pressed. OverloadOK is TRUE while the motor is healthy. Diagnose the program in simulation, then fix it so that Stop and the overload both drop the motor and Alarm follows the overload.",
+      "checkpoint": "You can name the contact that is in the wrong place before you change anything."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "StartPB is pressed at {{t:20}} ms and released at {{t:30}} ms. The stop button is pressed at {{t:60}} ms and released at {{t:70}} ms. Predict Motor at {{t:40}}, {{t:50}} and {{t:80}} ms for a program that works as described.",
+      "checkpoint": "{{v:MotorDiag.Motor=true@40|ON}} at {{t:40}} ms; {{v:MotorDiag.Motor=true@50|ON}} at {{t:50}} ms; and {{v:MotorDiag.Motor=false@80|OFF}} at {{t:80}} ms, because the stop button was pressed. The starter fails the last one."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter fault, save it, then press Check: StopOK is drawn in series with StartPB inside the branch, so the seal-in contact on Motor goes around it and a Stop press cannot drop the motor. Before you edit, diagnose it. Run the starter in Simulation and open the Watch table. Add Motor, StartPB and StopOK. Press the start button, then the stop button, and see that Motor stays ON. Select rung 1 and press F9 to set a breakpoint, run again, and read the values at the stop. Force StopOK to FALSE from the Watch table and see that nothing changes. Open the Trace and find where Motor should have fallen. Then move StopOK out of the branch, after it, in series with the whole branch.",
+      "checkpoint": "The visible scenario must pass with saved host evidence, and the Watch table shows no active force."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson. Release every force first: a forced value stays in the simulator until you release it, and Check judges the program, not your forces. Read each failed assertion: it names the instant, the expected value and the observed value.",
+      "checkpoint": "The scenario is named MotorDiag and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:80}}, {{t:120}}, {{t:150}} and {{t:200}} ms. The stop at {{t:60}} ms must drop the motor at {{t:80}} ms. The overload at {{t:140}} ms drops it again and lights Alarm at {{t:150}} ms. At {{t:190}} ms Start and Stop are pressed together and the motor stays off at {{t:200}} ms: Stop wins.",
+      "checkpoint": "{{v:MotorDiag.Motor=false,MotorDiag.Alarm=true@150|Motor OFF and Alarm ON}} at {{t:150}} ms, and {{v:MotorDiag.Motor=false@230|OFF}} at {{t:230}} ms, because the program does not restart by itself."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The first symptom was only that the motor did not stop. Which of the four tools told you the most: the Watch table, the breakpoint, the force or the trace? Why must a force never be left on, and why is forcing on a real machine a different matter from forcing in simulation?",
+      "checkpoint": "The scenario grades the fixed behavior only. It does not show how you found the bug, and it is not a safety function: the emergency stop of a real machine is wired in hardware."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Follow the power in the rung. When StopOK goes FALSE, which paths from the left rail to the Motor coil are still closed? Check whether the contact on Motor passes through StopOK."
+    },
+    {
+      "level": 2,
+      "text": "Rung 1 must read: StartPB in parallel with a contact of Motor, then StopOK, then OverloadOK, then the coil Motor. Move StopOK to the right of the branch so that it is in series with both paths."
+    }
+  ],
+  "faultCases": [
+    "StopOK is drawn in series with StartPB inside the branch, so the seal-in contact on Motor goes around it: a Stop press at {{t:60}} ms leaves Motor ON at {{t:80}} ms. Move StopOK to the series part after the branch."
+  ]
+}

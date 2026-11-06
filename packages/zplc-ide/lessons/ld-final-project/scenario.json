@@ -1,0 +1,333 @@
+{
+  "schemaVersion": 1,
+  "id": "PackStation",
+  "tickMs": 10,
+  "durationMs": 680,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "PackStation.Start": false,
+        "PackStation.StopOK": true,
+        "PackStation.EStopOK": true,
+        "PackStation.Part": false,
+        "PackStation.Reset": false
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "PackStation.Start": true
+      }
+    },
+    {
+      "atMs": 30,
+      "set": {
+        "PackStation.Start": false
+      }
+    },
+    {
+      "atMs": 50,
+      "set": {
+        "PackStation.Part": true
+      }
+    },
+    {
+      "atMs": 70,
+      "set": {
+        "PackStation.Part": false
+      }
+    },
+    {
+      "atMs": 90,
+      "set": {
+        "PackStation.Part": true
+      }
+    },
+    {
+      "atMs": 110,
+      "set": {
+        "PackStation.Part": false
+      }
+    },
+    {
+      "atMs": 150,
+      "set": {
+        "PackStation.Part": true
+      }
+    },
+    {
+      "atMs": 170,
+      "set": {
+        "PackStation.Part": false
+      }
+    },
+    {
+      "atMs": 200,
+      "set": {
+        "PackStation.Start": true
+      }
+    },
+    {
+      "atMs": 210,
+      "set": {
+        "PackStation.Start": false
+      }
+    },
+    {
+      "atMs": 240,
+      "set": {
+        "PackStation.Reset": true
+      }
+    },
+    {
+      "atMs": 250,
+      "set": {
+        "PackStation.Reset": false
+      }
+    },
+    {
+      "atMs": 280,
+      "set": {
+        "PackStation.Start": true
+      }
+    },
+    {
+      "atMs": 290,
+      "set": {
+        "PackStation.Start": false
+      }
+    },
+    {
+      "atMs": 320,
+      "set": {
+        "PackStation.EStopOK": false
+      }
+    },
+    {
+      "atMs": 340,
+      "set": {
+        "PackStation.EStopOK": true
+      }
+    },
+    {
+      "atMs": 370,
+      "set": {
+        "PackStation.Start": true
+      }
+    },
+    {
+      "atMs": 380,
+      "set": {
+        "PackStation.Start": false
+      }
+    },
+    {
+      "atMs": 410,
+      "set": {
+        "PackStation.Part": true
+      }
+    },
+    {
+      "atMs": 520,
+      "set": {
+        "PackStation.Reset": true
+      }
+    },
+    {
+      "atMs": 540,
+      "set": {
+        "PackStation.Reset": false
+      }
+    },
+    {
+      "atMs": 550,
+      "set": {
+        "PackStation.Part": false
+      }
+    },
+    {
+      "atMs": 570,
+      "set": {
+        "PackStation.Reset": true
+      }
+    },
+    {
+      "atMs": 580,
+      "set": {
+        "PackStation.Reset": false
+      }
+    },
+    {
+      "atMs": 600,
+      "set": {
+        "PackStation.Start": true
+      }
+    },
+    {
+      "atMs": 610,
+      "set": {
+        "PackStation.Start": false
+      }
+    },
+    {
+      "atMs": 640,
+      "set": {
+        "PackStation.StopOK": false
+      }
+    },
+    {
+      "atMs": 650,
+      "set": {
+        "PackStation.StopOK": true
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "PackStation.Belt": false,
+        "PackStation.BatchFull": false,
+        "PackStation.Fault": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 40,
+      "condition": {
+        "PackStation.Belt": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 130,
+      "condition": {
+        "PackStation.Belt": true,
+        "PackStation.BatchFull": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 190,
+      "condition": {
+        "PackStation.BatchFull": true,
+        "PackStation.Belt": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 230,
+      "condition": {
+        "PackStation.Belt": false,
+        "PackStation.BatchFull": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 270,
+      "condition": {
+        "PackStation.BatchFull": false,
+        "PackStation.Belt": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 310,
+      "condition": {
+        "PackStation.Belt": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 330,
+      "condition": {
+        "PackStation.Belt": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 360,
+      "condition": {
+        "PackStation.Belt": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 400,
+      "condition": {
+        "PackStation.Belt": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 460,
+      "condition": {
+        "PackStation.Belt": true,
+        "PackStation.Fault": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 510,
+      "condition": {
+        "PackStation.Fault": true,
+        "PackStation.Belt": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 530,
+      "condition": {
+        "PackStation.Fault": true,
+        "PackStation.Belt": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 590,
+      "condition": {
+        "PackStation.Fault": false,
+        "PackStation.Belt": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 620,
+      "condition": {
+        "PackStation.Belt": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 660,
+      "condition": {
+        "PackStation.Belt": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 40,
+      "forMs": 100,
+      "condition": {
+        "PackStation.Belt": true
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 410,
+      "withinMs": 100,
+      "condition": {
+        "PackStation.Fault": true
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "PackStation.Belt": true,
+        "PackStation.Fault": true
+      }
+    }
+  ]
+}

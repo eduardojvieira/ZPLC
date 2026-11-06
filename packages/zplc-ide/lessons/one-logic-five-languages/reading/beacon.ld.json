@@ -1,0 +1,148 @@
+{
+  "name": "Beacon",
+  "description": "A beacon that stays on after a short press and goes off on Off.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "TurnOn",
+        "type": "BOOL",
+        "comment": "Turn-on pushbutton: TRUE while pressed"
+      },
+      {
+        "name": "Off",
+        "type": "BOOL",
+        "comment": "Off pushbutton: TRUE while pressed"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Beacon",
+        "type": "BOOL",
+        "comment": "Beacon lamp. It is also the memory that holds it on."
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "TurnOn in parallel with Beacon holds the beacon; Off breaks the rung.",
+      "branches": [
+        {
+          "id": "branch_1",
+          "startCol": 0,
+          "endCol": 1,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "contact_no_TurnOn_00",
+              "type": "contact_no",
+              "variable": "TurnOn",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "contact_nc_Off_02",
+              "type": "contact_nc",
+              "variable": "Off",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_Beacon_07",
+              "type": "coil",
+              "variable": "Beacon",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "contact_no_Beacon_00",
+              "type": "contact_no",
+              "variable": "Beacon",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-06",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
