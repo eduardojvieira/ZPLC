@@ -496,9 +496,9 @@ describe('the committed evidence (VF-027)', () => {
     }>;
     const { overall, byWorkstream, errors } = coverage(full, evidence, listed);
     expect(errors).toEqual([]);
-    expect(overall.covered + overall.partial + overall.decided + overall.uncovered).toBe(393);
+    expect(overall.covered + overall.partial + overall.decided + overall.uncovered).toBe(394);
     for (const counts of Object.values(byWorkstream))
       expect(counts.covered + counts.partial + counts.decided + counts.uncovered).toBe(counts.total);
-    expect(Object.values(byWorkstream).reduce((sum, counts) => sum + counts.total, 0)).toBe(393);
+    expect(Object.values(byWorkstream).reduce((sum, counts) => sum + counts.total, 0)).toBe(394);
   });
 });
