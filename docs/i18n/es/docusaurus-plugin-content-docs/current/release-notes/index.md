@@ -11,7 +11,7 @@ tags: [releases, changelog]
 
 ZPLC 2.0 es una versión mayor nueva de la aplicación, el compilador y el runtime. Esta página dice qué puede hacer ahora,
 qué deja de funcionar, los pasos para pasar desde 1.x y qué no se ha verificado. El registro técnico completo está en
-`CHANGELOG.md`.
+`CHANGELOG.md` en el repositorio.
 
 :::warning Versión de evaluación
 ZPLC 2.0.0 es para evaluación. Ninguna placa se ha grabado, arrancado ni ejecutado, así que todas están en el nivel

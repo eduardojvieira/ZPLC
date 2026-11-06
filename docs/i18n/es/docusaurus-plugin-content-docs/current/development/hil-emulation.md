@@ -123,7 +123,7 @@ Las primeras ejecuciones emuladas de la cadena, el 2026-10-20, fallaron cinco pa
    - *Causa:* la ruta de falla funciona en Xtensa (división por cero, error de VM 3, salidas apagadas), pero con el reloj lento de QEMU un segundo de tiempo del host no alcanzó para los 21 ciclos que necesita el programa.
    - *Corrección:* los pasos de falla esperan la falla, hasta 10 s. QEMU la retuvo tras 1,4 s de tiempo del host y 21 ciclos.
 
-Al ejecutar el paso de RETAIN en la imagen HIL de la Pico se encontró un defecto más: la imagen rechazaba todo START con el error -3. El planificador armaba solo el `zephyr,watchdog` elegido en el árbol de dispositivos, que ninguna placa de este repositorio define. Ahora arma el alias `watchdog0` de la placa cuando no hay ninguno elegido, y una imagen con perro guardián por hardware y ninguno de los dos nodos no compila.
+Al ejecutar el paso de RETAIN en la imagen HIL de la Pico se encontró un defecto más: la imagen rechazaba todo START (`Scheduler start failed (-3)`). El planificador armaba solo el `zephyr,watchdog` elegido en el árbol de dispositivos, que ninguna placa de este repositorio define. Ahora arma el alias `watchdog0` de la placa cuando no hay ninguno elegido, y una imagen con perro guardián por hardware y ninguno de los dos nodos no compila.
 
 En rp2040js, los fixtures de parpadeo cuentan los cambios de salida leyendo las salidas por el shell, y de una ejecución a la siguiente un fixture distinto ve muy pocos cambios. No son evidencia en este emulador en ningún sentido.
 

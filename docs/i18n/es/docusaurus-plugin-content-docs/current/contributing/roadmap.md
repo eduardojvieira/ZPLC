@@ -34,7 +34,7 @@ Cada punto está integrado y cubierto por una verificación que ejecuta CI o un 
 
 ## No previsto para 2.0
 
-- Una evaluación de seguridad funcional. Ninguna parte de ZPLC se ha evaluado frente a una norma de seguridad; vea [Seguridad y limitaciones](../safety-and-limitations.md).
+- Una evaluación de seguridad. Ninguna parte de ZPLC se ha evaluado frente a una norma de seguridad; vea [Seguridad y limitaciones](../safety-and-limitations.md).
 - La calificación de una placa para producción.
 - Garantías de temporización. No se ha medido el tiempo de ciclo ni la fluctuación en ninguna placa, por eso ninguna página afirma una cifra.
 
