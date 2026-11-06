@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "id": "WhatIsPlc",
+  "tickMs": 10,
+  "durationMs": 60,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "WhatIsPlc.StartButton": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "WhatIsPlc.StartButton": true
+      }
+    },
+    {
+      "atMs": 30,
+      "set": {
+        "WhatIsPlc.StartButton": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "WhatIsPlc.Lamp": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "WhatIsPlc.Lamp": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 20,
+      "condition": {
+        "WhatIsPlc.Lamp": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 30,
+      "condition": {
+        "WhatIsPlc.Lamp": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "WhatIsPlc.Lamp": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 10,
+      "forMs": 10,
+      "condition": {
+        "WhatIsPlc.Lamp": true
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 10,
+      "withinMs": 0,
+      "condition": {
+        "WhatIsPlc.Lamp": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 30,
+      "withinMs": 0,
+      "condition": {
+        "WhatIsPlc.Lamp": false
+      }
+    }
+  ]
+}

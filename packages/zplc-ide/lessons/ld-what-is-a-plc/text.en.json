@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "What a PLC is: your first rung",
+  "summary": "Meet the three parts of every PLC machine, inputs, a program and outputs, and finish a one-rung program that lights a lamp while a button is pressed.",
+  "scope": "Tests provide deterministic native POSIX host evidence on your computer only; they are not hardware, electrical, HIL, or safety evidence.",
+  "objectives": [
+    "Name the three parts of a PLC system: inputs that read the world, a program that decides, and outputs that act on the world.",
+    "Complete a Ladder rung in which a pressed button lights a lamp, and read the result in the simulated lab."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/WhatIsPlc.ld.json one rung is drawn: a coil named Lamp on the right. The coil is the output, the lamp. Add a normally open contact named StartButton on the left of the coil. The contact is the input, the button. Together they say: the lamp is lit while the button is pressed.",
+      "checkpoint": "The rung has a StartButton contact on its left and the Lamp coil on its right."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before you run anything, predict Lamp. The scenario presses the button at {{t:10}} ms and releases it at {{t:30}} ms. Is the lamp lit at {{t:20}} ms? At {{t:50}} ms?",
+      "checkpoint": "{{v:WhatIsPlc.Lamp=true@20|Lamp ON}} at {{t:20}} ms, because the button is held; {{v:WhatIsPlc.Lamp=false@50|lamp OFF}} at {{t:50}} ms, because it was released at {{t:30}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Fix this starter omission, save it, then press Check: The starter has the Lamp coil but nothing that reads the button, so power always reaches the coil and the lamp is lit at {{t:0}} ms before anyone presses anything. Add a normally open contact on StartButton to the left of the coil.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program in the simulated lab on this computer and compares what it did with the scenario of this lesson.",
+      "checkpoint": "The scenario is named WhatIsPlc and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "In the results, green means ON or TRUE and grey means OFF or FALSE. Red means something went wrong, such as a failed assertion. Compare {{t:0}}, {{t:10}} and {{t:30}} ms: the lamp turns green when the button turns green and grey when it is released.",
+      "checkpoint": "Lamp rises once at {{t:10}} ms and falls once at {{t:30}} ms, exactly with the button."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Which part is the input, which is the program and which is the output? Now think of a wall light switch: what would you call the switch, the wiring decision and the lamp?",
+      "checkpoint": "The scenario covers one button and one lamp in simulation. It does not show real wiring, hardware timing, or a safety function."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "The coil only lights when power reaches it from the left. What would you put in the path so that the button decides whether power reaches the coil?"
+    },
+    {
+      "level": 2,
+      "text": "Add a normally open contact to the left of the Lamp coil and give it the variable StartButton. Do not change the coil."
+    }
+  ],
+  "faultCases": [
+    "The starter has the Lamp coil but nothing that reads the button, so power always reaches the coil and the lamp is lit at {{t:0}} ms before anyone presses anything; add a normally open contact on StartButton to the left of the coil."
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Qué es un PLC: su primer peldaño",
+  "summary": "Conozca las tres partes de toda máquina con PLC, entradas, un programa y salidas, y termine un programa de un peldaño que enciende una lámpara mientras se pulsa un botón.",
+  "scope": "Las pruebas aportan evidencia determinista del host con el runtime nativo POSIX, solo en su computador; no son evidencia de hardware, eléctrica, HIL ni de seguridad.",
+  "objectives": [
+    "Nombre las tres partes de un sistema con PLC: las entradas que leen el mundo, un programa que decide y las salidas que actúan sobre el mundo.",
+    "Complete un peldaño en diagrama de escalera en el que un botón pulsado enciende una lámpara, y lea el resultado en el laboratorio simulado."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/WhatIsPlc.ld.json hay un peldaño dibujado: una bobina llamada Lamp a la derecha. La bobina es la salida, la lámpara. Agregue un contacto normalmente abierto llamado StartButton a la izquierda de la bobina. El contacto es la entrada, el botón. Juntos dicen: la lámpara está encendida mientras el botón está pulsado.",
+      "checkpoint": "El peldaño tiene un contacto StartButton a su izquierda y la bobina Lamp a su derecha."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Antes de ejecutar nada, prediga Lamp. El escenario pulsa el botón a los {{t:10}} ms y lo suelta a los {{t:30}} ms. ¿Está encendida la lámpara a los {{t:20}} ms? ¿Y a los {{t:50}} ms?",
+      "checkpoint": "{{v:WhatIsPlc.Lamp=true@20|Lamp en ON}} a los {{t:20}} ms, porque el botón sigue pulsado; {{v:WhatIsPlc.Lamp=false@50|lámpara en OFF}} a los {{t:50}} ms, porque se soltó a los {{t:30}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial tiene la bobina Lamp pero nada que lea el botón, así que la energía siempre llega a la bobina y la lámpara está encendida a los {{t:0}} ms antes de que alguien pulse algo. Agregue un contacto normalmente abierto de StartButton a la izquierda de la bobina.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado en el laboratorio simulado de este computador y compara lo que hizo con el escenario de esta lección.",
+      "checkpoint": "El escenario se llama WhatIsPlc y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "En los resultados, el verde significa ON o TRUE y el gris significa OFF o FALSE. El rojo significa que algo salió mal, como una aserción que falló. Compare {{t:0}}, {{t:10}} y {{t:30}} ms: la lámpara se pone verde cuando el botón se pone verde y gris cuando se suelta.",
+      "checkpoint": "Lamp sube una vez a los {{t:10}} ms y cae una vez a los {{t:30}} ms, justo con el botón."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "¿Cuál es la entrada, cuál es el programa y cuál es la salida? Piense ahora en el interruptor de una luz de pared: ¿cómo llamaría al interruptor, a la decisión del cableado y a la lámpara?",
+      "checkpoint": "El escenario cubre un botón y una lámpara en simulación. No muestra cableado real, tiempos de hardware ni una función de seguridad."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "La bobina solo se enciende si la energía llega desde la izquierda. ¿Qué pondría en el camino para que el botón decida si la energía llega a la bobina?"
+    },
+    {
+      "level": 2,
+      "text": "Agregue un contacto normalmente abierto a la izquierda de la bobina Lamp y asígnele la variable StartButton. No cambie la bobina."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial tiene la bobina Lamp pero nada que lea el botón, así que la energía siempre llega a la bobina y la lámpara está encendida a los {{t:0}} ms antes de que alguien pulse algo; agregue un contacto normalmente abierto de StartButton a la izquierda de la bobina."
+  ]
+}
