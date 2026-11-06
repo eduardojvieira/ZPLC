@@ -6,9 +6,9 @@ The scenario has {{assertions}} assertions and the lamp changes at {{t:500}} ms.
   - nested
 - two
 
-| In | Out |
-|:--|--:|
-| a | b |
+| In  | Out |
+| :-- | --: |
+| a   |   b |
 
 > [!NOTE]
 > A note with `code 250 ms` inline.

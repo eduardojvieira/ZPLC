@@ -62,6 +62,17 @@ function findClose(src: string, from: number, to: number, marker: '*' | '**'): n
   return -1;
 }
 
+const WORD = /[\p{L}\p{N}]/u;
+
+/** The index of the unescaped `_` in `src[from, to)` that closes an underscore emphasis: not after a space, not inside a word. */
+function underscoreClose(src: string, from: number, to: number): number {
+  for (let j = from; j < to; j++) {
+    if (src[j] === '\\') j++;
+    else if (src[j] === '_' && j > from && !/\s/.test(src[j - 1]!) && !WORD.test(src[j + 1] ?? ' ')) return j;
+  }
+  return -1;
+}
+
 /** Parses `src[from, to)`; `lineAt` maps an offset of `src` to its source line. */
 function inline(src: string, from: number, to: number, lineAt: (offset: number) => number, errors: Errors): ReadingInline[] {
   const out: ReadingInline[] = [];
@@ -107,6 +118,12 @@ function inline(src: string, from: number, to: number, lineAt: (offset: number) 
     } else if ((c === 'h' || c === 'w') && !/[A-Za-z0-9]/.test(src[i - 1] ?? ' ') && /^(?:https?:\/\/|www\.)\S/.test(rest)) {
       fail(i, LINK);
       i += /^\S+/.exec(rest)![0].length;
+    } else if (c === '_' && !WORD.test(src[i - 1] ?? ' ') && !/\s/.test(src[i + 1] ?? ' ') && underscoreClose(src, i + 1, to) >= 0) {
+      // Prettier writes emphasis as _text_; an underscore inside a word (snake_case) opens nothing, as in CommonMark.
+      const close = underscoreClose(src, i + 1, to);
+      flush();
+      out.push({ type: 'emphasis', children: inline(src, i + 1, close, lineAt, errors) });
+      i = close + 1;
     } else if (c === '*') {
       const strong = src.startsWith('**', i);
       const marker = strong ? '**' : '*';

@@ -49,11 +49,11 @@ The second way is **fail-safe**: the most common failure, a broken wire, produce
 
 This is the point that surprises beginners. The program does not read "pressed". It reads the **electrical state** of the input.
 
-| Situation in the field | Input value |
-| :-- | :-- |
-| Nobody presses the stop button | TRUE |
-| The stop button is pressed | FALSE |
-| The wire is broken | FALSE |
+| Situation in the field         | Input value |
+| :----------------------------- | :---------- |
+| Nobody presses the stop button | TRUE        |
+| The stop button is pressed     | FALSE       |
+| The wire is broken             | FALSE       |
 
 So the program wants the motor to run when the stop input is TRUE. That means the motor rung needs a **normally open** contact on the stop input, which passes power when the input is TRUE. A beginner who thinks "stop, so I need a normally closed contact" gets the opposite of what they wanted: the motor would only run while the button is pressed or the wire is cut.
 

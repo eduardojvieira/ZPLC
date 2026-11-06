@@ -41,11 +41,11 @@ Pulse Ejecutar. Empiece con la tapa abierta: la lámpara de aviso está encendid
 ## Tabla de verdad de la escalera
 
 | SwitchA | SwitchB | StairLight |
-| :-- | :-- | :-- |
-| FALSE | FALSE | FALSE |
-| FALSE | TRUE | TRUE |
-| TRUE | FALSE | TRUE |
-| TRUE | TRUE | FALSE |
+| :------ | :------ | :--------- |
+| FALSE   | FALSE   | FALSE      |
+| FALSE   | TRUE    | TRUE       |
+| TRUE    | FALSE   | TRUE       |
+| TRUE    | TRUE    | FALSE      |
 
 Puede comprobar cualquier lógica nueva escribiendo primero una tabla así y probando después cada fila. La práctica de esta lección hace exactamente eso con un escenario.
 

@@ -40,21 +40,21 @@ Pulse Ejecutar. Active solo KeyTurned: el soldador sigue apagado. Active tambié
 
 Una **tabla de verdad** enumera todas las combinaciones de las entradas y el resultado de cada una. Con dos entradas hay cuatro combinaciones, porque cada entrada puede ser FALSE o TRUE. Esta es la tabla de AND, que es una serie.
 
-| A | B | A AND B |
-| :-- | :-- | :-- |
-| FALSE | FALSE | FALSE |
-| FALSE | TRUE | FALSE |
-| TRUE | FALSE | FALSE |
-| TRUE | TRUE | TRUE |
+| A     | B     | A AND B |
+| :---- | :---- | :------ |
+| FALSE | FALSE | FALSE   |
+| FALSE | TRUE  | FALSE   |
+| TRUE  | FALSE | FALSE   |
+| TRUE  | TRUE  | TRUE    |
 
 Y esta es la de OR, que es un paralelo.
 
-| A | B | A OR B |
-| :-- | :-- | :-- |
-| FALSE | FALSE | FALSE |
-| FALSE | TRUE | TRUE |
-| TRUE | FALSE | TRUE |
-| TRUE | TRUE | TRUE |
+| A     | B     | A OR B |
+| :---- | :---- | :----- |
+| FALSE | FALSE | FALSE  |
+| FALSE | TRUE  | TRUE   |
+| TRUE  | FALSE | TRUE   |
+| TRUE  | TRUE  | TRUE   |
 
 Observe el patrón. AND tiene un único TRUE, abajo: las dos entradas deben ser TRUE. OR tiene un único FALSE, arriba: las dos entradas deben ser FALSE. Una buena prueba de su programa es recorrer cada fila de su tabla de verdad, y esto es exactamente lo que hace el escenario de la práctica.
 

@@ -3168,6 +3168,7 @@
   ],
   "LRN-040": [
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/reading/ReadingPage.dom.test.tsx","test":"reading page rendering (LRN-040)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/readingMarkdown.test.ts","test":"LRN-040 reads _emphasis_ as Prettier writes it, while an underscore inside a word stays text"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/readingMarkdown.test.ts","test":"the live-block limits (LRN-040)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/readingMarkdown.test.ts","test":"the reading Markdown subset (LRN-040)"}
   ],

@@ -49,11 +49,11 @@ La segunda manera es **a prueba de fallas**: la falla más común, un cable roto
 
 Este es el punto que sorprende a los principiantes. El programa no lee "pulsado". Lee el **estado eléctrico** de la entrada.
 
-| Situación en el campo | Valor de la entrada |
-| :-- | :-- |
-| Nadie pulsa el botón de parada | TRUE |
-| Se pulsa el botón de parada | FALSE |
-| El cable está roto | FALSE |
+| Situación en el campo          | Valor de la entrada |
+| :----------------------------- | :------------------ |
+| Nadie pulsa el botón de parada | TRUE                |
+| Se pulsa el botón de parada    | FALSE               |
+| El cable está roto             | FALSE               |
 
 Entonces el programa quiere que el motor funcione cuando la entrada de parada es TRUE. Eso significa que el peldaño del motor necesita un contacto **normalmente abierto** sobre la entrada de parada, que deja pasar la energía cuando la entrada es TRUE. Un principiante que piensa "parada, entonces necesito un contacto normalmente cerrado" obtiene lo contrario de lo que quería: el motor solo funcionaría mientras el botón está pulsado o el cable está cortado.
 

@@ -78,7 +78,10 @@ function ReadingSurface({ lessonId }: { lessonId: string }) {
       aria-labelledby="learn-reading-title"
       data-learn-reading={lessonId}
       onKeyDown={trap}
-      className="absolute inset-0 z-30 overflow-y-auto bg-[var(--color-surface-900)] px-4 py-6 font-sans text-sm text-[var(--color-surface-200)]"
+      className={
+        'absolute inset-0 z-30 overflow-y-auto bg-[var(--color-surface-900)] px-4 py-6 font-sans text-sm ' +
+        'text-[var(--color-surface-200)]'
+      }
     >
       <div className="mx-auto max-w-[70ch]">
         <header className="border-b border-[var(--color-surface-600)] pb-4">

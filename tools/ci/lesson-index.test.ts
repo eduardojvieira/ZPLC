@@ -213,7 +213,14 @@ describe('the reading pages in the generated index (LRN-042)', () => {
     expect(problems).toEqual([]);
     const entries = (JSON.parse(data) as { lessons: Array<{ id: string; reading?: { en: string; images: string[] } }> }).lessons;
     expect(entries.find((entry) => entry.id === LESSON)?.reading?.images).toEqual(['images/dot.png', 'images/panel.svg']);
-    expect(entries.filter((entry) => entry.reading).map((entry) => entry.id)).toEqual([LESSON]);
+    // the lessons that already ship a reading page keep it; the fixture adds one more
+    const shipped = LESSON_INDEX.lessons.filter((entry) => 'reading' in entry).map((entry) => entry.id);
+    expect(
+      entries
+        .filter((entry) => entry.reading)
+        .map((entry) => entry.id)
+        .sort(),
+    ).toEqual([...shipped, LESSON].sort());
     expect(readFileSync(join(ROOT, 'packages/zplc-ide/src/generated/lessonIndex.json'), 'utf8')).not.toBe(data);
   });
 
@@ -221,7 +228,8 @@ describe('the reading pages in the generated index (LRN-042)', () => {
     const plain = generate(copyOfLessons());
     expect(plain.problems).toEqual([]);
     expect(plain.data).toBe(readFileSync(join(ROOT, 'packages/zplc-ide/src/generated/lessonIndex.json'), 'utf8'));
-    expect(plain.data).not.toContain('"reading"');
+    const entries = (JSON.parse(plain.data) as { lessons: Array<{ id: string }> }).lessons;
+    expect(entries.find((entry) => entry.id === LESSON)).not.toHaveProperty('reading');
   });
 
   it('reports a broken reading page through the generator, with the lesson and the line', () => {
@@ -265,7 +273,11 @@ describe('the paths of the course in the generated index (LRN-043)', () => {
     expect((JSON.parse(data) as { course: { paths: unknown[] } }).course.paths).toEqual([
       pathOf(['blinky-ladder-timer-feedback', 'seal-in-ladder']),
     ]);
-    expect(LESSON_INDEX.course).not.toHaveProperty('paths');
+    const withoutPaths = copyOfLessons();
+    const file = join(withoutPaths, 'course.json');
+    const { paths: _paths, ...course } = JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
+    writeFileSync(file, JSON.stringify(course));
+    expect((JSON.parse(generate(withoutPaths).data) as { course: object }).course).not.toHaveProperty('paths');
   });
 
   it('refuses a path that names a lesson no package has, or a path with a broken definition', () => {

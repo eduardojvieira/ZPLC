@@ -6,9 +6,9 @@ El escenario tiene {{assertions}} aserciones y la lámpara cambia a los {{t:500}
   - anidado
 - dos
 
-| In | Out |
-|:--|--:|
-| a | b |
+| In  | Out |
+| :-- | --: |
+| a   |   b |
 
 > [!NOTE]
 > Una nota con `code 250 ms` inline.

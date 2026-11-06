@@ -40,21 +40,21 @@ Press Run. Switch on KeyTurned alone: the welder stays off. Switch on GuardClose
 
 A **truth table** lists every combination of the inputs and the result for each one. With two inputs there are four combinations, because each input can be FALSE or TRUE. Here is AND, which is a series.
 
-| A | B | A AND B |
-| :-- | :-- | :-- |
-| FALSE | FALSE | FALSE |
-| FALSE | TRUE | FALSE |
-| TRUE | FALSE | FALSE |
-| TRUE | TRUE | TRUE |
+| A     | B     | A AND B |
+| :---- | :---- | :------ |
+| FALSE | FALSE | FALSE   |
+| FALSE | TRUE  | FALSE   |
+| TRUE  | FALSE | FALSE   |
+| TRUE  | TRUE  | TRUE    |
 
 And here is OR, which is a parallel.
 
-| A | B | A OR B |
-| :-- | :-- | :-- |
-| FALSE | FALSE | FALSE |
-| FALSE | TRUE | TRUE |
-| TRUE | FALSE | TRUE |
-| TRUE | TRUE | TRUE |
+| A     | B     | A OR B |
+| :---- | :---- | :----- |
+| FALSE | FALSE | FALSE  |
+| FALSE | TRUE  | TRUE   |
+| TRUE  | FALSE | TRUE   |
+| TRUE  | TRUE  | TRUE   |
 
 Look at the pattern. AND has a single TRUE, at the bottom: both inputs must be TRUE. OR has a single FALSE, at the top: both inputs must be FALSE. A good test of your program is to run it through every row of its truth table, and this is exactly what the scenario of the practice does.
 

@@ -41,11 +41,11 @@ Press Run. Start with the lid open: the warning lamp is on, and the blender does
 ## Truth table of the stairway
 
 | SwitchA | SwitchB | StairLight |
-| :-- | :-- | :-- |
-| FALSE | FALSE | FALSE |
-| FALSE | TRUE | TRUE |
-| TRUE | FALSE | TRUE |
-| TRUE | TRUE | FALSE |
+| :------ | :------ | :--------- |
+| FALSE   | FALSE   | FALSE      |
+| FALSE   | TRUE    | TRUE       |
+| TRUE    | FALSE   | TRUE       |
+| TRUE    | TRUE    | FALSE      |
 
 You can check any new logic by writing such a table first and then testing each row. The practice of this lesson does exactly that with a scenario.
 

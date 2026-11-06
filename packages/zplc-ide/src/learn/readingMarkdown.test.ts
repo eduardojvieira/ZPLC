@@ -47,6 +47,19 @@ describe('the reading Markdown subset (LRN-040)', () => {
     ]);
   });
 
+  it('LRN-040 reads _emphasis_ as Prettier writes it, while an underscore inside a word stays text', () => {
+    expect(clean('A _soft_ word, snake_case_name, a_b and _open alone.')).toEqual([
+      {
+        type: 'paragraph',
+        children: [
+          { type: 'text', value: 'A ' },
+          { type: 'emphasis', children: [{ type: 'text', value: 'soft' }] },
+          { type: 'text', value: ' word, snake_case_name, a_b and _open alone.' },
+        ],
+      },
+    ]);
+  });
+
   it('parses bullet and ordered lists with one nested level', () => {
     expect(clean('- one\n- two\n  - nested a\n  - nested b\n- three\n\n1. first\n2. second')).toEqual([
       {
