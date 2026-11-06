@@ -27,6 +27,8 @@ import LDPrompts, { type LDAsk } from './LDPrompts';
 import { insertRungAfter, runLDCommand, type LDCursor, type LDInsert, type LDOutcome } from './keyboard';
 import type { LDDropData } from './ldDragData';
 import { actionFor, keysBelongToControl } from '../keymap';
+import { functionItems, withFunction, withSlot } from './ldFunctions';
+import { ldFunctionSpec } from '../../models/ldSupport';
 import { useProjectBlocks } from '../useProjectBlocks';
 import { declaredSymbols } from '../symbols';
 import {
@@ -41,7 +43,7 @@ import {
 import { useMonitor } from '../../monitoring/useMonitor';
 import { debugValuesOf } from './debugValues';
 import { announce } from '../../utils/announce';
-import { Button, TextField, Textarea, Tooltip } from '../../ui';
+import { Button, Select, TextField, Textarea, Tooltip } from '../../ui';
 import { LDRungMenu } from './LDRungMenu';
 import { isContextMenuKey, openContextMenuOn } from '../contextMenuKey';
 import { useElementSelection } from '../elementSelection';
@@ -80,12 +82,16 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
   const [fbInstance, setFbInstance] = useState(element.instance || '');
   const [comment, setComment] = useState(element.comment || '');
   const [presetTime, setPresetTime] = useState(element.parameters?.PT ?? 'T#1s');
+  // a function box is edited as a whole: its function, its operands in pin order and its output (LNG-028)
+  const [fn, setFn] = useState(element);
+  const isFunction = element.type === 'function';
+  const pins = ldFunctionSpec(fn.functionName)?.pins ?? [];
   const isFB = element.type === 'function_block';
   const isTimer = element.fbType === 'TON' || element.fbType === 'TOF' || element.fbType === 'TP';
 
   const handleSave = () => {
     onChange({
-      ...element,
+      ...(isFunction ? fn : element),
       variable: variable || undefined,
       instance: fbInstance || undefined,
       comment: comment.trim() || undefined,
@@ -107,11 +113,48 @@ function ElementProperties({ element, symbols = [], onChange, onClose }: Element
         <div>
           <label className="block text-xs text-[var(--text-tertiary)] mb-1">{t('io.type')}</label>
           <div className="text-sm text-[var(--text-secondary)] font-mono bg-[var(--color-surface-700)] px-2 py-1 rounded">
-            {isFB ? element.fbType : element.type}
+            {isFB ? element.fbType : isFunction ? fn.functionName : element.type}
           </div>
         </div>
 
-        {!isFB && (
+        {isFunction && (
+          <>
+            <Select label={t('ld.functionName')} value={fn.functionName ?? ''} onChange={(e) => setFn(withFunction(fn, e.target.value))}>
+              {functionItems().map((item) => (
+                <option key={item.functionName} value={item.functionName}>
+                  {item.functionName}
+                </option>
+              ))}
+            </Select>
+            {[
+              ...pins.map((pin, index) => ({ label: t('ld.functionOperand', { pin }), slot: index })),
+              ...(fn.output === undefined ? [] : [{ label: t('ld.functionOutput'), slot: pins.length }]),
+            ].map(({ label, slot }) => (
+              <div key={`${fn.functionName}-${slot}`}>
+                <label className="block text-xs text-[var(--text-tertiary)] mb-1">{label}</label>
+                <TextField
+                  bare
+                  aria-label={label}
+                  type="text"
+                  value={(slot >= pins.length ? fn.output : fn.operands?.[slot]) ?? ''}
+                  onChange={(e) => setFn(withSlot(fn, slot, e.target.value))}
+                  className={
+                    'w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm ' +
+                    'text-[var(--text-secondary)] font-mono'
+                  }
+                  list="ld-declared-symbols"
+                />
+              </div>
+            ))}
+            <datalist id="ld-declared-symbols">
+              {symbols.map((name) => (
+                <option key={name} value={name} />
+              ))}
+            </datalist>
+          </>
+        )}
+
+        {!isFB && !isFunction && (
           <div>
             <label className="block text-xs text-[var(--text-tertiary)] mb-1">{t('a11y.ld.variable')}</label>
             <TextField
@@ -637,7 +680,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
 
   const dropItem = useCallback(
     (item: LDDropData, rungId: string, row: number, col: number) => {
-      insertItem({ type: item.type, fbType: item.fbType, category: item.category }, { rungId, row, col });
+      insertItem({ type: item.type, fbType: item.fbType, functionName: item.functionName, category: item.category }, { rungId, row, col });
     },
     [insertItem],
   );
@@ -680,7 +723,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
       {!readOnly && (
         <LDToolbox
           onInsert={(item) => {
-            insertItem({ type: item.type, fbType: item.fbType, category: item.category });
+            insertItem({ type: item.type, fbType: item.fbType, functionName: item.functionName, category: item.category });
             rootRef.current?.focus({ preventScroll: true });
           }}
         />
@@ -915,7 +958,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
             }}
             onBind={(name) => {
               setAsk(null);
-              runCommand('bindVariable', { variable: name });
+              runCommand('bindVariable', { variable: name, slot: ask.kind === 'bind' ? ask.slot : undefined });
             }}
             onCommand={(command) => {
               setAsk(null);

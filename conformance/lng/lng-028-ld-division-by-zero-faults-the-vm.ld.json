@@ -1,0 +1,70 @@
+{
+  "name": "Rungs",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Enable",
+        "type": "BOOL",
+        "address": "%IX8.0"
+      },
+      {
+        "name": "A",
+        "type": "INT",
+        "address": "%IW0"
+      },
+      {
+        "name": "B",
+        "type": "INT",
+        "address": "%IW1"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Out",
+        "type": "INT",
+        "address": "%QW0"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "r1",
+      "number": 1,
+      "gridConfig": {
+        "cols": 2,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "c1",
+              "type": "contact_no",
+              "variable": "Enable",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "f1",
+              "type": "function",
+              "functionName": "DIV",
+              "operands": ["A", "B"],
+              "output": "Out",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": [],
+      "verticalLinks": []
+    }
+  ]
+}

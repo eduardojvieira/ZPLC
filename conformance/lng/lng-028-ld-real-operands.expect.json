@@ -1,0 +1,54 @@
+{
+  "requirement": "LNG-028",
+  "title": "Ladder boxes compare and multiply REAL operands and REAL literals",
+  "matrix": ["ld-fbd.ld-en-eno-on-function-boxes", "ld-fbd.ld-blocks-in-a-rung"],
+  "tags": ["arch-sensitive", "float"],
+  "scans": 2,
+  "scanMs": 10,
+  "inputs": [
+    {
+      "at": "%IX8.0",
+      "type": "BOOL",
+      "value": true,
+      "beforeScan": 1
+    },
+    {
+      "at": "%ID0",
+      "type": "REAL",
+      "value": 3,
+      "beforeScan": 1
+    },
+    {
+      "at": "%ID0",
+      "type": "REAL",
+      "value": 2,
+      "beforeScan": 2
+    }
+  ],
+  "expect": [
+    {
+      "at": "%QX16.0",
+      "type": "BOOL",
+      "value": true,
+      "afterScan": 1
+    },
+    {
+      "at": "%QD0",
+      "type": "REAL",
+      "value": 6,
+      "afterScan": 1
+    },
+    {
+      "at": "%QX16.0",
+      "type": "BOOL",
+      "value": false,
+      "afterScan": 2
+    },
+    {
+      "at": "%QD0",
+      "type": "REAL",
+      "value": 4,
+      "afterScan": 2
+    }
+  ]
+}

@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_language_reference.ts): reference/language-ld. Do not edit. >>> */}
 
-The status of every element on this page is read off the executed conformance tests, not written by hand: an element works when at least one conformance case that names it builds, runs and holds its expected values, and no case of it is on the list of known failures. CI runs the whole suite on every change. This page covers 7 elements: 5 work, 2 are rejected on purpose and 0 are not yet proven.
+The status of every element on this page is read off the executed conformance tests, not written by hand: an element works when at least one conformance case that names it builds, runs and holds its expected values, and no case of it is on the list of known failures. CI runs the whole suite on every change. This page covers 7 elements: 6 work, 1 are rejected on purpose and 0 are not yet proven.
 
 ## Editor
 
@@ -28,10 +28,27 @@ The picture is a real screenshot of this editor, captured by automation from the
 | LD: normally open and closed contacts; normal, negated, set and reset coils | Works | 2 | LNG-022 |
 | LD: parallel branches | Works | 2 | LNG-021 |
 | LD: edge contacts and edge coils | Works | 3 | LNG-022 |
-| LD: blocks in a rung | Works | 2 | LNG-021, LNG-022 |
+| LD: blocks in a rung | Works | 10 | LNG-021, LNG-022 |
 | LD: jumps and labels | Rejected with a message, decision open | 2 | LNG-002 |
-| EN/ENO | Rejected with a message, decision open | 1 | LNG-002 |
+| LD: EN/ENO on function boxes | Works | 8 | LNG-028 |
 | User function blocks and functions in LD and FBD | Works | 3 | LNG-008 |
+
+## Function boxes
+
+A rung can hold the IEC functions below as boxes with EN and ENO. The left wire of a box is EN, the power that reaches it, and the right wire is ENO, the power that leaves it. Pick them from the Functions group of the palette; the number of operands follows the function you choose.
+
+| Kind | Functions | Operands | Output |
+| --- | --- | --- | --- |
+| Comparison | `GT`, `GE`, `EQ`, `NE`, `LE`, `LT` | `IN1`, `IN2` | none: the box passes power when the comparison holds |
+| Arithmetic | `ADD`, `SUB`, `MUL`, `DIV`, `MOD` | `IN1`, `IN2` | a variable |
+| Move | `MOVE` | `IN` | a variable |
+| Selection | `LIMIT`, `MIN`, `MAX` | `MN`, `IN`, `MX` for `LIMIT`; `IN1`, `IN2` for `MIN` and `MAX` | a variable |
+
+- **EN and ENO.** A comparison is a condition in series: power passes through it when the power that reaches it is on and the comparison holds. Every other function runs while EN is on, writes its result to the output and passes the power on; while EN is off, it does not run, its output keeps its value and ENO is off. No error is detected, so ENO does not report one.
+- **Operands.** Each operand is a declared variable, chosen from the list of declared symbols, or a literal that you type. The output is a declared variable that is not an input.
+- **Division by zero.** `DIV` and `MOD` with a divisor of zero are not detected by the box: the VM of the ZPLC runtime faults, the scan ends in a fault and the output is not written. This holds for integers and for `REAL` with `0.0` or `-0.0`.
+- **Overflow.** An integer result that does not fit its type wraps around; the box does not report it.
+- **Online.** While you monitor, the box shows the value of each variable operand and of the output, and its two wires show EN and ENO.
 
 ## I/O addressing
 
@@ -59,7 +76,6 @@ These elements do not work today. Each is rejected with a located message or is 
 | Element | Status | What happens | Requirement |
 | --- | --- | --- | --- |
 | LD: jumps and labels | Rejected with a message, decision open | Not supported: the build refuses it with a message that names the position; whether a later release supports it is an open decision. | LNG-002 |
-| EN/ENO | Rejected with a message, decision open | Not supported: the build refuses it with a message that names the position; whether a later release supports it is an open decision. | LNG-002 |
 
 ## Related pages
 

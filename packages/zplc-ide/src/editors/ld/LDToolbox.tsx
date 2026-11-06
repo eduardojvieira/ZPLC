@@ -9,15 +9,17 @@
  * - Coils (Standard, Negated, Set, Reset)
  * - Structure (Branch for parallel paths)
  * - Function Blocks (TON, TOF, CTU, etc.)
+ * - Functions with EN and ENO (compare, math, move, select) (LNG-028)
  */
 
 import { t } from '../../i18n';
 import { useState } from 'react';
-import { getToolboxItems, type LDToolboxItem } from '../../models/ld';
+import { getToolboxItems } from '../../models/ld';
 import { Button, TextField } from '../../ui';
 import { filterItems } from '../picker';
 import { useProjectBlocks } from '../useProjectBlocks';
 import { DRAG_MIME_TYPE } from './ldDragData';
+import { functionItems, functionKindLabel, type LDPaletteEntry } from './ldFunctions';
 
 /** The smallest text of the scale (UX-006): captions and notes. */
 const CAPTION = 'text-[length:var(--font-size-caption)]';
@@ -27,8 +29,8 @@ const CAPTION = 'text-[length:var(--font-size-caption)]';
 // =============================================================================
 
 interface ToolboxItemProps {
-  item: LDToolboxItem;
-  onInsert?: (item: LDToolboxItem) => void;
+  item: LDPaletteEntry;
+  onInsert?: (item: LDPaletteEntry) => void;
 }
 
 function ToolboxItem({ item, onInsert }: ToolboxItemProps) {
@@ -37,6 +39,7 @@ function ToolboxItem({ item, onInsert }: ToolboxItemProps) {
     const data = JSON.stringify({
       type: item.type,
       fbType: item.fbType,
+      functionName: item.functionName,
       category: item.category,
     });
     e.dataTransfer.setData(DRAG_MIME_TYPE, data);
@@ -52,6 +55,8 @@ function ToolboxItem({ item, onInsert }: ToolboxItemProps) {
         return 'border-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/10 text-[var(--color-accent-blue)]';
       case 'structure':
         return 'border-[var(--color-accent-orange)] hover:bg-[var(--color-accent-orange)]/10 text-[var(--color-accent-orange)]';
+      case 'function':
+        return 'border-[var(--color-accent-purple)] hover:bg-[var(--color-accent-purple)]/10 text-[var(--color-accent-purple)]';
       case 'function_block':
         return 'border-[var(--color-accent-yellow)] hover:bg-[var(--color-accent-yellow)]/10 text-[var(--color-accent-yellow)]';
       default:
@@ -67,7 +72,7 @@ function ToolboxItem({ item, onInsert }: ToolboxItemProps) {
       draggable
       onDragStart={handleDragStart}
       onClick={() => onInsert?.(item)}
-      data-ld-toolbox-item={`${item.type}${item.fbType ? `:${item.fbType}` : ''}`}
+      data-ld-toolbox-item={`${item.type}${(item.functionName ?? item.fbType) ? `:${item.functionName ?? item.fbType}` : ''}`}
       aria-label={t('editors.insert', { name: item.label })}
       tooltip={t('editors.ld.insertTooltip', { name: item.label })}
       className={
@@ -88,8 +93,8 @@ function ToolboxItem({ item, onInsert }: ToolboxItemProps) {
 
 interface ToolboxSectionProps {
   title: string;
-  items: LDToolboxItem[];
-  onInsert?: (item: LDToolboxItem) => void;
+  items: LDPaletteEntry[];
+  onInsert?: (item: LDPaletteEntry) => void;
   /** One item per row, for names too long to share a row without breaking a word (HYSTERESIS, AZURE_C2D_RECV). */
   wide?: boolean;
 }
@@ -102,7 +107,7 @@ function ToolboxSection({ title, items, onInsert, wide = false }: ToolboxSection
       <h3 className={`${CAPTION} font-semibold text-[var(--color-surface-300)] uppercase tracking-wider mb-1.5 px-1`}>{title}</h3>
       <div className={`grid ${wide ? 'grid-cols-1' : 'grid-cols-2'} gap-1.5`}>
         {items.map((item, idx) => (
-          <ToolboxItem key={`${item.type}-${item.fbType || idx}`} item={item} onInsert={onInsert} />
+          <ToolboxItem key={`${item.type}-${item.functionName || item.fbType || idx}`} item={item} onInsert={onInsert} />
         ))}
       </div>
     </div>
@@ -115,30 +120,32 @@ function ToolboxSection({ title, items, onInsert, wide = false }: ToolboxSection
 
 interface LDToolboxProps {
   /** An item was pressed: it is inserted at the cursor of the editor. */
-  onInsert?: (item: LDToolboxItem) => void;
+  onInsert?: (item: LDPaletteEntry) => void;
 }
 
 export default function LDToolbox({ onInsert }: LDToolboxProps) {
   // the function blocks of the project are placeable like the standard ones (LNG-008)
-  const projectItems = getToolboxItems(useProjectBlocks());
+  const projectItems: LDPaletteEntry[] = [...getToolboxItems(useProjectBlocks()), ...functionItems()];
   const [query, setQuery] = useState('');
+  const idOf = (item: LDPaletteEntry) => `${item.type}:${item.functionName ?? item.fbType ?? ''}`;
   const found = new Set(
     filterItems(
       projectItems.map((item) => ({
-        id: `${item.type}:${item.fbType ?? ''}`,
+        id: idOf(item),
         label: item.label,
-        detail: item.category,
-        keywords: [item.type, item.symbol, item.fbType ?? ''],
+        detail: item.kind ? functionKindLabel(item.kind) : item.category,
+        keywords: [item.type, item.symbol, item.fbType ?? '', ...(item.kind ? [item.kind] : [])],
       })),
       query,
     ).map((item) => item.id),
   );
-  const allItems = projectItems.filter((item) => found.has(`${item.type}:${item.fbType ?? ''}`));
+  const allItems = projectItems.filter((item) => found.has(idOf(item)));
 
   const contacts = allItems.filter((i) => i.category === 'contact');
   const coils = allItems.filter((i) => i.category === 'coil');
   const structure = allItems.filter((i) => i.category === 'structure');
   const functionBlocks = allItems.filter((i) => i.category === 'function_block');
+  const functions = allItems.filter((i) => i.category === 'function');
 
   return (
     <div
@@ -159,6 +166,7 @@ export default function LDToolbox({ onInsert }: LDToolboxProps) {
       <ToolboxSection title={t('editors.ld.coils')} items={coils} onInsert={onInsert} />
       <ToolboxSection title={t('editors.ld.structure')} items={structure} onInsert={onInsert} />
       <ToolboxSection title={t('editors.ld.functionBlocks')} items={functionBlocks} onInsert={onInsert} wide />
+      <ToolboxSection title={t('editors.ld.functions')} items={functions} onInsert={onInsert} />
       {allItems.length === 0 ? <p className={`px-1 ${CAPTION} text-[var(--color-surface-300)]`}>{t('editors.nothingMatches')}</p> : null}
 
       {/* Instructions */}

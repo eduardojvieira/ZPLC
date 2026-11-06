@@ -1,0 +1,163 @@
+{
+  "requirement": "LNG-028",
+  "title": "Ladder arithmetic boxes store their result while the power reaches them, keep it when it does not, and pass the power on",
+  "matrix": ["ld-fbd.ld-en-eno-on-function-boxes", "ld-fbd.ld-blocks-in-a-rung"],
+  "tags": ["arch-sensitive", "division"],
+  "note": "DIV truncates toward zero and MOD takes the sign of the dividend, as the VM states (IEC 61131-3 table 33).",
+  "scans": 3,
+  "scanMs": 10,
+  "inputs": [
+    {
+      "at": "%IX8.0",
+      "type": "BOOL",
+      "value": true,
+      "beforeScan": 1
+    },
+    {
+      "at": "%IW0",
+      "type": "INT",
+      "value": 17,
+      "beforeScan": 1
+    },
+    {
+      "at": "%IW1",
+      "type": "INT",
+      "value": 5,
+      "beforeScan": 1
+    },
+    {
+      "at": "%IX8.0",
+      "type": "BOOL",
+      "value": false,
+      "beforeScan": 2
+    },
+    {
+      "at": "%IW0",
+      "type": "INT",
+      "value": 100,
+      "beforeScan": 2
+    },
+    {
+      "at": "%IW1",
+      "type": "INT",
+      "value": 7,
+      "beforeScan": 2
+    },
+    {
+      "at": "%IX8.0",
+      "type": "BOOL",
+      "value": true,
+      "beforeScan": 3
+    }
+  ],
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 22,
+      "afterScan": 1
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 12,
+      "afterScan": 1
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 34,
+      "afterScan": 1
+    },
+    {
+      "at": "%QW3",
+      "type": "INT",
+      "value": 3,
+      "afterScan": 1
+    },
+    {
+      "at": "%QW4",
+      "type": "INT",
+      "value": 2,
+      "afterScan": 1
+    },
+    {
+      "at": "%QX16.0",
+      "type": "BOOL",
+      "value": true,
+      "afterScan": 1
+    },
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 22,
+      "afterScan": 2
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 12,
+      "afterScan": 2
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 34,
+      "afterScan": 2
+    },
+    {
+      "at": "%QW3",
+      "type": "INT",
+      "value": 3,
+      "afterScan": 2
+    },
+    {
+      "at": "%QW4",
+      "type": "INT",
+      "value": 2,
+      "afterScan": 2
+    },
+    {
+      "at": "%QX16.0",
+      "type": "BOOL",
+      "value": false,
+      "afterScan": 2
+    },
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 107,
+      "afterScan": 3
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 93,
+      "afterScan": 3
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 200,
+      "afterScan": 3
+    },
+    {
+      "at": "%QW3",
+      "type": "INT",
+      "value": 14,
+      "afterScan": 3
+    },
+    {
+      "at": "%QW4",
+      "type": "INT",
+      "value": 2,
+      "afterScan": 3
+    },
+    {
+      "at": "%QX16.0",
+      "type": "BOOL",
+      "value": true,
+      "afterScan": 3
+    }
+  ]
+}

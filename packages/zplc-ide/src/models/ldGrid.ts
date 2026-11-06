@@ -91,6 +91,8 @@ export function getElementSymbol(type: LDElementType): string {
       return '(N)'; // --(N)--
     case 'function_block':
       return '[FB]';
+    case 'function':
+      return '[fn]';
     default:
       return '???';
   }
@@ -125,6 +127,8 @@ export function getElementDescription(type: LDElementType): string {
       return t('ld.desc.coil_n');
     case 'function_block':
       return t('ld.desc.function_block');
+    case 'function':
+      return t('ld.desc.function');
     default:
       return t('ld.desc.unknown');
   }

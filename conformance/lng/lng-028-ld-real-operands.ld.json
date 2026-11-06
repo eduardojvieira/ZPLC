@@ -1,0 +1,117 @@
+{
+  "name": "Rungs",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Enable",
+        "type": "BOOL",
+        "address": "%IX8.0"
+      },
+      {
+        "name": "Temp",
+        "type": "REAL",
+        "address": "%ID0"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Warm",
+        "type": "BOOL",
+        "address": "%QX16.0"
+      },
+      {
+        "name": "Twice",
+        "type": "REAL",
+        "address": "%QD0"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "r1",
+      "number": 1,
+      "gridConfig": {
+        "cols": 3,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "c1",
+              "type": "contact_no",
+              "variable": "Enable",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "f1",
+              "type": "function",
+              "functionName": "GE",
+              "operands": ["Temp", "2.5"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "k1",
+              "type": "coil",
+              "variable": "Warm",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": [],
+      "verticalLinks": []
+    },
+    {
+      "id": "r2",
+      "number": 2,
+      "gridConfig": {
+        "cols": 2,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "c2",
+              "type": "contact_no",
+              "variable": "Enable",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "f2",
+              "type": "function",
+              "functionName": "MUL",
+              "operands": ["Temp", "2.0"],
+              "output": "Twice",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": [],
+      "verticalLinks": []
+    }
+  ]
+}

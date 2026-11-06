@@ -1,0 +1,65 @@
+{
+  "requirement": "LNG-028",
+  "title": "Ladder comparison boxes in parallel branches pass power like contacts in parallel: either one is enough",
+  "matrix": ["ld-fbd.ld-en-eno-on-function-boxes", "ld-fbd.ld-blocks-in-a-rung"],
+  "scans": 4,
+  "scanMs": 10,
+  "inputs": [
+    {
+      "at": "%IW0",
+      "type": "INT",
+      "value": 11,
+      "beforeScan": 1
+    },
+    {
+      "at": "%IW1",
+      "type": "INT",
+      "value": 9,
+      "beforeScan": 1
+    },
+    {
+      "at": "%IW0",
+      "type": "INT",
+      "value": 3,
+      "beforeScan": 2
+    },
+    {
+      "at": "%IW1",
+      "type": "INT",
+      "value": 4,
+      "beforeScan": 3
+    },
+    {
+      "at": "%IW1",
+      "type": "INT",
+      "value": 9,
+      "beforeScan": 4
+    }
+  ],
+  "expect": [
+    {
+      "at": "%QX16.0",
+      "type": "BOOL",
+      "value": true,
+      "afterScan": 1
+    },
+    {
+      "at": "%QX16.0",
+      "type": "BOOL",
+      "value": false,
+      "afterScan": 2
+    },
+    {
+      "at": "%QX16.0",
+      "type": "BOOL",
+      "value": true,
+      "afterScan": 3
+    },
+    {
+      "at": "%QX16.0",
+      "type": "BOOL",
+      "value": false,
+      "afterScan": 4
+    }
+  ]
+}

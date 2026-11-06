@@ -51,7 +51,7 @@ export function rowFacts(row: MatrixRow, cases: CaseFacts[], listed: string[], g
 // Which row is on which page
 // ---------------------------------------------------------------------------
 
-const SHARED_GRAPHICAL = ['ld-fbd.en-eno', 'ld-fbd.user-blocks-and-functions'];
+const SHARED_GRAPHICAL = ['ld-fbd.user-blocks-and-functions'];
 
 export const LANGUAGES = ['st', 'il', 'ld', 'fbd', 'sfc'] as const;
 export type Language = (typeof LANGUAGES)[number];
@@ -70,7 +70,8 @@ export function onPage(language: Language, row: MatrixRow): boolean {
     case 'ld':
       return row.id.startsWith('ld-fbd.ld-') || SHARED_GRAPHICAL.includes(row.id);
     case 'fbd':
-      return row.id.startsWith('ld-fbd.fbd-') || SHARED_GRAPHICAL.includes(row.id);
+      // EN/ENO is a Ladder feature (LNG-028) that FBD does not have: its row is the one of FBD
+      return row.id.startsWith('ld-fbd.fbd-') || row.id === 'ld-fbd.en-eno' || SHARED_GRAPHICAL.includes(row.id);
   }
 }
 
@@ -409,6 +410,76 @@ const NOT_SUPPORTED_NOTE: Record<State, L10n> = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Function boxes of Ladder (LNG-028)
+// ---------------------------------------------------------------------------
+
+const LD_BOXES: Record<Lang, { heading: string; intro: string; head: string[]; rows: string[][]; points: string[] }> = {
+  en: {
+    heading: 'Function boxes',
+    intro:
+      'A rung can hold the IEC functions below as boxes with EN and ENO. The left wire of a box is EN, the power that reaches it, and ' +
+      'the right wire is ENO, the power that leaves it. Pick them from the Functions group of the palette; the number of operands ' +
+      'follows the function you choose.',
+    head: ['Kind', 'Functions', 'Operands', 'Output'],
+    rows: [
+      ['Comparison', '`GT`, `GE`, `EQ`, `NE`, `LE`, `LT`', '`IN1`, `IN2`', 'none: the box passes power when the comparison holds'],
+      ['Arithmetic', '`ADD`, `SUB`, `MUL`, `DIV`, `MOD`', '`IN1`, `IN2`', 'a variable'],
+      ['Move', '`MOVE`', '`IN`', 'a variable'],
+      ['Selection', '`LIMIT`, `MIN`, `MAX`', '`MN`, `IN`, `MX` for `LIMIT`; `IN1`, `IN2` for `MIN` and `MAX`', 'a variable'],
+    ],
+    points: [
+      '**EN and ENO.** A comparison is a condition in series: power passes through it when the power that reaches it is on and the ' +
+        'comparison holds. Every other function runs while EN is on, writes its result to the output and passes the power on; while EN ' +
+        'is off, it does not run, its output keeps its value and ENO is off. No error is detected, so ENO does not report one.',
+      '**Operands.** Each operand is a declared variable, chosen from the list of declared symbols, or a literal that you type. The ' +
+        'output is a declared variable that is not an input.',
+      '**Division by zero.** `DIV` and `MOD` with a divisor of zero are not detected by the box: the VM of the ZPLC runtime faults, the ' +
+        'scan ends in a fault and the output is not written. This holds for integers and for `REAL` with `0.0` or `-0.0`.',
+      '**Overflow.** An integer result that does not fit its type wraps around; the box does not report it.',
+      '**Online.** While you monitor, the box shows the value of each variable operand and of the output, and its two wires show ' +
+        'EN and ENO.',
+    ],
+  },
+  es: {
+    heading: 'Cajas de función',
+    intro:
+      'Un peldaño puede contener como cajas con EN y ENO las funciones IEC siguientes. El cable izquierdo de una caja es EN, la ' +
+      'energía que llega a ella, y el cable derecho es ENO, la energía que sale de ella. Se eligen en el grupo Funciones de la paleta; ' +
+      'el número de operandos sigue a la función que elija.',
+    head: ['Tipo', 'Funciones', 'Operandos', 'Salida'],
+    rows: [
+      [
+        'Comparación',
+        '`GT`, `GE`, `EQ`, `NE`, `LE`, `LT`',
+        '`IN1`, `IN2`',
+        'ninguna: la caja deja pasar la energía cuando la comparación se cumple',
+      ],
+      ['Aritmética', '`ADD`, `SUB`, `MUL`, `DIV`, `MOD`', '`IN1`, `IN2`', 'una variable'],
+      ['Copia', '`MOVE`', '`IN`', 'una variable'],
+      ['Selección', '`LIMIT`, `MIN`, `MAX`', '`MN`, `IN`, `MX` para `LIMIT`; `IN1`, `IN2` para `MIN` y `MAX`', 'una variable'],
+    ],
+    points: [
+      '**EN y ENO.** Una comparación es una condición en serie: la energía pasa por ella cuando la energía que llega está activa y la ' +
+        'comparación se cumple. Cualquier otra función se ejecuta mientras EN está activo, escribe su resultado en la salida y deja ' +
+        'pasar la energía; mientras EN está inactivo, no se ejecuta, su salida conserva el valor y ENO está inactivo. No se detecta ' +
+        'ningún error, por eso ENO no informa de ninguno.',
+      '**Operandos.** Cada operando es una variable declarada, elegida de la lista de símbolos declarados, o un literal que usted ' +
+        'escribe. La salida es una variable declarada que no es una entrada.',
+      '**División por cero.** La caja no detecta `DIV` ni `MOD` con divisor cero: la VM del entorno de ejecución de ZPLC entra en falla, ' +
+        'el ciclo termina en falla y la salida no se escribe. Esto vale para enteros y para `REAL` con `0.0` o `-0.0`.',
+      '**Desbordamiento.** Un resultado entero que no cabe en su tipo se desborda en círculo; la caja no lo informa.',
+      '**En línea.** Mientras se monitorea, la caja muestra el valor de cada operando que es una variable y de la salida, y sus dos ' +
+        'cables muestran EN y ENO.',
+    ],
+  },
+};
+
+export function functionBoxSection(lang: Lang): string[] {
+  const text = LD_BOXES[lang];
+  return [`## ${text.heading}`, text.intro, table(text.head, text.rows), text.points.map((point) => `- ${point}`).join('\n')];
+}
+
 export function languageBody(language: Language, inputs: Inputs, lang: Lang): string {
   const text = LANGUAGE_TEXT[language];
   const facts = inputs.facts.filter(({ row }) => onPage(language, row));
@@ -460,6 +531,7 @@ export function languageBody(language: Language, inputs: Inputs, lang: Lang): st
     SCREENSHOT[lang],
     `## ${HEADINGS.elements![lang]}`,
     ...sections,
+    ...(language === 'ld' ? functionBoxSection(lang) : []),
     `## ${HEADINGS.addressing![lang]}`,
     ADDRESSING_INTRO[lang],
     addressingTable(lang),

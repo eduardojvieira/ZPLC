@@ -29,8 +29,27 @@ const finite = z.number();
 const position = z.looseObject({ x: finite, y: finite });
 const variable = z.looseObject({ name: id, type: id });
 
-const LD_ELEMENT_TYPES = ['left_rail', 'right_rail', ...LD_CONTACT_TYPES, ...LD_COIL_TYPES, 'function_block'] as const;
-const ldElement = z.looseObject({ id, type: z.enum(LD_ELEMENT_TYPES), variable: z.string().optional() });
+const LD_ELEMENT_TYPES = ['left_rail', 'right_rail', ...LD_CONTACT_TYPES, ...LD_COIL_TYPES, 'function_block', 'function'] as const;
+// A function box (LNG-028) names its function and lists its operands; an operand not bound yet is an empty string the build reports.
+const ldElement = z
+  .looseObject({
+    id,
+    type: z.enum(LD_ELEMENT_TYPES),
+    variable: z.string().optional(),
+    functionName: id.optional(),
+    operands: z.array(z.string()).optional(),
+    output: z.string().optional(),
+  })
+  .superRefine((element, context) => {
+    if (element.type !== 'function') return;
+    // zod's own words for a missing field: `expected string, received undefined`
+    const needed = { functionName: id, operands: z.array(z.string()) };
+    for (const [field, shape] of Object.entries(needed)) {
+      const checked = shape.safeParse(element[field as keyof typeof needed]);
+      if (!checked.success)
+        for (const issue of checked.error.issues) context.addIssue({ code: 'custom', message: issue.message, path: [field] });
+    }
+  });
 const ldRung = z
   .looseObject({
     id,

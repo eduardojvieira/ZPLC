@@ -1,0 +1,77 @@
+{
+  "requirement": "LNG-028",
+  "title": "a Ladder MOVE box copies its operand only while the power reaches it, and takes a negative literal",
+  "matrix": ["ld-fbd.ld-en-eno-on-function-boxes", "ld-fbd.ld-blocks-in-a-rung"],
+  "scans": 3,
+  "scanMs": 10,
+  "inputs": [
+    {
+      "at": "%IX8.0",
+      "type": "BOOL",
+      "value": true,
+      "beforeScan": 1
+    },
+    {
+      "at": "%IW0",
+      "type": "INT",
+      "value": 42,
+      "beforeScan": 1
+    },
+    {
+      "at": "%IX8.0",
+      "type": "BOOL",
+      "value": false,
+      "beforeScan": 2
+    },
+    {
+      "at": "%IW0",
+      "type": "INT",
+      "value": 9,
+      "beforeScan": 2
+    },
+    {
+      "at": "%IX8.1",
+      "type": "BOOL",
+      "value": true,
+      "beforeScan": 3
+    }
+  ],
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 42,
+      "afterScan": 1
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 0,
+      "afterScan": 1
+    },
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 42,
+      "afterScan": 2
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 0,
+      "afterScan": 2
+    },
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 42,
+      "afterScan": 3
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": -1,
+      "afterScan": 3
+    }
+  ]
+}

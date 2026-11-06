@@ -28,11 +28,12 @@ import {
   type LDModel,
   type LDRung,
 } from '../../models/ld';
-import { ldElementKind, LD_MODBUS_HELPERS } from '../../models/ldSupport';
+import { ldElementKind, ldFunctionLabel, ldFunctionSpec, LD_MODBUS_HELPERS } from '../../models/ldSupport';
 import type { ProjectBlock } from '../../models/projectBlocks';
 import type { PickerItem } from '../picker';
 import { boolOutputsOf, declaredSymbols, sameType, symbolItems } from '../symbols';
 import { NO_LD_SELECTION, type LDSelection } from './graphModel';
+import { emptyFunction, functionSlots, slotValue, withSlot } from './ldFunctions';
 import { t } from '../../i18n';
 
 /** A cell of a rung: the place the keys act on. */
@@ -46,13 +47,15 @@ export interface LDCursor {
 export interface LDInsert {
   type: string;
   fbType?: string;
-  category: 'contact' | 'coil' | 'function_block' | 'structure';
+  /** The IEC function of a function box (LNG-028). */
+  functionName?: string;
+  category: 'contact' | 'coil' | 'function_block' | 'function' | 'structure';
 }
 
 /** What the editor has to ask the user after a command, and then run another command with the answer. */
 export type LDPrompt =
   | { kind: 'palette' }
-  | { kind: 'bind'; elementId: string }
+  | { kind: 'bind'; elementId: string; /** A function box has several: its operands in pin order, then its output. */ slot?: number }
   | { kind: 'comment'; rungId: string }
   | { kind: 'select'; rungId: string; elementId: string };
 
@@ -72,6 +75,8 @@ export interface LDArgument {
   insert?: LDInsert;
   /** The name chosen from the list of declared symbols (or typed, where the list allows it). */
   variable?: string;
+  /** The operand (or, after the last pin, the output) of a function box that `variable` is for. */
+  slot?: number;
 }
 
 /** The commands of the table that act on the document or the cursor; the editor itself runs the others. */
@@ -182,6 +187,7 @@ function uniqueId(base: string, taken: Iterable<string>): string {
 
 function elementName(element: LDElement): string {
   const kind = ldElementKind(element.type);
+  if (element.type === 'function') return `${kind} ${ldFunctionLabel(element)}`;
   const name = isFunctionBlock(element.type) ? [element.fbType, element.instance].filter(Boolean).join(' ') : element.variable;
   return name ? `${kind} ${name}` : kind;
 }
@@ -310,6 +316,8 @@ export function newElement(
         .flatMap((cell) => (cell.element ? [cell.element.id] : [])) ?? [],
   );
   const id = uniqueId(item.type === 'function_block' ? `fb_${(item.fbType ?? 'block').toLowerCase()}` : item.type, taken);
+  if (item.type === 'function' && item.functionName)
+    return { element: { id, type: 'function', ...emptyFunction(item.functionName), row, col } };
   if (item.type !== 'function_block' || !item.fbType) return { element: { id, type: item.type as LDElement['type'], row, col } };
   if (LD_MODBUS_HELPERS.has(item.fbType)) return { element: { id, type: 'function_block', fbType: item.fbType, row, col } };
   const names = [...model.variables.local, ...(model.variables.inputs ?? []), ...model.variables.outputs].map((variable) => variable.name);
@@ -333,8 +341,21 @@ export function bindingChoices(
   model: LDModel,
   element: LDElement,
   projectBlocks?: readonly ProjectBlock[],
+  slot = 0,
 ): { items: PickerItem[]; free: boolean; title: string } {
   const symbols = declaredSymbols(model.variables);
+  if (element.type === 'function') {
+    // an operand is a declared symbol or a typed literal; the result goes to a variable that is not an input
+    const pins = ldFunctionSpec(element.functionName)?.pins ?? [];
+    const output = slot >= pins.length;
+    return {
+      items: symbolItems(output ? symbols.filter((symbol) => symbol.section !== 'input') : symbols),
+      free: true,
+      title: output
+        ? t('ld.bindResult', { name: element.functionName ?? '' })
+        : t('ld.bindOperand', { pin: pins[slot] ?? '', name: element.functionName ?? '' }),
+    };
+  }
   if (isFunctionBlock(element.type)) {
     const own = symbols.filter((symbol) => sameType(symbol.type, element.fbType));
     return { items: symbolItems(own), free: false, title: t('ld.instanceOf', { type: element.fbType ?? t('ld.fallbackBlock') }) };
@@ -433,7 +454,7 @@ export function runLDCommand(model: LDModel, given: LDCursor | null, command: st
       };
     }
     case 'bindVariable':
-      return argument.variable === undefined ? askBinding(model, cursor) : bindAt(model, cursor, argument.variable);
+      return argument.variable === undefined ? askBinding(model, cursor) : bindAt(model, cursor, argument.variable, argument.slot);
     case 'editComment': {
       const place = placeOf(model, cursor);
       return place
@@ -502,13 +523,14 @@ function insertAt(model: LDModel, cursor: LDCursor | null, item: LDInsert): LDOu
       }
     : withRung(model, rung);
   const bindable = !isFunctionBlock(element.type);
+  const slotted = element.type === 'function' && functionSlots(element).length > 0;
   return {
     model: next,
     cursor: cursorAt(place),
     changed: true,
     selection: { rungId: rung.id, elementId: element.id },
     // a contact or a coil is of no use until it is bound: the list of symbols is asked at once
-    ...(bindable ? { prompt: { kind: 'bind', elementId: element.id } as LDPrompt } : {}),
+    ...(bindable ? { prompt: { kind: 'bind', elementId: element.id, ...(slotted ? { slot: 0 } : {}) } as LDPrompt } : {}),
     say: t('ld.inserted', {
       name: elementName(element),
       at,
@@ -525,16 +547,18 @@ function askBinding(model: LDModel, cursor: LDCursor | null): LDOutcome {
   if (isFunctionBlock(element.type) && element.fbType && LD_MODBUS_HELPERS.has(element.fbType)) {
     return refuse(model, cursor, `${element.fbType} has no instance to bind.`);
   }
+  // a function box is asked from its first empty slot, or from the first when it is full
+  const first = element.type === 'function' ? functionSlots(element).findIndex((_, index) => slotValue(element, index) === '') : -1;
   return {
     model,
     cursor: cursorAt(place),
     changed: false,
-    prompt: { kind: 'bind', elementId: element.id },
+    prompt: { kind: 'bind', elementId: element.id, ...(element.type === 'function' ? { slot: Math.max(0, first) } : {}) },
     say: t('ld.bind', { name: elementName(element) }),
   };
 }
 
-function bindAt(model: LDModel, cursor: LDCursor | null, name: string): LDOutcome {
+function bindAt(model: LDModel, cursor: LDCursor | null, name: string, slot = 0): LDOutcome {
   const place = placeOf(model, cursor);
   if (!place) return refuse(model, cursor, describeCursor(model, cursor));
   const element = elementAt(place);
@@ -542,7 +566,13 @@ function bindAt(model: LDModel, cursor: LDCursor | null, name: string): LDOutcom
   const text = name.trim();
   if (text === '') return refuse(model, cursor, 'A variable name is needed.');
   let bound: LDElement;
-  if (isFunctionBlock(element.type)) {
+  let next: LDPrompt | undefined;
+  if (element.type === 'function') {
+    if (slot >= functionSlots(element).length) return refuse(model, cursor, 'This slot does not exist in the function.');
+    bound = withSlot(element, slot, text);
+    // the next slot is asked at once, so that a box is filled by keys alone
+    if (slot + 1 < functionSlots(element).length) next = { kind: 'bind', elementId: bound.id, slot: slot + 1 };
+  } else if (isFunctionBlock(element.type)) {
     const declared = model.variables.local.find((variable) => variable.name === text);
     if (!declared || !sameType(declared.type, element.fbType))
       return refuse(model, cursor, `${text} is not a declared variable of type ${element.fbType ?? 'the function block'}.`);
@@ -558,6 +588,7 @@ function bindAt(model: LDModel, cursor: LDCursor | null, name: string): LDOutcom
     cursor: cursorAt(place),
     changed: true,
     selection: { rungId: rung.id, elementId: bound.id },
+    ...(next ? { prompt: next } : {}),
     say: t('ld.bound', { name: elementName(bound) }),
   };
 }

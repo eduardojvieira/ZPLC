@@ -47,7 +47,9 @@ export type LDElementType =
   // Coils (outputs)
   | LDCoilType
   // Function blocks embedded in rungs
-  | 'function_block';
+  | 'function_block'
+  // An IEC function with EN and ENO (LNG-028): a comparison, arithmetic, MOVE or a selection
+  | 'function';
 
 // =============================================================================
 // Grid-Based Types (NEW)
@@ -166,6 +168,12 @@ export interface LDElement {
 
   // For function blocks: how many rows it spans
   rowSpan?: number;
+
+  // For functions (LNG-028): the IEC function, its operands in pin order (a declared variable or a literal), and the
+  // variable that receives the result (none for a comparison, which passes power instead)
+  functionName?: string;
+  operands?: string[];
+  output?: string;
 
   comment?: string;
 }

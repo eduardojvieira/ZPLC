@@ -1,0 +1,116 @@
+{
+  "name": "Rungs",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Enable",
+        "type": "BOOL",
+        "address": "%IX8.0"
+      },
+      {
+        "name": "Level",
+        "type": "INT",
+        "address": "%IW0"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "High",
+        "type": "BOOL",
+        "address": "%QX16.0"
+      },
+      {
+        "name": "Low",
+        "type": "BOOL",
+        "address": "%QX16.1"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "r1",
+      "number": 1,
+      "gridConfig": {
+        "cols": 3,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "c1",
+              "type": "contact_no",
+              "variable": "Enable",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "f1",
+              "type": "function",
+              "functionName": "GT",
+              "operands": ["Level", "100"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "k1",
+              "type": "coil",
+              "variable": "High",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": [],
+      "verticalLinks": []
+    },
+    {
+      "id": "r2",
+      "number": 2,
+      "gridConfig": {
+        "cols": 2,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "f2",
+              "type": "function",
+              "functionName": "LE",
+              "operands": ["Level", "100"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "k2",
+              "type": "coil",
+              "variable": "Low",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": [],
+      "verticalLinks": []
+    }
+  ]
+}

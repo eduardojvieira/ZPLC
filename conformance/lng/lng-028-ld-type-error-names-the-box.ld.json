@@ -1,0 +1,65 @@
+{
+  "name": "Rungs",
+  "variables": {
+    "local": [
+      {
+        "name": "Text",
+        "type": "STRING"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Enable",
+        "type": "BOOL",
+        "address": "%IX8.0"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Out",
+        "type": "INT",
+        "address": "%QW0"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "r1",
+      "number": 1,
+      "gridConfig": {
+        "cols": 2,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "c1",
+              "type": "contact_no",
+              "variable": "Enable",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "f1",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["Text"],
+              "output": "Out",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": [],
+      "verticalLinks": []
+    }
+  ]
+}

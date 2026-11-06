@@ -155,6 +155,73 @@ describe('Ladder editor in a browser (VF-007, LNG-012)', () => {
     expect((await rungsOf(app))[0]!.elements).toContain('coil_set/');
   });
 
+  test(
+    'LNG-028 LNG-012 the Functions group is inserted from the palette by keyboard: GT and ADD are bound from the declared ' +
+      'symbols and a typed literal, and the saved file holds both boxes',
+    async () => {
+      const app = await browserApp();
+      const file = JSON.parse(BLINKY);
+      file.variables.local.push({ name: 'Level', type: 'INT' }, { name: 'Sum', type: 'INT' });
+      await app.open({ name: 'main.ld.json', language: 'LD', content: JSON.stringify(file) });
+      const functions = (): Promise<unknown[]> =>
+        app.eval(
+          `import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const s = useIDEStore.getState(); return ` +
+            `JSON.parse(s.loadedFiles.get(s.activeFileId).content).rungs[0].grid.flat().filter((c) => c.element?.type === 'function')` +
+            `.map((c) => { const { id, ...rest } = c.element; return rest; }); })`,
+        );
+      // the group is in the toolbox, with a button for the function
+      await app.axNode('button', t('editors.insert', { name: 'GT' }));
+      await clickCell(app, 'rung_1', 0, 3);
+      await waitCursor(app, 'rung_1:0,3');
+      await app.press('i');
+      await app.axNode('combobox', t('editors.ld.insertElement'));
+      await app.type('GT');
+      await app.axNode('option', /^GT/);
+      await app.press('Enter');
+      await app.axNode('combobox', t('ld.bindOperand', { pin: 'IN1', name: 'GT' }));
+      await app.type('Level');
+      await app.axNode('option', /^Level/);
+      await app.press('Enter');
+      await app.axNode('combobox', t('ld.bindOperand', { pin: 'IN2', name: 'GT' }));
+      await app.type('100');
+      await app.press('Enter');
+      await app.until('the list closed', `!document.querySelector('[data-keyboard-picker]')`);
+      await clickCell(app, 'rung_1', 0, 4);
+      await waitCursor(app, 'rung_1:0,4');
+      await app.press('i');
+      await app.axNode('combobox', t('editors.ld.insertElement'));
+      await app.type('ADD');
+      await app.axNode('option', /^ADD/);
+      await app.press('Enter');
+      for (const [pin, value] of [
+        ['IN1', 'Level'],
+        ['IN2', '3'],
+      ]) {
+        await app.axNode('combobox', t('ld.bindOperand', { pin, name: 'ADD' }));
+        await app.type(value);
+        await app.press('Enter');
+      }
+      await app.axNode('combobox', t('ld.bindResult', { name: 'ADD' }));
+      await app.type('Sum');
+      await app.axNode('option', /^Sum/);
+      await app.press('Enter');
+      await app.until('the list closed', `!document.querySelector('[data-keyboard-picker]')`);
+      expect(await functions()).toEqual([
+        { type: 'function', functionName: 'GT', operands: ['Level', '100'], row: 0, col: 3 },
+        { type: 'function', functionName: 'ADD', operands: ['Level', '3'], output: 'Sum', row: 0, col: 4 },
+      ]);
+      // selecting a box opens its operands and its output, each in a named field
+      await app.click(`[data-ld-function="ADD"] [data-ld-element-id]`);
+      expect((await app.axNode('combobox', t('ld.functionOperand', { pin: 'IN2' }))).value).toBe('3');
+      expect((await app.axNode('combobox', t('ld.functionOutput'))).value).toBe('Sum');
+      // the boxes are selectable and deletable like any other element
+      await app.axNode('button', 'ADD(Level, 3) -> Sum');
+      await app.press('Delete');
+      await app.until('the ADD box gone', `document.querySelectorAll('[data-ld-function]').length === 1`);
+      expect(await functions()).toHaveLength(1);
+    },
+  );
+
   test('F1 lists the commands in a named, searchable list and Enter runs the chosen one', async () => {
     const app = await browserApp();
     await openBlinky(app);

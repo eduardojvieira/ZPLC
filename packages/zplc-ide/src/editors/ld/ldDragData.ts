@@ -3,7 +3,9 @@ export const DRAG_MIME_TYPE = 'application/zplc-ld-element';
 export interface LDDropData {
   type: string;
   fbType?: string;
-  category: 'contact' | 'coil' | 'function_block' | 'structure';
+  /** The IEC function of a function box (LNG-028). */
+  functionName?: string;
+  category: 'contact' | 'coil' | 'function_block' | 'function' | 'structure';
   isMove?: boolean;
   elementId?: string;
   fromRow?: number;

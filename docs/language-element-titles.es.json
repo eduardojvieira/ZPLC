@@ -105,6 +105,7 @@
   "ld-fbd.fbd-unwired-inputs": "FBD: entradas sin cablear",
   "ld-fbd.fbd-feedback-loops": "FBD: lazos de realimentación",
   "ld-fbd.en-eno": "EN/ENO",
+  "ld-fbd.ld-en-eno-on-function-boxes": "LD: EN/ENO en las cajas de función",
   "ld-fbd.user-blocks-and-functions": "Bloques de función y funciones del usuario en LD y FBD",
   "configuration.cyclic-tasks": "Tareas cíclicas en zplc.json (intervalo, prioridad, programas)",
   "configuration.ownership-and-memory-checks": "Verificación de propiedad de las salidas entre programas; verificación del límite de memoria",

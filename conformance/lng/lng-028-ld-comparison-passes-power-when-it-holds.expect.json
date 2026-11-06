@@ -1,0 +1,77 @@
+{
+  "requirement": "LNG-028",
+  "title": "a Ladder comparison box passes power only while the power reaching it is on and its comparison holds",
+  "matrix": ["ld-fbd.ld-en-eno-on-function-boxes", "ld-fbd.ld-blocks-in-a-rung"],
+  "scans": 3,
+  "scanMs": 10,
+  "inputs": [
+    {
+      "at": "%IX8.0",
+      "type": "BOOL",
+      "value": true,
+      "beforeScan": 1
+    },
+    {
+      "at": "%IW0",
+      "type": "INT",
+      "value": 150,
+      "beforeScan": 1
+    },
+    {
+      "at": "%IW0",
+      "type": "INT",
+      "value": 100,
+      "beforeScan": 2
+    },
+    {
+      "at": "%IX8.0",
+      "type": "BOOL",
+      "value": false,
+      "beforeScan": 3
+    },
+    {
+      "at": "%IW0",
+      "type": "INT",
+      "value": 150,
+      "beforeScan": 3
+    }
+  ],
+  "expect": [
+    {
+      "at": "%QX16.0",
+      "type": "BOOL",
+      "value": true,
+      "afterScan": 1
+    },
+    {
+      "at": "%QX16.1",
+      "type": "BOOL",
+      "value": false,
+      "afterScan": 1
+    },
+    {
+      "at": "%QX16.0",
+      "type": "BOOL",
+      "value": false,
+      "afterScan": 2
+    },
+    {
+      "at": "%QX16.1",
+      "type": "BOOL",
+      "value": true,
+      "afterScan": 2
+    },
+    {
+      "at": "%QX16.0",
+      "type": "BOOL",
+      "value": false,
+      "afterScan": 3
+    },
+    {
+      "at": "%QX16.1",
+      "type": "BOOL",
+      "value": false,
+      "afterScan": 3
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "name": "Rungs",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Enable",
+        "type": "BOOL",
+        "address": "%IX8.0"
+      },
+      {
+        "name": "Raw",
+        "type": "INT",
+        "address": "%IW0"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Clamped",
+        "type": "INT",
+        "address": "%QW0"
+      },
+      {
+        "name": "Lower",
+        "type": "INT",
+        "address": "%QW1"
+      },
+      {
+        "name": "Upper",
+        "type": "INT",
+        "address": "%QW2"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "r1",
+      "number": 1,
+      "gridConfig": {
+        "cols": 4,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "c1",
+              "type": "contact_no",
+              "variable": "Enable",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "f1",
+              "type": "function",
+              "functionName": "LIMIT",
+              "operands": ["0", "Raw", "4095"],
+              "output": "Clamped",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "f2",
+              "type": "function",
+              "functionName": "MIN",
+              "operands": ["Raw", "100"],
+              "output": "Lower",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "f3",
+              "type": "function",
+              "functionName": "MAX",
+              "operands": ["Raw", "100"],
+              "output": "Upper",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": [],
+      "verticalLinks": []
+    }
+  ]
+}

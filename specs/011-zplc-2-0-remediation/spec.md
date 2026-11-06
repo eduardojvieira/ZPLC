@@ -451,6 +451,7 @@ Structured Text (ST), Instruction List (IL), Ladder Diagram (LD), Function Block
 
 **Debug control**
 - **LNG-027** Pause, resume, cycle step and breakpoints MUST be available in all five languages, enabled or disabled from the capability profile the runtime reports.
+- **LNG-028** A Ladder rung MUST accept the IEC functions GT, GE, EQ, NE, LE, LT, ADD, SUB, MUL, DIV, MOD, MOVE, LIMIT, MIN and MAX as boxes with EN and ENO. A comparison box MUST pass power when the power reaching it is on and its comparison holds; any other box MUST run only while the power reaching it is on, keep its output otherwise, and pass that power on. Its operands MUST be declared variables or literals, its errors MUST name the rung and cell, and its power state MUST be monitored like any other Ladder element.
 
 #### Verification
 - Host conformance cases per language (VF-001), reusing the fixtures in `tools/hil/il_tests`, `ld_tests`, `fbd_tests` and `sfc_tests` and the expected values in the matching `tools/hil/test_*_suite.py` scripts (HIL-005).
@@ -1299,6 +1300,7 @@ Documentation written for controls engineers that takes a newcomer from nothing 
 | FBD: gates, comparison, arithmetic, selection, timers, counters, triggers, bistables | Works with two-input gates; `REAL` passes through `INT` | Works, with more than two inputs and correct types | LNG-023 |
 | FBD: unwired inputs | Broken: become 0 | Reported as an error when required | LNG-023 |
 | FBD: feedback loops | Missing | Detected and reported; support is Decision D-04 (2.x recommended) | LNG-023 |
+| LD: EN/ENO on function boxes | Works for the comparison, arithmetic, move and selection functions (GT, GE, EQ, NE, LE, LT, ADD, SUB, MUL, DIV, MOD, MOVE, LIMIT, MIN, MAX); FBD is unchanged | Works | LNG-028 |
 | `EN`/`ENO` | Missing | Decision D-04 (2.x recommended) | LNG-002 |
 | User function blocks and functions in LD and FBD | Missing | Works | LNG-008 |
 

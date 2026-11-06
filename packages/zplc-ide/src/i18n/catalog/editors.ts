@@ -47,6 +47,7 @@ export const editorsEn = {
   'editors.ld.coils': 'Coils',
   'editors.ld.structure': 'Structure',
   'editors.ld.functionBlocks': 'Function blocks',
+  'editors.ld.functions': 'Functions',
   'editors.ld.help': 'Press an item to insert it at the cursor, or drag it onto the grid. Use "Branch" to create parallel paths.',
   'editors.sfc.canvas': 'Sequential function chart canvas',
   'editors.sfc.debugActive': 'Debug mode active',
@@ -120,6 +121,7 @@ export const editorsEs: Record<keyof typeof editorsEn, string> = {
   'editors.ld.coils': 'Bobinas',
   'editors.ld.structure': 'Estructura',
   'editors.ld.functionBlocks': 'Bloques de función',
+  'editors.ld.functions': 'Funciones',
   'editors.ld.help':
     'Pulse un elemento para insertarlo en el cursor, o arrástrelo a la cuadrícula. Use «Rama» para crear caminos paralelos.',
   'editors.sfc.canvas': 'Lienzo del diagrama funcional secuencial',

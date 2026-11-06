@@ -1,0 +1,95 @@
+{
+  "requirement": "LNG-028",
+  "title": "Ladder LIMIT, MIN and MAX boxes select a value while the power reaches them and keep it when it does not",
+  "matrix": ["ld-fbd.ld-en-eno-on-function-boxes", "ld-fbd.ld-blocks-in-a-rung"],
+  "scans": 3,
+  "scanMs": 10,
+  "inputs": [
+    {
+      "at": "%IX8.0",
+      "type": "BOOL",
+      "value": true,
+      "beforeScan": 1
+    },
+    {
+      "at": "%IW0",
+      "type": "INT",
+      "value": 5000,
+      "beforeScan": 1
+    },
+    {
+      "at": "%IW0",
+      "type": "INT",
+      "value": -20,
+      "beforeScan": 2
+    },
+    {
+      "at": "%IX8.0",
+      "type": "BOOL",
+      "value": false,
+      "beforeScan": 3
+    },
+    {
+      "at": "%IW0",
+      "type": "INT",
+      "value": 50,
+      "beforeScan": 3
+    }
+  ],
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 4095,
+      "afterScan": 1
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 100,
+      "afterScan": 1
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 5000,
+      "afterScan": 1
+    },
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 0,
+      "afterScan": 2
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": -20,
+      "afterScan": 2
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 100,
+      "afterScan": 2
+    },
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 0,
+      "afterScan": 3
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": -20,
+      "afterScan": 3
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 100,
+      "afterScan": 3
+    }
+  ]
+}

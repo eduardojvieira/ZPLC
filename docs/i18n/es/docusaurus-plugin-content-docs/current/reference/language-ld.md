@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_language_reference.ts): reference/language-ld. Do not edit. >>> */}
 
-El estado de cada elemento de esta página se lee de las pruebas de conformidad ejecutadas, no se escribe a mano: un elemento funciona cuando al menos un caso de conformidad que lo nombra se compila, se ejecuta y cumple sus valores esperados, y ningún caso suyo figura en la lista de fallas conocidas. CI ejecuta toda la batería en cada cambio. Esta página cubre 7 elementos: 5 funcionan, 2 se rechazan a propósito y 0 aún no están probados.
+El estado de cada elemento de esta página se lee de las pruebas de conformidad ejecutadas, no se escribe a mano: un elemento funciona cuando al menos un caso de conformidad que lo nombra se compila, se ejecuta y cumple sus valores esperados, y ningún caso suyo figura en la lista de fallas conocidas. CI ejecuta toda la batería en cada cambio. Esta página cubre 7 elementos: 6 funcionan, 1 se rechazan a propósito y 0 aún no están probados.
 
 ## Editor
 
@@ -28,10 +28,27 @@ La imagen es una captura de pantalla real de este editor, tomada de forma autom�
 | LD: contactos normalmente abiertos y cerrados; bobinas normales, negadas, de activación y de desactivación | Funciona | 2 | LNG-022 |
 | LD: ramas en paralelo | Funciona | 2 | LNG-021 |
 | LD: contactos de flanco y bobinas de flanco | Funciona | 3 | LNG-022 |
-| LD: bloques en un peldaño | Funciona | 2 | LNG-021, LNG-022 |
+| LD: bloques en un peldaño | Funciona | 10 | LNG-021, LNG-022 |
 | LD: saltos y etiquetas | Se rechaza con un mensaje, decisión abierta | 2 | LNG-002 |
-| EN/ENO | Se rechaza con un mensaje, decisión abierta | 1 | LNG-002 |
+| LD: EN/ENO en las cajas de función | Funciona | 8 | LNG-028 |
 | Bloques de función y funciones del usuario en LD y FBD | Funciona | 3 | LNG-008 |
+
+## Cajas de función
+
+Un peldaño puede contener como cajas con EN y ENO las funciones IEC siguientes. El cable izquierdo de una caja es EN, la energía que llega a ella, y el cable derecho es ENO, la energía que sale de ella. Se eligen en el grupo Funciones de la paleta; el número de operandos sigue a la función que elija.
+
+| Tipo | Funciones | Operandos | Salida |
+| --- | --- | --- | --- |
+| Comparación | `GT`, `GE`, `EQ`, `NE`, `LE`, `LT` | `IN1`, `IN2` | ninguna: la caja deja pasar la energía cuando la comparación se cumple |
+| Aritmética | `ADD`, `SUB`, `MUL`, `DIV`, `MOD` | `IN1`, `IN2` | una variable |
+| Copia | `MOVE` | `IN` | una variable |
+| Selección | `LIMIT`, `MIN`, `MAX` | `MN`, `IN`, `MX` para `LIMIT`; `IN1`, `IN2` para `MIN` y `MAX` | una variable |
+
+- **EN y ENO.** Una comparación es una condición en serie: la energía pasa por ella cuando la energía que llega está activa y la comparación se cumple. Cualquier otra función se ejecuta mientras EN está activo, escribe su resultado en la salida y deja pasar la energía; mientras EN está inactivo, no se ejecuta, su salida conserva el valor y ENO está inactivo. No se detecta ningún error, por eso ENO no informa de ninguno.
+- **Operandos.** Cada operando es una variable declarada, elegida de la lista de símbolos declarados, o un literal que usted escribe. La salida es una variable declarada que no es una entrada.
+- **División por cero.** La caja no detecta `DIV` ni `MOD` con divisor cero: la VM del entorno de ejecución de ZPLC entra en falla, el ciclo termina en falla y la salida no se escribe. Esto vale para enteros y para `REAL` con `0.0` o `-0.0`.
+- **Desbordamiento.** Un resultado entero que no cabe en su tipo se desborda en círculo; la caja no lo informa.
+- **En línea.** Mientras se monitorea, la caja muestra el valor de cada operando que es una variable y de la salida, y sus dos cables muestran EN y ENO.
 
 ## Direccionamiento de E/S
 
@@ -59,7 +76,6 @@ Estos elementos no funcionan hoy. Cada uno se rechaza con un mensaje ubicado o a
 | Elemento | Estado | Qué ocurre | Requisito |
 | --- | --- | --- | --- |
 | LD: saltos y etiquetas | Se rechaza con un mensaje, decisión abierta | No admitido: la compilación lo rechaza con un mensaje que indica la posición; que una versión posterior lo admita es una decisión abierta. | LNG-002 |
-| EN/ENO | Se rechaza con un mensaje, decisión abierta | No admitido: la compilación lo rechaza con un mensaje que indica la posición; que una versión posterior lo admita es una decisión abierta. | LNG-002 |
 
 ## Páginas relacionadas
 
