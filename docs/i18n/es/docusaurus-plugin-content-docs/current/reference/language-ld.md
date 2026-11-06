@@ -28,9 +28,9 @@ La imagen es una captura de pantalla real de este editor, tomada de forma autom�
 | LD: contactos normalmente abiertos y cerrados; bobinas normales, negadas, de activación y de desactivación | Funciona | 2 | LNG-022 |
 | LD: ramas en paralelo | Funciona | 2 | LNG-021 |
 | LD: contactos de flanco y bobinas de flanco | Funciona | 3 | LNG-022 |
-| LD: bloques en un peldaño | Funciona | 10 | LNG-021, LNG-022 |
+| LD: bloques en un peldaño | Funciona | 11 | LNG-021, LNG-022 |
 | LD: saltos y etiquetas | Se rechaza con un mensaje, decisión abierta | 2 | LNG-002 |
-| LD: EN/ENO en las cajas de función | Funciona | 8 | LNG-028 |
+| LD: EN/ENO en las cajas de función | Funciona | 9 | LNG-028 |
 | Bloques de función y funciones del usuario en LD y FBD | Funciona | 3 | LNG-008 |
 
 ## Cajas de función

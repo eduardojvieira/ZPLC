@@ -28,9 +28,9 @@ The picture is a real screenshot of this editor, captured by automation from the
 | LD: normally open and closed contacts; normal, negated, set and reset coils | Works | 2 | LNG-022 |
 | LD: parallel branches | Works | 2 | LNG-021 |
 | LD: edge contacts and edge coils | Works | 3 | LNG-022 |
-| LD: blocks in a rung | Works | 10 | LNG-021, LNG-022 |
+| LD: blocks in a rung | Works | 11 | LNG-021, LNG-022 |
 | LD: jumps and labels | Rejected with a message, decision open | 2 | LNG-002 |
-| LD: EN/ENO on function boxes | Works | 8 | LNG-028 |
+| LD: EN/ENO on function boxes | Works | 9 | LNG-028 |
 | User function blocks and functions in LD and FBD | Works | 3 | LNG-008 |
 
 ## Function boxes
