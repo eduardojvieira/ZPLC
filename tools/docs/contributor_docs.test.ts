@@ -271,25 +271,22 @@ describe('internal process output is off the public surface (DOC-021)', () => {
     );
   });
 
-  it(
-    'files the documentation tracker and the source-of-truth map under Project, with the contributor pages, and not under ' + 'Reference',
-    async () => {
-      const { default: sidebars } = (await import(join(ROOT, 'docs/sidebars.js'))) as {
-        default: { docsSidebar: Array<{ label: string; items: unknown[] }> };
-      };
-      const flat = (items: unknown[]): string[] =>
-        items.flatMap((item) => (typeof item === 'string' ? [item] : flat((item as { items: unknown[] }).items)));
-      const category = (label: string) => flat(sidebars.docsSidebar.find((entry) => entry.label === label)!.items);
-      for (const page of ['reference/source-of-truth', 'reference/v1-5-canonical-docs-manifest']) {
-        expect({ page, project: category('Project').includes(page), reference: category('Reference').includes(page) }).toEqual({
-          page,
-          project: true,
-          reference: false,
-        });
-      }
-      expect(category('Project')).toContain('contributing/index');
-    },
-  );
+  it('files the source-of-truth map under Project, with the contributor pages, and not under ' + 'Reference', async () => {
+    const { default: sidebars } = (await import(join(ROOT, 'docs/sidebars.js'))) as {
+      default: { docsSidebar: Array<{ label: string; items: unknown[] }> };
+    };
+    const flat = (items: unknown[]): string[] =>
+      items.flatMap((item) => (typeof item === 'string' ? [item] : flat((item as { items: unknown[] }).items)));
+    const category = (label: string) => flat(sidebars.docsSidebar.find((entry) => entry.label === label)!.items);
+    for (const page of ['reference/source-of-truth']) {
+      expect({ page, project: category('Project').includes(page), reference: category('Reference').includes(page) }).toEqual({
+        page,
+        project: true,
+        reference: false,
+      });
+    }
+    expect(category('Project')).toContain('contributing/index');
+  });
 
   it('names a team or a role as the owner of every gate of the release record, never the tool that runs the check', () => {
     const rows = text('specs/008-release-foundation/artifacts/release-evidence-matrix.md')

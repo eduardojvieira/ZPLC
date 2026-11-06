@@ -7,17 +7,57 @@
     "message": "Empiece aquí",
     "description": "The label for category 'Start here' in sidebar 'docsSidebar'"
   },
-  "sidebar.docsSidebar.category.How-to guides": {
-    "message": "Guías prácticas",
-    "description": "The label for category 'How-to guides' in sidebar 'docsSidebar'"
+  "sidebar.docsSidebar.category.Learn": {
+    "message": "Aprender",
+    "description": "The label for category 'Learn' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Program": {
+    "message": "Programar",
+    "description": "The label for category 'Program' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Languages": {
+    "message": "Lenguajes",
+    "description": "The label for category 'Languages' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.ZPLC application": {
+    "message": "Aplicación ZPLC",
+    "description": "The label for category 'ZPLC application' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Simulate, test and debug": {
+    "message": "Simular, probar y depurar",
+    "description": "The label for category 'Simulate, test and debug' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Work with projects": {
+    "message": "Trabajar con proyectos",
+    "description": "The label for category 'Work with projects' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Connect and deploy": {
+    "message": "Conectar y desplegar",
+    "description": "The label for category 'Connect and deploy' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Boards and firmware": {
+    "message": "Placas y firmware",
+    "description": "The label for category 'Boards and firmware' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Deploy and operate": {
+    "message": "Desplegar y operar",
+    "description": "The label for category 'Deploy and operate' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Communications": {
+    "message": "Comunicaciones",
+    "description": "The label for category 'Communications' in sidebar 'docsSidebar'"
+  },
+  "sidebar.docsSidebar.category.Concepts": {
+    "message": "Conceptos",
+    "description": "The label for category 'Concepts' in sidebar 'docsSidebar'"
   },
   "sidebar.docsSidebar.category.Reference": {
     "message": "Referencia",
     "description": "The label for category 'Reference' in sidebar 'docsSidebar'"
   },
-  "sidebar.docsSidebar.category.Languages": {
-    "message": "Lenguajes",
-    "description": "The label for category 'Languages' in sidebar 'docsSidebar'"
+  "sidebar.docsSidebar.category.Language reference": {
+    "message": "Referencia de lenguajes",
+    "description": "The label for category 'Language reference' in sidebar 'docsSidebar'"
   },
   "sidebar.docsSidebar.category.Functions and function blocks": {
     "message": "Funciones y bloques de función",
@@ -34,22 +74,6 @@
   "sidebar.docsSidebar.category.Boards": {
     "message": "Placas",
     "description": "The label for category 'Boards' in sidebar 'docsSidebar'"
-  },
-  "sidebar.docsSidebar.category.Concepts": {
-    "message": "Conceptos",
-    "description": "The label for category 'Concepts' in sidebar 'docsSidebar'"
-  },
-  "sidebar.docsSidebar.category.ZPLC application": {
-    "message": "Aplicación ZPLC",
-    "description": "The label for category 'ZPLC application' in sidebar 'docsSidebar'"
-  },
-  "sidebar.docsSidebar.category.Runtime": {
-    "message": "Runtime",
-    "description": "The label for category 'Runtime' in sidebar 'docsSidebar'"
-  },
-  "sidebar.docsSidebar.category.Learn": {
-    "message": "Aprender",
-    "description": "The label for category 'Learn' in sidebar 'docsSidebar'"
   },
   "sidebar.docsSidebar.category.Project": {
     "message": "Proyecto",

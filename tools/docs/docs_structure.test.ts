@@ -59,9 +59,9 @@ function pagesOf(base: string): Array<{ path: string; id: string; draft: boolean
 }
 
 describe('docs structure: the sidebar is organised by reader intent (DOC-002)', () => {
-  it("has the six intents of the requirement, in the order of a reader's journey", async () => {
+  it("has the seven intents of the requirement, in the order of a reader's journey", async () => {
     const top = (await sidebar()).filter(isCategory).map((category) => category.label);
-    expect(top).toEqual(['Start here', 'How-to guides', 'Reference', 'Concepts', 'Learn', 'Project']);
+    expect(top).toEqual(['Start here', 'Learn', 'Program', 'Connect and deploy', 'Concepts', 'Reference', 'Project']);
     expect((await sidebar()).every(isCategory)).toBe(true);
   });
 

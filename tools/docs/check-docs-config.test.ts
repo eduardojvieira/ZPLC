@@ -259,12 +259,16 @@ describe('how-to guides: each task has a page in both languages with something t
     }
   });
 
-  it('lists every guide in the how-to category of the sidebar', async () => {
+  it('lists every guide in the sidebar, under the intent it serves', async () => {
     const { default: sidebars } = (await import(join(ROOT, 'docs/sidebars.js'))) as {
       default: { docsSidebar: Array<{ label: string; items: unknown[] }> };
     };
-    const howTo = sidebars.docsSidebar.find((category) => category.label === 'How-to guides')!.items;
-    for (const page of pages) expect({ page, listed: howTo.includes(page.replace(/\.md$/, '')) }).toEqual({ page, listed: true });
+    const flat = (items: unknown[]): string[] =>
+      items.flatMap((item) => (typeof item === 'string' ? [item] : flat((item as { items: unknown[] }).items)));
+    const guides = sidebars.docsSidebar
+      .filter((category) => ['Program', 'Connect and deploy'].includes(category.label))
+      .flatMap((c) => flat(c.items));
+    for (const page of pages) expect({ page, listed: guides.includes(page.replace(/\.md$/, '')) }).toEqual({ page, listed: true });
   });
 });
 
