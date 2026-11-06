@@ -1,0 +1,419 @@
+{
+  "name": "PackStation",
+  "description": "Packing station: a belt, a part counter, a blocked-sensor fault and a reset.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Count",
+        "type": "CTU",
+        "comment": "Part counter: Count.CV is the number of parts so far"
+      },
+      {
+        "name": "Stuck",
+        "type": "TON",
+        "comment": "Blocked-sensor timer: times how long Part stays on"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Start pushbutton, normally open: TRUE while pressed"
+      },
+      {
+        "name": "StopOK",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Stop pushbutton wired normally closed: TRUE at rest, FALSE while pressed"
+      },
+      {
+        "name": "EStopOK",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "Emergency stop wired normally closed: TRUE at rest, FALSE while pressed"
+      },
+      {
+        "name": "Part",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "Part sensor: TRUE while a part is in front of it"
+      },
+      {
+        "name": "Reset",
+        "type": "BOOL",
+        "address": "%I0.4",
+        "comment": "Reset pushbutton, normally open: TRUE while pressed"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Belt",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Belt motor command. It is also the memory that keeps the belt running."
+      },
+      {
+        "name": "BatchFull",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Batch lamp: TRUE once the batch is complete"
+      },
+      {
+        "name": "Fault",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "Fault lamp: TRUE while a blocked sensor fault is latched"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Each rising edge of Part counts one part; BatchFull follows the counter output once three parts are counted, and Reset clears the count.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "contact_no_Part_00",
+              "type": "contact_no",
+              "variable": "Part",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "fb_Count",
+              "type": "function_block",
+              "fbType": "CTU",
+              "instance": "Count",
+              "parameters": {
+                "CU": "CONNECTED",
+                "R": "Reset",
+                "PV": "3"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_BatchFull_07",
+              "type": "coil",
+              "variable": "BatchFull",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "If Part stays on for the preset, the sensor is blocked: set the latched Fault.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "contact_no_Part_00",
+              "type": "contact_no",
+              "variable": "Part",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "fb_Stuck",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "Stuck",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#80ms"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_set_Fault_07",
+              "type": "coil_set",
+              "variable": "Fault",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "Reset clears Fault only when the part sensor is clear again.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "contact_no_Reset_00",
+              "type": "contact_no",
+              "variable": "Reset",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "contact_nc_Part_00",
+              "type": "contact_nc",
+              "variable": "Part",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_reset_Fault_07",
+              "type": "coil_reset",
+              "variable": "Fault",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_4",
+      "number": 4,
+      "comment": "Seal-in for the belt. StopOK, EStopOK, Fault and BatchFull are in series after the branch, so any of them drops the belt and only a new Start restarts it.",
+      "branches": [
+        {
+          "id": "branch_1",
+          "startCol": 0,
+          "endCol": 1,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "contact_no_Start_00",
+              "type": "contact_no",
+              "variable": "Start",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "contact_no_StopOK_00",
+              "type": "contact_no",
+              "variable": "StopOK",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "contact_no_EStopOK_00",
+              "type": "contact_no",
+              "variable": "EStopOK",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "contact_nc_Fault_00",
+              "type": "contact_nc",
+              "variable": "Fault",
+              "row": 0,
+              "col": 4
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "contact_nc_BatchFull_00",
+              "type": "contact_nc",
+              "variable": "BatchFull",
+              "row": 0,
+              "col": 5
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_Belt_07",
+              "type": "coil",
+              "variable": "Belt",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "contact_no_Belt_00",
+              "type": "contact_no",
+              "variable": "Belt",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-05",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

@@ -1,0 +1,113 @@
+{
+  "name": "PartsCounter",
+  "description": "Counts parts in a box and lights a lamp when the box is full.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Count",
+        "type": "CTU",
+        "comment": "Part counter"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Sensor",
+        "type": "BOOL",
+        "comment": "Part sensor: TRUE while a part passes"
+      },
+      {
+        "name": "Reset",
+        "type": "BOOL",
+        "comment": "Reset pushbutton: TRUE while pressed"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "BoxFull",
+        "type": "BOOL",
+        "comment": "TRUE once four parts are counted"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Each rising edge of Sensor counts one part; BoxFull lights at four; Reset clears.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "contact_no_Sensor_00",
+              "type": "contact_no",
+              "variable": "Sensor",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "fb_Count",
+              "type": "function_block",
+              "fbType": "CTU",
+              "instance": "Count",
+              "parameters": {
+                "CU": "CONNECTED",
+                "R": "Reset",
+                "PV": "4"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_BoxFull_07",
+              "type": "coil",
+              "variable": "BoxFull",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-06",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
