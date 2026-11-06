@@ -4,283 +4,13 @@ sidebar_position: 1
 
 # Texto estructurado (ST)
 
-El texto estructurado (ST) es la base semántica canónica de ZPLC.
+El texto estructurado es el lenguaje principal de ZPLC y el primero que conviene aprender. Esta página enseña a escribirlo y expone las reglas que aplica el compilador: tipos, conversiones, tiempo, datos, funciones, bloques de función y organización del proyecto. Qué funciona, elemento por elemento, y los casos ejecutados que lo respaldan, está en la [referencia generada del texto estructurado](../reference/language-st.md).
 
-Qué funciona hoy del lenguaje, elemento por elemento y leído de las pruebas de conformidad ejecutadas, está en la [referencia del texto estructurado](../reference/language-st.md) generada.
+ST es el único lenguaje que el compilador lee directamente. La lista de instrucciones, la escalera, el diagrama de bloques de función y el diagrama funcional secuencial se traducen primero a ST (`packages/zplc-ide/src/compiler/index.ts`), así que las reglas de abajo son también las reglas de todos los demás lenguajes. El entorno de ejecución ejecuta el bytecode `.zplc` compilado, nunca el código fuente.
 
-## Papel en ZPLC 2.0
+## Escribir y ejecutar un programa
 
-- `ST` es la entrada directa al backend compartido del compilador
-- `IL`, `LD`, `FBD` y `SFC` son rutas cuando sus contratos de editor, transpilador y compilador las aceptan
-- el runtime sigue ejecutando `.zplc`, no código fuente específico de lenguaje
-
-## Por qué ST importa arquitectónicamente
-
-`packages/zplc-ide/src/compiler/index.ts` trata a ST distinto del resto:
-
-- `ST` evita la etapa de transpilación
-- los demás lenguajes se normalizan a ST antes de compilar
-
-Por eso ST es el mejor lugar para entender la semántica pública de automatización que el runtime debería ejecutar.
-
-## Uso típico en ZPLC
-
-ST es la opción natural para:
-
-- lógica de control en texto
-- aritmética y manipulación de datos
-- llamar directamente a funciones y bloques de función de la stdlib
-- cuerpos de acción que provienen de flujos visuales de más alto nivel
-
-## Ejemplo canónico mínimo
-
-```st runnable expect="Out1=TRUE" scans=30 scan_ms=10
-PROGRAM WorkflowST
-VAR
-    Start : BOOL := TRUE;
-    Timer : TON;
-    Out1 : BOOL := FALSE;
-END_VAR
-Timer(IN := Start, PT := T#250ms);
-Out1 := Timer.Q;
-END_PROGRAM
-```
-
-`Out1` es `FALSE` hasta que el temporizador cuenta 250 ms y `TRUE` desde entonces. CI compila este
-programa, lo ejecuta durante 30 ciclos de 10 ms y comprueba que `Out1` sea `TRUE`.
-
-## Superficies ST visibles hoy en el repositorio
-
-El compilador y la stdlib muestran uso de ST con:
-
-- cuerpos de programa y variables
-- temporizadores como `TON`, `TOF`, `TP`
-- contadores como `CTU`, `CTD`, `CTUD`
-- funciones de cadena como `LEN`, `CONCAT`, `LEFT`, `RIGHT`, `MID`
-- llamadas a bloques de función de comunicación cuando el contrato del compilador y del runtime los respalda
-
-## Tipos numéricos
-
-El caso que figura junto a una fila o una regla es un programa de conformidad de `conformance/cmp/` que se ejecuta en el runtime nativo. Un caso marcado «falla hoy» está en la lista de fallas esperadas de `tools/ci/expected-failures.json`. Los casos de los tipos de 64 bits y de `LREAL` dan los mismos resultados en una compilación de 64 bits y en una de 32 bits del runtime (VF-005).
-
-| Tipo    | Bits | Rango                                      | Se ordena como            | Caso de conformidad                  |
-| ------- | ---- | ------------------------------------------ | ------------------------- | ------------------------------------ |
-| `BOOL`  | 8    | `FALSE`, `TRUE`                            | sin orden                 | `harness/vf-001-bool-output-toggles` |
-| `SINT`  | 8    | -128 a 127                                 | con signo                 | `cmp-011-sint-limits`                |
-| `USINT` | 8    | 0 a 255                                    | sin signo                 | `cmp-012-usint-holds-0-to-255`       |
-| `BYTE`  | 8    | cadena de bits, 0 a 255                    | sin signo                 | `cmp-014-not-byte`                   |
-| `INT`   | 16   | -32768 a 32767                             | con signo                 | `cmp-011-int-limits`                 |
-| `UINT`  | 16   | 0 a 65535                                  | sin signo                 | `cmp-012-uint-65535`                 |
-| `WORD`  | 16   | cadena de bits, 0 a 65535                  | sin signo                 | `cmp-014-not-word`                   |
-| `DINT`  | 32   | -2147483648 a 2147483647                   | con signo                 | `cmp-011-dint-limits`                |
-| `UDINT` | 32   | 0 a 4294967295                             | sin signo                 | `cmp-012-udint-max`                  |
-| `DWORD` | 32   | cadena de bits, 0 a 4294967295             | sin signo                 | `cmp-014-not-dword`                  |
-| `LINT`  | 64   | -9223372036854775808 a 9223372036854775807 | con signo                 | `cmp-015-lint-extreme-values`        |
-| `ULINT` | 64   | 0 a 18446744073709551615                   | sin signo                 | `cmp-015-ulint-compares-unsigned`    |
-| `LWORD` | 64   | cadena de bits, 0 a 18446744073709551615   | sin signo                 | `cmp-015-ulint-compares-unsigned`    |
-| `REAL`  | 32   | IEEE 754 de precisión simple               | orden IEEE, NaN sin orden | `cmp-013-real-nan-is-unordered`      |
-| `LREAL` | 64   | IEEE 754 de precisión doble                | orden IEEE, NaN sin orden | `cmp-015-lreal-comparisons-and-nan`  |
-
-### Aritmética, desbordamiento y división
-
-- **Ancho de un cálculo.** Los operandos de 8 y 16 bits se amplían a 32 bits para la operación, y el resultado se recorta a su ancho solo cuando se guarda. Con `i : INT := 32767`, `i + 1` vale 32768 dentro de una expresión y -32768 una vez guardado en un `INT`; `UINT` 65535 más 1 guardado en un `UINT` es 0 (`cmp-012-uint-65535`), y `SINT`, `USINT` y `BYTE` se comportan igual.
-- **32 y 64 bits dan la vuelta en complemento a dos.** `DINT` 2147483647 más 1 es -2147483648, y la resta y la multiplicación dan la vuelta del mismo modo. El `DINT` más negativo, negado, pasado a `ABS` o dividido por -1, sigue siendo el `DINT` más negativo, y ese valor `MOD` -1 es 0 (`cmp-016-dint-add-wraps`, `cmp-016-dint-sub-wraps`, `cmp-016-dint-mul-wraps`, `cmp-016-dint-negate-min`, `cmp-016-dint-abs-min`, `cmp-016-dint-min-divided-by-minus-one`, `cmp-016-dint-min-modulo-minus-one`). La suma de `LINT` da la vuelta del mismo modo (`cmp-015-lint-extreme-values`), y también su multiplicación, que son los 64 bits bajos del producto (`cmp-015-lint-multiplication-wraps-at-64-bits`, `cmp-015-ulint-multiplication-is-unsigned`).
-- **La división trunca hacia cero y `MOD` toma el signo del dividendo.** -8 / 2 es -4 (`cmp-011-int-divide-negative`) y -7 / 2 es -3, con -7 `MOD` 2 igual a -1, como en C. La división y el `MOD` de `UDINT` son sin signo en todo el rango (`cmp-012-udint-divide-and-modulo`), y también los de `ULINT` y `LWORD` (`cmp-015-ulint-division-above-2-63`). `LINT` sigue la misma regla: el `LINT` más negativo dividido por -1 sigue siendo el `LINT` más negativo y ese valor `MOD` -1 es 0 (`cmp-015-lint-division-truncates-toward-zero`).
-- **Una división o un `MOD` por cero termina el ciclo con la falla de VM `ZPLC_VM_DIV_BY_ZERO` (código 0x03).** Lo mismo ocurre con una división de `REAL` o `LREAL` por 0.0 o -0.0, y con una división o un `MOD` de `LINT` o `ULINT` por cero (`cmp-015-lint-division-by-zero-faults`, `cmp-015-lint-modulo-by-zero-faults`, `cmp-015-ulint-division-by-zero-faults`, `cmp-015-ulint-modulo-by-zero-faults`, `cmp-015-lreal-division-by-zero-faults`). Las pruebas de la VM son `test_vm_arith_edges.c` y `test_vm_core.c` en `firmware/lib/zplc_core/tests/`; para saber qué hace una falla con las salidas, vea [Pausa, reanudación, paso y parada](../runtime/scheduler.md#pausa-reanudación-paso-y-parada).
-
-### Desplazamientos, rotaciones y lógica de bits
-
-- `SHL(IN, N)`, `SHR(IN, N)`, `ROL(IN, N)` y `ROR(IN, N)` son funciones. Un desplazamiento de 32 o más, o con una cuenta negativa, da 0 (`cmp-016-shift-by-the-width-or-more`). `SHR` es lógico: entran ceros por la izquierda. En un valor de 64 bits (`LWORD`, `LINT`, `ULINT`) el ancho es 64: un desplazamiento de 64 o más da 0, y una rotación toma su cuenta módulo 64 y conserva todos los bits (`cmp-015-lword-shifts-and-rotates-use-64-bits`).
-- Un `BYTE`, un `WORD` y los tipos enteros de 8 y 16 bits se desplazan y rotan dentro de su propio ancho: `SHL` descarta los bits desplazados más allá del bit 7 o del bit 15 (`cmp-014-shl-byte-keeps-8-bits`), y `ROL` y `ROR` dan la vuelta dentro de 8 o 16 bits (`cmp-014-rol-byte-rotates-within-8-bits`, `cmp-014-ror-word-rotates-within-16-bits`).
-- `AND`, `OR`, `XOR` y `NOT` trabajan con todo el ancho declarado (`cmp-014-not-byte`, `cmp-014-not-word`, `cmp-014-not-dword`, `cmp-014-and-or-xor-word`), y con 64 bits en `LWORD` (`cmp-015-ulint-compares-unsigned`).
-
-### Conversiones
-
-- **Ampliar conserva el valor.** Un tipo con signo se extiende con signo y un tipo sin signo o una cadena de bits se extiende con ceros: `INT` -5 pasa a `DINT` -5 (`cmp-011-int-widens-to-dint`), `UINT` 65535 pasa a `UDINT` 65535 (`cmp-012-uint-65535`), y un `LINT` toma un `DINT` con su signo y un `UDINT` sin él (`cmp-015-lint-widens-and-narrows`).
-- **Reducir al asignar conserva los bits bajos, y la compilación avisa.** Un `LINT` 5000000000 guardado en un `DINT` es 705032704 (`cmp-015-lint-widens-and-narrows`), y un `DINT` 70000 guardado en un `INT` es 4464 (`cmp-005-integer-narrowing-keeps-the-low-bits-and-warns`). La compilación termina bien e informa la advertencia `IMPLICIT_NARROWING` en el valor, con el nombre de los dos tipos; la aplicación ZPLC, la CLI (`Warning:`) y la API de herramientas la muestran. Una constante se controla en cambio (una constante que no cabe es un error, CMP-018), y `x AND máscara` o `x MOD n` con una máscara o un divisor que cabe en el destino no avisa (`cmp-005-widening-masks-and-constants-do-not-warn`). Aplique una máscara al valor o declare el destino con ancho suficiente para quitar la advertencia.
-- **Un entero se convierte a `REAL`** cuando se asigna a uno o se mezcla con uno: `INT` por `REAL` es un `REAL` (`cmp-013-int-times-real`, `cmp-013-real-assigned-from-integer`).
-- **Un entero de 64 bits se convierte a `REAL`** con un solo redondeo al `REAL` más cercano (`LINT_TO_REAL`, `ULINT_TO_REAL`: `cmp-015-lreal-conversion-functions`).
-- **`LREAL` es el tipo numérico más ancho.** Un entero de cualquier ancho y un `REAL` se convierten a `LREAL` al asignarse a uno o al mezclarse con uno, sin aviso: `LREAL` por `DINT` es un `LREAL` (`cmp-015-lreal-mixed-with-integers-and-real`). Un entero de 64 bits mayor que 2^53 se redondea al `LREAL` más cercano. Un literal real en una expresión `LREAL` es el doble que escribe: `x := 0.1 + 0.2` es 0.30000000000000004 (`cmp-015-lreal-literal-takes-the-type-of-its-context`), mientras que una expresión de valores `REAL` se calcula en precisión simple y se amplía (`r + r`). `REAL#0.1` y `LREAL#0.1` nombran el tipo.
-- **`LREAL` a `REAL` reduce y avisa.** `r := d;` con un `LREAL` `d` compila e informa `IMPLICIT_NARROWING` en el valor: el resultado se redondea a precisión simple (unas 7 cifras significativas) y una magnitud mayor que 3.4e38 pasa a ser un infinito (`cmp-015-lreal-narrowed-to-real-is-reported`). Escriba `LREAL_TO_REAL(d)` para decirlo. Un `LREAL` no se convierte a un entero de forma implícita: escriba `LREAL_TO_DINT(d)`.
-- **Lo inverso es un error.** `i := r` con un `REAL` `r`, y una expresión entera asignada a un `BOOL`, son errores de compilación que nombran los dos tipos (`cmp-005-int-assigned-from-real`, `cmp-005-bool-assigned-from-int`). Escriba `REAL_TO_INT(r)` e `i <> 0` en su lugar.
-- **`REAL_TO_INT` redondea al entero más cercano**, una mitad exacta al entero par, satura en los límites del tipo de destino y da 0 para un NaN (`cmp-057-real-to-int-rounds`, `cmp-057-real-to-int-ties-go-to-even`, `cmp-057-real-to-integer-saturates-at-the-destination-range`, `cmp-016-real-nan-to-dint`); `REAL_TO_DINT` es la forma de 32 bits (`cmp-016-real-out-of-range-to-dint`) y `REAL_TO_DINT(TRUNC(x))` trunca hacia cero (`cmp-016-real-to-dint-truncates-toward-zero`). `TRUNC` y `ROUND` devuelven un `REAL` (`cmp-057-trunc-truncates`, `cmp-057-bool-and-round-conversions`).
-- Existe una función de conversión `<ORIGEN>_TO_<DESTINO>` para cada par de tipos distintos entre `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `LINT`, `ULINT`, `LWORD`, `REAL`, `LREAL` y `TIME` (CMP-057, CMP-015, `cmp-057-integer-conversion-functions`, `cmp-015-integer-width-conversion-functions`, `cmp-015-lreal-conversion-functions`); un entero que no cabe conserva sus bits bajos y un `REAL` o un `LREAL` fuera del destino satura, redondea al entero más cercano con una mitad exacta al par y da 0 para un NaN. `DATE`, `TOD` y `DT` todavía no tienen ninguna.
-
-### Operandos mixtos y comparación
-
-- **El tipo de una operación es el del operando más ancho, `REAL` gana sobre todo entero, `LREAL` gana sobre `REAL`, y entre dos tipos del mismo ancho gana el que no tiene signo** (la regla de C). Por eso `DINT` -1 comparado con `UDINT` 5 es una comparación sin signo y `-1 < 5` es FALSE, mientras que `INT` -1 comparado con `UINT` 5 es TRUE porque ambos se amplían primero a 32 bits. La regla es `commonType` en `packages/zplc-compiler/src/compiler/numeric.ts`, cubierta por `numeric.test.ts`.
-- **Los tipos sin signo se comparan sin signo en todo su rango**: `UDINT` 4294967295 es el valor mayor en toda comparación (`cmp-012-udint-max`, `cmp-012-udint-around-2-31`, `cmp-012-udint-compare-unsigned`), y lo mismo `ULINT` (`cmp-015-ulint-compares-unsigned`).
-- **`REAL` se compara con el orden de IEEE 754.** -0.0 es igual a 0.0, los infinitos se ordenan más allá de todo valor finito, y un NaN no es igual, menor ni mayor que nada, ni siquiera que sí mismo (`cmp-013-real-negative-zero-equals-zero`, `cmp-013-real-infinities-order`, `cmp-013-real-nan-is-unordered`). Lo mismo vale para `LREAL`, con un opcode para cada operador (`cmp-015-lreal-comparisons-and-nan`); un `LINT` se compara con signo y un `ULINT` o `LWORD` sin signo, con sus 64 bits (`cmp-015-lint-compare-signed-and-unsigned-order`).
-
-### Tipos de 64 bits y `LREAL`
-
-`LINT`, `ULINT`, `LWORD` y `LREAL` ocupan dos celdas de la pila de evaluación, con la palabra baja más abajo. Cada operación de abajo es una instrucción de la VM (o una secuencia corta y fija), igual en toda plataforma: los opcodes de doble precisión se calculan con aritmética entera, así que un resultado es el mismo patrón de bits en un host de 64 bits, en uno de 32 bits y en un destino. Los resultados que define la VM están en la [ISA del runtime](../runtime/isa.md#valores-de-dos-palabras-enteros-de-64-bits-y-lreal).
-
-| Sobre `LINT`, `ULINT`, `LWORD` o `LREAL`                                                             | Resultado                                                                                                                                                                        | Caso de conformidad                                                                                                                                                             |
-| ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `+`, `-`, comparación, `AND`, `OR`, `XOR`, `NOT`, negación de los enteros                            | Funciona                                                                                                                                                                         | `cmp-015-lint-add-and-subtract-carry`, `cmp-015-lint-extreme-values`, `cmp-015-ulint-compares-unsigned`                                                                         |
-| `*`, `/`, `MOD` de `LINT`, `ULINT` y `LWORD`                                                         | Funciona: los 64 bits bajos del producto; división que trunca, `MOD` con el signo del dividendo; sin signo para `ULINT` y `LWORD`; un divisor cero es una falla de la VM         | `cmp-015-lint-multiplication-wraps-at-64-bits`, `cmp-015-lint-division-truncates-toward-zero`, `cmp-015-ulint-division-above-2-63`                                              |
-| `SHL`, `SHR`, `ROL`, `ROR`, `ABS` y negación de los enteros                                          | Funciona con 64 bits                                                                                                                                                             | `cmp-015-lword-shifts-and-rotates-use-64-bits`, `cmp-015-lint-abs-and-negate`                                                                                                   |
-| un contador de `FOR`, un selector de `CASE` con etiquetas y rangos de 64 bits                        | Funciona                                                                                                                                                                         | `cmp-015-lint-for-counter-crosses-32-bits`, `cmp-015-ulint-for-counter-up-to-the-top`, `cmp-015-lint-case-selector-and-labels`, `cmp-015-ulint-case-label-above-2-63`           |
-| literales de todo el rango, en cualquier base, con tipo (`LINT#-9`) o sin él                         | Funciona                                                                                                                                                                         | `cmp-015-lint-literals-over-the-full-range`                                                                                                                                     |
-| `LREAL` `+`, `-`, `*`, `/`, negación, comparación                                                    | Funciona: IEEE 754 binary64, al par más cercano, el desbordamiento es un infinito, un NaN se propaga                                                                             | `cmp-015-lreal-addition-subtraction-keep-52-bits`, `cmp-015-lreal-multiplication-and-division`, `cmp-015-lreal-nan-and-infinity-propagate`, `cmp-015-lreal-comparisons-and-nan` |
-| literales `LREAL`, formas con exponente y valores iniciales                                          | Funciona                                                                                                                                                                         | `cmp-015-lreal-literals-with-exponent`, `cmp-015-lreal-double-precision`                                                                                                        |
-| `LREAL` y `LINT` en arreglos, estructuras, parámetros y resultados de función, `RETAIN`              | Funciona                                                                                                                                                                         | `cmp-015-lreal-and-lint-in-arrays-structures-and-calls`, `cmp-015-lreal-keeps-its-value-between-scans`                                                                          |
-| `ABS`, `NEG`, `MAX`, `MIN`, `LIMIT`, `SEL`, `MUX`, `SQRT`, `TRUNC`, `ROUND`                          | Funciona; exacto para un `LREAL` (`SQRT` está correctamente redondeada, 0.0 en 0.0 o menos)                                                                                      | `cmp-015-lreal-abs-sqrt-limit-select`, `cmp-015-lreal-trunc-and-round`                                                                                                          |
-| `SIN`, `COS`, `TAN`, `EXP`, `LN`, `LOG`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`, `EXPT`, `**` de un `LREAL` | Funciona, en precisión simple: el argumento se redondea a `REAL`, la función calcula en `REAL` y el resultado se amplía de nuevo, así que tiene unas siete cifras significativas | `cmp-015-lreal-transcendental-functions-compute-in-real`                                                                                                                        |
-| funciones de conversión, y la conversión implícita de un entero o de un `REAL` a `LREAL`             | Funciona                                                                                                                                                                         | `cmp-015-lreal-conversion-functions`, `cmp-015-integer-width-conversion-functions`, `cmp-015-lreal-mixed-with-integers-and-real`                                                |
-
-Lo que todavía se rechaza, con un mensaje que dice por qué: un argumento de 64 bits o `LREAL` en las funciones de cadena, en `AND_WORD` y sus parientes y en los bloques de comunicación; un valor de 64 bits como índice de arreglo (conviértalo con `LINT_TO_DINT`); un `LREAL` como contador de `FOR` o selector de `CASE`; `AND`, `OR`, `XOR`, `NOT` y `MOD` sobre un `LREAL`. `TRUNC` de un `LREAL` devuelve +0.0 cuando el resultado es cero (el signo de un cero no se conserva), y `ROUND` de un valor entre -0.5 y 0 es +0.0.
-
-## Tipos de tiempo y fecha
-
-| Tipo                   | Ancho              | Qué contiene                                                           | Literal                           |
-| ---------------------- | ------------------ | ---------------------------------------------------------------------- | --------------------------------- |
-| `TIME`                 | 32 bits, sin signo | Una duración en milisegundos, de 0 a 4294967295 (`T#49d17h2m47s295ms`) | `T#1h30m`, `T#1.5s`, `TIME#250ms` |
-| `DATE`                 | 32 bits, con signo | Segundos desde 1970-01-01; las fechas anteriores son negativas         | `D#2024-01-01`                    |
-| `TOD` (`TIME_OF_DAY`)  | 32 bits, sin signo | Milisegundos desde la medianoche                                       | `TOD#12:30:00`                    |
-| `DT` (`DATE_AND_TIME`) | 64 bits, con signo | Milisegundos desde 1970-01-01 00:00:00                                 | `DT#2024-01-01-12:00:00`          |
-
-### TIME
-
-Este es el comportamiento actual. El signo y el ancho de `TIME` son una decisión abierta del propietario del proyecto, descrita al final de esta lista.
-
-- Un literal tiene días, horas, minutos, segundos y milisegundos, cada uno a lo sumo una vez y en ese orden, con un `_` opcional entre ellos (`T#1d_2h_3m_4s_5ms`). `us` y `ns` se aceptan cuando el literal completo es un número entero de milisegundos (`T#1000us` es 1 ms), y el último componente puede llevar fracción (`T#1h30.5m`, `T#1.5s`).
-- Un literal que no es un número entero de milisegundos (`T#1.5ms`), que supera 4294967295 ms (`T#50d`) o que es negativo (`T#-5s`) es un error de compilación que nombra el literal (`cmp-017-time-literal-below-a-millisecond`, `cmp-017-time-literal-above-the-range`, `cmp-017-time-literal-negative`). Las unidades fuera de orden (`T#30m1h`) también se rechazan (`cmp-017-time-literal-units-out-of-order`).
-- La comparación, la suma, la resta y la división son de 32 bits sin signo: `T#30d > T#1d` es TRUE y `T#30d + T#10d` es 3456000000 ms. Un valor preestablecido de temporizador de más de 24,8 días funciona: un `TON` con `PT := T#30d` no termina a los 20 ms.
-- Una duración negativa no se puede representar. Una resta por debajo de cero da la vuelta módulo 2^32: `T#0s - T#1s` es 4294966296 ms (`T#49d17h2m46s296ms`), y la compilación no advierte nada. Verifique que el minuendo no sea menor antes de restar.
-- El Watch de ZPLC muestra un `TIME` superior a 2147483647 ms (24d20h31m23s647ms) como un número negativo, porque los adaptadores de watch leen sus 32 bits con signo. El valor que guarda el programa es la cuenta sin signo.
-- Si `TIME` sigue siendo una cuenta de 32 bits sin signo o pasa a un valor de 64 bits con signo, que permitiría duraciones negativas y rangos de más de 49 días, es una decisión abierta del propietario que se sigue bajo el requisito CMP-017. Esta página no anuncia ningún cambio.
-
-### DATE, TOD y DT
-
-- `TOD` y `DT` guardan milisegundos, la unidad de `TIME`. `TOD#12:30:00 + T#1h` es 48600000 ms (13:30:00), `TOD#13:00:00 - T#30m` es 12:30:00, y la diferencia de dos valores `DT` es un `TIME`: `DT#2024-01-01-01:00:00 - DT#2024-01-01-00:00:00` es 3600000 ms. Los tres tipos se asignan y se comparan, y `DT` compara a través del límite de la palabra de 32 bits.
-- `DATE` cuenta segundos, no milisegundos. Se asigna y se compara (`D#2024-01-01 < D#2025-06-30`), pero `DATE + TIME` suma milisegundos a una cuenta de segundos: no sume un `TIME` a un `DATE`. Ningún caso de conformidad cubre la aritmética sobre `DATE`; su unidad es la que le da el código (`emitDateLiteral` en `packages/zplc-compiler/src/compiler/codegen.ts`). La unidad de `DATE` y el rango de estos tipos forman parte del requisito CMP-017, que no está cerrado.
-- Un literal `DT#` se lee en la zona horaria de la máquina que compila, mientras que `D#` y `TOD#` se leen como UTC. El mismo fuente compilado en dos zonas horarias da dos constantes `DT` distintas. Es un defecto, no un diseño, y todavía ningún caso de conformidad lo fija.
-
-### Tipos no soportados
-
-`LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` y `WCHAR` no forman parte de ZPLC 2.0. La declaración de uno de ellos, como la de cualquier nombre de tipo desconocido, es un error de compilación que nombra el tipo y su posición (`cmp-003-*` en `conformance/cmp/`).
-
-Nivel de evidencia: host. Los casos `cmp-017-*` y `cmp-015-dt-plus-time-and-difference` compilan con el compilador del repositorio y ejecutan el programa en el runtime nativo, y `packages/zplc-compiler/src/compiler/time.test.ts` cubre la gramática de los literales y sus rechazos. La vuelta por debajo de cero, la zona horaria de `DT#` y la visualización en ZPLC se observaron o se leyeron en el código (`numeric.ts`, `codegen.ts`, `debugAdapter.ts`) y todavía ningún caso las fija.
-
-## Literales, operadores y declaraciones
-
-Estas formas compilan y se ejecutan. Cada punto nombra los casos de conformidad de `conformance/cmp/` que lo fijan, y todos pasan.
-
-- **Literales numéricos.** Literales con base `2#1010`, `8#17` y `16#FF` (`cmp-031-binary-literal`, `cmp-031-octal-literal`, `cmp-031-hexadecimal-literal`), también con signo menos y con separadores de dígitos (`cmp-031-negative-based-literal`, `cmp-031-separator-in-based-literal`); `1_000` (`cmp-031-digit-separator`); y literales con tipo como `INT#5` de los tipos enteros, de cadena de bits, `BOOL` y `REAL` (`cmp-031-typed-literal`, `cmp-031-typed-literals-of-each-kind`). Una base numérica distinta de 2, 8 y 16, y un literal con tipo fuera del rango de su tipo, son errores de compilación (`cmp-031-base-not-supported`, `cmp-031-typed-literal-out-of-range`). La forma anterior `0xFF` sigue compilando y la compilación la informa como la advertencia `NON_IEC_HEX_LITERAL` (`cmp-031-0x-form-still-works`). Un literal real con exponente y sin parte fraccionaria, `1e3`, también compila y se informa como `NON_IEC_REAL_LITERAL` (`cmp-008-real-literal-without-fraction-warns`); las demás advertencias y la opción que las selecciona están en la [página del compilador](../ide/compiler.md#advertencias).
-- **Operadores.** `&` tiene la precedencia de `AND` (`cmp-032-ampersand-operator`, `cmp-032-ampersand-binds-tighter-than-or`). `**` es la potencia: los operandos enteros se convierten a `REAL`, liga más fuerte que el signo menos y la multiplicación, y un exponente fraccionario tiene una exactitud de alrededor de una parte en cien mil (`cmp-032-exponent-operator`, `cmp-032-power-of-integers`, `cmp-032-power-precedence`, `cmp-032-power-fractional-exponent`). `0.0 ** -1.0` provoca una falla como una división por cero (`cmp-032-power-zero-base-negative-exponent-faults`).
-- **Acceso a bits.** `w.0` lee y escribe un bit de un `BYTE`, `WORD`, `INT`, `DWORD` o `LWORD`, de un miembro de estructura y de un elemento de arreglo, y una escritura deja los demás bits como están (`cmp-032-bit-access`, `cmp-032-bit-set-and-clear`, `cmp-032-bit-write-in-each-width`, `cmp-032-bit-of-lword`, `cmp-032-bit-of-member-and-element`). Un número de bit mayor que el ancho del tipo y un bit de un `BOOL` son errores de compilación (`cmp-032-bit-number-out-of-range`, `cmp-032-bit-access-of-bool-rejected`).
-- **Comentarios y sentencia vacía.** Comentarios `(* *)` y `/* */`, y un `;` solo, también dentro de `IF` y `CASE` (`cmp-032-block-comment`, `cmp-032-empty-statement`, `cmp-032-empty-statements-inside-blocks`). Un comentario sin cerrar se informa donde se abre (`cmp-009-unterminated-comment-position`).
-- **Declaraciones.** `VAR RETAIN`, `VAR NON_RETAIN` y `VAR_GLOBAL RETAIN` (`cmp-029-var-retain-accepted`, `cmp-029-var-non-retain-is-accepted`, `cmp-029-var-global-retain`). Una variable retentiva toma su valor inicial declarado solo cuando la región retentiva no contiene un estado guardado, de modo que una región restaurada conserva sus valores (`packages/zplc-ide/src/cli/retainedInitialValues.test.ts`). Varios nombres en una declaración comparten su valor inicial (`cmp-030-several-names-one-declaration`, `cmp-030-several-names-with-initial-value`). `VAR_EXTERNAL` debe nombrar una global del mismo tipo (`cmp-030-var-external`, `cmp-030-var-external-type-differs`, `cmp-030-var-external-without-global`). `VAR_TEMP` se acepta en un programa y `VAR_OUTPUT` en una función (`cmp-030-var-temp-in-program`, `cmp-030-function-var-output`). Se aceptan un alias de tipo, también de una estructura o de un arreglo, y varios tipos en un bloque `TYPE`, y se rechazan los alias que se refieren entre sí (`cmp-030-type-alias`, `cmp-030-alias-of-array-and-structure`, `cmp-030-several-types-one-block`, `cmp-030-alias-refers-to-itself`).
-- **Bloques de función.** Una instancia se puede declarar dentro de un bloque de función, y los arreglos de instancias se llaman con un índice constante o en tiempo de ejecución, cada elemento con su propio estado (`cmp-038-instance-inside-function-block`, `cmp-038-array-of-instances`, `cmp-038-array-of-user-blocks`, `cmp-038-array-run-time-index`). Un índice constante fuera del arreglo es un error de compilación (`cmp-038-constant-index-out-of-bounds`). Los nombres de los bloques de biblioteca no son palabras reservadas: un bloque que declara el programa gana sobre el bloque de biblioteca del mismo nombre (`cmp-033-library-block-name-as-variable`, `cmp-033-user-block-named-like-a-library-block`).
-- **Diagnósticos.** Un archivo con varios errores independientes informa cada uno, en orden, sin los falsos errores que dejaba un `IF` roto (`cmp-007-three-errors-three-diagnostics`, `cmp-007-no-error-after-a-broken-if`). Una declaración duplicada y un miembro desconocido se informan en su propia línea (`cmp-006-duplicate-variable-position`, `cmp-006-unknown-member-position`), y se rechaza una llamada que pasa un argumento que ningún `VAR_INPUT` recibe (`cmp-035-unknown-argument-name`).
-
-## Datos, almacenamiento y valores iniciales
-
-Cada regla de abajo está cubierta por un caso de conformidad en `conformance/cmp` (CMP-019 a CMP-028).
-
-### Estructuras, enumeraciones y arreglos
-
-- Un miembro de una estructura o de un bloque de función se lee y se escribe con su ancho declarado (`BYTE` 1 byte, `INT` 2, `DINT` y `REAL` 4, `LINT` 8). Los miembros se anidan a cualquier profundidad: `a.b.c`.
-- Una estructura o un arreglo completo se asigna, y se pasa a una función, por valor: se copian todos los bytes, y los dos lados deben ser del mismo tipo.
-- Una estructura toma un valor inicial de la forma `(x := 1, y := 2)`. Un campo omitido conserva el valor por defecto de su declaración (`x : INT := 7;` dentro del `TYPE`).
-- Una enumeración se guarda como `INT`. Un valor se puede escribir `Tipo#Valor`, que además distingue un nombre de valor que dos enumeraciones comparten.
-- Un arreglo tiene de una a tres dimensiones, límites inferiores negativos y límites que son expresiones constantes (`ARRAY[-N .. N * 2] OF INT`). Sus elementos pueden ser de cualquier tipo: una estructura, una cadena, `LINT`. Un valor inicial es una lista `[1, 2, 3]`, listas anidadas para más dimensiones y cuentas de repetición `[100(0)]`.
-- Un índice constante fuera de los límites es un error de compilación. Un índice variable fuera de los límites termina el ciclo con la falla de VM `ZPLC_VM_OUT_OF_BOUNDS` (violación de acceso a memoria). El control está activo por defecto; la opción del compilador `arrayBoundsCheck: false` lo quita.
-
-### Cadenas
-
-- `STRING` tiene 80 caracteres, `STRING[n]` tiene `n`, `WSTRING[n]` tiene `n` caracteres de 16 bits.
-- Una asignación copia los caracteres, hasta la capacidad del destino. Un literal más largo que la capacidad de su variable es un error de compilación.
-- Una función de cadena nunca modifica sus argumentos: `LEFT`, `RIGHT`, `MID`, `CONCAT`, `INSERT`, `DELETE` y `REPLACE` devuelven una cadena nueva. `COPY(src, dst)` y `CLEAR(s)` escriben en su argumento, como dicen sus nombres.
-- `s := LEFT(s, n)` (y `RIGHT`, `MID`, `DELETE`, `CONCAT` de la propia variable) trabaja sobre la variable. Cualquier otra función que arma una cadena usa un búfer de la memoria WORK del programa, que cuenta contra los bytes del programa.
-- `WSTRING` se puede declarar, inicializar, asignar y medir con `LEN`. Las demás funciones de cadena y la comparación la rechazan con un mensaje.
-
-### Valores iniciales y constantes
-
-- En el primer ciclo toda variable tiene su valor inicial declarado, o el valor por defecto de su tipo: cero, `FALSE`, la cadena vacía, `NULL`. Eso cubre las variables de un programa, `VAR_GLOBAL`, cada miembro de cada instancia de bloque de función, los campos de estructura y los elementos de arreglo.
-- Un local de función y un `VAR_TEMP` de un bloque de función vuelven a tener su valor declarado en cada llamada, de modo que una función no guarda estado. Un `VAR` de un bloque de función conserva su valor de una llamada a otra.
-- `VAR CONSTANT` y `VAR_GLOBAL CONSTANT` conservan su valor, y asignar a una constante es un error de compilación.
-
-### VAR_IN_OUT y referencias
-
-- Un `VAR_IN_OUT` de un bloque de función se pasa por referencia: lo que el cuerpo cambia lo ve quien llama. La variable debe ser del mismo tipo y no puede ser una constante. Un bloque llamado sin enlazarlo termina el ciclo con una falla de VM.
-- `REF_TO`, `REF()` y `^` se controlan por tipo: `REF(x)` es una referencia al tipo de `x` y solo entra en un `REF_TO` de ese tipo. Una variable `REF_TO` es `NULL` hasta que se le asigna algo, y desreferenciar `NULL` termina el ciclo con la falla de VM `ZPLC_VM_OUT_OF_BOUNDS`.
-
-## Nombres y tipos
-
-Cada regla de abajo está cubierta por un caso de conformidad en `conformance/cmp` (CMP-003, CMP-004, CMP-006).
-
-- Los nombres no distinguen mayúsculas de minúsculas, como indica IEC 61131-3: variables, funciones, bloques de función, miembros de estructura, valores de enumeración, nombres de parámetros, nombres de tipo y direcciones directas. `MyVar`, `myvar` y `MYVAR` son la misma variable, `byte` es `BYTE` y `%ix0.0` es `%IX0.0`. Dos declaraciones cuyos nombres difieren solo en mayúsculas son un duplicado y un error de compilación.
-- Una declaración cuyo tipo no es un tipo es un error de compilación que nombra el tipo y su posición. Eso cubre un nombre mal escrito y los tipos que ZPLC 2.0 no tiene: `LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` y `WCHAR` (previstos para 2.x).
-- `VAR PERSISTENT` es un error de compilación en la palabra `PERSISTENT`. Declare las variables `RETAIN` para conservar su valor entre reinicios.
-
-## Tipos de los valores
-
-Cada regla de abajo está cubierta por un caso de conformidad en `conformance/cmp` (CMP-005, CMP-012, CMP-018).
-
-- Todo valor que entra en un lugar de un tipo se controla contra ese tipo: el lado derecho de una asignación, un valor inicial, un argumento de una función o de un bloque de función, el valor de una función y una salida enlazada con `=>`. Un valor de un tipo que no se convierte es un error de compilación que nombra los dos tipos.
-- Los enteros, las cadenas de bits y `REAL` forman una familia. Un tipo entero, `BYTE`, `WORD` y `DWORD` se convierten entre sí, y un valor que no cabe en el destino conserva sus bits bajos y la compilación avisa (`IMPLICIT_NARROWING`, véase [Conversiones](#conversiones)). Un entero se convierte a `REAL` y a `LREAL`, y `REAL` a `LREAL`; un `LREAL` se reduce a `REAL` con la advertencia `IMPLICIT_NARROWING`. Un `REAL` o un `LREAL` no se convierte a un entero: escriba `REAL_TO_INT(x)` o `LREAL_TO_DINT(x)`. Un `STRING` o `WSTRING` es texto y no se convierte a ningún número, `BOOL` o tiempo, ni ninguno se convierte a él: asignarlo, pasarlo como argumento, devolverlo, darlo como valor inicial, compararlo con un número o usarlo como condición es un error de compilación que nombra ambos tipos (`cmp-005-string-assigned-to-int`, `cmp-005-string-assigned-to-bool`, `cmp-005-wstring-assigned-to-real`, `cmp-005-string-literal-assigned-to-time`, `cmp-005-string-as-initial-value-of-an-int`, `cmp-005-string-passed-to-a-numeric-parameter`, `cmp-005-string-returned-from-a-numeric-function`, `cmp-005-string-compared-with-a-number`, `cmp-005-string-as-a-condition`). `LEN` y `FIND` dan un `INT` y van a un número (`cmp-005-string-length-goes-to-a-number`).
-- `BOOL` no se convierte a ni desde nada más, y tampoco `TIME`, `DATE`, `TOD` y `DT`: `i := b;`, `b := 1;` y `n := t;` son errores de compilación. La diferencia de dos valores `DT`, `TOD` o `DATE` es un `TIME`.
-- La condición de `IF`, `ELSIF`, `WHILE` y `UNTIL` es un `BOOL`: escriba `IF count <> 0 THEN`, no `IF count THEN`. La aritmética no toma un `BOOL`, `MOD` toma enteros, y `AND`, `OR`, `XOR` y `NOT` toman `BOOL` o cadenas de bits, no `REAL`; un `BOOL` no se compara con un número.
-- Una expresión constante (literales, constantes con nombre, `+ - * /` y `MOD` de ellos) debe caber en el tipo al que va: `small : SINT := 300;`, `level := -1;` para un `USINT` y `doubled := limit * 2;` con una constante `limit` de 20000 son errores de compilación. Una variable se controla por su tipo, no por su valor.
-- Un literal mayor que 2147483647 es un valor de 32 bits sin signo: va a una variable `UDINT` o `DWORD`, a un parámetro `UDINT` y a `AND_DWORD`, `OR_DWORD`, `XOR_DWORD` y `NOT_DWORD`; un literal fuera del rango de un parámetro `WORD` es un error.
-
-## Funciones y bloques de función
-
-Cada regla de abajo está cubierta por un caso de conformidad en `conformance/cmp` (CMP-034, CMP-035, CMP-037).
-
-- Cada función es un ámbito propio: dos funciones pueden declarar parámetros y locales con los mismos nombres, y un parámetro puede llamarse como una variable de un programa. Dentro de una función, un nombre es primero una variable propia y luego una `VAR_GLOBAL` (las variables de un programa no se ven allí). El nombre de la función es su variable de resultado.
-- Una función se llama con los argumentos por posición, `Sub(10, 2)`, o por nombre en cualquier orden, `Sub(b := 2, a := 10)`. Los argumentos posicionales van primero. Un parámetro dado dos veces, un nombre que la función no tiene, un argumento de más y un parámetro obligatorio sin argumento son errores de compilación; un parámetro que declara un valor inicial (`factor : INT := 10;`) puede omitirse y vale ese valor.
-- Una llamada puede ser una sentencia: `Bump(amount := 2);` ejecuta la función y descarta su resultado. Una función puede declararse antes o después de las que la llaman, y ninguna puede llamarse a sí misma, directamente o a través de otras: es un error de compilación en la llamada que cierra el ciclo.
-- Un bloque de función se llama con parámetros con nombre. `IN := x` da una entrada y `Q => y` copia la salida `Q` en la variable `y` después de la llamada (`y` puede ser un miembro o un elemento). Los nombres se comparan sin distinguir mayúsculas de minúsculas. Un nombre que el bloque no tiene, una local del bloque, una salida con valor dado con `:=` y una entrada enlazada con `=>` son errores de compilación. La llamada posicional de un bloque de función queda para 2.x.
-
-## Métodos, herencia e interfaces
-
-Cada regla de esta sección está cubierta por un caso de conformidad en `conformance/cmp` (CMP-041).
-
-- **Métodos.** Un método se llama sobre una instancia, `valve.Open()`, o por su nombre dentro del bloque, `Open()` o `THIS.Open()`. Un método tiene entradas y locales propias, y su valor es lo que asigna a su propio nombre (`cmp-041-this-member-in-method`, `cmp-041-method-with-several-assignments-called-in-a-loop`). Los argumentos de una llamada son valores del llamador: un nombre en ellos es el del llamador, aunque el método declare uno igual.
-- **Herencia.** `EXTENDS` da al bloque derivado las variables y los métodos de su base. `OVERRIDE` reemplaza un método y es obligatorio para hacerlo; `FINAL` en un método prohíbe sobrescribirlo, y `FUNCTION_BLOCK FINAL` prohíbe extender el bloque (`cmp-041-override-and-inherited-method`, `cmp-041-final-method-cannot-be-overridden`, `cmp-041-final-block-cannot-be-extended`).
-- **SUPER^.** `SUPER^.Metodo()` llama al método de la base del bloque que declara el código que se ejecuta, y `SUPER^();` ejecuta el cuerpo de ese bloque base, sobre la misma instancia. Un bloque derivado no ejecuta por sí solo el cuerpo de su base. Con tres niveles, cada `SUPER^` es el nivel de arriba, no la base de la instancia (`cmp-041-super-call`, `cmp-041-super-call-runs-the-base-body`, `cmp-041-super-call-through-three-levels`).
-- **ABSTRACT.** Un método declarado `ABSTRACT` no tiene cuerpo, y el bloque que declara uno es `FUNCTION_BLOCK ABSTRACT`. Un bloque abstracto no tiene instancias, y un bloque que no es abstracto implementa todos los métodos abstractos que hereda. Un método de la base puede llamar al método abstracto: el que se ejecuta es el del bloque de la instancia (`cmp-041-abstract-method-is-run-by-the-derived-block`, `cmp-041-abstract-block-cannot-be-instantiated`, `cmp-041-abstract-method-left-unimplemented-is-rejected`).
-- **Acceso.** Un método `PRIVATE` se llama solo dentro del bloque que lo declara, y uno `PROTECTED` dentro de ese bloque y de los bloques que lo extienden; `PUBLIC` es el valor por defecto. Una llamada desde un programa, una función u otro bloque es un error de compilación que nombra el método y dónde puede llamarse (`cmp-041-private-method-is-not-callable-from-outside`, `cmp-041-protected-method-is-not-callable-from-outside`, `cmp-041-protected-method-is-callable-from-a-derived-block`, `cmp-041-private-method-is-not-callable-from-a-derived-block`).
-- **Interfaces.** Una variable de tipo interfaz guarda una referencia a una instancia, `NULL` hasta que se le asigna una. Acepta una instancia de un bloque que declara `IMPLEMENTS` para la interfaz (o extiende uno que lo hace), otra variable de la interfaz o `NULL`; cualquier otra cosa es un error de compilación. `shape.Area()` ejecuta el método de la instancia a la que se refiere la variable, sea de cualquier bloque, incluido un elemento de un arreglo elegido en ejecución y una instancia de un bloque derivado (`cmp-041-interface-dispatch`, `cmp-041-interface-dispatch-by-the-instance-assigned`, `cmp-041-interface-variable-as-an-input-of-a-block`, `cmp-041-interface-through-inheritance-and-array-elements`). Una llamada por una variable que no guarda ninguna instancia termina el ciclo con una falla de la VM (`cmp-041-interface-call-of-a-null-reference-faults`).
-
-Cómo se construye una llamada por interfaz: un bloque de función se incorpora al código en cada lugar donde se llama, con las direcciones de su instancia. La referencia de una variable de interfaz es la dirección de la instancia en los 16 bits bajos y la etiqueta del tipo de su bloque en los 16 bits altos. Para cada llamada el compilador enumera todas las instancias del proyecto de un bloque que implementa la interfaz (variables, elementos de arreglo, instancias dentro de otros bloques y de estructuras), y escribe una comparación de la referencia con cada una, con el método incorporado sobre esa instancia detrás. Una referencia que no coincide con ninguna es una falla de la VM. El costo es código, no tiempo de ejecución: una llamada por interfaz es tan grande como la suma de los métodos de todas las instancias que pueden responderla, de modo que una interfaz implementada por bloques de los que el proyecto tiene muchas instancias conviene llamarla desde un bloque de función y no desde muchos lugares.
-
-## Proyectos, archivos y memoria
-
-Cada regla de esta sección está cubierta por un caso de conformidad en `conformance/cmp` (CMP-042, CMP-043) y por `packages/zplc-compiler/src/compiler/unit.test.ts`.
-
-- **Una sola unidad.** Todos los archivos de texto estructurado de un proyecto (`src/*.st`) se compilan como una sola unidad, sin importar si una tarea ejecuta un programa que está en ellos. Un tipo, una función, un bloque de función, una interfaz o un `VAR_GLOBAL` declarado en cualquier archivo es visible para todos los programas, y el archivo que usa un tipo puede ir antes que el que lo declara (`cmp-042-function-block-in-another-file`, `cmp-042-global-in-another-file`, `cmp-042-type-from-another-file-in-a-structure`). Un `PROGRAM` que ninguna tarea ejecuta no se compila. Los lenguajes gráficos y la lista de instrucciones se compilan cuando una tarea los ejecuta.
-- **Una global es una sola variable.** Un `VAR_GLOBAL` tiene una dirección, compartida por todos los programas y todas las tareas, y un valor inicial que se aplica una vez, antes del primer ciclo de la tarea que se ejecute primero (`cmp-042-two-tasks-share-a-global`). Una función se compila una sola vez y los programas de ambas tareas la llaman (`cmp-042-function-from-another-file-in-two-programs`). Dos programas pueden declarar variables con el mismo nombre: cada uno conserva la suya.
-- **Una declaración repetida es un error en ambos lugares.** Un tipo, una función, un bloque de función o una interfaz declarados en dos archivos, o una global declarada dos veces, se informan en cada declaración, y el mensaje nombra ambos archivos y líneas (`cmp-042-function-block-declared-in-two-files-is-rejected`). Un error de un archivo se informa en ese archivo, sin importar qué programa use lo que el archivo declara.
-- **Una sola memoria.** Las variables de las globales, las funciones, las instancias de bloques de función, los programas, los literales de cadena y los búferes de trabajo de las funciones de cadena de todo el proyecto comparten la memoria WORK del perfil del destino: 8192 bytes en el destino `posix`. No hay un límite por programa ni por tarea (`cmp-043-programs-share-the-region`, `cmp-043-program-that-fills-the-region`). Un byte de ella, el último, es el indicador de inicialización.
-- **Disposición.** El compilador coloca, en este orden: las globales, las variables de cada función, las variables de los métodos, las variables de cada programa en el orden de las tareas, los literales de cadena y los búferes de trabajo. Cada variable se alinea a su tamaño hasta 4 bytes, de modo que el mismo proyecto da siempre las mismas direcciones. Las direcciones que cambian porque se agregó otro archivo las informa el mapa de depuración, que lista cada una (véase [Modelo de memoria](../runtime/memory-model.md)).
-- **Una falla de asignación dice qué necesita.** Un proyecto que no cabe es un error de compilación en la declaración que cruza el final de la región, y el mensaje indica los bytes requeridos, los bytes disponibles y los tres mayores consumidores: `WORK allocation exceeds the target memory profile: 9005 bytes required, 8192 bytes available (...). Largest consumers: Overflow.Table (9000 bytes), Overflow.Gain (4 bytes)` (`cmp-043-allocation-failure-states-bytes-and-consumers`). Un destino con menos memoria WORK tiene un límite menor: el proyecto se compila contra el perfil de la placa que nombra.
-
-- **Dónde encuentran una global el mapa y las herramientas.** El mapa de depuración lista una global una sola vez, en el POU del archivo que la declara (un archivo sin programa es un POU con el nombre de su archivo, `globals.st`), marcada `scope: "global"`, con la única dirección que usan todos los programas. Una señal de un escenario la nombra como `Programa.Global`, para cualquier programa del proyecto, o solo por su nombre, que se lee como vista desde el primer programa; la traza y la evidencia la llaman `Programa.Global`. Un watch en ZPLC toma el nombre de la global y muestra esa dirección. Una variable que pertenece a otro programa no es una señal de este (`packages/zplc-ide/src/test-engine/globals.test.ts`, `packages/zplc-ide/src/hooks/globalWatch.test.ts`).
-
-## Entrada a la biblioteca estándar
-
-Véase [Biblioteca estándar](../runtime/stdlib.md).
-
-## Límites conocidos
-
-Esta sección lista lo que el compilador, el cargador y el mapa de depuración no hacen como pide IEC 61131-3. La tabla se genera a partir de los casos de conformidad que se espera que fallen (`tools/ci/expected-failures.json`) y de la descripción de cada requisito en `docs/known-limits.json`: una fila existe mientras falle al menos un caso de su requisito, y desaparece cuando pasa el último. Los bloques y funciones estándar tienen su propia tabla en la [sección 11 de la referencia de la biblioteca estándar](../runtime/stdlib.md#11-diferencias-conocidas-con-iec-61131-3).
-
-{/* >>> GENERATED (tools/docs/generate_known_limits.py): known-limits-language. Do not edit. >>> */}
-Ningún caso de conformidad de esta área figura en la lista de fallas esperadas: no hay un límite registrado.
-{/* <<< END GENERATED: known-limits-language <<< */}
-
-No soportado en esta versión y rechazado con un mensaje, por la decisión D-04: arreglos de arreglos, enumeraciones con tipo base, subrangos, `POINTER TO` y `ADR` (use `REF_TO` y `REF()`), `VAR_ACCESS`, una `CONFIGURATION` textual, `NAMESPACE`, `PROPERTY`, bloques `ACTION` en un programa, llamadas posicionales a bloques de función y las formas de función de los operadores como `ADD(a, b)`. Los casos `cmp-006-*-is-rejected` pasan: fijan el rechazo, de modo que un programa que usa uno de ellos no compila.
-
-## La sintaxis de un vistazo
-
-El texto estructurado (ST) es un lenguaje de alto nivel, estructurado en bloques, con una sintaxis parecida a Pascal. Es el lenguaje central de la aplicación ZPLC y del compilador.
-
-### Sintaxis básica
+Un programa declara sus variables y después lista instrucciones. Este cuenta ciclos y activa `Output_LED` cuando el contador llega al umbral:
 
 ```pascal runnable expect="Counter=3 Output_LED=FALSE" scans=3 scan_ms=10
 PROGRAM Main
@@ -301,28 +31,228 @@ PROGRAM Main
 END_PROGRAM
 ```
 
-Cada ciclo suma 1 a `Counter`, y `Output_LED` sigue en `FALSE` hasta que `Counter` llega a `Threshold`.
-Después de tres ciclos `Counter` vale 3 y `Output_LED` es `FALSE`; CI ejecuta el ejemplo durante tres
-ciclos y comprueba ambos valores.
+Cada ciclo suma 1 a `Counter`, y `Output_LED` sigue en `FALSE` hasta que `Counter` llega a `Threshold`. Después de tres ciclos, `Counter` vale 3. La integración continua compila el ejemplo, lo ejecuta durante tres ciclos de 10 ms y comprueba ambos valores.
 
-### Tipos de datos
+Los bloques de función estándar se declaran como variables y se llaman con parámetros con nombre. Este arranca un temporizador `TON`, y `Out1` pasa a `TRUE` cuando ha contado 250 ms:
 
-ZPLC soporta estos tipos elementales. [Texto estructurado (ST)](./st.md#tipos-numéricos) da el ancho, el rango y el comportamiento en los límites de cada uno.
+```st runnable expect="Out1=TRUE" scans=30 scan_ms=10
+PROGRAM WorkflowST
+VAR
+    Start : BOOL := TRUE;
+    Timer : TON;
+    Out1 : BOOL := FALSE;
+END_VAR
+Timer(IN := Start, PT := T#250ms);
+Out1 := Timer.Q;
+END_PROGRAM
+```
 
-- `BOOL`
-- `SINT`, `INT`, `DINT`, `LINT` (enteros con signo de 8, 16, 32 y 64 bits)
-- `USINT`, `UINT`, `UDINT`, `ULINT` (enteros sin signo de 8, 16, 32 y 64 bits)
-- `BYTE`, `WORD`, `DWORD`, `LWORD` (cadenas de bits de 8, 16, 32 y 64 bits)
-- `REAL` (punto flotante de 32 bits) y `LREAL` (punto flotante de 64 bits, doble precisión IEEE 754; requisito CMP-015)
-- `TIME`, `DATE`, `TOD`, `DT`: ver [Tipos de tiempo y fecha](./st.md#tipos-de-tiempo-y-fecha).
-- `STRING`, `WSTRING`
+La integración continua lo ejecuta durante 30 ciclos de 10 ms y comprueba que `Out1` sea `TRUE`. Los bloques y funciones que puede llamar están en la [biblioteca estándar](../runtime/stdlib.md).
 
-`LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` y `WCHAR` no están soportados: la declaración de uno de ellos es un error de compilación que nombra el tipo (requisito CMP-003).
+## La sintaxis de un vistazo
 
-### Estructuras de control
+Los tipos elementales son:
 
-- `IF ... THEN ... ELSIF ... ELSE ... END_IF`
-- `CASE ... OF ... ELSE ... END_CASE`
-- `FOR ... TO ... BY ... DO ... END_FOR`
-- `WHILE ... DO ... END_WHILE`
-- `REPEAT ... UNTIL ... END_REPEAT`
+- `BOOL`;
+- `SINT`, `INT`, `DINT`, `LINT` (enteros con signo de 8, 16, 32 y 64 bits) y `USINT`, `UINT`, `UDINT`, `ULINT` (sin signo);
+- `BYTE`, `WORD`, `DWORD`, `LWORD` (cadenas de bits de 8, 16, 32 y 64 bits);
+- `REAL` (32 bits) y `LREAL` (64 bits, doble precisión IEEE 754);
+- `TIME`, `DATE`, `TOD`, `DT`, vea [Tipos de tiempo y fecha](#tipos-de-tiempo-y-fecha);
+- `STRING` y `WSTRING`.
+
+Las estructuras de control son:
+
+- `IF ... THEN ... ELSIF ... ELSE ... END_IF`;
+- `CASE ... OF ... ELSE ... END_CASE`;
+- `FOR ... TO ... BY ... DO ... END_FOR`;
+- `WHILE ... DO ... END_WHILE`;
+- `REPEAT ... UNTIL ... END_REPEAT`.
+
+Los nombres no distinguen mayúsculas de minúsculas: `MyVar`, `myvar` y `MYVAR` son una sola variable, `byte` es `BYTE` y `%ix0.0` es `%IX0.0`. Dos declaraciones cuyos nombres solo difieren en las mayúsculas son un duplicado y un error de compilación. Se aceptan los comentarios `(* *)` y `/* */`, y también un `;` solo como instrucción vacía.
+
+## Tipos numéricos
+
+El caso nombrado en una fila o en una regla es un programa de conformidad bajo `conformance/cmp/` que se ejecuta en el entorno de ejecución nativo. Los casos de los tipos de 64 bits y de `LREAL` dan los mismos resultados en una compilación de 64 bits y en una de 32 bits del entorno de ejecución.
+
+| Tipo    | Bits | Rango                                       | Orden                     | Caso de conformidad                  |
+| ------- | ---- | ------------------------------------------- | ------------------------- | ------------------------------------ |
+| `BOOL`  | 8    | `FALSE`, `TRUE`                             | sin orden                 | `harness/vf-001-bool-output-toggles` |
+| `SINT`  | 8    | -128 a 127                                  | con signo                 | `cmp-011-sint-limits`                |
+| `USINT` | 8    | 0 a 255                                     | sin signo                 | `cmp-012-usint-holds-0-to-255`       |
+| `BYTE`  | 8    | cadena de bits, 0 a 255                     | sin signo                 | `cmp-014-not-byte`                   |
+| `INT`   | 16   | -32768 a 32767                              | con signo                 | `cmp-011-int-limits`                 |
+| `UINT`  | 16   | 0 a 65535                                   | sin signo                 | `cmp-012-uint-65535`                 |
+| `WORD`  | 16   | cadena de bits, 0 a 65535                   | sin signo                 | `cmp-014-not-word`                   |
+| `DINT`  | 32   | -2147483648 a 2147483647                    | con signo                 | `cmp-011-dint-limits`                |
+| `UDINT` | 32   | 0 a 4294967295                              | sin signo                 | `cmp-012-udint-max`                  |
+| `DWORD` | 32   | cadena de bits, 0 a 4294967295              | sin signo                 | `cmp-014-not-dword`                  |
+| `LINT`  | 64   | -9223372036854775808 a 9223372036854775807  | con signo                 | `cmp-015-lint-extreme-values`        |
+| `ULINT` | 64   | 0 a 18446744073709551615                    | sin signo                 | `cmp-015-ulint-compares-unsigned`    |
+| `LWORD` | 64   | cadena de bits, 0 a 18446744073709551615    | sin signo                 | `cmp-015-ulint-compares-unsigned`    |
+| `REAL`  | 32   | IEEE 754 de precisión simple                | orden IEEE, NaN sin orden | `cmp-013-real-nan-is-unordered`      |
+| `LREAL` | 64   | IEEE 754 de doble precisión                 | orden IEEE, NaN sin orden | `cmp-015-lreal-comparisons-and-nan`  |
+
+### Aritmética, desbordamiento y división
+
+- **Ancho de un cálculo.** Los operandos de 8 y 16 bits se amplían a 32 bits para la operación, y el resultado se recorta a su ancho solo cuando se almacena. Con `i : INT := 32767`, `i + 1` vale 32768 dentro de una expresión y -32768 una vez almacenado en un `INT`; un `UINT` de 65535 más 1 almacenado en un `UINT` vale 0 (`cmp-012-uint-65535`).
+- **Los 32 y 64 bits se desbordan en complemento a dos.** `DINT` 2147483647 más 1 es -2147483648, y la resta y la multiplicación se desbordan igual. El `DINT` más negativo, negado, pasado a `ABS` o dividido por -1, sigue siendo el `DINT` más negativo, y ese valor `MOD` -1 es 0 (`cmp-016-dint-add-wraps`, `cmp-016-dint-min-divided-by-minus-one`). `LINT` se desborda igual, y su producto son los 64 bits bajos (`cmp-015-lint-multiplication-wraps-at-64-bits`).
+- **La división trunca hacia cero, y `MOD` toma el signo del dividendo**, como en C: -7 / 2 es -3 y -7 `MOD` 2 es -1 (`cmp-011-int-divide-negative`). `UDINT`, `ULINT` y `LWORD` dividen y calculan `MOD` sin signo en todo su rango (`cmp-012-udint-divide-and-modulo`, `cmp-015-ulint-division-above-2-63`).
+
+:::warning
+La división o `MOD` por cero termina el ciclo con la falla de la VM `ZPLC_VM_DIV_BY_ZERO` (código 0x03). Lo mismo ocurre con una división de `REAL` o `LREAL` por 0.0 o -0.0 y con una división o `MOD` de `LINT` o `ULINT` por cero (`cmp-015-lint-division-by-zero-faults`). Compruebe el divisor antes de dividir. Lo que una falla hace con las salidas está en [Pausa, reanudación, paso y Stop](../runtime/scheduler.md#pausa-reanudación-paso-y-parada).
+:::
+
+### Desplazamientos, rotaciones y lógica de bits
+
+- `SHL(IN, N)`, `SHR(IN, N)`, `ROL(IN, N)` y `ROR(IN, N)` son funciones. Un desplazamiento de 32 o más, o con un contador negativo, da 0 (`cmp-016-shift-by-the-width-or-more`). `SHR` es lógico: entran ceros por la izquierda.
+- Un `BYTE`, un `WORD` y los enteros de 8 y 16 bits se desplazan y rotan dentro de su propio ancho (`cmp-014-shl-byte-keeps-8-bits`, `cmp-014-rol-byte-rotates-within-8-bits`). En `LWORD`, `LINT` y `ULINT` el ancho es 64: un desplazamiento de 64 o más da 0, y una rotación toma su contador módulo 64 y conserva todos los bits (`cmp-015-lword-shifts-and-rotates-use-64-bits`).
+- `AND`, `OR`, `XOR` y `NOT` actúan sobre todo el ancho declarado (`cmp-014-not-byte`, `cmp-014-and-or-xor-word`).
+- `w.0` lee y escribe un bit de un `BYTE`, `WORD`, `INT`, `DWORD` o `LWORD`, de un miembro de estructura y de un elemento de arreglo; una escritura deja intactos los demás bits. Un número de bit fuera del ancho y un bit de un `BOOL` son errores de compilación (`cmp-032-bit-access`, `cmp-032-bit-number-out-of-range`).
+
+### Conversiones
+
+- **Ampliar conserva el valor.** Un tipo con signo se extiende con el signo, y un tipo sin signo o una cadena de bits se extiende con ceros: `INT` -5 pasa a `DINT` -5 (`cmp-011-int-widens-to-dint`).
+- **Estrechar al asignar conserva los bits bajos, y la compilación avisa.** Un `DINT` 70000 almacenado en un `INT` vale 4464 (`cmp-005-integer-narrowing-keeps-the-low-bits-and-warns`). La compilación termina bien e informa de la advertencia `IMPLICIT_NARROWING` en el valor, con el nombre de ambos tipos. Una constante que no cabe es un error. Enmascare el valor, o declare el destino con el ancho suficiente, para quitar la advertencia.
+- **Un entero pasa a `REAL` o a `LREAL` cuando se asigna a uno o se mezcla con uno**: `INT` por `REAL` es un `REAL` (`cmp-013-int-times-real`). `LREAL` es el tipo numérico más ancho. Un literal real en una expresión `LREAL` es el doble que escribe, así que `0.1 + 0.2` vale 0.30000000000000004, mientras que una expresión de valores `REAL` se calcula en precisión simple y se amplía (`cmp-015-lreal-literal-takes-the-type-of-its-context`).
+- **De `LREAL` a `REAL` se estrecha y avisa**: el resultado se redondea a precisión simple, unas 7 cifras significativas, y una magnitud superior a 3.4e38 se convierte en infinito. Escriba `LREAL_TO_REAL(d)` para decirlo.
+- **Un real nunca pasa a entero de forma implícita.** `i := r` y una expresión entera asignada a un `BOOL` son errores de compilación que nombran ambos tipos (`cmp-005-int-assigned-from-real`, `cmp-005-bool-assigned-from-int`). Escriba `REAL_TO_INT(r)` e `i <> 0` en su lugar.
+- **`REAL_TO_INT` redondea al entero más cercano**, una mitad exacta al entero par, satura en los límites del destino y da 0 para un NaN (`cmp-057-real-to-int-ties-go-to-even`, `cmp-057-real-to-integer-saturates-at-the-destination-range`). `REAL_TO_DINT(TRUNC(x))` trunca hacia cero.
+- Existe una función de conversión `<FROM>_TO_<TO>` para cada par de tipos distintos entre `BOOL`, los enteros, las cadenas de bits, `REAL`, `LREAL` y `TIME`. `DATE`, `TOD` y `DT` todavía no tienen ninguna.
+- `BOOL` no se convierte hacia ni desde nada más, y tampoco `TIME`, `DATE`, `TOD` y `DT`: `i := b;`, `b := 1;` y `n := t;` son errores de compilación. Un `STRING` o `WSTRING` es texto y no se convierte a ningún número, `BOOL` ni tiempo, y ninguno se convierte a él (`cmp-005-string-assigned-to-int`).
+- La condición de `IF`, `ELSIF`, `WHILE` y `UNTIL` es un `BOOL`: escriba `IF count <> 0 THEN`, no `IF count THEN`. La aritmética no acepta un `BOOL`, y `AND`, `OR`, `XOR` y `NOT` aceptan `BOOL` o cadenas de bits, no `REAL`.
+- Una expresión constante debe caber en el tipo al que va: `small : SINT := 300;` es un error de compilación. Una variable se comprueba por su tipo, no por su valor. Un literal superior a 2147483647 es un valor de 32 bits sin signo y va a un `UDINT` o un `DWORD`.
+
+Pruebe la regla de redondeo:
+
+```st runnable expect="Down=3 Tie=2 Up=4" scans=1 scan_ms=10
+PROGRAM RoundTrip
+VAR
+    Down : INT;
+    Tie : INT;
+    Up : INT;
+END_VAR
+Down := REAL_TO_INT(2.6);
+Tie := REAL_TO_INT(2.5);
+Up := REAL_TO_INT(3.5);
+END_PROGRAM
+```
+
+### Operandos mixtos y comparación
+
+- **El tipo de una operación es el del operando más ancho.** `REAL` gana a todos los enteros, `LREAL` gana a `REAL`, y entre dos tipos del mismo ancho gana el que no tiene signo, como en C. `DINT` -1 comparado con `UDINT` 5 es una comparación sin signo, así que `-1 < 5` es FALSE, mientras que `INT` -1 comparado con `UINT` 5 es TRUE porque ambos se amplían primero a 32 bits. La regla es `commonType` en `packages/zplc-compiler/src/compiler/numeric.ts`.
+- **Los tipos sin signo se comparan sin signo en todo su rango**: `UDINT` 4294967295 es el valor mayor (`cmp-012-udint-max`).
+- **`REAL` y `LREAL` se comparan según el orden IEEE 754.** -0.0 es igual a 0.0, los infinitos se ordenan más allá de todo valor finito, y un NaN no es igual, menor ni mayor que nada, ni siquiera que sí mismo (`cmp-013-real-nan-is-unordered`).
+
+### Tipos de 64 bits y `LREAL`
+
+`LINT`, `ULINT`, `LWORD` y `LREAL` ocupan dos celdas de la pila de evaluación. Cada operación es una instrucción de la VM, o una secuencia corta fija, igual en todas las plataformas: los códigos de operación de doble precisión se calculan con aritmética entera, de modo que un resultado es el mismo patrón de bits en un host de 64 bits, en uno de 32 bits y en un destino. Los resultados que define la VM están en el [conjunto de instrucciones del entorno de ejecución](../runtime/isa.md#valores-de-dos-palabras-enteros-de-64-bits-y-lreal).
+
+- **Funciona:** aritmética, comparación, desplazamientos, `ABS`, un contador `FOR` y un selector `CASE` con etiquetas de 64 bits, literales en todo el rango y en cualquier base, y `LREAL` en arreglos, estructuras, parámetros y resultados de funciones y en `RETAIN` (`cmp-015-lint-extreme-values`, `cmp-015-lint-for-counter-crosses-32-bits`, `cmp-015-lreal-and-lint-in-arrays-structures-and-calls`).
+- **Funciones de `LREAL`:** `ABS`, `NEG`, `MAX`, `MIN`, `LIMIT`, `SEL`, `MUX`, `SQRT`, `TRUNC` y `ROUND` son exactas. `SIN`, `COS`, `TAN`, `EXP`, `LN`, `LOG`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`, `EXPT` y `**` calculan en precisión simple: el argumento se redondea a `REAL` y el resultado se vuelve a ampliar, así que tienen unas siete cifras significativas (`cmp-015-lreal-transcendental-functions-compute-in-real`).
+- **Todavía se rechaza, con un mensaje que dice por qué:** un argumento de 64 bits o `LREAL` en las funciones de cadena, en `AND_WORD` y sus parientes y en los bloques de comunicación; un valor de 64 bits como índice de arreglo (conviértalo con `LINT_TO_DINT`); un `LREAL` como contador `FOR` o selector `CASE`; y `AND`, `OR`, `XOR`, `NOT` y `MOD` sobre un `LREAL`.
+
+## Tipos de tiempo y fecha
+
+| Tipo                   | Ancho              | Qué contiene                                                       | Literal                           |
+| ---------------------- | ------------------ | ------------------------------------------------------------------ | --------------------------------- |
+| `TIME`                 | 32 bits, sin signo | Una duración en milisegundos, 0 a 4294967295 (`T#49d17h2m47s295ms`) | `T#1h30m`, `T#1.5s`, `TIME#250ms` |
+| `DATE`                 | 32 bits, con signo | Segundos desde 1970-01-01; las fechas anteriores son negativas     | `D#2024-01-01`                    |
+| `TOD` (`TIME_OF_DAY`)  | 32 bits, sin signo | Milisegundos desde la medianoche                                   | `TOD#12:30:00`                    |
+| `DT` (`DATE_AND_TIME`) | 64 bits, con signo | Milisegundos desde 1970-01-01 00:00:00                             | `DT#2024-01-01-12:00:00`          |
+
+### TIME
+
+- Un literal tiene días, horas, minutos, segundos y milisegundos, cada uno como máximo una vez y en ese orden, con un `_` opcional entre ellos (`T#1d_2h_3m_4s_5ms`). Se aceptan `us` y `ns` cuando todo el literal es un número entero de milisegundos, y el último componente puede tener fracción (`T#1.5s`).
+- Un literal que no es un número entero de milisegundos (`T#1.5ms`), que supera 4294967295 ms (`T#50d`), que es negativo (`T#-5s`) o que tiene las unidades desordenadas (`T#30m1h`) es un error de compilación que nombra el literal (`cmp-017-time-literal-below-a-millisecond`, `cmp-017-time-literal-above-the-range`).
+- La comparación, la suma, la resta y la división son de 32 bits sin signo: `T#30d > T#1d` es TRUE. Un valor preestablecido de temporizador superior a 24,8 días funciona.
+- **Una duración negativa no se puede representar.** Una resta por debajo de cero se desborda módulo 2^32: `T#0s - T#1s` vale 4294966296 ms, y la compilación no da ninguna advertencia. Compruebe que el minuendo no sea menor antes de restar.
+- La tabla de observación muestra un `TIME` superior a 2147483647 ms (24d20h31m23s647ms) como un número negativo, porque los adaptadores de observación leen sus 32 bits como con signo. El valor que guarda el programa es la cuenta sin signo.
+- Si `TIME` sigue siendo una cuenta de 32 bits sin signo o pasa a ser un valor de 64 bits con signo es una decisión abierta de la persona propietaria, registrada en el requisito CMP-017. Esta página no anuncia ningún cambio.
+
+### DATE, TOD y DT
+
+- `TOD` y `DT` guardan milisegundos, la unidad de `TIME`. `TOD#12:30:00 + T#1h` es 13:30:00, y la diferencia de dos valores `DT` es un `TIME`. Los tres tipos se asignan y se comparan.
+- `DATE` cuenta segundos, no milisegundos. Se asigna y se compara (`D#2024-01-01 < D#2025-06-30`), pero sumar un `TIME` a un `DATE` suma milisegundos a una cuenta de segundos: no lo haga. Ningún caso de conformidad cubre la aritmética de `DATE`.
+- Un literal `DT#` se lee en la zona horaria de la máquina que compila, mientras que `D#` y `TOD#` se leen como UTC. El mismo código fuente compilado en dos zonas horarias da dos constantes `DT` distintas. Es un defecto, no un diseño, y todavía ningún caso de conformidad lo fija.
+
+### Tipos no soportados
+
+`LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` y `WCHAR` no forman parte de ZPLC 2.0. La declaración de uno de ellos, como la de cualquier nombre de tipo desconocido, es un error de compilación que nombra el tipo y su posición (`cmp-003-*` en `conformance/cmp/`).
+
+Nivel de evidencia: host. Los casos `cmp-017-*` se compilan con el compilador del repositorio y se ejecutan en el entorno de ejecución nativo, y `packages/zplc-compiler/src/compiler/time.test.ts` cubre la gramática de los literales y sus rechazos. El desbordamiento por debajo de cero, la zona horaria de `DT#` y la visualización en la tabla de observación se observaron o se leyeron del código, y ningún caso las fija todavía.
+
+## Literales, operadores y declaraciones
+
+- **Literales numéricos.** Literales con base `2#1010`, `8#17` y `16#FF`, con signo menos y con separadores de dígitos; `1_000`; y literales con tipo como `INT#5`. Una base distinta de 2, 8 y 16, y un literal con tipo fuera del rango de su tipo, son errores de compilación (`cmp-031-hexadecimal-literal`, `cmp-031-typed-literal-out-of-range`). La forma antigua `0xFF` todavía se compila y la compilación informa de la advertencia `NON_IEC_HEX_LITERAL`; `1e3`, un literal real con exponente y sin fracción, se compila y se informa como `NON_IEC_REAL_LITERAL`. Las advertencias y la opción que las selecciona están en la [página del compilador](../ide/compiler.md#advertencias).
+- **Operadores.** `&` tiene la precedencia de `AND`. `**` es la potencia: los operandos enteros se convierten a `REAL`, se asocia con más fuerza que el signo menos y la multiplicación, y `0.0 ** -1.0` entra en falla como una división por cero (`cmp-032-ampersand-operator`, `cmp-032-power-precedence`).
+- **Declaraciones.** Se aceptan `VAR RETAIN`, `VAR NON_RETAIN` y `VAR_GLOBAL RETAIN`. Una variable retentiva toma su valor inicial declarado solo cuando la región retentiva no tiene ningún estado guardado, así que una región restaurada conserva sus valores. Varios nombres en una misma declaración comparten su valor inicial. `VAR_EXTERNAL` debe nombrar una global del mismo tipo. `VAR_TEMP` se acepta en un programa y `VAR_OUTPUT` en una función. Se acepta un alias de tipo, también de una estructura o de un arreglo, y se rechazan los alias que se refieren entre sí. `VAR PERSISTENT` es un error de compilación: declare las variables como `RETAIN` para conservar su valor tras un reinicio.
+- **Diagnósticos.** Un archivo con varios errores independientes informa de cada uno, en orden, sin los falsos errores que dejaba un `IF` roto. Una declaración duplicada y un miembro desconocido se informan en su propia línea, y se rechaza una llamada que pasa un argumento que ningún `VAR_INPUT` acepta (`cmp-007-three-errors-three-diagnostics`, `cmp-035-unknown-argument-name`).
+
+## Datos, almacenamiento y valores iniciales
+
+### Estructuras, enumeraciones y arreglos
+
+- Un miembro de una estructura o de un bloque de función se lee y se escribe con su ancho declarado. Los miembros se anidan a cualquier profundidad: `a.b.c`.
+- Una estructura o un arreglo completos se asignan, y se pasan a una función, por valor: se copia cada byte, y ambos lados deben ser del mismo tipo.
+- Una estructura toma un valor inicial de la forma `(x := 1, y := 2)`. Un campo omitido conserva el valor por defecto de su declaración.
+- Una enumeración se almacena como un `INT`. Un valor se puede escribir `Tipo#Valor`, lo que además distingue un nombre de valor que comparten dos enumeraciones.
+- Un arreglo tiene de una a tres dimensiones, límites inferiores negativos y límites que son expresiones constantes (`ARRAY[-N .. N * 2] OF INT`). Sus elementos pueden ser de cualquier tipo. Un valor inicial es una lista `[1, 2, 3]`, listas anidadas para más dimensiones y conteos de repetición `[100(0)]`.
+- Un índice constante fuera de los límites es un error de compilación. Un índice variable fuera de los límites termina el ciclo con la falla de la VM `ZPLC_VM_OUT_OF_BOUNDS`. La comprobación está activa por defecto; la opción del compilador `arrayBoundsCheck: false` la quita.
+
+### Cadenas
+
+- `STRING` guarda 80 caracteres, `STRING[n]` guarda `n`, y `WSTRING[n]` guarda `n` caracteres de 16 bits.
+- Una asignación copia los caracteres, hasta la capacidad del destino. Un literal más largo que la capacidad de su variable es un error de compilación.
+- Una función de cadena nunca modifica sus argumentos: `LEFT`, `RIGHT`, `MID`, `CONCAT`, `INSERT`, `DELETE` y `REPLACE` devuelven una cadena nueva. `COPY(src, dst)` y `CLEAR(s)` escriben en su argumento.
+- `s := LEFT(s, n)` actúa sobre la propia variable. Cualquier otra función de cadena que construya una cadena usa un búfer de trabajo de la memoria WORK del programa, que cuenta contra los bytes del programa.
+- `WSTRING` se puede declarar, inicializar, asignar y medir con `LEN`. Las demás funciones de cadena y la comparación la rechazan con un mensaje.
+
+### Valores iniciales y constantes
+
+- En el primer ciclo, cada variable guarda su valor inicial declarado, o el valor por defecto de su tipo: cero, `FALSE`, la cadena vacía, `NULL`. Esto abarca programas, `VAR_GLOBAL`, cada miembro de cada instancia de bloque de función, campos de estructura y elementos de arreglo.
+- Una variable local de una función y un `VAR_TEMP` de un bloque de función recuperan su valor declarado en cada llamada, así que una función no guarda estado. Un `VAR` de un bloque de función conserva su valor de una llamada a otra.
+- `VAR CONSTANT` y `VAR_GLOBAL CONSTANT` conservan su valor, y asignar a una constante es un error de compilación.
+
+### VAR_IN_OUT y referencias
+
+- Un `VAR_IN_OUT` de un bloque de función se pasa por referencia: lo que cambia el cuerpo, lo ve quien llama. La variable debe ser del mismo tipo y no puede ser una constante. Un bloque llamado sin asociarlo termina el ciclo con una falla de la VM.
+- `REF_TO`, `REF()` y `^` tienen comprobación de tipos: `REF(x)` solo entra en un `REF_TO` del tipo de `x`. Una variable `REF_TO` es `NULL` hasta que se le asigna algo, y desreferenciar `NULL` termina el ciclo con la falla de la VM `ZPLC_VM_OUT_OF_BOUNDS`.
+
+## Funciones y bloques de función
+
+- Cada función es un ámbito propio. Dentro de una función, un nombre es primero su propia variable y después una `VAR_GLOBAL`; las variables de un programa no son visibles ahí. El nombre de la función es su variable de resultado.
+- Una función se llama con los argumentos por posición, `Sub(10, 2)`, o por nombre en cualquier orden, `Sub(b := 2, a := 10)`, con los posicionales primero. Un parámetro dado dos veces, un nombre que la función no tiene, un argumento de más y un parámetro obligatorio sin argumento son errores de compilación. Un parámetro que declara un valor inicial (`factor : INT := 10;`) puede omitirse.
+- Una llamada puede ser una instrucción, y el resultado se descarta. Una función puede declararse antes o después de las que la llaman, y ninguna puede llamarse a sí misma, directamente o a través de otras: es un error de compilación en la llamada que cierra el ciclo.
+- Un bloque de función se llama con parámetros con nombre. `IN := x` da una entrada, y `Q => y` copia la salida `Q` en la variable `y` después de la llamada. Los nombres se comparan sin distinguir mayúsculas de minúsculas. Un nombre que el bloque no tiene, una salida a la que se da un valor con `:=` y una entrada asociada con `=>` son errores de compilación. La llamada posicional de un bloque de función queda para 2.x.
+- Una instancia puede declararse dentro de un bloque de función, y los arreglos de instancias se llaman con un índice constante o en tiempo de ejecución, cada elemento con su propio estado (`cmp-038-array-of-instances`, `cmp-038-array-run-time-index`). Los nombres de los bloques de la biblioteca no son palabras reservadas: un bloque que declara el programa prevalece sobre el bloque de la biblioteca del mismo nombre.
+
+## Métodos, herencia e interfaces
+
+- **Métodos.** Un método se llama sobre una instancia, `valve.Open()`, o por su nombre dentro del bloque, `Open()` o `THIS.Open()`. Un método tiene sus propias entradas y locales, y su valor es lo que asigna a su propio nombre.
+- **Herencia.** `EXTENDS` da al bloque derivado las variables y los métodos de su base. `OVERRIDE` reemplaza un método y es obligatorio para hacerlo; `FINAL` en un método prohíbe sobrescribirlo, y `FUNCTION_BLOCK FINAL` prohíbe extender el bloque (`cmp-041-override-and-inherited-method`, `cmp-041-final-method-cannot-be-overridden`).
+- **`SUPER^`.** `SUPER^.Method()` llama al método de la base del bloque que declara el código en ejecución, y `SUPER^();` ejecuta el cuerpo de ese bloque base sobre la misma instancia. Un bloque derivado no ejecuta por sí solo el cuerpo de su base.
+- **`ABSTRACT`.** Un método declarado `ABSTRACT` no tiene cuerpo, y el bloque que declara uno es `FUNCTION_BLOCK ABSTRACT`. Un bloque abstracto no tiene instancias, y un bloque que no es abstracto implementa todos los métodos abstractos que hereda.
+- **Acceso.** Un método `PRIVATE` se llama solo dentro del bloque que lo declara, y uno `PROTECTED` dentro de ese bloque y de los bloques que lo extienden. `PUBLIC` es el valor por defecto. Una llamada desde otro lugar es un error de compilación que nombra el método.
+- **Interfaces.** Una variable de tipo interfaz guarda una referencia a una instancia, `NULL` hasta que se le asigna una. Acepta una instancia de un bloque que declara `IMPLEMENTS` para la interfaz, otra variable de la interfaz, o `NULL`. `shape.Area()` ejecuta el método de la instancia a la que se refiere la variable, sea del bloque que sea (`cmp-041-interface-dispatch`). Una llamada a través de una variable que no guarda ninguna instancia termina el ciclo con una falla de la VM.
+
+Un bloque de función se incorpora al código en cada lugar donde se llama. En una llamada a una interfaz, el compilador lista todas las instancias del proyecto de un bloque que implementa la interfaz, compara la referencia con cada una e incorpora el método tras cada comparación; una referencia que no coincide con ninguna es una falla de la VM. El costo es de código, no de tiempo de ejecución: una llamada a través de una interfaz es tan grande como la suma de los métodos de todas las instancias que pueden responderla, de modo que una interfaz implementada por bloques con muchas instancias conviene llamarla desde un bloque de función y no desde muchos lugares.
+
+## Proyectos, archivos y memoria
+
+- **Una sola unidad.** Todos los archivos de texto estructurado de un proyecto (`src/*.st`) se compilan como una sola unidad. Un tipo, una función, un bloque de función, una interfaz o una `VAR_GLOBAL` declarados en cualquier archivo son visibles para todos los programas, y el archivo que usa un tipo puede ir antes que el que lo declara (`cmp-042-function-block-in-another-file`). Un `PROGRAM` que ninguna tarea ejecuta no se compila. Los lenguajes gráficos y la lista de instrucciones se compilan cuando una tarea los ejecuta.
+- **Una global es una sola variable.** Tiene una dirección, compartida por todos los programas y todas las tareas, y un valor inicial que se aplica una vez, antes del primer ciclo de la tarea que se ejecute primero. Dos programas pueden declarar variables con el mismo nombre: cada uno conserva la suya.
+- **Una declaración hecha dos veces es un error en ambos lugares**, y el mensaje nombra ambos archivos y líneas (`cmp-042-function-block-declared-in-two-files-is-rejected`).
+- **Una sola memoria.** Las globales, las funciones, las instancias de bloques de función, los programas, los literales de cadena y los búferes de trabajo de las funciones de cadena comparten la memoria WORK del perfil del destino: 8192 bytes en el destino `posix`. No hay un límite por programa ni por tarea, y el último byte es el indicador de inicialización.
+- **Disposición.** El compilador coloca, en este orden: las globales, las variables de cada función, las variables de los métodos, las variables de cada programa en el orden de las tareas, los literales de cadena y los búferes de trabajo. Cada variable se alinea a su tamaño hasta 4 bytes, de modo que el mismo proyecto da siempre las mismas direcciones. El mapa de depuración lista cada dirección (vea el [modelo de memoria](../runtime/memory-model.md)).
+- **Una falla de asignación nombra lo que necesita.** Un proyecto que no cabe es un error de compilación en la declaración que cruza el final de la región. Indica los bytes necesarios, los bytes disponibles y los tres mayores consumidores: `WORK allocation exceeds the target memory profile: 9005 bytes required, 8192 bytes available (...). Largest consumers: Overflow.Table (9000 bytes), Overflow.Gain (4 bytes)`. Una placa con una memoria WORK menor tiene un límite menor, porque el proyecto se compila contra el perfil de la placa que nombra.
+- **Dónde se encuentra una global.** El mapa de depuración lista una global una sola vez, en la unidad del archivo que la declara, marcada `scope: "global"`. Una señal de escenario la nombra como `Program.Global` o solo por su nombre, y una observación toma el nombre de la global y muestra esa dirección.
+
+## Límites conocidos
+
+Esta sección lista lo que el compilador, el cargador y el mapa de depuración no hacen como pide IEC 61131-3. La tabla se genera a partir de los casos de conformidad que se espera que fallen (`tools/ci/expected-failures.json`) y de la descripción de cada requisito en `docs/known-limits.json`: una fila existe mientras falle al menos un caso de su requisito, y desaparece cuando pasa el último. Los bloques y funciones estándar tienen su propia tabla en la [sección 11 de la referencia de la biblioteca estándar](../runtime/stdlib.md#11-diferencias-conocidas-con-iec-61131-3).
+
+{/* >>> GENERATED (tools/docs/generate_known_limits.py): known-limits-language. Do not edit. >>> */}
+Ningún caso de conformidad de esta área figura en la lista de fallas esperadas: no hay un límite registrado.
+{/* <<< END GENERATED: known-limits-language <<< */}
+
+No se admiten en esta versión y se rechazan con un mensaje, por la decisión D-04: arreglos de arreglos, enumeraciones con tipo base, subrangos, `POINTER TO` y `ADR` (use `REF_TO` y `REF()`), `VAR_ACCESS`, una `CONFIGURATION` textual, `NAMESPACE`, `PROPERTY`, bloques `ACTION` en un programa, llamadas posicionales a bloques de función y las formas de función de los operadores, como `ADD(a, b)`. Los casos `cmp-006-*-is-rejected` fijan el rechazo, de modo que un programa que usa alguno no se compila.

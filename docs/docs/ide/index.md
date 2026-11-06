@@ -3,131 +3,81 @@ slug: /ide
 id: index
 title: The ZPLC application
 sidebar_label: ZPLC application
-description: Folder-backed PLC authoring, validation, simulation, evidence, and human-controlled hardware workflows.
+description: What the ZPLC desktop application does, how it is built, and where its boundaries are.
 tags: [ide, tooling]
 ---
 
 # The ZPLC application
 
-ZPLC is the desktop workbench for creating, compiling, testing, simulating,
-and reviewing PLC projects in a folder selected by the user.
+ZPLC is the desktop application for writing, building, testing, simulating and reviewing PLC projects. A project is a folder you choose, and the application reads and writes the files in it. This page gives the overview and explains how the application is built; the other pages of this section cover the [workbench](./features.md), the [editors](./editors.md), the [compiler](./compiler.md) and [migration from version 1](./migration-v1-to-v2.md).
 
 ## Quick path
 
-1. Create or copy an example into a folder.
-2. Edit ST, LD, FBD, or SFC and compile through the canonical compiler path.
-3. Run temporal tests and native POSIX simulation; inspect the results in the bottom panel.
-4. For hardware, use the separate human build, flash, deploy, and RUN/STOP flows.
+1. Open a project folder, or create one with **New project**. You can also copy a bundled example into a folder.
+2. Edit a Structured Text, Instruction List, Ladder, Function Block Diagram or Sequential Function Chart file, and build the project.
+3. Run the scenario tests and the native simulation, and read the result in the panel under the editor.
+4. For a board, build the firmware, flash it, deploy the program and run it. A person starts each of these steps; see [Deploy a program](./deployment.md).
 
-## What the workbench owns
+## What the application owns
 
-| Surface    | Current role                                                                     |
-| ---------- | -------------------------------------------------------------------------------- |
-| Project    | Folder-backed files, schema v2 export, migration diff.                           |
-| Editors    | ST is the primary text path; LD/FBD/SFC preserve their semantic visual models.   |
-| Validation | Compiler diagnostics, temporal tests, safety rules, trace, and POSIX simulation. |
-| Evidence   | Records tool results and their scope; it does not promote host results to HIL.   |
-| Hardware   | Connect and deploy remain explicit human actions after compatibility checks.     |
+| Area | What it does |
+| --- | --- |
+| Project | Reads and writes the files of the folder, `zplc.json` included, and exports a reviewed version 2 project. |
+| Editors | A text editor for Structured Text and Instruction List, and a model editor for each graphical language. |
+| Validation | Compiler diagnostics, scenario tests, safety checks, traces and the native simulation. |
+| Evidence | Records each result with its scope, and never presents a host result as a hardware result. |
+| Hardware | Connecting and deploying are explicit actions of a person, after a compatibility check. |
 
-## Important boundaries
+## Boundaries
 
-Native POSIX simulation validates host behavior. It is not a claim of exact
-target timing, electrical I/O, HIL, or production qualification. Board profiles
-currently carry cross-build evidence only; see [hardware support](../reference/capabilities-evidence.md).
+The native simulation validates behavior on the host computer. It does not show the timing of a target, electrical I/O, hardware-in-the-loop behavior or production qualification. Board profiles carry cross-build evidence only; see the [hardware evidence](../reference/capabilities-evidence.md).
 
-AI may prepare an isolated candidate change, but only a person can save it or
-initiate a physical operation. Read [AI and privacy](./ai-privacy.md) before you
-opt in to an AI provider.
+An AI assistant may prepare an isolated candidate change, but only a person can save it or start a physical operation. Read [AI and privacy](./ai-privacy.md) before you opt in to an AI provider.
 
-## Application architecture and project model
+## How the application is built
 
-ZPLC presents a folder-backed project to editors and tools; the renderer does
-not own privileged filesystem, shell, or device access.
+The application keeps privileged access out of the window. The editors and panels see a folder-backed project through a narrow interface, and the operating-system work happens elsewhere.
 
-### Quick path
-
-Open a project folder, inspect its target and tasks, edit a source file, then
-compile through the Tool API. Export a reviewed v2 folder rather than relying on
-an implicit legacy rewrite.
-
-### Boundaries
-
-| Layer            | Responsibility                                                  |
-| ---------------- | --------------------------------------------------------------- |
-| Renderer         | Workbench, visual models, diagnostics, evidence presentation.   |
-| Preload/main     | Validated, narrow filesystem and supervised runtime operations. |
-| Compiler         | Canonical source/visual-model compilation to `.zplc`.           |
-| Runtime adapters | Native POSIX simulation or a connected compatible runtime.      |
+| Layer | Responsibility |
+| --- | --- |
+| Renderer | The workbench, the visual models, the diagnostics and the evidence views. It has no filesystem, shell or device access of its own. |
+| Preload and main process | Validated, narrow filesystem and supervised runtime operations. |
+| Compiler | Compiles source and visual models to `.zplc`. |
+| Runtime adapters | The native simulation, or a connected compatible runtime. |
 
 ### How the layers talk
 
-The renderer reaches the main process only through the preload, and only through
-the channels that `packages/zplc-ide/electron/ipcContract.ts` names. That module
-is the one definition: the main process, the preload and the renderer all take
-their channel names from it, so there is no second copy to drift.
+The renderer reaches the main process only through the preload, and only through the channels that `packages/zplc-ide/electron/ipcContract.ts` names. That module is the one definition: the main process, the preload and the renderer all take their channel names from it.
 
-- **One handler per channel.** The main process answers each channel of the
-  contract with exactly one handler, and refuses to start if a channel has none or
-  a handler has no channel.
-- **Sender and message first.** Every call is checked before its handler runs: the
-  sender must be the trusted ZPLC document of the window, and the arguments must
-  fit the schema of that channel. Anything else is denied with one fixed message.
-- **A narrow preload.** The preload exposes one method per operation and nothing
-  generic (no `send`, no raw channel access, no path of the machine). It is built
-  as a single script that requires nothing but `electron`.
-- **Fixed processes.** The processes started for compile, test and firmware
-  build (the native runtime, `west build`, the toolchain probes) come from a closed
-  list of fixed argument vectors, are started without a shell and never take a
-  command or an argument from the renderer.
+- **One handler per channel.** The main process refuses to start if a channel has no handler or a handler has no channel.
+- **Sender and message first.** Every call is checked before its handler runs: the sender must be the trusted ZPLC document of the window, and the arguments must fit the schema of the channel. Anything else is denied with one fixed message.
+- **A narrow preload.** It exposes one method per operation and nothing generic: no `send`, no raw channel access and no path of the machine.
+- **Fixed processes.** The processes started for compile, test and firmware build come from a closed list of fixed argument vectors, start without a shell and never take a command or an argument from the renderer.
 
-Evidence level: host. `electron/ipcRegistry.test.ts` runs the real handler table
-and registry against stand-ins for Electron and the stores, `electron/preload.test.ts`
-runs the real preload against a stand-in and compares what it invokes with the
-contract, and `shared/spawnAllowList.test.ts` shows the argument vectors
-(requirement IDE-017). It is not packaged-application evidence.
+Evidence level: host. `packages/zplc-ide/electron/ipcRegistry.test.ts` runs the real handler table against stand-ins for Electron and the stores, `packages/zplc-ide/electron/preload.test.ts` runs the real preload and compares what it invokes with the contract, and `packages/zplc-ide/shared/spawnAllowList.test.ts` shows the argument vectors (requirement IDE-017). It is not packaged-application evidence.
 
 ### Work that does not block the window
 
-Compile, safety check, scenario tests and the candidate review run in a process of
-their own, started for each request from a fixed list and stopped when the
-request ends. The main process only sends the request and waits, so a long compile
-or run cannot make the window unresponsive. **Cancel scenarios** in the Tests panel
-asks the worker to stop; a worker that is busy in a compile and does not answer is
-killed after a short grace period, and a deadline kills a worker that never
-finishes. Killing the worker also ends the native runtime that it started. A
-cancelled run is shown as cancelled and is recorded as cancelled in the execution
-log; nothing of it is kept as a build.
+Compile, safety check, scenario tests and the candidate review each run in a process of their own, started for the request from a fixed list and stopped when the request ends, so a long compile or run cannot freeze the window. **Cancel scenarios** in the Tests panel asks the worker to stop; a worker that is busy and does not answer is killed after a short grace period, and a deadline kills a worker that never finishes. Killing the worker also ends the native runtime that it started. A cancelled run is shown and recorded as cancelled, and nothing of it is kept as a build.
 
-Evidence level: host. `electron/toolWorkerHost.test.ts` runs real child processes:
-a worker stuck in a busy loop is killed and is really gone while the caller keeps
-running, and the real worker compiles a project and cancels a run of scenarios on
-the native runtime. Journey 35 of `bun run test:journeys` cancels a long run in the
-real application, sees the window answer throughout and finds no process of the
-run left (requirement IDE-012). The packaged probes below also build the project and
-run its scenarios in the packaged application, which starts the worker from its
-archive and the native runtime from its resources.
+Evidence level: host. `packages/zplc-ide/electron/toolWorkerHost.test.ts` runs real child processes: a worker stuck in a busy loop is killed while the caller keeps running, and the real worker compiles a project and cancels a run of scenarios on the native runtime. Journey 35 of `bun run test:journeys` cancels a long run in the real application (requirement IDE-012).
 
-### Security properties, shown by behaviour
+### One project of record
 
-The renderer is unprivileged, and these are what the running application does, not
-what its source says:
+Build, Test, Simulate and the candidate review all act on the folder that the window shows, and on nothing else. The main process owns that folder: the native folder dialog gives the window one folder and one opaque id for it. A build, a safety check or a test run names the workspace and that id, and the main process refuses the call when the id is not the window's folder now, or when the workspace belongs to another folder. Opening another folder therefore makes every earlier workspace unusable, with no linking step in between.
 
-- an inline script, and an inline event handler, that a page injects are blocked by
-  the content security policy (`script-src 'self'` in a packaged build), and a
-  request to another origin is refused by `connect-src`;
-- a permission other than serial (notifications, location, camera, microphone,
-  clipboard read, MIDI) is refused, while serial stays available to the ZPLC
-  document;
-- `window.open`, a link that opens a new window and navigation to another origin are
-  refused, and the window keeps its document, its folder and its IPC afterwards;
-- a project operation given a path with `..`, an absolute path or a drive path, a
-  link to a file or to a folder that leaves the project, an over-size write, or the
-  folder id of another window is refused, and nothing outside the project changes.
+Evidence level: host. `packages/zplc-ide/electron/workspaceTestGateway.test.ts` covers the rule, and journey 34 of `bun run test:journeys` sends crafted messages through the bridge of the real application after another folder was opened and sees each of them refused (requirement IDE-002).
 
-Evidence level: host. Journey 38 of `bun run test:journeys` makes these probes on
-the development host (which serves its own scripts inline for hot reload, so the
-inline-script probe is not made there). To make all of them on a packaged
-application on Linux, build an unpacked package and run the probes against it:
+### Security properties
+
+The renderer is unprivileged. These are what the running application does, not what its source says:
+
+- an inline script or inline event handler that a page injects is blocked by the content security policy (`script-src 'self'` in a packaged build), and a request to another origin is refused by `connect-src`;
+- a permission other than serial (notifications, location, camera, microphone, clipboard read, MIDI) is refused, while serial stays available to the ZPLC document;
+- `window.open`, a link that opens a new window and navigation to another origin are refused, and the window keeps its document, its folder and its IPC afterwards;
+- a project operation given a path with `..`, an absolute path or a drive path, a link that leaves the project, an over-size write, or the folder id of another window is refused, and nothing outside the project changes.
+
+Evidence level: host. Journey 38 of `bun run test:journeys` makes these probes on the development host, which serves its own scripts inline for hot reload, so the inline-script probe is not made there. To make all of them on a packaged application on Linux, build an unpacked package and run the probes against it:
 
 ```bash
 bun run --cwd packages/zplc-ide build:assets
@@ -137,34 +87,8 @@ bun run --cwd packages/zplc-ide electron:compile
 ZPLC_PACKAGED_DIST="$PWD/packages/zplc-ide/dist-electron" bun run test:journeys
 ```
 
-The packaged archive has no folder dialog, so the probes reach the project through a
-recent-projects list written to the application's user-data directory first. They
-cover Linux only: the packaged application on macOS and Windows is not probed
-(requirement IDE-016 asks for all three).
-
-### One project of record
-
-Build, Test, Simulate and the candidate review all act on the folder that the
-window shows, and on nothing else. The main process owns that folder: the native
-folder dialog gives the window one folder and one opaque id for it. A build, a
-safety check or a test run names the workspace and that id, and the main process
-refuses the call when the id is not the window's folder now, or when the workspace
-belongs to another folder (a workspace made for an earlier project, or a
-`zplc.json` chosen from elsewhere). Opening another folder therefore makes every
-earlier workspace unusable, with no linking step in between.
-
-Evidence level: host. `electron/workspaceTestGateway.test.ts`,
-`electron/ipcRegistry.test.ts` and `electron/security.test.ts` cover the rule, and
-journey 34 of `bun run test:journeys` sends crafted build, safety-check and test
-messages through the bridge of the real application after another folder was
-opened and sees each of them refused (requirement IDE-002).
+The packaged archive has no folder dialog, so the probes reach the project through a recent-projects list written to the user-data directory first. They cover Linux only: the packaged application on macOS and Windows is not probed (requirement IDE-016 asks for all three).
 
 ### Project configuration
 
-`zplc.json` names project metadata, target, tasks, and sources. A board choice
-is checked against the catalogued profile during an operation; it does not
-automatically import a capability model or certify a wiring configuration.
-
-Examples are copied to a destination folder chosen by the user. There is no
-virtual or memory project mode. See [migration](./migration-v1-to-v2.md) for
-how to bring a version 1 project into a folder.
+`zplc.json` names the project metadata, the target, the tasks and the sources. A board choice is checked against the catalogued profile during an operation; it does not import a capability model or certify a wiring configuration. Examples are copied to a folder you choose, and there is no virtual or memory-only project. To bring a version 1 project into a folder, see [Migrate a v1 project to v2](./migration-v1-to-v2.md).

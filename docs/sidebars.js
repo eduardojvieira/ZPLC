@@ -46,7 +46,7 @@ const sidebars = {
           type: 'category',
           label: 'Languages',
           collapsed: true,
-          items: ['languages/index', 'languages/st', 'languages/il'],
+          items: ['languages/index', 'languages/st', 'languages/ld', 'languages/fbd', 'languages/sfc', 'languages/il'],
         },
         {
           type: 'category',

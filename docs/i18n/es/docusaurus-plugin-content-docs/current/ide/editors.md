@@ -1,341 +1,181 @@
 # Editores de texto y visuales
 
-ZPLC tiene un solo entorno de trabajo para ST, IL, LD, FBD y SFC, pero cada
-lenguaje visual conserva su propio modelo.
+ZPLC edita los cinco lenguajes en un solo entorno de trabajo. El texto estructurado y la lista de instrucciones son texto. La escalera, el diagrama de bloques de función y el diagrama funcional secuencial son modelos visuales, y cada uno conserva su propio modelo. Esta página cubre lo que los editores comparten: el servicio de lenguaje, las paletas, el teclado, deshacer, los diagnósticos, los breakpoints y los valores en línea. Para aprender a escribir en un lenguaje, use su guía: [texto estructurado](../languages/st.md), [lista de instrucciones](../languages/il.md), [diagrama de escalera](../languages/ld.md), [diagrama de bloques de función](../languages/fbd.md) o [diagrama funcional secuencial](../languages/sfc.md).
 
-## Vías de edición actuales
+| Lenguaje | Editor | Límite |
+| --- | --- | --- |
+| ST | El editor de texto principal, con diagnósticos y navegación por el código fuente. | El subconjunto IEC admitido es el contrato del compilador. |
+| IL | Un editor de texto. | Lo que acepta depende del subconjunto del compilador. |
+| LD | Peldaños, contactos, bobinas, ramas, deshacer y validación visual. | El ST generado es solo una salida de lectura. |
+| FBD | Puertos con tipo, bloques, conexiones, deshacer y validación visual. | El ST generado es solo una salida de lectura. |
+| SFC | Pasos, transiciones, acciones, deshacer y validación visual. | El ST generado es solo una salida de lectura. |
 
-| Lenguaje | Vía                                                                     | Límite                                                         |
-| -------- | ----------------------------------------------------------------------- | -------------------------------------------------------------- |
-| ST       | Editor de texto principal, con diagnósticos y navegación por el código. | El subconjunto de IEC admitido es el que define el compilador. |
-| IL       | Vía de texto de compatibilidad.                                         | Depende del subconjunto que acepte el compilador.              |
-| LD       | Rungs, contactos, bobinas, ramas, deshacer y validación visual.         | El ST generado es una salida de solo lectura.                  |
-| FBD      | Puertos con tipo, bloques, conexiones, deshacer y validación visual.    | El ST generado es una salida de solo lectura.                  |
-| SFC      | Pasos, transiciones, acciones, deshacer y validación visual.            | El ST generado es una salida de solo lectura.                  |
-
-## Bloques del proyecto
-
-La paleta de bloques de FBD y LD muestra, además de los bloques estándar, un grupo **Project** con los bloques de
-función y las funciones que declaran los archivos Structured Text del proyecto (LNG-008). Un bloque del grupo tiene los
-puertos de su declaración: en un bloque de función, sus `VAR_INPUT` y `VAR_IN_OUT` son entradas y sus `VAR_OUTPUT` son
-salidas; en una función, sus entradas son las entradas y su resultado es la salida `OUT`. El Structured Text generado
-llama al bloque con argumentos por nombre, de modo que el orden en que se conectan las entradas no importa.
-
-- **FBD** coloca bloques de función (con un nombre de instancia) y funciones. Una función cuyo resultado nadie usa se
-  llama de todos modos.
-- **LD** coloca bloques de función en un peldaño, igual que un temporizador: el elemento nombra el tipo y la instancia, y
-  los parámetros nombran las entradas de la declaración. Una función no se coloca en un peldaño; llámela desde un archivo
-  FBD o ST.
-- Un bloque que ningún archivo declara se rechaza por su nombre al compilar el diagrama. Una declaración del proyecto
-  tiene prioridad sobre un bloque estándar del mismo nombre, como en el compilador.
-- La paleta lista los bloques de los archivos Structured Text de `src`, de los archivos de una carpeta de biblioteca
-  (vea [Declaraciones y carpetas de biblioteca](./features.md#declaraciones-y-carpetas-de-biblioteca)) y de cualquier
-  archivo abierto en el editor. La compilación lee los archivos de `src` y los que están directamente en las carpetas de
-  biblioteca que `libraries` de `zplc.json` lista.
-
-## Archivos visuales en disco
-
-Un archivo Ladder, FBD o SFC es JSON. ZPLC lo comprueba contra la forma que lee su editor cuando usted lo abre
-(LNG-011): un archivo que no es JSON, o que es JSON de otra forma, muestra un panel de error que nombra el archivo y
-sus cinco primeras violaciones por ruta (`rungs[0].grid[1][2].element.type: ...`), cuenta las demás y deja la ventana y
-las otras pestañas como estaban. Corrija el archivo y ábralo de nuevo; la compilación rechaza el mismo archivo por el
-mismo motivo.
-
-Abrir un archivo visual y guardarlo sin cambios lo deja byte por byte como estaba (LNG-014), con el formato en que se
-haya escrito. Un cambio que termina donde empezó, como arrastrar un elemento y devolverlo, tampoco reescribe el archivo.
-La primera edición real escribe el archivo completo en la única forma que usa ZPLC: JSON con dos espacios y un salto
-de línea al final (un número escrito `2.0` se escribe `2`; un peldaño escrito como lista de elementos se escribe como
-cuadrícula).
-
-## Deshacer, rehacer y selección en los editores visuales
-
-Un gesto tuyo es un paso de deshacer (LNG-010): un arrastre, un pegado, un borrado (los nodos y los cables que se fueron con
-ellos), un soltar desde la paleta, un cable trazado o la edición de un nombre o de una condición. Un arrastre de 300 píxeles
-llega al lienzo como unos treinta cambios de posición; el archivo se escribe, y el historial recibe una entrada, una sola
-vez, cuando sueltas el nodo. Las letras escritas en un campo con menos de un segundo entre una y otra son un solo paso. El
-historial guarda los últimos 100 gestos de cada archivo durante la sesión; lo usan los botones Deshacer y Rehacer, `Ctrl+Z` y
-`Ctrl+Shift+Z` (`Ctrl+Y`).
-
-La selección no es parte del archivo, y sobrevive a la edición: lo que está seleccionado sigue seleccionado cuando el lienzo
-se reconstruye desde el archivo tras un cambio. Deshacer y rehacer devuelven la selección junto con el contenido: deshacer
-un borrado devuelve los bloques y los selecciona, deshacer un pegado selecciona lo que estaba seleccionado antes de pegar.
-
-Nivel de evidencia: host. `src/editors/gesture.test.ts` ejercita la regla de commit con un arrastre de 30 pasos, un borrado
-y una serie de cambios de selección, y `src/editors/visualHistory.test.ts` guarda 100 gestos, la fusión de ediciones y la
-selección de cada paso. El recorrido 28j de `bun run test:journeys` arrastra un bloque con eventos de puntero reales, y un solo `Ctrl+Z` deshace todo el arrastre.
+Los modelos visuales se validan y se traducen antes de la compilación canónica ([Flujo del compilador](./compiler.md)). Un backend compartido no da a todos los lenguajes las mismas funciones ni la misma depuración, así que compile y ejecute el proyecto para saber qué obtiene.
 
 ## El servicio de lenguaje de Structured Text
 
 El editor de Structured Text lee todo el proyecto, no solo el archivo que tiene delante (LNG-015, LNG-016).
 
-| Función                                | Qué hace                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Diagnósticos                           | Cada error de sintaxis y cada error semántico de cada archivo Structured Text del proyecto, mientras escribe (con una pausa de 0,3 s), con el rango que dio el propio front end del compilador. Aparecen como subrayados en los archivos abiertos y en **Problemas** (Diagnósticos ST en vivo), y desaparecen la siguiente vez que se comprueba el proyecto y el error ya no está. No son evidencia de compilación; la evidencia es **Compilación**.                                                                                                                                  |
-| Autocompletado                         | Las variables, parámetros y métodos en el ámbito; tras un punto, los miembros del tipo de lo que está antes (un bloque, una estructura, un elemento de un arreglo de estructuras, un bloque estándar); los bloques, funciones y tipos de todos los archivos; los tipos donde va un tipo; los parámetros de una llamada como `Nombre := `. Los nombres del proyecto van antes que la biblioteca estándar.                                                                                                                                                                              |
-| Hover                                  | Qué es un nombre, su tipo y dónde se declara, también en otro archivo.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| Ir a la definición, buscar referencias | En todos los archivos del proyecto. Un nombre se encuentra por lo que es, no por cómo se escribe: el `Count` de un programa no es el `Count` de otro.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| Esquema                                | Las declaraciones del archivo como un árbol (un bloque contiene sus entradas, salidas, variables y métodos).                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Ayuda de firma                         | Los parámetros de la función, método o bloque que se llama, y el parámetro en el que está el cursor, también con argumentos con nombre.                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Renombrar símbolo (`F2`)               | Renombra lo que un nombre representa en todos los archivos del proyecto, por ámbito y por tipo, nunca como texto. Se rechaza, con el motivo, cuando el nombre nuevo ya está declarado donde se usa el anterior, cuando un archivo del proyecto tiene un error de sintaxis (podría contener un uso que no se encontró), cuando el nombre aparece en un archivo Ladder, FBD, SFC o IL (renómbrelo también allí) o cuando el nombre es un programa (las tareas de `zplc.json` lo ejecutan por su nombre). Los archivos que cambian se abren como pestañas modificadas; usted las guarda. |
-| Formatear documento (`Shift+Alt+F`)    | Sangra cada línea según la profundidad de sus bloques y recorta los extremos de las líneas. Solo cambia espacios al principio y al final de una línea: no añade ni quita líneas (un breakpoint es una línea), no mueve ningún token y deja los comentarios como están. Formatear dos veces da el mismo texto.                                                                                                                                                                                                                                                                         |
+| Función | Qué hace |
+| --- | --- |
+| Diagnósticos | Cada error de sintaxis y semántico de cada archivo de texto estructurado del proyecto, mientras escribe (tras una pausa de 0,3 s), con el rango que dio el propio front end del compilador. Aparecen como subrayados en los archivos abiertos y en **Problemas**, y desaparecen la próxima vez que se comprueba el proyecto y el error ya no está. No son evidencia de compilación; la **compilación** sí lo es. |
+| Autocompletado | Las variables, parámetros y métodos del ámbito; tras un punto, los miembros del tipo de lo que lo precede; los bloques, funciones y tipos de todos los archivos; los parámetros de una llamada como `Name := `. Los nombres del proyecto van antes que la biblioteca estándar. |
+| Ayuda emergente | Qué es un nombre, su tipo y dónde se declara, también en otro archivo. |
+| Ir a la definición, buscar referencias | En todos los archivos del proyecto. Un nombre se encuentra por lo que es, no por cómo se escribe: el `Count` de un programa no es el `Count` de otro. |
+| Esquema | Las declaraciones del archivo como un árbol. |
+| Ayuda de firma | Los parámetros de la función, el método o el bloque a que se llama, y aquel en el que está el cursor, también cuando los argumentos tienen nombre. |
+| Renombrar símbolo (`F2`) | Renombra lo que representa un nombre en todos los archivos del proyecto, por ámbito y por tipo, nunca como texto. Se rechaza, con el motivo, cuando el nombre nuevo ya está declarado donde se usa el antiguo, cuando un archivo del proyecto tiene un error de sintaxis, cuando el nombre se menciona en un archivo de escalera, FBD, SFC o IL (renómbrelo también allí), o cuando el nombre es un programa, porque las tareas de `zplc.json` lo ejecutan por su nombre. Los archivos que cambian se abren como pestañas modificadas; usted los guarda. |
+| Dar formato al documento (`Mayús+Alt+F`) | Sangra cada línea según la profundidad de sus bloques y recorta los finales de línea. Cambia solo el espacio en blanco al principio y al final de una línea: no se agrega ni se quita ninguna línea, ningún token se mueve, y un comentario queda como está escrito. Dar formato dos veces da el mismo texto. |
 
-Cada función se responde desde un solo índice del proyecto, construido con el lexer y el parser del compilador, con el
-texto del editor en lugar de su archivo; un archivo que aún no analiza sintácticamente sigue aportando las declaraciones
-que dan sus tokens, así que el autocompletado funciona a mitad de una línea.
+Cada función se responde desde un solo índice del proyecto, construido con el analizador léxico y sintáctico del compilador, con el texto del editor en lugar de su archivo. Un archivo que todavía no se analiza sigue aportando las declaraciones que dan sus tokens, así que el autocompletado funciona en mitad de una línea.
 
-No cubierto: un nombre que solo se usa en un archivo Ladder, FBD, SFC o IL no forma parte del índice (renombrar no lo
-adivina, como dice la tabla); la búsqueda de símbolos en todo el espacio de trabajo; las acciones de código.
+No cubierto: un nombre usado solo en un archivo de escalera, FBD, SFC o IL no forma parte del índice; la búsqueda de símbolos en todo el espacio de trabajo; las acciones de código.
 
-Nivel de evidencia: host. `packages/zplc-compiler/src/compiler/check.test.ts` compara los diagnósticos con los errores
-de la compilación para los mismos proyectos; `src/langsvc/*.test.ts` cubren el índice, renombrar, autocompletado, ayuda
-de firma, esquema, formato (sobre cada proyecto de ejemplo, token a token), los marcadores y los proveedores de Monaco; el journey 4c
-de `bun run test:journeys` escribe una variable sin declarar en el editor real, la ve con su rango y la deshace.
+Nivel de evidencia: host. `packages/zplc-compiler/src/compiler/check.test.ts` ejecuta los diagnósticos contra los errores de la compilación para los mismos proyectos, las pruebas de `packages/zplc-ide/src/langsvc/` cubren el índice, el renombrado, el autocompletado, la ayuda de firma, el esquema y el formato (sobre cada proyecto de ejemplo, token por token), y el recorrido 4c de `bun run test:journeys` escribe una variable no declarada en el editor real y la ve con su rango.
 
-## Tipos de pin en FBD
+## Bloques del proyecto en las paletas
 
-El lienzo FBD rechaza un cable entre pines cuyos tipos no coinciden y explica el motivo en un mensaje sobre el lienzo
-(LNG-013). Las reglas son las que aplica el compilador a una asignación: los enteros, las cadenas de bits y `REAL` son
-una sola familia de números (un entero entra en un `REAL` o un `LREAL`, un `REAL` y un `LREAL` entran uno en otro y la compilación avisa cuando un `LREAL` se estrecha, y un `REAL` nunca entra en un entero), y `BOOL`,
-`TIME`, `DATE`, `TOD`, `DT` y las cadenas aceptan solo su propio tipo. Un bloque de variable tiene el tipo con que se
-declaró su variable y una constante el tipo con que está escrita (`T#2s` es un `TIME`, `0.5` un `REAL`); un pin
-declarado `ANY` no se juzga. Por eso una salida `BOOL` no puede alimentar una entrada numérica, un `REAL` no puede
-alimentar una entrada `BOOL` ni entera, y un número no puede alimentar una entrada `TIME`; conviértalo antes de forma
-explícita con una función de conversión como `REAL_TO_INT`. Una entrada tiene una sola fuente: un segundo cable hacia
-ella también se rechaza. Un cable puede iniciarse en cualquiera de sus dos extremos.
+La paleta de bloques de diagrama de bloques de función y de escalera muestra, además de los bloques estándar, un grupo **Proyecto** con los bloques de función y las funciones que declaran los archivos de texto estructurado del proyecto (LNG-008). Un bloque del grupo tiene los puertos de su declaración: en un bloque de función, sus `VAR_INPUT` y `VAR_IN_OUT` son entradas y sus `VAR_OUTPUT` son salidas, y en una función las entradas son las entradas y el resultado es la salida `OUT`. El texto estructurado generado llama al bloque con argumentos con nombre, así que el orden en que conecta las entradas no importa.
 
-## A dónde apunta un diagnóstico
-
-El diagnóstico de un archivo visual o IL nombra el elemento del que trata (LNG-003, LNG-026), no una línea del
-Structured Text generado que usted nunca escribió. La compilación lo informa en el campo `element`, junto a `path`, y
-el panel Problems de ZPLC lo selecciona cuando usted activa el problema:
-
-| Lenguaje | Elemento                                                                                                                                                                                            | Se selecciona                                                                |
-| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| IL       | `line:12`, una línea de la fuente IL. Un hallazgo sobre el código generado se pone en la línea IL de la que salió.                                                                                  | La línea.                                                                    |
-| LD       | `rung:rung_1`, o `rung:rung_1/cell:0,3` para la celda de la fila 0, columna 3 (`rung:rung_1/element:c1` para un peldaño guardado como lista de elementos).                                          | El peldaño y el elemento de la celda, desplazado a la vista.                 |
-| FBD      | `block:and_1`, o `connection:w3` para un cable. Un bloque que solo lee una variable o tiene una constante no tiene sentencia: un hallazgo sobre su nombre queda en el bloque con el que se escribe. | El bloque o el cable.                                                        |
-| SFC      | `step:s1`, `transition:t1` (su condición) y `action:a1` (su cuerpo).                                                                                                                                | El paso o la transición; una acción se muestra en el primer paso que la usa. |
-
-La línea y la columna de un diagnóstico de diagrama siguen siendo las del Structured Text generado, y el mensaje lo
-dice. Un diagrama que no es válido da un diagnóstico por cada elemento incorrecto, no uno para todo el archivo.
-
-El elemento viaja con el diagnóstico desde la compilación hasta el panel Problems (la compilación corre en su propio
-proceso y lo envía, verificado, junto con el código, la ruta y la posición). Por eso el problema selecciona el
-elemento que la compilación nombró, también cuando el archivo del editor cambió después de compilar; un diagnóstico
-que llegó sin elemento (un host más antiguo, un texto que no es un id de elemento) se ubica desde el archivo abierto,
-como antes.
-
-Nivel de evidencia: host. `electron/workspaceCompileFailure.test.ts` y `src/components/workspaceTestPresentation.test.ts`
-cubren el elemento entre los dos procesos, `src/editors/diagnosticElement.test.ts` la elección entre el elemento
-transportado y el archivo abierto, y el recorrido 25 de `bun run test:journeys` devuelve el cable al disco después de
-una compilación fallida y aun así obtiene el bloque que la compilación nombró.
-
-## Breakpoints en un diagrama
-
-Se puede poner un punto de parada en el elemento del diagrama o en la línea IL que usted editó (LNG-004); el mapa de
-depuración relaciona cada rango de instrucciones con ese elemento y el runtime se detiene en su primera instrucción.
-Como el punto de una línea de un archivo de texto, se puede poner antes de cargar el programa y se arma cuando **Ejecutar** o
-**Cargar** lo carga.
-
-| Lenguaje | Dónde                                                                                                                                                          | Cómo                                                                   |
-| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| IL       | La línea IL. El mapa indica líneas de la fuente IL, como espera un editor de texto.                                                                            | El margen del editor.                                                  |
-| LD       | El peldaño: la primera sentencia de su código.                                                                                                                 | El punto a la izquierda del peldaño, o F9 con el peldaño seleccionado. |
-| FBD      | El bloque: la primera sentencia que genera. Una constante o la lectura de una variable no tiene.                                                               | F9 con el bloque seleccionado.                                         |
-| SFC      | Un paso se detiene donde una transición entra en él; una transición, donde se dispara. Un paso en el que no entra ninguna transición no tiene dónde detenerse. | F9 con el paso o la transición seleccionados.                          |
-
-El punto de parada se guarda en el elemento y no en una línea generada, de modo que sigue a su peldaño, bloque o paso cuando el
-diagrama cambia y se compila de nuevo; si se borra el elemento, el punto de parada se olvida, y uno en un elemento que no
-tiene sentencia se rechaza una vez cargado un programa. El elemento en el que está detenido el programa se resalta en
-amarillo. Los contadores de programa son los que toman el runtime de la simulación y el de una placa; detenerse en una
-placa no se ha comprobado aquí.
-
-## Valores en línea desde el mapa de depuración
-
-Mientras un programa corre bajo ZPLC, cada editor muestra lo que el programa contiene (LNG-006), leído a través del mapa
-de depuración de la compilación de su archivo. La compilación registra, para cada elemento de una fuente Ladder, FBD o
-SFC, qué variable del programa generado guarda su estado, de modo que ningún editor adivina un nombre a partir del que ve:
-un estado que el mapa no da se muestra como no disponible (un guion, `UNAVAILABLE`), nunca como FALSE o IDLE.
-
-| Lenguaje | Qué se muestra                                                                                                                                                                                                                      | De dónde sale                                                                                                                                                                                               |
-| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ST       | El valor de cada variable que nombra una línea, tras la línea (`Count=7  Ready=TRUE`). Un miembro de una instancia de bloque o de una estructura se lee a través de su instancia.                                                   | El servicio de lenguaje resuelve qué es un nombre; el mapa del programa del archivo da su dirección y su tipo. Una función o un bloque de función no muestra nada: sus nombres pertenecen a cada instancia. |
-| IL       | El valor de cada variable declarada que usa una instrucción, tras la línea.                                                                                                                                                         | El parser de IL y el mapa del programa del archivo.                                                                                                                                                         |
-| LD       | Energía: un elemento se ilumina cuando le llega energía, por caminos en serie y en paralelo y por ramas, y tras un bloque es la salida del propio bloque. El valor de un contacto o una bobina, y las salidas de un bloque, debajo. | El flujo de energía del peldaño como una expresión de las variables que lo forman (`rung:r/cell:fila,col`), evaluada con los valores leídos.                                                                |
-| FBD      | El valor de cada cable y las salidas de cada bloque; un bloque de variable muestra el valor de su variable.                                                                                                                         | El temporal que se dio a cada salida consumida, o el miembro de la instancia.                                                                                                                               |
-| SFC      | Qué pasos están activos y desde cuándo; de cada transición, si su condición se cumple y si disparó en este escaneo.                                                                                                                 | El estado generado del gráfico: el indicador y el temporizador de cada paso, `_C_` y `_F_` de cada transición.                                                                                              |
-
-Un valor se lee en el programa de su propio archivo: dos programas que tienen cada uno un `_rung1_result` tienen dos
-valores. Las variables que muestra un editor se leen con el sondeo de la tabla Watch, y solo las regiones que muestran un
-valor lo dibujan de nuevo ([Qué se vuelve a dibujar cuando cambia un valor](#qué-se-vuelve-a-dibujar-cuando-cambia-un-valor)).
-
-No cubierto: el cable entre dos elementos de un peldaño no se ilumina, solo los elementos; un elemento de un arreglo en ST no
-tiene valor en línea; los valores en una placa, la ejecución paso a paso en hardware. El runtime de la simulación es lo
-que leen las pruebas del host.
-
-Nivel de evidencia: host, contra el runtime real. `src/monitoring/runtime.test.ts` compila un Ladder, un FBD y un SFC, los
-carga en el runtime nativo, los escanea con entradas y lee las variables que nombra el mapa, y comprueba el estado de cada
-elemento: la energía por la rama de enclavamiento, los pines de los temporizadores, el paso activo y la transición
-disparada. `src/monitoring/elementStates.test.ts` comprueba que cada variable que nombra una entrada del monitor existe
-en el mapa para cada diagrama de ejemplo. Los journeys 28b a 28e de `bun run test:journeys` muestran los valores en la
-aplicación real.
-
-## Un solo vocabulario para los estados de señal
-
-Todo lugar que muestra el valor de una señal usa los mismos cinco estados, definidos una sola vez en `src/theme/signalTone.ts` con los tokens `--signal-*` de `src/theme/tokens.ts`: los valores en línea del editor de código, la tabla Watch, Ladder, FBD, SFC, el monitor de instancia, la vista del controlador y los escenarios grabados del Lab. El color nunca indica un estado por sí solo.
-
-| Estado      | Color                                        | Glifo | También se muestra como                                                                   |
-| ----------- | -------------------------------------------- | ----- | ----------------------------------------------------------------------------------------- |
-| TRUE        | Verde: un TRUE confirmado, o RUN, y nada más | `●`   | La palabra TRUE, `T` en la insignia de Ladder; el flujo de energía es un cable más grueso |
-| FALSE       | Gris neutro, nunca rojo                      | `○`   | La palabra FALSE, `F` en la insignia de Ladder                                            |
-| Desconocido | Gris neutro, contorno discontinuo            | `◌`   | Un guion o la palabra UNAVAILABLE; un valor que no se leyó nunca se muestra como FALSE    |
-| Forzado     | Ámbar                                        | `◆`   | La palabra FORCED; un valor forzado se dibuja como forzado, no como el valor que tiene    |
-| Falla       | Rojo, solo para una falla                    | `▲`   | La palabra FAULT, que un lector de pantalla lee como "Fault"                              |
-
-Un número no es un estado: se dibuja en el color de valor simple y sin glifo. Un cable en FBD es más grueso para los valores TRUE, forzados y con falla, y discontinuo para un valor que no se leyó; un número distinto de cero no se dibuja como TRUE.
-
-### Estados forzado y falla en los diagramas
-
-Una variable se dibuja como forzada en Ladder, FBD y SFC cuando la tabla de forzados la contiene (la fila de forzado de la tabla Watch) en la dirección que el mapa de depuración da a esa variable en el archivo que se muestra; una variable del mismo nombre en otro programa no se marca. Se dibuja como falla cuando el sondeo del depurador pidió la variable al entorno de ejecución y no obtuvo valor, o la lectura falló, y sigue como falla hasta que un sondeo posterior la lee. Los tres editores toman ambos estados de `Monitor.flagsOf` (`src/monitoring/signalFlags.ts`), así que no pueden discrepar.
-
-| Editor | Qué lleva la señal                                                                                                                                                                                                                                                                                                                                                     |
-| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ladder | El contacto o la bobina que nombra la variable.                                                                                                                                                                                                                                                                                                                        |
-| FBD    | El pin de un bloque cuya variable está forzada o no se pudo leer (un pin de entrada toma el estado de la salida conectada), el cable que sale de ese pin y un bloque de variable, que además dice FORCED o FAULT con palabras y muestra la variable misma y no lo que se le conecta.                                                                                   |
-| SFC    | Un paso cuyo indicador está forzado o no se pudo leer; una transición cuando su propia variable de condición lo está, o cuando una variable nombrada en su condición está forzada (solo cuentan las palabras que el mapa de depuración resuelve a una variable del archivo, así que una palabra clave, un literal o un nombre desconocido nunca marca una transición). |
-
-Forzado es ámbar con `◆` y falla es rojo con `▲`; el rojo significa falla y nada más. Nivel de evidencia: host. `src/editors/monitorFlagsWiring.test.tsx` entrega un ciclo registrado de los ejemplos FBD y SFC, con una entrada forzada y un elemento ilegible, a las funciones puras con las que cada editor construye sus nodos y dibuja los nodos; `src/monitoring/signalFlags.test.ts` comprueba la coincidencia con la tabla de forzados por dirección y el conjunto de variables ilegibles. Los recorridos 51 y 51b fuerzan una variable desde la tabla Watch contra el simulador nativo y leen la señal en el FBD y en el SFC; en el simulador no se puede provocar una falla de lectura, así que la señal de falla solo la comprueban las pruebas de dibujo.
-
-Nada en los editores visuales, la vista del controlador, la tabla Watch ni la lista de notificaciones brilla, pulsa o se anima de forma continua. Un indicador de carga puede girar, y se detiene con el movimiento reducido. `bun tools/ci/ui-kit-guard.ts` falla cuando un archivo agrega una animación o una sombra ahí (UX-010), y su lista de infractores existentes solo puede disminuir.
-
-Nivel de evidencia: host. `src/editors/signalVocabulary.test.tsx` dibuja un contacto y una bobina de Ladder, un bloque FBD, un paso SFC y una transición SFC con cada uno de los cinco estados y comprueba tanto el token como el glifo, y `src/theme/signalTone.test.ts` comprueba el contraste de cada estado en los tres temas. La paleta y los glifos son para que una persona los juzgue a simple vista.
-
-## Ajustar, acercar y alinear
-
-Ladder, FBD y SFC comparten estos gestos (UX-033). Cada uno es un comando de la tabla de teclas, así que también está en la lista de comandos (`F1`) del editor, y cada uno dice lo que hizo mediante el anunciador compartido, que lee un lector de pantalla.
-
-- **Ajustar a la vista** (`Ctrl+Alt+0`, o el botón Ajustar a la vista). FBD y SFC ajustan todo el diagrama a la ventana con un margen y nunca acercan más del 100 %, así que un diagrama de dos bloques conserva su tamaño natural; el botón de ajuste de los controles del lienzo y la tecla usan las mismas opciones. Ladder no tiene zoom: sus peldaños ya usan el ancho de la vista, así que ajustar muestra cada peldaño desde su borde izquierdo.
-- **Rango de zoom.** FBD y SFC acercan de 10 % a 400 % (antes de 50 % a 150 %). Al 10 % un diagrama nueve veces más ancho que la ventana sigue entero en pantalla, lo que necesita un esquema de cien bloques; al 400 % un pin es tan grande como un botón.
-- **Alineación y distribución** en FBD y SFC, sobre los bloques, pasos y transiciones seleccionados: izquierda (`Alt+Mayús+Izquierda`), derecha (`Alt+Mayús+Derecha`), arriba (`Alt+Mayús+Arriba`), abajo (`Alt+Mayús+Abajo`), centrar sobre una línea vertical (`Alt+Mayús+H`), centrar sobre una línea horizontal (`Alt+Mayús+V`) y un espacio uniforme entre tres o más elementos, de izquierda a derecha (`Ctrl+Alt+Mayús+H`) o de arriba abajo (`Ctrl+Alt+Mayús+V`). Un comando es un paso de deshacer y la selección se conserva. Alinear necesita dos elementos seleccionados y distribuir necesita tres; con menos, el comando no cambia nada y dice por qué.
-
-- **Menús contextuales** en el lienzo, en un bloque, paso o transición, en un cable y en un peldaño de Ladder. El clic derecho, la tecla de menú contextual o `Mayús+F10` abren el menú de lo que tiene el foco; el elemento se selecciona antes, así que un menú nunca actúa sobre algo distinto de aquello en lo que se abrió. Cada opción tiene nombre, muestra la tecla del mismo comando en la tabla de teclas y ejecuta ese comando, así que un menú y una tecla no pueden hacer cosas distintas. Una opción que no puede ejecutarse se muestra desactivada con su motivo bajo el nombre (por ejemplo «Seleccione al menos dos elementos para alinearlos», «El diagrama es de solo lectura», «Es el primer peldaño»). Un bloque de función ofrece además el monitor de instancia en su menú.
-- **Los peldaños de Ladder usan el ancho de la vista.** Un peldaño es tan ancho como la vista cuando esta es más ancha que su contenido, así que su riel de potencia derecho queda en el borde de la vista y no en una columna estrecha; cuando el contenido es más ancho que la vista, el peldaño se desplaza hacia los lados, y solo entonces.
-
-Nivel de evidencia: host. `src/editors/arrange.test.ts` comprueba la aritmética con cajas de distinto tamaño, `src/editors/fbd/keyboard.test.ts` y `src/editors/sfc/keyboard.test.ts` pulsan las teclas sobre un diagrama y cuentan un gesto cada una, `src/editors/viewBounds.test.ts` fija el rango, `src/editors/contextMenus.test.ts` comprueba las opciones, sus teclas y sus motivos, y `src/editors/ld/rungWidth.test.ts` el ancho de un peldaño. El recorrido 51c lo hace en la aplicación real: mide un peldaño frente a su vista, ajusta y acerca de 10 % a 400 % en FBD y SFC con los botones de zoom reales, abre el menú de un peldaño y de un elemento con `Mayús+F10` y lee el motivo de una opción desactivada. Alinear dos elementos seleccionados lo comprueban las pruebas de los comandos y no un recorrido, que aún no puede seleccionar dos nodos con el puntero.
-
-## Foco en los editores visuales
-
-Un nodo, una arista, un botón de la caja de herramientas y el campo que edita un nombre en Ladder, FBD y SFC muestran el mismo anillo de foco que cualquier otro control de ZPLC, en todos los temas: dos píxeles en los temas claro y oscuro, tres en alto contraste y el color de resaltado del sistema en el modo de colores forzados. La biblioteca de diagramas quita el contorno de sus nodos y aristas, así que `src/index.css` vuelve a ponerlo en ellos, y ningún archivo de los editores visuales lleva una clase de foco propia. `src/theme/focusRing.test.ts` falla cuando alguno la lleva, o cuando el anillo falta en los nodos.
-
-Nivel de evidencia: host. La prueba lee la hoja de estilos y los archivos fuente; un recorrido que llega con el tabulador a un nodo y lee su contorno calculado está en el recorrido de temas (UX-027).
-
-## Temas, colores forzados y movimiento reducido en los editores
-
-Los tres editores visuales y el editor de código siguen los temas claro, oscuro y de alto contraste, el modo de colores forzados del sistema y el ajuste de movimiento reducido, como el resto de ZPLC. Un editor visual se dibuja solo con los tokens de `src/theme/tokens.ts`: ningún archivo de `src/editors` lleva un color de la paleta estándar, un color literal, un brillo ni una clase de foco propia, y la lista de infractores de la guardia del kit ya no tiene entradas para ellos. El contraste del texto, de las etiquetas atenuadas, de cada estado de señal y del cable que lleva TRUE está declarado para el lienzo y para un nodo, y `bun tools/ci/ux-tokens.ts` lo comprueba en los tres temas.
-
-Con movimiento reducido la hoja de estilos acorta toda transición y animación, y la cámara de un diagrama, que anima el código, toma su duración de `animationMs` en `src/theme/motion.ts`: cero cuando el sistema pide movimiento reducido. Un cable nunca se anima; un paso SFC activo es un cable más grueso en el color de TRUE.
-
-Nivel de evidencia: host, en la aplicación real. El recorrido 46 abre un archivo Ladder, uno FBD, uno SFC y uno de Structured Text, cambia el tema en los ajustes y lee los colores calculados del lienzo, del texto y de los cables (y el fondo y el texto propios de Monaco) frente a los tokens de ese tema. Luego emula colores forzados y comprueba que cada editor toma el lienzo del sistema, y emula movimiento reducido y comprueba que ningún elemento de un editor ni de la barra de herramientas tarda más de una centésima de segundo en cambiar. Pone el foco en un nodo con el teclado y lee el contorno calculado. No se compara ninguna captura de pantalla.
-
-## Minimapa y estado de depuración del editor de código
-
-El minimapa del editor de código está apagado hasta que usted lo enciende: Ajustes, Preferencias, "Mostrar el minimapa en el editor de código". La elección se guarda para su usuario. Mientras depura, el estado aparece en la barra de estado bajo la barra de herramientas, como "Depuración: En pausa en la línea N" o "Depuración: Conectado, sin pausa", y no se dibuja nada sobre el código. Los breakpoints siguen en el margen del editor.
-
-Nivel de evidencia: host. `src/components/codeEditorDebugState.test.tsx` dibuja la barra de estado con y sin estado de depuración y lee el código fuente del editor, `src/store/editorViewSettings.test.ts` comprueba que el valor por defecto es apagado y que un almacenamiento ilegible se lee como apagado, y el recorrido 46 lee la opción de minimapa de Monaco en la aplicación real.
+- **El diagrama de bloques de función** coloca tanto bloques de función (con un nombre de instancia) como funciones. Una función cuyo resultado no usa nada se llama de todos modos.
+- **La escalera** coloca bloques de función en un peldaño, como un temporizador: el elemento nombra el tipo y la instancia, y los parámetros nombran las entradas de la declaración. Una función no se coloca en un peldaño; llámela desde un diagrama de bloques de función o desde texto estructurado.
+- Un bloque que ningún archivo declara se rechaza por su nombre cuando se compila el diagrama. Una declaración del proyecto prevalece sobre un bloque estándar del mismo nombre, como en el compilador.
+- La paleta lista los bloques de los archivos de texto estructurado de `src`, de los archivos de una carpeta de biblioteca (vea [Declaraciones y carpetas de biblioteca](./features.md#declaraciones-y-carpetas-de-biblioteca)) y de cualquier archivo abierto en el editor. La compilación lee los archivos de `src` y los que están directamente en las carpetas de biblioteca que lista `libraries` en `zplc.json`.
 
 ## Qué ofrecen las paletas
 
-Una paleta ofrece solo lo que su transpilador traduce (LNG-007), y cada elemento que ofrece se ejecuta en la suite de
-pruebas: se coloca en un programa, se compila, se carga en la máquina virtual y se ejecuta un ciclo.
+Una paleta ofrece solo lo que su traductor traduce (LNG-007), y cada elemento que ofrece se ejecuta en el conjunto de pruebas: se coloca en un programa, se compila, se carga en la máquina virtual y se ejecuta un ciclo.
 
-- **LD** ofrece cuatro contactos (normalmente abierto, normalmente cerrado, flanco de subida y de bajada), seis bobinas
-  (normal, negada, set, reset, flanco de subida y de bajada), la rama y los bloques de función de la biblioteca del
-  compilador y del proyecto. Los bloques de comunicación `COMM_CONNECT`, `COMM_PUBLISH`, `COMM_SUBSCRIBE` y
-  `COMM_MODBUS` no se ofrecen: ningún archivo Ladder puede declarar una instancia de ellos.
-- **FBD** ofrece las compuertas, las comparaciones, `ADD`, `SUB`, `MUL`, `DIV`, `MOD`, `ABS`, `MAX`, `MIN`, `LIMIT` y
-  `SEL`, los bloques de función de la biblioteca y del proyecto con las entradas y salidas que declaran, y los bloques
-  que llevan un valor (`constant`, `variable`, `input`, `output`). Las funciones de la biblioteca (`SQRT`, `SIN`,
-  `LEN`, `CONCAT`, las conversiones...) todavía no se ofrecen: un diagrama no puede llamarlas y la compilación las
-  rechaza por su nombre.
-- **SFC** ofrece el paso, el paso inicial y la transición.
+- **La escalera** ofrece cuatro contactos (normalmente abierto, normalmente cerrado, flanco ascendente y descendente), seis bobinas (normal, negada, de activación, de desactivación, flanco ascendente y descendente), la rama, los bloques de función de la biblioteca y del proyecto, y las quince cajas de función IEC del grupo **Funciones**. Los bloques de comunicación `COMM_CONNECT`, `COMM_PUBLISH`, `COMM_SUBSCRIBE` y `COMM_MODBUS` no se ofrecen: ningún archivo de escalera puede declarar una instancia de ellos.
+- **El diagrama de bloques de función** ofrece las compuertas, las comparaciones, `ADD`, `SUB`, `MUL`, `DIV`, `MOD`, `ABS`, `MAX`, `MIN`, `LIMIT` y `SEL`, los bloques de función de la biblioteca y del proyecto, y los bloques que transportan un valor (`constant`, `variable`, `input`, `output`). Las funciones de la biblioteca (`SQRT`, `SIN`, `LEN`, `CONCAT`, las conversiones) no se ofrecen: un diagrama no puede llamarlas, y la compilación las rechaza por su nombre.
+- **El diagrama funcional secuencial** ofrece el paso, el paso inicial y la transición.
+
+## Archivos visuales en disco
+
+Un archivo de escalera, FBD o SFC es JSON. ZPLC lo comprueba contra la forma que su editor lee cuando lo abre (LNG-011). Un archivo que no es JSON, o que es JSON de otra forma, muestra un panel de error que nombra el archivo y sus cinco primeras infracciones por ruta (`rungs[0].grid[1][2].element.type: ...`), cuenta el resto, y deja la ventana y todas las demás pestañas como estaban. Corrija el archivo y ábralo otra vez; la compilación rechaza el mismo archivo por el mismo motivo.
+
+Abrir un archivo visual y guardarlo sin cambios lo deja byte a byte como estaba (LNG-014), sea cual sea la disposición con que se escribió. Un cambio que termina donde empezó, como arrastrar un elemento y devolverlo, tampoco reescribe el archivo. La primera edición real escribe el archivo entero en la única forma que usa ZPLC: JSON con dos espacios de sangría y un salto de línea al final.
 
 ## Edición con el teclado
 
-Toda acción de edición de los editores de diagrama de escalera, de diagrama de bloques de función y de diagrama funcional secuencial se puede hacer con el
-teclado (LNG-012): mover un cursor, insertar un elemento, enlazar una variable entre los símbolos declarados, conectar y
-borrar. La [referencia de teclado](../reference/visual-editor-keyboard.md) lista todas las teclas. Se genera de la tabla de la
-que los editores leen sus teclas, así que una tecla que está en ella funciona, y una tecla que funciona está en ella.
+Cada acción de edición de los editores de escalera, de diagrama de bloques de función y de diagrama funcional secuencial se puede hacer con el teclado (LNG-012): mover un cursor, insertar un elemento, asociar una variable de los símbolos declarados, conectar y eliminar. La [referencia de teclado](../reference/visual-editor-keyboard.md) lista todas las teclas. Se genera a partir de la tabla de la que los editores leen sus teclas, así que una tecla que está en ella funciona, y una tecla que funciona está en ella.
 
-- **El cursor.** En Escalera es una celda de un peldaño, dibujada como un marco azul; un clic en una celda lo pone allí. En los
-  editores de bloques de función y de diagrama es el bloque o elemento seleccionado, y `Alt` con una flecha lo mueve al más
-  cercano en esa dirección. Las flechas sin `Alt` desplazan el bloque seleccionado en el lienzo, como antes.
-- **Insertar.** Una letra inserta en el cursor los elementos más comunes: `C` un contacto, `N` un contacto invertido, `O` una
-  bobina en Escalera, `T` una transición y `S` un paso en un diagrama. `Insert` o `I` abre la paleta como una lista con
-  búsqueda: se escribe para buscar, Arriba y Abajo eligen, Enter inserta. La caja de herramientas de cada editor se alcanza con
-  Tab: sus elementos son botones que insertan en el cursor, y tiene una caja de búsqueda. Arrastrar un elemento sigue
-  funcionando, e inserta con el mismo comando que la tecla.
-- **Enlazar.** `F2` pide la variable del elemento bajo el cursor, de la lista de símbolos que declara el archivo. A un contacto
-  se le ofrecen las variables BOOL y las salidas BOOL de bloques declarados (`Delay.Q`); a una bobina las variables BOOL que no
-  son entradas; a la instancia de un bloque de función las variables de su tipo; a la condición de una transición las
-  variables BOOL. Donde la lista lo permite, se puede escribir un nombre que no está declarado y se ofrece tal como se escribió.
-- **Conectar.** `C` sobre un bloque lista los cables que puede tener, cada uno de una salida a una entrada que la acepta: rigen
-  las reglas de los tipos de pin (LNG-013), y no se ofrece una entrada que ya tiene un cable. Se dibuja el cable elegido.
-  `Shift+C` lista los cables del bloque y quita el elegido. En un diagrama funcional, `T` inserta una transición debajo del paso
-  seleccionado y `S` un paso debajo de la transición seleccionada, cada uno conectado al que sigue.
-- **Borrar.** `Delete` quita el elemento bajo el cursor en Escalera, y los bloques y cables seleccionados en un diagrama o en
-  un diagrama funcional, y se van con el bloque los cables que tenía.
+- **El cursor.** En la escalera es una celda de un peldaño, dibujada como un marco azul; un clic en una celda lo coloca allí. En los editores de bloques de función y de diagramas de pasos es el bloque o el elemento seleccionado, y `Alt` con una flecha lo mueve al más cercano en esa dirección. Las flechas sin `Alt` desplazan el bloque seleccionado en el lienzo.
+- **Insertar.** Una letra inserta los elementos comunes en el cursor: `C` un contacto, `N` un contacto invertido y `O` una bobina en la escalera, `T` una transición y `S` un paso en un diagrama de pasos. `Insert` o `I` abre la paleta como una lista de búsqueda: escriba para buscar, Arriba y Abajo eligen, Enter inserta. A la caja de herramientas se llega con Tab, sus elementos son botones que insertan en el cursor, y tiene un cuadro de búsqueda. Arrastrar un elemento sigue funcionando e inserta mediante el mismo comando que la tecla.
+- **Asociar.** `F2` pide la variable del elemento que está bajo el cursor, de la lista de símbolos que declara el archivo. A un contacto se le ofrecen las variables `BOOL` y las salidas `BOOL` de los bloques declarados (`Delay.Q`); a una bobina, las variables `BOOL` que no son entradas; a la instancia de un bloque de función, las variables de su tipo; a la condición de una transición, las variables `BOOL`. Donde una lista lo permite, se puede escribir un nombre no declarado y se ofrece tal como se escribió.
+- **Conectar.** `C` sobre un bloque lista los cables que puede tener, cada uno desde una salida hasta una entrada que lo acepta; se aplican las reglas de tipos de los pines, y no se ofrece una entrada que ya tiene un cable. `Mayús+C` lista los cables del bloque y quita el elegido. En un diagrama de pasos, `T` inserta una transición debajo del paso seleccionado y `S` un paso debajo de la transición seleccionada, cada uno conectado al que sigue.
+- **Eliminar.** `Supr` quita el elemento que está bajo el cursor en la escalera, y los bloques y cables seleccionados en un diagrama o un diagrama de pasos, junto con los cables que había en un bloque.
 
-Un comando que cambia el archivo es un paso del historial de deshacer, y la selección vuelve con deshacer y rehacer (LNG-010).
-Lo que hizo cada comando, o por qué se negó, se escribe en una región viva cortés del editor, que lee un lector de pantalla.
+Un comando que cambia el archivo es un paso del historial de deshacer, y lo que hizo cada comando, o por qué se rechazó, se escribe en una región viva cortés que lee un lector de pantalla. Un contacto o una bobina soltados desde la caja de herramientas quedan sin asociar y muestran `???` hasta que se asocian. Un bloque de función soltado o insertado recibe un nombre de instancia que ningún otro tiene, y la instancia se declara como variable local de su tipo. El panel de propiedades de la escalera se abre cuando se hace clic en un elemento o se pulsa Enter sobre él, y un doble clic sobre un bloque de un diagrama de bloques de función pregunta qué contiene, como hace `F2`.
 
-Cuatro cosas difieren de lo que hacían antes los editores. Un contacto o una bobina soltados desde la caja de herramientas ya no
-se llaman `NewVar`: quedan sin enlazar y muestran `???` hasta que se enlazan. Un bloque de función soltado o insertado recibe un
-nombre de instancia que nada más tiene, y la instancia se declara como variable local de su tipo. El panel de propiedades de
-Escalera se abre al hacer clic en un elemento o al pulsar Enter sobre él, no cuando un comando del teclado lo selecciona. Un
-doble clic en un bloque de un diagrama de bloques de función pregunta qué contiene el bloque, como hace `F2`.
+Nivel de evidencia: host, y la aplicación real en el host de desarrollo. Las pruebas `packages/zplc-ide/src/editors/ld/keyboard.test.ts`, `packages/zplc-ide/src/editors/fbd/keyboard.test.ts` y `packages/zplc-ide/src/editors/sfc/keyboard.test.ts` pulsan teclas sobre un modelo y comprueban el documento, el cursor, las listas que se ofrecen y que la compilación lee lo que se escribió, y los recorridos 28f, 28g y 28h de `bun run test:journeys` arman un peldaño, editan un diagrama y editan un diagrama de pasos con eventos de teclado reales. No cubierto: un lector de pantalla real (la región viva está probada, no su voz), y una forma de teclado de colocar un bloque en una coordenada exacta.
 
-Nivel de evidencia: host, y la aplicación real en el host de desarrollo. `src/editors/ld/keyboard.test.ts`,
-`src/editors/fbd/keyboard.test.ts` y `src/editors/sfc/keyboard.test.ts` pulsan teclas sobre un modelo, con la tabla de teclas
-en medio, y comprueban el documento, el cursor, las listas que se ofrecen y que la compilación lee lo que se escribió;
-`src/editors/picker.test.ts` y `src/editors/keymap.test.ts` cubren la lista con búsqueda y la tabla. Los recorridos 28f, 28g y
-28h de `bun run test:journeys` construyen un peldaño, editan un diagrama y editan un diagrama funcional con eventos de teclado
-reales, guardan y compilan; el recorrido 28i suelta elementos de la caja de herramientas con eventos de arrastre del DOM. No cubierto: un lector de pantalla real (la región viva existe y su texto se prueba, no su voz), y
-una forma con teclado de poner un bloque en una coordenada exacta (un bloque se pone junto al cursor y luego se desplaza con
-las flechas).
+## Deshacer, rehacer y selección
 
-## Qué se vuelve a dibujar cuando cambia un valor
+Un gesto suyo es un paso de deshacer (LNG-010): un arrastre, un pegado, una eliminación (los nodos y los cables que se fueron con ellos), un elemento soltado desde la paleta, un cable dibujado, o una edición de un nombre o una condición. Un arrastre de 300 píxeles llega al lienzo como unos treinta cambios de posición, pero el archivo se escribe, y el historial recibe una entrada, una sola vez, cuando suelta el nodo. Las letras escritas en un mismo campo con menos de un segundo entre ellas son un solo paso. El historial conserva los últimos 100 gestos de cada archivo durante la sesión; los botones Deshacer y Rehacer, `Ctrl+Z` y `Ctrl+Mayús+Z` (`Ctrl+Y`) lo usan.
 
-Un valor observado se lee diez veces por segundo mientras corre un programa. ZPLC vuelve a dibujar solo lo que lo muestra
-(IDE-013): la tabla Watch y el editor del archivo que tiene la variable. El Explorador, la barra de herramientas, los ajustes
-y la barra de pestañas no se suscriben a las lecturas, y una lectura que vale lo mismo que antes no publica nada. Un
-componente que necesita cinco de 200 valores observados se vuelve a dibujar cuando cambia uno de esos cinco, no cuando
-cambia otro.
+La selección no forma parte del archivo, y sobrevive a la edición. Deshacer y rehacer devuelven la selección junto con el contenido: deshacer una eliminación devuelve los bloques eliminados y los selecciona, y deshacer un pegado selecciona lo que estaba seleccionado antes de pegar.
 
-`bun tools/ci/ide-structure.ts` (lo ejecuta `bun run lint:ide`) falla si un componente o hook fuera de `src/store/` se suscribe
-a todo el almacén o a su porción `debug`: cada región de la ventana nombra los campos que muestra
-(`src/store/regionSubscriptions.ts`).
+Nivel de evidencia: host. `packages/zplc-ide/src/editors/gesture.test.ts` y `packages/zplc-ide/src/editors/visualHistory.test.ts` cubren la regla de confirmación, la fusión y la selección de cada paso, y el recorrido 28j de `bun run test:journeys` arrastra un bloque con eventos reales del puntero y deshace todo el arrastre con un solo `Ctrl+Z`.
 
-Medido sobre el almacén con 200 valores observados leídos 100 veces y 50 pulsaciones en un archivo de 2.000 líneas: antes, cada
-uno de Explorador, barra de herramientas, Consola, área del editor y ajustes se dibujaba 150 veces y cada lector de valores
-observados 100 veces; ahora las regiones que no muestran ninguno de los dos se dibujan 0 veces, la barra de pestañas y el
-editor 50 veces (una por pulsación), y un lector de cinco valores 10 veces, por las 10 lecturas que los cambiaron.
+## Tipos de pin en FBD
 
-Nivel de evidencia: host, al nivel del almacén y de sus selectores (`src/store/regionSubscriptions.test.ts`). Este repositorio
-no tiene un entorno de pruebas con DOM, así que no se cuentan los dibujos de React; la Consola sigue dibujándose en cada
-pulsación, porque la pestaña Problemas muestra lo que escribir borra y sus comprobaciones comparan el contador de la
-compilación.
+El lienzo del diagrama de bloques de función rechaza un cable entre pines cuyos tipos no coinciden, y explica el motivo en un mensaje sobre el lienzo (LNG-013). Las reglas son las que el compilador aplica a una asignación: los enteros, las cadenas de bits y `REAL` son una sola familia de números (un entero entra en un `REAL` o un `LREAL`, un `REAL` y un `LREAL` entran uno en el otro con la advertencia de compilación cuando se estrecha un `LREAL`, y un `REAL` nunca entra en un entero), y `BOOL`, `TIME`, `DATE`, `TOD`, `DT` y las cadenas aceptan solo su propio tipo. Un bloque de variable tiene el tipo con que se declara su variable y una constante el tipo con que está escrita (`T#2s` es un `TIME`, `0.5` un `REAL`); un pin declarado `ANY` no se juzga. Una salida `BOOL` no puede, por tanto, alimentar una entrada numérica, un `REAL` no puede alimentar una entrada `BOOL` ni entera, y un número no puede alimentar una entrada `TIME`; conviértalo antes con una función de conversión como `REAL_TO_INT`. Una entrada tiene un solo origen, así que un segundo cable hacia ella se rechaza, y un cable puede empezar por cualquiera de sus extremos.
 
-## Ruta de compilación
+## Ajustar, acercar y alinear
 
-Los modelos visuales se validan y se transpilan antes de la compilación
-canónica. Compartir el backend evita duplicar código, pero no garantiza que todos
-los lenguajes tengan las mismas funciones ni el mismo comportamiento al depurar.
-Compile y ejecute el proyecto y el escenario que le interesan para comprobar el
-comportamiento que necesita.
+La escalera, FBD y SFC comparten estos gestos (UX-033). Cada uno es un comando de la tabla de teclas, así que también está en la lista de comandos (`F1`) del editor, y cada uno dice qué hizo mediante el anunciador compartido.
+
+- **Ajustar a la vista** (`Ctrl+Alt+0`, o el botón Ajustar a la vista). FBD y SFC ajustan todo el diagrama a la ventana con un margen y nunca acercan más allá del 100 %. La escalera no tiene zoom: sus peldaños ya usan el ancho de la vista, así que ajustar muestra cada peldaño desde su borde izquierdo.
+- **Rango de zoom.** FBD y SFC se acercan del 10 % al 400 %. Al 10 %, un diagrama nueve veces más ancho que la ventana sigue entero en pantalla; al 400 %, un pin es tan grande como un botón.
+- **Alineación y distribución** en FBD y SFC, sobre los bloques, pasos y transiciones seleccionados: a la izquierda (`Alt+Mayús+Izquierda`), a la derecha (`Alt+Mayús+Derecha`), arriba (`Alt+Mayús+Arriba`), abajo (`Alt+Mayús+Abajo`), centrar sobre una línea vertical (`Alt+Mayús+H`), centrar sobre una línea horizontal (`Alt+Mayús+V`), y un espacio uniforme entre tres o más elementos, de izquierda a derecha (`Ctrl+Alt+Mayús+H`) o de arriba abajo (`Ctrl+Alt+Mayús+V`). Un comando es un paso de deshacer. Alinear necesita dos elementos seleccionados y distribuir necesita tres; con menos, el comando no cambia nada y dice por qué.
+- **Menús contextuales** en el lienzo, en un bloque, paso o transición, en un cable y en un peldaño de escalera. El clic derecho, la tecla de menú contextual o `Mayús+F10` abren el menú de lo que tiene el foco, y el elemento se selecciona primero. Cada elemento del menú muestra la tecla del mismo comando de la tabla de teclas. Un elemento que no puede ejecutarse se muestra deshabilitado con su motivo bajo su nombre, por ejemplo "Seleccione al menos dos elementos para alinearlos". Un bloque de función ofrece además el monitor de instancia en su menú.
+- **Los peldaños de escalera usan el ancho de la vista.** Un peldaño es tan ancho como la vista cuando la vista es más ancha que su contenido; cuando el contenido es más ancho, el peldaño se desplaza hacia los lados, y solo entonces.
+
+Nivel de evidencia: host. `packages/zplc-ide/src/editors/arrange.test.ts`, `packages/zplc-ide/src/editors/viewBounds.test.ts` y `packages/zplc-ide/src/editors/contextMenus.test.ts` comprueban la aritmética, el rango y los elementos del menú, y el recorrido 51c mide un peldaño contra su vista, ajusta y acerca con los botones reales y abre menús con `Mayús+F10`. Alinear dos elementos seleccionados lo comprueban las pruebas de los comandos y no un recorrido.
+
+## A dónde apunta un diagnóstico
+
+Un diagnóstico de un archivo visual o IL nombra el elemento al que se refiere (LNG-003, LNG-026), no una línea del texto estructurado generado que usted nunca escribió. La compilación lo informa en el campo `element`, junto a `path`, y el panel Problemas lo selecciona cuando usted activa el problema:
+
+| Lenguaje | Elemento | Seleccionado |
+| --- | --- | --- |
+| IL | `line:12`, una línea del código fuente IL. Un hallazgo sobre el código generado se pone en la línea IL de la que vino. | La línea. |
+| LD | `rung:rung_1`, o `rung:rung_1/cell:0,3` para la celda de la fila 0, columna 3 (`rung:rung_1/element:c1` para un peldaño guardado como lista de elementos). | El peldaño y el elemento de la celda, desplazado hasta quedar a la vista. |
+| FBD | `block:and_1`, o `connection:w3` para un cable. Un bloque que solo lee una variable o contiene una constante no tiene instrucción: un hallazgo sobre su nombre se pone en el bloque con el que se escribe. | El bloque o el cable. |
+| SFC | `step:s1`, `transition:t1` (su condición) y `action:a1` (su cuerpo). | El paso o la transición; una acción se muestra en el primer paso que la usa. |
+
+La línea y la columna de un diagnóstico de un diagrama siguen siendo las del texto estructurado generado, y el mensaje lo dice. Un diagrama que no es válido da un diagnóstico por cada elemento erróneo, no uno por todo el archivo. El elemento viaja con el diagnóstico desde la compilación hasta el panel Problemas, de modo que el problema selecciona el elemento que nombró la compilación incluso cuando el archivo del editor cambió desde que se ejecutó la compilación.
+
+Nivel de evidencia: host. `packages/zplc-ide/src/editors/diagnosticElement.test.ts` cubre la elección entre el elemento transportado y el archivo abierto, y el recorrido 25 de `bun run test:journeys` devuelve el cable al disco tras una compilación fallida y aun así obtiene el bloque que nombró la compilación.
+
+## Breakpoints en un diagrama
+
+Un breakpoint se puede poner en el elemento del diagrama o en la línea IL que usted editó (LNG-004). El mapa de depuración relaciona cada rango de instrucciones con ese elemento, y el entorno de ejecución se detiene en la primera instrucción de él. Como el punto de una línea de un archivo de texto, se puede poner antes de cargar el programa y se arma cuando Ejecutar o Desplegar lo cargan.
+
+| Lenguaje | Dónde | Cómo |
+| --- | --- | --- |
+| IL | La línea IL. El mapa indica líneas del código fuente IL, como espera un editor de texto. | El margen del editor. |
+| LD | El peldaño: la primera instrucción de su código. | El punto a la izquierda del peldaño, o `F9` sobre el peldaño seleccionado. |
+| FBD | El bloque: la primera instrucción que genera. Una constante o una lectura de variable no la tienen. | `F9` sobre el bloque seleccionado. |
+| SFC | Un paso se detiene donde entra una transición; una transición se detiene donde se dispara. Un paso en el que no entra ninguna transición no tiene dónde detenerse. | `F9` sobre el paso o la transición seleccionados. |
+
+Un breakpoint se guarda en el elemento, no en una línea generada, así que sigue a su peldaño, bloque o paso cuando el diagrama cambia y se vuelve a compilar. Uno cuyo elemento se eliminó se olvida, y uno en un elemento sin instrucción se rechaza una vez cargado un programa. El elemento donde está el programa detenido se perfila en amarillo. Los contadores de programa son los que toman el entorno de ejecución de la simulación y el de una placa; aquí no se ha comprobado la detención en una placa.
+
+## Valores en línea desde el mapa de depuración
+
+Mientras un programa se ejecuta en ZPLC, cada editor muestra lo que contiene el programa (LNG-006), leído a través del mapa de depuración de la compilación de su archivo. La compilación registra, para cada elemento de un código fuente de escalera, FBD o SFC, qué variable del programa generado guarda su estado, así que ningún editor adivina un nombre. Un estado que el mapa no da se muestra como no disponible (un guion, `UNAVAILABLE`), nunca como FALSE o IDLE.
+
+| Lenguaje | Qué se muestra | De dónde viene |
+| --- | --- | --- |
+| ST | El valor de cada variable que nombra una línea, después de la línea (`Count=7  Ready=TRUE`). Un miembro de una instancia de bloque o de una estructura se lee a través de su instancia. | El servicio de lenguaje resuelve qué es un nombre; el mapa del programa del archivo da su dirección y su tipo. Una función o un bloque de función no muestran nada: sus nombres pertenecen a todas las instancias. |
+| IL | El valor de cada variable declarada que usa una instrucción, después de la línea. | El analizador de IL, y el mapa del programa del archivo. |
+| LD | Energía: un elemento se ilumina cuando le llega energía, por caminos en serie y en paralelo y por ramas, y después de un bloque es la salida del propio bloque. El valor de un contacto o una bobina, y las salidas de un bloque, debajo. | El flujo de energía del peldaño como una expresión de las variables de que está hecho, evaluada con los valores leídos. |
+| FBD | El valor de cada cable y las salidas de cada bloque; un bloque de variable muestra el valor de su variable. | La variable temporal que recibió cada salida consumida, o el miembro de la instancia. |
+| SFC | Qué pasos están activos y durante cuánto tiempo; de cada transición, si su condición se cumple y si se disparó en este ciclo. | El estado generado del diagrama: el indicador y el temporizador de cada paso, y los indicadores de condición y de disparo de cada transición. |
+
+Un valor se lee en el programa de su propio archivo: dos programas que tienen cada uno un `_rung1_result` tienen dos valores. Las variables que muestra un editor se leen con el sondeo de la tabla de observación, y solo se vuelven a dibujar las regiones que muestran un valor.
+
+No cubierto: el cable entre dos elementos de un peldaño no se ilumina, solo los elementos; un elemento de un arreglo en ST no tiene valor en línea; los valores en una placa y el avance paso a paso en hardware.
+
+Nivel de evidencia: host, contra el entorno de ejecución real. `packages/zplc-ide/src/monitoring/runtime.test.ts` arma una escalera, un FBD y un SFC, los carga en el entorno de ejecución nativo, los ejecuta con entradas y lee las variables que nombra el mapa, y comprueba el estado de cada elemento. Los recorridos 28b a 28e de `bun run test:journeys` muestran los valores en la aplicación real.
+
+## Un solo vocabulario para los estados de señal
+
+Todos los lugares que muestran el valor de una señal usan los mismos cinco estados: los valores en línea del editor de código, la tabla de observación, la escalera, FBD, SFC, el monitor de instancia, la vista del controlador y los escenarios registrados del Laboratorio. El color nunca transmite un estado por sí solo.
+
+| Estado | Color | Glifo | También se muestra como |
+| --- | --- | --- | --- |
+| TRUE | Verde: un TRUE confirmado, o RUN, y nada más | `●` | La palabra TRUE, `T` en una insignia de escalera; el flujo de energía es un cable más grueso |
+| FALSE | Gris neutro, nunca rojo | `○` | La palabra FALSE, `F` en una insignia de escalera |
+| Desconocido | Gris neutro, contorno discontinuo | `◌` | Un guion o la palabra UNAVAILABLE; un valor que no se leyó nunca se muestra como FALSE |
+| Forzado | Ámbar | `◆` | La palabra FORCED; un valor forzado se dibuja como forzado, no como el valor que contiene |
+| Falla | Rojo, solo para una falla | `▲` | La palabra FAULT, que un lector de pantalla lee como "Fault" |
+
+Un número no es un estado: se dibuja con el color de valor normal y sin glifo. Un cable en FBD es más grueso para los valores TRUE, forzados y de falla, y discontinuo para un valor que no se leyó.
+
+### Estados forzado y falla en los diagramas
+
+Una variable se dibuja como forzada en la escalera, FBD y SFC cuando la tabla de forzados la contiene en la dirección que el mapa de depuración da a esa variable en el archivo que se muestra; una variable del mismo nombre en otro programa no se marca. Se dibuja como falla cuando el sondeo del depurador la pidió al entorno de ejecución y no obtuvo ningún valor, o la lectura falló, y sigue siendo una falla hasta que un sondeo posterior la lee.
+
+| Editor | Qué lleva la señal |
+| --- | --- |
+| Escalera | El contacto o la bobina que nombra la variable. |
+| FBD | El pin de un bloque cuya variable está forzada o no se puede leer (un pin de entrada toma el estado de la salida conectada a él), el cable desde ese pin, y un bloque de variable, que además dice FORCED o FAULT con palabras. |
+| SFC | Un paso cuyo indicador está forzado o no se puede leer; una transición cuando su propia variable de condición lo está, o cuando una variable nombrada en su condición está forzada. |
+
+Nada en los editores visuales, la vista del controlador, la tabla de observación ni la lista de notificaciones brilla, pulsa ni se anima de forma continua (UX-010). Un indicador de carga puede girar, y se detiene con el movimiento reducido.
+
+Nivel de evidencia: host. `packages/zplc-ide/src/editors/signalVocabulary.test.tsx` renderiza cada estado en cada editor y comprueba el token y el glifo, y los recorridos 51 y 51b fuerzan una variable desde la tabla de observación contra el simulador nativo y leen la señal en el FBD y en el SFC. En el simulador no se puede provocar una falla de lectura, así que la señal de falla solo la comprueban las pruebas de renderizado.
+
+## Aspecto de los editores
+
+Los tres editores visuales y el editor de código siguen los temas claro, oscuro y de alto contraste, el modo de colores forzados del sistema y el ajuste de movimiento reducido. Se dibujan solo con los tokens del tema, y un nodo, una arista, un botón de la caja de herramientas y el campo que edita un nombre muestran el mismo anillo de foco que cualquier otro control: dos píxeles en los temas claro y oscuro, tres en alto contraste, y el color de resalte del sistema en el modo de colores forzados. Con el movimiento reducido, cada transición se acorta, la cámara de un diagrama no se anima y un cable no se anima nunca.
+
+El minimapa del editor de código está desactivado hasta que usted lo activa en Configuración, Preferencias, "Mostrar el minimapa en el editor de código", y la elección se conserva para su usuario. Mientras depura, el estado está en la barra de estado bajo la barra de herramientas, como "Depuración: en pausa en la línea N" o "Depuración: conectado, sin pausa", y no se dibuja nada sobre el código. Los breakpoints permanecen en el margen.
+
+Nivel de evidencia: host, en la aplicación real. El recorrido 46 abre un archivo de escalera, uno de FBD, uno de SFC y uno de Structured Text, cambia el tema y lee los colores calculados frente a los tokens de ese tema. Emula colores forzados y movimiento reducido, y da el foco a un nodo con el teclado para leer el contorno calculado. No se compara ninguna captura de pantalla.
 
 ## Edición con IA
 
-La IA edita los modelos visuales mediante operaciones con tipo, nunca con JSON
-sin procesar. El cambio candidato resultante queda aislado en la pestaña
-**Changes** hasta que usted lo revisa, lo compila, lo prueba y lo guarda.
-Consulte [IA y privacidad](./ai-privacy.md).
+Un asistente de IA edita los modelos visuales mediante operaciones con tipo, nunca con JSON sin procesar. El cambio candidato resultante queda aislado en la pestaña **Cambios** hasta que usted lo revise, lo compile y lo pruebe, y lo guarde. Vea [IA y privacidad](./ai-privacy.md).
