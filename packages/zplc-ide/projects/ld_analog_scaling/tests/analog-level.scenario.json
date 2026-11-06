@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "id": "AnalogLevel",
+  "tickMs": 10,
+  "durationMs": 130,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "AnalogLevel.Enable": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "AnalogLevel.Enable": true
+      }
+    },
+    {
+      "atMs": 120,
+      "set": {
+        "AnalogLevel.Enable": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "AnalogLevel.Warn": false,
+        "AnalogLevel.HighLevel": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "AnalogLevel.Warn": false,
+        "AnalogLevel.HighLevel": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 40,
+      "condition": {
+        "AnalogLevel.Warn": false,
+        "AnalogLevel.HighLevel": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "AnalogLevel.Warn": true,
+        "AnalogLevel.HighLevel": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 70,
+      "condition": {
+        "AnalogLevel.Warn": true,
+        "AnalogLevel.HighLevel": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 80,
+      "condition": {
+        "AnalogLevel.Warn": true,
+        "AnalogLevel.HighLevel": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 110,
+      "condition": {
+        "AnalogLevel.Warn": true,
+        "AnalogLevel.HighLevel": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 120,
+      "condition": {
+        "AnalogLevel.Warn": true,
+        "AnalogLevel.HighLevel": true
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 50,
+      "withinMs": 0,
+      "condition": {
+        "AnalogLevel.Warn": true
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 80,
+      "withinMs": 0,
+      "condition": {
+        "AnalogLevel.HighLevel": true
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 80,
+      "forMs": 40,
+      "condition": {
+        "AnalogLevel.HighLevel": true
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "AnalogLevel.HighLevel": true,
+        "AnalogLevel.Warn": false
+      }
+    }
+  ]
+}

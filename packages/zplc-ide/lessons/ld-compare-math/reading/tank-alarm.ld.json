@@ -1,0 +1,263 @@
+{
+  "name": "TankAlarm",
+  "description": "A level that goes up and down in steps, and an alarm above 100 liters.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Filled",
+        "type": "DINT",
+        "initialValue": 0,
+        "comment": "Liters that have come in so far"
+      },
+      {
+        "name": "Drained",
+        "type": "DINT",
+        "initialValue": 0,
+        "comment": "Liters that have gone out so far"
+      },
+      {
+        "name": "Level",
+        "type": "DINT",
+        "initialValue": 0,
+        "comment": "Liters in the tank: Filled minus Drained"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Fill",
+        "type": "BOOL",
+        "comment": "Inlet valve pushbutton: one press adds 25 liters"
+      },
+      {
+        "name": "Drain",
+        "type": "BOOL",
+        "comment": "Outlet valve pushbutton: one press takes 25 liters"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "HighAlarm",
+        "type": "BOOL",
+        "comment": "Lamp: more than 100 liters"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "One press of Fill is one pulse: the box adds 25 liters once and keeps the result.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "type": "contact_p",
+              "variable": "Fill",
+              "id": "r1_0",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "type": "function",
+              "functionName": "ADD",
+              "operands": ["Filled", "25"],
+              "output": "Filled",
+              "id": "r1_1",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "One press of Drain adds 25 liters to the total that went out.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "type": "contact_p",
+              "variable": "Drain",
+              "id": "r2_0",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "type": "function",
+              "functionName": "ADD",
+              "operands": ["Drained", "25"],
+              "output": "Drained",
+              "id": "r2_1",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "Level is what came in minus what went out. The box has no contact, so it runs on every scan.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "type": "function",
+              "functionName": "SUB",
+              "operands": ["Filled", "Drained"],
+              "output": "Level",
+              "id": "r3_0",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_4",
+      "number": 4,
+      "comment": "A comparison is a condition in series: the lamp is on while Level is above 100.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 6,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "type": "function",
+              "functionName": "GT",
+              "operands": ["Level", "100"],
+              "id": "r4_0",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "type": "coil",
+              "variable": "HighAlarm",
+              "id": "r4_5",
+              "row": 0,
+              "col": 5
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-06",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

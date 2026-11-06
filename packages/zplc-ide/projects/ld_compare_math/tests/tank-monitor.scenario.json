@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "id": "TankMonitor",
+  "tickMs": 10,
+  "durationMs": 130,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "TankMonitor.Setup": false,
+        "TankMonitor.Fill": false,
+        "TankMonitor.Drain": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "TankMonitor.Setup": true
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "TankMonitor.Setup": false
+      }
+    },
+    {
+      "atMs": 30,
+      "set": {
+        "TankMonitor.Fill": true
+      }
+    },
+    {
+      "atMs": 90,
+      "set": {
+        "TankMonitor.Fill": false
+      }
+    },
+    {
+      "atMs": 110,
+      "set": {
+        "TankMonitor.Drain": true
+      }
+    },
+    {
+      "atMs": 120,
+      "set": {
+        "TankMonitor.Drain": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "TankMonitor.Configured": false,
+        "TankMonitor.HighAlarm": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "TankMonitor.Configured": true,
+        "TankMonitor.HighAlarm": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 20,
+      "condition": {
+        "TankMonitor.Configured": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 70,
+      "condition": {
+        "TankMonitor.Configured": true,
+        "TankMonitor.HighAlarm": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 80,
+      "condition": {
+        "TankMonitor.HighAlarm": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 90,
+      "condition": {
+        "TankMonitor.HighAlarm": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 110,
+      "condition": {
+        "TankMonitor.HighAlarm": false
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 20,
+      "forMs": 100,
+      "condition": {
+        "TankMonitor.Configured": true
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 80,
+      "withinMs": 0,
+      "condition": {
+        "TankMonitor.HighAlarm": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 110,
+      "withinMs": 0,
+      "condition": {
+        "TankMonitor.HighAlarm": false
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "TankMonitor.HighAlarm": true,
+        "TankMonitor.Configured": false
+      }
+    }
+  ]
+}

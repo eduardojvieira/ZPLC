@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Comparison and math boxes in Ladder: a tank alarm and a safe division",
+  "summary": "Use comparison boxes as conditions and math boxes as calculations in Ladder, and guard a division so that a zero divisor can never reach it.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the behavior of a real level sensor, its wiring, the timing of a real tank, HIL, or certification.",
+  "objectives": [
+    "Use a comparison box as a condition in series, and choose between GT and GE for a limit.",
+    "Calculate with math boxes that run only while their rung has power, and guard a division with an NE comparison so that the divisor is never zero."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/TankMonitor.ld.json the program keeps the liters of a tank in Level, which is the liters that came in with Fill (25 on each scan) minus the liters that went out with Drain. Setup copies the capacity, 200 liters, into Capacity. The rung that turns Level into a percentage of Capacity is missing. Add it with a guard, so that HighAlarm turns ON when the tank reaches 75 percent.",
+      "checkpoint": "Percent follows Level, no division ever receives a zero Capacity, and HighAlarm turns ON at 75 percent."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Setup is pressed at {{t:10}} ms and released at {{t:20}} ms. Fill is pressed at {{t:30}} ms and released at {{t:90}} ms, so Level grows by 25 on each scan. Drain is pressed at {{t:110}} ms. Predict Configured at {{t:20}} ms and HighAlarm at {{t:70}}, {{t:80}}, {{t:90}} and {{t:110}} ms.",
+      "checkpoint": "{{v:TankMonitor.Configured=true@20|ON}} at {{t:20}} ms; HighAlarm {{v:TankMonitor.HighAlarm=false@70|OFF}} at {{t:70}} ms, {{v:TankMonitor.HighAlarm=true@80|ON}} at {{t:80}} ms, {{v:TankMonitor.HighAlarm=true@90|ON}} at {{t:90}} ms and {{v:TankMonitor.HighAlarm=false@110|OFF}} at {{t:110}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter has no rung for Percent, so Percent stays 0 and HighAlarm never turns ON at {{t:80}} ms; add one rung with an NE box (Capacity, 0), a MUL box (Level, 100, into Scaled) and a DIV box (Scaled, Capacity, into Percent), in that order. Insert each box from the Functions group of the Ladder palette and type its operands: a declared variable or a number.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named TankMonitor and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Open the Watch tab and compare {{t:80}}, {{t:90}} and {{t:110}} ms. Fill is released at {{t:90}} ms, yet HighAlarm stays ON: the ADD box has no power, so the total keeps its value. Drain takes Level back to 125 liters at {{t:110}} ms, which is 62 percent, and the alarm falls.",
+      "checkpoint": "HighAlarm rises once at {{t:80}} ms and falls once at {{t:110}} ms; Configured stays ON from {{t:10}} ms on, although Setup was released at {{t:20}} ms."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Capacity is 0 until Setup is pressed. What would the DIV box do on the first scan without the NE box, and why does a comparison in series prevent it? What would change if you used GT instead of GE for the alarm?",
+      "checkpoint": "The virtual machine would divide by zero and fault, ending the scan. NE conducts only when Capacity is not zero, so DIV gets no power and Percent keeps its value. Without the guard Check cannot grade the program, because the run fails on the first scan, when Capacity is still 0. With GT the alarm would wait until the level is above 75 percent, and the scenario would fail at {{t:80}} ms."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "The percentage needs three boxes in one rung, in series. Which comparison must come first, so that the division never sees a zero divisor?"
+    },
+    {
+      "level": 2,
+      "text": "Insert NE with Capacity and 0, then MUL with Level and 100 into Scaled, then DIV with Scaled and Capacity into Percent. Leave the alarm rung and the other rungs as they are."
+    }
+  ],
+  "faultCases": [
+    "The starter has no rung for Percent, so Percent stays 0 and HighAlarm never turns ON at {{t:80}} ms; add one rung with an NE box (Capacity, 0), a MUL box (Level, 100, into Scaled) and a DIV box (Scaled, Capacity, into Percent), in that order."
+  ]
+}
