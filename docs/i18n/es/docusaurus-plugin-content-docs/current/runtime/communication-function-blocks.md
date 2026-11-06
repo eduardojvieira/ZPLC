@@ -8,7 +8,7 @@ description: Los doce bloques de comunicación y de nube, su único handshake, s
 
 # Bloques de función de comunicación
 
-Use estos bloques cuando su programa IEC 61131-3 deba hablar con un dispositivo de campo, un broker o un servicio de nube. Son doce y comparten un solo handshake. Un bloque nunca espera a la red dentro del ciclo. Entrega el trabajo a un hilo propio, informa `BUSY` e informa el resultado en un ciclo posterior.
+Use estos bloques cuando su programa IEC 61131-3 deba hablar con un dispositivo de campo, un broker o un servicio de nube. Son doce y comparten un solo handshake. Un bloque nunca espera a la red dentro del ciclo. Entrega el trabajo a un hilo propio, informa `BUSY` y comunica el resultado en un ciclo posterior.
 
 ## El handshake
 
@@ -27,18 +27,18 @@ Un **bloque de solicitud** hace una solicitud por cada flanco de subida de `EN`:
 ### Bloques de solicitud
 
 ```text
-scan      1  2  3  4  5  6  7  8  9 10 11 12
+ciclo     1  2  3  4  5  6  7  8  9 10 11 12
 EN        0  1  1  1  1  1  1  1  0  0  1  1
-BUSY      0  1  1  1  0  0  0  0  0  0  1  1     the request, from the scan EN rose in
-DONE      0  0  0  0  1  1  1  1  0  0  0  0     the result, held while EN stays TRUE
-ERROR     0  0  0  0  0  0  0  0  0  0  0  0     (a failed request holds ERROR instead of DONE)
-STATUS    0  1  1  1  0  0  0  0  0  0  1  1     1 while BUSY, then the code of the result
-handler   .  S  p  p  R  .  .  .  .  .  S  p     S start, p poll that is still pending, R poll with the result
+BUSY      0  1  1  1  0  0  0  0  0  0  1  1     la solicitud, desde el ciclo en que subió EN
+DONE      0  0  0  0  1  1  1  1  0  0  0  0     el resultado, que se mantiene mientras EN sigue en TRUE
+ERROR     0  0  0  0  0  0  0  0  0  0  0  0     (una solicitud fallida mantiene ERROR en lugar de DONE)
+STATUS    0  1  1  1  0  0  0  0  0  0  1  1     1 mientras BUSY, luego el código del resultado
+handler   .  S  p  p  R  .  .  .  .  .  S  p     S inicio, p consulta aún pendiente, R consulta con el resultado
 ```
 
 Los valores son los que lee el programa después de llamar al bloque en ese ciclo. Del ciclo 6 al 8 el resultado se mantiene y no se llama al manejador.
 
-- **Un flanco de subida, una solicitud.** Mientras `EN` sigue en `TRUE` después del resultado, el resultado se mantiene y nada se repite. Un `EN` sostenido no envía un segundo mensaje, no aprovisiona por segunda vez ni escribe un segundo valor. Para pedir de nuevo, deje que `EN` baje al menos un ciclo y súbalo otra vez.
+- **Un flanco de subida, una solicitud.** Mientras `EN` sigue en `TRUE` después del resultado, el resultado se mantiene y nada se repite. Un `EN` sostenido no envía un segundo mensaje, no aprovisiona por segunda vez ni escribe un segundo valor. Para repetir la solicitud, deje que `EN` baje al menos un ciclo y súbalo otra vez.
 - **Una solicitud en curso termina.** Si `EN` baja mientras `BUSY` es `TRUE`, la solicitud igual termina y su resultado se muestra durante un ciclo, así que un pulso de un ciclo sirve como disparador. Un flanco de subida mientras `BUSY` es `TRUE` no inicia nada.
 - **`EN` en `FALSE` borra `DONE` y `ERROR`.** `STATUS` conserva el código de la última solicitud hasta que empiece la siguiente.
 - **`COMM_RESET` devuelve el bloque a reposo.** `EN`, `BUSY`, `DONE`, `ERROR` y `STATUS` pasan a 0, una solicitud pendiente se suelta y su resultado tardío se descarta en lugar de llegar al siguiente bloque que pida.
@@ -52,7 +52,7 @@ El manejador de un bloque de servicio se ejecuta en cada ciclo mientras `EN` es 
 | Estado                                                     | `BUSY`  | `DONE`  | `ERROR` | `STATUS`  |
 | ---------------------------------------------------------- | ------- | ------- | ------- | --------- |
 | Aún no alcanzado (conectando, suscribiendo)                | `TRUE`  | `FALSE` | `FALSE` | 1         |
-| Alcanzado (la sesión está arriba, la suscripción se mantiene) | `FALSE` | `TRUE`  | `FALSE` | 0         |
+| Alcanzado (la sesión está activa, la suscripción se mantiene) | `FALSE` | `TRUE`  | `FALSE` | 0         |
 | Perdido o no disponible                                    | `FALSE` | `FALSE` | `TRUE`  | el código |
 
 Cuando `EN` baja, `BUSY`, `DONE` y `ERROR` se borran, y un `PAYLOAD` recibido se va con ellos. `VALID` de `MQTT_SUBSCRIBE` y `AZURE_C2D_RECV` es `TRUE` durante exactamente un ciclo, el ciclo en que un mensaje es nuevo, y `PAYLOAD` conserva el último mensaje.
@@ -77,7 +77,7 @@ Cuando `EN` baja, `BUSY`, `DONE` y `ERROR` se borran, y un `PAYLOAD` recibido se
 
 | Qué                                                 | Límite                                                                                                                                                                                                                                                                                                 |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Una llamada de un bloque en el ciclo                | Toma un candado que se mantiene unas pocas instrucciones y encola la solicitud. Nunca espera a la red, a un socket ni a una flash.                                                                                                                                                                     |
+| Una llamada de un bloque en el ciclo                | Toma un bloqueo que se mantiene unas pocas instrucciones y encola la solicitud. Nunca espera a la red, a un socket ni a la memoria flash.                                                                                                                                                                     |
 | Una solicitud Modbus                                | El cliente espera como máximo el doble del tiempo límite configurado (para conectar y luego para la respuesta). El bloque informa `ERROR` con `STATUS` 2 a más tardar `(2 x tiempo límite + 100 ms) x 8` después de la solicitud, que son 8,8 s con el tiempo límite por defecto de 500 ms.                |
 | `MQTT_PUBLISH`, `AZURE_EG_PUB`, `SPB_REBIRTH`       | El hilo del cliente envía el mensaje en una pasada de su bucle; `ERROR` con `STATUS` 2 a los 5 s.                                                                                                                                                                                                      |
 | Un aprovisionamiento (`AZURE_DPS_PROV`, `AWS_FLEET_PROV`) | El servicio espera al broker 30 s en cada paso; `ERROR` con `STATUS` 2 a los 90 s.                                                                                                                                                                                                              |
@@ -99,7 +99,7 @@ Estos bloques leen y escriben un dispositivo remoto sin mapeo automático implí
 
 ### MQTT
 
-- `MQTT_CONNECT` informa el estado de la sesión MQTT que abre la configuración del dispositivo. `CONNECTED` es `TRUE` mientras está arriba. El bloque no abre la sesión.
+- `MQTT_CONNECT` informa el estado de la sesión MQTT que abre la configuración del dispositivo. `CONNECTED` es `TRUE` mientras está activa. El bloque no abre la sesión.
 - `MQTT_PUBLISH` publica `PAYLOAD` en `TOPIC` una vez por cada flanco de subida. `DONE` significa que el cliente aceptó el mensaje para enviarlo. No se espera el acuse de un mensaje QoS 1 o 2.
 - `MQTT_SUBSCRIBE` mantiene una suscripción a `TOPIC` y entrega sus mensajes en `PAYLOAD`, con `VALID` durante un ciclo cada uno.
 
@@ -115,7 +115,7 @@ El compilador registra los doce, así que puede instanciarlos en texto estructur
 
 ## En simulación
 
-El runtime nativo que manejan la simulación y la línea de comandos ejecuta los mismos manejadores Modbus y MQTT que un controlador. Usa un cliente Modbus TCP y un cliente MQTT 3.1.1 del anfitrión (TCP simple). Permanece apagado hasta que la sesión lo pide: un runtime iniciado a la manera antigua responde `STATUS` 3 en todos los bloques.
+El runtime nativo que controlan la simulación y la línea de comandos ejecuta los mismos manejadores Modbus y MQTT que un controlador. Usa un cliente Modbus TCP y un cliente MQTT 3.1.1 del anfitrión (TCP simple). Permanece apagado hasta que la sesión lo pide: un runtime iniciado de la forma anterior responde `STATUS` 3 en todos los bloques.
 
 | Entorno del runtime                 | Significado                                                                                                    |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -123,7 +123,7 @@ El runtime nativo que manejan la simulación y la línea de comandos ejecuta los
 | `ZPLC_NATIVE_MQTT_BROKER=host:port` | El broker que usan `MQTT_CONNECT`, `MQTT_PUBLISH` y `MQTT_SUBSCRIBE`. Sin él responden `STATUS` 10.            |
 | `ZPLC_NATIVE_MODBUS_TIMEOUT_MS`     | El tiempo que una solicitud Modbus espera para conectar y de nuevo para la respuesta. 500 por defecto.         |
 
-La aplicación de ZPLC y `zplc-cli test` inician los pares por usted. Una sesión que inician define `ZPLC_NATIVE_COMM=1` y `ZPLC_NATIVE_LOOPBACK=1`, y el runtime arranca entonces, dentro de su propio proceso en 127.0.0.1, un servidor Modbus TCP (1024 registros de retención y 1024 bobinas) y un broker MQTT. Terminan con la sesión y no necesitan un broker instalado, Python ni red. Toda solicitud Modbus TCP de un programa llega a ese servidor sin importar el host y el puerto que nombre el bloque, porque una simulación no tiene planta. Los bloques MQTT usan ese broker, y un broker nombrado en el entorno de la aplicación se ignora. La consola de la sesión dice qué extremos corren.
+La aplicación de ZPLC y `zplc-cli test` inician los pares por usted. Una sesión iniciada por ellos define `ZPLC_NATIVE_COMM=1` y `ZPLC_NATIVE_LOOPBACK=1`, y el runtime arranca entonces, dentro de su propio proceso en 127.0.0.1, un servidor Modbus TCP (1024 registros de retención y 1024 bobinas) y un broker MQTT. Terminan con la sesión y no necesitan un broker instalado, Python ni red. Toda solicitud Modbus TCP de un programa llega a ese servidor sin importar el host y el puerto que nombre el bloque, porque una simulación no tiene planta. Los bloques MQTT usan ese broker, y un broker nombrado en el entorno de la aplicación se ignora. La consola de la sesión dice qué extremos corren.
 
 Si un extremo no puede arrancar, los doce bloques responden `STATUS` 10 ("no disponible en simulación"), la capacidad `communication-endpoints` de la sesión dice `unavailable` y ningún bloque informa éxito sin actuar. Una solicitud Modbus por RTU (no hay dispositivo serie) y todo bloque de nube (no hay servicio) responden `STATUS` 10 en simulación. `zplc_loopback`, que se compila con el runtime, es el mismo par de extremos como programa aparte para pruebas: imprime sus puertos en una línea de JSON y termina cuando se cierra su entrada estándar.
 

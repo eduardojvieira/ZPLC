@@ -40,7 +40,7 @@ flowchart LR
 
 El almacén tiene dos ranuras, A y B, y un registro activo pequeño que nombra la ranura que debe ejecutarse. Una ranura es el artefacto, un pie de 8 bytes (`ZPE1` y la longitud del artefacto) y un registro de metadatos de 32 bytes, y todos los registros llevan un CRC-32 y la versión de formato. El runtime de host y el firmware ejecutan el mismo código, `zplc_program_store.c`, sobre las llamadas de persistencia del HAL.
 
-Una carga escribe la ranura que no está activa, la relee y la verifica, escribe los metadatos como preparados y los relee, y solo entonces escribe el registro activo. Esa escritura es el único punto en que el programa nuevo pasa a ser el que se restaura. Después los metadatos se reescriben como confirmados.
+Un despliegue escribe la ranura que no está activa, la relee y la verifica, escribe los metadatos como preparados y los relee, y solo entonces escribe el registro activo. Esa escritura es el único punto en que el programa nuevo pasa a ser el que se restaura. Después los metadatos se reescriben como confirmados.
 
 | Un corte de energía ... | Qué encuentra la siguiente restauración |
 | --- | --- |
@@ -49,7 +49,7 @@ Una carga escribe la ranura que no está activa, la relee y la verifica, escribe
 | después del registro activo y antes de reescribir los metadatos | El programa nuevo: la ranura se releyó antes de mover el puntero. |
 | que daña el registro activo | La última ranura confirmada y completa. |
 
-Los registros que existen y no verifican nunca se toman por un almacén vacío: la restauración los informa como no verificables y una carga se niega a escribir encima. Un almacén escrito por el primer firmware (una clave, `code_len` y `code`) se restaura tal cual y se migra en la siguiente carga.
+Los registros que existen y no verifican nunca se toman por un almacén vacío: la restauración los informa como no verificables y un despliegue se niega a escribir encima. Un almacén escrito por el primer firmware (una clave, `code_len` y `code`) se restaura tal cual y se migra en el siguiente despliegue.
 
 Un almacén clave-valor en flash guarda una entrada dentro de un sector de borrado, así que el contenido se corta en trozos de `CONFIG_ZPLC_PROGRAM_STORE_CHUNK_SIZE` bytes (1024 por defecto), cada uno bajo su propia clave.
 
@@ -57,13 +57,13 @@ Un almacén clave-valor en flash guarda una entrada dentro de un sector de borra
 
 El mayor artefacto es un único número, `CONFIG_ZPLC_CODE_SIZE_MAX`. Es la región de código, el mayor artefacto que acepta el cargador, el tamaño de los búferes de recepción y de restauración, el `max_artifact_size` que informa `zplc sys info` y el tamaño que se comunica a ZPLC para la placa (RT-028). La compilación falla si dos ranuras de ese tamaño, en trozos, no caben en la partición de almacenamiento. Los perfiles Raspberry Pi Pico y Waveshare RP2040-Zero fijan 24576 bytes (su partición de 128 KB también guarda los registros RETAIN), el perfil STM32F746G Discovery 16384 y el perfil Arduino Opta WiFi 32768 (su RAM), el perfil ESP32-S3 mantiene sus 8192 y los demás perfiles mantienen 45056. El búfer de recepción de la carga y la VM guardan cada uno un programa en RAM, así que un perfil gasta dos veces su tamaño de código.
 
-### Revertir una carga fallida
+### Revertir un despliegue fallido
 
-Una carga tiene que saber, antes de escribir, que existe un programa real al que volver. El almacén lee ese programa en el búfer de recepción cuando empieza una carga (`zplc load`, `zplc sched load` y el inicio de una transferencia de programa del enlace de dispositivo), mientras el búfer está libre. La confirmación del final sigue adelante solo si el registro activo y los dos registros de metadatos son todavía los de los que se leyó la respuesta; si no, no se escribe nada. Un almacén cuyos registros no verifican nada no da reversión, y la confirmación se niega.
+Un despliegue tiene que saber, antes de escribir, que existe un programa real al que volver. El almacén lee ese programa en el búfer de recepción cuando empieza una carga (`zplc load`, `zplc sched load` y el inicio de una transferencia de programa del enlace de dispositivo), mientras el búfer está libre. La confirmación del final sigue adelante solo si el registro activo y los dos registros de metadatos son todavía los de los que se leyó la respuesta; si no, no se escribe nada. Un almacén cuyos registros no verifican nada no da reversión, y la confirmación se niega.
 
 ### Evidencia
 
-Nivel de evidencia: host y destino emulado. Se inyectó un corte de energía en cada operación de una carga y una escritura truncada en cada registro, en el host (`test_program_store`, que también barre la carga como lo hace el firmware), y en cada operación de una carga del tamaño máximo sobre el simulador de flash de NVS en `native_sim` (`program_store_nvs`). No se ha probado un corte de energía en una placa: el controlador de flash, el tiempo de borrado y la alimentación de cada perfil necesitan el registro de hardware de ese perfil (HIL-010).
+Nivel de evidencia: host y destino emulado. Se inyectó un corte de energía en cada operación de un despliegue y una escritura truncada en cada registro, en el host (`test_program_store`, que también barre el despliegue como lo hace el firmware), y en cada operación de un despliegue del tamaño máximo sobre el simulador de flash de NVS en `native_sim` (`program_store_nvs`). No se ha probado un corte de energía en una placa: el controlador de flash, el tiempo de borrado y la alimentación de cada perfil necesitan el registro de hardware de ese perfil (HIL-010).
 
 ## Variables retentivas
 
@@ -145,7 +145,7 @@ Cada guardado de una región modificada cuesta borrados de flash, y el peor caso
 
 Guardados que aguanta la flash = ciclos de borrado x bytes de desgaste / bytes por guardado, y vida = guardados x intervalo. La compilación falla cuando el intervalo hace esa vida más corta que `CONFIG_ZPLC_RETAIN_LIFE_YEARS` (10 por defecto), de modo que una placa no puede salir con un intervalo que sus propios números no sostienen.
 
-Todos los números de abajo son estimaciones de ingeniería a partir de la clase de datasheet de la pieza y de la disposición de las particiones del archivo de la placa. Ninguna placa se midió.
+Todos los números de abajo son estimaciones de ingeniería a partir de la clase de hoja de datos de la pieza y de la disposición de las particiones del archivo de la placa. Ninguna placa se midió.
 
 | Placa | Partición de almacenamiento | RETAIN | Ciclos nominales | Bytes de desgaste | Intervalo | Vida estimada en el peor caso |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -185,7 +185,7 @@ El sistema de archivos de configuración ahora se monta en toda placa que lo inc
 
 ## Límites
 
-- **No medido:** los números de resistencia salen de la clase de datasheet de las piezas, y las disposiciones de partición de la GIGA, la Opta y la F746G se leen de la descripción de la placa, no de una placa.
+- **No medido:** los números de resistencia salen de la clase de hoja de datos de las piezas, y las disposiciones de partición de la GIGA, la Opta y la F746G se leen de la descripción de la placa, no de una placa.
 - **No demostrado:** que un guardado sobreviva a un corte de energía en alguna placa. El formato del registro y el orden de las escrituras se prueban con fallas inyectadas en cada paso en el host y en `native_sim`, y nada más.
 - **No medido:** cuánto tiempo detiene al procesador una escritura en flash. En piezas que ejecutan código desde la misma flash una escritura puede retener la captura de instrucciones durante un borrado. El guardado periódico corre en su propia cola de trabajo, pero que un ciclo se retrase depende del controlador de flash.
 - **No demostrado en una placa:** que los dos almacenes de una placa conserven los datos del otro. Sus particiones están separadas en cada compilación, y en `native_sim` el sistema de archivos de configuración y los registros se escriben uno junto al otro y ambos se leen de vuelta (`hal_persist_keys`).

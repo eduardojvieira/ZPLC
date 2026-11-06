@@ -91,7 +91,7 @@ Un valor `TIME`, como el `PT` de un temporizador y su `ET`, es una cuenta de 32 
 | `CTD` | -1 en un flanco de subida de `CD` | `LD` pone `CV` en `PV` | Se detiene en -32768 | `Q` es `CV <= 0`, así que es TRUE hasta la primera carga |
 | `CTUD` | +1 con `CU`, -1 con `CD`; dos flancos en una llamada se anulan | `R`, luego `LD`, luego los flancos | Se detiene en 32767 y en -32768 | `QU` es `CV >= PV`, `QD` es `CV <= 0` |
 
-Los biestables resuelven un empate por su nombre: `RS` domina el reinicio, así que `Q1` es FALSE cuando `S` y `R1` son ambos TRUE, y `SR` domina la activación. `R_TRIG` y `F_TRIG` dan `Q` durante exactamente un ciclo en un flanco de subida o de bajada de `CLK`.
+Los biestables resuelven un empate por su nombre: `RS` da prioridad al reinicio, así que `Q1` es FALSE cuando `S` y `R1` son ambos TRUE, y `SR` da prioridad a la activación. `R_TRIG` y `F_TRIG` dan `Q` durante exactamente un ciclo en un flanco de subida o de bajada de `CLK`.
 
 Nivel de evidencia: host. Los casos `cmp-058-ctu-*`, `cmp-058-ctd-*` y `cmp-058-ctud-*` de `conformance/cmp/` corren en el runtime nativo, y `packages/zplc-compiler/src/compiler/stdlib/counters.test.ts` reproduce ciclo a ciclo el código generado, incluidas las detenciones en 32767 y en -32768.
 
@@ -131,7 +131,7 @@ Existe una función `<FROM>_TO_<TO>` para cada par ordenado de tipos distintos e
 | Conversión | Resultado |
 | --- | --- |
 | Entero a un entero más ancho o del mismo ancho | El mismo valor. |
-| Entero a un entero más angosto, o al otro signo | Los bits bajos en el ancho del destino: `INT_TO_SINT(300)` es 44, `INT_TO_UINT(-1)` es 65535. |
+| Entero a un entero más estrecho, o al otro signo | Los bits bajos en el ancho del destino: `INT_TO_SINT(300)` es 44, `INT_TO_UINT(-1)` es 65535. |
 | `REAL` o `LREAL` a entero | El entero más cercano, y una mitad exacta al par (`REAL_TO_INT(2.5)` es 2, `REAL_TO_INT(3.5)` es 4). Fuera del rango da el límite más cercano (`REAL_TO_INT(40000.0)` es 32767), y un NaN da 0. |
 | Entero o `TIME` a `BOOL` | FALSE para 0, TRUE para cualquier otro valor. |
 | `TIME` a un número | Su cuenta de milisegundos: `TIME_TO_DINT(T#2s)` es 2000. |
