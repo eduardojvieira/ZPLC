@@ -21,7 +21,7 @@ Todo lo de esta página es evidencia de host, de simulador o de compilación. Un
 | Máquina             | Linux en x86-64 con unos 15 GB libres: el espacio de trabajo fijado de Zephyr ocupa unos 6,6 GB (medido con `du`, sin salidas de compilación) y el SDK de Zephyr unos 7 GB instalado completo. |
 | Herramientas        | `git`, `cmake` 3.20 o posterior, `ninja`, `dtc`, `gperf`, `python3` 3.10 o posterior y un compilador de C.                                                                           |
 | Modos de 32 bits    | El runtime de C de 32 bits: `lib32-glibc` y `lib32-gcc-libs` en Arch, `gcc-multilib` en Debian y Ubuntu.                                                                              |
-| SDK de Zephyr 1.0.1 | La cadena de herramientas `arm-zephyr-eabi` y las herramientas de host del SDK, que incluyen `qemu-system-arm`. La fila de tamaño del ESP32-S3 requiere además `xtensa-espressif_esp32s3_zephyr-elf`. |
+| SDK de Zephyr 1.0.1 | La cadena de herramientas `arm-zephyr-eabi` y las herramientas de host del SDK, que incluyen `qemu-system-arm`. La fila de tamaño de la ESP32-S3 requiere además `xtensa-espressif_esp32s3_zephyr-elf`. |
 | Red                 | Solo la primera vez, para `west update`.                                                                                                                                             |
 
 Los scripts leen el SDK de `~/zephyr-sdk-1.0.1`; defina `ZEPHYR_SDK_INSTALL_DIR` para usar otro lugar. Si falta el SDK, el script de preparación imprime la línea `west sdk install` que debe ejecutar y no la ejecuta.
@@ -156,7 +156,7 @@ La compilación se detiene con un mensaje como `I/O description: channel DO0 (P0
 
 `tools/firmware-test/size-budget.json` registra, para cada placa de `firmware/app/boards/boards.json`, la flash y la RAM medidas en la tabla de memoria del enlazador y el presupuesto que debe respetar la compilación. El presupuesto es la medición más 5 por ciento, redondeado hacia arriba a 256 bytes (la `margin_policy` del archivo).
 
-Cuando un cambio hace que una imagen crezca más allá de su presupuesto, la compilación falla. Suba el presupuesto en la misma confirmación y explique por qué:
+Cuando un cambio hace que una imagen crezca más allá de su presupuesto, la compilación falla. Suba el presupuesto en el mismo commit y explique por qué:
 
 ```bash
 python3 tools/firmware-test/fwtest.py size \
@@ -185,7 +185,7 @@ El informe solo lee archivos. Sus propias pruebas son `tools/firmware-test/test_
 
 - **(a)** dos almacenes comparten o se superponen en una partición, o un almacén se superpone con otra partición. Los almacenes son los registros del HAL (en `zplc_nvs_partition`, o en `storage_partition` donde la placa no la tiene) y el sistema de archivos de configuración (LittleFS, en `storage_partition`).
 - **(b)** un almacén tiene menos de dos bloques de borrado de su flash, no consta de bloques de borrado completos, o tiene bloques que su backend no puede montar (NVS rechaza un sector mayor de 64 KB; una NOR serie que no declara tamaño de borrado se toma como de 64 KB).
-- **(c)** un almacén queda dentro de la ranura de la imagen, la flash que el enlazador puede llenar. Donde el enlazador no acota la imagen (el ESP32-S3 ignora el tamaño de carga de Zephyr), la ranura es el presupuesto de flash de la placa, que la comprobación de tamaño de la misma ejecución hace cumplir.
+- **(c)** un almacén queda dentro de la ranura de la imagen, la flash que el enlazador puede llenar. Donde el enlazador no acota la imagen (la ESP32-S3 ignora el tamaño de carga de Zephyr), la ranura es el presupuesto de flash de la placa, que la comprobación de tamaño de la misma ejecución hace cumplir.
 
 Una línea por placa dice PASS o FAIL con el mapa de particiones. Una placa cuya falla es conocida y le corresponde a otro puede figurar con las comprobaciones que fallan en `tools/hil/storage-partitions-open.json`; la lista está vacía y solo se reduce. Ejecute la comprobación sola sobre árboles de compilación que ya existan:
 
@@ -213,7 +213,7 @@ El trabajo nocturno `loader-fuzz` de `.github/workflows/nightly-quality.yml` apl
 
 - Ponga una suite Zephyr en `firmware/tests/<nombre>` con un `testcase.yaml`, y liste en `platform_allow` cada plataforma en la que pasa. No liste una plataforma donde el escenario pasaría por un motivo que no nombra.
 - Zephyr elige los archivos de placa por calificador exacto. Un archivo para la variante de 64 bits es `boards/native_sim_native_64.overlay`, y la variante de 32 bits necesita `boards/native_sim_native.overlay`. Los ajustes por placa van en `boards/<placa>.conf`, por ejemplo `boards/qemu_cortex_m3.conf`.
-- Imprima solo ASCII. Twister decodifica la salida de QEMU de a un byte como UTF-8 y hace fallar la ejecución ante un carácter multibyte.
+- Imprima solo ASCII. Twister decodifica la salida de QEMU byte por byte como UTF-8 y hace fallar la ejecución ante un carácter multibyte.
 - Cuide la pila de los hilos. `native_sim` ejecuta los hilos en la pila del host, así que una pila demasiado pequeña aparece solo en un objetivo. La pila predeterminada de los hilos de prueba en `qemu_cortex_m3` es de 1 KB.
 
 ## Límites conocidos

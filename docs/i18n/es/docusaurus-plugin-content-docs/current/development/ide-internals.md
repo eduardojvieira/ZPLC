@@ -18,13 +18,13 @@ Todo texto que muestra la interfaz está en dos catálogos, inglés y español, 
 ### Dónde viven los textos
 
 - `packages/zplc-ide/src/i18n/en.ts` contiene los textos base en inglés y reúne los módulos de catálogo. `es.ts` hace lo mismo para el español y está tipado contra las claves del inglés.
-- Los textos de una pantalla viven en un módulo propio, `packages/zplc-ide/src/i18n/catalog/<pantalla>.ts` (por ejemplo `notices.ts`, `toolbarMsg.ts`, `console.ts`). Un módulo exporta los dos idiomas lado a lado, y `en.ts` y `es.ts` los esparcen.
+- Los textos de una pantalla viven en un módulo propio, `packages/zplc-ide/src/i18n/catalog/<pantalla>.ts` (por ejemplo `notices.ts`, `toolbarMsg.ts`, `console.ts`). Un módulo exporta los dos idiomas lado a lado, y `en.ts` y `es.ts` los incorporan.
 - Una clave es una ruta con puntos desde la superficie hasta el texto, como `welcome.open.title`. Un `{nombre}` marca un valor que aporta quien llama. Un par `.one` y `.other` es un plural.
 - El ajuste de idioma es `auto`, `en` o `es` (`src/i18n/locale.ts`). `auto` toma la subetiqueta principal del idioma del sistema, de modo que `es-AR` es `es`, y recurre al inglés.
 
 ### Pasos
 
-1. Agregue la clave y su texto en inglés al módulo de la pantalla, en el objeto `...En`. Si la pantalla aún no tiene módulo, cree uno y esparza su contenido tanto en `en.ts` como en `es.ts`.
+1. Agregue la clave y su texto en inglés al módulo de la pantalla, en el objeto `...En`. Si la pantalla aún no tiene módulo, cree uno y incorpore su contenido tanto en `en.ts` como en `es.ts`.
 2. Agregue la misma clave, en español, al objeto `...Es` del mismo módulo. Se declara como `Record<keyof typeof xxxEn, string>`, así que una clave que falta o que sobra es un error de TypeScript, y un marcador `{nombre}` distinto es una falla de la guardia.
 3. Use el texto:
    - en un componente, `const { t, tn } = useT()`, y luego `t('welcome.open.title')`, o `tn('notices.tests.scenarios', count)` para un plural;
@@ -66,13 +66,13 @@ Las comprobaciones son `tools/ci/i18n-guard.test.ts` para la guardia, `packages/
 
 ## Qué se carga al inicio
 
-La primera pantalla es Bienvenida. No debe pagar por los editores, así que la compilación los separa en fragmentos que se cargan cuando se abre un proyecto. `packages/zplc-ide/scripts/welcomeBundle.test.ts` compila la aplicación con la configuración de Vite del repositorio en una carpeta temporal, lee el manifiesto de Vite y el mapa de fuentes de cada fragmento, y sostiene estas reglas (IDE-015):
+La primera pantalla es Bienvenida. No debe pagar por los editores, así que la compilación los separa en fragmentos que se cargan cuando se abre un proyecto. `packages/zplc-ide/scripts/welcomeBundle.test.ts` compila la aplicación con la configuración de Vite del repositorio en una carpeta temporal, lee el manifiesto de Vite y el mapa de fuentes de cada fragmento, y comprueba estas reglas (IDE-015):
 
 - los fragmentos que carga la página de entrada al inicio contienen la pantalla de Bienvenida y ninguno de `monaco-editor`, `@xyflow`, el editor de código, los editores de escalera, FBD y SFC, ni la configuración del proyecto;
 - el editor de código, la configuración del proyecto y el editor de escalera tienen cada uno un fragmento propio que no se carga al inicio;
 - los fragmentos de inicio juntos son más pequeños que los que se cargan al usarse;
 - la aplicación empaquetada no contiene mapas de fuentes y sí contiene la página y sus scripts;
-- de Monaco solo se incluyen el núcleo del editor y el lenguaje Structured Text, con el worker del editor y ningún worker de lenguaje.
+- de Monaco solo se incluyen el núcleo del editor y el lenguaje texto estructurado, con el worker del editor y ningún worker de lenguaje.
 
 La misma compilación se revisa en cuanto a la red (LRN-030): la política de seguridad de contenido de la aplicación instalada y el proceso principal no descargan nada de otro host al inicio, en Aprender ni en la simulación, y la comprobación de actualizaciones solo se ejecuta cuando está activada.
 
@@ -106,7 +106,7 @@ Una variable observada se lee del runtime unas diez veces por segundo, y una per
 
 ### Qué cuenta la prueba
 
-`packages/zplc-ide/src/store/regionSubscriptions.test.ts` no tiene DOM. Ejecuta los selectores reales contra el almacén real y cuenta cuántas veces cambia cada selección, que es lo que decide un dibujo. Con 200 valores observados y 2000 líneas de código fuente sostiene lo siguiente:
+`packages/zplc-ide/src/store/regionSubscriptions.test.ts` no tiene DOM. Ejecuta los selectores reales contra el almacén real y cuenta cuántas veces cambia cada selección, que es lo que decide un dibujo. Con 200 valores observados y 2000 líneas de código fuente comprueba lo siguiente:
 
 | Suceso                                                            | Se dibuja de nuevo                                                                                                |
 | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |

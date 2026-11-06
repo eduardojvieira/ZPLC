@@ -380,7 +380,7 @@ const landingPageContent = {
     portability: {
       title: 'Escriba el programa una vez. Elija el hardware.',
       lead:
-        'Su programa se ejecuta en el mismo runtime de ZPLC en todas partes: en placas con Zephyr RTOS, en el port para FreeRTOS ' +
+        'Su programa se ejecuta en el mismo runtime de ZPLC en todas partes: en placas con Zephyr RTOS, en el puerto para FreeRTOS ' +
         'y en el simulador de su equipo. Si su placa todavía no está en la lista, puede traerla.',
       wiring: {
         label: 'Un programa, un runtime, tres plataformas',
@@ -395,7 +395,7 @@ const landingPageContent = {
         },
         {
           name: 'FreeRTOS',
-          text: 'Un segundo port a un RTOS, comprobado con la suite de conformidad de ports en CI.',
+          text: 'Un segundo puerto a un RTOS, comprobado con la suite de conformidad de puertos en CI.',
           to: '/docs/runtime/port-interface',
         },
         {
@@ -407,12 +407,12 @@ const landingPageContent = {
       port: {
         title: 'Traiga su propio microcontrolador',
         text:
-          'Un port nuevo implementa las 18 funciones de la capa de abstracción de hardware. Luego la suite de conformidad de ports ' +
+          'Un puerto nuevo implementa las 18 funciones de la capa de abstracción de hardware. Luego la suite de conformidad de puertos ' +
           'comprueba en él cada instrucción, el planificador, la E/S y el almacenamiento.',
       },
       links: [
         { label: 'Portar a una placa', to: '/docs/guides/port-to-a-board' },
-        { label: 'Interfaz de port', to: '/docs/runtime/port-interface' },
+        { label: 'Interfaz de puerto', to: '/docs/runtime/port-interface' },
       ],
       strip: {
         title: 'Capa de abstracción de hardware',
@@ -424,7 +424,7 @@ const landingPageContent = {
             terminals: ['entrada digital', 'salida digital', 'entrada analógica', 'salida analógica', 'tabla de E/S', 'canales'],
           },
           storage: { label: 'Almacenamiento', terminals: ['guardar', 'cargar', 'borrar'] },
-          locks: { label: 'Bloqueos', terminals: ['crear', 'bloquear', 'desbloquear', 'destruir'] },
+          locks: { label: 'Cerrojos', terminals: ['crear', 'bloquear', 'desbloquear', 'destruir'] },
           life: { label: 'Registro y ciclo de vida', terminals: ['registro', 'inicio', 'apagado'] },
           network: { label: 'Red, opcional', terminals: ['iniciar la red', 'dirección IP'] },
         },
@@ -458,7 +458,7 @@ const landingPageContent = {
         },
         {
           title: 'Diagramas desde el teclado',
-          text: 'Peldaños, bloques y etapas se colocan y conectan sin el ratón.',
+          text: 'Peldaños, bloques y pasos se colocan y conectan sin el ratón.',
         },
         {
           title: 'Una paleta de comandos',
@@ -508,7 +508,7 @@ const landingPageContent = {
           code: 'SFC',
           name: 'Diagrama funcional secuencial',
           text:
-            'Etapas, transiciones y acciones en un diagrama, editadas desde el teclado, con el estado en línea del diagrama mientras ' +
+            'Pasos, transiciones y acciones en un diagrama, editadas desde el teclado, con el estado en línea del diagrama mientras ' +
             'se ejecuta.',
           alt: 'El editor de diagrama funcional secuencial de ZPLC con el ejemplo Blinky.',
           reference: 'Referencia de diagrama funcional secuencial',
@@ -529,7 +529,7 @@ const landingPageContent = {
           title: 'Puntos de interrupción en cada lenguaje',
           text:
             'Deténgase en una línea de texto estructurado o de lista de instrucciones, en un peldaño, en un bloque de función o en ' +
-            'una etapa de un diagrama, y lea los valores de ese ciclo.',
+            'un paso de un diagrama, y lea los valores de ese ciclo.',
           link: 'Simular y depurar',
           to: '/docs/guides/simulate-and-debug',
         },
@@ -573,21 +573,21 @@ const landingPageContent = {
     learn: {
       title: 'Aprenda a programar PLC sin comprar un PLC',
       lead:
-        'Un curso gratuito de 68 lecciones en 12 módulos, en inglés y en español. Empiece desde cero con el camino de diagrama de ' +
+        'Un curso gratuito de 68 lecciones en 12 módulos, en inglés y en español. Empiece desde cero con la ruta de ' +
         'escalera: cada una de sus lecciones abre con una página de lectura con figuras y laboratorios que puede probar allí ' +
         'mismo, y luego practica con una máquina simulada. ZPLC comprueba su programa en cada lección y le dice qué corregir.',
       facts: [
         {
-          title: 'Una devolución en cada intento',
+          title: 'Una respuesta en cada intento',
           text:
-            'Comprobar ejecuta su programa guardado contra el escenario de la lección y lista cada aserción que falló, con el ' +
+            'Comprobar ejecuta su programa guardado contra el escenario de la lección y enumera cada aserción que falló, con el ' +
             'instante, el valor esperado y el valor observado.',
         },
         {
           title: 'Primero el simulador, la placa cuando esté listo',
           text:
-            'Todas las lecciones menos una se ejecutan en el simulador, así que no necesita hardware. 34 de ellas tienen un ' +
-            'recorrido para una placa del estudiante, con el cableado en un diagrama y un mapa de pines.',
+            'Todas las lecciones menos una se ejecutan en el simulador, así que no necesita hardware. 34 de ellas tienen una ' +
+            'ruta para una placa del estudiante, con el cableado en un diagrama y un mapa de pines.',
         },
         {
           title: 'Cuatro máquinas para controlar',
@@ -597,12 +597,12 @@ const landingPageContent = {
         },
         {
           title: 'Pistas antes de la solución',
-          text: 'Dos niveles de pista, la solución solo a pedido, y un docente puede ocultarla.',
+          text: 'Dos niveles de pista, la solución solo a petición, y un docente puede ocultarla.',
         },
       ],
-      captureAlt: 'La primera lección de Learn abierta junto al editor, después de que Comprobar pasó.',
+      captureAlt: 'La primera lección de Aprender abierta junto al editor, después de que Comprobar pasó.',
       courseTitle: 'El curso, módulo por módulo',
-      levels: ['Inicial', 'Intermedio', 'Avanzado'],
+      levels: ['Base', 'Intermedio', 'Avanzado'],
       modules: [
         'Primeros pasos',
         'Cómo piensa un PLC',
@@ -617,7 +617,7 @@ const landingPageContent = {
         'Fundamentos de Modbus y MQTT',
         'Proyecto final: una máquina pequeña',
       ],
-      plantsTitle: 'Las plantas que maneja su programa',
+      plantsTitle: 'Las plantas que controla su programa',
       plants: {
         tank: {
           name: 'Tanque',
@@ -641,7 +641,7 @@ const landingPageContent = {
         },
       },
       links: [
-        { label: 'Empezar con Learn', to: '/docs/learn' },
+        { label: 'Empezar con Aprender', to: '/docs/learn' },
         { label: 'Para docentes', to: '/docs/learn/educators' },
       ],
     },

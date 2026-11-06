@@ -47,7 +47,7 @@ Use esta página al escribir o revisar una lección, una pista o una etiqueta de
 | structured text                         | texto estructurado (ST)                                      |                                                                 |
 | ladder diagram                          | diagrama de escalera (LD)                                    |                                                                 |
 | function block diagram                  | diagrama de bloques de función (FBD)                         |                                                                 |
-| sequential function chart               | diagrama funcional secuencial (SFC)                          | Una etapa de un SFC es un "paso".                               |
+| sequential function chart               | diagrama funcional secuencial (SFC)                          | Un step de un SFC es un "paso".                               |
 | instruction list                        | lista de instrucciones (IL)                                  |                                                                 |
 | fault                                   | falla                                                        |                                                                 |
 | trace                                   | traza                                                        |                                                                 |

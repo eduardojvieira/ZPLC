@@ -17,8 +17,8 @@ decisiones que encuentra quien contribuye.
 | Comando                     | Qué hace                                                                                                 |
 | --------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `bun run format`            | Escribe el formato de cada archivo versionado que los formateadores gestionan                            |
-| `bun run format:check`      | Lo comprueba sin escribir y después ejecuta la guarda de longitud de línea; es el trabajo `format` de CI |
-| `bun run check:line-length` | Solo la guarda: lista cada línea de código fuente escrita a mano por encima del límite                   |
+| `bun run format:check`      | Lo comprueba sin escribir y después ejecuta la verificación de longitud de línea; es el trabajo `format` de CI |
+| `bun run check:line-length` | Solo la verificación: lista cada línea de código fuente escrita a mano por encima del límite                   |
 
 `format` llega a un punto fijo. Ejecuta Prettier, después
 `tools/ci/wrap-long-lines.ts` (que corta lo que Prettier no puede) y de nuevo
@@ -29,7 +29,7 @@ Prettier sobre los cortes, hasta que ningún archivo cambia.
 | Lenguaje                                    | Herramienta                                       | Versión                                                                           | Configuración      |
 | ------------------------------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------ |
 | TypeScript, JavaScript, CSS, JSON, Markdown | Prettier (MIT)                                    | 3.9.10, `devDependency` exacta del `package.json` raíz (unos 10 MB descomprimido) | `.prettierrc.json` |
-| C y cabeceras                               | clang-format (Apache-2.0 con excepciones de LLVM) | 23.1.3, el paquete de PyPI (unos 2 MB); `pipx install clang-format==23.1.3`       | `.clang-format`    |
+| C y encabezados                               | clang-format (Apache-2.0 con excepciones de LLVM) | 23.1.3, el paquete de PyPI (unos 2 MB); `pipx install clang-format==23.1.3`       | `.clang-format`    |
 | Editores                                    | EditorConfig                                      |                                                                                   | `.editorconfig`    |
 
 La salida de ambas herramientas cambia entre versiones, por eso las versiones son
@@ -46,7 +46,7 @@ C usa la base LLVM: dos espacios, llaves en la misma línea, sin ordenar los
 ## El límite: 140 columnas
 
 El límite se aplica al código fuente escrito a mano: TypeScript, TSX, JavaScript,
-CSS, C y cabeceras. Es 140 y no 120 por lo que cuesta cada opción. Medido sobre
+CSS, C y encabezados. Es 140 y no 120 por lo que cuesta cada opción. Medido sobre
 los 1522 archivos vigilados (297 933 líneas) antes de formatear:
 
 | Líneas de más de | Líneas | Proporción |
@@ -58,7 +58,7 @@ los 1522 archivos vigilados (297 933 líneas) antes de formatear:
 
 Después de Prettier y clang-format, las líneas que ningún formateador puede cortar
 (cadenas largas, comentarios, títulos de pruebas) eran 4163 con 120 columnas y 1476
-con 140. El cortador resuelve casi todas y la guarda informa del resto. Con 140
+con 140. El cortador resuelve casi todas y la verificación informa del resto. Con 140
 columnas el resto fue de 41 líneas (expresiones regulares, comentarios con columnas
 alineadas, URL de datos), cortadas a mano.
 
@@ -87,7 +87,7 @@ código.
   escribe enteros, cada uno con el generador dueño de sus bytes. Los bloques
   generados dentro de una página escrita a mano se protegen mientras Prettier corre
   (`protect` en `tools/ci/format.ts`), y dentro de un archivo C quedan entre
-  `/* clang-format off */` y `/* clang-format on */`. La guarda también los omite.
+  `/* clang-format off */` y `/* clang-format on */`. La verificación también los omite.
 
 ## Cambiar el estilo
 
