@@ -53,15 +53,15 @@ END_PROGRAM
 
 Después de 250 ms de ciclos, la salida en `%Q0.0` es `TRUE`. La integración continua ejecuta el ejemplo durante 30 ciclos de 10 ms y comprueba `%QX0.0`.
 
-## Diagnósticos y breakpoints
+## Diagnósticos y puntos de parada
 
 Un diagnóstico de un archivo IL nombra la línea IL a la que se refiere (`element: "line:12"`), también cuando el compilador encuentra el problema en el texto estructurado generado, y cada línea que no se traduce es un diagnóstico propio. Un mnemónico desconocido se rechaza con un mensaje que nombra su línea.
 
-El mapa de depuración de un archivo IL indica líneas IL, así que usted pone un breakpoint en la línea IL, en el margen del editor, y el programa detenido se muestra en esa línea. Las líneas del código generado que no corresponden a ninguna línea IL no son lugares donde detenerse.
+El mapa de depuración de un archivo IL indica líneas IL, así que usted pone un punto de parada en la línea IL, en el margen del editor, y el programa detenido se muestra en esa línea. Las líneas del código generado que no corresponden a ninguna línea IL no son lugares donde detenerse.
 
 ## Límites
 
-IL comparte el destino del compilador con todos los lenguajes, pero el costo de ejecución, la disponibilidad de los bloques de la biblioteca, y el avance paso a paso, las observaciones, los breakpoints y el comportamiento en una placa dependen del entorno de ejecución y de su perfil de capacidades. La simulación nativa es solo evidencia de host; una afirmación sobre un dispositivo físico necesita una ejecución en el destino o con hardware en el lazo.
+IL comparte el destino del compilador con todos los lenguajes, pero el costo de ejecución, la disponibilidad de los bloques de la biblioteca, y el avance paso a paso, las observaciones, los puntos de parada y el comportamiento en una placa dependen del entorno de ejecución y de su perfil de capacidades. La simulación nativa es solo evidencia de host; una afirmación sobre un dispositivo físico necesita una ejecución en el destino o con hardware en el lazo.
 
 ## Páginas relacionadas
 

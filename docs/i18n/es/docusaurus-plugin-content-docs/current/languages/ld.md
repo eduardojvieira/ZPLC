@@ -7,7 +7,7 @@ tags: [languages, ladder, ld]
 
 Esta guía muestra cómo crear un programa en diagrama de escalera en el editor de ZPLC: cómo se arma un peldaño, qué elementos ofrece la paleta, cómo se comportan las cajas de función con EN y ENO y qué errores rechaza la compilación. La lista completa de elementos, con la prueba de cada uno, está en la [referencia generada del diagrama de escalera](../reference/language-ld.md).
 
-Un archivo de escalera es un modelo de peldaños, no texto. La compilación lo valida y lo traduce a texto estructurado, que es solo una salida de lectura; después el compilador lo trata como cualquier otro programa ([Flujo del compilador](../ide/compiler.md)).
+Un archivo de escalera es un modelo de peldaños, no texto. La compilación lo valida y lo traduce a texto estructurado, que es una salida de solo lectura; después el compilador lo trata como cualquier otro programa ([Flujo del compilador](../ide/compiler.md)).
 
 ## Armar un peldaño
 
@@ -63,7 +63,7 @@ Una caja de función se coloca en el peldaño como un contacto. Su cable izquier
 - La **comparación** (`GT`, `GE`, `EQ`, `NE`, `LE`, `LT`) es una condición en serie. La energía pasa por ella cuando la energía que llega está activa y la comparación se cumple. No tiene salida.
 - Las **operaciones matemáticas** (`ADD`, `SUB`, `MUL`, `DIV`, `MOD`), la **copia** (`MOVE`) y la **selección** (`LIMIT`, `MIN`, `MAX`) se ejecutan mientras EN está activo. Escriben el resultado en su variable de salida y dejan pasar la energía. Mientras EN está inactivo no se ejecutan, su salida conserva el valor y ENO está inactivo.
 - Cada operando es una variable declarada o un literal que usted escribe. La salida es una variable declarada que no es una entrada.
-- La caja no detecta ningún error, por eso ENO nunca informa de uno. Un resultado entero que no cabe en su tipo se desborda en círculo.
+- La caja no detecta ningún error, por eso ENO nunca informa de uno. Un resultado entero que no cabe en su tipo se desborda y da la vuelta.
 - `DIV` y `MOD` con divisor cero ponen la VM en falla: el ciclo termina en falla, la salida no se escribe y la imagen de salidas `%Q` se borra, así que una salida asignada lee 0. Lo mismo vale para `REAL` con `0.0` o `-0.0`. Proteja el divisor con una caja de comparación en serie.
 
 Los pines de operandos son `IN1` e `IN2` para las comparaciones, las operaciones matemáticas, `MIN` y `MAX`; `IN` para `MOVE`; y `MN`, `IN` y `MX` para `LIMIT`.

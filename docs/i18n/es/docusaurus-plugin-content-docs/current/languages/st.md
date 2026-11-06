@@ -175,7 +175,7 @@ END_PROGRAM
 - `DATE` cuenta segundos, no milisegundos. Se asigna y se compara (`D#2024-01-01 < D#2025-06-30`), pero sumar un `TIME` a un `DATE` suma milisegundos a una cuenta de segundos: no lo haga. Ningún caso de conformidad cubre la aritmética de `DATE`.
 - Un literal `DT#` se lee en la zona horaria de la máquina que compila, mientras que `D#` y `TOD#` se leen como UTC. El mismo código fuente compilado en dos zonas horarias da dos constantes `DT` distintas. Es un defecto, no un diseño, y todavía ningún caso de conformidad lo fija.
 
-### Tipos no soportados
+### Tipos no admitidos
 
 `LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` y `WCHAR` no forman parte de ZPLC 2.0. La declaración de uno de ellos, como la de cualquier nombre de tipo desconocido, es un error de compilación que nombra el tipo y su posición (`cmp-003-*` en `conformance/cmp/`).
 

@@ -21,13 +21,13 @@ ZPLC ofrece cinco lenguajes IEC 61131-3 en un mismo proyecto: texto estructurado
 | Diagrama de bloques de función (FBD) | Un editor de diagramas | Flujo de señales entre temporizadores, contadores, comparaciones y aritmética. | [Diagrama de bloques de función](./fbd.md) |
 | Diagrama funcional secuencial (SFC) | Un editor de diagramas de pasos | Máquinas que avanzan por pasos, como una secuencia de arranque, marcha y paro. | [Diagrama funcional secuencial](./sfc.md) |
 
-El texto estructurado va directamente al compilador. Los otros cuatro se traducen primero a texto estructurado, y ese texto generado es solo una salida de lectura. Los lenguajes no son intercambiables: un editor, un depurador o un bloque de biblioteca puede admitir una construcción en un lenguaje y no en otro, y un programa no se convierte de vuelta de texto estructurado a un diagrama. Las [referencias generadas de los lenguajes](../reference/language-st.md) indican qué funciona en cada uno.
+El texto estructurado va directamente al compilador. Los otros cuatro se traducen primero a texto estructurado, y ese texto generado es una salida de solo lectura. Los lenguajes no son intercambiables: un editor, un depurador o un bloque de biblioteca puede admitir una construcción en un lenguaje y no en otro, y un programa no se convierte de vuelta de texto estructurado a un diagrama. Las [referencias generadas de los lenguajes](../reference/language-st.md) indican qué funciona en cada uno.
 
 ## Qué puede hacer hoy cada lenguaje
 
 Cada fila nombra un recorrido de la aplicación ZPLC que muestra la capacidad de principio a fin, en una ventana real; la integración continua los ejecuta todos, y la tabla se genera a partir de esa lista, no se escribe a mano. Al generar la página se rechaza una capacidad sin recorrido, o con solo una prueba unitaria o un caso de conformidad.
 
-Compilar, simular y desplegar salen de una sola cadena por lenguaje: se crea un programa en un proyecto nuevo, se edita un ejemplo, se guarda, se reabre y se compila, se simula con una pausa y un solo paso, y se observa. Después se pulsa Desplegar y se confirma contra el entorno de ejecución nativo detrás del shell de una placa emulada, y se observa cómo cambia allí el mismo valor. La placa es emulada y nada se ejecuta en una física: lo que se ejecutó en placas reales está en la [página de evidencia de hardware](../reference/capabilities-evidence.md). El perfil de capacidades que informa el entorno de ejecución decide cuáles de estas capacidades habilita la aplicación.
+La compilación, la simulación y la carga salen de una sola cadena por lenguaje: se crea un programa en un proyecto nuevo, se edita un ejemplo, se guarda, se reabre y se compila, se simula con una pausa y un solo paso, y se observa. Después se pulsa Cargar y se confirma contra el entorno de ejecución nativo detrás del shell de una placa emulada, y se observa cómo cambia allí el mismo valor. La placa es emulada y nada se ejecuta en una física: lo que se ejecutó en placas reales está en la [página de evidencia de hardware](../reference/capabilities-evidence.md). El perfil de capacidades que informa el entorno de ejecución decide cuáles de estas capacidades habilita la aplicación.
 
 {/* >>> GENERATED (tools/docs/generate_language_capabilities.ts): language-capabilities. Do not edit. >>> */}
 
@@ -82,9 +82,9 @@ Todos los lenguajes convergen en la ruta del compilador que produce bytecode `.z
 
 ## Depuración y evidencia
 
-La aplicación ofrece inspección, simulación y depuración según el perfil de capacidades que informa el entorno de ejecución. En la simulación nativa sobre un host Linux, los recorridos detienen el programa en un breakpoint en una línea de texto estructurado, una línea de lista de instrucciones, un peldaño de escalera, un bloque de diagrama de bloques de función y un paso de diagrama funcional secuencial, y marcan el elemento donde se detuvo. Las mismas ejecuciones pulsan Pausa, Avanzar un ciclo y Reanudar en cada lenguaje y leen el contador de ciclos: se mantiene mientras está en pausa, avanza exactamente uno con cada paso y vuelve a correr después de Reanudar.
+La aplicación ofrece inspección, simulación y depuración según el perfil de capacidades que informa el entorno de ejecución. En la simulación nativa sobre un host Linux, los recorridos detienen el programa en un punto de parada en una línea de texto estructurado, una línea de lista de instrucciones, un peldaño de escalera, un bloque de diagrama de bloques de función y un paso de diagrama funcional secuencial, y marcan el elemento donde se detuvo. Las mismas ejecuciones pulsan Pausa, Avanzar un ciclo y Reanudar en cada lenguaje y leen el contador de ciclos: se mantiene mientras está en pausa, avanza exactamente uno con cada paso y vuelve a correr después de Reanudar.
 
-La simulación nativa es un entorno de ejecución lógico del lado del host. No prueba el tiempo de hardware ni el comportamiento del destino, y un breakpoint en una placa necesita una ejecución con hardware en el lazo en esa placa.
+La simulación nativa es un entorno de ejecución lógico del lado del host. No prueba el tiempo de hardware ni el comportamiento del destino, y un punto de parada en una placa necesita una ejecución con hardware en el lazo en esa placa.
 
 ## Leer a continuación
 

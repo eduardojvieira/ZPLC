@@ -7,7 +7,7 @@ tags: [languages, fbd]
 
 Esta guía muestra cómo crear un diagrama de bloques de función (FBD) en el editor de ZPLC: qué bloques ofrece la paleta, cómo conectarlos, cómo se comprueban los tipos de los pines y qué diagramas rechaza la compilación. La lista completa de elementos, con la prueba de cada uno, está en la [referencia generada del diagrama de bloques de función](../reference/language-fbd.md).
 
-Un archivo FBD es un modelo de bloques y cables, no texto. La compilación lo valida y lo traduce a texto estructurado, que es solo una salida de lectura; después el compilador lo trata como cualquier otro programa ([Flujo del compilador](../ide/compiler.md)).
+Un archivo FBD es un modelo de bloques y cables, no texto. La compilación lo valida y lo traduce a texto estructurado, que es una salida de solo lectura; después el compilador lo trata como cualquier otro programa ([Flujo del compilador](../ide/compiler.md)).
 
 ## Armar un diagrama
 
@@ -61,6 +61,6 @@ Para llevar un `REAL` a una entrada entera, conviértalo antes con una función 
 
 ## Ordenar y leer el diagrama
 
-Ajuste el diagrama a la ventana con `Ctrl+Alt+0`. El lienzo se acerca de 10 % a 400 %. Alinee los bloques seleccionados con `Alt+Mayús` y una tecla de flecha, y distribuya tres o más de forma uniforme con `Ctrl+Alt+Mayús+H` o `Ctrl+Alt+Mayús+V`; cada comando es un paso de deshacer. Mientras un programa se ejecuta en la simulación, el editor muestra el valor de cada cable y las salidas de cada bloque, y un valor que no se leyó se muestra como no disponible, nunca como FALSE. Vea [Editores de texto y visuales](../ide/editors.md) para los detalles.
+Ajuste el diagrama a la ventana con `Ctrl+Alt+0`. El lienzo admite un zoom de 10 % a 400 %. Alinee los bloques seleccionados con `Alt+Mayús` y una tecla de flecha, y distribuya tres o más de forma uniforme con `Ctrl+Alt+Mayús+H` o `Ctrl+Alt+Mayús+V`; cada comando es un paso de deshacer. Mientras un programa se ejecuta en la simulación, el editor muestra el valor de cada cable y las salidas de cada bloque, y un valor que no se leyó se muestra como no disponible, nunca como FALSE. Vea [Editores de texto y visuales](../ide/editors.md) para los detalles.
 
 Nivel de evidencia: host. `packages/zplc-ide/src/transpiler/transpiler.test.ts` y `packages/zplc-ide/src/models/pinTypes.test.ts` cubren la traducción, el orden y las reglas de los pines, y los casos de conformidad de la referencia ejecutan los diagramas en el entorno de ejecución nativo. No se usó ninguna placa.
