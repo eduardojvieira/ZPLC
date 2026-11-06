@@ -3,87 +3,74 @@ slug: /architecture
 id: index
 title: Arquitectura del sistema
 sidebar_label: Arquitectura
-description: Límites del sistema, relaciones entre las partes del runtime y principios de trabajo de la arquitectura de ZPLC.
+description: 'Cómo está organizado ZPLC: los cuatro límites entre edición, compilación, ejecución y plataforma, qué posee cada parte y las reglas que mantienen portable el runtime.'
 tags: [architecture, integrator]
 ---
 
 # Arquitectura del sistema
 
-ZPLC se divide a propósito en superficies de ingeniería y superficies de ejecución.
+ZPLC mantiene separado lo que usted escribe de lo que mueve la máquina. Esta página muestra dónde están las divisiones, qué hay a cada lado y qué reglas las sostienen. Léala antes de portar ZPLC, de agregar una ruta de lenguaje o de interpretar qué dice un resultado de un lugar sobre otro.
 
-Esta separación protege el comportamiento determinista del runtime en el hardware de control, y aun así ofrece los flujos modernos de IDE, compilador y simulación.
-
-## La arquitectura de un vistazo
+## Las partes y cómo se conectan
 
 ```mermaid
 flowchart LR
-  subgraph Engineering[Superficies de ingeniería]
-    IDE[Interfaz de la aplicación ZPLC]
-    COMPILER[Canal de compilación de ZPLC]
+  subgraph Engineering[Ingeniería]
+    APP[Aplicación ZPLC]
+    COMPILER[Compilador]
   end
 
-  subgraph Execution[Superficies de ejecución]
-    BYTECODE[Bytecode .zplc]
-    VM[Máquina virtual del núcleo ZPLC]
-    HAL[Contrato HAL]
-    TARGETS[Equipo anfitrión nativo / hardware Zephyr]
+  subgraph Execution[Ejecución]
+    ARTIFACT[Artefacto .zplc]
+    CORE[Núcleo: VM, cargador, planificador]
+    HAL[HAL]
+    TARGET[Equipo anfitrión nativo, WebAssembly, placa Zephyr]
   end
 
-  IDE --> COMPILER
-  COMPILER --> BYTECODE
-  BYTECODE --> VM
-  VM --> HAL
-  HAL --> TARGETS
+  APP --> COMPILER
+  COMPILER --> ARTIFACT
+  ARTIFACT --> CORE
+  CORE --> HAL
+  HAL --> TARGET
 ```
 
-## Los límites principales del sistema
+| Límite | Qué hay a cada lado | Qué lo cruza |
+| --- | --- | --- |
+| Edición | Usted, la aplicación ZPLC y la línea de comandos, trabajando en ST, IL, LD, FBD o SFC | Archivos de proyecto: código fuente, `zplc.json`, escenarios |
+| Compilación | El compilador (`packages/zplc-compiler`) y los transpiladores de lenguaje de la aplicación | Un artefacto `.zplc` y su mapa de depuración |
+| Runtime | El núcleo en C99 de `firmware/lib/zplc_core/src/core`: la VM, el cargador con su verificador y el núcleo del planificador | Llamadas a las funciones `zplc_hal_*` |
+| Plataforma | Un puerto del HAL: Zephyr, POSIX, WebAssembly o FreeRTOS | El reloj, los pines, el almacenamiento y la red del dispositivo |
 
-ZPLC se entiende mejor como cuatro límites y no como una sola aplicación monolítica:
+## Quién posee qué
 
-1. **Límite de autoría.** Las personas trabajan en ZPLC con archivos `.st`, `.ld` o modelos visuales.
-2. **Límite de compilación.** La autoría en cada lenguaje converge en una transpilación canónica a ST, que genera el bytecode `.zplc` compartido.
-3. **Límite de ejecución.** El núcleo de ejecución en C99 interpreta el bytecode de forma determinista en el hardware de destino.
-4. **Límite de plataforma.** El hardware, la persistencia, los temporizadores, los sockets y los servicios del sistema operativo quedan detrás de la capa de abstracción de hardware (HAL).
+**La aplicación ZPLC** es donde trabaja una persona: edita los cinco lenguajes, compila, simula, observa, fuerza, despliega y ejecuta lecciones. Los pasos de compilación y de prueba también están en la línea de comandos, de modo que un proyecto se puede compilar y comprobar sin ventana. Véanse [las guías de lenguaje](../languages/index.md).
 
-## Los componentes principales
+**El compilador** convierte cada lenguaje en un único artefacto. La lista de instrucciones, el diagrama de escalera, el diagrama de bloques de función y el diagrama funcional secuencial se transpilan a texto estructurado con los transpiladores de `packages/zplc-ide/src/compiler/transpilers`, y el compilador lo convierte en bytecode. Como el formato del artefacto es uno solo, un programa se comporta igual sin importar el lenguaje en que se escribió. El artefacto se vuelve a comprobar al cargarlo; no se confía en él por haberlo generado el compilador.
 
-### 1. La aplicación ZPLC
+**El núcleo** es `libzplc_core`, escrito en C99. Define qué significa un programa: el conjunto de instrucciones, las cinco regiones de memoria, el cargador que verifica un artefacto antes de ejecutar nada y el núcleo del planificador que decide qué tarea corre y cuándo. Nunca toca registros, controladores ni sockets. Véanse la [descripción del runtime](../runtime/index.md), el [modelo de memoria](../runtime/memory-model.md) y el [planificador](../runtime/scheduler.md).
 
-La aplicación ZPLC es la superficie de ingeniería para quien opera y para quien desarrolla. Gestiona la edición de texto de Structured Text e Instruction List, la edición visual de Ladder, FBD y SFC, y la orquestación del proyecto (compilar, cargar, depurar).
+**El HAL** es el único encabezado, `firmware/lib/zplc_core/include/zplc_hal.h`, por el que el núcleo pide a una plataforma el tiempo, la E/S, el almacenamiento, los cerrojos y una línea de registro. Lo implementan cuatro puertos. Véase el [contrato del HAL](../runtime/hal-contract.md).
 
-### 2. El compilador
+## Dónde puede ejecutarse un programa
 
-El compilador lleva todos los lenguajes IEC al mismo contrato de bytecode y runtime. Como la salida `.zplc` es única, ZPLC ofrece "un solo núcleo de ejecución y muchas vías de autoría" sin diferencias de comportamiento en el runtime.
+| Runtime | Se compila a partir de | Evidencia que aporta |
+| --- | --- | --- |
+| Simulación nativa (`zplc_runtime`) | El núcleo y el puerto POSIX | Host: el resultado de cada ciclo, en un procesador y un reloj de equipo anfitrión |
+| Runtime de software (WebAssembly) | El mismo código de sesión y el mismo núcleo del planificador, compilados con el puerto WebAssembly | Host, degradada: sin bloques de red, sin puerto serie, sin pines. Véase [el runtime de software](../runtime/browser-runtime.md) |
+| Firmware Zephyr | El núcleo y el puerto Zephyr, una imagen por placa | Destino emulado o `cross-build` por ahora; véase [compatibilidad de hardware](../reference/capabilities-evidence.md) |
 
-### 3. El núcleo del runtime
+Los tres cargan los mismos artefactos `.zplc` y responden las mismas solicitudes de sesión, de modo que un escenario que pasa en simulación ejercita la lógica que usted desplegará. No ejercita los tiempos ni el comportamiento eléctrico de una placa.
 
-El runtime (`libzplc_core`) es el límite de ejecución, escrito en C99 estricto. Se apoya en estos modelos operativos:
+## Reglas que respeta el diseño
 
-- **Regiones de memoria compartida** definidas de forma global para entradas (IPI), salidas (OPI), trabajo, retención y código.
-- **Instancias de la máquina virtual** que guardan el estado de ejecución privado (punteros de pila y registros) de cada tarea.
-- **API del planificador** que registra las tareas, las consulta y gestiona la temporización cíclica.
-
-### 4. El contrato HAL
-
-La capa de abstracción de hardware (HAL) es el puente entre el núcleo determinista y los microcontroladores físicos.
-Para portar ZPLC a una arquitectura nueva basta con implementar `zplc_hal.h`:
-
-- Temporización (`zplc_hal_tick`, `zplc_hal_sleep`)
-- Manejo de E/S digitales y analógicas
-- Persistencia en NVS
-- Red y sockets
-- Inicialización del registro de mensajes
-
-Como todo pasa por la HAL, ZPLC garantiza una portabilidad profunda.
-
-## Principios de trabajo
-
-1. **El código de plataforma queda fuera del núcleo.** El núcleo nunca debe hablar directamente con los registros del microcontrolador ni con los controladores de Zephyr. Toda petición de hardware pasa por la HAL genérica.
-2. **Ejecución acotada.** La memoria se asigna de forma estática en la compilación, y el runtime analiza y ejecuta el bytecode dentro de límites de memoria fijos. La temporización es otro asunto: no se ha medido ningún tiempo de ciclo en una placa.
-3. **Ejecución de varias tareas.** El sistema aísla el contexto de ejecución de cada programa y expone de forma segura los bloques de datos globales compartidos (como las etiquetas de Modbus o las entradas físicas).
+1. **Sin código de plataforma en el núcleo.** Los archivos de `src/core` no incluyen ningún encabezado de plataforma, y un destino de compilación los compila solos para demostrarlo. Todo lo que pertenece a un pin, un reloj, un archivo o un socket pasa por `zplc_hal_*`.
+2. **Un artefacto, un verificador.** Todo runtime carga un programa con el mismo cargador, que rechaza el código que no puede demostrar bien formado.
+3. **Memoria estática.** Las regiones tienen tamaños fijos definidos al compilar, y el núcleo no reserva memoria mientras corre un programa.
+4. **Semántica de ciclo compartida.** Un solo núcleo del planificador decide la admisión, el orden, los plazos y la retención de la falla en todos los runtimes, y las pruebas comparan las decisiones del host y del destino con una traza de referencia.
+5. **La evidencia conserva su nivel.** Un resultado de host no es un resultado de placa. Toda página que dice qué funciona dice también si la evidencia es de host, QEMU, compilación para el destino, banco de pruebas o manual.
 
 ## Siguientes pasos
 
-- [Visión general de la plataforma](../platform-overview/index.md)
-- [Visión general del runtime](../runtime/index.md)
-- [Integración y carga](../integration/index.md)
+- [Descripción de la plataforma](../platform-overview/index.md) explica qué es ZPLC y qué no es.
+- [Descripción del runtime](../runtime/index.md) entra en el núcleo.
+- [Integración y despliegue](../integration/index.md) conecta un dispositivo con otros sistemas.

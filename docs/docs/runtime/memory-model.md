@@ -1,29 +1,24 @@
 ---
 id: memory-model
-title: Memory Model
-sidebar_label: Memory Model
-description: Public VM memory regions, shared/private state boundaries, and bounded-memory expectations for ZPLC.
+title: Memory model
+sidebar_label: Memory model
+description: 'The five memory regions of the ZPLC runtime, what tasks share and what each owns, how a thread outside the scan reaches the data, how the compiler places variables and where the sizes are set.'
 tags: [runtime, embedded, memory]
 ---
 
-# Memory Model
+# Memory model
 
-The public memory contract is defined primarily by:
+A ZPLC program sees one flat address space split into five regions. This page says what each region is for, what a task shares with the others and what is its own, and where the sizes come from. The public definitions are in `firmware/lib/zplc_core/include/zplc_isa.h` and `firmware/lib/zplc_core/include/zplc_core.h`.
 
-- `firmware/lib/zplc_core/include/zplc_isa.h`
-- `firmware/lib/zplc_core/include/zplc_core.h`
+## The five regions
 
-## Logical memory regions
-
-`zplc_isa.h` exposes five logical memory regions:
-
-| Region |     Base | Role                 |
-| ------ | -------: | -------------------- |
-| IPI    | `0x0000` | input process image  |
-| OPI    | `0x1000` | output process image |
-| WORK   | `0x2000` | working memory       |
-| RETAIN | `0x4000` | retentive memory     |
-| CODE   | `0x5000` | loaded bytecode      |
+| Region | Base | Role | Size |
+| --- | ---: | --- | --- |
+| IPI | `0x0000` | Input process image | 4 KB |
+| OPI | `0x1000` | Output process image | 4 KB |
+| WORK | `0x2000` | Working memory: the variables of the program | 8192 bytes by default |
+| RETAIN | `0x4000` | Retentive memory, saved and restored across a restart | 4096 bytes by default |
+| CODE | `0x5000` | The loaded bytecode | up to 45056 bytes by default |
 
 ```mermaid
 flowchart LR
@@ -37,83 +32,49 @@ flowchart LR
   OPI --> HALOUT[HAL output sync]
 ```
 
-## Shared vs private state
+The last 16 bytes of IPI are reserved for system data that a program can read: the cycle time (`ZPLC_SYS_CYCLE_TIME`), the uptime, the id of the current task and a flags byte with the first-scan, running and watchdog-warning bits. User data and runtime metadata never share an address.
 
-`zplc_core.h` makes a very important split explicit.
+## What tasks share and what they own
 
-### Shared across VM instances
+Every task runs in its own VM instance, but the memory is one.
 
-- IPI
-- OPI
-- work and retain address space
-- loaded code segment
+| Shared by all tasks | Private to each VM instance |
+| --- | --- |
+| IPI and OPI | The program counter, stack pointer and base pointer |
+| The WORK and RETAIN address space | The call depth, flags and error state |
+| The loaded code | The breakpoint table, the evaluation stack and the call stack |
 
-### Private per VM instance
-
-- program counter (`pc`)
-- stack pointer (`sp`)
-- base pointer (`bp`)
-- call depth
-- flags and error state
-- breakpoint table
-- evaluation stack
-- call stack
-
-That is the architectural reason multitask scheduling can share process data without pretending every task has the same execution context.
-
-## System registers inside IPI
-
-`zplc_isa.h` reserves the last 16 bytes of IPI for system information, including:
-
-- cycle time
-- system uptime
-- current task id
-- runtime flags such as first-scan and scheduler-running state
-
-That means user memory and runtime metadata are not mixed arbitrarily.
+That split is why several tasks can exchange data through global variables without sharing an execution context. The stack depth (`ZPLC_STACK_MAX_DEPTH`, 256), the call depth (`ZPLC_CALL_STACK_MAX`, 32) and the breakpoint table (`ZPLC_MAX_BREAKPOINTS`, 16) are bounded, so a program cannot grow them.
 
 ## Start of a program
 
-A program load is a cold start on every runtime (RT-016). IPI, OPI, WORK and RETAIN are set to zero and the force
-table is emptied before the new program is published, so a program never starts on the variables of the one it
-replaced; a runtime that holds a stored `RETAIN` record restores it after that. `zplc_core_cold_start()` is that
-operation, and `zplc_core_warm_start()` is the same without touching `RETAIN`, for a restart that keeps the retained
-values. The code region and the tags are the program and are not touched by either.
+A program load is a cold start on every runtime (RT-016). IPI, OPI, WORK and RETAIN are set to zero and the force table is emptied before the new program is published, so a program never starts on the variables of the one it replaced. A runtime that holds a stored `RETAIN` record restores it afterwards. `zplc_core_cold_start()` is that operation, and `zplc_core_warm_start()` is the same without touching RETAIN, for a restart that keeps the retained values. Neither touches the code region or the tags, which are the program.
 
 ## Access from outside the scan (RT-010, RT-011)
 
-While scans run, the scan is the only writer of the process image. A thread outside it (the Modbus server and
-clients, MQTT, the shell debug commands) goes through the exchange (`zplc_exchange.h`):
+While scans run, the scan is the only writer of the process image. A thread outside it, such as the Modbus server and clients, MQTT or the shell debug commands, goes through the exchange (`zplc_exchange.h`):
 
-- a read comes from the snapshot of IPI, OPI, WORK and RETAIN that the scan publishes at its commit. A value is whole
-  and from one scan, and a read never waits for a scan;
-- a write is queued whole and applied by the scan at the input latch of its next scan, through the force-aware
-  interface of the core: a forced variable keeps its forced value whatever a client writes. While no scan runs
-  (stopped, paused or faulted) there is no latch to wait for and the write is applied at once;
-- a write that does not fit the queue (`CONFIG_ZPLC_EXCHANGE_QUEUE_BYTES`, 1024 bytes by default) is refused whole
-  and the caller sees an error; a Modbus TCP client gets exception 6 (server device busy) and may retry;
-- a write to a Modbus tag of two registers sets the half that the register is, so two clients that write the two
-  halves never overwrite each other with a stale value of the other half.
+- **Reads** come from the snapshot of IPI, OPI, WORK and RETAIN that the scan publishes at its commit. A value is whole and from one scan, and a read never waits for a scan.
+- **Writes** are queued whole and applied by the scan at the input latch of its next scan, through the force-aware interface of the core: a forced variable keeps its forced value whatever a client writes. While no scan runs (stopped, paused or faulted) there is no latch to wait for, and the write is applied at once.
+- **A write that does not fit** the queue (`CONFIG_ZPLC_EXCHANGE_QUEUE_BYTES`, 1024 bytes by default) is refused whole and the caller sees an error. A Modbus TCP client gets exception 6 (server device busy) and may retry.
+- **A Modbus tag of two registers** is written one half at a time, so two clients that write the two halves never overwrite each other with a stale value of the other half.
 
-The snapshot is a copy of the four regions, so it costs their total size in RAM (20 KB with the default sizes).
+The snapshot is a copy of the four regions, so it costs their total size in RAM: 20 KB with the default sizes.
 
 ## How the compiler places variables
 
-The compiler gives the whole project one layout in WORK memory, and the debug map lists it: each variable, with its address and size, in the POU of the file that declares it. The order is the globals, the variables of each function, the variables of the methods, the variables of each program in the order of the tasks, the string literals, and the work buffers of the string functions; the last byte of the region of the target profile is the initialization flag. The memory a program can use is what the target profile has, shared by every program of the project, and a project that does not fit is a build error that states the bytes required, the bytes available and the largest consumers. Variables located with `AT %M` are at `0x2000` plus their offset, and a variable that the compiler places on top of one is a build error.
+The compiler gives the whole project one layout in WORK, and the debug map lists it: each variable with its address and size, under the POU of the file that declares it. The order is the globals, the variables of each function, the variables of the methods, the variables of each program in the order of the tasks, the string literals and the work buffers of the string functions. The last byte of the region of the target profile is the initialization flag.
 
-## Bounded memory expectations
+The memory a program can use is what the target profile has, shared by every program of the project. A project that does not fit is a build error that states the bytes required, the bytes available and the largest consumers. Variables located with `AT %M` sit at `0x2000` plus their offset, and a variable that the compiler would place on top of one is a build error.
 
-The public headers also expose bounded limits such as:
+## Where the sizes are set
 
-- `ZPLC_STACK_MAX_DEPTH`
-- `ZPLC_CALL_STACK_MAX`
-- `ZPLC_MAX_BREAKPOINTS`
-- configurable work, retain, and code sizes through `CONFIG_*` overrides
-
-On Zephyr the sizes are set with Kconfig options. These are the defaults from `firmware/zephyr/Kconfig`; a board's `prj.conf` can override them:
+On Zephyr the sizes of the retentive, work and code regions are Kconfig options. These are the defaults from `firmware/zephyr/Kconfig`, and the `prj.conf` of a board can override them:
 
 ```kconfig
 CONFIG_ZPLC_WORK_MEMORY_SIZE=8192
 CONFIG_ZPLC_RETAIN_MEMORY_SIZE=4096
 CONFIG_ZPLC_CODE_SIZE_MAX=45056
 ```
+
+Some boards set smaller values because they have less RAM. The board manifest `firmware/app/boards/boards.json` repeats the numbers, and a build fails when the two differ. See the [Kconfig reference](../reference/kconfig.md) for every symbol with its range, and [persistence](./persistence.md) for how the RETAIN region is saved.
