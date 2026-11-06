@@ -1,3 +1,12 @@
+---
+slug: /reference
+id: index
+title: Reference
+sidebar_label: Reference
+description: 'Look a fact up: the languages, the functions and function blocks, the project and scenario files, the command line, the runtime and the boards.'
+tags: [reference]
+---
+
 # Reference
 
 Look a fact up here: a name, a field, a code, a pin. Most pages are generated from the source they describe, and each says which source, so they cannot drift from it. To learn how to do something, start from the [guides](../guides/simulate-and-debug.md) or from [Learn](../learn/index.md) instead.

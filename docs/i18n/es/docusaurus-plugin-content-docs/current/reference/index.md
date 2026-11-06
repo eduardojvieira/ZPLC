@@ -1,3 +1,12 @@
+---
+slug: /reference
+id: index
+title: Referencia
+sidebar_label: Referencia
+description: 'Consulte un dato: los lenguajes, las funciones y los bloques de función, los archivos de proyecto y de escenario, la línea de comandos, el runtime y las placas.'
+tags: [reference]
+---
+
 # Referencia
 
 Consulte aquí un dato: un nombre, un campo, un código, un pin. La mayoría de las páginas se generan a partir de la fuente que describen, y cada una indica cuál es, de modo que no pueden desviarse de ella. Para aprender a hacer algo, empiece por las [guías](../guides/simulate-and-debug.md) o por [Aprender](../learn/index.md).
