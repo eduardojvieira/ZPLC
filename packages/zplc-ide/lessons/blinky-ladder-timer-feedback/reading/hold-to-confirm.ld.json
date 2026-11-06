@@ -1,0 +1,160 @@
+{
+  "name": "HoldToConfirm",
+  "description": "A lamp that lights only after the button has been held for two seconds.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "HoldButton",
+        "type": "BOOL",
+        "comment": "Push button: TRUE while pressed"
+      },
+      {
+        "name": "HoldTimer",
+        "type": "TON",
+        "comment": "On-delay timer of the hold"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "ConfirmLamp",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Lit once the hold time has passed"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "The timer counts while the button is held. Releasing the button resets it.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "e0_0_1",
+              "type": "contact_no",
+              "variable": "HoldButton",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_7_1",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "HoldTimer",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#2s"
+              },
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "Q becomes TRUE when the preset time has elapsed.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "e0_0_2",
+              "type": "contact_no",
+              "variable": "HoldTimer.Q",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_7_2",
+              "type": "coil",
+              "variable": "ConfirmLamp",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-05",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

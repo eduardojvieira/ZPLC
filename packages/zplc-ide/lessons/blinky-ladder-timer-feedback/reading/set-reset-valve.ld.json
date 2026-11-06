@@ -1,0 +1,155 @@
+{
+  "name": "ValveLatch",
+  "description": "A valve that opens with one button and closes with another.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "OpenButton",
+        "type": "BOOL",
+        "comment": "Push button: TRUE while pressed"
+      },
+      {
+        "name": "CloseButton",
+        "type": "BOOL",
+        "comment": "Push button: TRUE while pressed"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Valve",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Valve command"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "A press of Open sets the valve; it stays open when the button is released.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "e0_0_1",
+              "type": "contact_no",
+              "variable": "OpenButton",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_7_1",
+              "type": "coil_set",
+              "variable": "Valve",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "A press of Close resets the valve. It is the last rung, so it wins if both buttons are pressed.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "e0_0_2",
+              "type": "contact_no",
+              "variable": "CloseButton",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_7_2",
+              "type": "coil_reset",
+              "variable": "Valve",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-05",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
