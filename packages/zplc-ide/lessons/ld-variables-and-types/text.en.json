@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Variables, types and addresses in Ladder: memory bits, TIME values and the I/O map",
+  "summary": "Keep a request in a memory bit, store a duration in a TIME variable, and see which variables are wired to the machine through the I/O map.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the wiring, the electrical levels or the timing of real inputs and outputs, HIL, or certification.",
+  "objectives": [
+    "Tell a memory bit from a variable that is wired to a physical input or output through its address.",
+    "Choose the type that fits a value (BOOL, INT, REAL, TIME) and set the value of a TIME variable."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/StartupWarning.ld.json a request is kept in the memory bit Requested. After a start, WarningLamp must turn on at once and Motor must turn on only after the warning period kept in the TIME variable WarnTime. Stop turns both off.",
+      "checkpoint": "WarnTime holds the warning period and Motor is driven by WarnTimer.Q."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Start is pressed at {{t:10}} ms and released at {{t:20}} ms. Stop is pressed at {{t:130}} ms. The warning period is T#50ms. Predict WarningLamp and Motor at {{t:40}}, {{t:100}} and {{t:130}} ms.",
+      "checkpoint": "{{v:StartupWarning.WarningLamp=true,StartupWarning.Motor=false@40|Lamp ON and Motor OFF}} at {{t:40}} ms; {{v:StartupWarning.WarningLamp=true,StartupWarning.Motor=true@100|both ON}} at {{t:100}} ms; {{v:StartupWarning.WarningLamp=false,StartupWarning.Motor=false@130|both OFF}} at {{t:130}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter keeps WarnTime at T#500ms and has no coil for Motor: Motor is OFF at {{t:100}} ms instead of ON; give WarnTime the value T#50ms in the variable table and connect Motor to WarnTimer.Q. In the Ladder editor, open the variable table of the program to change the value of WarnTime, and add a rung with a contact on WarnTimer.Q and a coil on Motor.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named StartupWarning and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:40}} and {{t:100}} ms: WarningLamp follows the memory bit at once, while Motor waits for the timer. Open the Live I/O table in the Watch tab: Requested is not in it, because it has no address.",
+      "checkpoint": "WarningLamp rises at {{t:10}} ms; Motor rises later, inside the warning period, and both fall at {{t:130}} ms."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Give the memory bit Requested an output address such as %QX0.2 and run again. What changes in the Live I/O table, and why does the scenario still pass?",
+      "checkpoint": "The variable is now part of the output image and appears in the I/O map, but the logic did not change, so the scenario still passes. A memory bit is a choice of where the value lives, not of what the program does."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "The timer reads its length from a variable of type TIME. What is that variable set to, and which output still has no rung?"
+    },
+    {
+      "level": 2,
+      "text": "Change the value of WarnTime to T#50ms. Then add a rung with a normally open contact on WarnTimer.Q and a coil on Motor."
+    }
+  ],
+  "faultCases": [
+    "The starter keeps WarnTime at T#500ms and has no coil for Motor: Motor is OFF at {{t:100}} ms instead of ON; give WarnTime the value T#50ms in the variable table and connect Motor to WarnTimer.Q."
+  ]
+}

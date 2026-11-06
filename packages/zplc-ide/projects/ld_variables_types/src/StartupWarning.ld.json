@@ -1,0 +1,359 @@
+{
+  "name": "StartupWarning",
+  "description": "Warn first, then start the motor after a delay kept in a TIME variable.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Requested",
+        "type": "BOOL",
+        "comment": "Memory bit: the machine was asked to start. It has no address, so no terminal sees it"
+      },
+      {
+        "name": "WarnTimer",
+        "type": "TON",
+        "comment": "On-delay timer for the warning period"
+      },
+      {
+        "name": "WarnTime",
+        "type": "TIME",
+        "initialValue": "T#50ms",
+        "comment": "Length of the warning period"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "StartButton",
+        "type": "BOOL",
+        "address": "%IX0.0",
+        "comment": "Start pushbutton, normally open: TRUE while pressed"
+      },
+      {
+        "name": "StopButton",
+        "type": "BOOL",
+        "address": "%IX0.1",
+        "comment": "Stop pushbutton, normally open: TRUE while pressed"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "WarningLamp",
+        "type": "BOOL",
+        "address": "%QX0.0",
+        "comment": "Warning lamp: ON from the request until the machine stops"
+      },
+      {
+        "name": "Motor",
+        "type": "BOOL",
+        "address": "%QX0.1",
+        "comment": "Motor contactor command: ON once the warning period has passed"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Seal-in on the memory bit Requested: Start sets it, Stop breaks it.",
+      "branches": [
+        {
+          "id": "branch_1",
+          "startCol": 1,
+          "endCol": 4,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "nc_StopButton_00",
+              "type": "contact_nc",
+              "variable": "StopButton",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "no_StartButton_01",
+              "type": "contact_no",
+              "variable": "StartButton",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_Requested_07",
+              "type": "coil",
+              "variable": "Requested",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": {
+              "id": "no_Requested_11",
+              "type": "contact_no",
+              "variable": "Requested",
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "The warning period runs while Requested is ON, and its length is the TIME variable WarnTime.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_Requested_00",
+              "type": "contact_no",
+              "variable": "Requested",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "fb_WarnTimer",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "WarnTimer",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "WarnTime"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "WarningLamp follows the memory bit.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_Requested_00",
+              "type": "contact_no",
+              "variable": "Requested",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_WarningLamp_07",
+              "type": "coil",
+              "variable": "WarningLamp",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_4",
+      "number": 4,
+      "comment": "Motor starts when the warning period is over.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_WarnTimer_Q_00",
+              "type": "contact_no",
+              "variable": "WarnTimer.Q",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_Motor_07",
+              "type": "coil",
+              "variable": "Motor",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-05",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
