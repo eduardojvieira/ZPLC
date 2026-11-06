@@ -102,7 +102,7 @@ Qué contiene el manifiesto y la regla que rechaza un valor erróneo:
 | `io.channels` | Una entrada por cada pin que un programa puede alcanzar, como máximo 64 | Cada canal tiene una dirección con el sentido y el ancho correctos, dos canales no comparten un bit, una salida tiene su valor seguro y un canal digital nombra su alias de devicetree, controlador y pin |
 | `io.unmapped` | Los terminales que existen y que ZPLC no usa, cada uno con un motivo | Una entrada tiene un terminal y un motivo |
 
-Ningún port admite una salida analógica, así que déjela fuera de la descripción. Las direcciones de los canales son las que un proyecto asigna con `AT %I0.0` ([Vincular variables a pines](./map-io.md)).
+Ningún port admite una salida analógica, así que déjela fuera de la descripción. Las direcciones de los canales son las que un proyecto asigna con `AT %I0.0` ([Asignar variables a pines](./map-io.md)).
 
 ## 3. Agregue la placa a la compilación cruzada
 
@@ -136,7 +136,7 @@ La placa compila, y el informe falla la primera vez porque la placa aún no tien
 python3 tools/firmware-test/fwtest.py size --budget tools/firmware-test/size-budget.json --logs "$ZPLC_FW_WS/out/size" --rebaseline
 ```
 
-Desde entonces, un cambio que haga crecer la imagen más allá del presupuesto hace fallar la compilación de esta placa. El presupuesto sale de una compilación en el anfitrión, no de hardware.
+Desde entonces, un cambio que haga crecer la imagen más allá del presupuesto hace fallar la compilación de esta placa. El presupuesto sale de una compilación en el host, no de hardware.
 
 ## 5. Regenere la referencia
 
@@ -152,8 +152,8 @@ La placa nueva aparece en `cross-build`. Agregue también su `ide_id` a la lista
 
 | Parte | Verificado | Nivel |
 | --- | --- | --- |
-| La entrada de manifiesto de arriba cumple cada regla del manifiesto y no repite el nombre de otra placa | `bun tools/docs/check-docs-config.ts` la pasa por el validador del manifiesto, con el manifiesto de este repositorio | Anfitrión |
-| El orden de los pasos y los comandos | Leídos de los archivos de compilación del firmware, la herramienta de tamaño y el validador de este repositorio | Anfitrión |
+| La entrada de manifiesto de arriba cumple cada regla del manifiesto y no repite el nombre de otra placa | `bun tools/docs/check-docs-config.ts` la pasa por el validador del manifiesto, con el manifiesto de este repositorio | Host |
+| El orden de los pasos y los comandos | Leídos de los archivos de compilación del firmware, la herramienta de tamaño y el validador de este repositorio | Host |
 | Un port real | No ejecutado: no se portó ninguna placa nueva al escribir esta página | Ninguno |
 | La placa ejecuta un programa | No verificado: necesita un registro de hardware | Ninguno |
 

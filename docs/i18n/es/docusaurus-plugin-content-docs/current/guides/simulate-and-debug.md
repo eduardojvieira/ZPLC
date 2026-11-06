@@ -21,10 +21,10 @@ ZPLC elige el simulador por usted.
 
 | Simulador | Cuándo | Qué es |
 | --- | --- | --- |
-| Runtime nativo | Es el predeterminado, siempre que pueda iniciar | Un programa aparte que la aplicación de escritorio supervisa. El ciclo de escaneo, la memoria retentiva y los bloques de comunicación siguen las reglas del firmware |
-| Respaldo WASM | Solo cuando el runtime nativo no puede iniciar (falta su binario o falló su saludo inicial) | El mismo código de sesión compilado a WebAssembly. Es degradado: la barra de estado dice **Runtime: WASM fallback · degraded** y enumera lo que falta |
+| Entorno de ejecución nativo | Es el predeterminado, siempre que pueda iniciar | Un programa aparte que la aplicación de escritorio supervisa. El ciclo de escaneo, la memoria retentiva y los bloques de comunicación siguen las reglas del firmware |
+| Respaldo WASM | Solo cuando el runtime nativo no puede iniciar (falta su binario o falló su protocolo de enlace inicial) | El mismo código de sesión compilado a WebAssembly. Es degradado: la barra de estado dice **Runtime: WASM fallback · degraded** y enumera lo que falta |
 
-El respaldo conserva la pausa, la reanudación, el avance por ciclo y los puntos de parada, pero no tiene bloques de red, ni puerto serie, ni pines, y su tiempo sigue la ventana de la aplicación. Los detalles y la evidencia están en [Runtime de software](../runtime/browser-runtime.md). Una copia de ZPLC compilada desde el código fuente necesita que el runtime nativo se compile una vez con `bun run build:runtime`.
+El respaldo conserva la pausa, la reanudación, el avance por ciclo y los puntos de parada, pero no tiene bloques de red, ni puerto serie, ni pines, y su tiempo sigue la ventana de la aplicación. Los detalles y la evidencia están en [Entorno de ejecución de software](../runtime/browser-runtime.md). Una copia de ZPLC compilada desde el código fuente necesita que el entorno de ejecución nativo se compile una vez con `bun run build:runtime`.
 
 ## 1. Compilar y ejecutar
 
@@ -69,7 +69,7 @@ Un punto de parada también puede estar en una línea de lista de instrucciones,
 | Pausar (F6) | Se conserva | Se conservan | Se detiene entre ciclos |
 | Avanzar un ciclo (F10) | Se conserva, y muestra el ciclo ejecutado | Se conservan | Ejecuta un ciclo completo, o termina el que estaba detenido en un punto de parada |
 | Reanudar (F5) | Se conserva | Se conservan | Un ciclo detenido en un punto de parada continúa desde allí |
-| Detener (Shift+F5) | Se pone en cero | Se borran | Cada tarea vuelve a su punto de entrada |
+| Detener (Mayús+F5) | Se pone en cero | Se borran | Cada tarea vuelve a su punto de entrada |
 | Reiniciar (F8) | Un reinicio en frío: valores iniciales | Se borran | Empieza de nuevo desde el primer ciclo |
 
 La tabla completa y las pruebas que la respaldan están en [Pausa, reanudación, paso y parada](../runtime/scheduler.md#pausa-reanudación-paso-y-parada). En una placa, pausar, avanzar y detener también llevan las salidas físicas a su estado seguro.
@@ -84,11 +84,11 @@ Una ejecución manual muestra un solo camino. Una [prueba de escenario](./scenar
 | --- | --- | --- |
 | Un punto de parada se enlaza y detiene el ciclo, y Reanudar termina el ciclo interrumpido | Recorridos 7 y 16 en la aplicación real, y las suites del planificador | Host y `native_sim` |
 | Un forzado fijado en un punto de parada lo ve el resto del ciclo | Recorrido 18 en la aplicación real | Host |
-| Pausar, avanzar y detener conservan y borran lo que dice la tabla | Las suites de Zephyr en `native_sim` y QEMU | Objetivo emulado |
+| Pausar, avanzar y detener conservan y borran lo que dice la tabla | Las suites de Zephyr en `native_sim` y QEMU | Destino emulado |
 | Las mismas detenciones en una placa | Sin probar | Ninguno |
 
 ## Vea también
 
-- [Banco de trabajo de ZPLC](../ide/features.md#límite-de-la-depuración): qué muestran las observaciones, las trazas y los forzados.
+- [Entorno de trabajo de ZPLC](../ide/features.md#límite-de-la-depuración): qué muestran las observaciones, las trazas y los forzados.
 - [El shell de ZPLC](../operations/shell.md): los comandos de depuración de un dispositivo.
 - [Seguridad y limitaciones](../safety-and-limitations.md).

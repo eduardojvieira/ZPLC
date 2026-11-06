@@ -4,7 +4,7 @@ id: migration-v1-to-v2
 title: Migrar un proyecto v1 a v2
 sidebar_label: Migrar v1 a v2
 description: Previsualice, revise y guarde explícitamente un proyecto ZPLC v2 respaldado por una carpeta.
-tags: [ide, migracion]
+tags: [ide, migration]
 ---
 
 # Migrar un proyecto v1 a v2
@@ -44,13 +44,13 @@ Haga una copia de seguridad de la carpeta o confírmela en el control de version
 
 ## Qué está verificado
 
-La puerta de migración cubre los proyectos dorados de la versión 1 del repositorio: su forma guardada de la versión 2 debe compilarse y conservar el comportamiento observable probado en el entorno de ejecución nativo. No es una afirmación de equivalencia en un destino, en el comportamiento eléctrico, en el tiempo ni en ejecuciones con hardware en el lazo.
+La comprobación de migración cubre los proyectos de referencia de la versión 1 del repositorio: su forma guardada de la versión 2 debe compilarse y conservar el comportamiento observable probado en el entorno de ejecución nativo. No es una afirmación de equivalencia en un destino, en el comportamiento eléctrico, en el tiempo ni en ejecuciones con hardware en el lazo.
 
 | Parte | Verificada con | Nivel |
 | --- | --- | --- |
 | `migrate-preview` no escribe nada, y `migrate` escribe solo el archivo indicado en `--output` y deja la carpeta idéntica byte a byte | Pruebas unitarias de la línea de comandos, y ambos comandos ejecutados sobre una copia del proyecto incluido `motor_start_stop` sin su `schemaVersion` | Host |
 | La aplicación muestra la diferencia antes de escribir, y la aplica con **Aplicar migración** | Recorrido 31 en la aplicación real | Host |
-| La forma guardada de la versión 2 conserva lo que hace el proyecto | Una prueba exporta la migración del proyecto de arranque y paro de motor y comprueba que su escenario dorado da el mismo observable en el entorno de ejecución nativo | Host |
+| La forma guardada de la versión 2 conserva lo que hace el proyecto | Una prueba exporta la migración del proyecto de arranque y paro de motor y comprueba que su escenario de referencia da el mismo resultado observable en el entorno de ejecución nativo | Host |
 | El proyecto migrado se comporta igual en una placa | No se afirma: no hay equivalencia de destino, eléctrica ni de tiempo | Ninguno |
 
 ## Paso siguiente

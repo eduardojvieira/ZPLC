@@ -3,7 +3,7 @@ slug: /ide/ai-privacy
 id: ai-privacy
 title: IA, privacidad y revisión humana
 sidebar_label: IA y privacidad
-description: Qué envía ZPLC a un proveedor con opt-in, qué redacta y qué no puede automatizar.
+description: Qué envía ZPLC a un proveedor que usted activó, qué oculta y qué no puede automatizar.
 tags: [ide, ia, privacidad]
 ---
 
@@ -13,7 +13,7 @@ La IA es opcional en ZPLC. Puede explicar, planificar y proponer un cambio, y pu
 
 ## Camino rápido
 
-1. Seleccione un proveedor y acepte el opt-in antes de enviar una solicitud.
+1. Seleccione un proveedor y actívelo antes de enviar una solicitud.
 2. Lea la vista previa del contexto. Nombra el programa y el resumen del proyecto que se enviarán. Quite todo lo que no quiera enviar.
 3. Revise el cambio propuesto archivo por archivo, con el resultado de compilación y de escenarios de la ejecución aislada.
 4. Pulse **Guardar cambio revisado** solo para un cambio que acepte.
@@ -55,7 +55,7 @@ En el modo Editar una propuesta es un conjunto de cambios de como máximo cuatro
 
 - Un archivo de escalera, FBD o SFC tiene que cargarse como lo cargan los editores. Si no, la respuesta se muestra como no válida, con hasta cinco infracciones, y no se revisa nada. Un archivo que carga se reescribe en la forma estable propia de los editores.
 - `zplc.json` se reescribe como lo escribe ZPLC. Se rechaza un cambio que fije un valor en un campo sensible, y también un archivo nuevo cuyo nombre la compilación lea como un programa existente.
-- El conjunto completo se compila y se ejecuta con los escenarios del proyecto sobre una copia de trabajo del proyecto guardado, en la simulación del host. El proyecto en disco no se toca con esta ejecución.
+- El conjunto completo se compila y se ejecuta con los escenarios del proyecto sobre una copia del proyecto guardado, en la simulación del host. El proyecto en disco no se toca con esta ejecución.
 
 La pestaña Cambios muestra entonces una diferencia por archivo, marcada como modificada o nueva. El botón **Guardar cambio revisado** aparece solo cuando la ejecución aislada pasó. Un programa nuevo necesita su propia tarea en el cambio de `zplc.json` del mismo conjunto, porque una tarea ejecuta exactamente un programa. Se le dice así al asistente, pero un programa sin tarea sigue permitido.
 
@@ -87,7 +87,7 @@ Una respuesta que contenga alguno de ellos se muestra como no confiable y no ofr
 
 ## Límite importante
 
-El rechazo de patrones conocidos es una salvaguarda, no una garantía. Un literal secreto arbitrario que no coincida con un patrón conocido aún puede enviarse al proveedor seleccionado. No introduzca credenciales, claves privadas, direcciones de producción ni registros sensibles sin procesar. Revise las condiciones del proveedor y la política de su organización antes de aceptar el opt-in.
+El rechazo de patrones conocidos es una salvaguarda, no una garantía. Un literal secreto arbitrario que no coincida con un patrón conocido aún puede enviarse al proveedor seleccionado. No introduzca credenciales, claves privadas, direcciones de producción ni registros sensibles sin procesar. Revise las condiciones del proveedor y la política de su organización antes de activar un proveedor.
 
 ## Límite físico
 
@@ -112,7 +112,7 @@ Un candidato útil incluye sus diagnósticos, el resultado de compilación, el r
 | La solicitud lleva el programa abierto de cada uno de los cinco lenguajes en todos los modos y un resumen del proyecto sin campos de credenciales, y ninguno de los ajustes ni de la configuración del proveedor | `packages/zplc-ide/electron/aiProvider.test.ts` y `electron/security.test.ts` | Host |
 | Un conjunto de cambios tiene como máximo cuatro archivos, crea, reemplaza y cambia `zplc.json`, y rechaza una credencial, un choque de nombres, un modo incorrecto y una respuesta con un campo de más | `electron/aiProvider.test.ts`, `electron/security.test.ts`, `src/cli/changeSet.test.ts` | Host |
 | Los archivos de escalera, FBD y SFC se validan y normalizan, y el manifiesto se escribe como lo escribe ZPLC | `src/ai/changeSetPrepare.test.ts`, `src/components/agent/agentResponse.test.ts` | Host |
-| El conjunto de cambios se compila y se prueba con escenarios sobre una copia de trabajo, y la base no se escribe | `src/cli/changeSet.test.ts` en el runtime POSIX nativo | Host |
+| El conjunto de cambios se compila y se prueba con escenarios sobre una copia, y la base no se escribe | `src/cli/changeSet.test.ts` en el entorno de ejecución POSIX nativo | Host |
 | La revisión muestra cada archivo, nada se escribe ni se carga en el editor antes de Guardar, y Guardar escribe los programas nuevos, los reemplazados y el manifiesto en ese orden y se detiene en la primera falla | `src/components/agent/changeSetReview.test.ts`, `src/components/ConsoleChangesTrace.dom.test.tsx` | Host |
 | Un clic guarda el cambio revisado por una persona en la aplicación en ejecución, y ZPLC funciona sin el asistente | Recorrido 43 de `bun run smoke:journeys` | Host |
 | Las propiedades de seguridad de la aplicación en ejecución se cumplen | Recorrido 38 de `bun run smoke:journeys` | Host |

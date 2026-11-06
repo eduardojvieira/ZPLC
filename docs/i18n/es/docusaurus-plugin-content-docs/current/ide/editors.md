@@ -1,6 +1,6 @@
 # Editores de texto y visuales
 
-ZPLC edita los cinco lenguajes en un solo entorno de trabajo. El texto estructurado y la lista de instrucciones son texto. La escalera, el diagrama de bloques de función y el diagrama funcional secuencial son modelos visuales, y cada uno conserva su propio modelo. Esta página cubre lo que los editores comparten: el servicio de lenguaje, las paletas, el teclado, deshacer, los diagnósticos, los breakpoints y los valores en línea. Para aprender a escribir en un lenguaje, use su guía: [texto estructurado](../languages/st.md), [lista de instrucciones](../languages/il.md), [diagrama de escalera](../languages/ld.md), [diagrama de bloques de función](../languages/fbd.md) o [diagrama funcional secuencial](../languages/sfc.md).
+ZPLC edita los cinco lenguajes en un solo entorno de trabajo. El texto estructurado y la lista de instrucciones son texto. La escalera, el diagrama de bloques de función y el diagrama funcional secuencial son modelos visuales, y cada uno conserva su propio modelo. Esta página cubre lo que los editores comparten: el servicio de lenguaje, las paletas, el teclado, deshacer, los diagnósticos, los puntos de parada y los valores en línea. Para aprender a escribir en un lenguaje, use su guía: [texto estructurado](../languages/st.md), [lista de instrucciones](../languages/il.md), [diagrama de escalera](../languages/ld.md), [diagrama de bloques de función](../languages/fbd.md) o [diagrama funcional secuencial](../languages/sfc.md).
 
 | Lenguaje | Editor | Límite |
 | --- | --- | --- |
@@ -12,9 +12,9 @@ ZPLC edita los cinco lenguajes en un solo entorno de trabajo. El texto estructur
 
 Los modelos visuales se validan y se traducen antes de la compilación canónica ([Flujo del compilador](./compiler.md)). Un backend compartido no da a todos los lenguajes las mismas funciones ni la misma depuración, así que compile y ejecute el proyecto para saber qué obtiene.
 
-## El servicio de lenguaje de Structured Text
+## El servicio de lenguaje del texto estructurado
 
-El editor de Structured Text lee todo el proyecto, no solo el archivo que tiene delante (LNG-015, LNG-016).
+El editor de texto estructurado lee todo el proyecto, no solo el archivo que tiene delante (LNG-015, LNG-016).
 
 | Función | Qué hace |
 | --- | --- |
@@ -63,12 +63,12 @@ Cada acción de edición de los editores de escalera, de diagrama de bloques de 
 - **El cursor.** En la escalera es una celda de un peldaño, dibujada como un marco azul; un clic en una celda lo coloca allí. En los editores de bloques de función y de diagramas de pasos es el bloque o el elemento seleccionado, y `Alt` con una flecha lo mueve al más cercano en esa dirección. Las flechas sin `Alt` desplazan el bloque seleccionado en el lienzo.
 - **Insertar.** Una letra inserta los elementos comunes en el cursor: `C` un contacto, `N` un contacto invertido y `O` una bobina en la escalera, `T` una transición y `S` un paso en un diagrama de pasos. `Insert` o `I` abre la paleta como una lista de búsqueda: escriba para buscar, Arriba y Abajo eligen, Enter inserta. A la caja de herramientas se llega con Tab, sus elementos son botones que insertan en el cursor, y tiene un cuadro de búsqueda. Arrastrar un elemento sigue funcionando e inserta mediante el mismo comando que la tecla.
 - **Asociar.** `F2` pide la variable del elemento que está bajo el cursor, de la lista de símbolos que declara el archivo. A un contacto se le ofrecen las variables `BOOL` y las salidas `BOOL` de los bloques declarados (`Delay.Q`); a una bobina, las variables `BOOL` que no son entradas; a la instancia de un bloque de función, las variables de su tipo; a la condición de una transición, las variables `BOOL`. Donde una lista lo permite, se puede escribir un nombre no declarado y se ofrece tal como se escribió.
-- **Conectar.** `C` sobre un bloque lista los cables que puede tener, cada uno desde una salida hasta una entrada que lo acepta; se aplican las reglas de tipos de los pines, y no se ofrece una entrada que ya tiene un cable. `Mayús+C` lista los cables del bloque y quita el elegido. En un diagrama de pasos, `T` inserta una transición debajo del paso seleccionado y `S` un paso debajo de la transición seleccionada, cada uno conectado al que sigue.
+- **Conectar.** `C` sobre un bloque lista los cables que puede tener, cada uno desde una salida hasta una entrada que lo acepta; se aplican las reglas de tipos de los pines, y no se ofrece una entrada que ya tiene un cable. `Mayús+C` lista los cables del bloque y quita el elegido. En un diagrama de pasos, `T` inserta una transición debajo del paso seleccionado y `S` un paso debajo de la transición seleccionada, cada uno conectado al que lo precede.
 - **Eliminar.** `Supr` quita el elemento que está bajo el cursor en la escalera, y los bloques y cables seleccionados en un diagrama o un diagrama de pasos, junto con los cables que había en un bloque.
 
 Un comando que cambia el archivo es un paso del historial de deshacer, y lo que hizo cada comando, o por qué se rechazó, se escribe en una región viva cortés que lee un lector de pantalla. Un contacto o una bobina soltados desde la caja de herramientas quedan sin asociar y muestran `???` hasta que se asocian. Un bloque de función soltado o insertado recibe un nombre de instancia que ningún otro tiene, y la instancia se declara como variable local de su tipo. El panel de propiedades de la escalera se abre cuando se hace clic en un elemento o se pulsa Enter sobre él, y un doble clic sobre un bloque de un diagrama de bloques de función pregunta qué contiene, como hace `F2`.
 
-Nivel de evidencia: host, y la aplicación real en el host de desarrollo. Las pruebas `packages/zplc-ide/src/editors/ld/keyboard.test.ts`, `packages/zplc-ide/src/editors/fbd/keyboard.test.ts` y `packages/zplc-ide/src/editors/sfc/keyboard.test.ts` pulsan teclas sobre un modelo y comprueban el documento, el cursor, las listas que se ofrecen y que la compilación lee lo que se escribió, y los recorridos 28f, 28g y 28h de `bun run test:journeys` arman un peldaño, editan un diagrama y editan un diagrama de pasos con eventos de teclado reales. No cubierto: un lector de pantalla real (la región viva está probada, no su voz), y una forma de teclado de colocar un bloque en una coordenada exacta.
+Nivel de evidencia: host, y la aplicación real en el host de desarrollo. Las pruebas `packages/zplc-ide/src/editors/ld/keyboard.test.ts`, `packages/zplc-ide/src/editors/fbd/keyboard.test.ts` y `packages/zplc-ide/src/editors/sfc/keyboard.test.ts` pulsan teclas sobre un modelo y comprueban el documento, el cursor, las listas que se ofrecen y que la compilación lee lo que se escribió, y los recorridos 28f, 28g y 28h de `bun run test:journeys` arman un peldaño, editan un diagrama y editan un diagrama de pasos con eventos de teclado reales. No cubierto: un lector de pantalla real (la región viva está probada, no su voz), y una forma de colocar con el teclado un bloque en una coordenada exacta.
 
 ## Deshacer, rehacer y selección
 
@@ -109,9 +109,9 @@ La línea y la columna de un diagnóstico de un diagrama siguen siendo las del t
 
 Nivel de evidencia: host. `packages/zplc-ide/src/editors/diagnosticElement.test.ts` cubre la elección entre el elemento transportado y el archivo abierto, y el recorrido 25 de `bun run test:journeys` devuelve el cable al disco tras una compilación fallida y aun así obtiene el bloque que nombró la compilación.
 
-## Breakpoints en un diagrama
+## Puntos de parada en un diagrama
 
-Un breakpoint se puede poner en el elemento del diagrama o en la línea IL que usted editó (LNG-004). El mapa de depuración relaciona cada rango de instrucciones con ese elemento, y el entorno de ejecución se detiene en la primera instrucción de él. Como el punto de una línea de un archivo de texto, se puede poner antes de cargar el programa y se arma cuando Ejecutar o Desplegar lo cargan.
+Un punto de parada se puede poner en el elemento del diagrama o en la línea IL que usted editó (LNG-004). El mapa de depuración relaciona cada rango de instrucciones con ese elemento, y el entorno de ejecución se detiene en la primera instrucción de él. Como el punto de una línea de un archivo de texto, se puede poner antes de cargar el programa y se arma cuando el programa se carga con Ejecutar o con Cargar.
 
 | Lenguaje | Dónde | Cómo |
 | --- | --- | --- |
@@ -120,7 +120,7 @@ Un breakpoint se puede poner en el elemento del diagrama o en la línea IL que u
 | FBD | El bloque: la primera instrucción que genera. Una constante o una lectura de variable no la tienen. | `F9` sobre el bloque seleccionado. |
 | SFC | Un paso se detiene donde entra una transición; una transición se detiene donde se dispara. Un paso en el que no entra ninguna transición no tiene dónde detenerse. | `F9` sobre el paso o la transición seleccionados. |
 
-Un breakpoint se guarda en el elemento, no en una línea generada, así que sigue a su peldaño, bloque o paso cuando el diagrama cambia y se vuelve a compilar. Uno cuyo elemento se eliminó se olvida, y uno en un elemento sin instrucción se rechaza una vez cargado un programa. El elemento donde está el programa detenido se perfila en amarillo. Los contadores de programa son los que toman el entorno de ejecución de la simulación y el de una placa; aquí no se ha comprobado la detención en una placa.
+Un punto de parada se guarda en el elemento, no en una línea generada, así que sigue a su peldaño, bloque o paso cuando el diagrama cambia y se vuelve a compilar. Uno cuyo elemento se eliminó se olvida, y uno en un elemento sin instrucción se rechaza una vez cargado un programa. El elemento donde está el programa detenido se perfila en amarillo. Los contadores de programa son los que toman el entorno de ejecución de la simulación y el de una placa; aquí no se ha comprobado la detención en una placa.
 
 ## Valores en línea desde el mapa de depuración
 
@@ -172,9 +172,9 @@ Nivel de evidencia: host. `packages/zplc-ide/src/editors/signalVocabulary.test.t
 
 Los tres editores visuales y el editor de código siguen los temas claro, oscuro y de alto contraste, el modo de colores forzados del sistema y el ajuste de movimiento reducido. Se dibujan solo con los tokens del tema, y un nodo, una arista, un botón de la caja de herramientas y el campo que edita un nombre muestran el mismo anillo de foco que cualquier otro control: dos píxeles en los temas claro y oscuro, tres en alto contraste, y el color de resalte del sistema en el modo de colores forzados. Con el movimiento reducido, cada transición se acorta, la cámara de un diagrama no se anima y un cable no se anima nunca.
 
-El minimapa del editor de código está desactivado hasta que usted lo activa en Configuración, Preferencias, "Mostrar el minimapa en el editor de código", y la elección se conserva para su usuario. Mientras depura, el estado está en la barra de estado bajo la barra de herramientas, como "Depuración: en pausa en la línea N" o "Depuración: conectado, sin pausa", y no se dibuja nada sobre el código. Los breakpoints permanecen en el margen.
+El minimapa del editor de código está desactivado hasta que usted lo activa en Configuración, Preferencias, "Mostrar el minimapa en el editor de código", y la elección se conserva para su usuario. Mientras depura, el estado está en la barra de estado bajo la barra de herramientas, como "Depuración: en pausa en la línea N" o "Depuración: conectado, sin pausa", y no se dibuja nada sobre el código. Los puntos de parada permanecen en el margen.
 
-Nivel de evidencia: host, en la aplicación real. El recorrido 46 abre un archivo de escalera, uno de FBD, uno de SFC y uno de Structured Text, cambia el tema y lee los colores calculados frente a los tokens de ese tema. Emula colores forzados y movimiento reducido, y da el foco a un nodo con el teclado para leer el contorno calculado. No se compara ninguna captura de pantalla.
+Nivel de evidencia: host, en la aplicación real. El recorrido 46 abre un archivo de escalera, uno de FBD, uno de SFC y uno de texto estructurado, cambia el tema y lee los colores calculados frente a los tokens de ese tema. Emula colores forzados y movimiento reducido, y da el foco a un nodo con el teclado para leer el contorno calculado. No se compara ninguna captura de pantalla.
 
 ## Edición con IA
 

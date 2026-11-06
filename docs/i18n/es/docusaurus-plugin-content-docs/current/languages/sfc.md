@@ -7,7 +7,7 @@ tags: [languages, sfc]
 
 Esta guía muestra cómo crear un diagrama funcional secuencial (SFC) en el editor de ZPLC: cómo se combinan pasos, transiciones y acciones, qué hace cada calificador de acción, cómo recorre el diagrama un ciclo y qué diagramas rechaza la compilación. La lista completa de elementos, con la prueba de cada uno, está en la [referencia generada del diagrama funcional secuencial](../reference/language-sfc.md).
 
-Un archivo SFC es un modelo de pasos, transiciones y acciones, no texto. La compilación lo valida y lo traduce a texto estructurado, que es solo una salida de lectura; después el compilador lo trata como cualquier otro programa ([Flujo del compilador](../ide/compiler.md)).
+Un archivo SFC es un modelo de pasos, transiciones y acciones, no texto. La compilación lo valida y lo traduce a texto estructurado, que es una salida de solo lectura; después el compilador lo trata como cualquier otro programa ([Flujo del compilador](../ide/compiler.md)).
 
 ## Armar un diagrama
 
@@ -67,10 +67,10 @@ Un diagrama de más de 14 pasos se compila y se ejecuta en el entorno de ejecuci
 | Una condición de transición vacía | La compilación la rechaza. | Escriba una expresión `BOOL`; `TRUE` se dispara siempre. |
 | Una transición que no referencia un paso conocido | La compilación la rechaza y nombra la transición. | Vuelva a conectarla a pasos existentes. |
 | Un cuerpo de acción en un lenguaje distinto de texto estructurado | Solo se admiten acciones en texto estructurado. | Escriba el cuerpo en texto estructurado. |
-| Un paso en el que no entra ninguna transición | No tiene dónde detenerse un breakpoint. | Ponga el breakpoint en un paso en el que entre una transición. |
+| Un paso en el que no entra ninguna transición | Un punto de parada no tiene dónde detenerse. | Ponga el punto de parada en un paso en el que entre una transición. |
 
 ## Verlo en ejecución
 
-Mientras un programa se ejecuta en la simulación, el editor muestra qué pasos están activos y durante cuánto tiempo, y de cada transición si su condición se cumple y si se disparó en este ciclo. Un breakpoint en un paso se detiene donde entra una transición, y un breakpoint en una transición se detiene donde se dispara; `F9` lo alterna en el elemento seleccionado. Un estado que el mapa de depuración no da se muestra como no disponible, nunca como inactivo. Vea [Editores de texto y visuales](../ide/editors.md) para los detalles.
+Mientras un programa se ejecuta en la simulación, el editor muestra qué pasos están activos y durante cuánto tiempo, y de cada transición si su condición se cumple y si se disparó en este ciclo. Un punto de parada en un paso detiene la ejecución donde entra una transición, y uno en una transición, donde se dispara; `F9` lo alterna en el elemento seleccionado. Un estado que el mapa de depuración no da se muestra como no disponible, nunca como inactivo. Vea [Editores de texto y visuales](../ide/editors.md) para los detalles.
 
 Nivel de evidencia: host. Los casos de conformidad de la referencia ejecutan pasos, calificadores, ramas y un diagrama de más de 14 pasos en el entorno de ejecución nativo, y `packages/zplc-ide/src/transpiler/transpiler.test.ts` cubre la traducción y sus rechazos. No se usó ninguna placa.

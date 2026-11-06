@@ -1,11 +1,11 @@
-# Despliegue y sesiones de runtime
+# Despliegue y sesiones del entorno de ejecución
 
 Use esta página para poner un programa en un dispositivo con seguridad y para leer lo que la aplicación de ZPLC le dice del dispositivo al que está conectada. Compilar el firmware, grabarlo, desplegar un programa y ejecutar o depurar son cuatro operaciones distintas. Una persona inicia cada una. Ningún asistente ni herramienta MCP inicia ninguna.
 
 ## El camino corto
 
 1. Compile, pruebe y simule el programa que piensa desplegar.
-2. Elija el perfil de placa exacto y conecte el runtime que le corresponde.
+2. Elija el perfil de placa exacto y conecte el entorno de ejecución que le corresponde.
 3. Abra el diálogo de despliegue y lea la comparación: placa, firmware, ABI, hash del programa, tamaño y número de tareas.
 4. Confirme el despliegue usted mismo. El PLC queda detenido después, así que revise su estado antes de pulsar Ejecutar.
 
@@ -15,8 +15,8 @@ Use esta página para poner un programa en un dispositivo con seguridad y para l
 | --------------------------- | ----------------------------------------------------------------- | -------------------------------------------------- |
 | Compilar el firmware        | Produce las imágenes de firmware de Zephyr.                       | Una persona.                                       |
 | Grabar el firmware          | Escribe el firmware y la cadena de arranque en un dispositivo.    | Una persona, con el procedimiento del perfil.      |
-| Desplegar el programa PLC   | Envía un artefacto `.zplc` verificado a un runtime compatible.    | Una persona, que confirma con los datos del artefacto. |
-| Ejecutar / depurar          | Observa el dispositivo o cambia su estado de operación.           | Una persona, con el procedimiento del sitio.       |
+| Desplegar el programa PLC   | Envía un artefacto `.zplc` verificado a un entorno de ejecución compatible.    | Una persona, que confirma con los datos del artefacto. |
+| Ejecutar / depurar          | Observa el dispositivo o cambia su estado de operación.           | Una persona, con el procedimiento de la instalación. |
 
 ## A qué está conectado ZPLC
 
@@ -26,7 +26,7 @@ La barra de estado bajo la barra de herramientas siempre dice a qué está conec
 | ----------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | Sin conexión                        | Enchufe, gris         | Nada se está ejecutando.                                                                                                                     |
 | Simulación · runtime nativo         | Monitor, azul         | El programa se ejecuta en el simulador nativo de este computador.                                                                            |
-| Simulación · runtime de software    | Globo, azul           | El programa se ejecuta en el runtime de software (WebAssembly), que es limitado. La barra lista lo que le falta.                              |
+| Simulación · runtime de software    | Globo, azul           | El programa se ejecuta en el entorno de ejecución de software (WebAssembly), que es degradado. La barra lista lo que le falta.                              |
 | Conectando con el hardware          | Indicador de carga, ámbar | ZPLC está abriendo el enlace con un dispositivo.                                                                                         |
 | Hardware real · placa · enlace      | Chip, ámbar           | ZPLC está conectado a un dispositivo real. La placa es la que el dispositivo informó, y el enlace es el enlace enmarcado o la consola de texto anterior. |
 | Falla del hardware · placa          | Triángulo de aviso, rojo | El dispositivo conectado informa una falla.                                                                                               |
@@ -50,9 +50,9 @@ El diálogo compara el proyecto con el dispositivo, fila por fila:
 
 Cada fila tiene un veredicto en palabras y un icono: Coincide, No coincide, Sin informar o No se compara. Una fila que no coincide se resalta, y una frase bajo la tabla dice qué está mal y qué hacer. Un dispositivo que no coincide no se puede confirmar. El diálogo se llama entonces "Carga bloqueada", no se envía nada y su único botón es Cerrar.
 
-El diálogo también declara qué hacen las salidas. El firmware mantiene cada salida en su valor seguro mientras el programa anterior se detiene, se escribe el nuevo y el PLC permanece detenido. El valor seguro es apagado, salvo que el proyecto declare otro valor para esa salida, que el diálogo entonces lista. Las pruebas en el anfitrión y en el simulador comprueban esto. ZPLC no mide los pines de una placa, y solo un registro de hardware en el lazo (HIL) lo hace.
+El diálogo también declara qué hacen las salidas. El firmware mantiene cada salida en su valor seguro mientras el programa anterior se detiene, se escribe el nuevo y el PLC permanece detenido. El valor seguro es apagado, salvo que el proyecto declare otro valor para esa salida, que el diálogo entonces lista. Las pruebas en el host y en el simulador comprueban esto. ZPLC no mide los pines de una placa, y solo un registro de hardware en el lazo (HIL) lo hace.
 
-El botón de acción se nombra por su efecto: **Detener PLC y cargar** cuando el PLC está en ejecución o en pausa, y **Cargar** cuando está detenido. El foco empieza en Cancelar, así que Intro o Espacio no confirma por accidente, y Escape cancela. Ejecutar es una acción aparte después del despliegue.
+El botón de acción se nombra por su efecto: **Detener PLC y cargar** cuando el PLC está en ejecución o en pausa, y **Cargar** cuando está detenido. El foco empieza en Cancelar, así que Intro o Espacio no confirman por accidente, y Escape cancela. Ejecutar es una acción aparte después del despliegue.
 
 ## Diálogos de alerta
 
@@ -65,10 +65,10 @@ Ejecutar, pausar y avanzar un paso no se confirman, porque son una acción expl�
 
 ## Límite de la evidencia
 
-El adaptador nativo POSIX es una simulación en el anfitrión. Una conexión serie y un perfil de placa de compilación cruzada no lo convierten en evidencia de hardware en el lazo. Hoy los perfiles catalogados tienen cero referencias de evidencia HIL. Use el procedimiento exacto de Zephyr de la placa y registre una ejecución HIL antes de afirmar un comportamiento en el destino. Vea [Compatibilidad de hardware](../reference/capabilities-evidence.md) y [Seguridad y limitaciones](../safety-and-limitations.md).
+El adaptador nativo POSIX es una simulación en el host. Una conexión serie y un perfil de placa de compilación cruzada no lo convierten en evidencia de hardware en el lazo. Hoy los perfiles catalogados tienen cero referencias de evidencia HIL. Use el procedimiento exacto de Zephyr de la placa y registre una ejecución HIL antes de afirmar un comportamiento en el destino. Vea [Compatibilidad de hardware](../reference/capabilities-evidence.md) y [Seguridad y limitaciones](../safety-and-limitations.md).
 
 Aún no hay registro de una compilación del firmware de ZPLC en macOS ni en Windows.
 
 ## Cuando falla una conexión o un despliegue
 
-No reintente a ciegas. Revise de nuevo el perfil de placa seleccionado y la ABI del runtime, y siga [Límites de recuperación](../operations/recovery.md). Un despliegue de programa no es una recuperación de firmware y no reemplaza el procedimiento del programador de la placa.
+No reintente a ciegas. Revise de nuevo el perfil de placa seleccionado y la ABI del entorno de ejecución, y siga [Límites de recuperación](../operations/recovery.md). Un despliegue de programa no es una recuperación de firmware y no reemplaza el procedimiento del runner de la placa.

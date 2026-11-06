@@ -3,7 +3,7 @@ slug: /guides/scenario-tests
 id: scenario-tests
 title: Escribir y ejecutar pruebas de escenario
 sidebar_label: Pruebas de escenario
-description: 'Compruebe lo que hace un programa con un escenario guionizado: escriba el archivo, ejecútelo en ZPLC o desde la línea de comandos, y lea el resultado.'
+description: 'Compruebe lo que hace un programa con un escenario con guion: escriba el archivo, ejecútelo en ZPLC o desde la línea de comandos, y lea el resultado.'
 tags: [how-to, tests, scenarios, simulation]
 ---
 
@@ -17,7 +17,7 @@ Un escenario ejecuta su programa en el simulador nativo con un reloj virtual. Es
 
 ## 1. El programa
 
-Tome un enclavamiento de arranque y paro. `Run` se activa cuando se pulsa `Start`, sigue activa al soltar `Start` y se desactiva cuando se pulsa `Stop`.
+Tome un circuito de autorretención de arranque y paro. `Run` se activa cuando se pulsa `Start`, sigue activa al soltar `Start` y se desactiva cuando se pulsa `Stop`.
 
 ```st runnable expect="Run=FALSE" scans=5 scan_ms=10
 PROGRAM Pump
@@ -71,7 +71,7 @@ La comprobación de la documentación ejecuta este escenario contra el programa 
 
 ![La pestaña Tests después de Run host scenarios (interfaz en inglés)](/img/screens/guide-scenario-tests.png)
 
-**Desde una terminal**, con la línea de comandos del proyecto (compile el runtime una vez con `bun run setup`):
+**Desde una terminal**, con la línea de comandos del proyecto (compile el entorno de ejecución una vez con `bun run setup`):
 
 ```bash
 bun run simulate path/to/your/project
@@ -83,14 +83,14 @@ Ejecuta sin interfaz todos los escenarios del proyecto, imprime `test passed` o 
 
 - **Declare lo que nunca debe ocurrir** con `NEVER`. Para dos salidas que no deben estar activas a la vez, afírmelo. La pestaña **Enclavamientos** de ZPLC enumera cada par que usted declaró en `safety.incompatibleOutputs` como cubierto o no, a partir de sus expectativas `NEVER`.
 - **Compruebe un flanco** con `RISING` y `FALLING` cuando importa más el instante que el nivel.
-- **Use un modelo de planta** (`motor-v1`, `conveyor-v1`, `tank-v1`, `pedestrian-v1`) cuando el programa necesita la respuesta del proceso. El modelo maneja las entradas del programa a partir de sus salidas, y exige `tickMs` 10.
+- **Use un modelo de planta** (`motor-v1`, `conveyor-v1`, `tank-v1`, `pedestrian-v1`) cuando el programa necesita la respuesta del proceso. El modelo genera las entradas del programa a partir de sus salidas, y exige `tickMs` 10.
 - **Mantenga los escenarios cortos.** Un escenario tiene como máximo 256 eventos y 256 expectativas, y los archivos de un proyecto están acotados. Los límites están en la referencia.
 
 ## Qué está verificado y qué no
 
 | Parte | Verificado | Nivel |
 | --- | --- | --- |
-| El escenario de arriba pasa contra el programa de arriba, y la comprobación falla cuando una expectativa no se cumple | La comprobación de la documentación lo ejecuta en el runtime nativo | Host |
+| El escenario de arriba pasa contra el programa de arriba, y la comprobación falla cuando una expectativa no se cumple | La comprobación de la documentación lo ejecuta en el entorno de ejecución nativo | Host |
 | El lector de escenarios rechaza un archivo mal formado y aplica sus límites | Pruebas unitarias del motor de pruebas | Host |
 | El tiempo de ciclo real de una placa, una entrada física, una validación de seguridad | Sin probar | Ninguno |
 
@@ -100,4 +100,4 @@ Un escenario que pasa significa que la lógica hizo lo que usted escribió en el
 
 - [Formato del archivo de escenario](../reference/scenario-file.md): cada campo, tipo de expectativa y límite.
 - [Blink sin hardware](../tutorials/blink-without-hardware.md): la misma prueba en un primer proyecto.
-- [Aprender](../learn/index.md): lecciones calificadas con un escenario.
+- [Aprender](../learn/index.md): lecciones evaluadas con un escenario.
