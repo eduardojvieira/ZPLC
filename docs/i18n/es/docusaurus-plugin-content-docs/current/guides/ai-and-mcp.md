@@ -63,7 +63,7 @@ La mayoría de los clientes que ejecutan un servidor MCP local reciben un comand
 
 ### La revisión del protocolo
 
-El servidor habla una sola revisión del protocolo, la 2026-07-28, y ninguna anterior. Su punto de entrada inicia el transporte con `legacy: 'reject'`, donde el SDK que usa serviría por defecto el saludo inicial de 2025. El repositorio no registra el motivo de esa elección, así que tómela como el estado actual del servidor y no como una promesa. Un cliente no tiene paso `initialize`: nombra la revisión y sus capacidades en el `_meta` de cada solicitud.
+El servidor habla una sola revisión del protocolo, la 2026-07-28, y ninguna anterior. Su punto de entrada inicia el transporte con `legacy: 'reject'`, donde el SDK que usa serviría por defecto el protocolo de enlace inicial de 2025. El repositorio no registra el motivo de esa elección, así que tómela como el estado actual del servidor y no como una promesa. Un cliente no tiene paso `initialize`: nombra la revisión y sus capacidades en el `_meta` de cada solicitud.
 
 ```json
 {
@@ -79,7 +79,7 @@ El servidor habla una sola revisión del protocolo, la 2026-07-28, y ninguna ant
 }
 ```
 
-Un cliente que abre con `initialize` de una revisión anterior recibe esta respuesta. La conexión sigue abierta para una solicitud de la revisión soportada.
+Un cliente que abre con `initialize` de una revisión anterior recibe esta respuesta. La conexión sigue abierta para una solicitud de la revisión admitida.
 
 ```json
 {
@@ -103,8 +103,8 @@ Pida lo que devuelve una herramienta, para que cada afirmación del asistente te
 | --- | --- | --- |
 | "¿Es válido este archivo de proyecto?" | `project_validate` | `ok` y los diagnósticos |
 | "¿Compila, y qué necesita?" | `compiler_check`, `symbols_list` | El tamaño del programa, los diagnósticos, los símbolos públicos |
-| "¿Pasan sus escenarios?" | `tests_run`, `scenario_run` | Un resultado por escenario, con el resumen criptográfico de su traza |
-| "¿Qué pasó en el ciclo 40?" | `trace_get`, `runtime_snapshot` | Una traza acotada y depurada de una ejecución registrada |
+| "¿Pasan sus escenarios?" | `tests_run`, `scenario_run` | Un resultado por escenario, con el hash de su traza |
+| "¿Qué pasó en el ciclo 40?" | `trace_get`, `runtime_snapshot` | Una traza acotada y saneada de una ejecución registrada |
 | "Muéstreme el programa" | `zplc://project/programs`, `zplc://project/source/{name}` | La lista de los programas de `src` con su lenguaje, y el texto y el lenguaje de uno de ellos |
 | "¿Qué placas están descritas?" | `boards_list` | Las placas del manifiesto y su nivel, sin sondear hardware |
 | "¿Qué lecciones están aprobadas?" | `zplc://course/progress` | Las lecciones aprobadas, cuántas están hechas y cuántas existen |
@@ -128,8 +128,8 @@ La IA dentro de ZPLC lee el programa abierto y un resumen del proyecto, y propon
 
 | Parte | Verificado | Nivel |
 | --- | --- | --- |
-| El servidor enumera 15 herramientas al pedírselo; `project_validate`, `compiler_check` y `tests_run` pasan en un proyecto incluido; `boards_list` responde con `--repository`; un `initialize` de la revisión 2025-06-18 y una solicitud sin revisión se rechazan con `-32022`, y una sin `clientCapabilities` con `-32602` | Ejecutado a mano con un script que envía las solicitudes por la entrada y la salida estándar, mediante `bun run --cwd=packages/zplc-ide mcp`, en el proyecto incluido `pico_blinky_ton`; la CI no lo repite | Host |
-| El ejecutable compilado inicia y enumera sus herramientas como lo pide un cliente 2026-07-28 | La compilación de la versión publicada inicia el ejecutable y cuenta las herramientas | Host |
+| El servidor enumera 15 herramientas al pedírselo; `project_validate`, `compiler_check` y `tests_run` pasan en un proyecto incluido; `boards_list` responde con `--repository`; un `initialize` de la revisión 2025-06-18 y una solicitud sin revisión se rechazan con `-32022`, y una sin `clientCapabilities` con `-32602` | Ejecutado a mano con un script que envía las solicitudes por la entrada y la salida estándar, mediante `bun run --cwd=packages/zplc-ide mcp`, en el proyecto incluido `pico_blinky_ton`; la integración continua no lo repite | Host |
+| El ejecutable compilado inicia y enumera sus herramientas como lo pide un cliente 2026-07-28 | La compilación de publicación inicia el ejecutable y cuenta las herramientas | Host |
 | Ninguna herramienta llega a un dispositivo, un socket o un puerto serie | Una prueba enumera las herramientas y recursos registrados del servidor activo y atrapa cada punto de entrada de sockets y de puerto serie | Host |
 | Los dos recursos de programas devuelven el texto y el lenguaje de cada uno de los cinco lenguajes, y rechazan un nombre que no es un programa de `src`, un enlace y un archivo demasiado grande; el servidor no tiene ninguna herramienta que escriba | `packages/zplc-ide/src/mcp/server.test.ts` y `deviceLink.test.ts` | Host |
 | El recurso del curso informa las lecciones aprobadas y no escribe nada | `packages/zplc-ide/src/mcp/server.test.ts` | Host |

@@ -30,7 +30,7 @@ zplc-cli test path/to/project
 | Windows dice **Windows protegió su PC**, o bloquea el archivo sin **Ejecutar de todas formas** | El instalador no está firmado. SmartScreen advierte, y Smart App Control bloquea toda aplicación sin firmar | [Primer inicio](../getting-started/install.md#primer-inicio) |
 | macOS dice que no puede verificar la aplicación, o que está dañada | La aplicación no tiene identidad de desarrollador y no está notarizada | [Primer inicio](../getting-started/install.md#macos) |
 | La suma de comprobación no coincide | La descarga está incompleta, o no es el archivo publicado | Descárguelo de nuevo. No abra nunca un archivo cuyo hash difiera |
-| ZPLC desde el código fuente dice que falta el simulador | El runtime nativo es un programa aparte | `bun run build:runtime`, y luego inicie ZPLC de nuevo |
+| ZPLC desde el código fuente dice que falta el simulador | El entorno de ejecución nativo es un programa aparte | `bun run build:runtime`, y luego inicie ZPLC de nuevo |
 
 ## Compilar
 
@@ -46,7 +46,7 @@ zplc-cli test path/to/project
 
 | Síntoma | Qué significa | Qué hacer |
 | --- | --- | --- |
-| **Conectar** falla en modo Simular | El runtime nativo no inició | Compílelo (`bun run build:runtime`) o fije `ZPLC_NATIVE_SIM_BIN`. Mientras tanto la barra de estado muestra el respaldo WASM degradado ([Simular y depurar](./simulate-and-debug.md#qué-simulador-se-ejecuta)) |
+| **Conectar** falla en modo Simular | El entorno de ejecución nativo no inició | Compílelo (`bun run build:runtime`) o fije `ZPLC_NATIVE_SIM_BIN`. Mientras tanto la barra de estado muestra el respaldo WASM degradado ([Simular y depurar](./simulate-and-debug.md#qué-simulador-se-ejecuta)) |
 | Un escenario falla con una aserción en un instante | El programa no hizo lo que el escenario espera en ese instante | Ejecute hasta ese ciclo con un punto de parada: [Simular y depurar](./simulate-and-debug.md) |
 | Un escenario se rechaza por inválido | Un instante no es múltiplo de `tickMs`, una señal no existe, o se excede un límite | [Formato del archivo de escenario](../reference/scenario-file.md) |
 | La pestaña Pruebas no ejecuta un escenario | Hay un forzado activo | Libere los forzados ([Forzar un valor](./force-values.md)) |
@@ -59,7 +59,7 @@ zplc-cli test path/to/project
 | --- | --- | --- |
 | El puerto serie se rechaza en Linux | Su usuario no está en el grupo serie | [Linux: acceso al puerto serie](../getting-started/install.md#linux-acceso-al-puerto-serie) |
 | La carga se rechaza nombrando una placa | El proyecto se compiló para otra placa distinta de la que informa el dispositivo | Seleccione la placa correcta, recompile y vuelva a grabar si el firmware no es el del proyecto |
-| La carga se rechaza con dos números de borrador | El programa y el runtime vienen de borradores distintos del contrato binario. El borrador actual es el 6. Un programa compilado antes se rechaza, y la aplicación ZPLC rechaza un dispositivo cuyo firmware informa uno más antiguo | Recompile el programa y vuelva a grabar la placa juntos ([Contador de borrador del contrato](../contributing/index.md#contador-de-borrador-del-contrato)). `tools/contract/restamp_artifacts.py` actualiza los artefactos confirmados en un repositorio |
+| La carga se rechaza con dos números de borrador | El programa y el entorno de ejecución vienen de borradores distintos del contrato binario. El borrador actual es el 6. Un programa compilado antes se rechaza, y la aplicación ZPLC rechaza un dispositivo cuyo firmware informa uno más antiguo | Recompile el programa y vuelva a grabar la placa juntos ([Contador de borrador del contrato](../contributing/index.md#contador-de-borrador-del-contrato)). `tools/contract/restamp_artifacts.py` actualiza los artefactos confirmados en un repositorio |
 | El dispositivo recibió una compilación anterior | La carga no llevó el programa actual | Compile y cargue de nuevo antes de **Ejecutar** |
 | Una placa no vuelve tras grabar | La recuperación del firmware es el procedimiento propio de la placa | [Límites de la recuperación](../operations/recovery.md) |
 
@@ -69,14 +69,14 @@ Un bloque de comunicación informa su resultado en `STATUS`. [El handshake](../r
 
 | Síntoma | Qué significa | Qué hacer |
 | --- | --- | --- |
-| `STATUS` 3 (sin manejador) | Este runtime no tiene manejador para el bloque. Un runtime nativo iniciado a mano, sin `ZPLC_NATIVE_COMM=1`, responde así a todos los bloques | Inicie el runtime desde ZPLC, que activa los bloques ([En simulación](../runtime/communication-function-blocks.md#en-simulación)) |
-| `STATUS` 10 (no disponible) | El servicio del bloque no está en este runtime, o está desactivado en la configuración. En simulación es la respuesta de una solicitud Modbus RTU, de todo bloque de nube y de un bloque MQTT sin broker. El respaldo WASM la da en todo bloque de red | Use una placa, o una configuración que active el servicio |
-| `STATUS` 2 (tiempo agotado) | El par no respondió, o la solicitud superó su límite: 8,8 s para Modbus con el tiempo de espera por defecto, 5 s para una publicación, 90 s para un aprovisionamiento | Compruebe el par y el enlace. Un resultado tardío se descarta |
-| `STATUS` 4 (sin conexión) | La sesión o el enlace no está conectado | Compruebe los ajustes con `zplc mqtt status` y `zplc net status` |
-| `STATUS` 5 (cola llena) | Todas las ranuras de solicitud están en uso | Espere las solicitudes en curso. Un `EN` ascendente mientras `BUSY` es TRUE no inicia nada |
+| `STATUS` 3 (sin manejador) | Este entorno de ejecución no tiene manejador para el bloque. Un entorno de ejecución nativo iniciado a mano, sin `ZPLC_NATIVE_COMM=1`, responde así a todos los bloques | Inicie el entorno de ejecución desde ZPLC, que activa los bloques ([En simulación](../runtime/communication-function-blocks.md#en-simulación)) |
+| `STATUS` 10 (no disponible) | El servicio del bloque no está en este entorno de ejecución, o está desactivado en la configuración. En simulación es la respuesta de una solicitud Modbus RTU, de todo bloque de nube y de un bloque MQTT sin broker. El respaldo WASM la da en todo bloque de red | Use una placa, o una configuración que active el servicio |
+| `STATUS` 2 (tiempo agotado) | El otro extremo no respondió, o la solicitud superó su límite: 8,8 s para Modbus con el tiempo límite por defecto, 5 s para una publicación, 90 s para un aprovisionamiento | Compruebe el otro extremo y el enlace. Un resultado tardío se descarta |
+| `STATUS` 4 (no conectado) | La sesión o el enlace no está conectado | Compruebe los ajustes con `zplc mqtt status` y `zplc net status` |
+| `STATUS` 5 (cola llena) | Todas las ranuras de solicitud están en uso | Espere las solicitudes en curso. Un flanco de subida de `EN` mientras `BUSY` es TRUE no inicia nada |
 | `DONE` o `ERROR` sigue en TRUE | El resultado se mantiene mientras `EN` siga en TRUE, y no se repite nada | Deje que `EN` baje durante un ciclo para solicitarlo de nuevo |
 | MQTT no hace nada en un dispositivo | MQTT está desactivado y no tiene broker hasta que un operador lo fije | [Valores por defecto seguros](../runtime/connectivity.md#valores-por-defecto-seguros) |
-| `zplc config set mqtt_security 1` se rechaza | Una imagen de versión no desactiva la verificación de certificados | Es por diseño. Solo lo acepta una imagen compilada con `CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS` |
+| `zplc config set mqtt_security 1` se rechaza | Una imagen de publicación no desactiva la verificación de certificados | Es por diseño. Solo lo acepta una imagen compilada con `CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS` |
 
 ## Qué está verificado y qué no
 

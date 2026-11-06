@@ -29,7 +29,7 @@ python3 -m zipfile -l my-project.zip
 
 ## Importar
 
-1. En la pantalla de bienvenida, elija **Importar un archivo de proyecto** y seleccione el archivo. Todavía no se escribe nada. Un diálogo dice qué contiene el archivo (sus archivos, carpetas y tamaño), de quién es el proyecto y, para un proyecto de versión 1, las líneas que cambia migrarlo en `zplc.json`.
+1. En la pantalla de bienvenida, elija **Importar un archivo de proyecto** y seleccione el archivo. Todavía no se escribe nada. Un diálogo dice qué contiene el archivo (sus archivos, carpetas y tamaño), de quién es el proyecto y, para un proyecto de versión 1, las líneas de `zplc.json` que cambiaría su migración.
 2. Elija **Elegir una carpeta e importar** y seleccione una carpeta vacía. ZPLC escribe allí los archivos byte por byte y abre el proyecto.
 
 ![El diálogo Import archive de ZPLC (interfaz en inglés)](/img/screens/guide-import-archive.png)
@@ -58,5 +58,5 @@ No se escribe nada de un archivo rechazado.
 
 ## Vea también
 
-- [Banco de trabajo de ZPLC](../ide/features.md#archivos-de-proyecto): la descripción completa.
+- [Entorno de trabajo de ZPLC](../ide/features.md#archivos-de-proyecto): la descripción completa.
 - [Migrar un proyecto de versión 1](../ide/migration-v1-to-v2.md): lo que muestra la importación para un proyecto antiguo.

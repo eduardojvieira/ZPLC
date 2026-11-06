@@ -12,7 +12,7 @@ tags: [how-to, debugging, force, simulation]
 Un forzado mantiene una variable en un valor que usted elige, sin importar lo que el programa le asigne. Úselo en el simulador para probar una rama de la lógica sin escribir un escenario, y para ver cómo reacciona el programa ante una entrada difícil de producir.
 
 :::danger Forzar es una acción humana
-En el simulador un forzado es inofensivo. En un controlador conectado a una planta, un forzado puede arrancar un motor. Lo necesita una persona con la autoridad para hacerlo y un procedimiento del sitio.
+En el simulador un forzado es inofensivo. En un controlador conectado a una planta, un forzado puede arrancar un motor. Requiere una persona con la autoridad para hacerlo y un procedimiento de la instalación.
 
 Los asistentes de IA y el servidor MCP nunca fuerzan un valor, ni en un simulador ni en un dispositivo (regla 7 de AGENTS.md). Un forzado siempre parte del clic de una persona o de su comando en la consola. Vea [IA, privacidad y revisión humana](../ide/ai-privacy.md).
 :::
@@ -37,7 +37,7 @@ El panel **E/S en vivo**, al comienzo de la pestaña Observación, enumera cada 
 | Un mensaje Modbus, MQTT o de nube escribe la variable | El valor forzado permanece |
 | Pausa, paso y reanudación | Se conservan |
 | Detención | Se borran, y la imagen de salida se pone en cero |
-| Una falla del runtime | Se borran, como con la detención |
+| Una falla del entorno de ejecución | Se borran, como con la detención |
 | Carga de un programa nuevo | Se borran: una carga es un arranque en frío |
 | Una prueba de escenario | Se rechaza mientras haya un forzado activo: libérelo antes |
 
@@ -58,7 +58,7 @@ zplc dbg force clear_all
 
 Un forzado siempre pertenece a una sesión (COM-020). Un forzado escrito en la consola abre la sesión del enlace de la consola, o se une a la que la aplicación ZPLC mantiene en él, y termina con esa sesión:
 
-- cuando la sesión se cierra o se toma;
+- cuando la sesión se cierra o la toma otro enlace;
 - tras el tiempo de inactividad (`CONFIG_ZPLC_PROTO_SESSION_IDLE_S`, 30 s por defecto; otro comando de forzado cuenta como actividad);
 - de inmediato cuando se pierde el enlace.
 
@@ -77,6 +77,6 @@ En una consola USB CDC ACM (la Raspberry Pi Pico), el dispositivo ve caer el enl
 
 ## Vea también
 
-- [Banco de trabajo de ZPLC](../ide/features.md#es-en-vivo): el panel de E/S en vivo y el límite de la depuración.
+- [Entorno de trabajo de ZPLC](../ide/features.md#es-en-vivo): el panel de E/S en vivo y el límite de la depuración.
 - [El shell de ZPLC](../operations/shell.md): todos los comandos de depuración.
 - [Seguridad y limitaciones](../safety-and-limitations.md).

@@ -12,12 +12,12 @@ tags: [how-to, io, boards, mapping]
 Un programa lee entradas y escribe salidas mediante direcciones de la imagen de proceso, como `%IX0.0` y `%QX0.0`. La placa decide a qué pin llega cada dirección. Esta página muestra cómo ubicar una variable en una dirección, cómo ver qué pin es, y qué hacen la compilación y la carga cuando la dirección es incorrecta.
 
 :::note Dónde está la verdad
-Cada placa tiene una descripción de E/S en `firmware/app/boards/boards.json`: sus canales, la dirección IEC y el pin de cada uno, sus notas eléctricas y el valor seguro de cada salida. ZPLC, la compilación, el firmware y la documentación leen ese único archivo, así que la tabla de pines de [Placas soportadas](../reference/boards.md) es el mismo dato que comprueba la compilación. Ningún pin se ha medido en un banco: vea [Compatibilidad de hardware](../reference/capabilities-evidence.md).
+Cada placa tiene una descripción de E/S en `firmware/app/boards/boards.json`: sus canales, la dirección IEC y el pin de cada uno, sus notas eléctricas y el valor seguro de cada salida. ZPLC, la compilación, el firmware y la documentación leen ese único archivo, así que la tabla de pines de [Placas compatibles](../reference/boards.md) es el mismo dato que comprueba la compilación. Ningún pin se ha medido en un banco de pruebas: vea [Compatibilidad de hardware](../reference/capabilities-evidence.md).
 :::
 
 ## 1. Encontrar los canales de su placa
 
-Abra [Placas soportadas](../reference/boards.md) y vaya a su placa. Cada fila es un canal:
+Abra [Placas compatibles](../reference/boards.md) y vaya a su placa. Cada fila es un canal:
 
 - su dirección (`%QX0.0` para una salida digital, `%IW4` para una entrada analógica);
 - el pin o el borne impreso en la placa;
@@ -94,7 +94,7 @@ La misma ubicación se registra en `zplc.json` bajo `io`. En ZPLC, abra **Config
 
 La comprobación de la documentación contrasta cada dirección de `inputs` y `outputs` de un fragmento con los canales de su placa, incorpora el fragmento a un proyecto y lo compila.
 
-Una dirección que ningún pin maneja no es un canal. Enumérela en `io.virtual` (en ZPLC: **Mantener como virtual (sin pin)**) cuando quiera un bit o una palabra de la imagen de proceso que solo lea una prueba o el depurador.
+Una dirección que ningún pin controla no es un canal. Enumérela en `io.virtual` (en ZPLC: **Mantener como virtual (sin pin)**) cuando quiera un bit o una palabra de la imagen de proceso que solo lea una prueba o el depurador.
 
 ## 5. Qué pasa cuando una dirección es incorrecta
 
@@ -112,12 +112,12 @@ Agregue el alias al overlay de devicetree de la placa y una entrada a su descrip
 | --- | --- | --- |
 | Las descripciones son coherentes con el devicetree de cada placa | La compilación del firmware falla si no | Compilación |
 | Una dirección sin asignar es un error en el editor, la compilación y la carga | Pruebas unitarias, y el recorrido 40 en la aplicación real | Host |
-| Un bit y una palabra en un mismo byte lo comparten, y el compilador no lo rechaza | El ejemplo de arriba se ejecuta en el runtime nativo; `zplc-cli check` acepta el programa | Host |
-| El escalado analógico de un canal, y la tabla de E/S del firmware | Pruebas en `native_sim` | Objetivo emulado |
-| Que un pin maneje la señal que dice la descripción, y el nivel de una salida | Sin probar | Ninguno |
+| Un bit y una palabra en un mismo byte lo comparten, y el compilador no lo rechaza | El ejemplo de arriba se ejecuta en el entorno de ejecución nativo; `zplc-cli check` acepta el programa | Host |
+| El escalado analógico de un canal, y la tabla de E/S del firmware | Pruebas en `native_sim` | Destino emulado |
+| Que un pin controle la señal que dice la descripción, y el nivel de una salida | Sin probar | Ninguno |
 
 ## Vea también
 
-- [Placas soportadas](../reference/boards.md): los canales, pines, valores seguros y huella de cada placa.
+- [Placas compatibles](../reference/boards.md): los canales, pines, valores seguros y huella de cada placa.
 - [Forzar un valor](./force-values.md) y [Escribir y ejecutar pruebas de escenario](./scenario-tests.md).
 - [Archivo de proyecto](../reference/project-file.md): cada campo de `io`.
