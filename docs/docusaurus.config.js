@@ -56,6 +56,25 @@ const config = {
       onBrokenMarkdownLinks: 'throw',
     },
   },
+  plugins: [
+    // The pages merged or retired in the 2.0 documentation rewrite keep their published address: each one redirects to the page that
+    // took over its content, in English and in Spanish (the plugin runs once per locale and adds the locale to both paths).
+    [
+      '@docusaurus/plugin-client-redirects',
+      {
+        redirects: [
+          { from: '/docs/languages/structured-text', to: '/docs/languages/st' },
+          { from: '/docs/languages/stdlib', to: '/docs/runtime/stdlib' },
+          { from: '/docs/runtime/hal', to: '/docs/runtime/hal-contract' },
+          { from: '/docs/runtime/intro', to: '/docs/runtime' },
+          { from: '/docs/ide/overview', to: '/docs/ide' },
+          { from: '/docs/reference/v1-5-canonical-docs-manifest', to: '/docs/reference/source-of-truth' },
+          { from: '/docs/languages/examples/v1-5-language-suite', to: '/docs/languages' },
+        ],
+      },
+    ],
+  ],
+
   themes: [
     '@docusaurus/theme-mermaid',
     // DOC-018: full-text search that runs in the browser from an index built with the site, in both languages, with no
