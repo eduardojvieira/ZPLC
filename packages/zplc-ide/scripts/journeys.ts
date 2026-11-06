@@ -8077,7 +8077,9 @@ export const JOURNEYS: Journey[] = [
         journeyLocale = 'es';
       }
       try {
-        await openFolder(app, project);
+        app.answer(project);
+        await app.click(button(ui('welcome.open.title'), 'contains'), 'the Open project button');
+        await app.until('the project workbench to appear', async () => (await app.visible(toolbar)) || undefined);
         await openDiagram(app, 'src/TankMonitor.ld.json', '[data-ld-function]');
         await app.eval(`document.querySelector('[data-ld-function]')?.scrollIntoView({ block: 'center', inline: 'center' })`);
         await docShot(app, `ld-function-box-${locale}`);
