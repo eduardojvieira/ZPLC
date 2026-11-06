@@ -5987,6 +5987,9 @@ export const JOURNEYS: Journey[] = [
           assert(existsSync(join(folder, ...file.split('/'))), `The copied example has no ${file}.`);
         }
 
+        await app.until('the editor to load the program', async () => (await editorText(app)).includes('PROGRAM Blinky') || undefined);
+        await shot('blink-copied');
+
         // Step 3: read the program.
         await openFile(app, 'src/main.st');
         assert(hasProgram(await editorText(app), 'Blinky'), 'The example does not open its program Blinky.');
@@ -5999,6 +6002,7 @@ export const JOURNEYS: Journey[] = [
 
         // Steps 5 and 6: connect to the simulator, run, and watch the output change.
         await connectAndRun(app);
+        await shot('blink-running');
         await watch(app, 'LED_Output');
         // The divider above the lower panel is dragged up so that the Watch table has room (the user's own choice).
         await app.click(css('#workspace-separator'), 'the divider above the lower panel');

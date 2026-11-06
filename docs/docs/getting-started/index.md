@@ -42,7 +42,7 @@ shows how the parts fit together.
 | **Learn PLC programming**, from nothing at all | [Install ZPLC](./install.md), then **Learn** on the Welcome screen: [Learn](../learn/index.md)                                                            | Take the course in the application: 68 lessons in English and Spanish, with a Ladder path that starts at zero  |
 
 Both paths use the same application and the same simulator, and you can switch at any time: a lesson workspace is an
-ordinary project, and an example project is an ordinary exercise.
+ordinary project you can open like any other, and an example project can be used as a practice exercise.
 
 ## Run your first program
 
@@ -65,7 +65,7 @@ electrical side of a board or its real timing, so a result in it is a host resul
 ## Take the course instead
 
 On the Welcome screen choose **Learn**. The course needs no folder, no network and no board. Each lesson of the Ladder
-path opens a full-screen reading page that explains one idea and lets you try it in a small simulation inside the
+path opens a reading page over the workbench that explains one idea and lets you try it in a small simulation inside the
 page; you then practise in the editor, and **Check** grades your program against a scenario. [Learn](../learn/index.md)
 describes the course, and [the release notes](../release-notes/index.md#learn-reading-mode-and-the-ladder-path) say
 what is new in 2.0.

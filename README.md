@@ -4,18 +4,19 @@
 
 **Open-source IEC 61131-3 PLC runtime and development environment on Zephyr RTOS.**
 
-ZPLC compiles Structured Text, Ladder Diagram, Function Block Diagram,
-Sequential Function Chart and Instruction List to one bytecode format. A small
-C99 runtime executes it: on microcontroller boards as a Zephyr module, and on
-your computer as a simulator. The ZPLC desktop application edits, compiles,
-tests and simulates projects.
+ZPLC is a desktop application and a small C99 runtime. You write a program in
+Structured Text, Instruction List, Ladder, Function Block Diagram or Sequential
+Function Chart, compile it to one bytecode format, and run it on your computer in a
+simulator or, in a cross-build, on a Zephyr board.
+
+- **Build a controller:** [Install ZPLC](docs/docs/getting-started/install.md), then follow [Blink without hardware](docs/docs/tutorials/blink-without-hardware.md).
+- **Learn PLC programming:** open **Learn** in the application: a course from zero, with a Ladder path.
 
 > **Status:** ZPLC 2.0 is for evaluation. Seven boards cross-build in CI and none
 > has been tested on hardware yet. It is not a safety PLC and must not be used
 > to control machinery: [Safety and limitations](docs/docs/safety-and-limitations.md).
 
 [Download ZPLC](https://github.com/eduardojvieira/ZPLC/releases) ·
-[Getting started](docs/docs/getting-started/index.md) ·
 [Documentation](https://eduardojvieira.github.io/ZPLC/) · MIT licence
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -42,7 +43,7 @@ the only channel that exists today. Check the file against `SHA256SUMS`, then op
 - Compile them to `.zplc` bytecode and run them in the simulator, with no hardware.
 - Test them with scenarios: scripted inputs and timed checks on outputs, run from the Tests tab.
 - Start from one of 81 example projects, such as a tank level controller, a conveyor, motor start/stop and a pedestrian crossing. They are in [`packages/zplc-ide/projects/`](packages/zplc-ide/projects/) and on the Welcome screen.
-- Learn PLC programming from zero with the built-in course: 68 lessons in English and Spanish, with a Ladder path whose lessons open on a reading page with a try-it lab.
+- Learn PLC programming from zero with the built-in course: 68 lessons in English and Spanish, with a Ladder path whose lessons open on a reading page over the workbench, with a try-it lab.
 - Build the runtime for seven Zephyr boards.
 
 ## What it runs on
@@ -161,7 +162,7 @@ a separate step that a person does with the board's own Zephyr procedure.
 │                             │ HAL Interface                 │
 │  ┌──────────────────────────▼───────────────────────────┐  │
 │  │ ┌──────────┐  ┌──────────┐  ┌────────────────────┐   │  │
-│  │ │  Zephyr  │  │  POSIX   │  │  WASM (browser)     │   │  │
+│  │ │  Zephyr  │  │  POSIX   │  │  WASM (fallback)    │   │  │
 │  │ │   HAL    │  │   HAL    │  │        HAL          │   │  │
 │  │ └──────────┘  └──────────┘  └────────────────────┘   │  │
 │  └──────────────────────────────────────────────────────┘  │

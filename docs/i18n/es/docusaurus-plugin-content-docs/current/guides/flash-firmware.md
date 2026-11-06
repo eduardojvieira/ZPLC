@@ -59,7 +59,7 @@ esptool --chip esp32s3 --port <serial port> write-flash 0x0 zplc-runtime-<versio
 
 Para una imagen compilada por usted, el archivo es `build/zephyr/zephyr.bin`. La versión 4 de esptool escribe el comando como `esptool.py ... write_flash`.
 
-4. Pulse RST para salir del modo de descarga e iniciar el programa que desplegó. Si la consola sigue en silencio, la placa aún está en modo de descarga: pulse RST otra vez.
+4. Pulse RST para salir del modo de descarga e iniciar el firmware que grabó. Si la consola sigue en silencio, la placa aún está en modo de descarga: pulse RST otra vez.
 
 ### El grabador en el navegador
 

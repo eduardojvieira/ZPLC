@@ -10,14 +10,7 @@ ZPLC and not for one who changes it:
   sentence each. No requirement identifiers, no file names unless the user types them.
 - `### Breaking changes`: what stops working or must be done differently. Say
   what, and what to do instead. `None.` when nothing breaks.
-- `
-- **There is no hosted browser build.** ZPLC is the desktop application only; the WebAssembly simulation fallback of the
-  application stays.
-- **A fault latches after 3 consecutive deadline misses instead of 1** on every runtime
-  (`CONFIG_ZPLC_DEADLINE_MISS_LIMIT`; set it to 1 for the earlier behavior).
-
-### Migration`: the steps to move from the previous release, in order.
-
+- `### Migration`: the steps to move from the previous release, in order.
 - `### Known limits`: what does not work or has not been verified in this release,
   at the evidence level it is known to hold at.
 - `### Details for contributors`: the engineering record, with the requirement
@@ -38,7 +31,7 @@ This section becomes the entry of 2.0.0 when the release is cut (`RELEASING.md`)
   and test result as a notification that opens its details, can cancel a long
   operation, and keeps the preferences you set. A project exports to one archive
   and imports back byte for byte.
-- **Learn teaches with reading pages and a lab.** A lesson that has a reading page opens it first, full screen: an
+- **Learn teaches with reading pages and a lab.** A lesson that has a reading page opens it first, over the workbench: an
   explanation, drawings of Ladder rungs and a try-it lab that you run inside the page. **Practice** opens the lesson beside
   the editor. The first path of the Learn home is the **Ladder path**, _Ladder diagram from zero_, a course for someone who
   has never programmed a PLC, and every lesson of it has a reading page.
@@ -111,6 +104,10 @@ This section becomes the entry of 2.0.0 when the release is cut (`RELEASING.md`)
 
 ### Breaking changes
 
+- **There is no hosted browser build.** ZPLC is the desktop application only; the WebAssembly simulation fallback of the
+  application stays.
+- **A fault latches after 3 consecutive deadline misses instead of 1** on every runtime
+  (`CONFIG_ZPLC_DEADLINE_MISS_LIMIT`; set it to 1 for the earlier behavior).
 - **Rebuild every program and reflash every board.** The binary contract has a draft
   counter (now 6), and a program or a firmware image of another draft is refused
   by the loader, the runtime, the firmware shell and the ZPLC application, with both numbers.
@@ -157,8 +154,8 @@ This section becomes the entry of 2.0.0 when the release is cut (`RELEASING.md`)
   broker or service, and no cloud block was verified against a service, an emulator or
   a recorded exchange. The handshake of the communication blocks and the separation of
   the four Modbus data areas are not final.
-- Retained values are proven on the host and the simulator only, and are off by default
-  on firmware.
+- Retained values are proven on the host, `native_sim` and the simulator only; every
+  shipped board profile turns persistence on, and no board has been measured.
 - TLS is off on the Nucleo-H743ZI and the Arduino Opta until their random generator is
   verified on the board, so MQTT runs over plain TCP there.
 - The browser runtime is degraded and was run on one engine: the module under Bun and in the
@@ -168,6 +165,9 @@ This section becomes the entry of 2.0.0 when the release is cut (`RELEASING.md`)
 - The installers are not signed with a paid identity: Windows asks you to confirm the
   first launch and macOS needs **Open Anyway**
   ([Install ZPLC](docs/docs/getting-started/install.md)).
+- The installers were not launched by a hosted run: the release workflow installs or
+  mounts and launches every installer format before it makes the draft, but no hosted
+  release run has executed them yet.
 - Timing is not measured on any board, and ZPLC is not a safety PLC
   ([Safety and limitations](docs/docs/safety-and-limitations.md)).
 

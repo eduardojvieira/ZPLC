@@ -131,8 +131,10 @@ const PAGE_DIRS = ['docs/docs', 'docs/i18n/es/docusaurus-plugin-content-docs/cur
 /** The pictures the journey takes, in the order of the steps. The journey and this list are checked against each other by a capture. */
 const ENGLISH_PICTURES = [
   { file: 'blink-1-welcome.png', step: 'The Welcome screen with the example list' },
+  { file: 'blink-copied.png', step: 'The example copied into the folder and opened' },
   { file: 'blink-2-program.png', step: 'The program open in the editor' },
   { file: 'blink-3-built.png', step: 'The build succeeded' },
+  { file: 'blink-running.png', step: 'The simulator connected and running' },
   { file: 'blink-4-output-true.png', step: 'The simulator runs and the output is TRUE' },
   { file: 'blink-5-output-false.png', step: 'The output is FALSE half a second later' },
   { file: 'blink-6-scenario.png', step: 'The scenario test passed' },
