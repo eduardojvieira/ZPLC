@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter fault, save it, then press Check: StopOK is drawn in series with StartPB inside the branch, so the seal-in contact on Motor goes around it and a Stop press cannot drop the motor. Before you edit, diagnose it. Run the starter in Simulation and open the Watch table. Add Motor, StartPB and StopOK. Press the start button, then the stop button, and see that Motor stays ON. Select rung 1 and press F9 to set a breakpoint, run again, and read the values at the stop. Force StopOK to FALSE from the Watch table and see that nothing changes. Open the Trace and find where Motor should have fallen. Then move StopOK out of the branch, after it, in series with the whole branch.",
+      "body": "Correct this starter fault, save it, then press Check: StopOK is drawn in series with StartPB inside the branch, so the seal-in contact on Motor goes around it: a Stop press at {{t:60}} ms leaves Motor ON at {{t:80}} ms. Move StopOK to the series part after the branch. Before you edit, diagnose it. Run the starter in Simulation and open the Watch table. Add Motor, StartPB and StopOK. Press the start button, then the stop button, and see that Motor stays ON. Select rung 1 and press F9 to set a breakpoint, run again, and read the values at the stop. Force StopOK to FALSE from the Watch table and see that nothing changes. Open the Trace and find where Motor should have fallen. Then move StopOK out of the branch, after it, in series with the whole branch.",
       "checkpoint": "The visible scenario must pass with saved host evidence, and the Watch table shows no active force."
     },
     {

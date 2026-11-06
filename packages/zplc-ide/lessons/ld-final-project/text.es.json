@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: el programa inicial tiene solo el peldaño de la cinta con Start, Stop y el paro de emergencia. Planifique primero: escriba las entradas y salidas en una tabla, luego los pasos y luego las pruebas. Después agregue el peldaño 1 con el contador (CU desde Part, R desde Reset, valor preestablecido 3) que gobierna BatchFull, el peldaño 2 con el temporizador sobre Part que activa Fault, el peldaño 3 con una bobina RESET sobre Fault bajo Reset y un contacto normalmente cerrado de Part, y un contacto normalmente cerrado de Fault y de BatchFull en el peldaño de la cinta.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial tiene solo el peldaño de la cinta, de modo que un lote lleno nunca detiene la cinta y un sensor bloqueado nunca activa Fault. Agregue el contador con Reset en su entrada R, el temporizador sobre Part que activa Fault, la bobina RESET a la que Reset llega solo cuando Part está libre, y un contacto normalmente cerrado de Fault y de BatchFull en el peldaño de la cinta. Planifique primero: escriba las entradas y salidas en una tabla, luego los pasos y luego las pruebas. Los peldaños son: el peldaño 1, el contador (CU desde Part, R desde Reset, valor preestablecido 3) que gobierna BatchFull; el peldaño 2, el temporizador sobre Part que activa Fault; el peldaño 3, la bobina RESET sobre Fault bajo Reset con un contacto normalmente cerrado de Part.",
       "checkpoint": "El escenario visible debe pasar con evidencia guardada del equipo anfitrión."
     },
     {

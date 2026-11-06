@@ -128,7 +128,8 @@ describe('the placement of lessons in the course', () => {
     tracks: ['simulation'],
     ...over,
   });
-  const placed = (...lessons: ReturnType<typeof lesson>[]) => validateCoursePlacement(course as unknown as CourseDefinition, lessons);
+  const placed = (...lessons: ReturnType<typeof lesson>[]) =>
+    validateCoursePlacement({ ...course, paths: [] } as unknown as CourseDefinition, lessons);
 
   it('accepts a lesson in a module of its own level whose tracks the module has', () => {
     expect(placed(lesson())).toEqual([]);

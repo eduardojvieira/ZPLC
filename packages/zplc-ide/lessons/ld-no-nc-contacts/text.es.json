@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija estas omisiones del programa inicial, guárdelo y pulse Comprobar: El programa inicial lee StopButton de forma equivocada en los dos peldaños, así que Motor nunca funciona y StopLamp está encendida a los {{t:0}} ms con el circuito de parada intacto. En el peldaño del motor use un contacto normalmente abierto de StopButton. En el peldaño de la lámpara use un contacto normalmente cerrado. En el editor de escalera, borre el contacto e inserte el otro tipo en la misma celda: C inserta un contacto normalmente abierto y N uno normalmente cerrado.",
+      "body": "Corrija estas omisiones del programa inicial, guárdelo y pulse Comprobar: El programa inicial lee StopButton de forma equivocada en los dos peldaños, así que Motor nunca funciona y StopLamp está encendida a los {{t:0}} ms con el circuito de parada intacto; use un contacto normalmente abierto en el peldaño del motor y uno normalmente cerrado en el de la lámpara. En el editor de escalera, borre el contacto e inserte el otro tipo en la misma celda: C inserta un contacto normalmente abierto y N uno normalmente cerrado.",
       "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
     },
     {

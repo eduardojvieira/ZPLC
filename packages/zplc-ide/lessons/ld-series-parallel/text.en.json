@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Fix this starter omission, save it, then press Check: The starter reads only DoorOpen in the horn rung, so Horn stays OFF at {{t:50}} ms although Overheat is TRUE. Add a normally open contact on Overheat in a second row, under the DoorOpen contact, and join the two rows so they are in parallel. In the Ladder editor, put the cursor on the DoorOpen contact and press B to start a parallel branch.",
+      "body": "Fix this starter omission, save it, then press Check: The starter reads only DoorOpen in the horn rung, so Horn stays OFF at {{t:50}} ms although Overheat is TRUE; add a normally open contact on Overheat in parallel with the DoorOpen contact. In the Ladder editor, put the cursor on the DoorOpen contact and press B to start a parallel branch.",
       "checkpoint": "The visible scenario must pass with saved host evidence."
     },
     {

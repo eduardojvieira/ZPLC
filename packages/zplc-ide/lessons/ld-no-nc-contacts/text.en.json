@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Fix these starter omissions, save them, then press Check: The starter reads StopButton in the wrong way in both rungs, so Motor never runs and StopLamp is lit at {{t:0}} ms with the stop circuit intact. In the motor rung use a normally open contact on StopButton. In the lamp rung use a normally closed contact. In the Ladder editor, delete the contact and insert the other kind in the same cell: C inserts a normally open contact and N a normally closed contact.",
+      "body": "Fix these starter omissions, save them, then press Check: The starter reads StopButton in the wrong way in both rungs, so Motor never runs and StopLamp is lit at {{t:0}} ms with the stop circuit intact; use a normally open contact in the motor rung and a normally closed contact in the lamp rung. In the Ladder editor, delete the contact and insert the other kind in the same cell: C inserts a normally open contact and N a normally closed contact.",
       "checkpoint": "The visible scenario must pass with saved host evidence."
     },
     {

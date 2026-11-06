@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial tiene la bobina Lamp pero nada que lea el botón, así que la energía siempre llega a la bobina y la lámpara está encendida a los {{t:0}} ms antes de que alguien pulse algo. Agregue un contacto normalmente abierto de StartButton a la izquierda de la bobina.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial tiene la bobina Lamp pero nada que lea el botón, así que la energía siempre llega a la bobina y la lámpara está encendida a los {{t:0}} ms antes de que alguien pulse algo; agregue un contacto normalmente abierto de StartButton a la izquierda de la bobina.",
       "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
     },
     {

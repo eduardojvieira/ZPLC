@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Fix this starter omission, save it, then press Check: The starter has the Lamp coil but nothing that reads the button, so power always reaches the coil and the lamp is lit at {{t:0}} ms before anyone presses anything. Add a normally open contact on StartButton to the left of the coil.",
+      "body": "Fix this starter omission, save it, then press Check: The starter has the Lamp coil but nothing that reads the button, so power always reaches the coil and the lamp is lit at {{t:0}} ms before anyone presses anything; add a normally open contact on StartButton to the left of the coil.",
       "checkpoint": "The visible scenario must pass with saved host evidence."
     },
     {

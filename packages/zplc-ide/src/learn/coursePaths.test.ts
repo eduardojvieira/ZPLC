@@ -113,7 +113,8 @@ describe('the state of a lesson inside a path (LRN-043)', () => {
 
 describe('the paths in the course view and the Continue of a path (LRN-043)', () => {
   it('lists no path for a course that has none, and the full-course view is unchanged', () => {
-    const plain = buildCourseView(LESSON_INDEX, emptyProgress(), { locale: 'en', unlockAll: false });
+    const noPaths = { ...LESSON_INDEX, course: { ...LESSON_INDEX.course, paths: [] } };
+    const plain = buildCourseView(noPaths, emptyProgress(), { locale: 'en', unlockAll: false });
     expect(plain.paths).toEqual([]);
     const view = buildCourseView(withPath, emptyProgress(), { locale: 'en', unlockAll: false });
     expect(view.modules).toEqual(plain.modules);

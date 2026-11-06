@@ -61,7 +61,7 @@ describe('the Learn home', () => {
     const headings = [...out.matchAll(/data-learn-module="(\d+)"/g)].map((match) => Number(match[1]));
     expect(headings).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
     expect(out).toContain('Simulation');
-    expect(out).toContain('Foundation. Requires module 0. About 45 min.');
+    expect(out).toContain('Foundation. Requires module 0. About 75 min.');
     expect(out).toContain('Intermediate. Requires module 3.');
     expect((out.match(/No lessons yet\./g) ?? []).length).toBe(
       LESSON_INDEX.course.modules.filter((module) => !LESSON_INDEX.lessons.some((lesson) => lesson.module === module.id)).length,

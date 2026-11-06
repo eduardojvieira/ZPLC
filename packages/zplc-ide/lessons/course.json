@@ -217,5 +217,44 @@
         "es": "El curso termina con una máquina pequeña, llevada de una descripción escrita a un programa probado, con todo lo anterior."
       }
     }
+  ],
+  "paths": [
+    {
+      "id": "ladder",
+      "title": {
+        "en": "Ladder diagram from zero",
+        "es": "Diagrama de escalera desde cero"
+      },
+      "summary": {
+        "en": "A complete course for someone who has never programmed a PLC: from what a PLC is to the tested program of a machine, in Ladder diagram, with only a computer.",
+        "es": "Un curso completo para quien nunca programó un PLC: desde qué es un PLC hasta el programa probado de una máquina, en diagrama de escalera y solo con una computadora."
+      },
+      "rationale": {
+        "en": "Ladder diagram is the language most PLC programmers start with, because it reads like the relay circuits it replaced. Each lesson opens with a reading page that explains the idea and lets you try it, then you practise in the IDE against a simulated machine. The path ends with a final project and a look at the other four languages.",
+        "es": "El diagrama de escalera es el lenguaje con el que empieza la mayoría de quienes programan PLC, porque se lee como los circuitos de relés que reemplazó. Cada lección abre con una página de lectura que explica la idea y le permite probarla, y luego practica en el IDE con una máquina simulada. El camino termina con un proyecto final y una mirada a los otros cuatro lenguajes."
+      },
+      "language": "LD",
+      "lessons": [
+        "ld-what-is-a-plc",
+        "ld-scan-cycle",
+        "blinky-ladder-timer-feedback",
+        "ld-no-nc-contacts",
+        "ld-series-parallel",
+        "boolean-logic-two-hand-guard-ladder",
+        "seal-in-ladder",
+        "set-reset-alarm-latch-ladder",
+        "ld-edges",
+        "timers-on-delay-off-delay-ladder",
+        "edge-counter-pulses-ladder",
+        "ld-variables-and-types",
+        "ld-sequence-step-bits",
+        "interlock-reversing-ladder",
+        "tank-level-fault-reset-ladder",
+        "ld-function-blocks",
+        "ld-diagnosis-debugger",
+        "ld-final-project",
+        "one-logic-five-languages"
+      ]
+    }
   ]
 }

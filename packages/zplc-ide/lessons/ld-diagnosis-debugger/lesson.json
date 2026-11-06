@@ -5,9 +5,15 @@
   "order": 87,
   "module": 8,
   "level": "advanced",
-  "prerequisites": ["tank-level-fault-reset-ladder"],
-  "languages": ["LD"],
-  "tracks": ["simulation"],
+  "prerequisites": [
+    "ld-function-blocks"
+  ],
+  "languages": [
+    "LD"
+  ],
+  "tracks": [
+    "simulation"
+  ],
   "unsupported": {
     "hardware": {
       "reason": {

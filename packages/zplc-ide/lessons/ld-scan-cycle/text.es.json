@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija este orden del programa inicial, guárdelo y pulse Comprobar: El programa inicial resuelve el peldaño de la lámpara antes de actualizar ButtonSeen, así que la lámpara aún muestra el valor anterior y se enciende un ciclo tarde, a los {{t:20}} ms en vez de a los {{t:10}} ms. Mueva el peldaño de ButtonSeen por encima del peldaño de la lámpara con el botón Subir el peldaño del editor de escalera.",
+      "body": "Corrija este orden del programa inicial, guárdelo y pulse Comprobar: El programa inicial resuelve el peldaño de la lámpara antes de actualizar ButtonSeen, así que la lámpara se enciende un ciclo tarde, a los {{t:20}} ms en vez de a los {{t:10}} ms; mueva el peldaño de ButtonSeen por encima del peldaño de la lámpara. En el editor de escalera, use el botón Subir el peldaño.",
       "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
     },
     {

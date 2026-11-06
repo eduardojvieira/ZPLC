@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Fix this starter order, save it, then press Check: The starter solves the lamp rung before it updates ButtonSeen, so the lamp still shows the old value and lights one scan late, at {{t:20}} ms instead of {{t:10}} ms. Move the ButtonSeen rung above the lamp rung with the Move rung up button of the Ladder editor.",
+      "body": "Fix this starter order, save it, then press Check: The starter solves the lamp rung before it updates ButtonSeen, so the lamp lights one scan late, at {{t:20}} ms instead of {{t:10}} ms; move the ButtonSeen rung above the lamp rung. In the Ladder editor, use the Move rung up button.",
       "checkpoint": "The visible scenario must pass with saved host evidence."
     },
     {

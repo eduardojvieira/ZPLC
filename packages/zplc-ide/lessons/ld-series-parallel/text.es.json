@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edite",
-      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial lee solo DoorOpen en el peldaño de la bocina, así que Horn queda en OFF a los {{t:50}} ms aunque Overheat es TRUE. Agregue un contacto normalmente abierto de Overheat en una segunda fila, bajo el contacto de DoorOpen, y una las dos filas para que queden en paralelo. En el editor de escalera, ponga el cursor sobre el contacto DoorOpen y pulse B para iniciar una rama paralela.",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial lee solo DoorOpen en el peldaño de la bocina, así que Horn queda en OFF a los {{t:50}} ms aunque Overheat es TRUE; agregue un contacto normalmente abierto de Overheat en paralelo con el contacto DoorOpen. En el editor de escalera, ponga el cursor sobre el contacto DoorOpen y pulse B para iniciar una rama paralela.",
       "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
     },
     {

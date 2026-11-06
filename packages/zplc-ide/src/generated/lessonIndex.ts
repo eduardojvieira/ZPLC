@@ -62,6 +62,16 @@ export const LESSON_IDS = [
   "types-arithmetic-comparison-il",
   "interlock-guard-permissive-il",
   "function-block-call-il",
+  "ld-what-is-a-plc",
+  "ld-scan-cycle",
+  "ld-no-nc-contacts",
+  "ld-series-parallel",
+  "ld-edges",
+  "ld-variables-and-types",
+  "ld-sequence-step-bits",
+  "ld-function-blocks",
+  "ld-diagnosis-debugger",
+  "ld-final-project",
 ] as const;
 
 export type LessonId = typeof LESSON_IDS[number];

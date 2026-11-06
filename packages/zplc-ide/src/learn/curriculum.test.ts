@@ -62,7 +62,7 @@ const TABLE = [
     title: [/state machines/i, /sequences/i],
     level: 'intermediate',
     requires: 3,
-    languages: ['ST', 'SFC'],
+    languages: ['ST', 'SFC', 'LD'],
     tracks: ['simulation', 'hardware'],
   },
   {
@@ -78,7 +78,7 @@ const TABLE = [
     title: [/functions/i, /function blocks/i, /structures/i, /arrays/i, /tasks/i],
     level: 'intermediate',
     requires: 4,
-    languages: ['ST', 'FBD', 'IL'],
+    languages: ['ST', 'FBD', 'IL', 'LD'],
     tracks: ['simulation', 'hardware'],
   },
   {
@@ -86,7 +86,7 @@ const TABLE = [
     title: [/scenario tests/i, /temporal assertions/i, /trace/i, /breakpoints/i],
     level: 'advanced',
     requires: 6,
-    languages: ['ST'],
+    languages: ['ST', 'LD'],
     tracks: ['simulation'],
   },
   {
@@ -205,7 +205,8 @@ describe(
     }
 
     it('LRN-008 offers the first blink in module 1 in Ladder and in Structured Text, each as the program the learner edits', () => {
-      const blinks = order.filter((lesson) => lesson.module === 1 && lesson.id !== 'scan-cycle-one-scan-memory');
+      // module 1 also holds the scan cycle lessons and the first Ladder lessons of the Ladder path (LRN-043): the blinks are the ones named so
+      const blinks = order.filter((lesson) => lesson.module === 1 && /blink/.test(lesson.id));
       expect(blinks.map((lesson) => [lesson.id, editedLanguageOf(lesson)])).toEqual([
         ['blinky-ladder-timer-feedback', 'LD'],
         ['blink-structured-text', 'ST'],
