@@ -10,7 +10,7 @@ description: What the single history rewrite of decision D-05 removes, why, wher
 Read this page if you have a clone of the ZPLC repository, or if you maintain it. Decision D-05 (requirement DOC-027) rewrites the Git history once, to drop a third-party board schematic and several build trees that were committed by mistake. The page says what goes, why, where the old history is kept, and what to do with an existing clone.
 
 :::caution Status
-The maintainer's repository was rewritten on 2026-10-22: the baseline commit `b379d82` is now `6b73a0c`, and 1688 commits were rewritten one for one. The mirror of the old history and its bundle are kept on the maintainer's machine until they are published as a read-only repository. At that date the force-push to GitHub had not been made, and the commands for contributors below apply only after it is.
+The maintainer's repository was rewritten on 2026-10-22: the baseline commit `b379d82` is now `6b73a0c`, and 1688 commits were rewritten one for one. The mirror of the old history and its bundle are kept on the maintainer's machine until they are published as a read-only repository. The rewritten history is now on GitHub: the remote branches contain `6b73a0c`, and `b379d82` is no longer in them, so the commands for contributors below apply to every clone made before the rewrite.
 
 To tell which history your clone has, run `git cat-file -t b379d82`. If it prints `commit`, your clone still has the old history. If it prints a "Not a valid object name" error, it has the rewritten one.
 :::

@@ -10,7 +10,7 @@ description: Qué elimina la única reescritura del historial de la decisión D-
 Lea esta página si tiene un clon del repositorio de ZPLC, o si lo mantiene. La decisión D-05 (requisito DOC-027) reescribe el historial de Git una sola vez, para eliminar el esquema de una placa de terceros y varios árboles de compilación que se confirmaron por error. La página dice qué se elimina, por qué, dónde se conserva el historial anterior y qué hacer con un clon existente.
 
 :::caution Estado
-El repositorio del mantenedor se reescribió el 2026-10-22: el commit de la línea base `b379d82` ahora es `6b73a0c`, y se reescribieron 1688 commits, uno por uno. El espejo del historial anterior y su bundle se guardan en la máquina del mantenedor hasta que se publiquen como repositorio de solo lectura. A esa fecha el force-push a GitHub todavía no se había hecho, y los comandos para colaboradores de más abajo se aplican solo después de hacerlo.
+El repositorio del mantenedor se reescribió el 2026-10-22: el commit de la línea base `b379d82` ahora es `6b73a0c`, y se reescribieron 1688 commits, uno por uno. El espejo del historial anterior y su bundle se guardan en la máquina del mantenedor hasta que se publiquen como repositorio de solo lectura. El historial reescrito ya está en GitHub: las ramas remotas contienen `6b73a0c` y ya no contienen `b379d82`, así que los comandos para colaboradores de más abajo se aplican a todo clon hecho antes de la reescritura.
 
 Para saber qué historial tiene su clon, ejecute `git cat-file -t b379d82`. Si imprime `commit`, su clon aún tiene el historial anterior. Si imprime un error "Not a valid object name", tiene el reescrito.
 :::
