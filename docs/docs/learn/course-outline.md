@@ -9,8 +9,10 @@ tags: [learn, lessons, course]
 
 # Course outline
 
-This page lists the whole course: every module in order, the lessons that exist
-today and the lessons that are planned. It matches `packages/zplc-ide/lessons/course.json`
+This page lists the whole course: every module in order, with its 68 lessons. Read
+it to choose where to start, or to see what a module needs before you take it. If
+you have never programmed a PLC, start with the Ladder path of 21 of these lessons, *Ladder diagram
+from zero*, described in [Learn](./index.md). The page matches `packages/zplc-ide/lessons/course.json`
 and the lesson packages next to it; a CI check fails when a lesson is missing here or
 when a row disagrees with its lesson.
 

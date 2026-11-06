@@ -9,8 +9,10 @@ tags: [learn, lessons, course]
 
 # Esquema del curso
 
-Esta página enumera el curso completo: cada módulo en orden, las lecciones que
-existen hoy y las que están planeadas. Coincide con `packages/zplc-ide/lessons/course.json`
+Esta página enumera el curso completo: cada módulo en orden, con sus 68 lecciones. Léala
+para elegir por dónde empezar, o para ver qué requiere un módulo antes de tomarlo. Si
+nunca programó un PLC, empiece con la ruta de escalera de 21 de estas lecciones, *Diagrama de escalera
+desde cero*, descrita en [Aprender](./index.md). La página coincide con `packages/zplc-ide/lessons/course.json`
 y con los paquetes de lección que lo acompañan; una verificación de CI falla
 cuando falta una lección aquí o cuando una fila no coincide con su lección.
 
