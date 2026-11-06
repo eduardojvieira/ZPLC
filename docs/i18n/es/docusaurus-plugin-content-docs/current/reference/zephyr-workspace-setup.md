@@ -36,12 +36,12 @@ El SDK de Zephyr lo instala usted. Los requisitos, el espacio en disco y lo que 
 
 ```mermaid
 flowchart TD
-  ROOT[Zephyr workspace]
-  ROOT --> WEST[west metadata]
-  ROOT --> ZEPHYR[zephyr and its modules]
-  ROOT --> ZPLC[ZPLC checkout]
+  ROOT[Espacio de trabajo de Zephyr]
+  ROOT --> WEST[Metadatos de west]
+  ROOT --> ZEPHYR[zephyr y sus módulos]
+  ROOT --> ZPLC[Copia de trabajo de ZPLC]
   ZPLC --> APP[firmware/app]
-  APP --> BOARDS[board conf and overlay]
+  APP --> BOARDS[conf y overlay de la placa]
 ```
 
 ## Compile una placa
