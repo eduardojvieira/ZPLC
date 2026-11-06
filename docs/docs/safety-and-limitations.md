@@ -9,10 +9,8 @@ tags: [safety, limits, evidence]
 
 # Safety and limitations
 
-Read this page before you rely on ZPLC for anything beyond learning and
-simulation. It is the one place that says what ZPLC is not, where each part has
-been checked, and which limits are hard. Other pages link here instead of
-repeating it.
+Read this page before you rely on ZPLC for anything beyond learning and simulation. It is the one place that says
+what ZPLC is not, which evidence backs each part, and which limits are hard. Other pages link here instead of repeating it.
 
 ## What ZPLC is not
 
@@ -25,14 +23,13 @@ repeating it.
 - **It does not guarantee timing.** A task interval is the period of a release
   and the deadline of a scan. No board has a measured scan time, jitter or
   worst-case execution time, and the simulator runs on a clock of its own.
-- **It is not a finished product.** The current release is a prerelease for
-  evaluation: see [Release notes](./release-notes/index.md) and the
-  [roadmap](./contributing/roadmap.md).
+- **It is not a qualified product.** ZPLC 2.0 is released for evaluation: the [release notes](./release-notes/index.md)
+  list what is not verified, and the [roadmap](./contributing/roadmap.md) says what comes next.
 - **It does not claim a board.** Every board of the table in
   [Hardware support](./reference/capabilities-evidence.md) is at the level its
   records say, and today that level is cross-build for all of them.
 
-## Where each part has been checked
+## Evidence levels: where each part has been checked
 
 A check at one level never proves a higher one. The names of the levels are the
 ones of [Hardware support](./reference/capabilities-evidence.md#the-levels).

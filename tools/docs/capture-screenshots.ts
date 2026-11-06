@@ -13,6 +13,11 @@
 //                                       journey 59 in the real application (a display, the built runtime and application, as for
 //                                       the tutorial): the first lesson of Learn passed, in English and Spanish, light and dark,
 //                                       for the landing page, into docs/static/img/learn; the manifest records their commit
+//   bun run docs:screenshots -- --screens
+//                                       journeys 66 and 67 in the real application, in English and Spanish: the Ladder path of the
+//                                       Learn home, the reading page of its first lesson, the try-it lab with its lamp lit, and
+//                                       a Ladder function box in the editor, into docs/static/img/screens; the manifest records
+//                                       their commit
 //   bun tools/docs/capture-screenshots.ts --check
 //                                       exit 1 when a page shows an image that the manifest does not list, a listed image is
 //                                       missing or changed, or a picture of the folder is not in the manifest
@@ -50,6 +55,52 @@ export const MANIFEST = `${IMAGE_DIR}/manifest.json`;
  * in its dark mode.
  */
 export const LEARN_DIR = `${IMAGE_DIR}/learn`;
+/** The pictures of the Learn reading mode and of the Ladder function box (journeys 66 and 67), in both languages. */
+export const SCREENS_DIR = `${IMAGE_DIR}/screens`;
+export const SCREEN_JOURNEYS = [
+  {
+    journey: '66 The Learn reading page and its try-it lab, for the pictures of the site',
+    pictures: [
+      { name: 'learn-path', step: 'The Ladder path of the Learn home' },
+      { name: 'learn-reading', step: 'The reading page of the first lesson of the Ladder path' },
+      { name: 'learn-lab', step: 'The try-it lab of the reading page, running, with its lamp lit' },
+    ],
+  },
+  {
+    journey: '67 A Ladder function box in the editor, for the pictures of the site',
+    pictures: [{ name: 'ld-function-box', step: 'A Ladder function box with its operands in the editor' }],
+  },
+] as const;
+/** The pictures for the guides (journeys 68 to 72): the controls are named in English, so these are English only. */
+export const GUIDE_JOURNEYS = [
+  {
+    journey: '68 The Watch table, a force and a scenario run, for the pictures of the guides',
+    pictures: [
+      { file: 'guide-watch.png', step: 'The Watch tab with a variable, while the program runs' },
+      { file: 'guide-force.png', step: 'The Watch table with one forced variable and the banner of one active force' },
+      { file: 'guide-scenario-tests.png', step: 'The Tests tab after Run host scenarios' },
+    ],
+  },
+  {
+    journey: '69 A breakpoint and the Trace row, for the pictures of the guides',
+    pictures: [{ file: 'guide-breakpoint.png', step: 'The editor stopped at a breakpoint, with the Trace row that says paused' }],
+  },
+  {
+    journey: '70 The I/O mapping section of Project settings, for the pictures of the guides',
+    pictures: [{ file: 'guide-io-mapping.png', step: 'The I/O Mapping section of Project settings' }],
+  },
+  {
+    journey: '72 The Pico example with Hardware chosen and the port dialog, for the pictures of the first board tutorial',
+    pictures: [
+      { file: 'first-board-hardware.png', step: 'The Raspberry Pi Pico example built, with Hardware chosen and no board connected' },
+      { file: 'first-board-connect.png', step: 'The Connect dialog that lists serial ports, with no board chosen' },
+    ],
+  },
+  {
+    journey: '71 The Import archive dialog, for the pictures of the guides',
+    pictures: [{ file: 'guide-import-archive.png', step: 'The dialog of Import a project archive' }],
+  },
+] as const;
 export const LEARN_JOURNEY = '59 The first lesson of Learn is checked and passes';
 export const LEARN_PICTURES = [
   { file: 'lesson-checked-en.png', locale: 'en', theme: 'light' },
@@ -215,7 +266,7 @@ export function checkManifest(
         message: 'is a picture that no results.json of the recorded check lists: a published image is a captured one',
       });
   for (const path of listed)
-    if ((path.startsWith(`${PICTURE_DIR}/`) || path.startsWith(`${EDITOR_DIR}/`)) && !known.has(path))
+    if ((path.startsWith(`${PICTURE_DIR}/`) || path.startsWith(`${EDITOR_DIR}/`) || path.startsWith(`${SCREENS_DIR}/`)) && !known.has(path))
       problems.push({ where: path, message: 'is a picture that the manifest does not list: a published image is a captured one' });
   for (const { page, text } of pages) {
     for (const reference of imagesOf(text)) {
@@ -368,6 +419,78 @@ function captureLearn(): void {
   }
 }
 
+/** The reading-mode and function-box pictures: journeys 66 and 67 run once per language, and this script hashes them into the manifest. */
+function captureScreens(): void {
+  const cache = process.env.TMPDIR ?? join(process.env.HOME ?? ROOT, '.cache', 'zplc-doc-shots');
+  mkdirSync(cache, { recursive: true });
+  const scratch = mkdtempSync(join(cache, 'docs-screens-shots-'));
+  try {
+    for (const { journey } of SCREEN_JOURNEYS) {
+      for (const locale of EDITOR_LOCALES) {
+        const run = spawnSync('bun', ['run', 'scripts/run-journeys.ts'], {
+          cwd: join(ROOT, 'packages/zplc-ide'),
+          env: { ...process.env, ZPLC_JOURNEY_ONLY: journey, ZPLC_DOC_SHOTS: scratch, ZPLC_DOC_SHOTS_LOCALE: locale },
+          stdio: ['ignore', 'pipe', 'pipe'],
+          encoding: 'utf8',
+        });
+        if (run.status !== 0 || !journeyPassed(run.stdout, journey)) {
+          process.stderr.write(`${run.stdout}\n${run.stderr}\n`);
+          throw new Error(`the journey "${journey}" did not pass in ${locale}, so no picture is written`);
+        }
+      }
+    }
+    for (const { journey } of GUIDE_JOURNEYS) {
+      const run = spawnSync('bun', ['run', 'scripts/run-journeys.ts'], {
+        cwd: join(ROOT, 'packages/zplc-ide'),
+        env: { ...process.env, ZPLC_JOURNEY_ONLY: journey, ZPLC_DOC_SHOTS: scratch },
+        stdio: ['ignore', 'pipe', 'pipe'],
+        encoding: 'utf8',
+      });
+      if (run.status !== 0 || !journeyPassed(run.stdout, journey)) {
+        process.stderr.write(`${run.stdout}\n${run.stderr}\n`);
+        throw new Error(`the journey "${journey}" did not pass, so no picture is written`);
+      }
+    }
+    const guides = GUIDE_JOURNEYS.flatMap(({ pictures }) => pictures.map(({ file, step }) => ({ file, step })));
+    const wanted = SCREEN_JOURNEYS.flatMap(({ pictures }) =>
+      pictures.flatMap(({ name, step }) =>
+        EDITOR_LOCALES.map((locale) => ({
+          file: `${name}-${locale}.png`,
+          step: `${step}, interface in ${locale === 'en' ? 'English' : 'Spanish'}`,
+        })),
+      ),
+    ).concat(guides);
+    const taken = readdirSync(scratch)
+      .filter((name) => name.endsWith('.png'))
+      .sort();
+    if (
+      taken.join() !==
+      wanted
+        .map(({ file }) => file)
+        .sort()
+        .join()
+    )
+      throw new Error(
+        `the journeys took ${taken.join(', ') || 'no picture'}; this script expects ${wanted.map(({ file }) => file).join(', ')}`,
+      );
+    mkdirSync(join(ROOT, SCREENS_DIR), { recursive: true });
+    const commit = git(['rev-parse', 'HEAD']);
+    const images: ManifestImage[] = wanted.map(({ file, step }) => {
+      copyFileSync(join(scratch, file), join(ROOT, SCREENS_DIR, file));
+      const bytes = readFileSync(join(ROOT, SCREENS_DIR, file));
+      return { file: `screens/${file}`, step, sha256: sha256(bytes), bytes: bytes.length, ...pngSize(bytes), commit };
+    });
+    const manifest = JSON.parse(readFileSync(join(ROOT, MANIFEST), 'utf8')) as Manifest;
+    manifest.images = [...manifest.images.filter((image) => !image.file.startsWith('screens/')), ...images];
+    writeFileSync(join(ROOT, MANIFEST), `${JSON.stringify(manifest, null, 2)}\n`);
+    console.log(
+      `docs-screenshots: ${images.length} reading-mode and function-box pictures of ${commit.slice(0, 8)} written to ${SCREENS_DIR}`,
+    );
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+}
+
 /** The editor pictures: the helper of the IDE package takes them, this script hashes them into the manifest. */
 function captureEditors(): void {
   const cache = process.env.TMPDIR ?? join(process.env.HOME ?? ROOT, '.cache', 'zplc-doc-shots');
@@ -458,7 +581,7 @@ function check(): number {
     page,
     text: readFileSync(join(ROOT, page), 'utf8'),
   }));
-  const listed = [PICTURE_DIR, EDITOR_DIR, LEARN_DIR].flatMap((directory) =>
+  const listed = [PICTURE_DIR, EDITOR_DIR, LEARN_DIR, SCREENS_DIR].flatMap((directory) =>
     existsSync(join(ROOT, directory)) ? readdirSync(join(ROOT, directory)).map((name) => `${directory}/${name}`) : [],
   );
   const recorded = recordedImages();
@@ -500,5 +623,6 @@ if (import.meta.main) {
   if (process.argv.includes('--check')) process.exit(check());
   if (process.argv.includes('--editors')) captureEditors();
   else if (process.argv.includes('--learn')) captureLearn();
+  else if (process.argv.includes('--screens')) captureScreens();
   else capture();
 }

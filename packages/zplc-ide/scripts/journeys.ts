@@ -7996,6 +7996,243 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
+    // DOC-013: the pictures of the Learn reading page and of its try-it lab, taken by `bun run docs:screenshots -- --reading`.
+    // The Ladder path of the Learn home is shown and its first lesson opens on its reading page, full screen. The lab
+    // of the page is run, a switch is turned on and the picture is taken when its lamp is lit. ZPLC_DOC_SHOTS_LOCALE (en or es)
+    // chooses the language, in the stored preferences, as journey 59 does.
+    name: '66 The Learn reading page and its try-it lab, for the pictures of the site',
+    example: 'none',
+    proves: [],
+    partly: ['DOC-013'],
+    run: async (app) => {
+      const locale = process.env.ZPLC_DOC_SHOTS_LOCALE === 'es' ? 'es' : 'en';
+      await app.cdp.command('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+      if (locale === 'es') {
+        await app.eval(
+          `(() => { const key = 'zplc-ide-settings'; const stored = JSON.parse(localStorage.getItem(key) || '{}'); const target = ` +
+            `stored.settings ?? stored; target.language = 'es'; localStorage.setItem(key, JSON.stringify(stored)); })()`,
+        );
+        await app.cdp.command('Page.reload');
+      }
+      await app.until(
+        `the Welcome screen in ${locale}`,
+        async () =>
+          (await app.eval<boolean>(
+            `(document.querySelector('[data-welcome-learn]')?.textContent?.trim().startsWith('Learn') ?? false) === ${locale === 'en'} && ` +
+              `document.querySelector('[data-welcome-learn]') !== null`,
+          )) || undefined,
+        45_000,
+      );
+      await app.click(css('[data-welcome-learn]'), 'Learn on the Welcome screen');
+      await app.until('the Learn home', async () => (await app.visible(css('[data-learn-home]'))) || undefined);
+      // the Ladder path of the home, then its first lesson, which opens on its reading page
+      await app.eval(`document.querySelector('[data-learn-paths]')?.scrollIntoView({ block: 'start' })`);
+      await app.until('the Ladder path', async () => (await app.visible(css('[data-learn-path-start]'))) || undefined);
+      await docShot(app, `learn-path-${locale}`);
+      await app.click(css('[data-learn-path-start]'), 'the first lesson of the Ladder path');
+      await app.until(
+        'the reading page of the first lesson',
+        async () => (await app.visible(css('[data-learn-reading]'))) || undefined,
+        45_000,
+      );
+      await docShot(app, `learn-reading-${locale}`);
+
+      // the lab of the page: Run, then the switch; the picture is taken when the porch light is lit
+      const lab = css('[data-lab-control="run"]');
+      await app.eval(`document.querySelector('[data-lab-control="run"]')?.scrollIntoView({ block: 'center' })`);
+      await app.until('the try-it lab', async () => (await app.visible(lab)) || undefined, 45_000);
+      await app.click(lab, 'Run in the try-it lab');
+      await app.until(
+        'the lab running',
+        async () =>
+          (await app.eval<boolean>(`document.querySelector('[data-lab-status]')?.getAttribute('data-lab-status') === 'running'`)) ||
+          undefined,
+      );
+      await app.click(css('[data-lab-input="NightSwitch"]'), 'the night switch');
+      await app.until(
+        'the porch light lit',
+        async () =>
+          (await app.eval<boolean>(`document.querySelector('[data-lamp="PorchLight"]')?.getAttribute('data-state') === 'on'`)) || undefined,
+      );
+      await app.eval(`document.querySelector('[data-lab-control="run"]')?.scrollIntoView({ block: 'center' })`);
+      await docShot(app, `learn-lab-${locale}`);
+    },
+  },
+  {
+    // DOC-013: the picture of a Ladder function box in the editor (LNG-028), taken by `bun run docs:screenshots -- --reading`:
+    // the compare-and-math lesson project open on its Ladder program, which has boxes with EN and ENO wires.
+    name: '67 A Ladder function box in the editor, for the pictures of the site',
+    example: 'ld_compare_math',
+    proves: [],
+    partly: ['DOC-013', 'LNG-028'],
+    run: async (app, { project }) => {
+      const locale = process.env.ZPLC_DOC_SHOTS_LOCALE === 'es' ? 'es' : 'en';
+      await app.cdp.command('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+      if (locale === 'es') {
+        await app.eval(
+          `(() => { const key = 'zplc-ide-settings'; const stored = JSON.parse(localStorage.getItem(key) || '{}'); const target = ` +
+            `stored.settings ?? stored; target.language = 'es'; localStorage.setItem(key, JSON.stringify(stored)); })()`,
+        );
+        await app.cdp.command('Page.reload');
+        journeyLocale = 'es';
+      }
+      try {
+        app.answer(project);
+        await app.click(button(ui('welcome.open.title'), 'contains'), 'the Open project button');
+        await app.until('the project workbench to appear', async () => (await app.visible(toolbar)) || undefined);
+        await openDiagram(app, 'src/TankMonitor.ld.json', '[data-ld-function]');
+        await app.eval(`document.querySelector('[data-ld-function]')?.scrollIntoView({ block: 'center', inline: 'center' })`);
+        await docShot(app, `ld-function-box-${locale}`);
+      } finally {
+        journeyLocale = 'en';
+      }
+    },
+  },
+  {
+    // DOC-013: pictures for the guides "Simulate and debug", "Force values" and "Write and run scenario tests": the Watch tab with a
+    // variable, the Watch table with a forced variable and its banner, and the Tests tab after Run host scenarios.
+    name: '68 The Watch table, a force and a scenario run, for the pictures of the guides',
+    example: 'motor_start_stop',
+    proves: [],
+    partly: ['DOC-013'],
+    run: async (app, { project }) => {
+      await app.cdp.command('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Motor example does not build: ${result.message}`);
+      await connectAndRun(app);
+      await watch(app, 'Start');
+      await watch(app, 'Forward');
+      await app.until('Forward to read FALSE', async () => (await watchValue(app, 'Forward')) === 'FALSE' || undefined);
+      await app.click(css('#workspace-separator'), 'the separator above the lower panel');
+      for (let step = 0; step < 6; step++) await app.press('ArrowUp');
+      await docShot(app, 'guide-watch');
+      await app.click(css('input[aria-label="Force Start"]'), 'the Force checkbox of Start');
+      const startValue = `${watchRow('Start')}?.children[1]`;
+      await app.click(startValue, 'the value of Start', 2);
+      await app.until(
+        'the value editor of Start to take focus',
+        async () => (await app.eval(`document.activeElement === ${watchRow('Start')}?.querySelector('input[type="text"]')`)) || undefined,
+      );
+      await app.type('1');
+      await app.press('Enter');
+      await app.until('Forward to turn TRUE', async () => (await watchValue(app, 'Forward')) === 'TRUE' || undefined);
+      await app.until('the banner of one active force', async () => (await app.text()).includes('1 active force') || undefined);
+      await docShot(app, 'guide-force');
+      await app.click(css('input[aria-label="Force Start"]'), 'the Force checkbox of Start');
+      await app.click(button(`${ui('toolbar.stop.label')} (`, 'prefix'), 'Stop');
+      await app.until(
+        'the program to stop',
+        async () => (await app.visible(button(`${ui('toolbar.run.label')} (F5)`, 'prefix'))) || undefined,
+      );
+      await app.click(tab(ui('panel.tests')));
+      await app.click(button(ui('console.runHostScenarios')));
+      await app.until('the scenario to pass', async () => (await app.text()).includes('Host POSIX scenarios passed') || undefined, 30_000);
+      await docShot(app, 'guide-scenario-tests');
+    },
+  },
+  {
+    // DOC-013: the picture for "Simulate and debug": the editor stopped at a breakpoint and the Trace row that says paused.
+    name: '69 A breakpoint and the Trace row, for the pictures of the guides',
+    example: 'motor_start_stop',
+    proves: [],
+    partly: ['DOC-013'],
+    run: async (app, { project }) => {
+      await app.cdp.command('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      const line = await lineWith(app, 'Forward := SealIn;');
+      assert(line > 0, 'Motor.st no longer has the statement Forward := SealIn; the journey aims at.');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Motor example does not build: ${result.message}`);
+      await clickEditorLine(app, line, 'gutter');
+      await app.until(
+        `a breakpoint dot on line ${line}`,
+        async () => (await decoratedLines(app, 'glyphMarginClassName', 'breakpoint-glyph')).includes(line) || undefined,
+      );
+      await app.click(button('Connect'));
+      await app.until('the simulation to connect', async () => (await app.visible(button('Disconnect'))) || undefined);
+      await app.click(button('Run (F5)', 'prefix'));
+      await app.until(`execution to stop at line ${line}`, async () => (await app.visible(button('Resume (F5)', 'prefix'))) || undefined);
+      await app.click(tab('Trace'));
+      await app.until(
+        'a Trace row that says paused',
+        async () =>
+          (await app.eval<boolean>(
+            `document.querySelector('[id^="console-panel-"] table tbody tr:first-child')?.innerText.includes('paused') === true`,
+          )) || undefined,
+      );
+      await app.eval(`document.querySelector('[id^="console-panel-"] table')?.scrollIntoView({ block: 'end' })`);
+      await docShot(app, 'guide-breakpoint');
+    },
+  },
+  {
+    // DOC-013: the picture for "Map I/O": the I/O Mapping section of Project settings, for the Raspberry Pi Pico example.
+    name: '70 The I/O mapping section of Project settings, for the pictures of the guides',
+    example: 'pico_blinky',
+    proves: [],
+    partly: ['DOC-013'],
+    run: async (app, { project }) => {
+      await app.cdp.command('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+      await openFolder(app, project);
+      await app.click(button('Project settings'), 'the Project settings button');
+      await app.click(css('[data-open-config-editor="io"]'), 'the I/O mapping editor');
+      await app.until(
+        'the channels of the selected board',
+        async () => (await app.eval<boolean>(`document.querySelector('ul[aria-label^="Channels of"]') !== null`)) || undefined,
+      );
+      await docShot(app, 'guide-io-mapping');
+    },
+  },
+  {
+    // DOC-013: the picture for "Project archives": the dialog that says what an archive holds before anything is written.
+    name: '71 The Import archive dialog, for the pictures of the guides',
+    example: 'motor_start_stop',
+    proves: [],
+    partly: ['DOC-013'],
+    run: async (app, { project, root }) => {
+      await app.cdp.command('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+      const archive = join(root, 'motor.zplc.zip');
+      await openFolder(app, project);
+      app.answer(archive);
+      await app.click(button('Build options'));
+      await app.click(menuItem('Export project archive'));
+      await app.until('the archive on disk', () => existsSync(archive) || undefined);
+      await app.until(
+        'the export reported in Output',
+        async () => /Exported motor\.zplc\.zip: \d+ files/.test(await outputText(app)) || undefined,
+      );
+      await showExplorer(app);
+      await app.click(button('Close project'));
+      await app.until('the Welcome screen', async () => (await app.visible(button('Import a project archive', 'contains'))) || undefined);
+      app.answer(archive);
+      await app.click(button('Import a project archive', 'contains'), 'the Import a project archive button');
+      await app.until('the import dialog', async () => (await app.visible(css('[data-import-archive-dialog]'))) || undefined);
+      await docShot(app, 'guide-import-archive');
+    },
+  },
+  {
+    // DOC-013: the pictures for the tutorial "Your first board" that need no board: the Raspberry Pi Pico example built, with
+    // Hardware chosen, and the dialog of Connect. No port is chosen and nothing is sent: a physical board is not pictured.
+    name: '72 The Pico example with Hardware chosen and the port dialog, for the pictures of the first board tutorial',
+    example: 'pico_blinky',
+    proves: [],
+    partly: ['DOC-013', 'DOC-004'],
+    run: async (app, { project }) => {
+      await app.cdp.command('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+      await openFolder(app, project);
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Pico example does not build: ${result.message}`);
+      await app.click(button('Hardware'), 'the Hardware mode');
+      await docShot(app, 'first-board-hardware');
+      await app.click(button('Connect'), 'Connect');
+      await app.until('the port dialog', async () => (await app.visible(css('[data-serial-port-dialog]'))) || undefined);
+      await docShot(app, 'first-board-connect');
+      await app.click(button('Cancel'), 'Cancel');
+    },
+  },
+  {
     // The Welcome cards of rc.3 ran out of their boxes on a MacBook Air in Spanish (2026-10-26), and a sweep of the other
     // screens found the same in ten more places. Spanish labels are the longest, and 1024 by 768 is the smallest window
     // the shell supports (journey 45).

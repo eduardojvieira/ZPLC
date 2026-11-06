@@ -3,84 +3,89 @@ slug: /getting-started
 id: index
 title: Primeros pasos
 sidebar_label: Primeros pasos
-description: Instale ZPLC, abra un ejemplo incluido y ejecútelo en el simulador sin ningún hardware.
+description: 'Qué es ZPLC, para quién es y las dos formas de empezar a usarlo: construir un controlador o aprender programación de PLC. No necesita hardware.'
 tags: [quickstart]
 ---
 
 # Primeros pasos
 
-Esta página lo lleva desde cero hasta un programa que se ejecuta en el
-simulador de su propio equipo. No necesita un PLC ni una placa de desarrollo. El
-tutorial [Blink sin hardware](../tutorials/blink-without-hardware.md) es la versión
-más pausada de esta página, con el programa explicado y una prueba de escenario.
+ZPLC es una forma libre y de código abierto de escribir, probar y ejecutar programas de PLC. Esta página dice qué es,
+le ayuda a elegir un camino y deja un programa funcionando en su equipo en unos diez minutos. No necesita un PLC ni una
+placa.
 
-:::warning Versión preliminar
-La versión 2.0 es para evaluación. Ninguna placa se ha probado con hardware, y
-ZPLC no debe controlar maquinaria. ZPLC 2.0.0-rc.3 es una versión preliminar sin
-firmar: lea [Seguridad y limitaciones](../safety-and-limitations.md) antes de
-confiar en ella. El nivel que alcanzó cada placa está en
-[Compatibilidad de hardware](../reference/capabilities-evidence.md).
+:::warning Versión de evaluación
+ZPLC 2.0 es para evaluación. Ninguna placa se ha probado en hardware, los instaladores no están firmados con una
+identidad de pago y ZPLC no debe controlar maquinaria. Lea [Seguridad y limitaciones](../safety-and-limitations.md) antes
+de confiar en él para algo más que aprender y simular.
 :::
 
-## Camino rápido
+## Qué es ZPLC
 
-1. Descargue el instalador para su sistema desde [GitHub Releases](https://github.com/eduardojvieira/ZPLC/releases) y compruébelo: [Instalar ZPLC](./install.md).
-2. Ábralo. Windows y macOS advierten sobre las aplicaciones sin firmar; la página de instalación explica cómo continuar.
-3. En ZPLC, copie el ejemplo **Blinky** a una carpeta.
-4. Compílelo, cambie a **Simular**, pulse **Conectar** y luego **Ejecutar**.
+ZPLC tiene tres partes, en el orden en que las conocerá:
 
-## Abrir un ejemplo
+1. **La aplicación ZPLC**, un programa de escritorio para Windows, macOS y Linux. En ella escribe programas, los compila,
+   los prueba y los ejecuta en un simulador. Es la única parte que necesita para empezar.
+2. **El runtime**, un programa pequeño en C99 que ejecuta el bytecode compilado. En la aplicación corre en su equipo como
+   simulador. En una placa con microcontrolador corre como módulo de Zephyr RTOS.
+3. **Las placas**: siete placas Zephyr tienen un perfil de compilación. Todas están en el nivel de compilación cruzada:
+   el firmware se compila en integración continua y nadie lo ha grabado ni ejecutado en una placa física
+   ([Compatibilidad de hardware](../reference/capabilities-evidence.md)).
 
-1. Inicie ZPLC. La pantalla de bienvenida ofrece **Abrir proyecto**, **Nuevo proyecto** y **Aprender**, y una lista de **Ejemplos**.
-2. En **Ejemplos**, en el grupo **Primeros pasos**, elija **Blinky**.
-3. Elija una carpeta de destino vacía. ZPLC copia el ejemplo allí y lo abre. La copia se detiene si ya existe un archivo en la carpeta.
+Puede escribir en cinco lenguajes de IEC 61131-3: texto estructurado, lista de instrucciones, diagrama de escalera,
+diagrama de bloques de función y diagrama funcional de secuencias. Los cinco se compilan a un único formato de bytecode.
+La [Panorama de plataforma](../platform-overview/index.md) muestra cómo encajan las partes.
 
-La carpeta contiene `zplc.json` (el proyecto: destino, tareas y fuentes), los
-archivos del programa en `src` y una prueba de escenario en `tests`. Blinky
-activa y desactiva la salida `LED_Output` en `%Q0.0` aproximadamente cada
-500 ms.
+## Elija un camino
 
-## Compilar y simular
+| Usted quiere...                               | Empiece por                                                                                                                                               | Qué hace                                                                                                                  |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Construir un controlador** y conoce los PLC | [Instalar ZPLC](./install.md), luego [Blink sin hardware](../tutorials/blink-without-hardware.md) y luego [Su primera placa](../tutorials/first-board.md) | Copia un ejemplo, lo compila, lo ejecuta en el simulador, lo prueba con un escenario y luego sigue los pasos de una placa |
+| **Aprender programación de PLC** desde cero   | [Instalar ZPLC](./install.md), luego **Aprender** en la pantalla de bienvenida: [Aprender](../learn/index.md)                                             | Hace el curso dentro de la aplicación: 68 lecciones en español e inglés, con una ruta de escalera que parte de cero       |
 
-1. Elija **Compilación** y luego **Compilar** (Ctrl+B, o Cmd+B en macOS). Los mensajes aparecen en las pestañas **Problemas** y **Salida** del panel inferior.
-2. En la barra de herramientas, seleccione **Simular** y pulse **Conectar**. ZPLC inicia el simulador incluido con la aplicación.
-3. Pulse **Ejecutar** (F5). Abra la pestaña **Observación**, pulse **+** y escriba `LED_Output`. Su valor cambia entre verdadero y falso aproximadamente cada medio segundo.
-4. Pulse **Detener** (Shift+F5) al terminar.
+Ambos caminos usan la misma aplicación y el mismo simulador, y puede cambiar de uno a otro cuando quiera: el espacio de
+trabajo de una lección es un proyecto común, y un proyecto de ejemplo es un ejercicio común.
 
-El simulador es el runtime en C de ZPLC compilado para su equipo. Ejecuta el
-programa compilado con un temporizador. No modela la E/S eléctrica de una placa
-ni sus tiempos reales.
+## Ejecute su primer programa
 
-## Ejecutar la prueba de escenario
+Esta es la versión corta de [Blink sin hardware](../tutorials/blink-without-hardware.md), que explica cada paso y termina
+con una prueba de escenario.
 
-Un escenario es un guion breve que fija entradas, deja correr el programa durante
-un tiempo definido y verifica las salidas.
+1. Descargue el instalador de su sistema desde [GitHub Releases](https://github.com/eduardojvieira/ZPLC/releases),
+   compruébelo y ábralo: [Instalar ZPLC](./install.md). Windows y macOS avisan de una aplicación sin firmar, y la página
+   de instalación muestra cómo continuar.
+2. En la pantalla de bienvenida, bajo **Ejemplos**, en el grupo **Recorrido por los lenguajes**, elija **Blinky (texto
+   estructurado)** y luego elija una carpeta vacía. ZPLC copia allí el ejemplo y lo abre.
+3. Elija **Compilación** y luego **Compilar** (Ctrl+B, o Cmd+B en macOS).
+4. En la barra de herramientas elija **Simular**, pulse **Conectar** y luego **Ejecutar** (F5).
+5. Abra la pestaña **Observación**, pulse **+** y escriba `LED_Output`. Su valor cambia entre verdadero y falso
+   aproximadamente cada medio segundo.
 
-1. Abra la pestaña **Pruebas**. Si solicita el proyecto, elija **Elegir zplc.json** y seleccione el `zplc.json` de la carpeta de su proyecto.
-2. Pulse **Ejecutar escenarios en el host**. ZPLC ejecuta `tests/blinky-visual.scenario.json` en el simulador y muestra **Superado** o **Fallido** para cada escenario, con sus verificaciones.
+El simulador es el runtime de ZPLC construido para su equipo. Ejecuta su programa con un temporizador y no modela el lado
+eléctrico de una placa ni sus tiempos reales, así que un resultado en él es un resultado de host.
 
-## Hardware
+## Haga el curso en su lugar
 
-Las placas que tienen un perfil de compilación, y hasta dónde se ha demostrado
-que funciona cada una, están en [Compatibilidad de hardware](../reference/capabilities-evidence.md);
-los pines y canales de cada una están en [Placas](../reference/boards.md).
-Una placa cuyo nivel es `cross-build` tiene un firmware que compila en integración
-continua, y nada más: nadie ha demostrado que se grabe, arranque o ejecute un
-programa.
+En la pantalla de bienvenida elija **Aprender**. El curso no necesita carpeta, red ni placa. Cada lección de la ruta de
+escalera abre una página de lectura a pantalla completa que explica una idea y le deja probarla en una pequeña simulación
+dentro de la misma página; después practica en el editor, y **Comprobar** califica su programa contra un escenario.
+[Aprender](../learn/index.md) describe el curso, y [las notas de la versión](../release-notes/index.md#modo-de-lectura-de-aprender-y-la-ruta-de-escalera)
+dicen qué hay de nuevo en 2.0.
 
-La versión rc.3 no incluye firmware precompilado. El canal de versiones compila
-una imagen por placa en cada versión que hace, y ZPLC muestra la imagen de la
-placa elegida, con su suma de verificación y los pasos para grabarla, en **Configuración del proyecto**, **Destino**; no la graba. Para compilar el firmware usted mismo,
-siga la [configuración del espacio de trabajo Zephyr](../reference/zephyr-workspace-setup.md).
-Compilar el firmware, grabarlo, cargar un programa y ejecutarlo son acciones
-separadas que una persona inicia en ZPLC. Las herramientas de IA y MCP no
-pueden iniciar ninguna de ellas.
+## Pasar al hardware
+
+La compatibilidad de cada placa está en [Compatibilidad de hardware](../reference/capabilities-evidence.md), y los pines y
+canales en [Placas compatibles](../reference/boards.md). Una placa en el nivel `cross-build` tiene un firmware que se
+compila en integración continua, y nada más.
+
+Compilar el firmware, grabarlo, cargar un programa y ejecutarlo son cuatro acciones separadas, y una persona inicia cada
+una. Los asistentes de IA y las herramientas MCP no pueden iniciar ninguna. [Su primera placa](../tutorials/first-board.md)
+enumera los pasos para una Raspberry Pi Pico o una ESP32-S3, y dice con claridad que nadie los ha ejecutado todavía en una
+placa.
 
 ## Ejecutar ZPLC desde el código fuente
 
-Úselo en Linux o macOS si el instalador no inicia. Necesita Bun 1.3.14, CMake y
-un compilador de C. El simulador de la aplicación ZPLC es un programa aparte que usted
-compila primero y que luego indica a la aplicación:
+Use esto en Linux o macOS si el instalador no arranca. Necesita Bun 1.3.14, CMake y un compilador de C. El simulador es un
+programa aparte que usted compila primero y al que apunta la aplicación:
 
 ```bash
 cmake -S firmware/lib/zplc_core -B firmware/lib/zplc_core/build
@@ -93,7 +98,7 @@ ZPLC_NATIVE_SIM_BIN="$PWD/firmware/lib/zplc_core/build/zplc_runtime" \
 ## Siguientes pasos
 
 - [Instalar ZPLC](./install.md): descarga, verificación, primer inicio, actualización y desinstalación.
-- [La aplicación ZPLC](../ide/index.md): los editores, las pruebas y las herramientas del entorno de trabajo.
-- [Flujo del compilador](../ide/compiler.md): cómo el código fuente se convierte en un programa `.zplc`.
-- [Lenguajes](../languages/index.md): Structured Text y los demás lenguajes.
-- [Despliegue](../ide/deployment.md): cómo llevar un programa a una placa conectada.
+- [Blink sin hardware](../tutorials/blink-without-hardware.md): el tutorial completo, con una captura de cada paso.
+- [La aplicación ZPLC](../ide/index.md): los editores, las pruebas y las herramientas del banco de trabajo.
+- [Lenguajes](../languages/index.md): texto estructurado y los otros cuatro lenguajes.
+- [Notas de la versión](../release-notes/index.md): qué hay de nuevo en 2.0, qué se rompe y qué no está verificado.

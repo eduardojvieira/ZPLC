@@ -9,10 +9,9 @@ tags: [safety, limits, evidence]
 
 # Seguridad y limitaciones
 
-Lea esta página antes de confiar en ZPLC para algo que vaya más allá del
-aprendizaje y la simulación. Es el único lugar que dice qué no es ZPLC, dónde se
-ha verificado cada parte y qué límites son duros. Las demás páginas enlazan aquí
-en lugar de repetirlo.
+Lea esta página antes de confiar en ZPLC para algo que vaya más allá del aprendizaje y la simulación. Es el único lugar que
+dice qué no es ZPLC, qué evidencia respalda cada parte y qué límites son duros. Las demás páginas enlazan aquí en lugar de
+repetirlo.
 
 ## Lo que ZPLC no es
 
@@ -27,14 +26,13 @@ en lugar de repetirlo.
   liberación y el plazo de un ciclo. Ninguna placa tiene un tiempo de ciclo, un
   jitter ni un tiempo de ejecución de peor caso medidos, y el simulador corre con
   un reloj propio.
-- **No es un producto terminado.** La versión actual es una versión preliminar
-  para evaluación: vea las [notas de la versión](./release-notes/index.md) y la
-  [hoja de ruta](./contributing/roadmap.md).
+- **No es un producto calificado.** ZPLC 2.0 se publica para evaluación: las [notas de la versión](./release-notes/index.md)
+  enumeran lo que no está verificado, y la [hoja de ruta](./contributing/roadmap.md) dice qué viene después.
 - **No declara ninguna placa.** Cada placa de la tabla de
   [Compatibilidad de hardware](./reference/capabilities-evidence.md) está en el nivel que
   indican sus registros, y hoy ese nivel es compilación cruzada para todas.
 
-## Dónde se ha verificado cada parte
+## Niveles de evidencia: dónde se ha verificado cada parte
 
 Una verificación de un nivel nunca prueba uno superior. Los nombres de los niveles
 son los de [Compatibilidad de hardware](./reference/capabilities-evidence.md#los-niveles).
