@@ -1,7 +1,7 @@
 {
   "requirement": "LNG-028",
   "title": "a Ladder comparison box passes power only while the power reaching it is on and its comparison holds",
-  "matrix": ["ld-fbd.en-eno", "ld-fbd.ld-blocks-in-a-rung"],
+  "matrix": ["ld-fbd.ld-en-eno-on-function-boxes", "ld-fbd.ld-blocks-in-a-rung"],
   "scans": 3,
   "scanMs": 10,
   "inputs": [

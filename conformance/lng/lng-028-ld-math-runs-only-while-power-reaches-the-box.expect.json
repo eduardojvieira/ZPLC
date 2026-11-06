@@ -1,7 +1,7 @@
 {
   "requirement": "LNG-028",
   "title": "Ladder arithmetic boxes store their result while the power reaches them, keep it when it does not, and pass the power on",
-  "matrix": ["ld-fbd.en-eno", "ld-fbd.ld-blocks-in-a-rung"],
+  "matrix": ["ld-fbd.ld-en-eno-on-function-boxes", "ld-fbd.ld-blocks-in-a-rung"],
   "tags": ["arch-sensitive", "division"],
   "note": "DIV truncates toward zero and MOD takes the sign of the dividend, as the VM states (IEC 61131-3 table 33).",
   "scans": 3,

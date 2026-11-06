@@ -1,7 +1,7 @@
 {
   "requirement": "LNG-028",
   "title": "Ladder LIMIT, MIN and MAX boxes select a value while the power reaches them and keep it when it does not",
-  "matrix": ["ld-fbd.en-eno", "ld-fbd.ld-blocks-in-a-rung"],
+  "matrix": ["ld-fbd.ld-en-eno-on-function-boxes", "ld-fbd.ld-blocks-in-a-rung"],
   "scans": 3,
   "scanMs": 10,
   "inputs": [

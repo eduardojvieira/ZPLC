@@ -1,7 +1,7 @@
 {
   "requirement": "LNG-028",
   "title": "Ladder boxes compare and multiply REAL operands and REAL literals",
-  "matrix": ["ld-fbd.en-eno", "ld-fbd.ld-blocks-in-a-rung"],
+  "matrix": ["ld-fbd.ld-en-eno-on-function-boxes", "ld-fbd.ld-blocks-in-a-rung"],
   "tags": ["arch-sensitive", "float"],
   "scans": 2,
   "scanMs": 10,

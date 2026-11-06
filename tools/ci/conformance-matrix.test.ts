@@ -144,10 +144,10 @@ describe('the committed matrix', () => {
   const committed = JSON.parse(readFileSync(new URL('../../conformance/matrix.json', import.meta.url), 'utf8')) as Matrix;
   const specFile = new URL('../../specs/011-zplc-2-0-remediation/spec.md', import.meta.url);
 
-  it('is well formed, and its rows are the ones of section 6: 94 that must work, 5 that are rejected, 12 left to D-04', () => {
+  it('is well formed, and its rows are the ones of section 6: 95 that must work, 5 that are rejected, 12 left to D-04', () => {
     expect(validateMatrix(committed)).toEqual([]);
     const count = (target: string) => committed.rows.filter((entry) => entry.target === target).length;
-    expect([committed.rows.length, count('works'), count('rejects'), count('decision')]).toEqual([111, 94, 5, 12]);
+    expect([committed.rows.length, count('works'), count('rejects'), count('decision')]).toEqual([112, 95, 5, 12]);
   });
 
   it('is in step with section 6 while the spec is tracked, and says so when it cannot check', () => {

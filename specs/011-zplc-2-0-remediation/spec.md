@@ -1300,6 +1300,7 @@ Documentation written for controls engineers that takes a newcomer from nothing 
 | FBD: gates, comparison, arithmetic, selection, timers, counters, triggers, bistables | Works with two-input gates; `REAL` passes through `INT` | Works, with more than two inputs and correct types | LNG-023 |
 | FBD: unwired inputs | Broken: become 0 | Reported as an error when required | LNG-023 |
 | FBD: feedback loops | Missing | Detected and reported; support is Decision D-04 (2.x recommended) | LNG-023 |
+| LD: EN/ENO on function boxes | Works for the comparison, arithmetic, move and selection functions (GT, GE, EQ, NE, LE, LT, ADD, SUB, MUL, DIV, MOD, MOVE, LIMIT, MIN, MAX); FBD is unchanged | Works | LNG-028 |
 | `EN`/`ENO` | Missing | Decision D-04 (2.x recommended) | LNG-002 |
 | User function blocks and functions in LD and FBD | Missing | Works | LNG-008 |
 
