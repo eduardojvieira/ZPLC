@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Series and parallel: AND and OR with contacts",
+  "summary": "Combine contacts in series for AND and in parallel for OR, read a truth table, and finish a program with a horn that sounds when either of two conditions is true.",
+  "scope": "Tests provide deterministic native POSIX host evidence on your computer only; they are not hardware, electrical, HIL, or safety evidence.",
+  "objectives": [
+    "Explain that contacts in series pass power only when all of them conduct (AND), and contacts in parallel pass power when any of them conducts (OR).",
+    "Add a parallel path to a rung so that a horn sounds when the door is open or the motor is overheated, and check it against every row of a truth table."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/SeriesParallel.ld.json two rungs are drawn. The first lights RunLamp when Auto and Ready are both TRUE, with two contacts in series. The second sounds Horn, but it only reads DoorOpen. Add a second path in parallel so that Overheat also sounds the horn.",
+      "checkpoint": "The horn rung has DoorOpen and Overheat on two parallel paths that join before the Horn coil."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, predict RunLamp and Horn. At {{t:20}} ms Auto and Ready are both TRUE. At {{t:50}} ms only Overheat is TRUE. What are the two outputs at each time?",
+      "checkpoint": "{{v:SeriesParallel.RunLamp=true,SeriesParallel.Horn=false@20|RunLamp ON, Horn OFF}} at {{t:20}} ms; {{v:SeriesParallel.RunLamp=false,SeriesParallel.Horn=true@50|RunLamp OFF, Horn ON}} at {{t:50}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Fix this starter omission, save it, then press Check: The starter reads only DoorOpen in the horn rung, so Horn stays OFF at {{t:50}} ms although Overheat is TRUE. Add a normally open contact on Overheat in a second row, under the DoorOpen contact, and join the two rows so they are in parallel. In the Ladder editor, put the cursor on the DoorOpen contact and press B to start a parallel branch.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program and tries the combinations of the truth table one step at a time.",
+      "checkpoint": "The scenario is named SeriesParallel and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:40}}, {{t:50}} and {{t:60}} ms: Horn is ON when only DoorOpen is TRUE, when only Overheat is TRUE and when both are TRUE. It is OFF when neither is. RunLamp is ON only at {{t:20}} ms, when both Auto and Ready are TRUE.",
+      "checkpoint": "RunLamp rises once at {{t:20}} ms, and Horn stays ON from {{t:40}} ms to {{t:60}} ms."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Put DoorOpen and Overheat in series instead and watch which assertion fails. Which rows of the truth table does that change?",
+      "checkpoint": "The scenario checks every combination of the two horn inputs and of the two lamp inputs that it sets. It does not prove an alarm system works on a real machine."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "The horn must sound when either condition is TRUE. Contacts in series need both. Which arrangement gives power two different ways to reach the coil?"
+    },
+    {
+      "level": 2,
+      "text": "Add a normally open contact on Overheat in the second row, under the DoorOpen contact, and join it to the first row so the two are in parallel. Leave the RunLamp rung as it is."
+    }
+  ],
+  "faultCases": [
+    "The starter reads only DoorOpen in the horn rung, so Horn stays OFF at {{t:50}} ms although Overheat is TRUE; add a normally open contact on Overheat in parallel with the DoorOpen contact."
+  ]
+}

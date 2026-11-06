@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Serie y paralelo: AND y OR con contactos",
+  "summary": "Combine contactos en serie para AND y en paralelo para OR, lea una tabla de verdad y termine un programa con una bocina que suena cuando se cumple cualquiera de dos condiciones.",
+  "scope": "Las pruebas aportan evidencia determinista del host con el runtime nativo POSIX, solo en su computador; no son evidencia de hardware, eléctrica, HIL ni de seguridad.",
+  "objectives": [
+    "Explique que los contactos en serie dejan pasar la energía solo cuando todos conducen (AND), y los contactos en paralelo cuando alguno conduce (OR).",
+    "Agregue un camino en paralelo a un peldaño para que una bocina suene cuando la puerta está abierta o el motor se sobrecalienta, y compruébelo con cada fila de una tabla de verdad."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/SeriesParallel.ld.json hay dos peldaños dibujados. El primero enciende RunLamp cuando Auto y Ready son TRUE, con dos contactos en serie. El segundo hace sonar Horn, pero solo lee DoorOpen. Agregue un segundo camino en paralelo para que Overheat también haga sonar la bocina.",
+      "checkpoint": "El peldaño de la bocina tiene DoorOpen y Overheat en dos caminos paralelos que se unen antes de la bobina Horn."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Antes de ejecutar, prediga RunLamp y Horn. A los {{t:20}} ms Auto y Ready son ambos TRUE. A los {{t:50}} ms solo Overheat es TRUE. ¿Cuánto valen las dos salidas en cada instante?",
+      "checkpoint": "{{v:SeriesParallel.RunLamp=true,SeriesParallel.Horn=false@20|RunLamp en ON, Horn en OFF}} a los {{t:20}} ms; {{v:SeriesParallel.RunLamp=false,SeriesParallel.Horn=true@50|RunLamp en OFF, Horn en ON}} a los {{t:50}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija esta omisión del programa inicial, guárdelo y pulse Comprobar: El programa inicial lee solo DoorOpen en el peldaño de la bocina, así que Horn queda en OFF a los {{t:50}} ms aunque Overheat es TRUE. Agregue un contacto normalmente abierto de Overheat en una segunda fila, bajo el contacto de DoorOpen, y una las dos filas para que queden en paralelo. En el editor de escalera, ponga el cursor sobre el contacto DoorOpen y pulse B para iniciar una rama paralela.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado y prueba las combinaciones de la tabla de verdad, un paso a la vez.",
+      "checkpoint": "El escenario se llama SeriesParallel y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:40}}, {{t:50}} y {{t:60}} ms: Horn está en ON cuando solo DoorOpen es TRUE, cuando solo Overheat es TRUE y cuando lo son ambos. Está en OFF cuando no lo es ninguno. RunLamp está en ON solo a los {{t:20}} ms, cuando Auto y Ready son TRUE.",
+      "checkpoint": "RunLamp sube una vez a los {{t:20}} ms, y Horn permanece en ON desde los {{t:40}} ms hasta los {{t:60}} ms."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "Ponga DoorOpen y Overheat en serie y observe qué aserción falla. ¿Qué filas de la tabla de verdad cambian?",
+      "checkpoint": "El escenario comprueba cada combinación de las dos entradas de la bocina y de las dos de la lámpara que ajusta. No demuestra que un sistema de alarma funcione en una máquina real."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "La bocina debe sonar cuando cualquiera de las dos condiciones es TRUE. Los contactos en serie exigen ambas. ¿Qué disposición da a la energía dos maneras distintas de llegar a la bobina?"
+    },
+    {
+      "level": 2,
+      "text": "Agregue un contacto normalmente abierto de Overheat en la segunda fila, bajo el contacto DoorOpen, y únalo a la primera fila para que queden en paralelo. Deje el peldaño de RunLamp como está."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial lee solo DoorOpen en el peldaño de la bocina, así que Horn queda en OFF a los {{t:50}} ms aunque Overheat es TRUE; agregue un contacto normalmente abierto de Overheat en paralelo con el contacto DoorOpen."
+  ]
+}

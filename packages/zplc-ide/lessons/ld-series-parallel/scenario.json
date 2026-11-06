@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "id": "SeriesParallel",
+  "tickMs": 10,
+  "durationMs": 80,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "SeriesParallel.Auto": false,
+        "SeriesParallel.Ready": false,
+        "SeriesParallel.DoorOpen": false,
+        "SeriesParallel.Overheat": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "SeriesParallel.Auto": true,
+        "SeriesParallel.Ready": false,
+        "SeriesParallel.DoorOpen": false,
+        "SeriesParallel.Overheat": false
+      }
+    },
+    {
+      "atMs": 20,
+      "set": {
+        "SeriesParallel.Auto": true,
+        "SeriesParallel.Ready": true,
+        "SeriesParallel.DoorOpen": false,
+        "SeriesParallel.Overheat": false
+      }
+    },
+    {
+      "atMs": 30,
+      "set": {
+        "SeriesParallel.Auto": false,
+        "SeriesParallel.Ready": true,
+        "SeriesParallel.DoorOpen": false,
+        "SeriesParallel.Overheat": false
+      }
+    },
+    {
+      "atMs": 40,
+      "set": {
+        "SeriesParallel.Auto": false,
+        "SeriesParallel.Ready": false,
+        "SeriesParallel.DoorOpen": true,
+        "SeriesParallel.Overheat": false
+      }
+    },
+    {
+      "atMs": 50,
+      "set": {
+        "SeriesParallel.Auto": false,
+        "SeriesParallel.Ready": false,
+        "SeriesParallel.DoorOpen": false,
+        "SeriesParallel.Overheat": true
+      }
+    },
+    {
+      "atMs": 60,
+      "set": {
+        "SeriesParallel.Auto": false,
+        "SeriesParallel.Ready": false,
+        "SeriesParallel.DoorOpen": true,
+        "SeriesParallel.Overheat": true
+      }
+    },
+    {
+      "atMs": 70,
+      "set": {
+        "SeriesParallel.Auto": false,
+        "SeriesParallel.Ready": false,
+        "SeriesParallel.DoorOpen": false,
+        "SeriesParallel.Overheat": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "SeriesParallel.RunLamp": false,
+        "SeriesParallel.Horn": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "SeriesParallel.RunLamp": false,
+        "SeriesParallel.Horn": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 20,
+      "condition": {
+        "SeriesParallel.RunLamp": true,
+        "SeriesParallel.Horn": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 30,
+      "condition": {
+        "SeriesParallel.RunLamp": false,
+        "SeriesParallel.Horn": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 40,
+      "condition": {
+        "SeriesParallel.RunLamp": false,
+        "SeriesParallel.Horn": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "SeriesParallel.RunLamp": false,
+        "SeriesParallel.Horn": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 60,
+      "condition": {
+        "SeriesParallel.RunLamp": false,
+        "SeriesParallel.Horn": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 70,
+      "condition": {
+        "SeriesParallel.RunLamp": false,
+        "SeriesParallel.Horn": false
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 20,
+      "withinMs": 0,
+      "condition": {
+        "SeriesParallel.RunLamp": true
+      }
+    },
+    {
+      "kind": "FOR",
+      "fromMs": 40,
+      "forMs": 20,
+      "condition": {
+        "SeriesParallel.Horn": true
+      }
+    }
+  ]
+}

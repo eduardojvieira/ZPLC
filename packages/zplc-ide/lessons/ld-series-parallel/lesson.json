@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "ld-series-parallel",
+  "version": 2,
+  "order": 80,
+  "module": 2,
+  "level": "foundation",
+  "prerequisites": ["ld-no-nc-contacts"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The scenario sets all four inputs in every combination of a truth table, one step at a time, which only the simulation can do.",
+        "es": "El escenario ajusta las cuatro entradas en cada combinación de una tabla de verdad, un paso a la vez, algo que solo la simulación puede hacer."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where every combination can be set exactly.",
+        "es": "Complétela en Simulación, donde cada combinación se puede ajustar con exactitud."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "ld_series_parallel_starter",
+    "program": "src/SeriesParallel.ld.json"
+  },
+  "solution": {
+    "project": "ld_series_parallel",
+    "program": "src/SeriesParallel.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "SeriesParallel",
+    "path": "tests/series-parallel.scenario.json",
+    "sha256": "8a8cd4d17487dc1fa46db2f5549b11a639249fd1acb27db073346ef4ee1ab3c4"
+  },
+  "regressionScenarios": []
+}

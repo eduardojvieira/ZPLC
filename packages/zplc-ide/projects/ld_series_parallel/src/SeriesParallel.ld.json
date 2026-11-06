@@ -1,0 +1,232 @@
+{
+  "name": "SeriesParallel",
+  "description": "A run lamp that needs two conditions together, and a horn that needs either of two conditions.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Auto",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Automatic mode selected: TRUE when selected"
+      },
+      {
+        "name": "Ready",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Machine ready: TRUE when ready"
+      },
+      {
+        "name": "DoorOpen",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "Door switch: TRUE while the door is open"
+      },
+      {
+        "name": "Overheat",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "Temperature switch: TRUE while the motor is too hot"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "RunLamp",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Lamp: automatic mode and machine ready"
+      },
+      {
+        "name": "Horn",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Horn: door open or overheat"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Series: RunLamp is lit only when Auto AND Ready are both TRUE.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "e0_0_1",
+              "type": "contact_no",
+              "variable": "Auto",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_1_1",
+              "type": "contact_no",
+              "variable": "Ready",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_7_1",
+              "type": "coil",
+              "variable": "RunLamp",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "Parallel: Horn sounds when DoorOpen OR Overheat is TRUE.",
+      "branches": [
+        {
+          "id": "branch_1",
+          "startCol": 0,
+          "endCol": 0,
+          "rows": [
+            0,
+            1
+          ]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "e0_0_2",
+              "type": "contact_no",
+              "variable": "DoorOpen",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_7_2",
+              "type": "coil",
+              "variable": "Horn",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "e1_0_2",
+              "type": "contact_no",
+              "variable": "Overheat",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-05",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
