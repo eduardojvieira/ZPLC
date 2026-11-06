@@ -43,6 +43,8 @@ example projects grouped by what they teach. **Blinky (structured text)** is in 
 The folder holds three things: `zplc.json`, the project (its target, its task and its program); `src/main.st`, the
 program; and `tests/blinky-st.scenario.json`, the scenario test.
 
+![The project Blinky just copied: its objects in the Project view, with the program open in the editor](/img/tutorials/blink-copied.png)
+
 ## 3. Read the program
 
 Open `src/main.st` from the **Files** list of the **Project** view. It opens in the editor.
@@ -96,6 +98,8 @@ If the build fails, **Problems** lists each error with its line and column.
 
 The status line shows **Running** and the cycle count rises. The simulator is the runtime of ZPLC built for your
 computer. It runs your program on a timer, and it does not model the electrical side of a board or its real timing.
+
+![The toolbar and status line with the simulator connected and the program running](/img/tutorials/blink-running.png)
 
 ## 6. Watch the output change
 

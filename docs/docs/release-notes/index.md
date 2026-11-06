@@ -23,19 +23,19 @@ The installers are unsigned, and ZPLC is not a safety PLC and must not control m
 
 - **A course inside the application.** Learn has 68 lessons in English and Spanish, a Ladder path that starts at zero,
   and a hardware track for the Raspberry Pi Pico and the ESP32-S3-DevKitC-1.
-- **Reading pages with a lab inside.** Ladder lessons open on a full-screen page that you can try without leaving it.
+- **Reading pages with a lab inside.** Ladder lessons open on a page over the workbench that you can try without leaving it.
 - **Ladder function boxes.** Comparison, math and other functions sit in a rung with EN and ENO wires.
 - **A simulator that follows the target.** The same scheduler core runs on your computer and in the firmware.
 - **Five languages, one bytecode.** Structured Text, Instruction List, Ladder, Function Block Diagram and Sequential
   Function Chart compile to one format.
-- **Documentation you can trust.** Every number, command and claim on the site is checked against the repository, in
-  English and in Spanish.
+- **Documentation you can trust.** Function names, settings, shell commands, file paths, counts and code samples on the
+  site are checked against the repository by CI, in English and in Spanish.
 
 ## What changed for you
 
 ### Learn reading mode and the Ladder path
 
-Learn now teaches in two steps. A lesson that has a **reading page** opens it first, full screen over the workbench: a
+Learn now teaches in two steps. A lesson that has a **reading page** opens it first, over the workbench: a
 short explanation, drawings of Ladder rungs, and a **try-it lab**. **Practice** closes the page and opens the lesson
 beside the editor, **Back to course** returns to the Learn home, and **Read again** on the lesson panel brings the page
 back.
@@ -151,7 +151,7 @@ boxes may write one variable. The [Ladder reference](../reference/language-ld.md
 - **No communication exchange was tested with a real device, broker or service.** The Modbus, MQTT, Sparkplug B and cloud
   blocks were tested against stand-ins and loopback servers, and no cloud block was verified against a service. The
   handshake of the communication blocks and the separation of the four Modbus data areas are not final.
-- **Retained values** are proven on the host and the simulator only, and are off by default on firmware.
+- **Retained values** are proven on the host, `native_sim` and the simulator only; every shipped board profile turns persistence on, and no board has been measured.
 - **TLS is off on the Nucleo-H743ZI and the Arduino Opta** until their random generator is verified on the board, so MQTT
   runs over plain TCP there.
 - **The browser runtime is degraded.** It was run on one engine, its timing is the browser's, its communication blocks

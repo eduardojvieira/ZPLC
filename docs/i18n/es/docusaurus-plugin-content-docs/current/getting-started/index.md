@@ -43,7 +43,7 @@ El [Panorama de plataforma](../platform-overview/index.md) muestra cómo encajan
 | **Aprender programación de PLC** desde cero   | [Instalar ZPLC](./install.md), luego **Aprender** en la pantalla de bienvenida: [Aprender](../learn/index.md)                                             | Hace el curso dentro de la aplicación: 68 lecciones en español e inglés, con una ruta de escalera que parte de cero       |
 
 Ambos caminos usan la misma aplicación y el mismo simulador, y puede cambiar de uno a otro cuando quiera: el espacio de
-trabajo de una lección es un proyecto común, y un proyecto de ejemplo es un ejercicio común.
+trabajo de una lección es un proyecto que se abre como cualquier otro, y un proyecto de ejemplo puede usarse como ejercicio de práctica.
 
 ## Ejecute su primer programa
 
@@ -66,7 +66,7 @@ eléctrico de una placa ni sus tiempos reales, así que un resultado en él es u
 ## Haga el curso en su lugar
 
 En la pantalla de bienvenida elija **Aprender**. El curso no necesita carpeta, red ni placa. Cada lección de la ruta de
-escalera abre una página de lectura a pantalla completa que explica una idea y le deja probarla en una pequeña simulación
+escalera abre una página de lectura sobre el banco de trabajo que explica una idea y le deja probarla en una pequeña simulación
 dentro de la misma página; después practica en el editor, y **Comprobar** califica su programa contra un escenario.
 [Aprender](../learn/index.md) describe el curso, y [las notas de la versión](../release-notes/index.md#modo-de-lectura-de-aprender-y-la-ruta-de-escalera)
 dicen qué hay de nuevo en 2.0.

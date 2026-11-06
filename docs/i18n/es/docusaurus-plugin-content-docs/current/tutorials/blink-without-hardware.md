@@ -45,6 +45,8 @@ por los lenguajes**.
 La carpeta contiene tres cosas: `zplc.json`, el proyecto (su destino, su tarea y su programa); `src/main.st`, el programa;
 y `tests/blinky-st.scenario.json`, la prueba de escenario.
 
+![El proyecto Blinky recién copiado: sus objetos en la vista Proyecto](/img/tutorials/blink-copied-es.png)
+
 ## 3. Lea el programa
 
 Abra `src/main.st` desde la lista **Archivos** de la vista **Proyecto**. Se abre en el editor.
@@ -98,6 +100,8 @@ Si la compilación falla, **Problemas** enumera cada error con su línea y su co
 
 La línea de estado muestra **En marcha** y el contador de ciclos sube. El simulador es el runtime de ZPLC construido para su
 equipo. Ejecuta su programa con un temporizador, y no modela el lado eléctrico de una placa ni sus tiempos reales.
+
+![La barra de herramientas y la línea de estado con el simulador conectado y el programa en marcha](/img/tutorials/blink-running-es.png)
 
 ## 6. Observe cómo cambia la salida
 

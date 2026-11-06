@@ -224,6 +224,12 @@ describe('what changed for a user, what breaks, how to migrate and what is limit
     });
   });
 
+  test('the notes of the unreleased entry carry the browser-build and deadline-miss breaking changes', () => {
+    const { breaking } = changelogParts(readFileSync(join(root, 'CHANGELOG.md'), 'utf8'), 'Unreleased');
+    expect(breaking.some((item) => item.startsWith('**There is no hosted browser build.**'))).toBe(true);
+    expect(breaking.some((item) => item.startsWith('**A fault latches after 3 consecutive deadline misses'))).toBe(true);
+  });
+
   test('takes every bullet of an older section as a change, and says nothing is recorded under "None."', () => {
     expect(changelogParts(changelog, '2.0.0-rc.3')).toEqual({
       structured: false,

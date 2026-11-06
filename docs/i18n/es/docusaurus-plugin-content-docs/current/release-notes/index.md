@@ -23,21 +23,21 @@ ZPLC 2.0.0 es para evaluación. Ninguna placa se ha grabado, arrancado ni ejecut
 
 - **Un curso dentro de la aplicación.** Aprender tiene 68 lecciones en español e inglés, una ruta de escalera que parte de
   cero y una ruta de hardware para la Raspberry Pi Pico y la ESP32-S3-DevKitC-1.
-- **Páginas de lectura con un laboratorio dentro.** Las lecciones de escalera abren una página a pantalla completa que
+- **Páginas de lectura con un laboratorio dentro.** Las lecciones de escalera abren una página sobre el banco de trabajo que
   puede probar sin salir de ella.
 - **Cajas de función en escalera.** Las comparaciones, las operaciones matemáticas y otras funciones van en un peldaño con
   cables EN y ENO.
 - **Un simulador que sigue al destino.** El mismo núcleo de planificación corre en su equipo y en el firmware.
 - **Cinco lenguajes, un solo bytecode.** Texto estructurado, lista de instrucciones, escalera, diagrama de bloques de
   función y diagrama funcional secuencial se compilan a un único formato.
-- **Documentación en la que puede confiar.** Cada número, comando y afirmación del sitio se comprueba contra el
+- **Documentación en la que puede confiar.** Los nombres de funciones, ajustes, comandos de shell, rutas de archivo, cifras y ejemplos de código del sitio los comprueba CI contra el
   repositorio, en español y en inglés.
 
 ## Qué cambió para usted
 
 ### Modo de lectura de Aprender y la ruta de escalera
 
-Aprender ahora enseña en dos pasos. Una lección que tiene una **página de lectura** la abre primero, a pantalla completa
+Aprender ahora enseña en dos pasos. Una lección que tiene una **página de lectura** la abre primero, sobre el banco de trabajo
 sobre el banco de trabajo: una explicación breve, dibujos de peldaños de escalera y un **laboratorio de prueba**.
 **Practicar** cierra la página y abre la lección junto al editor, **Volver al curso** regresa al inicio de Aprender, y
 **Volver a leer** en el panel de la lección trae la página de nuevo.
@@ -137,7 +137,7 @@ tiene la lista y las reglas.
 - **Recompilar descarta los valores retentivos**, porque un programa que difiere en un byte tiene otra identidad.
 - **No hay una versión alojada para navegador.** ZPLC es la aplicación de escritorio. El recurso de WebAssembly del
   simulador se mantiene.
-- **Los plazos incumplidos consecutivos que bloquean una falla son 3 en lugar de 1** en todos los runtimes
+- **Una falla se retiene tras 3 plazos incumplidos consecutivos en lugar de 1** en todos los runtimes
   (`CONFIG_ZPLC_DEADLINE_MISS_LIMIT`; fíjelo en 1 para el comportamiento anterior).
 
 ## Migración desde 1.x
@@ -164,8 +164,7 @@ tiene la lista y las reglas.
   MQTT, Sparkplug B y de nube se probaron contra sustitutos y servidores de loopback, y ningún bloque de nube se verificó
   contra un servicio. El protocolo de enlace de los bloques de comunicación y la separación de las cuatro áreas de datos de
   Modbus no son definitivos.
-- **Los valores retentivos** están demostrados solo en el host y el simulador, y están desactivados de forma predeterminada
-  en el firmware.
+- **Los valores retentivos** están demostrados solo en el host, `native_sim` y el simulador; todo perfil de placa incluido activa la persistencia, y ninguna placa se ha medido.
 - **TLS está desactivado en la Nucleo-H743ZI y en la Arduino Opta** hasta que su generador de números aleatorios se verifique
   en la placa, así que allí MQTT corre sobre TCP sin cifrar.
 - **El runtime del navegador está degradado.** Se ejecutó en un solo motor, su temporización es la del navegador, sus

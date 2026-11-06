@@ -59,7 +59,7 @@ esptool --chip esp32s3 --port <serial port> write-flash 0x0 zplc-runtime-<versio
 
 For an image you built, the file is `build/zephyr/zephyr.bin`. Version 4 of esptool spells the command `esptool.py ... write_flash`.
 
-4. Press RST to leave download mode and start the program you deployed. If the console stays silent, the board is still in download mode: press RST again.
+4. Press RST to leave download mode and start the firmware you wrote. If the console stays silent, the board is still in download mode: press RST again.
 
 ### The browser flasher
 
