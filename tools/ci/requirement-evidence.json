@@ -2889,6 +2889,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/boardSession.test.ts","test":"LRN-015 has no session to give when Studio is not connected to a board"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/boardSession.test.ts","test":"the I/O trace of the board session (LRN-024, LRN-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/boardSession.test.ts","test":"the read-only board session (LRN-015, LRN-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/tryLab.test.ts","test":"try-it lab session (LRN-041, LRN-015)"},
+    {"kind":"unit","ref":"tools/ci/learn-physical-guard.test.ts","test":"LRN-015 LRN-041 lets the try-it lab seam use only its own WASM session"},
     {"kind":"unit","ref":"tools/ci/learn-physical-guard.test.ts","test":"LRN-015 finds a call that connects, deploys, runs, stops, forces, writes, opens a port or flashes"},
     {"kind":"unit","ref":"tools/ci/learn-physical-guard.test.ts","test":"LRN-015 finds an import of a module that reaches a device"},
     {"kind":"unit","ref":"tools/ci/learn-physical-guard.test.ts","test":"LRN-015 guards the Learn modules and components, not their tests or other surfaces"},
@@ -3150,6 +3152,53 @@
   ],
   "LRN-038": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/learnLesson.test.ts","test":"Learn lesson text is never replaced at run time (LRN-038)"}
+  ],
+  "LRN-039": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 Back to course closes the view and opens the Learn home, never both at once"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 Escape does what Practice does"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 Practice closes the view and moves the focus to the lesson panel"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 a lesson without a reading page opens as before: the workspace, the lesson panel and no reading view"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 a page that does not parse shows a short error and the way out, never a crash"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 keeps the focus inside the view: Tab from the last control wraps to the first"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 reads the page in the language of the app"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 starting a lesson with a reading page shows it full screen: module, title as h1, time and the page"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"LRN-039 the lesson panel offers Read again, which reopens the page"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LearnReadingView.dom.test.tsx","test":"the reading view (LRN-039)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnContent.v1.test.ts","test":"the reading page in the Learn content (LRN-039)"}
+  ],
+  "LRN-040": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/reading/ReadingPage.dom.test.tsx","test":"reading page rendering (LRN-040)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/readingMarkdown.test.ts","test":"the live-block limits (LRN-040)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/readingMarkdown.test.ts","test":"the reading Markdown subset (LRN-040)"}
+  ],
+  "LRN-041": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/reading/LdTry.dom.test.tsx","test":"try-it lab (LRN-041)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/reading/ReadingPage.dom.test.tsx","test":"self-check question (LRN-041)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/reading/ReadingPage.dom.test.tsx","test":"timing diagram (LRN-041)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/reading/ldTry.browser.test.ts","test":"try-it lab on the WebAssembly runtime (LRN-041)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/reading/ldTryModel.test.ts","test":"timing trace of a run (LRN-041)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/tryLab.test.ts","test":"plain variables as inputs (LRN-041)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/tryLab.test.ts","test":"try-it lab plan (LRN-041)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/tryLab.test.ts","test":"try-it lab session (LRN-041, LRN-015)"},
+    {"kind":"unit","ref":"tools/ci/learn-physical-guard.test.ts","test":"LRN-015 LRN-041 lets the try-it lab seam use only its own WASM session"}
+  ],
+  "LRN-042": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonReading.test.ts","test":"a lesson package with a reading page (LRN-042)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/readingMarkdown.test.ts","test":"the reading parity shape (LRN-042)"},
+    {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"the reading pages in the generated index (LRN-042)"}
+  ],
+  "LRN-043": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnPaths.dom.test.tsx","test":"LRN-043 Continue of the path opens the first lesson of the path that is not passed"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnPaths.dom.test.tsx","test":"LRN-043 a locked lesson of the path cannot be started"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnPaths.dom.test.tsx","test":"LRN-043 lists the lessons as one numbered list in path order, each with a module label and its state"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnPaths.dom.test.tsx","test":"LRN-043 shows the path before the full course, with its title, summary and rationale"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnPaths.dom.test.tsx","test":"LRN-043 starts a lesson from the path when the path unlocks it, although the full course keeps it locked"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnPaths.dom.test.tsx","test":"LRN-043 the full course below stays as it was, and a course without paths shows no path section"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnPaths.dom.test.tsx","test":"learning paths on the Learn home (LRN-043)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/coursePaths.test.ts","test":"the paths in the course view and the Continue of a path (LRN-043)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/coursePaths.test.ts","test":"the paths of the course file (LRN-043)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/coursePaths.test.ts","test":"the state of a lesson inside a path (LRN-043)"},
+    {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"the paths of the course in the generated index (LRN-043)"}
   ],
   "HIL-001": [
     {"kind":"unit","ref":"packages/zplc-hil/tests/blocks/timers.test.ts","test":"HIL cases: timer blocks (HIL-001)"},
