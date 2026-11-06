@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test';
+import { StrictMode } from 'react';
 import { setupDom } from '../../test/dom';
 import type { LdTryData } from '../readingTypes';
 import { OFF_DELAY, OFF_DELAY_SRC } from './fixtures/blocks';
@@ -197,5 +198,76 @@ describe('try-it lab (LRN-041)', () => {
     await user.click(dom.screen.getByRole('button', { name: 'Run' }));
     const alert = await dom.screen.findByRole('alert');
     expect(alert.getAttribute('data-lab-failure')).toBe('runtime');
+  });
+
+  describe('survives a re-render and StrictMode', () => {
+    /** Every open makes a new lab that, like the real one, refuses to work once closed. */
+    function freshLabs() {
+      const labs: { lab: TryLab; closed: boolean; calls: string[] }[] = [];
+      const open: typeof openTryLab = () => {
+        const entry = { closed: false, calls: [] as string[] } as { lab: TryLab; closed: boolean; calls: string[] };
+        const live = async (call: string): Promise<void> => {
+          if (entry.closed) throw new Error('The simulation was closed.');
+          entry.calls.push(call);
+        };
+        entry.lab = {
+          run: () => live('run'),
+          hold: () => live('hold'),
+          restart: () => live('restart'),
+          press: (name, on) => live(`press ${name} ${on}`),
+          readings: async () => {
+            await live('read');
+            return { read: () => undefined, states: new Map() };
+          },
+          close: async () => void (entry.closed = true),
+        };
+        labs.push(entry);
+        return { ok: true, lab: entry.lab };
+      };
+      return { labs, open };
+    }
+
+    it('LRN-041 keeps a running lab when the parent re-renders with an equal but new data object', async () => {
+      const { labs, open } = freshLabs();
+      const tree = (data: LdTryData) => <LdTry data={data} files={files} open={open} />;
+      const { user, rerender } = dom.render(tree({ ...DATA }));
+      await run(user);
+      const button = dom.screen.getByRole('button', { name: 'Button (hold to press)' });
+      dom.fireEvent.pointerDown(button);
+      dom.fireEvent.pointerUp(button);
+      await dom.waitFor(() => expect(labs.at(-1)!.calls.filter((call) => call.startsWith('press '))).toHaveLength(2));
+      rerender(tree({ ...DATA, inputs: [{ name: 'Button', kind: 'push' }] }));
+      await Bun.sleep(150);
+      expect(statusOf()).toBe('running');
+      expect(labs.filter((entry) => !entry.closed)).toHaveLength(1);
+      dom.fireEvent.pointerDown(button);
+      dom.fireEvent.pointerUp(button);
+      await dom.waitFor(() => expect(labs.at(-1)!.calls.filter((call) => call.startsWith('press '))).toHaveLength(4));
+      expect(dom.screen.queryByRole('alert')).toBeNull();
+    });
+
+    it('LRN-041 starts over, with a new lab, when the lab data really changes', async () => {
+      const { labs, open } = freshLabs();
+      const { user, rerender } = dom.render(<LdTry data={DATA} files={files} open={open} />);
+      await run(user);
+      rerender(<LdTry data={{ ...DATA, outputs: ['Light', 'Other'] }} files={files} open={open} />);
+      await dom.waitFor(() => expect(statusOf()).toBe('idle'));
+      expect(labs.filter((entry) => !entry.closed)).toHaveLength(1);
+    });
+
+    for (const strict of [false, true])
+      it(`LRN-041 runs on the first Run in ${strict ? 'StrictMode' : 'a plain root'}, and closes its lab on unmount`, async () => {
+        const { labs, open } = freshLabs();
+        const tree = <LdTry data={DATA} files={files} open={open} />;
+        const { user, unmount } = dom.render(strict ? <StrictMode>{tree}</StrictMode> : tree);
+        await Bun.sleep(100);
+        expect(labs.every((entry) => entry.calls.length === 0)).toBe(true);
+        await run(user);
+        expect(dom.screen.queryByRole('alert')).toBeNull();
+        expect(labs.filter((entry) => !entry.closed)).toHaveLength(1);
+        expect(labs.at(-1)!.calls).toContain('run');
+        unmount();
+        await dom.waitFor(() => expect(labs.every((entry) => entry.closed)).toBe(true));
+      });
   });
 });

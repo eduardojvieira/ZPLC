@@ -14,7 +14,10 @@
 // the renderer, with no device and no workspace session. Only packages/zplc-ide/src/runtime/tryLab.ts creates that session, and
 // Learn reaches it through verbs that name the lab (run, hold, restart, press, close), never through the adapter. The seam itself
 // is guarded too: it may import the WASM adapter and drive it, but it must not import a module that reaches a device or the IDE
-// store, and must not force, write a virtual input, open a port or flash.
+// store (the adapter factory, which returns the native session under Electron, and the runtime barrel, which re-exports the native
+// and serial adapters, are such modules), and must not force, write a virtual input, open a port or flash. The seam takes an
+// adapter of its own only through `openTryLabWith`, which is for tests; Learn must not import or call it, and `openTryLab` takes
+// no adapter, so Learn cannot hand the lab one.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, posix, resolve } from 'node:path';
 
@@ -35,14 +38,16 @@ export const isGuarded = (path: string): boolean =>
 
 const DEVICE_MODULE = new RegExp(
   String.raw`(?:from|import\()\s*['"][^'"]*(?:runtime\/(?:connectionManager|serialAdapter|framedSerialAdapter|nativeAdapter|` +
-    String.raw`wasmAdapter)|hooks\/useDebugController\w*|components\/(?:deployFlow|deployConfirm|hardwareDeployConfirmation)|` +
-    String.raw`uploader\/[^'"]*)['"]`,
+    String.raw`wasmAdapter|simulationAdapterFactory)|hooks\/useDebugController\w*|` +
+    String.raw`components\/(?:deployFlow|deployConfirm|hardwareDeployConfirmation)|uploader\/[^'"]*)['"]|` +
+    // the runtime barrel re-exports the native and serial adapters and the connection manager
+    String.raw`(?:from|import\()\s*['"][^'"]*\/runtime(?:\/index)?['"]`,
 );
 const PHYSICAL_CALL = new RegExp(
   String.raw`\.(?:connect|disconnect|loadProgram|start|stop|pause|resume|step|reset|forceValue|clearForcedValue|` +
     String.raw`clearAllForcedValues|setValue|poke|pokeN|setIPI|setVirtualInput|sendRaw|requestPort|getPorts|enablePassthrough|` +
     String.raw`triggerNetworkBringUp|flash\w*)\s*\(|\bconnectionManager\b|\bnavigator\.serial\b|\bperformHardwareDeploy\b|` +
-    String.raw`\buseDebugController\b`,
+    String.raw`\buseDebugController\b|\bopenTryLabWith\b`,
 );
 
 export function violationsOf(file: SourceFile): Violation[] {
@@ -57,7 +62,9 @@ export const TRY_LAB = `${IDE_SRC}/runtime/tryLab.ts`;
 
 const SEAM_DEVICE_MODULE = new RegExp(
   String.raw`(?:from|import\()\s*['"][^'"]*(?:connectionManager|serialAdapter|framedSerialAdapter|nativeAdapter|` +
-    String.raw`hooks\/useDebugController\w*|store\/useIDEStore|deployFlow|deployConfirm|hardwareDeployConfirmation|uploader\/[^'"]*)['"]`,
+    String.raw`simulationAdapterFactory|hooks\/useDebugController\w*|store\/useIDEStore|deployFlow|deployConfirm|` +
+    String.raw`hardwareDeployConfirmation|uploader\/[^'"]*)['"]|` +
+    String.raw`(?:from|import\()\s*['"]\.(?:\/index)?['"]`,
 );
 const SEAM_PHYSICAL_CALL = new RegExp(
   String.raw`\.(?:forceValue|clearForcedValue|clearAllForcedValues|setVirtualInput|setIPI|sendRaw|requestPort|getPorts|` +

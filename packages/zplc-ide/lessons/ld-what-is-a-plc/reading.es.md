@@ -1,12 +1,12 @@
 ## Bienvenida: no se supone nada
 
-No necesita saber nada de PLC para empezar. Solo necesita este computador. Todo este curso se ejecuta en un laboratorio simulado dentro de ZPLC, así que no hacen falta placas, cables ni herramientas.
+No necesita saber nada de PLC para empezar. Solo necesita este computadora. Todo este curso se ejecuta en un laboratorio simulado dentro de ZPLC, así que no hacen falta placas, cables ni herramientas.
 
-Un **PLC** (controlador lógico programable) es un computador pequeño y resistente fabricado para manejar máquinas: una cinta transportadora, una estación de empaque, una bomba, un portón. Vive en un gabinete de una fábrica y hace un solo trabajo durante años, sin pantalla, sin teclado y sin reiniciarse. Lo que lo hace especial es que está conectado directamente a la máquina, de modo que lo que decide el programa realmente mueve cosas.
+Un **PLC** (controlador lógico programable) es un computadora pequeño y resistente fabricado para manejar máquinas: una cinta transportadora, una estación de empaque, una bomba, un portón. Vive en un gabinete de una fábrica y hace un solo trabajo durante años, sin pantalla, sin teclado y sin reiniciarse. Lo que lo hace especial es que está conectado directamente a la máquina, de modo que lo que decide el programa realmente mueve cosas.
 
 ## Qué es un programa
 
-Un **programa** es una lista de instrucciones que un computador sigue al pie de la letra. Una receta de cocina es una buena imagen: "si el agua hierve, agregue la pasta". Un programa de PLC se compone de muchas reglas pequeñas como esa, por ejemplo "si el botón de inicio está pulsado, encienda la lámpara". El PLC nunca se cansa, nunca olvida una regla y revisa todas las reglas una y otra vez, muchas veces por segundo.
+Un **programa** es una lista de instrucciones que un computadora sigue al pie de la letra. Una receta de cocina es una buena imagen: "si el agua hierve, agregue la pasta". Un programa de PLC se compone de muchas reglas pequeñas como esa, por ejemplo "si el botón de inicio está pulsado, encienda la lámpara". El PLC nunca se cansa, nunca olvida una regla y revisa todas las reglas una y otra vez, muchas veces por segundo.
 
 ## Entradas, un programa y salidas
 

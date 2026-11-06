@@ -39,8 +39,23 @@ const NO_READING: LdTryLab['read'] = () => undefined;
 const EMPTY_TRACE: Trace = { at: 0, last: {}, edges: {} };
 
 /** `open` is for a test that gives another lab; a page opens the lab of the WebAssembly runtime. */
-export function useLdTry(content: string | undefined, data: LdTryData, open: typeof openTryLab = openTryLab): LdTryLab {
-  const opened = useMemo<TryLabOpening | undefined>(() => (content === undefined ? undefined : open(content, data)), [content, data, open]);
+export function useLdTry(content: string | undefined, block: LdTryData, open: typeof openTryLab = openTryLab): LdTryLab {
+  // the page parses its text again on a render: the block is told apart by what it says, not by its identity
+  const blockKey = JSON.stringify(block);
+  const data = useMemo(() => JSON.parse(blockKey) as LdTryData, [blockKey]);
+  // The lab is opened and closed by one effect, so that StrictMode's unmount-and-remount opens a fresh one instead of reusing a closed one.
+  const [pending, setPending] = useState<TryLabOpening | undefined>();
+  const opened = content === undefined ? undefined : pending;
+  useEffect(() => {
+    if (content === undefined) return undefined;
+    const made = open(content, data);
+    // the lab is an external resource this effect opens, so the opening can only be stored after it
+    setPending(made); // eslint-disable-line react-hooks/set-state-in-effect
+    return () => {
+      setPending(undefined);
+      if (made.ok) void made.lab.close();
+    };
+  }, [content, data, open]);
   const lab: TryLab | undefined = opened?.ok ? opened.lab : undefined;
   const [status, setStatus] = useState<LabStatus>('idle');
   const [started, setStarted] = useState(false);
@@ -73,9 +88,6 @@ export function useLdTry(content: string | undefined, data: LdTryData, open: typ
   useEffect(() => {
     traceRef.current = EMPTY_TRACE;
     clock.current = { running: false, last: 0, elapsed: 0 };
-    return () => {
-      if (lab) void lab.close();
-    };
   }, [lab]);
 
   // the poll: only after the learner ran the lab, until it fails or the page closes
@@ -149,13 +161,15 @@ export function useLdTry(content: string | undefined, data: LdTryData, open: typ
   );
 
   const failure: LabFailure | undefined =
-    opened === undefined
+    content === undefined
       ? { reason: 'missing', detail: data.src }
-      : !opened.ok
-        ? opened.reason === 'compile'
-          ? { reason: 'compile', detail: opened.message }
-          : { reason: opened.reason, detail: opened.name }
-        : runtimeFailure;
+      : opened === undefined
+        ? undefined
+        : !opened.ok
+          ? opened.reason === 'compile'
+            ? { reason: 'compile', detail: opened.message }
+            : { reason: opened.reason, detail: opened.name }
+          : runtimeFailure;
   const timing = useMemo(
     () => (data.timing && data.timing.length > 0 ? traceTiming(trace, [...data.timing]) : undefined),
     [trace, data.timing],
