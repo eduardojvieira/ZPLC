@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "NO and NC contacts: a stop button that fails safe",
+  "summary": "Learn the normally open and normally closed contacts, why a stop button is wired normally closed, and read a field stop signal correctly in a program that also lights a lamp when the stop circuit is open.",
+  "scope": "Tests provide deterministic native POSIX host evidence on your computer only. The stop signal is set by the scenario; they do not prove a safe stop function, wiring, hardware timing, HIL, or certification.",
+  "objectives": [
+    "Explain why a stop button is wired normally closed, and what a field NC button looks like to the program: TRUE at rest, FALSE when pressed or when the wire breaks.",
+    "Choose the right kind of contact in a rung: a normally open contact passes power when its variable is TRUE, a normally closed contact when it is FALSE."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/NcStop.ld.json two rungs are drawn. The first drives Motor from StartButton and StopButton. The second lights StopLamp when the stop circuit is open. StopButton is a stop button wired normally closed: it is TRUE at rest. Both rungs read it with the wrong kind of contact. Replace each of them with the other kind.",
+      "checkpoint": "The motor rung reads StopButton with a normally open contact and the lamp rung with a normally closed contact."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, predict Motor and StopLamp. Start is held from {{t:40}} ms. Stop is pressed at {{t:50}} ms and released at {{t:60}} ms. What are Motor and StopLamp at {{t:50}} ms and at {{t:60}} ms?",
+      "checkpoint": "{{v:NcStop.Motor=false,NcStop.StopLamp=true@50|Motor OFF, lamp ON}} at {{t:50}} ms; {{v:NcStop.Motor=true,NcStop.StopLamp=false@60|Motor ON, lamp OFF}} at {{t:60}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Fix these starter omissions, save them, then press Check: The starter reads StopButton in the wrong way in both rungs, so Motor never runs and StopLamp is lit at {{t:0}} ms with the stop circuit intact. In the motor rung use a normally open contact on StopButton. In the lamp rung use a normally closed contact. In the Ladder editor, delete the contact and insert the other kind in the same cell: C inserts a normally open contact and N a normally closed contact.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program and sets StartButton and StopButton the way the field devices would.",
+      "checkpoint": "The scenario is named NcStop and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:40}}, {{t:50}} and {{t:60}} ms: Start stays pressed the whole time, but Motor falls at {{t:50}} ms when StopButton goes FALSE and returns at {{t:60}} ms. StopLamp is the mirror image of the stop circuit.",
+      "checkpoint": "Motor falls once at {{t:50}} ms, and Motor and StopLamp are never ON together."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "At {{t:70}} ms Start is released and StopButton is FALSE at the same time. Imagine that FALSE came from a cut wire instead of a button. What does the machine do, and why is that good?",
+      "checkpoint": "A cut wire reads like a press, so the motor stops. This scenario sets the stop signal and shows that the program reacts. It does not make the program a safety function."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "A normally open contact conducts when its variable is TRUE. StopButton is TRUE at rest. Which kind of contact lets the motor run when StopButton is TRUE, and which kind lights the lamp when it is FALSE?"
+    },
+    {
+      "level": 2,
+      "text": "In the motor rung, replace the normally closed contact on StopButton with a normally open one. In the lamp rung, replace the normally open contact on StopButton with a normally closed one. Leave StartButton, Motor and StopLamp as they are."
+    }
+  ],
+  "faultCases": [
+    "The starter reads StopButton in the wrong way in both rungs, so Motor never runs and StopLamp is lit at {{t:0}} ms with the stop circuit intact; use a normally open contact in the motor rung and a normally closed contact in the lamp rung."
+  ]
+}

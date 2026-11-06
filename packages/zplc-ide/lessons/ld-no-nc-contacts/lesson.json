@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "ld-no-nc-contacts",
+  "version": 2,
+  "order": 79,
+  "module": 2,
+  "level": "foundation",
+  "prerequisites": ["blinky-ladder-timer-feedback"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson needs a stop button wired normally closed and a broken wire, which the simulation applies as a signal and the learner boards do not provide.",
+        "es": "La lección necesita un botón de parada cableado normalmente cerrado y un cable roto, que la simulación aplica como una señal y las placas del estudiante no ofrecen."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where a broken wire costs nothing and can be repeated.",
+        "es": "Complétela en Simulación, donde un cable roto no cuesta nada y se puede repetir."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "ld_nc_stop_starter",
+    "program": "src/NcStop.ld.json"
+  },
+  "solution": {
+    "project": "ld_nc_stop",
+    "program": "src/NcStop.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "NcStop",
+    "path": "tests/nc-stop.scenario.json",
+    "sha256": "65ccb345b4d4e434fe88e12d3e9190c1944e15d7e4cb1a64072e9d7e7e2c89cf"
+  },
+  "regressionScenarios": []
+}

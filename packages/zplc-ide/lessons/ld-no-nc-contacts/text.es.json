@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Contactos NA y NC: un botón de parada que falla en modo seguro",
+  "summary": "Aprenda los contactos normalmente abierto y normalmente cerrado, por qué un botón de parada se cablea normalmente cerrado, y lea correctamente una señal de parada de campo en un programa que además enciende una lámpara cuando el circuito de parada está abierto.",
+  "scope": "Las pruebas aportan evidencia determinista del host con el runtime nativo POSIX, solo en su computador. El escenario ajusta la señal de parada; no demuestran una función de parada segura, el cableado, los tiempos del hardware, HIL ni certificación.",
+  "objectives": [
+    "Explique por qué un botón de parada se cablea normalmente cerrado, y cómo ve el programa un botón NC de campo: TRUE en reposo, FALSE al pulsarlo o si se rompe el cable.",
+    "Elija el tipo correcto de contacto en un peldaño: un contacto normalmente abierto deja pasar la energía cuando su variable es TRUE, y uno normalmente cerrado cuando es FALSE."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/NcStop.ld.json hay dos peldaños dibujados. El primero acciona Motor con StartButton y StopButton. El segundo enciende StopLamp cuando el circuito de parada está abierto. StopButton es un botón de parada cableado normalmente cerrado: es TRUE en reposo. Los dos peldaños lo leen con el tipo de contacto equivocado. Reemplace cada uno por el otro tipo.",
+      "checkpoint": "El peldaño del motor lee StopButton con un contacto normalmente abierto y el de la lámpara con uno normalmente cerrado."
+    },
+    {
+      "key": "predict",
+      "title": "Prediga",
+      "body": "Antes de ejecutar, prediga Motor y StopLamp. Start se mantiene pulsado desde los {{t:40}} ms. Stop se pulsa a los {{t:50}} ms y se suelta a los {{t:60}} ms. ¿Cuánto valen Motor y StopLamp a los {{t:50}} ms y a los {{t:60}} ms?",
+      "checkpoint": "{{v:NcStop.Motor=false,NcStop.StopLamp=true@50|Motor en OFF, lámpara en ON}} a los {{t:50}} ms; {{v:NcStop.Motor=true,NcStop.StopLamp=false@60|Motor en ON, lámpara en OFF}} a los {{t:60}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edite",
+      "body": "Corrija estas omisiones del programa inicial, guárdelo y pulse Comprobar: El programa inicial lee StopButton de forma equivocada en los dos peldaños, así que Motor nunca funciona y StopLamp está encendida a los {{t:0}} ms con el circuito de parada intacto. En el peldaño del motor use un contacto normalmente abierto de StopButton. En el peldaño de la lámpara use un contacto normalmente cerrado. En el editor de escalera, borre el contacto e inserte el otro tipo en la misma celda: C inserta un contacto normalmente abierto y N uno normalmente cerrado.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecute",
+      "body": "Pulse Comprobar. ZPLC ejecuta su programa guardado y ajusta StartButton y StopButton como lo harían los dispositivos de campo.",
+      "checkpoint": "El escenario se llama NcStop y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:40}}, {{t:50}} y {{t:60}} ms: Start permanece pulsado todo el tiempo, pero Motor cae a los {{t:50}} ms cuando StopButton pasa a FALSE y vuelve a los {{t:60}} ms. StopLamp es la imagen especular del circuito de parada.",
+      "checkpoint": "Motor cae una vez a los {{t:50}} ms, y Motor y StopLamp nunca están en ON a la vez."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexione",
+      "body": "A los {{t:70}} ms se suelta Start y StopButton está en FALSE al mismo tiempo. Imagine que ese FALSE viene de un cable cortado y no de un botón. ¿Qué hace la máquina y por qué es bueno?",
+      "checkpoint": "Un cable cortado se lee como una pulsación, así que el motor se detiene. Este escenario ajusta la señal de parada y muestra que el programa reacciona. No convierte el programa en una función de seguridad."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Un contacto normalmente abierto conduce cuando su variable es TRUE. StopButton es TRUE en reposo. ¿Qué tipo de contacto deja funcionar el motor cuando StopButton es TRUE, y cuál enciende la lámpara cuando es FALSE?"
+    },
+    {
+      "level": 2,
+      "text": "En el peldaño del motor, reemplace el contacto normalmente cerrado de StopButton por uno normalmente abierto. En el peldaño de la lámpara, reemplace el contacto normalmente abierto de StopButton por uno normalmente cerrado. Deje StartButton, Motor y StopLamp como están."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial lee StopButton de forma equivocada en los dos peldaños, así que Motor nunca funciona y StopLamp está encendida a los {{t:0}} ms con el circuito de parada intacto; use un contacto normalmente abierto en el peldaño del motor y uno normalmente cerrado en el de la lámpara."
+  ]
+}

@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "id": "NcStop",
+  "tickMs": 10,
+  "durationMs": 90,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "NcStop.StartButton": false,
+        "NcStop.StopButton": true
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "NcStop.StartButton": true,
+        "NcStop.StopButton": true
+      }
+    },
+    {
+      "atMs": 30,
+      "set": {
+        "NcStop.StartButton": false,
+        "NcStop.StopButton": true
+      }
+    },
+    {
+      "atMs": 40,
+      "set": {
+        "NcStop.StartButton": true,
+        "NcStop.StopButton": true
+      }
+    },
+    {
+      "atMs": 50,
+      "set": {
+        "NcStop.StartButton": true,
+        "NcStop.StopButton": false
+      }
+    },
+    {
+      "atMs": 60,
+      "set": {
+        "NcStop.StartButton": true,
+        "NcStop.StopButton": true
+      }
+    },
+    {
+      "atMs": 70,
+      "set": {
+        "NcStop.StartButton": false,
+        "NcStop.StopButton": false
+      }
+    },
+    {
+      "atMs": 80,
+      "set": {
+        "NcStop.StartButton": false,
+        "NcStop.StopButton": true
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "NcStop.Motor": false,
+        "NcStop.StopLamp": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "NcStop.Motor": true,
+        "NcStop.StopLamp": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 30,
+      "condition": {
+        "NcStop.Motor": false,
+        "NcStop.StopLamp": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 40,
+      "condition": {
+        "NcStop.Motor": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 50,
+      "condition": {
+        "NcStop.Motor": false,
+        "NcStop.StopLamp": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 60,
+      "condition": {
+        "NcStop.Motor": true,
+        "NcStop.StopLamp": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 70,
+      "condition": {
+        "NcStop.Motor": false,
+        "NcStop.StopLamp": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 80,
+      "condition": {
+        "NcStop.Motor": false,
+        "NcStop.StopLamp": false
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 50,
+      "withinMs": 0,
+      "condition": {
+        "NcStop.Motor": false
+      }
+    },
+    {
+      "kind": "NEVER",
+      "condition": {
+        "NcStop.Motor": true,
+        "NcStop.StopLamp": true
+      }
+    }
+  ]
+}

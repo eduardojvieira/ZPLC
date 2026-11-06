@@ -1,0 +1,156 @@
+{
+  "name": "DoorReady",
+  "description": "A guard-door switch read with a normally open and a normally closed contact.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "DoorClosed",
+        "type": "BOOL",
+        "comment": "Guard door switch: TRUE when the door is closed and the wire is intact"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "MachineReady",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "The machine may start"
+      },
+      {
+        "name": "DoorOpenLamp",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Lamp that shows an open door"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Ready while the door is closed: DoorClosed is TRUE and the normally open contact conducts.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "e0_0_1",
+              "type": "contact_no",
+              "variable": "DoorClosed",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_7_1",
+              "type": "coil",
+              "variable": "MachineReady",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "Warning while the door is open: DoorClosed is FALSE and the normally closed contact conducts.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "e0_0_2",
+              "type": "contact_nc",
+              "variable": "DoorClosed",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_7_2",
+              "type": "coil",
+              "variable": "DoorOpenLamp",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-05",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
