@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Edges in Ladder: P and N contacts and one-scan pulses",
+  "summary": "Use a positive transition contact and a negative transition contact so that a box on a conveyor gives one pulse when it arrives and one when it leaves, however long the sensor stays on.",
+  "scope": "Tests provide native POSIX host evidence with one 10 ms task; they do not establish the debounce, the response time or the wiring of a real sensor, HIL, or certification.",
+  "objectives": [
+    "Use a positive transition contact (P) and a negative transition contact (N) to turn a level into a pulse of one scan.",
+    "Explain why a held input must be counted once, and which scan sees the pulse."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/BoxEdges.ld.json two rungs copy BoxSensor to BoxArrived and to BoxLeft. Make BoxArrived pulse for one scan when a box arrives, and BoxLeft pulse for one scan when it leaves, however long the sensor stays on.",
+      "checkpoint": "BoxArrived uses a positive transition contact and BoxLeft uses a negative transition contact."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "A box blocks the sensor from {{t:10}} to {{t:70}} ms. A second box blocks it from {{t:100}} to {{t:110}} ms. Predict BoxArrived at {{t:10}}, {{t:20}} and {{t:60}} ms, and BoxLeft at {{t:70}} ms.",
+      "checkpoint": "{{v:BoxEdges.BoxArrived=true@10|ON}} at {{t:10}} ms, the scan of the arrival; {{v:BoxEdges.BoxArrived=false@20|OFF}} at {{t:20}} ms and {{v:BoxEdges.BoxArrived=false@60|OFF}} at {{t:60}} ms, although the box is still there; {{v:BoxEdges.BoxLeft=true@70|ON}} for BoxLeft at {{t:70}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then press Check: The starter copies the sensor to both coils: BoxArrived is still ON at {{t:20}} ms, while the box is held, instead of dropping after one scan, and BoxLeft never pulses; use a positive transition contact for BoxArrived and a negative transition contact for BoxLeft. In the Ladder editor, select each contact and replace it with the transition contact from the toolbox.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs your saved program against the scenario of this lesson.",
+      "checkpoint": "The scenario is named BoxEdges and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:10}}, {{t:20}} and {{t:70}} ms: each output is ON for exactly one scan, the scan in which the sensor changes, and then it is OFF again even if the sensor does not change.",
+      "checkpoint": "BoxArrived rises at {{t:10}} ms and falls at {{t:20}} ms; BoxLeft rises at {{t:70}} ms and falls at {{t:80}} ms."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Swap the two contacts, so that BoxArrived takes the negative transition, and run again. Which assertions fail, and what would a counter placed after each output count?",
+      "checkpoint": "The arrival then pulses when the box leaves, so the pulse comes late by the length of the box. An edge contact answers the question when did it change, not is it on now, and a count needs the first one."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "A plain contact is true for as long as its variable is true. Which kind of contact is true only in the scan in which its variable changes?"
+    },
+    {
+      "level": 2,
+      "text": "Replace the contact of the first rung with a positive transition contact on BoxSensor, and the contact of the second rung with a negative transition contact on BoxSensor. Keep both coils."
+    }
+  ],
+  "faultCases": [
+    "The starter copies the sensor to both coils: BoxArrived is still ON at {{t:20}} ms, while the box is held, instead of dropping after one scan, and BoxLeft never pulses; use a positive transition contact for BoxArrived and a negative transition contact for BoxLeft."
+  ]
+}
