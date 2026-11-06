@@ -9,20 +9,15 @@ tags: [how-to, tests, scenarios, simulation]
 
 # Write and run scenario tests
 
-A scenario sets inputs at chosen times, lets your program run on the simulator's
-virtual clock, and checks what the outputs do. Use it to say what a program must
-do before you trust it, and to find out when a change breaks it.
+A scenario sets inputs at chosen times, lets your program run on the simulator's virtual clock and checks what the outputs do. Write one to say what a program must do, and to learn when a change breaks it.
 
 :::note What a scenario proves
-A scenario runs your program on the native simulator, with a virtual clock. It is
-a host result: it says what the logic does, not how a board behaves, and it
-checks only the signals you name.
+A scenario runs your program on the native simulator with a virtual clock. It is a host result: it says what the logic does, not how a board behaves, and it checks only the signals you name.
 :::
 
 ## 1. The program
 
-Take a start and stop latch: `Run` comes on when `Start` is pressed, stays on
-after `Start` is released, and goes off when `Stop` is pressed.
+Take a start and stop latch. `Run` comes on when `Start` is pressed, stays on after `Start` is released, and goes off when `Stop` is pressed.
 
 ```st runnable expect="Run=FALSE" scans=5 scan_ms=10
 PROGRAM Pump
@@ -38,14 +33,11 @@ Run := (Start OR Run) AND NOT Stop;
 END_PROGRAM
 ```
 
-The inputs are placed at input addresses, because a scenario writes inputs into
-the process image, where the program reads them. With no input set the output
-stays `FALSE`; the scenario sets the inputs.
+The inputs sit at input addresses because a scenario writes inputs into the process image, where the program reads them. With nothing set, `Run` stays `FALSE`. The scenario sets the inputs.
 
 ## 2. The scenario
 
-A scenario is a JSON file in the `tests` folder of the project, named
-`<name>.scenario.json`. A signal is written `Program.variable`: here `Pump.Start`.
+A scenario is a JSON file in the `tests` folder of the project, named `<name>.scenario.json`. A signal is written `Program.variable`, here `Pump.Start`.
 
 ```json zplc-scenario
 {
@@ -67,60 +59,40 @@ A scenario is a JSON file in the `tests` folder of the project, named
 }
 ```
 
-- `tickMs` is the simulated time of one scan, and `durationMs` is a multiple of it.
+- `tickMs` is the simulated time of one cycle. `durationMs` is a multiple of it.
 - Each event writes BOOL inputs at a time that is a multiple of `tickMs`.
-- Each expectation names a kind (`AT`, `FOR`, `WITHIN`, `NEVER` and the others in the
-  [scenario file format](../reference/scenario-file.md)), a time window and the
-  output values the signals must hold.
+- Each expectation has a kind (`AT`, `FOR`, `WITHIN`, `NEVER` and the others in the [scenario file format](../reference/scenario-file.md)), a time window, and the output values the signals must hold.
 
-The documentation check runs this scenario against the program above, so it is a
-scenario that passes.
+The documentation check runs this scenario against the program above, so it is a scenario that passes.
 
 ## 3. Run it
 
-**In ZPLC**, open the **Tests** tab and press **Run host scenarios**. Each
-scenario is listed as passed or failed, with its assertions and the time of each.
-A failed assertion shows the instant, the value it expected and the value it
-observed.
+**In ZPLC**, open the **Tests** tab and press **Run host scenarios**. Each scenario is listed as passed or failed, with its assertions and their times. A failed assertion shows the instant, the value expected and the value observed. A scenario does not run while a value is forced, so release your forces first ([Force a value](./force-values.md)).
 
-**From a terminal**, with the command line of the project (build the runtime
-first, `bun run setup`):
+**From a terminal**, with the command line of the project (build the runtime once with `bun run setup`):
 
 ```bash
 bun run simulate path/to/your/project
 ```
 
-It runs every scenario of the project headless, prints `test passed` or the failing
-assertion, and exits with 0 on a pass and 1 on a failure. To run one scenario by its
-`id`, use `zplc-cli scenario-run <workspace> <scenario-id>`; the
-[command line reference](../reference/cli.md) lists every option, including
-`--json` for a machine-readable result.
+It runs every scenario of the project headless, prints `test passed` or the failing assertion, and exits with 0 on a pass and 1 on a failure. To run one scenario by its `id`, use `zplc-cli scenario-run <workspace> <scenario-id>`. The [command line reference](../reference/cli.md) lists every option, including `--json` for a machine-readable result.
 
 ## 4. Make it useful
 
-- **State what must never happen** with `NEVER`: for two outputs that must not be
-  on together, assert it. The **Interlocks** tab of ZPLC lists each pair you
-  declared under `safety.incompatibleOutputs` as covered or not, from your `NEVER`
-  expectations.
-- **Check an edge** with `RISING` and `FALLING` rather than a level, when the
-  moment matters.
-- **Use a plant model** (`motor-v1`, `conveyor-v1`, `tank-v1`, `pedestrian-v1`) when
-  the program needs feedback from the process: it drives its own inputs from your
-  outputs. A plant model requires `tickMs` 10.
-- **Keep scenarios short.** A scenario holds at most 256 events and 256
-  expectations, and the files of a project are bounded: see the limits in the
-  reference.
+- **State what must never happen** with `NEVER`. For two outputs that must not be on together, assert it. The **Interlocks** tab of ZPLC lists each pair you declared under `safety.incompatibleOutputs` as covered or not, from your `NEVER` expectations.
+- **Check an edge** with `RISING` and `FALLING` when the moment matters more than the level.
+- **Use a plant model** (`motor-v1`, `conveyor-v1`, `tank-v1`, `pedestrian-v1`) when the program needs feedback from the process. The model drives the program's inputs from its outputs, and it requires `tickMs` 10.
+- **Keep scenarios short.** A scenario holds at most 256 events and 256 expectations, and the files of a project are bounded. The limits are in the reference.
 
 ## What is verified, and what is not
 
-| Part                                                                                                       | Verified                                              | Level |
-| ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ----- |
-| The scenario above passes against the program above, and the check fails when an expectation does not hold | The documentation check runs it on the native runtime | Host  |
-| The scenario reader refuses a malformed file and enforces its limits                                       | Unit tests of the test engine                         | Host  |
-| The real scan time of a board, a physical input, a safety validation                                       | Not tested                                            | None  |
+| Part | Verified | Level |
+| --- | --- | --- |
+| The scenario above passes against the program above, and the check fails when an expectation does not hold | The documentation check runs it on the native runtime | Host |
+| The scenario reader refuses a malformed file and enforces its limits | Unit tests of the test engine | Host |
+| The real scan time of a board, a physical input, a safety validation | Not tested | None |
 
-A scenario that passes means that the logic did what you wrote on the virtual
-clock: [Safety and limitations](../safety-and-limitations.md).
+A passing scenario means the logic did what you wrote on the virtual clock. Read [Safety and limitations](../safety-and-limitations.md) before you rely on it.
 
 ## See also
 
