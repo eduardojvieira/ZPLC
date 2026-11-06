@@ -1,0 +1,159 @@
+{
+  "name": "MixerLid",
+  "description": "A mixer motor with a lid permissive.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "StartButton",
+        "type": "BOOL",
+        "comment": "Start button, normally open"
+      },
+      {
+        "name": "StopButton",
+        "type": "BOOL",
+        "comment": "Stop button, wired normally closed"
+      },
+      {
+        "name": "LidClosed",
+        "type": "BOOL",
+        "comment": "Lid switch: TRUE while the lid is closed"
+      }
+    ],
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "Motor",
+        "type": "BOOL",
+        "comment": "Mixer motor contactor"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "The motor holds itself on once started, but it needs the lid closed and the stop button not pressed.",
+      "branches": [
+        {
+          "id": "branch_1",
+          "startCol": 0,
+          "endCol": 1,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "no_StartButton_00",
+              "type": "contact_no",
+              "variable": "StartButton",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "no_LidClosed_02",
+              "type": "contact_no",
+              "variable": "LidClosed",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "nc_StopButton_03",
+              "type": "contact_nc",
+              "variable": "StopButton",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_Motor_07",
+              "type": "coil",
+              "variable": "Motor",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "no_Motor_10",
+              "type": "contact_no",
+              "variable": "Motor",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-06",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
