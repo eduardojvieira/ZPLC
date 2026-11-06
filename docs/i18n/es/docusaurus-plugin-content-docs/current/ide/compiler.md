@@ -66,7 +66,7 @@ Una rama que una condición constante deshabilita (`IF FALSE THEN`) no es códig
 | --- | --- | --- | --- |
 | `compiler.warnings` | `none`, `default`, `all` | `default` | Qué advertencias informa la compilación. `none` no informa ninguna, `all` agrega `WRITE_ONLY_VARIABLE`. |
 | `compiler.strictTypes` | `true`, `false` | `false` | Un estrechamiento implícito es un error en el valor, con el nombre de ambos tipos, en lugar de la advertencia `IMPLICIT_NARROWING`. |
-| `compiler.debug` | `true`, `false` | `true` | El mapa de depuración lleva los rangos de instrucciones y las asociaciones de líneas que necesitan los breakpoints y la línea actual. Con `false` lista solo las variables y la memoria; el código es el mismo. |
+| `compiler.debug` | `true`, `false` | `true` | El mapa de depuración lleva los rangos de instrucciones y las asociaciones de líneas que necesitan los puntos de parada y la línea actual. Con `false` lista solo las variables y la memoria; el código es el mismo. |
 | `compiler.optimization` | `none`, `size`, `speed` | `none` | El compilador tiene un solo generador de código, así que el código es el mismo con cualquier valor. `size` y `speed` se aceptan para que los proyectos antiguos se compilen, y la compilación avisa con `OPTION_IGNORED`. |
 | `build.generateDebugInfo` | `true`, `false` | `false` | `zplc-cli compile <workspace> --output <file>` escribe además el mapa de depuración junto al artefacto, como `<file>.map.json`. |
 | `libraries` | lista de carpetas | ninguna | Carpetas de archivos fuente que se compilan con el proyecto, vea abajo. |
