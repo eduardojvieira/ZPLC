@@ -191,13 +191,42 @@ describe('LNG-028 LNG-002 LNG-003 the function box: every fault names its rung a
     expect(faults(element)).toEqual([{ message: expect.stringContaining(message), element: 'rung:r1/cell:0,1' }]);
   });
 
-  it('an output that another element writes is a second writer, reported at the box', () => {
+  it('LNG-028 several boxes may write one variable: each writes while its EN is on, the last in scan order wins', () => {
     const result = transpileLDToST(
-      ldFile({ ...declared, local: [variable('Sum', 'INT')] }, box('f1', 'MOVE', ['A'], 'Sum'), box('f2', 'MOVE', ['B'], 'Sum')),
+      rungsFile({ ...declared, local: [variable('Sum', 'INT')] }, [
+        { cols: 1, grid: [[box('f1', 'MOVE', ['A'], 'Sum')]] },
+        { cols: 1, grid: [[box('f2', 'MOVE', ['B'], 'Sum')]] },
+      ]),
     );
-    expect(result.diagnostics).toEqual([{ message: "Multiple writers target 'SUM'", element: 'rung:r1/cell:0,1' }]);
+    expect(result.errors).toEqual([]);
+    expect(result.success).toBe(true);
+  });
+
+  it('LNG-028 a coil and a box on one variable are refused, naming both positions', () => {
+    const result = transpileLDToST(
+      rungsFile({ ...declared, local: [variable('Flag', 'BOOL')] }, [
+        { cols: 1, grid: [[coil('k1', 'Flag')]] },
+        { cols: 1, grid: [[box('f1', 'MOVE', ['Start'], 'Flag')]] },
+      ]),
+    );
     expect(result.success).toBe(false);
-    expect(result.errors.join(' ')).toContain('Multiple writers');
+    expect(result.diagnostics).toEqual([
+      {
+        message: "Multiple writers target 'FLAG': a coil (rung:r1/cell:0,0) and a function box (rung:r2/cell:0,0)",
+        element: 'rung:r2/cell:0,0',
+      },
+    ]);
+  });
+
+  it('LNG-028 two plain coils on one variable stay refused', () => {
+    const result = transpileLDToST(
+      rungsFile(declared, [
+        { cols: 1, grid: [[coil('k1', 'Lamp')]] },
+        { cols: 1, grid: [[coil('k2', 'Lamp')]] },
+      ]),
+    );
+    expect(result.success).toBe(false);
+    expect(result.diagnostics).toEqual([{ message: "Multiple writers target 'LAMP'", element: 'rung:r2/cell:0,0' }]);
   });
 
   it('literals are accepted: integers, REAL, based, typed and TIME', () => {

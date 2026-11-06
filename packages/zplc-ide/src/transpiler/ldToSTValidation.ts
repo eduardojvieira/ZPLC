@@ -609,8 +609,14 @@ export function validateLDForTranspilation(input: unknown): Problems {
       types.includes('coil_set') &&
       types.includes('coil_reset') &&
       new Set(writerTypes.map((writer) => writer.rung)).size === 2;
+    // function boxes write only while their EN is on, so several may share a variable and the last in scan order wins (LNG-028)
+    const onlyBoxes = types.every((type) => type === 'function');
+    const coil = writerTypes.find((writer) => writer.type.startsWith('coil'));
+    const box = writerTypes.find((writer) => writer.type === 'function');
     // the second writer is the one that is wrong: the first was there before it
-    if (writerTypes.length > 1 && !allowedSetReset) errors.push(`Multiple writers target '${destination}'`, writerTypes[1]!.element);
+    if (writerTypes.length < 2 || allowedSetReset || onlyBoxes) continue;
+    const named = coil && box ? `: a coil (${String(coil.element)}) and a function box (${String(box.element)})` : '';
+    errors.push(`Multiple writers target '${destination}'${named}`, writerTypes[1]!.element);
   }
   return errors;
 }

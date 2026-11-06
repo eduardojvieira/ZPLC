@@ -1,0 +1,111 @@
+{
+  "name": "Rungs",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Tick",
+        "type": "BOOL",
+        "address": "%IX8.0"
+      },
+      {
+        "name": "Clear",
+        "type": "BOOL",
+        "address": "%IX8.1"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Count",
+        "type": "INT",
+        "address": "%QW0"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "r1",
+      "number": 1,
+      "gridConfig": {
+        "cols": 3,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "c1",
+              "type": "contact_no",
+              "variable": "Tick",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "f1",
+              "type": "function",
+              "functionName": "ADD",
+              "operands": ["Count", "1"],
+              "output": "Count",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": [],
+      "verticalLinks": []
+    },
+    {
+      "id": "r2",
+      "number": 2,
+      "gridConfig": {
+        "cols": 3,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "c2",
+              "type": "contact_no",
+              "variable": "Clear",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "f2",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["0"],
+              "output": "Count",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": [],
+      "verticalLinks": []
+    }
+  ]
+}

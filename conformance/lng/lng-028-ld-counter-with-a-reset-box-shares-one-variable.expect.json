@@ -1,0 +1,72 @@
+{
+  "requirement": "LNG-028",
+  "title": "two Ladder boxes may write one variable: ADD counts on one rung, a MOVE 0 on a later rung resets it, and the last in scan order wins",
+  "matrix": ["ld-fbd.ld-en-eno-on-function-boxes", "ld-fbd.ld-blocks-in-a-rung"],
+  "note": "The counter of a classic Ladder: each box writes only while its EN is on. On scan 3 both boxes run and the later rung wins.",
+  "scans": 5,
+  "scanMs": 10,
+  "inputs": [
+    {
+      "at": "%IX8.0",
+      "type": "BOOL",
+      "value": true,
+      "beforeScan": 1
+    },
+    {
+      "at": "%IX8.1",
+      "type": "BOOL",
+      "value": true,
+      "beforeScan": 3
+    },
+    {
+      "at": "%IX8.1",
+      "type": "BOOL",
+      "value": false,
+      "beforeScan": 4
+    },
+    {
+      "at": "%IX8.0",
+      "type": "BOOL",
+      "value": false,
+      "beforeScan": 4
+    },
+    {
+      "at": "%IX8.0",
+      "type": "BOOL",
+      "value": true,
+      "beforeScan": 5
+    }
+  ],
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 1,
+      "afterScan": 1
+    },
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 2,
+      "afterScan": 2
+    },
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 0,
+      "afterScan": 3
+    },
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 0,
+      "afterScan": 4
+    },
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 1,
+      "afterScan": 5
+    }
+  ]
+}
