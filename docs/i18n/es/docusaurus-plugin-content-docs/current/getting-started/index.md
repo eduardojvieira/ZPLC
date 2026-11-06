@@ -32,8 +32,8 @@ ZPLC tiene tres partes, en el orden en que las conocerá:
    ([Compatibilidad de hardware](../reference/capabilities-evidence.md)).
 
 Puede escribir en cinco lenguajes de IEC 61131-3: texto estructurado, lista de instrucciones, diagrama de escalera,
-diagrama de bloques de función y diagrama funcional de secuencias. Los cinco se compilan a un único formato de bytecode.
-La [Panorama de plataforma](../platform-overview/index.md) muestra cómo encajan las partes.
+diagrama de bloques de función y diagrama funcional secuencial. Los cinco se compilan a un único formato de bytecode.
+El [Panorama de plataforma](../platform-overview/index.md) muestra cómo encajan las partes.
 
 ## Elija un camino
 

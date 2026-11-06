@@ -33,9 +33,9 @@ flowchart LR
 | Parte                                     | Qué es                                                                                                                                                 | Dónde está                                             |
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
 | **Aplicación ZPLC**                       | El programa de escritorio en el que escribe, compila, prueba y simula. También contiene el curso Aprender.                                             | `packages/zplc-ide/`                                   |
-| **Compilador**                            | Convierte texto estructurado, lista de instrucciones, escalera, diagrama de bloques de función y diagrama funcional de secuencias en bytecode `.zplc`. | `packages/zplc-ide/src/compiler/` y los transpiladores |
+| **Compilador**                            | Convierte texto estructurado, lista de instrucciones, escalera, diagrama de bloques de función y diagrama funcional secuencial en bytecode `.zplc`. | `packages/zplc-ide/src/compiler/` y los transpiladores |
 | **Núcleo del runtime**                    | Un intérprete de bytecode en C99 con validación de programas, estado del runtime y un planificador portátil. El mismo código corre en todas partes.    | `firmware/lib/zplc_core/`                              |
-| **Capa de abstracción de hardware (HAL)** | La interfaz pequeña que el núcleo usa para relojes, almacenamiento, E/S y transportes. Un port la implementa para cada plataforma.                     | `firmware/lib/zplc_core/` y los ports de las placas    |
+| **Capa de abstracción de hardware (HAL)** | La interfaz pequeña que el núcleo usa para relojes, almacenamiento, E/S y transportes. Un puerto la implementa para cada plataforma.                     | `firmware/lib/zplc_core/` y los puertos de las placas    |
 
 ## Cómo viaja un programa
 

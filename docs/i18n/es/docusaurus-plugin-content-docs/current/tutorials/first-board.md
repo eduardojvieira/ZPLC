@@ -3,14 +3,14 @@ slug: /tutorials/first-board
 id: first-board
 title: Su primera placa
 sidebar_label: Su primera placa
-description: 'Los pasos para compilar el firmware, grabarlo, conectar ZPLC, cargar un programa y observar una salida en una Raspberry Pi Pico o un ESP32-S3, todavía no ejecutados en una placa.'
+description: 'Los pasos para compilar el firmware, grabarlo, conectar ZPLC, cargar un programa y observar una salida en una Raspberry Pi Pico o una ESP32-S3, todavía no ejecutados en una placa.'
 tags: [tutorial, hardware, raspberry-pi-pico, esp32-s3]
 ---
 
 # Su primera placa
 
 Esta página enumera los pasos desde el firmware hasta un LED que parpadea en una
-Raspberry Pi Pico o en un ESP32-S3. Está escrita a partir del manifiesto de placas
+Raspberry Pi Pico o en una ESP32-S3. Está escrita a partir del manifiesto de placas
 y del flujo de despliegue de ZPLC, y **nadie la ha ejecutado en una placa**.
 
 :::danger No ejecutado en una placa
@@ -51,13 +51,13 @@ descarga.
 
 ## 1. Obtenga el firmware
 
-El canal de publicación compila una imagen del runtime para cada placa del manifiesto, en cada versión que hace, con el nombre `zplc-runtime-<versión>-<placa>.<extensión>`, con su
-suma de verificación en `SHA256SUMS` y el nivel de evidencia de la placa en las
+El canal de publicación compila una imagen del runtime para cada placa del manifiesto, en cada versión que hace, con el nombre `zplc-runtime-<versión>-<placa>.<extensión>`; su
+suma de verificación está en `SHA256SUMS` y el nivel de evidencia de la placa, en las
 notas de la versión. Los instaladores llevan las imágenes de la Raspberry Pi Pico y
 de la ESP32-S3: en ZPLC, abra **Configuración del proyecto**, **Destino**, elija la placa, y
 ZPLC muestra el archivo, su SHA-256, dónde está y los pasos para grabarlo. ZPLC
-solo las muestra: usted graba (paso 2). La canalización todavía no ha publicado una versión, así que ese camino no está ejercitado:
-así que compile el firmware desde el código fuente con el script del repositorio, que envuelve el mismo `west build` y la misma
+solo las muestra: usted graba (paso 2). La canalización todavía no ha publicado una versión, así que ese camino no está ejercitado,
+por lo que debe compilar el firmware desde el código fuente con el script del repositorio, que envuelve el mismo `west build` y la misma
 comprobación de tamaño que el trabajo de integración continua.
 
 Prepare el espacio de trabajo de Zephyr una vez (unos 6,6 GB, o unos 15 GB con el SDK de Zephyr y las salidas de compilación; vea
@@ -72,7 +72,7 @@ tools/firmware-test/run.sh size rpi-pico-rp2040
 El script ejecuta `west build` para la placa del manifiesto y comprueba su flash y
 su RAM contra el presupuesto registrado. La imagen está en
 `$ZPLC_FW_WS/out/size/rpi-pico-rp2040/zephyr/` (`zephyr.elf` y, para la Pico,
-`zephyr.uf2`; para el ESP32-S3, `zephyr.bin`). Para el ESP32-S3 el identificador de placa es `esp32-s3-devkitc`.
+`zephyr.uf2`; para la ESP32-S3, `zephyr.bin`). Para la ESP32-S3 el identificador de placa es `esp32-s3-devkitc`.
 Para compilar una placa sin el script, ejecute el comando de su perfil desde la raíz
 del espacio de trabajo de Zephyr:
 
@@ -106,7 +106,7 @@ Si una placa no vuelve, use el procedimiento de recuperación de su perfil:
 
    ![El ejemplo de la Raspberry Pi Pico compilado, con Hardware elegido y ninguna placa conectada](/img/screens/first-board-hardware.png)
 
-2. Pulse **Conectar**. Un diálogo de ZPLC lista cada puerto serie con su nombre
+2. Pulse **Conectar**. Un diálogo de ZPLC enumera cada puerto serie con su nombre
    y sus identificadores USB, y marca las placas que conoce. Si la placa no aparece,
    conéctela y pulse **Actualizar**. Elija su puerto y pulse **Usar este puerto**:
    ZPLC usa solo ese puerto, y elegirlo no envía nada a la placa. En Linux su usuario
@@ -149,7 +149,7 @@ su estado seguro, apagado
 | 4. Despliegue y ejecute | El tutorial Blink ejercita la ejecución en el simulador; ninguna placa ha recibido un programa                                   | Aún no verificado en hardware                  |
 | 5. Observe              | La tabla de observación se ejercita en el simulador; nadie ha visto cambiar una salida física                                    | Aún no verificado en hardware                  |
 
-## Qué puede informar
+## Qué informar
 
 Suceda lo que suceda, el resultado es útil: informe qué paso alcanzó, la placa y la
 versión del firmware (`zplc version` en la consola imprime el commit, la placa y las

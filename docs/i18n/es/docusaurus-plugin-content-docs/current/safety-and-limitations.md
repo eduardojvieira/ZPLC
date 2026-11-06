@@ -112,6 +112,6 @@ caso se corrige.
 ## Si necesita más que esto
 
 Si un límite de esta página le impide avanzar, el camino es un registro de
-hardware o un cambio en el runtime, y ambos se siguen en abierto: vea la hoja de
+hardware o un cambio en el runtime, y ambos se siguen de forma pública: vea la hoja de
 ruta y las notas de la versión. No sortee un límite confiando en el simulador:
 muestra lo que hace la lógica, no lo que hace una placa.
