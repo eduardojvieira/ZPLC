@@ -15,7 +15,7 @@ funciona. El proyecto mantiene nueve reglas en su
 que es el texto normativo. Esta página dice qué le exige cada regla cuando usted
 cambia algo y dónde la verifica el repositorio. Si esta página y la constitución
 discrepan, prevalece la constitución, y la discrepancia es un error que conviene
-reportar.
+informar.
 
 ## Las reglas
 
@@ -31,7 +31,7 @@ plataforma vive en `src/hal/`.
 ### 2. Un cambio de comportamiento trae una prueba que puede fallar
 
 Antes de cambiar un comportamiento riesgoso, agregue o refuerce una prueba
-focalizada y luego ejecute las verificaciones de host, de destino o de banco que
+específica y luego ejecute las verificaciones de host, de destino o de banco que
 correspondan. Una prueba afirma comportamiento: ejecuta un programa en la VM o
 renderiza una pantalla. No lee texto fuente. CI ejecuta cada capa, y la lista de
 fallas esperadas mantiene visibles las fallas conocidas en lugar de ocultarlas.
@@ -68,7 +68,7 @@ hay shell genérico ni acceso genérico al sistema de archivos.
 Los resultados de host, QEMU, compilación para el destino, banco
 (hardware en el lazo) y manuales son niveles distintos, y un nivel inferior
 nunca prueba uno superior. Indique qué nivel respalda cada afirmación en la
-documentación, en un mensaje de commit y en un pull request. Véase
+documentación, en un mensaje de commit y en un pull request. Vea
 [Compatibilidad de hardware](../reference/capabilities-evidence.md).
 
 ### 8. Inglés y español avanzan juntos, y una dependencia necesita una razón
