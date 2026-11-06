@@ -27,7 +27,7 @@ The [course outline](./course-outline.md) lists every module and lesson with its
 
 If you have never programmed a PLC, take the Ladder path, *Ladder diagram from zero*. It is made of 21 of the lessons, from what a PLC is to the tested program of a machine, and it ends with a final project and a look at the other four languages. Ladder reads like the relay circuits it replaced, which is why most people start with it.
 
-Each lesson of the path opens with a **reading page**. It explains one idea in plain words, shows Ladder figures and timing diagrams, and has **Check yourself** questions that are not graded or saved. Where an idea is easier to see than to read, the page has a **try-it lab**: a small Ladder program that runs live beside its diagram. Hold a push button or flip a switch, press **Run**, and watch the lamps and the rung change. **Pause** and **Reset** let you start over. The lab runs on its own simulation in the page and never touches your project.
+Each lesson of the path opens with a **reading page**. The page covers the main area of the workbench, and the side and bottom panels stay visible around it. It explains one idea in plain words, shows Ladder figures and timing diagrams, and has **Check yourself** questions that are not graded or saved. Where an idea is easier to see than to read, the page has a **try-it lab**: a small Ladder program that runs live beside its diagram. Hold a push button or flip a switch, press **Run**, and watch the lamps and the rung change. **Pause** and **Reset** let you start over. The lab runs on its own simulation in the page and never touches your project.
 
 When you are ready, choose **Practice**: the page closes and the lesson panel opens beside the editor. **Read again** brings the page back. The path is also on the Learn home, with how many of its lessons you have passed and a button to continue where you stopped.
 
@@ -43,13 +43,13 @@ Every lesson offers two levels of hint, and ZPLC records each level you open. Th
 
 The first lesson ends in a blinking output in simulation. When **Start the course** has opened it, choose **Build** and then **Compile** on the toolbar, then **Connect** and **Run**. **Run** stays disabled until the program is built. Open the **Watch** tab: the [**Live I/O** faceplate](./faceplate.md) lists the outputs of the program, and the lamp of the lesson turns on and off.
 
-Every lesson but one can be completed this way, with no board: the lesson index refuses a foundation or intermediate lesson that cannot. The exception, *Verify my board*, exists to check a board. Evidence level: host. A journey of the development host (journey 57) follows exactly these visible controls from a fresh profile and sees the output change. How long a person takes is not measured: that needs a timed test with first-time users.
+Every lesson but one can be completed this way, with no board: the lesson index refuses a foundation or intermediate lesson that cannot. The exception, *Verify my board*, exists to check a board. Evidence level: host. A scripted run of the application on the development host (journey 57 of `packages/zplc-ide/scripts/journeys.ts`) follows exactly these visible controls from a fresh profile and sees the output change. How long a person takes is not measured: that needs a timed test with first-time users.
 
 ## Offline
 
 The simulation track needs no network, and that includes module 10: its Modbus and MQTT blocks talk to a server and a broker that the simulation starts on your computer and stops with it. The window loads no font, script or stylesheet from another host, and the one request ZPLC can make on its own, the check for a newer release, is off until you turn it on in the preferences.
 
-Evidence level: host. A journey of the development host on Linux (journey 58) starts, runs and checks the first lesson and a Communications lesson while every request to another host is refused, and a test of the production build finds no remote load in it. An installed package was not run without a network.
+Evidence level: host. A scripted run of the application on the development host on Linux (journey 58 of the same file) starts, runs and checks the first lesson and a Communications lesson while every request to another host is refused, and a test of the production build finds no remote load in it. An installed package was not run without a network.
 
 ## Beyond the lessons
 
