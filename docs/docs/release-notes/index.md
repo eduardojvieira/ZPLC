@@ -11,7 +11,7 @@ tags: [releases, changelog]
 
 ZPLC 2.0 is a new major version of the application, the compiler and the runtime. This page says what you can now do,
 what stops working, the steps to move from 1.x, and what has not been verified. The full engineering record is in
-[`CHANGELOG.md`](https://github.com/eduardojvieira/ZPLC/blob/master/CHANGELOG.md).
+`CHANGELOG.md` in the repository.
 
 :::warning Evaluation release
 ZPLC 2.0.0 is for evaluation. No board has been flashed, booted or run, so every board is at the `cross-build` level.
