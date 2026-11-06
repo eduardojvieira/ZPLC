@@ -5,15 +5,9 @@
   "order": 89,
   "module": 4,
   "level": "intermediate",
-  "prerequisites": [
-    "ld-variables-and-types"
-  ],
-  "languages": [
-    "LD"
-  ],
-  "tracks": [
-    "simulation"
-  ],
+  "prerequisites": ["ld-variables-and-types"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
   "unsupported": {
     "hardware": {
       "reason": {
