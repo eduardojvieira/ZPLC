@@ -1,5 +1,4 @@
----
-id: isa
+---id: isa
 title: Runtime ISA
 sidebar_label: ISA
 description: Public instruction-set, memory, and .zplc binary contract for ZPLC 2.0.
@@ -8,28 +7,15 @@ tags: [runtime, isa, bytecode]
 
 # Runtime ISA
 
-The canonical source for this page is `firmware/lib/zplc_core/include/zplc_isa.h`.
+This page describes the contract between the compiler, the loader and the virtual machine: the memory map, the reserved registers, the instruction families and the `.zplc` file. Read it to write a tool that produces or inspects bytecode, or to find out why a program was refused. The single source is `firmware/lib/zplc_core/include/zplc_isa.h`; when the two disagree, the header wins.
 
-In ZPLC 2.0, that public header defines the binary/ISA contract for:
+## Versions
 
-- the VM memory layout
-- reserved system registers
-- valid opcode families
-- shared type identifiers and limits
-- the packed `.zplc` binary format
+The header defines `ZPLC_VERSION_MAJOR = 1` and `ZPLC_VERSION_MINOR = 0`. They number the binary contract, not the ZPLC product release. A second number, the draft counter, tracks changes to the contract while it is still moving (see [Draft counter](#draft-counter)).
 
-## What the header versions today
+## Memory map
 
-`zplc_isa.h` currently exposes these ISA contract constants:
-
-- `ZPLC_VERSION_MAJOR = 1`
-- `ZPLC_VERSION_MINOR = 0`
-
-That is the **binary/ISA contract version**, not the full product marketing version.
-
-## VM memory layout
-
-The ISA reserves five logical regions with public bases and contract-defined sizes:
+The VM sees five regions at fixed bases. WORK, RETAIN and CODE take their size from the board configuration; the table gives the defaults of the header.
 
 | Region                     |     Base |                           Size | Canonical source                               |
 | -------------------------- | -------: | -----------------------------: | ---------------------------------------------- |
@@ -51,9 +37,11 @@ flowchart LR
   OPI --> HALOUT[HAL publishes outputs]
 ```
 
+A cycle reads the input image, runs the program and writes the output image. [Memory Model](./memory-model.md) explains how variables are placed in these regions.
+
 ## Reserved system registers
 
-The last 16 bytes of IPI (`0x0FF0` through `0x0FFF`) are reserved for scheduler/runtime state.
+The runtime owns the last 16 bytes of the input image, `0x0FF0` to `0x0FFF`. The runtime rewrites them before each cycle, so a program reads them and gains nothing by writing them.
 
 | Register              |  Address | Purpose                                   |
 | --------------------- | -------: | ----------------------------------------- |
@@ -62,19 +50,19 @@ The last 16 bytes of IPI (`0x0FF0` through `0x0FFF`) are reserved for scheduler/
 | `ZPLC_SYS_TASK_ID`    | `0x0FF8` | current task identifier                   |
 | `ZPLC_SYS_FLAGS`      | `0x0FF9` | runtime state flags                       |
 
-Public flags defined today:
+The byte at `ZPLC_SYS_FLAGS` combines these bits:
 
-- `ZPLC_SYS_FLAG_FIRST_SCAN`
-- `ZPLC_SYS_FLAG_WDG_WARN` (reserved; current runtimes do not produce it)
-- `ZPLC_SYS_FLAG_RUNNING`
+- `ZPLC_SYS_FLAG_FIRST_SCAN` (`0x01`) is set during the first cycle.
+- `ZPLC_SYS_FLAG_WDG_WARN` (`0x02`) is reserved. No runtime sets it today.
+- `ZPLC_SYS_FLAG_RUNNING` (`0x04`) is set while the program runs.
 
-`ZPLC_SYS_FLAG_WDG_WARN` is not evidence of a watchdog, timing monitor, or
-safe-state mechanism. The runtime's instruction budget is a separate logical
-execution bound.
+:::note
+`ZPLC_SYS_FLAG_WDG_WARN` is not evidence of a watchdog, a timing monitor or a safe-state mechanism. The instruction budget of the VM is a different thing: a logical bound on one cycle, not a time limit.
+:::
 
 ## Opcode families
 
-The public `zplc_opcode_t` enum groups instructions into clear runtime-facing families:
+The opcodes of `zplc_opcode_t` fall into the families below. For the exact stack effect of each opcode, use the [Runtime API](../reference/runtime-api.md) table.
 
 | Family            | Examples                                                                                                                                                                         | Role                                                            |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
@@ -92,41 +80,24 @@ The public `zplc_opcode_t` enum groups instructions into clear runtime-facing fa
 | Conversion        | `OP_I2F`, `OP_F2I`, `OP_I2B`, `OP_EXT8`, `OP_EXT16`, `OP_ZEXT8`, `OP_ZEXT16`, `OP_F2D`, `OP_D2F`, `OP_I2D`, `OP_D2I`, `OP_L2D`, `OP_D2L`, `OP_U2D`, `OP_D2U`, `OP_L2F`, `OP_U2F` | type adaptation, including `LREAL` and the 64-bit integers      |
 | Communication     | `OP_COMM_EXEC`, `OP_COMM_STATUS`, `OP_COMM_RESET`                                                                                                                                | communication FB execution                                      |
 
-An indirect access (`OP_LOADI*`, `OP_STOREI*`) to an address that no data region
-contains, such as `0xFFFF` or any address of the CODE region, ends the scan with
-`ZPLC_VM_OUT_OF_BOUNDS` (memory access violation). The compiler relies on that
-fault: a `REF_TO` variable starts as `0xFFFF`, so dereferencing a null reference
-faults, and a run-time array index outside the bounds loads from the CODE base
-address (CMP-023, CMP-024). A host test pins the behaviour.
+The top two bits of an opcode fix the size of its operand:
 
-The ISA also fixes operand width by opcode range:
+- `0x00-0x3F`: no operand.
+- `0x40-0x7F`: an 8-bit operand.
+- `0x80-0xBF`: a 16-bit operand.
+- `0xC0-0xFF`: a 32-bit operand.
 
-- `0x00-0x3F`: no operand
-- `0x40-0x7F`: 8-bit operand
-- `0x80-0xBF`: 16-bit operand
-- `0xC0-0xFF`: 32-bit operand
+`OP_RET` and the opcodes from `OP_I2F` (`0xA0`) to `OP_GED` (`0xBE`) are the exception: they lie in the 16-bit range but take no operand.
 
-`OP_RET` and the conversion, double-precision and double comparison opcodes from
-`OP_I2F` (`0xA0`) to `OP_GED` (`0xBE`) carry no operand although they lie in the
-16-bit range.
+An indirect access (`OP_LOADI*`, `OP_STOREI*`) to an address that no data region contains ends the cycle with `ZPLC_VM_OUT_OF_BOUNDS`, the memory access violation. `0xFFFF` and every address of the CODE region are in that case. The compiler relies on it: a `REF_TO` variable starts as `0xFFFF`, so dereferencing a null reference faults, and a run-time array index outside the bounds reads from the CODE base address and faults the same way. A host test pins this behaviour.
 
 ## Two-word values: 64-bit integers and `LREAL`
 
-The evaluation stack has 32-bit words. A `LINT`, `ULINT`, `LWORD` or `LREAL`
-value is two words, the **low word deeper** on the stack and the high word on
-top, exactly as `OP_LOAD64` leaves it and `OP_STORE64` takes it. An `LREAL` is
-the IEEE 754 binary64 bit pattern in those two words.
+The evaluation stack holds 32-bit words, so a `LINT`, `ULINT`, `LWORD` or `LREAL` takes two. The low word sits deeper and the high word on top, which is how `OP_LOAD64` leaves them and `OP_STORE64` takes them. An `LREAL` is the IEEE 754 binary64 bit pattern in those two words.
 
-The opcodes of the 64-bit and double-precision families are listed, with their
-stack effects, in the [Runtime API](../reference/runtime-api.md) table. The loader
-proves the stack depth of every path from that table, so a program that uses one
-of them with too few words is refused (`ZPLC_LOADER_ERR_STACK`). They are part of
-the C core: every runtime has them at once.
+The loader proves the stack depth of every path from the stack effects in the [Runtime API](../reference/runtime-api.md) table, so a program that applies one of these opcodes to too few words is refused with `ZPLC_LOADER_ERR_STACK`. All of them are part of the C core: every runtime has them.
 
-The VM computes every double-precision result in integer arithmetic. A result
-therefore does not depend on the C library, on hardware floating point or on x87
-extended precision, and is the same bit pattern on the 64-bit host, on a 32-bit
-build and on every target. The results the VM defines:
+The VM computes each double-precision result in integer arithmetic. The result therefore does not depend on the C library, on hardware floating point or on x87 extended precision, and it is the same bit pattern on the 64-bit host, on a 32-bit build and on every target. The results the VM defines:
 
 | Operation                                        | Operands                  | Result                                                                                       |
 | ------------------------------------------------ | ------------------------- | -------------------------------------------------------------------------------------------- |
@@ -160,46 +131,37 @@ build and on every target. The results the VM defines:
 |                                                  | otherwise                 | truncated toward zero                                                                        |
 | `OP_I2D`, `OP_L2D`, `OP_U2D`, `OP_L2F`, `OP_U2F` | any                       | one rounding, to nearest even                                                                |
 
-Every NaN that a double-precision operation produces is the quiet NaN
-`0x7FF8000000000000` (`0x7FC00000` as a `REAL`), so two platforms never differ in
-the payload.
+Every NaN that a double-precision operation produces is the quiet NaN `0x7FF8000000000000` (`0x7FC00000` as a `REAL`), so two platforms never differ in the payload.
 
-A count is read as one unsigned 32-bit word, so a negative count is a count of 64
-or more. Rounding to the nearest integer for the language conversions
-(`LREAL_TO_DINT(2.5) = 2`) is `OP_RNDD` followed by a truncating conversion, as
-the `REAL` conversions are.
+A shift count is read as one unsigned 32-bit word, so a negative count counts as 64 or more. The language conversions round to the nearest integer (`LREAL_TO_DINT(2.5) = 2`) with `OP_RNDD` followed by a truncating conversion, the same way the `REAL` conversions do.
 
 ## Draft counter
 
-Until the contract is frozen (CMP-052), header word 28 of every `.zplc` artifact
-holds the draft counter (`ZPLC_DRAFT_COUNTER`) and the loader refuses an artifact
-that carries another value, with both numbers. Every change of an opcode, layout
-or size increases it. The counter is **6** since the declared safe values (the
-`ZPLC_SEG_SAFE` segment): programs built before are refused and must be rebuilt
-(it was 5 with the layout of the strings of the communication blocks, 4 with the
-call depth of a task and the build identity, and 3 with the 64-bit and
-double-precision opcodes). The
-`tools/contract/restamp_artifacts.py` tool moves the artifacts committed to the
-repository to the current counter.
+Until the contract is frozen, header word 28 of every `.zplc` artifact holds `ZPLC_DRAFT_COUNTER`, and the loader refuses an artifact that carries another value, reporting both numbers. Any change to an opcode, a layout or a size raises the counter.
 
-## Public types and limits
+The counter is **6** today. The history, newest first:
 
-The header also publishes limits that the toolchain and runtime share:
+- 6: the declared safe values (the `ZPLC_SEG_SAFE` segment).
+- 5: the layout of the strings of the communication blocks.
+- 4: the call depth of a task and the build identity.
+- 3: the 64-bit and double-precision opcodes.
 
-- `ZPLC_STACK_MAX_DEPTH` for the evaluation stack
-- `ZPLC_CALL_STACK_MAX` for the call stack
-- `ZPLC_MAX_BREAKPOINTS` for debug capacity
-- IEC type IDs such as `ZPLC_TYPE_BOOL`, `ZPLC_TYPE_INT`, `ZPLC_TYPE_DINT`, `ZPLC_TYPE_REAL`, `ZPLC_TYPE_TIME`, and `ZPLC_TYPE_STRING`
+A program built before a bump is refused and must be rebuilt. To move the artifacts committed to the repository to the current counter, run `tools/contract/restamp_artifacts.py`.
 
-For `STRING`, the ISA fixes a safe memory layout with:
+## Shared limits and types
 
-- current length at offset `0`
-- max capacity at offset `2`
-- character data at offset `4`
+The header publishes the limits that the toolchain and the runtime share:
 
-## `.zplc` file contract
+- `ZPLC_STACK_MAX_DEPTH` for the evaluation stack (256 unless the board configuration changes it).
+- `ZPLC_CALL_STACK_MAX` for the call stack (32 unless changed).
+- `ZPLC_MAX_BREAKPOINTS` for the debugger (16 unless changed).
+- The IEC type identifiers: `ZPLC_TYPE_BOOL`, `ZPLC_TYPE_INT`, `ZPLC_TYPE_DINT`, `ZPLC_TYPE_REAL`, `ZPLC_TYPE_TIME`, `ZPLC_TYPE_STRING` and the others.
 
-The `.zplc` binary format uses packed public structures from the same header:
+A `STRING` has a fixed layout: the current length at offset `0`, the capacity at offset `2` and the character data from offset `4`.
+
+## The `.zplc` file
+
+The file is built from packed structures declared in the same header:
 
 - `zplc_file_header_t`
 - `zplc_segment_entry_t`
@@ -209,7 +171,7 @@ The `.zplc` binary format uses packed public structures from the same header:
 - `zplc_build_info_t`
 - `zplc_safe_entry_t`
 
-Public segment identifiers defined today include:
+The segments it can carry:
 
 - `ZPLC_SEG_CODE`
 - `ZPLC_SEG_DATA`
@@ -225,48 +187,21 @@ Public segment identifiers defined today include:
 
 ## Task depth and build identity
 
-The compiler measures what the loader will prove, and records it in the artifact
-(CMP-050, CMP-056):
+The compiler measures what the loader will verify and records it in the artifact.
 
-- `stack_size` of a task definition is the most values the task holds on the
-  evaluation stack at once, and `call_depth` the most call frames it has active
-  at once, its own body included (1 for a task that calls nothing; 0 means the
-  artifact does not declare it). The loader refuses a task that needs more than
-  it declares, and a task whose call depth is more than the call stack of the VM
-  plus its body. The compiler fails the build when a task needs a stack deeper
-  than `ZPLC_VERIFY_MAX_DEPTH` (127) or than the target holds, or calls nested
-  deeper than `ZPLC_CALL_STACK_MAX`.
-- The `ZPLC_SEG_BUILD` segment holds one 32-bit value, the build identity: the
-  CRC-32 of the CODE segment followed by the TASK segment as written, never 0.
-  The debug map of the same build records it as `buildId` in 8 hexadecimal
-  digits, so that a tool can tell a map that does not belong to the program that
-  runs. An artifact without the segment reads as not identified.
+- A task definition carries `stack_size`, the most values the task holds on the evaluation stack at once, and `call_depth`, the most call frames it has active at once, its own body included. A task that calls nothing has a call depth of 1; 0 means the artifact does not declare it.
+- The loader refuses a task that needs more than it declares, and a task whose call depth exceeds the call stack of the VM plus its own body.
+- The compiler fails the build when a task needs a stack deeper than `ZPLC_VERIFY_MAX_DEPTH` (127) or deeper than the target holds, or nests calls deeper than `ZPLC_CALL_STACK_MAX`.
+- The `ZPLC_SEG_BUILD` segment holds one 32-bit value, the build identity: the CRC-32 of the CODE segment followed by the TASK segment as written, never 0. The debug map of the same build records it as `buildId`, in 8 hexadecimal digits, so a tool can tell that a map does not belong to the program that is running. An artifact without the segment reads as not identified.
 
 ## Declared safe values
 
-The state of an output while the program does not control it (STOP, a pause, a
-latched fault, the boot, a deploy in progress) is off, unless the project
-declares another value for it (RT-023). The declaration travels in the artifact,
-in the `ZPLC_SEG_SAFE` segment, so that a program and its safe state are one
-unit: a device that restores the program restores its declaration, and an
-interrupted deploy cannot leave the program of one build with the safe values of
-another.
+While the program does not control an output (STOP, a pause, a latched fault, the boot, a deploy in progress), the output is off unless the project declares another value for it. The declaration travels inside the artifact, in the `ZPLC_SEG_SAFE` segment, so a program and its safe state are one unit: a device that restores the program restores its declaration, and an interrupted deploy cannot leave one build's program with another build's safe values.
 
-- Each entry is a `zplc_safe_entry_t` of `ZPLC_SAFE_ENTRY_SIZE` (4) bytes: the
-  byte `offset` of the output in the output image, the `bit` (0 to 7) and the
-  `value` (0 or 1).
-- The loader refuses the artifact with `ZPLC_LOADER_ERR_SAFE` when the segment is
-  not whole entries, an entry names a bit outside the output image or a value
-  other than 0 or 1, an output is declared twice, or there are more than
-  `ZPLC_LOADER_MAX_SAFE` (64) entries; a second `ZPLC_SEG_SAFE` segment is
-  refused as a segment error. An artifact without the segment declares nothing.
-- The runtime refuses, at deploy and at boot restore, a declaration for an
-  output the board does not have (an entry has to name a digital output channel
-  of the board description by its image offset and bit). A program of another
-  board is not run with a safe state that does not exist.
-- A value declared for an output replaces the level the board description gives
-  that output in the safe state, in both directions. It is in force from the load
-  that committed the program, before the first scan.
+- Each entry is a `zplc_safe_entry_t` of `ZPLC_SAFE_ENTRY_SIZE` (4) bytes: the byte `offset` of the output in the output image, the `bit` (0 to 7) and the `value` (0 or 1).
+- The loader refuses the artifact with `ZPLC_LOADER_ERR_SAFE` when the segment is not a whole number of entries, an entry names a bit outside the output image or a value other than 0 or 1, an output is declared twice, or there are more than `ZPLC_LOADER_MAX_SAFE` (64) entries. A second `ZPLC_SEG_SAFE` segment is refused as a segment error. An artifact without the segment declares nothing.
+- At deploy and at boot restore, the runtime refuses a declaration for an output the board does not have: each entry must name a digital output channel of the board description by its image offset and bit. A program for another board never runs with a safe state that does not exist.
+- A declared value replaces the level the board description gives that output in the safe state, in both directions. It is in force from the load that committed the program, before the first cycle.
 
 ## Related pages
 
