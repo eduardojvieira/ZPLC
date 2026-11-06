@@ -72,6 +72,8 @@ export const LESSON_IDS = [
   "ld-function-blocks",
   "ld-diagnosis-debugger",
   "ld-final-project",
+  "ld-compare-math",
+  "ld-analog-scaling",
 ] as const;
 
 export type LessonId = typeof LESSON_IDS[number];

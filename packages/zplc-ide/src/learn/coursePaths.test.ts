@@ -154,3 +154,50 @@ describe('the paths in the course view and the Continue of a path (LRN-043)', ()
     expect(pathContinueTarget(state(emptyProgress(), true))).toBe(A);
   });
 });
+
+// The topics LRN-044 names, each mapped to the lesson of the Ladder path that teaches it, in the order of the path (D6).
+const LADDER_TOPICS: Array<[topic: string, lesson: string]> = [
+  ['what a PLC is, inputs and outputs', 'ld-what-is-a-plc'],
+  ['the scan cycle', 'ld-scan-cycle'],
+  ['a first blink', 'blinky-ladder-timer-feedback'],
+  ['NO and NC contacts', 'ld-no-nc-contacts'],
+  ['series and parallel logic', 'ld-series-parallel'],
+  ['a two-hand guard', 'boolean-logic-two-hand-guard-ladder'],
+  ['seal-in', 'seal-in-ladder'],
+  ['set and reset', 'set-reset-alarm-latch-ladder'],
+  ['edges', 'ld-edges'],
+  ['timers', 'timers-on-delay-off-delay-ladder'],
+  ['counters', 'edge-counter-pulses-ladder'],
+  ['variables and I/O addresses', 'ld-variables-and-types'],
+  ['comparison and arithmetic', 'ld-compare-math'],
+  ['analog scaling', 'ld-analog-scaling'],
+  ['sequences', 'ld-sequence-step-bits'],
+  ['interlocks', 'interlock-reversing-ladder'],
+  ['faults and reset', 'tank-level-fault-reset-ladder'],
+  ['function blocks', 'ld-function-blocks'],
+  ['diagnosis with the debugger', 'ld-diagnosis-debugger'],
+  ['a final project', 'ld-final-project'],
+  ['the same logic in the other languages', 'one-logic-five-languages'],
+];
+
+describe('the Ladder path teaches from zero (LRN-044)', () => {
+  const ladder = LESSON_INDEX.course.paths?.find((entry) => entry.id === 'ladder');
+  const lessonOf = (id: string) => LESSON_INDEX.lessons.find((lesson) => lesson.id === id);
+
+  it('LRN-044 holds the 21 lessons of the outline, in order, and names a lesson for each topic', () => {
+    expect(ladder?.lessons).toEqual(LADDER_TOPICS.map(([, lesson]) => lesson));
+    for (const [topic, lesson] of LADDER_TOPICS) expect(ladder?.lessons, `no lesson on ${topic}`).toContain(lesson);
+  });
+
+  it('LRN-044 gives every lesson a reading page in English and Spanish, a Simulation track and the language LD', () => {
+    for (const id of ladder?.lessons ?? []) {
+      const lesson = lessonOf(id);
+      expect(lesson, `${id} exists`).toBeDefined();
+      expect(lesson?.reading?.en.trim().length, `${id} reading.en.md`).toBeGreaterThan(0);
+      expect(lesson?.reading?.es.trim().length, `${id} reading.es.md`).toBeGreaterThan(0);
+      expect(lesson?.tracks, `${id} tracks`).toContain('simulation');
+      expect(lesson?.languages, `${id} languages`).toContain('LD');
+    }
+    expect(ladder?.language).toBe('LD');
+  });
+});

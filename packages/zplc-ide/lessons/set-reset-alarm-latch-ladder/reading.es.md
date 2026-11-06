@@ -27,7 +27,7 @@ src: reading/call-light.ld.json
 caption: Un peldaño activa CallLamp con SET y otro peldaño la desactiva con RESET
 ```
 
-ZPLC acepta exactamente un SET y un RESET para una variable, cada uno en su propio peldaño. Dos peldaños que escriben la variable de otras maneras se rechazan como escritores múltiples.
+ZPLC acepta exactamente un SET y un RESET para una variable, cada uno en su propio peldaño. Dos peldaños que escriben la variable con bobinas de otras maneras se rechazan como escritores múltiples.
 
 ## Pruébelo
 

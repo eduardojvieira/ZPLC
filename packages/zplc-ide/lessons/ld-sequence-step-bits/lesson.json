@@ -6,7 +6,7 @@
   "module": 5,
   "level": "intermediate",
   "prerequisites": [
-    "ld-variables-and-types"
+    "ld-analog-scaling"
   ],
   "languages": [
     "LD"

@@ -247,6 +247,8 @@
         "timers-on-delay-off-delay-ladder",
         "edge-counter-pulses-ladder",
         "ld-variables-and-types",
+        "ld-compare-math",
+        "ld-analog-scaling",
         "ld-sequence-step-bits",
         "interlock-reversing-ladder",
         "tank-level-fault-reset-ladder",

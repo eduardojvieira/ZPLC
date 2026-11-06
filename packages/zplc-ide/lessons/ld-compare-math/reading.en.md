@@ -42,7 +42,7 @@ Compare that with a coil, which is switched off whenever its rung has no power. 
 
 A box also passes power on. When a math box has power in, it has power out, so you can chain several boxes in one rung and they all run in order from left to right. Two comparisons chained in series work as AND.
 
-One rule goes with it: **one variable, one writer**. In ZPLC Ladder only one element may write a given variable, and a second box or coil on the same variable is an error reported at the second one. That is why the figure keeps two totals, `Filled` and `Drained`, and calculates `Level` from them in a box of its own, instead of one `Level` that two rungs try to change.
+One rule goes with it: **a coil is exclusive, but boxes can share a variable**. A coil writes its variable on every scan, so ZPLC allows only one coil per variable (a SET and a RESET pair is the one exception), and a second coil is an error reported at the second one. A box writes only while it has power, so several boxes may write the same variable. When more than one has power in the same scan, **the last one in scan order wins**. A coil and a box on the same variable are still refused. The classic use is a counter: one rung with `ADD(Count, 1) -> Count` and a rung below it with `MOVE(0) -> Count` that resets it. In the figure, `Filled` and `Drained` are kept as two separate totals and `Level` is calculated from them in a box of its own. That is a design choice that keeps each total easy to read, not something ZPLC requires.
 
 ## The zero divisor
 
@@ -72,7 +72,7 @@ In the lab, the lamp `Empty` is on until the first bottle. Add one light bottle:
 
 ## Common mistakes
 
-- Writing one variable from two rungs. The build stops with an error at the second box: split the work into two variables and calculate the result in a third.
+- Writing one variable from two boxes without thinking about the order. If both have power in the same scan, the lower rung wins, so put the reset below the count. A coil and a box on one variable is an error reported at the second one.
 - Expecting a box output to turn off with its rung. It does not: it keeps its value until another rung writes it.
 - Putting the guard after the `DIV`. The guard has to come first, from the left, because power flows from left to right.
 - Using `GT` when the rule says "at least". Read the rule word by word and check the value that sits exactly on the limit.

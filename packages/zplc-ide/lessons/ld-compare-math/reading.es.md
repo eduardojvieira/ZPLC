@@ -42,7 +42,7 @@ Compárelo con una bobina, que se apaga siempre que su peldaño no tiene energí
 
 Una caja también deja pasar la energía. Cuando un bloque matemático tiene energía de entrada, tiene energía de salida, así que puede encadenar varias cajas en un peldaño y todas se ejecutan en orden, de izquierda a derecha. Dos comparaciones encadenadas en serie funcionan como una Y lógica (AND).
 
-Una regla acompaña a esto: **una variable, un escritor**. En la escalera de ZPLC solo un elemento puede escribir una variable dada, y una segunda caja o bobina sobre la misma variable es un error que se informa en la segunda. Por eso la figura guarda dos totales, `Filled` y `Drained`, y calcula `Level` a partir de ellos en una caja propia, en lugar de un único `Level` que dos peldaños intentan cambiar.
+Una regla acompaña a esto: **una bobina es exclusiva, pero las cajas pueden compartir una variable**. Una bobina escribe su variable en cada ciclo, así que ZPLC permite una sola bobina por variable (un par SET y RESET es la única excepción), y una segunda bobina es un error que se informa en la segunda. Una caja escribe solo mientras tiene energía, así que varias cajas pueden escribir la misma variable. Cuando más de una tiene energía en el mismo ciclo, **gana la última en el orden de ejecución**. Una bobina y una caja sobre la misma variable siguen siendo rechazadas. El uso clásico es un contador: un peldaño con `ADD(Count, 1) -> Count` y un peldaño más abajo con `MOVE(0) -> Count` que lo reinicia. En la figura, `Filled` y `Drained` se guardan como dos totales separados y `Level` se calcula a partir de ellos en una caja propia. Es una decisión de diseño que mantiene cada total fácil de leer, no algo que ZPLC exija.
 
 ## El divisor en cero
 
@@ -72,7 +72,7 @@ En el laboratorio, la lámpara `Empty` está encendida hasta la primera botella.
 
 ## Errores comunes
 
-- Escribir una variable desde dos peldaños. La compilación se detiene con un error en la segunda caja: divida el trabajo en dos variables y calcule el resultado en una tercera.
+- Escribir una variable desde dos cajas sin pensar en el orden. Si ambas tienen energía en el mismo ciclo, gana el peldaño de abajo, así que ponga el reinicio debajo de la cuenta. Una bobina y una caja sobre la misma variable es un error que se informa en la segunda.
 - Esperar que la salida de una caja se apague con su peldaño. No lo hace: conserva su valor hasta que otro peldaño la escribe.
 - Poner la protección después del `DIV`. La protección debe ir primero, desde la izquierda, porque la energía fluye de izquierda a derecha.
 - Usar `GT` cuando la regla dice "al menos". Lea la regla palabra por palabra y compruebe el valor que cae justo en el límite.

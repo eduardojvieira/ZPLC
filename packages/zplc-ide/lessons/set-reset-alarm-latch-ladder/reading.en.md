@@ -27,7 +27,7 @@ src: reading/call-light.ld.json
 caption: One rung sets CallLamp, another rung resets it
 ```
 
-ZPLC accepts exactly one SET and one RESET for a variable, each in its own rung. Two rungs that both write the variable in other ways are refused as multiple writers.
+ZPLC accepts exactly one SET and one RESET for a variable, each in its own rung. Two rungs that both write the variable with coils in other ways are refused as multiple writers.
 
 ## Try it
 
