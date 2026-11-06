@@ -7996,6 +7996,97 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
+    // DOC-013: the pictures of the Learn reading page and of its try-it lab, taken by `bun run docs:screenshots -- --reading`.
+    // The Ladder path of the Learn home is shown and its first lesson opens on its reading page, full screen. The lab
+    // of the page is run, a switch is turned on and the picture is taken when its lamp is lit. ZPLC_DOC_SHOTS_LOCALE (en or es)
+    // chooses the language, in the stored preferences, as journey 59 does.
+    name: '66 The Learn reading page and its try-it lab, for the pictures of the site',
+    example: 'none',
+    proves: [],
+    partly: ['DOC-013'],
+    run: async (app) => {
+      const locale = process.env.ZPLC_DOC_SHOTS_LOCALE === 'es' ? 'es' : 'en';
+      await app.cdp.command('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+      if (locale === 'es') {
+        await app.eval(
+          `(() => { const key = 'zplc-ide-settings'; const stored = JSON.parse(localStorage.getItem(key) || '{}'); const target = ` +
+            `stored.settings ?? stored; target.language = 'es'; localStorage.setItem(key, JSON.stringify(stored)); })()`,
+        );
+        await app.cdp.command('Page.reload');
+      }
+      await app.until(
+        `the Welcome screen in ${locale}`,
+        async () =>
+          (await app.eval<boolean>(
+            `(document.querySelector('[data-welcome-learn]')?.textContent?.trim().startsWith('Learn') ?? false) === ${locale === 'en'} && ` +
+              `document.querySelector('[data-welcome-learn]') !== null`,
+          )) || undefined,
+        45_000,
+      );
+      await app.click(css('[data-welcome-learn]'), 'Learn on the Welcome screen');
+      await app.until('the Learn home', async () => (await app.visible(css('[data-learn-home]'))) || undefined);
+      // the Ladder path of the home, then its first lesson, which opens on its reading page
+      await app.eval(`document.querySelector('[data-learn-paths]')?.scrollIntoView({ block: 'start' })`);
+      await app.until('the Ladder path', async () => (await app.visible(css('[data-learn-path-start]'))) || undefined);
+      await docShot(app, `learn-path-${locale}`);
+      await app.click(css('[data-learn-path-start]'), 'the first lesson of the Ladder path');
+      await app.until(
+        'the reading page of the first lesson',
+        async () => (await app.visible(css('[data-learn-reading]'))) || undefined,
+        45_000,
+      );
+      await docShot(app, `learn-reading-${locale}`);
+
+      // the lab of the page: Run, then the switch; the picture is taken when the porch light is lit
+      const lab = css('[data-lab-control="run"]');
+      await app.eval(`document.querySelector('[data-lab-control="run"]')?.scrollIntoView({ block: 'center' })`);
+      await app.until('the try-it lab', async () => (await app.visible(lab)) || undefined, 45_000);
+      await app.click(lab, 'Run in the try-it lab');
+      await app.until(
+        'the lab running',
+        async () =>
+          (await app.eval<boolean>(`document.querySelector('[data-lab-status]')?.getAttribute('data-lab-status') === 'running'`)) ||
+          undefined,
+      );
+      await app.click(css('[data-lab-input="NightSwitch"]'), 'the night switch');
+      await app.until(
+        'the porch light lit',
+        async () =>
+          (await app.eval<boolean>(`document.querySelector('[data-lamp="PorchLight"]')?.getAttribute('data-state') === 'on'`)) || undefined,
+      );
+      await app.eval(`document.querySelector('[data-lab-control="run"]')?.scrollIntoView({ block: 'center' })`);
+      await docShot(app, `learn-lab-${locale}`);
+    },
+  },
+  {
+    // DOC-013: the picture of a Ladder function box in the editor (LNG-028), taken by `bun run docs:screenshots -- --reading`:
+    // the compare-and-math lesson project open on its Ladder program, which has boxes with EN and ENO wires.
+    name: '67 A Ladder function box in the editor, for the pictures of the site',
+    example: 'ld_compare_math',
+    proves: [],
+    partly: ['DOC-013', 'LNG-028'],
+    run: async (app, { project }) => {
+      const locale = process.env.ZPLC_DOC_SHOTS_LOCALE === 'es' ? 'es' : 'en';
+      await app.cdp.command('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+      if (locale === 'es') {
+        await app.eval(
+          `(() => { const key = 'zplc-ide-settings'; const stored = JSON.parse(localStorage.getItem(key) || '{}'); const target = ` +
+            `stored.settings ?? stored; target.language = 'es'; localStorage.setItem(key, JSON.stringify(stored)); })()`,
+        );
+        await app.cdp.command('Page.reload');
+        journeyLocale = 'es';
+      }
+      try {
+        await openFolder(app, project);
+        await openDiagram(app, 'src/TankMonitor.ld.json', '[data-ld-function]');
+        await app.eval(`document.querySelector('[data-ld-function]')?.scrollIntoView({ block: 'center', inline: 'center' })`);
+        await docShot(app, `ld-function-box-${locale}`);
+      } finally {
+        journeyLocale = 'en';
+      }
+    },
+  },
+  {
     // The Welcome cards of rc.3 ran out of their boxes on a MacBook Air in Spanish (2026-10-26), and a sweep of the other
     // screens found the same in ten more places. Spanish labels are the longest, and 1024 by 768 is the smallest window
     // the shell supports (journey 45).
