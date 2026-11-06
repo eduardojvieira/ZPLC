@@ -1,0 +1,113 @@
+{
+  "name": "Rungs",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Enable",
+        "type": "BOOL",
+        "address": "%IX8.0"
+      },
+      {
+        "name": "Clear",
+        "type": "BOOL",
+        "address": "%IX8.1"
+      },
+      {
+        "name": "Src",
+        "type": "INT",
+        "address": "%IW0"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Dst",
+        "type": "INT",
+        "address": "%QW0"
+      },
+      {
+        "name": "Mark",
+        "type": "INT",
+        "address": "%QW1"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "r1",
+      "number": 1,
+      "gridConfig": {
+        "cols": 2,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "c1",
+              "type": "contact_no",
+              "variable": "Enable",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "f1",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["Src"],
+              "output": "Dst",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": [],
+      "verticalLinks": []
+    },
+    {
+      "id": "r2",
+      "number": 2,
+      "gridConfig": {
+        "cols": 2,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "c2",
+              "type": "contact_no",
+              "variable": "Clear",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "f2",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["-1"],
+              "output": "Mark",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": [],
+      "verticalLinks": []
+    }
+  ]
+}

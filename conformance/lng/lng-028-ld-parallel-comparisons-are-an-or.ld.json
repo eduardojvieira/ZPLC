@@ -1,0 +1,88 @@
+{
+  "name": "Rungs",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "A",
+        "type": "INT",
+        "address": "%IW0"
+      },
+      {
+        "name": "B",
+        "type": "INT",
+        "address": "%IW1"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Lamp",
+        "type": "BOOL",
+        "address": "%QX16.0"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "r1",
+      "number": 1,
+      "gridConfig": {
+        "cols": 2,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "f1",
+              "type": "function",
+              "functionName": "GT",
+              "operands": ["A", "10"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "k1",
+              "type": "coil",
+              "variable": "Lamp",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "f2",
+              "type": "function",
+              "functionName": "LT",
+              "operands": ["B", "5"],
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ],
+      "branches": [
+        {
+          "id": "b1",
+          "startCol": 0,
+          "endCol": 0,
+          "rows": [0, 1]
+        }
+      ],
+      "verticalLinks": []
+    }
+  ]
+}

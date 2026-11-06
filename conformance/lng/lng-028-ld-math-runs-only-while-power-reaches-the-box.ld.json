@@ -1,0 +1,179 @@
+{
+  "name": "Rungs",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Enable",
+        "type": "BOOL",
+        "address": "%IX8.0"
+      },
+      {
+        "name": "A",
+        "type": "INT",
+        "address": "%IW0"
+      },
+      {
+        "name": "B",
+        "type": "INT",
+        "address": "%IW1"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Sum",
+        "type": "INT",
+        "address": "%QW0"
+      },
+      {
+        "name": "Diff",
+        "type": "INT",
+        "address": "%QW1"
+      },
+      {
+        "name": "Prod",
+        "type": "INT",
+        "address": "%QW2"
+      },
+      {
+        "name": "Quot",
+        "type": "INT",
+        "address": "%QW3"
+      },
+      {
+        "name": "Rem",
+        "type": "INT",
+        "address": "%QW4"
+      },
+      {
+        "name": "Done",
+        "type": "BOOL",
+        "address": "%QX16.0"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "r1",
+      "number": 1,
+      "gridConfig": {
+        "cols": 4,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "c1",
+              "type": "contact_no",
+              "variable": "Enable",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "f1",
+              "type": "function",
+              "functionName": "ADD",
+              "operands": ["A", "B"],
+              "output": "Sum",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "f2",
+              "type": "function",
+              "functionName": "SUB",
+              "operands": ["A", "B"],
+              "output": "Diff",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "f3",
+              "type": "function",
+              "functionName": "MUL",
+              "operands": ["A", "2"],
+              "output": "Prod",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": [],
+      "verticalLinks": []
+    },
+    {
+      "id": "r2",
+      "number": 2,
+      "gridConfig": {
+        "cols": 4,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "c2",
+              "type": "contact_no",
+              "variable": "Enable",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "f4",
+              "type": "function",
+              "functionName": "DIV",
+              "operands": ["A", "B"],
+              "output": "Quot",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "f5",
+              "type": "function",
+              "functionName": "MOD",
+              "operands": ["A", "B"],
+              "output": "Rem",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "k1",
+              "type": "coil",
+              "variable": "Done",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": [],
+      "verticalLinks": []
+    }
+  ]
+}

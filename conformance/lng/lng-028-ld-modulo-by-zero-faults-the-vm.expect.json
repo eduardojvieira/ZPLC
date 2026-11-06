@@ -1,0 +1,25 @@
+{
+  "requirement": "LNG-028",
+  "title": "a Ladder MOD box with a divisor of zero ends the scan in a VM fault: the box detects no error",
+  "matrix": ["ld-fbd.en-eno", "ld-fbd.ld-blocks-in-a-rung"],
+  "scans": 1,
+  "scanMs": 10,
+  "inputs": [
+    {
+      "at": "%IX8.0",
+      "type": "BOOL",
+      "value": true,
+      "beforeScan": 1
+    },
+    {
+      "at": "%IW0",
+      "type": "INT",
+      "value": 7,
+      "beforeScan": 1
+    }
+  ],
+  "expect": [],
+  "fault": true,
+  "tags": ["arch-sensitive", "division"],
+  "note": "The box detects no error: the VM faults on a zero divisor for every integer width and for REAL (zplc_core.c)."
+}

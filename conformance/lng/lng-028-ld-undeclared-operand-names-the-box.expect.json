@@ -1,0 +1,9 @@
+{
+  "requirement": "LNG-028",
+  "title": "a Ladder function box with an operand that is not declared is reported at its rung and cell",
+  "matrix": ["ld-fbd.en-eno", "ld-fbd.ld-blocks-in-a-rung"],
+  "build": "fails",
+  "codes": ["TRANSLATION_FAILED"],
+  "elements": ["rung:r1/cell:0,1"],
+  "messageIncludes": ["'Missing'"]
+}

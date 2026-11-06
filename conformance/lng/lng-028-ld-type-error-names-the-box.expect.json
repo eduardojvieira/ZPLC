@@ -1,0 +1,8 @@
+{
+  "requirement": "LNG-028",
+  "title": "a type error in a Ladder function box is reported at the rung and cell of the box",
+  "matrix": ["ld-fbd.en-eno", "ld-fbd.ld-blocks-in-a-rung"],
+  "build": "fails",
+  "elements": ["rung:r1/cell:0,1"],
+  "messageIncludes": ["STRING"]
+}
