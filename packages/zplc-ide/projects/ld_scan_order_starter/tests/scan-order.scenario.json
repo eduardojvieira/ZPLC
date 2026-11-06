@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "id": "ScanOrder",
+  "tickMs": 10,
+  "durationMs": 60,
+  "events": [
+    {
+      "atMs": 0,
+      "set": {
+        "ScanOrder.StartButton": false
+      }
+    },
+    {
+      "atMs": 10,
+      "set": {
+        "ScanOrder.StartButton": true
+      }
+    },
+    {
+      "atMs": 30,
+      "set": {
+        "ScanOrder.StartButton": false
+      }
+    }
+  ],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 0,
+      "condition": {
+        "ScanOrder.Lamp": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10,
+      "condition": {
+        "ScanOrder.Lamp": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 20,
+      "condition": {
+        "ScanOrder.Lamp": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 30,
+      "condition": {
+        "ScanOrder.Lamp": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 40,
+      "condition": {
+        "ScanOrder.Lamp": false
+      }
+    },
+    {
+      "kind": "RISING",
+      "fromMs": 10,
+      "withinMs": 0,
+      "condition": {
+        "ScanOrder.Lamp": true
+      }
+    },
+    {
+      "kind": "FALLING",
+      "fromMs": 30,
+      "withinMs": 0,
+      "condition": {
+        "ScanOrder.Lamp": false
+      }
+    }
+  ]
+}

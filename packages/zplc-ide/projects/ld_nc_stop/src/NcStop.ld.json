@@ -1,0 +1,170 @@
+{
+  "name": "NcStop",
+  "description": "A motor that runs while Start is held and the stop circuit is intact, and a lamp that shows an open stop circuit.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "StartButton",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "Start pushbutton, normally open: TRUE while pressed"
+      },
+      {
+        "name": "StopButton",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "Stop pushbutton wired normally closed in the field: TRUE at rest, FALSE when pressed or when the wire breaks"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Motor",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Motor contactor command"
+      },
+      {
+        "name": "StopLamp",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Lamp that shows the stop circuit is open"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "The motor runs while Start is pressed and the stop circuit is intact.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "e0_0_1",
+              "type": "contact_no",
+              "variable": "StartButton",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_1_1",
+              "type": "contact_no",
+              "variable": "StopButton",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_7_1",
+              "type": "coil",
+              "variable": "Motor",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "The lamp is lit while the stop circuit is open.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "e0_0_2",
+              "type": "contact_nc",
+              "variable": "StopButton",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "e0_7_2",
+              "type": "coil",
+              "variable": "StopLamp",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-05",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "ld-what-is-a-plc",
+  "version": 2,
+  "order": 77,
+  "module": 1,
+  "level": "foundation",
+  "prerequisites": [],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "This lesson is about the simulated lab on your computer: the button and the lamp exist only in the simulation, so there is no board wiring to check.",
+        "es": "Esta lección trata del laboratorio simulado en su computador: el botón y la lámpara existen solo en la simulación, así que no hay cableado de placa que verificar."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, which needs only your computer.",
+        "es": "Complétela en Simulación, que solo necesita su computador."
+      }
+    }
+  },
+  "plant": null,
+  "estimatedMinutes": 15,
+  "starter": {
+    "project": "ld_what_is_plc_starter",
+    "program": "src/WhatIsPlc.ld.json"
+  },
+  "solution": {
+    "project": "ld_what_is_plc",
+    "program": "src/WhatIsPlc.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "WhatIsPlc",
+    "path": "tests/what-is-a-plc.scenario.json",
+    "sha256": "30175537811c0fa008dc2c8dfe5f5d2035a15ffb49d3920338a309f67c508fe6"
+  },
+  "regressionScenarios": []
+}
