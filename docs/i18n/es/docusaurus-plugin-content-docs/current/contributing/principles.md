@@ -27,7 +27,7 @@ La carga de bytecode, la persistencia, el IPC, el acceso al sistema de archivos,
 
 ### 4. Las salidas fallan en estado seguro
 
-Cada salida tiene un estado seguro documentado, normalmente apagado, y ese estado es el predeterminado. Un reinicio, un tiempo de espera agotado, una falla, el fallo de un watchdog, una conexión perdida o un programa inválido nunca deben llevar a una reanudación automática insegura del control.
+Cada salida tiene un estado seguro documentado, normalmente apagado, y ese estado es el predeterminado. Un reinicio, un tiempo de espera agotado, una falla, la falla de un watchdog, una conexión perdida o un programa inválido nunca deben llevar a una reanudación automática insegura del control.
 
 ### 5. Compilar, grabar, cargar y ejecutar son pasos separados, y una persona inicia cada uno
 
