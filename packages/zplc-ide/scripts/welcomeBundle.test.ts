@@ -51,12 +51,22 @@ const allChunks = (): string[] => [...new Set(Object.values(manifest).map((chunk
 
 beforeAll(async () => {
   outDir = mkdtempSync(join(tmpdir(), 'zplc-welcome-bundle-'));
-  await build({
-    root: packageRoot,
-    configFile: join(packageRoot, 'vite.config.ts'),
-    logLevel: 'silent',
-    build: { outDir, emptyOutDir: true, manifest: true, sourcemap: true, reportCompressedSize: false },
-  });
+  // bun test sets NODE_ENV=test, and Vite then bundles the development builds of React. The checks below are about the
+  // renderer that ships, so the build runs as production, like `vite build` does.
+  const nodeEnv = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'production';
+  try {
+    await build({
+      root: packageRoot,
+      configFile: join(packageRoot, 'vite.config.ts'),
+      mode: 'production',
+      logLevel: 'silent',
+      build: { outDir, emptyOutDir: true, manifest: true, sourcemap: true, reportCompressedSize: false },
+    });
+  } finally {
+    if (nodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = nodeEnv;
+  }
   manifest = JSON.parse(readFileSync(join(outDir, '.vite', 'manifest.json'), 'utf8')) as Record<string, ManifestChunk>;
 }, 240_000);
 
