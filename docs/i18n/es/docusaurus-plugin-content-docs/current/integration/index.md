@@ -43,10 +43,10 @@ El núcleo solo toca el hardware a través del HAL, así que el puerto es el HAL
 
 Un protocolo necesita la capa inferior en la placa:
 
-| Protocolo  | La placa necesita                                                    |
-| ---------- | -------------------------------------------------------------------- |
-| MQTT       | Una interfaz Wi-Fi o Ethernet en la configuración de Zephyr          |
-| Modbus TCP | Una interfaz Ethernet o Wi-Fi y sus sockets                          |
-| Modbus RTU | Un UART con un transceptor RS-485 en la placa                        |
+| Protocolo  | La placa necesita                                           |
+| ---------- | ----------------------------------------------------------- |
+| MQTT       | Una interfaz Wi-Fi o Ethernet en la configuración de Zephyr |
+| Modbus TCP | Una interfaz Ethernet o Wi-Fi y sus sockets                 |
+| Modbus RTU | Un UART con un transceptor RS-485 en la placa               |
 
 La clase de red de cada placa está en [Placas](../reference/boards.md). Qué se probó de cada protocolo, y con qué nivel de evidencia, está en [Conectividad](../runtime/connectivity.md).

@@ -34,11 +34,11 @@ zplc-cli check packages/zplc-ide/projects/blinky_st
 
 Cada uno imprime su nombre y `passed` (`inspect passed`, `validate passed`, `check passed`) y termina con 0.
 
-| Comando | Qué hace |
-| --- | --- |
-| `inspect` | Lee el archivo del proyecto y enumera sus tareas y fuentes |
-| `validate` | Comprueba el archivo del proyecto y sus fuentes, sin compilar |
-| `check` | Compila y descarta el programa, de modo que solo quedan los diagnósticos de la compilación |
+| Comando    | Qué hace                                                                                   |
+| ---------- | ------------------------------------------------------------------------------------------ |
+| `inspect`  | Lee el archivo del proyecto y enumera sus tareas y fuentes                                 |
+| `validate` | Comprueba el archivo del proyecto y sus fuentes, sin compilar                              |
+| `check`    | Compila y descarta el programa, de modo que solo quedan los diagnósticos de la compilación |
 
 ## Compilar
 
@@ -64,14 +64,14 @@ El runtime debe estar compilado (`bun run build:runtime`) o indicado en `ZPLC_NA
 
 ## Otros comandos
 
-| Comando | Qué hace |
-| --- | --- |
-| `zplc-cli safety-check <workspace>` | Comprueba que cada par de salidas incompatibles declarado en `zplc.json` tenga un escenario que afirme que nunca ocurre |
-| `zplc-cli symbols <workspace>` | Enumera los símbolos públicos del proyecto |
-| `zplc-cli migrate-preview <workspace>` | Muestra qué cambiaría migrar un archivo de proyecto de versión 1 a versión 2 |
-| `zplc-cli migrate <workspace> --output <archivo>` | Escribe el archivo de proyecto de versión 2 que produce la migración |
-| `zplc-cli toolchain-inspect <repositorio>` | Informa qué requisitos de compilación del firmware tiene una copia del repositorio |
-| `zplc-cli firmware-build <repositorio> <ide-id>` | Una compilación cruzada local del firmware de una placa, indicada por su identificador en ZPLC |
+| Comando                                           | Qué hace                                                                                                                |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `zplc-cli safety-check <workspace>`               | Comprueba que cada par de salidas incompatibles declarado en `zplc.json` tenga un escenario que afirme que nunca ocurre |
+| `zplc-cli symbols <workspace>`                    | Enumera los símbolos públicos del proyecto                                                                              |
+| `zplc-cli migrate-preview <workspace>`            | Muestra qué cambiaría migrar un archivo de proyecto de versión 1 a versión 2                                            |
+| `zplc-cli migrate <workspace> --output <archivo>` | Escribe el archivo de proyecto de versión 2 que produce la migración                                                    |
+| `zplc-cli toolchain-inspect <repositorio>`        | Informa qué requisitos de compilación del firmware tiene una copia del repositorio                                      |
+| `zplc-cli firmware-build <repositorio> <ide-id>`  | Una compilación cruzada local del firmware de una placa, indicada por su identificador en ZPLC                          |
 
 ## En un script
 
@@ -85,12 +85,12 @@ La [referencia de la línea de comandos](../reference/cli.md) enumera cada coman
 
 ## Qué está verificado y qué no
 
-| Parte | Verificado | Nivel |
-| --- | --- | --- |
-| Los comandos imprimen lo que dice esta página y terminan como ella dice | Los comandos se ejecutaron sobre el ejemplo de esta página; pruebas unitarias cubren cada operación | Host |
-| Un escenario da el mismo resultado desde la línea de comandos, ZPLC y el servidor MCP | Una prueba ejecuta cada proyecto incluido, cada escenario por separado, por las tres vías | Host |
-| El ejecutable independiente funciona sin Bun, Node ni copia del repositorio | Una prueba lo compila y lo ejecuta sin ningún runtime de JavaScript en la ruta | Host |
-| `firmware-build` produce una imagen que funciona | Sin probar: es una compilación cruzada | Ninguno |
+| Parte                                                                                 | Verificado                                                                                          | Nivel   |
+| ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------- |
+| Los comandos imprimen lo que dice esta página y terminan como ella dice               | Los comandos se ejecutaron sobre el ejemplo de esta página; pruebas unitarias cubren cada operación | Host    |
+| Un escenario da el mismo resultado desde la línea de comandos, ZPLC y el servidor MCP | Una prueba ejecuta cada proyecto incluido, cada escenario por separado, por las tres vías           | Host    |
+| El ejecutable independiente funciona sin Bun, Node ni copia del repositorio           | Una prueba lo compila y lo ejecuta sin ningún runtime de JavaScript en la ruta                      | Host    |
+| `firmware-build` produce una imagen que funciona                                      | Sin probar: es una compilación cruzada                                                              | Ninguno |
 
 ## Vea también
 

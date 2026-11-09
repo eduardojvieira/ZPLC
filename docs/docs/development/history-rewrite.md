@@ -19,11 +19,11 @@ To tell which history your clone has, run `git cat-file -t b379d82`. If it print
 
 The list lives in `tools/history/removed-paths.txt`, one path per line with its reason. Only two kinds of content are removed: a schematic that is not ours to redistribute, and build outputs.
 
-| Path                                                                                                                     | Kind                                              | Size in history  | Why                                                                          |
-| ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------- | ---------------- | ---------------------------------------------------------------------------- |
-| `Screenshots/mb1940-n657x0q-c02-schematic.pdf`                                                                           | Third-party schematic                             | 34 MB            | The file is not ours to redistribute.                                        |
-| Four Zephyr build directories under `firmware/app`: `build_esp32s3`, `build_verify_esp32s3`, `build_disco`, `build_giga` | Zephyr build trees (ELF, map, libraries, objects) | about 390 MB     | Build outputs are never source. They were committed by mistake.              |
-| The `build_tests` directory under `firmware/app`                                                                         | CMake configure output                            | 8 KB             | A build directory; it is still tracked on some branches.                     |
+| Path                                                                                                                     | Kind                                              | Size in history | Why                                                             |
+| ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------- | --------------- | --------------------------------------------------------------- |
+| `Screenshots/mb1940-n657x0q-c02-schematic.pdf`                                                                           | Third-party schematic                             | 34 MB           | The file is not ours to redistribute.                           |
+| Four Zephyr build directories under `firmware/app`: `build_esp32s3`, `build_verify_esp32s3`, `build_disco`, `build_giga` | Zephyr build trees (ELF, map, libraries, objects) | about 390 MB    | Build outputs are never source. They were committed by mistake. |
+| The `build_tests` directory under `firmware/app`                                                                         | CMake configure output                            | 8 KB            | A build directory; it is still tracked on some branches.        |
 
 Everything else stays, including the documentation images, the fixtures that tests read, the `Screenshots/` captures and the generated site on the `gh-pages` branch.
 

@@ -15,11 +15,11 @@ Todo registro que escribe una ejecución emulada dice `evidence_level: emulated`
 
 ## Qué se emula
 
-| Placa                                  | Emulador                                                                                | Imagen                                                    | Lo que hace el banco                                                                                                                                                                       |
-| -------------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Raspberry Pi Pico                      | [rp2040js](https://github.com/wokwi/rp2040js) 1.4.1 (commit `5fbd2050`) con cinco correcciones | La imagen distribuida `rpi_pico/rp2040`, sin cambios      | Grabación, ciclo de energía y corte de energía sobre un archivo de flash; el shell USB CDC y UART1 (Modbus RTU) en ptys del host; el lazo DO0→DI0 … DO3→DI3; inyección analógica en ADC0 a ADC4; tiempo simulado |
-| ESP32-S3-DevKitC-1                     | QEMU de Espressif `esp_develop_9.2.2_20260417`, máquina `esp32s3`, PSRAM octal          | Una compilación **solo para emulación**: consola en UART0, ADC apagado | Grabación y ciclo de energía sobre un archivo de flash de 8 MB; el shell de UART0 en un pty del host                                                                                       |
-| `native_sim` con el mapa de canales de la Pico | Zephyr `native_sim/native/64`                                                   | `run.sh app-native` (solo emulación)                      | Entradas, valores analógicos y salidas mediante su comando de shell `emu`                                                                                                                  |
+| Placa                                          | Emulador                                                                                       | Imagen                                                                 | Lo que hace el banco                                                                                                                                                                                             |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Raspberry Pi Pico                              | [rp2040js](https://github.com/wokwi/rp2040js) 1.4.1 (commit `5fbd2050`) con cinco correcciones | La imagen distribuida `rpi_pico/rp2040`, sin cambios                   | Grabación, ciclo de energía y corte de energía sobre un archivo de flash; el shell USB CDC y UART1 (Modbus RTU) en ptys del host; el lazo DO0→DI0 … DO3→DI3; inyección analógica en ADC0 a ADC4; tiempo simulado |
+| ESP32-S3-DevKitC-1                             | QEMU de Espressif `esp_develop_9.2.2_20260417`, máquina `esp32s3`, PSRAM octal                 | Una compilación **solo para emulación**: consola en UART0, ADC apagado | Grabación y ciclo de energía sobre un archivo de flash de 8 MB; el shell de UART0 en un pty del host                                                                                                             |
+| `native_sim` con el mapa de canales de la Pico | Zephyr `native_sim/native/64`                                                                  | `run.sh app-native` (solo emulación)                                   | Entradas, valores analógicos y salidas mediante su comando de shell `emu`                                                                                                                                        |
 
 ## Qué no se emula
 
@@ -86,11 +86,11 @@ tools/firmware-test/run.sh app-native
 
 Esto compila `firmware/app` para `native_sim/native/64` con la descripción de E/S de la Pico sobre `gpio_emul` y `adc_emul`, lo arranca y lo maneja mediante su comando de shell `emu`:
 
-| Comando                  | Efecto                                                           |
-| ------------------------ | ---------------------------------------------------------------- |
+| Comando                  | Efecto                                                                      |
+| ------------------------ | --------------------------------------------------------------------------- |
 | `emu pin <gpio> <0\|1>`  | Maneja un pin de entrada (las entradas son activas en bajo: `0` es pulsado) |
-| `emu adc <ch> <0..4095>` | Fija una entrada del conversor a esa fracción de 3,3 V           |
-| `emu out`                | Los niveles de los pines de salida, como máscara de bits de números GPIO |
+| `emu adc <ch> <0..4095>` | Fija una entrada del conversor a esa fracción de 3,3 V                      |
+| `emu out`                | Los niveles de los pines de salida, como máscara de bits de números GPIO    |
 
 El comando vive en `firmware/tests/app_native_emulation/module`, un módulo que solo este modo agrega a la compilación. El modo también configura `rpi_pico/rp2040` con el comando habilitado y espera que la compilación se detenga, de modo que el comando nunca puede compilarse en una placa distribuida.
 
@@ -103,25 +103,25 @@ El parche corrige cinco lugares donde rp2040js no se comportaba como el RP2040. 
 Las primeras ejecuciones emuladas de la cadena, el 2026-10-20, fallaron cinco pasos. Cada falla se rastreó hasta su causa, y el paso se volvió a ejecutar en el emulador tras la corrección.
 
 1. **Ciclo de energía y RETAIN, ambas placas.**
-   - *Registro:* RETAIN 102 antes del ciclo de energía, 0 después.
-   - *Causa:* las imágenes no tenían persistencia de RETAIN. `CONFIG_ZPLC_RETAIN_PERSIST` estaba apagada en todos los perfiles distribuidos (ahora está activa en todos, RT-025), y en la Pico no cabe en la partición de almacenamiento de 64 KB, así que la compilación se detiene. Con la opción activa, la imagen de la ESP32-S3 conservó el valor (16 antes y después), y también lo hizo una imagen de la Pico compilada para la prueba con una partición de almacenamiento de 128 KB (101 antes y después).
-   - *Corrección:* el paso comprueba la opción de la imagen y dice por qué no puede aprobar. La imagen HIL activa la opción, y la Pico y la RP2040-Zero mantienen una partición de almacenamiento de 128 KB. La imagen HIL de la Pico conservó el valor (102 antes y después).
+   - _Registro:_ RETAIN 102 antes del ciclo de energía, 0 después.
+   - _Causa:_ las imágenes no tenían persistencia de RETAIN. `CONFIG_ZPLC_RETAIN_PERSIST` estaba apagada en todos los perfiles distribuidos (ahora está activa en todos, RT-025), y en la Pico no cabe en la partición de almacenamiento de 64 KB, así que la compilación se detiene. Con la opción activa, la imagen de la ESP32-S3 conservó el valor (16 antes y después), y también lo hizo una imagen de la Pico compilada para la prueba con una partición de almacenamiento de 128 KB (101 antes y después).
+   - _Corrección:_ el paso comprueba la opción de la imagen y dice por qué no puede aprobar. La imagen HIL activa la opción, y la Pico y la RP2040-Zero mantienen una partición de almacenamiento de 128 KB. La imagen HIL de la Pico conservó el valor (102 antes y después).
 2. **Sobrecarga, ambas placas.**
-   - *Registro:* `vm_fault` con error de VM 8, no `deadline_miss`; salidas apagadas.
-   - *Causa:* el bucle del paso ejecutó 104.000 instrucciones de VM en un ciclo, por encima del presupuesto de 100.000 (`CONFIG_ZPLC_VM_CYCLE_INSTRUCTION_BUDGET`), así que el runtime retuvo su falla de perro guardián de la VM, como está diseñado.
-   - *Corrección:* el paso dimensiona el bucle a la mitad del presupuesto que informa la imagen. Ambas placas retienen entonces `deadline_miss` tras tres ciclos tardíos, con las salidas apagadas.
+   - _Registro:_ `vm_fault` con error de VM 8, no `deadline_miss`; salidas apagadas.
+   - _Causa:_ el bucle del paso ejecutó 104.000 instrucciones de VM en un ciclo, por encima del presupuesto de 100.000 (`CONFIG_ZPLC_VM_CYCLE_INSTRUCTION_BUDGET`), así que el runtime retuvo su falla de perro guardián de la VM, como está diseñado.
+   - _Corrección:_ el paso dimensiona el bucle a la mitad del presupuesto que informa la imagen. Ambas placas retienen entonces `deadline_miss` tras tres ciclos tardíos, con las salidas apagadas.
 3. **Intercambio de bus de campo, Pico.**
-   - *Registro:* ninguna solicitud llegó al host, error 10.
-   - *Causa:* el cliente Modbus RTU del dispositivo está apagado por omisión y arranca solo al iniciar, de modo que el bloque falló de inmediato con `UNAVAILABLE`. El lado del host de la línea también se abrió a 115200 baudios, mientras el dispositivo funciona a 19200.
-   - *Corrección:* el paso enciende el cliente a 19200 baudios, lo guarda y reinicia la placa. El intercambio emulado leyó 0x5A17.
+   - _Registro:_ ninguna solicitud llegó al host, error 10.
+   - _Causa:_ el cliente Modbus RTU del dispositivo está apagado por omisión y arranca solo al iniciar, de modo que el bloque falló de inmediato con `UNAVAILABLE`. El lado del host de la línea también se abrió a 115200 baudios, mientras el dispositivo funciona a 19200.
+   - _Corrección:_ el paso enciende el cliente a 19200 baudios, lo guarda y reinicia la placa. El intercambio emulado leyó 0x5A17.
 4. **Carga, ESP32-S3.**
-   - *Registro:* "Not in loading state" después de que se envió un fragmento otra vez.
-   - *Causa:* el cargador rechazó el fixture con `ZPLC_LOADER_ERR_MEMORY` (-13), porque la cadena compilaba los fixtures para 8 KB de memoria de trabajo y la ESP32-S3 tiene 2 KB. El probador volvió entonces a enviar el último fragmento, a una carga que había terminado. Una placa hace lo mismo.
-   - *Corrección:* la cadena compila los fixtures para la placa, y el probador eleva el rechazo del dispositivo en lugar de reenviar el fragmento. El banco de la ESP32-S3 también da a los programas diez veces el tiempo del host, por el reloj lento de QEMU. La carga y los seis fixtures de parpadeo pasan entonces.
+   - _Registro:_ "Not in loading state" después de que se envió un fragmento otra vez.
+   - _Causa:_ el cargador rechazó el fixture con `ZPLC_LOADER_ERR_MEMORY` (-13), porque la cadena compilaba los fixtures para 8 KB de memoria de trabajo y la ESP32-S3 tiene 2 KB. El probador volvió entonces a enviar el último fragmento, a una carga que había terminado. Una placa hace lo mismo.
+   - _Corrección:_ la cadena compila los fixtures para la placa, y el probador eleva el rechazo del dispositivo en lugar de reenviar el fragmento. El banco de la ESP32-S3 también da a los programas diez veces el tiempo del host, por el reloj lento de QEMU. La carga y los seis fixtures de parpadeo pasan entonces.
 5. **Falla fatal, ESP32-S3.**
-   - *Registro:* sigue en ejecución, sin falla, después de 1 s.
-   - *Causa:* la ruta de falla funciona en Xtensa (división por cero, error de VM 3, salidas apagadas), pero con el reloj lento de QEMU un segundo de tiempo del host no alcanzó para los 21 ciclos que necesita el programa.
-   - *Corrección:* los pasos de falla esperan la falla, hasta 10 s. QEMU la retuvo tras 1,4 s de tiempo del host y 21 ciclos.
+   - _Registro:_ sigue en ejecución, sin falla, después de 1 s.
+   - _Causa:_ la ruta de falla funciona en Xtensa (división por cero, error de VM 3, salidas apagadas), pero con el reloj lento de QEMU un segundo de tiempo del host no alcanzó para los 21 ciclos que necesita el programa.
+   - _Corrección:_ los pasos de falla esperan la falla, hasta 10 s. QEMU la retuvo tras 1,4 s de tiempo del host y 21 ciclos.
 
 Al ejecutar el paso de RETAIN en la imagen HIL de la Pico se encontró un defecto más: la imagen rechazaba todo START (`Scheduler start failed (-3)`). El planificador armaba solo el `zephyr,watchdog` elegido en el árbol de dispositivos, que ninguna placa de este repositorio define. Ahora arma el alias `watchdog0` de la placa cuando no hay ninguno elegido, y una imagen con perro guardián por hardware y ninguno de los dos nodos no compila.
 
@@ -129,9 +129,9 @@ En rp2040js, los fixtures de parpadeo cuentan los cambios de salida leyendo las 
 
 ## Licencias
 
-| Software                       | Licencia | En este repositorio                                                                                                  |
-| ------------------------------ | -------- | -------------------------------------------------------------------------------------------------------------------- |
-| rp2040js, Uri Shaked y Wokwi   | MIT      | Solo `rp2040js-zplc-emu.patch`, una obra derivada bajo la misma licencia MIT. `setup.sh` descarga el emulador.        |
-| QEMU de Espressif              | GPL-2.0  | Nada. `setup.sh` descarga la versión, que se ejecuta como un programa aparte.                                         |
+| Software                     | Licencia | En este repositorio                                                                                            |
+| ---------------------------- | -------- | -------------------------------------------------------------------------------------------------------------- |
+| rp2040js, Uri Shaked y Wokwi | MIT      | Solo `rp2040js-zplc-emu.patch`, una obra derivada bajo la misma licencia MIT. `setup.sh` descarga el emulador. |
+| QEMU de Espressif            | GPL-2.0  | Nada. `setup.sh` descarga la versión, que se ejecuta como un programa aparte.                                  |
 
 Ofrecer las correcciones de rp2040js a su proyecto de origen es una decisión del dueño del proyecto.

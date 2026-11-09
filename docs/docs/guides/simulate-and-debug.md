@@ -19,10 +19,10 @@ The simulator shows what the logic does. It does not model a board's pins, drive
 
 ZPLC picks the simulator for you.
 
-| Simulator | When | What it is |
-| --- | --- | --- |
-| Native runtime | The default, whenever it can start | A separate program that the desktop app supervises. The scan cycle, the retained memory and the communication blocks follow the firmware's rules |
-| WASM fallback | Only when the native runtime cannot start (its binary is missing, or its handshake failed) | The same session code built to WebAssembly. It is degraded, and the status bar says **Runtime: WASM fallback · degraded** and lists what is missing |
+| Simulator      | When                                                                                       | What it is                                                                                                                                          |
+| -------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Native runtime | The default, whenever it can start                                                         | A separate program that the desktop app supervises. The scan cycle, the retained memory and the communication blocks follow the firmware's rules    |
+| WASM fallback  | Only when the native runtime cannot start (its binary is missing, or its handshake failed) | The same session code built to WebAssembly. It is degraded, and the status bar says **Runtime: WASM fallback · degraded** and lists what is missing |
 
 The fallback keeps pause, resume, step and breakpoints, but it has no network blocks, no serial and no pins, and its timing follows the app window. Details and evidence: [Software runtime](../runtime/browser-runtime.md). A copy of ZPLC built from source needs the native runtime built once with `bun run build:runtime`.
 
@@ -64,13 +64,13 @@ A breakpoint can also sit on an Instruction List line, a Ladder rung, an FBD blo
 
 ## 3. What each control keeps
 
-| Control | Output image | Forces | The cycle |
-| --- | --- | --- | --- |
-| Pause (F6) | Kept | Kept | Stops between cycles |
-| Step one cycle (F10) | Kept, and shows the stepped cycle | Kept | Runs one whole cycle, or finishes the one stopped at a breakpoint |
-| Resume (F5) | Kept | Kept | A cycle stopped at a breakpoint continues from there |
-| Stop (Shift+F5) | Zeroed | Cleared | Every task returns to its entry point |
-| Reset (F8) | A cold restart: initial values | Cleared | Starts again from the first cycle |
+| Control              | Output image                      | Forces  | The cycle                                                         |
+| -------------------- | --------------------------------- | ------- | ----------------------------------------------------------------- |
+| Pause (F6)           | Kept                              | Kept    | Stops between cycles                                              |
+| Step one cycle (F10) | Kept, and shows the stepped cycle | Kept    | Runs one whole cycle, or finishes the one stopped at a breakpoint |
+| Resume (F5)          | Kept                              | Kept    | A cycle stopped at a breakpoint continues from there              |
+| Stop (Shift+F5)      | Zeroed                            | Cleared | Every task returns to its entry point                             |
+| Reset (F8)           | A cold restart: initial values    | Cleared | Starts again from the first cycle                                 |
 
 The full table and the tests behind it are in [Pause, resume, step and stop](../runtime/scheduler.md#pause-resume-step-and-stop). On a board, pause, step and stop also drive the physical outputs to their safe state.
 
@@ -80,12 +80,12 @@ A manual run shows one path. A [scenario test](./scenario-tests.md) says what th
 
 ## What is verified, and what is not
 
-| Part | Verified | Level |
-| --- | --- | --- |
+| Part                                                                              | Verified                                                        | Level                 |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------- | --------------------- |
 | A breakpoint binds and stops the cycle, and Resume finishes the interrupted cycle | Scripted runs of the real application, and the scheduler suites | Host and `native_sim` |
-| A force set at a breakpoint is seen by the rest of the cycle | A scripted run of the real application | Host |
-| Pause, step and stop keep and clear what the table says | The Zephyr suites on `native_sim` and QEMU | Emulated target |
-| The same stops on a board | Not tested | None |
+| A force set at a breakpoint is seen by the rest of the cycle                      | A scripted run of the real application                          | Host                  |
+| Pause, step and stop keep and clear what the table says                           | The Zephyr suites on `native_sim` and QEMU                      | Emulated target       |
+| The same stops on a board                                                         | Not tested                                                      | None                  |
 
 ## See also
 

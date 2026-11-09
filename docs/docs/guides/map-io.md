@@ -47,12 +47,12 @@ Nothing sets the input, so it is `FALSE` and the output is `TRUE`. On a board wh
 
 An address is an area, a size and a position: `%` + `I` (input), `Q` (output) or `M` (memory) + `X` (bit), `B` (byte), `W` (word, 16 bits) or `D` (double word, 32 bits) + the index.
 
-| Address | Covers |
-| --- | --- |
-| `%IX0.0` | Bit 0 of byte 0 of the input image |
-| `%IB1` | Byte 1 |
-| `%IW1` | Word 1: bytes 2 and 3 |
-| `%QD1` | Double word 1: bytes 4 to 7 of the output image |
+| Address  | Covers                                          |
+| -------- | ----------------------------------------------- |
+| `%IX0.0` | Bit 0 of byte 0 of the input image              |
+| `%IB1`   | Byte 1                                          |
+| `%IW1`   | Word 1: bytes 2 and 3                           |
+| `%QD1`   | Double word 1: bytes 4 to 7 of the output image |
 
 The index of a word or a double word counts words, but the index of a bit and a byte counts bytes. So `%IX0.0` to `%IX1.7` lie inside the bytes of `%IW0`, and `%IW1` starts at byte 2.
 
@@ -108,13 +108,13 @@ Add the alias to the board's devicetree overlay and an entry to its I/O descript
 
 ## What is verified, and what is not
 
-| Part | Verified | Level |
-| --- | --- | --- |
-| The descriptions are consistent with the devicetree of each board | The firmware build fails otherwise | Build |
-| An unmapped address is an error in the editor, the build and the deploy | Unit tests, and journey 40 in the real application | Host |
-| A bit and a word on one byte share it, and the compiler does not refuse it | The sample above runs on the native runtime; `zplc-cli check` accepts the program | Host |
-| The analog scaling of a channel, and the I/O table of the firmware | Tests on `native_sim` | Emulated target |
-| That a pin drives the signal the description says, and the level of an output | Not tested | None |
+| Part                                                                          | Verified                                                                          | Level           |
+| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --------------- |
+| The descriptions are consistent with the devicetree of each board             | The firmware build fails otherwise                                                | Build           |
+| An unmapped address is an error in the editor, the build and the deploy       | Unit tests, and journey 40 in the real application                                | Host            |
+| A bit and a word on one byte share it, and the compiler does not refuse it    | The sample above runs on the native runtime; `zplc-cli check` accepts the program | Host            |
+| The analog scaling of a channel, and the I/O table of the firmware            | Tests on `native_sim`                                                             | Emulated target |
+| That a pin drives the signal the description says, and the level of an output | Not tested                                                                        | None            |
 
 ## See also
 

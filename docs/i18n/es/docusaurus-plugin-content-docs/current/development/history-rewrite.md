@@ -19,11 +19,11 @@ Para saber qué historial tiene su clon, ejecute `git cat-file -t b379d82`. Si i
 
 La lista está en `tools/history/removed-paths.txt`, una ruta por línea con su motivo. Solo se eliminan dos clases de contenido: un esquema que no podemos redistribuir y salidas de compilación.
 
-| Ruta                                                                                                                     | Clase                                                  | Tamaño en el historial | Por qué                                                                 |
-| ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ | ---------------------- | ----------------------------------------------------------------------- |
-| `Screenshots/mb1940-n657x0q-c02-schematic.pdf`                                                                           | Esquema de terceros                                    | 34 MB                  | No podemos redistribuir el archivo.                                     |
+| Ruta                                                                                                                                | Clase                                                             | Tamaño en el historial | Por qué                                                                       |
+| ----------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------------- |
+| `Screenshots/mb1940-n657x0q-c02-schematic.pdf`                                                                                      | Esquema de terceros                                               | 34 MB                  | No podemos redistribuir el archivo.                                           |
 | Cuatro directorios de compilación de Zephyr en `firmware/app`: `build_esp32s3`, `build_verify_esp32s3`, `build_disco`, `build_giga` | Árboles de compilación de Zephyr (ELF, map, bibliotecas, objetos) | unos 390 MB            | Las salidas de compilación nunca son código fuente. Se confirmaron por error. |
-| El directorio `build_tests` en `firmware/app`                                                                            | Salida de configuración de CMake                       | 8 KB                   | Es un directorio de compilación; en algunas ramas sigue versionado.     |
+| El directorio `build_tests` en `firmware/app`                                                                                       | Salida de configuración de CMake                                  | 8 KB                   | Es un directorio de compilación; en algunas ramas sigue versionado.           |
 
 Todo lo demás se queda, incluidas las imágenes de la documentación, los fixtures que leen las pruebas, las capturas de `Screenshots/` y el sitio generado en la rama `gh-pages`.
 

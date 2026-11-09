@@ -17,12 +17,12 @@ Una compilación terminada demuestra que el perfil compila y cabe en su presupue
 
 `west.yml` nombra un solo proyecto, Zephyr, en un commit fijo, e importa los módulos que Zephyr necesita. ZPLC es la entrada `self` de ese manifiesto, así que la copia de trabajo es el repositorio de manifiesto del espacio de trabajo.
 
-| Entrada                           | Qué fija                                                  |
-| --------------------------------- | --------------------------------------------------------- |
-| `west.yml`                        | La revisión de Zephyr y los módulos que importa           |
-| `firmware/app/CMakeLists.txt`     | La aplicación que se compila para cada placa              |
+| Entrada                           | Qué fija                                                     |
+| --------------------------------- | ------------------------------------------------------------ |
+| `west.yml`                        | La revisión de Zephyr y los módulos que importa              |
+| `firmware/app/CMakeLists.txt`     | La aplicación que se compila para cada placa                 |
 | `firmware/app/boards/boards.json` | El manifiesto de placas: destinos, memoria, E/S, presupuesto |
-| `tools/firmware-test/setup.sh`    | El script que crea y verifica el espacio de trabajo       |
+| `tools/firmware-test/setup.sh`    | El script que crea y verifica el espacio de trabajo          |
 
 ## Cree el espacio de trabajo
 

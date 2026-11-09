@@ -11,25 +11,25 @@ Use esta página para poner un programa en un dispositivo con seguridad y para l
 
 ## Las cuatro operaciones
 
-| Operación                   | Qué hace                                                          | Quién la inicia                                    |
-| --------------------------- | ----------------------------------------------------------------- | -------------------------------------------------- |
-| Compilar el firmware        | Produce las imágenes de firmware de Zephyr.                       | Una persona.                                       |
-| Grabar el firmware          | Escribe el firmware y la cadena de arranque en un dispositivo.    | Una persona, con el procedimiento del perfil.      |
-| Cargar el programa PLC   | Envía un artefacto `.zplc` verificado a un runtime compatible.    | Una persona, que confirma con los datos del artefacto. |
-| Ejecutar / depurar          | Observa el dispositivo o cambia su estado de operación.           | Una persona, con el procedimiento de la instalación. |
+| Operación              | Qué hace                                                       | Quién la inicia                                        |
+| ---------------------- | -------------------------------------------------------------- | ------------------------------------------------------ |
+| Compilar el firmware   | Produce las imágenes de firmware de Zephyr.                    | Una persona.                                           |
+| Grabar el firmware     | Escribe el firmware y la cadena de arranque en un dispositivo. | Una persona, con el procedimiento del perfil.          |
+| Cargar el programa PLC | Envía un artefacto `.zplc` verificado a un runtime compatible. | Una persona, que confirma con los datos del artefacto. |
+| Ejecutar / depurar     | Observa el dispositivo o cambia su estado de operación.        | Una persona, con el procedimiento de la instalación.   |
 
 ## A qué está conectado ZPLC
 
 La barra de estado bajo la barra de herramientas siempre dice a qué está conectado ZPLC, con palabras, un icono y un color. El color nunca es la única señal.
 
-| Indicador                           | Icono y color         | Significado                                                                                                                                  |
-| ----------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| Sin conexión                        | Enchufe, gris         | Nada se está ejecutando.                                                                                                                     |
-| Simulación · runtime nativo         | Monitor, azul         | El programa se ejecuta en el simulador nativo de esta computadora.                                                                            |
-| Simulación · runtime de software    | Globo, azul           | El programa se ejecuta en el runtime de software (WebAssembly), que es degradado. La barra lista lo que le falta.                              |
-| Conectando con el hardware          | Indicador de carga, ámbar | ZPLC está abriendo el enlace con un dispositivo.                                                                                         |
-| Hardware real · placa · enlace      | Chip, ámbar           | ZPLC está conectado a un dispositivo real. La placa es la que el dispositivo informó, y el enlace es el enlace enmarcado o la consola de texto anterior. |
-| Falla del hardware · placa          | Triángulo de aviso, rojo | El dispositivo conectado informa una falla.                                                                                               |
+| Indicador                        | Icono y color             | Significado                                                                                                                                              |
+| -------------------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sin conexión                     | Enchufe, gris             | Nada se está ejecutando.                                                                                                                                 |
+| Simulación · runtime nativo      | Monitor, azul             | El programa se ejecuta en el simulador nativo de esta computadora.                                                                                       |
+| Simulación · runtime de software | Globo, azul               | El programa se ejecuta en el runtime de software (WebAssembly), que es degradado. La barra lista lo que le falta.                                        |
+| Conectando con el hardware       | Indicador de carga, ámbar | ZPLC está abriendo el enlace con un dispositivo.                                                                                                         |
+| Hardware real · placa · enlace   | Chip, ámbar               | ZPLC está conectado a un dispositivo real. La placa es la que el dispositivo informó, y el enlace es el enlace enmarcado o la consola de texto anterior. |
+| Falla del hardware · placa       | Triángulo de aviso, rojo  | El dispositivo conectado informa una falla.                                                                                                              |
 
 Un aviso ámbar permanece bajo el indicador mientras haya forzados activos. Una alerta roja lo reemplaza cuando no se puede confirmar un forzado: reconecte y verifique antes de operar.
 
@@ -39,14 +39,14 @@ Toda carga pasa por un solo diálogo, sin importar si lo inicia desde la barra d
 
 El diálogo compara el proyecto con el dispositivo, fila por fila:
 
-| Fila                    | Qué se compara                                                                                                                                      |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Placa y perfil de placa | La placa para la que se compila el proyecto y la placa que informa el dispositivo.                                                                  |
-| Versión del firmware    | El firmware que informa el dispositivo. El proyecto no fija uno.                                                                                    |
-| Versión de ABI          | La versión del bytecode y el borrador del contrato del programa y del dispositivo.                                                                  |
-| Programa                | El nombre y el SHA-256 del programa. El dispositivo no informa qué programa tiene, así que esa celda dice "El dispositivo no lo informa".           |
-| Tamaño                  | El tamaño del programa y el programa más grande que acepta el dispositivo, cuando lo dice.                                                          |
-| Tareas                  | El número de tareas del programa y el número que admite el dispositivo.                                                                             |
+| Fila                    | Qué se compara                                                                                                                            |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Placa y perfil de placa | La placa para la que se compila el proyecto y la placa que informa el dispositivo.                                                        |
+| Versión del firmware    | El firmware que informa el dispositivo. El proyecto no fija uno.                                                                          |
+| Versión de ABI          | La versión del bytecode y el borrador del contrato del programa y del dispositivo.                                                        |
+| Programa                | El nombre y el SHA-256 del programa. El dispositivo no informa qué programa tiene, así que esa celda dice "El dispositivo no lo informa". |
+| Tamaño                  | El tamaño del programa y el programa más grande que acepta el dispositivo, cuando lo dice.                                                |
+| Tareas                  | El número de tareas del programa y el número que admite el dispositivo.                                                                   |
 
 Cada fila tiene un veredicto en palabras y un icono: Coincide, No coincide, Sin informar o No se compara. Una fila que no coincide se resalta, y una frase bajo la tabla dice qué está mal y qué hacer. Un dispositivo que no coincide no se puede confirmar. El diálogo se llama entonces "Carga bloqueada", no se envía nada y su único botón es Cerrar.
 

@@ -21,62 +21,62 @@ Use esta página al escribir o revisar una lección, una pista o una etiqueta de
 
 ## Términos
 
-| Inglés                                  | Español                                                      | Nota                                                            |
-| --------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------- |
-| scan cycle                              | ciclo de escaneo                                             | Una pasada del programa es "un ciclo".                          |
-| rung                                    | peldaño                                                      | El editor de diagrama de escalera de ZPLC usa la misma palabra. |
-| contact, normally open, normally closed | contacto, normalmente abierto (NA), normalmente cerrado (NC) |                                                                 |
-| coil                                    | bobina                                                       |                                                                 |
-| seal-in                                 | autorretención                                               |                                                                 |
-| latch (un bloque SR o RS)               | biestable                                                    | Mantener un valor memorizado es "retenerlo".                    |
-| interlock                               | enclavamiento                                                | La pestaña Interlocks de ZPLC es "Enclavamientos".              |
-| permissive                              | permisivo                                                    |                                                                 |
-| set, reset                              | set, reset (activar, desactivar)                             | Las bobinas SET y RESET conservan su nombre.                    |
-| on-delay timer                          | temporizador con retardo a la conexión (TON)                 |                                                                 |
-| off-delay timer                         | temporizador con retardo a la desconexión (TOF)              |                                                                 |
-| preset                                  | valor preestablecido                                         |                                                                 |
-| rising edge, falling edge               | flanco ascendente, flanco descendente                        |                                                                 |
-| counter                                 | contador                                                     |                                                                 |
-| function block                          | bloque de función                                            |                                                                 |
-| function box | caja de función | Una función (ADD, MUL, LIMIT...) dibujada como caja en un peldaño. La fila "bloque de función" de arriba es un bloque con memoria. |
-| EN, ENO | EN, ENO | La entrada y la salida de habilitación de una caja de función. Las dos siglas quedan en inglés. |
-| comparison box | caja de comparación | Una caja como GT o EQ cuya salida conduce cuando se cumple la comparación. |
-| analog input | entrada analógica | Una palabra como `%IW0`, no un bit. |
-| raw counts | cuentas, valor crudo | El entero que entrega el conversor, antes del escalado. |
-| scaling | escalado | Convertir cuentas en unidades de ingeniería (milímetros, porcentaje). |
-| structured text                         | texto estructurado (ST)                                      |                                                                 |
-| ladder diagram                          | diagrama de escalera (LD)                                    |                                                                 |
-| function block diagram                  | diagrama de bloques de función (FBD)                         |                                                                 |
-| sequential function chart               | diagrama funcional secuencial (SFC)                          | Un step de un SFC es un "paso".                               |
-| instruction list                        | lista de instrucciones (IL)                                  |                                                                 |
-| fault                                   | falla                                                        |                                                                 |
-| trace                                   | traza                                                        |                                                                 |
-| sample                                  | muestra                                                      |                                                                 |
-| assertion                               | aserción                                                     |                                                                 |
-| scenario                                | escenario                                                    |                                                                 |
-| starter, starting program               | proyecto inicial, programa inicial                           |                                                                 |
-| reference solution                      | solución de referencia                                       |                                                                 |
-| hint                                    | pista                                                        |                                                                 |
-| track (del curso)                       | ruta                                                         |                                                                 |
-| plant                                   | planta                                                       |                                                                 |
-| request                                 | solicitud                                                    |                                                                 |
-| command                                 | orden                                                        |                                                                 |
-| target (device)                         | dispositivo de destino                                       |                                                                 |
-| holding register                        | registro de retención                                        |                                                                 |
-| topic (MQTT)                            | tema                                                         |                                                                 |
-| payload                                 | contenido                                                    |                                                                 |
-| wiring                                  | cableado                                                     |                                                                 |
-| pin map                                 | mapa de pines                                                |                                                                 |
-| bill of materials                       | lista de materiales                                          |                                                                 |
-| breadboard                              | protoboard                                                   |                                                                 |
-| scheduler                               | planificador                                                 | Los términos del runtime que usan las páginas técnicas.         |
-| timer (de hardware)                     | temporizador                                                 |                                                                 |
-| lock                                    | cerrojo                                                      |                                                                 |
-| batch (de tareas)                       | lote                                                         |                                                                 |
-| snapshot (de la imagen de proceso)      | instantánea                                                  |                                                                 |
-| program store                           | almacén de programas                                         |                                                                 |
-| slot                                    | ranura                                                       |                                                                 |
-| issue (del repositorio)                 | incidencia                                                   |                                                                 |
+| Inglés                                  | Español                                                      | Nota                                                                                                                               |
+| --------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| scan cycle                              | ciclo de escaneo                                             | Una pasada del programa es "un ciclo".                                                                                             |
+| rung                                    | peldaño                                                      | El editor de diagrama de escalera de ZPLC usa la misma palabra.                                                                    |
+| contact, normally open, normally closed | contacto, normalmente abierto (NA), normalmente cerrado (NC) |                                                                                                                                    |
+| coil                                    | bobina                                                       |                                                                                                                                    |
+| seal-in                                 | autorretención                                               |                                                                                                                                    |
+| latch (un bloque SR o RS)               | biestable                                                    | Mantener un valor memorizado es "retenerlo".                                                                                       |
+| interlock                               | enclavamiento                                                | La pestaña Interlocks de ZPLC es "Enclavamientos".                                                                                 |
+| permissive                              | permisivo                                                    |                                                                                                                                    |
+| set, reset                              | set, reset (activar, desactivar)                             | Las bobinas SET y RESET conservan su nombre.                                                                                       |
+| on-delay timer                          | temporizador con retardo a la conexión (TON)                 |                                                                                                                                    |
+| off-delay timer                         | temporizador con retardo a la desconexión (TOF)              |                                                                                                                                    |
+| preset                                  | valor preestablecido                                         |                                                                                                                                    |
+| rising edge, falling edge               | flanco ascendente, flanco descendente                        |                                                                                                                                    |
+| counter                                 | contador                                                     |                                                                                                                                    |
+| function block                          | bloque de función                                            |                                                                                                                                    |
+| function box                            | caja de función                                              | Una función (ADD, MUL, LIMIT...) dibujada como caja en un peldaño. La fila "bloque de función" de arriba es un bloque con memoria. |
+| EN, ENO                                 | EN, ENO                                                      | La entrada y la salida de habilitación de una caja de función. Las dos siglas quedan en inglés.                                    |
+| comparison box                          | caja de comparación                                          | Una caja como GT o EQ cuya salida conduce cuando se cumple la comparación.                                                         |
+| analog input                            | entrada analógica                                            | Una palabra como `%IW0`, no un bit.                                                                                                |
+| raw counts                              | cuentas, valor crudo                                         | El entero que entrega el conversor, antes del escalado.                                                                            |
+| scaling                                 | escalado                                                     | Convertir cuentas en unidades de ingeniería (milímetros, porcentaje).                                                              |
+| structured text                         | texto estructurado (ST)                                      |                                                                                                                                    |
+| ladder diagram                          | diagrama de escalera (LD)                                    |                                                                                                                                    |
+| function block diagram                  | diagrama de bloques de función (FBD)                         |                                                                                                                                    |
+| sequential function chart               | diagrama funcional secuencial (SFC)                          | Un step de un SFC es un "paso".                                                                                                    |
+| instruction list                        | lista de instrucciones (IL)                                  |                                                                                                                                    |
+| fault                                   | falla                                                        |                                                                                                                                    |
+| trace                                   | traza                                                        |                                                                                                                                    |
+| sample                                  | muestra                                                      |                                                                                                                                    |
+| assertion                               | aserción                                                     |                                                                                                                                    |
+| scenario                                | escenario                                                    |                                                                                                                                    |
+| starter, starting program               | proyecto inicial, programa inicial                           |                                                                                                                                    |
+| reference solution                      | solución de referencia                                       |                                                                                                                                    |
+| hint                                    | pista                                                        |                                                                                                                                    |
+| track (del curso)                       | ruta                                                         |                                                                                                                                    |
+| plant                                   | planta                                                       |                                                                                                                                    |
+| request                                 | solicitud                                                    |                                                                                                                                    |
+| command                                 | orden                                                        |                                                                                                                                    |
+| target (device)                         | dispositivo de destino                                       |                                                                                                                                    |
+| holding register                        | registro de retención                                        |                                                                                                                                    |
+| topic (MQTT)                            | tema                                                         |                                                                                                                                    |
+| payload                                 | contenido                                                    |                                                                                                                                    |
+| wiring                                  | cableado                                                     |                                                                                                                                    |
+| pin map                                 | mapa de pines                                                |                                                                                                                                    |
+| bill of materials                       | lista de materiales                                          |                                                                                                                                    |
+| breadboard                              | protoboard                                                   |                                                                                                                                    |
+| scheduler                               | planificador                                                 | Los términos del runtime que usan las páginas técnicas.                                                                            |
+| timer (de hardware)                     | temporizador                                                 |                                                                                                                                    |
+| lock                                    | cerrojo                                                      |                                                                                                                                    |
+| batch (de tareas)                       | lote                                                         |                                                                                                                                    |
+| snapshot (de la imagen de proceso)      | instantánea                                                  |                                                                                                                                    |
+| program store                           | almacén de programas                                         |                                                                                                                                    |
+| slot                                    | ranura                                                       |                                                                                                                                    |
+| issue (del repositorio)                 | incidencia                                                   |                                                                                                                                    |
 
 Las filas de "function box" a "scaling" son las palabras que usan las lecciones de escalera; las demás son anteriores. Los controles de ZPLC que nombra una lección se escriben como ZPLC los muestra: **Check** es **Comprobar** y el panel Tests es **Pruebas**.
 

@@ -13,19 +13,19 @@ Aprender es un curso de programación de PLC que se ejecuta dentro de la aplicac
 
 ## Qué es el curso
 
-| | |
-| --- | --- |
-| Lecciones | 68, en 12 módulos (del 0 al 11), unas 26 horas en total |
-| Niveles | Base 27, intermedias 29 y avanzadas 12 |
+|           |                                                                                                                                                                       |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lecciones | 68, en 12 módulos (del 0 al 11), unas 26 horas en total                                                                                                               |
+| Niveles   | Base 27, intermedias 29 y avanzadas 12                                                                                                                                |
 | Lenguajes | Texto estructurado, diagrama de escalera, diagrama de bloques de función, diagrama funcional secuencial y lista de instrucciones, cada uno presentado por una lección |
-| Rutas | Simulación, que ofrecen 67 de ellas, y Hardware, que ofrecen 34 de ellas |
-| Práctica | Cada lección tiene seis etapas, dos niveles de pista, una solución de referencia a petición y un escenario que califica su programa |
+| Rutas     | Simulación, que ofrecen 67 de ellas, y Hardware, que ofrecen 34 de ellas                                                                                              |
+| Práctica  | Cada lección tiene seis etapas, dos niveles de pista, una solución de referencia a petición y un escenario que califica su programa                                   |
 
 El [esquema del curso](./course-outline.md) enumera cada módulo y cada lección con sus lenguajes, rutas y duración. Los [módulos del curso](./modules/index.md) y las [plantas de las lecciones](./plants.md) describen las máquinas simuladas.
 
 ## Empiece desde cero: la ruta de escalera
 
-Si nunca programó un PLC, tome la ruta de escalera, *Diagrama de escalera desde cero*. Se compone de 21 de las lecciones, desde qué es un PLC hasta el programa probado de una máquina, y termina con un proyecto final y una mirada a los otros cuatro lenguajes. El diagrama de escalera se lee como los circuitos de relés que reemplazó, y por eso la mayoría de las personas empieza con él.
+Si nunca programó un PLC, tome la ruta de escalera, _Diagrama de escalera desde cero_. Se compone de 21 de las lecciones, desde qué es un PLC hasta el programa probado de una máquina, y termina con un proyecto final y una mirada a los otros cuatro lenguajes. El diagrama de escalera se lee como los circuitos de relés que reemplazó, y por eso la mayoría de las personas empieza con él.
 
 Cada lección de la ruta abre con una **página de lectura**. La página cubre el área principal del espacio de trabajo, y los paneles laterales e inferiores siguen visibles a su alrededor. Explica una idea con palabras sencillas, muestra figuras de escalera y diagramas de tiempos, y tiene preguntas **Compruebe lo aprendido** que no se califican ni se guardan. Donde una idea se ve mejor que se lee, la página tiene un **laboratorio para probar**: un programa de escalera pequeño que corre en vivo junto a su diagrama. Mantenga pulsado un botón o cambie un interruptor, pulse **Ejecutar** y observe las lámparas y el peldaño. **Pausar** y **Reiniciar** le permiten empezar de nuevo. El laboratorio corre en su propia simulación dentro de la página y nunca toca su proyecto.
 
@@ -43,7 +43,7 @@ Cada lección ofrece dos niveles de pista, y ZPLC registra cada nivel que usted 
 
 La primera lección termina en una salida que parpadea en simulación. Cuando **Comenzar el curso** la haya abierto, elija **Compilación** y luego **Compilar** en la barra de herramientas, después **Conectar** y **Ejecutar**. **Ejecutar** permanece desactivado hasta que el programa está compilado. Abra la pestaña **Observación**: el [panel **E/S en vivo**](./faceplate.md) enumera las salidas del programa, y la lámpara de la lección se enciende y se apaga.
 
-Todas las lecciones menos una se pueden completar así, sin placa: el índice de lecciones rechaza una lección de base o intermedia que no pueda. La excepción, *Verificar mi placa*, existe para comprobar una placa. Nivel de evidencia: host. Una ejecución guionada de la aplicación en el host de desarrollo (el recorrido 57 de `packages/zplc-ide/scripts/journeys.ts`) sigue exactamente estos controles visibles desde un perfil nuevo y ve cambiar la salida. No se mide cuánto tarda una persona: eso requiere una prueba cronometrada con personas que lo usan por primera vez.
+Todas las lecciones menos una se pueden completar así, sin placa: el índice de lecciones rechaza una lección de base o intermedia que no pueda. La excepción, _Verificar mi placa_, existe para comprobar una placa. Nivel de evidencia: host. Una ejecución guionada de la aplicación en el host de desarrollo (el recorrido 57 de `packages/zplc-ide/scripts/journeys.ts`) sigue exactamente estos controles visibles desde un perfil nuevo y ve cambiar la salida. No se mide cuánto tarda una persona: eso requiere una prueba cronometrada con personas que lo usan por primera vez.
 
 ## Sin conexión
 

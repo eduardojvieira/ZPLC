@@ -74,23 +74,23 @@ Los nombres no distinguen mayúsculas de minúsculas: `MyVar`, `myvar` y `MYVAR`
 
 El caso nombrado en una fila o en una regla es un programa de conformidad bajo `conformance/cmp/` que se ejecuta en el runtime nativo. Los casos de los tipos de 64 bits y de `LREAL` dan los mismos resultados en una compilación de 64 bits y en una de 32 bits del runtime.
 
-| Tipo    | Bits | Rango                                       | Orden                     | Caso de conformidad                  |
-| ------- | ---- | ------------------------------------------- | ------------------------- | ------------------------------------ |
-| `BOOL`  | 8    | `FALSE`, `TRUE`                             | sin orden                 | `harness/vf-001-bool-output-toggles` |
-| `SINT`  | 8    | -128 a 127                                  | con signo                 | `cmp-011-sint-limits`                |
-| `USINT` | 8    | 0 a 255                                     | sin signo                 | `cmp-012-usint-holds-0-to-255`       |
-| `BYTE`  | 8    | cadena de bits, 0 a 255                     | sin signo                 | `cmp-014-not-byte`                   |
-| `INT`   | 16   | -32768 a 32767                              | con signo                 | `cmp-011-int-limits`                 |
-| `UINT`  | 16   | 0 a 65535                                   | sin signo                 | `cmp-012-uint-65535`                 |
-| `WORD`  | 16   | cadena de bits, 0 a 65535                   | sin signo                 | `cmp-014-not-word`                   |
-| `DINT`  | 32   | -2147483648 a 2147483647                    | con signo                 | `cmp-011-dint-limits`                |
-| `UDINT` | 32   | 0 a 4294967295                              | sin signo                 | `cmp-012-udint-max`                  |
-| `DWORD` | 32   | cadena de bits, 0 a 4294967295              | sin signo                 | `cmp-014-not-dword`                  |
-| `LINT`  | 64   | -9223372036854775808 a 9223372036854775807  | con signo                 | `cmp-015-lint-extreme-values`        |
-| `ULINT` | 64   | 0 a 18446744073709551615                    | sin signo                 | `cmp-015-ulint-compares-unsigned`    |
-| `LWORD` | 64   | cadena de bits, 0 a 18446744073709551615    | sin signo                 | `cmp-015-ulint-compares-unsigned`    |
-| `REAL`  | 32   | IEEE 754 de precisión simple                | orden IEEE, NaN sin orden | `cmp-013-real-nan-is-unordered`      |
-| `LREAL` | 64   | IEEE 754 de doble precisión                 | orden IEEE, NaN sin orden | `cmp-015-lreal-comparisons-and-nan`  |
+| Tipo    | Bits | Rango                                      | Orden                     | Caso de conformidad                  |
+| ------- | ---- | ------------------------------------------ | ------------------------- | ------------------------------------ |
+| `BOOL`  | 8    | `FALSE`, `TRUE`                            | sin orden                 | `harness/vf-001-bool-output-toggles` |
+| `SINT`  | 8    | -128 a 127                                 | con signo                 | `cmp-011-sint-limits`                |
+| `USINT` | 8    | 0 a 255                                    | sin signo                 | `cmp-012-usint-holds-0-to-255`       |
+| `BYTE`  | 8    | cadena de bits, 0 a 255                    | sin signo                 | `cmp-014-not-byte`                   |
+| `INT`   | 16   | -32768 a 32767                             | con signo                 | `cmp-011-int-limits`                 |
+| `UINT`  | 16   | 0 a 65535                                  | sin signo                 | `cmp-012-uint-65535`                 |
+| `WORD`  | 16   | cadena de bits, 0 a 65535                  | sin signo                 | `cmp-014-not-word`                   |
+| `DINT`  | 32   | -2147483648 a 2147483647                   | con signo                 | `cmp-011-dint-limits`                |
+| `UDINT` | 32   | 0 a 4294967295                             | sin signo                 | `cmp-012-udint-max`                  |
+| `DWORD` | 32   | cadena de bits, 0 a 4294967295             | sin signo                 | `cmp-014-not-dword`                  |
+| `LINT`  | 64   | -9223372036854775808 a 9223372036854775807 | con signo                 | `cmp-015-lint-extreme-values`        |
+| `ULINT` | 64   | 0 a 18446744073709551615                   | sin signo                 | `cmp-015-ulint-compares-unsigned`    |
+| `LWORD` | 64   | cadena de bits, 0 a 18446744073709551615   | sin signo                 | `cmp-015-ulint-compares-unsigned`    |
+| `REAL`  | 32   | IEEE 754 de precisión simple               | orden IEEE, NaN sin orden | `cmp-013-real-nan-is-unordered`      |
+| `LREAL` | 64   | IEEE 754 de doble precisión                | orden IEEE, NaN sin orden | `cmp-015-lreal-comparisons-and-nan`  |
 
 ### Aritmética, desbordamiento y división
 
@@ -153,12 +153,12 @@ END_PROGRAM
 
 ## Tipos de tiempo y fecha
 
-| Tipo                   | Ancho              | Qué contiene                                                       | Literal                           |
-| ---------------------- | ------------------ | ------------------------------------------------------------------ | --------------------------------- |
+| Tipo                   | Ancho              | Qué contiene                                                        | Literal                           |
+| ---------------------- | ------------------ | ------------------------------------------------------------------- | --------------------------------- |
 | `TIME`                 | 32 bits, sin signo | Una duración en milisegundos, 0 a 4294967295 (`T#49d17h2m47s295ms`) | `T#1h30m`, `T#1.5s`, `TIME#250ms` |
-| `DATE`                 | 32 bits, con signo | Segundos desde 1970-01-01; las fechas anteriores son negativas     | `D#2024-01-01`                    |
-| `TOD` (`TIME_OF_DAY`)  | 32 bits, sin signo | Milisegundos desde la medianoche                                   | `TOD#12:30:00`                    |
-| `DT` (`DATE_AND_TIME`) | 64 bits, con signo | Milisegundos desde 1970-01-01 00:00:00                             | `DT#2024-01-01-12:00:00`          |
+| `DATE`                 | 32 bits, con signo | Segundos desde 1970-01-01; las fechas anteriores son negativas      | `D#2024-01-01`                    |
+| `TOD` (`TIME_OF_DAY`)  | 32 bits, sin signo | Milisegundos desde la medianoche                                    | `TOD#12:30:00`                    |
+| `DT` (`DATE_AND_TIME`) | 64 bits, con signo | Milisegundos desde 1970-01-01 00:00:00                              | `DT#2024-01-01-12:00:00`          |
 
 ### TIME
 

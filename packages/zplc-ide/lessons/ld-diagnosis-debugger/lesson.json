@@ -5,15 +5,9 @@
   "order": 87,
   "module": 8,
   "level": "advanced",
-  "prerequisites": [
-    "ld-function-blocks"
-  ],
-  "languages": [
-    "LD"
-  ],
-  "tracks": [
-    "simulation"
-  ],
+  "prerequisites": ["ld-function-blocks"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
   "unsupported": {
     "hardware": {
       "reason": {

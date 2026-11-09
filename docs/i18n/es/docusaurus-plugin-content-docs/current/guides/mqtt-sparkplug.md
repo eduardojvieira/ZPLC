@@ -75,13 +75,13 @@ Un valor que llega para una variable `{subscribe}` se escribe en la imagen de pr
 
 La comprobación de la documentación mezcla este fragmento en un proyecto y lo compila. Elija el `profile`:
 
-| `profile`               | Úselo para                          | Mensajes                                                                                                |
-| ----------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `sparkplug-b`           | Una aplicación anfitriona Sparkplug B | Mensajes de nacimiento, de datos y de muerte con contenido protobuf                                   |
-| `generic-broker`        | Cualquier broker MQTT               | Un mensaje de telemetría en JSON                                                                        |
-| `aws-iot-core`          | AWS IoT Core                        | Los mensajes genéricos; AWS IoT Core autentica un dispositivo con un certificado de cliente y una clave |
-| `azure-iot-hub`         | Azure IoT Hub                       | Mensajes de dispositivo a nube en los temas del hub                                                     |
-| `azure-event-grid-mqtt` | Azure Event Grid MQTT               | Telemetría en el tema que usted nombra en `azureEventGridTopic`, o en el tema genérico                  |
+| `profile`               | Úselo para                            | Mensajes                                                                                                |
+| ----------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `sparkplug-b`           | Una aplicación anfitriona Sparkplug B | Mensajes de nacimiento, de datos y de muerte con contenido protobuf                                     |
+| `generic-broker`        | Cualquier broker MQTT                 | Un mensaje de telemetría en JSON                                                                        |
+| `aws-iot-core`          | AWS IoT Core                          | Los mensajes genéricos; AWS IoT Core autentica un dispositivo con un certificado de cliente y una clave |
+| `azure-iot-hub`         | Azure IoT Hub                         | Mensajes de dispositivo a nube en los temas del hub                                                     |
+| `azure-event-grid-mqtt` | Azure Event Grid MQTT                 | Telemetría en el tema que usted nombra en `azureEventGridTopic`, o en el tema genérico                  |
 
 Mantenga `securityLevel` en `tls-server-verify` o más estricto. Desactivar la verificación es un ajuste explícito que una imagen de publicación rechaza, y una imagen que lo permite muestra `tls-verify: OFF` en el estado ([Conectividad](../runtime/connectivity.md#valores-por-defecto-seguros)).
 
@@ -100,11 +100,11 @@ zplc cert status
 
 `<device>` es el identificador de cliente, o el nombre del host cuando no hay identificador de cliente. Estas formas se leen del firmware y pueden cambiar, así que léalas como el contrato de esta versión.
 
-| Perfil                           | Telemetría                                         | Comandos a una variable                         |
-| -------------------------------- | -------------------------------------------------- | ----------------------------------------------- |
-| `sparkplug-b`                    | `spBv1.0/<groupId>/DDATA/<device>`, tras `NBIRTH`  | `spBv1.0/<groupId>/DCMD/<device>/tag_<address>` |
-| `generic-broker`, `aws-iot-core` | `<topicNamespace>/telemetry/<device>`              | `<topicNamespace>/cmd/<device>/tag_<address>`   |
-| `azure-iot-hub`                  | `devices/<device>/messages/events/`                | `devices/<device>/messages/devicebound/#`       |
+| Perfil                           | Telemetría                                        | Comandos a una variable                         |
+| -------------------------------- | ------------------------------------------------- | ----------------------------------------------- |
+| `sparkplug-b`                    | `spBv1.0/<groupId>/DDATA/<device>`, tras `NBIRTH` | `spBv1.0/<groupId>/DCMD/<device>/tag_<address>` |
+| `generic-broker`, `aws-iot-core` | `<topicNamespace>/telemetry/<device>`             | `<topicNamespace>/cmd/<device>/tag_<address>`   |
+| `azure-iot-hub`                  | `devices/<device>/messages/events/`               | `devices/<device>/messages/devicebound/#`       |
 
 Un mensaje genérico es JSON: `{"profile":"...","ts":<uptime in ms>,"metrics":{"tag_00a0":1.5}}`. Una métrica se identifica con `tag_` y la dirección hexadecimal de cuatro dígitos de la variable en la memoria de trabajo, **no con su nombre**. La dirección está en el mapa de depuración de la compilación. El mensaje de última voluntad se publica en `.../status/<device>` o, para Sparkplug B, como `NDEATH`.
 
@@ -140,15 +140,15 @@ Los bloques siguen el único handshake de los doce bloques de comunicación ([Bl
 
 ## Qué está verificado y qué no
 
-| Parte | Verificado | Nivel |
-| --- | --- | --- |
-| Los temas y contenidos hostiles no pueden cambiar el estado de ejecución, los forzados ni el programa cargado, bajo los cinco perfiles | Prueba del cliente del producto con espías en cada autoridad | Host y `native_sim` |
-| Los contenidos de comandos de cada tipo admitido se decodifican, y uno malformado se rechaza | Prueba unitaria del decodificador | Host y `native_sim` |
-| Manejadores de bloques: pines, handshake, códigos de estado, límites, entrega al hilo del cliente | Prueba con un cliente sustituto | Host y `native_sim` |
-| El cliente MQTT del controlador: sesión, publicación una vez por solicitud, suscripción, conexión rechazada, sesión perdida, reinicio con el bloque ocupado | Ejecutado en `native_sim` contra un broker escrito para la prueba en loopback | `native_sim` |
-| El cliente MQTT del runtime de simulación: sesión, publicación, suscripción, pérdida de la sesión, reconexión, pérdida silenciosa, un mensaje publicado con la sesión caída | Ejecutado contra un broker escrito para la prueba en loopback, en sockets reales, bajo los sanitizadores de direcciones, de comportamiento indefinido y de hilos | Host |
-| TLS rechaza un generador aleatorio no criptográfico al compilar | Regla de compilación | Compilación para el destino |
-| Una sesión con un broker real, un handshake TLS, una aplicación anfitriona Sparkplug B, entrega QoS 1 | No probado | Ninguno |
+| Parte                                                                                                                                                                       | Verificado                                                                                                                                                       | Nivel                       |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| Los temas y contenidos hostiles no pueden cambiar el estado de ejecución, los forzados ni el programa cargado, bajo los cinco perfiles                                      | Prueba del cliente del producto con espías en cada autoridad                                                                                                     | Host y `native_sim`         |
+| Los contenidos de comandos de cada tipo admitido se decodifican, y uno malformado se rechaza                                                                                | Prueba unitaria del decodificador                                                                                                                                | Host y `native_sim`         |
+| Manejadores de bloques: pines, handshake, códigos de estado, límites, entrega al hilo del cliente                                                                           | Prueba con un cliente sustituto                                                                                                                                  | Host y `native_sim`         |
+| El cliente MQTT del controlador: sesión, publicación una vez por solicitud, suscripción, conexión rechazada, sesión perdida, reinicio con el bloque ocupado                 | Ejecutado en `native_sim` contra un broker escrito para la prueba en loopback                                                                                    | `native_sim`                |
+| El cliente MQTT del runtime de simulación: sesión, publicación, suscripción, pérdida de la sesión, reconexión, pérdida silenciosa, un mensaje publicado con la sesión caída | Ejecutado contra un broker escrito para la prueba en loopback, en sockets reales, bajo los sanitizadores de direcciones, de comportamiento indefinido y de hilos | Host                        |
+| TLS rechaza un generador aleatorio no criptográfico al compilar                                                                                                             | Regla de compilación                                                                                                                                             | Compilación para el destino |
+| Una sesión con un broker real, un handshake TLS, una aplicación anfitriona Sparkplug B, entrega QoS 1                                                                       | No probado                                                                                                                                                       | Ninguno                     |
 
 ## Vea también
 

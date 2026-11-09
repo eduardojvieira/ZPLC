@@ -48,8 +48,8 @@ west build -p always -b rpi_pico/rp2040 firmware/app
 
 ## Qué está verificado y qué no
 
-| Parte                                             | Verificado                                        | Nivel                  |
-| ------------------------------------------------- | ------------------------------------------------- | ---------------------- |
+| Parte                                                      | Verificado                                       | Nivel                       |
+| ---------------------------------------------------------- | ------------------------------------------------ | --------------------------- |
 | El firmware de cada placa compila y cabe en su presupuesto | Integración continua, con los comandos de arriba | Compilación para el destino |
-| Los pasos de esta página en una máquina limpia    | No ejecutados                                     | Ninguno                |
-| Que la imagen se ejecute en la placa              | No probado                                        | Ninguno                |
+| Los pasos de esta página en una máquina limpia             | No ejecutados                                    | Ninguno                     |
+| Que la imagen se ejecute en la placa                       | No probado                                       | Ninguno                     |

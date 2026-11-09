@@ -12,11 +12,11 @@ Lea esta página cuando una parte de su máquina necesite código que la lógica
 
 ## Elija la capa
 
-| Póngalo en lógica IEC (ST, LD, FBD, SFC)                  | Póngalo en C nativo de Zephyr                                      |
-| --------------------------------------------------------- | ------------------------------------------------------------------ |
-| Secuencias, enclavamientos, lazos PID, estados de máquina | Controladores I2C o SPI para una pieza que Zephyr no cubre         |
+| Póngalo en lógica IEC (ST, LD, FBD, SFC)                  | Póngalo en C nativo de Zephyr                                            |
+| --------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Secuencias, enclavamientos, lazos PID, estados de máquina | Controladores I2C o SPI para una pieza que Zephyr no cubre               |
 | Todo lo que un integrador deba cambiar sin recompilar     | Un SDK de proveedor, un servicio criptográfico, un algoritmo propietario |
-| Lógica que desea simular y probar en una computadora        | Un protocolo que el firmware no implementa                         |
+| Lógica que desea simular y probar en una computadora      | Un protocolo que el firmware no implementa                               |
 
 :::note C nativo es un hilo aparte, no un bloque
 Una tarea en C nativo no es un bloque de función de su programa. Se ejecuta como un hilo de Zephyr propio junto al planificador, así que la lógica IEC no puede llamarla y el simulador no la ejecuta. Además cambia la imagen del firmware, por lo que exige compilar, grabar y registrar nueva evidencia de la placa donde se ejecuta.

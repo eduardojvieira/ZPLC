@@ -88,11 +88,11 @@ Ejecuta sin interfaz todos los escenarios del proyecto, imprime `test passed` o 
 
 ## Qué está verificado y qué no
 
-| Parte | Verificado | Nivel |
-| --- | --- | --- |
-| El escenario de arriba pasa contra el programa de arriba, y la comprobación falla cuando una expectativa no se cumple | La comprobación de la documentación lo ejecuta en el runtime nativo | Host |
-| El lector de escenarios rechaza un archivo mal formado y aplica sus límites | Pruebas unitarias del motor de pruebas | Host |
-| El tiempo de ciclo real de una placa, una entrada física, una validación de seguridad | Sin probar | Ninguno |
+| Parte                                                                                                                 | Verificado                                                          | Nivel   |
+| --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ------- |
+| El escenario de arriba pasa contra el programa de arriba, y la comprobación falla cuando una expectativa no se cumple | La comprobación de la documentación lo ejecuta en el runtime nativo | Host    |
+| El lector de escenarios rechaza un archivo mal formado y aplica sus límites                                           | Pruebas unitarias del motor de pruebas                              | Host    |
+| El tiempo de ciclo real de una placa, una entrada física, una validación de seguridad                                 | Sin probar                                                          | Ninguno |
 
 Un escenario que pasa significa que la lógica hizo lo que usted escribió en el reloj virtual. Lea [Seguridad y limitaciones](../safety-and-limitations.md) antes de apoyarse en él.
 

@@ -20,12 +20,12 @@ When something fails, recover the smallest layer first. Return the control logic
 
 ## Pick the recovery
 
-| Situation                 | Safe action                                                               | Evidence limit                                                       |
-| ------------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| Runtime or program fault  | Keep the outputs in the runtime safe state, then inspect status and trace. | A host trace is not electrical proof.                                |
-| Lost connection           | Reconnect and verify board, profile and ABI before any deploy.            | A serial identity is not HIL qualification.                          |
-| Program replacement       | Compile, test and simulate, then use the deploy dialog and confirm it.    | A deploy changes control logic. It is not a firmware flash.          |
-| Firmware failure          | Stop, and follow the exact board and runner recovery procedure.           | The catalogued profiles have no HIL evidence references.             |
+| Situation                 | Safe action                                                                      | Evidence limit                                                |
+| ------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Runtime or program fault  | Keep the outputs in the runtime safe state, then inspect status and trace.       | A host trace is not electrical proof.                         |
+| Lost connection           | Reconnect and verify board, profile and ABI before any deploy.                   | A serial identity is not HIL qualification.                   |
+| Program replacement       | Compile, test and simulate, then use the deploy dialog and confirm it.           | A deploy changes control logic. It is not a firmware flash.   |
+| Firmware failure          | Stop, and follow the exact board and runner recovery procedure.                  | The catalogued profiles have no HIL evidence references.      |
 | Persisted program concern | Reboot only under the site procedure, and inspect the restored state before RUN. | Power-cut and target persistence need target or HIL evidence. |
 
 ## Safe state and restart

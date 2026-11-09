@@ -141,13 +141,13 @@ su estado seguro, apagado
 
 ## Qué está verificado
 
-| Paso                    | Evidencia hoy                                                                                                                    | Estado                                         |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| 1. Obtenga el firmware  | La integración continua ejecuta `west build` y la misma comprobación del presupuesto de flash y RAM que el script de compilación | Compila en integración continua: `cross-build` |
-| 2. Grábelo              | Ninguna                                                                                                                          | Aún no verificado en hardware                  |
-| 3. Conecte ZPLC         | El diálogo se muestra arriba sin ninguna placa; el tutorial Blink ejercita la conexión en el simulador                           | Aún no verificado en hardware                  |
-| 4. Cargue y ejecute | El tutorial Blink ejercita la ejecución en el simulador; ninguna placa ha recibido un programa                                   | Aún no verificado en hardware                  |
-| 5. Observe              | La tabla de observación se ejercita en el simulador; nadie ha visto cambiar una salida física                                    | Aún no verificado en hardware                  |
+| Paso                   | Evidencia hoy                                                                                                                    | Estado                                         |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| 1. Obtenga el firmware | La integración continua ejecuta `west build` y la misma comprobación del presupuesto de flash y RAM que el script de compilación | Compila en integración continua: `cross-build` |
+| 2. Grábelo             | Ninguna                                                                                                                          | Aún no verificado en hardware                  |
+| 3. Conecte ZPLC        | El diálogo se muestra arriba sin ninguna placa; el tutorial Blink ejercita la conexión en el simulador                           | Aún no verificado en hardware                  |
+| 4. Cargue y ejecute    | El tutorial Blink ejercita la ejecución en el simulador; ninguna placa ha recibido un programa                                   | Aún no verificado en hardware                  |
+| 5. Observe             | La tabla de observación se ejercita en el simulador; nadie ha visto cambiar una salida física                                    | Aún no verificado en hardware                  |
 
 ## Qué informar
 

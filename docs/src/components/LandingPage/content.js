@@ -217,9 +217,7 @@ const landingPageContent = {
         },
         {
           title: 'Watch and force',
-          text:
-            'Show a variable as decimal, hexadecimal, binary or time. A forced value stays marked as forced until you release ' +
-            'it.',
+          text: 'Show a variable as decimal, hexadecimal, binary or time. A forced value stays marked as forced until you release ' + 'it.',
           link: 'Force a value',
           to: '/docs/guides/force-values',
         },

@@ -13,13 +13,13 @@ ZPLC ofrece cinco lenguajes IEC 61131-3 en un mismo proyecto: texto estructurado
 
 ## Elegir un lenguaje
 
-| Lenguaje | Se escribe en | Sirve para | Guía |
-| --- | --- | --- | --- |
-| Texto estructurado (ST) | Un editor de texto | Cálculos, manejo de datos, bucles, todo lo que se lee mejor como código. El lenguaje al que se traducen todos los demás. | [Texto estructurado](./st.md) |
-| Lista de instrucciones (IL) | Un editor de texto | Lógica IL existente y secuencias de bajo nivel sobre un acumulador. | [Lista de instrucciones](./il.md) |
-| Diagrama de escalera (LD) | Un editor de peldaños | Enclavamientos, lógica al estilo de relés y condiciones que una persona electricista lee de un vistazo. | [Diagrama de escalera](./ld.md) |
-| Diagrama de bloques de función (FBD) | Un editor de diagramas | Flujo de señales entre temporizadores, contadores, comparaciones y aritmética. | [Diagrama de bloques de función](./fbd.md) |
-| Diagrama funcional secuencial (SFC) | Un editor de diagramas de pasos | Máquinas que avanzan por pasos, como una secuencia de arranque, marcha y paro. | [Diagrama funcional secuencial](./sfc.md) |
+| Lenguaje                             | Se escribe en                   | Sirve para                                                                                                               | Guía                                       |
+| ------------------------------------ | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------ |
+| Texto estructurado (ST)              | Un editor de texto              | Cálculos, manejo de datos, bucles, todo lo que se lee mejor como código. El lenguaje al que se traducen todos los demás. | [Texto estructurado](./st.md)              |
+| Lista de instrucciones (IL)          | Un editor de texto              | Lógica IL existente y secuencias de bajo nivel sobre un acumulador.                                                      | [Lista de instrucciones](./il.md)          |
+| Diagrama de escalera (LD)            | Un editor de peldaños           | Enclavamientos, lógica al estilo de relés y condiciones que una persona electricista lee de un vistazo.                  | [Diagrama de escalera](./ld.md)            |
+| Diagrama de bloques de función (FBD) | Un editor de diagramas          | Flujo de señales entre temporizadores, contadores, comparaciones y aritmética.                                           | [Diagrama de bloques de función](./fbd.md) |
+| Diagrama funcional secuencial (SFC)  | Un editor de diagramas de pasos | Máquinas que avanzan por pasos, como una secuencia de arranque, marcha y paro.                                           | [Diagrama funcional secuencial](./sfc.md)  |
 
 El texto estructurado va directamente al compilador. Los otros cuatro se traducen primero a texto estructurado, y ese texto generado es una salida de solo lectura. Los lenguajes no son intercambiables: un editor, un depurador o un bloque de biblioteca puede admitir una construcción en un lenguaje y no en otro, y un programa no se convierte de vuelta de texto estructurado a un diagrama. Las [referencias generadas de los lenguajes](../reference/language-st.md) indican qué funciona en cada uno.
 

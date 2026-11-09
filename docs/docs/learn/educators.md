@@ -32,21 +32,21 @@ bun tools/ci/learn-educator.ts verify student-progress.json
 
 The command prints one line per lesson, in the form `<lesson id>: <result>`, with a detail in parentheses for a mismatch. A last line says `ok` or `failed`.
 
-| Result           | Meaning                                                                                                                                                                      |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `verified`       | The lesson is passed and its grade record was taken in simulation against the lesson's current scenario: same scenario id, same SHA-256, same number of assertions.       |
-| `mismatch`       | The grade record was taken against another scenario, another track or another number of assertions. The detail says which.                                                  |
-| `unverified`     | The lesson is passed with no grade record, as in progress migrated from the first release.                                                                                  |
-| `in-progress`    | The lesson was started and not passed.                                                                                                                                       |
-| `unknown-lesson` | The file names a lesson this build does not have. It is kept and ignored.                                                                                                    |
+| Result           | Meaning                                                                                                                                                             |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `verified`       | The lesson is passed and its grade record was taken in simulation against the lesson's current scenario: same scenario id, same SHA-256, same number of assertions. |
+| `mismatch`       | The grade record was taken against another scenario, another track or another number of assertions. The detail says which.                                          |
+| `unverified`     | The lesson is passed with no grade record, as in progress migrated from the first release.                                                                          |
+| `in-progress`    | The lesson was started and not passed.                                                                                                                              |
+| `unknown-lesson` | The file names a lesson this build does not have. It is kept and ignored.                                                                                           |
 
 ### Exit codes
 
-| Code | When                                                                                                                                  |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| 0    | No lesson is a `mismatch`.                                                                                                            |
-| 1    | A lesson is a `mismatch`, the file is not a progress file, or the file cannot be read.                                                |
-| 2    | The command line is wrong: no file name after `verify`, or a command other than `verify` and `outline`.                              |
+| Code | When                                                                                                    |
+| ---- | ------------------------------------------------------------------------------------------------------- |
+| 0    | No lesson is a `mismatch`.                                                                              |
+| 1    | A lesson is a `mismatch`, the file is not a progress file, or the file cannot be read.                  |
+| 2    | The command line is wrong: no file name after `verify`, or a command other than `verify` and `outline`. |
 
 Add `--strict` to make an `unverified` lesson fail too (exit 1).
 
@@ -62,10 +62,10 @@ bun tools/ci/learn-educator.ts outline --locale es --format html > curso.html
 
 The outline lists every module and, under it, every lesson in course order with its time, languages, tracks, prerequisites and objectives.
 
-| Option     | Values                         | Default    |
-| ---------- | ------------------------------ | ---------- |
-| `--locale` | `en`, `es`                     | `en`       |
-| `--format` | `markdown`, `html`             | `markdown` |
+| Option     | Values             | Default    |
+| ---------- | ------------------ | ---------- |
+| `--locale` | `en`, `es`         | `en`       |
+| `--format` | `markdown`, `html` | `markdown` |
 
 Another value for either option exits with code 2. The HTML page is self-contained: it has print styles, no script and no external file, so you can open it in a browser and print it.
 

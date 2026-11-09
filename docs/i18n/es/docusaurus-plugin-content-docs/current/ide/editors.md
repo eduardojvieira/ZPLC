@@ -2,13 +2,13 @@
 
 ZPLC edita los cinco lenguajes en un solo entorno de trabajo. El texto estructurado y la lista de instrucciones son texto. La escalera, el diagrama de bloques de función y el diagrama funcional secuencial son modelos visuales, y cada uno conserva su propio modelo. Esta página cubre lo que los editores comparten: el servicio de lenguaje, las paletas, el teclado, deshacer, los diagnósticos, los puntos de parada y los valores en línea. Para aprender a escribir en un lenguaje, use su guía: [texto estructurado](../languages/st.md), [lista de instrucciones](../languages/il.md), [diagrama de escalera](../languages/ld.md), [diagrama de bloques de función](../languages/fbd.md) o [diagrama funcional secuencial](../languages/sfc.md).
 
-| Lenguaje | Editor | Límite |
-| --- | --- | --- |
-| ST | El editor de texto principal, con diagnósticos y navegación por el código fuente. | El subconjunto IEC admitido es el contrato del compilador. |
-| IL | Un editor de texto. | Lo que acepta depende del subconjunto del compilador. |
-| LD | Peldaños, contactos, bobinas, ramas, deshacer y validación visual. | El ST generado es solo una salida de lectura. |
-| FBD | Puertos con tipo, bloques, conexiones, deshacer y validación visual. | El ST generado es solo una salida de lectura. |
-| SFC | Pasos, transiciones, acciones, deshacer y validación visual. | El ST generado es solo una salida de lectura. |
+| Lenguaje | Editor                                                                            | Límite                                                     |
+| -------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| ST       | El editor de texto principal, con diagnósticos y navegación por el código fuente. | El subconjunto IEC admitido es el contrato del compilador. |
+| IL       | Un editor de texto.                                                               | Lo que acepta depende del subconjunto del compilador.      |
+| LD       | Peldaños, contactos, bobinas, ramas, deshacer y validación visual.                | El ST generado es solo una salida de lectura.              |
+| FBD      | Puertos con tipo, bloques, conexiones, deshacer y validación visual.              | El ST generado es solo una salida de lectura.              |
+| SFC      | Pasos, transiciones, acciones, deshacer y validación visual.                      | El ST generado es solo una salida de lectura.              |
 
 Los modelos visuales se validan y se traducen antes de la compilación canónica ([Flujo del compilador](./compiler.md)). Un backend compartido no da a todos los lenguajes las mismas funciones ni la misma depuración, así que compile y ejecute el proyecto para saber qué obtiene.
 
@@ -16,16 +16,16 @@ Los modelos visuales se validan y se traducen antes de la compilación canónica
 
 El editor de texto estructurado lee todo el proyecto, no solo el archivo que tiene delante.
 
-| Función | Qué hace |
-| --- | --- |
-| Diagnósticos | Cada error de sintaxis y semántico de cada archivo de texto estructurado del proyecto, mientras escribe (tras una pausa de 0,3 s), con el rango que dio el propio front end del compilador. Aparecen como subrayados en los archivos abiertos y en **Problemas**, y desaparecen la próxima vez que se comprueba el proyecto y el error ya no está. No son evidencia de compilación; la **compilación** sí lo es. |
-| Autocompletado | Las variables, parámetros y métodos del ámbito; tras un punto, los miembros del tipo de lo que lo precede; los bloques, funciones y tipos de todos los archivos; los parámetros de una llamada como `Name := `. Los nombres del proyecto van antes que la biblioteca estándar. |
-| Ayuda emergente | Qué es un nombre, su tipo y dónde se declara, también en otro archivo. |
-| Ir a la definición, buscar referencias | En todos los archivos del proyecto. Un nombre se encuentra por lo que es, no por cómo se escribe: el `Count` de un programa no es el `Count` de otro. |
-| Esquema | Las declaraciones del archivo como un árbol. |
-| Ayuda de firma | Los parámetros de la función, el método o el bloque a que se llama, y aquel en el que está el cursor, también cuando los argumentos tienen nombre. |
-| Renombrar símbolo (`F2`) | Renombra lo que representa un nombre en todos los archivos del proyecto, por ámbito y por tipo, nunca como texto. Se rechaza, con el motivo, cuando el nombre nuevo ya está declarado donde se usa el antiguo, cuando un archivo del proyecto tiene un error de sintaxis, cuando el nombre se menciona en un archivo de escalera, FBD, SFC o IL (renómbrelo también allí), o cuando el nombre es un programa, porque las tareas de `zplc.json` lo ejecutan por su nombre. Los archivos que cambian se abren como pestañas modificadas; usted los guarda. |
-| Dar formato al documento (`Mayús+Alt+F`) | Sangra cada línea según la profundidad de sus bloques y recorta los finales de línea. Cambia solo el espacio en blanco al principio y al final de una línea: no se agrega ni se quita ninguna línea, ningún token se mueve, y un comentario queda como está escrito. Dar formato dos veces da el mismo texto. |
+| Función                                  | Qué hace                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Diagnósticos                             | Cada error de sintaxis y semántico de cada archivo de texto estructurado del proyecto, mientras escribe (tras una pausa de 0,3 s), con el rango que dio el propio front end del compilador. Aparecen como subrayados en los archivos abiertos y en **Problemas**, y desaparecen la próxima vez que se comprueba el proyecto y el error ya no está. No son evidencia de compilación; la **compilación** sí lo es.                                                                                                                                         |
+| Autocompletado                           | Las variables, parámetros y métodos del ámbito; tras un punto, los miembros del tipo de lo que lo precede; los bloques, funciones y tipos de todos los archivos; los parámetros de una llamada como `Name := `. Los nombres del proyecto van antes que la biblioteca estándar.                                                                                                                                                                                                                                                                           |
+| Ayuda emergente                          | Qué es un nombre, su tipo y dónde se declara, también en otro archivo.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Ir a la definición, buscar referencias   | En todos los archivos del proyecto. Un nombre se encuentra por lo que es, no por cómo se escribe: el `Count` de un programa no es el `Count` de otro.                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Esquema                                  | Las declaraciones del archivo como un árbol.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Ayuda de firma                           | Los parámetros de la función, el método o el bloque a que se llama, y aquel en el que está el cursor, también cuando los argumentos tienen nombre.                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Renombrar símbolo (`F2`)                 | Renombra lo que representa un nombre en todos los archivos del proyecto, por ámbito y por tipo, nunca como texto. Se rechaza, con el motivo, cuando el nombre nuevo ya está declarado donde se usa el antiguo, cuando un archivo del proyecto tiene un error de sintaxis, cuando el nombre se menciona en un archivo de escalera, FBD, SFC o IL (renómbrelo también allí), o cuando el nombre es un programa, porque las tareas de `zplc.json` lo ejecutan por su nombre. Los archivos que cambian se abren como pestañas modificadas; usted los guarda. |
+| Dar formato al documento (`Mayús+Alt+F`) | Sangra cada línea según la profundidad de sus bloques y recorta los finales de línea. Cambia solo el espacio en blanco al principio y al final de una línea: no se agrega ni se quita ninguna línea, ningún token se mueve, y un comentario queda como está escrito. Dar formato dos veces da el mismo texto.                                                                                                                                                                                                                                            |
 
 Cada función se responde desde un solo índice del proyecto, construido con el analizador léxico y sintáctico del compilador, con el texto del editor en lugar de su archivo. Un archivo que todavía no se analiza sigue aportando las declaraciones que dan sus tokens, así que el autocompletado funciona en mitad de una línea.
 
@@ -98,12 +98,12 @@ Nivel de evidencia: host. `packages/zplc-ide/src/editors/arrange.test.ts`, `pack
 
 Un diagnóstico de un archivo visual o IL nombra el elemento al que se refiere, no una línea del texto estructurado generado que usted nunca escribió. La compilación lo informa en el campo `element`, junto a `path`, y el panel Problemas lo selecciona cuando usted activa el problema:
 
-| Lenguaje | Elemento | Seleccionado |
-| --- | --- | --- |
-| IL | `line:12`, una línea del código fuente IL. Un hallazgo sobre el código generado se pone en la línea IL de la que vino. | La línea. |
-| LD | `rung:rung_1`, o `rung:rung_1/cell:0,3` para la celda de la fila 0, columna 3 (`rung:rung_1/element:c1` para un peldaño guardado como lista de elementos). | El peldaño y el elemento de la celda, desplazado hasta quedar a la vista. |
-| FBD | `block:and_1`, o `connection:w3` para un cable. Un bloque que solo lee una variable o contiene una constante no tiene instrucción: un hallazgo sobre su nombre se pone en el bloque con el que se escribe. | El bloque o el cable. |
-| SFC | `step:s1`, `transition:t1` (su condición) y `action:a1` (su cuerpo). | El paso o la transición; una acción se muestra en el primer paso que la usa. |
+| Lenguaje | Elemento                                                                                                                                                                                                   | Seleccionado                                                                 |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| IL       | `line:12`, una línea del código fuente IL. Un hallazgo sobre el código generado se pone en la línea IL de la que vino.                                                                                     | La línea.                                                                    |
+| LD       | `rung:rung_1`, o `rung:rung_1/cell:0,3` para la celda de la fila 0, columna 3 (`rung:rung_1/element:c1` para un peldaño guardado como lista de elementos).                                                 | El peldaño y el elemento de la celda, desplazado hasta quedar a la vista.    |
+| FBD      | `block:and_1`, o `connection:w3` para un cable. Un bloque que solo lee una variable o contiene una constante no tiene instrucción: un hallazgo sobre su nombre se pone en el bloque con el que se escribe. | El bloque o el cable.                                                        |
+| SFC      | `step:s1`, `transition:t1` (su condición) y `action:a1` (su cuerpo).                                                                                                                                       | El paso o la transición; una acción se muestra en el primer paso que la usa. |
 
 La línea y la columna de un diagnóstico de un diagrama siguen siendo las del texto estructurado generado, y el mensaje lo dice. Un diagrama que no es válido da un diagnóstico por cada elemento erróneo, no uno por todo el archivo. El elemento viaja con el diagnóstico desde la compilación hasta el panel Problemas, de modo que el problema selecciona el elemento que nombró la compilación incluso cuando el archivo del editor cambió desde que se ejecutó la compilación.
 
@@ -113,12 +113,12 @@ Nivel de evidencia: host. `packages/zplc-ide/src/editors/diagnosticElement.test.
 
 Un punto de parada se puede poner en el elemento del diagrama o en la línea IL que usted editó. El mapa de depuración relaciona cada rango de instrucciones con ese elemento, y el runtime se detiene en la primera instrucción de él. Como el punto de una línea de un archivo de texto, se puede poner antes de cargar el programa y se arma cuando el programa se carga con Ejecutar o con Cargar.
 
-| Lenguaje | Dónde | Cómo |
-| --- | --- | --- |
-| IL | La línea IL. El mapa indica líneas del código fuente IL, como espera un editor de texto. | El margen del editor. |
-| LD | El peldaño: la primera instrucción de su código. | El punto a la izquierda del peldaño, o `F9` sobre el peldaño seleccionado. |
-| FBD | El bloque: la primera instrucción que genera. Una constante o una lectura de variable no la tienen. | `F9` sobre el bloque seleccionado. |
-| SFC | Un paso se detiene donde entra una transición; una transición se detiene donde se dispara. Un paso en el que no entra ninguna transición no tiene dónde detenerse. | `F9` sobre el paso o la transición seleccionados. |
+| Lenguaje | Dónde                                                                                                                                                              | Cómo                                                                       |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| IL       | La línea IL. El mapa indica líneas del código fuente IL, como espera un editor de texto.                                                                           | El margen del editor.                                                      |
+| LD       | El peldaño: la primera instrucción de su código.                                                                                                                   | El punto a la izquierda del peldaño, o `F9` sobre el peldaño seleccionado. |
+| FBD      | El bloque: la primera instrucción que genera. Una constante o una lectura de variable no la tienen.                                                                | `F9` sobre el bloque seleccionado.                                         |
+| SFC      | Un paso se detiene donde entra una transición; una transición se detiene donde se dispara. Un paso en el que no entra ninguna transición no tiene dónde detenerse. | `F9` sobre el paso o la transición seleccionados.                          |
 
 Un punto de parada se guarda en el elemento, no en una línea generada, así que sigue a su peldaño, bloque o paso cuando el diagrama cambia y se vuelve a compilar. Uno cuyo elemento se eliminó se olvida, y uno en un elemento sin instrucción se rechaza una vez cargado un programa. El elemento donde está el programa detenido se perfila en amarillo. Los contadores de programa son los que toman el runtime de la simulación y el de una placa; aquí no se ha comprobado la detención en una placa.
 
@@ -126,13 +126,13 @@ Un punto de parada se guarda en el elemento, no en una línea generada, así que
 
 Mientras un programa se ejecuta en ZPLC, cada editor muestra lo que contiene el programa, leído a través del mapa de depuración de la compilación de su archivo. La compilación registra, para cada elemento de un código fuente de escalera, FBD o SFC, qué variable del programa generado guarda su estado, así que ningún editor adivina un nombre. Un estado que el mapa no da se muestra como no disponible (un guion, `UNAVAILABLE`), nunca como FALSE o IDLE.
 
-| Lenguaje | Qué se muestra | De dónde viene |
-| --- | --- | --- |
-| ST | El valor de cada variable que nombra una línea, después de la línea (`Count=7  Ready=TRUE`). Un miembro de una instancia de bloque o de una estructura se lee a través de su instancia. | El servicio de lenguaje resuelve qué es un nombre; el mapa del programa del archivo da su dirección y su tipo. Una función o un bloque de función no muestran nada: sus nombres pertenecen a todas las instancias. |
-| IL | El valor de cada variable declarada que usa una instrucción, después de la línea. | El analizador de IL, y el mapa del programa del archivo. |
-| LD | Energía: un elemento se ilumina cuando le llega energía, por caminos en serie y en paralelo y por ramas, y después de un bloque es la salida del propio bloque. El valor de un contacto o una bobina, y las salidas de un bloque, debajo. | El flujo de energía del peldaño como una expresión de las variables de que está hecho, evaluada con los valores leídos. |
-| FBD | El valor de cada cable y las salidas de cada bloque; un bloque de variable muestra el valor de su variable. | La variable temporal que recibió cada salida consumida, o el miembro de la instancia. |
-| SFC | Qué pasos están activos y durante cuánto tiempo; de cada transición, si su condición se cumple y si se disparó en este ciclo. | El estado generado del diagrama: el indicador y el temporizador de cada paso, y los indicadores de condición y de disparo de cada transición. |
+| Lenguaje | Qué se muestra                                                                                                                                                                                                                            | De dónde viene                                                                                                                                                                                                     |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ST       | El valor de cada variable que nombra una línea, después de la línea (`Count=7  Ready=TRUE`). Un miembro de una instancia de bloque o de una estructura se lee a través de su instancia.                                                   | El servicio de lenguaje resuelve qué es un nombre; el mapa del programa del archivo da su dirección y su tipo. Una función o un bloque de función no muestran nada: sus nombres pertenecen a todas las instancias. |
+| IL       | El valor de cada variable declarada que usa una instrucción, después de la línea.                                                                                                                                                         | El analizador de IL, y el mapa del programa del archivo.                                                                                                                                                           |
+| LD       | Energía: un elemento se ilumina cuando le llega energía, por caminos en serie y en paralelo y por ramas, y después de un bloque es la salida del propio bloque. El valor de un contacto o una bobina, y las salidas de un bloque, debajo. | El flujo de energía del peldaño como una expresión de las variables de que está hecho, evaluada con los valores leídos.                                                                                            |
+| FBD      | El valor de cada cable y las salidas de cada bloque; un bloque de variable muestra el valor de su variable.                                                                                                                               | La variable temporal que recibió cada salida consumida, o el miembro de la instancia.                                                                                                                              |
+| SFC      | Qué pasos están activos y durante cuánto tiempo; de cada transición, si su condición se cumple y si se disparó en este ciclo.                                                                                                             | El estado generado del diagrama: el indicador y el temporizador de cada paso, y los indicadores de condición y de disparo de cada transición.                                                                      |
 
 Un valor se lee en el programa de su propio archivo: dos programas que tienen cada uno un `_rung1_result` tienen dos valores. Las variables que muestra un editor se leen con el sondeo de la tabla de observación, y solo se vuelven a dibujar las regiones que muestran un valor.
 
@@ -144,13 +144,13 @@ Nivel de evidencia: host, contra el runtime real. `packages/zplc-ide/src/monitor
 
 Todos los lugares que muestran el valor de una señal usan los mismos cinco estados: los valores en línea del editor de código, la tabla de observación, la escalera, FBD, SFC, el monitor de instancia, la vista del controlador y los escenarios registrados del Laboratorio. El color nunca transmite un estado por sí solo.
 
-| Estado | Color | Glifo | También se muestra como |
-| --- | --- | --- | --- |
-| TRUE | Verde: un TRUE confirmado, o RUN, y nada más | `●` | La palabra TRUE, `T` en una insignia de escalera; el flujo de energía es un cable más grueso |
-| FALSE | Gris neutro, nunca rojo | `○` | La palabra FALSE, `F` en una insignia de escalera |
-| Desconocido | Gris neutro, contorno discontinuo | `◌` | Un guion o la palabra UNAVAILABLE; un valor que no se leyó nunca se muestra como FALSE |
-| Forzado | Ámbar | `◆` | La palabra FORCED; un valor forzado se dibuja como forzado, no como el valor que contiene |
-| Falla | Rojo, solo para una falla | `▲` | La palabra FAULT, que un lector de pantalla lee como "Fault" |
+| Estado      | Color                                        | Glifo | También se muestra como                                                                      |
+| ----------- | -------------------------------------------- | ----- | -------------------------------------------------------------------------------------------- |
+| TRUE        | Verde: un TRUE confirmado, o RUN, y nada más | `●`   | La palabra TRUE, `T` en una insignia de escalera; el flujo de energía es un cable más grueso |
+| FALSE       | Gris neutro, nunca rojo                      | `○`   | La palabra FALSE, `F` en una insignia de escalera                                            |
+| Desconocido | Gris neutro, contorno discontinuo            | `◌`   | Un guion o la palabra UNAVAILABLE; un valor que no se leyó nunca se muestra como FALSE       |
+| Forzado     | Ámbar                                        | `◆`   | La palabra FORCED; un valor forzado se dibuja como forzado, no como el valor que contiene    |
+| Falla       | Rojo, solo para una falla                    | `▲`   | La palabra FAULT, que un lector de pantalla lee como "Fault"                                 |
 
 Un número no es un estado: se dibuja con el color de valor normal y sin glifo. Un cable en FBD es más grueso para los valores TRUE, forzados y de falla, y discontinuo para un valor que no se leyó.
 
@@ -158,11 +158,11 @@ Un número no es un estado: se dibuja con el color de valor normal y sin glifo. 
 
 Una variable se dibuja como forzada en la escalera, FBD y SFC cuando la tabla de forzados la contiene en la dirección que el mapa de depuración da a esa variable en el archivo que se muestra; una variable del mismo nombre en otro programa no se marca. Se dibuja como falla cuando el sondeo del depurador la pidió al runtime y no obtuvo ningún valor, o la lectura falló, y sigue siendo una falla hasta que un sondeo posterior la lee.
 
-| Editor | Qué lleva la señal |
-| --- | --- |
-| Escalera | El contacto o la bobina que nombra la variable. |
-| FBD | El pin de un bloque cuya variable está forzada o no se puede leer (un pin de entrada toma el estado de la salida conectada a él), el cable desde ese pin, y un bloque de variable, que además dice FORCED o FAULT con palabras. |
-| SFC | Un paso cuyo indicador está forzado o no se puede leer; una transición cuando su propia variable de condición lo está, o cuando una variable nombrada en su condición está forzada. |
+| Editor   | Qué lleva la señal                                                                                                                                                                                                              |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Escalera | El contacto o la bobina que nombra la variable.                                                                                                                                                                                 |
+| FBD      | El pin de un bloque cuya variable está forzada o no se puede leer (un pin de entrada toma el estado de la salida conectada a él), el cable desde ese pin, y un bloque de variable, que además dice FORCED o FAULT con palabras. |
+| SFC      | Un paso cuyo indicador está forzado o no se puede leer; una transición cuando su propia variable de condición lo está, o cuando una variable nombrada en su condición está forzada.                                             |
 
 Nada en los editores visuales, la vista del controlador, la tabla de observación ni la lista de notificaciones brilla, pulsa ni se anima de forma continua. Un indicador de carga puede girar, y se detiene con el movimiento reducido.
 

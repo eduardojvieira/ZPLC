@@ -20,12 +20,12 @@ Cuando algo falla, recupere primero la capa más pequeña. Lleve la lógica de c
 
 ## Elija la recuperación
 
-| Situación                      | Acción segura                                                                 | Límite de la evidencia                                                 |
-| ------------------------------ | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Falla del runtime o del programa | Mantenga las salidas en el estado seguro del runtime y revise estado y traza. | Una traza del anfitrión no es prueba eléctrica.                        |
-| Conexión perdida               | Reconecte y verifique placa, perfil y ABI antes de cualquier carga.      | Una identidad por serie no es calificación HIL.                        |
-| Reemplazo del programa         | Compile, pruebe y simule; luego use el diálogo de carga y confírmelo.    | Una carga cambia la lógica de control. No es una grabación del firmware. |
-| Falla del firmware             | Deténgase y siga el procedimiento exacto de recuperación de la placa y su programador. | Los perfiles catalogados no tienen referencias de evidencia HIL. |
+| Situación                         | Acción segura                                                                             | Límite de la evidencia                                                         |
+| --------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Falla del runtime o del programa  | Mantenga las salidas en el estado seguro del runtime y revise estado y traza.             | Una traza del anfitrión no es prueba eléctrica.                                |
+| Conexión perdida                  | Reconecte y verifique placa, perfil y ABI antes de cualquier carga.                       | Una identidad por serie no es calificación HIL.                                |
+| Reemplazo del programa            | Compile, pruebe y simule; luego use el diálogo de carga y confírmelo.                     | Una carga cambia la lógica de control. No es una grabación del firmware.       |
+| Falla del firmware                | Deténgase y siga el procedimiento exacto de recuperación de la placa y su programador.    | Los perfiles catalogados no tienen referencias de evidencia HIL.               |
 | Duda sobre el programa persistido | Reinicie solo bajo el procedimiento del sitio y revise el estado restaurado antes de RUN. | La persistencia tras un corte de energía necesita evidencia del destino o HIL. |
 
 ## Estado seguro y reinicio

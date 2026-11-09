@@ -31,12 +31,12 @@ flowchart TD
 
 ## Where it runs
 
-| Runtime | Role | What its results establish |
-| --- | --- | --- |
-| Native simulation (`zplc_runtime`) | Headless host runtime for compiling, testing, tracing and replaying | Host evidence: the logic, not the timing or the I/O of a board |
-| Software runtime (WebAssembly) | Fallback simulation of the ZPLC application when the native runtime cannot start | Host evidence, degraded; see [the software runtime](./browser-runtime.md) |
-| Zephyr firmware | One image per board profile, with the HAL adapters of that board | Depends on the profile; see [hardware support](../reference/capabilities-evidence.md) |
-| FreeRTOS port | A second embedded port, built against the FreeRTOS POSIX simulator | Host (simulator); no FreeRTOS board is qualified |
+| Runtime                            | Role                                                                             | What its results establish                                                            |
+| ---------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Native simulation (`zplc_runtime`) | Headless host runtime for compiling, testing, tracing and replaying              | Host evidence: the logic, not the timing or the I/O of a board                        |
+| Software runtime (WebAssembly)     | Fallback simulation of the ZPLC application when the native runtime cannot start | Host evidence, degraded; see [the software runtime](./browser-runtime.md)             |
+| Zephyr firmware                    | One image per board profile, with the HAL adapters of that board                 | Depends on the profile; see [hardware support](../reference/capabilities-evidence.md) |
+| FreeRTOS port                      | A second embedded port, built against the FreeRTOS POSIX simulator               | Host (simulator); no FreeRTOS board is qualified                                      |
 
 ## From a build to a running machine
 
@@ -48,15 +48,15 @@ Building firmware, flashing it, deploying a program and running or debugging it 
 
 ## The pages of this section
 
-| Page | Read it to know |
-| --- | --- |
-| [Scheduler](./scheduler.md) | How a scan cycle works, how tasks are ordered, what a missed deadline does, what the outputs do when the program stops |
-| [Memory model](./memory-model.md) | The five regions, what a task shares and what it owns, how a thread outside the scan reaches the data |
-| [Persistence](./persistence.md) | What is stored, what a restart restores, the flash-wear budget of each board |
-| [HAL contract](./hal-contract.md) | What the core asks of a platform, and what each of the four ports does with it |
-| [Software runtime](./browser-runtime.md) | What the WebAssembly simulation shares with the firmware and what it lacks |
-| [Standard library](./stdlib.md) | What the built-in functions and function blocks are and where the rules for them live |
-| [Runtime API](../reference/runtime-api.md) | The public C surface, generated from the headers |
+| Page                                       | Read it to know                                                                                                        |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| [Scheduler](./scheduler.md)                | How a scan cycle works, how tasks are ordered, what a missed deadline does, what the outputs do when the program stops |
+| [Memory model](./memory-model.md)          | The five regions, what a task shares and what it owns, how a thread outside the scan reaches the data                  |
+| [Persistence](./persistence.md)            | What is stored, what a restart restores, the flash-wear budget of each board                                           |
+| [HAL contract](./hal-contract.md)          | What the core asks of a platform, and what each of the four ports does with it                                         |
+| [Software runtime](./browser-runtime.md)   | What the WebAssembly simulation shares with the firmware and what it lacks                                             |
+| [Standard library](./stdlib.md)            | What the built-in functions and function blocks are and where the rules for them live                                  |
+| [Runtime API](../reference/runtime-api.md) | The public C surface, generated from the headers                                                                       |
 
 ## What the evidence covers
 

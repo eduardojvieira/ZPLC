@@ -22,11 +22,11 @@ Cada acción también se puede hacer con el teclado; la [referencia de teclado](
 
 ## Los bloques de la paleta
 
-| Grupo | Bloques |
-| --- | --- |
+| Grupo                                                                                                                                                | Bloques                                                                                                                                                                                                                             |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Grupos de la biblioteca, como Compuertas lógicas, Comparación, Matemáticas, Selección, Temporizadores, Contadores, Detección de flancos y Biestables | Las compuertas, las comparaciones, `ADD`, `SUB`, `MUL`, `DIV`, `MOD`, `ABS`, `MAX`, `MIN`, `LIMIT`, `SEL` y los bloques de función de la biblioteca. Un grupo aparece solo cuando contiene un bloque que un diagrama puede colocar. |
-| Proyecto | Los bloques de función y las funciones que declaran los archivos de texto estructurado del proyecto, con los pines de su declaración. |
-| E/S | Los bloques que transportan un valor: `constant`, `variable`, `input`, `output`. |
+| Proyecto                                                                                                                                             | Los bloques de función y las funciones que declaran los archivos de texto estructurado del proyecto, con los pines de su declaración.                                                                                               |
+| E/S                                                                                                                                                  | Los bloques que transportan un valor: `constant`, `variable`, `input`, `output`.                                                                                                                                                    |
 
 Las funciones de la biblioteca, como `SQRT`, `SIN`, `LEN`, `CONCAT` y las conversiones, no se ofrecen, y la compilación las rechaza por su nombre; llámelas desde texto estructurado. Una función del proyecto sí se ofrece, y se llama aunque nadie use su resultado. Una declaración del proyecto prevalece sobre un bloque estándar del mismo nombre.
 
@@ -40,24 +40,24 @@ Un bloque del proyecto se llama con argumentos con nombre, así que el orden en 
 
 El lienzo rechaza un cable entre pines cuyos tipos no coinciden, y explica el motivo en un mensaje sobre el lienzo.
 
-| Tipos | Regla |
-| --- | --- |
-| Enteros, cadenas de bits, `REAL`, `LREAL` | Una sola familia de números. Un entero entra en un `REAL` o un `LREAL`, y un `REAL` y un `LREAL` entran uno en el otro (la compilación avisa cuando se estrecha un `LREAL`). Un `REAL` nunca entra en un entero. |
-| `BOOL`, `TIME`, `DATE`, `TOD`, `DT`, cadenas | Cada uno acepta solo su propio tipo. |
-| Un pin declarado `ANY` | No se juzga. |
+| Tipos                                        | Regla                                                                                                                                                                                                            |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Enteros, cadenas de bits, `REAL`, `LREAL`    | Una sola familia de números. Un entero entra en un `REAL` o un `LREAL`, y un `REAL` y un `LREAL` entran uno en el otro (la compilación avisa cuando se estrecha un `LREAL`). Un `REAL` nunca entra en un entero. |
+| `BOOL`, `TIME`, `DATE`, `TOD`, `DT`, cadenas | Cada uno acepta solo su propio tipo.                                                                                                                                                                             |
+| Un pin declarado `ANY`                       | No se juzga.                                                                                                                                                                                                     |
 
 Para llevar un `REAL` a una entrada entera, conviértalo antes con una función de conversión como `REAL_TO_INT` en un programa de texto estructurado. Una entrada tiene un solo origen: un segundo cable hacia la misma entrada se rechaza.
 
 ## Errores comunes
 
-| Error | Qué ocurre | Qué hacer |
-| --- | --- | --- |
-| Un pin de entrada sin cable | La compilación lo rechaza con un mensaje que nombra el bloque. | Conéctelo, o agregue un bloque constante o variable. |
-| Un lazo de realimentación, una salida conectada de vuelta a un bloque anterior | La compilación lo rechaza y nombra un bloque del lazo. | Reorganice la lógica para que los datos fluyan en un solo sentido, o escriba la realimentación en texto estructurado. |
-| Una salida `BOOL` hacia una entrada numérica | El cable se rechaza. | Conviértala, o compare el valor. |
-| Dos cables hacia una entrada | El segundo se rechaza. | Combine los orígenes con un bloque como `OR` o `SEL`. |
-| EN y ENO en un bloque | No se admite. La compilación lo rechaza con un mensaje. | Use una caja de función de escalera cuando necesite EN y ENO ([Escribir un diagrama de escalera](./ld.md)). |
-| Un bloque que ningún archivo declara | La compilación lo rechaza por su nombre. | Declárelo en un archivo de texto estructurado de `src` o de una carpeta de biblioteca. |
+| Error                                                                          | Qué ocurre                                                     | Qué hacer                                                                                                             |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Un pin de entrada sin cable                                                    | La compilación lo rechaza con un mensaje que nombra el bloque. | Conéctelo, o agregue un bloque constante o variable.                                                                  |
+| Un lazo de realimentación, una salida conectada de vuelta a un bloque anterior | La compilación lo rechaza y nombra un bloque del lazo.         | Reorganice la lógica para que los datos fluyan en un solo sentido, o escriba la realimentación en texto estructurado. |
+| Una salida `BOOL` hacia una entrada numérica                                   | El cable se rechaza.                                           | Conviértala, o compare el valor.                                                                                      |
+| Dos cables hacia una entrada                                                   | El segundo se rechaza.                                         | Combine los orígenes con un bloque como `OR` o `SEL`.                                                                 |
+| EN y ENO en un bloque                                                          | No se admite. La compilación lo rechaza con un mensaje.        | Use una caja de función de escalera cuando necesite EN y ENO ([Escribir un diagrama de escalera](./ld.md)).           |
+| Un bloque que ningún archivo declara                                           | La compilación lo rechaza por su nombre.                       | Declárelo en un archivo de texto estructurado de `src` o de una carpeta de biblioteca.                                |
 
 ## Ordenar y leer el diagrama
 

@@ -23,13 +23,13 @@ Every action also works from the keyboard; the [keyboard reference](../reference
 
 ## The elements of the palette
 
-| Group | Elements |
-| --- | --- |
-| Contacts | normally open, normally closed, rising edge, falling edge |
-| Coils | normal, negated, set, reset, rising edge, falling edge |
-| Structure | the parallel branch |
+| Group           | Elements                                                                                                                                   |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Contacts        | normally open, normally closed, rising edge, falling edge                                                                                  |
+| Coils           | normal, negated, set, reset, rising edge, falling edge                                                                                     |
+| Structure       | the parallel branch                                                                                                                        |
 | Function blocks | the timers, counters, triggers and bistables of the library, and the function blocks that the Structured Text files of the project declare |
-| Functions | the fifteen IEC functions that run as boxes with EN and ENO, described below |
+| Functions       | the fifteen IEC functions that run as boxes with EN and ENO, described below                                                               |
 
 The communication blocks `COMM_CONNECT`, `COMM_PUBLISH`, `COMM_SUBSCRIBE` and `COMM_MODBUS` are not offered: a Ladder file cannot declare an instance of them. A function of the project is not placed in a rung; call it from a Function Block Diagram or from Structured Text. Jumps and labels are not supported, and the build refuses them with a message.
 
@@ -70,24 +70,24 @@ The operand pins are `IN1` and `IN2` for the comparisons, math, `MIN` and `MAX`,
 
 ## Who may write a variable
 
-| Writers of one variable | Result |
-| --- | --- |
-| Several function boxes | Allowed. Each writes while its EN is on, and the last in scan order wins. |
-| One coil | Allowed. |
-| A set coil in one rung and a reset coil in another | Allowed. |
-| Two normal coils | Refused: `Multiple writers target ...`. |
-| A coil and a function box | Refused, and the message names both positions. |
+| Writers of one variable                            | Result                                                                    |
+| -------------------------------------------------- | ------------------------------------------------------------------------- |
+| Several function boxes                             | Allowed. Each writes while its EN is on, and the last in scan order wins. |
+| One coil                                           | Allowed.                                                                  |
+| A set coil in one rung and a reset coil in another | Allowed.                                                                  |
+| Two normal coils                                   | Refused: `Multiple writers target ...`.                                   |
+| A coil and a function box                          | Refused, and the message names both positions.                            |
 
 ## Common mistakes
 
-| Mistake | What happens | What to do |
-| --- | --- | --- |
-| Two coils drive the same output | The build refuses it with `Multiple writers target ...`. | Combine the conditions in one rung, or use a set coil and a reset coil in two rungs. |
-| A box and a coil write one variable | The build refuses it and names both elements. | Give the box its own output variable and read it with a contact. |
-| `DIV` or `MOD` with a divisor that can be zero | The VM faults and the outputs clear. | Put `NE` with the divisor and 0 in series before the box. |
-| A box with an empty operand or output | The build reports the box by rung and cell. | Press `F2` on the box and bind every slot. |
-| A contact or coil still shows `???` | It is not bound to a variable. | Press `F2` and choose a declared symbol. |
-| A jump or a label | The build refuses it with a message. | Use a branch, or move the logic to a Structured Text program. |
+| Mistake                                        | What happens                                             | What to do                                                                           |
+| ---------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Two coils drive the same output                | The build refuses it with `Multiple writers target ...`. | Combine the conditions in one rung, or use a set coil and a reset coil in two rungs. |
+| A box and a coil write one variable            | The build refuses it and names both elements.            | Give the box its own output variable and read it with a contact.                     |
+| `DIV` or `MOD` with a divisor that can be zero | The VM faults and the outputs clear.                     | Put `NE` with the divisor and 0 in series before the box.                            |
+| A box with an empty operand or output          | The build reports the box by rung and cell.              | Press `F2` on the box and bind every slot.                                           |
+| A contact or coil still shows `???`            | It is not bound to a variable.                           | Press `F2` and choose a declared symbol.                                             |
+| A jump or a label                              | The build refuses it with a message.                     | Use a branch, or move the logic to a Structured Text program.                        |
 
 ## Watch it run
 

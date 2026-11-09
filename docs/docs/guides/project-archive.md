@@ -50,11 +50,11 @@ Nothing from a refused archive is written.
 
 ## What is verified, and what is not
 
-| Part | Verified | Level |
-| --- | --- | --- |
-| The format, the refusals, and a round trip on real folders | Unit tests of the archive reader and writer | Host |
-| Export, then import into an empty folder, gives equal folders and a byte-equal `zplc.json` | Journey 30 in the real application | Host |
-| An archive that a different tool wrote, stored or deflated | Unit tests with archives written by another tool | Host |
+| Part                                                                                       | Verified                                         | Level |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------ | ----- |
+| The format, the refusals, and a round trip on real folders                                 | Unit tests of the archive reader and writer      | Host  |
+| Export, then import into an empty folder, gives equal folders and a byte-equal `zplc.json` | Journey 30 in the real application               | Host  |
+| An archive that a different tool wrote, stored or deflated                                 | Unit tests with archives written by another tool | Host  |
 
 ## See also
 

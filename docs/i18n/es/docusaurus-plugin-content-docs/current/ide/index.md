@@ -20,13 +20,13 @@ ZPLC es la aplicación de escritorio para escribir, compilar, probar, simular y 
 
 ## Qué gestiona la aplicación
 
-| Área | Qué hace |
-| --- | --- |
-| Proyecto | Lee y escribe los archivos de la carpeta, `zplc.json` incluido, y exporta un proyecto de la versión 2 revisado. |
-| Editores | Un editor de texto para texto estructurado y lista de instrucciones, y un editor de modelos para cada lenguaje gráfico. |
-| Validación | Diagnósticos del compilador, pruebas de escenario, comprobaciones de seguridad, trazas y la simulación nativa. |
-| Evidencia | Registra cada resultado con su alcance, y nunca presenta un resultado de host como un resultado de hardware. |
-| Hardware | Conectar y cargar son acciones explícitas de una persona, después de una comprobación de compatibilidad. |
+| Área       | Qué hace                                                                                                                |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Proyecto   | Lee y escribe los archivos de la carpeta, `zplc.json` incluido, y exporta un proyecto de la versión 2 revisado.         |
+| Editores   | Un editor de texto para texto estructurado y lista de instrucciones, y un editor de modelos para cada lenguaje gráfico. |
+| Validación | Diagnósticos del compilador, pruebas de escenario, comprobaciones de seguridad, trazas y la simulación nativa.          |
+| Evidencia  | Registra cada resultado con su alcance, y nunca presenta un resultado de host como un resultado de hardware.            |
+| Hardware   | Conectar y cargar son acciones explícitas de una persona, después de una comprobación de compatibilidad.                |
 
 ## Límites
 
@@ -38,12 +38,12 @@ Un asistente de IA puede preparar un cambio candidato aislado, pero solo una per
 
 La aplicación mantiene el acceso privilegiado fuera de la ventana. Los editores y los paneles ven un proyecto respaldado por una carpeta a través de una interfaz estrecha, y el trabajo del sistema operativo ocurre en otro lugar.
 
-| Capa | Responsabilidad |
-| --- | --- |
-| Renderizador | El entorno de trabajo, los modelos visuales, los diagnósticos y las vistas de evidencia. No tiene por sí mismo acceso al sistema de archivos, al shell ni a dispositivos. |
-| Preload y proceso principal | Operaciones validadas y estrechas de sistema de archivos y del runtime supervisado. |
-| Compilador | Compila el código fuente y los modelos visuales a `.zplc`. |
-| Adaptadores del runtime | La simulación nativa, o un runtime compatible conectado. |
+| Capa                        | Responsabilidad                                                                                                                                                           |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Renderizador                | El entorno de trabajo, los modelos visuales, los diagnósticos y las vistas de evidencia. No tiene por sí mismo acceso al sistema de archivos, al shell ni a dispositivos. |
+| Preload y proceso principal | Operaciones validadas y estrechas de sistema de archivos y del runtime supervisado.                                                                                       |
+| Compilador                  | Compila el código fuente y los modelos visuales a `.zplc`.                                                                                                                |
+| Adaptadores del runtime     | La simulación nativa, o un runtime compatible conectado.                                                                                                                  |
 
 ### Cómo se comunican las capas
 

@@ -40,11 +40,11 @@ Cada punto está integrado y cubierto por una verificación que ejecuta CI o un 
 
 ## Cuándo podrá usarlo
 
-| Usted quiere                                  | Hoy                                                                                                         |
-| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Escribir y simular un programa                | Sí, en la aplicación de escritorio para Windows, macOS y Linux (niveles host y simulación nativa).          |
-| Aprender a programar PLC sin hardware         | Sí, con el curso Aprender.                                                                                     |
-| Compilar el runtime para una placa            | Sí, en `cross-build`: la imagen se compila y cabe, y no se afirma nada más.                                 |
-| Confiar en una placa en campo                 | Todavía no. Espere un registro de banco de su placa y lea antes la página de seguridad.                     |
+| Usted quiere                          | Hoy                                                                                                |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Escribir y simular un programa        | Sí, en la aplicación de escritorio para Windows, macOS y Linux (niveles host y simulación nativa). |
+| Aprender a programar PLC sin hardware | Sí, con el curso Aprender.                                                                         |
+| Compilar el runtime para una placa    | Sí, en `cross-build`: la imagen se compila y cabe, y no se afirma nada más.                        |
+| Confiar en una placa en campo         | Todavía no. Espere un registro de banco de su placa y lea antes la página de seguridad.            |
 
 La versión preliminar actual conserva las afirmaciones que establecen las [notas de la versión](../release-notes/index.md).

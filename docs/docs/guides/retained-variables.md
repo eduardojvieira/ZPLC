@@ -43,13 +43,13 @@ The simulator keeps its store in the `.zplc` folder of your home directory, unle
 
 ## 3. What discards the values
 
-| Event | Retained values |
-| --- | --- |
-| Stop and run again, or a restart, of the same program | Restored |
-| A rebuild of the program, even one that only moves code | Discarded: the program has another identity |
-| A reset command | Discarded: it is a cold restart |
-| Another program loaded | Discarded: the stored record belongs to the other program |
-| A fault | A stop of a faulted runtime stores nothing |
+| Event                                                   | Retained values                                           |
+| ------------------------------------------------------- | --------------------------------------------------------- |
+| Stop and run again, or a restart, of the same program   | Restored                                                  |
+| A rebuild of the program, even one that only moves code | Discarded: the program has another identity               |
+| A reset command                                         | Discarded: it is a cold restart                           |
+| Another program loaded                                  | Discarded: the stored record belongs to the other program |
+| A fault                                                 | A stop of a faulted runtime stores nothing                |
 
 The status of the runtime says which of these happened, with a `reason` such as `restored`, `none`, `identity_mismatch` or `layout_mismatch`. Read it in the field `retain` of the session status, or with `zplc sched status` on a board.
 
@@ -68,12 +68,12 @@ The Nucleo-H743ZI keeps its records in ZMS, which only `native_sim` has run. If 
 
 ## What is verified, and what is not
 
-| Part | Verified | Level |
-| --- | --- | --- |
+| Part                                                          | Verified                                   | Level                 |
+| ------------------------------------------------------------- | ------------------------------------------ | --------------------- |
 | The record format, the alternating slots, restore and reasons | Tests with failures injected at every step | Host and `native_sim` |
-| Values survive a stop and a start of the native runtime | Test of the native session | Host |
-| A power cut on a board | Not tested | None |
-| How long a flash write delays a cycle | Not measured | None |
+| Values survive a stop and a start of the native runtime       | Test of the native session                 | Host                  |
+| A power cut on a board                                        | Not tested                                 | None                  |
+| How long a flash write delays a cycle                         | Not measured                               | None                  |
 
 ## See also
 

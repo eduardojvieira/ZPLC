@@ -88,11 +88,11 @@ It runs every scenario of the project headless, prints `test passed` or the fail
 
 ## What is verified, and what is not
 
-| Part | Verified | Level |
-| --- | --- | --- |
-| The scenario above passes against the program above, and the check fails when an expectation does not hold | The documentation check runs it on the native runtime | Host |
-| The scenario reader refuses a malformed file and enforces its limits | Unit tests of the test engine | Host |
-| The real scan time of a board, a physical input, a safety validation | Not tested | None |
+| Part                                                                                                       | Verified                                              | Level |
+| ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ----- |
+| The scenario above passes against the program above, and the check fails when an expectation does not hold | The documentation check runs it on the native runtime | Host  |
+| The scenario reader refuses a malformed file and enforces its limits                                       | Unit tests of the test engine                         | Host  |
+| The real scan time of a board, a physical input, a safety validation                                       | Not tested                                            | None  |
 
 A passing scenario means the logic did what you wrote on the virtual clock. Read [Safety and limitations](../safety-and-limitations.md) before you rely on it.
 

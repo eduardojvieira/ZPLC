@@ -36,7 +36,7 @@ Hay 116 escenarios.
 | LRN-013   | Elegir una placa en Learn                         | 6          |
 | LRN-024   | Verificación en hardware, rotulada aparte         | 7          |
 | RT-025    | RETAIN tras un ciclo de energía                   | 8          |
-| LNG-004   | Puntos de parada en elementos del fuente    | 8          |
+| LNG-004   | Puntos de parada en elementos del fuente          | 8          |
 | IO-006    | Entrada y salida analógica                        | 6          |
 | COM-016   | TLS y el generador aleatorio                      | 5          |
 | DOC-004   | Primera placa y compilar desde el código          | 6          |

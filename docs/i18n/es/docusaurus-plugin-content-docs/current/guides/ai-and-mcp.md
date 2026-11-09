@@ -17,13 +17,13 @@ Ninguna herramienta del servidor graba una placa, carga un programa, fuerza un v
 
 ## Qué puede y qué no puede hacer el asistente
 
-| El asistente puede | El asistente no puede |
-| --- | --- |
+| El asistente puede                                                        | El asistente no puede                                                                     |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | Leer el código fuente guardado de sus programas y un resumen del proyecto | Leer contenido del editor sin guardar, ni ningún archivo fuera de la carpeta del proyecto |
-| Validar el archivo del proyecto, compilar, enumerar símbolos | Escribir un programa: ninguna herramienta ni recurso del servidor escribe uno |
-| Ejecutar sus pruebas de escenario en el simulador y leer la traza | Grabar, cargar, forzar, ejecutar, detener, avanzar un dispositivo ni recuperar una placa |
-| Leer qué lecciones del curso aprobó (un recurso de solo lectura) | Cambiar su progreso ni desbloquear una lección |
-| Describir las placas del manifiesto, sin sondear hardware | Abrir un puerto serie, un socket o un shell |
+| Validar el archivo del proyecto, compilar, enumerar símbolos              | Escribir un programa: ninguna herramienta ni recurso del servidor escribe uno             |
+| Ejecutar sus pruebas de escenario en el simulador y leer la traza         | Grabar, cargar, forzar, ejecutar, detener, avanzar un dispositivo ni recuperar una placa  |
+| Leer qué lecciones del curso aprobó (un recurso de solo lectura)          | Cambiar su progreso ni desbloquear una lección                                            |
+| Describir las placas del manifiesto, sin sondear hardware                 | Abrir un puerto serie, un socket o un shell                                               |
 
 La IA dentro de ZPLC sigue el mismo límite y tiene sus propias reglas de datos: vea [IA, privacidad y revisión humana](../ide/ai-privacy.md).
 
@@ -99,15 +99,15 @@ Una solicitud que no nombra ninguna revisión recibe el mismo código y el mensa
 
 Pida lo que devuelve una herramienta, para que cada afirmación del asistente tenga un resultado detrás.
 
-| Pregunta | Herramienta o recurso | Qué devuelve |
-| --- | --- | --- |
-| "¿Es válido este archivo de proyecto?" | `project_validate` | `ok` y los diagnósticos |
-| "¿Compila, y qué necesita?" | `compiler_check`, `symbols_list` | El tamaño del programa, los diagnósticos, los símbolos públicos |
-| "¿Pasan sus escenarios?" | `tests_run`, `scenario_run` | Un resultado por escenario, con el hash de su traza |
-| "¿Qué pasó en el ciclo 40?" | `trace_get`, `runtime_snapshot` | Una traza acotada y saneada de una ejecución registrada |
-| "Muéstreme el programa" | `zplc://project/programs`, `zplc://project/source/{name}` | La lista de los programas de `src` con su lenguaje, y el texto y el lenguaje de uno de ellos |
-| "¿Qué placas están descritas?" | `boards_list` | Las placas del manifiesto y su nivel, sin sondear hardware |
-| "¿Qué lecciones están aprobadas?" | `zplc://course/progress` | Las lecciones aprobadas, cuántas están hechas y cuántas existen |
+| Pregunta                               | Herramienta o recurso                                     | Qué devuelve                                                                                 |
+| -------------------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| "¿Es válido este archivo de proyecto?" | `project_validate`                                        | `ok` y los diagnósticos                                                                      |
+| "¿Compila, y qué necesita?"            | `compiler_check`, `symbols_list`                          | El tamaño del programa, los diagnósticos, los símbolos públicos                              |
+| "¿Pasan sus escenarios?"               | `tests_run`, `scenario_run`                               | Un resultado por escenario, con el hash de su traza                                          |
+| "¿Qué pasó en el ciclo 40?"            | `trace_get`, `runtime_snapshot`                           | Una traza acotada y saneada de una ejecución registrada                                      |
+| "Muéstreme el programa"                | `zplc://project/programs`, `zplc://project/source/{name}` | La lista de los programas de `src` con su lenguaje, y el texto y el lenguaje de uno de ellos |
+| "¿Qué placas están descritas?"         | `boards_list`                                             | Las placas del manifiesto y su nivel, sin sondear hardware                                   |
+| "¿Qué lecciones están aprobadas?"      | `zplc://course/progress`                                  | Las lecciones aprobadas, cuántas están hechas y cuántas existen                              |
 
 [La referencia de MCP](../reference/mcp.md) enumera las 15 herramientas y los 15 recursos.
 
@@ -126,15 +126,15 @@ La IA dentro de ZPLC lee el programa abierto y un resumen del proyecto, y propon
 
 ## Qué está verificado y qué no
 
-| Parte | Verificado | Nivel |
-| --- | --- | --- |
-| El servidor enumera 15 herramientas al pedírselo; `project_validate`, `compiler_check` y `tests_run` pasan en un proyecto incluido; `boards_list` responde con `--repository`; un `initialize` de la revisión 2025-06-18 y una solicitud sin revisión se rechazan con `-32022`, y una sin `clientCapabilities` con `-32602` | Ejecutado a mano con un script que envía las solicitudes por la entrada y la salida estándar, mediante `bun run --cwd=packages/zplc-ide mcp`, en el proyecto incluido `pico_blinky_ton`; la integración continua no lo repite | Host |
-| El ejecutable compilado inicia y enumera sus herramientas como lo pide un cliente 2026-07-28 | La compilación de publicación inicia el ejecutable y cuenta las herramientas | Host |
-| Ninguna herramienta llega a un dispositivo, un socket o un puerto serie | Una prueba enumera las herramientas y recursos registrados del servidor activo y atrapa cada punto de entrada de sockets y de puerto serie | Host |
-| Los dos recursos de programas devuelven el texto y el lenguaje de cada uno de los cinco lenguajes, y rechazan un nombre que no es un programa de `src`, un enlace y un archivo demasiado grande; el servidor no tiene ninguna herramienta que escriba | `packages/zplc-ide/src/mcp/server.test.ts` y `deviceLink.test.ts` | Host |
-| El recurso del curso informa las lecciones aprobadas y no escribe nada | `packages/zplc-ide/src/mcp/server.test.ts` | Host |
-| Un producto de asistente concreto funciona con la entrada de arriba | Sin verificar: no se ejecutó ningún producto cliente para esta página | Ninguno |
-| El cambio de un asistente es correcto | Nunca se da por supuesto: solo la compilación y los escenarios lo dicen | Ninguno |
+| Parte                                                                                                                                                                                                                                                                                                                       | Verificado                                                                                                                                                                                                                    | Nivel   |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| El servidor enumera 15 herramientas al pedírselo; `project_validate`, `compiler_check` y `tests_run` pasan en un proyecto incluido; `boards_list` responde con `--repository`; un `initialize` de la revisión 2025-06-18 y una solicitud sin revisión se rechazan con `-32022`, y una sin `clientCapabilities` con `-32602` | Ejecutado a mano con un script que envía las solicitudes por la entrada y la salida estándar, mediante `bun run --cwd=packages/zplc-ide mcp`, en el proyecto incluido `pico_blinky_ton`; la integración continua no lo repite | Host    |
+| El ejecutable compilado inicia y enumera sus herramientas como lo pide un cliente 2026-07-28                                                                                                                                                                                                                                | La compilación de publicación inicia el ejecutable y cuenta las herramientas                                                                                                                                                  | Host    |
+| Ninguna herramienta llega a un dispositivo, un socket o un puerto serie                                                                                                                                                                                                                                                     | Una prueba enumera las herramientas y recursos registrados del servidor activo y atrapa cada punto de entrada de sockets y de puerto serie                                                                                    | Host    |
+| Los dos recursos de programas devuelven el texto y el lenguaje de cada uno de los cinco lenguajes, y rechazan un nombre que no es un programa de `src`, un enlace y un archivo demasiado grande; el servidor no tiene ninguna herramienta que escriba                                                                       | `packages/zplc-ide/src/mcp/server.test.ts` y `deviceLink.test.ts`                                                                                                                                                             | Host    |
+| El recurso del curso informa las lecciones aprobadas y no escribe nada                                                                                                                                                                                                                                                      | `packages/zplc-ide/src/mcp/server.test.ts`                                                                                                                                                                                    | Host    |
+| Un producto de asistente concreto funciona con la entrada de arriba                                                                                                                                                                                                                                                         | Sin verificar: no se ejecutó ningún producto cliente para esta página                                                                                                                                                         | Ninguno |
+| El cambio de un asistente es correcto                                                                                                                                                                                                                                                                                       | Nunca se da por supuesto: solo la compilación y los escenarios lo dicen                                                                                                                                                       | Ninguno |
 
 ## Vea también
 

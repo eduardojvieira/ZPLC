@@ -31,15 +31,15 @@ The **Live I/O** panel at the top of the Watch tab lists every input the running
 
 ## What a force does
 
-| Event | Forces |
-| --- | --- |
-| The program assigns the variable | The forced value wins |
-| A Modbus, MQTT or cloud message writes the variable | The forced value stays |
-| Pause, step and resume | Kept |
-| Stop | Cleared, and the output image is zeroed |
-| A fault of the runtime | Cleared, as with Stop |
-| Load of a new program | Cleared: a load is a cold start |
-| A scenario test | Refused while a force is active: release it first |
+| Event                                               | Forces                                            |
+| --------------------------------------------------- | ------------------------------------------------- |
+| The program assigns the variable                    | The forced value wins                             |
+| A Modbus, MQTT or cloud message writes the variable | The forced value stays                            |
+| Pause, step and resume                              | Kept                                              |
+| Stop                                                | Cleared, and the output image is zeroed           |
+| A fault of the runtime                              | Cleared, as with Stop                             |
+| Load of a new program                               | Cleared: a load is a cold start                   |
+| A scenario test                                     | Refused while a force is active: release it first |
 
 A force carries the types of up to 32 bits. [Pause, resume, step and stop](../runtime/scheduler.md#pause-resume-step-and-stop) has the full table and its tests, including what a forced output does at the first commit after a resume.
 
@@ -66,14 +66,14 @@ On a USB CDC ACM console (the Raspberry Pi Pico) the device sees the link go whe
 
 ## What is verified, and what is not
 
-| Part | Verified | Level |
-| --- | --- | --- |
-| A force holds a value against the program and against an outside write | C and Zephyr tests, and a journey in the real application | Host and `native_sim` |
-| Forces are kept by pause and step, and cleared by stop and by a fault | Tests of the scheduler | Host, `native_sim` and QEMU |
-| A console force ends with its session: close, takeover, idle time, a falling line; the output follows the program | Engine and core tests; the device-link test of the real image (DTR cannot be lowered there) | Host and `native_sim` |
-| DTR on the Pico's USB port ends the session | Not run on a board | None |
-| An input of a program can be set or forced by its own name | Journey 37 in the real application | Host |
-| The effect of a force on a physical pin | Not tested | None |
+| Part                                                                                                              | Verified                                                                                    | Level                       |
+| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | --------------------------- |
+| A force holds a value against the program and against an outside write                                            | C and Zephyr tests, and a journey in the real application                                   | Host and `native_sim`       |
+| Forces are kept by pause and step, and cleared by stop and by a fault                                             | Tests of the scheduler                                                                      | Host, `native_sim` and QEMU |
+| A console force ends with its session: close, takeover, idle time, a falling line; the output follows the program | Engine and core tests; the device-link test of the real image (DTR cannot be lowered there) | Host and `native_sim`       |
+| DTR on the Pico's USB port ends the session                                                                       | Not run on a board                                                                          | None                        |
+| An input of a program can be set or forced by its own name                                                        | Journey 37 in the real application                                                          | Host                        |
+| The effect of a force on a physical pin                                                                           | Not tested                                                                                  | None                        |
 
 ## See also
 

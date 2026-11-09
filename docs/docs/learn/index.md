@@ -13,19 +13,19 @@ Learn is a course in PLC programming that runs inside the ZPLC application, in E
 
 ## What the course is
 
-| | |
-| --- | --- |
-| Lessons | 68, in 12 modules (0 to 11), about 26 hours in all |
-| Levels | Foundation 27, intermediate 29 and advanced 12 |
+|           |                                                                                                                              |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Lessons   | 68, in 12 modules (0 to 11), about 26 hours in all                                                                           |
+| Levels    | Foundation 27, intermediate 29 and advanced 12                                                                               |
 | Languages | Structured Text, Ladder, Function Block Diagram, Sequential Function Chart and Instruction List, each introduced by a lesson |
-| Tracks | Simulation, which 67 of them offer, and Hardware, which 34 of them offer |
-| Practice | Each lesson has six stages, two levels of hint, a reference solution on request and a scenario that grades your program |
+| Tracks    | Simulation, which 67 of them offer, and Hardware, which 34 of them offer                                                     |
+| Practice  | Each lesson has six stages, two levels of hint, a reference solution on request and a scenario that grades your program      |
 
 The [course outline](./course-outline.md) lists every module and lesson with its languages, tracks and time. The [course modules](./modules/index.md) and the [lesson plants](./plants.md) describe the simulated machines.
 
 ## Start from zero: the Ladder path
 
-If you have never programmed a PLC, take the Ladder path, *Ladder diagram from zero*. It is made of 21 of the lessons, from what a PLC is to the tested program of a machine, and it ends with a final project and a look at the other four languages. Ladder reads like the relay circuits it replaced, which is why most people start with it.
+If you have never programmed a PLC, take the Ladder path, _Ladder diagram from zero_. It is made of 21 of the lessons, from what a PLC is to the tested program of a machine, and it ends with a final project and a look at the other four languages. Ladder reads like the relay circuits it replaced, which is why most people start with it.
 
 Each lesson of the path opens with a **reading page**. The page covers the main area of the workbench, and the side and bottom panels stay visible around it. It explains one idea in plain words, shows Ladder figures and timing diagrams, and has **Check yourself** questions that are not graded or saved. Where an idea is easier to see than to read, the page has a **try-it lab**: a small Ladder program that runs live beside its diagram. Hold a push button or flip a switch, press **Run**, and watch the lamps and the rung change. **Pause** and **Reset** let you start over. The lab runs on its own simulation in the page and never touches your project.
 
@@ -43,7 +43,7 @@ Every lesson offers two levels of hint, and ZPLC records each level you open. Th
 
 The first lesson ends in a blinking output in simulation. When **Start the course** has opened it, choose **Build** and then **Compile** on the toolbar, then **Connect** and **Run**. **Run** stays disabled until the program is built. Open the **Watch** tab: the [**Live I/O** faceplate](./faceplate.md) lists the outputs of the program, and the lamp of the lesson turns on and off.
 
-Every lesson but one can be completed this way, with no board: the lesson index refuses a foundation or intermediate lesson that cannot. The exception, *Verify my board*, exists to check a board. Evidence level: host. A scripted run of the application on the development host (journey 57 of `packages/zplc-ide/scripts/journeys.ts`) follows exactly these visible controls from a fresh profile and sees the output change. How long a person takes is not measured: that needs a timed test with first-time users.
+Every lesson but one can be completed this way, with no board: the lesson index refuses a foundation or intermediate lesson that cannot. The exception, _Verify my board_, exists to check a board. Evidence level: host. A scripted run of the application on the development host (journey 57 of `packages/zplc-ide/scripts/journeys.ts`) follows exactly these visible controls from a fresh profile and sees the output change. How long a person takes is not measured: that needs a timed test with first-time users.
 
 ## Offline
 

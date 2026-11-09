@@ -24,11 +24,11 @@ Every protocol was exercised on the host and on `native_sim`, against servers an
 
 Protocol use depends on the interfaces of the board, and the manifest sorts boards into classes:
 
-| Class           | Interface                          | Protocols the firmware is built for  | Boards of the manifest                                           |
-| --------------- | ---------------------------------- | ------------------------------------ | ---------------------------------------------------------------- |
-| Serial-focused  | A UART, optionally an RS-485 stage | Modbus RTU                           | Raspberry Pi Pico, Waveshare RP2040-Zero, Arduino GIGA R1 (M7)   |
-| Network, Wi-Fi  | A wireless interface               | Modbus TCP, MQTT                     | ESP32-S3-DevKitC-1, Arduino Opta WiFi (M7)                       |
-| Network, wired  | An Ethernet interface              | Modbus TCP, MQTT                     | STM32 Nucleo-H743ZI, STM32F746G Discovery                        |
+| Class          | Interface                          | Protocols the firmware is built for | Boards of the manifest                                         |
+| -------------- | ---------------------------------- | ----------------------------------- | -------------------------------------------------------------- |
+| Serial-focused | A UART, optionally an RS-485 stage | Modbus RTU                          | Raspberry Pi Pico, Waveshare RP2040-Zero, Arduino GIGA R1 (M7) |
+| Network, Wi-Fi | A wireless interface               | Modbus TCP, MQTT                    | ESP32-S3-DevKitC-1, Arduino Opta WiFi (M7)                     |
+| Network, wired | An Ethernet interface              | Modbus TCP, MQTT                    | STM32 Nucleo-H743ZI, STM32F746G Discovery                      |
 
 ZPLC shows the Wi-Fi or Ethernet settings only for a board that has the hardware. The class of each board is in [Boards](../reference/boards.md).
 
@@ -108,12 +108,12 @@ Two checks hold this. The object files of the handlers of every board image are 
 
 ## What has been exercised
 
-| Part                                                                | Evidence level                         | What exists                                                                            |
-| ------------------------------------------------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------- |
-| Modbus server framing and mapping                                   | Host and `native_sim`                  | Tests that put frames in front of the server                                           |
-| Modbus TCP client transaction code                                  | Host and `native_sim`                  | One source file, run against a server written for the test on loopback                 |
-| Modbus RTU client                                                   | `native_sim` (interface parameters)    | Only the parameters are checked; no serial device is used                              |
-| MQTT client of the simulation runtime                               | Host                                   | A broker written for the test on loopback, under sanitizers                            |
-| MQTT client of the controller and its five profiles                 | `native_sim`                           | A broker written for the test on loopback, and hostile topics and payloads             |
-| Build of every board with its network options                       | Target build                           | Continuous integration                                                                 |
-| Any exchange over a wire, a serial line, a real broker or a service | None                                   | Not recorded; bench or manual evidence is still open                                   |
+| Part                                                                | Evidence level                      | What exists                                                                |
+| ------------------------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------- |
+| Modbus server framing and mapping                                   | Host and `native_sim`               | Tests that put frames in front of the server                               |
+| Modbus TCP client transaction code                                  | Host and `native_sim`               | One source file, run against a server written for the test on loopback     |
+| Modbus RTU client                                                   | `native_sim` (interface parameters) | Only the parameters are checked; no serial device is used                  |
+| MQTT client of the simulation runtime                               | Host                                | A broker written for the test on loopback, under sanitizers                |
+| MQTT client of the controller and its five profiles                 | `native_sim`                        | A broker written for the test on loopback, and hostile topics and payloads |
+| Build of every board with its network options                       | Target build                        | Continuous integration                                                     |
+| Any exchange over a wire, a serial line, a real broker or a service | None                                | Not recorded; bench or manual evidence is still open                       |

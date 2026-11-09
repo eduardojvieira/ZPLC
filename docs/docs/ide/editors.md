@@ -2,13 +2,13 @@
 
 ZPLC edits all five languages in one workbench. Structured Text and Instruction List are text. Ladder, Function Block Diagram and Sequential Function Chart are visual models, and each keeps its own model. This page covers what the editors share: the language service, the palettes, the keyboard, undo, diagnostics, breakpoints and online values. To learn to write in a language, use its guide: [Structured Text](../languages/st.md), [Instruction List](../languages/il.md), [Ladder Diagram](../languages/ld.md), [Function Block Diagram](../languages/fbd.md) or [Sequential Function Chart](../languages/sfc.md).
 
-| Language | Editor | Boundary |
-| --- | --- | --- |
-| ST | The primary text editor, with diagnostics and source navigation. | The supported IEC subset is the compiler contract. |
-| IL | A text editor. | What it accepts depends on the compiler subset. |
-| LD | Rungs, contacts, coils, branches, undo and visual validation. | The generated ST is read-only output. |
-| FBD | Typed ports, blocks, connections, undo and visual validation. | The generated ST is read-only output. |
-| SFC | Steps, transitions, actions, undo and visual validation. | The generated ST is read-only output. |
+| Language | Editor                                                           | Boundary                                           |
+| -------- | ---------------------------------------------------------------- | -------------------------------------------------- |
+| ST       | The primary text editor, with diagnostics and source navigation. | The supported IEC subset is the compiler contract. |
+| IL       | A text editor.                                                   | What it accepts depends on the compiler subset.    |
+| LD       | Rungs, contacts, coils, branches, undo and visual validation.    | The generated ST is read-only output.              |
+| FBD      | Typed ports, blocks, connections, undo and visual validation.    | The generated ST is read-only output.              |
+| SFC      | Steps, transitions, actions, undo and visual validation.         | The generated ST is read-only output.              |
 
 Visual models are validated and translated before the canonical compilation ([Compiler workflow](./compiler.md)). A shared backend does not give every language the same features or the same debugging, so build and run the project to learn what you get.
 
@@ -16,16 +16,16 @@ Visual models are validated and translated before the canonical compilation ([Co
 
 The Structured Text editor reads the whole project, not only the file in front of you.
 
-| Feature | What it does |
-| --- | --- |
-| Diagnostics | Every syntax and semantic error of every Structured Text file of the project, while you type (after a pause of 0.3 s), with the range the compiler's own front end gave. They appear as squiggles in the open files and in **Problems**, and go away the next time the project is checked and the error is gone. They are not build evidence; **Build** is. |
-| Completion | The variables, parameters and methods in scope; after a dot, the members of the type of what is before it; the blocks, functions and types of every file; the parameters of a call as `Name := `. Project names come before the standard library. |
-| Hover | What a name is, its type and where it is declared, also in another file. |
-| Go to definition, find references | Across the files of the project. A name is found by what it is, not by its spelling: `Count` of one program is not `Count` of another. |
-| Outline | The declarations of the file as a tree. |
-| Signature help | The parameters of the function, method or block being called, and the one the cursor is at, also when the arguments are named. |
-| Rename symbol (`F2`) | Renames what a name stands for in every file of the project, by scope and by type, never as text. It is refused, with the reason, when the new name is already declared where the old one is used, when a file of the project has a syntax error, when the name is mentioned in a Ladder, FBD, SFC or IL file (rename it there too), or when the name is a program, because the tasks of `zplc.json` run it by name. The changed files open as modified tabs; you save them. |
-| Format document (`Shift+Alt+F`) | Indents each line by the depth of its blocks and trims the ends of lines. It changes only white space at the start and end of a line: no line is added or removed, no token moves, and a comment is left as written. Formatting twice gives the same text. |
+| Feature                           | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Diagnostics                       | Every syntax and semantic error of every Structured Text file of the project, while you type (after a pause of 0.3 s), with the range the compiler's own front end gave. They appear as squiggles in the open files and in **Problems**, and go away the next time the project is checked and the error is gone. They are not build evidence; **Build** is.                                                                                                                  |
+| Completion                        | The variables, parameters and methods in scope; after a dot, the members of the type of what is before it; the blocks, functions and types of every file; the parameters of a call as `Name := `. Project names come before the standard library.                                                                                                                                                                                                                            |
+| Hover                             | What a name is, its type and where it is declared, also in another file.                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Go to definition, find references | Across the files of the project. A name is found by what it is, not by its spelling: `Count` of one program is not `Count` of another.                                                                                                                                                                                                                                                                                                                                       |
+| Outline                           | The declarations of the file as a tree.                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Signature help                    | The parameters of the function, method or block being called, and the one the cursor is at, also when the arguments are named.                                                                                                                                                                                                                                                                                                                                               |
+| Rename symbol (`F2`)              | Renames what a name stands for in every file of the project, by scope and by type, never as text. It is refused, with the reason, when the new name is already declared where the old one is used, when a file of the project has a syntax error, when the name is mentioned in a Ladder, FBD, SFC or IL file (rename it there too), or when the name is a program, because the tasks of `zplc.json` run it by name. The changed files open as modified tabs; you save them. |
+| Format document (`Shift+Alt+F`)   | Indents each line by the depth of its blocks and trims the ends of lines. It changes only white space at the start and end of a line: no line is added or removed, no token moves, and a comment is left as written. Formatting twice gives the same text.                                                                                                                                                                                                                   |
 
 Each feature is answered from one index of the project, built from the compiler's lexer and parser, with the text of the editor in place of its file. A file that does not parse yet still contributes the declarations its tokens give, so completion works in the middle of a line.
 
@@ -98,12 +98,12 @@ Evidence level: host. `packages/zplc-ide/src/editors/arrange.test.ts`, `packages
 
 A diagnostic of a visual or IL file names the element it is about, not a line of the generated Structured Text that you never wrote. The build reports it in the `element` field next to `path`, and the Problems panel selects it when you activate the problem:
 
-| Language | Element | Selected |
-| --- | --- | --- |
-| IL | `line:12`, a line of the IL source. A finding about the generated code is put on the IL line it came from. | The line. |
-| LD | `rung:rung_1`, or `rung:rung_1/cell:0,3` for the cell at row 0, column 3 (`rung:rung_1/element:c1` for a rung stored as a list of elements). | The rung and the element in the cell, scrolled into view. |
-| FBD | `block:and_1`, or `connection:w3` for a wire. A block that only reads a variable or holds a constant has no statement: a finding about its name is on the block that is written with it. | The block or the wire. |
-| SFC | `step:s1`, `transition:t1` (its condition) and `action:a1` (its body). | The step or the transition; an action is shown on the first step that uses it. |
+| Language | Element                                                                                                                                                                                  | Selected                                                                       |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| IL       | `line:12`, a line of the IL source. A finding about the generated code is put on the IL line it came from.                                                                               | The line.                                                                      |
+| LD       | `rung:rung_1`, or `rung:rung_1/cell:0,3` for the cell at row 0, column 3 (`rung:rung_1/element:c1` for a rung stored as a list of elements).                                             | The rung and the element in the cell, scrolled into view.                      |
+| FBD      | `block:and_1`, or `connection:w3` for a wire. A block that only reads a variable or holds a constant has no statement: a finding about its name is on the block that is written with it. | The block or the wire.                                                         |
+| SFC      | `step:s1`, `transition:t1` (its condition) and `action:a1` (its body).                                                                                                                   | The step or the transition; an action is shown on the first step that uses it. |
 
 The line and column of a diagram diagnostic stay those of the generated Structured Text, and the message says so. A diagram that is not valid yields one diagnostic for each element that is wrong, not one for the whole file. The element travels with the diagnostic from the build to the Problems panel, so the problem selects the element the build named even when the file in the editor has changed since the build ran.
 
@@ -113,12 +113,12 @@ Evidence level: host. `packages/zplc-ide/src/editors/diagnosticElement.test.ts` 
 
 A breakpoint can be set on the element of the diagram or the IL line you edited. The debug map relates each instruction range to that element, and the runtime stops at the first instruction of it. Like the dot on a line of a text file, it can be set before the program is loaded and is armed when Run or Deploy loads it.
 
-| Language | Where | How |
-| --- | --- | --- |
-| IL | The IL line. The map states lines of the IL source, as a text editor expects. | The gutter of the editor. |
-| LD | The rung: the first statement of its code. | The dot at the left of the rung, or `F9` on the selected rung. |
-| FBD | The block: the first statement it generates. A constant or a variable read has none. | `F9` on the selected block. |
-| SFC | A step stops where a transition enters it; a transition stops where it fires. A step that no transition enters has no place to stop. | `F9` on the selected step or transition. |
+| Language | Where                                                                                                                                | How                                                            |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| IL       | The IL line. The map states lines of the IL source, as a text editor expects.                                                        | The gutter of the editor.                                      |
+| LD       | The rung: the first statement of its code.                                                                                           | The dot at the left of the rung, or `F9` on the selected rung. |
+| FBD      | The block: the first statement it generates. A constant or a variable read has none.                                                 | `F9` on the selected block.                                    |
+| SFC      | A step stops where a transition enters it; a transition stops where it fires. A step that no transition enters has no place to stop. | `F9` on the selected step or transition.                       |
 
 A breakpoint is kept on the element, not on a generated line, so it follows its rung, block or step when the diagram changes and is built again. One whose element was deleted is forgotten, and one on an element with no statement is refused once a program is loaded. The element where the paused program is at is outlined in yellow. The program counters are the ones the runtime of the simulation and of a board take; stopping on a board has not been checked here.
 
@@ -126,13 +126,13 @@ A breakpoint is kept on the element, not on a generated line, so it follows its 
 
 While a program runs under ZPLC, each editor shows what the program holds, read through the debug map of the build of its file. The build records, for each element of a Ladder, FBD or SFC source, which variable of the generated program holds its state, so no editor guesses a name. A state that the map does not give is shown as unavailable (a dash, `UNAVAILABLE`), never as FALSE or IDLE.
 
-| Language | What is shown | Where it comes from |
-| --- | --- | --- |
-| ST | The value of each variable a line names, after the line (`Count=7  Ready=TRUE`). A member of a block instance or a structure is read through its instance. | The language service resolves what a name is; the map of the program of the file gives its address and type. A function or a function block shows nothing: its names belong to every instance. |
-| IL | The value of each declared variable an instruction uses, after the line. | The IL parser, and the map of the program of the file. |
-| LD | Power: an element is lit when power reaches it, through series and parallel paths and branches, and after a block it is the block's own output. The value of a contact or a coil, and the outputs of a block, below it. | The rung's power flow as an expression of the variables it is made of, evaluated with the values read. |
-| FBD | The value on each wire, and the outputs of each block; a variable block shows the value of its variable. | The temporary each consumed output was given, or the member of the instance. |
-| SFC | Which steps are active and for how long; for each transition, whether its condition holds and whether it fired in this scan. | The generated state of the chart: the flag and timer of each step, and the condition and fired flags of each transition. |
+| Language | What is shown                                                                                                                                                                                                           | Where it comes from                                                                                                                                                                            |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ST       | The value of each variable a line names, after the line (`Count=7  Ready=TRUE`). A member of a block instance or a structure is read through its instance.                                                              | The language service resolves what a name is; the map of the program of the file gives its address and type. A function or a function block shows nothing: its names belong to every instance. |
+| IL       | The value of each declared variable an instruction uses, after the line.                                                                                                                                                | The IL parser, and the map of the program of the file.                                                                                                                                         |
+| LD       | Power: an element is lit when power reaches it, through series and parallel paths and branches, and after a block it is the block's own output. The value of a contact or a coil, and the outputs of a block, below it. | The rung's power flow as an expression of the variables it is made of, evaluated with the values read.                                                                                         |
+| FBD      | The value on each wire, and the outputs of each block; a variable block shows the value of its variable.                                                                                                                | The temporary each consumed output was given, or the member of the instance.                                                                                                                   |
+| SFC      | Which steps are active and for how long; for each transition, whether its condition holds and whether it fired in this scan.                                                                                            | The generated state of the chart: the flag and timer of each step, and the condition and fired flags of each transition.                                                                       |
 
 A value is read in the program of its own file: two programs that each have a `_rung1_result` have two values. The variables an editor shows are read with the poll of the Watch table, and only the regions that show a value draw it again.
 
@@ -144,13 +144,13 @@ Evidence level: host, against the real runtime. `packages/zplc-ide/src/monitorin
 
 Every place that shows the value of a signal uses the same five states: the inline values of the code editor, the Watch table, Ladder, FBD, SFC, the instance monitor, the controller view and the recorded scenarios of the Lab. Colour never carries a state alone.
 
-| State | Colour | Glyph | Also shown as |
-| --- | --- | --- | --- |
-| TRUE | Green: a confirmed TRUE, or RUN, and nothing else | `●` | The word TRUE, `T` in a Ladder badge; power flow is a heavier wire |
-| FALSE | Neutral grey, never red | `○` | The word FALSE, `F` in a Ladder badge |
-| Unknown | Neutral grey, dashed outline | `◌` | A dash or the word UNAVAILABLE; a value that was not read is never shown as FALSE |
-| Forced | Amber | `◆` | The word FORCED; a forced value is drawn as forced, not as the value it holds |
-| Fault | Red, only for a fault | `▲` | The word FAULT, read by a screen reader as "Fault" |
+| State   | Colour                                            | Glyph | Also shown as                                                                     |
+| ------- | ------------------------------------------------- | ----- | --------------------------------------------------------------------------------- |
+| TRUE    | Green: a confirmed TRUE, or RUN, and nothing else | `●`   | The word TRUE, `T` in a Ladder badge; power flow is a heavier wire                |
+| FALSE   | Neutral grey, never red                           | `○`   | The word FALSE, `F` in a Ladder badge                                             |
+| Unknown | Neutral grey, dashed outline                      | `◌`   | A dash or the word UNAVAILABLE; a value that was not read is never shown as FALSE |
+| Forced  | Amber                                             | `◆`   | The word FORCED; a forced value is drawn as forced, not as the value it holds     |
+| Fault   | Red, only for a fault                             | `▲`   | The word FAULT, read by a screen reader as "Fault"                                |
 
 A number is not a state: it is drawn in the plain value colour with no glyph. A wire in FBD is heavier for TRUE, forced and fault values and dashed for a value that was not read.
 
@@ -158,11 +158,11 @@ A number is not a state: it is drawn in the plain value colour with no glyph. A 
 
 A variable is drawn as forced in Ladder, FBD and SFC when the force table holds it at the address the debug map gives that variable in the file being shown; a variable of the same name in another program is not marked. It is drawn as a fault when the poll of the debugger asked the runtime for it and got no value, or the read failed, and it stays a fault until a later poll reads it.
 
-| Editor | What carries the cue |
-| --- | --- |
-| Ladder | The contact or coil that names the variable. |
-| FBD | The pin of a block whose variable is forced or unreadable (an input pin takes the state of the output wired to it), the wire from that pin, and a variable block, which also says FORCED or FAULT in words. |
-| SFC | A step whose flag is forced or unreadable; a transition when its own condition variable is, or when a variable named in its condition is forced. |
+| Editor | What carries the cue                                                                                                                                                                                        |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ladder | The contact or coil that names the variable.                                                                                                                                                                |
+| FBD    | The pin of a block whose variable is forced or unreadable (an input pin takes the state of the output wired to it), the wire from that pin, and a variable block, which also says FORCED or FAULT in words. |
+| SFC    | A step whose flag is forced or unreadable; a transition when its own condition variable is, or when a variable named in its condition is forced.                                                            |
 
 Nothing in the visual editors, the controller view, the Watch table or the notification list glows, pulses or animates continuously. A loading spinner may turn, and it stops under reduced motion.
 

@@ -31,12 +31,12 @@ flowchart TD
 
 ## Dónde se ejecuta
 
-| Runtime | Función | Qué establecen sus resultados |
-| --- | --- | --- |
-| Simulación nativa (`zplc_runtime`) | Runtime de host sin ventana para compilar, probar, trazar y reproducir | Evidencia de host: la lógica, no los tiempos ni la E/S de una placa |
-| Runtime de software (WebAssembly) | Simulación de respaldo de la aplicación ZPLC cuando el runtime nativo no puede arrancar | Evidencia de host, degradada; véase [el runtime de software](./browser-runtime.md) |
-| Firmware Zephyr | Una imagen por perfil de placa, con los adaptadores del HAL de esa placa | Depende del perfil; véase [compatibilidad de hardware](../reference/capabilities-evidence.md) |
-| Puerto FreeRTOS | Un segundo puerto embebido, compilado contra el simulador POSIX de FreeRTOS | Host (simulador); ninguna placa FreeRTOS está calificada |
+| Runtime                            | Función                                                                                 | Qué establecen sus resultados                                                                 |
+| ---------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Simulación nativa (`zplc_runtime`) | Runtime de host sin ventana para compilar, probar, trazar y reproducir                  | Evidencia de host: la lógica, no los tiempos ni la E/S de una placa                           |
+| Runtime de software (WebAssembly)  | Simulación de respaldo de la aplicación ZPLC cuando el runtime nativo no puede arrancar | Evidencia de host, degradada; véase [el runtime de software](./browser-runtime.md)            |
+| Firmware Zephyr                    | Una imagen por perfil de placa, con los adaptadores del HAL de esa placa                | Depende del perfil; véase [compatibilidad de hardware](../reference/capabilities-evidence.md) |
+| Puerto FreeRTOS                    | Un segundo puerto embebido, compilado contra el simulador POSIX de FreeRTOS             | Host (simulador); ninguna placa FreeRTOS está calificada                                      |
 
 ## De la compilación a la máquina en marcha
 
@@ -48,15 +48,15 @@ Compilar el firmware, grabarlo, cargar un programa y ejecutarlo o depurarlo son 
 
 ## Las páginas de esta sección
 
-| Página | Léala para saber |
-| --- | --- |
-| [Planificador](./scheduler.md) | Cómo funciona un ciclo, cómo se ordenan las tareas, qué hace un plazo incumplido y qué hacen las salidas cuando el programa se detiene |
-| [Modelo de memoria](./memory-model.md) | Las cinco regiones, qué comparte una tarea y qué le pertenece, cómo llega a los datos un hilo ajeno al ciclo |
-| [Persistencia](./persistence.md) | Qué se almacena, qué restaura un reinicio y el presupuesto de desgaste de la flash de cada placa |
-| [Contrato del HAL](./hal-contract.md) | Qué pide el núcleo a una plataforma y qué hace con ello cada uno de los cuatro puertos |
-| [Runtime de software](./browser-runtime.md) | Qué comparte la simulación WebAssembly con el firmware y qué le falta |
-| [Biblioteca estándar](./stdlib.md) | Qué son las funciones y los bloques de función integrados y dónde están las reglas de cada uno |
-| [API del runtime](../reference/runtime-api.md) | La superficie pública en C, generada a partir de los encabezados |
+| Página                                         | Léala para saber                                                                                                                       |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| [Planificador](./scheduler.md)                 | Cómo funciona un ciclo, cómo se ordenan las tareas, qué hace un plazo incumplido y qué hacen las salidas cuando el programa se detiene |
+| [Modelo de memoria](./memory-model.md)         | Las cinco regiones, qué comparte una tarea y qué le pertenece, cómo llega a los datos un hilo ajeno al ciclo                           |
+| [Persistencia](./persistence.md)               | Qué se almacena, qué restaura un reinicio y el presupuesto de desgaste de la flash de cada placa                                       |
+| [Contrato del HAL](./hal-contract.md)          | Qué pide el núcleo a una plataforma y qué hace con ello cada uno de los cuatro puertos                                                 |
+| [Runtime de software](./browser-runtime.md)    | Qué comparte la simulación WebAssembly con el firmware y qué le falta                                                                  |
+| [Biblioteca estándar](./stdlib.md)             | Qué son las funciones y los bloques de función integrados y dónde están las reglas de cada uno                                         |
+| [API del runtime](../reference/runtime-api.md) | La superficie pública en C, generada a partir de los encabezados                                                                       |
 
 ## Qué cubre la evidencia
 

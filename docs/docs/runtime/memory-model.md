@@ -12,13 +12,13 @@ A ZPLC program sees one flat address space split into five regions. This page sa
 
 ## The five regions
 
-| Region | Base | Role | Size |
-| --- | ---: | --- | --- |
-| IPI | `0x0000` | Input process image | 4 KB |
-| OPI | `0x1000` | Output process image | 4 KB |
-| WORK | `0x2000` | Working memory: the variables of the program | 8192 bytes by default |
-| RETAIN | `0x4000` | Retentive memory, saved and restored across a restart | 4096 bytes by default |
-| CODE | `0x5000` | The loaded bytecode | up to 45056 bytes by default |
+| Region |     Base | Role                                                  | Size                         |
+| ------ | -------: | ----------------------------------------------------- | ---------------------------- |
+| IPI    | `0x0000` | Input process image                                   | 4 KB                         |
+| OPI    | `0x1000` | Output process image                                  | 4 KB                         |
+| WORK   | `0x2000` | Working memory: the variables of the program          | 8192 bytes by default        |
+| RETAIN | `0x4000` | Retentive memory, saved and restored across a restart | 4096 bytes by default        |
+| CODE   | `0x5000` | The loaded bytecode                                   | up to 45056 bytes by default |
 
 ```mermaid
 flowchart LR
@@ -38,11 +38,11 @@ The last 16 bytes of IPI are reserved for system data that a program can read: t
 
 Every task runs in its own VM instance, but the memory is one.
 
-| Shared by all tasks | Private to each VM instance |
-| --- | --- |
-| IPI and OPI | The program counter, stack pointer and base pointer |
-| The WORK and RETAIN address space | The call depth, flags and error state |
-| The loaded code | The breakpoint table, the evaluation stack and the call stack |
+| Shared by all tasks               | Private to each VM instance                                   |
+| --------------------------------- | ------------------------------------------------------------- |
+| IPI and OPI                       | The program counter, stack pointer and base pointer           |
+| The WORK and RETAIN address space | The call depth, flags and error state                         |
+| The loaded code                   | The breakpoint table, the evaluation stack and the call stack |
 
 That split is why several tasks can exchange data through global variables without sharing an execution context. The stack depth (`ZPLC_STACK_MAX_DEPTH`, 256), the call depth (`ZPLC_CALL_STACK_MAX`, 32) and the breakpoint table (`ZPLC_MAX_BREAKPOINTS`, 16) are bounded, so a program cannot grow them.
 

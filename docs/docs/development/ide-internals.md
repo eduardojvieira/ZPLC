@@ -2,7 +2,7 @@
 slug: /development/ide-internals
 title: IDE internals
 sidebar_label: IDE internals
-description: "For contributors to the ZPLC application: how to add a translated text and what the i18n guard enforces, what loads at start and how the start-up and render budgets are checked, and what is drawn again when a watched value changes."
+description: 'For contributors to the ZPLC application: how to add a translated text and what the i18n guard enforces, what loads at start and how the start-up and render budgets are checked, and what is drawn again when a watched value changes.'
 ---
 
 # IDE internals
@@ -48,15 +48,15 @@ If a key is missing from a catalog at run time, ZPLC shows the English text, or 
 
 `bun tools/ci/i18n-guard.ts` runs as part of `bun run lint:ide`. With `--list` it prints every hard-coded string with its line, and with `--write` it lowers the counts that shrank.
 
-| Rule                                                          | What fails                                                                                                                                                                                                                                                       | Requirement        |
-| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `hard-coded-text`, `hard-coded-attribute`                     | JSX text with letters, or a string shown as a JSX child, or a string in `aria-label`, `placeholder`, `alt`, `label`, `tooltip`, `title` or `description` of a component. Text inside `<code>`, `<kbd>`, `<pre>`, `<samp>` and `<var>` is technical vocabulary and does not count | UX-029             |
-| `hard-coded-message`                                          | A sentence in a plain `.ts` module that shows text to the person (a presentation, a flow, a keyboard): in a `say`, `title`, `label`, `detail`, `message`, `description`, `hint`, `heading`, `summary`, `placeholder`, `tooltip` or `ariaLabel` property, in the first argument of `announce()`, or in what a function or table named `...Label`, `...Message`, `...Text`, `...Title`, `...Hint` and similar returns or holds | UX-029             |
-| `missing-key`, `extra-key`, `placeholder-mismatch`            | The two catalogs differ in their keys or in their `{placeholders}`                                                                                                                                                                                               | UX-029             |
-| `sentence-case`                                               | A capital letter in the middle of a sentence that is not an acronym, a code token, a quoted label or a name on the `PROPER_NOUNS` list                                                                                                                           | UX-031             |
-| `exclamation`                                                 | An exclamation mark, `!` or `¡`                                                                                                                                                                                                                                  | UX-031             |
-| `internal-term`                                               | A term of the engineering team: `candidate`, `link zplc.json`, `stopgap` and their Spanish forms                                                                                                                                                                 | UX-031             |
-| `voseo`                                                       | Rioplatense voseo in the Spanish text (decision D-10, neutral register)                                                                                                                                                                                          | UX-030             |
+| Rule                                               | What fails                                                                                                                                                                                                                                                                                                                                                                                                                   | Requirement |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| `hard-coded-text`, `hard-coded-attribute`          | JSX text with letters, or a string shown as a JSX child, or a string in `aria-label`, `placeholder`, `alt`, `label`, `tooltip`, `title` or `description` of a component. Text inside `<code>`, `<kbd>`, `<pre>`, `<samp>` and `<var>` is technical vocabulary and does not count                                                                                                                                             | UX-029      |
+| `hard-coded-message`                               | A sentence in a plain `.ts` module that shows text to the person (a presentation, a flow, a keyboard): in a `say`, `title`, `label`, `detail`, `message`, `description`, `hint`, `heading`, `summary`, `placeholder`, `tooltip` or `ariaLabel` property, in the first argument of `announce()`, or in what a function or table named `...Label`, `...Message`, `...Text`, `...Title`, `...Hint` and similar returns or holds | UX-029      |
+| `missing-key`, `extra-key`, `placeholder-mismatch` | The two catalogs differ in their keys or in their `{placeholders}`                                                                                                                                                                                                                                                                                                                                                           | UX-029      |
+| `sentence-case`                                    | A capital letter in the middle of a sentence that is not an acronym, a code token, a quoted label or a name on the `PROPER_NOUNS` list                                                                                                                                                                                                                                                                                       | UX-031      |
+| `exclamation`                                      | An exclamation mark, `!` or `¡`                                                                                                                                                                                                                                                                                                                                                                                              | UX-031      |
+| `internal-term`                                    | A term of the engineering team: `candidate`, `link zplc.json`, `stopgap` and their Spanish forms                                                                                                                                                                                                                                                                                                                             | UX-031      |
+| `voseo`                                            | Rioplatense voseo in the Spanish text (decision D-10, neutral register)                                                                                                                                                                                                                                                                                                                                                      | UX-030      |
 
 The tests, the i18n module itself, the component gallery, the MCP server, the command line, the compiler and the language service are out of the guard's reach: the last four speak to programs and keep the compiler's own English.
 
@@ -80,12 +80,12 @@ The same build is checked for the network (LRN-030): the content security policy
 
 The test sets a rule, not a number. These sizes are from a production build of this tree on a Linux development machine on 2026-11-06, with source maps off, so treat them as a baseline to compare against and not as a limit:
 
-| Measure                                              | Value                           |
-| ---------------------------------------------------- | ------------------------------- |
-| JavaScript loaded at start (entry and React vendor)  | about 3,800 KB in 2 chunks      |
-| JavaScript in the whole build                        | about 8,270 KB in 28 chunks     |
-| CSS in the whole build                               | about 240 KB                    |
-| The Monaco chunk, loaded when a project opens        | about 3,600 KB                  |
+| Measure                                             | Value                       |
+| --------------------------------------------------- | --------------------------- |
+| JavaScript loaded at start (entry and React vendor) | about 3,800 KB in 2 chunks  |
+| JavaScript in the whole build                       | about 8,270 KB in 28 chunks |
+| CSS in the whole build                              | about 240 KB                |
+| The Monaco chunk, loaded when a project opens       | about 3,600 KB              |
 
 To measure again, run `bun test packages/zplc-ide/scripts/welcomeBundle.test.ts` for the rules, and `vite build` in `packages/zplc-ide` with `build.manifest` on to read the sizes from `dist/.vite/manifest.json`.
 
@@ -108,13 +108,13 @@ A watched variable is read from the runtime about ten times a second, and a pers
 
 `packages/zplc-ide/src/store/regionSubscriptions.test.ts` has no DOM. It runs the real selectors against the real store and counts how often each selection changes, which is what decides a render. With 200 watched values and 2,000 lines of source it holds:
 
-| Event                                                             | Draws again                                                                                                       |
-| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| 100 readings of the 200 values (about ten seconds)                | No region that shows none of them: all ten counts are 0                                                           |
-| A region that shows five of the values, ten of 100 readings change them | That region 10 times, and a region that shows all 200 values 100 times                                            |
-| 100 readings that return the values they already had              | Nothing: no publication, and the state is the same object                                                         |
-| 100 keystrokes in the file                                        | The tab bar and editor (`openFiles`) 100 times, the Console at least once, and the toolbar, sidebar, Welcome, theme, project settings, file tree and file info 0 times |
-| 100 readings with a keystroke on every second one                 | `openFiles` and the Console 50 times each, and the regions above 0 times                                          |
+| Event                                                                   | Draws again                                                                                                                                                            |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 100 readings of the 200 values (about ten seconds)                      | No region that shows none of them: all ten counts are 0                                                                                                                |
+| A region that shows five of the values, ten of 100 readings change them | That region 10 times, and a region that shows all 200 values 100 times                                                                                                 |
+| 100 readings that return the values they already had                    | Nothing: no publication, and the state is the same object                                                                                                              |
+| 100 keystrokes in the file                                              | The tab bar and editor (`openFiles`) 100 times, the Console at least once, and the toolbar, sidebar, Welcome, theme, project settings, file tree and file info 0 times |
+| 100 readings with a keystroke on every second one                       | `openFiles` and the Console 50 times each, and the regions above 0 times                                                                                               |
 
 Evidence level: host. No render was timed in a browser, and no frame rate was measured.
 

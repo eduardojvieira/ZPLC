@@ -76,13 +76,13 @@ Nivel de evidencia: host. `packages/zplc-ide/electron/recentProjects.test.ts` y 
 
 En el modo Archivos del navegador, el encabezado tiene **Nuevo archivo** y **Nueva carpeta**. Un clic derecho sobre un archivo o una carpeta, o `F2` para renombrar, abre sus acciones:
 
-| Acción | Qué hace |
-| --- | --- |
-| **Renombrar** | Renombra el archivo o la carpeta en disco. Su pestaña abierta, su texto sin guardar y sus puntos de parada lo siguen, y una tarea que ejecuta un programa renombrado se actualiza en `zplc.json` cuando la configuración del proyecto no tiene ediciones sin guardar. |
-| **Duplicar** | Copia un archivo junto al original como `Nombre_copy.ext` (luego `_copy2`, y así sucesivamente), a partir del texto que muestra el editor. |
-| **Mover a…** | Mueve un archivo o una carpeta a otra carpeta del proyecto. Se informa de un programa movido fuera de `src`: la compilación lee solo los archivos que están directamente en `src`. |
-| **Eliminar** / **Eliminar carpeta** | Lo borra del disco tras una confirmación que nombra cualquier archivo que contenga con cambios sin guardar. |
-| **Nueva carpeta…** | En una carpeta: crea una carpeta dentro de ella. |
+| Acción                              | Qué hace                                                                                                                                                                                                                                                              |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Renombrar**                       | Renombra el archivo o la carpeta en disco. Su pestaña abierta, su texto sin guardar y sus puntos de parada lo siguen, y una tarea que ejecuta un programa renombrado se actualiza en `zplc.json` cuando la configuración del proyecto no tiene ediciones sin guardar. |
+| **Duplicar**                        | Copia un archivo junto al original como `Nombre_copy.ext` (luego `_copy2`, y así sucesivamente), a partir del texto que muestra el editor.                                                                                                                            |
+| **Mover a…**                        | Mueve un archivo o una carpeta a otra carpeta del proyecto. Se informa de un programa movido fuera de `src`: la compilación lee solo los archivos que están directamente en `src`.                                                                                    |
+| **Eliminar** / **Eliminar carpeta** | Lo borra del disco tras una confirmación que nombra cualquier archivo que contenga con cambios sin guardar.                                                                                                                                                           |
+| **Nueva carpeta…**                  | En una carpeta: crea una carpeta dentro de ella.                                                                                                                                                                                                                      |
 
 ZPLC rechaza un nombre que ya está en uso, o que la compilación lee como igual al de otro programa (diferencias de mayúsculas, `main.ld` y `main.ld.json`, el mismo nombre en otra carpeta), y lo dice en el diálogo sin cambiar nada.
 
@@ -135,15 +135,15 @@ Nivel de evidencia: host. `packages/zplc-ide/electron/recoveryStore.test.ts` cub
 
 Las preferencias son suyas, no de un proyecto: se aplican a todos los proyectos y se guardan para su cuenta de usuario. Ábralas desde el desplegable **Preferencias** de la pantalla de bienvenida, o en la parte superior de la pestaña Configuración del proyecto dentro de un proyecto.
 
-| Preferencia | Opciones | Por defecto |
-| --- | --- | --- |
-| Tema | Claro, Oscuro, Alto contraste | Sistema |
-| Tamaño de letra del editor | 10 a 32 px | 14 px |
-| Tamaño de tabulación | 2, 3, 4 u 8 espacios | 4; la sangría propia de un archivo no la reemplaza |
-| Densidad | Cómoda, Compacta | Cómoda; la compacta escala el espaciado de toda la ventana |
-| Idioma | Automático, English, Español | Automático: sigue el idioma del sistema operativo (vea [Idioma de la interfaz](#idioma-de-la-interfaz)) |
-| Guardado automático | Desactivado, o después de 5, 15, 30 o 60 segundos sin escribir | Desactivado |
-| Buscar una versión más reciente al iniciar ZPLC | Activado o desactivado, y un botón **Buscar ahora** | Desactivado |
+| Preferencia                                     | Opciones                                                       | Por defecto                                                                                             |
+| ----------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Tema                                            | Claro, Oscuro, Alto contraste                                  | Sistema                                                                                                 |
+| Tamaño de letra del editor                      | 10 a 32 px                                                     | 14 px                                                                                                   |
+| Tamaño de tabulación                            | 2, 3, 4 u 8 espacios                                           | 4; la sangría propia de un archivo no la reemplaza                                                      |
+| Densidad                                        | Cómoda, Compacta                                               | Cómoda; la compacta escala el espaciado de toda la ventana                                              |
+| Idioma                                          | Automático, English, Español                                   | Automático: sigue el idioma del sistema operativo (vea [Idioma de la interfaz](#idioma-de-la-interfaz)) |
+| Guardado automático                             | Desactivado, o después de 5, 15, 30 o 60 segundos sin escribir | Desactivado                                                                                             |
+| Buscar una versión más reciente al iniciar ZPLC | Activado o desactivado, y un botón **Buscar ahora**            | Desactivado                                                                                             |
 
 El guardado automático escribe los archivos modificados con el mismo guardado que **Guardar todo**, sin una línea en Salida por cada guardado. Un archivo que no se puede escribir sigue modificado y se informa. Junto con las copias de recuperación, un cierre inesperado cuesta como máximo lo escrito en el último segundo.
 
@@ -167,17 +167,17 @@ ZPLC mantiene una sola lista de comandos, y cada forma de iniciar un comando la 
 - **Paleta de comandos.** Pulse `Ctrl+Mayús+P` (`Cmd+Mayús+P` en macOS), escriba unas letras de un comando, elija con las flechas y pulse Enter. La paleta lista todos los comandos, así que cada uno es accesible desde el teclado aunque no tenga atajo. Un comando que no se aplica ahora, como Cargar sin una conexión, se lista como no disponible y no se ejecuta.
 - **Referencia de atajos.** Abra **Ayuda** > **Atajos de teclado**, o pulse `Ctrl+K` y luego `Ctrl+S`, para ver cada comando con su atajo.
 
-| Atajo | Comando |
-| --- | --- |
-| `Ctrl+S` | Guardar |
-| `Ctrl+B` | Compilar el proyecto |
-| `F5` | Ejecutar, o reanudar si está en pausa |
-| `Mayús+F5` | Detener |
-| `F6` | Pausar |
-| `F10` | Avanzar un ciclo |
-| `F8` | Reiniciar el runtime |
-| `Ctrl+Mayús+P` | Paleta de comandos |
-| `Ctrl+K`, luego `Ctrl+S` | Atajos de teclado |
+| Atajo                    | Comando                               |
+| ------------------------ | ------------------------------------- |
+| `Ctrl+S`                 | Guardar                               |
+| `Ctrl+B`                 | Compilar el proyecto                  |
+| `F5`                     | Ejecutar, o reanudar si está en pausa |
+| `Mayús+F5`               | Detener                               |
+| `F6`                     | Pausar                                |
+| `F10`                    | Avanzar un ciclo                      |
+| `F8`                     | Reiniciar el runtime                  |
+| `Ctrl+Mayús+P`           | Paleta de comandos                    |
+| `Ctrl+K`, luego `Ctrl+S` | Atajos de teclado                     |
 
 `Cmd` reemplaza a `Ctrl` en macOS. Los atajos que actúan sobre un programa (`F5`, `F6`, `F10`, `F8`, `Mayús+F5`) dejan a un campo de texto sus propias teclas.
 
@@ -195,12 +195,12 @@ Las acciones de hardware son aparte: compilar el firmware del runtime, grabarlo,
 
 La pausa, la reanudación y el paso mantienen el estado lógico del programa donde está, y Detener lo descarta. La tabla vale para la simulación nativa y para el planificador de Zephyr de una placa conectada.
 
-| Acción | Imagen de salida | Forzados | El ciclo |
-| --- | --- | --- | --- |
-| Pausar | Se conserva | Se conservan | Pausa entre ciclos. |
-| Avanzar un ciclo | Se conserva, y muestra el ciclo ejecutado | Se conservan | Ejecuta un ciclo completo, o termina el ciclo detenido en un punto de parada. |
-| Reanudar | Se conserva | Se conservan | Un ciclo detenido en un punto de parada continúa desde allí. |
-| Detener | A cero | Se borran | Cada tarea vuelve a su punto de entrada, y se descarta un ciclo que interrumpió un punto de parada. |
+| Acción           | Imagen de salida                          | Forzados     | El ciclo                                                                                            |
+| ---------------- | ----------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------- |
+| Pausar           | Se conserva                               | Se conservan | Pausa entre ciclos.                                                                                 |
+| Avanzar un ciclo | Se conserva, y muestra el ciclo ejecutado | Se conservan | Ejecuta un ciclo completo, o termina el ciclo detenido en un punto de parada.                       |
+| Reanudar         | Se conserva                               | Se conservan | Un ciclo detenido en un punto de parada continúa desde allí.                                        |
+| Detener          | A cero                                    | Se borran    | Cada tarea vuelve a su punto de entrada, y se descarta un ciclo que interrumpió un punto de parada. |
 
 Una falla borra la imagen y los forzados igual que Detener. En una placa, la pausa, el paso y Detener además llevan las salidas físicas a su estado seguro, apagadas. [Pausa, reanudación, paso y parada](../runtime/scheduler.md#pausa-reanudación-paso-y-parada) tiene la tabla completa y las pruebas de Zephyr que la respaldan, ejecutadas en `native_sim` y QEMU sin medir ninguna placa. Para la simulación nativa, las comprobaciones están en `firmware/lib/zplc_core/tests/test_native_runtime_session.c`, donde Detener también pone a cero la imagen de entrada.
 

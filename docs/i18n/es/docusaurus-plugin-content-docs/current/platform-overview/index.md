@@ -30,12 +30,12 @@ flowchart LR
   Core --> Board
 ```
 
-| Parte                                     | Qué es                                                                                                                                                 | Dónde está                                             |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
-| **Aplicación ZPLC**                       | El programa de escritorio en el que escribe, compila, prueba y simula. También contiene el curso Aprender.                                             | `packages/zplc-ide/`                                   |
+| Parte                                     | Qué es                                                                                                                                              | Dónde está                                             |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| **Aplicación ZPLC**                       | El programa de escritorio en el que escribe, compila, prueba y simula. También contiene el curso Aprender.                                          | `packages/zplc-ide/`                                   |
 | **Compilador**                            | Convierte texto estructurado, lista de instrucciones, escalera, diagrama de bloques de función y diagrama funcional secuencial en bytecode `.zplc`. | `packages/zplc-ide/src/compiler/` y los transpiladores |
-| **Núcleo del runtime**                    | Un intérprete de bytecode en C99 con validación de programas, estado del runtime y un planificador portátil. El mismo código corre en todas partes.    | `firmware/lib/zplc_core/`                              |
-| **Capa de abstracción de hardware (HAL)** | La interfaz pequeña que el núcleo usa para relojes, almacenamiento, E/S y transportes. Un puerto la implementa para cada plataforma.                     | `firmware/lib/zplc_core/` y los puertos de las placas    |
+| **Núcleo del runtime**                    | Un intérprete de bytecode en C99 con validación de programas, estado del runtime y un planificador portátil. El mismo código corre en todas partes. | `firmware/lib/zplc_core/`                              |
+| **Capa de abstracción de hardware (HAL)** | La interfaz pequeña que el núcleo usa para relojes, almacenamiento, E/S y transportes. Un puerto la implementa para cada plataforma.                | `firmware/lib/zplc_core/` y los puertos de las placas  |
 
 ## Cómo viaja un programa
 
@@ -55,7 +55,7 @@ ZPLC indica el nivel de evidencia de cada afirmación. Un resultado en un nivel 
 
 | Nivel                  | Qué demuestra                                                                                  |
 | ---------------------- | ---------------------------------------------------------------------------------------------- |
-| Host                   | La lógica es correcta en su computadora, con el reloj virtual del simulador.                        |
+| Host                   | La lógica es correcta en su computadora, con el reloj virtual del simulador.                   |
 | QEMU y `native_sim`    | El runtime y el planificador corren en un procesador emulado. Sin placa.                       |
 | Compilación de destino | El firmware de una placa compila y cabe en su presupuesto de flash y RAM (`cross-build`).      |
 | Banco y manual         | Una persona lo ejecutó en una placa física y lo registró. Hoy ninguna placa tiene un registro. |

@@ -43,13 +43,13 @@ El simulador guarda su almacén en la carpeta `.zplc` de su directorio personal,
 
 ## 3. Qué descarta los valores
 
-| Evento | Valores retentivos |
-| --- | --- |
-| Detener y ejecutar de nuevo, o un reinicio, del mismo programa | Se restauran |
-| Una recompilación del programa, aunque solo mueva código | Se descartan: el programa tiene otra identidad |
-| Un comando de reinicio | Se descartan: es un reinicio en frío |
-| Se carga otro programa | Se descartan: el registro almacenado pertenece al otro programa |
-| Una falla | La detención de un runtime con falla no almacena nada |
+| Evento                                                         | Valores retentivos                                              |
+| -------------------------------------------------------------- | --------------------------------------------------------------- |
+| Detener y ejecutar de nuevo, o un reinicio, del mismo programa | Se restauran                                                    |
+| Una recompilación del programa, aunque solo mueva código       | Se descartan: el programa tiene otra identidad                  |
+| Un comando de reinicio                                         | Se descartan: es un reinicio en frío                            |
+| Se carga otro programa                                         | Se descartan: el registro almacenado pertenece al otro programa |
+| Una falla                                                      | La detención de un runtime con falla no almacena nada           |
 
 El estado del runtime dice cuál de estos casos ocurrió, con un `reason` como `restored`, `none`, `identity_mismatch` o `layout_mismatch`. Léalo en el campo `retain` del estado de la sesión, o con `zplc sched status` en una placa.
 
@@ -68,12 +68,12 @@ La Nucleo-H743ZI guarda sus registros en ZMS, que solo `native_sim` ha ejecutado
 
 ## Qué está verificado y qué no
 
-| Parte | Verificado | Nivel |
-| --- | --- | --- |
+| Parte                                                                        | Verificado                                 | Nivel               |
+| ---------------------------------------------------------------------------- | ------------------------------------------ | ------------------- |
 | El formato del registro, las ranuras alternas, la restauración y los motivos | Pruebas con fallas inyectadas en cada paso | Host y `native_sim` |
-| Los valores sobreviven a una detención y un arranque del runtime nativo | Prueba de la sesión nativa | Host |
-| Un corte de energía en una placa | Sin probar | Ninguno |
-| Cuánto retrasa una escritura en flash a un ciclo | Sin medir | Ninguno |
+| Los valores sobreviven a una detención y un arranque del runtime nativo      | Prueba de la sesión nativa                 | Host                |
+| Un corte de energía en una placa                                             | Sin probar                                 | Ninguno             |
+| Cuánto retrasa una escritura en flash a un ciclo                             | Sin medir                                  | Ninguno             |
 
 ## Vea también
 

@@ -20,13 +20,13 @@ ZPLC is the desktop application for writing, building, testing, simulating and r
 
 ## What the application owns
 
-| Area | What it does |
-| --- | --- |
-| Project | Reads and writes the files of the folder, `zplc.json` included, and exports a reviewed version 2 project. |
-| Editors | A text editor for Structured Text and Instruction List, and a model editor for each graphical language. |
-| Validation | Compiler diagnostics, scenario tests, safety checks, traces and the native simulation. |
-| Evidence | Records each result with its scope, and never presents a host result as a hardware result. |
-| Hardware | Connecting and deploying are explicit actions of a person, after a compatibility check. |
+| Area       | What it does                                                                                              |
+| ---------- | --------------------------------------------------------------------------------------------------------- |
+| Project    | Reads and writes the files of the folder, `zplc.json` included, and exports a reviewed version 2 project. |
+| Editors    | A text editor for Structured Text and Instruction List, and a model editor for each graphical language.   |
+| Validation | Compiler diagnostics, scenario tests, safety checks, traces and the native simulation.                    |
+| Evidence   | Records each result with its scope, and never presents a host result as a hardware result.                |
+| Hardware   | Connecting and deploying are explicit actions of a person, after a compatibility check.                   |
 
 ## Boundaries
 
@@ -38,12 +38,12 @@ An AI assistant may prepare an isolated candidate change, but only a person can 
 
 The application keeps privileged access out of the window. The editors and panels see a folder-backed project through a narrow interface, and the operating-system work happens elsewhere.
 
-| Layer | Responsibility |
-| --- | --- |
-| Renderer | The workbench, the visual models, the diagnostics and the evidence views. It has no filesystem, shell or device access of its own. |
-| Preload and main process | Validated, narrow filesystem and supervised runtime operations. |
-| Compiler | Compiles source and visual models to `.zplc`. |
-| Runtime adapters | The native simulation, or a connected compatible runtime. |
+| Layer                    | Responsibility                                                                                                                     |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Renderer                 | The workbench, the visual models, the diagnostics and the evidence views. It has no filesystem, shell or device access of its own. |
+| Preload and main process | Validated, narrow filesystem and supervised runtime operations.                                                                    |
+| Compiler                 | Compiles source and visual models to `.zplc`.                                                                                      |
+| Runtime adapters         | The native simulation, or a connected compatible runtime.                                                                          |
 
 ### How the layers talk
 

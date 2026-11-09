@@ -17,13 +17,13 @@ No tool of the server flashes a board, deploys a program, forces a value, starts
 
 ## What the assistant may and may not do
 
-| The assistant may | The assistant may not |
-| --- | --- |
+| The assistant may                                                   | The assistant may not                                               |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------- |
 | Read the saved source of your programs and a summary of the project | Read unsaved editor content, or any file outside the project folder |
-| Validate the project file, compile, list symbols | Write a program: no tool or resource of the server writes one |
-| Run your scenario tests on the simulator and read the trace | Flash, deploy, force, run, stop, step a device, recover a board |
-| Read which lessons of the course you passed (a read-only resource) | Change your progress, or unlock a lesson |
-| Describe the boards of the manifest, with no probe of hardware | Open a serial port, a socket or a shell |
+| Validate the project file, compile, list symbols                    | Write a program: no tool or resource of the server writes one       |
+| Run your scenario tests on the simulator and read the trace         | Flash, deploy, force, run, stop, step a device, recover a board     |
+| Read which lessons of the course you passed (a read-only resource)  | Change your progress, or unlock a lesson                            |
+| Describe the boards of the manifest, with no probe of hardware      | Open a serial port, a socket or a shell                             |
 
 AI inside ZPLC follows the same boundary and has its own data rules: see [AI, privacy and human review](../ide/ai-privacy.md).
 
@@ -99,15 +99,15 @@ A request that names no revision gets the same code and the message `Unsupported
 
 Ask for what a tool returns, so every claim of the assistant has a result behind it.
 
-| Ask | Tool or resource | What comes back |
-| --- | --- | --- |
-| "Is this project file valid?" | `project_validate` | `ok` and the diagnostics |
-| "Does it compile, and what does it need?" | `compiler_check`, `symbols_list` | The size of the program, the diagnostics, the public symbols |
-| "Do its scenarios pass?" | `tests_run`, `scenario_run` | One result per scenario, with the digest of its trace |
-| "What happened at cycle 40?" | `trace_get`, `runtime_snapshot` | A bounded, sanitised trace of a recorded run |
-| "Show me the program" | `zplc://project/programs`, `zplc://project/source/{name}` | The list of the programs of `src` with their language, and the text and language of one of them |
-| "Which boards are described?" | `boards_list` | The boards of the manifest and their level, with no probe of hardware |
-| "Which lessons have I passed?" | `zplc://course/progress` | The lessons passed, how many are done and how many exist |
+| Ask                                       | Tool or resource                                          | What comes back                                                                                 |
+| ----------------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| "Is this project file valid?"             | `project_validate`                                        | `ok` and the diagnostics                                                                        |
+| "Does it compile, and what does it need?" | `compiler_check`, `symbols_list`                          | The size of the program, the diagnostics, the public symbols                                    |
+| "Do its scenarios pass?"                  | `tests_run`, `scenario_run`                               | One result per scenario, with the digest of its trace                                           |
+| "What happened at cycle 40?"              | `trace_get`, `runtime_snapshot`                           | A bounded, sanitised trace of a recorded run                                                    |
+| "Show me the program"                     | `zplc://project/programs`, `zplc://project/source/{name}` | The list of the programs of `src` with their language, and the text and language of one of them |
+| "Which boards are described?"             | `boards_list`                                             | The boards of the manifest and their level, with no probe of hardware                           |
+| "Which lessons have I passed?"            | `zplc://course/progress`                                  | The lessons passed, how many are done and how many exist                                        |
 
 [The MCP reference](../reference/mcp.md) lists all 15 tools and 15 resources.
 
@@ -126,15 +126,15 @@ AI inside ZPLC reads the open program and a project summary, and proposes a chan
 
 ## What is verified, and what is not
 
-| Part | Verified | Level |
-| --- | --- | --- |
-| The server lists 15 tools when asked; `project_validate`, `compiler_check` and `tests_run` pass on a bundled project; `boards_list` answers with `--repository`; an `initialize` of revision 2025-06-18 and a request with no revision are refused with `-32022`, and one without `clientCapabilities` with `-32602` | Run by hand with a script that sends the requests over standard input and output, through `bun run --cwd=packages/zplc-ide mcp`, on the bundled project `pico_blinky_ton`; not repeated by CI | Host |
-| The built executable starts and lists its tools the way a 2026-07-28 client asks | The release build starts the executable and counts the tools | Host |
-| No tool reaches a device, a socket or a serial port | A test lists the registered tools and resources of the live server and traps every socket and serial entry point | Host |
-| The two program resources return the text and language of each of the five languages, and refuse a name that is not a program of `src`, a link and an oversized file; the server has no tool that writes | `packages/zplc-ide/src/mcp/server.test.ts` and `deviceLink.test.ts` | Host |
-| The course resource reports passed lessons and writes nothing | `packages/zplc-ide/src/mcp/server.test.ts` | Host |
-| A named assistant product works with the entry above | Not verified: no client product was run for this page | None |
-| An assistant's change is correct | Never implied: only the build and the scenarios say so | None |
+| Part                                                                                                                                                                                                                                                                                                                 | Verified                                                                                                                                                                                      | Level |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| The server lists 15 tools when asked; `project_validate`, `compiler_check` and `tests_run` pass on a bundled project; `boards_list` answers with `--repository`; an `initialize` of revision 2025-06-18 and a request with no revision are refused with `-32022`, and one without `clientCapabilities` with `-32602` | Run by hand with a script that sends the requests over standard input and output, through `bun run --cwd=packages/zplc-ide mcp`, on the bundled project `pico_blinky_ton`; not repeated by CI | Host  |
+| The built executable starts and lists its tools the way a 2026-07-28 client asks                                                                                                                                                                                                                                     | The release build starts the executable and counts the tools                                                                                                                                  | Host  |
+| No tool reaches a device, a socket or a serial port                                                                                                                                                                                                                                                                  | A test lists the registered tools and resources of the live server and traps every socket and serial entry point                                                                              | Host  |
+| The two program resources return the text and language of each of the five languages, and refuse a name that is not a program of `src`, a link and an oversized file; the server has no tool that writes                                                                                                             | `packages/zplc-ide/src/mcp/server.test.ts` and `deviceLink.test.ts`                                                                                                                           | Host  |
+| The course resource reports passed lessons and writes nothing                                                                                                                                                                                                                                                        | `packages/zplc-ide/src/mcp/server.test.ts`                                                                                                                                                    | Host  |
+| A named assistant product works with the entry above                                                                                                                                                                                                                                                                 | Not verified: no client product was run for this page                                                                                                                                         | None  |
+| An assistant's change is correct                                                                                                                                                                                                                                                                                     | Never implied: only the build and the scenarios say so                                                                                                                                        | None  |
 
 ## See also
 

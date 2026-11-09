@@ -12,11 +12,11 @@ Read this page when part of your machine needs code that IEC logic cannot expres
 
 ## Choose the layer
 
-| Put it in IEC logic (ST, LD, FBD, SFC)                    | Put it in native Zephyr C                                       |
-| --------------------------------------------------------- | --------------------------------------------------------------- |
-| Sequences, interlocks, PID loops, machine states          | I2C or SPI drivers for a part Zephyr does not cover             |
-| Anything an integrator must change without rebuilding     | A vendor SDK, a cryptographic service, a proprietary algorithm  |
-| Logic you want to simulate and test on a computer         | A protocol the firmware does not implement                      |
+| Put it in IEC logic (ST, LD, FBD, SFC)                | Put it in native Zephyr C                                      |
+| ----------------------------------------------------- | -------------------------------------------------------------- |
+| Sequences, interlocks, PID loops, machine states      | I2C or SPI drivers for a part Zephyr does not cover            |
+| Anything an integrator must change without rebuilding | A vendor SDK, a cryptographic service, a proprietary algorithm |
+| Logic you want to simulate and test on a computer     | A protocol the firmware does not implement                     |
 
 :::note Native C is a side thread, not a block
 A native C task is not a function block of your program. It runs as its own Zephyr thread next to the scheduler, so IEC logic cannot call it and the simulator does not run it. It also changes the firmware image, so it needs a build, a flash and a new evidence record for the board it runs on.

@@ -15,19 +15,19 @@ La fuente de verdad es el registro del compilador en `packages/zplc-compiler/src
 
 ## Qué contiene la biblioteca
 
-| Grupo | Archivo fuente en `stdlib/` | Ejemplos |
-| --- | --- | --- |
-| Temporizadores | `timers.ts` | `TON`, `TOF`, `TP` |
-| Contadores | `counters.ts` | `CTU`, `CTD`, `CTUD` |
-| Biestables y detectores de flanco | `bistables.ts` | `RS`, `SR`, `R_TRIG`, `F_TRIG` |
-| Generadores de pulsos | `generators.ts` | `BLINK`, `PWM`, `PULSE` |
-| Control de procesos | `process.ts` | `HYSTERESIS`, `DEADBAND`, `LAG_FILTER`, `RAMP_REAL`, `INTEGRAL`, `DERIVATIVE`, `PID_Compact` |
-| Búferes | `system.ts` | `FIFO`, `LIFO` |
-| Funciones matemáticas, de selección y bit a bit | `math.ts`, `functions.ts`, `bitwise.ts`, `mathlib.ts` | `ABS`, `SQRT`, `SIN`, `LIMIT`, `SEL`, `MUX`, `SHL`, `ROL` |
-| Cadenas | `strings.ts` | `LEN`, `CONCAT`, `LEFT`, `MID`, `FIND`, `REPLACE` |
-| Conversiones | `conversions.ts` | `INT_TO_REAL`, `REAL_TO_INT`, `LINT_TO_LREAL` |
-| Sistema | `system.ts` | `UPTIME`, `CYCLE_TIME`, `WATCHDOG_RESET` |
-| Bloques de comunicación | `communication.ts` | `MB_READ_HREG`, `MQTT_PUBLISH`; véase [Bloques de función de comunicación](./communication-function-blocks.md) |
+| Grupo                                           | Archivo fuente en `stdlib/`                           | Ejemplos                                                                                                       |
+| ----------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Temporizadores                                  | `timers.ts`                                           | `TON`, `TOF`, `TP`                                                                                             |
+| Contadores                                      | `counters.ts`                                         | `CTU`, `CTD`, `CTUD`                                                                                           |
+| Biestables y detectores de flanco               | `bistables.ts`                                        | `RS`, `SR`, `R_TRIG`, `F_TRIG`                                                                                 |
+| Generadores de pulsos                           | `generators.ts`                                       | `BLINK`, `PWM`, `PULSE`                                                                                        |
+| Control de procesos                             | `process.ts`                                          | `HYSTERESIS`, `DEADBAND`, `LAG_FILTER`, `RAMP_REAL`, `INTEGRAL`, `DERIVATIVE`, `PID_Compact`                   |
+| Búferes                                         | `system.ts`                                           | `FIFO`, `LIFO`                                                                                                 |
+| Funciones matemáticas, de selección y bit a bit | `math.ts`, `functions.ts`, `bitwise.ts`, `mathlib.ts` | `ABS`, `SQRT`, `SIN`, `LIMIT`, `SEL`, `MUX`, `SHL`, `ROL`                                                      |
+| Cadenas                                         | `strings.ts`                                          | `LEN`, `CONCAT`, `LEFT`, `MID`, `FIND`, `REPLACE`                                                              |
+| Conversiones                                    | `conversions.ts`                                      | `INT_TO_REAL`, `REAL_TO_INT`, `LINT_TO_LREAL`                                                                  |
+| Sistema                                         | `system.ts`                                           | `UPTIME`, `CYCLE_TIME`, `WATCHDOG_RESET`                                                                       |
+| Bloques de comunicación                         | `communication.ts`                                    | `MB_READ_HREG`, `MQTT_PUBLISH`; véase [Bloques de función de comunicación](./communication-function-blocks.md) |
 
 Los temporizadores, los biestables, los contadores y los detectores de flanco son los bloques estándar de IEC. `BLINK`, `PWM`, `PULSE`, los bloques de control de procesos y los búferes pertenecen a la biblioteca de ZPLC y no son bloques de IEC 61131-3.
 
@@ -85,11 +85,11 @@ Un valor `TIME`, como el `PT` de un temporizador y su `ET`, es una cuenta de 32 
 - **El detector de flancos sigue funcionando durante el reinicio y la carga.** Un pulso que sube mientras `R` o `LD` es TRUE no se cuenta cuando se suelta; el que sube en la llamada en que se suelta sí se cuenta, si la entrada era FALSE en la llamada anterior.
 - **Las salidas se recalculan en cada llamada** a partir de `CV` y `PV`, después del reinicio, la carga o la cuenta de esa llamada.
 
-| Bloque | Cuenta | Prioridad | Límite de `CV` | Salidas |
-| --- | --- | --- | --- | --- |
-| `CTU` | +1 en un flanco de subida de `CU` | `R` pone `CV` en 0 | Se detiene en 32767; un flanco allí no se cuenta | `Q` es `CV >= PV` |
-| `CTD` | -1 en un flanco de subida de `CD` | `LD` pone `CV` en `PV` | Se detiene en -32768 | `Q` es `CV <= 0`, así que es TRUE hasta la primera carga |
-| `CTUD` | +1 con `CU`, -1 con `CD`; dos flancos en una llamada se anulan | `R`, luego `LD`, luego los flancos | Se detiene en 32767 y en -32768 | `QU` es `CV >= PV`, `QD` es `CV <= 0` |
+| Bloque | Cuenta                                                         | Prioridad                          | Límite de `CV`                                   | Salidas                                                  |
+| ------ | -------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------ | -------------------------------------------------------- |
+| `CTU`  | +1 en un flanco de subida de `CU`                              | `R` pone `CV` en 0                 | Se detiene en 32767; un flanco allí no se cuenta | `Q` es `CV >= PV`                                        |
+| `CTD`  | -1 en un flanco de subida de `CD`                              | `LD` pone `CV` en `PV`             | Se detiene en -32768                             | `Q` es `CV <= 0`, así que es TRUE hasta la primera carga |
+| `CTUD` | +1 con `CU`, -1 con `CD`; dos flancos en una llamada se anulan | `R`, luego `LD`, luego los flancos | Se detiene en 32767 y en -32768                  | `QU` es `CV >= PV`, `QD` es `CV <= 0`                    |
 
 Los biestables resuelven un empate por su nombre: `RS` da prioridad al reinicio, así que `Q1` es FALSE cuando `S` y `R1` son ambos TRUE, y `SR` da prioridad a la activación. `R_TRIG` y `F_TRIG` dan `Q` durante exactamente un ciclo en un flanco de subida o de bajada de `CLK`.
 
@@ -103,18 +103,18 @@ Nivel de evidencia: host. Los casos `cmp-058-ctu-*`, `cmp-058-ctd-*` y `cmp-058-
 
 Las funciones trigonométricas, exponenciales y logarítmicas son subrutinas en aritmética de precisión simple, medidas contra `Math.*` sobre cuadrículas densas en la suite de pruebas del compilador (`stdlib/mathlib.test.ts`). Un argumento `LREAL` se redondea a `REAL` y el resultado se vuelve a ensanchar, así que un resultado `LREAL` tiene la precisión de un `REAL`, unas siete cifras significativas. El error nunca supera:
 
-| Función | Rango | Error |
-| --- | --- | --- |
-| `SQRT` | todo REAL positivo, incluidos los subnormales | relativo 1,3e-7 |
-| `EXP` | -87 a 88 | relativo 1,3e-7 |
-| `LN`, `LOG` | todo REAL positivo, incluidos los subnormales | relativo 3e-7 |
-| `SIN`, `COS` | magnitud hasta 1000 | absoluto 2e-7 |
-| `SIN`, `COS` | magnitud menor que 2^40 (1,1e12) | absoluto 2e-6 |
-| `SIN`, `COS` | magnitud de 2^40 a 2^48 (2,8e14) | absoluto 1e-4 |
-| `TAN` | magnitud hasta 1000 | relativo 3e-7 |
-| `ATAN` | todo REAL | absoluto 2e-7 |
-| `ASIN`, `ACOS` | -1,0 a 1,0 | absoluto 4e-7 |
-| `ATAN2` | todos los pares REAL | absoluto 4e-7 |
+| Función        | Rango                                         | Error           |
+| -------------- | --------------------------------------------- | --------------- |
+| `SQRT`         | todo REAL positivo, incluidos los subnormales | relativo 1,3e-7 |
+| `EXP`          | -87 a 88                                      | relativo 1,3e-7 |
+| `LN`, `LOG`    | todo REAL positivo, incluidos los subnormales | relativo 3e-7   |
+| `SIN`, `COS`   | magnitud hasta 1000                           | absoluto 2e-7   |
+| `SIN`, `COS`   | magnitud menor que 2^40 (1,1e12)              | absoluto 2e-6   |
+| `SIN`, `COS`   | magnitud de 2^40 a 2^48 (2,8e14)              | absoluto 1e-4   |
+| `TAN`          | magnitud hasta 1000                           | relativo 3e-7   |
+| `ATAN`         | todo REAL                                     | absoluto 2e-7   |
+| `ASIN`, `ACOS` | -1,0 a 1,0                                    | absoluto 4e-7   |
+| `ATAN2`        | todos los pares REAL                          | absoluto 4e-7   |
 
 Ninguna de ellas provoca una falla de la VM con ningún argumento: una división por cero se reemplaza por el valor que la función define, y un argumento NaN da un NaN. Ningún bucle depende del argumento, de modo que el número de instrucciones tiene una cota fija. Un REAL de 2 pi por 2^48 o más no lleva información de ángulo, y las funciones seno dan entonces el valor para un ángulo de 0,0, finito y sin error.
 
@@ -128,13 +128,13 @@ La posición va antes de la cantidad en `MID`, `DELETE` y `REPLACE`, mientras qu
 
 Existe una función `<FROM>_TO_<TO>` para cada par ordenado de tipos distintos entre `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `LINT`, `ULINT`, `LWORD`, `REAL`, `LREAL` y `TIME`: 240 funciones. `DATE`, `TOD` y `DT` todavía no tienen ninguna. Las reglas, en breve:
 
-| Conversión | Resultado |
-| --- | --- |
-| Entero a un entero más ancho o del mismo ancho | El mismo valor. |
-| Entero a un entero más estrecho, o al otro signo | Los bits bajos en el ancho del destino: `INT_TO_SINT(300)` es 44, `INT_TO_UINT(-1)` es 65535. |
-| `REAL` o `LREAL` a entero | El entero más cercano, y una mitad exacta al par (`REAL_TO_INT(2.5)` es 2, `REAL_TO_INT(3.5)` es 4). Fuera del rango da el límite más cercano (`REAL_TO_INT(40000.0)` es 32767), y un NaN da 0. |
-| Entero o `TIME` a `BOOL` | FALSE para 0, TRUE para cualquier otro valor. |
-| `TIME` a un número | Su cuenta de milisegundos: `TIME_TO_DINT(T#2s)` es 2000. |
+| Conversión                                       | Resultado                                                                                                                                                                                       |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Entero a un entero más ancho o del mismo ancho   | El mismo valor.                                                                                                                                                                                 |
+| Entero a un entero más estrecho, o al otro signo | Los bits bajos en el ancho del destino: `INT_TO_SINT(300)` es 44, `INT_TO_UINT(-1)` es 65535.                                                                                                   |
+| `REAL` o `LREAL` a entero                        | El entero más cercano, y una mitad exacta al par (`REAL_TO_INT(2.5)` es 2, `REAL_TO_INT(3.5)` es 4). Fuera del rango da el límite más cercano (`REAL_TO_INT(40000.0)` es 32767), y un NaN da 0. |
+| Entero o `TIME` a `BOOL`                         | FALSE para 0, TRUE para cualquier otro valor.                                                                                                                                                   |
+| `TIME` a un número                               | Su cuenta de milisegundos: `TIME_TO_DINT(T#2s)` es 2000.                                                                                                                                        |
 
 La tabla completa, con un ejemplo para cada tipo de origen, está en la [referencia de funciones](../reference/functions.md). `TRUNC` quita la fracción hacia cero y devuelve un `REAL`; `ROUND` no es una función IEC y redondea una mitad alejándose de cero.
 

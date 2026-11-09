@@ -24,11 +24,11 @@ Cada protocolo se ejercitó en el anfitrión y en `native_sim`, contra servidore
 
 El uso de un protocolo depende de las interfaces de la placa, y el manifiesto clasifica las placas en clases:
 
-| Clase            | Interfaz                              | Protocolos para los que se compila el firmware | Placas del manifiesto                                            |
-| ---------------- | ------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------- |
-| Enfocada en serie | Un UART, opcionalmente una etapa RS-485 | Modbus RTU                                     | Raspberry Pi Pico, Waveshare RP2040-Zero, Arduino GIGA R1 (M7)   |
-| De red, Wi-Fi    | Una interfaz inalámbrica              | Modbus TCP, MQTT                               | ESP32-S3-DevKitC-1, Arduino Opta WiFi (M7)                       |
-| De red, cableada | Una interfaz Ethernet                 | Modbus TCP, MQTT                               | STM32 Nucleo-H743ZI, STM32F746G Discovery                        |
+| Clase             | Interfaz                                | Protocolos para los que se compila el firmware | Placas del manifiesto                                          |
+| ----------------- | --------------------------------------- | ---------------------------------------------- | -------------------------------------------------------------- |
+| Enfocada en serie | Un UART, opcionalmente una etapa RS-485 | Modbus RTU                                     | Raspberry Pi Pico, Waveshare RP2040-Zero, Arduino GIGA R1 (M7) |
+| De red, Wi-Fi     | Una interfaz inalámbrica                | Modbus TCP, MQTT                               | ESP32-S3-DevKitC-1, Arduino Opta WiFi (M7)                     |
+| De red, cableada  | Una interfaz Ethernet                   | Modbus TCP, MQTT                               | STM32 Nucleo-H743ZI, STM32F746G Discovery                      |
 
 ZPLC muestra los ajustes de Wi-Fi o Ethernet solo para una placa que tiene ese hardware. La clase de cada placa está en [Placas](../reference/boards.md).
 
@@ -46,13 +46,13 @@ El runtime mueve los datos mientras su lógica se ejecuta. Cargar estos ajustes 
 
 Un servidor Modbus tiene cuatro espacios de direcciones. Una bobina, una entrada discreta, un registro de entrada y un registro de retención con el mismo número son cuatro variables distintas. El número `N` de la etiqueta `{modbus:N}` de una variable dice cuál es, con la notación del mundo Modbus:
 
-| `N`                            | Área                     | Dirección en el cable | Un cliente puede                           |
-| ------------------------------ | ------------------------ | --------------------- | ------------------------------------------ |
-| 10001 a 19999                  | Entrada discreta         | `N - 10001`           | leerla (función 2)                         |
-| 30001 a 39999                  | Registro de entrada      | `N - 30001`           | leerlo (función 4)                         |
-| 40001 a 49999                  | Registro de retención    | `N - 40001`           | leerlo (función 3) y escribirlo (6, 16)    |
-| cualquier otro número, un `BOOL` | Bobina                 | `N`                   | leerla (función 1) y escribirla (5, 15)    |
-| cualquier otro número, otro tipo | Registro de retención  | `N`                   | leerlo (función 3) y escribirlo (6, 16)    |
+| `N`                              | Área                  | Dirección en el cable | Un cliente puede                        |
+| -------------------------------- | --------------------- | --------------------- | --------------------------------------- |
+| 10001 a 19999                    | Entrada discreta      | `N - 10001`           | leerla (función 2)                      |
+| 30001 a 39999                    | Registro de entrada   | `N - 30001`           | leerlo (función 4)                      |
+| 40001 a 49999                    | Registro de retención | `N - 40001`           | leerlo (función 3) y escribirlo (6, 16) |
+| cualquier otro número, un `BOOL` | Bobina                | `N`                   | leerla (función 1) y escribirla (5, 15) |
+| cualquier otro número, otro tipo | Registro de retención | `N`                   | leerlo (función 3) y escribirlo (6, 16) |
 
 Una variable se sirve en un solo área. Una solicitud de una dirección que ninguna variable tiene en el área solicitada recibe la excepción 2 (dirección de datos ilegal), incluso si otra área tiene una variable en ese número. Las entradas discretas y los registros de entrada no tienen función de escritura. Una variable de 32 bits ocupa dos registros consecutivos, y un área de bits lleva un bit por variable.
 
@@ -88,14 +88,14 @@ TLS necesita números aleatorios que nadie pueda predecir. Una compilación de f
 
 Ningún mensaje de Modbus, MQTT o un servicio de nube cambia RUN o STOP, define o quita un forzado, ni descarga un programa. Esas acciones existen solo en la consola de diagnóstico y en la aplicación de ZPLC, por el enlace serie.
 
-| Origen                                                       | Qué puede cambiar                                                                                                                                       | A qué no llega                        |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| Servidor Modbus TCP y RTU                                    | Las variables que usted vinculó con `{modbus}`, por el mapeo del servidor y la escritura que respeta forzados del intercambio: una dirección con forzado lo conserva | RUN/STOP, forzados, descarga de programa |
-| Temas MQTT de las variables suscritas (`DCMD`, temas de comandos) | Las variables que usted marcó `{subscribe}`, por la escritura que respeta forzados: una dirección con forzado lo conserva                          | RUN/STOP, forzados, descarga de programa |
-| Rebirth `NCMD`/`DCMD` de Sparkplug B                         | Hace que el nodo publique de nuevo sus certificados de nacimiento                                                                                       | RUN/STOP, forzados, descarga de programa |
-| Mensaje de nube a dispositivo de Azure                       | El contenido del bloque `AZURE_C2D_RECV` que ejecuta su programa                                                                                        | RUN/STOP, forzados, descarga de programa |
-| Métodos directos y gemelo de dispositivo de Azure, sombra (shadow) y trabajos (jobs) de AWS | Nada: se registran, y un método directo se responde `501` (no implementado)                                                          | RUN/STOP, forzados, descarga de programa |
-| Respuesta de aprovisionamiento (Azure DPS, flota de AWS)     | Solo después de que su programa inició el bloque: el hub asignado o las credenciales emitidas                                                           | RUN/STOP, forzados, descarga de programa |
+| Origen                                                                                      | Qué puede cambiar                                                                                                                                                    | A qué no llega                           |
+| ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| Servidor Modbus TCP y RTU                                                                   | Las variables que usted vinculó con `{modbus}`, por el mapeo del servidor y la escritura que respeta forzados del intercambio: una dirección con forzado lo conserva | RUN/STOP, forzados, descarga de programa |
+| Temas MQTT de las variables suscritas (`DCMD`, temas de comandos)                           | Las variables que usted marcó `{subscribe}`, por la escritura que respeta forzados: una dirección con forzado lo conserva                                            | RUN/STOP, forzados, descarga de programa |
+| Rebirth `NCMD`/`DCMD` de Sparkplug B                                                        | Hace que el nodo publique de nuevo sus certificados de nacimiento                                                                                                    | RUN/STOP, forzados, descarga de programa |
+| Mensaje de nube a dispositivo de Azure                                                      | El contenido del bloque `AZURE_C2D_RECV` que ejecuta su programa                                                                                                     | RUN/STOP, forzados, descarga de programa |
+| Métodos directos y gemelo de dispositivo de Azure, sombra (shadow) y trabajos (jobs) de AWS | Nada: se registran, y un método directo se responde `501` (no implementado)                                                                                          | RUN/STOP, forzados, descarga de programa |
+| Respuesta de aprovisionamiento (Azure DPS, flota de AWS)                                    | Solo después de que su programa inició el bloque: el hub asignado o las credenciales emitidas                                                                        | RUN/STOP, forzados, descarga de programa |
 
 Dos comprobaciones sostienen esto. Los archivos objeto de los manejadores de cada imagen de placa se leen a nivel de enlace (`tools/firmware-test/check_inbound_authority.py`, que ejecuta `run.sh size`): ninguno referencia el inicio, la parada, la pausa, la reanudación, el paso ni la carga del planificador, las llamadas de forzado, el cargador o el almacén de programas, ni un reinicio. Y dos pruebas del firmware ponen el código de entrada frente a un núcleo cuyas entradas de autoridad cuentan sus llamadas. Una recorre cada código de función Modbus y cada cantidad de escritura por el encuadre y el mapeo del servidor (`firmware/tests/inbound_authority`). La otra entrega temas y contenidos hostiles al cliente MQTT bajo cada uno de sus cinco perfiles (`firmware/tests/inbound_mqtt`). La única escritura que causó un mensaje fue a una variable vinculada, encolada por el intercambio (`zplc_exchange_write`), la única interfaz que el código de entrada puede alcanzar.
 
@@ -108,12 +108,12 @@ Dos comprobaciones sostienen esto. Los archivos objeto de los manejadores de cad
 
 ## Qué se ha ejercitado
 
-| Parte                                                               | Nivel de evidencia                      | Qué existe                                                                              |
-| ------------------------------------------------------------------- | --------------------------------------- | --------------------------------------------------------------------------------------- |
-| Encuadre y mapeo del servidor Modbus                                | Anfitrión y `native_sim`                | Pruebas que ponen tramas frente al servidor                                             |
-| Código de transacción del cliente Modbus TCP                        | Anfitrión y `native_sim`                | Un solo archivo fuente, ejecutado contra un servidor escrito para la prueba en loopback |
-| Cliente Modbus RTU                                                  | `native_sim` (parámetros de interfaz)   | Solo se comprueban los parámetros; no se usa ningún dispositivo serie                   |
-| Cliente MQTT del runtime de simulación                              | Anfitrión                               | Un broker escrito para la prueba en loopback, bajo sanitizadores                        |
-| Cliente MQTT del controlador y sus cinco perfiles                   | `native_sim`                            | Un broker escrito para la prueba en loopback, y temas y contenidos hostiles             |
-| Compilación de cada placa con sus opciones de red                   | Compilación para el destino             | Integración continua                                                                    |
-| Cualquier intercambio por un cable, una línea serie, un broker o servicio reales | Ninguno                    | Sin registro; la evidencia de banco o manual sigue abierta                              |
+| Parte                                                                            | Nivel de evidencia                    | Qué existe                                                                              |
+| -------------------------------------------------------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------- |
+| Encuadre y mapeo del servidor Modbus                                             | Anfitrión y `native_sim`              | Pruebas que ponen tramas frente al servidor                                             |
+| Código de transacción del cliente Modbus TCP                                     | Anfitrión y `native_sim`              | Un solo archivo fuente, ejecutado contra un servidor escrito para la prueba en loopback |
+| Cliente Modbus RTU                                                               | `native_sim` (parámetros de interfaz) | Solo se comprueban los parámetros; no se usa ningún dispositivo serie                   |
+| Cliente MQTT del runtime de simulación                                           | Anfitrión                             | Un broker escrito para la prueba en loopback, bajo sanitizadores                        |
+| Cliente MQTT del controlador y sus cinco perfiles                                | `native_sim`                          | Un broker escrito para la prueba en loopback, y temas y contenidos hostiles             |
+| Compilación de cada placa con sus opciones de red                                | Compilación para el destino           | Integración continua                                                                    |
+| Cualquier intercambio por un cable, una línea serie, un broker o servicio reales | Ninguno                               | Sin registro; la evidencia de banco o manual sigue abierta                              |

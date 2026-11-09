@@ -40,11 +40,11 @@ Each item is merged and backed by a check that CI or a repeatable local command 
 
 ## When you can use it
 
-| You want to                              | Today                                                                                           |
-| ---------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Write and simulate a program             | Yes, in the desktop application on Windows, macOS and Linux (host and native simulation levels). |
-| Learn PLC programming with no hardware   | Yes, with the Learn course.                                                                     |
-| Build the runtime for a board            | Yes, at `cross-build`: the image builds and fits, and nothing more is claimed.                   |
-| Rely on a board in the field             | Not yet. Wait for a bench record of your board, and read the safety page first.                 |
+| You want to                            | Today                                                                                            |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Write and simulate a program           | Yes, in the desktop application on Windows, macOS and Linux (host and native simulation levels). |
+| Learn PLC programming with no hardware | Yes, with the Learn course.                                                                      |
+| Build the runtime for a board          | Yes, at `cross-build`: the image builds and fits, and nothing more is claimed.                   |
+| Rely on a board in the field           | Not yet. Wait for a bench record of your board, and read the safety page first.                  |
 
 The current prerelease keeps the claims that the [release notes](../release-notes/index.md) state.

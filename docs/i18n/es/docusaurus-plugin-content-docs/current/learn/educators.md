@@ -32,21 +32,21 @@ bun tools/ci/learn-educator.ts verify progreso-estudiante.json
 
 El comando imprime una línea por lección, con la forma `<id de la lección>: <resultado>`, y un detalle entre paréntesis cuando hay un `mismatch`. La última línea dice `ok` o `failed`.
 
-| Resultado        | Significado                                                                                                                                                                              |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Resultado        | Significado                                                                                                                                                                                |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `verified`       | La lección está aprobada y su registro de calificación se tomó en simulación contra el escenario vigente de la lección: mismo id de escenario, mismo SHA-256 y mismo número de aserciones. |
-| `mismatch`       | El registro de calificación se tomó contra otro escenario, otra ruta u otro número de aserciones. El detalle dice cuál.                                                                  |
-| `unverified`     | La lección está aprobada sin registro de calificación, como en el progreso migrado de la primera versión.                                                                                |
-| `in-progress`    | La lección se inició y no se aprobó.                                                                                                                                                     |
-| `unknown-lesson` | El archivo nombra una lección que esta compilación no tiene. Se conserva y se ignora.                                                                                                    |
+| `mismatch`       | El registro de calificación se tomó contra otro escenario, otra ruta u otro número de aserciones. El detalle dice cuál.                                                                    |
+| `unverified`     | La lección está aprobada sin registro de calificación, como en el progreso migrado de la primera versión.                                                                                  |
+| `in-progress`    | La lección se inició y no se aprobó.                                                                                                                                                       |
+| `unknown-lesson` | El archivo nombra una lección que esta compilación no tiene. Se conserva y se ignora.                                                                                                      |
 
 ### Códigos de salida
 
-| Código | Cuándo                                                                                                                     |
-| ------ | -------------------------------------------------------------------------------------------------------------------------- |
-| 0      | Ninguna lección es `mismatch`.                                                                                             |
-| 1      | Una lección es `mismatch`, el archivo no es un archivo de progreso o no se puede leer.                                     |
-| 2      | La línea de comandos es incorrecta: falta el nombre del archivo tras `verify`, o el comando no es `verify` ni `outline`.   |
+| Código | Cuándo                                                                                                                   |
+| ------ | ------------------------------------------------------------------------------------------------------------------------ |
+| 0      | Ninguna lección es `mismatch`.                                                                                           |
+| 1      | Una lección es `mismatch`, el archivo no es un archivo de progreso o no se puede leer.                                   |
+| 2      | La línea de comandos es incorrecta: falta el nombre del archivo tras `verify`, o el comando no es `verify` ni `outline`. |
 
 Agregue `--strict` para que una lección `unverified` también falle (código 1).
 
@@ -62,10 +62,10 @@ bun tools/ci/learn-educator.ts outline --locale es --format html > curso.html
 
 El esquema enumera cada módulo y, debajo, cada lección en el orden del curso con su duración, lenguajes, rutas, requisitos y objetivos.
 
-| Opción     | Valores                        | Valor predeterminado |
-| ---------- | ------------------------------ | -------------------- |
-| `--locale` | `en`, `es`                     | `en`                 |
-| `--format` | `markdown`, `html`             | `markdown`           |
+| Opción     | Valores            | Valor predeterminado |
+| ---------- | ------------------ | -------------------- |
+| `--locale` | `en`, `es`         | `en`                 |
+| `--format` | `markdown`, `html` | `markdown`           |
 
 Cualquier otro valor en cualquiera de las dos opciones termina con el código 2. La página HTML es autónoma: tiene estilos de impresión, ningún script y ningún archivo externo, de modo que puede abrirla en un navegador e imprimirla.
 

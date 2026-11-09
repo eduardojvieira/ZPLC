@@ -12,13 +12,13 @@ Un programa ZPLC ve un único espacio de direcciones plano dividido en cinco reg
 
 ## Las cinco regiones
 
-| Región | Base | Función | Tamaño |
-| --- | ---: | --- | --- |
-| IPI | `0x0000` | Imagen de proceso de entradas | 4 KB |
-| OPI | `0x1000` | Imagen de proceso de salidas | 4 KB |
-| WORK | `0x2000` | Memoria de trabajo: las variables del programa | 8192 bytes por defecto |
-| RETAIN | `0x4000` | Memoria retentiva, guardada y restaurada entre reinicios | 4096 bytes por defecto |
-| CODE | `0x5000` | El bytecode cargado | hasta 45056 bytes por defecto |
+| Región |     Base | Función                                                  | Tamaño                        |
+| ------ | -------: | -------------------------------------------------------- | ----------------------------- |
+| IPI    | `0x0000` | Imagen de proceso de entradas                            | 4 KB                          |
+| OPI    | `0x1000` | Imagen de proceso de salidas                             | 4 KB                          |
+| WORK   | `0x2000` | Memoria de trabajo: las variables del programa           | 8192 bytes por defecto        |
+| RETAIN | `0x4000` | Memoria retentiva, guardada y restaurada entre reinicios | 4096 bytes por defecto        |
+| CODE   | `0x5000` | El bytecode cargado                                      | hasta 45056 bytes por defecto |
 
 ```mermaid
 flowchart LR
@@ -38,11 +38,11 @@ Los últimos 16 bytes de IPI están reservados para datos de sistema que un prog
 
 Cada tarea corre en su propia instancia de la VM, pero la memoria es una sola.
 
-| Compartido por todas las tareas | Privado de cada instancia de la VM |
-| --- | --- |
-| IPI y OPI | El contador de programa, el puntero de pila y el puntero base |
-| El espacio de direcciones WORK y RETAIN | La profundidad de llamadas, los indicadores y el estado de error |
-| El código cargado | La tabla de puntos de parada, la pila de evaluación y la pila de llamadas |
+| Compartido por todas las tareas         | Privado de cada instancia de la VM                                        |
+| --------------------------------------- | ------------------------------------------------------------------------- |
+| IPI y OPI                               | El contador de programa, el puntero de pila y el puntero base             |
+| El espacio de direcciones WORK y RETAIN | La profundidad de llamadas, los indicadores y el estado de error          |
+| El código cargado                       | La tabla de puntos de parada, la pila de evaluación y la pila de llamadas |
 
 Esa separación permite que varias tareas intercambien datos mediante variables globales sin compartir un contexto de ejecución. La profundidad de pila (`ZPLC_STACK_MAX_DEPTH`, 256), la profundidad de llamadas (`ZPLC_CALL_STACK_MAX`, 32) y la tabla de puntos de parada (`ZPLC_MAX_BREAKPOINTS`, 16) están acotadas, de modo que un programa no puede ampliarlas.
 

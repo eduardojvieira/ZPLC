@@ -22,25 +22,25 @@ Cada acción también se puede hacer con el teclado; la [referencia de teclado](
 
 ## Los elementos de la paleta
 
-| Elemento | Qué es |
-| --- | --- |
-| Paso inicial | El paso que está activo cuando arranca el programa. |
-| Paso | Un estado de la máquina. Puede ejecutar acciones mientras está activo. |
-| Transición | La condición que lleva el diagrama de los pasos que la preceden a los pasos que la siguen. |
+| Elemento     | Qué es                                                                                     |
+| ------------ | ------------------------------------------------------------------------------------------ |
+| Paso inicial | El paso que está activo cuando arranca el programa.                                        |
+| Paso         | Un estado de la máquina. Puede ejecutar acciones mientras está activo.                     |
+| Transición   | La condición que lleva el diagrama de los pasos que la preceden a los pasos que la siguen. |
 
 La condición de una transición es una expresión `BOOL` en texto estructurado. Dentro de una condición o del cuerpo de una acción, `Paso.X` es TRUE mientras el paso llamado `Paso` está activo, y `Paso.T` es el tiempo que lleva activo. Una divergencia de selección son varias transiciones que salen de un paso; una divergencia o convergencia simultánea es una transición que entra en varios pasos o sale de ellos.
 
 ## Calificadores de acción
 
-| Calificador | La acción se ejecuta |
-| --- | --- |
-| `N` | mientras el paso está activo |
-| `S` | desde el primer ciclo del paso hasta que un paso con `R` la desactiva, también después de salir del paso |
-| `R` | ya no, una vez activo este paso: borra el estado que `S` guardó para la acción |
-| `L` | mientras el paso está activo, durante el tiempo indicado como máximo |
-| `D` | mientras el paso está activo, una vez transcurrido el tiempo indicado |
-| `P`, `P1` | durante un ciclo, cuando el paso se activa |
-| `P0` | durante un ciclo, cuando se sale del paso |
+| Calificador | La acción se ejecuta                                                                                     |
+| ----------- | -------------------------------------------------------------------------------------------------------- |
+| `N`         | mientras el paso está activo                                                                             |
+| `S`         | desde el primer ciclo del paso hasta que un paso con `R` la desactiva, también después de salir del paso |
+| `R`         | ya no, una vez activo este paso: borra el estado que `S` guardó para la acción                           |
+| `L`         | mientras el paso está activo, durante el tiempo indicado como máximo                                     |
+| `D`         | mientras el paso está activo, una vez transcurrido el tiempo indicado                                    |
+| `P`, `P1`   | durante un ciclo, cuando el paso se activa                                                               |
+| `P0`        | durante un ciclo, cuando se sale del paso                                                                |
 
 Los calificadores `SD`, `DS` y `SL` no se admiten: la compilación los rechaza con un mensaje.
 
@@ -57,17 +57,17 @@ Un diagrama de más de 14 pasos se compila y se ejecuta en el runtime nativo.
 
 ## Errores comunes
 
-| Error | Qué ocurre | Qué hacer |
-| --- | --- | --- |
-| Dos pasos con el mismo nombre | La compilación lo rechaza, porque `Paso.T` sería ambiguo. | Dé a cada paso un nombre distinto. |
-| Una variable con el nombre de un paso | La compilación lo rechaza por el mismo motivo. | Cambie el nombre de la variable o del paso. |
-| `L` o `D` sin tiempo | La compilación dice que el calificador necesita un tiempo, como `T#2s`. | Escriba un literal `TIME`. |
-| Un tiempo en `N`, `S`, `R` o `P` | La compilación dice que el calificador no admite tiempo. | Deje el tiempo vacío. |
-| Un nombre de acción que no se resuelve | La compilación nombra el paso y la acción. | Defina la acción, o corrija el nombre. |
-| Una condición de transición vacía | La compilación la rechaza. | Escriba una expresión `BOOL`; `TRUE` se dispara siempre. |
-| Una transición que no referencia un paso conocido | La compilación la rechaza y nombra la transición. | Vuelva a conectarla a pasos existentes. |
-| Un cuerpo de acción en un lenguaje distinto de texto estructurado | Solo se admiten acciones en texto estructurado. | Escriba el cuerpo en texto estructurado. |
-| Un paso en el que no entra ninguna transición | Un punto de parada no tiene dónde detenerse. | Ponga el punto de parada en un paso en el que entre una transición. |
+| Error                                                             | Qué ocurre                                                              | Qué hacer                                                           |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Dos pasos con el mismo nombre                                     | La compilación lo rechaza, porque `Paso.T` sería ambiguo.               | Dé a cada paso un nombre distinto.                                  |
+| Una variable con el nombre de un paso                             | La compilación lo rechaza por el mismo motivo.                          | Cambie el nombre de la variable o del paso.                         |
+| `L` o `D` sin tiempo                                              | La compilación dice que el calificador necesita un tiempo, como `T#2s`. | Escriba un literal `TIME`.                                          |
+| Un tiempo en `N`, `S`, `R` o `P`                                  | La compilación dice que el calificador no admite tiempo.                | Deje el tiempo vacío.                                               |
+| Un nombre de acción que no se resuelve                            | La compilación nombra el paso y la acción.                              | Defina la acción, o corrija el nombre.                              |
+| Una condición de transición vacía                                 | La compilación la rechaza.                                              | Escriba una expresión `BOOL`; `TRUE` se dispara siempre.            |
+| Una transición que no referencia un paso conocido                 | La compilación la rechaza y nombra la transición.                       | Vuelva a conectarla a pasos existentes.                             |
+| Un cuerpo de acción en un lenguaje distinto de texto estructurado | Solo se admiten acciones en texto estructurado.                         | Escriba el cuerpo en texto estructurado.                            |
+| Un paso en el que no entra ninguna transición                     | Un punto de parada no tiene dónde detenerse.                            | Ponga el punto de parada en un paso en el que entre una transición. |
 
 ## Verlo en ejecución
 

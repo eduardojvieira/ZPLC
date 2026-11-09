@@ -47,12 +47,12 @@ Nada fija la entrada, así que es `FALSE` y la salida es `TRUE`. En una placa cu
 
 Una dirección es un área, un tamaño y una posición: `%` + `I` (entrada), `Q` (salida) o `M` (memoria) + `X` (bit), `B` (byte), `W` (palabra, 16 bits) o `D` (palabra doble, 32 bits) + el índice.
 
-| Dirección | Cubre |
-| --- | --- |
-| `%IX0.0` | El bit 0 del byte 0 de la imagen de entrada |
-| `%IB1` | El byte 1 |
-| `%IW1` | La palabra 1: los bytes 2 y 3 |
-| `%QD1` | La palabra doble 1: los bytes 4 a 7 de la imagen de salida |
+| Dirección | Cubre                                                      |
+| --------- | ---------------------------------------------------------- |
+| `%IX0.0`  | El bit 0 del byte 0 de la imagen de entrada                |
+| `%IB1`    | El byte 1                                                  |
+| `%IW1`    | La palabra 1: los bytes 2 y 3                              |
+| `%QD1`    | La palabra doble 1: los bytes 4 a 7 de la imagen de salida |
 
 El índice de una palabra o de una palabra doble cuenta palabras, pero el índice de un bit y de un byte cuenta bytes. Así, de `%IX0.0` a `%IX1.7` caen dentro de los bytes de `%IW0`, y `%IW1` empieza en el byte 2.
 
@@ -108,13 +108,13 @@ Agregue el alias al overlay de devicetree de la placa y una entrada a su descrip
 
 ## Qué está verificado y qué no
 
-| Parte | Verificado | Nivel |
-| --- | --- | --- |
-| Las descripciones son coherentes con el devicetree de cada placa | La compilación del firmware falla si no | Compilación |
-| Una dirección sin asignar es un error en el editor, la compilación y la carga | Pruebas unitarias, y el recorrido 40 en la aplicación real | Host |
-| Un bit y una palabra en un mismo byte lo comparten, y el compilador no lo rechaza | El ejemplo de arriba se ejecuta en el runtime nativo; `zplc-cli check` acepta el programa | Host |
-| El escalado analógico de un canal, y la tabla de E/S del firmware | Pruebas en `native_sim` | Destino emulado |
-| Que un pin controle la señal que dice la descripción, y el nivel de una salida | Sin probar | Ninguno |
+| Parte                                                                             | Verificado                                                                                | Nivel           |
+| --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | --------------- |
+| Las descripciones son coherentes con el devicetree de cada placa                  | La compilación del firmware falla si no                                                   | Compilación     |
+| Una dirección sin asignar es un error en el editor, la compilación y la carga     | Pruebas unitarias, y el recorrido 40 en la aplicación real                                | Host            |
+| Un bit y una palabra en un mismo byte lo comparten, y el compilador no lo rechaza | El ejemplo de arriba se ejecuta en el runtime nativo; `zplc-cli check` acepta el programa | Host            |
+| El escalado analógico de un canal, y la tabla de E/S del firmware                 | Pruebas en `native_sim`                                                                   | Destino emulado |
+| Que un pin controle la señal que dice la descripción, y el nivel de una salida    | Sin probar                                                                                | Ninguno         |
 
 ## Vea también
 

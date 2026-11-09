@@ -34,11 +34,11 @@ zplc-cli check packages/zplc-ide/projects/blinky_st
 
 Each prints its name and `passed` (`inspect passed`, `validate passed`, `check passed`) and exits with 0.
 
-| Command | What it does |
-| --- | --- |
-| `inspect` | Reads the project file and lists its tasks and sources |
-| `validate` | Checks the project file and its sources, without compiling |
-| `check` | Compiles and discards the program, so only the build diagnostics remain |
+| Command    | What it does                                                            |
+| ---------- | ----------------------------------------------------------------------- |
+| `inspect`  | Reads the project file and lists its tasks and sources                  |
+| `validate` | Checks the project file and its sources, without compiling              |
+| `check`    | Compiles and discards the program, so only the build diagnostics remain |
 
 ## Build
 
@@ -64,14 +64,14 @@ The runtime must be built (`bun run build:runtime`) or named by `ZPLC_NATIVE_SIM
 
 ## Other commands
 
-| Command | What it does |
-| --- | --- |
-| `zplc-cli safety-check <workspace>` | Checks that every pair of incompatible outputs declared in `zplc.json` has a scenario that asserts it never happens |
-| `zplc-cli symbols <workspace>` | Lists the public symbols of the project |
-| `zplc-cli migrate-preview <workspace>` | Shows what migrating a version 1 project file to version 2 would change |
-| `zplc-cli migrate <workspace> --output <file>` | Writes the version 2 project file that the migration produces |
-| `zplc-cli toolchain-inspect <repository>` | Reports which firmware build prerequisites a checkout has |
-| `zplc-cli firmware-build <repository> <ide-id>` | A local cross-build of the firmware of one board, named by its identifier in ZPLC |
+| Command                                         | What it does                                                                                                        |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `zplc-cli safety-check <workspace>`             | Checks that every pair of incompatible outputs declared in `zplc.json` has a scenario that asserts it never happens |
+| `zplc-cli symbols <workspace>`                  | Lists the public symbols of the project                                                                             |
+| `zplc-cli migrate-preview <workspace>`          | Shows what migrating a version 1 project file to version 2 would change                                             |
+| `zplc-cli migrate <workspace> --output <file>`  | Writes the version 2 project file that the migration produces                                                       |
+| `zplc-cli toolchain-inspect <repository>`       | Reports which firmware build prerequisites a checkout has                                                           |
+| `zplc-cli firmware-build <repository> <ide-id>` | A local cross-build of the firmware of one board, named by its identifier in ZPLC                                   |
 
 ## In a script
 
@@ -85,12 +85,12 @@ The [command line reference](../reference/cli.md) lists every command, option an
 
 ## What is verified, and what is not
 
-| Part | Verified | Level |
-| --- | --- | --- |
-| The commands print what this page says and exit as it says | The commands were run on the example for this page; unit tests cover each operation | Host |
-| A scenario gives the same result from the command line, ZPLC and the MCP server | A test runs every bundled project, each scenario by itself, through the three | Host |
-| The standalone executable runs with no Bun, Node or checkout | A test builds it and runs it with no JavaScript runtime on the path | Host |
-| `firmware-build` produces an image that runs | Not tested: it is a cross-build | None |
+| Part                                                                            | Verified                                                                            | Level |
+| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ----- |
+| The commands print what this page says and exit as it says                      | The commands were run on the example for this page; unit tests cover each operation | Host  |
+| A scenario gives the same result from the command line, ZPLC and the MCP server | A test runs every bundled project, each scenario by itself, through the three       | Host  |
+| The standalone executable runs with no Bun, Node or checkout                    | A test builds it and runs it with no JavaScript runtime on the path                 | Host  |
+| `firmware-build` produces an image that runs                                    | Not tested: it is a cross-build                                                     | None  |
 
 ## See also
 

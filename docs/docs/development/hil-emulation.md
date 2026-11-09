@@ -15,11 +15,11 @@ Every record an emulated run writes says `evidence_level: emulated` and names th
 
 ## What is emulated
 
-| Board                                  | Emulator                                                                                | Image                                                  | The bench does                                                                                                                                                                         |
-| -------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Board                                  | Emulator                                                                                | Image                                                  | The bench does                                                                                                                                                                            |
+| -------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Raspberry Pi Pico                      | [rp2040js](https://github.com/wokwi/rp2040js) 1.4.1 (commit `5fbd2050`) with five fixes | The shipped `rpi_pico/rp2040` image, unchanged         | Flash, power cycle and power cut on a flash file; the USB CDC shell and UART1 (Modbus RTU) on host ptys; the DO0→DI0 … DO3→DI3 loopback; analog injection on ADC0 to ADC4; simulated time |
-| ESP32-S3-DevKitC-1                     | Espressif QEMU `esp_develop_9.2.2_20260417`, machine `esp32s3`, octal PSRAM             | An **emulation-only** build: console on UART0, ADC off | Flash and power cycle on an 8 MB flash file; the UART0 shell on a host pty                                                                                                             |
-| `native_sim` with the Pico channel map | Zephyr `native_sim/native/64`                                                           | `run.sh app-native` (emulation only)                   | Inputs, analog values and outputs through its `emu` shell command                                                                                                                      |
+| ESP32-S3-DevKitC-1                     | Espressif QEMU `esp_develop_9.2.2_20260417`, machine `esp32s3`, octal PSRAM             | An **emulation-only** build: console on UART0, ADC off | Flash and power cycle on an 8 MB flash file; the UART0 shell on a host pty                                                                                                                |
+| `native_sim` with the Pico channel map | Zephyr `native_sim/native/64`                                                           | `run.sh app-native` (emulation only)                   | Inputs, analog values and outputs through its `emu` shell command                                                                                                                         |
 
 ## What is not emulated
 
@@ -103,25 +103,25 @@ The patch fixes five places where rp2040js did not behave like the RP2040. Each 
 The first emulated runs of the chain, on 2026-10-20, failed five steps. Each failure was traced to its cause, and the step was run again on the emulator after the fix.
 
 1. **Power cycle and RETAIN, both boards.**
-   - *Record:* RETAIN 102 before the power cycle, 0 after.
-   - *Cause:* the images had no RETAIN persistence. `CONFIG_ZPLC_RETAIN_PERSIST` was off in every shipped profile (it is on in all of them now, RT-025), and on the Pico it does not fit the 64 KB storage partition, so the build stops. With the option on, the ESP32-S3 image kept the value (16 before and after), and so did a Pico image built for the test with a 128 KB storage partition (101 before and after).
-   - *Fix:* the step checks the option of the image and says why it cannot pass. The HIL image turns the option on, and the Pico and the RP2040-Zero keep a 128 KB storage partition. The HIL image of the Pico kept the value (102 before and after).
+   - _Record:_ RETAIN 102 before the power cycle, 0 after.
+   - _Cause:_ the images had no RETAIN persistence. `CONFIG_ZPLC_RETAIN_PERSIST` was off in every shipped profile (it is on in all of them now, RT-025), and on the Pico it does not fit the 64 KB storage partition, so the build stops. With the option on, the ESP32-S3 image kept the value (16 before and after), and so did a Pico image built for the test with a 128 KB storage partition (101 before and after).
+   - _Fix:_ the step checks the option of the image and says why it cannot pass. The HIL image turns the option on, and the Pico and the RP2040-Zero keep a 128 KB storage partition. The HIL image of the Pico kept the value (102 before and after).
 2. **Overrun, both boards.**
-   - *Record:* `vm_fault` with VM error 8, not `deadline_miss`; outputs off.
-   - *Cause:* the loop of the step ran 104,000 VM instructions in one scan, past the budget of 100,000 (`CONFIG_ZPLC_VM_CYCLE_INSTRUCTION_BUDGET`), so the runtime latched its VM watchdog fault, as designed.
-   - *Fix:* the step sizes the loop to half the budget the image reports. Both boards then latch `deadline_miss` after three late scans, outputs off.
+   - _Record:_ `vm_fault` with VM error 8, not `deadline_miss`; outputs off.
+   - _Cause:_ the loop of the step ran 104,000 VM instructions in one scan, past the budget of 100,000 (`CONFIG_ZPLC_VM_CYCLE_INSTRUCTION_BUDGET`), so the runtime latched its VM watchdog fault, as designed.
+   - _Fix:_ the step sizes the loop to half the budget the image reports. Both boards then latch `deadline_miss` after three late scans, outputs off.
 3. **Fieldbus exchange, Pico.**
-   - *Record:* no request reached the host, error 10.
-   - *Cause:* the Modbus RTU client of the device is off by default and starts at boot only, so the block failed at once with `UNAVAILABLE`. The host side of the line was also opened at 115200 baud, while the device runs 19200.
-   - *Fix:* the step turns the client on at 19200 baud, stores it and restarts the board. The emulated exchange read 0x5A17.
+   - _Record:_ no request reached the host, error 10.
+   - _Cause:_ the Modbus RTU client of the device is off by default and starts at boot only, so the block failed at once with `UNAVAILABLE`. The host side of the line was also opened at 115200 baud, while the device runs 19200.
+   - _Fix:_ the step turns the client on at 19200 baud, stores it and restarts the board. The emulated exchange read 0x5A17.
 4. **Deploy, ESP32-S3.**
-   - *Record:* "Not in loading state" after a chunk was sent again.
-   - *Cause:* the loader refused the fixture with `ZPLC_LOADER_ERR_MEMORY` (-13), because the chain compiled the fixtures for 8 KB of work memory and the ESP32-S3 has 2 KB. The tester then sent the last chunk again, to a load that had ended. A board does the same.
-   - *Fix:* the chain compiles the fixtures for the board, and the tester raises the refusal of the device instead of sending the chunk again. The ESP32-S3 bench also gives programs ten times the host time, for the slow clock of QEMU. The deploy and the six blink fixtures then pass.
+   - _Record:_ "Not in loading state" after a chunk was sent again.
+   - _Cause:_ the loader refused the fixture with `ZPLC_LOADER_ERR_MEMORY` (-13), because the chain compiled the fixtures for 8 KB of work memory and the ESP32-S3 has 2 KB. The tester then sent the last chunk again, to a load that had ended. A board does the same.
+   - _Fix:_ the chain compiles the fixtures for the board, and the tester raises the refusal of the device instead of sending the chunk again. The ESP32-S3 bench also gives programs ten times the host time, for the slow clock of QEMU. The deploy and the six blink fixtures then pass.
 5. **Fatal fault, ESP32-S3.**
-   - *Record:* still running, no fault, after 1 s.
-   - *Cause:* the fault path works on Xtensa (division by zero, VM error 3, outputs off), but on the slow clock of QEMU one second of host time was not enough for the 21 scans the program needs.
-   - *Fix:* the fault steps wait for the fault, up to 10 s. QEMU latched it after 1.4 s of host time and 21 scans.
+   - _Record:_ still running, no fault, after 1 s.
+   - _Cause:_ the fault path works on Xtensa (division by zero, VM error 3, outputs off), but on the slow clock of QEMU one second of host time was not enough for the 21 scans the program needs.
+   - _Fix:_ the fault steps wait for the fault, up to 10 s. QEMU latched it after 1.4 s of host time and 21 scans.
 
 Running the RETAIN step on the HIL image of the Pico found one more defect: the image refused every START ("Scheduler start failed (-3)"). The scheduler armed only the `zephyr,watchdog` chosen in the devicetree, which no board of this repository sets. It now arms the `watchdog0` alias of the board when nothing is chosen, and an image with the hardware watchdog and neither node does not build.
 
@@ -129,9 +129,9 @@ On rp2040js, the blink fixtures count output changes by reading the outputs over
 
 ## Licenses
 
-| Software                       | License | In this repository                                                                                                   |
-| ------------------------------ | ------- | -------------------------------------------------------------------------------------------------------------------- |
-| rp2040js, Uri Shaked and Wokwi | MIT     | Only `rp2040js-zplc-emu.patch`, a derivative under the same MIT license. `setup.sh` downloads the emulator.           |
-| Espressif QEMU                 | GPL-2.0 | Nothing. `setup.sh` downloads the release, which runs as a separate program.                                          |
+| Software                       | License | In this repository                                                                                          |
+| ------------------------------ | ------- | ----------------------------------------------------------------------------------------------------------- |
+| rp2040js, Uri Shaked and Wokwi | MIT     | Only `rp2040js-zplc-emu.patch`, a derivative under the same MIT license. `setup.sh` downloads the emulator. |
+| Espressif QEMU                 | GPL-2.0 | Nothing. `setup.sh` downloads the release, which runs as a separate program.                                |
 
 Offering the rp2040js fixes upstream is a decision for the project owner.

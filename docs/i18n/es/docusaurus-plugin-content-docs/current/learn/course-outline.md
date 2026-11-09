@@ -9,7 +9,7 @@ tags: [learn, lessons, course]
 
 # Esquema del curso
 
-Esta página es el mapa de todo el curso: cada módulo en orden, con sus 68 lecciones, y para cada lección los lenguajes, las rutas, la planta, el tiempo y los requisitos. Úsela para elegir por dónde empezar o para ver qué necesita un módulo antes. Si nunca programó un PLC, tome la ruta de escalera de 21 de estas lecciones, *Diagrama de escalera desde cero*, descrita en [Aprender](./index.md).
+Esta página es el mapa de todo el curso: cada módulo en orden, con sus 68 lecciones, y para cada lección los lenguajes, las rutas, la planta, el tiempo y los requisitos. Úsela para elegir por dónde empezar o para ver qué necesita un módulo antes. Si nunca programó un PLC, tome la ruta de escalera de 21 de estas lecciones, _Diagrama de escalera desde cero_, descrita en [Aprender](./index.md).
 
 La página sigue `packages/zplc-ide/lessons/course.json` y los paquetes de lección que lo acompañan. Una verificación de CI falla cuando falta una lección o cuando una fila no coincide con su lección. Cada módulo y cada lección tiene además su propia página generada: empiece por los [módulos del curso](./modules/index.md) y vea las [plantas de las lecciones](./plants.md) para las máquinas simuladas.
 

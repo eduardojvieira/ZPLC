@@ -116,7 +116,7 @@ La VM calcula cada resultado de doble precisión con aritmética entera. Por eso
 | `OP_SAR64`                                       | cuenta de 64 o más          | `-1` para un valor negativo, `0` en otro caso                                                                          |
 | `OP_ADDD`, `OP_SUBD`, `OP_MULD`, `OP_DIVD`       | cualquiera                  | el resultado IEEE 754 binary64, al par más cercano; el desbordamiento es un infinito y el subdesbordamiento es gradual |
 | `OP_DIVD`                                        | divisor `0.0` o `-0.0`      | falla `ZPLC_VM_DIV_BY_ZERO`, sea cual sea el dividendo (como `OP_DIVF`)                                                |
-| `OP_NEGD`, `OP_ABSD`                             | cualquiera                  | el bit de signo invertido o borrado; un NaN conserva su contenido                                                          |
+| `OP_NEGD`, `OP_ABSD`                             | cualquiera                  | el bit de signo invertido o borrado; un NaN conserva su contenido                                                      |
 | `OP_SQRTD`                                       | `0.0`, `-0.0` o menor       | `0.0` (la regla de `SQRT` sobre un `REAL`)                                                                             |
 |                                                  | `+Inf`                      | `+Inf`                                                                                                                 |
 |                                                  | en otro caso                | la raíz cuadrada correctamente redondeada                                                                              |

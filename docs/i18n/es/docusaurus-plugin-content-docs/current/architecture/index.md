@@ -34,12 +34,12 @@ flowchart LR
   HAL --> TARGET
 ```
 
-| Límite | Qué hay a cada lado | Qué lo cruza |
-| --- | --- | --- |
-| Edición | Usted, la aplicación ZPLC y la línea de comandos, trabajando en ST, IL, LD, FBD o SFC | Archivos de proyecto: código fuente, `zplc.json`, escenarios |
-| Compilación | El compilador (`packages/zplc-compiler`) y los transpiladores de lenguaje de la aplicación | Un artefacto `.zplc` y su mapa de depuración |
-| Runtime | El núcleo en C99 de `firmware/lib/zplc_core/src/core`: la VM, el cargador con su verificador y el núcleo del planificador | Llamadas a las funciones `zplc_hal_*` |
-| Plataforma | Un puerto del HAL: Zephyr, POSIX, WebAssembly o FreeRTOS | El reloj, los pines, el almacenamiento y la red del dispositivo |
+| Límite      | Qué hay a cada lado                                                                                                       | Qué lo cruza                                                    |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Edición     | Usted, la aplicación ZPLC y la línea de comandos, trabajando en ST, IL, LD, FBD o SFC                                     | Archivos de proyecto: código fuente, `zplc.json`, escenarios    |
+| Compilación | El compilador (`packages/zplc-compiler`) y los transpiladores de lenguaje de la aplicación                                | Un artefacto `.zplc` y su mapa de depuración                    |
+| Runtime     | El núcleo en C99 de `firmware/lib/zplc_core/src/core`: la VM, el cargador con su verificador y el núcleo del planificador | Llamadas a las funciones `zplc_hal_*`                           |
+| Plataforma  | Un puerto del HAL: Zephyr, POSIX, WebAssembly o FreeRTOS                                                                  | El reloj, los pines, el almacenamiento y la red del dispositivo |
 
 ## Quién posee qué
 
@@ -53,11 +53,11 @@ flowchart LR
 
 ## Dónde puede ejecutarse un programa
 
-| Runtime | Se compila a partir de | Evidencia que aporta |
-| --- | --- | --- |
-| Simulación nativa (`zplc_runtime`) | El núcleo y el puerto POSIX | Host: el resultado de cada ciclo, en un procesador y un reloj de la computadora anfitriona |
-| Runtime de software (WebAssembly) | El mismo código de sesión y el mismo núcleo del planificador, compilados con el puerto WebAssembly | Host, degradada: sin bloques de red, sin puerto serie, sin pines. Véase [el runtime de software](../runtime/browser-runtime.md) |
-| Firmware Zephyr | El núcleo y el puerto Zephyr, una imagen por placa | Destino emulado o `cross-build` por ahora; véase [compatibilidad de hardware](../reference/capabilities-evidence.md) |
+| Runtime                            | Se compila a partir de                                                                             | Evidencia que aporta                                                                                                            |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Simulación nativa (`zplc_runtime`) | El núcleo y el puerto POSIX                                                                        | Host: el resultado de cada ciclo, en un procesador y un reloj de la computadora anfitriona                                      |
+| Runtime de software (WebAssembly)  | El mismo código de sesión y el mismo núcleo del planificador, compilados con el puerto WebAssembly | Host, degradada: sin bloques de red, sin puerto serie, sin pines. Véase [el runtime de software](../runtime/browser-runtime.md) |
+| Firmware Zephyr                    | El núcleo y el puerto Zephyr, una imagen por placa                                                 | Destino emulado o `cross-build` por ahora; véase [compatibilidad de hardware](../reference/capabilities-evidence.md)            |
 
 Los tres cargan los mismos artefactos `.zplc` y responden las mismas solicitudes de sesión, de modo que un escenario que pasa en simulación ejercita la lógica que usted cargará. No ejercita los tiempos ni el comportamiento eléctrico de una placa.
 

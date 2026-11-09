@@ -11,9 +11,9 @@ Lea esta página antes de su primer commit. Enumera el formateador de cada lengu
 
 ## Los comandos
 
-| Comando                     | Qué hace                                                                                                 |
-| --------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `bun run format`            | Escribe el formato de cada archivo versionado que los formateadores gestionan                            |
+| Comando                     | Qué hace                                                                                                       |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `bun run format`            | Escribe el formato de cada archivo versionado que los formateadores gestionan                                  |
 | `bun run format:check`      | Lo comprueba sin escribir y después ejecuta la verificación de longitud de línea; es el trabajo `format` de CI |
 | `bun run check:line-length` | Solo la verificación: lista cada línea de código fuente escrita a mano por encima del límite                   |
 
@@ -24,7 +24,7 @@ Lea esta página antes de su primer commit. Enumera el formateador de cada lengu
 | Lenguaje                                    | Herramienta                                       | Versión                                                                           | Configuración      |
 | ------------------------------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------ |
 | TypeScript, JavaScript, CSS, JSON, Markdown | Prettier (MIT)                                    | 3.9.10, `devDependency` exacta del `package.json` raíz (unos 10 MB descomprimido) | `.prettierrc.json` |
-| C y encabezados                               | clang-format (Apache-2.0 con excepciones de LLVM) | 23.1.3, el paquete de PyPI (unos 2 MB); `pipx install clang-format==23.1.3`       | `.clang-format`    |
+| C y encabezados                             | clang-format (Apache-2.0 con excepciones de LLVM) | 23.1.3, el paquete de PyPI (unos 2 MB); `pipx install clang-format==23.1.3`       | `.clang-format`    |
 | Editores                                    | EditorConfig                                      |                                                                                   | `.editorconfig`    |
 
 La salida de ambas herramientas cambia entre versiones, por eso las versiones son exactas. `tools/ci/format.ts` rechaza cualquier otro clang-format, y el trabajo `format` de `.github/workflows/ci.yml` instala el mismo paquete. Si su computadora tiene otro clang-format, instale el fijado con `pipx` antes de ejecutar `bun run format:check`, o la comprobación se detendrá en la versión.

@@ -100,9 +100,9 @@ Open the serial console of the board and run `zplc version`. It prints the versi
 
 ## What is verified, and what is not
 
-| Part                                                     | Verified                                           | Level        |
-| -------------------------------------------------------- | -------------------------------------------------- | ------------ |
-| Every board's firmware builds and fits its budget        | Continuous integration build                       | Target build |
-| The names, addresses and checksums of the release images | The release pipeline checks them                   | Host         |
-| The boot-mode steps and the flash runner commands        | Read from the tools of each board, not executed    | None         |
-| A flash on a real board                                  | Not recorded by anyone                             | None         |
+| Part                                                     | Verified                                        | Level        |
+| -------------------------------------------------------- | ----------------------------------------------- | ------------ |
+| Every board's firmware builds and fits its budget        | Continuous integration build                    | Target build |
+| The names, addresses and checksums of the release images | The release pipeline checks them                | Host         |
+| The boot-mode steps and the flash runner commands        | Read from the tools of each board, not executed | None         |
+| A flash on a real board                                  | Not recorded by anyone                          | None         |

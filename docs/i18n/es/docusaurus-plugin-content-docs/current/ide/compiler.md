@@ -46,30 +46,30 @@ CODE exceeds the target memory profile: 46012 bytes required, 45056 bytes availa
 
 Una compilación que termina bien aún puede señalar algo que merece una revisión. Cada advertencia tiene un código estable, una posición y, en un proyecto, el archivo al que pertenece. La aplicación, la línea de comandos (`Warning:`) y la API de herramientas muestran las mismas advertencias para el mismo proyecto.
 
-| Código | Se informa cuando | Nivel |
-| --- | --- | --- |
-| `NON_IEC_HEX_LITERAL` | se escribe `0xFF`; IEC 61131-3 escribe `16#FF` | `default` |
-| `NON_IEC_REAL_LITERAL` | un literal real tiene exponente y no tiene fracción, `1e3`; IEC escribe `1.0E3` | `default` |
-| `IMPLICIT_NARROWING` | un valor se almacena en un tipo más estrecho y conserva sus bits bajos (es un error con `compiler.strictTypes`) | `default` |
-| `UNREACHABLE_STATEMENT` | una instrucción sigue a `RETURN`, `EXIT` o `CONTINUE`, o a un `IF` o `CASE` con `ELSE` cuyas ramas salen todas, en la misma lista: una advertencia para el resto de la lista | `default` |
-| `UNUSED_VARIABLE` | una variable `VAR` o `VAR_TEMP` no se lee ni se escribe nunca | `default` |
-| `WRITE_ONLY_VARIABLE` | una variable `VAR` o `VAR_TEMP` se escribe y no se lee nunca | `all` |
-| `OPTION_IGNORED` | una opción de `zplc.json` tiene un valor que no cambia nada | `default` |
-| `SOURCE_NOT_COMPILED` | un archivo de texto estructurado de la carpeta del proyecto no está en `src` ni en una biblioteca listada | `default` |
-| `WATCHDOG_RESET_NO_EFFECT` | se llama a `WATCHDOG_RESET()`: no hace nada, porque el runtime alimenta por sí mismo el watchdog de hardware después de cada ciclo completado | `default` |
+| Código                     | Se informa cuando                                                                                                                                                            | Nivel     |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| `NON_IEC_HEX_LITERAL`      | se escribe `0xFF`; IEC 61131-3 escribe `16#FF`                                                                                                                               | `default` |
+| `NON_IEC_REAL_LITERAL`     | un literal real tiene exponente y no tiene fracción, `1e3`; IEC escribe `1.0E3`                                                                                              | `default` |
+| `IMPLICIT_NARROWING`       | un valor se almacena en un tipo más estrecho y conserva sus bits bajos (es un error con `compiler.strictTypes`)                                                              | `default` |
+| `UNREACHABLE_STATEMENT`    | una instrucción sigue a `RETURN`, `EXIT` o `CONTINUE`, o a un `IF` o `CASE` con `ELSE` cuyas ramas salen todas, en la misma lista: una advertencia para el resto de la lista | `default` |
+| `UNUSED_VARIABLE`          | una variable `VAR` o `VAR_TEMP` no se lee ni se escribe nunca                                                                                                                | `default` |
+| `WRITE_ONLY_VARIABLE`      | una variable `VAR` o `VAR_TEMP` se escribe y no se lee nunca                                                                                                                 | `all`     |
+| `OPTION_IGNORED`           | una opción de `zplc.json` tiene un valor que no cambia nada                                                                                                                  | `default` |
+| `SOURCE_NOT_COMPILED`      | un archivo de texto estructurado de la carpeta del proyecto no está en `src` ni en una biblioteca listada                                                                    | `default` |
+| `WATCHDOG_RESET_NO_EFFECT` | se llama a `WATCHDOG_RESET()`: no hace nada, porque el runtime alimenta por sí mismo el watchdog de hardware después de cada ciclo completado                                | `default` |
 
 Una rama que una condición constante deshabilita (`IF FALSE THEN`) no es código inalcanzable: IEC 61131-3 no define ninguna regla para ella y el compilador no evalúa ninguna condición. Las variables que no se comprueban son las entradas, salidas y variables de entrada/salida de una unidad, las globales, las variables con dirección directa (`AT %Q0.0`) y las que tienen una etiqueta de comunicación; un miembro de bloque de función que otra unidad lee como `instance.member` cuenta como usado.
 
 ## Opciones del proyecto
 
-| Opción | Valores | Por defecto | Efecto |
-| --- | --- | --- | --- |
-| `compiler.warnings` | `none`, `default`, `all` | `default` | Qué advertencias informa la compilación. `none` no informa ninguna, `all` agrega `WRITE_ONLY_VARIABLE`. |
-| `compiler.strictTypes` | `true`, `false` | `false` | Un estrechamiento implícito es un error en el valor, con el nombre de ambos tipos, en lugar de la advertencia `IMPLICIT_NARROWING`. |
-| `compiler.debug` | `true`, `false` | `true` | El mapa de depuración lleva los rangos de instrucciones y las asociaciones de líneas que necesitan los puntos de parada y la línea actual. Con `false` lista solo las variables y la memoria; el código es el mismo. |
-| `compiler.optimization` | `none`, `size`, `speed` | `none` | El compilador tiene un solo generador de código, así que el código es el mismo con cualquier valor. `size` y `speed` se aceptan para que los proyectos antiguos se compilen, y la compilación avisa con `OPTION_IGNORED`. |
-| `build.generateDebugInfo` | `true`, `false` | `false` | `zplc-cli compile <workspace> --output <file>` escribe además el mapa de depuración junto al artefacto, como `<file>.map.json`. |
-| `libraries` | lista de carpetas | ninguna | Carpetas de archivos fuente que se compilan con el proyecto, vea abajo. |
+| Opción                    | Valores                  | Por defecto | Efecto                                                                                                                                                                                                                    |
+| ------------------------- | ------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `compiler.warnings`       | `none`, `default`, `all` | `default`   | Qué advertencias informa la compilación. `none` no informa ninguna, `all` agrega `WRITE_ONLY_VARIABLE`.                                                                                                                   |
+| `compiler.strictTypes`    | `true`, `false`          | `false`     | Un estrechamiento implícito es un error en el valor, con el nombre de ambos tipos, en lugar de la advertencia `IMPLICIT_NARROWING`.                                                                                       |
+| `compiler.debug`          | `true`, `false`          | `true`      | El mapa de depuración lleva los rangos de instrucciones y las asociaciones de líneas que necesitan los puntos de parada y la línea actual. Con `false` lista solo las variables y la memoria; el código es el mismo.      |
+| `compiler.optimization`   | `none`, `size`, `speed`  | `none`      | El compilador tiene un solo generador de código, así que el código es el mismo con cualquier valor. `size` y `speed` se aceptan para que los proyectos antiguos se compilen, y la compilación avisa con `OPTION_IGNORED`. |
+| `build.generateDebugInfo` | `true`, `false`          | `false`     | `zplc-cli compile <workspace> --output <file>` escribe además el mapa de depuración junto al artefacto, como `<file>.map.json`.                                                                                           |
+| `libraries`               | lista de carpetas        | ninguna     | Carpetas de archivos fuente que se compilan con el proyecto, vea abajo.                                                                                                                                                   |
 
 Un valor que no figura en la tabla es un error de proyecto que nombra la opción.
 
@@ -105,24 +105,24 @@ Para un proyecto, el listado contiene el código de todos los programas, en el o
 
 Un operando tiene que caber en su campo. Un valor que no cabe es un error que nombra la línea y el campo; el ensamblador nunca lo trunca.
 
-| Campo | Códigos de operación | Valores aceptados |
-| --- | --- | --- |
-| Inmediato de 8, 16 o 32 bits | `PUSH8`, `PICK`, `PUSH16`, `PUSH32` | de -2^(n-1) a 2^n - 1: escrito con o sin signo, la VM lo extiende con el signo |
-| Dirección de memoria de 16 bits | `LOAD8` a `STORE64` | 0 a 65535 |
-| Dirección de código de 16 bits | `JMP`, `JZ`, `JNZ`, `CALL` | una instrucción del código, 0 a 65535 |
-| Desplazamiento de 8 bits con signo | `JR`, `JRZ`, `JRNZ` | -128 a 127 desde la instrucción siguiente |
-| Tipo de 32 bits | `COMM_EXEC`, `COMM_STATUS`, `COMM_RESET` | 0 a 4294967295 |
+| Campo                              | Códigos de operación                     | Valores aceptados                                                              |
+| ---------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------ |
+| Inmediato de 8, 16 o 32 bits       | `PUSH8`, `PICK`, `PUSH16`, `PUSH32`      | de -2^(n-1) a 2^n - 1: escrito con o sin signo, la VM lo extiende con el signo |
+| Dirección de memoria de 16 bits    | `LOAD8` a `STORE64`                      | 0 a 65535                                                                      |
+| Dirección de código de 16 bits     | `JMP`, `JZ`, `JNZ`, `CALL`               | una instrucción del código, 0 a 65535                                          |
+| Desplazamiento de 8 bits con signo | `JR`, `JRZ`, `JRNZ`                      | -128 a 127 desde la instrucción siguiente                                      |
+| Tipo de 32 bits                    | `COMM_EXEC`, `COMM_STATUS`, `COMM_RESET` | 0 a 4294967295                                                                 |
 
 Es un error un salto a una etiqueta posterior a la última instrucción, a un destino numérico fuera del código, o a una etiqueta a más de 127 bytes con un salto relativo. También lo es un punto de entrada, un campo de etiqueta o una dirección reubicada que no cabe en su campo: `relocateBytecode` deja el bytecode sin cambios cuando una dirección pasaría de 65535.
 
 El generador de código escribe solo instrucciones de la tabla de códigos de operación generada, y cada línea se comprueba al escribirse. Una línea que no está en la tabla es un error interno del compilador que la nombra; nunca llega al ensamblador.
 
-| Directiva | Efecto en la salida |
-| --- | --- |
-| `.ORG addr` | El byte siguiente está en `addr`; el hueco se rellena con bytes `NOP`. Retroceder es un error. |
-| `.ENTRY label` o `.ENTRY addr` | Fija el punto de entrada del archivo; tiene que ser una instrucción del código. |
-| `.DB v, v, ...` y `.BYTE` | Emite cada valor, de -128 a 255, como un byte en este lugar. Una etiqueta posterior queda después de los bytes. El cargador verifica el segmento de código como instrucciones, así que los bytes tienen que decodificarse como tales. |
-| `.TAG addr type id value` | Agrega una etiqueta de variable al segmento TAGS; los cuatro números tienen que caber en 16, 8, 8 y 32 bits. |
+| Directiva                      | Efecto en la salida                                                                                                                                                                                                                   |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.ORG addr`                    | El byte siguiente está en `addr`; el hueco se rellena con bytes `NOP`. Retroceder es un error.                                                                                                                                        |
+| `.ENTRY label` o `.ENTRY addr` | Fija el punto de entrada del archivo; tiene que ser una instrucción del código.                                                                                                                                                       |
+| `.DB v, v, ...` y `.BYTE`      | Emite cada valor, de -128 a 255, como un byte en este lugar. Una etiqueta posterior queda después de los bytes. El cargador verifica el segmento de código como instrucciones, así que los bytes tienen que decodificarse como tales. |
+| `.TAG addr type id value`      | Agrega una etiqueta de variable al segmento TAGS; los cuatro números tienen que caber en 16, 8, 8 y 32 bits.                                                                                                                          |
 
 ## Lo que demuestra el artefacto
 

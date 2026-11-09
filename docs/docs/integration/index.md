@@ -43,10 +43,10 @@ The core does not touch hardware except through the HAL, so the port is the HAL.
 
 A protocol needs the layer under it on the board:
 
-| Protocol   | The board needs                                                    |
-| ---------- | ------------------------------------------------------------------ |
-| MQTT       | A Wi-Fi or Ethernet interface in the Zephyr configuration          |
-| Modbus TCP | An Ethernet or Wi-Fi interface and its sockets                     |
-| Modbus RTU | A UART with an RS-485 transceiver on the board                     |
+| Protocol   | The board needs                                           |
+| ---------- | --------------------------------------------------------- |
+| MQTT       | A Wi-Fi or Ethernet interface in the Zephyr configuration |
+| Modbus TCP | An Ethernet or Wi-Fi interface and its sockets            |
+| Modbus RTU | A UART with an RS-485 transceiver on the board            |
 
 Each board's network class is in [Boards](../reference/boards.md). What was exercised for each protocol, and at which evidence level, is in [Connectivity](../runtime/connectivity.md).

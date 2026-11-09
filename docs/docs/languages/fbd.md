@@ -22,11 +22,11 @@ Every action also works from the keyboard; the [keyboard reference](../reference
 
 ## The blocks of the palette
 
-| Group | Blocks |
-| --- | --- |
+| Group                                                                                                           | Blocks                                                                                                                                                                                                           |
+| --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Library groups such as Logic Gates, Comparison, Math, Selection, Timers, Counters, Edge Detection and Bistables | The gates, the comparisons, `ADD`, `SUB`, `MUL`, `DIV`, `MOD`, `ABS`, `MAX`, `MIN`, `LIMIT`, `SEL`, and the function blocks of the library. A group appears only when it holds a block that a diagram can place. |
-| Project | The function blocks and the functions that the Structured Text files of the project declare, with the ports of their declaration. |
-| I/O | The blocks that carry a value: `constant`, `variable`, `input`, `output`. |
+| Project                                                                                                         | The function blocks and the functions that the Structured Text files of the project declare, with the ports of their declaration.                                                                                |
+| I/O                                                                                                             | The blocks that carry a value: `constant`, `variable`, `input`, `output`.                                                                                                                                        |
 
 The functions of the library such as `SQRT`, `SIN`, `LEN`, `CONCAT` and the conversions are not offered, and the build refuses them by name; call them from Structured Text. A function of the project is offered, and it is called even when nothing uses its result. A declaration in the project wins over a standard block of the same name.
 
@@ -40,24 +40,24 @@ A block of the project is called with named arguments, so the order in which you
 
 The canvas refuses a wire between pins whose types do not match, and says why in a message over the canvas.
 
-| Types | Rule |
-| --- | --- |
-| Integers, bit strings, `REAL`, `LREAL` | One family of numbers. An integer goes into a `REAL` or an `LREAL`, and a `REAL` and an `LREAL` go into each other (the build warns when an `LREAL` is narrowed). A `REAL` never goes into an integer. |
-| `BOOL`, `TIME`, `DATE`, `TOD`, `DT`, strings | Each takes only its own type. |
-| A pin declared `ANY` | Not judged. |
+| Types                                        | Rule                                                                                                                                                                                                   |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Integers, bit strings, `REAL`, `LREAL`       | One family of numbers. An integer goes into a `REAL` or an `LREAL`, and a `REAL` and an `LREAL` go into each other (the build warns when an `LREAL` is narrowed). A `REAL` never goes into an integer. |
+| `BOOL`, `TIME`, `DATE`, `TOD`, `DT`, strings | Each takes only its own type.                                                                                                                                                                          |
+| A pin declared `ANY`                         | Not judged.                                                                                                                                                                                            |
 
 To feed a `REAL` to an integer input, convert it first with a conversion function such as `REAL_TO_INT` in a Structured Text program. An input has one source: a second wire into the same input is refused.
 
 ## Common mistakes
 
-| Mistake | What happens | What to do |
-| --- | --- | --- |
-| An input pin with no wire | The build refuses it with a message that names the block. | Wire it, or add a constant or variable block. |
-| A feedback loop, an output wired back to an earlier block | The build refuses it and names a block of the loop. | Restructure the logic so that data flows one way, or write the feedback in Structured Text. |
-| A `BOOL` output into a numeric input | The wire is refused. | Convert it, or compare the value instead. |
-| Two wires into one input | The second is refused. | Combine the sources with a block such as `OR` or `SEL`. |
-| EN and ENO on a block | Not supported. The build refuses it with a message. | Use a Ladder function box when you need EN and ENO ([Write a Ladder Diagram](./ld.md)). |
-| A block that no file declares | The build refuses it by name. | Declare it in a Structured Text file of `src` or of a library folder. |
+| Mistake                                                   | What happens                                              | What to do                                                                                  |
+| --------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| An input pin with no wire                                 | The build refuses it with a message that names the block. | Wire it, or add a constant or variable block.                                               |
+| A feedback loop, an output wired back to an earlier block | The build refuses it and names a block of the loop.       | Restructure the logic so that data flows one way, or write the feedback in Structured Text. |
+| A `BOOL` output into a numeric input                      | The wire is refused.                                      | Convert it, or compare the value instead.                                                   |
+| Two wires into one input                                  | The second is refused.                                    | Combine the sources with a block such as `OR` or `SEL`.                                     |
+| EN and ENO on a block                                     | Not supported. The build refuses it with a message.       | Use a Ladder function box when you need EN and ENO ([Write a Ladder Diagram](./ld.md)).     |
+| A block that no file declares                             | The build refuses it by name.                             | Declare it in a Structured Text file of `src` or of a library folder.                       |
 
 ## Arrange and read the diagram
 

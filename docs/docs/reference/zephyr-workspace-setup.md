@@ -17,12 +17,12 @@ A finished build proves that the profile compiles and fits its flash and RAM bud
 
 `west.yml` names one project, Zephyr, at a fixed commit, and imports the modules Zephyr itself needs. ZPLC is the `self` entry of that manifest, so the checkout is the manifest repository of the workspace.
 
-| Input                              | What it fixes                                           |
-| ---------------------------------- | ------------------------------------------------------- |
-| `west.yml`                         | The Zephyr revision and the modules it imports          |
-| `firmware/app/CMakeLists.txt`      | The application that is built for every board           |
-| `firmware/app/boards/boards.json`  | The board manifest: targets, memory sizes, I/O, budget  |
-| `tools/firmware-test/setup.sh`     | The script that creates and verifies the workspace      |
+| Input                             | What it fixes                                          |
+| --------------------------------- | ------------------------------------------------------ |
+| `west.yml`                        | The Zephyr revision and the modules it imports         |
+| `firmware/app/CMakeLists.txt`     | The application that is built for every board          |
+| `firmware/app/boards/boards.json` | The board manifest: targets, memory sizes, I/O, budget |
+| `tools/firmware-test/setup.sh`    | The script that creates and verifies the workspace     |
 
 ## Create the workspace
 

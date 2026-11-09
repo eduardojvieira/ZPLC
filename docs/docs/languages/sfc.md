@@ -22,25 +22,25 @@ Every action also works from the keyboard; the [keyboard reference](../reference
 
 ## The elements of the palette
 
-| Element | What it is |
-| --- | --- |
-| Initial step | The step that is active when the program starts. |
-| Step | A state of the machine. It can run actions while it is active. |
-| Transition | The condition that moves the chart from the steps before it to the steps after it. |
+| Element      | What it is                                                                         |
+| ------------ | ---------------------------------------------------------------------------------- |
+| Initial step | The step that is active when the program starts.                                   |
+| Step         | A state of the machine. It can run actions while it is active.                     |
+| Transition   | The condition that moves the chart from the steps before it to the steps after it. |
 
 A transition condition is a `BOOL` expression in Structured Text. Inside a condition or an action body, `Step.X` is TRUE while the step named `Step` is active, and `Step.T` is the time the step has been active. A selection divergence is several transitions that leave one step; a simultaneous divergence or convergence is one transition that enters or leaves several steps.
 
 ## Action qualifiers
 
-| Qualifier | The action runs |
-| --- | --- |
-| `N` | while the step is active |
-| `S` | from the first scan of the step until some step with `R` resets it, also after the step is left |
-| `R` | no longer once this step is active: it clears the state that `S` stored for the action |
-| `L` | while the step is active, for at most the time given |
-| `D` | while the step is active, once the time given has passed |
-| `P`, `P1` | for one scan, when the step becomes active |
-| `P0` | for one scan, when the step is left |
+| Qualifier | The action runs                                                                                 |
+| --------- | ----------------------------------------------------------------------------------------------- |
+| `N`       | while the step is active                                                                        |
+| `S`       | from the first scan of the step until some step with `R` resets it, also after the step is left |
+| `R`       | no longer once this step is active: it clears the state that `S` stored for the action          |
+| `L`       | while the step is active, for at most the time given                                            |
+| `D`       | while the step is active, once the time given has passed                                        |
+| `P`, `P1` | for one scan, when the step becomes active                                                      |
+| `P0`      | for one scan, when the step is left                                                             |
 
 The qualifiers `SD`, `DS` and `SL` are not supported: the build refuses them with a message.
 
@@ -57,17 +57,17 @@ A chart of more than 14 steps builds and runs on the native runtime.
 
 ## Common mistakes
 
-| Mistake | What happens | What to do |
-| --- | --- | --- |
-| Two steps with the same name | The build refuses it, because `Step.T` would be ambiguous. | Give every step a distinct name. |
-| A variable named like a step | The build refuses it for the same reason. | Rename the variable or the step. |
-| `L` or `D` with no time | The build says that the qualifier needs a time, such as `T#2s`. | Write a `TIME` literal. |
-| A time on `N`, `S`, `R` or `P` | The build says that the qualifier does not support time. | Leave the time empty. |
-| An action name that does not resolve | The build names the step and the action. | Define the action, or fix the name. |
-| An empty transition condition | The build refuses it. | Write a `BOOL` expression; `TRUE` always fires. |
-| A transition that does not reference a known step | The build refuses it and names the transition. | Reconnect it to existing steps. |
-| An action body in a language other than Structured Text | Only Structured Text actions are supported. | Write the body in Structured Text. |
-| A step that no transition enters | It has no place for a breakpoint to stop. | Set the breakpoint on a step that a transition enters. |
+| Mistake                                                 | What happens                                                    | What to do                                             |
+| ------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------ |
+| Two steps with the same name                            | The build refuses it, because `Step.T` would be ambiguous.      | Give every step a distinct name.                       |
+| A variable named like a step                            | The build refuses it for the same reason.                       | Rename the variable or the step.                       |
+| `L` or `D` with no time                                 | The build says that the qualifier needs a time, such as `T#2s`. | Write a `TIME` literal.                                |
+| A time on `N`, `S`, `R` or `P`                          | The build says that the qualifier does not support time.        | Leave the time empty.                                  |
+| An action name that does not resolve                    | The build names the step and the action.                        | Define the action, or fix the name.                    |
+| An empty transition condition                           | The build refuses it.                                           | Write a `BOOL` expression; `TRUE` always fires.        |
+| A transition that does not reference a known step       | The build refuses it and names the transition.                  | Reconnect it to existing steps.                        |
+| An action body in a language other than Structured Text | Only Structured Text actions are supported.                     | Write the body in Structured Text.                     |
+| A step that no transition enters                        | It has no place for a breakpoint to stop.                       | Set the breakpoint on a step that a transition enters. |
 
 ## Watch it run
 

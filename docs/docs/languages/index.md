@@ -13,13 +13,13 @@ ZPLC offers five IEC 61131-3 languages in one project: Structured Text, Instruct
 
 ## Choose a language
 
-| Language | Write it in | Use it for | Guide |
-| --- | --- | --- | --- |
-| Structured Text (ST) | A text editor | Calculations, data handling, loops, anything that is easier to read as code. The language every other one is translated to. | [Structured Text](./st.md) |
-| Instruction List (IL) | A text editor | Existing IL logic, and low-level sequences on an accumulator. | [Instruction List](./il.md) |
-| Ladder Diagram (LD) | A rung editor | Interlocks, relay-style logic, and conditions that an electrician reads at a glance. | [Ladder Diagram](./ld.md) |
-| Function Block Diagram (FBD) | A diagram editor | Signal flow between timers, counters, comparisons and arithmetic. | [Function Block Diagram](./fbd.md) |
-| Sequential Function Chart (SFC) | A chart editor | Machines that move through steps, such as a start, run and stop sequence. | [Sequential Function Chart](./sfc.md) |
+| Language                        | Write it in      | Use it for                                                                                                                  | Guide                                 |
+| ------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| Structured Text (ST)            | A text editor    | Calculations, data handling, loops, anything that is easier to read as code. The language every other one is translated to. | [Structured Text](./st.md)            |
+| Instruction List (IL)           | A text editor    | Existing IL logic, and low-level sequences on an accumulator.                                                               | [Instruction List](./il.md)           |
+| Ladder Diagram (LD)             | A rung editor    | Interlocks, relay-style logic, and conditions that an electrician reads at a glance.                                        | [Ladder Diagram](./ld.md)             |
+| Function Block Diagram (FBD)    | A diagram editor | Signal flow between timers, counters, comparisons and arithmetic.                                                           | [Function Block Diagram](./fbd.md)    |
+| Sequential Function Chart (SFC) | A chart editor   | Machines that move through steps, such as a start, run and stop sequence.                                                   | [Sequential Function Chart](./sfc.md) |
 
 Structured Text goes to the compiler directly. The other four are translated to Structured Text first, and that generated text is read-only output. The languages are not interchangeable: an editor, a debugger or a library block may support a construct in one language and not in another, and a program does not convert back from Structured Text to a diagram. The generated [language references](../reference/language-st.md) state what works in each.
 

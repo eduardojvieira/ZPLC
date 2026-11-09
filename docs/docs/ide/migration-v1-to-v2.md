@@ -31,12 +31,12 @@ zplc-cli migrate path/to/project --output zplc.v2.json
 
 ## What changes
 
-| Area | Version 2 behavior |
-| --- | --- |
-| Project model | An explicit Save writes `schemaVersion: 2` to the `zplc.json` of the folder. |
-| Original folder | Unchanged during the preview. Save updates its `zplc.json`. |
-| Preview | The application's view is a preview. It does not promise that every legacy construct is supported. |
-| Evidence | Build, test and native simulation results apply to the saved project and are host evidence only. |
+| Area            | Version 2 behavior                                                                                 |
+| --------------- | -------------------------------------------------------------------------------------------------- |
+| Project model   | An explicit Save writes `schemaVersion: 2` to the `zplc.json` of the folder.                       |
+| Original folder | Unchanged during the preview. Save updates its `zplc.json`.                                        |
+| Preview         | The application's view is a preview. It does not promise that every legacy construct is supported. |
+| Evidence        | Build, test and native simulation results apply to the saved project and are host evidence only.   |
 
 ## Before you save
 
@@ -46,12 +46,12 @@ Back up the folder or commit it to version control, then review the difference. 
 
 The migration gate covers the repository's golden version 1 projects: their saved version 2 form must compile and keep the tested observable behavior on the native runtime. It is not a claim of equivalence on a target, in electrical behavior, in timing or in hardware-in-the-loop runs.
 
-| Part | Verified by | Level |
-| --- | --- | --- |
-| `migrate-preview` writes nothing, and `migrate` writes only the file named by `--output` and leaves the folder byte-identical | Unit tests of the command line, and both commands run on a copy of the bundled project `motor_start_stop` with its `schemaVersion` removed | Host |
-| The application shows the difference before it writes, and applies it on **Apply migration** | Journey 31 in the real application | Host |
-| The saved version 2 form keeps what the project does | A test exports the migration of the motor start/stop project and checks that its golden scenario gives the same observable on the native runtime | Host |
-| The migrated project behaves the same on a board | Not claimed: no target, electrical or timing equivalence | None |
+| Part                                                                                                                          | Verified by                                                                                                                                      | Level |
+| ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----- |
+| `migrate-preview` writes nothing, and `migrate` writes only the file named by `--output` and leaves the folder byte-identical | Unit tests of the command line, and both commands run on a copy of the bundled project `motor_start_stop` with its `schemaVersion` removed       | Host  |
+| The application shows the difference before it writes, and applies it on **Apply migration**                                  | Journey 31 in the real application                                                                                                               | Host  |
+| The saved version 2 form keeps what the project does                                                                          | A test exports the migration of the motor start/stop project and checks that its golden scenario gives the same observable on the native runtime | Host  |
+| The migrated project behaves the same on a board                                                                              | Not claimed: no target, electrical or timing equivalence                                                                                         | None  |
 
 ## Next step
 

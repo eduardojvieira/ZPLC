@@ -23,13 +23,13 @@ Cada acción también se puede hacer con el teclado; la [referencia de teclado](
 
 ## Los elementos de la paleta
 
-| Grupo | Elementos |
-| --- | --- |
-| Contactos | normalmente abierto, normalmente cerrado, flanco ascendente, flanco descendente |
-| Bobinas | normal, negada, de activación, de desactivación, flanco ascendente, flanco descendente |
-| Estructura | la rama paralela |
+| Grupo              | Elementos                                                                                                                                                         |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Contactos          | normalmente abierto, normalmente cerrado, flanco ascendente, flanco descendente                                                                                   |
+| Bobinas            | normal, negada, de activación, de desactivación, flanco ascendente, flanco descendente                                                                            |
+| Estructura         | la rama paralela                                                                                                                                                  |
 | Bloques de función | los temporizadores, contadores, disparadores y biestables de la biblioteca, y los bloques de función que declaran los archivos de texto estructurado del proyecto |
-| Funciones | las quince funciones IEC que se ejecutan como cajas con EN y ENO, descritas más abajo |
+| Funciones          | las quince funciones IEC que se ejecutan como cajas con EN y ENO, descritas más abajo                                                                             |
 
 Los bloques de comunicación `COMM_CONNECT`, `COMM_PUBLISH`, `COMM_SUBSCRIBE` y `COMM_MODBUS` no se ofrecen: un archivo de escalera no puede declarar una instancia de ellos. Una función del proyecto no se coloca en un peldaño; llámela desde un diagrama de bloques de función o desde texto estructurado. Los saltos y las etiquetas no se admiten, y la compilación los rechaza con un mensaje.
 
@@ -70,24 +70,24 @@ Los pines de operandos son `IN1` e `IN2` para las comparaciones, las operaciones
 
 ## Quién puede escribir una variable
 
-| Escritores de una variable | Resultado |
-| --- | --- |
-| Varias cajas de función | Se permite. Cada una escribe mientras su EN está activo, y gana la última en el orden del ciclo. |
-| Una bobina | Se permite. |
-| Una bobina de activación en un peldaño y una de desactivación en otro | Se permite. |
-| Dos bobinas normales | Se rechaza: `Multiple writers target ...`. |
-| Una bobina y una caja de función | Se rechaza, y el mensaje nombra ambas posiciones. |
+| Escritores de una variable                                            | Resultado                                                                                        |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Varias cajas de función                                               | Se permite. Cada una escribe mientras su EN está activo, y gana la última en el orden del ciclo. |
+| Una bobina                                                            | Se permite.                                                                                      |
+| Una bobina de activación en un peldaño y una de desactivación en otro | Se permite.                                                                                      |
+| Dos bobinas normales                                                  | Se rechaza: `Multiple writers target ...`.                                                       |
+| Una bobina y una caja de función                                      | Se rechaza, y el mensaje nombra ambas posiciones.                                                |
 
 ## Errores comunes
 
-| Error | Qué ocurre | Qué hacer |
-| --- | --- | --- |
-| Dos bobinas gobiernan la misma salida | La compilación lo rechaza con `Multiple writers target ...`. | Combine las condiciones en un peldaño, o use una bobina de activación y una de desactivación en dos peldaños. |
-| Una caja y una bobina escriben una variable | La compilación lo rechaza y nombra ambos elementos. | Dé a la caja su propia variable de salida y léala con un contacto. |
-| `DIV` o `MOD` con un divisor que puede ser cero | La VM entra en falla y las salidas se borran. | Ponga en serie, antes de la caja, un `NE` con el divisor y 0. |
-| Una caja con un operando o una salida vacíos | La compilación informa de la caja por peldaño y celda. | Pulse `F2` sobre la caja y asocie cada ranura. |
-| Un contacto o una bobina siguen mostrando `???` | No están asociados a una variable. | Pulse `F2` y elija un símbolo declarado. |
-| Un salto o una etiqueta | La compilación lo rechaza con un mensaje. | Use una rama, o mueva la lógica a un programa de texto estructurado. |
+| Error                                           | Qué ocurre                                                   | Qué hacer                                                                                                     |
+| ----------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| Dos bobinas gobiernan la misma salida           | La compilación lo rechaza con `Multiple writers target ...`. | Combine las condiciones en un peldaño, o use una bobina de activación y una de desactivación en dos peldaños. |
+| Una caja y una bobina escriben una variable     | La compilación lo rechaza y nombra ambos elementos.          | Dé a la caja su propia variable de salida y léala con un contacto.                                            |
+| `DIV` o `MOD` con un divisor que puede ser cero | La VM entra en falla y las salidas se borran.                | Ponga en serie, antes de la caja, un `NE` con el divisor y 0.                                                 |
+| Una caja con un operando o una salida vacíos    | La compilación informa de la caja por peldaño y celda.       | Pulse `F2` sobre la caja y asocie cada ranura.                                                                |
+| Un contacto o una bobina siguen mostrando `???` | No están asociados a una variable.                           | Pulse `F2` y elija un símbolo declarado.                                                                      |
+| Un salto o una etiqueta                         | La compilación lo rechaza con un mensaje.                    | Use una rama, o mueva la lógica a un programa de texto estructurado.                                          |
 
 ## Verla en ejecución
 

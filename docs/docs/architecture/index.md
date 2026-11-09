@@ -34,12 +34,12 @@ flowchart LR
   HAL --> TARGET
 ```
 
-| Boundary | What is on each side | What crosses it |
-| --- | --- | --- |
-| Authoring | You, the ZPLC application and the command line, working in ST, IL, LD, FBD or SFC | Project files: source, `zplc.json`, scenarios |
-| Compilation | The compiler (`packages/zplc-compiler`) and the language transpilers of the application | A `.zplc` artifact and its debug map |
-| Runtime | The C99 core in `firmware/lib/zplc_core/src/core`: the VM, the loader and verifier, the scheduler core | Calls to the `zplc_hal_*` functions |
-| Platform | A HAL port: Zephyr, POSIX, WebAssembly or FreeRTOS | The clock, pins, storage and network of the device |
+| Boundary    | What is on each side                                                                                   | What crosses it                                    |
+| ----------- | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| Authoring   | You, the ZPLC application and the command line, working in ST, IL, LD, FBD or SFC                      | Project files: source, `zplc.json`, scenarios      |
+| Compilation | The compiler (`packages/zplc-compiler`) and the language transpilers of the application                | A `.zplc` artifact and its debug map               |
+| Runtime     | The C99 core in `firmware/lib/zplc_core/src/core`: the VM, the loader and verifier, the scheduler core | Calls to the `zplc_hal_*` functions                |
+| Platform    | A HAL port: Zephyr, POSIX, WebAssembly or FreeRTOS                                                     | The clock, pins, storage and network of the device |
 
 ## Who owns what
 
@@ -53,11 +53,11 @@ flowchart LR
 
 ## Where a program can run
 
-| Runtime | Built from | Evidence it gives |
-| --- | --- | --- |
-| Native simulation (`zplc_runtime`) | The core and the POSIX port | Host: the result of every scan, on a host processor and clock |
-| Software runtime (WebAssembly) | The same session code and scheduler core, built with the WebAssembly port | Host, degraded: no network blocks, no serial, no pins. See [the software runtime](../runtime/browser-runtime.md) |
-| Zephyr firmware | The core and the Zephyr port, one image per board | Emulated target or `cross-build` today; see [hardware support](../reference/capabilities-evidence.md) |
+| Runtime                            | Built from                                                                | Evidence it gives                                                                                                |
+| ---------------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Native simulation (`zplc_runtime`) | The core and the POSIX port                                               | Host: the result of every scan, on a host processor and clock                                                    |
+| Software runtime (WebAssembly)     | The same session code and scheduler core, built with the WebAssembly port | Host, degraded: no network blocks, no serial, no pins. See [the software runtime](../runtime/browser-runtime.md) |
+| Zephyr firmware                    | The core and the Zephyr port, one image per board                         | Emulated target or `cross-build` today; see [hardware support](../reference/capabilities-evidence.md)            |
 
 All three load the same `.zplc` artifacts and answer the same session requests, so a scenario that passes in simulation exercises the logic you will deploy. It does not exercise the timing or the electrical behaviour of a board.
 

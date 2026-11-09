@@ -17,13 +17,13 @@ Ningún bloque de nube ha intercambiado un mensaje con un servicio real de Azure
 
 ## Qué hace cada bloque
 
-| Bloque           | Qué hace                                                                                       | Configuración que necesita                                     |
-| ---------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `AZURE_DPS_PROV` | Registra el dispositivo en el Azure Device Provisioning Service y devuelve el hub asignado     | `azureDpsEnabled`, `azureDpsIdScope`, `azureDpsRegistrationId` |
-| `AZURE_C2D_RECV` | Recibe un mensaje de nube a dispositivo de Azure IoT Hub                                       | `azureC2dEnabled`, perfil `azure-iot-hub`                      |
-| `AZURE_EG_PUB`   | Publica un evento en un tema de Azure Event Grid                                               | perfil `azure-event-grid-mqtt`, `azureEventGridTopic`          |
-| `AWS_FLEET_PROV` | Aprovisiona el dispositivo mediante el aprovisionamiento de flota de AWS IoT                   | `awsFleetEnabled`, `awsFleetTemplateName`, `awsClaimCertPath`  |
-| `SPB_REBIRTH`    | Pide a la sesión Sparkplug B que publique de nuevo sus mensajes de nacimiento                  | perfil `sparkplug-b`                                           |
+| Bloque           | Qué hace                                                                                   | Configuración que necesita                                     |
+| ---------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| `AZURE_DPS_PROV` | Registra el dispositivo en el Azure Device Provisioning Service y devuelve el hub asignado | `azureDpsEnabled`, `azureDpsIdScope`, `azureDpsRegistrationId` |
+| `AZURE_C2D_RECV` | Recibe un mensaje de nube a dispositivo de Azure IoT Hub                                   | `azureC2dEnabled`, perfil `azure-iot-hub`                      |
+| `AZURE_EG_PUB`   | Publica un evento en un tema de Azure Event Grid                                           | perfil `azure-event-grid-mqtt`, `azureEventGridTopic`          |
+| `AWS_FLEET_PROV` | Aprovisiona el dispositivo mediante el aprovisionamiento de flota de AWS IoT               | `awsFleetEnabled`, `awsFleetTemplateName`, `awsClaimCertPath`  |
+| `SPB_REBIRTH`    | Pide a la sesión Sparkplug B que publique de nuevo sus mensajes de nacimiento              | perfil `sparkplug-b`                                           |
 
 Los pines de cada bloque, con sus tipos, están en la [referencia de bloques de función](../reference/function-blocks.md#azure_c2d_recv).
 
@@ -131,13 +131,13 @@ Un mensaje de nube no puede iniciar ni detener el programa, definir un forzado n
 
 ## Qué está verificado, bloque por bloque
 
-| Bloque | Un servicio real | Un emulador o un doble local | Un intercambio grabado | Qué se probó en su lugar |
-| --- | --- | --- | --- | --- |
-| `AZURE_C2D_RECV` | No | El cliente del controlador en `native_sim`, contra un broker escrito para la prueba | Ninguno registrado | El manejador (pines, handshake, códigos de estado, `VALID` durante un ciclo), la disposición del bloque con sus límites y un mensaje de nube a dispositivo por el doble del broker |
-| `AZURE_DPS_PROV` | No | Existe un ayudante manual; ninguna prueba ejecutada lo usa | Ninguno registrado | El manejador, con el servicio de aprovisionamiento reemplazado por uno que espera; el generador del token de firma de acceso compartido, contra un vector conocido |
-| `AZURE_EG_PUB` | No | El cliente del controlador en `native_sim`, contra un broker escrito para la prueba | Ninguno registrado | El manejador, la disposición del bloque con los límites de su texto y un mensaje de Event Grid por solicitud por el doble del broker |
-| `AWS_FLEET_PROV` | No | Existe un ayudante manual; ninguna prueba ejecutada lo usa | Ninguno registrado | El manejador, con el servicio de aprovisionamiento reemplazado por uno que espera |
-| `SPB_REBIRTH` | No | El cliente del controlador en `native_sim`, contra un broker escrito para la prueba | Ninguno registrado | El manejador, y un `NBIRTH` por solicitud por el doble del broker; un comando de rebirth entregado al cliente solo vuelve a publicar los mensajes de nacimiento |
+| Bloque           | Un servicio real | Un emulador o un doble local                                                        | Un intercambio grabado | Qué se probó en su lugar                                                                                                                                                           |
+| ---------------- | ---------------- | ----------------------------------------------------------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AZURE_C2D_RECV` | No               | El cliente del controlador en `native_sim`, contra un broker escrito para la prueba | Ninguno registrado     | El manejador (pines, handshake, códigos de estado, `VALID` durante un ciclo), la disposición del bloque con sus límites y un mensaje de nube a dispositivo por el doble del broker |
+| `AZURE_DPS_PROV` | No               | Existe un ayudante manual; ninguna prueba ejecutada lo usa                          | Ninguno registrado     | El manejador, con el servicio de aprovisionamiento reemplazado por uno que espera; el generador del token de firma de acceso compartido, contra un vector conocido                 |
+| `AZURE_EG_PUB`   | No               | El cliente del controlador en `native_sim`, contra un broker escrito para la prueba | Ninguno registrado     | El manejador, la disposición del bloque con los límites de su texto y un mensaje de Event Grid por solicitud por el doble del broker                                               |
+| `AWS_FLEET_PROV` | No               | Existe un ayudante manual; ninguna prueba ejecutada lo usa                          | Ninguno registrado     | El manejador, con el servicio de aprovisionamiento reemplazado por uno que espera                                                                                                  |
+| `SPB_REBIRTH`    | No               | El cliente del controlador en `native_sim`, contra un broker escrito para la prueba | Ninguno registrado     | El manejador, y un `NBIRTH` por solicitud por el doble del broker; un comando de rebirth entregado al cliente solo vuelve a publicar los mensajes de nacimiento                    |
 
 Los ayudantes manuales están en `tools/connectivity/`: `fake_azure_dps.py`, `fake_aws_fleet.py` e `inspect_event_grid.py`. Se ejecutan contra un broker local y responden en los temas de aprovisionamiento. Comprueban el flujo de temas y los cambios de estado del dispositivo. No muestran que un bloque funcione con el DPS real de Azure, con Event Grid o con AWS IoT Core, y las comprobaciones del proyecto no registran ninguna ejecución de ellos.
 

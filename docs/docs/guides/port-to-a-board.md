@@ -92,15 +92,15 @@ Add one entry to `firmware/app/boards/boards.json`. The ZPLC application, the co
 
 What the manifest holds, and the rule that refuses a wrong value:
 
-| Key | What to write | What is checked |
-| --- | --- | --- |
-| `board_id`, `ide_id`, `zephyr_board` | Three names for the same board: the firmware name, the name a project file uses in `target.board`, and the Zephyr target | None of them repeats a name that another board has |
-| `memory` | The three sizes of step 1 | The build stops when they differ from the `.conf` |
-| `network_class`, `network_interface` | `serial-focused`, `network-capable` or `other`; `none`, `wifi` or `ethernet` | Only these words are accepted |
-| `evidence_refs` | An empty list | A path must be a hardware record that exists; the level is derived from the records and is never written by hand |
-| `watchdog` | Whether the hardware watchdog is on in this profile (`false` until a hardware record exists), the timeout its reset timing was recorded at, the longest timeout the part accepts, and what it does in STOP, while paused and in a latched fault (`disarm` or `feed`; `disarm` or `expire`) | A reason when it is off, a timeout inside what the part accepts, and the words of the three policies; it is never enabled without a hardware record |
-| `io.channels` | One entry per pin that a program can reach, at most 64 | Each channel has an address of the right direction and width, no two share a bit, an output has its safe value, and a digital channel names its devicetree alias, controller and pin |
-| `io.unmapped` | The terminals that exist and that ZPLC does not use, each with a reason | An entry has a terminal and a reason |
+| Key                                  | What to write                                                                                                                                                                                                                                                                              | What is checked                                                                                                                                                                      |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `board_id`, `ide_id`, `zephyr_board` | Three names for the same board: the firmware name, the name a project file uses in `target.board`, and the Zephyr target                                                                                                                                                                   | None of them repeats a name that another board has                                                                                                                                   |
+| `memory`                             | The three sizes of step 1                                                                                                                                                                                                                                                                  | The build stops when they differ from the `.conf`                                                                                                                                    |
+| `network_class`, `network_interface` | `serial-focused`, `network-capable` or `other`; `none`, `wifi` or `ethernet`                                                                                                                                                                                                               | Only these words are accepted                                                                                                                                                        |
+| `evidence_refs`                      | An empty list                                                                                                                                                                                                                                                                              | A path must be a hardware record that exists; the level is derived from the records and is never written by hand                                                                     |
+| `watchdog`                           | Whether the hardware watchdog is on in this profile (`false` until a hardware record exists), the timeout its reset timing was recorded at, the longest timeout the part accepts, and what it does in STOP, while paused and in a latched fault (`disarm` or `feed`; `disarm` or `expire`) | A reason when it is off, a timeout inside what the part accepts, and the words of the three policies; it is never enabled without a hardware record                                  |
+| `io.channels`                        | One entry per pin that a program can reach, at most 64                                                                                                                                                                                                                                     | Each channel has an address of the right direction and width, no two share a bit, an output has its safe value, and a digital channel names its devicetree alias, controller and pin |
+| `io.unmapped`                        | The terminals that exist and that ZPLC does not use, each with a reason                                                                                                                                                                                                                    | An entry has a terminal and a reason                                                                                                                                                 |
 
 No port supports an analog output, so leave it out of the description. The addresses of the channels are the ones a project maps with `AT %I0.0` ([Map variables to pins](./map-io.md)).
 
@@ -150,12 +150,12 @@ The new board appears at `cross-build`. Also add its `ide_id` to the `target.boa
 
 ## What is verified, and what is not
 
-| Part | Verified | Level |
-| --- | --- | --- |
-| The manifest entry above follows every rule of the manifest and repeats no name of another board | `bun tools/docs/check-docs-config.ts` runs it through the manifest validator, with the manifest of this repository | Host |
-| The order of the steps and the commands | Read from the firmware build files, the size tool and the validator of this repository | Host |
-| A real port | Not executed: no new board was ported while this page was written | None |
-| The board runs a program | Not verified: needs a hardware record | None |
+| Part                                                                                             | Verified                                                                                                           | Level |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ----- |
+| The manifest entry above follows every rule of the manifest and repeats no name of another board | `bun tools/docs/check-docs-config.ts` runs it through the manifest validator, with the manifest of this repository | Host  |
+| The order of the steps and the commands                                                          | Read from the firmware build files, the size tool and the validator of this repository                             | Host  |
+| A real port                                                                                      | Not executed: no new board was ported while this page was written                                                  | None  |
+| The board runs a program                                                                         | Not verified: needs a hardware record                                                                              | None  |
 
 ## See also
 
