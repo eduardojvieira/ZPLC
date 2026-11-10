@@ -349,32 +349,43 @@ export const NATIVE_TRACE_FLUSH_MS = 50;
 
 export interface NativeTraceBatcher {
   push(sample: NativeTraceSample): void;
-  /** Drops the samples not flushed yet: the trace they belong to was cleared. */
+  /** Drops the samples not flushed yet: the trace they belong to was emptied. */
   cancel(): void;
 }
 
-/** One `flush` per `delayMs` with every sample that arrived meanwhile, in order, at most the newest NATIVE_TRACE_LIMIT. */
+/**
+ * One `flush` per `delayMs` with every sample that arrived meanwhile, in order, at most the newest NATIVE_TRACE_LIMIT.
+ * A sample whose state differs from the one before it (the first one included) flushes at once: the live panel shows
+ * only a sample of the current state, so a start or a pause must not leave it empty for a whole delay.
+ */
 export function createNativeTraceBatcher(
   flush: (samples: NativeTraceSample[]) => void,
   delayMs = NATIVE_TRACE_FLUSH_MS,
 ): NativeTraceBatcher {
   let pending: NativeTraceSample[] = [];
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let lastState: VMState | undefined;
+  const flushPending = () => {
+    clearTimeout(timer);
+    timer = undefined;
+    const samples = pending;
+    pending = [];
+    flush(samples);
+  };
   return {
     push(sample) {
       pending.push(sample);
       if (pending.length > NATIVE_TRACE_LIMIT) pending.shift();
-      timer ??= setTimeout(() => {
-        timer = undefined;
-        const samples = pending;
-        pending = [];
-        flush(samples);
-      }, delayMs);
+      const changed = sample.state !== lastState;
+      lastState = sample.state;
+      if (changed) flushPending();
+      else timer ??= setTimeout(flushPending, delayMs);
     },
     cancel() {
       clearTimeout(timer);
       timer = undefined;
       pending = [];
+      lastState = undefined;
     },
   };
 }

@@ -14,7 +14,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
 import { monitoredKeys, subscribeMonitorKeys } from '../monitoring/registry';
-import { useIDEStore } from '../store/useIDEStore';
+import { onNativeTraceCleared, useIDEStore } from '../store/useIDEStore';
 import { publishVmInfo } from '../store/vmInfo';
 import type { IDebugAdapter, VMState, VMInfo, DebugAdapterEvents } from '../runtime/debugAdapter';
 import { connectSimulationAdapter } from '../runtime/simulationAdapterFactory';
@@ -127,23 +127,22 @@ export function useDebugController(): DebugController {
   const clearForcedValues = useIDEStore((state) => state.clearForcedValues);
   const markForcedValuesUnconfirmed = useIDEStore((state) => state.markForcedValuesUnconfirmed);
   const clearNativeTrace = useIDEStore((state) => state.clearNativeTrace);
-  // Samples reach the store in batches, not once a scan (NATIVE_TRACE_FLUSH_MS). Closing the project starts a new
-  // compiler run, so a batch from before it is dropped.
-  const [traceBatcher] = useState(() =>
-    createNativeTraceBatcher((samples) => {
-      const { compilerRunId, appendNativeTrace } = useIDEStore.getState();
-      const current = samples.filter((sample) => sample.compilerRunId === compilerRunId);
-      if (current.length > 0) appendNativeTrace(...current);
-    }),
-  );
-  useEffect(() => () => traceBatcher.cancel(), [traceBatcher]);
+  // Samples reach the store in batches, not once a scan (NATIVE_TRACE_FLUSH_MS). Whatever empties the trace drops the
+  // batch not flushed yet, so no sample from before it comes back.
+  const [traceBatcher] = useState(() => createNativeTraceBatcher((samples) => useIDEStore.getState().appendNativeTrace(...samples)));
+  useEffect(() => {
+    const off = onNativeTraceCleared(() => traceBatcher.cancel());
+    return () => {
+      off();
+      traceBatcher.cancel();
+    };
+  }, [traceBatcher]);
 
   const invalidateNativeTrace = useCallback(() => {
     traceCaptureEnabledRef.current = false;
     traceEpochRef.current += 1;
-    traceBatcher.cancel();
     clearNativeTrace();
-  }, [clearNativeTrace, traceBatcher]);
+  }, [clearNativeTrace]);
   const forcesUnconfirmed = useIDEStore((state) => state.debug.forcesUnconfirmed);
 
   const { enqueueDeviceLog, flushDeviceLogs } = useDeviceLogQueue(addConsoleEntries);

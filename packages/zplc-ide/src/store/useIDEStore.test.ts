@@ -52,7 +52,7 @@ await mock.module('../utils/projectLoader', () =>
   projectLoaderStub({ loadProject: () => loadedExample, loadProjectAssets: () => loadedExampleAssets }),
 );
 
-const { useIDEStore } = await import('./useIDEStore');
+const { useIDEStore, onNativeTraceCleared } = await import('./useIDEStore');
 
 describe('useIDEStore workspace-test boundary', () => {
   it('does not promise automatic workspace-test registration from browser folder handles', () => {
@@ -153,6 +153,24 @@ describe('useIDEStore native trace', () => {
     expect(updates).toBe(1);
     expect(useIDEStore.getState().debug.nativeTrace.map((item) => item.cycles)).toEqual([2, 3, 4]);
     state.clearNativeTrace();
+  });
+
+  it('tells whenever something empties the trace, and not when it grows', () => {
+    const state = useIDEStore.getState();
+    state.clearNativeTrace();
+    let cleared = 0;
+    const off = onNativeTraceCleared(() => {
+      cleared += 1;
+    });
+    state.appendNativeTrace(sample);
+    expect(cleared).toBe(0);
+    state.clearNativeTrace();
+    expect(cleared).toBe(1);
+    state.clearNativeTrace();
+    expect(cleared).toBe(2);
+    off();
+    state.clearNativeTrace();
+    expect(cleared).toBe(2);
   });
 });
 

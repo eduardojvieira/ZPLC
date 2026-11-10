@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 
-import type { IDebugAdapter, RuntimeSnapshot } from './debugAdapter';
+import type { IDebugAdapter, RuntimeSnapshot, VMState } from './debugAdapter';
 import {
   type NativeTraceSample,
   NATIVE_TRACE_LIMIT,
@@ -201,44 +201,60 @@ function motorMap(overrides: Partial<DebugMap> = {}): DebugMap {
 }
 
 describe('native trace batching', () => {
-  const sample = (cycles: number) =>
-    project(snapshot({ uptimeMs: cycles * 10, stats: { cycles, activeTasks: 1, overruns: 0, programSize: 9 } }))!;
+  const sample = (cycles: number, state: VMState = 'running') =>
+    project(snapshot({ state, uptimeMs: cycles * 10, stats: { cycles, activeTasks: 1, overruns: 0, programSize: 9 } }))!;
   const settle = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
   const cyclesOf = (flushes: NativeTraceSample[][]) => flushes.map((batch) => batch.map((item) => item.cycles));
 
-  it('hands a burst of samples to one flush, in arrival order, after the delay', async () => {
+  it('hands the samples of one state to one flush, in arrival order, after the delay', async () => {
     const flushes: NativeTraceSample[][] = [];
     const batcher = createNativeTraceBatcher((samples) => flushes.push(samples), 5);
-    for (const cycles of [1, 2, 3]) batcher.push(sample(cycles));
-    expect(flushes).toEqual([]);
+    batcher.push(sample(1));
+    expect(cyclesOf(flushes)).toEqual([[1]]);
+    for (const cycles of [2, 3, 4]) batcher.push(sample(cycles));
+    expect(cyclesOf(flushes)).toEqual([[1]]);
     await settle(20);
-    expect(cyclesOf(flushes)).toEqual([[1, 2, 3]]);
+    expect(cyclesOf(flushes)).toEqual([[1], [2, 3, 4]]);
+    batcher.push(sample(5));
+    await settle(20);
+    expect(cyclesOf(flushes)).toEqual([[1], [2, 3, 4], [5]]);
+  });
+
+  it('flushes at once, with the samples pending, when the runtime state changes', () => {
+    const flushes: NativeTraceSample[][] = [];
+    const batcher = createNativeTraceBatcher((samples) => flushes.push(samples), 5);
+    batcher.push(sample(1));
+    batcher.push(sample(2));
+    batcher.push(sample(3, 'paused'));
+    expect(cyclesOf(flushes)).toEqual([[1], [2, 3]]);
     batcher.push(sample(4));
-    await settle(20);
-    expect(cyclesOf(flushes)).toEqual([[1, 2, 3], [4]]);
+    expect(cyclesOf(flushes)).toEqual([[1], [2, 3], [4]]);
+    batcher.cancel();
   });
 
   it('holds at most the newest 200 samples between flushes', async () => {
     const flushes: NativeTraceSample[][] = [];
     const batcher = createNativeTraceBatcher((samples) => flushes.push(samples), 5);
-    for (let cycles = 1; cycles <= NATIVE_TRACE_LIMIT + 5; cycles++) batcher.push(sample(cycles));
+    for (let cycles = 1; cycles <= NATIVE_TRACE_LIMIT + 6; cycles++) batcher.push(sample(cycles));
     await settle(20);
-    expect(flushes).toHaveLength(1);
-    expect(flushes[0]).toHaveLength(NATIVE_TRACE_LIMIT);
-    expect(flushes[0]![0]!.cycles).toBe(6);
-    expect(flushes[0]!.at(-1)!.cycles).toBe(NATIVE_TRACE_LIMIT + 5);
+    expect(flushes).toHaveLength(2);
+    expect(flushes[1]).toHaveLength(NATIVE_TRACE_LIMIT);
+    expect(flushes[1]![0]!.cycles).toBe(7);
+    expect(flushes[1]!.at(-1)!.cycles).toBe(NATIVE_TRACE_LIMIT + 6);
   });
 
   it('drops the samples not yet flushed when cancelled, and batches again afterwards', async () => {
     const flushes: NativeTraceSample[][] = [];
     const batcher = createNativeTraceBatcher((samples) => flushes.push(samples), 5);
     batcher.push(sample(1));
+    batcher.push(sample(2));
     batcher.cancel();
     await settle(20);
-    expect(flushes).toEqual([]);
-    batcher.push(sample(2));
+    expect(cyclesOf(flushes)).toEqual([[1]]);
+    batcher.push(sample(3));
+    batcher.push(sample(4));
     await settle(20);
-    expect(cyclesOf(flushes)).toEqual([[2]]);
+    expect(cyclesOf(flushes)).toEqual([[1], [3], [4]]);
   });
 });
 

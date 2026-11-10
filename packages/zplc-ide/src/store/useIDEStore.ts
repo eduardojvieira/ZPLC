@@ -841,6 +841,16 @@ export const useIDEStore = create<IDEState>((set, get, api) => ({
   },
 }));
 
+/**
+ * Calls `listener` whenever something empties the native trace: a new session or program, a closed project, or the
+ * Trace tab's Clear. The debug controller drops its batch of samples not flushed yet then, so none of them comes back.
+ */
+export function onNativeTraceCleared(listener: () => void): () => void {
+  return useIDEStore.subscribe((state, previous) => {
+    if (state.debug.nativeTrace !== previous.debug.nativeTrace && state.debug.nativeTrace.length === 0) listener();
+  });
+}
+
 // =============================================================================
 // Theme Initialization
 // =============================================================================
