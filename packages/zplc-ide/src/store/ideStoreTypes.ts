@@ -277,7 +277,7 @@ export interface IDEState {
   clearForcedValue: (varPath: string) => void;
   markForcedValuesUnconfirmed: () => void;
   clearForcedValues: () => void;
-  appendNativeTrace: (sample: NativeTraceSample) => void;
+  appendNativeTrace: (...samples: NativeTraceSample[]) => void;
   clearNativeTrace: () => void;
   setPolling: (isPolling: boolean) => void;
   setPollingInterval: (interval: number) => void;

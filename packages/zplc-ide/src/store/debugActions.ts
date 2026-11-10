@@ -198,9 +198,9 @@ export const createDebugActions: StateCreator<
       debug: { ...state.debug, forcedValues: new Map(), forcesUnconfirmed: false },
     })),
 
-  appendNativeTrace: (sample) =>
+  appendNativeTrace: (...samples) =>
     set((state) => ({
-      debug: { ...state.debug, nativeTrace: [...state.debug.nativeTrace, sample].slice(-NATIVE_TRACE_LIMIT) },
+      debug: { ...state.debug, nativeTrace: [...state.debug.nativeTrace, ...samples].slice(-NATIVE_TRACE_LIMIT) },
     })),
 
   clearNativeTrace: () =>

@@ -32,10 +32,11 @@ import { type DebugCapabilities } from '../runtime/debugCapabilities';
 import { getDebugCapabilitiesForAdapter, getDebugFeatureActionability } from './debugCapabilityActions';
 import { isCurrentSerialAdapter, usesConnectionManager } from './forceReconciliation';
 import {
-  appendNativeTrace as appendNativeTraceSample,
   canCaptureNativeTrace,
   canCommitNativeLoad,
   canReenableNativeTrace,
+  createNativeTraceBatcher,
+  projectNativeTrace,
 } from '../runtime/nativeTrace';
 
 /**
@@ -125,14 +126,24 @@ export function useDebugController(): DebugController {
   const addConsoleEntries = useIDEStore((state) => state.addConsoleEntries);
   const clearForcedValues = useIDEStore((state) => state.clearForcedValues);
   const markForcedValuesUnconfirmed = useIDEStore((state) => state.markForcedValuesUnconfirmed);
-  const appendNativeTrace = useIDEStore((state) => state.appendNativeTrace);
   const clearNativeTrace = useIDEStore((state) => state.clearNativeTrace);
+  // Samples reach the store in batches, not once a scan (NATIVE_TRACE_FLUSH_MS). Closing the project starts a new
+  // compiler run, so a batch from before it is dropped.
+  const [traceBatcher] = useState(() =>
+    createNativeTraceBatcher((samples) => {
+      const { compilerRunId, appendNativeTrace } = useIDEStore.getState();
+      const current = samples.filter((sample) => sample.compilerRunId === compilerRunId);
+      if (current.length > 0) appendNativeTrace(...current);
+    }),
+  );
+  useEffect(() => () => traceBatcher.cancel(), [traceBatcher]);
 
   const invalidateNativeTrace = useCallback(() => {
     traceCaptureEnabledRef.current = false;
     traceEpochRef.current += 1;
+    traceBatcher.cancel();
     clearNativeTrace();
-  }, [clearNativeTrace]);
+  }, [clearNativeTrace, traceBatcher]);
   const forcesUnconfirmed = useIDEStore((state) => state.debug.forcesUnconfirmed);
 
   const { enqueueDeviceLog, flushDeviceLogs } = useDeviceLogQueue(addConsoleEntries);
@@ -225,13 +236,8 @@ export function useDebugController(): DebugController {
           ) {
             return;
           }
-          const trace = appendNativeTraceSample(currentState.debug.nativeTrace, adapterRef.current, owner, snapshot, {
-            compilerRunId: traceContext.compilerRunId,
-            receivedAtMs: Date.now(),
-          });
-          if (trace !== currentState.debug.nativeTrace) {
-            appendNativeTrace(trace.at(-1)!);
-          }
+          const sample = projectNativeTrace(snapshot, { compilerRunId: traceContext.compilerRunId, receivedAtMs: Date.now() });
+          if (sample) traceBatcher.push(sample);
         },
         onCapabilitiesChange: () => {
           if (isCurrentOwner()) {
@@ -240,7 +246,7 @@ export function useDebugController(): DebugController {
         },
       };
     },
-    [debugMap, enqueueDeviceLog, setCurrentExecution, addConsoleEntry, updateLiveValues, appendNativeTrace],
+    [debugMap, enqueueDeviceLog, setCurrentExecution, addConsoleEntry, updateLiveValues, traceBatcher],
   );
 
   const bindAdapterEventHandlers = useCallback(

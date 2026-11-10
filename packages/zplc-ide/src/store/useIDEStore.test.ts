@@ -140,6 +140,20 @@ describe('useIDEStore native trace', () => {
     state.clearNativeTrace();
     expect(useIDEStore.getState().debug.nativeTrace).toEqual([]);
   });
+
+  it('appends a batch of samples in order with one store update', () => {
+    const state = useIDEStore.getState();
+    state.clearNativeTrace();
+    let updates = 0;
+    const unsubscribe = useIDEStore.subscribe(() => {
+      updates += 1;
+    });
+    state.appendNativeTrace(sample, { ...sample, uptimeMs: 2, cycles: 3 }, { ...sample, uptimeMs: 3, cycles: 4 });
+    unsubscribe();
+    expect(updates).toBe(1);
+    expect(useIDEStore.getState().debug.nativeTrace.map((item) => item.cycles)).toEqual([2, 3, 4]);
+    state.clearNativeTrace();
+  });
 });
 
 describe('useIDEStore forced-value evidence', () => {

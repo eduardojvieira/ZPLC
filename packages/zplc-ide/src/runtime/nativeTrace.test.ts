@@ -8,6 +8,7 @@ import {
   canCaptureNativeTrace,
   canCommitNativeLoad,
   canReenableNativeTrace,
+  createNativeTraceBatcher,
   presentLiveNativeMotorOutput,
   presentLiveNativeMotorControls,
   projectNativeTrace,
@@ -198,6 +199,48 @@ function motorMap(overrides: Partial<DebugMap> = {}): DebugMap {
     ...overrides,
   };
 }
+
+describe('native trace batching', () => {
+  const sample = (cycles: number) =>
+    project(snapshot({ uptimeMs: cycles * 10, stats: { cycles, activeTasks: 1, overruns: 0, programSize: 9 } }))!;
+  const settle = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+  const cyclesOf = (flushes: NativeTraceSample[][]) => flushes.map((batch) => batch.map((item) => item.cycles));
+
+  it('hands a burst of samples to one flush, in arrival order, after the delay', async () => {
+    const flushes: NativeTraceSample[][] = [];
+    const batcher = createNativeTraceBatcher((samples) => flushes.push(samples), 5);
+    for (const cycles of [1, 2, 3]) batcher.push(sample(cycles));
+    expect(flushes).toEqual([]);
+    await settle(20);
+    expect(cyclesOf(flushes)).toEqual([[1, 2, 3]]);
+    batcher.push(sample(4));
+    await settle(20);
+    expect(cyclesOf(flushes)).toEqual([[1, 2, 3], [4]]);
+  });
+
+  it('holds at most the newest 200 samples between flushes', async () => {
+    const flushes: NativeTraceSample[][] = [];
+    const batcher = createNativeTraceBatcher((samples) => flushes.push(samples), 5);
+    for (let cycles = 1; cycles <= NATIVE_TRACE_LIMIT + 5; cycles++) batcher.push(sample(cycles));
+    await settle(20);
+    expect(flushes).toHaveLength(1);
+    expect(flushes[0]).toHaveLength(NATIVE_TRACE_LIMIT);
+    expect(flushes[0]![0]!.cycles).toBe(6);
+    expect(flushes[0]!.at(-1)!.cycles).toBe(NATIVE_TRACE_LIMIT + 5);
+  });
+
+  it('drops the samples not yet flushed when cancelled, and batches again afterwards', async () => {
+    const flushes: NativeTraceSample[][] = [];
+    const batcher = createNativeTraceBatcher((samples) => flushes.push(samples), 5);
+    batcher.push(sample(1));
+    batcher.cancel();
+    await settle(20);
+    expect(flushes).toEqual([]);
+    batcher.push(sample(2));
+    await settle(20);
+    expect(cyclesOf(flushes)).toEqual([[2]]);
+  });
+});
 
 describe('live native motor output', () => {
   const live = (overrides: Partial<Parameters<typeof presentLiveNativeMotorOutput>[0]> = {}) =>

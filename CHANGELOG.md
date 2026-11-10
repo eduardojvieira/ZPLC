@@ -98,6 +98,9 @@ ZPLC 2.0.0 is the first stable release. It follows the release candidates 2.0.0-
   device of the boards whose identifier the project has recorded (the two RP2040
   boards today); the install page says how to apply it without a reboot, and the
   group that the other boards need.
+- **The simulator keeps up on a slow computer.** A running simulation reports its state on
+  every scan; the window now takes those reports in batches, at most twenty a second, so
+  on a loaded machine the live panel and its buttons no longer fall seconds behind.
 - **ZPLC tells you about a newer release.** With the optional check turned on, or when
   you press **Check now**, a dismissible notice names the release, its address and the
   update step of your system. Nothing is downloaded or installed.

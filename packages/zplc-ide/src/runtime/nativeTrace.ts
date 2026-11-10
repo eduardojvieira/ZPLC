@@ -340,6 +340,45 @@ export function appendNativeTrace(
   return [...trace, sample].slice(-NATIVE_TRACE_LIMIT);
 }
 
+/**
+ * How long native trace samples gather before they reach the store together. The native runtime reports every scan (100
+ * a second at a 10 ms interval), and one store update a scan rendered the console that often: a loaded renderer fell
+ * behind, its queue grew, and the replies waiting in it came seconds late.
+ */
+export const NATIVE_TRACE_FLUSH_MS = 50;
+
+export interface NativeTraceBatcher {
+  push(sample: NativeTraceSample): void;
+  /** Drops the samples not flushed yet: the trace they belong to was cleared. */
+  cancel(): void;
+}
+
+/** One `flush` per `delayMs` with every sample that arrived meanwhile, in order, at most the newest NATIVE_TRACE_LIMIT. */
+export function createNativeTraceBatcher(
+  flush: (samples: NativeTraceSample[]) => void,
+  delayMs = NATIVE_TRACE_FLUSH_MS,
+): NativeTraceBatcher {
+  let pending: NativeTraceSample[] = [];
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return {
+    push(sample) {
+      pending.push(sample);
+      if (pending.length > NATIVE_TRACE_LIMIT) pending.shift();
+      timer ??= setTimeout(() => {
+        timer = undefined;
+        const samples = pending;
+        pending = [];
+        flush(samples);
+      }, delayMs);
+    },
+    cancel() {
+      clearTimeout(timer);
+      timer = undefined;
+      pending = [];
+    },
+  };
+}
+
 export interface VmErrorCode {
   name: string;
   code: number;
