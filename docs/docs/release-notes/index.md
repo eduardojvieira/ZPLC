@@ -13,12 +13,6 @@ ZPLC 2.0 is a new major version of the application, the compiler and the runtime
 what stops working, the steps to move from 1.x, and what has not been verified. The full engineering record is in
 `CHANGELOG.md` in the repository.
 
-:::warning Evaluation release
-ZPLC 2.0.0 is for evaluation. No board has been flashed, booted or run, so every board is at the `cross-build` level.
-The installers are unsigned, and ZPLC is not a safety PLC and must not control machinery:
-[Safety and limitations](../safety-and-limitations.md).
-:::
-
 ## Highlights
 
 - **A course inside the application.** Learn has 68 lessons in English and Spanish, a Ladder path that starts at zero,
@@ -173,3 +167,5 @@ boxes may write one variable. The [Ladder reference](../reference/language-ld.md
   [Hardware in the loop](../development/hardware-in-the-loop.md).
 
 Do not infer feature parity, timing performance or physical safety from this page or from the presence of source code.
+
+What ZPLC does not do, and what to test before it runs a machine: [Safety and limitations](../safety-and-limitations.md).

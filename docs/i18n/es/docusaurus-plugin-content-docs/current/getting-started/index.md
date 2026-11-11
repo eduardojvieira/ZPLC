@@ -13,12 +13,6 @@ ZPLC es una forma libre y de código abierto de escribir, probar y ejecutar prog
 le ayuda a elegir un camino y deja un programa funcionando en su computadora en unos diez minutos. No necesita un PLC ni una
 placa.
 
-:::warning Versión de evaluación
-ZPLC 2.0 es para evaluación. Ninguna placa se ha probado en hardware, los instaladores no están firmados con una
-identidad de pago y ZPLC no debe controlar maquinaria. Lea [Seguridad y limitaciones](../safety-and-limitations.md) antes
-de confiar en él para algo más que aprender y simular.
-:::
-
 ## Qué es ZPLC
 
 ZPLC tiene tres partes, en el orden en que las conocerá:
@@ -102,3 +96,4 @@ ZPLC_NATIVE_SIM_BIN="$PWD/firmware/lib/zplc_core/build/zplc_runtime" \
 - [La aplicación ZPLC](../ide/index.md): los editores, las pruebas y las herramientas del banco de trabajo.
 - [Lenguajes](../languages/index.md): texto estructurado y los otros cuatro lenguajes.
 - [Notas de la versión](../release-notes/index.md): qué hay de nuevo en 2.0, qué se rompe y qué no está verificado.
+- [Seguridad y limitaciones](../safety-and-limitations.md): lo que ZPLC no hace, y qué probar antes de que maneje una máquina.
