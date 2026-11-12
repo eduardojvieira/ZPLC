@@ -2,16 +2,12 @@ import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { itNative, nativeRuntimeBinary } from '../../cli/nativeRuntimeGuard';
 import { SCENE_INDEX } from '../../generated/sceneIndex';
 import type { PlantSceneFile } from '../contracts';
 import { checkSceneFacts, expectedHash, runSceneCheck } from './sceneCheck';
 
-const nativeRuntimeBinary =
-  process.env.ZPLC_NATIVE_SIM_BIN ?? resolve(import.meta.dir, '../../../../../firmware/lib/zplc_core/build/zplc_runtime');
-const hasRuntime = existsSync(nativeRuntimeBinary);
-const nativeIt = hasRuntime ? it : it.skip;
-if (!hasRuntime)
-  console.log(`sceneCheck: native runtime ${nativeRuntimeBinary} is absent; the runtime tests are skipped (bun run build:runtime)`);
+const nativeIt = itNative;
 
 const TOP = 0.45;
 const fixtureScene: PlantSceneFile = {
