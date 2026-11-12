@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/runtime-protocol. Do not edit. >>> */}
 
-El runtime POSIX nativo, el que usan las simulaciones y CI, es un proceso que recibe una solicitud JSON por línea en la entrada estándar y responde en la salida estándar. Esta es la versión `1.0` del protocolo: 26 métodos. Una solicitud tiene un `id`, un `type` con valor `request`, un `method` y un objeto `params`; cada parámetro indicado para un método es obligatorio y no se acepta ningún otro. La consola del dispositivo es otra interfaz: véanse los [comandos de la consola](./shell-commands.md).
+El runtime POSIX nativo, el que usan las simulaciones y CI, es un proceso que recibe una solicitud JSON por línea en la entrada estándar y responde en la salida estándar. Esta es la versión `1.0` del protocolo: 27 métodos. Una solicitud tiene un `id`, un `type` con valor `request`, un `method` y un objeto `params`; cada parámetro indicado para un método es obligatorio y no se acepta ningún otro. La consola del dispositivo es otra interfaz: véanse los [comandos de la consola](./shell-commands.md).
 
 Esta tabla se lee del archivo fuente `firmware/apps/posix_host/src/native_runtime_session.c`; su texto es el de la propia fuente, por eso es igual en inglés y en español.
 
@@ -43,6 +43,7 @@ Esta tabla se lee del archivo fuente `firmware/apps/posix_host/src/native_runtim
 | `session.hello` | `client_name`, `client_version`, `protocol_version` |
 | `simulation.input.set` | `input_id`, `active`, `program_generation` |
 | `scenario.step` | `at_ms` |
+| `simulation.clock.set` | `mode` |
 
 ## Parámetros
 
@@ -65,6 +66,7 @@ Esta tabla se lee del archivo fuente `firmware/apps/posix_host/src/native_runtim
 | `active` | The value of the input. |
 | `program_generation` | The generation of the loaded program that the input belongs to. |
 | `at_ms` | Time of the scan, in milliseconds of virtual time. |
+| `mode` | The clock of the session: "virtual" runs one scan per scenario.step, "free" runs scans in real time. |
 
 {/* <<< END GENERATED: reference/runtime-protocol <<< */}
 

@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/runtime-protocol. Do not edit. >>> */}
 
-The native POSIX runtime, the one that simulations and CI use, is a process that speaks one JSON request per line on standard input and answers on standard output. This is protocol version `1.0`: 26 methods. A request has an `id`, a `type` of `request`, a `method` and a `params` object; every parameter listed for a method is required and no other is accepted. The device shell is a different interface: see the [shell commands](./shell-commands.md).
+The native POSIX runtime, the one that simulations and CI use, is a process that speaks one JSON request per line on standard input and answers on standard output. This is protocol version `1.0`: 27 methods. A request has an `id`, a `type` of `request`, a `method` and a `params` object; every parameter listed for a method is required and no other is accepted. The device shell is a different interface: see the [shell commands](./shell-commands.md).
 
 This table is read off the source file `firmware/apps/posix_host/src/native_runtime_session.c`; its text is the source's own, so it is the same in English and in Spanish.
 
@@ -43,6 +43,7 @@ This table is read off the source file `firmware/apps/posix_host/src/native_runt
 | `session.hello` | `client_name`, `client_version`, `protocol_version` |
 | `simulation.input.set` | `input_id`, `active`, `program_generation` |
 | `scenario.step` | `at_ms` |
+| `simulation.clock.set` | `mode` |
 
 ## Parameters
 
@@ -65,6 +66,7 @@ This table is read off the source file `firmware/apps/posix_host/src/native_runt
 | `active` | The value of the input. |
 | `program_generation` | The generation of the loaded program that the input belongs to. |
 | `at_ms` | Time of the scan, in milliseconds of virtual time. |
+| `mode` | The clock of the session: "virtual" runs one scan per scenario.step, "free" runs scans in real time. |
 
 {/* <<< END GENERATED: reference/runtime-protocol <<< */}
 

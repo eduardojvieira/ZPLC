@@ -616,6 +616,7 @@ const PROTOCOL_PARAMS: Record<string, string> = {
   active: 'The value of the input.',
   program_generation: 'The generation of the loaded program that the input belongs to.',
   at_ms: 'Time of the scan, in milliseconds of virtual time.',
+  mode: 'The clock of the session: "virtual" runs one scan per scenario.step, "free" runs scans in real time.',
   capacity: 'Samples the I/O trace keeps; 0 keeps as many as its ring holds.',
   in_bytes: 'Bytes of the input image each I/O trace sample keeps, from its first byte (at most 32).',
   out_bytes: 'Bytes of the output image each I/O trace sample keeps, from its first byte (at most 32).',
