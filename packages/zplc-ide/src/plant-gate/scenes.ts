@@ -68,3 +68,26 @@ export function restSoak(): GateScene {
     eyes: [],
   };
 }
+
+// 20 belts (4 columns in x by 5 rows in z), 10 boxes of 5 kg on each, 0.35 m apart, centred.
+export function stress(): GateScene {
+  const big: BoxSpec = { id: 'floor', halfExtents: [40, 0.5, 10], position: [0, -0.5, 0], massKg: 0, friction: 0.6, motion: 'static' };
+  const boxes: BoxSpec[] = [big];
+  const belts: BeltSpec[] = [];
+  for (let n = 0; n < 20; n += 1) {
+    const x = ((n % 4) - 1.5) * 9;
+    const z = (Math.floor(n / 4) - 2) * 1.0;
+    belts.push({ id: `belt-${n}`, halfExtents: [4, 0.05, 0.3], position: [x, BELT_TOP - 0.05, z], axis: [1, 0, 0], friction: 0.6, accelMps2: 1.0 });
+    for (let i = 0; i < 10; i += 1) {
+      boxes.push({ id: `box-${n}-${i}`, halfExtents: [CUBE, CUBE, CUBE], position: [x + (i - 4.5) * 0.35, BELT_TOP + CUBE + 0.001, z], massKg: 5, friction: 0.6, motion: 'dynamic' });
+    }
+  }
+  return { name: 'stress', boxes, belts, eyes: [] };
+}
+
+// Every 200 scans every belt reverses between +0.5 and -0.5 m/s.
+export function driveStress(world: { setBeltTarget(id: string, speedMps: number): void }, scan: number): void {
+  if (scan % 200 !== 0) return;
+  const speed = (scan / 200) % 2 === 0 ? BELT_SPEED_MPS : -BELT_SPEED_MPS;
+  for (let n = 0; n < 20; n += 1) world.setBeltTarget(`belt-${n}`, speed);
+}
