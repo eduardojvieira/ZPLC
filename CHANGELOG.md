@@ -22,7 +22,7 @@ and version when the release is cut (see `RELEASING.md`).
 
 ## Unreleased
 
-## 2.0.0 - 2026-11-11
+## 2.0.0 - 2026-11-12
 
 ZPLC 2.0.0 is the first stable release. It follows the release candidates 2.0.0-rc.1 to 2.0.0-rc.3.
 

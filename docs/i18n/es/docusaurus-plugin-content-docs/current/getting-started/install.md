@@ -13,12 +13,6 @@ Esta página deja ZPLC en su computadora: qué archivo descargar, cómo comproba
 abre y cómo actualizarlo y quitarlo. ZPLC es una aplicación de escritorio para Windows, macOS y Linux. No hay una versión
 alojada ni para navegador.
 
-:::warning Versión de evaluación, instaladores sin firmar
-Los instaladores de Windows no llevan firma, y la aplicación de macOS está firmada solo ad hoc y no está notarizada, por lo
-que ambos sistemas piden confirmación antes del primer inicio. No se usa ningún certificado de pago. No use ZPLC para
-controlar maquinaria: [Seguridad y limitaciones](../safety-and-limitations.md).
-:::
-
 ## Descarga
 
 Todo instalador es un archivo de una [versión de GitHub](https://github.com/eduardojvieira/ZPLC/releases). Busque la línea
@@ -281,3 +275,5 @@ dentro de ella.
 
 Si su problema no está aquí, abra una incidencia con la plantilla de informe de errores del
 [repositorio](https://github.com/eduardojvieira/ZPLC/issues). No incluya credenciales ni identificadores de dispositivos.
+
+Lo que ZPLC no hace, y qué probar antes de que maneje una máquina: [Seguridad y limitaciones](../safety-and-limitations.md).
