@@ -83,7 +83,7 @@ function fakeRuntime(options: { scanIntervalMs?: number; failStep?: number; hold
     getInfo: async () => ({ cycles }),
     peek: async (address, length) => {
       calls.push(`peek@${address}+${length}`);
-      return opi.slice(address - 0x1000, address - 0x1000 + length);
+      return address >= 0x1000 ? opi.slice(address - 0x1000, address - 0x1000 + length) : ipi.slice(address, address + length);
     },
     pokeN: async (address, bytes) => {
       calls.push(`poke@${address}+${bytes.length}`);
@@ -197,7 +197,8 @@ describe('the lock-step session over fakes', () => {
     expect(session.scans).toBe(50);
     const failure = events.find((e) => e.kind === 'state' && e.state === 'faulted');
     expect(failure && 'reason' in failure ? failure.reason : '').toBe('RUNTIME_FAILURE: zplc_core_run_cycle failed');
-    // the last completed scan was reported at 500 ms; the plant stepped once for the scan that failed and never again
+    // events report the last completed scan (500 ms); the plant had already stepped for the scan in flight when it failed, and never steps
+    // again
     const last = events.filter((e) => e.kind === 'scan').at(-1);
     expect(last && last.kind === 'scan' ? [last.scans, last.snapshot.timeMs] : []).toEqual([50, 500]);
     expect(plant.timeMs()).toBe(510);
@@ -234,7 +235,7 @@ describe('the lock-step session over fakes', () => {
     expect([session.scans, plant.advances.length]).toEqual([5, 5]);
   });
 
-  it('LNK-003 the exchange is one memory.write and one memory.read per scan', async () => {
+  it('LNK-003 the exchange is one memory.write, one input read and one output read per scan', async () => {
     const plant = fakeCore();
     const rt = fakeRuntime();
     const session = make({
@@ -249,9 +250,10 @@ describe('the lock-step session over fakes', () => {
     await session.start();
     await session.settled();
     expect(rt.calls.filter((call) => call.startsWith('poke@'))).toEqual(Array(7).fill('poke@0+1'));
-    expect(rt.calls.filter((call) => call.startsWith('peek@'))).toEqual(Array(7).fill('peek@4096+1'));
+    expect(rt.calls.filter((call) => call.startsWith('peek@4096'))).toEqual(Array(7).fill('peek@4096+1'));
     // per scan: read, write, step, in this order
-    expect(rt.calls.slice(1, 5)).toEqual(['peek@4096+1', 'poke@0+1', 'step@0', 'peek@4096+1']);
+    expect(rt.calls.filter((call) => call.startsWith('peek@0'))).toEqual(Array(7).fill('peek@0+1'));
+    expect(rt.calls.slice(1, 5)).toEqual(['peek@4096+1', 'peek@0+1', 'poke@0+1', 'step@0']);
   });
 
   it('PLT-016 a plant that cannot keep up slows both and says so, dropping no step', async () => {
@@ -305,6 +307,46 @@ describe('the lock-step session over fakes', () => {
     const session = make({ core: plant.core, runtime: rt.port, map: bad, ioMap, paceMs: instant });
     await expect(session.start()).rejects.toThrow('the program has no input Cell.Nope');
     expect(rt.calls).toEqual([]);
+  });
+
+  it('PLT-005 two steps at once run two scans in order, never overlapping', async () => {
+    const plant = fakeCore();
+    const rt = fakeRuntime();
+    const session = make({ core: plant.core, runtime: rt.port, map, ioMap, paceMs: instant });
+    await session.step();
+    await Promise.allSettled([session.step(), session.step()]);
+    expect(rt.calls.filter((call) => call.startsWith('step@'))).toEqual(['step@0', 'step@10', 'step@20']);
+    expect([session.scans, plant.timeMs()]).toEqual([3, 30]);
+  });
+
+  it('PLT-005 a stop during a step ends stopped, not faulted', async () => {
+    const plant = fakeCore();
+    const rt = fakeRuntime();
+    const session = make({ core: plant.core, runtime: rt.port, map, ioMap, paceMs: instant });
+    await session.step();
+    const stepping = session.step();
+    const stopping = session.stop();
+    await Promise.allSettled([stepping, stopping]);
+    expect(session.state).toBe('stopped');
+    expect(rt.mode()).toBe('free');
+  });
+
+  it('LNK-006 a bit the plant does not drive keeps the value a person set', async () => {
+    const plant = fakeCore();
+    const rt = fakeRuntime();
+    rt.ipi[0] = 4; // Aux, set from the Faceplate
+    const session = make({
+      core: plant.core,
+      runtime: rt.port,
+      map,
+      ioMap,
+      paceMs: async () => {
+        if (session.scans >= 3) session.pause();
+      },
+    });
+    await session.start();
+    await session.settled();
+    expect(rt.ipi[0]! & 4).toBe(4);
   });
 
   it('PLT-005 stop gives the clock back and reset returns the session to idle', async () => {

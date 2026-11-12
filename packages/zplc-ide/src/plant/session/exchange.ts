@@ -1,6 +1,7 @@
 /**
  * The lock-step exchange (R3, LNK-003): the memory side of one scan. One `memory.read` of the output image range that holds
- * every mapped command, one `memory.write` of the input image range that holds every mapped sensor. The order of the plant
+ * every mapped command, one `memory.read` and one `memory.write` of the input image range that holds every mapped sensor. The order of the
+ * plant
  * operations is `exchangeScan` of the scenario seam (S1), imported and not copied, so a live run and a graded run of the same
  * scene and script give the same trace (PLT-017).
  */
@@ -90,10 +91,14 @@ export async function exchangeOnce(
     },
     async (sensed) => {
       if (layout.inputLength === 0) return;
-      // ponytail: the session owns the whole input range, so an unmapped bit of those bytes is written 0;
-      // read-modify-write would need a second memory.read per scan (LNK-003)
-      const bytes = new Uint8Array(layout.inputLength);
-      for (const s of layout.sensors) if (sensed[s.name]) bytes[s.byte]! |= 1 << s.bit;
+      // Bits the plant map does not drive (a person's Faceplate value) are kept: read the range, write the sensor bits over it.
+      // ponytail: a Faceplate write landing between this read and the write below can be lost; closing it needs a masked
+      // write in the runtime or routing the Faceplate through the session.
+      const bytes = new Uint8Array(await runtime.peek(layout.inputBase, layout.inputLength));
+      for (const s of layout.sensors) {
+        if (sensed[s.name]) bytes[s.byte]! |= 1 << s.bit;
+        else bytes[s.byte]! &= ~(1 << s.bit);
+      }
       await runtime.pokeN(layout.inputBase, bytes);
     },
     atMs,

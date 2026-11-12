@@ -23,17 +23,20 @@ const SOURCE = `PROGRAM Cell
 VAR
   Eye AT %IX0.0 : BOOL;
   Start AT %IX0.1 : BOOL;
+  Aux AT %IX0.2 : BOOL;
   Running : BOOL := FALSE;
   Hold : TON;
 END_VAR
 VAR_OUTPUT
   Belt AT %QX0.0 : BOOL;
   Done AT %QX0.1 : BOOL;
+  AuxOut AT %QX0.2 : BOOL;
 END_VAR
 Running := (Running OR Start) AND NOT Eye;
 Belt := Running;
 Hold(IN := Belt, PT := T#500ms);
 Done := Hold.Q;
+AuxOut := Aux;
 END_PROGRAM`;
 const built = compileSingleFileWithTask(SOURCE, 'ST', { programName: 'Cell', intervalMs: 10 });
 const ioMap = listIoMap(built.debugMap);
@@ -232,6 +235,17 @@ describe('the lock-step session over the real native runtime', () => {
     await session.start();
     await session.settled();
     expect(outputs.some((o) => o.belt)).toBe(false); // the program never saw the plant's Start
+  });
+
+  itNative('LNK-006 a bit the plant does not drive keeps the value a person set from the Faceplate', async () => {
+    const adapter = await nativeAdapter();
+    const core = await freshCore();
+    const current = (await adapter.peek(0, 1))[0]!;
+    await adapter.pokeN(0, new Uint8Array([current | 4])); // Aux, a read-modify-write like the Faceplate's
+    const { session } = await live(adapter, core, { scans: 20 });
+    await session.start();
+    await session.settled();
+    expect(bit((await adapter.peek(DONE, 1))[0], 2)).toBe(true);
   });
 
   itNative('PLT-017 live equals graded on the real runtime', async () => {

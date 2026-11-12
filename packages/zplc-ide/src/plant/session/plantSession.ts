@@ -23,7 +23,7 @@ export interface PlantSessionPorts {
   core: PlantCore;
   runtime: PlantRuntimePort & {
     /** Returns the runtime to idle (a native session leaves `scenario.step` paused); the session needs it to hand the clock back. */
-    reset?(): Promise<void>;
+    reset(): Promise<void>;
   };
   map: PlantMapV2;
   /** The loaded program's I/O map: where each mapped signal lives in the images (an addition to contract C6, Task R3). */
@@ -147,12 +147,42 @@ export function createPlantSession(ports: PlantSessionPorts): PlantSessionHandle
     })();
   }
 
+  /** Resolves when the loop is stable: no scan in flight and no newer loop started meanwhile. */
+  async function settle(): Promise<void> {
+    let seen: Promise<void>;
+    do {
+      seen = loop;
+      await seen;
+    } while (seen !== loop);
+  }
+
+  /** Steps queue: each waits for the one before, so two calls never run a scan at once. */
+  let stepChain: Promise<void> = Promise.resolve();
+  async function stepOnce(): Promise<void> {
+    if (state === 'running') throw new Error('plant: pause the session before stepping');
+    if (state === 'idle') {
+      await open();
+      state = 'paused';
+      emit({ kind: 'state', state });
+    }
+    if (state !== 'paused' && state !== 'held') throw new Error(`plant: cannot step a session that is ${state}`);
+    await settle();
+    try {
+      const completed = await scan();
+      // a stop that arrived during the scan keeps its state
+      if (state === 'paused' || state === 'held') setState(completed ? 'paused' : 'held');
+    } catch (error) {
+      if (state === 'paused' || state === 'held') fault(error);
+    }
+  }
+
   async function close(): Promise<void> {
-    await loop;
+    await settle();
+    await stepChain;
     exchanged = false;
     if (!clockVirtual) return;
     clockVirtual = false;
-    await runtime.reset?.();
+    await runtime.reset();
     await runtime.setClockMode('free');
   }
 
@@ -172,7 +202,7 @@ export function createPlantSession(ports: PlantSessionPorts): PlantSessionHandle
     get scanMs() {
       return scanMs;
     },
-    settled: () => loop,
+    settled: settle,
     async start() {
       if (state !== 'idle') throw new Error(`plant: cannot start a session that is ${state}; reset it first`);
       await open();
@@ -187,20 +217,10 @@ export function createPlantSession(ports: PlantSessionPorts): PlantSessionHandle
       setState('running');
       run();
     },
-    async step() {
-      if (state === 'running') throw new Error('plant: pause the session before stepping');
-      if (state === 'idle') {
-        await open();
-        state = 'paused';
-        emit({ kind: 'state', state });
-      }
-      if (state !== 'paused' && state !== 'held') throw new Error(`plant: cannot step a session that is ${state}`);
-      await loop;
-      try {
-        setState(((await scan()) ? 'paused' : 'held') as PlantSessionState, 'single step');
-      } catch (error) {
-        fault(error);
-      }
+    step() {
+      const queued = stepChain.then(stepOnce);
+      stepChain = queued.catch(() => undefined);
+      return queued;
     },
     async stop() {
       if (state === 'idle' || state === 'stopped') return;
