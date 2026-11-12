@@ -7731,8 +7731,9 @@ export const JOURNEYS: Journey[] = [
   },
   {
     // LRN-018 (and LRN-019, LRN-020, LRN-021, LRN-037): the plant of a lesson runs live in closed loop with the starter, bound by the
-    // mapping the lesson ships. An input is operated on the faceplate and the plant reacts; play, pause, step and a fault action
-    // work with the keyboard alone, the state is announced in words, and the recorded run stays available as a labelled replay.
+    // mapping the lesson ships. An input is operated on the faceplate and the plant reacts; pause, step and resume are the command bar's
+    // (PLS-003) and a fault action works with the keyboard alone, the state is announced in words, and the recorded run stays
+    // available as a labelled replay.
     name: '52 A lesson plant runs live in closed loop, with pause, step and a fault action, and the recorded run stays a labelled replay',
     example: 'none',
     proves: ['LRN-018'],
@@ -7780,24 +7781,27 @@ export const JOURNEYS: Journey[] = [
       await patiently('Running to follow the plant', async () => (await outputText('Running')).includes('TRUE') || undefined);
       await patiently('the state to be announced in words', async () => (await said('Motor at speed')) || undefined);
 
-      // 3. Pause, with the keyboard: the plant stops advancing; Step advances exactly one scan; Play resumes.
-      await focus('[data-plant-control="play-pause"]');
-      await app.press('Enter');
+      // 3. Pause, Step and Resume of the command bar (the one transport, PLS-003): the plant stops advancing, advances exactly one
+      // scan with one step of the program, and runs again. The plant has no such controls of its own.
+      assert(
+        !(await app.eval<boolean>(`Boolean(document.querySelector('[data-plant-control="play-pause"], [data-plant-control="step"]'))`)),
+        'The live plant still has a play, pause or step control of its own.',
+      );
+      await app.click(button(`${ui('toolbar.pause.label')} (F6)`, 'prefix'), 'Pause in the command bar');
       await patiently(
         'the plant to say it is paused',
         async () =>
           (await app.eval<string>(`document.querySelector('[data-plant-scans]')?.textContent ?? ''`)).includes('paused') || undefined,
       );
+      await pause(400);
       const held = await scans();
       await pause(700);
-      assert((await scans()) === held, 'The plant advanced while paused.');
-      await focus('[data-plant-control="step"]');
-      await app.press('Space');
+      assert((await scans()) === held, 'The plant advanced while the program was paused.');
+      await app.click(button(ui('toolbar.step.label'), 'prefix'), 'Step in the command bar');
       await patiently('one scan to be stepped', async () => (await scans()) === held + 1 || undefined);
       await pause(500);
       assert((await scans()) === held + 1, 'Step advanced more than one scan.');
-      await focus('[data-plant-control="play-pause"]');
-      await app.press('Enter');
+      await app.click(button(ui('toolbar.resume.label'), 'prefix'), 'Resume in the command bar');
       await patiently('the plant to run again', async () => (await scans()) > held + 1 || undefined);
 
       // 4. The fault action, with the keyboard: the motor stalls, never reaches speed, and the program sees it.

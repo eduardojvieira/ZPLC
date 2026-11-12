@@ -7,6 +7,9 @@ const { useIDEStore } = await import('../store/useIDEStore');
 const { Toolbar } = await import('./Toolbar');
 const { RunControls } = await import('./ToolbarRunControls');
 const { createRef } = await import('react');
+const { ActionConfirmHost } = await import('./ActionConfirmHost');
+const { plantTransport } = await import('../runtime/transport');
+const { registerPlantTransport } = await import('../store/useTransport');
 type RunProps = Parameters<typeof RunControls>[0];
 
 const debugController = {} as never;
@@ -137,5 +140,85 @@ describe('Run controls (IDE-001) in a DOM', () => {
     expect(dom.screen.getByRole('button', { name: dom.t('toolbar.disconnect') })).toBeTruthy();
     await user.click(dom.screen.getByRole('button', { name: new RegExp(dom.t('toolbar.deploy.label')) }));
     expect(handlers.onUpload).toHaveBeenCalledTimes(1);
+  });
+});
+
+/** A debug controller that is connected and running, with every call recorded. */
+const liveController = () => {
+  const calls: string[] = [];
+  const call = (name: string) => async () => {
+    calls.push(name);
+  };
+  const controller = {
+    adapter: { connected: true, type: 'wasm' },
+    vmState: 'running',
+    disconnect: call('disconnect'),
+    start: call('start'),
+    resume: call('resume'),
+    pause: call('pause'),
+    step: call('step'),
+    stop: call('stop'),
+    reset: call('reset'),
+  };
+  return { controller: controller as never, calls };
+};
+
+const button = (key: 'toolbar.pause.label' | 'toolbar.stop.label' | 'toolbar.reset.label') =>
+  dom.screen.getByRole('button', { name: new RegExp(dom.t(key)) });
+
+describe('Command bar transport (PLS-003, decision D-26) in a DOM', () => {
+  it(
+    'PLS-003 Pause, Stop and Reset of the command bar call the active transport, which is the debug controller with no ' + 'plant',
+    async () => {
+      const { controller, calls } = liveController();
+      const { user } = dom.render(<Toolbar debugController={controller} />);
+      await user.click(button('toolbar.pause.label'));
+      await user.click(button('toolbar.stop.label'));
+      await user.click(button('toolbar.reset.label'));
+      expect(calls).toEqual(['pause', 'stop', 'reset']);
+    },
+  );
+
+  it('PLS-003 with a plant transport registered, the command bar drives the plant session and not the debug controller', async () => {
+    const { controller, calls } = liveController();
+    const plantCalls: string[] = [];
+    const session = {
+      state: 'running',
+      slowdown: 1,
+      onChange: () => () => undefined,
+      start: async () => void plantCalls.push('start'),
+      pause: () => void plantCalls.push('pause'),
+      resume: () => void plantCalls.push('resume'),
+      step: async () => void plantCalls.push('step'),
+      stop: async () => void plantCalls.push('stop'),
+      reset: async () => void plantCalls.push('reset'),
+    };
+    const unregister = registerPlantTransport(plantTransport(session as never));
+    try {
+      const { user } = dom.render(<Toolbar debugController={controller} />);
+      await user.click(button('toolbar.pause.label'));
+      await user.click(button('toolbar.stop.label'));
+      await user.click(button('toolbar.reset.label'));
+    } finally {
+      unregister();
+    }
+    expect(plantCalls).toEqual(['pause', 'stop', 'reset']);
+    expect(calls).toEqual([]);
+  });
+
+  it('Stop and Reset on a board ask for confirmation as before', async () => {
+    const { controller, calls } = liveController();
+    const { user } = dom.render(
+      <>
+        <Toolbar debugController={controller} />
+        <ActionConfirmHost />
+      </>,
+    );
+    await user.click(dom.screen.getByRole('button', { name: dom.t('toolbar.hardware.label') }));
+    await user.click(button('toolbar.stop.label'));
+    expect(await dom.screen.findByRole('alertdialog')).toBeTruthy();
+    expect(calls).not.toContain('stop');
+    await user.click(await dom.screen.findByRole('button', { name: dom.t('confirm.stop.action') }));
+    await dom.waitFor(() => expect(calls).toContain('stop'));
   });
 });

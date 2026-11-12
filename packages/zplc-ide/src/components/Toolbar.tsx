@@ -42,6 +42,7 @@ import { isWorkspaceTestRunCurrent, presentWorkspaceCompileResult, resolveWorksp
 import { shownProjectBridge } from '../ipc/shownProjectBridge';
 import { useNotifications } from '../store/notifications';
 import { vmInfoNow } from '../store/vmInfo';
+import { activeTransport } from '../store/useTransport';
 import { Notifications } from './Notifications';
 import { useDropdownMenu } from './useDropdownMenu';
 import { canLinkProjectWorkspace, linkProjectWorkspace } from '../utils/workspaceTestLink';
@@ -108,21 +109,9 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const toggleMpeek = useIDEStore((s) => s.toggleMpeek);
 
   // Destructure debug controller
-  const {
-    adapter,
-    vmState,
-    startSimulation,
-    connectHardware,
-    disconnect,
-    loadProgram,
-    start,
-    stop,
-    pause,
-    resume,
-    step,
-    reset,
-    getHardwareSystemInfo,
-  } = debugController;
+  const { adapter, vmState, startSimulation, connectHardware, disconnect, loadProgram, getHardwareSystemInfo } = debugController;
+  // One transport (PLS-003): the plant session when a plant document registered one, else the program alone.
+  const transport = activeTransport(debugController);
 
   // Local UI state
   const [executionMode, setExecutionMode] = useState<ExecutionMode>(EXECUTION_MODE.SIMULATE);
@@ -634,7 +623,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     }
 
     try {
-      await start();
+      await transport.run();
       addConsoleEntry({ type: 'info', message: t('toolbarMsg.executionStarted'), source: 'runtime' });
     } catch (e) {
       pendingExecutionFocusRef.current = null;
@@ -650,7 +639,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     if (controlsBusy) return;
     pendingExecutionFocusRef.current = keyboardInitiated ? 'paused' : null;
     try {
-      await pause();
+      await transport.pause();
       addConsoleEntry({ type: 'info', message: t('toolbarMsg.pausedAtCycle', { value: vmInfoNow()?.cycles || 0 }), source: 'runtime' });
     } catch (e) {
       pendingExecutionFocusRef.current = null;
@@ -670,7 +659,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     }
     pendingExecutionFocusRef.current = keyboardInitiated ? 'running' : null;
     try {
-      await resume();
+      await transport.run();
       addConsoleEntry({ type: 'info', message: t('toolbarMsg.resumed'), source: 'runtime' });
     } catch (e) {
       pendingExecutionFocusRef.current = null;
@@ -685,7 +674,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const handleStop = async () => {
     if (controlsBusy || !(await proceedAfterConfirmation(executionMode, confirmStop))) return;
     try {
-      await stop();
+      await transport.stop();
       addConsoleEntry({ type: 'info', message: t('toolbarMsg.stopped'), source: 'runtime' });
     } catch (e) {
       addConsoleEntry({
@@ -703,7 +692,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
       return;
     }
     try {
-      await step();
+      await transport.step();
     } catch (e) {
       addConsoleEntry({
         type: 'error',
@@ -716,7 +705,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const handleReset = async () => {
     if (controlsBusy || !(await proceedAfterConfirmation(executionMode, confirmReset))) return;
     try {
-      await reset();
+      await transport.reset();
       addConsoleEntry({ type: 'info', message: t('toolbarMsg.reset'), source: 'runtime' });
     } catch (e) {
       addConsoleEntry({
