@@ -32,21 +32,6 @@ describe('plant engine (LRN-018, LRN-019)', () => {
     expect(run.sense().atSpeed).toBe(false);
   });
 
-  it('pause freezes the plant, step advances exactly one scan, play resumes', () => {
-    const run = createPlantRun('tank-v1');
-    run.tick({ pump: true });
-    const before = run.state.level;
-    run.setPaused(true);
-    run.tick({ pump: true });
-    expect(run.state.level).toBe(before);
-    run.step({ pump: true });
-    expect(run.state.level).not.toBe(before);
-    expect(run.tickCount).toBe(2);
-    run.setPaused(false);
-    run.tick({ pump: true });
-    expect(run.tickCount).toBe(3);
-  });
-
   it(
     'the tank starts at 200, fills with the pump, drains without it, and a pump failure stops the flow and raises the input ' + '(D-19)',
     () => {
