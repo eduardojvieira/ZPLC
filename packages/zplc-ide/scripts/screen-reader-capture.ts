@@ -46,6 +46,8 @@ const words = (language: Language) => {
     learn: t('welcome.learn.title'),
     connect: t('toolbar.connect'),
     disconnect: t('command.online.disconnect'),
+    pause: t('toolbar.pause.label'),
+    resume: t('toolbar.resume.label'),
     addVariable: t('workbench.watch.addVariable'),
     releaseAll: t('workbench.watch.releaseAll'),
     paletteWatch: t('command.view.watch'),
@@ -665,17 +667,26 @@ async function stepPlant({ app, recorder: rec, language, project }: Session): Pr
     15_000,
   );
   await rec.shot('9-plant-at-speed');
-  // pause, step and the fault action
-  await rec
-    .reach('the pause control', `el.getAttribute('data-plant-control') === 'play-pause'`, 'Shift+Tab', 40, false)
-    .catch(() => rec.reach('the pause control', `el.getAttribute('data-plant-control') === 'play-pause'`, 'Tab', 60));
-  await rec.key('Enter', 'pause the plant');
-  await rec.stop('the plant is paused');
+  // pause and resume with the command bar (the one transport, spec 013 PLS-003): the plant has no controls of its own, it holds while
+  // the program is paused. The bar's buttons are reached by name, the way Connect is.
+  const inBar = (name: string) =>
+    `el.closest('[role="toolbar"]') !== null && (el.getAttribute('aria-label') ?? el.textContent ?? '').includes(${JSON.stringify(name)})`;
+  const reachBar = (what: string, name: string) =>
+    rec.reach(what, inBar(name), 'Shift+Tab', 80, false).catch(() => rec.reach(what, inBar(name), 'Tab', 120));
+  await reachBar('the pause button of the command bar', w.pause);
+  await rec.key('Enter', 'pause the program');
+  await app.until(
+    'the plant to say it is paused',
+    async () =>
+      (await app.eval<string>(`document.querySelector('[data-plant-scans]')?.textContent ?? ''`)).includes(w.t('plant.paused')) ||
+      undefined,
+  );
   rec.fact('pausedText', await app.eval<string>(`document.querySelector('[data-plant-scans]')?.textContent ?? ''`));
-  await rec.key('Enter', 'play again');
+  await reachBar('the resume button of the command bar', w.resume);
+  await rec.key('Enter', 'resume the program');
   await rec
-    .reach('the stall fault action', `el.getAttribute('data-plant-action') === 'stall'`, 'Tab', 20, false)
-    .catch(() => rec.reach('the stall fault action', `el.getAttribute('data-plant-action') === 'stall'`, 'Shift+Tab', 30));
+    .reach('the stall fault action', `el.getAttribute('data-plant-action') === 'stall'`, 'Tab', 120, false)
+    .catch(() => rec.reach('the stall fault action', `el.getAttribute('data-plant-action') === 'stall'`, 'Shift+Tab', 120));
   await rec.key('Enter', 'switch the stall fault on');
   await app.until('the motor to stall', async () => (await state('stalled')).fact === 'plant.motor.stalled' || undefined, 45_000);
   await rec.expectAnnounced(

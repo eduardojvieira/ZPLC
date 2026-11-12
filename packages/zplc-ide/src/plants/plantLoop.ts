@@ -58,11 +58,6 @@ export function createPlantLoop({ run, resolved, read, write, cycles }: PlantLoo
       }
       await sync();
     },
-    /** One scan of the plant, paused or not (the Step control). */
-    async step(): Promise<void> {
-      run.step(await sample());
-      await sync();
-    },
     /** Forget what was written, so the next pass writes every sensor again (after a reset or a reload). */
     forget(): void {
       written.clear();
