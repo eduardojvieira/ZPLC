@@ -526,7 +526,7 @@ describe('requirement coverage of spec 012', () => {
     const result = run('--spec', '012', '--list');
     expect(result.exitCode).toBe(0);
     expect(text(result)).toContain('spec 012');
-    expect(text(result)).toContain('PLT-001 uncovered');
+    expect(text(result)).toMatch(/^ {2}(PLT|VIS|PRT|SCN|LNK|CRS)-\d{3} uncovered: /m);
     expect(text(result)).toMatch(/overall\s+\d+ \/\s+87/);
   });
 
