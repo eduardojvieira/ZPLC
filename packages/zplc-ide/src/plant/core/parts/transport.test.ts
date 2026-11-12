@@ -229,9 +229,7 @@ describe('transport parts', () => {
     expect(p.runtimes[2]!.facts()).toEqual({ 'delivered:rm': 1 });
   });
 
-  // FINDING (P3): a ring of straight belts turns a 0.4 x 0.3 m box only to about 82 degrees, not 90 +- 5. The plan fixes the
-  // threshold, so it stays; `it.failing` keeps the suite green and fails loudly once P2 offers an angular surface velocity.
-  it.failing('PRT-003 the curved conveyor turns a box through ninety degrees at catalogue speed', async () => {
+  it('PRT-003 the curved conveyor turns a box through ninety degrees at catalogue speed', async () => {
     const r = 1.5;
     const p = await plant([
       part('feed', 'belt', [-1, TOP, 0], { length: 2 }),

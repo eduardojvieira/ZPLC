@@ -30,35 +30,27 @@ interface Segment {
   length: number;
   width: number;
   ratio: number; // surface speed relative to the centreline speed
+  turnPerMps?: number;
 }
-
-// Friction slip makes a box turn slower than the rigid rotation rate; a gain above 1 on the lane speed gradient recovers part of it.
-// ponytail: measured with a 0.4 x 0.3 m box, it still reaches only about 82 of 90 degrees; the exact answer is an angular surface
-// velocity on the contact (Jolt ContactSettings), which needs `PhysicsWorld` support (Task P2 owner).
-const TURN_GAIN = 1.3;
-const LANES = 7; // curved only: lanes of different surface speed turn an item (rigid rotation, omega = speed / radius)
 
 function layout(layoutId: Layout, part: ScenePart, fields: Record<string, ConfigField>): Segment[] {
   const width = cfgNumber(part, fields, 'width');
   if (layoutId !== 'curved') return [{ centre: [0, 0], yaw: 0, length: cfgNumber(part, fields, 'length'), width, ratio: 1 }];
   const r = cfgNumber(part, fields, 'radius');
   const sign = cfg(part, fields, 'hand') === 'right' ? 1 : -1;
-  const laneWidth = width / LANES;
   const out: Segment[] = [];
   for (let i = 0; i < 90 / SEGMENT_DEG; i += 1) {
     const phi = (i + 0.5) * SEGMENT_DEG;
     const rad = (phi * Math.PI) / 180;
-    for (let lane = 0; lane < LANES; lane += 1) {
-      const radius = r + (lane - (LANES - 1) / 2) * laneWidth; // the radius of this lane's centreline
-      out.push({
-        centre: [radius * Math.sin(rad), sign * (r - radius * Math.cos(rad))],
-        yaw: -sign * phi,
-        // Covers the outer edge of the wedge between neighbours: no gap an item could fall into.
-        length: 2 * (radius + laneWidth / 2) * Math.tan((SEGMENT_DEG * Math.PI) / 360),
-        width: laneWidth,
-        ratio: 1 + TURN_GAIN * (radius / r - 1),
-      });
-    }
+    out.push({
+      centre: [r * Math.sin(rad), sign * (r - r * Math.cos(rad))],
+      yaw: -sign * phi,
+      // Covers the outer edge of the wedge between neighbours: no gap an item could fall into.
+      length: 2 * (r + width / 2) * Math.tan((SEGMENT_DEG * Math.PI) / 360),
+      width,
+      ratio: 1,
+      turnPerMps: -sign / r, // linear speed along the tangent plus this spin about the segment centre = rigid rotation about the arc centre
+    });
   }
   return out;
 }
@@ -100,6 +92,7 @@ function runtime(layoutId: Layout, fields: Record<string, ConfigField>): (part: 
             bodyId: ids[i]!,
             axis: [Math.cos(a), 0, -Math.sin(a)],
             accelMps2: cfgNumber(part, fields, 'accelMps2'),
+            ...(s.turnPerMps === undefined ? {} : { turnPerMps: s.turnPerMps }),
           });
         });
       },
@@ -117,7 +110,7 @@ function runtime(layoutId: Layout, fields: Record<string, ConfigField>): (part: 
         else if (action === 'jam' && !jammed && world) {
           jammed = true;
           // A fixed bar across the middle of the belt: items are blocked by the physics, not by a script.
-          const mid = segments[Math.floor(segments.length / (2 * LANES)) * LANES + Math.floor(LANES / 2)] ?? segments[0]!;
+          const mid = segments[Math.floor(segments.length / 2)] ?? segments[0]!;
           const { position, yaw } = place(mid);
           world.addBody({
             id: `${part.id}-jam`,

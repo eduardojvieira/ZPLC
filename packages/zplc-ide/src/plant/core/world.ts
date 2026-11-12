@@ -20,6 +20,8 @@ export interface WorldBeltSpec {
   bodyId: string;
   axis: Vec3;
   accelMps2: number;
+  /** Optional: angular surface velocity about world +y, in rad/s per m/s of belt speed (a curved belt: -hand / radius). */
+  turnPerMps?: number;
 }
 export interface PhysicsWorld {
   readonly timeMs: number;
@@ -109,6 +111,8 @@ export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): P
       sign * a[1] * belt.speed,
       sign * a[2] * belt.speed,
     );
+    const w = (belt.spec.turnPerMps ?? 0) * belt.speed;
+    if (w !== 0) Jolt.wrapPointer(ioSettings, Jolt.ContactSettings).mRelativeAngularSurfaceVelocity.Set(0, sign * w, 0);
   };
   listener.OnContactAdded = (b1: number, b2: number, _m: number, set: number) => surface(b1, b2, set);
   listener.OnContactPersisted = (b1: number, b2: number, _m: number, set: number) => surface(b1, b2, set);
