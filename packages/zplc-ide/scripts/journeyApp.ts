@@ -391,6 +391,8 @@ export async function launchPackagedApp(
   executable: string,
   root: string,
   recent: string[] = [],
+  flags: string[] = ['--headless', '--disable-gpu'],
+  environment: Record<string, string> = {},
 ): Promise<{ app: App; pid: number; stop(): Promise<void>; processes(): number[] }> {
   const notes: string[] = [];
   const profile = join(root, 'profile');
@@ -407,10 +409,12 @@ export async function launchPackagedApp(
   const output: string[] = [];
   const env = { ...process.env };
   for (const name of ['ZPLC_NATIVE_SIM_BIN', 'ZPLC_SMOKE_FOLDER_ANSWER_FILE', 'ZPLC_PERSIST_ROOT', 'NODE_ENV']) delete env[name];
-  const electron: OwnedProcess = Bun.spawn(
-    [executable, '--headless', '--disable-gpu', `--remote-debugging-port=${cdpPort}`, `--user-data-dir=${profile}`],
-    { stdout: 'pipe', stderr: 'pipe', env },
-  );
+  Object.assign(env, environment);
+  const electron: OwnedProcess = Bun.spawn([executable, ...flags, `--remote-debugging-port=${cdpPort}`, `--user-data-dir=${profile}`], {
+    stdout: 'pipe',
+    stderr: 'pipe',
+    env,
+  });
   drain(electron, output, 'electron');
   let cdp: Cdp | undefined;
   const stopApp = async () => {

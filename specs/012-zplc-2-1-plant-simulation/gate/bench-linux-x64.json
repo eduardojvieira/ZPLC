@@ -1,0 +1,40 @@
+{
+  "schema": "zplc.plant-gate-bench/1",
+  "commit": "6b92110f773abc9718791fd3527fabce49fabcc3",
+  "dirtyTree": true,
+  "started": "2026-11-12T20:40:36.687Z",
+  "finished": "2026-11-12T20:40:38.965Z",
+  "host": {
+    "platform": "linux",
+    "arch": "x64",
+    "cpu": "AMD Ryzen 5 8600G w/ Radeon 760M Graphics",
+    "memoryGb": 60,
+    "gpu": "unavailable",
+    "screen": null,
+    "gpuEnabled": false
+  },
+  "sequencesRun": [
+    "noGpu"
+  ],
+  "noGpu": {
+    "commit": "6b92110f773abc9718791fd3527fabce49fabcc3",
+    "probe": {
+      "jolt": true,
+      "webgl2": false,
+      "gpu": "unavailable",
+      "cspViolations": []
+    },
+    "live": {
+      "hash": "d49abaf2985f0f641662ee9ef235094e4e98072319d977fcf58f24d99de462cb",
+      "completedScans": 800,
+      "exchangeMsP50": 0.6999999992549419,
+      "exchangeMsP95": 1.0999999977648258,
+      "exchangeMsMax": 8.800000000745058,
+      "realTimeFactor": 12.455238984883575,
+      "pausedHeld": true
+    },
+    "gradedHash": "d49abaf2985f0f641662ee9ef235094e4e98072319d977fcf58f24d99de462cb",
+    "hashMatchesGraded": true,
+    "verdict": "pass"
+  }
+}
