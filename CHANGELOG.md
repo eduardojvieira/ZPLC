@@ -22,6 +22,11 @@ and version when the release is cut (see `RELEASING.md`).
 
 ## Unreleased
 
+### What changed for you
+
+- A release holds fewer files: the per-platform checksum and evidence files are no longer on it, and `SHA256SUMS`
+  still lists every file you download.
+
 ## 2.0.0 - 2026-11-12
 
 ZPLC 2.0.0 is the first stable release. It follows the release candidates 2.0.0-rc.1 to 2.0.0-rc.3.
