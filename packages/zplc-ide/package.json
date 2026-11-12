@@ -46,17 +46,19 @@
     "zplc-cli": "./dist/zplc-cli"
   },
   "dependencies": {
-    "@zplc/compiler": "workspace:*",
     "@modelcontextprotocol/server": "2.4.0",
     "@monaco-editor/react": "^4.7.0",
     "@xyflow/react": "^12.12.1",
+    "@zplc/compiler": "workspace:*",
+    "jolt-physics": "1.1.1",
     "js-yaml": "^4.1.1",
     "lucide-react": "^0.562.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-resizable-panels": "^4.21.0",
-    "zustand": "^5.1.0",
-    "zod": "4.6.7"
+    "three": "0.187.0",
+    "zod": "4.6.7",
+    "zustand": "^5.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
@@ -70,6 +72,7 @@
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@types/three": "0.187.0",
     "@vitejs/plugin-react": "^5.1.1",
     "concurrently": "^9.2.5",
     "electron": "45.2.3",
