@@ -4,6 +4,7 @@ import { announcementsSnapshot, resetAnnouncements } from '../utils/announce';
 import {
   NOTIFICATION_LIMIT,
   SUCCESS_VISIBLE_MS,
+  advanceNotification,
   beginNotification,
   dismissNotification,
   expireNotifications,
@@ -180,5 +181,50 @@ describe('a failure offers its way back (IDE-021, UX-021)', () => {
     expect(tried).toBe(1);
     const ok = finishNotification([], 'b', { kind: 'save', status: 'success', title: 'Saved', details: 'output', recover }, t0);
     expect(ok[0]!.recover).toBeUndefined();
+  });
+});
+
+describe('one notice per composite action (FLW-013, FLW-001)', () => {
+  afterEach(() => useNotifications.getState().clear());
+  const ok = (kind: 'build' | 'run' | 'save', title: string) => ({ kind, status: 'success' as const, title, details: 'output' as const });
+
+  it('FLW-013 a second success replaces the first', () => {
+    let list = finishNotification([], 'a', ok('build', 'Build succeeded'), t0);
+    list = finishNotification(list, 'b', ok('run', 'Running'), t0 + 1);
+    expect(list.map((entry) => entry.id)).toEqual(['b']);
+  });
+
+  it('FLW-013 a failure stays until dismissed and is not replaced by a success', () => {
+    let list = finishNotification([], 'a', { kind: 'build', status: 'error', title: 'Build failed', details: 'problems' }, t0);
+    list = finishNotification(list, 'b', ok('build', 'Build succeeded'), t0 + 1);
+    list = finishNotification(list, 'c', ok('run', 'Running'), t0 + 2);
+    expect(list.map((entry) => entry.id)).toEqual(['a', 'c']);
+    expect(expireNotifications(list, t0 + SUCCESS_VISIBLE_MS * 2).map((entry) => entry.id)).toEqual(['a']);
+  });
+
+  it('FLW-001 advance changes the step of a running notice and keeps its id and its cancel action', () => {
+    const cancel = () => undefined;
+    const list = beginNotification([], { kind: 'run', title: 'Saving', details: 'output', cancel }, 'a', t0);
+    const next = advanceNotification(list, 'a', 'Building');
+    expect(next).toHaveLength(1);
+    expect(next[0]).toMatchObject({ id: 'a', kind: 'run', status: 'running', title: 'Building', startedAt: t0 });
+    expect(next[0]!.cancel).toBe(cancel);
+  });
+
+  it('advance on a finished notice changes nothing', () => {
+    const done = finishNotification([], 'a', ok('save', 'Saved'), t0);
+    expect(advanceNotification(done, 'a', 'Building')).toBe(done);
+    expect(advanceNotification(done, 'missing', 'Building')).toBe(done);
+  });
+
+  it('FLW-001 the store announces a step once per change', () => {
+    resetAnnouncements();
+    const store = useNotifications.getState();
+    const id = store.begin({ kind: 'run', title: 'Saving', details: 'output' });
+    store.advance(id, 'Building');
+    expect(announcementsSnapshot().polite.message).toBe('Building');
+    const { seq } = announcementsSnapshot().polite;
+    store.advance(id, 'Building');
+    expect(announcementsSnapshot().polite.seq).toBe(seq);
   });
 });

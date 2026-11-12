@@ -49,7 +49,7 @@ export function NotificationList({
   return (
     <section
       aria-label={t('notifications.label')}
-      className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-[22rem] max-w-[calc(100vw-2rem)] flex-col gap-2"
+      className="pointer-events-none fixed right-4 top-24 z-50 flex w-[22.5rem] max-w-[calc(100vw-2rem)] flex-col gap-2"
     >
       {items.map((entry) => {
         const panelKey = PANEL_NAMES[entry.details];
