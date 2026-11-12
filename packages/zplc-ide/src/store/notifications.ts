@@ -9,7 +9,8 @@
  *
  *   - a running operation stays until it ends, and shows progress and, when it can be stopped, a cancel action;
  *   - a success goes by itself after `SUCCESS_VISIBLE_MS`; a failure, a warning and a cancellation stay until dismissed;
- *   - a finished result replaces the earlier finished result of its kind, so repeated saves do not pile up;
+ *   - a finished result replaces the earlier finished result of its kind, so repeated saves do not pile up; a success also
+ *     replaces any success that is showing (one notice per composite action, FLW-013), and never a failure;
  *   - the list is bounded, oldest finished result first.
  */
 import { create } from 'zustand';
@@ -17,7 +18,7 @@ import { create } from 'zustand';
 import type { ConsoleTab } from '../types';
 import { announce } from '../utils/announce';
 
-export type NotificationKind = 'build' | 'save' | 'deploy' | 'connection' | 'tests';
+export type NotificationKind = 'build' | 'save' | 'deploy' | 'connection' | 'tests' | 'run';
 export type NotificationStatus = 'running' | 'success' | 'warning' | 'error' | 'cancelled';
 
 /** The way back from a failure: what the button says, and what it does. */
@@ -106,14 +107,24 @@ export function finishNotification(list: AppNotification[], id: string, result: 
     ...(result.detail ? { detail: result.detail } : {}),
     ...(result.recover && (result.status === 'error' || result.status === 'warning') ? { recover: result.recover } : {}),
   };
-  // The latest finished result of a kind replaces the earlier one.
-  const kept = list.filter((entry) => entry.id !== id && !(isFinished(entry) && entry.kind === result.kind));
+  // The latest finished result of a kind replaces the earlier one, except that a success never replaces a failure; and a
+  // success replaces the success that is showing, whatever its kind.
+  const replaced = (entry: AppNotification) =>
+    isFinished(entry) && (result.status === 'success' ? entry.status === 'success' : entry.kind === result.kind);
+  const kept = list.filter((entry) => entry.id !== id && !replaced(entry));
   const position = existing ? list.findIndex((entry) => entry.id === id) : -1;
   if (position < 0) return bounded([...kept, finished]);
   // Keep the place of the operation among the running ones.
   const before = list.slice(0, position).filter((entry) => kept.includes(entry));
   const after = list.slice(position + 1).filter((entry) => kept.includes(entry));
   return bounded([...before, finished, ...after]);
+}
+
+/** Names the step a running operation is at; the id and the cancel action stay. The same list when it is not running. */
+export function advanceNotification(list: AppNotification[], id: string, stepTitle: string): AppNotification[] {
+  const entry = list.find((candidate) => candidate.id === id);
+  if (!entry || entry.status !== 'running' || entry.title === stepTitle) return list;
+  return list.map((candidate) => (candidate === entry ? { ...entry, title: stepTitle } : candidate));
 }
 
 export function dismissNotification(list: AppNotification[], id: string): AppNotification[] {
@@ -130,6 +141,8 @@ interface NotificationState {
   items: AppNotification[];
   /** Starts a long operation and returns the id that ends it. */
   begin(start: NotificationStart): string;
+  /** Changes the step a running notice names (FLW-001); announced once per change. */
+  advance(id: string, stepTitle: string): void;
   finish(id: string, result: NotificationResult): void;
   /** A result that had no running phase (a save, a refused deploy). */
   report(result: NotificationResult): void;
@@ -154,6 +167,13 @@ export const useNotifications = create<NotificationState>((set) => ({
     say({ status: 'running', title: start.title });
     set((state) => ({ items: beginNotification(state.items, start, id, Date.now()) }));
     return id;
+  },
+  advance: (id, stepTitle) => {
+    const before = useNotifications.getState().items;
+    const items = advanceNotification(before, id, stepTitle);
+    if (items === before) return;
+    say({ status: 'running', title: stepTitle });
+    set({ items });
   },
   finish: (id, result) => {
     say(result);

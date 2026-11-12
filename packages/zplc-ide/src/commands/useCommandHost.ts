@@ -10,6 +10,7 @@ import { useIDEStore } from '../store/useIDEStore';
 import { useAppSettings } from '../store/useAppSettings';
 import { exportOpenProjectArchive } from '../utils/projectArchiveActions';
 import { openLearnHome } from '../learn/learnUi';
+import { openConfigEditorFromNavigator } from '../navigator/openConfigEditor';
 import { useNewProjectDialog } from '../store/newProjectDialog';
 import { useShellLayout } from '../store/useShellLayout';
 import type { ConsoleTab } from '../types';
@@ -97,6 +98,15 @@ export function useShellCommands(): void {
         },
         'view.trace': showPanel('trace'),
         'view.watch': showPanel('watch'),
+        'view.interlocks': showPanel('interlocks'),
+        'view.changes': showPanel('changes'),
+        'view.agent': showPanel('agent'),
+        'view.terminal': showPanel('terminal'),
+        'project.tasks': () => openConfigEditorFromNavigator('tasks'),
+        'project.io': () => openConfigEditorFromNavigator('io'),
+        'project.network': () => openConfigEditorFromNavigator('network'),
+        'project.communication': () => openConfigEditorFromNavigator('communication'),
+        'project.target': () => openConfigEditorFromNavigator('target'),
         'view.themeLight': () => useIDEStore.getState().setTheme('light'),
         'view.themeDark': () => useIDEStore.getState().setTheme('dark'),
         'view.themeHighContrast': () => useIDEStore.getState().setTheme('high-contrast'),
