@@ -1,8 +1,6 @@
 import type * as THREE_NS from 'three';
 import type { PlantSceneFile, PlantSnapshot } from '../contracts';
-import {
-  cameraFromPreset, cameraPosition, orbitCamera, panCamera, zoomCamera, type CameraState,
-} from './camera';
+import { cameraFromPreset, cameraPosition, orbitCamera, panCamera, zoomCamera, type CameraState } from './camera';
 import { instanceColors, instanceMatrices, partShape, type ShapeSpec } from './geometry';
 import { chooseInitialQuality, qualitySettings, type QualityLevel } from './quality';
 
@@ -99,7 +97,11 @@ function buildGeometry(THREE: Three, spec: ShapeSpec): THREE_NS.BufferGeometry {
 }
 
 const PART_COLORS: Readonly<Record<string, number>> = {
-  belt: 0x4b5563, roller: 0x6b7280, curve: 0x4b5563, blade: 0xb45309, sensor: 0x15803d,
+  belt: 0x4b5563,
+  roller: 0x6b7280,
+  curve: 0x4b5563,
+  blade: 0xb45309,
+  sensor: 0x15803d,
 };
 
 function probeGpu(): { webgl2: boolean; rendererString: string; maxTextureSize: number } | null {
@@ -154,10 +156,7 @@ export function createRenderer(
   const sun = new THREE.DirectionalLight(0xffffff, 1.6);
   sun.position.set(6, 12, 8);
   world.add(hemi, sun);
-  const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(200, 200),
-    new THREE.MeshStandardMaterial({ color: 0xf3f4f6, roughness: 1 }),
-  );
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: 0xf3f4f6, roughness: 1 }));
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
   world.add(floor);
@@ -177,18 +176,22 @@ export function createRenderer(
   const geometries = new Map<string, THREE_NS.BufferGeometry>();
   const geometryFor = (spec: ShapeSpec, key: string): THREE_NS.BufferGeometry => {
     let g = geometries.get(key);
-    if (!g) { g = buildGeometry(THREE, spec); geometries.set(key, g); }
+    if (!g) {
+      g = buildGeometry(THREE, spec);
+      geometries.set(key, g);
+    }
     return g;
   };
   const materialFor = (part: string): THREE_NS.MeshStandardMaterial => {
     let m = partMaterials.get(part);
-    if (!m) { m = new THREE.MeshStandardMaterial({ color: PART_COLORS[part] ?? 0x9ca3af, roughness: 0.7 }); partMaterials.set(part, m); }
+    if (!m) {
+      m = new THREE.MeshStandardMaterial({ color: PART_COLORS[part] ?? 0x9ca3af, roughness: 0.7 });
+      partMaterials.set(part, m);
+    }
     return m;
   };
 
-  let camState: CameraState = cameraFromPreset(
-    scene.cameras[0] ?? { name: 'default', position: [6, 6, 8], target: [0, 0, 0] },
-  );
+  let camState: CameraState = cameraFromPreset(scene.cameras[0] ?? { name: 'default', position: [6, 6, 8], target: [0, 0, 0] });
   let width = canvas.width || 1280;
   let height = canvas.height || 720;
   let dirty = true;
@@ -206,16 +209,22 @@ export function createRenderer(
     renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio || 1, s.pixelRatioCap));
     renderer.setSize(width, height, false);
     itemMaterial.needsUpdate = true;
-    partMaterials.forEach((m) => { m.needsUpdate = true; });
+    partMaterials.forEach((m) => {
+      m.needsUpdate = true;
+    });
     dirty = true;
   };
   applyQuality();
 
-  const stopWatching = watchContext(canvas, (event) => {
-    paused = event === 'lost' || event === 'unavailable';
-    dirty = true;
-    listeners.forEach((l) => l(event));
-  }, options.restoreTimeoutMs);
+  const stopWatching = watchContext(
+    canvas,
+    (event) => {
+      paused = event === 'lost' || event === 'unavailable';
+      dirty = true;
+      listeners.forEach((l) => l(event));
+    },
+    options.restoreTimeoutMs,
+  );
 
   const frame = (now: number): void => {
     if (disposed) return;
@@ -250,7 +259,8 @@ export function createRenderer(
       if (snapshot.items.length > capacity) growItems(snapshot.items.length);
       instanceMatrices(snapshot.items, items.instanceMatrix.array as Float32Array);
       const colors = instanceColors(snapshot.items);
-      for (let i = 0; i < snapshot.items.length; i++) items.setColorAt(i, new THREE.Color(colors[i * 3], colors[i * 3 + 1], colors[i * 3 + 2]));
+      for (let i = 0; i < snapshot.items.length; i++)
+        items.setColorAt(i, new THREE.Color(colors[i * 3], colors[i * 3 + 1], colors[i * 3 + 2]));
       items.count = snapshot.items.length;
       items.instanceMatrix.needsUpdate = true;
       if (items.instanceColor) items.instanceColor.needsUpdate = true;
@@ -276,7 +286,10 @@ export function createRenderer(
         entry.mesh.quaternion.set(...view.pose.q);
       }
       for (const [id, entry] of partMeshes) {
-        if (!seen.has(id)) { world.remove(entry.mesh); partMeshes.delete(id); }
+        if (!seen.has(id)) {
+          world.remove(entry.mesh);
+          partMeshes.delete(id);
+        }
       }
       dirty = true;
     },
@@ -287,14 +300,28 @@ export function createRenderer(
     },
     setCameraPreset(name) {
       const preset = scene.cameras.find((c) => c.name === name);
-      if (preset) { camState = cameraFromPreset(preset); dirty = true; }
+      if (preset) {
+        camState = cameraFromPreset(preset);
+        dirty = true;
+      }
     },
-    orbit(dx, dy) { camState = orbitCamera(camState, dx, dy); dirty = true; },
-    pan(dx, dz) { camState = panCamera(camState, dx, dz); dirty = true; },
-    zoom(factor) { camState = zoomCamera(camState, factor); dirty = true; },
+    orbit(dx, dy) {
+      camState = orbitCamera(camState, dx, dy);
+      dirty = true;
+    },
+    pan(dx, dz) {
+      camState = panCamera(camState, dx, dz);
+      dirty = true;
+    },
+    zoom(factor) {
+      camState = zoomCamera(camState, factor);
+      dirty = true;
+    },
     onContext(listener) {
       listeners.add(listener);
-      return () => { listeners.delete(listener); };
+      return () => {
+        listeners.delete(listener);
+      };
     },
     fps: () => stats.fps(),
     resize(w, h) {

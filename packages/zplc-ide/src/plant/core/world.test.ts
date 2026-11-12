@@ -3,10 +3,43 @@ import { createHash } from 'node:crypto';
 import { createWorld, type PhysicsWorld, type WorldBodySpec } from './world';
 import { loadJolt, type JoltModule } from './jolt';
 
-const floor: WorldBodySpec = { id: 'floor', kind: 'box', half: [5, 0.5, 5], position: [0, -0.5, 0], rotationYDeg: 0, massKg: 0, friction: 0.6, motion: 'static', layer: 'static' };
-const belt = (id: string, z = 0): WorldBodySpec => ({ id, kind: 'box', half: [2, 0.05, 0.3], position: [0, 0.45, z], rotationYDeg: 0, massKg: 0, friction: 0.6, motion: 'static', layer: 'static' });
-const box = (id: string, at: [number, number, number]): WorldBodySpec => ({ id, kind: 'item', half: [0.15, 0.15, 0.15], position: at, rotationYDeg: 0, massKg: 5, friction: 0.6, motion: 'dynamic', layer: 'moving' });
-const addBelt = (w: PhysicsWorld, id: string, z = 0) => { w.addBody(belt(id, z)); w.addBelt({ id, bodyId: id, axis: [1, 0, 0], accelMps2: 1 }); };
+const floor: WorldBodySpec = {
+  id: 'floor',
+  kind: 'box',
+  half: [5, 0.5, 5],
+  position: [0, -0.5, 0],
+  rotationYDeg: 0,
+  massKg: 0,
+  friction: 0.6,
+  motion: 'static',
+  layer: 'static',
+};
+const belt = (id: string, z = 0): WorldBodySpec => ({
+  id,
+  kind: 'box',
+  half: [2, 0.05, 0.3],
+  position: [0, 0.45, z],
+  rotationYDeg: 0,
+  massKg: 0,
+  friction: 0.6,
+  motion: 'static',
+  layer: 'static',
+});
+const box = (id: string, at: [number, number, number]): WorldBodySpec => ({
+  id,
+  kind: 'item',
+  half: [0.15, 0.15, 0.15],
+  position: at,
+  rotationYDeg: 0,
+  massKg: 5,
+  friction: 0.6,
+  motion: 'dynamic',
+  layer: 'moving',
+});
+const addBelt = (w: PhysicsWorld, id: string, z = 0) => {
+  w.addBody(belt(id, z));
+  w.addBelt({ id, bodyId: id, axis: [1, 0, 0], accelMps2: 1 });
+};
 const state = (w: PhysicsWorld, id: string) => w.bodies().find((b) => b.id === id)!;
 
 function hashPoses(w: PhysicsWorld): string {

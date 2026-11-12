@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'bun:test';
 import {
-  cameraFromPreset, cameraKeyAction, cameraPosition, orbitCamera, panCamera, zoomCamera,
-  DISTANCE_MAX, DISTANCE_MIN, POLAR_MAX_DEG, POLAR_MIN_DEG,
+  cameraFromPreset,
+  cameraKeyAction,
+  cameraPosition,
+  orbitCamera,
+  panCamera,
+  zoomCamera,
+  DISTANCE_MAX,
+  DISTANCE_MIN,
+  POLAR_MAX_DEG,
+  POLAR_MIN_DEG,
 } from './camera';
 
 const base = cameraFromPreset({ name: 'a', position: [0, 5, 5], target: [0, 0, 0] });

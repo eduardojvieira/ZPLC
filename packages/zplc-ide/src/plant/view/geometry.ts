@@ -48,22 +48,36 @@ export function sensorShape(view: PartView): ShapeSpec {
 /** The shape of a part by catalogue id; an unknown id is drawn as its pose box. */
 export function partShape(view: PartView): ShapeSpec {
   switch (view.part) {
-    case 'belt': return beltShape(view);
-    case 'roller': return rollerShape(view);
-    case 'curve': return curveShape(view);
-    case 'blade': return bladeShape(view);
-    case 'sensor': return sensorShape(view);
-    default: return { shape: 'box', size: view.pose.size };
+    case 'belt':
+      return beltShape(view);
+    case 'roller':
+      return rollerShape(view);
+    case 'curve':
+      return curveShape(view);
+    case 'blade':
+      return bladeShape(view);
+    case 'sensor':
+      return sensorShape(view);
+    default:
+      return { shape: 'box', size: view.pose.size };
   }
 }
 
 /** Column-major 4x4 matrix for translation `p`, rotation `q` and scale `s` (same layout as three's Matrix4). */
 export function composeMatrix(p: Vec3, q: Quat, s: Vec3, out: Float32Array, offset: number): void {
   const [x, y, z, w] = q;
-  const x2 = x + x, y2 = y + y, z2 = z + z;
-  const xx = x * x2, xy = x * y2, xz = x * z2;
-  const yy = y * y2, yz = y * z2, zz = z * z2;
-  const wx = w * x2, wy = w * y2, wz = w * z2;
+  const x2 = x + x,
+    y2 = y + y,
+    z2 = z + z;
+  const xx = x * x2,
+    xy = x * y2,
+    xz = x * z2;
+  const yy = y * y2,
+    yz = y * z2,
+    zz = z * z2;
+  const wx = w * x2,
+    wy = w * y2,
+    wz = w * z2;
   const [sx, sy, sz] = s;
   out[offset] = (1 - (yy + zz)) * sx;
   out[offset + 1] = (xy + wz) * sx;

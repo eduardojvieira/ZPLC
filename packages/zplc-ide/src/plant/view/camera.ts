@@ -44,11 +44,7 @@ export function cameraPosition(s: CameraState): Vec3 {
   const az = s.azimuthDeg * RAD;
   const po = s.polarDeg * RAD;
   const flat = s.distance * Math.sin(po);
-  return [
-    s.target[0] + flat * Math.sin(az),
-    s.target[1] + s.distance * Math.cos(po),
-    s.target[2] + flat * Math.cos(az),
-  ];
+  return [s.target[0] + flat * Math.sin(az), s.target[1] + s.distance * Math.cos(po), s.target[2] + flat * Math.cos(az)];
 }
 
 export function orbitCamera(s: CameraState, dxDeg: number, dyDeg: number): CameraState {
@@ -74,9 +70,7 @@ export function zoomCamera(s: CameraState, factor: number): CameraState {
 }
 
 export type CameraKeyAction =
-  | { kind: 'orbit'; dxDeg: number; dyDeg: number }
-  | { kind: 'zoom'; factor: number }
-  | { kind: 'pan'; dx: number; dz: number };
+  { kind: 'orbit'; dxDeg: number; dyDeg: number } | { kind: 'zoom'; factor: number } | { kind: 'pan'; dx: number; dz: number };
 
 /** Keyboard equivalent of mouse control (VIS-002): arrows orbit, + and - zoom, WASD pan; Shift takes bigger steps. */
 export function cameraKeyAction(key: string, shift: boolean): CameraKeyAction | null {
@@ -84,16 +78,33 @@ export function cameraKeyAction(key: string, shift: boolean): CameraKeyAction | 
   const pan = shift ? 2 : 0.5;
   const zoom = shift ? 1.5 : 1.1;
   switch (key) {
-    case 'ArrowLeft': return { kind: 'orbit', dxDeg: -orbit, dyDeg: 0 };
-    case 'ArrowRight': return { kind: 'orbit', dxDeg: orbit, dyDeg: 0 };
-    case 'ArrowUp': return { kind: 'orbit', dxDeg: 0, dyDeg: -orbit };
-    case 'ArrowDown': return { kind: 'orbit', dxDeg: 0, dyDeg: orbit };
-    case '+': case '=': return { kind: 'zoom', factor: zoom };
-    case '-': case '_': return { kind: 'zoom', factor: 1 / zoom };
-    case 'w': case 'W': return { kind: 'pan', dx: 0, dz: pan };
-    case 's': case 'S': return { kind: 'pan', dx: 0, dz: -pan };
-    case 'a': case 'A': return { kind: 'pan', dx: -pan, dz: 0 };
-    case 'd': case 'D': return { kind: 'pan', dx: pan, dz: 0 };
-    default: return null;
+    case 'ArrowLeft':
+      return { kind: 'orbit', dxDeg: -orbit, dyDeg: 0 };
+    case 'ArrowRight':
+      return { kind: 'orbit', dxDeg: orbit, dyDeg: 0 };
+    case 'ArrowUp':
+      return { kind: 'orbit', dxDeg: 0, dyDeg: -orbit };
+    case 'ArrowDown':
+      return { kind: 'orbit', dxDeg: 0, dyDeg: orbit };
+    case '+':
+    case '=':
+      return { kind: 'zoom', factor: zoom };
+    case '-':
+    case '_':
+      return { kind: 'zoom', factor: 1 / zoom };
+    case 'w':
+    case 'W':
+      return { kind: 'pan', dx: 0, dz: pan };
+    case 's':
+    case 'S':
+      return { kind: 'pan', dx: 0, dz: -pan };
+    case 'a':
+    case 'A':
+      return { kind: 'pan', dx: -pan, dz: 0 };
+    case 'd':
+    case 'D':
+      return { kind: 'pan', dx: pan, dz: 0 };
+    default:
+      return null;
   }
 }

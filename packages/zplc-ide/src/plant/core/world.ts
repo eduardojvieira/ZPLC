@@ -3,9 +3,24 @@ import type { JoltModule } from './jolt';
 
 export const PLANT_STEP_MS = 5;
 
-export interface WorldBodySpec { id: string; kind: 'box' | 'pallet' | 'item'; half: Vec3; position: Vec3; rotationYDeg: number; massKg: number; friction: number; motion: 'static' | 'dynamic' | 'kinematic'; layer: 'moving' | 'static' }
+export interface WorldBodySpec {
+  id: string;
+  kind: 'box' | 'pallet' | 'item';
+  half: Vec3;
+  position: Vec3;
+  rotationYDeg: number;
+  massKg: number;
+  friction: number;
+  motion: 'static' | 'dynamic' | 'kinematic';
+  layer: 'moving' | 'static';
+}
 /** A belt is a static body plus a surface velocity along `axis` (world space), ramped at `accelMps2`. */
-export interface WorldBeltSpec { id: string; bodyId: string; axis: Vec3; accelMps2: number }
+export interface WorldBeltSpec {
+  id: string;
+  bodyId: string;
+  axis: Vec3;
+  accelMps2: number;
+}
 export interface PhysicsWorld {
   readonly timeMs: number;
   addBody(spec: WorldBodySpec): void;
@@ -51,8 +66,17 @@ export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): P
   physics.SetGravity(gravity);
   Jolt.destroy(gravity);
 
-  interface Entry { spec: WorldBodySpec; body: InstanceType<typeof Jolt.Body>; key: number }
-  interface Belt { spec: WorldBeltSpec; target: number; speed: number; wake: InstanceType<typeof Jolt.AABox> }
+  interface Entry {
+    spec: WorldBodySpec;
+    body: InstanceType<typeof Jolt.Body>;
+    key: number;
+  }
+  interface Belt {
+    spec: WorldBeltSpec;
+    target: number;
+    speed: number;
+    wake: InstanceType<typeof Jolt.AABox>;
+  }
   const entries = new Map<string, Entry>(); // Map keeps insertion order: creation order
   const idByKey = new Map<number, string>();
   const belts = new Map<string, Belt>();
@@ -80,7 +104,11 @@ export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): P
     // The setting is the surface velocity of body 2 relative to body 1: flip it when the belt is body 1.
     const sign = belt1 ? -1 : 1;
     const a = belt.spec.axis;
-    Jolt.wrapPointer(ioSettings, Jolt.ContactSettings).mRelativeLinearSurfaceVelocity.Set(sign * a[0] * belt.speed, sign * a[1] * belt.speed, sign * a[2] * belt.speed);
+    Jolt.wrapPointer(ioSettings, Jolt.ContactSettings).mRelativeLinearSurfaceVelocity.Set(
+      sign * a[0] * belt.speed,
+      sign * a[1] * belt.speed,
+      sign * a[2] * belt.speed,
+    );
   };
   listener.OnContactAdded = (b1: number, b2: number, _m: number, set: number) => surface(b1, b2, set);
   listener.OnContactPersisted = (b1: number, b2: number, _m: number, set: number) => surface(b1, b2, set);
@@ -91,7 +119,9 @@ export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): P
   let disposed = false;
 
   const world: PhysicsWorld = {
-    get timeMs() { return timeMs; },
+    get timeMs() {
+      return timeMs;
+    },
     addBody(spec) {
       if (entries.has(spec.id)) throw new Error(`duplicate body ${spec.id}`);
       const half = new Jolt.Vec3(spec.half[0], spec.half[1], spec.half[2]);
@@ -99,7 +129,12 @@ export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): P
       const pos = new Jolt.RVec3(spec.position[0], spec.position[1], spec.position[2]);
       const a = (spec.rotationYDeg * Math.PI) / 360;
       const rot = new Jolt.Quat(0, Math.sin(a), 0, Math.cos(a));
-      const motion = spec.motion === 'dynamic' ? Jolt.EMotionType_Dynamic : spec.motion === 'kinematic' ? Jolt.EMotionType_Kinematic : Jolt.EMotionType_Static;
+      const motion =
+        spec.motion === 'dynamic'
+          ? Jolt.EMotionType_Dynamic
+          : spec.motion === 'kinematic'
+            ? Jolt.EMotionType_Kinematic
+            : Jolt.EMotionType_Static;
       const cs = new Jolt.BodyCreationSettings(shape, pos, rot, motion, spec.layer === 'moving' ? MOVING : NON_MOVING);
       cs.mFriction = spec.friction;
       if (spec.motion === 'dynamic') {
@@ -178,37 +213,57 @@ export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): P
         const p = body.GetPosition();
         const q = body.GetRotation();
         const v = body.GetLinearVelocity();
-        out.push({ id, p: [p.GetX(), p.GetY(), p.GetZ()], q: [q.GetX(), q.GetY(), q.GetZ(), q.GetW()], v: [v.GetX(), v.GetY(), v.GetZ()], asleep: !body.IsActive() });
+        out.push({
+          id,
+          p: [p.GetX(), p.GetY(), p.GetZ()],
+          q: [q.GetX(), q.GetY(), q.GetZ(), q.GetW()],
+          v: [v.GetX(), v.GetY(), v.GetZ()],
+          asleep: !body.IsActive(),
+        });
       }
       return out;
     },
     capture() {
       const chunks: Uint8Array[] = [];
       const recorder = new Jolt.StateRecorderJS();
-      recorder.WriteBytes = (data: number, n: number) => { chunks.push(Jolt.HEAPU8.slice(data, data + n)); };
+      recorder.WriteBytes = (data: number, n: number) => {
+        chunks.push(Jolt.HEAPU8.slice(data, data + n));
+      };
       recorder.IsEOF = () => false;
       recorder.IsFailed = () => false;
       physics.SaveState(recorder, Jolt.EStateRecorderState_All);
       Jolt.destroy(recorder);
-      const head = new TextEncoder().encode(JSON.stringify({ timeMs, ids: [...entries.keys()], belts: [...belts].map(([id, b]) => [id, b.speed, b.target]) }));
+      const head = new TextEncoder().encode(
+        JSON.stringify({ timeMs, ids: [...entries.keys()], belts: [...belts].map(([id, b]) => [id, b.speed, b.target]) }),
+      );
       const total = chunks.reduce((n, c) => n + c.length, 0);
       const out = new Uint8Array(4 + head.length + total);
       new DataView(out.buffer).setUint32(0, head.length, true);
       out.set(head, 4);
       let at = 4 + head.length;
-      for (const c of chunks) { out.set(c, at); at += c.length; }
+      for (const c of chunks) {
+        out.set(c, at);
+        at += c.length;
+      }
       return out;
     },
     restore(bytes) {
       const headLen = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(0, true);
-      const head = JSON.parse(new TextDecoder().decode(bytes.subarray(4, 4 + headLen))) as { timeMs: number; ids: string[]; belts: [string, number, number][] };
+      const head = JSON.parse(new TextDecoder().decode(bytes.subarray(4, 4 + headLen))) as {
+        timeMs: number;
+        ids: string[];
+        belts: [string, number, number][];
+      };
       if (head.ids.join('\u0000') !== [...entries.keys()].join('\u0000')) throw new Error('capture belongs to a different set of bodies');
       const data = bytes.subarray(4 + headLen);
       let pos = 0;
       let failed = false;
       const recorder = new Jolt.StateRecorderJS();
       recorder.ReadBytes = (out: number, n: number) => {
-        if (pos + n > data.length) { failed = true; return; }
+        if (pos + n > data.length) {
+          failed = true;
+          return;
+        }
         Jolt.HEAPU8.set(data.subarray(pos, pos + n), out);
         pos += n;
       };
@@ -220,7 +275,10 @@ export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): P
       timeMs = head.timeMs;
       for (const [id, speed, target] of head.belts) {
         const b = belts.get(id);
-        if (b) { b.speed = speed; b.target = target; }
+        if (b) {
+          b.speed = speed;
+          b.target = target;
+        }
       }
     },
     dispose() {

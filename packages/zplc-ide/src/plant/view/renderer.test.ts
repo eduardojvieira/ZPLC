@@ -9,20 +9,36 @@ const scene: PlantSceneFile = { schemaVersion: 1, name: 't', parts: [], cameras:
 function fakeCanvas(gl: unknown = null) {
   const handlers = new Map<string, (e: Event) => void>();
   const canvas = {
-    width: 100, height: 100,
+    width: 100,
+    height: 100,
     getContext: () => gl,
-    addEventListener: (n: string, h: (e: Event) => void) => { handlers.set(n, h); },
-    removeEventListener: (n: string) => { handlers.delete(n); },
+    addEventListener: (n: string, h: (e: Event) => void) => {
+      handlers.set(n, h);
+    },
+    removeEventListener: (n: string) => {
+      handlers.delete(n);
+    },
   };
   return { canvas: canvas as unknown as HTMLCanvasElement, handlers };
 }
 
 const pose = (over: Partial<BodyPose> = {}): BodyPose => ({
-  id: 'b', part: 'box', kind: 'box', size: [0.4, 0.3, 0.2], p: [1, 2, 3], q: [0, 0, 0, 1], ...over,
+  id: 'b',
+  part: 'box',
+  kind: 'box',
+  size: [0.4, 0.3, 0.2],
+  p: [1, 2, 3],
+  q: [0, 0, 0, 1],
+  ...over,
 });
-const view = (part: string, over: Partial<BodyPose> = {}, state: PartView['state'] = {}): PartView => (
-  { id: 'v', part, name: 'V', pose: pose({ part, ...over }), state, signals: {} }
-);
+const view = (part: string, over: Partial<BodyPose> = {}, state: PartView['state'] = {}): PartView => ({
+  id: 'v',
+  part,
+  name: 'V',
+  pose: pose({ part, ...over }),
+  state,
+  signals: {},
+});
 
 describe('renderer', () => {
   it('VIS-006 no WebGL 2 reports unavailable with a message, not an exception', async () => {
@@ -38,7 +54,11 @@ describe('renderer', () => {
     const events: string[] = [];
     const stop = watchContext(canvas, (e) => events.push(e), 10_000);
     let prevented = false;
-    handlers.get('webglcontextlost')?.({ preventDefault: () => { prevented = true; } } as Event);
+    handlers.get('webglcontextlost')?.({
+      preventDefault: () => {
+        prevented = true;
+      },
+    } as Event);
     expect(prevented).toBe(true);
     handlers.get('webglcontextrestored')?.({} as Event);
     expect(events).toEqual(['lost', 'restored']);
@@ -60,8 +80,14 @@ describe('renderer', () => {
     const s = createFrameStats();
     expect(s.fps()).toEqual({ current: 0, p5: 0 });
     let t = 0;
-    for (let i = 0; i < 90; i++) { s.frame(t); t += 10; }
-    for (let i = 0; i < 10; i++) { s.frame(t); t += 100; } // 10 % of the frames take 100 ms
+    for (let i = 0; i < 90; i++) {
+      s.frame(t);
+      t += 10;
+    }
+    for (let i = 0; i < 10; i++) {
+      s.frame(t);
+      t += 100;
+    } // 10 % of the frames take 100 ms
     const { current, p5 } = s.fps();
     expect(current).toBeGreaterThan(30);
     expect(current).toBeLessThan(60);
@@ -75,9 +101,13 @@ describe('geometry', () => {
     expect(palletShape(pose({ size: [1.2, 0.15, 0.8] }))).toEqual({ shape: 'box', size: [1.2, 0.15, 0.8] });
     expect(partShape(view('belt', { size: [2, 0.1, 0.5] }))).toEqual({ shape: 'box', size: [2, 0.1, 0.5] });
     expect(partShape(view('roller', { size: [2, 0.1, 0.5] }))).toEqual({ shape: 'cylinder', radius: 0.05, length: 2 });
-    expect(partShape(view('curve', { size: [0.5, 0.1, 0.5] }, { radius: 1.5, angleDeg: 45 }))).toEqual(
-      { shape: 'curve', innerRadius: 1, outerRadius: 1.5, height: 0.1, angleDeg: 45 },
-    );
+    expect(partShape(view('curve', { size: [0.5, 0.1, 0.5] }, { radius: 1.5, angleDeg: 45 }))).toEqual({
+      shape: 'curve',
+      innerRadius: 1,
+      outerRadius: 1.5,
+      height: 0.1,
+      angleDeg: 45,
+    });
     for (const p of ['blade', 'sensor', 'unknown']) {
       expect(partShape(view(p, { size: [3, 4, 5] }))).toEqual({ shape: 'box', size: [3, 4, 5] });
     }
@@ -91,9 +121,9 @@ describe('geometry', () => {
     const items = [pose(), pose({ q: [0, half, 0, half], p: [0, 0, 0], size: [1, 1, 1] })];
     const m = instanceMatrices(items);
     expect(m.length).toBe(32);
-    expect(Array.from(m.slice(0, 16))).toEqual([
-      expect.closeTo(0.4), 0, 0, 0, 0, expect.closeTo(0.3), 0, 0, 0, 0, expect.closeTo(0.2), 0, 1, 2, 3, 1,
-    ].map((v) => v));
+    expect(Array.from(m.slice(0, 16))).toEqual(
+      [expect.closeTo(0.4), 0, 0, 0, 0, expect.closeTo(0.3), 0, 0, 0, 0, expect.closeTo(0.2), 0, 1, 2, 3, 1].map((v) => v),
+    );
     // A quarter turn about Y sends +X to -Z.
     expect(m[16]).toBeCloseTo(0);
     expect(m[18]).toBeCloseTo(-1);
