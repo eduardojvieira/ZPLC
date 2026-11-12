@@ -15,6 +15,16 @@ const CONSOLE_MODULES = [
 const consoleSources = (): string =>
   CONSOLE_MODULES.map((file) => compactSource(readFileSync(join(import.meta.dir, file), 'utf8'))).join('\n');
 
+describe('the results panel after the plant left it (SHL-003)', () => {
+  it('SHL-003 the results panel has nine tabs and none of them is Lab', () => {
+    const source = readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8');
+    const start = source.indexOf('const tabs: ConsoleTabFace[] = [');
+    const list = source.slice(start, source.indexOf('\n  ];', start));
+    const ids = [...list.matchAll(/^ {4,6}(?:\{ )?id: '(\w+)'/gm)].map((match) => match[1]);
+    expect(ids).toEqual(['output', 'problems', 'tests', 'interlocks', 'changes', 'agent', 'trace', 'watch', 'terminal']);
+  });
+});
+
 describe('Console tab boundary', () => {
   it('excludes a concurrent motor command and clears a failure only after a newer sample', () => {
     const inFlight = { current: false };
@@ -39,8 +49,9 @@ describe('Console tab boundary', () => {
     expect(source).toContain("key === 'End'");
     expect(source).toContain('document.getElementById(`console-tab-${nextTab}`)?.focus()');
     expect(source).toContain("id: 'trace'");
-    expect(source).toContain("id: 'lab'");
-    expect(source).toContain('<LabPanel');
+    // the plant left the results panel for the plant document (SHL-003, PLS-001): no Lab tab and no panel for it here
+    expect(source).not.toContain("id: 'lab'");
+    expect(source).not.toContain('<LabPanel');
     // the explorer, the inspector and the lessons moved to the sidebars (UX-011): their requests are routed there, and none is a tab here
     expect(source).not.toContain("id: 'learn'");
     expect(source).not.toContain("id: 'explorer'");

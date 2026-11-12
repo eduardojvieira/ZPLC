@@ -11,7 +11,7 @@ export const labEn = {
   'lab.runningScenarios': 'Running scenarios…',
   'lab.labRecordedScenario': 'Replay of a recorded run',
   'lab.recordedNativePosixHost':
-    'This is a replay of a recorded native POSIX host run. It is not live: the live plant is above, and a replay is not runtime, hardware or HIL evidence.',
+    'This is a replay of a recorded native POSIX host run. It is not live: the live view of the plant is the other view of this document, and a replay is not runtime, hardware or HIL evidence.',
   'lab.scenario': 'Scenario',
   'lab.play': 'Play',
   'lab.step': 'Step',
@@ -99,7 +99,7 @@ export const labEs: Record<keyof typeof labEn, string> = {
   'lab.runningScenarios': 'Ejecutando escenarios…',
   'lab.labRecordedScenario': 'Repetición de una ejecución registrada',
   'lab.recordedNativePosixHost':
-    'Esta es una repetición de una ejecución registrada en el host POSIX nativo. No está en vivo: la planta en vivo está arriba, y una repetición no es evidencia del runtime, del hardware ni de HIL.',
+    'Esta es una repetición de una ejecución registrada en el host POSIX nativo. No está en vivo: la vista en vivo de la planta es la otra vista de este documento, y una repetición no es evidencia del runtime, del hardware ni de HIL.',
   'lab.scenario': 'Escenario',
   'lab.play': 'Reproducir',
   'lab.step': 'Paso',

@@ -72,7 +72,8 @@ describe('Lab playback', () => {
     // LRN-020: the recorded run is labelled as a replay, and says it is not live runtime, hardware or HIL evidence.
     expect(source).toContain('Replay of a recorded run');
     expect(source).toContain('a replay is not runtime, hardware or HIL evidence.');
-    expect(source).toContain('Run host scenarios');
+    // the empty state and its next action belong to the plant document now (PLS-001), not to the replay
+    expect(source).not.toContain('Run host scenarios');
     expect(source).toContain('Play');
     expect(source).toContain('Pause');
     expect(source).toContain('Step');

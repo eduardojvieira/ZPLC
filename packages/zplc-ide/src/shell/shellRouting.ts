@@ -11,8 +11,11 @@ export type SidebarConsoleTab = (typeof SIDEBAR_CONSOLE_TABS)[number];
 
 export const isSidebarConsoleTab = (tab: ConsoleTab): tab is SidebarConsoleTab => (SIDEBAR_CONSOLE_TABS as readonly string[]).includes(tab);
 
-/** The tab the results panel shows for a stored tab: the stored one, or Output when the request belongs to a sidebar. */
-export const resultsTabFor = (tab: ConsoleTab): ConsoleTab => (isSidebarConsoleTab(tab) ? 'output' : tab);
+/**
+ * The tab the results panel shows for a stored tab: the stored one, or Output when the request belongs to a sidebar or to the plant
+ * document.
+ */
+export const resultsTabFor = (tab: ConsoleTab): ConsoleTab => (isSidebarConsoleTab(tab) || tab === 'lab' ? 'output' : tab);
 
 /**
  * Where the lesson of the open lesson workspace is shown (LRN-004). On the Learn rail it fills the primary sidebar; on any other
@@ -21,12 +24,17 @@ export const resultsTabFor = (tab: ConsoleTab): ConsoleTab => (isSidebarConsoleT
 export const lessonSurface = (view: ActivityView, lessonOpen: boolean): 'primary' | 'secondary' | 'none' =>
   !lessonOpen ? 'none' : view === 'learn' ? 'primary' : 'secondary';
 
-export type ShellRoute = { primary: ActivityView } | { secondary: 'inspector' };
+/**
+ * `lab` is the tab 2.0 stored for the plant: it is a document of the editor area now (PLS-002), and the value stays so that a stored
+ * session parses.
+ */
+export type ShellRoute = { primary: ActivityView } | { secondary: 'inspector' } | { plant: true };
 
 export function routeConsoleTab(tab: ConsoleTab): ShellRoute | null {
   if (tab === 'explorer') return { primary: 'project' };
   if (tab === 'learn') return { primary: 'learn' };
   if (tab === 'inspector') return { secondary: 'inspector' };
+  if (tab === 'lab') return { plant: true };
   return null;
 }
 
@@ -38,6 +46,7 @@ interface WorkbenchStore {
 interface ShellActions {
   showActivity(view: ActivityView): void;
   setSecondaryVisible(visible: boolean): void;
+  showPlant(): void;
 }
 
 /**
@@ -53,6 +62,7 @@ export function startShellRouting(workbench: WorkbenchStore, shell: () => ShellA
       return;
     }
     if ('primary' in route) shell().showActivity(route.primary);
+    else if ('plant' in route) shell().showPlant();
     else shell().setSecondaryVisible(true);
     workbench.getState().setActiveConsoleTab(resultsTab);
   };
