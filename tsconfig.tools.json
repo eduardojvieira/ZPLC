@@ -34,6 +34,8 @@
     "scripts/**/*.ts",
     // The components of the documentation site that tools/docs tests import (the browser flasher, REL-024).
     "docs/src/components/FirmwareFlasher/*.ts",
+    "docs/src/components/DownloadPage/*.d.ts",
+    "docs/src/components/LandingPage/*.d.ts",
     "packages/zplc-hil/tests/**/*.ts",
     // Ambient declarations of the Studio that the sources above rely on without importing.
     "packages/zplc-ide/src/**/*.d.ts"
