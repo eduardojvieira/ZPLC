@@ -12,6 +12,13 @@ import { projectEs } from './catalog/project';
 import { labEs } from './catalog/lab';
 import { plantEditorEs } from './catalog/plantEditor';
 import { plantViewEs } from './catalog/plantView';
+import { studioCommandsEs } from './catalog/studioCommands';
+import { studioSurfacesEs } from './catalog/studioSurfaces';
+import { studioDocumentsEs } from './catalog/studioDocuments';
+import { studioTransportEs } from './catalog/studioTransport';
+import { studioFlowEs } from './catalog/studioFlow';
+import { studioNoticesEs } from './catalog/studioNotices';
+import { studioStatusEs } from './catalog/studioStatus';
 import { editorGesturesEs } from './catalog/editorGestures';
 import { ldEs } from './catalog/ld';
 import { importArchiveEs } from './catalog/importArchive';
@@ -634,6 +641,13 @@ export const es: Record<MessageKey, string> = {
   ...projectEs,
   ...labEs,
   ...plantViewEs,
+  ...studioCommandsEs,
+  ...studioSurfacesEs,
+  ...studioDocumentsEs,
+  ...studioTransportEs,
+  ...studioFlowEs,
+  ...studioNoticesEs,
+  ...studioStatusEs,
   ...plantEditorEs,
   ...editorGesturesEs,
   ...ldEs,

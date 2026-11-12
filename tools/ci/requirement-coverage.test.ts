@@ -17,6 +17,7 @@ import {
   unitChecks,
   type Check,
 } from './requirement-coverage';
+import { buildIndex, parseMapped } from './generate-requirement-index';
 import type { Inventory } from './test-inventory';
 import { flattenConcatenations } from './source-text';
 
@@ -554,5 +555,91 @@ describe('requirement coverage of spec 012', () => {
     const check = run('--check');
     expect(check.exitCode).toBe(0);
     expect(text(check)).toMatch(/^requirement-coverage: \d+ of 394 requirements covered/);
+  });
+});
+
+// Spec 013 (the 2.1 Studio experience) is reported like spec 012: report only, never gating CI (spec 013 section 8.2 item 1).
+// The plan of milestone M1 delivers U0 and U1; the requirements of U2 and U3 are pending, not uncovered.
+describe('requirement coverage of spec 013', () => {
+  const run = (...args: string[]) =>
+    Bun.spawnSync(['bun', 'tools/ci/requirement-coverage.ts', ...args], { cwd: new URL('../../', import.meta.url).pathname });
+  const text = (result: ReturnType<typeof run>) => result.stdout.toString();
+  const index013 = () =>
+    JSON.parse(readFileSync(new URL('./requirement-index-013.json', import.meta.url), 'utf8')) as Array<{
+      id: string;
+      workstream: string;
+      title: string;
+      mapped?: boolean;
+    }>;
+
+  it('spec 013 is reported with its seven prefixes', () => {
+    const counts: Record<string, number> = {};
+    for (const { workstream } of index013()) counts[workstream] = (counts[workstream] ?? 0) + 1;
+    expect(counts).toEqual({ SHL: 16, FLW: 14, TST: 10, FND: 7, MSG: 7, GDE: 13, PLS: 13 });
+    const result = run('--spec', '013');
+    expect(result.exitCode).toBe(0);
+    expect(text(result)).toContain('spec 013');
+    for (const prefix of Object.keys(counts)) expect(text(result)).toContain(prefix);
+    expect(text(result)).toMatch(/overall\s+\d+ \/\s+80/);
+  });
+
+  it('a requirement of U2 or U3 is pending, not uncovered, and a requirement the plan delivers is uncovered until it has a check', () => {
+    const result = run('--spec', '013', '--list');
+    expect(result.exitCode).toBe(0);
+    expect(text(result)).toContain('TST-001 pending');
+    expect(text(result)).toContain('FLW-001 uncovered');
+    expect(text(result)).not.toContain('TST-001 uncovered');
+    const mapped = index013().filter((entry) => entry.mapped);
+    expect(mapped.length).toBe(31);
+    expect(index013().filter((entry) => entry.mapped === undefined)).toEqual([]);
+  });
+
+  it('a test that names a requirement of spec 013 covers it', () => {
+    const index = index013();
+    const prefixes = new Set(index.map((entry) => entry.workstream));
+    const scanned = scanFiles(
+      ['packages/zplc-ide/src/commands/a.test.ts'],
+      () => "it('FND-002 every surface has a command', () => {});",
+      { runs: [{ pattern: 'packages/zplc-ide/src/**/*.test.ts', job: 'ide' }], notRunInCi: [] } as unknown as Inventory,
+      prefixes,
+    );
+    const { states } = coverage(index, mergeEvidence(scanned, {}), []);
+    expect(states.get('FND-002')).toBe('covered');
+  });
+
+  it('spec 013 does not change the output or the exit code of spec 011 or 012', () => {
+    const report = run();
+    expect(text(report)).not.toContain('SHL');
+    expect(text(report)).toMatch(/overall\s+\d+ \/\s+394/);
+    expect(text(run('--spec', '012'))).not.toContain('SHL');
+    expect(run('--spec', 'banana').exitCode).toBe(1);
+  });
+});
+
+describe('the index of spec 013 from the plan mapping table', () => {
+  const plan = [
+    '### Spec 013 (milestones U0 and U1)',
+    '| Requirement | Task(s) | Note |',
+    '|---|---|---|',
+    '| SHL-006, SHL-007 | W2 | two groups |',
+    '| FLW-007 to FLW-010 | W6 | target |',
+    '| Section 8.1 | W0 | baseline |',
+    '**Not delivered here**: SHL-005.',
+    '| TST-001 | X | after the marker |',
+  ].join('\n');
+  const spec = ['## 6. Workstreams', '### SHL: Shell', '- **SHL-005** A. B.', '- **SHL-006** C.', '- **SHL-007** D.'].join('\n');
+
+  it('expands a list and a range, and stops at the paragraph of what is not delivered', () => {
+    expect([...parseMapped(plan)]).toEqual(['SHL-006', 'SHL-007', 'FLW-007', 'FLW-008', 'FLW-009', 'FLW-010']);
+  });
+
+  it('marks what the plan delivers and what it leaves to later milestones, and refuses an ID the spec lacks', () => {
+    const short = plan.replace('FLW-007 to FLW-010', 'SHL-007');
+    expect(buildIndex(spec, short, { section: 6, mapped: true }).map((entry) => [entry.id, entry.mapped])).toEqual([
+      ['SHL-005', false],
+      ['SHL-006', true],
+      ['SHL-007', true],
+    ]);
+    expect(() => buildIndex(spec, plan, { section: 6, mapped: true })).toThrow('does not have: FLW-007');
   });
 });

@@ -7,10 +7,14 @@
 //   bun tools/ci/requirement-coverage.ts --write         rewrite tools/ci/requirement-evidence.json from the tracked tree
 //   bun tools/ci/requirement-coverage.ts --check         CI: fail when that file is not what --write would produce
 //   bun tools/ci/requirement-coverage.ts --spec 012      the same report for spec 012 (2.1 plant simulation), alone (--list works)
+//   bun tools/ci/requirement-coverage.ts --spec 013      the same for spec 013 (2.1 Studio experience), with a `pending` column
 //
 // Spec 012 is report-only: its index is tools/ci/requirement-index-012.json, its evidence is scanned from the tree on each run
 // (no committed record, no hand-written records yet), it never changes the output or the exit code of the commands above, and
 // `--spec 012` exits 0 however much is uncovered (spec 012 section 7 item 1: a check for each requirement, or a recorded condition).
+// Spec 013 is reported the same way (tools/ci/requirement-index-013.json, spec 013 section 8.2 item 1). Its index marks each
+// requirement `mapped` when the table "Spec 013 (milestones U0 and U1)" of the M1 plan delivers it. One that is not mapped
+// (milestones U2 and U3, which have no plan yet) and has no check is `pending`, not `uncovered`: nobody owes it a check yet.
 //
 // A check names its requirement in its own metadata, so adding a check needs no edit to a registry:
 //   conformance  the "requirement" of a conformance/**/*.expect.json (VF-002)
@@ -300,6 +304,9 @@ export function groups(index: Requirement[], states: Map<string, State>) {
 
 const INDEX_011 = 'tools/ci/requirements-index.json';
 const INDEX_012 = 'tools/ci/requirement-index-012.json';
+const INDEX_013 = 'tools/ci/requirement-index-013.json';
+/** The specs reported alone and never gating: the number given to --spec, and its index. */
+const REPORT_ONLY_INDEX: Record<string, string> = { '012': INDEX_012, '013': INDEX_013 };
 
 function load(indexFile = INDEX_011) {
   const read = (file: string) => readFileSync(new URL(file, ROOT), 'utf8');
@@ -354,11 +361,27 @@ function printReport012(
   states: Map<string, State>,
   list: boolean,
 ) {
-  console.log(`${''.padEnd(8)}${'covered'.padStart(10)}${'partial'.padStart(9)}${'decided'.padStart(9)}${'uncovered'.padStart(11)}`);
-  for (const workstream of new Set(index.map((entry) => entry.workstream))) console.log(row(workstream, byWorkstream[workstream]!));
-  console.log(row('overall', overall));
+  // Spec 013 only: an uncovered requirement that the M1 plan does not deliver is pending. Its column is printed only then.
+  const hasPending = index.some((entry) => entry.mapped !== undefined);
+  const isPending = (entry: Requirement) => entry.mapped === false && states.get(entry.id) === 'uncovered';
+  const pendingOf = (workstream?: string) =>
+    index.filter((entry) => (!workstream || entry.workstream === workstream) && isPending(entry)).length;
+  const line = (name: string, counts: Counts, workstream?: string) =>
+    hasPending
+      ? `${name.padEnd(8)}${pad(counts.covered, 5)} /${pad(counts.total, 4)}${pad(counts.partial, 9)}${pad(counts.decided, 9)}${pad(
+          counts.uncovered - pendingOf(workstream),
+          11,
+        )}${pad(pendingOf(workstream), 9)}`
+      : row(name, counts);
+  const heading = `${''.padEnd(8)}${'covered'.padStart(10)}${'partial'.padStart(9)}${'decided'.padStart(9)}${'uncovered'.padStart(11)}`;
+  console.log(heading + (hasPending ? 'pending'.padStart(9) : ''));
+  for (const workstream of new Set(index.map((entry) => entry.workstream)))
+    console.log(line(workstream, byWorkstream[workstream]!, workstream));
+  console.log(line('overall', overall));
   if (list)
-    for (const entry of index) if (states.get(entry.id) !== 'covered') console.log(`  ${entry.id} ${states.get(entry.id)}: ${entry.title}`);
+    for (const entry of index)
+      if (states.get(entry.id) !== 'covered')
+        console.log(`  ${entry.id} ${isPending(entry) ? 'pending' : states.get(entry.id)}: ${entry.title}`);
 }
 
 if (import.meta.main) {
@@ -374,18 +397,18 @@ if (import.meta.main) {
       spec: { type: 'string' },
     },
   });
-  if (values.spec !== undefined && values.spec !== '012') {
-    console.error(`requirement-coverage: --spec knows only 012, not ${values.spec}`);
+  if (values.spec !== undefined && !(values.spec in REPORT_ONLY_INDEX)) {
+    console.error(`requirement-coverage: --spec knows only 012 and 013, not ${values.spec}`);
     process.exit(1);
   }
-  const { index, evidence, listed, recorded } = load(values.spec === '012' ? INDEX_012 : INDEX_011);
+  const { index, evidence, listed, recorded } = load(values.spec === undefined ? INDEX_011 : REPORT_ONLY_INDEX[values.spec]);
   const order = index.map((entry) => entry.id);
   const wanted = serializeEvidence(evidence, order);
   const { overall, byWorkstream, states, kinds, withFailures, gated, errors } = coverage(index, evidence, listed);
   const behind = serializeEvidence(recorded, order) !== wanted;
 
-  if (values.spec === '012') {
-    console.log('spec 012 (report only: it never fails --check)');
+  if (values.spec !== undefined) {
+    console.log(`spec ${values.spec} (report only: it never fails --check)`);
     printReport012(index, byWorkstream, overall, states, values.list);
     process.exit(0);
   }

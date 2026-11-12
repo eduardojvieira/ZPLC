@@ -20,6 +20,17 @@ export function bindCommands(bound: Partial<Record<CommandId, CommandHandler>>):
   };
 }
 
+/** Whether some code owns this command now. A registered id with no handler is declared ahead of its owner (spec 013, lane W). */
+export const isCommandBound = (id: CommandId): boolean => handlers.has(id);
+
+/** The commands the palette lists: only those a handler is bound to, in registry order. */
+export function listedCommands<C extends { readonly id: string }>(
+  list: readonly C[],
+  bound: (id: CommandId) => boolean = isCommandBound,
+): C[] {
+  return list.filter((command) => isCommandId(command.id) && bound(command.id));
+}
+
 export type CommandOutcome = 'ran' | 'unavailable' | 'unknown';
 
 /**

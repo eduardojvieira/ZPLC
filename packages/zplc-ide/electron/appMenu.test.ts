@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import type { MenuItemConstructorOptions } from 'electron';
+import { resetCommandsForTest, runCommand } from '../src/commands/bus';
 import { INITIAL_COMMAND_STATE, commandById, isCommandEnabled } from '../src/commands/registry';
 import { menuCategories, menuCommands, menuTranslator } from '../src/commands/menuEntry';
 import {
@@ -261,5 +262,28 @@ describe('the Learn entry of the Help menu (LRN-001)', () => {
   it('LRN-001 is available with no project open, because the Learn home opens before a project does', () => {
     expect(isCommandEnabled(commandById('help.learn'), INITIAL_COMMAND_STATE)).toBe(true);
     expect(INITIAL_COMMAND_STATE.projectOpen).toBe(false);
+  });
+});
+
+describe('menu items of commands that nobody bound yet (FND-002)', () => {
+  it('FND-002 lists a registered command with no handler as an item that sends only its id, and the window refuses it', () => {
+    resetCommandsForTest();
+    const sent: string[] = [];
+    const template = buildMenuTemplate('linux', menuCommands, menuTranslator('en'), {
+      isPackaged: true,
+      appName: 'ZPLC',
+      categories: menuCategories,
+      run: (id) => {
+        sent.push(id);
+      },
+      requestReload: noop,
+    });
+    const plant = flatten(template).find((item) => item.label === menuTranslator('en')('command.view.plant'))!;
+    // Confirmed for W0: the menu is built once from the registry and knows no handlers, so the item is enabled ...
+    expect(plant.enabled).toBeUndefined();
+    plant.click?.({} as never, undefined, {} as never);
+    expect(sent).toEqual(['view.plant']);
+    // ... and the harm stops in the window: runCommand refuses an id nobody bound, with no side effect.
+    expect(runCommand('view.plant')).toBe('unavailable');
   });
 });

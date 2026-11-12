@@ -8,6 +8,10 @@
 //   --out <file>                                         the index to write or check (default: tools/ci/requirements-index.json);
 //                                                        spec 012 has its own, tools/ci/requirement-index-012.json, with
 //                                                        --spec and --plan naming specs/012-zplc-2-1-plant-simulation/{spec,plan}.md
+//   --section <n> --mapped                               spec 013 (tools/ci/requirement-index-013.json): its requirements are
+//                                                        in section 6; --plan names plan-m1.md, whose table "Spec 013 (milestones
+//                                                        U0 and U1)" marks each requirement it delivers `mapped: true`; the others
+//                                                        (U2, U3) get `mapped: false`
 //
 // Regenerate whenever a requirement is added, removed or reworded in the spec, and commit the result.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -21,6 +25,8 @@ export interface Requirement {
   phase?: number;
   workPackage?: string;
   alsoAdvancedBy?: string[];
+  /** Spec 013 only: whether the plan of milestone M1 delivers it (a row of its mapping table); false is for U2 and U3. */
+  mapped?: boolean;
 }
 
 export const ID_PATTERN = /^[A-Z]{2,4}-[0-9]{3}$/;
@@ -40,9 +46,9 @@ function title(text: string): string {
 }
 
 /** The requirement bullets of section 5, in spec order. */
-export function parseSpec(spec: string): Array<{ id: string; workstream: string; title: string }> {
-  const start = spec.search(/^## 5\. /m);
-  if (start < 0) throw new Error('the spec has no "## 5." section');
+export function parseSpec(spec: string, sectionNumber = 5): Array<{ id: string; workstream: string; title: string }> {
+  const start = spec.search(new RegExp(`^## ${sectionNumber}\\. `, 'm'));
+  if (start < 0) throw new Error(`the spec has no "## ${sectionNumber}." section`);
   const after = spec.slice(start + 1);
   const end = after.search(/^## /m);
   const section = end < 0 ? after : after.slice(0, end);
@@ -80,8 +86,46 @@ export function parsePlan(plan: string): Map<string, { workPackage: string; phas
   return rows;
 }
 
-export function buildIndex(spec: string, plan?: string): Requirement[] {
-  const requirements = parseSpec(spec);
+/**
+ * The requirement IDs of the mapping table of spec 013 in plan-m1.md: the first cell of each row, a list ("A-001, A-002") or
+ * a range ("FLW-007 to FLW-010"), between the heading "### Spec 013 (milestones" and the paragraph "Not delivered here".
+ */
+export function parseMapped(plan: string): Set<string> {
+  const start = plan.search(/^### Spec 013 \(milestones/m);
+  if (start < 0) throw new Error('the plan has no "### Spec 013 (milestones" mapping table');
+  const rest = plan.slice(start);
+  const end = rest.search(/\*\*Not delivered here\*\*/);
+  const mapped = new Set<string>();
+  for (const line of (end < 0 ? rest : rest.slice(0, end)).split('\n')) {
+    const cell = /^\| ([A-Z]{2,4}-[0-9]{3}[^|]*) \|/.exec(line)?.[1] ?? '';
+    if (cell === '') continue;
+    for (const range of cell.split(',')) {
+      const bounds = /^\s*([A-Z]{2,4})-([0-9]{3})(?: to \1-([0-9]{3}))?\s*$/.exec(range);
+      if (!bounds) throw new Error(`cannot read the requirement cell "${cell}"`);
+      const [, prefix = '', first = '0', last = first] = bounds;
+      for (let number = Number(first); number <= Number(last); number++) mapped.add(`${prefix}-${String(number).padStart(3, '0')}`);
+    }
+  }
+  return mapped;
+}
+
+export interface IndexOptions {
+  /** The section of the spec that holds the requirement bullets (5 for specs 011 and 012, 6 for spec 013). */
+  section?: number;
+  /** Read `plan` as plan-m1.md and mark each requirement `mapped`, instead of reading the coverage appendix of spec 011's plan. */
+  mapped?: boolean;
+}
+
+export function buildIndex(spec: string, plan?: string, options: IndexOptions = {}): Requirement[] {
+  const requirements = parseSpec(spec, options.section);
+  if (options.mapped) {
+    if (plan === undefined) throw new Error('--mapped needs the plan');
+    const mapped = parseMapped(plan);
+    const known = new Set(requirements.map((requirement) => requirement.id));
+    const unknown = [...mapped].filter((id) => !known.has(id));
+    if (unknown.length > 0) throw new Error(`the plan maps requirements that the spec does not have: ${unknown.join(', ')}`);
+    return requirements.map((requirement) => ({ ...requirement, mapped: mapped.has(requirement.id) }));
+  }
   const rows = plan === undefined ? new Map<string, { workPackage: string; phase: number; alsoAdvancedBy: string[] }>() : parsePlan(plan);
   const known = new Set(requirements.map((requirement) => requirement.id));
   const unknown = [...rows.keys()].filter((id) => !known.has(id));
@@ -107,6 +151,7 @@ export function validateIndex(index: unknown): string[] {
     if (entry.workPackage !== undefined && !/^WP-[0-9]+$/.test(String(entry.workPackage)))
       errors.push(`${id}: workPackage must look like WP-12`);
     if (entry.phase !== undefined && !Number.isInteger(entry.phase)) errors.push(`${id}: phase must be a whole number`);
+    if (entry.mapped !== undefined && typeof entry.mapped !== 'boolean') errors.push(`${id}: mapped must be true or false`);
     const also = entry.alsoAdvancedBy;
     if (also !== undefined && !(Array.isArray(also) && also.every((item) => /^WP-[0-9]+$/.test(String(item)))))
       errors.push(`${id}: alsoAdvancedBy must list packages like WP-12`);
@@ -119,8 +164,8 @@ export const serialize = (index: Requirement[]): string => `[\n${index.map((entr
 
 const REGENERATE = 'regenerate it with: bun tools/ci/generate-requirement-index.ts';
 
-export function checkAgainstSpec(committed: string, spec: string, plan?: string): string[] {
-  const expected = buildIndex(spec, plan);
+export function checkAgainstSpec(committed: string, spec: string, plan?: string, options: IndexOptions = {}): string[] {
+  const expected = buildIndex(spec, plan, options);
   if (committed === serialize(expected)) return [];
   let current: Array<Record<string, unknown>> = [];
   try {
@@ -141,11 +186,19 @@ export function checkAgainstSpec(committed: string, spec: string, plan?: string)
 if (import.meta.main) {
   const { values } = parseArgs({
     args: Bun.argv.slice(2),
-    options: { check: { type: 'boolean', default: false }, spec: { type: 'string' }, plan: { type: 'string' }, out: { type: 'string' } },
+    options: {
+      check: { type: 'boolean', default: false },
+      spec: { type: 'string' },
+      plan: { type: 'string' },
+      out: { type: 'string' },
+      section: { type: 'string' },
+      mapped: { type: 'boolean', default: false },
+    },
   });
   const specFile = values.spec ?? new URL(`${SPEC_DIR}spec.md`, ROOT).pathname;
   const planFile = values.plan ?? new URL(`${SPEC_DIR}plan.md`, ROOT).pathname;
   const outFile = values.out ?? INDEX_FILE.pathname;
+  const options: IndexOptions = { ...(values.section !== undefined && { section: Number(values.section) }), mapped: values.mapped };
   const sources =
     existsSync(specFile) && existsSync(planFile)
       ? { spec: readFileSync(specFile, 'utf8'), plan: readFileSync(planFile, 'utf8') }
@@ -158,7 +211,7 @@ if (import.meta.main) {
     } catch {
       errors = ['requirements-index.json is not valid JSON'];
     }
-    if (errors.length === 0 && sources) errors = checkAgainstSpec(committed, sources.spec, sources.plan);
+    if (errors.length === 0 && sources) errors = checkAgainstSpec(committed, sources.spec, sources.plan, options);
     if (errors.length === 0)
       console.log(
         `requirement-index: ${(JSON.parse(committed) as unknown[]).length} requirements${
@@ -168,7 +221,7 @@ if (import.meta.main) {
   } else if (!sources) {
     errors = [`the spec and the plan are needed to regenerate the index: ${specFile}, ${planFile}`];
   } else {
-    const index = buildIndex(sources.spec, sources.plan);
+    const index = buildIndex(sources.spec, sources.plan, options);
     errors = validateIndex(index);
     if (errors.length === 0) {
       writeFileSync(outFile, serialize(index));

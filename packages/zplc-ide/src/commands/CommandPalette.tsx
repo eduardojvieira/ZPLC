@@ -6,7 +6,7 @@
 import { useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useT } from '../i18n';
 import { Dialog, TextField, cx } from '../ui';
-import { runCommand, useCommandState } from './bus';
+import { listedCommands, runCommand, useCommandState } from './bus';
 import { filterEntries, nextIndex, type PaletteEntry } from './palette';
 import { COMMAND_LIST, MENU_TITLE_KEYS, isCommandEnabled, type CommandId } from './registry';
 import { shortcutText } from './shortcutLabels';
@@ -27,7 +27,7 @@ function PaletteBody() {
   const input = useRef<HTMLInputElement>(null);
   const rows = useMemo(
     (): Row[] =>
-      COMMAND_LIST.map((command) => ({
+      listedCommands(COMMAND_LIST).map((command) => ({
         id: command.id as CommandId,
         title: t(command.titleKey),
         category: t(MENU_TITLE_KEYS[command.category]),
