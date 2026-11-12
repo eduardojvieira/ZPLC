@@ -1,0 +1,15 @@
+{
+  "schema": "zplc.plant-gate/1",
+  "check": 2,
+  "commit": "a4149b97",
+  "commitNote": "commit that adds this file (code identical to the final one); macOS and Windows runs are Task 8",
+  "machine": { "platform": "linux", "arch": "x64", "cpu": "AMD Ryzen 5 8600G w/ Radeon 760M Graphics", "gpu": "none used (headless)" },
+  "scene": "palletStack",
+  "script": "6000 scans of 10 ms, belt 0.5 m/s at scans 100, 1000, 1900, 0 at 700, 1600, 2500",
+  "freshRuns": 3,
+  "hash": "5091d6e028aba6d068fdf4079149def92c8fafec4e53b6260c8a64d93f1916e0",
+  "identicalOnThisMachine": true,
+  "linuxHashPinned": true,
+  "verdict": "pass",
+  "pending": ["macOS arm64 run (Task 8)", "Windows run (Task 8)"]
+}
