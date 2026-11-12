@@ -12,9 +12,8 @@ simulator or, in a cross-build, on a Zephyr board.
 - **Build a controller:** [Install ZPLC](docs/docs/getting-started/install.md), then follow [Blink without hardware](docs/docs/tutorials/blink-without-hardware.md).
 - **Learn PLC programming:** open **Learn** in the application: a course from zero, with a Ladder path.
 
-> **Status:** ZPLC 2.0 is for evaluation. Seven boards cross-build in CI and none
-> has been tested on hardware yet. It is not a safety PLC and must not be used
-> to control machinery: [Safety and limitations](docs/docs/safety-and-limitations.md).
+> **Status:** ZPLC 2.0. What it does not do, and what to test before it runs a
+> machine: [Safety and limitations](docs/docs/safety-and-limitations.md).
 
 [Download ZPLC](https://github.com/eduardojvieira/ZPLC/releases) ·
 [Documentation](https://eduardojvieira.github.io/ZPLC/) · MIT licence
