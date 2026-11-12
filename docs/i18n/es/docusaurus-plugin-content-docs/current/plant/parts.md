@@ -1,7 +1,7 @@
 ---
 title: "Referencia de piezas de la planta"
 sidebar_label: "Referencia de piezas"
-description: "Cada pieza del catálogo de la planta con sus ajustes, señales y acciones de fallo, generada de las definiciones de pieza."
+description: "Cada pieza del catálogo de la planta con sus ajustes, señales y acciones de falla, generada de las definiciones de pieza."
 tags: [reference, generated]
 ---
 
@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/plant-parts-reference.ts): plant/parts. Do not edit. >>> */}
 
-Cada pieza del catálogo de la planta, con sus ajustes, señales y acciones de fallo. El nombre de una señal en una planta es el nombre dado a la pieza, un punto y la señal que figura aquí.
+Cada pieza del catálogo de la planta, con sus ajustes, señales y acciones de falla. El nombre de una señal en una planta es el nombre dado a la pieza, un punto y la señal que figura aquí.
 
 ## Piezas
 
@@ -30,7 +30,7 @@ Una caja de 0,4 por 0,3 m con altura y masa a elegir. Su posición es el centro 
 
 Ninguna.
 
-#### Acciones de fallo
+#### Acciones de falla
 
 Ninguna.
 
@@ -48,7 +48,7 @@ Ninguna.
 
 Ninguna.
 
-#### Acciones de fallo
+#### Acciones de falla
 
 Ninguna.
 
@@ -76,7 +76,7 @@ Emite una pieza en cada flanco de subida de su señal, y por sí solo cada inter
 | --- | --- | --- | --- |
 | `emit` | command | BOOL |   |
 
-#### Acciones de fallo
+#### Acciones de falla
 
 Ninguna.
 
@@ -98,7 +98,7 @@ Un volumen que retira cada pieza cuyo centro entra en él y las cuenta como entr
 
 Ninguna.
 
-#### Acciones de fallo
+#### Acciones de falla
 
 Ninguna.
 
@@ -126,7 +126,7 @@ Una cinta transportadora. Su posición es el centro de la superficie superior; c
 | --- | --- | --- | --- |
 | `run` | command | BOOL |   |
 
-#### Acciones de fallo
+#### Acciones de falla
 
 `stall`, `jam`
 
@@ -152,7 +152,7 @@ Un transportador de rodillos. Mueve las piezas como una cinta; los rodillos son 
 | --- | --- | --- | --- |
 | `run` | command | BOOL |   |
 
-#### Acciones de fallo
+#### Acciones de falla
 
 `stall`, `jam`
 
@@ -179,7 +179,7 @@ Un transportador de cuarto de vuelta con el radio de línea central indicado. La
 | --- | --- | --- | --- |
 | `run` | command | BOOL |   |
 
-#### Acciones de fallo
+#### Acciones de falla
 
 `stall`, `jam`
 
@@ -206,7 +206,7 @@ Una placa a través de una cinta en la posición de la pieza (el centro de la su
 | `extended` | sensor | BOOL |   |
 | `retracted` | sensor | BOOL |   |
 
-#### Acciones de fallo
+#### Acciones de falla
 
 `stuck`
 
@@ -231,7 +231,7 @@ Detecta cualquier pieza que entre en su haz. El haz parte de la posición de la 
 | --- | --- | --- | --- |
 | `detect` | sensor | BOOL |   |
 
-#### Acciones de fallo
+#### Acciones de falla
 
 `stuckOn`, `stuckOff`
 
@@ -254,7 +254,7 @@ Un haz hasta un reflector a rangeM de distancia; detecta una pieza que corte el 
 | --- | --- | --- | --- |
 | `detect` | sensor | BOOL |   |
 
-#### Acciones de fallo
+#### Acciones de falla
 
 `stuckOn`, `stuckOff`
 
@@ -276,7 +276,7 @@ Ninguna.
 | --- | --- | --- | --- |
 | `pressed` | sensor | BOOL |   |
 
-#### Acciones de fallo
+#### Acciones de falla
 
 Ninguna.
 
@@ -296,7 +296,7 @@ Ninguna.
 | --- | --- | --- | --- |
 | `lit` | command | BOOL |   |
 
-#### Acciones de fallo
+#### Acciones de falla
 
 Ninguna.
 
