@@ -123,6 +123,7 @@ describe('source readers: the command line, MCP and the protocol (DOC-008)', () 
       '}',
       'static int parse_simulation_input_params(const char **cursor) { return strcmp(key, "input_id"); }',
       'static int parse_scenario_step_params(const char **cursor) { return strcmp(key, "at_ms"); }',
+      'static int parse_clock_set_params(const char **cursor, zplc_native_request_t *request) { return strcmp(key, "mode"); }',
       'static int parse_canonical_control_params(const char **cursor, const char *method)',
       '{',
       '    if (strcmp(method, "memory.read") == 0) {',
@@ -138,7 +139,8 @@ describe('source readers: the command line, MCP and the protocol (DOC-008)', () 
       '    }',
       '}',
       'static void dispatch(void) { if (strcmp(request->method, "session.hello") == 0) {} if (strcmp(request->method, "memory.read") == ' +
-        '0) {} if (strcmp(request->method, "status.get") == 0) {} }',
+        '0) {} if (strcmp(request->method, "status.get") == 0) {} ' +
+        'if (strcmp(request->method, "simulation.clock.set") == 0) {} }',
     ].join('\n');
     expect(parseProtocol(source)).toEqual({
       version: '1.0',
@@ -146,6 +148,7 @@ describe('source readers: the command line, MCP and the protocol (DOC-008)', () 
         { method: 'status.get', params: [] },
         { method: 'memory.read', params: ['address', 'length'] },
         { method: 'session.hello', params: ['client_name'] },
+        { method: 'simulation.clock.set', params: ['mode'] },
       ],
     });
   });

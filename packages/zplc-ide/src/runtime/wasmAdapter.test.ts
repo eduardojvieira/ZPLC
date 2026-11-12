@@ -37,6 +37,18 @@ describe('WASMAdapter (IDE-025)', () => {
     await adapter.disconnect();
   });
 
+  itWasm('LNK-005 the WASM adapter switches to the virtual clock through the same request', async () => {
+    const adapter = new WASMAdapter({ loadModule: async () => builtWasmModule().bytes });
+    await adapter.connect();
+    await adapter.loadProgram(assemble('    PUSH8 9\n    STORE8 0x1000\n    HALT\n').zplcFile);
+    const { scanIntervalMs } = await adapter.setClockMode('virtual');
+    expect(Number.isInteger(scanIntervalMs) && scanIntervalMs > 0).toBe(true);
+    await adapter.scenarioStep(0);
+    await adapter.scenarioStep(scanIntervalMs);
+    expect((await adapter.peek(0x1000, 1))[0]).toBe(9);
+    await adapter.disconnect();
+  });
+
   it('takes the capabilities of the controller from the same profile that the handshake reports', () => {
     const capabilities = getWasmCapabilities();
     expect(capabilities.supportsPause && capabilities.supportsResume && capabilities.supportsStep && capabilities.supportsBreakpoints).toBe(

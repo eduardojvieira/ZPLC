@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
-import { ZPLC_CONSTANTS } from '@zplc/compiler';
+import { assemble, ZPLC_CONSTANTS } from '@zplc/compiler';
+
+import { withNativeCommunicationEnvironment } from '../../shared/nativeSimulationEnvironment';
+import { NativeSimulationSupervisor } from '../../shared/nativeSimulationSupervisor';
+import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
 
 import { NATIVE_PROGRAM_MAX_BYTES } from '../../electron/security';
 import { DEBUG_ADAPTER_TYPE } from './debugAdapter';
@@ -1139,6 +1146,59 @@ describe('NativeAdapter', () => {
     await expect(adapter.scenarioStep(1.5)).rejects.toThrow('uint32');
   });
 
+  it('LNK-004 setClockMode sends simulation.clock.set and returns the scan interval', async () => {
+    const calls: NativeRequest[] = [];
+    const clockRequest = async <TResult = unknown>(message: NativeRequest): Promise<TResult> => {
+      calls.push(message);
+      if (message.method !== 'simulation.clock.set') return requestMock(message) as TResult;
+      return {
+        ...nativeSnapshot({ state: 'idle' }),
+        clock_mode: message.params.mode,
+        scan_interval_ms: message.params.mode === 'virtual' ? 10 : 0,
+      } as TResult;
+    };
+    const adapter = new NativeAdapter({ startSession, stopSession, request: clockRequest });
+    await adapter.connect();
+
+    await expect(adapter.setClockMode('virtual')).resolves.toEqual({ scanIntervalMs: 10 });
+    expect(calls.at(-1)).toMatchObject({ method: 'simulation.clock.set', params: { mode: 'virtual' } });
+    await expect(adapter.setClockMode('free')).resolves.toEqual({ scanIntervalMs: 0 });
+    expect(calls.at(-1)).toMatchObject({ method: 'simulation.clock.set', params: { mode: 'free' } });
+    expect(adapter.state).toBe('idle');
+  });
+
+  it('LNK-004 setClockMode refuses a mode other than virtual or free before sending anything', async () => {
+    const adapter = new NativeAdapter({ startSession, stopSession, request });
+    await adapter.connect();
+    requestMock.mockClear();
+    await expect(adapter.setClockMode('real' as never)).rejects.toThrow('virtual');
+    expect(requestMock).not.toHaveBeenCalled();
+  });
+
+  it('LNK-004 a malformed simulation.clock.set reply is an error', async () => {
+    const bad = (reply: Record<string, unknown>) =>
+      new NativeAdapter({
+        startSession,
+        stopSession,
+        request: async <TResult = unknown>(message: NativeRequest): Promise<TResult> =>
+          (message.method === 'simulation.clock.set'
+            ? { ...nativeSnapshot({ state: 'idle' }), ...reply }
+            : requestMock(message)) as TResult,
+      });
+    for (const reply of [
+      {},
+      { clock_mode: 'virtual' },
+      { clock_mode: 'free', scan_interval_ms: 5 },
+      { clock_mode: 'virtual', scan_interval_ms: -1 },
+      { clock_mode: 'virtual', scan_interval_ms: 1.5 },
+      { clock_mode: 'virtual', scan_interval_ms: '10' },
+    ]) {
+      const adapter = bad(reply);
+      await adapter.connect();
+      await expect(adapter.setClockMode('virtual')).rejects.toThrow('Invalid native clock reply');
+    }
+  });
+
   it('rejects malformed step snapshots before state or event updates', async () => {
     const malformedRequest = async <TResult = unknown>(message: NativeRequest): Promise<TResult> => {
       if (message.method === 'execution.step') {
@@ -1308,5 +1368,40 @@ describe('NativeAdapter', () => {
 
     expect(adapter.getParityEvidence()).toHaveLength(1);
     expect(adapter.getParityEvidence()[0]?.mismatches[0]?.feature).toBe('tasks');
+  });
+});
+
+describe('NativeAdapter on the native runtime (LNK-004)', () => {
+  itNative('LNK-004 a Studio-path session switches to the virtual clock and steps', async () => {
+    const persistRoot = await mkdtemp(join(tmpdir(), 'zplc-clock-'));
+    // the Studio path: the clock is requested by the method, never by ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK
+    const supervisor = new NativeSimulationSupervisor({
+      clientName: 'zplc-test',
+      clientVersion: '0.0.0',
+      environment: {
+        ...withNativeCommunicationEnvironment(process.env),
+        ZPLC_PERSIST_ROOT: persistRoot,
+        ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary,
+      },
+    });
+    const adapter = new NativeAdapter(supervisor);
+    try {
+      await adapter.connect();
+      await adapter.loadProgram(assemble('    PUSH8 9\n    STORE8 0x1000\n    HALT\n').zplcFile);
+      await expect(adapter.scenarioStep(0)).rejects.toThrow(); // a free-clock session refuses scenario.step
+      const { scanIntervalMs } = await adapter.setClockMode('virtual');
+      expect(Number.isInteger(scanIntervalMs) && scanIntervalMs > 0).toBe(true);
+      await adapter.scenarioStep(0);
+      await adapter.scenarioStep(scanIntervalMs);
+      expect((await adapter.peek(0x1000, 1))[0]).toBe(9);
+      await expect(adapter.start()).rejects.toThrow('scenario');
+      await adapter.reset(); // the program halted: a reset returns the session to idle, where the clock may change
+      await adapter.setClockMode('free');
+      await expect(adapter.scenarioStep(2 * scanIntervalMs)).rejects.toThrow();
+    } finally {
+      await adapter.disconnect().catch(() => undefined);
+      await supervisor.stopSession().catch(() => undefined);
+      await rm(persistRoot, { recursive: true, force: true });
+    }
   });
 });

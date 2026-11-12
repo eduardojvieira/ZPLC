@@ -455,6 +455,7 @@ export function parseProtocol(text: string): Protocol {
     'session.hello': keys(body('parse_hello_params')),
     'simulation.input.set': keys(body('parse_simulation_input_params')),
     'scenario.step': keys(body('parse_scenario_step_params')),
+    'simulation.clock.set': keys(body('parse_clock_set_params')),
   };
   const result = methods.map((method): ProtocolMethod => {
     if (special[method]) return { method, params: special[method]!.filter((key) => key !== 'key') };
