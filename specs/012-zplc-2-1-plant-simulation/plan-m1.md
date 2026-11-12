@@ -1,16 +1,20 @@
-# ZPLC 2.1 Plant Simulation: Milestone M1 Implementation Plan (PROVISIONAL)
+# ZPLC 2.1 Milestone M1 Implementation Plan, with the workbench of spec 013 (PROVISIONAL, revision 2)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 > **Provisional.** This plan is built on decision D-14 (three.js for rendering, Jolt in WebAssembly for physics, inside Studio) as confirmed by the feasibility gate **on Linux x64 only** (`gate/check-1.json`, `check-2.json`, `check-4-graded.json`, `capacity-headless-linux-x64.json`; Ryzen 5 8600G). The macOS and Windows runs of checks 2, 3, 4 and 7 are still pending the owner, and the gate's own rule says D-14 is confirmed only when every check passes. **No task of this plan may start before the owner records the gate verdict**, except Tasks Q1 and R1 named in "Start rule". If macOS or Windows overturns D-14, the tasks marked **PHYS** in the lane table are physics-specific and would be redone; the tasks marked **KEEP** do not depend on the physics library and survive any outcome (they are written against `PlantCore`, `PlantSnapshot` and `PlantSceneFile` of section "Contracts", never against Jolt).
 
-**Goal:** Deliver milestone M1 of spec 012: the plant core, one clock with the scan-exact exchange in the native runtime, the 3D view with its fallbacks, the editor's authoring path, the transport parts, and reference scenes 1, 2, 4, 8 and 9, in a state that could ship as a 2.1 pre-release (spec 6.2).
+> **Revision 2, 2026-11-12.** The owner took decisions D-20 to D-26 of spec 013 (`specs/013-zplc-2-1-studio-experience/spec.md`, section 4.2) on their recommended defaults: "rehaz el plan. toma las desiciones recomendadas." This revision applies them. What changed against revision 1 (commit `e614555e`): the plant is a document of the editor area, not a tab of the results panel (D-20); the command bar is the only transport, for a program alone and for a program with a plant (D-26); a new lane W delivers milestones U0 and U1 of spec 013 (D-24); Tasks V4 and E3 are rewritten on that base; open questions 2, 3 and 4 are closed. Everything about the plant core, the physics, the clock, the scenario seam, the scenes and the firmware is unchanged.
+>
+> **State of the work when this revision was written** (`feat/plant-simulation` at `8024dd1f`, 18:42 on 2026-11-12; read from the log and the run file, nothing was run). Merged: precondition A, R1, Q1 (its conditional and pending records for spec 012 still to do), T0 (merged before its full suite, at risk), P1, P2, V1, R2. In flight: P3, V2, V3, S1, E1, and P5 on its own branch. Not started: every other task. No merged or in-flight task is changed by this revision. The run of that day proceeded past the gate at risk on the PHYS tasks and applied the defaults of revision 1's open questions (run log, entry L5); from this revision on, questions 2, 3 and 4 follow D-20 and D-26, not those defaults.
 
-**Architecture:** A headless `PlantCore` (TypeScript, Jolt `wasm-compat`, fixed 5 ms plant step) is built from a validated scene file made of catalogue parts. A lock-step session exchanges signals with the runtime once per scan on the runtime's virtual clock, through a new session request that switches a live session to scan-stepping. The three.js view only draws `PlantSnapshot`s. The scenario engine gains one optional plant port; its four graded 2.0 models are untouched. Everything heavy (three, Jolt, the editor) loads through one dynamic import.
+**Goal:** Deliver milestone M1 of spec 012: the plant core, one clock with the scan-exact exchange in the native runtime, the 3D view with its fallbacks, the editor's authoring path, the transport parts, and reference scenes 1, 2, 4, 8 and 9, in a state that could ship as a 2.1 pre-release (spec 6.2). Together with it, milestones U0 and U1 of spec 013: the plant document and the editor split, one transport in the command bar, one-action Run in simulation, one save model, the target selector and the one-line status rail (spec 013, section 9).
+
+**Architecture:** A headless `PlantCore` (TypeScript, Jolt `wasm-compat`, fixed 5 ms plant step) is built from a validated scene file made of catalogue parts. A lock-step session exchanges signals with the runtime once per scan on the runtime's virtual clock, through a new session request that switches a live session to scan-stepping. The three.js view only draws `PlantSnapshot`s. The scenario engine gains one optional plant port; its four graded 2.0 models are untouched. Everything heavy (three, Jolt, the editor) loads through one dynamic import. The view is the content of a **plant document** of the editor area, which can sit beside a program in a split. It has no run controls: the command bar drives one `Transport` (contract C8), implemented by the debug controller for a program alone and by the lock-step session while a plant is bound.
 
 **Tech Stack:** TypeScript 5.9 (`erasableSyntaxOnly`: no parameter properties), React 19, Bun 1.3.14 (`bun test`), Electron 45, `three` 0.187.0, `jolt-physics` 1.1.1 (`jolt-physics/wasm-compat`), C99 in `firmware/apps/posix_host/src/native_runtime_session.c`, ANSI C99 tests in `firmware/lib/zplc_core/tests/test_native_runtime_session.c`.
 
-**Spec:** `spec.md` (sections 5 and 6.2), `research.md` (sections 8.1 and the gate results), `plan.md` (M0, the format model), `gate/*` on `spike/plant-gate` (evidence). Read the spec sections of your task before you start.
+**Spec:** `spec.md` (sections 5 and 6.2), `research.md` (sections 8.1 and the gate results), `plan.md` (M0, the format model), `gate/*` on `spike/plant-gate` (evidence). For lane W and for Tasks V4 and E3 also spec 013, `specs/013-zplc-2-1-studio-experience/spec.md` (sections 4.2, 4.4, 5 and its workstreams SHL, FLW, MSG and PLS). Read the spec sections of your task before you start.
 
 **Created:** 2026-11-12 by a planning agent. Anything marked **Unconfirmed** was not verified while writing; the executor confirms it first and records the answer in the commit body.
 
@@ -26,7 +30,8 @@
 ## Start rule
 1. **Precondition A, the typed plant map.** `IDE/src/plants/plantMap.ts` in this worktree is still schema 1. Branch `feat/plant-typed-map` (commit `6db934c8`, worktree `ZPLC-worktrees/plant-map`) holds the typed map v2 for LNK-001, LNK-002 and PLT-003 (`PlantMapV2`, `normalizePlantMap`, `resolvePlantMap`, `plantMap.ts:13-215` there). M1 builds on it and does not redo it. The parent merges it into `feat/plant-simulation` before Task T0.
 2. **Precondition B, the gate.** The owner records the D-14 verdict in `research.md` section 11. If it is anything but "confirmed", stop and re-plan the PHYS tasks.
-3. **May start before the verdict** because they touch no physics and no dependency: R1 (C), Q1 (coverage tooling). Everything else waits for T0, which waits for the verdict.
+3. **May start before the verdict** because they touch no physics and no dependency: R1 (C), Q1 (coverage tooling), and every task of lane W. Everything else waits for T0, which waits for the verdict.
+4. **Precondition C, spec 013 in the tree.** `specs/013-zplc-2-1-studio-experience/spec.md` is untracked in the main checkout. The parent copies it into this worktree and commits it, together with this revision of the plan, before Task W0. In the same commit the parent amends one clause of spec 012, as decision D-20 requires: in VIS-001, "where 2.0 shows the live plant" becomes "in a plant document of the editor area (decision D-20 of spec 013)". Nothing else of spec 012 changes.
 
 ## Requirement mapping
 "Plan choice" marks a design decision of this plan that the spec does not state. Requirements that M1 does not deliver are listed in the last table so nothing is silently dropped.
@@ -49,7 +54,7 @@
 | PLT-015 | Q2 | Editor-latency measurement, with and without a scene. |
 | PLT-016 | P1 (located load errors), R3 ("When the plant cannot keep its step in real time it MUST slow simulated time for the plant and the program together and say so; it MUST NOT drop steps silently."), V4 (the message) | |
 | PLT-017 | R3, S1 | One model: live, graded and (later) board use `PlantCore`. |
-| VIS-001 | V4 | Panel replaces the 2.0 live plant in `LabPanel`; maximisable. The separate window is SHOULD and is not in M1 (open question 2). |
+| VIS-001 | W3, V4 | The panel is the content of the plant document (W3, decision D-20 of spec 013); maximise is the shell's command (W2). The separate window is SHOULD and is not in M1. |
 | VIS-002 | V1 | |
 | VIS-003 | V2 | |
 | VIS-004 | V1 (performance work), Q2 (evidence, pending machines) | |
@@ -88,6 +93,35 @@
 | CRS-011 (M1 parts) | D2 | |
 
 **Not delivered by M1** (later milestones, per spec 6.2): PLT-009 (process models, M2), PRT-004 numeric variants (M2), PRT-005 (M4), LNK-007 to LNK-018 (M6), CRS-001, CRS-002, CRS-007 to CRS-010, CRS-012, CRS-013 (course, M7), SCN-001 for scenes 3, 5, 6, 7, 10 to 21, VIS-001 "movable to a window of its own" (open question 2).
+
+### Spec 013 (milestones U0 and U1)
+Requirement IDs with the prefixes SHL, FLW, MSG and PLS belong to spec 013. "Part" means the requirement is complete only with a later milestone of that spec; the note says what this plan delivers of it.
+
+| Requirement | Task(s) | Note |
+|---|---|---|
+| SHL-001 | W1, W10 | Part. The registry gives every surface one region (W1); `IDE/DESIGN.md` records the map as it stands after this milestone (W10). The surfaces that move in U2 keep their 2.0 region until then. |
+| SHL-002 | W0, W1 | Registry in `IDE/src/shell/surfaces.ts`. Plan choice: the rail and the tab strip are compared with it, not generated from it, while tabs are still moving. |
+| SHL-003 | W3 | Part. Lab leaves the results panel (nine tabs). Tests controls, Interlocks, Changes and Agent leave in U2. |
+| SHL-004 | W1, W3 | Part. A command for every surface that had none (W1); a stored session that names the Lab tab opens the plant document (W3). The Changes review as a document is U2. |
+| SHL-006, SHL-007 | W2 | Two editor groups, restored with the session; maximise. |
+| SHL-010 | W9 | The table as a pure function and `reveal()`. W3, W4 and W6 adopt it in the files they own; the remaining call sites move in U2 and U3. |
+| SHL-014 | W9 | The entry program opens when no session is restored. |
+| FLW-001, FLW-002, FLW-003, FLW-014 | W5, W6 | The plan is a pure function (W5); the command bar executes it (W6). |
+| FLW-004 | W5, W6, W8 | A refusal is an offer in a notice. |
+| FLW-005, FLW-006 | W5, W6 | "Save all" and the preference (W5); bound and followed by Build and Run (W6). Run tests and Check follow the preference in U2 and U3. A scene and a plant map join the same save path in E5. |
+| FLW-007 to FLW-010 | W6 | Target selector, implicit simulator session, the budget of the bar, live values. |
+| FLW-011, FLW-012 | W7 | One line and details; the offer on a stale build. |
+| FLW-013 | W8 | One notice per composite action, clear of the results panel. |
+| MSG-007 | W7 | The table of state words, English and Spanish. |
+| PLS-001 | W3, V4 | The document (W3); its 3D content (V4). |
+| PLS-002 | W3 | The four 2.0 plants open in the same document; the interface says "Plant" (decision D-25). The docs follow in W10 and D2. |
+| PLS-003 | W4, V4 | Contract C8. The 2.0 live plant loses its play, pause and step (W4); the scene panel never has them and registers its session (V4). |
+| PLS-004, PLS-009, PLS-010 | V4 | The plant's own toolbar; failures shown in the document; no frames while not visible. |
+| PLS-012 | W1, V4 | The plant document is in the registry (W1); the quality setting is a section of Preferences (V4). |
+| PLS-013 | W7 | The plant session's state, and slowed time, in the one status line. |
+| Section 8.1 | W0, W10 | The 2.0 baseline measured on the running application (W0); the targets of rows 1, 4, 6, 7, 8 and 14 checked in CI (W10). |
+
+**Not delivered here** (milestones U2 and U3 of spec 013, which have no plan yet): the rest of SHL-003 and SHL-004, SHL-005, SHL-008, SHL-009, SHL-011 to SHL-013, SHL-015, SHL-016, every TST and FND requirement, MSG-001 to MSG-006, every GDE requirement, PLS-005 to PLS-008, PLS-011. Task E3 builds its three components so that PLS-005 and PLS-006 can move them without changing them.
 
 ## Contracts (fixed up front; lanes code against these, never against each other)
 Task T0 writes `IDE/src/plant/contracts.ts` containing exactly these declarations (types and interfaces only, no logic, so every lane compiles from the first merge). Changing one needs the parent: every lane depends on it.
@@ -197,6 +231,61 @@ export interface ScenarioPlantPort { core: PlantCore; map: PlantMapV2 }
 - **Signal names:** `<ScenePart.name>.<signal>`, for example `Belt1.run`, `EyeA.detect`, `StartButton.pressed`. Plan choice. Catalogue part signals in M1: belts and rollers `run` (command, BOOL), `runReverse` (command, BOOL, only where the part config allows it); optical sensors `detect` (sensor, BOOL); stop blade `extend` (command), `extended`, `retracted` (sensors); emitter `emit` (command, BOOL, edge); push button `pressed` (sensor), indicator light `lit` (command).
 - **Facts (plan choice, names are API for scenarios and text):** `itemsEmitted`, `itemsRemoved`, `itemsDropped` (fell below the floor plane minus 0.5 m), `itemsCollided` (box to box contacts above 0.5 m/s closing speed), `delivered:<RemoverName>`, `count:<SensorName>` (rising edges), `position:<itemKind>:<index>`.
 
+### Contracts, lane W (spec 013)
+Task W0 writes the types and the ids of this section, with no logic, so that every lane W task and Task V4 compile against them from the first merge. Changing one needs the parent.
+
+```ts
+// IDE/src/runtime/transport.ts
+import type { PlantSession } from '../plant/contracts';
+import type { DebugController } from '../hooks/debugControllerTypes';
+
+/** C8. The one transport the command bar drives (spec 013 PLS-003, decision D-26). */
+export type TransportState = 'stopped' | 'running' | 'paused' | 'held' | 'faulted';
+export interface Transport {
+  readonly kind: 'program' | 'plant';
+  readonly state: TransportState;
+  /** 1 = real time. Below 1 a plant slows itself and the program together (PLT-016). Always 1 for 'program'. */
+  readonly slowdown: number;
+  run(): Promise<void>; // starts, or resumes when paused
+  pause(): Promise<void>;
+  step(): Promise<void>; // one scan
+  stop(): Promise<void>;
+  reset(): Promise<void>; // program and plant together (spec 013, section 4.3)
+  onChange(listener: (state: TransportState, reason?: string) => void): () => void;
+}
+export declare function programTransport(controller: DebugController): Transport; // Task W4
+export declare function plantTransport(session: PlantSession): Transport; // Task W4, over contract C6
+
+// IDE/src/store/useTransport.ts (Task W4)
+/** A plant document registers the session of the scene it shows; it gets back the function that unregisters it. */
+export declare function registerPlantTransport(transport: Transport): () => void;
+/** The registered plant transport, else `programTransport(controller)`. The command bar calls nothing else. */
+export declare function activeTransport(controller: DebugController): Transport;
+```
+
+**State mapping (fixed here).** Debug controller `vmState`: `running` is running, `paused` is paused, `error` is faulted, anything else is stopped. `PlantSessionState` (C6): `idle` and `stopped` are stopped; `running`, `paused`, `held` and `faulted` keep their names. `held` is not `paused`: the program stopped at a breakpoint and the plant waits (PLT-005).
+
+**View ids (Task W2).** `IDE/src/layout/documentKinds.ts` exports `PLANT_VIEW_ID = 'plant'`. A view id of the editor area is a file id, `'settings'`, `'config:<kind>'` (`IDE/src/navigator/configEditors.ts:22`) or `PLANT_VIEW_ID`.
+
+**Command ids (declared by W0 in `IDE/src/commands/registry.ts`, bound by the task named).** A registered id with no handler is refused as unavailable (`IDE/src/commands/bus.ts`), and after W0 the palette does not list it.
+
+| Id | Category | Bound by |
+|---|---|---|
+| `file.saveAll` | file | W6 |
+| `view.splitRight`, `view.moveToOtherGroup`, `view.focusOtherGroup`, `view.maximiseDocument` | view | W2 |
+| `view.plant` | view | W3 |
+| `view.interlocks`, `view.changes`, `view.agent`, `view.terminal` | view | W1 |
+| `project.tasks`, `project.io`, `project.network`, `project.communication`, `project.target` | project | W1 |
+| `online.restartSimulator` | online | W6 |
+| `debug.rebuildAndRestart` | debug | W6 (offered by W7) |
+| `view.statusDetails` | view | W7 |
+
+**Catalogues (registered empty by W0, each filled by its owners in different waves).** `studioCommands` (W0), `studioSurfaces` (W1), `studioDocuments` (W2, then W3), `studioTransport` (W4), `studioFlow` (W5, then W6), `studioNotices` (W8), `studioStatus` (W7). New text uses the words of spec 013 MSG-001 where it has one: Project, Simulation, Board, Target, Build, Deploy, Test, Plant.
+
+**Journeys.** `IDE/scripts/journeys013.ts` exports the concatenation of `IDE/scripts/journeys013/{w2,w3,w4,w6,w7,w8,w9}.ts`, each owned by its task and created empty by W0, and `IDE/scripts/journeys.ts` spreads it into its list. An existing journey of `journeys.ts` is edited only by the task whose "Allowed edit surfaces" names it.
+
+**Preference (Task W5).** `saveBeforeRun: 'always' | 'ask'` in `AppSettings`, default `'always'` (decision D-21).
+
 ## Lanes and dependency graph
 **PHYS** = redone if D-14 is overturned. **KEEP** = survives.
 
@@ -216,10 +305,10 @@ export interface ScenarioPlantPort { core: PlantCore; map: PlantMapV2 }
 | V | V1 | three.js renderer core | KEEP | T0 | `IDE/src/plant/view/{renderer,camera,quality,geometry}.ts` |
 | V | V2 | State cues and display modes | KEEP | V1 | `IDE/src/plant/view/cues.ts`, `displayModes.ts` |
 | V | V3 | Schematic and text equivalent | KEEP | P1 | `IDE/src/plant/schematic/*`, `IDE/src/plant/text/*` |
-| V | V4 | Panel integration, operation, fallbacks | KEEP | V1, V2, V3, R3, P4 | `IDE/src/plant/ui/*`, `IDE/src/components/LabPanel.tsx` |
+| V | V4 | Panel in the plant document: operation, fallbacks | KEEP | V1, V2, V3, R3, P4, W3, W4 | `IDE/src/plant/ui/*`, the quality section of `AppPreferences.tsx` and `appSettings.ts` |
 | E | E1 | Editor model: commands, undo/redo, snapping, validation | KEEP | P1 | `IDE/src/plant/editor/{model,commands,validate,templates}.ts` |
 | E | E2 | Plant-map editor and declaration generator | KEEP | E1 | `IDE/src/plant/editor/{mapEditor,declarations}.ts` |
-| E | E3 | Editor panel: the pointer-free path | KEEP | E1, E2, V4 | `IDE/src/plant/editor/EditorPanel.tsx` and parts |
+| E | E3 | Editor in the plant document: the pointer-free path | KEEP | E1, E2, V4 | `IDE/src/plant/editor/EditorPanel.tsx` and its three parts |
 | E | E4 | Pointer placement in the 3D view | KEEP | E3, V1 | `IDE/src/plant/editor/pointer.ts` |
 | E | E5 | Scenes saved with the project | KEEP | E1 | locator-dependent, see task |
 | F | F1 | Scenes 1, 2, 4 | KEEP (content) | S2, P4 | `IDE/plant-scenes/{belt-to-sensor,latch-two-sensors,counted-queue}/*` |
@@ -230,6 +319,17 @@ export interface ScenarioPlantPort { core: PlantCore; map: PlantMapV2 }
 | D | D2 | Plant, scene format and scene pages (EN, ES) | KEEP | F1, F2, V4 | `docs/docs/plant/*`, `docs/i18n/es/.../plant/*` |
 | Q | Q1 | Requirement coverage reads spec 012 | KEEP | none (start rule 3) | `tools/ci/requirement-*`, `tools/ci/spec-tracking.test.ts` |
 | Q | Q2 | Benchmarks, journeys, security check | KEEP (frame numbers PHYS) | V4, R3 | `IDE/scripts/plant/*`, `IDE/scripts/run-journeys.ts` journeys |
+| W | W0 | Foundation of lane W: catalogues, command ids, transport types, coverage of spec 013, the 2.0 baseline | KEEP | C | `IDE/src/i18n/{en,es}.ts`, `catalog/studio*.ts`, `IDE/src/commands/{registry,bus}.ts`, `IDE/src/runtime/transport.ts`, `IDE/scripts/journeys013*`, `interfaceBudget*`, `tools/ci/requirement-*` |
+| W | W1 | Surface registry; a command for every surface | KEEP | W0 | `IDE/src/shell/surfaces*.ts`, `IDE/src/commands/useCommandHost.ts` |
+| W | W2 | Editor area with two groups; maximise | KEEP | W0 | `IDE/src/layout/*`, `IDE/src/components/{EditorArea,EditorGroup}.tsx`, `IDE/src/shell/WorkbenchShell.tsx`, the session files |
+| W | W3 | The plant document; Lab leaves the results panel | KEEP | W1, W2 | `IDE/src/shell/PlantDocument*.tsx`, `IDE/src/components/{Console,LabPanel}.tsx`, `IDE/src/shell/shellRouting.ts` |
+| W | W4 | One transport | KEEP | W0 | `IDE/src/runtime/transport*.ts`, `IDE/src/store/useTransport.ts`, the run handlers of `Toolbar.tsx`, `IDE/src/plants/PlantLivePanel.tsx` |
+| W | W5 | The run plan, "Save all", the save preference | KEEP | W0 | `IDE/src/runtime/runPlan*.ts`, `IDE/src/store/saveAll*.ts`, `IDE/src/utils/appSettings*.ts`, `AppPreferences.tsx` |
+| W | W8 | Notices | KEEP | W0 | `IDE/src/store/notifications*.ts`, `IDE/src/components/Notifications*.tsx` |
+| W | W9 | Reveal rules; the entry program opens | KEEP | W0 | `IDE/src/shell/reveal*.ts`, `IDE/src/project/entryProgram*.ts`, the open path of `useIDEStore.ts` |
+| W | W6 | The command bar: Run in one action, the target, the implicit simulator session | KEEP | W4, W5, W8, W9 | `IDE/src/components/{Toolbar,ToolbarRunControls,ToolbarBuildMenu,TargetSelector,runSequence,programState}*`, `IDE/src/shell/CommandBarCenter.tsx` |
+| W | W7 | The status rail in one line; state words; the plant session's state | KEEP | W6, W4 | `IDE/src/components/{OperationalStatusBar,operationalStatusPresentation,programState,StatusDetails}*` |
+| W | W10 | Close-out of U0 and U1: budget in CI, design documents, docs | KEEP | W3, W6, W7, V4 | `IDE/scripts/interfaceBudget*`, `IDE/DESIGN.md`, `IDE/PRODUCT.md`, `docs/docs/ide/*` |
 
 **Graph.**
 ```
@@ -240,16 +340,22 @@ R1 -> R2 ----------------------------------------------------------+  (R3 needs 
 T0 -> V1 -> V2 -+-> V4 (needs V3, R3, P4) -> E3 -> E4 ; V4 -> Q2
 T0 -> P1 -> V3 ; P1 -> E1 -> E2 -> E3 ; E1 -> E5 ; T0 -> P5 ; S1 (after P1) -> S2, L1 -> L2 ; P4 -> D1
 Q1 independent.
+(C: spec 013 committed) -> W0 -+-> W1 --+-> W3 --+-> V4 (also needs W4)
+                               +-> W2 --+        |
+                               +-> W4 -----------+-> W6 -> W7 -> W10 (also needs W3, V4)
+                               +-> W5, W8, W9 ---+
 ```
 **Parallel waves** (lanes run at the same time inside a wave; the parent merges at the end of each wave and runs the seam check):
-1. R1, Q1 (before the verdict, if the owner wants the C review to start early).
-2. T0.
-3. P1, P2, P5, V1, R2, E1 (disjoint surfaces).
-4. P3, V2, V3, S1, E2, L1.
-5. P4, E5.
-6. R3, S2, D1, V4 (V4 starts when R3 has a stable `createPlantSession` signature; it may code against C6 with a fake session earlier).
-7. F1, F2, E3, Q2.
-8. E4, L2, D2.
+1. R1, Q1. **Done.**
+2. T0. **Done** (merged before its full suite; the seam check of wave 3 covers it).
+3. P1, P2, P5, V1, R2, E1, **W0**. P1, P2, V1 and R2 are merged; W0 starts now.
+4. P3, V2, V3, S1, E2, L1, **W1, W2, W5, W8, W9**. P3, V2, V3 and S1 were in flight, with E1, when this revision was written; the lane W tasks of this wave follow W0.
+5. P4, E5, **W3, W4**. Milestone U0 of spec 013 is complete when this wave merges.
+6. R3, S2, D1, V4, **W6** (V4 starts when R3 has a stable `createPlantSession` signature and W3 and W4 are merged; it may code against C6 and C8 with fakes earlier).
+7. F1, F2, E3, Q2, **W7**.
+8. E4, L2, D2, **W10**.
+
+A wave is a set of tasks that may run together, not one that must: the parent runs as many as it can review. Lane W shares no file with the plant lanes inside a wave. Inside lane W, the tasks of one wave share no file either; `Toolbar.tsx` is edited in waves 5 (W4) and 6 (W6), `useCommandHost.ts` in waves 4 (W1) and 5 (W3), `studioDocuments.ts` in waves 4 (W2) and 5 (W3), `AppPreferences.tsx` and `appSettings.ts` in waves 4 (W5) and 6 (V4), and `IDE/scripts/journeys.ts` by W0, W3 and W4 (wave 5: the parent serialises these two), W6 and Q2, never by two tasks of one wave otherwise.
 
 ## Global Constraints
 - **Security posture (VIS-012).** The renderer stays sandboxed (`sandbox: true`, `contextIsolation: true`, `IDE/electron/main.ts:321-327` as cited by plan M0) and the content security policy stays as it is (`createContentSecurityPolicy`, `IDE/electron/security.ts:977-1001`; the spec cites `:982` and `:986` for the WebAssembly and worker allowances). No cross-origin isolation headers, so no multi-threaded Jolt flavour and no `SharedArrayBuffer`. No remote asset: every texture, geometry and font is generated or bundled. The only security-surface edits in M1 are the two renderer-allowed methods of R2, reviewed on their own.
@@ -257,7 +363,7 @@ Q1 independent.
 - **Firmware.** C99, bounded static memory, no dynamic allocation in anything R1 adds; no new heap use in the session. Run `bun run lint:c` and the formatter check at the root. The formatter is clang-format 23.1.3 from a uv venv through `CLANG_FORMAT` (skipping it broke the 2.0 CI).
 - **Tests through public interfaces**, with the requirement ID in the test name (`it('PLT-008 five boxes stay stacked ...')`), the style the existing suites use (`welcomeBundle.test.ts`). Each test asserts every observable effect of its rule. When a task changes an existing option or helper, add one test that its previous behaviour still holds.
 - **Determinism.** No `Date`, `Math.random`, `performance.now` or iteration over an unordered collection in `IDE/src/plant/core/**`; a seeded generator only. Creation order of bodies is the order of `scene.parts`.
-- **The 2.0 suites pass unchanged** (PLT-013, PLT-015): `bun test` in `IDE/` at every merge, plus the lesson, plant, smoke and journey suites named in `IDE/package.json` scripts. A 2.0 test may change only in Task P5, and only the live-model assertions that D-19 names.
+- **The 2.0 suites pass unchanged** (PLT-013, PLT-015): `bun test` in `IDE/` at every merge, plus the lesson, plant, smoke and journey suites named in `IDE/package.json` scripts. A 2.0 test may change only in Task P5 (the live-model assertions that D-19 names) and in lane W (a test or a journey step that freezes the layout or the flow spec 013 changes: the Lab tab, the plant's own play button, Connect before Run in simulation, the mode toggle, the items of the status rail). Each such change is named with its reason in the commit body (spec 013, section 8.2 item 4).
 - **Structural rules.** `bun run lint` in `IDE/` (eslint with warnings as errors, then `tools/ci/ide-structure.ts`: modules at most 1600 lines, no import cycle, a store module imports no component, no whole-store subscription; `ux-tokens`, `ui-kit-guard`, `i18n-guard`). Components select the store fields they show; the plant panel never subscribes to the whole store. UI uses the Studio kit (`IDE/src/ui`, UX-002).
 - **Docs.** Every new command, option, message and page ships in English (`docs/docs/`) and Spanish (`docs/i18n/es/docusaurus-plugin-content-docs/current/`) in the same commit series. Evidence levels stay distinct (host, QEMU, target, HIL, manual).
 - **No physical operations.** Nothing here flashes, deploys, opens a serial port, forces I/O on a board or starts plant I/O mode. AI and MCP may only run scene scenarios headless against a simulated runtime (LNK-009; constitution rule 9). R2's methods are renderer-to-simulated-runtime only.
@@ -266,6 +372,10 @@ Q1 independent.
 - **Shell.** `bat`, `rg`, `fd`, `eza`; not `cat`, `grep`, `find`, `ls`. Do not use CodeGraph or prowl on this branch.
 - **Fresh worktree.** `bun run build` needs `bun run build:compiler` first.
 
+- **One transport (spec 013 PLS-003, decision D-26).** Only the command bar (`IDE/src/components/Toolbar*.tsx`), the command registry and `IDE/src/runtime/transport.ts` may render or bind Run, Pause, Step, Stop or Reset for the project's simulation. No plant view has them, and no code path answers a press of Run with a pointer to another control. `IDE/src/learn/reading/LdTry.tsx` keeps its own controls: a try-it lab runs a session of its own on a reading page (LRN-041).
+- **The board path does not change (P7, P9, constitution rules 5 and 9).** No task of lane W may make a connection, a deploy, a run or a force on a board happen without the explicit action and the confirmation 2.0 has. Lane W adds no command that AI or MCP can reach.
+- **Latency with the split (PLT-015).** Q2's `latency` sequence also measures with the plant document beside the code editor in a split, the layout a learner uses (spec 013 SHL-006).
+- **Words.** New interface text of lane W and of Task V4 says "Plant", never "Lab" (decision D-25), and uses the vocabulary of spec 013 MSG-001 where it has a word.
 ## Review Focus (conditions the spec implies; each has a test in the task that owns it)
 1. A box asleep on a stopped belt moves when its belt starts, with a per-belt wake, not a wake of every body (P2; the spike woke every body, 30 to 45 % of its cost).
 2. A held scan (breakpoint) leaves the program's timers exactly where an unheld run would leave them (R1; the gate measured a skew of one scan).
@@ -275,6 +385,10 @@ Q1 independent.
 6. No WebGL 2, or a lost context, leaves the core, the session and grading running (V1, V4).
 7. A forced input keeps its forced value over the plant's write (R3).
 8. Old scene files open or fail with a message that names the version (P1).
+9. With no plant registered, the command bar drives the debug controller exactly as before; every 2.0 lesson and journey passes on the merge of W4 (W4).
+10. On a board, no plan of `planRun` holds a step other than `run`, and no press of Run connects or deploys (W5, W6).
+11. A session written by 2.0 restores: one editor group, and the Lab tab opens the plant document (W2, W3).
+12. A failed step of Run in simulation stops the sequence; nothing after it runs (W6).
 
 ---
 
@@ -707,7 +821,7 @@ IDE/src/plant/session/exchange.ts
 IDE/src/plant/session/plantSession.test.ts
 IDE/src/plant/session/plantSessionNative.test.ts
 ```
-**Interfaces:** implements `createPlantSession` (C6). Uses `exchangeScan` from S1 (import, no copy) and `PlantRuntimePort` (C5).
+**Interfaces:** implements `createPlantSession` (C6). Uses `exchangeScan` from S1 (import, no copy) and `PlantRuntimePort` (C5). The session is driven by the command bar through `plantTransport` (contract C8, Task W4); R3 builds no control and exposes nothing else for it.
 
 Behaviour: `start()` calls `setClockMode('virtual')`, reads `scanIntervalMs`, refuses with a located message if it is not a positive multiple of 5 ("plant: the scan interval of 7 ms is not a multiple of the plant step of 5 ms; set the task interval to a multiple of 5 ms", PLT-004), then loops: per scan, `exchangeScan`, `scenarioStep((k)*scanMs)`, read `getInfo().cycles`: if unchanged the scan was **held** (state `held`, the plant does not advance, `heldSteps++`), else the plant follows the **completed scan** (never timestamps; verified in the gate). `pace` waits `scanMs / speed` of wall time between scans (default `setTimeout`); `slowdown`: if the mean exchange plus advance time of the last 20 scans exceeds `0.9 * scanMs`, set `slowdown = scanMs / meanCost` clamped to [0.1, 1], and emit `{ kind: 'slowdown', factor, message }` once per change (PLT-016: slow plant and program together, say so, never drop a step; since the loop is lock-step, slowing is just longer pacing). `pause()` stops issuing steps; `step()` issues exactly one; `stop()` calls `setClockMode('free')` after the runtime is idle; a rejected `scenarioStep` sets `faulted` and stops the plant at the last completed scan with the runtime's message.
 
@@ -846,8 +960,8 @@ git commit -m "feat(plant-view): generated schematic and a live text equivalent 
 
 ---
 
-### Task V4: Panel integration, operation and fallbacks
-**Spec:** VIS-001, VIS-006, VIS-010, VIS-011, PLT-016 (message). **Lane V. Wave 6. KEEP.**
+### Task V4: The panel in the plant document: operation and fallbacks
+**Spec:** VIS-001, VIS-005 (the setting), VIS-006, VIS-010, VIS-011, PLT-016 (message). **Spec 013:** PLS-001 (content), PLS-003, PLS-004, PLS-009, PLS-010, PLS-012. **Lane V. Wave 6. KEEP.** Rewritten in revision 2 (decisions D-20 and D-26 of spec 013).
 
 **Allowed edit surfaces**
 ```
@@ -857,15 +971,19 @@ IDE/src/plant/ui/OperatePanel.tsx
 IDE/src/plant/ui/usePlantSession.ts
 IDE/src/plant/ui/loadPlantEngine.ts
 IDE/src/plant/ui/PlantPanel.test.tsx
-IDE/src/components/LabPanel.tsx
+IDE/src/components/settings/AppPreferences.tsx   (the plant quality section; nothing else)
+IDE/src/utils/appSettings.ts                      (the plant quality setting; nothing else)
+IDE/src/utils/appSettings.test.ts
 IDE/src/i18n/catalog/plantView.ts
 ```
-**Interfaces:** `PlantPanel` replaces the T0 stub: `export function PlantPanel(props: { controller: DebugController | undefined }): JSX.Element`. `LabPanel.tsx` (`:221`, `const live = <PlantLivePanel controller={controller} />`) shows `PlantPanel` when a scene is chosen and keeps `PlantLivePanel` for the four 2.0 plants and for lessons; the 2.0 panel is **not** modified. `PlantPanel` loads three, Jolt, the core and the renderer through `loadPlantEngine()` (one dynamic import, so the 4.1 MB chunk stays lazy; the T0 chunk test now has its real subject) and owns its transport (Run, Pause, Step, Reset), like the 2.0 live panel does with `Pause, Play, RotateCcw, SkipForward` (`PlantLivePanel.tsx:6`). The global Run is not wired to the plant (open question 4): when a scene session is active and the person presses the global Run, the existing refusal "scenario session only accepts scenario.step" must surface as a located, translated message ("Use the plant panel's Run"), added to the catalogue.
+**Interfaces:** `PlantPanel` replaces the T0 stub: `export function PlantPanel(props: { controller: DebugController | undefined; visible: boolean }): JSX.Element`. It is the content of the plant document: `PlantDocument` (Task W3) already mounts it for a project with a scene, and this task touches no file of the shell, `LabPanel` or `Console`. The 2.0 live panel is not modified here (Task W4 removed its run controls). `PlantPanel` loads three, Jolt, the core and the renderer through `loadPlantEngine()` (one dynamic import, so the 4.1 MB chunk stays lazy; the T0 chunk test now has its real subject).
 
-Behaviour: scene chooser (shipped scenes from `SCENE_INDEX`, once S2 lands; before that a prop), a "Maximise" control; an operate region listing the scene's panel parts (push button: press and hold by pointer, Space or Enter by keyboard; indicator light shown), fault-action menu per part, "Add item"/"Remove item" where the scene's emitter allows it (`addItem` returns an id; keyboard path: choose the part from a list, press Enter); the fallback banner: when the renderer reports `unavailable`, `lost` without `restored` within 3 s, or `fps().p5 < 30` for 5 s, show a translated message naming the reason and a button that switches to the schematic (V3) while the session, the core and grading keep running (VIS-006); the live text region (V3) with `announce`.
+**It has no transport.** `usePlantSession` creates the lock-step session (R3) for the chosen scene and registers `plantTransport(session)` with `registerPlantTransport` (contract C8, Task W4) while the document is open and the target is the simulation; it unregisters when the document closes or the scene changes. Run, Pause, Step, Stop and Reset are the command bar's. Revision 1's refusal "Use the plant panel's Run" does not exist: the command bar starts the plant session itself.
+
+Behaviour: scene chooser (shipped scenes from `SCENE_INDEX`, once S2 lands; before that a prop); no Maximise control of its own, which is the shell's `view.maximiseDocument` (Task W2); a toolbar that holds only what belongs to a plant (spec 013 PLS-004): the switch between the 3D view and the schematic, the camera presets, "Reset plant", and "Edit scene", which is enabled only while the transport is stopped (SCN-008); an operate region listing the scene's panel parts (push button: press and hold by pointer, Space or Enter by keyboard; indicator light shown), fault-action menu per part, "Add item"/"Remove item" where the scene's emitter allows it (`addItem` returns an id; keyboard path: choose the part from a list, press Enter); the fallback banner: when the renderer reports `unavailable`, `lost` without `restored` within 3 s, or `fps().p5 < 30` for 5 s, show a translated message naming the reason and a button that switches to the schematic (V3) while the session, the core and grading keep running (VIS-006), all of it shown in the document and not only in Output (spec 013 PLS-009); the live text region (V3) with `announce`. While `visible` is false the renderer draws no frame and the session keeps running (spec 013 PLS-010, P14). The quality level (VIS-005) is chosen automatically at first run and is a section of Preferences (spec 013 PLS-012): `plantQuality` in `AppSettings`, a select in `AppPreferences.tsx`; the panel has no quality control. The state of the session is not shown in the panel: the status rail shows it (Task W7, spec 013 PLS-013); the slowdown message below is the notice and the announcement, not a second status.
 
 - [ ] **Step 1: Failing tests** (`PlantPanel.test.tsx`, React Testing Library as the 2.0 `PlantView.test.tsx` does; the renderer and the session are fakes through props so no GPU is needed):
-  1. `'VIS-001 the panel shows the 3D canvas where the live plant was and offers Maximise'`.
+  1. `'VIS-001 the panel shows the 3D canvas as the content of the plant document'` (rendered inside `PlantDocument`).
   2. `'VIS-006 with no WebGL 2 the panel says so and offers the schematic, and the session keeps running'` (fake session keeps emitting `scan` events; assert the text updates).
   3. `'VIS-006 a lost context offers the schematic after 3 seconds without restoration'` (fake timers).
   4. `'VIS-010 the push button works by pointer and by keyboard'` (`operate` called with true on down and false on up; Space and Enter on key down and up).
@@ -874,13 +992,18 @@ Behaviour: scene chooser (shipped scenes from `SCENE_INDEX`, once S2 lands; befo
   7. `'VIS-011 every visible string comes from the catalogue in English and Spanish'` (render in both locales, no raw key shown; `bun run lint`'s i18n guard).
   8. `'PLT-016 the slowdown message is shown and announced once per change'`.
   9. `'the panel subscribes to no whole store'` is enforced by `bun run lint`; the panel selects the fields it shows.
-- [ ] **Step 2: Run** `bun test src/plant/ui src/components`. Expected: FAIL. **Step 3: Implement. Step 4: Run** the suites; then `bun run build` and `bun test scripts/welcomeBundle.test.ts` (the T0 chunk tests now exercise the real import; if they were recorded pending in T0, this task completes them). Also `bun test` (the whole IDE suite) once: the 2.0 `LabPanel` and `PlantLivePanel` tests must pass unchanged.
+  10. `'PLS-003 the panel renders no Run, Pause, Step, Stop or Reset control'`.
+  11. `'PLS-003 while the document is open the session is the active transport, and the command bar\'s Run starts it'` (through `activeTransport`, with a fake session); `'PLS-003 closing the document or changing the scene unregisters it'`.
+  12. `'PLS-004 Edit scene is offered only while the transport is stopped'`.
+  13. `'PLS-010 with visible false no frame is drawn and scan events still arrive'`.
+  14. `'PLS-012 the quality level is read from Preferences, and an unknown stored value falls back to automatic'`.
+- [ ] **Step 2: Run** `bun test src/plant/ui src/components`. Expected: FAIL. **Step 3: Implement. Step 4: Run** the suites; then `bun run build` and `bun test scripts/welcomeBundle.test.ts` (the T0 chunk tests now exercise the real import; if they were recorded pending in T0, this task completes them). Also `bun test` (the whole IDE suite) once: the suites of W3 and W4 (`PlantDocument`, `transport`, `PlantLivePanel`) must pass unchanged.
 - [ ] **Step 5: Commit.**
 ```bash
-git add packages/zplc-ide/src/plant/ui packages/zplc-ide/src/components/LabPanel.tsx packages/zplc-ide/src/i18n/catalog/plantView.ts
-git commit -m "feat(plant-ui): 3D panel with operation, fallbacks and keyboard paths in Lab"
+git add packages/zplc-ide/src/plant/ui packages/zplc-ide/src/components/settings/AppPreferences.tsx packages/zplc-ide/src/utils/appSettings.ts packages/zplc-ide/src/utils/appSettings.test.ts packages/zplc-ide/src/i18n/catalog/plantView.ts
+git commit -m "feat(plant-ui): the 3D panel in the plant document, with operation, fallbacks and keyboard paths"
 ```
-**Risk:** item 3 (`LabPanel` is the 2.0 entry for the live plant; the change is one conditional), item 6 for pixels.
+**Risk:** item 3 (the session is registered as the command bar's transport; a session left registered after its document closes would leave Run driving nothing, hence test 11), item 6 for pixels.
 
 ---
 
@@ -970,7 +1093,7 @@ IDE/src/plant/editor/SignalTable.tsx
 IDE/src/plant/editor/EditorPanel.test.tsx
 IDE/src/i18n/catalog/plantEditor.ts
 ```
-**Interfaces:** replaces the T0 stub `EditorPanel`; `export function EditorPanel(props: { editor: SceneEditor; mapEditor: MapEditor; stopped: boolean }): JSX.Element`. `PlantPanel` (V4) already mounts it lazily through `React.lazy`. A path that needs no pointer: a catalogue list (add a part), numeric fields for x, z, rotation (position it), a signal table with a bind control per signal (bind its signals), problems listed at the part. Everything through the Studio kit.
+**Interfaces:** replaces the T0 stub `EditorPanel`; `export function EditorPanel(props: { editor: SceneEditor; mapEditor: MapEditor; stopped: boolean }): JSX.Element`. `PlantPanel` (V4) already mounts it lazily through `React.lazy`, in the edit state of the plant document, entered by "Edit scene" (spec 013 PLS-004). The part list, the part form and the signal table MUST be three components that take their data and callbacks by props and do not know where they are mounted: milestone U3 of spec 013 moves the list to the sidebar of the Plant activity, the form to the Inspector and the signal table beside the plant-map editor (PLS-005, PLS-006) without changing them. Undo and redo are the commands of the Edit menu (SCN-010), scoped to the document, not buttons of the panel. A path that needs no pointer: a catalogue list (add a part), numeric fields for x, z, rotation (position it), a signal table with a bind control per signal (bind its signals), problems listed at the part. Everything through the Studio kit.
 
 - [ ] **Step 1: Failing tests:** `'SCN-014 a small scene is built from the empty floor by keyboard alone'` (Tab, type, Enter: add a belt and a sensor, set numeric positions, bind both signals to two points, no pointer event fired); `'SCN-015 a problem is shown at the part that causes it and the part is focusable from the list'`; `'SCN-011 the signal table lists type and direction'`; `'SCN-008 the form is disabled with a message while the plant runs'`; `'VIS-011 English and Spanish render with no missing key'`.
 - [ ] **Step 2: Run, implement, run.** `bun test src/plant/editor`, `bun run lint`.
@@ -1159,13 +1282,496 @@ git commit -m "test(plant): benchmarks, journeys and the packaged security check
 
 ---
 
+## Lane W: the workbench of spec 013 (milestones U0 and U1)
+Tasks W0 to W4 are milestone U0, the contract Task V4 builds on. Tasks W5 to W9 are milestone U1. W10 closes both. Every task of this lane touches no physics and no dependency, so it may start before the gate verdict (start rule 3). Line numbers are at `1a263378`; the files cited are the same at `8024dd1f`, and the shell and the command bar are unchanged since `v2.0.0`.
+
+### Task W0: Foundation of lane W
+**Spec 013:** SHL-002 (basis), FND-002 (basis), section 8.1 (baseline), section 8.2 item 1. **Lane W. Wave 3. KEEP.**
+
+**Allowed edit surfaces**
+```
+IDE/src/i18n/en.ts
+IDE/src/i18n/es.ts
+IDE/src/i18n/catalog/studioCommands.ts
+IDE/src/i18n/catalog/studioSurfaces.ts
+IDE/src/i18n/catalog/studioDocuments.ts
+IDE/src/i18n/catalog/studioTransport.ts
+IDE/src/i18n/catalog/studioFlow.ts
+IDE/src/i18n/catalog/studioNotices.ts
+IDE/src/i18n/catalog/studioStatus.ts
+IDE/src/commands/registry.ts
+IDE/src/commands/bus.ts
+IDE/src/commands/CommandPalette.tsx
+IDE/src/commands/commands.test.ts
+IDE/electron/appMenu.test.ts
+IDE/src/runtime/transport.ts
+IDE/scripts/journeys.ts                  (one import and one spread; nothing else)
+IDE/scripts/journeys013.ts
+IDE/scripts/journeys013/w2.ts, w3.ts, w4.ts, w6.ts, w7.ts, w8.ts, w9.ts
+IDE/scripts/interfaceBudget.ts
+IDE/scripts/interfaceBudget.test.ts
+tools/ci/generate-requirement-index.ts
+tools/ci/requirement-coverage.ts
+tools/ci/requirement-coverage.test.ts
+tools/ci/requirement-index-013.json
+tools/ci/spec-tracking.test.ts
+specs/013-zplc-2-1-studio-experience/baseline/interface-budget-2.0.json
+```
+**Interfaces:** produces everything of "Contracts, lane W":
+1. The seven catalogues as empty typed objects, as T0 made `plantView` (`IDE/src/i18n/catalog/plantView.ts`), registered in `en.ts` and `es.ts`. `studioCommands` is filled here with the titles of the new command ids in both languages.
+2. The command ids of the contract in `COMMANDS` (`IDE/src/commands/registry.ts:61-151`), each with its category and its `enabled` rule, and no handler.
+3. `isCommandBound(id)` exported by `bus.ts`. The palette lists a command only when it is bound (`IDE/src/commands/CommandPalette.tsx:30`).
+4. `transport.ts` with the types of C8 and no logic.
+5. `journeys013.ts` and its seven empty per-task files, spread into the list of `journeys.ts`.
+6. `requirement-index-013.json`, generated from spec 013 the way Q1 generated the index of spec 012 (`tools/ci/generate-requirement-index.ts:7-10`), and `requirement-coverage.ts` reporting spec 013: the requirements of the mapping table above expected, those of U2 and U3 `pending`.
+7. `interfaceBudget.ts`, a script on the journey harness (`IDE/scripts/journeyApp.ts`). It opens the Blinky example at 1366 by 768 and at 1440 by 900, in English and in Spanish, in the states open, built, running in simulation and paused, and writes for each: the controls of the command bar left and right of the project name, the tabs of the results panel and which of them show their name, the items of the status rail, and how many times the target is shown.
+
+**Unconfirmed:** whether the application menu shows a registered command with no handler as an enabled item. It is built in the main process from the registry (`IDE/electron/appMenu.ts`); the window refuses an unbound id. Read `appMenu.ts` and `IDE/src/commands/menuEntry.ts` first. If the menu would show a dead item, publish the bound ids with the command state and disable the missing ones, with a test. **Unconfirmed:** what `tools/ci/spec-tracking.test.ts` pins.
+
+- [ ] **Step 1: Failing tests.**
+  1. `commands.test.ts`: `'FND-002 every id of the lane W contract is registered with a title in English and Spanish'`; `'FND-002 the palette does not list a command that has no handler'`; `'a registered command with no handler is refused as unavailable'` (pins what `runCommand` does today).
+  2. `interfaceBudget.test.ts`, on the pure counting functions over a stored DOM snapshot: `'counts the controls of the command bar on each side of the project name'`; `'reports a results tab as named only when its name is visible'`; `'counts every place the target is shown'`.
+  3. `requirement-coverage.test.ts`: `'spec 013 is reported with its seven prefixes'`; `'a requirement of U2 or U3 is pending, not uncovered'`.
+- [ ] **Step 2: Run** `bun test src/commands scripts/interfaceBudget.test.ts` in `IDE/` and `bun test tools/ci` at the root. Expected: FAIL. **Step 3: Implement. Step 4: Run** the suites, `bun run lint`, `bunx tsc -b`.
+- [ ] **Step 5: Record the baseline** before any other lane W task merges: `bun scripts/interfaceBudget.ts --out ../../specs/013-zplc-2-1-studio-experience/baseline/interface-budget-2.0.json`. It replaces the 2.0.0 column of spec 013 section 2.3 for rows 2, 3, 6, 7 and 8, which was counted from source and screenshots. Where a number differs, the record wins and the commit body says so.
+- [ ] **Step 6: Commit.**
+```bash
+git commit -m "feat(shell): lane W foundation: catalogues, command ids, transport types, coverage of spec 013 and the 2.0 interface baseline"
+```
+**Risk:** `registry.ts`, `en.ts` and `es.ts` are shared files; this is the only lane W task that edits them. Q1's open follow-up (the conditional and pending records of spec 012) edits the same `tools/ci` files: the parent serialises the two.
+
+### Task W1: Surface registry, and a command for every surface
+**Spec 013:** SHL-001 (registry), SHL-002, SHL-004 (commands), PLS-012 (registry), FND-002 (surfaces). **Lane W. Wave 4. KEEP.**
+
+**Allowed edit surfaces**
+```
+IDE/src/shell/surfaces.ts
+IDE/src/shell/surfaces.test.ts
+IDE/src/commands/useCommandHost.ts
+IDE/src/i18n/catalog/studioSurfaces.ts
+```
+**Interfaces:**
+```ts
+// IDE/src/shell/surfaces.ts
+export type Region = 'commandBar' | 'activity' | 'editor' | 'secondary' | 'results' | 'status' | 'dialog';
+export interface Surface { id: string; titleKey: MessageKey; region: Region; command: CommandId }
+export const SURFACES: readonly Surface[];
+export function surfacesIn(region: Region): readonly Surface[];
+```
+One entry per surface of spec 013 section 7 that exists in the tree, with the region it has **today**: the four activities, the Inspector, the ten results tabs, the five configuration editors, the settings page, the Learn home, the command palette, the shortcut reference, and the plant document (`view.plant`, bound by W3). `useShellCommands` (`IDE/src/commands/useCommandHost.ts:68-98`) binds the commands that only show something: `view.interlocks`, `view.changes`, `view.agent` and `view.terminal` through the existing `showPanel`, and `project.tasks`, `project.io`, `project.network`, `project.communication` and `project.target` through `openConfigEditorFromNavigator` (`IDE/src/navigator/openConfigEditor.ts`).
+
+Plan choice: the rail and the tab strip keep their own lists (`IDE/src/shell/ActivityRail.tsx:22-27`, `IDE/src/components/Console.tsx:272-307`) and a test compares them with the registry. SHL-002 allows "generated from it or compared with it", and the tabs still move in W3 and in U2.
+
+- [ ] **Step 1: Failing tests** (`surfaces.test.ts`):
+  1. `'SHL-002 every surface has one region and a registered command'`.
+  2. `'SHL-002 every activity of the rail and every tab of the results panel is a surface'` (the tab ids from a list typed `satisfies readonly ConsoleTab[]`, so a new tab fails the build until it is a surface).
+  3. `'SHL-004 the commands of Interlocks, Changes, Agent and Terminal show their tab, and open the panel when it is collapsed'`.
+  4. `'SHL-004 each configuration editor opens from its command'`.
+  5. `'FND-002 with a project open the palette lists the nine commands'`.
+- [ ] **Step 2: Run** `bun test src/shell src/commands`. Expected: FAIL. **Step 3: Implement. Step 4: Run** the suites, `bun run lint`, `bunx tsc -b`.
+- [ ] **Step 5: Commit.**
+```bash
+git commit -m "feat(shell): surface registry, and commands for the surfaces that had none"
+```
+
+### Task W2: Editor area with two groups, and maximise
+**Spec 013:** SHL-006, SHL-007. **Lane W. Wave 4. KEEP.**
+
+**Allowed edit surfaces**
+```
+IDE/src/layout/editorGroups.ts
+IDE/src/layout/editorGroups.test.ts
+IDE/src/layout/documentKinds.ts
+IDE/src/store/useEditorGroups.ts
+IDE/src/components/EditorArea.tsx
+IDE/src/components/EditorGroup.tsx
+IDE/src/components/EditorArea.split.dom.test.tsx
+IDE/src/shell/WorkbenchShell.tsx
+IDE/src/store/useShellLayout.ts
+IDE/src/utils/sessionState.ts
+IDE/src/utils/sessionState.test.ts
+IDE/src/store/sessionPersistence.ts
+IDE/electron/sessionStoreProtocol.ts
+IDE/electron/sessionStoreProtocol.test.ts
+IDE/src/i18n/catalog/studioDocuments.ts
+IDE/scripts/journeys013/w2.ts
+```
+**Interfaces:**
+```ts
+// IDE/src/layout/editorGroups.ts (pure)
+export interface EditorGroups {
+  readonly second: readonly ViewId[]; // the views shown in the second group; every other open view is in the first
+  readonly activeSecond: ViewId | null;
+  readonly focused: 'first' | 'second';
+  readonly ratio: number; // width of the first group, 0.2 to 0.8
+}
+export const ONE_GROUP: EditorGroups;
+export function moveToOther(groups: EditorGroups, view: ViewId): EditorGroups;
+export function closeView(groups: EditorGroups, view: ViewId): EditorGroups; // the second group closes with its last view
+export function shownGroups(groups: EditorGroups, compact: boolean): 1 | 2; // one below the compact width (UX-023)
+```
+A tree with no split is exactly today's: the first group holds every open view. `EditorArea.tsx` renders one or two `EditorGroup`s in a horizontal `Group` of `react-resizable-panels`, already used by the shell (`IDE/src/shell/WorkbenchShell.tsx:7`), with a `PanelSeparator` between them (UX-017). The task binds `view.splitRight` (moves the active view to the second group), `view.moveToOtherGroup`, `view.focusOtherGroup` and `view.maximiseDocument`. Maximise is `maximised: boolean` in `useShellLayout`, not saved: while it is true `WorkbenchShell` collapses both sidebars and the results panel, and restores what they were; Escape leaves it when no dialog or menu is open. The split is saved with the session (IDE-008): `SessionInput` and `RestorePlan` (`IDE/src/utils/sessionState.ts:43-84`) gain the paths of the second group and the ratio, and the session document gains them as optional fields, so a session written by 2.0 restores as one group.
+
+**Unconfirmed:** the shape and the version rule of the session document in `IDE/electron/sessionStoreProtocol.ts`. Read it first; a document written by 2.0 must stay valid.
+
+- [ ] **Step 0: Extract `EditorGroup.tsx`** from `EditorArea.tsx` (689 lines) with no behaviour change. Run `bun test src/components`. Commit it alone.
+- [ ] **Step 1: Failing tests.**
+  1. `editorGroups.test.ts`: `'SHL-006 moving the only view of the first group to the second leaves one group'`; `'SHL-006 closing the last view of the second group closes the split'`; `'SHL-006 below the compact width two groups show as one, and widening the window brings the split back'`.
+  2. `sessionState.test.ts`: `'SHL-006 the split and its ratio are restored with the session'`; `'a session saved by 2.0 restores as one group'`.
+  3. `sessionStoreProtocol.test.ts`: `'a document with a split is valid, and so is one without'`; `'a split that names a path outside the project is refused'` (P11).
+  4. `EditorArea.split.dom.test.tsx`: `'SHL-006 a view moves to the other group by its command and by the keyboard, and the focus follows it'`; `'UX-017 the separator between the groups is operable by keyboard'`; `'SHL-007 maximise hides the sidebars and the results panel, and the same command restores them as they were'`; `'SHL-007 Escape leaves maximise only when no dialog is open'`.
+  5. Journey in `w2.ts`: `'W2 Split, move and maximise by keyboard'`, `proves: ['SHL-006', 'SHL-007']`.
+- [ ] **Step 2: Run** `bun test src/layout src/utils src/components electron/sessionStoreProtocol.test.ts`. Expected: FAIL. **Step 3: Implement. Step 4: Run** the suites, `bun run lint`, `bunx tsc -b`, and journeys 3, 9, 12 and 15 of 2.0 (tabs, undo after switching tabs, session restore, new file), which must pass unchanged.
+- [ ] **Step 5: Commit.**
+```bash
+git commit -m "feat(shell): a second editor group, restored with the session, and maximise"
+```
+**Risk:** two code editors side by side must stay inside the editor-latency budget of PLT-015. Q2 measures it (Global Constraints, "Latency with the split").
+
+### Task W3: The plant document; Lab leaves the results panel
+**Spec 013:** PLS-001, PLS-002, SHL-003 (Lab), SHL-004 (routing), decisions D-20 and D-25. **Spec 012:** VIS-001 (the place). **Lane W. Wave 5. KEEP.**
+
+**Allowed edit surfaces**
+```
+IDE/src/shell/PlantDocument.tsx
+IDE/src/shell/PlantDocument.test.tsx
+IDE/src/layout/documentKinds.ts
+IDE/src/components/EditorGroup.tsx          (one case: PLANT_VIEW_ID renders PlantDocument)
+IDE/src/plant/ui/PlantPanel.tsx             (the props of the stub; nothing else)
+IDE/src/components/Console.tsx
+IDE/src/components/LabPanel.tsx
+IDE/src/components/LabPanel.dom.test.tsx
+IDE/src/components/Console.tabNavigation.test.ts
+IDE/src/shell/shellRouting.ts
+IDE/src/shell/shellRouting.test.ts
+IDE/src/commands/useCommandHost.ts          (binds view.plant; nothing else)
+IDE/src/i18n/catalog/studioDocuments.ts
+IDE/src/i18n/catalog/lab.ts                 (only the strings that say "Lab")
+IDE/src/i18n/catalog/console.ts             (only the two strings of the Lab tab)
+IDE/scripts/journeys.ts                     (only the steps that click the Lab tab)
+IDE/scripts/journeys013/w3.ts
+```
+**Interfaces:** `export function PlantDocument(props: { controller: DebugController | undefined; visible: boolean }): JSX.Element` is the content of view id `PLANT_VIEW_ID`. It shows:
+- the scene panel, `PlantPanel` (`IDE/src/plant/ui/PlantPanel.tsx`, T0's stub until V4), when the project has a scene;
+- else the live plant of 2.0, `PlantLivePanel`, which this task does not change;
+- a Replay view, which is the recorded-replay part of `LabPanel` (`IDE/src/components/LabPanel.tsx:248` onward), when the last test run recorded a plant trace. It reads the result from `useWorkspaceTestResult` (`IDE/src/shell/workspaceTestResult.ts`), as the sidebars do, and is labelled as a replay (LRN-020). A switch chooses between live and replay when both exist.
+
+`visible` is false while the document's tab is not the active one of its group; it is passed to the panel so that V4 can stop drawing (PLS-010). The stub `PlantPanel` gains the props `{ controller, visible }` and still returns `null`.
+
+In `Console.tsx` the `lab` tab goes (`:291`, `:1520-1530`). `LabPanel` loses `const live` (`:221`) and keeps the replay. `ConsoleTab` keeps the value `lab`, so that a stored session still parses, and `shellRouting.ts` routes it to the plant document as it routes `explorer`, `inspector` and `learn` (`IDE/src/shell/shellRouting.ts:9`). `view.plant` opens the document in the second group when the window is not compact and the first group has a view, else as a tab. The interface says "Plant" (decision D-25).
+
+- [ ] **Step 1: Failing tests.**
+  1. `PlantDocument.test.tsx`: `'PLS-001 the plant document shows the live plant of a 2.0 plant lesson'`; `'PLS-001 with a recorded plant trace it offers the replay, labelled as a replay (LRN-020)'`; `'PLS-001 with neither it shows an empty state that names the next action'` (UX-021); `'PLS-010 visible is false while another tab of the group is active'`.
+  2. `shellRouting.test.ts`: `'SHL-004 a stored session whose tab is lab opens the plant document and leaves the results panel on its last tab'`.
+  3. `'SHL-003 the results panel has nine tabs and none of them is Lab'`.
+  4. `Console.tabNavigation.test.ts` and `LabPanel.dom.test.tsx`: rewritten only where they name the Lab tab or the live plant inside it. Name each changed test in the commit body.
+  5. Journeys in `w3.ts`: `'W3 A 2.0 plant lesson with its program and its plant side by side'` (`proves: ['PLS-001', 'PLS-002']`, `partly: ['SHL-003', 'SHL-004']`); `'W3 A session saved with the Lab tab opens the plant document'`.
+- [ ] **Step 2: Run** `bun test src/shell src/components`. Expected: FAIL. **Step 3: Implement. Step 4: Run** the whole IDE suite, `bun run lint` (`Console.tsx` is 1,539 lines against a limit of 1,600; it must end shorter than it started), `bunx tsc -b`, and the journeys.
+- [ ] **Step 5: Commit.**
+```bash
+git commit -m "feat(shell): the plant is a document of the editor area; Lab leaves the results panel"
+```
+**Risk:** until W4 merges, in the same wave, the 2.0 live plant still has its own play, pause and step. The exit of U0 is checked after both.
+
+### Task W4: One transport
+**Spec 013:** PLS-003, decision D-26. **Spec 012:** PLT-005 (its consequence for the interface). **Spec 011:** LRN-018. **Lane W. Wave 5. KEEP.**
+
+**Allowed edit surfaces**
+```
+IDE/src/runtime/transport.ts
+IDE/src/runtime/transport.test.ts
+IDE/src/store/useTransport.ts
+IDE/src/components/Toolbar.tsx              (the six run handlers; nothing else)
+IDE/src/components/Toolbar.dom.test.tsx
+IDE/src/plants/PlantLivePanel.tsx
+IDE/src/plants/PlantLivePanel.dom.test.tsx
+IDE/src/i18n/catalog/studioTransport.ts
+IDE/scripts/journeys.ts                     (only the steps that press the plant's own play, pause or step)
+IDE/scripts/journeys013/w4.ts
+```
+**Interfaces:** implements C8. `programTransport(controller)` wraps today's calls, `start`, `pause`, `resume`, `step`, `stop` and `reset` (`IDE/src/hooks/debugControllerTypes.ts:33-43`), and maps `vmState`. `plantTransport(session)` wraps a `PlantSession` (C6). `useTransport` holds at most one registered plant transport. In `Toolbar.tsx` the handlers `handleStart` (`:591`), `handlePause`, `handleResume`, `handleStep`, `handleStop` and `handleReset` call `activeTransport(debugController)` where they call the controller today; their guards, confirmations and messages do not change. `PlantLivePanel` loses its play-pause and step buttons (`IDE/src/plants/PlantLivePanel.tsx:177`, `:198`). Its loop already follows the runtime's scan counter (`IDE/src/plants/plantLoop.ts:1-8`), so pausing the program pauses the plant. Its reset button (`:211`) stays, worded "Reset plant", and so do the fault actions.
+
+**Unconfirmed:** what the play-pause button of `PlantLivePanel` holds apart from the runtime's state. Read `PlantLivePanel.tsx:60-170` and `plantLoop.ts` first. If the panel can hold the plant while the program runs, that state is removed: under P15 it must not exist.
+
+- [ ] **Step 1: Failing tests.**
+  1. `transport.test.ts`, with a fake controller and a fake session: `'PLS-003 the program transport maps running, paused, error and idle of the debug controller'`; `'PLS-003 run resumes when paused and starts otherwise'`; `'PLS-003 the plant transport maps the six states of a plant session, and held is not paused'`; `'PLS-003 both transports answer run, pause, step, run, stop, reset with the same states'`; `'PLS-003 with a plant transport registered the active transport is the plant one, and the program one again after it unregisters'`; `'a transport whose action rejects reports faulted with the reason'`.
+  2. `Toolbar.dom.test.tsx`: `'PLS-003 Run, Pause, Step, Stop and Reset of the command bar call the active transport'`; `'PLS-003 with a plant transport registered, Run starts the plant session and the debug controller is not started directly'`; `'Stop and Reset on a board ask for confirmation as before'` (pins the previous behaviour).
+  3. `PlantLivePanel.dom.test.tsx`: `'PLS-003 the live plant has no play, pause or step control'`; `'it keeps Reset plant and its fault actions'`; `'LRN-018 pausing the program freezes the plant'` (a fake scan counter).
+  4. Journey in `w4.ts`: `'W4 The command bar drives a 2.0 plant'`, `proves: ['PLS-003']`: open a plant lesson project, show the plant, build, connect, Run, the plant facts change; Pause, the scan counter and the facts hold; Step, both advance by one scan.
+- [ ] **Step 2: Run** `bun test src/runtime src/components src/plants`. Expected: FAIL. **Step 3: Implement. Step 4: Run** the whole IDE suite, the lesson suites and the journeys. A 2.0 journey that pressed the plant's own play now presses Run; name each in the commit body. `src/learn/learnPhysical.test.tsx` and the restricted AI and MCP regression pass unchanged.
+- [ ] **Step 5: Commit.**
+```bash
+git commit -m "feat(runtime): one transport for the command bar; the live plant has no run controls"
+```
+**Risk:** this is the change revision 1 warned about in its open question 4: it touches the path every lesson uses. The seam bounds it. With no plant registered, `activeTransport` is the program transport, which calls exactly what the handlers called. An independent verifier runs the 2.0 lesson and journey suites on the merge.
+
+### Task W5: The run plan, "Save all" and the save preference
+**Spec 013:** FLW-001, FLW-002, FLW-003, FLW-004 (the decision), FLW-005 (the action), FLW-006, FLW-012 (the decision), FLW-014, decision D-21. **Lane W. Wave 4. KEEP.**
+
+**Allowed edit surfaces**
+```
+IDE/src/runtime/runPlan.ts
+IDE/src/runtime/runPlan.test.ts
+IDE/src/store/saveAll.ts
+IDE/src/store/saveAll.test.ts
+IDE/src/utils/appSettings.ts
+IDE/src/utils/appSettings.test.ts
+IDE/src/components/settings/AppPreferences.tsx
+IDE/src/i18n/catalog/studioFlow.ts
+```
+**Interfaces:**
+```ts
+// IDE/src/runtime/runPlan.ts (pure: no React, no store)
+export type RunStep = 'save' | 'askToSave' | 'build' | 'startSimulator' | 'load' | 'run' | 'holdBeforeFirstScan';
+export type RunOffer = 'connect' | 'build' | 'deploy';
+export interface RunSituation {
+  target: 'simulation' | 'board';
+  modified: boolean; // any document, the project configuration included
+  saveBeforeRun: 'always' | 'ask';
+  buildIsCurrent: boolean;
+  sessionOpen: boolean; // the simulator is started, or the board is connected
+  programLoaded: boolean; // the current build is in the runtime
+  state: TransportState;
+  plantBound: boolean;
+}
+export type RunPlan =
+  | { kind: 'steps'; steps: readonly RunStep[] }
+  | { kind: 'offer'; offer: RunOffer }
+  | { kind: 'nothing' };
+export function planRun(situation: RunSituation, intent: 'run' | 'step' | 'rebuildAndRestart'): RunPlan;
+
+// IDE/src/store/saveAll.ts
+export function saveAllDocuments(): Promise<{ saved: number; failed: readonly string[] }>; // files and the project configuration
+```
+The rules of `planRun`, which are the whole of FLW-001 to FLW-003:
+- **Simulation, `run`, stopped:** `save` (or `askToSave`) if modified; `build` unless the build is current and nothing was saved; `startSimulator` unless the session is open; `load` unless the current build is loaded; `run`.
+- **Simulation, `run`, paused:** `run`. **Running:** nothing.
+- **Simulation, `step`, stopped:** the same preparation, then `holdBeforeFirstScan` in place of `run`.
+- **Board, any intent:** the steps are never more than `run`. Not connected is the offer `connect`; no current build is the offer `build`; a current build that is not on the board is the offer `deploy`.
+- **`rebuildAndRestart`:** in simulation `save` if modified, `build`, `load`, `run`; on a board the offer `build`.
+- `plantBound` does not change the steps. It is in the situation so that W6 names the plant in the notice; W4's transport is what runs it.
+
+The preference `saveBeforeRun` joins `AppSettings` (`IDE/src/utils/appSettings.ts:26-52`), is validated on read like the other fields, and has a select in `AppPreferences.tsx` beside autosave (`:119`).
+
+**Unconfirmed:** whether `saveAllFiles` (`IDE/src/store/ideStoreTypes.ts:220`) also saves the project configuration. `hasUnsavedChanges` counts it (`IDE/src/store/useIDEStore.ts:834-841`). `saveAllDocuments` calls `saveAllFiles({ quiet: true })` and then saves the configuration if it is still modified.
+
+- [ ] **Step 1: Failing tests.**
+  1. `runPlan.test.ts`, table-driven over every combination of target, modified, preference, build, session, loaded and state:
+     `'FLW-001 from a modified program, Run in simulation plans save, build, start the simulator, load and run, in that order'`;
+     `'FLW-001 nothing already done is done again'`;
+     `'FLW-006 with the preference on Ask the plan asks before it saves, and never builds sources that were not saved'`;
+     `'FLW-002 Step from stopped prepares the session and holds before the first scan'`;
+     `'FLW-003 on a board no plan holds a step other than run: a missing step is an offer'` (a property over every board situation);
+     `'FLW-012 rebuild and restart is steps in simulation and the offer to build on a board'`;
+     `'FLW-014 the plan is the same whether or not a plant is bound'`.
+  2. `saveAll.test.ts`: `'FLW-005 Save all saves every modified file and the configuration, and names the ones that failed'`; `'with nothing modified it writes nothing'`.
+  3. `appSettings.test.ts`: `'FLW-006 the preference defaults to Always, and an unknown stored value falls back to it'`.
+- [ ] **Step 2: Run** `bun test src/runtime src/store src/utils`. Expected: FAIL. **Step 3: Implement. Step 4: Run** the suites, `bun run lint`, `bunx tsc -b`.
+- [ ] **Step 5: Commit.**
+```bash
+git commit -m "feat(runtime): the run plan as a pure function, Save all, and the save-before-run preference"
+```
+
+### Task W8: Notices
+**Spec 013:** FLW-013, FLW-001 (the one notice), FLW-004 (the offer). **Lane W. Wave 4. KEEP.**
+
+**Allowed edit surfaces**
+```
+IDE/src/store/notifications.ts
+IDE/src/store/notifications.test.ts
+IDE/src/components/Notifications.tsx
+IDE/src/components/NotificationsList.tsx
+IDE/src/components/NotificationsList.test.tsx
+IDE/src/index.css                           (the position of the list; nothing else)
+IDE/src/i18n/catalog/studioNotices.ts
+IDE/scripts/journeys013/w8.ts
+```
+**Interfaces:** the store (`IDE/src/store/notifications.ts:150-172`) gains `advance(id, stepTitle)`, which changes the step a running notice names and keeps its id and its cancel action, and the kind `'run'` joins `NotificationKind` (`:20`). A refusal is reported with status `warning` and its offered step in the existing `recover` field (`:24-27`). Policy: a new success replaces the success that is showing; a failure stays until dismissed. Plan choice for the place: the list is anchored at the top right, under the status rail, over a corner of the editor area, at most 360 pixels wide, and never over the results panel or a dialog. A success leaves by itself after `SUCCESS_VISIBLE_MS` (`:64`).
+
+- [ ] **Step 1: Failing tests.**
+  1. `notifications.test.ts`: `'FLW-013 a second success replaces the first'`; `'FLW-013 a failure stays until dismissed and is not replaced by a success'`; `'FLW-001 advance changes the step of a running notice and keeps its id and its cancel action'`; `'advance on a finished notice changes nothing'`.
+  2. `NotificationsList.test.tsx`: `'FLW-004 a refusal shows the offered step as a button and runs it once'`; `'the step in progress is announced once per change'`.
+  3. Journey in `w8.ts`: `'W8 Notices stay clear of the results panel at 1366 by 768'`, `proves: ['FLW-013']`: build, then run, and compare the rectangles of the list and of the panel.
+- [ ] **Step 2: Run** `bun test src/store src/components`. Expected: FAIL. **Step 3: Implement. Step 4: Run** the suites, `bun run lint`, `bunx tsc -b`.
+- [ ] **Step 5: Commit.**
+```bash
+git commit -m "feat(shell): one notice per composite action, clear of the results panel"
+```
+
+### Task W9: The rules by which the shell moves; the entry program opens
+**Spec 013:** SHL-010, SHL-014. **Lane W. Wave 4. KEEP.**
+
+**Allowed edit surfaces**
+```
+IDE/src/shell/reveal.ts
+IDE/src/shell/reveal.test.ts
+IDE/src/project/entryProgram.ts
+IDE/src/project/entryProgram.test.ts
+IDE/src/store/useIDEStore.ts                (the open path: the entry program; nothing else)
+IDE/scripts/journeys013/w9.ts
+```
+**Interfaces:**
+```ts
+// IDE/src/shell/reveal.ts
+export type ShellEvent =
+  | 'buildFailed' | 'buildSucceeded' | 'runStarted' | 'stoppedAtPlace' | 'fault'
+  | 'testsFailed' | 'testsPassed' | 'lessonChecked' | 'messageToHiddenTab' | 'changeProposed';
+export interface ShellMove { panel?: ConsoleTab; openPanel?: boolean; guide?: boolean; openDocument?: boolean }
+export function movesFor(event: ShellEvent): ShellMove; // the table of SHL-010, pure
+export function reveal(event: ShellEvent, at?: { path: string; line: number; column: number }): void; // applies it through the stores
+
+// IDE/src/project/entryProgram.ts
+export function entryProgramPath(config: ZPLCProjectConfig | null, files: readonly string[]): string | null;
+```
+This task delivers the table and its one function, and changes one call site: project open. W3, W4 and W6 replace their own direct `setActiveConsoleTab` calls with `reveal` in the files they own. The call sites of the Tests tab and of Learn move in U2 and U3.
+
+**Unconfirmed:** which of the three places that set `openTabs: []` (`IDE/src/store/useIDEStore.ts:260`, `:400`, `:548`) is the open path, and where the session restore runs relative to it. The entry program must never replace restored tabs.
+
+- [ ] **Step 1: Failing tests.**
+  1. `reveal.test.ts`: one test per row of the table of SHL-010, among them `'SHL-010 a successful build moves nothing'`, `'SHL-010 a failed build shows Problems and opens the panel'`, `'SHL-010 a message to a hidden tab moves nothing'`, `'SHL-010 a stop at a breakpoint opens the document and not the Watch tab'`.
+  2. `entryProgram.test.ts`: `'SHL-014 the entry program is the first program of the first task'`; `'a project with no task has none'`; `'a program the task names that is not on disk is skipped'`.
+  3. Journeys in `w9.ts`: `'W9 A project opened for the first time shows its program'`, `proves: ['SHL-014']`; `'W9 A restored session keeps its tabs'`.
+- [ ] **Step 2: Run** `bun test src/shell src/project`. Expected: FAIL. **Step 3: Implement. Step 4: Run** the suites, `bun run lint`, `bunx tsc -b`, and journey 12 of 2.0 (session restore) unchanged.
+- [ ] **Step 5: Commit.**
+```bash
+git commit -m "feat(shell): the rules by which the shell moves, and the entry program on first open"
+```
+
+### Task W6: The command bar: Run in one action, the target, the implicit simulator session
+**Spec 013:** FLW-001 to FLW-010, FLW-014 (its use), decision D-21. **Lane W. Wave 6. KEEP.**
+
+**Allowed edit surfaces**
+```
+IDE/src/components/Toolbar.tsx
+IDE/src/components/ToolbarRunControls.tsx
+IDE/src/components/ToolbarBuildMenu.tsx
+IDE/src/components/TargetSelector.tsx
+IDE/src/components/TargetSelector.test.tsx
+IDE/src/components/runSequence.ts
+IDE/src/components/runSequence.test.ts
+IDE/src/components/programState.ts          (getStatusDisplay moved out of Toolbar.tsx, words unchanged)
+IDE/src/components/programState.test.ts
+IDE/src/components/Toolbar.dom.test.tsx
+IDE/src/shell/CommandBarCenter.tsx
+IDE/src/i18n/catalog/studioFlow.ts
+IDE/src/i18n/catalog/toolbarMsg.ts          (only the messages this task retires or rewords)
+IDE/scripts/journeys.ts                     (journey 6 and the helper that connects and runs in simulation)
+IDE/scripts/journeys013/w6.ts
+```
+**Interfaces:**
+```ts
+// IDE/src/components/runSequence.ts
+export interface RunActions {
+  save(): Promise<boolean>; askToSave(): Promise<'saved' | 'cancelled'>;
+  build(): Promise<boolean>; startSimulator(): Promise<void>; load(): Promise<void>;
+  run(): Promise<void>; holdBeforeFirstScan(): Promise<void>;
+}
+export function runSequence(plan: RunPlan, actions: RunActions, notice: { begin(title: string): string; advance(id: string, step: string): void; finish(id: string, result: NotificationResult): void }):
+  Promise<'done' | 'cancelled' | { failedAt: RunStep; message: string }>;
+```
+`runSequence` executes the steps of W5's plan in order under one notice (W8's `advance`), stops at the first failure and runs nothing after it. The actions are the handlers that exist, injected: `saveAllDocuments`, `handleCompile`, `startSimulation`, the load of `handleStart` (`IDE/src/components/Toolbar.tsx:611-633`) and the active transport's `run`.
+
+What changes in the bar:
+- **Run** computes the situation, calls `planRun` and runs the result. An offer becomes a notice with that step as its button (FLW-004). The refusals "Connect first." and "No compiled bytecode. Compile first." (`IDE/src/i18n/catalog/toolbarMsg.ts:59-61`) are no longer written to Output alone.
+- **Build** follows the preference: it saves first, or asks with the unsaved-changes dialog. It no longer refuses and sends the user to the Tests tab (`Toolbar.tsx:276-284`).
+- **`TargetSelector`**, a kit menu button, shows "Simulation" or the name of the project's board, with the items Simulation, the board, and "Change the board", which runs `project.target`. It calls `handleExecutionModeChange`, which keeps its confirmation while a program runs (UX-020). The Simulation and Hardware toggle goes (`IDE/src/components/ToolbarRunControls.tsx:87`, `:106`).
+- **Connect and Disconnect** are rendered for a board only. In simulation the session starts inside `runSequence` and ends when the project closes or the target changes. `online.restartSimulator` is bound here.
+- **Out of the bar:** the "To ST" button (`Toolbar.tsx:905`), the theme menu (`:957`) and the Live toggle (`ToolbarRunControls.tsx:185`). Their commands exist: `build.generateSt`, `view.theme*`, `debug.liveValues` (`IDE/src/commands/registry.ts:99`, `:91-94`, `:146`). Live values are on when a simulation session starts and off when a board connects (FLW-010).
+- **`file.saveAll`** is bound to `saveAllDocuments`.
+- **`getStatusDisplay`** (`Toolbar.tsx:805-835`) moves to `programState.ts` with its words unchanged, so that W7 rewords it without this file.
+
+- [ ] **Step 0: Move `getStatusDisplay`** to `programState.ts`, with a test that pins every string it returns today. Commit it alone.
+- [ ] **Step 1: Failing tests.**
+  1. `runSequence.test.ts`: `'FLW-001 the steps run in order and each is named in the one notice'`; `'FLW-001 a failed build stops the sequence: the simulator is not started and nothing is loaded'`; `'FLW-001 Cancel during the build stops before the next step'`; `'FLW-006 with Ask, choosing Cancel saves nothing and runs nothing'`.
+  2. `Toolbar.dom.test.tsx`:
+     `'FLW-001 one press of Run from a modified program ends with the program running in simulation'`;
+     `'FLW-003 on a board, Run with nothing connected calls no device action and offers Connect'`;
+     `'FLW-003 on a board, Run never deploys: with a current build that is not on the board it offers Deploy, and the deploy dialog is still the only way'`;
+     `'FLW-004 no refusal is written to Output alone'`;
+     `'FLW-005 Save all is offered when any document is modified, and saves the configuration too'`;
+     `'FLW-007 the target is shown once in the bar, and choosing the board while a program runs asks first'`;
+     `'FLW-008 with a simulation target the bar never says connect or disconnected'`;
+     `'FLW-009 the bar holds at most seven controls left of the project name in simulation when stopped, running and paused, nine with a board, and three on the right'`;
+     `'FLW-010 live values are on when a simulation starts and off when a board connects'`.
+  3. `TargetSelector.test.tsx`: keyboard operation and accessible name; `'IDE-025 the degraded label of the WASM runtime shows in the selector'`.
+  4. Journeys. In `journeys.ts`, journey 6 becomes `'6 Simulate: one press of Run, watch a value change'` and adds `FLW-001` to `proves`; the helper that pressed Connect and then Run in simulation presses Run. In `w6.ts`: `'W6 Run with a build error ends in Problems and starts no simulator'` (`proves: ['FLW-001']`, `partly: ['SHL-010']`); `'W6 Step from stopped holds before the first scan'` (`proves: ['FLW-002']`); `'W6 Save all, then Build, with two modified files and a changed task interval'` (`proves: ['FLW-005', 'FLW-006']`).
+- [ ] **Step 2: Run** `bun test src/components`. Expected: FAIL. **Step 3: Implement**, in two commits: `runSequence` behind the existing handlers with the board path untouched; then the bar. **Step 4: Run** the whole IDE suite and the journeys. `physicalActions.test.ts`, `deployFlow.test.ts`, `hardwareDeployConfirmation.test.ts`, `terminalForceCommandPolicy.test.ts`, `Toolbar.programResolution.test.ts` and the restricted AI and MCP regression pass unchanged. Then `bun scripts/interfaceBudget.ts`, with its counts in the commit body.
+- [ ] **Step 5: Commit.**
+```bash
+git commit -m "feat(command-bar): Run in simulation is one action; one target selector; the simulator session is implicit"
+```
+**Risk:** `Toolbar.tsx` is 996 lines and owns every gate of the board path. An independent verifier reads the board path of the merge against `1a263378`, line by line. Saving before a build writes to disk without an explicit Save: the first time it happens a notice says so and links to the preference.
+
+### Task W7: The status rail in one line; the state words; the plant session's state
+**Spec 013:** FLW-011, FLW-012, MSG-007, PLS-013, decision D-23. **Lane W. Wave 7. KEEP.**
+
+**Allowed edit surfaces**
+```
+IDE/src/components/programState.ts
+IDE/src/components/programState.test.ts
+IDE/src/components/OperationalStatusBar.tsx
+IDE/src/components/OperationalStatusBar.dom.test.tsx
+IDE/src/components/operationalStatusPresentation.ts
+IDE/src/components/operationalStatusPresentation.test.ts
+IDE/src/components/operationalStatusPresentation.es.test.ts
+IDE/src/components/StatusDetails.tsx
+IDE/src/components/ToolbarBuildMenu.tsx     (the mark on Build while the last build is not of the current sources)
+IDE/src/i18n/catalog/studioStatus.ts
+IDE/scripts/journeys013/w7.ts
+```
+**Interfaces:** `programState.ts` exports `programStateOf(input)`, which returns the message key, its parameters and its tone for one row of the table of spec 013 MSG-007. Its input is the target, whether a board is connected, the `TransportState`, whether a build exists and is current, whether the program is loaded, the `slowdown` of the transport and the place of a pause. A `slowdown` below 1 reads "Running slower than real time"; a `held` scan reads "Paused" at its place (PLS-013).
+
+The line shows, in this order: the connection indicator (`ConnectionIndicator`, unchanged, UX-018), the program state, the scan interval, the count of active forces. Overruns appear only when they are not zero. The "Mode" field goes (`IDE/src/components/OperationalStatusBar.tsx:121-124`): the indicator and the target selector say it. `StatusDetails` is a kit popover opened by `view.statusDetails`, with the runtime, the cycles, the tasks, the firmware, the protocol and the live-values toggle. The force banner, the unconfirmed-force alert and the limits note do not change (`:150-166`). When the sources changed after the build that is running, the state carries the action of FLW-012: `debug.rebuildAndRestart` in simulation, `build.compile` on a board.
+
+- [ ] **Step 1: Failing tests.**
+  1. `programState.test.ts`: `'MSG-007 every state of the 2.0 status maps to one row, and two different states never read the same'`; `'MSG-007 the one exception: in simulation, ready and ready with a stale build both read Stopped, and the Build control carries the mark'`; `'PLS-013 a plant session slower than real time reads Running slower than real time'`; `'PLS-013 a held scan reads Paused at its place'`; the same table in Spanish, in the register of D-10.
+  2. `OperationalStatusBar.dom.test.tsx`: `'FLW-011 while a simulation runs the line has at most four items, in this order'`; `'FLW-011 overruns appear only when they are not zero'`; `'FLW-011 the details open by keyboard and list runtime, cycles, tasks, firmware and protocol'`; `'IDE-025 the degraded label is visible without opening the details'`; `'IDE-029 the force banner and the unconfirmed alert are unchanged'` and `'UX-018 the hardware indicator differs from simulation in text, icon and colour'` (both pin the previous behaviour).
+  3. `'FLW-012 with a stale running build the rail offers Rebuild and restart in simulation and Build on a board, and on a board it never deploys'`.
+  4. Journey in `w7.ts`: `'W7 The status line at 1366 by 768 in English and Spanish'`, `proves: ['FLW-011']`, `partly: ['MSG-007']`.
+- [ ] **Step 2: Run** `bun test src/components`. Expected: FAIL. **Step 3: Implement. Step 4: Run** the whole IDE suite, `bun run lint`, `bunx tsc -b`, the journeys.
+- [ ] **Step 5: Commit.**
+```bash
+git commit -m "feat(status): the status rail in one line with details on request; one table of state words"
+```
+
+### Task W10: Close-out of U0 and U1
+**Spec 013:** section 8.1 rows 1, 4, 6, 7, 8 and 14; section 8.2 items 2, 4 and 6 for what U0 and U1 changed; SHL-001 (the map in `DESIGN.md`). **Spec 011:** UX-032. **Lane W. Wave 8. KEEP.**
+
+**Allowed edit surfaces**
+```
+IDE/scripts/interfaceBudget.ts
+IDE/scripts/interfaceBudget.test.ts
+IDE/scripts/interfaceBudget.targets.json
+the workflow that runs the journeys          (one step)
+IDE/DESIGN.md
+IDE/PRODUCT.md
+docs/docs/ide/* and docs/docs/getting-started/*, with their Spanish twins   (only the pages that show the changed flow)
+docs/static/img/tutorials/*, docs/static/img/screens/*   (regenerated by the documentation pipeline, never edited)
+specs/013-zplc-2-1-studio-experience/baseline/interface-budget-2.1-m1.json
+```
+**Unconfirmed:** the name of the workflow and of the job that run the journeys; which docs pages show Connect before Run in simulation, the Lab tab or the mode toggle. Search the docs for "Connect" and "Lab" and for the screenshots `blink-3-built`, `blink-running`, `guide-scenario-tests` and `learn-lab-*`. D2 owns `docs/docs/plant/*`; this task does not touch it.
+
+**Interfaces:** `interfaceBudget.targets.json` holds the targets of spec 013 section 8.1 that U0 and U1 own: the command bar at most 7 and 3 in simulation, 9 and 3 with a board; the status rail at most 4 items; the target shown at most twice; one set of run controls for the project's simulation. The results panel is checked at nine tabs, with the reason written beside it: its target of five belongs to U2. `interfaceBudget.ts --check` fails when a count is over its target and names the state, the language and the control.
+
+- [ ] **Step 1: Failing test:** `'the budget check fails on a count over its target and names the state, the language and the control'`.
+- [ ] **Step 2: Implement** the check and add it to CI after the journeys. Record `interface-budget-2.1-m1.json`.
+- [ ] **Step 3: `IDE/DESIGN.md`.** Rewrite the Layout section to the six regions of spec 013 section 5.1, as they stand after this milestone. The sentences that say the Explorer is a tab of the lower panel and that there is no command palette go (`IDE/DESIGN.md:148-150`, `:214`). No token changes, so the generated tables do not.
+- [ ] **Step 4: Docs** in English and Spanish, in the same commit series (constitution rule 8), with the screenshots regenerated by the pipeline. `bun run check:docs` at the root.
+- [ ] **Step 5: Commit.**
+```bash
+git commit -m "test(shell): the interface budget of spec 013 runs in CI"
+git commit -m "docs: the workbench after U0 and U1, in English and Spanish"
+```
+
+---
+
 ## Open questions for the owner
 Only where the spec leaves a real product decision open. Each has a recommended default; the plan proceeds on the default unless told otherwise.
 
 1. **When do the live 2.0 plants take the graded models (D-19)?** The spec records the decision but 6.2 assigns it to no milestone. *Default: M1, Task P5*, because it is a defect of released 2.0 (a program can look right live and fail its check) and the equivalence tests are cheap before more code depends on the live models.
-2. **VIS-001 says the panel SHOULD be movable to a window of its own.** A second window is a main-process change with new IPC and sandbox review. *Default: not in M1; maximise only. Schedule the window with the M7 editor work.*
-3. **Is the scene editor reachable by learners in the M1 pre-release?** D-15 says the editor is learner-facing in 2.1, but 6.2 lists "the learner-facing editor" under M7 and "the editor's authoring path" under M1. *Default: reachable from the Lab panel from M1 as "Edit scene" with no flag, documentation in M7; the pre-release label covers it.*
-4. **Does the global Run button start a plant session when a scene is bound?** *Default: no. The plant panel owns Run, Pause, Step and Reset (as the 2.0 live panel does), and the global Run shows a translated pointer to the panel.* Wiring it into the global transport touches the debug controller used by every lesson.
+2. **Closed in revision 2.** A window of its own is not in M1. Maximise is the shell's command (Task W2, spec 013 SHL-007); the window stays spec 012's SHOULD and is scheduled with the M7 editor work.
+3. **Closed by decision D-20 of spec 013.** The editor is reachable from M1 as "Edit scene", an action of the plant document (spec 013 PLS-004), with no flag; documentation in M7; the pre-release label covers it.
+4. **Closed by decision D-26 of spec 013.** Yes. The command bar is the only transport: its controls drive the debug controller for a program alone and the lock-step session while a plant is bound (contract C8, Tasks W4 and V4). The cost revision 1 named, that it touches the debug controller every lesson uses, is bounded by the seam and checked by the independent verifier of W4.
 5. **Use the Open Industry Project box and pallet textures (the only `reuse` items of `gate/prior-art.md`)?** *Default: no; geometry and procedural textures made in code (PRT-009), the attribution line unnecessary. Revisit after a viewing if the boxes look poor.*
 6. **Plant step of 5 ms refuses scan intervals that are not a multiple of 5 ms.** Gate-verified step; any lesson with a 1 ms or 7 ms task would be refused with a located message. *Default: refuse in M1 and list the lessons that would be affected (none of the five M1 lessons).* A 1 ms plant step is a P2 change and a capacity retest.
 7. **Course outline approval (CRS-001) is pending.** The five M1 lessons (12.1, 12.2, 12.3, 14.1, 14.2) wait for it (L1, L2). *Default: approve before wave 4, or accept that M1 ships its five scenes without lessons and the lessons land with M7.* Spec 6.2 says milestones ship scenes with their lessons, so the second option departs from it.
@@ -1175,7 +1781,9 @@ Only where the spec leaves a real product decision open. Each has a recommended 
 - **6.2 against D-15 and SCN-008.** M1 lists "the editor's authoring path"; M7 lists "the learner-facing editor (decision D-15)"; SCN-008 says its requirements "apply to learners as well as to scene authors". The plan builds the whole authoring path in M1 and treats the learner exposure as open question 3.
 - **6.2 against CRS-001.** "Each milestone ships its scenes together with their lessons", but CRS-001 forbids lessons before the owner approves the outline, and `course-outline.md` is still a draft (open question 7).
 - **D-19 has no milestone** (open question 1); PLT-013 says the live models change, which nothing in 6.2 schedules.
-- **PLT-005 against the baseline's live sessions.** The spec says live sessions run freely and the plant polls them; the M1 design instead moves a live plant session onto the virtual clock (the transport belongs to the plant panel while a scene runs). That is a behaviour change for any user who expected the global Run to drive a plant; flagged in open question 4.
+- **PLT-005 against the baseline's live sessions.** The spec says live sessions run freely and the plant polls them; the M1 design instead moves a live plant session onto the virtual clock. Revision 1 gave that session's transport to the plant panel, which made the global Run stop driving a plant. Revision 2 resolves it under decision D-26 of spec 013: the command bar drives the session through contract C8.
+- **VIS-001 against decision D-20 of spec 013.** VIS-001 places the 3D panel "where 2.0 shows the live plant", which is the Lab tab. D-20 moves it to a plant document; precondition C amends that clause of spec 012.
+- **Spec 013 was written from source and screenshots.** Nobody ran the application for it. W0 measures its baseline on the running application before anything changes.
 - **LNK-006 relies on staged writes.** `native_runtime_session.c:488-517` shows staged memory writes applied through `zplc_force_write_bytes`, so a forced byte keeps its value (read, not executed). Review Focus 7 and R3 test 8 prove it end to end; the claim stays unproven until that test passes.
 - **PLT-014 and VIS-004 are measured on Linux headless only.** The gate has no rendered frame-rate number and no macOS or Windows number; the spec's "60 typical, never below 30 at 1920x1080" is untested.
 - **Unconfirmed baseline facts I could not read in the time given:** the exact ctest target names for the C tests; the test-engine's evidence mechanism in `tools/ci`; where project files and archives enumerate file kinds (E5); whether `ipcContract.ts` or `preload.ts` also enumerate native methods (R2); whether `jolt-physics` 1.1.1 exposes `ActivateBodiesInAABox` (P2 step 1); how `src/generated/lessonIndex` is generated (S2); the docs sidebar and docs-parity check names (D1, D2); the single plant-map type of the worktree is schema 1 until precondition A.
@@ -1183,11 +1791,17 @@ Only where the spec leaves a real product decision open. Each has a recommended 
 
 ## Done when (aligned with spec section 7, for M1)
 - [ ] The owner has recorded the gate verdict and the open questions above have answers or accepted defaults.
+- [ ] Precondition C is committed: spec 013 is in the tree and VIS-001 of spec 012 is amended.
+- [ ] **U0 of spec 013** (after wave 5): a plant lesson of 2.0 opens with its program and its plant side by side; Run and Pause of the command bar drive both; there is no Lab tab, and a session that names it opens the plant document; journeys W2, W3 and W4 pass.
+- [ ] **U1 of spec 013** (after wave 7): the measures of spec 013 section 8.1, rows 1, 4, 6, 7, 8 and 14, meet their targets on Linux, recorded by `interfaceBudget.ts` and the journeys. macOS and Windows runs are the owner's.
+- [ ] No plant view has a run control, and no code path answers a press of Run with a pointer to another control.
+- [ ] The board path is unchanged: the physical-action suites and the restricted AI and MCP regression pass unchanged.
+- [ ] `tools/ci/requirement-coverage.ts` reports spec 013: the requirements of its mapping table `covered` (or `partial` where the table says Part), those of U2 and U3 `pending`.
 - [ ] Every requirement in the mapping table has an executed check named by its ID, and `tools/ci/requirement-coverage.ts` reports spec 012 (Q1): M1's requirements `covered`, later milestones `pending`, conditional ones with their decision (section 7 item 1).
 - [ ] Reference scenes 1, 2, 4, 8 and 9 pass their scenarios in CI with the reference program and fail with the starter, in CI on Linux, macOS and Windows (SCN-004, section 7 item 2). macOS and Windows runs are the owner's until the nightly job covers them.
 - [ ] The frame-rate, capacity and editor-latency records exist for each reference machine (VIS-004, PLT-014, PLT-015, section 7 item 4); a machine without a record is listed as pending, not omitted.
-- [ ] All 2.0 suites pass unchanged: lessons, plants (apart from the D-19 assertions of P5, each justified), smoke, journeys, the content security policy test (section 7 item 6).
+- [ ] All 2.0 suites pass unchanged: lessons, plants (apart from the D-19 assertions of P5, each justified), smoke, journeys, the content security policy test (section 7 item 6). The tests and journey steps lane W changed because they froze the 2.0 layout or flow are each named in their commit.
 - [ ] `welcomeBundle.test.ts` and `bun scripts/release/sbom.ts --check` pass with three and Jolt in one lazy chunk, and every dependency and asset has its licence recorded (VIS-012, VIS-013, section 7 item 7).
-- [ ] The independent reviews of Task R1 (C) and of R2's allow-list, and the independent verifiers of P5, S1, L1 and E5, returned with no open blocker.
+- [ ] The independent reviews of Task R1 (C) and of R2's allow-list, and the independent verifiers of P5, S1, L1, E5, W4 and W6, returned with no open blocker.
 - [ ] Documentation in English and Spanish exists for the parts reference and the plant pages and claims only what recorded evidence supports (section 7 item 8).
 - [ ] The tree can ship as a 2.1 pre-release: `bun run lint`, `bun test`, `bun run test:core`, `bun run format:check` all pass at the root.

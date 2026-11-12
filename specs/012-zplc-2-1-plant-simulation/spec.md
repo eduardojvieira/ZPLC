@@ -200,7 +200,7 @@ The learner sees and operates the plant in three dimensions at interactive frame
 - **Out:** photorealism, virtual reality, video export.
 
 #### Requirements
-- **VIS-001** Studio MUST show the running scene in a 3D panel where 2.0 shows the live plant. The panel MUST be maximisable and SHOULD be movable to a window of its own for a second monitor.
+- **VIS-001** Studio MUST show the running scene in a 3D panel in a plant document of the editor area (decision D-20 of spec 013). The panel MUST be maximisable and SHOULD be movable to a window of its own for a second monitor.
 - **VIS-002** The camera MUST orbit, pan and zoom by mouse and by keyboard, and each scene MUST offer named camera presets.
 - **VIS-003** The view MUST show the state that matters for control: sensor beams and whether they detect, actuator state, and the signal name of a part on hover and on focus. It MUST use the signal vocabulary of UX-009, with a cue other than colour for every state.
 - **VIS-004** On each reference machine at 1920×1080, the largest reference scene MUST render at 60 frames per second typically and never below 30 (design default, confirmed at the gate and published as evidence, P6).
