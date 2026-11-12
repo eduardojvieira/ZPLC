@@ -48,6 +48,10 @@
  * The first commit of a store that has never held a program can be interrupted too: nothing was published, and
  * restore reports ZPLC_PROGRAM_STORE_EMPTY. Records that exist and verify as nothing are never mistaken for an
  * empty store: restore reports ZPLC_PROGRAM_STORE_UNVERIFIABLE and commit refuses to write over them.
+ *
+ * A whole program of another contract is not such a record: its records verify and its CRC-32 matches, and the
+ * loader refuses it only for its draft counter or ISA version, which a runtime of another release wrote. Restore does
+ * not run it, and a commit goes on as if there were nothing to fall back to, writing the slot that does not hold it.
  */
 
 #ifndef ZPLC_CORE_PROGRAM_STORE_H
@@ -152,8 +156,11 @@ int zplc_pstore_commit(const zplc_pstore_config_t *config, uint8_t *workspace, s
 /** @brief What the rollback of a commit is: a value of zplc_pstore_rollback_t.kind. 0 is "nothing found". */
 #define ZPLC_PSTORE_ROLLBACK_NONE 0U
 #define ZPLC_PSTORE_ROLLBACK_SLOT 1U   /**< a v1 slot that read back and was admitted */
-#define ZPLC_PSTORE_ROLLBACK_EMPTY 2U  /**< a store that never held a program */
+#define ZPLC_PSTORE_ROLLBACK_EMPTY 2U  /**< a store that never held a program, or only a whole first-firmware one of another contract */
 #define ZPLC_PSTORE_ROLLBACK_LEGACY 3U /**< the single-key program of the first firmware, read and admitted */
+/** The program the store holds is whole but of another contract (its draft counter or ISA version is not this
+ *  runtime's): nothing to fall back to, and the commit writes the slot that does not hold it. */
+#define ZPLC_PSTORE_ROLLBACK_STALE 4U
 
 /**
  * @brief The rollback a commit relies on, found before the upload and checked again when it is committed.

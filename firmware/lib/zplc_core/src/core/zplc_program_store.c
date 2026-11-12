@@ -124,6 +124,24 @@ static int admits(const zplc_pstore_config_t *config, const uint8_t *program, si
 
 static int absent_or_corrupt(zplc_hal_result_t result) { return result == ZPLC_HAL_NOT_IMPL || result == ZPLC_HAL_CORRUPT; }
 
+/* A whole artifact of another contract: its draft counter or ISA version is not this runtime's (or the record that
+ * describes it was written by a runtime of another ISA version), and its CRC-32, in the loader's convention, matches.
+ * The loader refuses such an artifact before it reads anything else (CMP-052), so the refusal says nothing about the
+ * bytes; the CRC-32 does. The caller has checked that it is at least a header long. */
+static int whole_of_another_contract(const uint8_t *artifact, size_t length, int record_of_another_version) {
+  uint32_t crc;
+
+  if (zplc_get_u32_le(artifact) != ZPLC_MAGIC ||
+      (record_of_another_version == 0 && zplc_get_u32_le(artifact + 28U) == ZPLC_DRAFT_COUNTER &&
+       zplc_get_u16_le(artifact + 4U) == ZPLC_VERSION_MAJOR && zplc_get_u16_le(artifact + 6U) == ZPLC_VERSION_MINOR)) {
+    return 0;
+  }
+  crc = zplc_crc32_update(0xFFFFFFFFU, artifact, 12U);
+  crc = zplc_crc32_update(crc, artifact + 16U, length - 16U) ^ 0xFFFFFFFFU;
+  return crc == zplc_get_u32_le(artifact + 12U);
+}
+
+/* The answers of read_meta(). */
 static int valid_meta(const uint8_t meta[STORE_META_SIZE], unsigned slot, int allow_prepared, uint32_t *generation, uint32_t *length,
                       uint32_t *file_crc) {
   const uint8_t state = meta[7];
@@ -131,19 +149,19 @@ static int valid_meta(const uint8_t meta[STORE_META_SIZE], unsigned slot, int al
   if (memcmp(meta, META_MAGIC, sizeof(META_MAGIC)) != 0 || zplc_get_u16_le(meta + 4U) != STORE_FORMAT_VERSION || meta[6] != slot ||
       (state != STORE_SLOT_COMMITTED && (allow_prepared == 0 || state != STORE_SLOT_PREPARED)) || zplc_get_u32_le(meta + 8U) == 0U ||
       zplc_get_u32_le(meta + 12U) == 0U || zplc_get_u32_le(meta + 12U) > ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE ||
-      zplc_get_u16_le(meta + 20U) != ZPLC_VERSION_MAJOR || zplc_get_u16_le(meta + 22U) != ZPLC_VERSION_MINOR ||
       zplc_get_u32_le(meta + 24U) != 0U || zplc_get_u32_le(meta + 28U) != zplc_crc32(meta, 28U)) {
-    return 0;
+    return 1;
   }
   *generation = zplc_get_u32_le(meta + 8U);
   *length = zplc_get_u32_le(meta + 12U);
   if (file_crc != NULL) {
     *file_crc = zplc_get_u32_le(meta + 16U);
   }
-  return 1;
+  return zplc_get_u16_le(meta + 20U) == ZPLC_VERSION_MAJOR && zplc_get_u16_le(meta + 22U) == ZPLC_VERSION_MINOR ? 0 : 2;
 }
 
-/* 0: a valid record; 1: absent or invalid; -1: the backend failed. */
+/* 0: a valid record; 2: an intact record that a runtime of another ISA version wrote (its fields are returned too);
+ * 1: absent or invalid; -1: the backend failed. */
 static int read_meta(unsigned slot, int allow_prepared, uint32_t *generation, uint32_t *length, uint32_t *file_crc) {
   uint8_t meta[STORE_META_SIZE];
   zplc_hal_result_t result;
@@ -156,7 +174,7 @@ static int read_meta(unsigned slot, int allow_prepared, uint32_t *generation, ui
   if (result != ZPLC_HAL_OK) {
     return -1;
   }
-  return valid_meta(meta, slot, allow_prepared, generation, length, file_crc) ? 0 : 1;
+  return valid_meta(meta, slot, allow_prepared, generation, length, file_crc);
 }
 
 static int read_active(unsigned *slot, uint32_t *generation) {
@@ -207,7 +225,8 @@ static void make_active(uint8_t active[STORE_ACTIVE_SIZE], unsigned slot, uint32
 /* Serial-number arithmetic: the generation wraps, and 0 is never a generation. */
 static int generation_is_newer(uint32_t candidate, uint32_t current) { return candidate != current && candidate - current < 0x80000000U; }
 
-/* 0: the slot holds a program that its record and the admission check accept; 1: it does not; -1: backend failure.
+/* 0: the slot holds a program that its record and the admission check accept; 2: it holds a whole program of another
+ * contract (whole_of_another_contract), with its generation; 1: neither; -1: backend failure.
  * The buffer needs length + footer bytes; it is cleared first so that a short read cannot pass for a long one. */
 static int read_slot(const zplc_pstore_config_t *config, unsigned slot, int allow_prepared, uint8_t *buffer, size_t capacity,
                      size_t *program_size, uint32_t *generation) {
@@ -216,7 +235,7 @@ static int read_slot(const zplc_pstore_config_t *config, unsigned slot, int allo
   int result = read_meta(slot, allow_prepared, generation, &length, &header_crc);
   zplc_hal_result_t load;
 
-  if (result != 0) {
+  if (result != 0 && result != 2) {
     return result;
   }
   if (length < ZPLC_FILE_HEADER_SIZE || length > capacity - ZPLC_PROGRAM_STORE_FOOTER_SIZE) {
@@ -230,15 +249,18 @@ static int read_slot(const zplc_pstore_config_t *config, unsigned slot, int allo
   if (load != ZPLC_HAL_OK) {
     return -1;
   }
-  if (!footer_is(buffer, length) || zplc_get_u32_le(buffer + 12U) != header_crc || !admits(config, buffer, length)) {
+  if (!footer_is(buffer, length) || zplc_get_u32_le(buffer + 12U) != header_crc) {
     return 1;
   }
-  *program_size = length;
-  return 0;
+  if (result == 0 && admits(config, buffer, length)) {
+    *program_size = length;
+    return 0;
+  }
+  return whole_of_another_contract(buffer, length, result == 2) ? 2 : 1;
 }
 
-/* Returns 0 for a valid legacy rollback, 1 when it is unavailable or corrupt, and -1 for an I/O failure that must
- * stop a commit before it mutates the store. */
+/* Returns 0 for a valid legacy rollback, 2 for a whole legacy program of another contract, 1 when it is unavailable
+ * or corrupt, and -1 for an I/O failure that must stop a commit before it mutates the store. */
 static int legacy_rollback_available(const zplc_pstore_config_t *config) {
   uint32_t legacy_length = 0U;
   zplc_hal_result_t result;
@@ -262,7 +284,10 @@ static int legacy_rollback_available(const zplc_pstore_config_t *config) {
   if (result != ZPLC_HAL_OK) {
     return -1;
   }
-  return admits(config, config->scratch, legacy_length) ? 0 : 1;
+  if (admits(config, config->scratch, legacy_length)) {
+    return 0;
+  }
+  return whole_of_another_contract(config->scratch, legacy_length, 0) ? 2 : 1;
 }
 
 /* A record that exists but cannot form a verified rollback is not bootstrap. Probing one byte is enough to
@@ -332,8 +357,26 @@ static int highest_structural_generation(uint32_t *generation) {
   return 0;
 }
 
+/* Of two slot reads, the slot whose read gave `wanted`, the newer one when both did. One of them did. */
+static void pick_slot(int a, int b, uint32_t generation_a, uint32_t generation_b, int wanted, unsigned *slot, uint32_t *generation) {
+  if (b == wanted && (a != wanted || generation_is_newer(generation_b, generation_a))) {
+    *slot = 1U;
+    *generation = generation_b;
+  } else {
+    *slot = 0U;
+    *generation = generation_a;
+  }
+}
+
 /* Determine a real rollback before writing C. Returns 0 with a v1 slot, 1 for an unequivocally empty store, 2 for a
- * verified legacy rollback, and -1 for I/O or corruption states that must fail closed. */
+ * verified legacy rollback, 3 with the v1 slot that holds a whole program of another contract, and -1 for I/O or
+ * corruption states that must fail closed.
+ *
+ * A whole program of another contract (whole_of_another_contract) is not a rollback, since this runtime would never
+ * run it, and not damaged evidence. It counts only when nothing admitted is there, and it is chosen the way a
+ * rollback is: the slot the active record names, else the newest committed one; the commit writes the other slot, so
+ * an interrupted commit leaves it as it was and the next commit finds it again. A legacy one leaves no slot to
+ * avoid, and the commit goes on as on an empty store. */
 static int discover_rollback_slot(const zplc_pstore_config_t *config, unsigned *slot, uint32_t *generation) {
   unsigned active_slot;
   uint32_t active_generation;
@@ -344,6 +387,7 @@ static int discover_rollback_slot(const zplc_pstore_config_t *config, unsigned *
   int a;
   int b;
   int legacy;
+  int active_of_another_contract = 0;
 
   active = read_active(&active_slot, &active_generation);
   if (active < 0) {
@@ -359,6 +403,7 @@ static int discover_rollback_slot(const zplc_pstore_config_t *config, unsigned *
       *generation = active_generation;
       return 0;
     }
+    active_of_another_contract = a == 2 && generation_a == active_generation;
   }
 
   a = read_slot(config, 0U, 0, config->scratch, config->scratch_capacity, &length, &generation_a);
@@ -367,13 +412,7 @@ static int discover_rollback_slot(const zplc_pstore_config_t *config, unsigned *
     return -1;
   }
   if (a == 0 || b == 0) {
-    if (b == 0 && (a != 0 || generation_is_newer(generation_b, generation_a))) {
-      *slot = 1U;
-      *generation = generation_b;
-    } else {
-      *slot = 0U;
-      *generation = generation_a;
-    }
+    pick_slot(a, b, generation_a, generation_b, 0, slot, generation);
     return 0;
   }
 
@@ -383,6 +422,18 @@ static int discover_rollback_slot(const zplc_pstore_config_t *config, unsigned *
   }
   if (legacy == 0) {
     return 2;
+  }
+  if (active_of_another_contract) {
+    *slot = active_slot;
+    *generation = active_generation;
+    return 3;
+  }
+  if (a == 2 || b == 2) {
+    pick_slot(a, b, generation_a, generation_b, 2, slot, generation);
+    return 3;
+  }
+  if (legacy == 2) {
+    return 1;
   }
   return durable_state_exists() == 0 ? 1 : -1;
 }
@@ -395,7 +446,8 @@ static int discover_rollback_slot(const zplc_pstore_config_t *config, unsigned *
 /* What a commit does once it knows which slot is the rollback: write the new program to the other slot (or slot 0
  * when there is none), read it back, verify it, prepare, publish, commit the metadata. `current` is the result of
  * discover_rollback_slot() (0: a v1 slot, with its number and generation; 1: an empty store; 2: a verified legacy
- * program). The caller has admitted the artifact. */
+ * program; 3: the v1 slot of a whole program of another contract, which is not overwritten either). The caller has
+ * admitted the artifact. */
 static int commit_after_discovery(const zplc_pstore_config_t *config, int current, unsigned prior_slot, uint32_t generation,
                                   uint8_t *workspace, size_t program_size) {
   uint8_t meta[STORE_META_SIZE];
@@ -408,7 +460,7 @@ static int commit_after_discovery(const zplc_pstore_config_t *config, int curren
   if (highest_structural_generation(&generation) != 0) {
     return ZPLC_PROGRAM_STORE_COMMIT_ERROR;
   }
-  slot = current == 0 ? prior_slot ^ 1U : 0U;
+  slot = current == 0 || current == 3 ? prior_slot ^ 1U : 0U;
   generation = generation == UINT32_MAX ? 1U : generation + 1U;
   expected_header_crc = zplc_get_u32_le(workspace + 12U);
   total = program_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE;
@@ -543,7 +595,8 @@ int zplc_pstore_probe(const zplc_pstore_config_t *config, uint8_t *buffer, size_
     rollback_clear(rollback);
     return ZPLC_PROGRAM_STORE_COMMIT_ERROR;
   }
-  rollback->kind = found == 0 ? ZPLC_PSTORE_ROLLBACK_SLOT : (found == 1 ? ZPLC_PSTORE_ROLLBACK_EMPTY : ZPLC_PSTORE_ROLLBACK_LEGACY);
+  /* the kinds are in the order of discover_rollback_slot()'s answers */
+  rollback->kind = (uint8_t)(ZPLC_PSTORE_ROLLBACK_SLOT + (unsigned)found);
   rollback->slot = (uint8_t)slot;
   rollback->generation = generation;
   return 0;
@@ -578,10 +631,11 @@ int zplc_pstore_commit_probed(const zplc_pstore_config_t *config, const zplc_pst
       !artifact_fits(program_size, workspace_capacity) || !admits(config, workspace, program_size)) {
     return ZPLC_PROGRAM_STORE_COMMIT_ERROR;
   }
-  if (rollback->kind < ZPLC_PSTORE_ROLLBACK_SLOT || rollback->kind > ZPLC_PSTORE_ROLLBACK_LEGACY) {
+  if (rollback->kind < ZPLC_PSTORE_ROLLBACK_SLOT || rollback->kind > ZPLC_PSTORE_ROLLBACK_STALE) {
     return ZPLC_PROGRAM_STORE_COMMIT_ERROR; /* nothing was found, or it was found unverifiable: fail closed */
   }
-  /* the kinds are in the order of discover_rollback_slot()'s answers: a slot, an empty store, the first version */
+  /* the kinds are in the order of discover_rollback_slot()'s answers: a slot, an empty store, the first version, the
+   * slot of a program of another contract */
   current = (int)rollback->kind - (int)ZPLC_PSTORE_ROLLBACK_SLOT;
   if (records_digest(&digest) != 0 || digest != rollback->digest) {
     return ZPLC_PROGRAM_STORE_COMMIT_ERROR; /* the store changed since the rollback was found */

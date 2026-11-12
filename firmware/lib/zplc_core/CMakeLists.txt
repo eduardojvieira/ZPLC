@@ -881,6 +881,7 @@ target_include_directories(test_native_runtime_session PRIVATE
 target_compile_definitions(test_native_runtime_session PRIVATE
     ZPLC_EXPECTED_PRODUCT_VERSION="${ZPLC_CORE_VERSION_STR}"
     ZPLC_HAL_PERSIST_TESTING
+    ZPLC_STORE_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/store-before-draft-counter"
 )
 
 target_link_libraries(test_native_runtime_session PRIVATE zplc_core)

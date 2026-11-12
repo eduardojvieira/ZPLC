@@ -2871,6 +2871,74 @@ static void test_commit_rejects_unverified_durable_evidence(void) {
   setenv("ZPLC_PERSIST_ROOT", test_persist_root, 1);
 }
 
+/* 2.0.1: the store a runtime from before the draft counter left (tests/fixtures/store-before-draft-counter, the real
+ * files: programs of draft 0 in both slots behind valid records, and the keys of the first version) holds nothing
+ * this runtime runs and nothing damaged. program.load over it is a deploy, and the new program is the one a restart
+ * restores. */
+static void test_program_load_over_a_store_of_another_draft(void) {
+  static const char *const keys[] = {"program_v1_active",
+                                     "program_v1_slot_a_meta",
+                                     "program_v1_slot_a_payload",
+                                     "program_v1_slot_b_meta",
+                                     "program_v1_slot_b_payload",
+                                     "code_len",
+                                     "code"};
+  char root[] = "/tmp/zplc_store_old_draft_XXXXXX";
+  zplc_native_runtime_session_t session;
+  uint8_t record[128], program[16];
+  char hex[512], request[640], response[1024], event[1024];
+  size_t length = 0U;
+  unsigned index;
+  int copied = 1;
+
+  printf("\n=== Test: program.load over the store of a runtime from before the draft counter ===\n");
+  if (mkdtemp(root) == NULL) {
+    TEST_ASSERT(0, "mkdtemp succeeds for the store of another draft");
+    return;
+  }
+  for (index = 0U; index < sizeof(keys) / sizeof(keys[0]); index++) {
+    char path[512];
+    FILE *file;
+    size_t size = 0U;
+
+    (void)snprintf(path, sizeof(path), "%s/%s.bin", ZPLC_STORE_FIXTURE_DIR, keys[index]);
+    file = fopen(path, "rb");
+    if (file != NULL) {
+      size = fread(record, 1U, sizeof(record), file);
+      copied = fclose(file) == 0 && copied;
+    }
+    copied = copied && size != 0U && write_store_record(root, keys[index], record, size) == 0;
+  }
+  TEST_ASSERT(copied, "the seven files of the fixture are copied to a scratch store");
+  setenv("ZPLC_PERSIST_ROOT", root, 1);
+
+  length = emit_push32(program, length, 42U);
+  length = emit_store32(program, length, ZPLC_MEM_OPI_BASE);
+  length = emit_halt(program, length);
+  bytecode_to_task_hex(program, length, hex, sizeof(hex));
+
+  zplc_native_runtime_session_init(&session);
+  TEST_ASSERT(session.program_loaded == 0U, "nothing of the old store is restored");
+  snprintf(request, sizeof(request),
+           "{\"id\":\"over-old\",\"type\":\"request\",\"method\":\"program.load\",\"params\":{\"bytecode_hex\":\"%s\"}}", hex);
+  (void)zplc_native_runtime_session_handle_request(&session, request, response, sizeof(response), event, sizeof(event));
+  TEST_ASSERT(strstr(response, "PROGRAM_LOAD_FAILED") == NULL, "program.load over it is not a persistence failure");
+  TEST_ASSERT_CONTAINS(response, "\"program_generation\":1", "it loads as the first program of the session");
+  TEST_ASSERT(session.program_loaded == 1U, "and the session holds it");
+  zplc_native_runtime_session_shutdown(&session);
+
+  zplc_native_runtime_session_init(&session);
+  TEST_ASSERT(session.program_loaded == 1U, "a restart restores the new program");
+  (void)zplc_native_runtime_session_handle_request(
+      &session, "{\"id\":\"over-old-start\",\"type\":\"request\",\"method\":\"execution.start\",\"params\":{}}", response, sizeof(response),
+      event, sizeof(event));
+  (void)zplc_native_runtime_session_tick(&session, 100U, event, sizeof(event));
+  TEST_ASSERT(zplc_opi_read8(0U) == 42U, "and it is the one that runs");
+  zplc_native_runtime_session_shutdown(&session);
+  remove_persist_root(root);
+  setenv("ZPLC_PERSIST_ROOT", test_persist_root, 1);
+}
+
 /* RT-028, RT-032: an artifact of exactly the configured code size is stored and restored by the shared store.
  * The largest artifact the runtime accepts is the configured code size, stored and restored through the host
  * program store, which is the store the firmware uses. The artifact is a real one: the loader verifies it and the
@@ -4766,6 +4834,7 @@ int main(void) {
   test_restore_preserves_non_ok_hal_status();
   test_restore_stages_invalid_legacy_data();
   test_commit_rejects_unverified_durable_evidence();
+  test_program_load_over_a_store_of_another_draft();
   test_largest_artifact_deploys_and_restores();
   test_commit_fences_structural_prepared_generation();
   test_legacy_migrates_once();
