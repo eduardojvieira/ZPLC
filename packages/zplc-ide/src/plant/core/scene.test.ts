@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'bun:test';
 import type { PartDefinition, ScenePart } from '../contracts';
+import { plantEditorEn, plantEditorEs } from '../../i18n/catalog/plantEditor';
 import { createCatalogue } from './catalogue';
 import { migrateScene, parseScene, SCENE_SCHEMA_VERSION, sceneSignals, validateScene } from './scene';
 
@@ -139,5 +140,18 @@ describe('scene', () => {
     const parsed = migrateScene(two);
     if (!('scene' in parsed)) throw new Error('expected scene');
     expect(sceneSignals(parsed.scene, cat).map((x) => x.name)).toEqual(['Belt1.run', 'Belt2.run']);
+  });
+});
+
+describe('scene messages', () => {
+  it('PLT-016 the Spanish catalog has every plantScene key with the same placeholders', () => {
+    const marks = (s: string) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
+    const keys = Object.keys(plantEditorEn).filter((k) => k.startsWith('plantScene.'));
+    expect(keys.length).toBeGreaterThan(0);
+    for (const key of keys) {
+      const es = (plantEditorEs as Record<string, string>)[key];
+      expect(es, key).toBeDefined();
+      expect(marks(es!), key).toEqual(marks((plantEditorEn as Record<string, string>)[key]!));
+    }
   });
 });

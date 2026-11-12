@@ -1,3 +1,4 @@
+import { t } from '../../i18n';
 import type { ConfigField, PlantSceneFile, PlantSignalDef } from '../contracts';
 import type { Catalogue } from './catalogue';
 import { checkSceneStructure, SCENE_SCHEMA_VERSION, type SceneProblem } from './sceneSchema';
@@ -15,7 +16,7 @@ export function migrateScene(value: unknown): SceneResult {
       problems: [
         {
           path: 'schemaVersion',
-          message: `this scene has schemaVersion ${version}, written by a newer Studio; this Studio reads ${SCENE_SCHEMA_VERSION}`,
+          message: t('plantScene.versionNewer', { found: version, supported: SCENE_SCHEMA_VERSION }),
         },
       ],
     };
@@ -31,7 +32,7 @@ export function parseScene(text: string): SceneResult {
   try {
     value = JSON.parse(text);
   } catch (error) {
-    return { problems: [{ path: '', message: `scene is not valid JSON: ${error instanceof Error ? error.message : String(error)}` }] };
+    return { problems: [{ path: '', message: t('plantScene.json', { detail: error instanceof Error ? error.message : String(error) }) }] };
   }
   return migrateScene(value);
 }
@@ -39,13 +40,13 @@ export function parseScene(text: string): SceneResult {
 function checkConfigValue(key: string, field: ConfigField, v: number | string | boolean): string | undefined {
   const unit = field.unit ? ` ${field.unit}` : '';
   if (field.kind === 'number') {
-    if (typeof v !== 'number') return `${key} must be a number`;
-    if (field.max !== undefined && v > field.max) return `${key} ${v} is above the limit ${field.max}${unit}`;
-    if (field.min !== undefined && v < field.min) return `${key} ${v} is below the limit ${field.min}${unit}`;
+    if (typeof v !== 'number') return t('plantScene.mustBeNumber', { key });
+    if (field.max !== undefined && v > field.max) return t('plantScene.aboveLimit', { key, value: v, limit: field.max, unit });
+    if (field.min !== undefined && v < field.min) return t('plantScene.belowLimit', { key, value: v, limit: field.min, unit });
   } else if (field.kind === 'boolean') {
-    if (typeof v !== 'boolean') return `${key} must be true or false`;
+    if (typeof v !== 'boolean') return t('plantScene.mustBeBoolean', { key });
   } else if (typeof v !== 'string' || !(field.values ?? []).includes(v)) {
-    return `${key} ${JSON.stringify(v)} is not one of: ${(field.values ?? []).join(', ')}`;
+    return t('plantScene.notOneOf', { key, value: JSON.stringify(v), values: (field.values ?? []).join(', ') });
   }
   return undefined;
 }
@@ -59,13 +60,11 @@ export function validateScene(value: unknown, catalogue: Catalogue): SceneProble
     const base = `parts[${i}]`;
     const def = catalogue.get(p.part);
     if (!def) {
-      out.push({
-        path: `${base}.part`,
-        message: `unknown part "${p.part}"; the catalogue has: ${catalogue
-          .list()
-          .map((d) => d.id)
-          .join(', ')}`,
-      });
+      const known = catalogue
+        .list()
+        .map((d) => d.id)
+        .join(', ');
+      out.push({ path: `${base}.part`, message: t('plantScene.unknownPart', { part: p.part, known }) });
       return;
     }
     for (const key of Object.keys(p.config)) {
@@ -73,7 +72,7 @@ export function validateScene(value: unknown, catalogue: Catalogue): SceneProble
       if (!field) {
         out.push({
           path: `${base}.config.${key}`,
-          message: `unknown setting "${key}" for part "${p.part}"; it has: ${Object.keys(def.config).join(', ')}`,
+          message: t('plantScene.unknownSetting', { key, part: p.part, known: Object.keys(def.config).join(', ') }),
         });
         continue;
       }
