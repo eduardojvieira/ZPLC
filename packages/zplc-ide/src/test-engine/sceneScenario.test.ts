@@ -266,13 +266,29 @@ describe('a scene scenario', () => {
     const result = await runScenario(scenario, new Uint8Array([1]), fakeRuntime().runtime);
     // eye sees the item from 30 ms of plant time = the scan at 20 ms (the plant leads the scan by one advance); the belt stops after it
     const belt = result.trace.map((sample) => [sample.atMs, sample.outputs['Cell.Belt']]);
-    expect(belt).toEqual([[0, true], [10, true], [20, false], [30, false], [40, false], [50, false], [60, false]]);
+    expect(belt).toEqual([
+      [0, true],
+      [10, true],
+      [20, false],
+      [30, false],
+      [40, false],
+      [50, false],
+      [60, false],
+    ]);
   });
 
   it('a scene block with an unknown part action reports a located problem', () => {
     const { core } = fakeCore();
     const bad = sceneScenario({
-      scene: { file: 'scene.json', map: 'plant-map.json', script: [{ atMs: 0, operate: { signal: 'StartButton.pressed', value: true } }, { atMs: 10, emit: { kind: 'box', at: [0, 0, 0] } }, { atMs: 20, fault: { part: 'Belt1', action: 'melt' } }] },
+      scene: {
+        file: 'scene.json',
+        map: 'plant-map.json',
+        script: [
+          { atMs: 0, operate: { signal: 'StartButton.pressed', value: true } },
+          { atMs: 10, emit: { kind: 'box', at: [0, 0, 0] } },
+          { atMs: 20, fault: { part: 'Belt1', action: 'melt' } },
+        ],
+      },
     });
     expect(() => compileScenario(bad, cellMap(), context(core))).toThrow(
       'scene.script[2].fault.action: "melt" is not an action of Belt1; it has: stall, jam',
@@ -281,12 +297,15 @@ describe('a scene scenario', () => {
 
   it('SCN-005 a malformed block, an unknown part, an unmapped panel signal and an unaligned time are refused with their path', () => {
     const { core } = fakeCore();
-    const compile = (script: unknown) => () => compileScenario(sceneScenario({ scene: { file: 'scene.json', map: 'plant-map.json', script } }), cellMap(), context(core));
+    const compile = (script: unknown) => () =>
+      compileScenario(sceneScenario({ scene: { file: 'scene.json', map: 'plant-map.json', script } }), cellMap(), context(core));
     expect(compile([{ atMs: 0 }])).toThrow('scene.script[0]: must have atMs and exactly one of');
     expect(compile([{ atMs: 0, fault: { part: 'Nope', action: 'jam' } }])).toThrow('scene.script[0].fault.part: "Nope"');
     expect(compile([{ atMs: 0, operate: { signal: 'Ghost.pressed', value: true } }])).toThrow('scene.script[0].operate.signal');
     expect(compile([{ atMs: 5, operate: { signal: 'StartButton.pressed', value: true } }])).toThrow('align to tickMs');
-    expect(() => compileScenario(sceneScenario({ scene: { file: '../x', map: 'm', script: [] } }), cellMap(), context(core))).toThrow('scene.file');
+    expect(() => compileScenario(sceneScenario({ scene: { file: '../x', map: 'm', script: [] } }), cellMap(), context(core))).toThrow(
+      'scene.file',
+    );
   });
 
   it('PLT-017 a scenario event cannot write an input the scene plant owns, and a tick off the plant step is refused', () => {
@@ -294,8 +313,12 @@ describe('a scene scenario', () => {
     expect(() => compileScenario(sceneScenario({ events: [{ atMs: 0, set: { 'Cell.Eye': true } }] }), cellMap(), context(core))).toThrow(
       'plant-owned',
     );
-    expect(() => compileScenario(sceneScenario({ tickMs: 12, durationMs: 60 }), cellMap(), context(core))).toThrow('multiple of the plant step 5');
-    expect(() => compileScenario(sceneScenario({ events: [{ atMs: 0, set: { 'Cell.Free': true } }] }), cellMap(), context(core))).not.toThrow();
+    expect(() => compileScenario(sceneScenario({ tickMs: 12, durationMs: 60 }), cellMap(), context(core))).toThrow(
+      'multiple of the plant step 5',
+    );
+    expect(() =>
+      compileScenario(sceneScenario({ events: [{ atMs: 0, set: { 'Cell.Free': true } }] }), cellMap(), context(core)),
+    ).not.toThrow();
   });
 
   it('PLT-010 running a scene scenario twice gives the same trace (the core is reset first)', async () => {

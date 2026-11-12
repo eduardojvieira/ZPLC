@@ -10,7 +10,9 @@ describe('compileSceneBlock', () => {
   });
 
   it('SCN-005 collects located problems instead of throwing', () => {
-    expect(compileSceneBlock({ ...block, script: [{ atMs: -1, operate: {} }] })).toEqual({ problems: ['scene.script[0].atMs: must be a non-negative integer'] });
+    expect(compileSceneBlock({ ...block, script: [{ atMs: -1, operate: {} }] })).toEqual({
+      problems: ['scene.script[0].atMs: must be a non-negative integer'],
+    });
     expect(compileSceneBlock({ ...block, extra: 1 })).toEqual({ problems: ['scene: must have exactly the keys file, map, script'] });
     expect(compileSceneBlock(7)).toEqual({ problems: ['scene: must be an object'] });
     expect(compileSceneBlock({ ...block, script: [{ atMs: 0, emit: { kind: 'box', at: [0, 0] } }] })).toEqual({
@@ -21,9 +23,16 @@ describe('compileSceneBlock', () => {
 
 describe('factTruthy', () => {
   it('SCN-005 a fact is true-ish when a number is above 0, a boolean is true or a string is not empty', () => {
-    expect([factTruthy(1), factTruthy(0), factTruthy(-1), factTruthy(true), factTruthy(false), factTruthy('a'), factTruthy(''), factTruthy(undefined)]).toEqual([
-      true, false, false, true, false, true, false, false,
-    ]);
+    expect([
+      factTruthy(1),
+      factTruthy(0),
+      factTruthy(-1),
+      factTruthy(true),
+      factTruthy(false),
+      factTruthy('a'),
+      factTruthy(''),
+      factTruthy(undefined),
+    ]).toEqual([true, false, false, true, false, true, false, false]);
   });
 });
 

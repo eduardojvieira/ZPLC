@@ -74,7 +74,12 @@ export function compileSceneBlock(input: unknown): SceneScenarioBlock | { proble
 }
 
 /** Located problems of a script against the scene it runs on: unknown panel signals, parts and fault actions. */
-export function validateSceneScript(script: readonly SceneScriptEvent[], scene: PlantSceneFile, port: ScenarioPlantPort, catalogue: Catalogue): string[] {
+export function validateSceneScript(
+  script: readonly SceneScriptEvent[],
+  scene: PlantSceneFile,
+  port: ScenarioPlantPort,
+  catalogue: Catalogue,
+): string[] {
   const problems: string[] = [];
   const panel = new Set(port.core.signals.filter((signal) => signal.direction === 'sensor').map((signal) => signal.name));
   script.forEach((event, index) => {
@@ -87,7 +92,9 @@ export function validateSceneScript(script: readonly SceneScriptEvent[], scene: 
       else {
         const actions = catalogue.get(part.part)?.actions ?? [];
         if (!actions.includes(event.fault.action))
-          problems.push(`${path}.fault.action: "${event.fault.action}" is not an action of ${part.name}; it has: ${actions.join(', ') || 'none'}`);
+          problems.push(
+            `${path}.fault.action: "${event.fault.action}" is not an action of ${part.name}; it has: ${actions.join(', ') || 'none'}`,
+          );
       }
     }
   });
@@ -119,11 +126,13 @@ export async function exchangeScan(
     else core.act(event.fault.part, event.fault.action);
   }
   const commands: Record<string, boolean | number> = {};
-  for (const [name, signal] of Object.entries(map.signals)) if (signal.direction === 'command') commands[name] = await readCommand(signal.point);
+  for (const [name, signal] of Object.entries(map.signals))
+    if (signal.direction === 'command') commands[name] = await readCommand(signal.point);
   core.apply(commands);
   core.advance(scanMs);
   const sensed = core.sense();
   const sensors: Record<string, boolean | number> = {};
-  for (const [name, signal] of Object.entries(map.signals)) if (signal.direction === 'sensor' && name in sensed) sensors[name] = sensed[name]!;
+  for (const [name, signal] of Object.entries(map.signals))
+    if (signal.direction === 'sensor' && name in sensed) sensors[name] = sensed[name]!;
   await writeSensors(sensors);
 }
