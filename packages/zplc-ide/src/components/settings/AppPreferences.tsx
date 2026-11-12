@@ -14,11 +14,13 @@ import {
   AUTOSAVE_CHOICES,
   DENSITY_CHOICES,
   LANGUAGE_CHOICES,
+  PLANT_QUALITY_CHOICES,
   SAVE_BEFORE_RUN_CHOICES,
   TAB_SIZE_CHOICES,
   type AppSettings,
   type Density,
   type Language,
+  type PlantQualitySetting,
   type SaveBeforeRun,
 } from '../../utils/appSettings';
 import { describeUpdateCheck, runUpdateCheck } from '../../ipc/updateCheckBridge';
@@ -36,6 +38,12 @@ const SAVE_BEFORE_RUN_NAMES = {
   always: 'studio.flow.saveBeforeRun.always',
   ask: 'studio.flow.saveBeforeRun.ask',
 } as const satisfies Record<SaveBeforeRun, MessageKey>;
+const PLANT_QUALITY_NAMES = {
+  auto: 'plant.quality.auto',
+  low: 'plant.quality.low',
+  medium: 'plant.quality.medium',
+  high: 'plant.quality.high',
+} as const satisfies Record<PlantQualitySetting, MessageKey>;
 const DENSITY_NAMES = { comfortable: 'preferences.density.comfortable', compact: 'preferences.density.compact' } as const satisfies Record<
   Density,
   MessageKey
@@ -132,6 +140,12 @@ export function AppPreferences({ includeTheme = true }: { includeTheme?: boolean
           field="saveBeforeRun"
           options={SAVE_BEFORE_RUN_CHOICES}
           name={(choice) => t(SAVE_BEFORE_RUN_NAMES[choice])}
+        />
+        <Choice
+          label={t('plant.quality.label')}
+          field="plantQuality"
+          options={PLANT_QUALITY_CHOICES}
+          name={(choice) => t(PLANT_QUALITY_NAMES[choice])}
         />
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-[var(--color-surface-600)] pt-3">

@@ -21,10 +21,14 @@ export const AUTOSAVE_CHOICES = [0, 5, 15, 30, 60] as const;
 /** Whether Run and Build save a modified project first (`always`, the 2.0 behaviour) or ask (FLW-006). */
 export const SAVE_BEFORE_RUN_CHOICES = ['always', 'ask'] as const;
 
+/** The 3D plant's quality (VIS-005, PLS-012): `auto` picks a level from the graphics at first run. */
+export const PLANT_QUALITY_CHOICES = ['auto', 'low', 'medium', 'high'] as const;
+
 export type TabSize = (typeof TAB_SIZE_CHOICES)[number];
 export type Density = (typeof DENSITY_CHOICES)[number];
 export type Language = LanguageSetting;
 export type SaveBeforeRun = (typeof SAVE_BEFORE_RUN_CHOICES)[number];
+export type PlantQualitySetting = (typeof PLANT_QUALITY_CHOICES)[number];
 export type AutosaveSeconds = (typeof AUTOSAVE_CHOICES)[number];
 
 export interface AppSettings {
@@ -42,6 +46,7 @@ export interface AppSettings {
    */
   hideSolutions: boolean;
   saveBeforeRun: SaveBeforeRun;
+  plantQuality: PlantQualitySetting;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -55,6 +60,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   unlockAllLessons: false,
   hideSolutions: false,
   saveBeforeRun: 'always',
+  plantQuality: 'auto',
 };
 
 /** What the settings need of a storage; the renderer's `localStorage` has it. */
@@ -69,7 +75,7 @@ const oneOf = <T extends readonly unknown[]>(choices: T, value: unknown): value 
 export function parseSettings(raw: unknown, defaults: AppSettings = DEFAULT_SETTINGS): AppSettings {
   const value = typeof raw === 'object' && raw !== null && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
   const { editorFontSize, editorTabSize, density, language, autosaveSeconds, checkForUpdates, unlockAllLessons, hideSolutions } = value;
-  const { saveBeforeRun } = value;
+  const { saveBeforeRun, plantQuality } = value;
   return {
     editorFontSize:
       typeof editorFontSize === 'number' &&
@@ -86,6 +92,7 @@ export function parseSettings(raw: unknown, defaults: AppSettings = DEFAULT_SETT
     unlockAllLessons: typeof unlockAllLessons === 'boolean' ? unlockAllLessons : defaults.unlockAllLessons,
     hideSolutions: typeof hideSolutions === 'boolean' ? hideSolutions : defaults.hideSolutions,
     saveBeforeRun: oneOf(SAVE_BEFORE_RUN_CHOICES, saveBeforeRun) ? saveBeforeRun : defaults.saveBeforeRun,
+    plantQuality: oneOf(PLANT_QUALITY_CHOICES, plantQuality) ? plantQuality : defaults.plantQuality,
   };
 }
 
