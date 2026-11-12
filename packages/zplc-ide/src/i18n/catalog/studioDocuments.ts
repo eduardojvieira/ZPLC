@@ -8,6 +8,12 @@ export const studioDocumentsEn = {
   'studio.document.moveToOther': 'Move to the other group',
   'studio.document.maximise': 'Maximise the document',
   'studio.document.maximised': 'The document is maximised. Use the same command again to restore the layout.',
+  'studio.plant.views': 'Plant view',
+  'studio.plant.close': 'Close the plant',
+  'studio.plant.live': 'Live',
+  'studio.plant.replay': 'Replay',
+  'studio.plant.empty': 'There is no plant to show yet. Open a plant lesson, or run the project tests to record a replay.',
+  'studio.plant.showTests': 'Show the tests',
 } as const;
 export const studioDocumentsEs: Record<keyof typeof studioDocumentsEn, string> = {
   'studio.document.group.first': 'Grupo de editor izquierdo',
@@ -18,4 +24,11 @@ export const studioDocumentsEs: Record<keyof typeof studioDocumentsEn, string> =
   'studio.document.moveToOther': 'Mover al otro grupo',
   'studio.document.maximise': 'Maximizar el documento',
   'studio.document.maximised': 'El documento está maximizado. Usa el mismo comando otra vez para restaurar el diseño.',
+  'studio.plant.views': 'Vista de la planta',
+  'studio.plant.close': 'Cerrar la planta',
+  'studio.plant.live': 'En vivo',
+  'studio.plant.replay': 'Repetición',
+  'studio.plant.empty':
+    'Todavía no hay una planta para mostrar. Abre una lección con planta, o ejecuta las pruebas del proyecto para grabar una repetición.',
+  'studio.plant.showTests': 'Mostrar las pruebas',
 };

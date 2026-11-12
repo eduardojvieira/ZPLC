@@ -2070,6 +2070,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectFilesProtocol.test.ts","test":"recent project message schema (IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/sessionStore.test.ts","test":"session store (IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/sessionStoreIpc.test.ts","test":"session IPC boundary (IDE-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/sessionStoreProtocol.test.ts","test":"session split (SHL-006, IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/sessionStoreProtocol.test.ts","test":"session state format (IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/WelcomeScreen.dom.test.tsx","test":"Welcome screen (UX-022, IDE-008) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/welcomeRecent.test.ts","test":"the rows of the Recent section (IDE-008)"},
@@ -2086,6 +2087,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/sessionState.test.ts","test":"finding the project file an editor model shows (IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/sessionState.test.ts","test":"planning the restore of a saved session (IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/sessionState.test.ts","test":"reading the split the panel library reports (IDE-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/sessionState.test.ts","test":"the editor split in the session (SHL-006, IDE-008)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"12 Restore the session"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"14 A recent project that is gone","partial":true}
   ],
@@ -2548,6 +2550,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/windowSurface.test.ts","test":"UX-016 gives the native window the canvas token of each theme until the renderer reports its own"}
   ],
   "UX-017": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/EditorArea.split.dom.test.tsx","test":"UX-017 the separator between the groups is operable by keyboard"},
     {"kind":"unit","ref":"packages/zplc-ide/src/layout/separatorSteps.test.ts","test":"UX-017 gives the difference to the panel after the separator, so that the group still adds up to 100"},
     {"kind":"unit","ref":"packages/zplc-ide/src/layout/separatorSteps.test.ts","test":"UX-017 goes to the limits with Home and End and never past them"},
     {"kind":"unit","ref":"packages/zplc-ide/src/layout/separatorSteps.test.ts","test":"UX-017 ignores a key that does not move this separator, and a value it cannot read"},
@@ -2640,6 +2643,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/components/panelStates.test.tsx","test":"UX-021 offers the first next step the state allows: Step once connected, Connect before"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/panelStates.test.tsx","test":"UX-021 shows a title, a sentence and the next action, which is the registered command by its title"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/panelStates.test.tsx","test":"panel empty states (UX-021)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/shell/PlantDocument.test.tsx","test":"PLS-001 with neither it shows an empty state that names the next action (UX-021)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/store/notifications.test.ts","test":"a failure offers its way back (IDE-021, UX-021)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"UX-021 renders an error state as an alert with its reason and a recovery action"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"UX-021 shows nothing for a loading state before its delay, and the spinner with its phrase once there is none"},
@@ -2979,7 +2983,7 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"LRN-017, RT-009: the writes to the input image that a running program receives are staged and reach the image at"}
   ],
   "LRN-018": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/LabPanel.dom.test.tsx","test":"Lab (LRN-018, LRN-020) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LabPanel.dom.test.tsx","test":"the replay of a recorded plant trace (LRN-018, LRN-020) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/PlantView.test.tsx","test":"plant schematics (LRN-018, LRN-037)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/plantEngine.test.ts","test":"plant engine (LRN-018, LRN-019)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/plantLoop.test.ts","test":"closed-loop plant session (LRN-018)"},
@@ -2992,8 +2996,9 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"52 A lesson plant runs live in closed loop, with pause, step and a fault action, and the recorded run stays a labelled replay","partial":true}
   ],
   "LRN-020": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/LabPanel.dom.test.tsx","test":"Lab (LRN-018, LRN-020) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LabPanel.dom.test.tsx","test":"the replay of a recorded plant trace (LRN-018, LRN-020) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/labPlayback.test.ts","test":"keeps the Lab view recorded, manually controllable, and explicitly non-HIL","note":"LRN-020: the recorded run stays available as a replay of recorded samples and is labelled as a replay that is not live runtime, hardware or HIL evidence; the live closed loop is journey 52"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/shell/PlantDocument.test.tsx","test":"PLS-001 with a recorded plant trace it offers the replay, labelled as a replay (LRN-020)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"52 A lesson plant runs live in closed loop, with pause, step and a fault action, and the recorded run stays a labelled replay","partial":true}
   ],
   "LRN-021": [

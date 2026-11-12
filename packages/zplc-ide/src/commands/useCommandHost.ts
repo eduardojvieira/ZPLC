@@ -13,6 +13,7 @@ import { openLearnHome } from '../learn/learnUi';
 import { openConfigEditorFromNavigator } from '../navigator/openConfigEditor';
 import { useNewProjectDialog } from '../store/newProjectDialog';
 import { useShellLayout } from '../store/useShellLayout';
+import { usePlantDocument } from '../store/usePlantDocument';
 import type { ConsoleTab } from '../types';
 import { bindCommands, publishCommandState, runCommand } from './bus';
 import { COMMAND_LIST, commandById, isCommandId, type CommandId } from './registry';
@@ -60,6 +61,11 @@ const showPanel = (tab: ConsoleTab) => (): void => {
   focusSoon(`#console-tab-${tab}`);
 };
 
+const showPlant = (): void => {
+  usePlantDocument.getState().show();
+  focusSoon('#editor-tab-plant');
+};
+
 const showActivity = (view: 'project' | 'search' | 'learn' | 'tests'): void => {
   useShellLayout.getState().showActivity(view);
   focusSoon(`[data-activity="${view}"]`);
@@ -90,6 +96,7 @@ export function useShellCommands(): void {
         'view.showProject': () => showActivity('project'),
         'view.showSearch': () => showActivity('search'),
         'view.showLearn': () => showActivity('learn'),
+        'view.plant': showPlant,
         'view.output': showPanel('output'),
         'view.problems': showPanel('problems'),
         'view.tests': () => {

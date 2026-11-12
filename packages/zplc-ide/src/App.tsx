@@ -51,7 +51,7 @@ import { useStatusAnnouncements } from './hooks/useStatusAnnouncements';
 
 interface WorkbenchParts {
   Toolbar: ComponentType<{ debugController: DebugController }>;
-  EditorArea: ComponentType;
+  EditorArea: ComponentType<{ debugController?: DebugController }>;
   Console: ComponentType<{ debugController: DebugController }>;
 }
 

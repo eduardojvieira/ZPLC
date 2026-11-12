@@ -6,7 +6,7 @@ import { PLC_LANGUAGES, type PLCLanguage } from '../types';
 
 export type ViewId = string;
 export const SETTINGS_VIEW_ID: ViewId = 'settings';
-/** The plant document (spec 013 PLS-001); the task that builds it renders it. */
+/** The plant document (spec 013 PLS-001): `shell/PlantDocument.tsx`, opened by `view.plant`. */
 export const PLANT_VIEW_ID: ViewId = 'plant';
 
 /** The languages edited as text in Monaco; every other language of the project has a visual editor (LD, FBD, SFC). */

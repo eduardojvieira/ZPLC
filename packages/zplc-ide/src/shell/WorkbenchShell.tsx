@@ -13,6 +13,7 @@ import { useT } from '../i18n';
 import type { DebugController } from '../hooks/useDebugController';
 import { openLearnHome, useLearnUi } from '../learn/learnUi';
 import { useIDEStore } from '../store/useIDEStore';
+import { usePlantDocument } from '../store/usePlantDocument';
 import { lessonSurface, startShellRouting } from './shellRouting';
 import { toggleMaximise, useShellLayout } from '../store/useShellLayout';
 import { bindCommands } from '../commands/bus';
@@ -24,7 +25,7 @@ import { claimLostFocus } from './claimLostFocus';
 import { COMPACT_MAX_WIDTH, useShellDensity } from './shellDensity';
 
 interface WorkbenchShellProps {
-  EditorArea: ComponentType;
+  EditorArea: ComponentType<{ debugController?: DebugController }>;
   Console: ComponentType<{ debugController: DebugController }>;
   debugController: DebugController;
 }
@@ -82,7 +83,10 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
   }, [maximised]);
 
   // A request for the lessons, the explorer or the inspector, made by name as a console tab, shows that view.
-  useEffect(() => startShellRouting(useIDEStore, () => useShellLayout.getState()), []);
+  useEffect(
+    () => startShellRouting(useIDEStore, () => ({ ...useShellLayout.getState(), showPlant: () => usePlantDocument.getState().show() })),
+    [],
+  );
 
   // A project that opens while the workbench is already showing brings its own split; the first one is the group's default.
   useEffect(() => {
@@ -172,7 +176,7 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
             <Panel id="editor" defaultSize="72%" minSize="30%" className="overflow-hidden">
               <main ref={editorRegion} tabIndex={-1} aria-label={t('shell.editor.label')} className="relative h-full min-h-0">
                 <ErrorBoundary region="Editor">
-                  <EditorArea />
+                  <EditorArea debugController={debugController} />
                 </ErrorBoundary>
                 {/* The Learn home covers the editor without unmounting it, so a lesson's buffers and cursor are where they were
                     when it closes. */}

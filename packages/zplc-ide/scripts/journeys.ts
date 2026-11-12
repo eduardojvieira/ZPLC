@@ -7486,13 +7486,12 @@ export const JOURNEYS: Journey[] = [
       };
       await walk('tests', ['zplc.json'], ['Choose zplc.json', 'Run host scenarios', 'Select the saved']);
       await walk('interlocks', ['Cobertura de enclavamientos declarados'], ['Declared interlock coverage', 'Check declared interlocks']);
-      await walk('lab', ['Laboratorio'], ['Run the saved host scenarios']);
       await walk('changes', ['cambio'], ['Review active ST change', 'requires the desktop app']);
       await walk('agent', ['Actualizar el estado'], ['Provider settings', 'Refresh status']);
       const tabs = await app.eval<string[]>(
         `[...document.querySelectorAll('[role="tab"][id^="console-tab-"]')].map((tab) => tab.textContent.trim())`,
       );
-      for (const label of ['Salida', 'Problemas', 'Enclavamientos', 'Laboratorio', 'Cambios', 'Agente'])
+      for (const label of ['Salida', 'Problemas', 'Enclavamientos', 'Cambios', 'Agente'])
         assert(
           tabs.some((tab) => tab.includes(label)),
           `The results tabs are ${JSON.stringify(tabs)}, without ${label}.`,
@@ -7763,7 +7762,14 @@ export const JOURNEYS: Journey[] = [
       await connectAndRun(app);
 
       // 1. The plant is drawn and bound by the mapping the lesson ships: no name is typed anywhere.
-      await app.click(tab('Lab', 'prefix'));
+      // the plant is a document of the editor area (spec 013 PLS-001): shown by its command, as a keyboard user does
+      await app.press('Ctrl+Shift+P');
+      await app.type('show the plant');
+      await app.until(
+        'the palette to list Show the plant',
+        async () => (await app.eval<boolean>(`Boolean(document.querySelector('[role="option"][data-command="view.plant"]'))`)) || undefined,
+      );
+      await app.press('Enter');
       await patiently('the live motor plant', async () => (await app.visible(css('[data-plant="motor-v1"]'))) || undefined);
       assert((await fact()) === 'plant.motor.stopped', `The motor starts as ${await fact()}.`);
       // Everything the two live regions are told, in order (a later message replaces an earlier one in the region itself).
@@ -7818,7 +7824,9 @@ export const JOURNEYS: Journey[] = [
       );
 
       // 5. The recorded run stays, and says it is a replay.
+      await app.click(tab('Tests', 'prefix'), 'the Tests tab');
       await app.click(button('Run host scenarios'), 'Run host scenarios');
+      await app.click(button('Replay'), 'the Replay view of the plant document');
       await patiently(
         'the replay of the recorded run',
         async () => (await app.eval<string>(`document.body.innerText`)).includes('Replay of a recorded run') || undefined,
