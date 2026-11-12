@@ -26,6 +26,7 @@ interface ManifestChunk {
 }
 
 const packageRoot = join(import.meta.dir, '..');
+const loaderPath = join(packageRoot, 'src/plant/ui/loadPlantEngine.ts');
 let outDir = '';
 let manifest: Record<string, ManifestChunk> = {};
 
@@ -58,10 +59,29 @@ beforeAll(async () => {
   try {
     await build({
       root: packageRoot,
+      plugins: [
+        {
+          name: 'plant-engine-fixture',
+          resolveId: (id) => (id === '\0plant-engine-fixture' ? id : null),
+          load: (id) =>
+            id === '\0plant-engine-fixture'
+              ? `import { loadPlantEngine } from ${JSON.stringify(loaderPath)}; globalThis.plantEngineFixture = loadPlantEngine;`
+              : null,
+        },
+      ],
       configFile: join(packageRoot, 'vite.config.ts'),
       mode: 'production',
       logLevel: 'silent',
-      build: { outDir, emptyOutDir: true, manifest: true, sourcemap: true, reportCompressedSize: false },
+      build: {
+        outDir,
+        emptyOutDir: true,
+        manifest: true,
+        sourcemap: true,
+        reportCompressedSize: false,
+        // Nothing in the app imports the plant engine yet (Task V4 does). A side-effecting second entry holds the loader so its
+        // chunk is built and measured; it is not reachable from index.html, so it is in no start chunk.
+        rollupOptions: { input: { index: join(packageRoot, 'index.html'), plantEngine: '\0plant-engine-fixture' } },
+      },
     });
   } finally {
     if (nodeEnv === undefined) delete process.env.NODE_ENV;
@@ -99,6 +119,23 @@ describe('the chunks the Welcome screen loads at start (IDE-015)', () => {
     expect(lazyModules.some((source) => source.endsWith('src/components/settings/ProjectSettings.tsx'))).toBe(true);
     expect(lazyModules.some((source) => /src\/editors\/ld\/LDEditor\.tsx$/.test(source))).toBe(true);
     expect(kilobytes(start)).toBeLessThan(kilobytes(lazy));
+  });
+});
+
+describe('the plant engine chunk (VIS-012, VIS-013)', () => {
+  const engineModule = /node_modules\/(three|jolt-physics)\//;
+
+  it('VIS-012 three and Jolt are in no start chunk and arrive through a dynamic import', () => {
+    const start = new Set(startChunks());
+    const inStart = [...start].filter((file) => sourcesOf(file).some((source) => engineModule.test(source)));
+    expect(inStart).toEqual([]);
+  });
+
+  it('VIS-013 the plant chunk exists and stays under 6 MB', () => {
+    const holders = allChunks().filter((file) => sourcesOf(file).some((source) => /node_modules\/jolt-physics\//.test(source)));
+    expect(holders.length).toBeGreaterThan(0);
+    const bytes = holders.reduce((sum, file) => sum + readFileSync(join(outDir, file)).length, 0);
+    expect(bytes).toBeLessThan(6 * 1024 * 1024);
   });
 });
 

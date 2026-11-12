@@ -1,0 +1,11 @@
+{
+  "task": "T0",
+  "dependencies": [
+    { "name": "three", "version": "0.187.0", "license": "MIT", "kind": "dependency", "chunk": "assets/three.module-*.js", "chunkBytes": 753355 },
+    { "name": "jolt-physics", "version": "1.1.1", "license": "MIT", "kind": "dependency", "chunk": "assets/jolt-physics.wasm-compat-*.js", "chunkBytes": 3565805 },
+    { "name": "@types/three", "version": "0.187.0", "license": "MIT", "kind": "devDependency", "chunk": null, "chunkBytes": 0 }
+  ],
+  "lazyChunksTotalBytes": 4319160,
+  "limitBytes": 6291456,
+  "measuredBy": "production build with the loader as a side-effecting second entry (scripts/welcomeBundle.test.ts); linux x64"
+}

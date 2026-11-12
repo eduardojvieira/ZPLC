@@ -10,6 +10,8 @@ import { toolchainEs } from './catalog/toolchain';
 import { commtagsEs } from './catalog/commtags';
 import { projectEs } from './catalog/project';
 import { labEs } from './catalog/lab';
+import { plantEditorEs } from './catalog/plantEditor';
+import { plantViewEs } from './catalog/plantView';
 import { editorGesturesEs } from './catalog/editorGestures';
 import { ldEs } from './catalog/ld';
 import { importArchiveEs } from './catalog/importArchive';
@@ -631,6 +633,8 @@ export const es: Record<MessageKey, string> = {
   ...commtagsEs,
   ...projectEs,
   ...labEs,
+  ...plantViewEs,
+  ...plantEditorEs,
   ...editorGesturesEs,
   ...ldEs,
   ...importArchiveEs,
