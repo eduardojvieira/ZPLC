@@ -50,6 +50,8 @@ export interface SessionInput {
   /** The split the user chose in this project, or null when they never resized. */
   layout: WorkspaceLayout | null;
   consoleCollapsed: boolean;
+  /** The second editor group (SHL-006): file ids among the open tabs, the one it shows, and the width of the first group. */
+  split?: { second: readonly string[]; activeSecond: string | null; ratio: number } | null;
 }
 
 /** The document to store for the open workbench. Unsaved content is not part of it: only paths and positions. */
@@ -70,7 +72,24 @@ export function captureSession(input: SessionInput): SessionState {
     if (id === input.activeFileId) activePath = path;
   }
   const layout = input.layout ?? (input.consoleCollapsed ? DEFAULT_WORKSPACE_LAYOUT : null);
-  return { schemaVersion: 1, tabs, activePath, panels: layout ? { ...layout, consoleCollapsed: input.consoleCollapsed } : null };
+  const state: SessionState = {
+    schemaVersion: 1,
+    tabs,
+    activePath,
+    panels: layout ? { ...layout, consoleCollapsed: input.consoleCollapsed } : null,
+  };
+  // Only recorded tabs can be in the second group; one group, the common case, writes the document 2.0 wrote.
+  const pathOf = (id: string | null) => (id === null ? undefined : tabs.find((tab) => input.files.get(id)?.path === tab.path)?.path);
+  const second = (input.split?.second ?? []).flatMap((id) => pathOf(id) ?? []);
+  if (input.split && second.length > 0) {
+    const activeSecond = pathOf(input.split.activeSecond);
+    state.split = {
+      second,
+      activeSecond: activeSecond !== undefined && second.includes(activeSecond) ? activeSecond : null,
+      ratio: input.split.ratio,
+    };
+  }
+  return state;
 }
 
 export interface RestorePlan {
@@ -82,6 +101,8 @@ export interface RestorePlan {
   layout: WorkspaceLayout | null;
   /** Whether the lower panel was collapsed; null when the session says nothing about the panels. */
   consoleCollapsed: boolean | null;
+  /** The second editor group, only with files that still exist; null for one group (a session saved by 2.0 has none). */
+  split: { secondPaths: string[]; activeSecondPath: string | null; ratio: number } | null;
 }
 
 /**
@@ -91,11 +112,21 @@ export function planRestore(state: SessionState, exists: (path: string) => boole
   const kept = state.tabs.filter((tab) => exists(tab.path));
   const tabPaths = kept.map((tab) => tab.path);
   const activePath = state.activePath !== null && tabPaths.includes(state.activePath) ? state.activePath : (tabPaths.at(-1) ?? null);
+  const secondPaths = (state.split?.second ?? []).filter((path) => tabPaths.includes(path));
+  const activeSecond = state.split?.activeSecond ?? null;
   return {
     tabPaths,
     activePath,
     viewStates: new Map(kept.map((tab) => [tab.path, { line: tab.line, column: tab.column, scrollTop: tab.scrollTop }])),
     layout: state.panels && isUsableLayout(state.panels) ? { editor: state.panels.editor, console: state.panels.console } : null,
     consoleCollapsed: state.panels ? state.panels.consoleCollapsed : null,
+    split:
+      state.split && secondPaths.length > 0
+        ? {
+            secondPaths,
+            activeSecondPath: activeSecond !== null && secondPaths.includes(activeSecond) ? activeSecond : null,
+            ratio: state.split.ratio,
+          }
+        : null,
   };
 }

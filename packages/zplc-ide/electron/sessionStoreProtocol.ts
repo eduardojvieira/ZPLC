@@ -19,6 +19,9 @@ export const SESSION_LIMITS = {
   maxLine: 10_000_000,
   maxColumn: 100_000,
   maxScrollTop: 100_000_000,
+  /** The width of the first editor group as a share of the area (SHL-006). */
+  minSplitRatio: 0.2,
+  maxSplitRatio: 0.8,
 } as const;
 
 export interface SessionTab {
@@ -33,11 +36,19 @@ export interface SessionPanels {
   console: number;
   consoleCollapsed: boolean;
 }
+/** The second editor group (SHL-006): paths that are also tabs, the one it shows, and the width of the first group. */
+export interface SessionSplit {
+  second: string[];
+  activeSecond: string | null;
+  ratio: number;
+}
+/** `split` is absent for one group, so a document written by 2.0 (no such key) is valid and one without a split is the same bytes. */
 export interface SessionState {
   schemaVersion: 1;
   tabs: SessionTab[];
   activePath: string | null;
   panels: SessionPanels | null;
+  split?: SessionSplit;
 }
 
 /** Names that the platforms cannot all address: separators, drive and stream colons, NUL, and names ending in a dot or a space. */
@@ -84,10 +95,26 @@ function parsePanels(value: unknown): SessionPanels | null | undefined {
   return { editor, console: lower, consoleCollapsed };
 }
 
+function parseSplit(value: unknown, tabs: readonly SessionTab[]): SessionSplit | null {
+  if (!isPlainObject(value) || !hasExactKeys(value, ['second', 'activeSecond', 'ratio'])) return null;
+  const { second, activeSecond, ratio } = value;
+  if (!Array.isArray(second) || second.length < 1 || second.length > SESSION_LIMITS.maxTabs) return null;
+  const paths: string[] = [];
+  for (const path of second) {
+    if (!isSessionPath(path) || paths.includes(path) || !tabs.some((tab) => tab.path === path)) return null;
+    paths.push(path);
+  }
+  if (activeSecond !== null && (typeof activeSecond !== 'string' || !paths.includes(activeSecond))) return null;
+  if (typeof ratio !== 'number' || !Number.isFinite(ratio) || ratio < SESSION_LIMITS.minSplitRatio || ratio > SESSION_LIMITS.maxSplitRatio)
+    return null;
+  return { second: paths, activeSecond, ratio };
+}
+
 /** A fresh, validated copy of a session document, or null for anything that is not exactly one. */
 export function parseSessionState(value: unknown): SessionState | null {
-  if (!isPlainObject(value) || !hasExactKeys(value, ['schemaVersion', 'tabs', 'activePath', 'panels']) || value.schemaVersion !== 1)
-    return null;
+  const hasSplit = isPlainObject(value) && Object.hasOwn(value, 'split');
+  const keys = ['schemaVersion', 'tabs', 'activePath', 'panels', ...(hasSplit ? ['split'] : [])];
+  if (!isPlainObject(value) || !hasExactKeys(value, keys) || value.schemaVersion !== 1) return null;
   const { tabs: rawTabs, activePath, panels: rawPanels } = value;
   if (!Array.isArray(rawTabs) || rawTabs.length > SESSION_LIMITS.maxTabs) return null;
   const tabs: SessionTab[] = [];
@@ -99,7 +126,9 @@ export function parseSessionState(value: unknown): SessionState | null {
   if (activePath !== null && (!isSessionPath(activePath) || !tabs.some((tab) => tab.path === activePath))) return null;
   const panels = parsePanels(rawPanels);
   if (panels === undefined) return null;
-  const state: SessionState = { schemaVersion: 1, tabs, activePath, panels };
+  const split = hasSplit ? parseSplit(value.split, tabs) : undefined;
+  if (split === null) return null;
+  const state: SessionState = { schemaVersion: 1, tabs, activePath, panels, ...(split ? { split } : {}) };
   return new TextEncoder().encode(JSON.stringify(state)).length <= SESSION_LIMITS.maxBytes ? state : null;
 }
 

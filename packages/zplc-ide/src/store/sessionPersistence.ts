@@ -10,6 +10,7 @@ import type { SessionState } from '../../electron/sessionStoreProtocol';
 import { saveSession } from '../ipc/sessionBridge';
 import { projectRootId } from '../ipc/projectFilesHandles';
 import { captureSession, type ViewState, type WorkspaceLayout } from '../utils/sessionState';
+import { useEditorGroups } from './useEditorGroups';
 import { debugLog } from '../utils/debugLog';
 
 /** How long the changes must stop before the session is sent. */
@@ -122,6 +123,8 @@ export function resetViewStates(restored: ReadonlyMap<string, ViewState> = new M
 /** The part of the store that decides what a session holds. */
 export interface SessionStoreState {
   isProjectOpen?: boolean;
+  /** Counts the projects the window opened; the editor split of a project is applied after its tabs (see `restoreEditorGroups`). */
+  projectSession?: number;
   openTabs: readonly string[];
   activeFileId: string | null;
   sessionLayout: object | null;
@@ -153,6 +156,9 @@ export function startSessionPersistence<
       const state = store.getState();
       const rootId = projectRootId(state.directoryHandle);
       if (!state.isProjectOpen || rootId === null || !state.loadedFiles) return null;
+      const { groups, pendingFor } = useEditorGroups.getState();
+      // The saved split is read after the tabs open: a session written before that would replace it with one group.
+      if (state.projectSession !== undefined && pendingFor === state.projectSession) return null;
       return {
         rootId,
         state: captureSession({
@@ -162,6 +168,7 @@ export function startSessionPersistence<
           viewStates,
           layout: state.sessionLayout as WorkspaceLayout | null,
           consoleCollapsed: state.isConsoleCollapsed,
+          split: groups.second.length > 0 ? { second: groups.second, activeSecond: groups.activeSecond, ratio: groups.ratio } : null,
         }),
       };
     });
@@ -187,6 +194,9 @@ export function startSessionPersistence<
     )
       queue();
   });
+  const unsubscribeGroups = useEditorGroups.subscribe((state, previous) => {
+    if (state.groups !== previous.groups || state.pendingFor !== previous.pendingFor) queue();
+  });
   const flush = () => saver.flush();
   // The window going away: the renderer is unloaded, and what is still queued goes out now.
   const onPageHide = () => {
@@ -197,6 +207,7 @@ export function startSessionPersistence<
   active = handle;
   return () => {
     unsubscribe();
+    unsubscribeGroups();
     if (typeof window !== 'undefined') window.removeEventListener('pagehide', onPageHide);
     saver.dispose();
     if (active === handle) active = null;

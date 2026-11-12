@@ -14,7 +14,8 @@ import type { DebugController } from '../hooks/useDebugController';
 import { openLearnHome, useLearnUi } from '../learn/learnUi';
 import { useIDEStore } from '../store/useIDEStore';
 import { lessonSurface, startShellRouting } from './shellRouting';
-import { useShellLayout } from '../store/useShellLayout';
+import { toggleMaximise, useShellLayout } from '../store/useShellLayout';
+import { bindCommands } from '../commands/bus';
 import { useShellLayoutSizes, useWorkspaceLayout } from '../utils/layoutStorage';
 import { workspaceLayoutFrom } from '../utils/sessionState';
 import { ActivityRail } from './ActivityRail';
@@ -27,6 +28,9 @@ interface WorkbenchShellProps {
   Console: ComponentType<{ debugController: DebugController }>;
   debugController: DebugController;
 }
+
+/** An open dialog, menu or list takes Escape first (SHL-007); the shell leaves maximise only when none is open. */
+const OPEN_OVERLAY = '[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [aria-modal="true"]';
 
 /** Keeps a collapsible panel and the visibility flag that stands for it the same, whichever one the user changed. */
 function useCollapsible(panel: ReturnType<typeof usePanelCallbackRef>[0], visible: boolean): void {
@@ -49,6 +53,7 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
   const projectSession = useIDEStore((s) => s.projectSession);
   const { defaultLayout, onLayoutChanged } = useWorkspaceLayout();
   const shellSizes = useShellLayoutSizes();
+  const maximised = useShellLayout((state) => state.maximised);
 
   const [consolePanel, setConsolePanel] = usePanelCallbackRef();
   const [groupPanel, setGroupPanel] = useGroupCallbackRef();
@@ -62,6 +67,19 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
   useEffect(() => {
     claimLostFocus(editorRegion.current, document.activeElement, document.body);
   }, []);
+
+  // SHL-007: the command, and Escape when nothing else is open that would use it.
+  useEffect(() => bindCommands({ 'view.maximiseDocument': toggleMaximise }), []);
+  useEffect(() => {
+    if (!maximised) return undefined;
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'Escape' || event.defaultPrevented || document.querySelector(OPEN_OVERLAY)) return;
+      event.preventDefault();
+      toggleMaximise();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [maximised]);
 
   // A request for the lessons, the explorer or the inspector, made by name as a console tab, shows that view.
   useEffect(() => startShellRouting(useIDEStore, () => useShellLayout.getState()), []);
@@ -84,7 +102,7 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
   // The lesson moves to the secondary sidebar when the rail leaves Learn (LRN-004); that sidebar opens then, so the lesson never hides.
   const lessonBeside = lessonSurface(activityView, lessonWorkspace !== null && lessonWorkspace.session === projectSession) === 'secondary';
   useEffect(() => {
-    if (lessonBeside && density !== 'compact') useShellLayout.getState().setSecondaryVisible(true);
+    if (lessonBeside && density !== 'compact' && !useShellLayout.getState().maximised) useShellLayout.getState().setSecondaryVisible(true);
   }, [lessonBeside, density]);
 
   // A window as narrow as the minimum has no room for the secondary sidebar (UX-023); it can be shown again from the View menu.
@@ -101,6 +119,9 @@ export function WorkbenchShell({ EditorArea, Console, debugController }: Workben
 
   return (
     <div className="flex min-h-0 flex-1 ledger-workspace">
+      <span role="status" className="sr-only">
+        {maximised ? t('studio.document.maximised') : ''}
+      </span>
       <ActivityRail
         active={activityView}
         density={density}

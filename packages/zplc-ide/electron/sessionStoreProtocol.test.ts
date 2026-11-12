@@ -138,3 +138,40 @@ describe('session state format (IDE-008)', () => {
     expect(new TextEncoder().encode(JSON.stringify(parsed)).length).toBeLessThan(SESSION_LIMITS.maxBytes);
   });
 });
+
+describe('session split (SHL-006, IDE-008)', () => {
+  const split = { second: ['src/Pump.st'], activeSecond: 'src/Pump.st' as string | null, ratio: 0.4 };
+  const withSplit = (value: unknown) => ({ ...valid(), split: value });
+
+  test('a document with a split is valid, and so is one without', () => {
+    expect(parseSessionState(withSplit(split))).toEqual({ ...valid(), split });
+    expect(parseSessionState(valid())).toEqual(valid());
+    expect('split' in parseSessionState(valid())!).toBe(false);
+    expect(parseSessionState(withSplit({ ...split, activeSecond: null }))).not.toBeNull();
+  });
+
+  test('a split that names a path outside the project is refused', () => {
+    for (const path of ['../secret.st', '/etc/passwd', 'src/../x.st', 'C:\\x.st', 'src/Unknown.st'])
+      expect(parseSessionState(withSplit({ ...split, second: [path], activeSecond: null }))).toBeNull();
+  });
+
+  test('a malformed split is refused: keys, bounds, duplicates, active outside the group', () => {
+    const bad: unknown[] = [
+      null,
+      [],
+      'x',
+      { second: split.second, activeSecond: null },
+      { ...split, extra: 1 },
+      { ...split, second: [] },
+      { ...split, second: ['src/Pump.st', 'src/Pump.st'] },
+      { ...split, second: [7], activeSecond: null },
+      { ...split, activeSecond: 'src/Motor.st' },
+      { ...split, ratio: 0.1 },
+      { ...split, ratio: 0.9 },
+      { ...split, ratio: Number.NaN },
+      { ...split, ratio: '0.5' },
+    ];
+    for (const value of bad) expect(parseSessionState(withSplit(value))).toBeNull();
+    expect(parseSessionState({ ...valid(), split: undefined })).toBeNull();
+  });
+});
