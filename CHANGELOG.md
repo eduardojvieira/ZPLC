@@ -22,8 +22,21 @@ and version when the release is cut (see `RELEASING.md`).
 
 ## Unreleased
 
+## 2.0.1 - 2026-11-12
+
+ZPLC 2.0.1 fixes the simulation for anyone who used an earlier ZPLC on the same computer.
+
 ### What changed for you
 
+- The simulation loads your program again when an earlier ZPLC left programs in `~/.zplc`. ZPLC 2.0.0 refused every
+  load there with "Request denied"; the runtime now stores the new program beside the old one, and a damaged file
+  still stops the load.
+- ZPLC keeps the program of the simulation in its own data folder (`native-simulation` in the user-data folder of the
+  application), no longer in `~/.zplc`, which the command line keeps using.
+- When the runtime refuses a request, ZPLC says why, for example "The native runtime could not load or store the
+  program (PROGRAM_LOAD_FAILED).", instead of "Request denied".
+- The release notes open with a table that links the installer of each system, and the site has a download page that
+  offers the installer of your computer.
 - A release holds fewer files: the per-platform checksum and evidence files are no longer on it, and `SHA256SUMS`
   still lists every file you download.
 
