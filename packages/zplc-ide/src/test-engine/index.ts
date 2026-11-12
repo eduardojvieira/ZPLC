@@ -1,4 +1,16 @@
 import type { DebugMap, DebugVarInfo } from '../compiler';
+import type { PlantSceneFile } from '../plant/contracts';
+import { catalogue as shippedCatalogue, type Catalogue } from '../plant/core/catalogue';
+import {
+  FACT_READ,
+  MAX_SCENE_SCRIPT,
+  compileSceneBlock,
+  exchangeScan,
+  factTruthy,
+  validateSceneScript,
+  type SceneScriptEvent,
+  type ScenarioPlantPort,
+} from './scenePort';
 
 const MAX_EVENTS = 256;
 const MAX_EXPECTATIONS = 256;
@@ -26,6 +38,21 @@ export interface ResolvedSignal {
   readonly value: boolean;
 }
 
+/** A scene plant bound to the program: the port, the script, and every mapped signal resolved to its address (S1, C7). */
+export interface CompiledScene {
+  readonly port: ScenarioPlantPort;
+  readonly script: ReadonlyArray<SceneScriptEvent>;
+  readonly commands: ReadonlyArray<{ readonly name: string; readonly point: string; readonly signal: ResolvedSignal }>;
+  readonly sensors: ReadonlyArray<{ readonly name: string; readonly signal: ResolvedSignal }>;
+}
+
+/** What `compileScenario` needs to bind a scenario that has a `"scene"` block (S1). */
+export interface SceneScenarioContext {
+  readonly port: ScenarioPlantPort;
+  readonly scene: PlantSceneFile;
+  readonly catalogue?: Catalogue;
+}
+
 export interface CompiledScenario {
   readonly id: string;
   readonly tickMs: number;
@@ -40,6 +67,7 @@ export interface CompiledScenario {
     readonly forMs?: number;
     readonly untilReads?: ReadonlyArray<ResolvedSignal>;
   }>;
+  readonly scene?: CompiledScene;
   readonly plant?:
     | {
         readonly kind: 'motor-v1';
@@ -159,14 +187,14 @@ function namedSignal(signal: unknown, path: string): string {
   if (typeof signal !== 'string' || !SIGNAL.test(signal)) fail(`${path} must be a POU.variable signal, or the name of a global`);
   return signal;
 }
-function signalSet(value: unknown, path: string): Array<{ signal: string; value: boolean }> {
+function signalSet(value: unknown, path: string, allowFacts = false): Array<{ signal: string; value: boolean }> {
   const set = record(value, path);
   const entries = Object.entries(set);
   if (entries.length === 0 || entries.length > MAX_SIGNALS) fail(`${path} must contain 1-${MAX_SIGNALS} signals`);
   return entries
     .map(([signal, expected]) => {
       if (typeof expected !== 'boolean') fail(`${path}.${signal} must be boolean`);
-      return { signal: namedSignal(signal, path), value: expected };
+      return { signal: allowFacts && FACT_READ.test(signal) ? signal : namedSignal(signal, path), value: expected };
     })
     .sort((left, right) => (left.signal < right.signal ? -1 : left.signal > right.signal ? 1 : 0));
 }
@@ -236,6 +264,16 @@ function freezeScenario(scenario: CompiledScenario): CompiledScenario {
   }
   Object.freeze(scenario.events);
   Object.freeze(scenario.expectations);
+  if (scenario.scene) {
+    for (const bound of [...scenario.scene.commands, ...scenario.scene.sensors]) {
+      Object.freeze(bound.signal);
+      Object.freeze(bound);
+    }
+    Object.freeze(scenario.scene.commands);
+    Object.freeze(scenario.scene.sensors);
+    Object.freeze(scenario.scene.script);
+    Object.freeze(scenario.scene);
+  }
   if (scenario.plant) {
     if (scenario.plant.kind === 'motor-v1') {
       Object.freeze(scenario.plant.command);
@@ -262,16 +300,46 @@ function freezeScenario(scenario: CompiledScenario): CompiledScenario {
   return scenario;
 }
 
-export function compileScenario(input: unknown, debugMap: DebugMap): CompiledScenario {
+function bindScene(input: unknown, context: SceneScenarioContext, debugMap: DebugMap, tickMs: number, durationMs: number): CompiledScene {
+  const block = compileSceneBlock(input);
+  if ('problems' in block) return fail(block.problems.join('; '));
+  const { port } = context;
+  if (tickMs % port.core.stepMs !== 0) fail(`tickMs must be a multiple of the plant step ${port.core.stepMs}`);
+  if (block.script.length > MAX_SCENE_SCRIPT) fail('scene script is too long');
+  block.script.forEach((event, index) => aligned(event.atMs, `scene.script[${index}].atMs`, tickMs, durationMs));
+  const problems = validateSceneScript(block.script, context.scene, port, context.catalogue ?? shippedCatalogue);
+  const plantSignals = new Map(port.core.signals.map((signal) => [signal.name, signal]));
+  const commands: Array<{ name: string; point: string; signal: ResolvedSignal }> = [];
+  const sensors: Array<{ name: string; signal: ResolvedSignal }> = [];
+  for (const [name, mapped] of Object.entries(port.map.signals)) {
+    const plantSignal = plantSignals.get(name);
+    if (!plantSignal || plantSignal.direction !== mapped.direction)
+      problems.push(`scene map: "${name}" is not a ${mapped.direction} signal of the scene`);
+    else if (mapped.type !== 'BOOL') problems.push(`scene map: "${name}" is ${mapped.type}; scene scenarios drive BOOL signals only`);
+    else if (mapped.direction === 'command')
+      commands.push({ name, point: mapped.point, signal: resolve(debugMap, mapped.point, 'OPI', false) });
+    else sensors.push({ name, signal: resolve(debugMap, mapped.point, 'IPI', false) });
+  }
+  if (problems.length > 0) fail(problems.join('; '));
+  return { port, script: block.script, commands, sensors };
+}
+
+export function compileScenario(input: unknown, debugMap: DebugMap, sceneContext?: SceneScenarioContext): CompiledScenario {
   const source = record(input, 'scenario');
   const hasPlant = Object.hasOwn(source, 'plant');
+  const hasScene = Object.hasOwn(source, 'scene');
   exact(
     source,
-    hasPlant
-      ? ['schemaVersion', 'id', 'plant', 'tickMs', 'durationMs', 'events', 'expectations']
-      : ['schemaVersion', 'id', 'tickMs', 'durationMs', 'events', 'expectations'],
+    [
+      ...(hasPlant
+        ? ['schemaVersion', 'id', 'plant', 'tickMs', 'durationMs', 'events', 'expectations']
+        : ['schemaVersion', 'id', 'tickMs', 'durationMs', 'events', 'expectations']),
+      ...(hasScene ? ['scene'] : []),
+    ],
     'scenario',
   );
+  if (hasScene && hasPlant) fail('scene and plant are exclusive');
+  if (hasScene && !sceneContext) fail('scene needs the scene plant it runs on');
   if (source.schemaVersion !== 1 || typeof source.id !== 'string' || source.id.length === 0 || source.id.length > 128)
     fail('schemaVersion or id');
   const tickMs = integer(source.tickMs, 'tickMs', 60_000);
@@ -321,6 +389,7 @@ export function compileScenario(input: unknown, debugMap: DebugMap): CompiledSce
         fail('plant must be motor-v1, conveyor-v1, tank-v1, or pedestrian-v1');
       })()
     : undefined;
+  const scene = hasScene ? bindScene(source.scene, sceneContext!, debugMap, tickMs, durationMs) : undefined;
   const eventInputs = dataArray(source.events, 'events', MAX_EVENTS, 0);
   const expectationInputs = dataArray(source.expectations, 'expectations', MAX_EXPECTATIONS);
 
@@ -349,6 +418,8 @@ export function compileScenario(input: unknown, debugMap: DebugMap): CompiledSce
           fail(`events[${index}].set cannot write tank-v1 plant-owned input`);
         if (plant?.kind === 'pedestrian-v1' && location(resolved) === location(plant.pedRequest))
           fail(`events[${index}].set cannot write pedestrian-v1 plant-owned input`);
+        if (scene?.sensors.some((owned) => location(resolved) === location(owned.signal)))
+          fail(`events[${index}].set cannot write a scene plant-owned input`);
         const physicalKey = `${atMs}:${location(resolved)}`;
         const previous = physicalWrites.get(physicalKey);
         if (previous !== undefined && previous !== value) fail(`conflicting event for IPI location at ${atMs}ms`);
@@ -385,8 +456,8 @@ export function compileScenario(input: unknown, debugMap: DebugMap): CompiledSce
               ? ['kind', 'fromMs', 'condition', 'until']
               : ['kind', 'condition'];
     exact(expectation, keys, `expectations[${index}]`);
-    const reads = signalSet(expectation.condition, `expectations[${index}].condition`).map(({ signal, value }) =>
-      resolve(debugMap, signal, 'OPI', value),
+    const reads = signalSet(expectation.condition, `expectations[${index}].condition`, hasScene).map(({ signal, value }) =>
+      signal.startsWith('fact:') ? { signal, address: -1, bitOffset: 0, value } : resolve(debugMap, signal, 'OPI', value),
     );
     if (kind === 'AT') return { kind, reads, atMs: aligned(expectation.atMs, `expectations[${index}].atMs`, tickMs, durationMs) };
     if (kind === 'WITHIN' || kind === 'EVENTUALLY' || kind === 'RISING' || kind === 'FALLING') {
@@ -426,12 +497,21 @@ export function compileScenario(input: unknown, debugMap: DebugMap): CompiledSce
           : plant?.kind === 'pedestrian-v1'
             ? [plant.pedWalk]
             : []),
+    ...(scene?.commands.map((command) => command.signal) ?? []),
   ];
   const uniqueReads = new Set(observationReads.map((read) => read.signal)).size;
   const conditionReads = observationReads.length;
   if (uniqueReads > MAX_SIGNALS || samples * uniqueReads > MAX_TRACE_VALUES || samples * conditionReads > MAX_TRACE_VALUES)
     fail('scenario observation budget exceeded');
-  return freezeScenario({ id: source.id, tickMs, durationMs, events, expectations, ...(plant ? { plant } : {}) });
+  return freezeScenario({
+    id: source.id,
+    tickMs,
+    durationMs,
+    events,
+    expectations,
+    ...(plant ? { plant } : {}),
+    ...(scene ? { scene } : {}),
+  });
 }
 
 function matches(reads: ReadonlyArray<ResolvedSignal>, outputs: Record<string, boolean>): boolean {
@@ -454,7 +534,15 @@ export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, 
   if (scenario.plant?.kind === 'pedestrian-v1') reads.set(scenario.plant.pedWalk.signal, scenario.plant.pedWalk);
   const terminalReads = new Map<string, ResolvedSignal>();
   for (const expectation of scenario.expectations) for (const read of expectation.untilReads ?? []) terminalReads.set(read.signal, read);
-  const orderedReads = [...reads.values()].sort((left, right) => (left.signal < right.signal ? -1 : left.signal > right.signal ? 1 : 0));
+  const scene = scenario.scene;
+  if (scene) {
+    for (const command of scene.commands) reads.set(command.signal.signal, command.signal);
+    scene.port.core.reset();
+  }
+  const bySignal = (left: ResolvedSignal, right: ResolvedSignal) => (left.signal < right.signal ? -1 : left.signal > right.signal ? 1 : 0);
+  const factReads = [...reads.values()].filter((read) => read.address < 0).sort(bySignal);
+  const orderedReads = [...reads.values()].filter((read) => read.address >= 0).sort(bySignal);
+  let lastOutputs: Record<string, boolean> = {};
   const trace: ScenarioTraceSample[] = [];
   const inputs = new Map<string, boolean>([...terminalReads.values()].map((read) => [location(read), false]));
   const inputSnapshots: Record<string, boolean>[] = [];
@@ -514,9 +602,30 @@ export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, 
       inputs.set(location(write), write.value);
       await runtime.setInput(write.address, write.bitOffset, write.value);
     }
+    if (scene)
+      await exchangeScan(
+        scene.port,
+        async (point) => lastOutputs[scene.commands.find((command) => command.point === point)!.signal.signal] ?? false,
+        async (sensed) => {
+          for (const sensor of scene.sensors) {
+            if (!(sensor.name in sensed)) continue;
+            const value = Boolean(sensed[sensor.name]);
+            inputs.set(location(sensor.signal), value);
+            await runtime.setInput(sensor.signal.address, sensor.signal.bitOffset, value);
+          }
+        },
+        atMs,
+        scenario.tickMs,
+        scene.script,
+      );
     await runtime.step(atMs);
     const outputs: Record<string, boolean> = {};
     for (const read of orderedReads) outputs[read.signal] = await runtime.readOutput(read.address, read.bitOffset);
+    if (scene) {
+      const facts = scene.port.core.facts();
+      for (const read of factReads) outputs[read.signal] = factTruthy(facts[read.signal.slice('fact:'.length)]);
+      lastOutputs = outputs;
+    }
     if (scenario.plant?.kind === 'motor-v1')
       speedPermille = outputs[scenario.plant.command.signal] ? Math.min(1000, speedPermille + 500) : Math.max(0, speedPermille - 1000);
     if (scenario.plant?.kind === 'conveyor-v1' && outputs[scenario.plant.beltCommand.signal]) {
