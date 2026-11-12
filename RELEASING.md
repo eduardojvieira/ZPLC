@@ -86,8 +86,9 @@ platform simply has no files in the draft and the notes say so.
 
 The draft release has: the installers per platform, all named `zplc-<version>-<os>-<arch>.<ext>` (the Windows ones add `-setup-unsigned` or `-portable-unsigned`), the standalone `zplc-cli` and `zplc-mcp` executables, the
 firmware images of every board (`zplc-runtime-<version>-<board>.<ext>`) with their manifest
-`zplc-runtime-<version>.manifest.json`, the bill of materials, `SHA256SUMS` (all assets), the per-platform checksum
-and evidence files, the notes and a title that says how complete the prerelease is. Check that every asset the
+`zplc-runtime-<version>.manifest.json`, the bill of materials, `SHA256SUMS` (all assets), the notes and a title that
+says how complete the prerelease is. The per-platform checksum and evidence files (`SHA256SUMS-<platform>`,
+`release-evidence-<platform>.json`) stay in the bundle artifacts of the run, not on the release. Check that every asset the
 release should have is listed and that the signing state of each is the one you expect. A draft with no
 firmware images is a draft whose firmware job failed: the images are all of the boards or none, so do not publish
 it as a release that has them; the notes name the job. Each firmware image is labelled with the evidence level of
