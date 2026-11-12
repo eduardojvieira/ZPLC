@@ -3,16 +3,17 @@ import { createElement } from 'react';
 import { setupDom } from '../test/dom';
 import { en } from '../i18n/en';
 import { es } from '../i18n/es';
-import { CONFIG_EDITOR_KINDS } from '../navigator/configEditors';
-import { getCommandState, listedCommands, resetCommandsForTest, runCommand } from '../commands/bus';
-import { COMMAND_LIST, commandById, isCommandEnabled, isCommandId } from '../commands/registry';
-import { ACTIVITY_VIEWS } from '../store/useShellLayout';
 import type { ConsoleTab } from '../types';
-import { SURFACES, surfacesIn, type Region } from './surfaces';
+import type { Region } from './surfaces';
 
 const dom = await setupDom();
 await (await import('../test/dom')).stubProjectLoader();
 const { useIDEStore } = await import('../store/useIDEStore');
+const { CONFIG_EDITOR_KINDS } = await import('../navigator/configEditors');
+const { getCommandState, listedCommands, resetCommandsForTest, runCommand } = await import('../commands/bus');
+const { COMMAND_LIST, commandById, isCommandEnabled, isCommandId } = await import('../commands/registry');
+const { ACTIVITY_VIEWS } = await import('../store/useShellLayout');
+const { SURFACES, surfacesIn } = await import('./surfaces');
 const { useConfigEditors } = await import('../store/useConfigEditors');
 const { useShellCommands } = await import('../commands/useCommandHost');
 
