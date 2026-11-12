@@ -88,6 +88,8 @@ odd/
 # Records that the requirement, conformance and CMP-015 generators write (tools/ci/generate-requirement-index.ts,
 # requirement-coverage.ts --write, generate-conformance-matrix.ts, conformance-coverage.ts, gen_cmp015_cases.py).
 /tools/ci/requirements-index.json
+/tools/ci/requirement-index-012.json
+/tools/ci/requirement-index-013.json
 /tools/ci/requirement-evidence.json
 /conformance/matrix.json
 /conformance/cmp/cmp-015-*.expect.json

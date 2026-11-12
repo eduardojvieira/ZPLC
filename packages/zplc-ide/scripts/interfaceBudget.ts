@@ -99,18 +99,33 @@ export function captureExpression(locale: Locale): string {
     const box = (element) => element.getBoundingClientRect();
     const bar = document.querySelector('[role="toolbar"][aria-label=${JSON.stringify(toolbar)}]');
     const name = document.querySelector('[data-project-name]');
-    const controls = bar ? [...bar.querySelectorAll('button, select, input, a[href], [role="switch"], [role="radio"], [role="menuitem"]')]
+    const controlSelector = 'button, select, input, a[href], [role="switch"], [role="radio"], [role="menuitem"]';
+    const controls = bar ? [...bar.querySelectorAll(controlSelector)]
       .filter((element) => getComputedStyle(element).visibility !== 'hidden')
-      .map((element) => ({ label: element.getAttribute('aria-label') ?? (element.textContent ?? '').trim(), x: Math.round(box(element).x), width: Math.round(box(element).width) })) : [];
+      .map((element) => ({
+        label: element.getAttribute('aria-label') ?? (element.textContent ?? '').trim(),
+        x: Math.round(box(element).x),
+        width: Math.round(box(element).width),
+      })) : [];
     const strip = document.querySelector('[role="tablist"][aria-label=${JSON.stringify(panels)}]');
     const tabs = [...document.querySelectorAll('[role="tab"][id^="console-tab-"]')].map((tab) => {
-      const label = [...tab.querySelectorAll('span')].find((span) => (span.textContent ?? '').trim() !== '' && !span.classList.contains('ml-1'));
-      return { id: tab.id.replace('console-tab-', ''), name: (label?.textContent ?? '').trim(), nameWidth: label ? Math.round(box(label).width) : 0, left: Math.round(box(tab).left), right: Math.round(box(tab).right) };
+      const label = [...tab.querySelectorAll('span')]
+        .find((span) => (span.textContent ?? '').trim() !== '' && !span.classList.contains('ml-1'));
+      return {
+        id: tab.id.replace('console-tab-', ''),
+        name: (label?.textContent ?? '').trim(),
+        nameWidth: label ? Math.round(box(label).width) : 0,
+        left: Math.round(box(tab).left),
+        right: Math.round(box(tab).right),
+      };
     });
     const rail = document.querySelector('section[aria-label=${JSON.stringify(status)}] > div > div');
-    const items = rail ? [...rail.children].filter((child) => child.getAttribute('aria-hidden') !== 'true').map((child) => ({ text: (child.innerText ?? '').trim() })) : [];
+    const items = rail ? [...rail.children]
+      .filter((child) => child.getAttribute('aria-hidden') !== 'true')
+      .map((child) => ({ text: (child.innerText ?? '').trim() })) : [];
     return { commandBar: { projectNameX: name ? Math.round(box(name).x) : null, controls },
-      tabStrip: strip ? { left: Math.round(box(strip).left), right: Math.round(box(strip).right) } : null, resultsTabs: tabs, statusRail: items };
+      tabStrip: strip ? { left: Math.round(box(strip).left), right: Math.round(box(strip).right) } : null,
+      resultsTabs: tabs, statusRail: items };
   })()`;
 }
 
@@ -238,7 +253,9 @@ async function main(): Promise<void> {
   const samples: BudgetSample[] = [];
   for (const locale of LOCALES) samples.push(...(await runLocale(locale)));
   const record = {
-    what: 'The 2.0.0 interface baseline of spec 013 section 8.1 (rows 2, 3, 6, 7 and 8), measured on the running application by scripts/interfaceBudget.ts',
+    what:
+      'The 2.0.0 interface baseline of spec 013 section 8.1 (rows 2, 3, 6, 7 and 8), ' +
+      'measured on the running application by scripts/interfaceBudget.ts',
     runtime: 'Electron development host, headless, native POSIX runtime; example Blinky; Linux only (no macOS or Windows evidence)',
     measuredOn: new Date().toISOString().slice(0, 10),
     rows: budgetRows(samples),

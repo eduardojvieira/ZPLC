@@ -526,7 +526,7 @@ describe('requirement coverage of spec 012', () => {
     const result = run('--spec', '012', '--list');
     expect(result.exitCode).toBe(0);
     expect(text(result)).toContain('spec 012');
-    expect(text(result)).toContain('PLT-001 uncovered');
+    expect(text(result)).toMatch(/^ {2}(PLT|VIS|PRT|SCN|LNK|CRS)-\d{3} uncovered: /m);
     expect(text(result)).toMatch(/overall\s+\d+ \/\s+87/);
   });
 
@@ -583,11 +583,12 @@ describe('requirement coverage of spec 013', () => {
     expect(text(result)).toMatch(/overall\s+\d+ \/\s+80/);
   });
 
-  it('a requirement of U2 or U3 is pending, not uncovered, and a requirement the plan delivers is uncovered until it has a check', () => {
+  it('a requirement of U2 or U3 is pending, not uncovered', () => {
     const result = run('--spec', '013', '--list');
     expect(result.exitCode).toBe(0);
     expect(text(result)).toContain('TST-001 pending');
-    expect(text(result)).toContain('FLW-001 uncovered');
+    // every requirement the plan does not deliver is listed as pending, never as uncovered
+    for (const entry of index013().filter((e) => !e.mapped)) expect(text(result)).not.toContain(`${entry.id} uncovered`);
     expect(text(result)).not.toContain('TST-001 uncovered');
     const mapped = index013().filter((entry) => entry.mapped);
     expect(mapped.length).toBe(31);

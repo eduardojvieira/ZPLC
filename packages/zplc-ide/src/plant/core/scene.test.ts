@@ -108,12 +108,12 @@ describe('scene', () => {
     if (!('problems' in result)) throw new Error('expected problems');
     expect(result.problems[0]!.path).toBe('schemaVersion');
     expect(result.problems[0]!.message).toContain('schemaVersion 2');
-    expect(result.problems[0]!.message).toContain('this Studio reads 1');
+    expect(result.problems[0]!.message).toContain('this ZPLC reads 1');
   });
 
   it('SCN-006 a version 1 scene migrates to itself', () => {
     const value = scene();
-    expect(migrateScene(value)).toEqual({ scene: value });
+    expect(migrateScene(value) as unknown).toEqual({ scene: value });
     expect(SCENE_SCHEMA_VERSION).toBe(1);
   });
 
