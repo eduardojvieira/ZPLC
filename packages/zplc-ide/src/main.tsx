@@ -6,6 +6,7 @@ import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import { LiveRegions } from './ui';
 import { useIDEStore } from './store/useIDEStore.ts';
 import { PRODUCT_NAME } from './productName.ts';
+import type { PlantGate } from './plant-gate/gateEntry';
 
 const container = document.getElementById('root')!;
 
@@ -39,3 +40,5 @@ if (import.meta.env.DEV && window.location.hash === '#ui-gallery') {
     </StrictMode>,
   );
 }
+
+(window as unknown as { __zplcPlantGate?: () => Promise<PlantGate> }).__zplcPlantGate = () => import('./plant-gate/gateEntry').then((module) => module.plantGate);
