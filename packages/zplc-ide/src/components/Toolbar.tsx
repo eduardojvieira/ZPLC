@@ -35,6 +35,7 @@ import {
 } from './debugSessionState';
 import { EXECUTION_MODE, selectRuntimeArtifact, type ExecutionMode } from './runtimeArtifactSelection';
 import { OperationalStatusBar } from './OperationalStatusBar';
+import { getStatusDisplay } from './programState';
 import { CommandBarCenter } from '../shell/CommandBarCenter';
 import { generateStructuredText } from './visualToStructuredText';
 import { downloadBlob } from '../utils/downloadBlob';
@@ -790,42 +791,17 @@ export function Toolbar({ debugController }: ToolbarProps) {
   // Render Helpers
   // ==========================================================================
 
-  // Status text and color
-  const getStatusDisplay = () => {
-    if (!isConnected) {
-      return { text: t('toolbarMsg.disconnected'), tone: 'neutral' as const };
-    }
-    switch (vmState) {
-      case 'running':
-        return hasCurrentCompileResult
-          ? { text: t('toolbarMsg.status.running'), tone: 'success' as const }
-          : { text: t('toolbarMsg.status.runningRebuild'), tone: 'attention' as const };
-      case 'paused':
-        return hasCurrentCompileResult
-          ? { text: t('toolbarMsg.status.paused'), tone: 'attention' as const }
-          : { text: t('toolbarMsg.status.pausedRebuild'), tone: 'attention' as const };
-      case 'idle':
-        if (executionMode === EXECUTION_MODE.HARDWARE) {
-          if (programLoadState === PROGRAM_LOAD_STATE.LOADED && hasCurrentCompileResult) {
-            return { text: t('toolbarMsg.status.deployedStopped'), tone: 'info' as const };
-          }
-          return hasCurrentCompileResult
-            ? { text: t('toolbarMsg.status.connectedDeploy'), tone: 'info' as const }
-            : lastCompileResult
-              ? { text: t('toolbarMsg.status.connectedRebuild'), tone: 'attention' as const }
-              : { text: t('toolbarMsg.status.connectedBuild'), tone: 'info' as const };
-        }
-        return lastCompileResult && !hasCurrentCompileResult
-          ? { text: t('toolbarMsg.status.readyRebuild'), tone: 'attention' as const }
-          : { text: t('toolbarMsg.status.ready'), tone: 'info' as const };
-      case 'error':
-        return { text: t('toolbarMsg.status.error'), tone: 'danger' as const };
-      default:
-        return { text: vmState, tone: 'neutral' as const };
-    }
-  };
-
-  const status = getStatusDisplay();
+  const status = getStatusDisplay(
+    {
+      isConnected,
+      vmState,
+      executionMode,
+      programLoaded: programLoadState === PROGRAM_LOAD_STATE.LOADED,
+      currentBuild: hasCurrentCompileResult,
+      anyBuild: lastCompileResult !== null,
+    },
+    t,
+  );
 
   // Check if running in Electron on macOS
   const isElectronMac = typeof window !== 'undefined' && window.electronAPI?.isElectron && window.electronAPI?.platform === 'darwin';
