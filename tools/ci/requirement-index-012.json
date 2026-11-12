@@ -1,353 +1,89 @@
 [
-  {
-    "id": "PLT-001",
-    "workstream": "PLT",
-    "title": "The plant core MUST run a scene without a window, a GPU or a document object model, in the test runner the rest of Studio uses and from the…"
-  },
-  {
-    "id": "PLT-002",
-    "workstream": "PLT",
-    "title": "A scene MUST be data: a versioned file, validated against a schema before use, that lists catalogue parts with their position, configuration…"
-  },
-  { "id": "PLT-003", "workstream": "PLT", "title": "Signals MUST be typed." },
-  {
-    "id": "PLT-004",
-    "workstream": "PLT",
-    "title": "The plant MUST advance in fixed steps of simulated time that do not depend on frame rate, host speed or polling rate."
-  },
-  {
-    "id": "PLT-005",
-    "workstream": "PLT",
-    "title": "In simulation the plant and the program MUST share one virtual clock: when the program has run N milliseconds of scans, the plant has…"
-  },
-  {
-    "id": "PLT-006",
-    "workstream": "PLT",
-    "title": "The same scene, program and input script MUST produce the same signal trace and the same plant facts on Linux, macOS and Windows and on…"
-  },
-  { "id": "PLT-007", "workstream": "PLT", "title": "Items MUST have mass, friction and collision." },
-  {
-    "id": "PLT-008",
-    "workstream": "PLT",
-    "title": "A stack of five boxes on a pallet MUST stay stacked while the pallet travels on a conveyor at catalogue speed and while that conveyor starts…"
-  },
-  {
-    "id": "PLT-009",
-    "workstream": "PLT",
-    "title": "A process without rigid bodies (tank level, flow) MUST be a numeric model stepped on the same clock, with its equations documented."
-  },
-  {
-    "id": "PLT-010",
-    "workstream": "PLT",
-    "title": "The core MUST expose named plant facts about what happened: items produced, delivered, dropped and collided, positions reached, levels."
-  },
-  {
-    "id": "PLT-011",
-    "workstream": "PLT",
-    "title": "A part MAY define fault actions (a jammed item, a stuck sensor, an actuator that does not move)."
-  },
-  {
-    "id": "PLT-012",
-    "workstream": "PLT",
-    "title": "Reset MUST return a scene to exactly its initial state, and the state of a running scene MUST be capturable and restorable."
-  },
-  {
-    "id": "PLT-013",
-    "workstream": "PLT",
-    "title": "The four 2.0 plants MUST keep grading unchanged: the models inside the scenario engine, their scenario files and their hashes."
-  },
-  {
-    "id": "PLT-014",
-    "workstream": "PLT",
-    "title": "The core MUST simulate the largest reference scene, and a stress scene of at least 200 dynamic items, in real time on the reference machines…"
-  },
-  { "id": "PLT-015", "workstream": "PLT", "title": "A running plant MUST NOT slow the editor." },
-  {
-    "id": "PLT-016",
-    "workstream": "PLT",
-    "title": "Failures MUST be located messages (P1): a scene that fails validation, an unknown part, a missing asset."
-  },
-  { "id": "PLT-017", "workstream": "PLT", "title": "A scene MUST have one model." },
-  { "id": "VIS-001", "workstream": "VIS", "title": "Studio MUST show the running scene in a 3D panel where 2.0 shows the live plant." },
-  {
-    "id": "VIS-002",
-    "workstream": "VIS",
-    "title": "The camera MUST orbit, pan and zoom by mouse and by keyboard, and each scene MUST offer named camera presets."
-  },
-  {
-    "id": "VIS-003",
-    "workstream": "VIS",
-    "title": "The view MUST show the state that matters for control: sensor beams and whether they detect, actuator state, and the signal name of a part…"
-  },
-  {
-    "id": "VIS-004",
-    "workstream": "VIS",
-    "title": "On each reference machine at 1920×1080, the largest reference scene MUST render at 60 frames per second typically and never below 30 (design…"
-  },
-  {
-    "id": "VIS-005",
-    "workstream": "VIS",
-    "title": "A quality setting with at least three levels MUST exist, chosen automatically at first run."
-  },
-  {
-    "id": "VIS-006",
-    "workstream": "VIS",
-    "title": "When WebGL 2 is unavailable, the graphics context is lost and cannot be restored, or the frame rate stays below the minimum, Studio MUST say…"
-  },
-  {
-    "id": "VIS-007",
-    "workstream": "VIS",
-    "title": "Every scene MUST have a two-dimensional schematic generated from the scene, with no drawing made by hand per scene."
-  },
-  {
-    "id": "VIS-008",
-    "workstream": "VIS",
-    "title": "The plant facts MUST be available as live text and announced when the situation changes, not on every scan."
-  },
-  {
-    "id": "VIS-009",
-    "workstream": "VIS",
-    "title": "The light, dark, high-contrast and reduced-motion modes MUST apply to the 3D panel (UX-027)."
-  },
-  {
-    "id": "VIS-010",
-    "workstream": "VIS",
-    "title": "While a scene runs, a person MUST be able to operate panel parts (push button, selector, emergency stop, potentiometer), trigger a fault…"
-  },
-  {
-    "id": "VIS-011",
-    "workstream": "VIS",
-    "title": "All text of the view MUST exist in English and Spanish (LRN-029), and its controls MUST come from the Studio component kit (UX-002)."
-  },
-  {
-    "id": "VIS-012",
-    "workstream": "VIS",
-    "title": "The Electron security posture MUST NOT weaken: the sandboxed renderer and the existing content security policy stay as they are…"
-  },
-  {
-    "id": "VIS-013",
-    "workstream": "VIS",
-    "title": "The feature MUST add no more than 50 MB to each installer (design default, confirmed at the gate), and every binary asset MUST have its…"
-  },
-  { "id": "PRT-001", "workstream": "PRT", "title": "Every part of the minimum catalogue MUST exist and be usable in a scene." },
-  {
-    "id": "PRT-002",
-    "workstream": "PRT",
-    "title": "A part MUST be defined once (P10): its signals, configuration, limits, fault actions, English and Spanish names and its documentation page…"
-  },
-  {
-    "id": "PRT-003",
-    "workstream": "PRT",
-    "title": "A part's behaviour MUST be tested on the headless core, including its limits (speed, stroke, load)."
-  },
-  {
-    "id": "PRT-004",
-    "workstream": "PRT",
-    "title": "Where a reference scene needs both, a part MUST offer a digital variant (commands and limit sensors) and a numeric variant (setpoint and…"
-  },
-  {
-    "id": "PRT-005",
-    "workstream": "PRT",
-    "title": "The vision sensor MUST report the identity of the item in view as a code; the light array MUST report height; the scale MUST report weight."
-  },
-  {
-    "id": "PRT-006",
-    "workstream": "PRT",
-    "title": "Sensors MUST react to the property they name: an inductive sensor to metal items only, a capacitive sensor to any item, an optical sensor to…"
-  },
-  {
-    "id": "PRT-007",
-    "workstream": "PRT",
-    "title": "Parts MUST have snap points so that conveyors, sensors and stations connect without manual alignment."
-  },
-  {
-    "id": "PRT-008",
-    "workstream": "PRT",
-    "title": "Each part SHOULD define the fault actions a diagnosis lesson needs: at least a sensor stuck on or off, an actuator that does not move, and…"
-  },
-  {
-    "id": "PRT-009",
-    "workstream": "PRT",
-    "title": "A part's geometry MUST be generated in code or be a mesh with a recorded licence that allows redistribution (P17)."
-  },
-  {
-    "id": "PRT-010",
-    "workstream": "PRT",
-    "title": "Adding a part MUST NOT require a change to a scene file format version, to the plant link or to lesson packages."
-  },
-  { "id": "SCN-001", "workstream": "SCN", "title": "The 21 reference scenes MUST ship." },
-  {
-    "id": "SCN-002",
-    "workstream": "SCN",
-    "title": "A reference scene MUST use only the catalogue and the scene format available to every user."
-  },
-  { "id": "SCN-003", "workstream": "SCN", "title": "Layouts, names, text and assets MUST be original (P17)." },
-  {
-    "id": "SCN-004",
-    "workstream": "SCN",
-    "title": "Each reference scene MUST have a deterministic scenario that its reference program passes and an empty program fails, run in CI."
-  },
-  {
-    "id": "SCN-005",
-    "workstream": "SCN",
-    "title": "A scenario MUST be able to script panel inputs, item emission and fault actions at virtual times, and to assert on plant facts with the…"
-  },
-  { "id": "SCN-006", "workstream": "SCN", "title": "A scene MUST be saved with its project." },
-  {
-    "id": "SCN-007",
-    "workstream": "SCN",
-    "title": "Each scene MUST declare the shortest sensor pulse it can produce at catalogue speeds, for LNK-014."
-  },
-  {
-    "id": "SCN-008",
-    "workstream": "SCN",
-    "title": "The editor MUST place, move, rotate, duplicate and delete parts with snapping and a grid, while the plant is stopped."
-  },
-  {
-    "id": "SCN-009",
-    "workstream": "SCN",
-    "title": "The editor MUST let the user configure a part: its name, variant and limits within the documented range."
-  },
-  { "id": "SCN-010", "workstream": "SCN", "title": "The editor MUST support undo and redo for every edit." },
-  {
-    "id": "SCN-011",
-    "workstream": "SCN",
-    "title": "The editor MUST list the signals of the scene, built from its parts, with type and direction."
-  },
-  {
-    "id": "SCN-012",
-    "workstream": "SCN",
-    "title": "A plant-map editor MUST bind signals to program inputs and outputs with a type check, and report an unbound or mismatched signal as a…"
-  },
-  {
-    "id": "SCN-013",
-    "workstream": "SCN",
-    "title": "Studio SHOULD generate the variable declarations for a scene's signals, so that a learner starts a program without typing the I/O list."
-  },
-  {
-    "id": "SCN-014",
-    "workstream": "SCN",
-    "title": "The editor MUST offer a path that needs no pointer: add a part from a list, position it with numeric fields, bind its signals (UX-025)."
-  },
-  {
-    "id": "SCN-015",
-    "workstream": "SCN",
-    "title": "The editor MUST validate a scene as it is edited and show each problem at the part that causes it."
-  },
-  { "id": "SCN-016", "workstream": "SCN", "title": "Studio MUST offer an empty floor and each reference scene as starting templates." },
-  { "id": "LNK-001", "workstream": "LNK", "title": "The plant map MUST carry typed signals and name a scene or a 2.0 plant." },
-  {
-    "id": "LNK-002",
-    "workstream": "LNK",
-    "title": "Binding MUST be explicit and checked against the program's I/O map, including type compatibility."
-  },
-  {
-    "id": "LNK-003",
-    "workstream": "LNK",
-    "title": "The exchange MUST be atomic with respect to the scan: all sensor values of a plant step are applied at one scan boundary, and commands are…"
-  },
-  { "id": "LNK-004", "workstream": "LNK", "title": "With the native runtime the exchange MUST satisfy PLT-005." },
-  {
-    "id": "LNK-005",
-    "workstream": "LNK",
-    "title": "With the WASM runtime the plant MUST work, and any difference from the native runtime MUST be a declared capability gap (IDE-025, P16)."
-  },
-  {
-    "id": "LNK-006",
-    "workstream": "LNK",
-    "title": "Plant writes MUST go through the force-aware memory interface: a forced input keeps its forced value over the plant's (RT-011)."
-  },
-  {
-    "id": "LNK-007",
-    "workstream": "LNK",
-    "title": "A board MUST offer plant I/O mode: the inputs bound in the plant map take their values from the plant link instead of the board's pins, and…"
-  },
-  { "id": "LNK-008", "workstream": "LNK", "title": "Entering plant I/O mode is a physical operation." },
-  { "id": "LNK-009", "workstream": "LNK", "title": "AI and MCP MUST NOT start plant I/O mode (constitution rule 9)." },
-  {
-    "id": "LNK-010",
-    "workstream": "LNK",
-    "title": "While a board is in plant I/O mode its physical outputs MUST be in the safe state, unless a person has turned on mirroring for that session…"
-  },
-  {
-    "id": "LNK-011",
-    "workstream": "LNK",
-    "title": "When the session ends, times out or loses its link, the board MUST leave plant I/O mode into its documented safe state."
-  },
-  { "id": "LNK-012", "workstream": "LNK", "title": "Plant I/O mode MUST be a negotiated capability of the control link (COM-019)." },
-  { "id": "LNK-013", "workstream": "LNK", "title": "Deploy admission (IO-004) MUST count a plant-fed input as provided." },
-  { "id": "LNK-014", "workstream": "LNK", "title": "Against a board the plant runs in real time." },
-  {
-    "id": "LNK-015",
-    "workstream": "LNK",
-    "title": "The plant exchange MUST NOT delay the scan (COM-025): its time per scan is bounded, and an exchange that arrives late is counted and…"
-  },
-  {
-    "id": "LNK-016",
-    "workstream": "LNK",
-    "title": "Plant I/O mode MUST be implemented in C99 behind the port interface of IO-013 (constitution rule 1), with bounded static memory and no…"
-  },
-  {
-    "id": "LNK-017",
-    "workstream": "LNK",
-    "title": "Plant I/O mode MUST work over USB serial, and SHOULD work over TCP on boards with a network interface."
-  },
-  {
-    "id": "LNK-018",
-    "workstream": "LNK",
-    "title": "The firmware MUST validate every plant frame before it changes an input (P11): frame integrity, session, signal count and width."
-  },
-  {
-    "id": "CRS-001",
-    "workstream": "CRS",
-    "title": "A course outline MUST be written and approved by the owner before any lesson: for every module, its lessons with scene, language, tracks and…"
-  },
-  {
-    "id": "CRS-002",
-    "workstream": "CRS",
-    "title": "The course MUST appear in Learn as new modules ordered by difficulty and as at least one path."
-  },
-  { "id": "CRS-003", "workstream": "CRS", "title": "Every reference scene MUST be used by at least one graded lesson." },
-  {
-    "id": "CRS-004",
-    "workstream": "CRS",
-    "title": "A scene lesson MUST be a data package (LRN-027): adding one requires no change to application code."
-  },
-  {
-    "id": "CRS-005",
-    "workstream": "CRS",
-    "title": "A scene lesson MUST be graded by a scenario pinned by its content hash, with at least one expectation on a plant fact, so that writing…"
-  },
-  {
-    "id": "CRS-006",
-    "workstream": "CRS",
-    "title": "Grading MUST run headless, give the same result on every platform (PLT-006), need no 3D view (P14) and finish within 60 seconds on the…"
-  },
-  {
-    "id": "CRS-007",
-    "workstream": "CRS",
-    "title": "The outline MUST cover at least: sequences with set and reset, timers, counters, analog scaling, PID level control with PID_Compact, state…"
-  },
-  { "id": "CRS-008", "workstream": "CRS", "title": "Each lesson MUST state its languages." },
-  {
-    "id": "CRS-009",
-    "workstream": "CRS",
-    "title": "A lesson whose scene meets LNK-014 on a learner board MUST offer the hardware track through plant I/O mode, and its page MUST say what to…"
-  },
-  {
-    "id": "CRS-010",
-    "workstream": "CRS",
-    "title": "The 68 lessons of 2.0 MUST keep their starter, solution, scenario, scenario hash and simulation grade."
-  },
-  {
-    "id": "CRS-011",
-    "workstream": "CRS",
-    "title": "Every lesson, hint, part name and scene text MUST exist in English and Spanish with the same structure (LRN-029)."
-  },
-  { "id": "CRS-012", "workstream": "CRS", "title": "The course MUST include lessons in which the learner builds or changes a scene." },
-  {
-    "id": "CRS-013",
-    "workstream": "CRS",
-    "title": "Public text about the plant MUST state only what recorded evidence supports, including the frame rates, the supported boards and the link…"
-  }
+  {"id":"PLT-001","workstream":"PLT","title":"The plant core MUST run a scene without a window, a GPU or a document object model, in the test runner the rest of Studio uses and from the…"},
+  {"id":"PLT-002","workstream":"PLT","title":"A scene MUST be data: a versioned file, validated against a schema before use, that lists catalogue parts with their position, configuration…"},
+  {"id":"PLT-003","workstream":"PLT","title":"Signals MUST be typed."},
+  {"id":"PLT-004","workstream":"PLT","title":"The plant MUST advance in fixed steps of simulated time that do not depend on frame rate, host speed or polling rate."},
+  {"id":"PLT-005","workstream":"PLT","title":"In simulation the plant and the program MUST share one virtual clock: when the program has run N milliseconds of scans, the plant has…"},
+  {"id":"PLT-006","workstream":"PLT","title":"The same scene, program and input script MUST produce the same signal trace and the same plant facts on Linux, macOS and Windows and on…"},
+  {"id":"PLT-007","workstream":"PLT","title":"Items MUST have mass, friction and collision."},
+  {"id":"PLT-008","workstream":"PLT","title":"A stack of five boxes on a pallet MUST stay stacked while the pallet travels on a conveyor at catalogue speed and while that conveyor starts…"},
+  {"id":"PLT-009","workstream":"PLT","title":"A process without rigid bodies (tank level, flow) MUST be a numeric model stepped on the same clock, with its equations documented."},
+  {"id":"PLT-010","workstream":"PLT","title":"The core MUST expose named plant facts about what happened: items produced, delivered, dropped and collided, positions reached, levels."},
+  {"id":"PLT-011","workstream":"PLT","title":"A part MAY define fault actions (a jammed item, a stuck sensor, an actuator that does not move)."},
+  {"id":"PLT-012","workstream":"PLT","title":"Reset MUST return a scene to exactly its initial state, and the state of a running scene MUST be capturable and restorable."},
+  {"id":"PLT-013","workstream":"PLT","title":"The four 2.0 plants MUST keep grading unchanged: the models inside the scenario engine, their scenario files and their hashes."},
+  {"id":"PLT-014","workstream":"PLT","title":"The core MUST simulate the largest reference scene, and a stress scene of at least 200 dynamic items, in real time on the reference machines…"},
+  {"id":"PLT-015","workstream":"PLT","title":"A running plant MUST NOT slow the editor."},
+  {"id":"PLT-016","workstream":"PLT","title":"Failures MUST be located messages (P1): a scene that fails validation, an unknown part, a missing asset."},
+  {"id":"PLT-017","workstream":"PLT","title":"A scene MUST have one model."},
+  {"id":"VIS-001","workstream":"VIS","title":"Studio MUST show the running scene in a 3D panel in a plant document of the editor area (decision D-20 of spec 013)."},
+  {"id":"VIS-002","workstream":"VIS","title":"The camera MUST orbit, pan and zoom by mouse and by keyboard, and each scene MUST offer named camera presets."},
+  {"id":"VIS-003","workstream":"VIS","title":"The view MUST show the state that matters for control: sensor beams and whether they detect, actuator state, and the signal name of a part…"},
+  {"id":"VIS-004","workstream":"VIS","title":"On each reference machine at 1920×1080, the largest reference scene MUST render at 60 frames per second typically and never below 30 (design…"},
+  {"id":"VIS-005","workstream":"VIS","title":"A quality setting with at least three levels MUST exist, chosen automatically at first run."},
+  {"id":"VIS-006","workstream":"VIS","title":"When WebGL 2 is unavailable, the graphics context is lost and cannot be restored, or the frame rate stays below the minimum, Studio MUST say…"},
+  {"id":"VIS-007","workstream":"VIS","title":"Every scene MUST have a two-dimensional schematic generated from the scene, with no drawing made by hand per scene."},
+  {"id":"VIS-008","workstream":"VIS","title":"The plant facts MUST be available as live text and announced when the situation changes, not on every scan."},
+  {"id":"VIS-009","workstream":"VIS","title":"The light, dark, high-contrast and reduced-motion modes MUST apply to the 3D panel (UX-027)."},
+  {"id":"VIS-010","workstream":"VIS","title":"While a scene runs, a person MUST be able to operate panel parts (push button, selector, emergency stop, potentiometer), trigger a fault…"},
+  {"id":"VIS-011","workstream":"VIS","title":"All text of the view MUST exist in English and Spanish (LRN-029), and its controls MUST come from the Studio component kit (UX-002)."},
+  {"id":"VIS-012","workstream":"VIS","title":"The Electron security posture MUST NOT weaken: the sandboxed renderer and the existing content security policy stay as they are…"},
+  {"id":"VIS-013","workstream":"VIS","title":"The feature MUST add no more than 50 MB to each installer (design default, confirmed at the gate), and every binary asset MUST have its…"},
+  {"id":"PRT-001","workstream":"PRT","title":"Every part of the minimum catalogue MUST exist and be usable in a scene."},
+  {"id":"PRT-002","workstream":"PRT","title":"A part MUST be defined once (P10): its signals, configuration, limits, fault actions, English and Spanish names and its documentation page…"},
+  {"id":"PRT-003","workstream":"PRT","title":"A part's behaviour MUST be tested on the headless core, including its limits (speed, stroke, load)."},
+  {"id":"PRT-004","workstream":"PRT","title":"Where a reference scene needs both, a part MUST offer a digital variant (commands and limit sensors) and a numeric variant (setpoint and…"},
+  {"id":"PRT-005","workstream":"PRT","title":"The vision sensor MUST report the identity of the item in view as a code; the light array MUST report height; the scale MUST report weight."},
+  {"id":"PRT-006","workstream":"PRT","title":"Sensors MUST react to the property they name: an inductive sensor to metal items only, a capacitive sensor to any item, an optical sensor to…"},
+  {"id":"PRT-007","workstream":"PRT","title":"Parts MUST have snap points so that conveyors, sensors and stations connect without manual alignment."},
+  {"id":"PRT-008","workstream":"PRT","title":"Each part SHOULD define the fault actions a diagnosis lesson needs: at least a sensor stuck on or off, an actuator that does not move, and…"},
+  {"id":"PRT-009","workstream":"PRT","title":"A part's geometry MUST be generated in code or be a mesh with a recorded licence that allows redistribution (P17)."},
+  {"id":"PRT-010","workstream":"PRT","title":"Adding a part MUST NOT require a change to a scene file format version, to the plant link or to lesson packages."},
+  {"id":"SCN-001","workstream":"SCN","title":"The 21 reference scenes MUST ship."},
+  {"id":"SCN-002","workstream":"SCN","title":"A reference scene MUST use only the catalogue and the scene format available to every user."},
+  {"id":"SCN-003","workstream":"SCN","title":"Layouts, names, text and assets MUST be original (P17)."},
+  {"id":"SCN-004","workstream":"SCN","title":"Each reference scene MUST have a deterministic scenario that its reference program passes and an empty program fails, run in CI."},
+  {"id":"SCN-005","workstream":"SCN","title":"A scenario MUST be able to script panel inputs, item emission and fault actions at virtual times, and to assert on plant facts with the…"},
+  {"id":"SCN-006","workstream":"SCN","title":"A scene MUST be saved with its project."},
+  {"id":"SCN-007","workstream":"SCN","title":"Each scene MUST declare the shortest sensor pulse it can produce at catalogue speeds, for LNK-014."},
+  {"id":"SCN-008","workstream":"SCN","title":"The editor MUST place, move, rotate, duplicate and delete parts with snapping and a grid, while the plant is stopped."},
+  {"id":"SCN-009","workstream":"SCN","title":"The editor MUST let the user configure a part: its name, variant and limits within the documented range."},
+  {"id":"SCN-010","workstream":"SCN","title":"The editor MUST support undo and redo for every edit."},
+  {"id":"SCN-011","workstream":"SCN","title":"The editor MUST list the signals of the scene, built from its parts, with type and direction."},
+  {"id":"SCN-012","workstream":"SCN","title":"A plant-map editor MUST bind signals to program inputs and outputs with a type check, and report an unbound or mismatched signal as a…"},
+  {"id":"SCN-013","workstream":"SCN","title":"Studio SHOULD generate the variable declarations for a scene's signals, so that a learner starts a program without typing the I/O list."},
+  {"id":"SCN-014","workstream":"SCN","title":"The editor MUST offer a path that needs no pointer: add a part from a list, position it with numeric fields, bind its signals (UX-025)."},
+  {"id":"SCN-015","workstream":"SCN","title":"The editor MUST validate a scene as it is edited and show each problem at the part that causes it."},
+  {"id":"SCN-016","workstream":"SCN","title":"Studio MUST offer an empty floor and each reference scene as starting templates."},
+  {"id":"LNK-001","workstream":"LNK","title":"The plant map MUST carry typed signals and name a scene or a 2.0 plant."},
+  {"id":"LNK-002","workstream":"LNK","title":"Binding MUST be explicit and checked against the program's I/O map, including type compatibility."},
+  {"id":"LNK-003","workstream":"LNK","title":"The exchange MUST be atomic with respect to the scan: all sensor values of a plant step are applied at one scan boundary, and commands are…"},
+  {"id":"LNK-004","workstream":"LNK","title":"With the native runtime the exchange MUST satisfy PLT-005."},
+  {"id":"LNK-005","workstream":"LNK","title":"With the WASM runtime the plant MUST work, and any difference from the native runtime MUST be a declared capability gap (IDE-025, P16)."},
+  {"id":"LNK-006","workstream":"LNK","title":"Plant writes MUST go through the force-aware memory interface: a forced input keeps its forced value over the plant's (RT-011)."},
+  {"id":"LNK-007","workstream":"LNK","title":"A board MUST offer plant I/O mode: the inputs bound in the plant map take their values from the plant link instead of the board's pins, and…"},
+  {"id":"LNK-008","workstream":"LNK","title":"Entering plant I/O mode is a physical operation."},
+  {"id":"LNK-009","workstream":"LNK","title":"AI and MCP MUST NOT start plant I/O mode (constitution rule 9)."},
+  {"id":"LNK-010","workstream":"LNK","title":"While a board is in plant I/O mode its physical outputs MUST be in the safe state, unless a person has turned on mirroring for that session…"},
+  {"id":"LNK-011","workstream":"LNK","title":"When the session ends, times out or loses its link, the board MUST leave plant I/O mode into its documented safe state."},
+  {"id":"LNK-012","workstream":"LNK","title":"Plant I/O mode MUST be a negotiated capability of the control link (COM-019)."},
+  {"id":"LNK-013","workstream":"LNK","title":"Deploy admission (IO-004) MUST count a plant-fed input as provided."},
+  {"id":"LNK-014","workstream":"LNK","title":"Against a board the plant runs in real time."},
+  {"id":"LNK-015","workstream":"LNK","title":"The plant exchange MUST NOT delay the scan (COM-025): its time per scan is bounded, and an exchange that arrives late is counted and…"},
+  {"id":"LNK-016","workstream":"LNK","title":"Plant I/O mode MUST be implemented in C99 behind the port interface of IO-013 (constitution rule 1), with bounded static memory and no…"},
+  {"id":"LNK-017","workstream":"LNK","title":"Plant I/O mode MUST work over USB serial, and SHOULD work over TCP on boards with a network interface."},
+  {"id":"LNK-018","workstream":"LNK","title":"The firmware MUST validate every plant frame before it changes an input (P11): frame integrity, session, signal count and width."},
+  {"id":"CRS-001","workstream":"CRS","title":"A course outline MUST be written and approved by the owner before any lesson: for every module, its lessons with scene, language, tracks and…"},
+  {"id":"CRS-002","workstream":"CRS","title":"The course MUST appear in Learn as new modules ordered by difficulty and as at least one path."},
+  {"id":"CRS-003","workstream":"CRS","title":"Every reference scene MUST be used by at least one graded lesson."},
+  {"id":"CRS-004","workstream":"CRS","title":"A scene lesson MUST be a data package (LRN-027): adding one requires no change to application code."},
+  {"id":"CRS-005","workstream":"CRS","title":"A scene lesson MUST be graded by a scenario pinned by its content hash, with at least one expectation on a plant fact, so that writing…"},
+  {"id":"CRS-006","workstream":"CRS","title":"Grading MUST run headless, give the same result on every platform (PLT-006), need no 3D view (P14) and finish within 60 seconds on the…"},
+  {"id":"CRS-007","workstream":"CRS","title":"The outline MUST cover at least: sequences with set and reset, timers, counters, analog scaling, PID level control with PID_Compact, state…"},
+  {"id":"CRS-008","workstream":"CRS","title":"Each lesson MUST state its languages."},
+  {"id":"CRS-009","workstream":"CRS","title":"A lesson whose scene meets LNK-014 on a learner board MUST offer the hardware track through plant I/O mode, and its page MUST say what to…"},
+  {"id":"CRS-010","workstream":"CRS","title":"The 68 lessons of 2.0 MUST keep their starter, solution, scenario, scenario hash and simulation grade."},
+  {"id":"CRS-011","workstream":"CRS","title":"Every lesson, hint, part name and scene text MUST exist in English and Spanish with the same structure (LRN-029)."},
+  {"id":"CRS-012","workstream":"CRS","title":"The course MUST include lessons in which the learner builds or changes a scene."},
+  {"id":"CRS-013","workstream":"CRS","title":"Public text about the plant MUST state only what recorded evidence supports, including the frame rates, the supported boards and the link…"}
 ]
