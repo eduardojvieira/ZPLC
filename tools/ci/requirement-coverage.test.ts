@@ -502,3 +502,57 @@ describe('the committed evidence (VF-027)', () => {
     expect(Object.values(byWorkstream).reduce((sum, counts) => sum + counts.total, 0)).toBe(394);
   });
 });
+
+// Spec 012 (the 2.1 plant simulation) is reported next to spec 011 but never gates CI (spec 012 section 7 item 1).
+describe('requirement coverage of spec 012', () => {
+  const run = (...args: string[]) =>
+    Bun.spawnSync(['bun', 'tools/ci/requirement-coverage.ts', ...args], { cwd: new URL('../../', import.meta.url).pathname });
+  const text = (result: ReturnType<typeof run>) => result.stdout.toString();
+  const index012 = () =>
+    JSON.parse(readFileSync(new URL('./requirement-index-012.json', import.meta.url), 'utf8')) as Array<{
+      id: string;
+      workstream: string;
+      title: string;
+    }>;
+
+  it('requirements of spec 012 are indexed with their IDs', () => {
+    const counts: Record<string, number> = {};
+    for (const { workstream } of index012()) counts[workstream] = (counts[workstream] ?? 0) + 1;
+    expect(counts).toEqual({ PLT: 17, VIS: 13, PRT: 10, SCN: 16, LNK: 18, CRS: 13 });
+  });
+
+  it('a requirement of spec 012 with no test and no condition is reported as uncovered, and the report never fails', () => {
+    const result = run('--spec', '012', '--list');
+    expect(result.exitCode).toBe(0);
+    expect(text(result)).toContain('spec 012');
+    expect(text(result)).toContain('PLT-001 uncovered');
+    expect(text(result)).toMatch(/overall\s+\d+ \/\s+87/);
+  });
+
+  it('a test that names a requirement of spec 012 covers it', () => {
+    const index = index012();
+    const prefixes = new Set(index.map((entry) => entry.workstream));
+    const scanned = scanFiles(
+      ['packages/zplc-ide/src/plant/a.test.ts'],
+      () => "it('the core runs headless (PLT-001)', () => {});",
+      {
+        runs: [{ pattern: 'packages/zplc-ide/src/**/*.test.ts', job: 'ide' }],
+        notRunInCi: [],
+      } as unknown as Inventory,
+      prefixes,
+    );
+    const { states, overall } = coverage(index, mergeEvidence(scanned, {}), []);
+    expect(states.get('PLT-001')).toBe('covered');
+    expect(overall.total).toBe(87);
+    expect(overall.covered).toBe(1);
+  });
+
+  it('leaves the output and the check of spec 011 as they were', () => {
+    const report = run();
+    expect(text(report)).not.toContain('PLT');
+    expect(text(report)).toMatch(/overall\s+\d+ \/\s+394/);
+    const check = run('--check');
+    expect(check.exitCode).toBe(0);
+    expect(text(check)).toMatch(/^requirement-coverage: \d+ of 394 requirements covered/);
+  });
+});
