@@ -72,6 +72,8 @@ typedef struct {
   uint8_t has_active;
   uint32_t at_ms;
   uint8_t at_ms_state;
+  /* simulation.clock.set: 1 for "virtual", 0 for "free". */
+  uint8_t clock_virtual;
   /* trace.arm: capacity, in_bytes, out_bytes; trace.read: from, count (in that order). */
   uint32_t trace_values[3];
 } zplc_native_request_t;
@@ -851,6 +853,33 @@ static int parse_scenario_step_params(const char **cursor, zplc_native_request_t
   return 0;
 }
 
+/* simulation.clock.set takes exactly {"mode":"virtual"} or {"mode":"free"}; the token buffer holds 7 characters and a
+ * longer string is refused by the string parser. */
+static int parse_clock_set_params(const char **cursor, zplc_native_request_t *request) {
+  char key[8];
+  char mode[8];
+
+  skip_json_space(cursor);
+  if (*(*cursor)++ != '{')
+    return -1;
+  skip_json_space(cursor);
+  if (parse_canonical_json_string(cursor, key, sizeof(key)) != 0 || strcmp(key, "mode") != 0)
+    return -1;
+  skip_json_space(cursor);
+  if (*(*cursor)++ != ':')
+    return -1;
+  skip_json_space(cursor);
+  if (parse_canonical_json_string(cursor, mode, sizeof(mode)) != 0)
+    return -1;
+  if (strcmp(mode, "virtual") == 0) {
+    request->clock_virtual = 1U;
+  } else if (strcmp(mode, "free") != 0) {
+    return -1;
+  }
+  skip_json_space(cursor);
+  return *(*cursor)++ == '}' ? 0 : -1;
+}
+
 static int parse_hello_params(const char **cursor) {
   char key[32];
   char value[128];
@@ -1022,6 +1051,9 @@ static int parse_canonical_request(const char *line, zplc_native_request_t *requ
       return -1;
   } else if (strcmp(request->method, "scenario.step") == 0) {
     if (parse_scenario_step_params(&cursor, request) != 0)
+      return -1;
+  } else if (strcmp(request->method, "simulation.clock.set") == 0) {
+    if (parse_clock_set_params(&cursor, request) != 0)
       return -1;
   } else if (is_control_params_method(request->method)) {
     if (parse_canonical_control_params(&cursor, request->method, request) != 0)
@@ -1798,6 +1830,32 @@ static int handle_step(zplc_native_runtime_session_t *session, const zplc_native
   return format_status_result(session, response, response_size, request->id);
 }
 
+/* simulation.clock.set: a stopped session takes the virtual clock (scenario.step only) or gives it back (wall clock). The
+ * flag is the one the environment switch sets, so a session has one clock rule, not two. */
+static int handle_clock_set(zplc_native_runtime_session_t *session, const zplc_native_request_t *request, char *response,
+                            size_t response_size) {
+  int length;
+  size_t used;
+
+  if (session->state != ZPLC_NATIVE_SESSION_IDLE) {
+    return format_error_response(request->id, "INVALID_STATE", "clock mode can only change while the runtime is stopped", response,
+                                 response_size);
+  }
+  zplc_native_runtime_session_set_scenario_clock_enabled(session, request->clock_virtual != 0U ? 1 : 0);
+  length = format_status_result(session, response, response_size, request->id);
+  if (length < 2) {
+    return format_failed(response, response_size);
+  }
+  /* The status result ends in "}}": the fields go inside its result object. */
+  used = (size_t)length - 2U;
+  if (append_jsonf(response, response_size, &used, ",\"clock_mode\":\"%s\",\"scan_interval_ms\":%u}}",
+                   session->scenario_clock_enabled != 0U ? "virtual" : "free",
+                   session->program_loaded != 0U ? (unsigned)session->scan_interval_ms : 0U) != 0) {
+    return format_failed(response, response_size);
+  }
+  return (int)used;
+}
+
 static int handle_scenario_step(zplc_native_runtime_session_t *session, const zplc_native_request_t *request, char *response,
                                 size_t response_size, char *event, size_t event_size) {
   session_batch_t batch;
@@ -1805,6 +1863,10 @@ static int handle_scenario_step(zplc_native_runtime_session_t *session, const zp
   int first_release;
   int run_result;
   uint32_t expected_at_ms;
+  /* A breakpoint holds a scan: its step did not complete one. The scan continues at the timestamp it began with, so a
+   * hold costs the program no virtual time: scan n completes at the same timestamp as in a run with no hold. */
+  const int continuing = session->scan_in_flight != 0U;
+  uint32_t held_tasks = 0U;
 
   if (session->scenario_clock_enabled == 0U) {
     return format_error_response(request->id, "INVALID_STATE", "scenario.step is unavailable for this session", response, response_size);
@@ -1829,13 +1891,24 @@ static int handle_scenario_step(zplc_native_runtime_session_t *session, const zp
     if (session->scan_interval_ms == 0U || session->scenario_last_timestamp_ms > UINT32_MAX - session->scan_interval_ms) {
       return format_error_response(request->id, "INVALID_STATE", "scenario timestamp cannot advance safely", response, response_size);
     }
-    expected_at_ms = session->scenario_last_timestamp_ms + session->scan_interval_ms;
+    expected_at_ms = continuing ? session->scenario_last_timestamp_ms : session->scenario_last_timestamp_ms + session->scan_interval_ms;
     if (request->at_ms != expected_at_ms) {
-      return format_error_response(request->id, "INVALID_REQUEST", "scenario at_ms must advance by the task interval", response,
-                                   response_size);
+      return format_error_response(request->id, "INVALID_REQUEST",
+                                   continuing ? "scenario at_ms must repeat the held timestamp while a scan is held"
+                                              : "scenario at_ms must advance by the task interval",
+                                   response, response_size);
     }
   }
 
+  if (continuing && session->task_count > 1U) {
+    uint8_t held;
+
+    for (held = 0U; held < session->task_count; ++held) {
+      if (zplc_vm_is_paused(&session->task_vms[held]) != 0) {
+        held_tasks |= (uint32_t)1U << held;
+      }
+    }
+  }
   if (session_resume_tasks(session) != 0) {
     session_apply_safe_state(session);
     return format_error_response(request->id, "RUNTIME_FAILURE", "failed to resume paused vm before step", response, response_size);
@@ -1844,7 +1917,12 @@ static int handle_scenario_step(zplc_native_runtime_session_t *session, const zp
   /* The first step releases every task; after it each task is released at its own interval (RT-015). A step at
      * which no task is due runs no batch: the images and the scan counts stay as they are. */
   first_release = session->scenario_timestamp_started == 0U;
-  due = session->multirate != 0U ? session_due_tasks(session, request->at_ms, first_release) : ZPLC_NATIVE_ALL_TASKS;
+  /* The held scan finishes the tasks it stopped in; their release was marked when the scan began. */
+  if (continuing && session->multirate != 0U && held_tasks != 0U) {
+    due = held_tasks;
+  } else {
+    due = session->multirate != 0U ? session_due_tasks(session, request->at_ms, first_release) : ZPLC_NATIVE_ALL_TASKS;
+  }
   session_plan_batch(session, due, request->at_ms, first_release, &batch);
   if (due != 0U) {
     zplc_hal_posix_set_tick_override(request->at_ms);
@@ -1862,7 +1940,7 @@ static int handle_scenario_step(zplc_native_runtime_session_t *session, const zp
       session_apply_safe_state(session);
       return format_error_response(request->id, "RUNTIME_FAILURE", "failed to clear simulation input pulse", response, response_size);
     }
-    if (session->multirate != 0U) {
+    if (session->multirate != 0U && !continuing) {
       session_mark_released(session, &batch, request->at_ms, first_release);
     }
   }
@@ -2212,6 +2290,10 @@ int zplc_native_runtime_session_handle_request(zplc_native_runtime_session_t *se
 
   if (strcmp(request.method, "execution.step") == 0) {
     return handle_step(session, &request, response, response_size, event, event_size);
+  }
+
+  if (strcmp(request.method, "simulation.clock.set") == 0) {
+    return handle_clock_set(session, &request, response, response_size);
   }
 
   if (strcmp(request.method, "scenario.step") == 0) {
