@@ -4,6 +4,9 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
 
 import type { WatchForceEntry } from '../runtime/debugAdapter';
+import type { FactValue, PlantCore, PlantSceneFile } from '../plant/contracts';
+import { compileScenario, runScenario } from '../test-engine';
+import type { DebugMap } from '../compiler';
 import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
 import { createNativeScenarioRuntime, createNativeScenarioSession } from './nativeScenarioRuntime';
 
@@ -110,6 +113,90 @@ describe('createNativeScenarioRuntime', () => {
     await expect(runtime.readOutput(0x1000, 0)).rejects.toThrow('exactly one byte');
     expect(adapter.calls).toEqual(['peek:0:1', 'peek:4096:1']);
     expect(adapter.calls.some((call) => call.startsWith('poke:'))).toBe(false);
+  });
+});
+
+describe('a scene scenario on the native scenario runtime', () => {
+  it('LNK-009 the headless runner needs no hardware or session: only load, reset, step, peek, poke and the force check', async () => {
+    const adapter = new FakeNativeAdapter();
+    const allowed = new Set(['loadProgram', 'reset', 'scenarioStep', 'listForcedValues', 'peek', 'poke']);
+    // any other method of the adapter would be a hardware or session call: the proxy throws on it
+    const strict = new Proxy(adapter, {
+      get: (target, key) => {
+        if (typeof key === 'string' && !allowed.has(key) && !['calls', 'memory', 'forced', 'then'].includes(key))
+          throw new Error(`unexpected adapter call ${key}`);
+        return Reflect.get(target, key) as unknown;
+      },
+    });
+    const bit = (addr: number, bitOffset: number, region: 'IPI' | 'OPI') => ({ addr, bitOffset, type: 'BOOL' as const, region, size: 1 });
+    const debugMap = {
+      version: '1.0.0',
+      programName: 'Cell',
+      compilerVersion: 'test',
+      generatedAt: '',
+      memoryLayout: {
+        ipiBase: 0,
+        ipiSize: 1,
+        opiBase: 0x1000,
+        opiSize: 1,
+        workBase: 0x2000,
+        workSize: 1,
+        retainBase: 0x3000,
+        retainSize: 1,
+        codeBase: 0x4000,
+        codeSize: 1,
+      },
+      pou: { Cell: { type: 'PROGRAM', sourceMap: [], breakpoints: [], vars: { Eye: bit(0, 0, 'IPI'), Belt: bit(0x1000, 0, 'OPI') } } },
+    } as unknown as DebugMap;
+    let advanced = 0;
+    const core = {
+      stepMs: 5,
+      signals: [
+        { name: 'Belt1.run', direction: 'command', type: 'BOOL' },
+        { name: 'EyeA.detect', direction: 'sensor', type: 'BOOL' },
+      ],
+      apply: () => undefined,
+      advance: () => void advanced++,
+      sense: () => ({ 'EyeA.detect': true }),
+      facts: (): Record<string, FactValue> => ({ itemsRemoved: 1 }),
+      reset: () => undefined,
+    } as unknown as PlantCore;
+    const scene: PlantSceneFile = { schemaVersion: 1, name: 'c', parts: [], cameras: [] };
+    const scenario = compileScenario(
+      {
+        schemaVersion: 1,
+        id: 'lnk-009',
+        tickMs: 10,
+        durationMs: 20,
+        scene: { file: 'scene.json', map: 'plant-map.json', script: [] },
+        events: [],
+        expectations: [{ kind: 'EVENTUALLY', fromMs: 0, withinMs: 20, condition: { 'fact:itemsRemoved': true } }],
+      },
+      debugMap,
+      {
+        scene,
+        port: {
+          core,
+          map: {
+            schemaVersion: 2,
+            target: { scene: 'c' },
+            signals: {
+              'Belt1.run': { direction: 'command', type: 'BOOL', point: 'Cell.Belt' },
+              'EyeA.detect': { direction: 'sensor', type: 'BOOL', point: 'Cell.Eye' },
+            },
+          },
+        },
+      },
+    );
+    const result = await runScenario(scenario, new Uint8Array([1]), createNativeScenarioRuntime(strict));
+    expect(result.passed).toBe(true);
+    expect(advanced).toBe(3);
+    expect(adapter.calls.filter((call) => call.startsWith('scenario-step:'))).toEqual([
+      'scenario-step:0',
+      'scenario-step:10',
+      'scenario-step:20',
+    ]);
+    expect(adapter.memory.get(0)![0]! & 1).toBe(1); // the eye reached input memory through poke
   });
 });
 
