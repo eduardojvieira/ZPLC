@@ -96,6 +96,15 @@ describe('exporting a project (IDE-022)', () => {
     ]);
   });
 
+  it('SCN-006 the project archive includes the scene files of the project, byte for byte', async () => {
+    mkdirSync(join(project, 'scenes'));
+    const scene = '{\n  "schemaVersion": 1,\n  "name": "line"\n}\n';
+    writeFileSync(join(project, 'scenes', 'line.scene.json'), scene);
+    await archive().handle(OWNER, PROJECT_ARCHIVE_CHANNEL.exportArchive, [{ rootId: 'root-1' }]);
+    const entry = readZip(readFileSync(join(scratch, 'out.zip'))).find((e) => e.path === 'scenes/line.scene.json');
+    expect(new TextDecoder().decode(entry?.bytes)).toBe(scene);
+  });
+
   it('gives the same bytes when the same project is exported twice', async () => {
     await archive().handle(OWNER, PROJECT_ARCHIVE_CHANNEL.exportArchive, [{ rootId: 'root-1' }]);
     const first = readFileSync(join(scratch, 'out.zip'));
