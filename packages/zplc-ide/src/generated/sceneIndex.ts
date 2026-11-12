@@ -11,6 +11,14 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     }
   },
   {
+    "id": "buffer-release",
+    "dir": "plant-scenes/buffer-release",
+    "names": {
+      "en": "Buffer and release",
+      "es": "Buffer and release"
+    }
+  },
+  {
     "id": "counted-queue",
     "dir": "plant-scenes/counted-queue",
     "names": {
@@ -24,6 +32,14 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "names": {
       "en": "Latch between two sensors",
       "es": "Latch between two sensors"
+    }
+  },
+  {
+    "id": "merge-lines",
+    "dir": "plant-scenes/merge-lines",
+    "names": {
+      "en": "Merge two lines",
+      "es": "Merge two lines"
     }
   }
 ];
