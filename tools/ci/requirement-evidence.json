@@ -2403,6 +2403,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/elementStates.test.ts","test":"forced and faulted variables reach the state of the element that shows them (UX-009, LNG-006)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/signalFlags.test.ts","test":"the variables the poll could not read (UX-009)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/monitoring/signalFlags.test.ts","test":"which variables a diagram shows as forced or faulted (UX-009)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/plant/view/cues.test.ts","test":"VIS-003 every state of the UX-009 vocabulary has its own word and marker"},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/signalTone.test.ts","test":"UX-009 paints SVG from the same tokens as the classes, and marks every state but a plain number"},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/signalTone.test.ts","test":"UX-009 reads a reading of the debug map: absent or unread is unknown, an error is a fault, a force is forced"},
     {"kind":"unit","ref":"packages/zplc-ide/src/theme/signalTone.test.ts","test":"signal tone of a watched value (UX-009 stopgap: Ladder, FBD, SFC, Trace and the I/O faceplate are not on it yet)","partial":true},
