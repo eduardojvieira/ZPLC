@@ -87,10 +87,10 @@ export const sensorParts: readonly RuntimePartDefinition[] = [
       'it. Signal: detect. Faults: stuckOn, stuckOff.',
     es:
       'Detecta cualquier pieza que entre en su haz. El haz parte de la posición de la pieza, corre a lo largo de +x durante rangeM y ' +
-      'está heightM por encima. Señal: detect. Fallos: stuckOn, stuckOff.',
+      'está heightM por encima. Señal: detect. Fallas: stuckOn, stuckOff.',
   }),
   define('sensor-retro', { en: 'Retro-reflective optical sensor', es: 'Sensor óptico retrorreflectivo' }, retroConfig, {
     en: 'A beam to a reflector rangeM away; detects an item that breaks the beam. Signal: detect. Faults: stuckOn, stuckOff.',
-    es: 'Un haz hasta un reflector a rangeM de distancia; detecta una pieza que corte el haz. Señal: detect. Fallos: stuckOn, stuckOff.',
+    es: 'Un haz hasta un reflector a rangeM de distancia; detecta una pieza que corte el haz. Señal: detect. Fallas: stuckOn, stuckOff.',
   }),
 ];

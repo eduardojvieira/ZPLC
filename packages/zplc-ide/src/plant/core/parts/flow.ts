@@ -85,7 +85,7 @@ export const flowParts: readonly RuntimePartDefinition[] = [
         'report the limits. Signals: extend, extended, retracted. Fault: stuck.',
       es:
         'Una placa a través de una cinta en la posición de la pieza (el centro de la superficie de la cinta). Tarda 0,4 s en recorrer; ' +
-        'extended y retracted indican los límites. Señales: extend, extended, retracted. Fallo: stuck.',
+        'extended y retracted indican los límites. Señales: extend, extended, retracted. Falla: stuck.',
     },
     runtime: bladeRuntime,
   },

@@ -34,11 +34,11 @@ Ninguna.
 
 Ninguna.
 
-### Palé
+### Tarima
 
 `pallet`
 
-Un palé de 1,2 por 0,8 m, de 0,144 m de alto y 25 kg. Su posición es el centro de su cara inferior.
+Una tarima de 1,2 por 0,8 m, de 0,144 m de alto y 25 kg. Su posición es el centro de su cara inferior.
 
 #### Ajustes
 
@@ -189,7 +189,7 @@ Un transportador de cuarto de vuelta con el radio de línea central indicado. La
 
 `stop-blade`
 
-Una placa a través de una cinta en la posición de la pieza (el centro de la superficie de la cinta). Tarda 0,4 s en recorrer; extended y retracted indican los límites. Señales: extend, extended, retracted. Fallo: stuck.
+Una placa a través de una cinta en la posición de la pieza (el centro de la superficie de la cinta). Tarda 0,4 s en recorrer; extended y retracted indican los límites. Señales: extend, extended, retracted. Falla: stuck.
 
 #### Ajustes
 
@@ -216,7 +216,7 @@ Una placa a través de una cinta en la posición de la pieza (el centro de la su
 
 `sensor-diffuse`
 
-Detecta cualquier pieza que entre en su haz. El haz parte de la posición de la pieza, corre a lo largo de +x durante rangeM y está heightM por encima. Señal: detect. Fallos: stuckOn, stuckOff.
+Detecta cualquier pieza que entre en su haz. El haz parte de la posición de la pieza, corre a lo largo de +x durante rangeM y está heightM por encima. Señal: detect. Fallas: stuckOn, stuckOff.
 
 #### Ajustes
 
@@ -239,7 +239,7 @@ Detecta cualquier pieza que entre en su haz. El haz parte de la posición de la 
 
 `sensor-retro`
 
-Un haz hasta un reflector a rangeM de distancia; detecta una pieza que corte el haz. Señal: detect. Fallos: stuckOn, stuckOff.
+Un haz hasta un reflector a rangeM de distancia; detecta una pieza que corte el haz. Señal: detect. Fallas: stuckOn, stuckOff.
 
 #### Ajustes
 

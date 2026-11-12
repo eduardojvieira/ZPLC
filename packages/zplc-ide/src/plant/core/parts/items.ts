@@ -131,14 +131,14 @@ export const itemParts: readonly RuntimePartDefinition[] = [
   {
     id: 'pallet',
     family: 'items',
-    names: { en: 'Pallet', es: 'Palé' },
+    names: { en: 'Pallet', es: 'Tarima' },
     config: {},
     signals: NO_SIGNALS,
     actions: [],
     snapPoints: () => [],
     doc: itemDoc(
       'A 1.2 by 0.8 m pallet, 0.144 m high, 25 kg. Its position is the centre of its bottom face.',
-      'Un palé de 1,2 por 0,8 m, de 0,144 m de alto y 25 kg. Su posición es el centro de su cara inferior.',
+      'Una tarima de 1,2 por 0,8 m, de 0,144 m de alto y 25 kg. Su posición es el centro de su cara inferior.',
     ),
     runtime: itemRuntime('pallet'),
   },
