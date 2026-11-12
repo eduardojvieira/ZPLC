@@ -1,26 +1,25 @@
 /**
  * EditorArea Component
  *
- * Tabbed editor container with Monaco for text languages (ST, IL)
- * and visual editors for graphical languages (LD, FBD, SFC)
+ * The editor area (SHL-006): one group of tabs, or two side by side. It owns what is open, what asks before it closes and the
+ * undo history of the visual editors; each `EditorGroup` shows the views it is given (Monaco for text languages, visual
+ * editors for graphical ones).
  */
 
-import { lazy, Suspense, useMemo, useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useMemo, useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { Group, Panel, useGroupCallbackRef } from 'react-resizable-panels';
 import { useT } from '../i18n';
-import { X, FileCode, File, Settings, Undo2, Redo2 } from 'lucide-react';
+import { FileCode } from 'lucide-react';
 import { useIDEStore } from '../store/useIDEStore';
 import { useEditorAreaState, useOpenFiles } from '../store/regionSubscriptions';
-import { PLC_LANGUAGES, type PLCLanguage } from '../types';
-import { serializeFBDModel, type FBDModel } from '../models/fbd';
-import { serializeLDModel, type LDModel } from '../models/ld';
-import { serializeSFCModel, type SFCModel } from '../models/sfc';
-import { isUnchangedVisualDocument, loadFBDFile, loadLDFile, loadSFCFile, type VisualFileLoad } from '../models/visualFileLoad';
+import { restoreEditorGroups, useEditorGroups } from '../store/useEditorGroups';
+import { type ProjectFileWithHandle } from '../types';
+import { isUnchangedVisualDocument } from '../models/visualFileLoad';
 import { disposeClosedModelsOfLoadedEditor } from './editorModels';
 import { canCommitVisualEditorChange } from '../editors/visualCommitGuard';
-import { displayEditorFileName } from './editorFilePresentation';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
-import { ErrorBoundary } from './ErrorBoundary';
-import { DevFaultProbe } from './DevFaultProbe';
+import { PanelSeparator } from './PanelSeparator';
+import { EditorGroup } from './EditorGroup';
 import { unsavedOutcome, type UnsavedChoice } from '../utils/unsavedChanges';
 import {
   recordVisualSnapshot,
@@ -33,51 +32,21 @@ import {
 } from '../editors/visualHistory';
 import { setVisualSelection, visualFileKey } from '../editors/visualSelection';
 import { useConfigEditors } from '../store/useConfigEditors';
-import { ConfigEditorTab, ConfigCloseDialog } from '../navigator/ConfigEditorTab';
-import { configCloseNeedsConfirmation, configEditorViewId, type ConfigEditorKind } from '../navigator/configEditors';
+import { ConfigCloseDialog } from '../navigator/ConfigEditorTab';
+import { configCloseNeedsConfirmation, configEditorViewId, isConfigEditorKind, type ConfigEditorKind } from '../navigator/configEditors';
 import { discardProjectConfigEdits } from '../navigator/discardConfigEdits';
-import { Button } from '../ui';
+import { bindCommands, runCommand } from '../commands/bus';
+import { shownGroups } from '../layout/editorGroups';
+import { SETTINGS_VIEW_ID, isVisualWorkflow, type ViewId } from '../layout/documentKinds';
+import { useShellLayout } from '../store/useShellLayout';
+import { useShellDensity } from '../shell/shellDensity';
 
-// Each view loads when it is first shown (IDE-015): a project of Structured Text files never fetches the visual editors,
-// one of diagrams never fetches Monaco, and the settings load when they are opened.
-const FBDEditor = lazy(() => import('../editors/fbd').then((module) => ({ default: module.FBDEditor })));
-const LDEditor = lazy(() => import('../editors/ld').then((module) => ({ default: module.LDEditor })));
-const SFCEditor = lazy(() => import('../editors/sfc').then((module) => ({ default: module.SFCEditor })));
-const ConfigEditorHost = lazy(() => import('../navigator/ConfigEditorHost').then((module) => ({ default: module.ConfigEditorHost })));
-const ProjectSettings = lazy(() => import('./settings/ProjectSettings').then((module) => ({ default: module.ProjectSettings })));
-const CodeEditor = lazy(() => import('./CodeEditor').then((module) => ({ default: module.CodeEditor })));
-
-function ViewLoading() {
-  const { t } = useT();
-  return (
-    <div
-      role="status"
-      className="flex h-full w-full items-center justify-center bg-[var(--color-surface-900)] text-sm text-[var(--color-surface-300)]"
-    >
-      {t('workbench.editor.loading')}
-    </div>
-  );
-}
-
-const TEXT_WORKFLOW_LANGUAGES = {
-  ST: 'ST',
-  IL: 'IL',
-} as const;
-
-const SETTINGS_TAB_ID = 'settings';
 const EDITOR_PANEL_ID = 'editor-panel';
+const SECOND_PANEL_ID = 'editor-panel-second';
 
 interface VisualHistoryState {
   projectSession: number;
   histories: VisualHistories;
-}
-
-function supportsTextWorkflow(language: PLCLanguage): boolean {
-  return language === TEXT_WORKFLOW_LANGUAGES.ST || language === TEXT_WORKFLOW_LANGUAGES.IL;
-}
-
-function isVisualWorkflow(language: PLCLanguage): boolean {
-  return !supportsTextWorkflow(language) && PLC_LANGUAGES[language]?.isVisual === true;
 }
 
 function isEditableShortcutTarget(target: EventTarget | null): boolean {
@@ -85,8 +54,15 @@ function isEditableShortcutTarget(target: EventTarget | null): boolean {
   return target.matches('input, textarea, select') || target.isContentEditable || target.closest('[contenteditable="true"]') !== null;
 }
 
+const configKindOf = (viewId: ViewId): ConfigEditorKind | null => {
+  const kind = viewId.startsWith('config:') ? viewId.slice('config:'.length) : null;
+  return isConfigEditorKind(kind) ? kind : null;
+};
+
 export function EditorArea() {
   const { t } = useT();
+  const compact = useShellDensity() === 'compact';
+  const maximised = useShellLayout((state) => state.maximised);
   const {
     activeFileId,
     openTabs,
@@ -97,7 +73,6 @@ export function EditorArea() {
     updateFileContent,
     showSettings,
     toggleSettings,
-    getActiveFile,
     getFile,
     projectSession,
   } = useEditorAreaState();
@@ -106,16 +81,13 @@ export function EditorArea() {
 
   const [unsavedTabId, setUnsavedTabId] = useState<string | null>(null);
   const [savingTab, setSavingTab] = useState(false);
-  const activeFile = getActiveFile();
   const tabFiles = openTabs.map((id) => getFile(id)).filter((f): f is NonNullable<typeof f> => f !== undefined);
   const selectedFileId = tabFiles.some((file) => file.id === activeFileId) ? activeFileId : (tabFiles[0]?.id ?? null);
   const configOpen = useConfigEditors((state) => state.open);
   const configActive = useConfigEditors((state) => state.active);
-  const selectedViewId = showSettings ? SETTINGS_TAB_ID : configActive ? configEditorViewId(configActive) : selectedFileId;
+  const selectedViewId = showSettings ? SETTINGS_VIEW_ID : configActive ? configEditorViewId(configActive) : selectedFileId;
   const [closingConfig, setClosingConfig] = useState<ConfigEditorKind | null>(null);
   const [savingConfig, setSavingConfig] = useState(false);
-  const activeVisualFile = activeFile && isVisualWorkflow(activeFile.language) ? activeFile : null;
-  const visualHistoryKey = activeVisualFile ? `${projectSession}:${activeVisualFile.id}` : null;
   const initialVisualHistoryState: VisualHistoryState = {
     projectSession,
     histories: new Map(),
@@ -126,6 +98,45 @@ export function EditorArea() {
     () => (visualHistoryState.projectSession === projectSession ? visualHistoryState.histories : new Map<string, never>()),
     [projectSession, visualHistoryState],
   );
+
+  // Every open view in tab order: the settings, the configuration editors, then the files. The groups split this list.
+  const allViews: ViewId[] = [
+    ...(showSettings ? [SETTINGS_VIEW_ID] : []),
+    ...configOpen.map(configEditorViewId),
+    ...tabFiles.map((file) => file.id),
+  ];
+  const viewsKey = allViews.join('\n');
+  const groups = useEditorGroups((state) => state.groups);
+  const activeFirst = useEditorGroups((state) => state.activeFirst);
+  const shown = shownGroups(groups, compact);
+  const secondViews = shown === 2 ? allViews.filter((id) => groups.second.includes(id)) : [];
+  const firstViews = shown === 2 ? allViews.filter((id) => !groups.second.includes(id)) : allViews;
+  /** What a group shows: the active view when it is the group's, otherwise the one the group showed last. */
+  const activeOf = (views: readonly ViewId[], remembered: ViewId | null): ViewId | null =>
+    selectedViewId !== null && views.includes(selectedViewId)
+      ? selectedViewId
+      : remembered !== null && views.includes(remembered)
+        ? remembered
+        : (views.at(-1) ?? null);
+  const firstActive = activeOf(firstViews, activeFirst);
+  const secondActive = activeOf(secondViews, groups.activeSecond);
+
+  // The groups follow what is open and which view is active (SHL-006): a closed view leaves the second group, and the group of the
+  // active view has the focus.
+  useEffect(() => {
+    useEditorGroups.getState().sync(viewsKey === '' ? [] : viewsKey.split('\n'), selectedViewId);
+  }, [viewsKey, selectedViewId]);
+
+  // The split of a saved session is applied once the project's tabs are open (IDE-008).
+  useEffect(() => {
+    const state = useIDEStore.getState();
+    void restoreEditorGroups({
+      projectSession,
+      directoryHandle: state.directoryHandle,
+      openTabs: state.openTabs,
+      files: state.loadedFiles,
+    });
+  }, [projectSession]);
 
   // Another file shown, by any path (a tab, the navigator, a problem, a search result), leaves the configuration tab; a project of its own
   // starts with none.
@@ -161,39 +172,12 @@ export function EditorArea() {
     [],
   );
 
-  const getFileIcon = (lang: PLCLanguage) => {
-    const info = PLC_LANGUAGES[lang];
-    if (info?.isVisual) {
-      return <FileCode size={14} className="text-[var(--color-accent-purple)]" />;
-    }
-    return <File size={14} className="text-[var(--color-accent-blue)]" />;
+  const handleEditorChange = (fileId: string, value: string | undefined) => {
+    if (value !== undefined) updateFileContent(fileId, value);
   };
-
-  const handleEditorChange = (value: string | undefined) => {
-    if (activeFileId && value !== undefined) {
-      updateFileContent(activeFileId, value);
-    }
-  };
-
-  // Validate and load the visual model from the file content; an invalid file becomes an error value, never an exception.
-  const fbdLoad = useMemo(
-    (): VisualFileLoad<FBDModel> | null =>
-      activeFile?.language === 'FBD' ? loadFBDFile(activeFile.path || activeFile.name, activeFile.content) : null,
-    [activeFile],
-  );
-  const ldLoad = useMemo(
-    (): VisualFileLoad<LDModel> | null =>
-      activeFile?.language === 'LD' ? loadLDFile(activeFile.path || activeFile.name, activeFile.content) : null,
-    [activeFile],
-  );
-  const sfcLoad = useMemo(
-    (): VisualFileLoad<SFCModel> | null =>
-      activeFile?.language === 'SFC' ? loadSFCFile(activeFile.path || activeFile.name, activeFile.content) : null,
-    [activeFile],
-  );
 
   const updateVisualContent = useCallback(
-    (expectedProjectSession: number, expectedFileId: string, expectedLanguage: PLCLanguage, content: string, gesture?: VisualGesture) => {
+    (expectedProjectSession: number, expectedFileId: string, expectedLanguage: string, content: string, gesture?: VisualGesture) => {
       const state = useIDEStore.getState();
       const file = state.getFile(expectedFileId);
       if (
@@ -203,7 +187,7 @@ export function EditorArea() {
           expectedProjectSession,
           state.activeFileId,
           expectedFileId,
-          expectedLanguage,
+          expectedLanguage as ProjectFileWithHandle['language'],
           file,
         ) ||
         !isVisualWorkflow(file.language)
@@ -220,29 +204,32 @@ export function EditorArea() {
       setVisualHistoryState(next);
       state.updateFileContent(file.id, content);
     },
-    [],
+    [setVisualHistoryState],
   );
 
-  const applyVisualHistory = useCallback((direction: 'undo' | 'redo'): boolean => {
-    const state = useIDEStore.getState();
-    const file = state.getActiveFile();
-    if (!file || !isVisualWorkflow(file.language)) return false;
-    const key = visualFileKey(state.projectSession, file.id);
-    const current = visualHistoryRef.current;
-    const histories = current.projectSession === state.projectSession ? current.histories : new Map<string, never>();
-    const result =
-      direction === 'undo' ? undoVisualSnapshot(histories, key, file.content) : redoVisualSnapshot(histories, key, file.content);
-    if (result.histories !== histories) {
-      const next = { projectSession: state.projectSession, histories: result.histories };
-      visualHistoryRef.current = next;
-      setVisualHistoryState(next);
-    }
-    if (result.content === undefined) return false;
-    // the editor shows the selection the gesture had: it applies it when it rebuilds the canvas from the content
-    if (result.selection !== undefined) setVisualSelection(key, result.selection);
-    state.updateFileContent(file.id, result.content);
-    return true;
-  }, []);
+  const applyVisualHistory = useCallback(
+    (direction: 'undo' | 'redo'): boolean => {
+      const state = useIDEStore.getState();
+      const file = state.getActiveFile();
+      if (!file || !isVisualWorkflow(file.language)) return false;
+      const key = visualFileKey(state.projectSession, file.id);
+      const current = visualHistoryRef.current;
+      const histories = current.projectSession === state.projectSession ? current.histories : new Map<string, never>();
+      const result =
+        direction === 'undo' ? undoVisualSnapshot(histories, key, file.content) : redoVisualSnapshot(histories, key, file.content);
+      if (result.histories !== histories) {
+        const next = { projectSession: state.projectSession, histories: result.histories };
+        visualHistoryRef.current = next;
+        setVisualHistoryState(next);
+      }
+      if (result.content === undefined) return false;
+      // the editor shows the selection the gesture had: it applies it when it rebuilds the canvas from the content
+      if (result.selection !== undefined) setVisualSelection(key, result.selection);
+      state.updateFileContent(file.id, result.content);
+      return true;
+    },
+    [setVisualHistoryState],
+  );
 
   const handleVisualHistoryShortcut = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
@@ -260,31 +247,7 @@ export function EditorArea() {
     [applyVisualHistory],
   );
 
-  // Handle FBD model changes
-  const handleFBDChange = useCallback(
-    (model: FBDModel, gesture?: VisualGesture) => {
-      if (activeFile?.language === 'FBD') updateVisualContent(projectSession, activeFile.id, 'FBD', serializeFBDModel(model), gesture);
-    },
-    [activeFile, projectSession, updateVisualContent],
-  );
-
-  // Handle LD model changes
-  const handleLDChange = useCallback(
-    (model: LDModel, gesture?: VisualGesture) => {
-      if (activeFile?.language === 'LD') updateVisualContent(projectSession, activeFile.id, 'LD', serializeLDModel(model), gesture);
-    },
-    [activeFile, projectSession, updateVisualContent],
-  );
-
-  // Handle SFC model changes
-  const handleSFCChange = useCallback(
-    (model: SFCModel, gesture?: VisualGesture) => {
-      if (activeFile?.language === 'SFC') updateVisualContent(projectSession, activeFile.id, 'SFC', serializeSFCModel(model), gesture);
-    },
-    [activeFile, projectSession, updateVisualContent],
-  );
-
-  const focusTab = useCallback((viewId: string | null) => {
+  const focusTab = useCallback((viewId: ViewId | null) => {
     requestAnimationFrame(() => {
       if (viewId) document.getElementById(`editor-tab-${viewId}`)?.focus();
       else document.querySelector<HTMLButtonElement>('button[data-project-settings]')?.focus();
@@ -306,6 +269,17 @@ export function EditorArea() {
       useConfigEditors.getState().show(kind);
     },
     [showSettings, toggleSettings],
+  );
+
+  const selectView = useCallback(
+    (viewId: ViewId) => {
+      const config = configKindOf(viewId);
+      if (viewId === SETTINGS_VIEW_ID) {
+        if (!showSettings) toggleSettings();
+      } else if (config) selectConfigTab(config);
+      else selectFileTab(viewId);
+    },
+    [selectConfigTab, selectFileTab, showSettings, toggleSettings],
   );
 
   const closeConfigTab = (kind: ConfigEditorKind) => {
@@ -334,43 +308,13 @@ export function EditorArea() {
     setClosingConfig(null);
   };
 
-  const handleTabKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLButtonElement>, viewId: string) => {
-      if (!['Home', 'End', 'ArrowLeft', 'ArrowRight'].includes(event.key)) return;
-      event.preventDefault();
-      const editorViews = [
-        ...(showSettings ? [SETTINGS_TAB_ID] : []),
-        ...configOpen.map(configEditorViewId),
-        ...tabFiles.map((file) => file.id),
-      ];
-      const index = editorViews.indexOf(viewId);
-      if (index < 0) return;
-      const destination =
-        event.key === 'Home'
-          ? editorViews[0]
-          : event.key === 'End'
-            ? editorViews.at(-1)
-            : event.key === 'ArrowLeft'
-              ? editorViews[(index - 1 + editorViews.length) % editorViews.length]
-              : event.key === 'ArrowRight'
-                ? editorViews[(index + 1) % editorViews.length]
-                : undefined;
-      if (!destination || destination === viewId) return;
-      const config = configOpen.find((kind) => configEditorViewId(kind) === destination);
-      if (config) selectConfigTab(config);
-      else if (destination !== SETTINGS_TAB_ID) selectFileTab(destination);
-      focusTab(destination);
-    },
-    [configOpen, focusTab, selectConfigTab, selectFileTab, showSettings, tabFiles],
-  );
-
   const closeTabAndFocus = useCallback(
     (fileId: string, discard: boolean) => {
       const remainingFileIds = tabFiles.filter((file) => file.id !== fileId).map((file) => file.id);
       const nextFileId = selectedFileId === fileId ? (remainingFileIds.at(-1) ?? null) : selectedFileId;
       if (discard) discardFile(fileId);
       else closeTab(fileId);
-      focusTab(showSettings ? SETTINGS_TAB_ID : nextFileId);
+      focusTab(showSettings ? SETTINGS_VIEW_ID : nextFileId);
     },
     [closeTab, discardFile, focusTab, selectedFileId, showSettings, tabFiles],
   );
@@ -405,80 +349,70 @@ export function EditorArea() {
     focusTab(selectedFileId);
   }, [focusTab, selectedFileId, toggleSettings]);
 
-  // Render visual editor based on language
-  const renderVisualEditor = () => {
-    if (!activeFile) return null;
-
-    switch (activeFile.language) {
-      case 'FBD':
-        return fbdLoad?.ok ? <FBDEditor model={fbdLoad.model} onChange={handleFBDChange} /> : renderFileError('FBD', fbdLoad);
-
-      case 'LD':
-        return ldLoad?.ok ? <LDEditor model={ldLoad.model} onChange={handleLDChange} /> : renderFileError('LD', ldLoad);
-
-      case 'SFC':
-        return sfcLoad?.ok ? <SFCEditor model={sfcLoad.model} onChange={handleSFCChange} /> : renderFileError('SFC', sfcLoad);
-
-      default:
-        return renderPlaceholder(activeFile.language, 'Unknown visual language');
-    }
+  const closeView = (viewId: ViewId) => {
+    const config = configKindOf(viewId);
+    if (viewId === SETTINGS_VIEW_ID) handleCloseSettings();
+    else if (config) handleCloseConfigTab(config);
+    else handleCloseTab(viewId);
   };
 
-  const visualHistory = visualHistoryActions(
-    visualHistoryKey ? visualHistories.get(visualHistoryKey) : undefined,
-    activeVisualFile?.content ?? '',
+  // SHL-006: the split commands act on the active view; below the compact width there is one group and they do nothing.
+  const latest = useRef({ allViews, selectedViewId, firstActive, secondActive, compact, selectView, focusTab });
+  useEffect(() => {
+    latest.current = { allViews, selectedViewId, firstActive, secondActive, compact, selectView, focusTab };
+  });
+  const moveActive = useCallback((onlyToSecond: boolean) => {
+    const { allViews: open, selectedViewId: view, compact: narrow, focusTab: focus } = latest.current;
+    const store = useEditorGroups.getState();
+    if (view === null || narrow || (onlyToSecond && store.groups.second.includes(view))) return;
+    store.move(view, open);
+    focus(view);
+  }, []);
+  useEffect(
+    () =>
+      bindCommands({
+        'view.splitRight': () => moveActive(true),
+        'view.moveToOtherGroup': () => moveActive(false),
+        'view.focusOtherGroup': () => {
+          const { secondActive: second, firstActive: first, compact: narrow, selectView: select, focusTab: focus } = latest.current;
+          const { groups: current } = useEditorGroups.getState();
+          if (narrow || current.second.length === 0) return;
+          const target = current.focused === 'first' ? second : first;
+          if (target === null) return;
+          select(target);
+          focus(target);
+        },
+      }),
+    [moveActive],
   );
 
-  // An invalid visual file names itself and its first violations; nothing else in the window is affected.
-  const renderFileError = (lang: string, load: VisualFileLoad<unknown> | null) => {
-    if (!load || load.ok) return null;
-    const { fileName, violations, more } = load.error;
-    return (
-      <div
-        role="alert"
-        data-file-error
-        className="w-full h-full overflow-auto flex items-center justify-center bg-[var(--color-surface-800)] p-6"
-      >
-        <div className="max-w-xl">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-[var(--color-accent-red)]/30 flex items-center justify-center">
-            <FileCode size={32} className="text-[var(--color-accent-red)]" />
-          </div>
-          <p className="text-[var(--color-accent-red)] text-lg font-medium text-center">
-            {t('workbench.editor.invalidFile', { language: lang })}
-          </p>
-          <p className="text-[var(--color-surface-200)] text-sm mt-1 text-center font-mono break-all">{fileName}</p>
-          <ul className="mt-4 list-disc pl-5 text-sm text-[var(--color-surface-300)] space-y-1">
-            {violations.map((violation) => (
-              <li key={violation} className="break-words">
-                {violation}
-              </li>
-            ))}
-          </ul>
-          {more > 0 && (
-            <p className="mt-1 pl-5 text-sm text-[var(--color-surface-400)]">{t('workbench.editor.moreViolations', { count: more })}</p>
-          )}
-          <p className="text-[var(--color-surface-400)] text-sm mt-4 text-center">{t('workbench.editor.fixFile')}</p>
-        </div>
-      </div>
-    );
+  const focusGroup = (which: 'first' | 'second') => {
+    if (shown !== 2 || useEditorGroups.getState().groups.focused === which) return;
+    const target = which === 'first' ? firstActive : secondActive;
+    if (target !== null) selectView(target);
   };
 
-  // Render placeholder for unimplemented editors
-  const renderPlaceholder = (lang: string, message: string) => (
-    <div className="w-full h-full flex items-center justify-center bg-[var(--color-surface-800)]">
-      <div className="text-center">
-        <div className="w-20 h-20 mx-auto mb-4 rounded-lg bg-[var(--color-surface-700)] flex items-center justify-center">
-          <FileCode size={40} className="text-[var(--color-accent-purple)]" />
-        </div>
-        <p className="text-[var(--color-surface-100)] text-lg font-medium">{PLC_LANGUAGES[lang as PLCLanguage]?.fullName || lang}</p>
-        <p className="text-[var(--color-surface-400)] text-sm mt-1">{message}</p>
-        {activeFile && <p className="text-[var(--color-surface-500)] text-xs mt-3 font-mono">{activeFile.name}</p>}
-      </div>
-    </div>
-  );
+  const [groupHandle, setGroupHandle] = useGroupCallbackRef();
+  const filesById = new Map<ViewId, ProjectFileWithHandle>(tabFiles.map((file) => [file.id, file]));
+  const groupProps = {
+    files: filesById,
+    onSelect: selectView,
+    onClose: closeView,
+    onTextChange: handleEditorChange,
+    onVisualChange: (file: ProjectFileWithHandle, content: string, gesture?: VisualGesture) =>
+      updateVisualContent(projectSession, file.id, file.language, content, gesture),
+    historyOf: (file: ProjectFileWithHandle) => visualHistoryActions(visualHistories.get(`${projectSession}:${file.id}`), file.content),
+    onHistory: applyVisualHistory,
+    onHistoryShortcut: handleVisualHistoryShortcut,
+    onMaximise: () => runCommand('view.maximiseDocument'),
+    maximised,
+    moveLabel: t(shown === 2 ? 'studio.document.moveToOther' : 'studio.document.splitRight'),
+    onMove: () => moveActive(false),
+    canMove: !compact,
+  };
 
   // No open tabs state (only if settings not shown)
-  if (tabFiles.length === 0 && !showSettings && configOpen.length === 0) {
+  if (allViews.length === 0) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-[var(--color-surface-900)]">
         <div className="text-center">
@@ -493,186 +427,58 @@ export function EditorArea() {
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-[var(--color-surface-900)] overflow-hidden">
-      {/* Tab Bar */}
-      <div
-        role="tablist"
-        aria-label={t('workbench.editor.views')}
-        className="h-9 flex items-center bg-[var(--color-surface-800)] border-b border-[var(--color-surface-600)] overflow-x-auto"
-      >
-        {/* Settings Tab (if open) */}
-        {showSettings && (
-          <div
-            role="presentation"
-            className={
-              'group flex items-center gap-2 px-3 h-full border-r border-[var(--color-surface-600)] cursor-pointer select-none ' +
-              'transition-colors bg-[var(--color-surface-700)] text-[var(--color-surface-100)]'
-            }
-          >
-            <Button
-              variant="bare"
-              id={`editor-tab-${SETTINGS_TAB_ID}`}
-              role="tab"
-              aria-selected="true"
-              aria-controls={EDITOR_PANEL_ID}
-              tabIndex={0}
-              onKeyDown={(event) => handleTabKeyDown(event, SETTINGS_TAB_ID)}
-              className="flex min-w-0 items-center gap-2 rounded text-left focus-visible:outline"
-            >
-              <Settings size={14} className="text-[var(--color-accent-blue)]" />
-              <span className="text-sm whitespace-nowrap">{t('workbench.editor.settings')}</span>
-            </Button>
-            <Button
-              variant="bare"
-              type="button"
-              onClick={handleCloseSettings}
-              className={
-                'p-0.5 rounded opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 ' +
-                'hover:bg-[var(--color-surface-500)] focus-visible:opacity-100 focus-visible:outline transition-opacity'
-              }
-              aria-label={t('workbench.editor.closeSettings')}
-              tooltip={t('workbench.editor.closeSettings')}
-            >
-              <X size={14} />
-            </Button>
-          </div>
-        )}
-
-        {/* Configuration editors (UX-013) */}
-        {configOpen.map((kind) => (
-          <ConfigEditorTab
-            key={kind}
-            kind={kind}
-            selected={!showSettings && configActive === kind}
-            panelId={EDITOR_PANEL_ID}
-            onSelect={selectConfigTab}
-            onClose={handleCloseConfigTab}
-            onKeyDown={handleTabKeyDown}
+    <div className="w-full h-full overflow-hidden">
+      {shown === 2 ? (
+        <Group
+          orientation="horizontal"
+          className="h-full min-w-0"
+          defaultLayout={{ 'editor-first': groups.ratio * 100, 'editor-second': (1 - groups.ratio) * 100 }}
+          groupRef={setGroupHandle}
+          onLayoutChanged={(layout, meta) => {
+            const first = layout['editor-first'];
+            if (meta.isUserInteraction && typeof first === 'number') useEditorGroups.getState().setRatio(first / 100);
+          }}
+        >
+          <Panel id="editor-first" minSize="20%" maxSize="80%" className="overflow-hidden">
+            <EditorGroup
+              {...groupProps}
+              views={firstViews}
+              activeViewId={firstActive}
+              panelId={EDITOR_PANEL_ID}
+              focused={groups.focused === 'first'}
+              onFocusGroup={() => focusGroup('first')}
+              label={t('studio.document.group.first')}
+            />
+          </Panel>
+          <PanelSeparator
+            id="editor-groups-separator"
+            label={t('studio.document.separator')}
+            group={groupHandle}
+            leading="editor-first"
+            trailing="editor-second"
           />
-        ))}
-
-        {/* File Tabs */}
-        {tabFiles.map((file) => {
-          if (!file) return null;
-          const isActive = file.id === selectedViewId;
-          const displayName = displayEditorFileName(file.name, file.language);
-
-          return (
-            <div
-              key={file.id}
-              role="presentation"
-              className={
-                `group flex items-center gap-2 px-3 h-full border-r border-[var(--color-surface-600)] cursor-pointer ` +
-                `select-none transition-colors ${
-                  isActive
-                    ? 'bg-[var(--color-surface-700)] text-[var(--color-surface-100)]'
-                    : 'bg-[var(--color-surface-800)] text-[var(--color-surface-300)] hover:bg-[var(--color-surface-700)]'
-                }`
-              }
-            >
-              <Button
-                variant="bare"
-                id={`editor-tab-${file.id}`}
-                role="tab"
-                aria-selected={isActive}
-                aria-controls={EDITOR_PANEL_ID}
-                tabIndex={isActive ? 0 : -1}
-                onClick={() => selectFileTab(file.id)}
-                onKeyDown={(event) => handleTabKeyDown(event, file.id)}
-                className="flex min-w-0 items-center gap-2 rounded text-left focus-visible:outline"
-              >
-                {getFileIcon(file.language)}
-                <span className="text-sm whitespace-nowrap">{displayName}</span>
-                {file.isModified && <span className="text-[var(--color-accent-orange)] text-lg leading-none">*</span>}
-              </Button>
-              <Button
-                variant="bare"
-                type="button"
-                onClick={() => handleCloseTab(file.id)}
-                className={
-                  'p-0.5 rounded opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 ' +
-                  'hover:bg-[var(--color-surface-500)] focus-visible:opacity-100 focus-visible:outline transition-opacity'
-                }
-                aria-label={t('workbench.editor.closeFile', { name: displayName })}
-                tooltip={t('workbench.editor.closeFile', { name: displayName })}
-              >
-                <X size={14} />
-              </Button>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Editor Content */}
-      <div id={EDITOR_PANEL_ID} role="tabpanel" aria-labelledby={`editor-tab-${selectedViewId}`} className="flex-1 overflow-hidden">
-        <ErrorBoundary region="Editor" resetKey={selectedViewId}>
-          <DevFaultProbe region="Editor" />
-          <Suspense fallback={<ViewLoading />}>
-            {showSettings ? (
-              /* Project Settings Panel */
-              <ProjectSettings />
-            ) : configActive ? (
-              <ConfigEditorHost kind={configActive} />
-            ) : activeFile ? (
-              !supportsTextWorkflow(activeFile.language) && PLC_LANGUAGES[activeFile.language]?.isVisual ? (
-                /* Visual Editors (FBD, LD, SFC) */
-                <div className="h-full min-h-0 flex flex-col" onKeyDownCapture={handleVisualHistoryShortcut}>
-                  <div
-                    role="toolbar"
-                    aria-label={t('workbench.editor.history')}
-                    className={
-                      'h-9 shrink-0 flex items-center gap-1 px-2 border-b border-[var(--color-surface-600)] ' +
-                      'bg-[var(--color-surface-800)]'
-                    }
-                  >
-                    <Button
-                      variant="bare"
-                      type="button"
-                      onClick={() => applyVisualHistory('undo')}
-                      disabled={!visualHistory.canUndo}
-                      aria-label={t('workbench.editor.undoLabel')}
-                      tooltip={t('workbench.editor.undoTitle')}
-                      aria-keyshortcuts="Control+Z"
-                      className={
-                        'inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--color-surface-200)] ' +
-                        'hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline'
-                      }
-                    >
-                      <Undo2 size={14} aria-hidden="true" />
-                      <span>{t('workbench.editor.undo')}</span>
-                    </Button>
-                    <Button
-                      variant="bare"
-                      type="button"
-                      onClick={() => applyVisualHistory('redo')}
-                      disabled={!visualHistory.canRedo}
-                      aria-label={t('workbench.editor.redoLabel')}
-                      tooltip={t('workbench.editor.redoTitle')}
-                      aria-keyshortcuts="Control+Shift+Z"
-                      className={
-                        'inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--color-surface-200)] ' +
-                        'hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline'
-                      }
-                    >
-                      <Redo2 size={14} aria-hidden="true" />
-                      <span>{t('workbench.editor.redo')}</span>
-                    </Button>
-                  </div>
-                  <div className="min-h-0 flex-1">{renderVisualEditor()}</div>
-                </div>
-              ) : (
-                /* Code Editor with debug support for Text Languages */
-                <CodeEditor
-                  fileId={activeFile.id}
-                  content={activeFile.content}
-                  language={activeFile.language}
-                  onChange={handleEditorChange}
-                />
-              )
-            ) : null}
-          </Suspense>
-        </ErrorBoundary>
-      </div>
+          <Panel id="editor-second" minSize="20%" maxSize="80%" className="overflow-hidden">
+            <EditorGroup
+              {...groupProps}
+              views={secondViews}
+              activeViewId={secondActive}
+              panelId={SECOND_PANEL_ID}
+              focused={groups.focused === 'second'}
+              onFocusGroup={() => focusGroup('second')}
+              label={t('studio.document.group.second')}
+            />
+          </Panel>
+        </Group>
+      ) : (
+        <EditorGroup
+          {...groupProps}
+          views={firstViews}
+          activeViewId={firstActive}
+          panelId={EDITOR_PANEL_ID}
+          focused
+          onFocusGroup={() => {}}
+        />
+      )}
       {closingConfig && <ConfigCloseDialog busy={savingConfig} onChoice={(choice) => void answerConfigClose(choice)} />}
       {unsavedTabId && (
         <UnsavedChangesDialog

@@ -174,3 +174,49 @@ describe('finding the project file an editor model shows (IDE-008)', () => {
       expect(projectPathFromModelPath(path)).toBeNull();
   });
 });
+
+describe('the editor split in the session (SHL-006, IDE-008)', () => {
+  const split = { second: ['file:src/Pump.st'], activeSecond: 'file:src/Pump.st' as string | null, ratio: 0.35 };
+  const exists = () => true;
+
+  it('SHL-006 the split and its ratio are restored with the session', () => {
+    const state = captureSession({ ...base, split });
+    expect(state.split).toEqual({ second: ['src/Pump.st'], activeSecond: 'src/Pump.st', ratio: 0.35 });
+    expect(parseSessionState(state)).toEqual(state);
+    expect(planRestore(state, exists).split).toEqual({ secondPaths: ['src/Pump.st'], activeSecondPath: 'src/Pump.st', ratio: 0.35 });
+  });
+
+  it('records no split key for one group, and leaves out views that are not recorded tabs', () => {
+    expect('split' in captureSession(base)).toBe(false);
+    expect('split' in captureSession({ ...base, split: null })).toBe(false);
+    expect('split' in captureSession({ ...base, split: { ...split, second: ['settings', 'file:src/Gone.st'] } })).toBe(false);
+  });
+
+  it('a session saved by 2.0 restores as one group', () => {
+    const saved2 = JSON.parse(
+      '{"schemaVersion":1,"tabs":[{"path":"src/Motor.st","line":3,"column":1,"scrollTop":0}],"activePath":"src/Motor.st",' +
+        '"panels":{"editor":72,"console":28,"consoleCollapsed":false}}',
+    ) as unknown;
+    const state = parseSessionState(saved2);
+    expect(state).not.toBeNull();
+    const plan = planRestore(state!, exists);
+    expect(plan.split).toBeNull();
+    expect(plan.tabPaths).toEqual(['src/Motor.st']);
+  });
+
+  it('files of the second group that no longer exist leave it, and an empty second group is no split', () => {
+    const state = captureSession({ ...base, split });
+    expect(planRestore(state, (path) => path !== 'src/Pump.st').split).toBeNull();
+    const two = captureSession({
+      ...base,
+      openTabs: [...base.openTabs, 'file:src/Valve.st'],
+      files: files('src/Motor.st', 'src/Pump.st', 'src/Valve.st'),
+      split: { ...split, second: ['file:src/Pump.st', 'file:src/Valve.st'], activeSecond: 'file:src/Valve.st' },
+    });
+    expect(planRestore(two, (path) => path !== 'src/Valve.st').split).toEqual({
+      secondPaths: ['src/Pump.st'],
+      activeSecondPath: null,
+      ratio: 0.35,
+    });
+  });
+});
