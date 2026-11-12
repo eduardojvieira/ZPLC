@@ -98,3 +98,5 @@ odd/
 # document of the tokens (tools/ci/ux-tokens.ts --write).
 /conformance/defect-map.md
 /packages/zplc-ide/DESIGN.md
+/docs/docs/plant/parts.md
+/docs/i18n/es/docusaurus-plugin-content-docs/current/plant/parts.md
