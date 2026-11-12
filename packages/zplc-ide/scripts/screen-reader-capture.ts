@@ -51,6 +51,7 @@ const words = (language: Language) => {
     addVariable: t('workbench.watch.addVariable'),
     releaseAll: t('workbench.watch.releaseAll'),
     paletteWatch: t('command.view.watch'),
+    palettePlant: t('command.view.plant'),
     paletteProblems: t('command.view.problems'),
     paletteOutput: t('command.view.output'),
     paletteProject: t('command.view.showProject'),
@@ -629,10 +630,8 @@ async function stepPlant({ app, recorder: rec, language, project }: Session): Pr
     30_000,
   );
   await rec.key('F5', 'Run');
-  // the Lab tab, by the tab list
-  await palette(rec, app, w.paletteWatch);
-  await rec.reach('the Lab tab', `el.id === 'console-tab-lab'`, 'ArrowRight', 12);
-  await rec.key('Enter', 'open the Lab tab');
+  // the plant is a document of the editor area (spec 013 D-20), opened by the view.plant command
+  await palette(rec, app, w.palettePlant);
   await app.until(
     'the live motor plant',
     async () => (await app.eval<boolean>(`Boolean(document.querySelector('[data-plant="motor-v1"]'))`)) || undefined,
