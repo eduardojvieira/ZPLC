@@ -2,6 +2,8 @@ import { describe, expect, it } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import type { AppNotification } from '../store/notifications';
+import { useNotifications } from '../store/notifications';
+import { announcementsSnapshot, resetAnnouncements } from '../utils/announce';
 import { NotificationList } from './NotificationsList';
 
 const item = (patch: Partial<AppNotification>): AppNotification => ({
@@ -96,5 +98,36 @@ describe('the notification list (IDE-021)', () => {
     expect(html).toContain('data-recover');
     expect(html).toContain('>Try again<');
     expect(tried).toBe(0);
+  });
+});
+
+describe('a refusal is an offer (FLW-004)', () => {
+  it('FLW-004 a refusal shows the offered step as a button and runs it once', () => {
+    let ran = 0;
+    const entry = item({
+      kind: 'run',
+      status: 'warning',
+      title: 'Nothing to run: the project has no build',
+      recover: { label: 'Build now', run: () => (ran += 1) },
+    });
+    const html = renderToStaticMarkup(<NotificationList items={[entry]} onOpenDetails={noop} onDismiss={noop} />);
+    expect(html).toContain('data-status="warning"');
+    expect(html).toContain('>Build now<');
+    expect(ran).toBe(0);
+    entry.recover!.run();
+    expect(ran).toBe(1);
+  });
+
+  it('the step in progress is announced once per change', () => {
+    resetAnnouncements();
+    const store = useNotifications.getState();
+    const id = store.begin({ kind: 'run', title: 'Saving all', details: 'output' });
+    store.advance(id, 'Building');
+    store.advance(id, 'Building');
+    store.advance(id, 'Loading');
+    expect(announcementsSnapshot().polite.message).toBe('Loading');
+    // begin, then two changes: three announcements, the repeated step none
+    expect(announcementsSnapshot().polite.seq).toBe(3);
+    store.clear();
   });
 });
