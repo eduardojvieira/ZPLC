@@ -158,7 +158,14 @@ const sidebars = {
           type: 'category',
           label: 'Projects and tools',
           collapsed: true,
-          items: ['reference/project-file', 'reference/scenario-file', 'reference/cli', 'reference/mcp', 'reference/diagnostic-codes'],
+          items: [
+            'reference/project-file',
+            'reference/scenario-file',
+            'plant/parts',
+            'reference/cli',
+            'reference/mcp',
+            'reference/diagnostic-codes',
+          ],
         },
         {
           type: 'category',
