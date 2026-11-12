@@ -2984,6 +2984,8 @@
   ],
   "LRN-018": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/LabPanel.dom.test.tsx","test":"the replay of a recorded plant trace (LRN-018, LRN-020) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/plants/PlantLivePanel.dom.test.tsx","test":"LRN-018 pausing the program freezes the plant"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/plants/PlantLivePanel.dom.test.tsx","test":"Live plant panel (PLS-003, LRN-018) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/PlantView.test.tsx","test":"plant schematics (LRN-018, LRN-037)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/plantEngine.test.ts","test":"plant engine (LRN-018, LRN-019)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/plantLoop.test.ts","test":"closed-loop plant session (LRN-018)"},

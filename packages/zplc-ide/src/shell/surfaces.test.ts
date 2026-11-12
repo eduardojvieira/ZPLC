@@ -19,11 +19,10 @@ const { useShellCommands } = await import('../commands/useCommandHost');
 const REGIONS: readonly Region[] = ['commandBar', 'activity', 'editor', 'secondary', 'results', 'status', 'dialog'];
 
 /** Every tab of the results panel; a new `ConsoleTab` that is not listed here fails the build (SHL-002). */
-const RESULTS_TABS: Record<Exclude<ConsoleTab, 'explorer' | 'inspector' | 'learn'>, true> = {
+const RESULTS_TABS: Record<Exclude<ConsoleTab, 'explorer' | 'inspector' | 'learn' | 'lab'>, true> = {
   output: true,
   problems: true,
   tests: true,
-  lab: true,
   changes: true,
   agent: true,
   terminal: true,
