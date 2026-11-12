@@ -5,6 +5,9 @@
 //   bun tools/ci/generate-requirement-index.ts --check   CI: fail when the committed index is not what the spec generates;
 //                                                        when the spec or the plan is absent, only check that the index is well formed
 //   --spec <file> --plan <file>                          where to read them (default: specs/011-zplc-2-0-remediation/)
+//   --out <file>                                         the index to write or check (default: tools/ci/requirements-index.json);
+//                                                        spec 012 has its own, tools/ci/requirement-index-012.json, with
+//                                                        --spec and --plan naming specs/012-zplc-2-1-plant-simulation/{spec,plan}.md
 //
 // Regenerate whenever a requirement is added, removed or reworded in the spec, and commit the result.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -138,17 +141,18 @@ export function checkAgainstSpec(committed: string, spec: string, plan?: string)
 if (import.meta.main) {
   const { values } = parseArgs({
     args: Bun.argv.slice(2),
-    options: { check: { type: 'boolean', default: false }, spec: { type: 'string' }, plan: { type: 'string' } },
+    options: { check: { type: 'boolean', default: false }, spec: { type: 'string' }, plan: { type: 'string' }, out: { type: 'string' } },
   });
   const specFile = values.spec ?? new URL(`${SPEC_DIR}spec.md`, ROOT).pathname;
   const planFile = values.plan ?? new URL(`${SPEC_DIR}plan.md`, ROOT).pathname;
+  const outFile = values.out ?? INDEX_FILE.pathname;
   const sources =
     existsSync(specFile) && existsSync(planFile)
       ? { spec: readFileSync(specFile, 'utf8'), plan: readFileSync(planFile, 'utf8') }
       : undefined;
   let errors: string[] = [];
   if (values.check) {
-    const committed = readFileSync(INDEX_FILE, 'utf8');
+    const committed = readFileSync(outFile, 'utf8');
     try {
       errors = validateIndex(JSON.parse(committed));
     } catch {
@@ -167,8 +171,8 @@ if (import.meta.main) {
     const index = buildIndex(sources.spec, sources.plan);
     errors = validateIndex(index);
     if (errors.length === 0) {
-      writeFileSync(INDEX_FILE, serialize(index));
-      console.log(`requirement-index: wrote ${index.length} requirements to tools/ci/requirements-index.json`);
+      writeFileSync(outFile, serialize(index));
+      console.log(`requirement-index: wrote ${index.length} requirements to ${values.out ?? 'tools/ci/requirements-index.json'}`);
     }
   }
   if (errors.length > 0) {
