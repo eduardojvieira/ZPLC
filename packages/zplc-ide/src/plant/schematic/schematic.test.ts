@@ -13,7 +13,14 @@ const def = (id: string, snap: [number, number, number][] = []): PartDefinition 
   snapPoints: () => snap.map((position, i) => ({ name: `s${i}`, position, normalYDeg: 0, accepts: [] })),
   doc: { en: '', es: '' },
 });
-const defs = [def('belt', [[-1, 0, 0], [1, 0, 0]]), def('sensor'), def('button')];
+const defs = [
+  def('belt', [
+    [-1, 0, 0],
+    [1, 0, 0],
+  ]),
+  def('sensor'),
+  def('button'),
+];
 const cat = createCatalogue(defs);
 const scene = (parts: PlantSceneFile['parts']): PlantSceneFile => ({ schemaVersion: 1, name: 'x', parts, cameras: [] });
 const part = (id: string, kind: string, x: number, z: number) => ({
