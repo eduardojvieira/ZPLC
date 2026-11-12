@@ -24,6 +24,12 @@ describe('native simulation child environment', () => {
     });
   });
 
+  it('keeps the virtual clock only for the plant gate', () => {
+    const inherited = { PATH: '/safe/bin', ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK: '1' };
+    expect(nativeSimulationEnvironment({ ...inherited, ZPLC_PLANT_GATE: '1' }, true, '/resources', 'linux').ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK).toBe('1');
+    expect('ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK' in nativeSimulationEnvironment(inherited, true, '/resources', 'linux')).toBe(false);
+  });
+
   it('asks the runtime for its own loopback Modbus and MQTT endpoints, and for no other peer (COM-009)', () => {
     const environment = nativeSimulationEnvironment({ PATH: '/safe/bin' }, false, '/resources', 'linux');
     expect(environment.ZPLC_NATIVE_COMM).toBe('1');

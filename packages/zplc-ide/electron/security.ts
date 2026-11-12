@@ -24,6 +24,7 @@ const NATIVE_SIMULATION_METHODS = new Set([
   'force.clear',
   'force.clear_all',
   'force.list',
+  'scenario.step',
 ]);
 
 const REQUEST_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,62}$/;
@@ -261,6 +262,8 @@ function isAllowedNativeSimulationParams(method: string, params: Record<string, 
       );
     case 'force.clear':
       return hasExactKeys(params, ['address']) && isUint16(params.address);
+    case 'scenario.step':
+      return hasExactKeys(params, ['at_ms']) && typeof params.at_ms === 'number' && Number.isSafeInteger(params.at_ms) && params.at_ms >= 0 && params.at_ms <= 0xffff_ffff;
     case 'breakpoint.add':
     case 'breakpoint.remove':
       return hasExactKeys(params, ['pc']) && isUint16(params.pc);

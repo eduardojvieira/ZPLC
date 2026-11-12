@@ -820,6 +820,10 @@ describe('Electron security boundary', () => {
       params,
     });
 
+    expect(isAllowedNativeSimulationRequest(request('scenario.step', { at_ms: 10 }))).toBe(true);
+    for (const params of [{}, { at_ms: -1 }, { at_ms: 1.5 }, { at_ms: 4294967296 }, { at_ms: 10, extra: 1 }]) {
+      expect(isAllowedNativeSimulationRequest(request('scenario.step', params))).toBe(false);
+    }
     expect(isAllowedNativeSimulationRequest(request('status.get', { extra: true }))).toBe(false);
     expect(isAllowedNativeSimulationRequest(request('memory.read', { address: 0 }))).toBe(false);
     expect(isAllowedNativeSimulationRequest(request('memory.read', { address: 65535, length: 2 }))).toBe(false);

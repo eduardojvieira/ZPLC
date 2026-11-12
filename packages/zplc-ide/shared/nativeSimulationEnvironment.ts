@@ -20,7 +20,9 @@ export function nativeSimulationEnvironment(
   platform: NodeJS.Platform = process.platform,
 ): NodeJS.ProcessEnv {
   const childEnvironment = withNativeCommunicationEnvironment(environment);
-  delete childEnvironment.ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK;
+  // Spike only (plant gate): the lock-step needs the scenario clock; the product never keeps it.
+  if (environment.ZPLC_PLANT_GATE === '1') childEnvironment.ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK = '1';
+  else delete childEnvironment.ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK;
   if (!isDev) {
     childEnvironment.ZPLC_NATIVE_SIM_BIN = path.join(
       resourcesPath,
