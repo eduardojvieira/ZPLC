@@ -113,7 +113,7 @@ describe('scene', () => {
 
   it('SCN-006 a version 1 scene migrates to itself', () => {
     const value = scene();
-    expect(migrateScene(value)).toEqual({ scene: value });
+    expect(migrateScene(value) as unknown).toEqual({ scene: value });
     expect(SCENE_SCHEMA_VERSION).toBe(1);
   });
 

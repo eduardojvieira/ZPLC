@@ -117,7 +117,10 @@ describe('typed plant map, schema 2 (LNK-001, PLT-003)', () => {
       expect.stringContaining('plant map.signals.command.direction'),
     ]);
     expect(
-      validatePlantMap({ ...v2, signals: { command: (v2 as { signals: { command: object } }).signals.command, atSpeed: { ...level } } }),
+      validatePlantMap({
+        ...v2,
+        signals: { command: (v2 as unknown as { signals: { command: object } }).signals.command, atSpeed: { ...level } },
+      }),
     ).toEqual([expect.stringContaining('plant map.signals.atSpeed.type')]);
   });
 

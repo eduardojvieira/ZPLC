@@ -142,7 +142,7 @@ describe('live plants behave as the graded ones (PLT-013, D-19)', () => {
           }
         });
         const sensed = live.map((s) => Object.fromEntries(Object.keys(expected[0]!).map((k) => [k, s[k]])));
-        expect(sensed).toEqual(expected);
+        expect(sensed as unknown).toEqual(expected);
         if (kind === 'conveyor-v1' && index === 0) expect(sensed.some((s) => s.jamDetected)).toBe(true);
       });
     });
