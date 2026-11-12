@@ -101,6 +101,10 @@ describe('lesson package validators (LRN-009, LRN-010, LRN-027)', () => {
     expect(validateManifest({ ...manifest, plant: 'steam-v9' })[0]).toContain('manifest.plant');
     expect(validateManifest({ ...manifest, scenario: { ...manifest.scenario, sha256: 'xyz' } })[0]).toContain('manifest.scenario.sha256');
     expect(validateManifest({ ...manifest, unexpected: true })).toEqual(['manifest: unknown key "unexpected"']);
+    // LNK-001: a manifest names a plant or a scene (an optional key); never both.
+    expect(validateManifest({ ...manifest, scene: 'cell-1' })).toEqual([]);
+    expect(validateManifest({ ...manifest, scene: null })).toEqual([]);
+    expect(validateManifest({ ...manifest, plant: 'motor-v1', scene: 'cell-1' })[0]).toContain('manifest.scene');
   });
 
   it('LRN-011 requires a reason and an instead, in both languages, for every track the lesson does not support', () => {
