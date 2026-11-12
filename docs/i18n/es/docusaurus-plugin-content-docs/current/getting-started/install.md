@@ -255,8 +255,8 @@ deba volver a escribir la clave de un asistente de IA guardada.
 | Linux, DEB          | `sudo apt remove zplc`                                                             |
 | Linux, AppImage     | Elimine el archivo.                                                                |
 
-ZPLC guarda sus preferencias, proyectos recientes, progreso de lecciones y copias de recuperación en la carpeta de datos de
-usuario de la aplicación para su cuenta; quitar la aplicación no la elimina. Las carpetas de sus proyectos nunca están
+ZPLC guarda sus preferencias, proyectos recientes, progreso de lecciones, copias de recuperación y el programa de la
+simulación (`native-simulation`) en la carpeta de datos de usuario de la aplicación para su cuenta; quitar la aplicación no la elimina. Las carpetas de sus proyectos nunca están
 dentro de ella.
 
 ## Solución de problemas

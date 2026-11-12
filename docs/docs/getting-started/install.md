@@ -251,8 +251,9 @@ possibly the Linux keyring) may not carry the entries over, so a stored AI assis
 | Linux, DEB        | `sudo apt remove zplc`                                            |
 | Linux, AppImage   | Delete the file.                                                  |
 
-ZPLC keeps its preferences, recent projects, lesson progress and recovery copies in the user-data folder of the
-application for your account; removing the application does not remove it. Your project folders are never inside it.
+ZPLC keeps its preferences, recent projects, lesson progress, recovery copies and the program of the simulation
+(`native-simulation`) in the user-data folder of the application for your account; removing the application does not
+remove it. Your project folders are never inside it.
 
 ## Troubleshooting
 

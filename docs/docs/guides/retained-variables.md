@@ -39,7 +39,7 @@ The native runtime of the simulator saves the region and restores it when you lo
 2. Press **Stop**. The region is stored with the values of the last complete cycle.
 3. Press **Run** again, or close and reopen ZPLC and run the same program. The counter continues from the value it had.
 
-The simulator keeps its store in the `.zplc` folder of your home directory, unless `ZPLC_PERSIST_ROOT` names another place. While the program runs, the region is stored at most once per interval (30 seconds by default) and only when it changed. The environment variable `ZPLC_RETAIN_SAVE_INTERVAL_MS` of the process that starts the runtime sets the interval. `0` turns periodic saves off, and a stop and a shutdown still store.
+ZPLC keeps the store in the `native-simulation` folder of its user-data folder: `~/.config/ZPLC` on Linux, `~/Library/Application Support/ZPLC` on macOS and `%APPDATA%\ZPLC` on Windows. A `zplc_runtime` that you start yourself uses the folder that `ZPLC_PERSIST_ROOT` names, or the `.zplc` folder of your home directory. While the program runs, the region is stored at most once per interval (30 seconds by default) and only when it changed. The environment variable `ZPLC_RETAIN_SAVE_INTERVAL_MS` of the process that starts the runtime sets the interval. `0` turns periodic saves off, and a stop and a shutdown still store.
 
 ## 3. What discards the values
 
