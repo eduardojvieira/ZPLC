@@ -1849,7 +1849,8 @@ static int handle_clock_set(zplc_native_runtime_session_t *session, const zplc_n
   /* The status result ends in "}}": the fields go inside its result object. */
   used = (size_t)length - 2U;
   if (append_jsonf(response, response_size, &used, ",\"clock_mode\":\"%s\",\"scan_interval_ms\":%u}}",
-                   session->scenario_clock_enabled != 0U ? "virtual" : "free", (unsigned)session->scan_interval_ms) != 0) {
+                   session->scenario_clock_enabled != 0U ? "virtual" : "free",
+                   session->program_loaded != 0U ? (unsigned)session->scan_interval_ms : 0U) != 0) {
     return format_failed(response, response_size);
   }
   return (int)used;

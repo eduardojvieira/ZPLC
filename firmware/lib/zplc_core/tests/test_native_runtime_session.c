@@ -4778,6 +4778,17 @@ static void test_clock_set_virtual_then_scenario_step(void) {
   zplc_native_runtime_session_shutdown(&session);
 }
 
+static void test_clock_set_without_program_reports_zero_interval(void) {
+  zplc_native_runtime_session_t session;
+
+  printf("\n=== Test: simulation.clock.set with no program ===\n");
+  zplc_native_runtime_session_init(&session);
+  /* Earlier tests persisted a program that init restores; a fresh install has none. */
+  session.program_loaded = 0U;
+  TEST_ASSERT_CONTAINS(clock_set_call(&session, "{\"mode\":\"virtual\"}"), "\"scan_interval_ms\":0", "0 with no program");
+  zplc_native_runtime_session_shutdown(&session);
+}
+
 static void test_clock_set_refused_while_running(void) {
   zplc_native_runtime_session_t session;
   const char *response;
@@ -4964,6 +4975,7 @@ int main(void) {
   test_canonical_request_envelope();
   test_scenario_virtual_clock();
   test_clock_set_virtual_then_scenario_step();
+  test_clock_set_without_program_reports_zero_interval();
   test_clock_set_refused_while_running();
   test_clock_set_rejects_bad_params();
   test_held_scan_is_clock_neutral();
