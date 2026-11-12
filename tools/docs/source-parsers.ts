@@ -361,8 +361,13 @@ export interface ScenarioFormat {
 }
 
 export function parseScenarioFormat(engine: string, workspace: string): ScenarioFormat {
-  const top = /exact\(\s*source,\s*hasPlant\s*\?\s*\[([^\]]*)\]\s*:\s*\[([^\]]*)\],\s*'scenario',?\s*\)/.exec(engine);
-  if (!top) throw new Error('test-engine/index.ts: the top-level keys of a scenario were not found');
+  // the keys are either one conditional, or a spread of it followed by the optional `scene` key
+  const spread = new RegExp(
+    String.raw`exact\(\s*source,\s*\[\s*\.\.\.\(hasPlant\s*\?\s*\[([^\]]*)\]\s*:\s*\[([^\]]*)\]\)\s*,` +
+      String.raw`\s*\.\.\.\(hasScene\s*\?\s*\[([^\]]*)\]\s*:\s*\[\]\)\s*,?\s*\],\s*'scenario',?\s*\)`,
+  );
+  const plain = /exact\(\s*source,\s*hasPlant\s*\?\s*\[([^\]]*)\]\s*:\s*\[([^\]]*)\],\s*'scenario',?\s*\)/;
+  const top = spread.exec(engine) ?? plain.exec(engine);
   const list = (text: string) => [...text.matchAll(/'(\w+)'/g)].map((match) => match[1]!);
   const withPlant = list(top[1]!);
   const without = list(top[2]!);
@@ -401,7 +406,7 @@ export function parseScenarioFormat(engine: string, workspace: string): Scenario
   const plants = [...engine.matchAll(/source\.plant === '([\w-]+)'/g)].map((match) => match[1]!);
   return {
     fields: without,
-    optionalFields: withPlant.filter((field) => !without.includes(field)),
+    optionalFields: [...withPlant.filter((field) => !without.includes(field)), ...list(top[3] ?? '')],
     eventFields: list(event[1]!),
     kinds,
     plants,

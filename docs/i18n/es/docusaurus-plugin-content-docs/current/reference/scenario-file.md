@@ -24,6 +24,7 @@ Esta tabla se lee del archivo fuente `packages/zplc-ide/src/test-engine/index.ts
 | `events` | Inputs to write, in time order; may be empty. |
 | `expectations` | What the outputs must do; at least one. |
 | `plant` | Optional: one of the plant models below, which drives its own inputs from the outputs of the program. |
+| `scene` | Optional, and exclusive with `plant`: a scene plant file, its signal map file and a script of timed `operate`, `emit` and `fault` events (keys `file`, `map`, `script`). |
 
 ## Eventos
 

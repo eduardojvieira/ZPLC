@@ -45,7 +45,7 @@ const HEAD = {
 const LABEL = {
   config: { en: 'Settings', es: 'Ajustes' },
   signals: { en: 'Signals', es: 'Señales' },
-  actions: { en: 'Fault actions', es: 'Acciones de fallo' },
+  actions: { en: 'Fault actions', es: 'Acciones de falla' },
   none: { en: 'None.', es: 'Ninguna.' },
 } satisfies Record<string, L10n>;
 const INTRO: L10n = {
@@ -53,7 +53,7 @@ const INTRO: L10n = {
     'Every part of the plant catalogue, with its settings, signals and fault actions. A signal name on a plant is the name given to ' +
     'the part, a dot and the signal listed here.',
   es:
-    'Cada pieza del catálogo de la planta, con sus ajustes, señales y acciones de fallo. El nombre de una señal en una planta es el ' +
+    'Cada pieza del catálogo de la planta, con sus ajustes, señales y acciones de falla. El nombre de una señal en una planta es el ' +
     'nombre dado a la pieza, un punto y la señal que figura aquí.',
 };
 
@@ -116,7 +116,7 @@ export const pagesFor = (parts: readonly PartDefinition[]): ReferencePage[] => [
     label: { en: 'Parts reference', es: 'Referencia de piezas' },
     description: {
       en: 'Every part of the plant catalogue with its settings, signals and fault actions, generated from the part definitions.',
-      es: 'Cada pieza del catálogo de la planta con sus ajustes, señales y acciones de fallo, generada de las definiciones de pieza.',
+      es: 'Cada pieza del catálogo de la planta con sus ajustes, señales y acciones de falla, generada de las definiciones de pieza.',
     },
     body: (lang) => partsBody(parts, lang),
   },
