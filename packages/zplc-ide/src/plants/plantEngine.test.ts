@@ -11,13 +11,16 @@ describe('plant engine (LRN-018, LRN-019)', () => {
     expect(run.model.actions).toEqual(['stall']);
   });
 
-  it('spins the motor up while commanded, down when not, and reports at speed', () => {
+  it('spins the motor up while commanded, down when not, and reports at speed only from 1000 (D-19)', () => {
     const run = createPlantRun('motor-v1');
-    for (let i = 0; i < 9; i += 1) run.tick({ command: true });
-    expect(run.state.speed).toBe(900);
+    run.tick({ command: true });
+    expect(run.state.speed).toBe(500);
+    expect(run.sense().atSpeed).toBe(false);
+    run.tick({ command: true });
+    expect(run.state.speed).toBe(1000);
     expect(run.sense().atSpeed).toBe(true);
     run.tick({ command: false });
-    expect(run.state.speed).toBe(800);
+    expect(run.state.speed).toBe(0);
     expect(run.sense().atSpeed).toBe(false);
   });
 
@@ -44,34 +47,57 @@ describe('plant engine (LRN-018, LRN-019)', () => {
     expect(run.tickCount).toBe(3);
   });
 
-  it('the tank fills with the pump, drains without it, and a pump failure stops the flow and raises the input', () => {
+  it('the tank starts at 200, fills with the pump, drains without it, and a pump failure stops the flow and raises the input (D-19)', () => {
     const run = createPlantRun('tank-v1');
-    expect(run.state.level).toBe(500);
+    expect(run.state.level).toBe(200);
+    expect(run.sense().levelLow).toBe(true);
     run.tick({ pump: true });
-    expect(run.state.level).toBe(512);
+    expect(run.state.level).toBe(300);
     run.act('pumpFault');
     run.tick({ pump: true });
-    expect(run.state.level).toBe(504);
+    expect(run.state.level).toBe(280);
     expect(run.sense().pumpFault).toBe(true);
-    for (let i = 0; i < 70; i += 1) run.tick({ pump: false });
+    for (let i = 0; i < 20; i += 1) run.tick({ pump: false });
     expect(run.state.level).toBe(0);
     expect(run.sense().levelLow).toBe(true);
+    run.act('pumpFault');
+    for (let i = 0; i < 8; i += 1) run.tick({ pump: true });
+    expect(run.sense().levelHigh).toBe(true);
+    expect(run.sense().pumpFault).toBe(false);
   });
 
-  it('the conveyor moves a part to the classifier and diverter sensors, counts it, and a jam stops it', () => {
+  it('the conveyor walks a part through the classifier and diverter, counts it, then jams by itself as graded (D-19)', () => {
     const run = createPlantRun('conveyor-v1');
-    const seen = new Set<string>();
-    for (let i = 0; i < 30; i += 1) {
-      run.tick({ belt: true, diverter: false });
-      for (const [k, v] of Object.entries(run.sense())) if (v) seen.add(k);
+    const sensed: Array<string[]> = [];
+    for (let i = 0; i < 6; i += 1) {
+      sensed.push(
+        Object.entries(run.sense())
+          .filter(([, v]) => v)
+          .map(([k]) => k),
+      );
+      run.tick({ belt: true, diverter: true });
     }
-    expect([...seen].sort()).toEqual(['partAtClassifier', 'partAtDiverter']);
+    expect(sensed).toEqual([[], ['partAtClassifier', 'metalDetected'], ['partAtDiverter'], [], ['jamDetected'], ['jamDetected']]);
     expect(run.state.classified).toBe(1);
-    run.act('jam');
-    const position = run.state.position;
+  });
+
+  it('a jam action stops the belt, raises the sensor, and clearing it frees the belt again (PLT-011)', () => {
+    const run = createPlantRun('conveyor-v1');
     run.tick({ belt: true, diverter: false });
-    expect(run.state.position).toBe(position);
+    run.act('jam');
+    run.tick({ belt: true, diverter: false });
+    expect(run.state.phase).toBe('classifier');
     expect(run.sense().jamDetected).toBe(true);
+    run.act('jam');
+    run.tick({ belt: true, diverter: false });
+    expect(run.state.phase).toBe('diverter');
+    run.tick({ belt: true, diverter: false });
+    run.tick({ belt: true, diverter: false });
+    expect(run.sense().jamDetected).toBe(true);
+    run.act('jam');
+    expect(run.sense().jamDetected).toBe(false);
+    run.reset();
+    expect(run.state.phase).toBe('idle');
   });
 
   it('the pedestrian crossing waits for WALK, crosses, and a blocked vehicle holds the pedestrian back', () => {
@@ -115,8 +141,8 @@ function motorProgramFor(kind: string) {
   });
 }
 const GOLDEN: Record<string, string> = {
-  'conveyor-v1': '3e7ad046',
-  'motor-v1': '16e1f1ed',
-  'pedestrian-v1': '5faddcd8',
-  'tank-v1': 'd059d702',
+  'conveyor-v1': '65e13d62',
+  'motor-v1': 'bd503d36',
+  'pedestrian-v1': '22aab56d',
+  'tank-v1': '9ffc9413',
 };

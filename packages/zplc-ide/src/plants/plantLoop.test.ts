@@ -49,7 +49,7 @@ describe('closed-loop plant session (LRN-018)', () => {
     await loop.poll();
     expect(plc.writes.sort()).toEqual([
       ['Tank.LevelHigh', false],
-      ['Tank.LevelLow', false],
+      ['Tank.LevelLow', true],
       ['Tank.PumpFault', false],
     ]);
     plc.writes.length = 0;

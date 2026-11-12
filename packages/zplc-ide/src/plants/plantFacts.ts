@@ -37,7 +37,7 @@ export function plantFacts(kind: PlantKind, state: PlantState): PlantFact {
       const speed = state.speed as number;
       const key = state.stall
         ? 'plant.motor.stalled'
-        : speed >= 900
+        : speed >= 1000
           ? 'plant.motor.atSpeed'
           : speed > 0
             ? 'plant.motor.spinning'
@@ -62,9 +62,9 @@ export function plantFacts(kind: PlantKind, state: PlantState): PlantFact {
       const level = state.level as number;
       const key = state.pumpFault
         ? 'plant.tank.pumpFault'
-        : level >= 800
+        : level >= 750
           ? 'plant.tank.high'
-          : level <= 200
+          : level <= 250
             ? 'plant.tank.low'
             : state.filling
               ? 'plant.tank.filling'
