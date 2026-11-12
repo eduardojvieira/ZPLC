@@ -306,7 +306,11 @@ function bindScene(input: unknown, context: SceneScenarioContext, debugMap: Debu
   const { port } = context;
   if (tickMs % port.core.stepMs !== 0) fail(`tickMs must be a multiple of the plant step ${port.core.stepMs}`);
   if (block.script.length > MAX_SCENE_SCRIPT) fail('scene script is too long');
-  block.script.forEach((event, index) => aligned(event.atMs, `scene.script[${index}].atMs`, tickMs, durationMs));
+  block.script.forEach((event, index) => {
+    const path = `scene.script[${index}].atMs`;
+    if (event.atMs > durationMs) fail(`${path} ${event.atMs} is after the end of the scenario (durationMs ${durationMs})`);
+    aligned(event.atMs, path, tickMs, durationMs);
+  });
   const problems = validateSceneScript(block.script, context.scene, port, context.catalogue ?? shippedCatalogue);
   const plantSignals = new Map(port.core.signals.map((signal) => [signal.name, signal]));
   const commands: Array<{ name: string; point: string; signal: ResolvedSignal }> = [];

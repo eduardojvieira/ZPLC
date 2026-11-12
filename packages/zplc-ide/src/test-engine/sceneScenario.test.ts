@@ -302,6 +302,9 @@ describe('a scene scenario', () => {
     expect(compile([{ atMs: 0 }])).toThrow('scene.script[0]: must have atMs and exactly one of');
     expect(compile([{ atMs: 0, fault: { part: 'Nope', action: 'jam' } }])).toThrow('scene.script[0].fault.part: "Nope"');
     expect(compile([{ atMs: 0, operate: { signal: 'Ghost.pressed', value: true } }])).toThrow('scene.script[0].operate.signal');
+    expect(compile([{ atMs: 600, operate: { signal: 'StartButton.pressed', value: true } }])).toThrow(
+      'scene.script[0].atMs 600 is after the end of the scenario (durationMs 60)',
+    );
     expect(compile([{ atMs: 5, operate: { signal: 'StartButton.pressed', value: true } }])).toThrow('align to tickMs');
     expect(() => compileScenario(sceneScenario({ scene: { file: '../x', map: 'm', script: [] } }), cellMap(), context(core))).toThrow(
       'scene.file',
