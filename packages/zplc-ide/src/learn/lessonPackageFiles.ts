@@ -19,7 +19,8 @@ import {
   type WiringBoard,
   type WiringFile,
 } from '../boards/wiring/wiring';
-import { plantKindOf, validatePlantMap, type PlantMap } from '../plants/plantMap';
+import { parseScene } from '../plant/core/scene';
+import { normalizePlantMap, plantKindOf, validatePlantMap, type PlantMap } from '../plants/plantMap';
 import { validateCourseDefinition, validateCoursePlacement, type CourseDefinition } from './courseDefinition';
 import {
   canonicalJson,
@@ -45,6 +46,8 @@ import {
 
 export const LESSONS_DIRECTORY = join(import.meta.dir, '..', '..', 'lessons');
 export const PROJECTS_DIRECTORY = join(import.meta.dir, '..', '..', 'projects');
+/** The shipped scenes: one directory per scene, with `scene.json` in it (spec 012). */
+export const SCENES_DIRECTORY = join(import.meta.dir, '..', '..', 'plant-scenes');
 /** The board I/O manifest of the firmware: the one source of the pins of the learner boards (IO-001). */
 export const BOARDS_FILE = join(import.meta.dir, '..', '..', '..', '..', 'firmware', 'app', 'boards', 'boards.json');
 const LOCALES: readonly LessonLocale[] = ['en', 'es'];
@@ -197,7 +200,11 @@ function readingFileProblems(source: ReadingSource, scenario: ScenarioFile, star
 }
 
 /** Loads and validates every package. A broken package is reported by its problems and left out. */
-export function loadLessonPackages(lessonsDirectory = LESSONS_DIRECTORY, projectsDirectory = PROJECTS_DIRECTORY): LoadedPackages {
+export function loadLessonPackages(
+  lessonsDirectory = LESSONS_DIRECTORY,
+  projectsDirectory = PROJECTS_DIRECTORY,
+  scenesDirectory = SCENES_DIRECTORY,
+): LoadedPackages {
   const problems: string[] = [];
   const packages: LessonPackage[] = [];
   let learnerBoards: ReturnType<typeof loadLearnerBoards> | undefined;
@@ -237,7 +244,36 @@ export function loadLessonPackages(lessonsDirectory = LESSONS_DIRECTORY, project
     let plantMap: PlantMap | null = null;
     const hasMap = existsSync(join(directory, 'plant-map.json'));
     if (typed.plant !== null && !hasMap) here.push(`${id}: the lesson names the plant "${typed.plant}" but has no plant-map.json`);
-    if (typed.plant === null && hasMap) here.push(`${id}: plant-map.json belongs to a lesson that names a plant`);
+    const scene = typeof typed.scene === 'string' ? typed.scene : null;
+    if (scene !== null && !hasMap) here.push(`${id}: the lesson names the scene "${scene}" but has no plant-map.json`);
+    if (typed.plant === null && scene === null && hasMap)
+      here.push(`${id}: plant-map.json belongs to a lesson that names a plant or a scene`);
+    if (scene !== null && hasMap) {
+      const raw = readJson(join(directory, 'plant-map.json'), here);
+      const mapProblems = validatePlantMap(raw);
+      here.push(...mapProblems.map((problem) => `${id}/plant-map.json: ${problem}`));
+      if (mapProblems.length === 0) {
+        plantMap = raw as PlantMap;
+        const target = normalizePlantMap(plantMap).target;
+        const mapScene = 'scene' in target ? target.scene : undefined;
+        if (mapScene !== scene)
+          here.push(`${id}/plant-map.json: ${mapScene ? `scene "${mapScene}"` : 'a 2.0 plant'} differs from the manifest scene "${scene}"`);
+      }
+    }
+    if (scene !== null) {
+      const sceneFile = join(scenesDirectory, scene, 'scene.json');
+      if (!existsSync(sceneFile))
+        here.push(`${id}: the lesson names the scene "${scene}" but plant-scenes/${scene}/scene.json does not exist`);
+      else {
+        const parsed = parseScene(readFileSync(sceneFile, 'utf8'));
+        if ('problems' in parsed)
+          here.push(
+            ...parsed.problems.map((problem) => `${id}/scene ${scene}: ${problem.path ? `${problem.path}: ` : ''}${problem.message}`),
+          );
+      }
+      if ((scenarioRaw as { scene?: unknown } | undefined)?.scene === undefined)
+        here.push(`${id}/${typed.scenario.file}: a lesson that names a scene has a scenario with a "scene" block`);
+    }
     if (typed.plant !== null && hasMap) {
       const raw = readJson(join(directory, 'plant-map.json'), here);
       const mapProblems = validatePlantMap(raw);
@@ -284,7 +320,11 @@ export function loadLessonPackages(lessonsDirectory = LESSONS_DIRECTORY, project
     if (scenario) {
       if (scenario.id !== typed.scenario.id)
         here.push(`${id}: scenario id "${scenario.id}" differs from the manifest "${typed.scenario.id}"`);
-      if ((scenario.plant ?? null) !== typed.plant)
+      if (scene !== null && scenario.plant !== undefined)
+        here.push(
+          `${id}/${typed.scenario.file}: scenario.plant: a scene lesson names its scene in the scenario's scene block, not a plant`,
+        );
+      else if ((scenario.plant ?? null) !== typed.plant)
         here.push(`${id}: manifest plant "${typed.plant}" differs from the scenario plant "${scenario.plant ?? null}"`);
       const hash = scenarioHash(scenarioRaw);
       if (hash !== typed.scenario.sha256)
@@ -389,6 +429,7 @@ export function buildIndex(packages: readonly LessonPackage[], course: CourseDef
         tracks: manifest.tracks,
         unsupported: manifest.unsupported,
         plant: manifest.plant,
+        ...(typeof manifest.scene === 'string' ? { scene: manifest.scene } : {}),
         plantMap,
         estimatedMinutes: manifest.estimatedMinutes,
         starter: manifest.starter,

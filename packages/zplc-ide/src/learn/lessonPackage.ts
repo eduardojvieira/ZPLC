@@ -122,6 +122,8 @@ export interface LessonManifest {
   /** For each track of the course the lesson does not list: why, and what to do instead, in both languages (LRN-011). */
   unsupported: Partial<Record<string, LessonUnsupportedTrack>>;
   plant: string | null;
+  /** The directory of `plant-scenes/` the lesson ships its plant in; absent in a 2.0 manifest. Exclusive with `plant`. */
+  scene?: string | null;
   estimatedMinutes: number;
   /** The example project copied into the learner's workspace, and the program of it the learner edits. */
   starter: { project: string; program: string };
@@ -296,7 +298,12 @@ const MANIFEST_KEYS = [
 export function validateManifest(value: unknown): string[] {
   const problems: string[] = [];
   if (!isObject(value)) return ['manifest: must be an object'];
-  exactKeys(value, value.hardware === undefined ? MANIFEST_KEYS : [...MANIFEST_KEYS, 'hardware'], 'manifest', problems);
+  exactKeys(
+    value,
+    [...MANIFEST_KEYS, ...(value.hardware === undefined ? [] : ['hardware']), ...(value.scene === undefined ? [] : ['scene'])],
+    'manifest',
+    problems,
+  );
   if (value.schemaVersion !== LESSON_SCHEMA_VERSION) problems.push('manifest.schemaVersion: must be 1');
   if (typeof value.id !== 'string' || !ID.test(value.id)) problems.push('manifest.id: must be a lowercase slug of 3 to 64 characters');
   if (!isPositiveInt(value.version)) problems.push('manifest.version: must be a positive integer');
@@ -321,6 +328,10 @@ export function validateManifest(value: unknown): string[] {
   validateHardware(value, problems);
   if (value.plant !== null && !oneOf(LESSON_PLANTS, value.plant))
     problems.push(`manifest.plant: must be null or one of ${LESSON_PLANTS.join(', ')}`);
+  if (value.scene !== undefined && value.scene !== null && (typeof value.scene !== 'string' || !ID.test(value.scene)))
+    problems.push('manifest.scene: must be null or the name of a directory of plant-scenes/ (a lowercase slug)');
+  else if (typeof value.scene === 'string' && value.plant !== null)
+    problems.push('manifest.scene: a lesson names a plant or a scene, not both; set plant to null');
   if (!isPositiveInt(value.estimatedMinutes) || (value.estimatedMinutes as number) > 480)
     problems.push('manifest.estimatedMinutes: must be an integer from 1 to 480');
   for (const part of ['starter', 'solution'] as const) {
@@ -790,6 +801,8 @@ export interface LessonIndexEntry {
   tracks: readonly string[];
   unsupported: Readonly<Partial<Record<string, LessonUnsupportedTrack>>>;
   plant: string | null;
+  /** The scene the lesson ships; present only for a lesson that names one, so a 2.0 index entry is unchanged. */
+  scene?: string;
   /** The plant's mapping to the starter's I/O (LRN-021); null for a lesson without a plant. */
   plantMap: PlantMap | null;
   estimatedMinutes: number;
