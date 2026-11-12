@@ -47,24 +47,27 @@ describe('plant engine (LRN-018, LRN-019)', () => {
     expect(run.tickCount).toBe(3);
   });
 
-  it('the tank starts at 200, fills with the pump, drains without it, and a pump failure stops the flow and raises the input (D-19)', () => {
-    const run = createPlantRun('tank-v1');
-    expect(run.state.level).toBe(200);
-    expect(run.sense().levelLow).toBe(true);
-    run.tick({ pump: true });
-    expect(run.state.level).toBe(300);
-    run.act('pumpFault');
-    run.tick({ pump: true });
-    expect(run.state.level).toBe(280);
-    expect(run.sense().pumpFault).toBe(true);
-    for (let i = 0; i < 20; i += 1) run.tick({ pump: false });
-    expect(run.state.level).toBe(0);
-    expect(run.sense().levelLow).toBe(true);
-    run.act('pumpFault');
-    for (let i = 0; i < 8; i += 1) run.tick({ pump: true });
-    expect(run.sense().levelHigh).toBe(true);
-    expect(run.sense().pumpFault).toBe(false);
-  });
+  it(
+    'the tank starts at 200, fills with the pump, drains without it, and a pump failure stops the flow and raises the input ' + '(D-19)',
+    () => {
+      const run = createPlantRun('tank-v1');
+      expect(run.state.level).toBe(200);
+      expect(run.sense().levelLow).toBe(true);
+      run.tick({ pump: true });
+      expect(run.state.level).toBe(300);
+      run.act('pumpFault');
+      run.tick({ pump: true });
+      expect(run.state.level).toBe(280);
+      expect(run.sense().pumpFault).toBe(true);
+      for (let i = 0; i < 20; i += 1) run.tick({ pump: false });
+      expect(run.state.level).toBe(0);
+      expect(run.sense().levelLow).toBe(true);
+      run.act('pumpFault');
+      for (let i = 0; i < 8; i += 1) run.tick({ pump: true });
+      expect(run.sense().levelHigh).toBe(true);
+      expect(run.sense().pumpFault).toBe(false);
+    },
+  );
 
   it('the conveyor walks a part through the classifier and diverter, counts it, then jams by itself as graded (D-19)', () => {
     const run = createPlantRun('conveyor-v1');

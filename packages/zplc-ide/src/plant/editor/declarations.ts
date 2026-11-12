@@ -20,7 +20,9 @@ export function generateDeclarations(signals: readonly PlantSignalDef[], languag
   if (language !== 'st') throw new Error(`declarations: unsupported language ${String(language)}`);
   const ids = identifiers(signals);
   const block = (keyword: string, direction: PlantSignalDef['direction']) => {
-    const lines = signals.flatMap((s, i) => (s.direction === direction ? [`    ${ids[i]} : ${s.type};${s.unit ? ` (* ${s.unit} *)` : ''}`] : []));
+    const lines = signals.flatMap((s, i) =>
+      s.direction === direction ? [`    ${ids[i]} : ${s.type};${s.unit ? ` (* ${s.unit} *)` : ''}`] : [],
+    );
     return lines.length ? [`  ${keyword}`, ...lines, '  END_VAR'] : [];
   };
   return [...block('VAR_INPUT', 'sensor'), ...block('VAR_OUTPUT', 'command')].join('\n') + '\n';

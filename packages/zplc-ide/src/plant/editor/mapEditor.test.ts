@@ -15,7 +15,15 @@ const signals: PlantSignalDef[] = [
   { name: 'tank.level', direction: 'sensor', type: 'REAL', unit: 'm' },
   { name: 'valve.pos', direction: 'command', type: 'INT' },
 ];
-const out = (path: string, type: string) => ({ path, pou: 'Main', name: path.split('.')[1], type, region: 'OPI' as const, address: 0, size: 1 });
+const out = (path: string, type: string) => ({
+  path,
+  pou: 'Main',
+  name: path.split('.')[1],
+  type,
+  region: 'OPI' as const,
+  address: 0,
+  size: 1,
+});
 const inp = (path: string, type: string) => ({ path, pou: 'Main', name: path.split('.')[1], type }) as unknown as IoMap['inputs'][number];
 const io = (outputs: IoMap['outputs'], inputs: IoMap['inputs'] = []): IoMap => ({ outputs, inputs });
 
