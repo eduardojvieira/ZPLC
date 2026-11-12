@@ -19,7 +19,7 @@ import { announce } from '../utils/announce';
 import { createPlantRun, type PlantKind } from './plantEngine';
 import { plantFacts } from './plantFacts';
 import { createPlantLoop } from './plantLoop';
-import { resolvePlantMap, type PlantMap } from './plantMap';
+import { plantKindOf, resolvePlantMap, type PlantMap } from './plantMap';
 import { PlantView } from './PlantView';
 
 const POLL_MS = 100;
@@ -54,7 +54,7 @@ export function PlantLivePanel({ controller }: { controller: DebugController | u
   );
   const candidate = candidates.find((item) => item.lessonId === chosen) ?? candidates[0];
   const resolved = useMemo(() => (candidate ? resolvePlantMap(candidate.map, ioMap) : undefined), [candidate, ioMap]);
-  const kind: PlantKind | undefined = candidate?.map.plant;
+  const kind: PlantKind | undefined = candidate && plantKindOf(candidate.map);
 
   const run = useMemo(() => (kind ? createPlantRun(kind) : undefined), [kind]);
   const lastKey = useRef<string | undefined>(undefined);

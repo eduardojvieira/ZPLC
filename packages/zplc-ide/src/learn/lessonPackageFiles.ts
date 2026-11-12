@@ -19,7 +19,7 @@ import {
   type WiringBoard,
   type WiringFile,
 } from '../boards/wiring/wiring';
-import { validatePlantMap, type PlantMap } from '../plants/plantMap';
+import { plantKindOf, validatePlantMap, type PlantMap } from '../plants/plantMap';
 import { validateCourseDefinition, validateCoursePlacement, type CourseDefinition } from './courseDefinition';
 import {
   canonicalJson,
@@ -244,8 +244,9 @@ export function loadLessonPackages(lessonsDirectory = LESSONS_DIRECTORY, project
       here.push(...mapProblems.map((problem) => `${id}/plant-map.json: ${problem}`));
       if (mapProblems.length === 0) {
         plantMap = raw as PlantMap;
-        if (plantMap.plant !== typed.plant)
-          here.push(`${id}/plant-map.json: plant "${plantMap.plant}" differs from the manifest plant "${typed.plant}"`);
+        const mapPlant = plantKindOf(plantMap);
+        if (mapPlant !== typed.plant)
+          here.push(`${id}/plant-map.json: plant "${mapPlant ?? 'a scene'}" differs from the manifest plant "${typed.plant}"`);
       }
     }
     // LRN-013, LRN-014: a lesson on the hardware track ships its wiring, which fits both learner boards and its program.
