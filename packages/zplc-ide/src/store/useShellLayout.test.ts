@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'bun:test';
-import { DEFAULT_SHELL_STATE, SHELL_STATE_VERSION, parseShellState, serializeShellState } from './useShellLayout';
+import { stubProjectLoader } from '../test/dom';
+
+await stubProjectLoader();
+const { DEFAULT_SHELL_STATE, SHELL_STATE_VERSION, parseShellState, serializeShellState } = await import('./useShellLayout');
 
 describe('what the shell remembers (UX-011, UX-012, UX-017)', () => {
   it('UX-012 keeps the navigator mode and the visibility of the sidebars through a save and a read', () => {
