@@ -7,8 +7,10 @@ const FLOATS_PER_BODY = 7;
 export class TraceRecorder {
   private readonly chunks: Uint8Array[] = [];
   private readonly scratch: Float32Array;
+  private readonly world: GateWorld;
 
-  constructor(private readonly world: GateWorld) {
+  constructor(world: GateWorld) {
+    this.world = world;
     this.scratch = new Float32Array(world.bodies().length * FLOATS_PER_BODY);
   }
 
