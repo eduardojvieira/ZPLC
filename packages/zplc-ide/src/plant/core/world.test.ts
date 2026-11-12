@@ -36,9 +36,9 @@ const box = (id: string, at: [number, number, number]): WorldBodySpec => ({
   motion: 'dynamic',
   layer: 'moving',
 });
-const addBelt = (w: PhysicsWorld, id: string, z = 0) => {
+const addBelt = (w: PhysicsWorld, id: string, z = 0, turnPerMps?: number) => {
   w.addBody(belt(id, z));
-  w.addBelt({ id, bodyId: id, axis: [1, 0, 0], accelMps2: 1 });
+  w.addBelt({ id, bodyId: id, axis: [1, 0, 0], accelMps2: 1, ...(turnPerMps === undefined ? {} : { turnPerMps }) });
 };
 const state = (w: PhysicsWorld, id: string) => w.bodies().find((b) => b.id === id)!;
 
@@ -103,6 +103,19 @@ describe('physics world', () => {
     world.setBeltTarget('belt', 0.5);
     world.step(1500);
     expect(Math.abs(state(world, 'b').v[0] - 0.5)).toBeLessThanOrEqual(0.01);
+    world.dispose();
+  });
+
+  it('a belt with turnPerMps spins the box on it about the up axis', async () => {
+    const { world } = await make();
+    world.addBody(floor);
+    addBelt(world, 'belt', 0, -0.5);
+    world.addBody(box('b', [0, 0.6, 0]));
+    world.setBeltTarget('belt', 0.5);
+    world.step(1500);
+    // omega = turnPerMps * speed = -0.25 rad/s about +y, tolerant of friction slip.
+    const q = state(world, 'b').q;
+    expect(2 * Math.atan2(q[1], q[3])).toBeLessThan(-0.1);
     world.dispose();
   });
 
