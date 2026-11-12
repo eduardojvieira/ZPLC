@@ -9,7 +9,7 @@ tags: [how-to, projects, archive]
 
 # Exportar e importar un archivo de proyecto
 
-Un proyecto es una carpeta. Un archivo de proyecto es esa carpeta como un solo archivo, para poder enviarla, guardarla o abrirla en otra computadora y recuperar el mismo proyecto byte por byte.
+Un proyecto es una carpeta. Un archivo de proyecto es esa carpeta como un solo archivo, para poder enviarla, guardarla o abrirla en otra computadora y recuperar el mismo proyecto byte por byte. Las escenas de planta guardadas con el proyecto (`scenes/<name>.scene.json`, de hasta 1 MiB cada una) viajan en el archivo como cualquier otro archivo.
 
 ## Exportar
 

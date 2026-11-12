@@ -5,7 +5,34 @@
  */
 import { useIDEStore } from './useIDEStore';
 
-export async function saveAllDocuments(): Promise<{ saved: number; failed: readonly string[] }> {
+export type SaveAllResult = { saved: number; failed: readonly string[] };
+export type SaveAllParticipant = () => Promise<SaveAllResult>;
+
+const participants = new Set<SaveAllParticipant>();
+
+/** A document outside `loadedFiles` (a plant scene, a plant map) joins "Save all" (FLW-006); returns the function that leaves. */
+export function registerSaveAllParticipant(participant: SaveAllParticipant): () => void {
+  participants.add(participant);
+  return () => participants.delete(participant);
+}
+
+export async function saveAllDocuments(): Promise<SaveAllResult> {
+  const own = await saveStoreDocuments();
+  let saved = own.saved;
+  const failed = [...own.failed];
+  for (const participant of participants) {
+    try {
+      const result = await participant();
+      saved += result.saved;
+      failed.push(...result.failed);
+    } catch (error) {
+      failed.push(error instanceof Error ? error.message : String(error));
+    }
+  }
+  return { saved, failed };
+}
+
+async function saveStoreDocuments(): Promise<SaveAllResult> {
   const before = useIDEStore.getState();
   const modifiedIds = [...before.loadedFiles].filter(([, file]) => file.isModified).map(([id]) => id);
   const configModified = before.projectConfigDirty;

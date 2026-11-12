@@ -4,7 +4,7 @@ import { projectLoaderStub } from '../test/projectLoaderStub';
 import type { ProjectFile } from '../types';
 
 await mock.module('../utils/projectLoader', () => projectLoaderStub({ loadProject: () => null, loadProjectAssets: () => null }));
-const { saveAllDocuments } = await import('./saveAll');
+const { saveAllDocuments, registerSaveAllParticipant } = await import('./saveAll');
 const { useIDEStore } = await import('./useIDEStore');
 
 const original = useIDEStore.getState();
@@ -51,5 +51,23 @@ describe('Save all (FLW-005)', () => {
     const calls = stage([file('a', false)], false);
     expect(await saveAllDocuments()).toEqual({ saved: 0, failed: [] });
     expect(calls).toEqual({ files: 0, config: 0 });
+  });
+
+  it('FLW-006 a plant scene joins Save all, and its failure is named without stopping the others', async () => {
+    const calls = stage([file('a', true)], false);
+    const leave = [
+      registerSaveAllParticipant(async () => ({ saved: 1, failed: [] })),
+      registerSaveAllParticipant(async () => ({ saved: 0, failed: ['scenes/line.scene.json'] })),
+      registerSaveAllParticipant(async () => {
+        throw new Error('plant map');
+      }),
+    ];
+    try {
+      expect(await saveAllDocuments()).toEqual({ saved: 2, failed: ['scenes/line.scene.json', 'plant map'] });
+      expect(calls.files).toBe(1);
+    } finally {
+      for (const stop of leave) stop();
+    }
+    expect(await saveAllDocuments()).toEqual({ saved: 0, failed: [] });
   });
 });

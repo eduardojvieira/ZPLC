@@ -9,7 +9,7 @@ tags: [how-to, projects, archive]
 
 # Export and import a project archive
 
-A project is a folder. An archive is that folder as one file, so you can send it, store it, or open it on another computer and get the same project back byte for byte.
+A project is a folder. An archive is that folder as one file, so you can send it, store it, or open it on another computer and get the same project back byte for byte. Plant scenes saved with the project (`scenes/<name>.scene.json`, at most 1 MiB each) travel in the archive like any other file.
 
 ## Export
 
