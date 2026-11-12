@@ -12,12 +12,15 @@ import { Button } from '../ui';
 export function BuildMenu({
   menu,
   onCompile,
+  onGenerateSt,
   onDownloadBytecode,
   onViewAssembly,
   hasCurrentCompileResult,
 }: {
   menu: ReturnType<typeof useDropdownMenu>;
   onCompile: () => void;
+  /** Present for a visual language (FBD, LD, SFC): Generate ST is in this menu and the palette, not in the bar (FLW-009). */
+  onGenerateSt: (() => void) | undefined;
   onDownloadBytecode: () => void;
   onViewAssembly: () => void;
   hasCurrentCompileResult: boolean;
@@ -84,6 +87,25 @@ export function BuildMenu({
             <span className="ml-auto text-xs text-[var(--color-surface-400)]">{shortcutText('build.compile')}</span>
           </Button>
           <div className="h-px bg-[var(--color-surface-600)] my-1" />
+          {onGenerateSt && (
+            <Button
+              variant="bare"
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                onClose();
+                onGenerateSt();
+              }}
+              className={
+                'focus-ring w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] ' +
+                'hover:bg-[var(--menu-item-bg-active)] transition-colors'
+              }
+              aria-label={t('toolbar.toSt.label')}
+            >
+              <FileCode size={14} />
+              <span>{t('toolbar.toSt.text')}</span>
+            </Button>
+          )}
           <Button
             variant="bare"
             type="button"

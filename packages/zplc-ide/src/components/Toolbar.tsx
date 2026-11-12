@@ -13,11 +13,11 @@
  */
 
 import { useState, useRef, useEffect, useEffectEvent } from 'react';
-import { Settings, FileCode, Save } from 'lucide-react';
+import { Settings, Save } from 'lucide-react';
 import { useIDEStore } from '../store/useIDEStore';
 import { useActiveFileInfo, useToolbarState } from '../store/regionSubscriptions';
 import { useT } from '../i18n';
-import { bindCommands, publishCommandState } from '../commands/bus';
+import { bindCommands, publishCommandState, runCommand } from '../commands/bus';
 import type { CommandId } from '../commands/registry';
 import { withShortcut } from '../commands/shortcutLabels';
 import { useDebugController } from '../hooks/useDebugController';
@@ -31,10 +31,10 @@ import {
   nextProgramLoadStateAfterCompile,
   nextProgramLoadStateAfterConnect,
   PROGRAM_LOAD_STATE,
-  shouldAutoLoadBeforeStart,
 } from './debugSessionState';
 import { EXECUTION_MODE, selectRuntimeArtifact, type ExecutionMode } from './runtimeArtifactSelection';
 import { OperationalStatusBar } from './OperationalStatusBar';
+import { getStatusDisplay } from './programState';
 import { CommandBarCenter } from '../shell/CommandBarCenter';
 import { generateStructuredText } from './visualToStructuredText';
 import { downloadBlob } from '../utils/downloadBlob';
@@ -49,9 +49,15 @@ import { canLinkProjectWorkspace, linkProjectWorkspace } from '../utils/workspac
 import { performHardwareDeploy } from './deployFlow';
 import { confirmReset, confirmStop, proceedAfterConfirmation } from './physicalActions';
 import { RunControls } from './ToolbarRunControls';
-import { ThemeMenu } from './ToolbarThemeMenu';
 import { BuildMenu } from './ToolbarBuildMenu';
-import { Button } from '../ui';
+import { Button, MenuButton } from '../ui';
+import { TargetSelector } from './TargetSelector';
+import { runSequence, type RunActions } from './runSequence';
+import { planRun, type RunOffer, type RunSituation } from '../runtime/runPlan';
+import { saveAllDocuments } from '../store/saveAll';
+import { useAppSettings } from '../store/useAppSettings';
+import { confirmAction } from '../store/actionConfirm';
+import { reveal } from '../shell/reveal';
 
 // =============================================================================
 // Types
@@ -60,6 +66,7 @@ import { Button } from '../ui';
 /** The commands whose behaviour lives in the toolbar (UX-015). */
 const TOOLBAR_COMMANDS = [
   'file.save',
+  'file.saveAll',
   'build.compile',
   'build.generateSt',
   'build.downloadProgram',
@@ -69,6 +76,8 @@ const TOOLBAR_COMMANDS = [
   'online.connect',
   'online.disconnect',
   'online.deploy',
+  'online.restartSimulator',
+  'debug.rebuildAndRestart',
   'debug.run',
   'debug.pause',
   'debug.stop',
@@ -77,6 +86,12 @@ const TOOLBAR_COMMANDS = [
   'debug.liveValues',
 ] as const satisfies readonly CommandId[];
 type ToolbarCommandId = (typeof TOOLBAR_COMMANDS)[number];
+
+/** What a build reports to Run's sequence: whether it built, and the located message of the first problem when it did not. */
+type BuildOutcome = { ok: true } | { ok: false; message?: string };
+
+/** The saved-first notice (FLW-006) is said once per window: saving before a build writes to disk without an explicit Save. */
+let savedFirstNoticeShown = false;
 
 interface ToolbarProps {
   /** Debug controller instance from App */
@@ -105,8 +120,12 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const isProjectOpen = useIDEStore((s) => s.isProjectOpen);
   const recordCanonicalWorkspaceBuildEvidence = useIDEStore((s) => s.recordCanonicalWorkspaceBuildEvidence);
 
-  const mpeekEnabled = useIDEStore((s) => s.debug.mpeekEnabled);
   const toggleMpeek = useIDEStore((s) => s.toggleMpeek);
+  const boardName = useIDEStore((s) => s.projectConfig?.target?.board);
+  // Save all differs from Save when a document other than the active one, or the project configuration, is modified (FLW-005).
+  const othersModified = useIDEStore(
+    (s) => s.projectConfigDirty || [...s.loadedFiles].some(([id, file]) => file.isModified && id !== s.activeFileId),
+  );
 
   // Destructure debug controller
   const { adapter, vmState, startSimulation, connectHardware, disconnect, loadProgram, getHardwareSystemInfo } = debugController;
@@ -118,6 +137,15 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isModeTransitioning, setIsModeTransitioning] = useState(false);
+  // Run's sequence is in flight: its controls wait, and a second press does nothing (FLW-001).
+  const [isRunPreparing, setIsRunPreparing] = useState(false);
+  const runInFlightRef = useRef(false);
+  // The controller of the latest render: the steps of a sequence outlive the render that started them.
+  const controllerRef = useRef(debugController);
+  useEffect(() => {
+    controllerRef.current = debugController;
+  });
+  const lastCompileRef = useRef<LastCompileResult | null>(null);
   const [programLoadState, setProgramLoadState] = useState<(typeof PROGRAM_LOAD_STATE)[keyof typeof PROGRAM_LOAD_STATE]>(
     PROGRAM_LOAD_STATE.EMPTY,
   );
@@ -147,12 +175,18 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const isConnected = adapter?.connected ?? false;
   const isRunning = vmState === 'running';
   const isPaused = vmState === 'paused';
-  const isIdle = vmState === 'idle';
-  const controlsBusy = isConnecting || isUploading || isModeTransitioning;
+  // A simulation that has not started its session is stopped too: Run starts it (FLW-008).
+  const isStopped = vmState === 'idle' || vmState === 'disconnected';
+  const controlsBusy = isConnecting || isUploading || isModeTransitioning || isRunPreparing;
   const hasCurrentCompileResult = useIDEStore((s) => isCompileResultCurrent(lastCompileResult?.compilerRunId ?? null, s.compilerRunId));
+  // Read from a ref: a step of Run's sequence runs after the build that made the result, in the same closure.
   const currentCompileResult = () => {
-    const result = lastCompileResult;
+    const result = lastCompileRef.current;
     return result && isCompileResultCurrent(result.compilerRunId, useIDEStore.getState().compilerRunId) ? result : null;
+  };
+  const storeCompileResult = (result: LastCompileResult) => {
+    lastCompileRef.current = result;
+    setLastCompileResult(result);
   };
 
   useEffect(() => {
@@ -172,6 +206,21 @@ export function Toolbar({ debugController }: ToolbarProps) {
   useEffect(() => {
     if (isProjectOpen) void linkProjectWorkspace();
   }, [isProjectOpen, projectSession]);
+
+  // The simulator session ends with the project (FLW-008): the bar goes when the project closes, and the session with it.
+  const executionModeRef = useRef(executionMode);
+  useEffect(() => {
+    executionModeRef.current = executionMode;
+  });
+  useEffect(
+    () => () => {
+      const controller = controllerRef.current;
+      if (!useIDEStore.getState().isProjectOpen && executionModeRef.current === EXECUTION_MODE.SIMULATE && controller.adapter) {
+        void controller.disconnect();
+      }
+    },
+    [],
+  );
 
   // ==========================================================================
   // File Operations
@@ -200,6 +249,54 @@ export function Toolbar({ debugController }: ToolbarProps) {
                 void handleSaveFile();
               },
             },
+          },
+    );
+  };
+
+  /** Saves every modified document and the configuration; says once per window that a build or a run saved by itself (FLW-006). */
+  const saveModified = async (): Promise<void> => {
+    const result = await saveAllDocuments();
+    if (result.failed.length > 0) throw new Error(t('studio.flow.saveAll.failed', { files: result.failed.join(', ') }));
+    if (result.saved > 0 && !savedFirstNoticeShown) {
+      savedFirstNoticeShown = true;
+      useNotifications.getState().report({
+        kind: 'save',
+        status: 'warning',
+        title: t('studio.flow.savedFirst'),
+        details: 'output',
+        recover: {
+          label: t('studio.flow.savedFirst.action'),
+          run: () => {
+            if (!useIDEStore.getState().showSettings) toggleSettings();
+          },
+        },
+      });
+    }
+  };
+
+  /** Asks before saving when the preference says Ask (FLW-006); the answer to "Save" saves. */
+  const askToSave = async (): Promise<'saved' | 'cancelled'> => {
+    const yes = await confirmAction({
+      title: t('studio.flow.ask.title'),
+      description: t('studio.flow.ask.description'),
+      actionLabel: t('studio.flow.ask.action'),
+      cancelLabel: t('common.cancel'),
+    });
+    if (!yes) return 'cancelled';
+    await saveModified();
+    return 'saved';
+  };
+
+  const handleSaveAll = async () => {
+    const { saved, failed } = await saveAllDocuments();
+    useNotifications.getState().report(
+      failed.length > 0
+        ? { kind: 'save', status: 'error', title: t('studio.flow.saveAll.failed', { files: failed.join(', ') }), details: 'output' }
+        : {
+            kind: 'save',
+            status: 'success',
+            title: saved > 0 ? t('studio.flow.saveAll.saved', { count: saved }) : t('studio.flow.saveAll.nothing'),
+            details: 'output',
           },
     );
   };
@@ -240,7 +337,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
     current.setActiveConsoleTab('problems');
   };
 
-  const handleCompile = async () => {
+  /**
+   * Builds the saved project. With `quiet` (Run's sequence, FLW-001) the build opens no notice of its own: the one notice of
+   * the run names the step, and a failure comes back as a located message instead of a second notice.
+   */
+  const compileProject = async (quiet: boolean): Promise<BuildOutcome> => {
     clearCompilerMessages();
     const compilerRunId = useIDEStore.getState().compilerRunId;
     const isCurrentRun = () => useIDEStore.getState().compilerRunId === compilerRunId;
@@ -273,51 +374,63 @@ export function Toolbar({ debugController }: ToolbarProps) {
             : t('toolbarMsg.saveChangesBeforeBuilding');
       addConsoleEntry({ type: 'error', message, source: 'compiler' });
       addCompilerMessage({ type: 'error', message });
-      useNotifications
-        .getState()
-        .report({ kind: 'build', status: 'error', title: t('toolbarMsg.buildDidNotStart'), detail: message, details: 'tests' });
-      return;
+      if (!quiet)
+        useNotifications
+          .getState()
+          .report({ kind: 'build', status: 'error', title: t('toolbarMsg.buildDidNotStart'), detail: message, details: 'tests' });
+      return { ok: false, message };
     }
 
     if (workspaceCompileRoute === 'canonical' && workspaceTests) {
       // Build the folder the main process owns, registered afresh for this build: the user never chooses a zplc.json (IDE-001).
       const link = canLinkProjectWorkspace() ? await linkProjectWorkspace() : currentWorkspaceLink;
-      if (!isCurrentRun()) return;
+      if (!isCurrentRun()) return { ok: false };
       if (!link) {
         revealCompileProblems();
         const message = t('toolbarMsg.savedWorkspaceCouldNot');
         addConsoleEntry({ type: 'error', message, source: 'compiler' });
         addCompilerMessage({ type: 'error', message });
         markCompilerMessagesChecked();
-        useNotifications
-          .getState()
-          .report({ kind: 'build', status: 'error', title: t('toolbarMsg.buildDidNotStart'), detail: message, details: 'problems' });
-        return;
+        if (!quiet)
+          useNotifications
+            .getState()
+            .report({ kind: 'build', status: 'error', title: t('toolbarMsg.buildDidNotStart'), detail: message, details: 'problems' });
+        return { ok: false, message };
       }
       const workspaceId = link.workspaceId;
       const expected = { projectSession, compilerRunId, workspaceId };
       addConsoleEntry({ type: 'info', message: t('toolbarMsg.buildingSavedWorkspaceLocally'), source: 'compiler' });
       let cancelRequested = false;
       const notices = useNotifications.getState();
-      const operation = notices.begin({
-        kind: 'build',
-        title: t('toolbarMsg.buildingProject'),
-        details: 'output',
-        cancel: () => {
-          cancelRequested = true;
-          void workspaceTests.cancel().catch(() => undefined);
-        },
-      });
+      const operation = quiet
+        ? null
+        : notices.begin({
+            kind: 'build',
+            title: t('toolbarMsg.buildingProject'),
+            details: 'output',
+            cancel: () => {
+              cancelRequested = true;
+              void workspaceTests.cancel().catch(() => undefined);
+            },
+          });
+      const finishNotice = (result: Parameters<typeof notices.finish>[1]) => {
+        if (operation !== null) notices.finish(operation, result);
+      };
+      const dismissNotice = () => {
+        if (operation !== null) notices.dismiss(operation);
+      };
       try {
         const response = await workspaceTests.compile({ workspaceId });
         const latest = useIDEStore.getState();
         if (!isWorkspaceTestRunCurrent(latest, expected)) {
-          notices.dismiss(operation);
-          return;
+          dismissNotice();
+          return { ok: false };
         }
         const canonical = presentWorkspaceCompileResult(response);
         if (!canonical.ok) {
-          notices.finish(operation, {
+          const first = canonical.diagnostics[0];
+          const located = first ? `${first.path ? `${first.path}: ` : ''}${first.message}` : undefined;
+          finishNotice({
             kind: 'build',
             status: 'error',
             title: t('toolbarMsg.buildFailed'),
@@ -343,10 +456,10 @@ export function Toolbar({ debugController }: ToolbarProps) {
             });
           }
           markCompilerMessagesChecked();
-          return;
+          return located === undefined ? { ok: false } : { ok: false, message: located };
         }
 
-        setLastCompileResult({
+        storeCompileResult({
           bytecode: canonical.artifact.bytecode,
           zplcFile: canonical.artifact.zplcFile,
           assembly: canonical.artifact.assembly,
@@ -376,7 +489,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
           source: 'compiler',
         });
         markCompilerMessagesChecked();
-        notices.finish(operation, {
+        finishNotice({
           kind: 'build',
           status: 'success',
           title: t('toolbarMsg.buildSucceeded'),
@@ -387,45 +500,71 @@ export function Toolbar({ debugController }: ToolbarProps) {
           }),
           details: 'output',
         });
+        return { ok: true };
       } catch {
         const latest = useIDEStore.getState();
         if (!isWorkspaceTestRunCurrent(latest, expected)) {
-          notices.dismiss(operation);
-          return;
+          dismissNotice();
+          return { ok: false };
         }
         if (cancelRequested) {
           addConsoleEntry({ type: 'warning', message: t('toolbarMsg.buildCancelled'), source: 'compiler' });
-          notices.finish(operation, {
+          finishNotice({
             kind: 'build',
             status: 'cancelled',
             title: t('toolbarMsg.buildCancelled'),
             detail: t('toolbarMsg.noArtifactWasKept'),
             details: 'output',
           });
-          return;
+          return { ok: false };
         }
         revealCompileProblems();
         addConsoleEntry({ type: 'error', message: t('toolbarMsg.canonicalWorkspaceBuildFailed'), source: 'compiler' });
         addCompilerMessage({ type: 'error', message: t('toolbarMsg.canonicalWorkspaceBuildFailed') });
         markCompilerMessagesChecked();
-        notices.finish(operation, {
+        finishNotice({
           kind: 'build',
           status: 'error',
           title: t('toolbarMsg.buildFailed'),
           detail: t('toolbarMsg.theCompilerCouldNot'),
           details: 'problems',
         });
+        return { ok: false, message: t('toolbarMsg.theCompilerCouldNot') };
       }
-      return;
     }
 
-    if (!isCurrentRun()) return;
+    if (!isCurrentRun()) return { ok: false };
     const current = useIDEStore.getState();
     if (current.isConsoleCollapsed) current.toggleConsole();
     current.setActiveConsoleTab('tests');
     const message = t('toolbarMsg.buildRequiresASaved');
     addConsoleEntry({ type: 'error', message, source: 'compiler' });
     addCompilerMessage({ type: 'error', message });
+    return { ok: false, message };
+  };
+
+  /** Build from the menu, the palette or a shortcut: it follows the save preference and no longer refuses (FLW-006). */
+  const handleCompile = async () => {
+    buildMenu.setOpen(false);
+    if (hasUnsavedChanges()) {
+      try {
+        if (useAppSettings.getState().settings.saveBeforeRun === 'ask') {
+          if ((await askToSave()) === 'cancelled') return;
+        } else {
+          await saveModified();
+        }
+      } catch (e) {
+        useNotifications.getState().report({
+          kind: 'build',
+          status: 'error',
+          title: t('toolbarMsg.buildDidNotStart'),
+          detail: e instanceof Error ? e.message : String(e),
+          details: 'output',
+        });
+        return;
+      }
+    }
+    await compileProject(false);
   };
 
   const handleDownloadBytecode = () => {
@@ -464,6 +603,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
   // Connection & Execution
   // ==========================================================================
 
+  /** Live values are on while a simulation runs and off on a board until the person turns them on (FLW-010). */
+  const setLiveValues = (on: boolean) => {
+    if (useIDEStore.getState().debug.mpeekEnabled !== on) toggleMpeek();
+  };
+
   const handleConnect = async () => {
     if (controlsBusy) return;
 
@@ -489,11 +633,13 @@ export function Toolbar({ debugController }: ToolbarProps) {
       if (executionMode === 'simulate') {
         await startSimulation();
         setProgramLoadState(nextProgramLoadStateAfterConnect());
+        setLiveValues(true);
         addConsoleEntry({ type: 'success', message: t('toolbarMsg.simulatorReady'), source: 'runtime' });
         notices.finish(operation, { kind: 'connection', status: 'success', title: t('toolbarMsg.simulatorReady'), details: 'output' });
       } else {
         await connectHardware();
         setProgramLoadState(nextProgramLoadStateAfterConnect());
+        setLiveValues(false);
         addConsoleEntry({ type: 'success', message: t('toolbarMsg.hardwareConnected'), source: 'runtime' });
         notices.finish(operation, { kind: 'connection', status: 'success', title: t('toolbarMsg.deviceConnected'), details: 'output' });
       }
@@ -521,8 +667,19 @@ export function Toolbar({ debugController }: ToolbarProps) {
     }
   };
 
+  /** Changes where Run goes. A running program is asked about first (FLW-007, UX-020): the session ends with the change. */
   const handleExecutionModeChange = async (nextMode: ExecutionMode) => {
     if (nextMode === executionMode || controlsBusy) return;
+    if (isRunning || isPaused) {
+      const yes = await confirmAction({
+        title: t('studio.flow.target.change.title'),
+        description: t('studio.flow.target.change.description'),
+        actionLabel: t('studio.flow.target.change.action'),
+        cancelLabel: t('common.cancel'),
+        destructive: true,
+      });
+      if (!yes) return;
+    }
 
     setIsModeTransitioning(true);
     setProgramLoadState(nextProgramLoadStateAfterConnect());
@@ -577,51 +734,124 @@ export function Toolbar({ debugController }: ToolbarProps) {
     }
   };
 
-  const handleStart = async (keyboardInitiated = false) => {
-    if (controlsBusy) return;
-    if (!isConnected) {
-      addConsoleEntry({ type: 'error', message: t('toolbarMsg.connectFirst'), source: 'runtime' });
-      return;
-    }
-    const result = currentCompileResult();
-    if (!canRunCurrentProgram(executionMode, Boolean(result), programLoadState)) {
-      addConsoleEntry({
-        type: 'error',
-        message:
-          executionMode === EXECUTION_MODE.HARDWARE ? t('toolbarMsg.deployTheCurrentBuild') : t('toolbarMsg.noCompiledBytecodeCompile'),
-        source: 'runtime',
-      });
-      return;
-    }
+  // ==========================================================================
+  // Run (spec 013 FLW-001 to FLW-004, FLW-014): the plan is a pure function of where the project stands; these are its steps.
+  // On a board a plan is never more than `run`: a missing step is an offer, and Connect and Deploy stay a person's actions.
+  // ==========================================================================
 
-    pendingExecutionFocusRef.current = keyboardInitiated ? 'running' : null;
+  const runSituation = (): RunSituation => ({
+    target: executionMode === EXECUTION_MODE.HARDWARE ? 'board' : 'simulation',
+    modified: hasUnsavedChanges(),
+    saveBeforeRun: useAppSettings.getState().settings.saveBeforeRun,
+    buildIsCurrent: currentCompileResult() !== null,
+    sessionOpen: isConnected,
+    programLoaded: programLoadState === PROGRAM_LOAD_STATE.LOADED,
+    state: transport.state,
+    plantBound: transport.kind === 'plant',
+  });
 
-    // Simulation keeps the local convenience; hardware requires an explicit deploy.
-    if (result && shouldAutoLoadBeforeStart(executionMode, vmState, programLoadState)) {
+  /** A refusal is an offer: the notice names the step that is missing and has it as its button (FLW-004). */
+  const offerStep = (offer: RunOffer) => {
+    const actions: Record<RunOffer, () => void> = {
+      connect: () => void handleConnect(),
+      build: () => void handleCompile(),
+      deploy: () => void handleUpload(),
+    };
+    useNotifications.getState().report({
+      kind: 'run',
+      status: 'warning',
+      title: t(`studio.flow.offer.${offer}`),
+      details: 'output',
+      recover: { label: t(`studio.flow.offer.${offer}.action`), run: actions[offer] },
+    });
+  };
+
+  /** The controller of the render after a session opened: a sequence that starts the simulator must not load through the old one. */
+  const settledController = async () => {
+    for (let attempt = 0; attempt < 50 && !controllerRef.current.adapter; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    return controllerRef.current;
+  };
+
+  const runActions: RunActions = {
+    save: async () => {
+      await saveModified();
+      return true;
+    },
+    askToSave,
+    build: async () => {
+      const outcome = await compileProject(true);
+      if (outcome.ok) return true;
+      reveal('buildFailed');
+      if (outcome.message !== undefined) throw new Error(outcome.message);
+      return false;
+    },
+    startSimulator: async () => {
+      await startSimulation();
+      setProgramLoadState(nextProgramLoadStateAfterConnect());
+      setLiveValues(true);
+      addConsoleEntry({ type: 'success', message: t('toolbarMsg.simulatorReady'), source: 'runtime' });
+    },
+    load: async () => {
+      const result = currentCompileResult();
+      if (!result) throw new Error(t('toolbarMsg.noCompiledBytecodeCompile'));
+      const controller = await settledController();
       try {
-        const dataToUpload = selectRuntimeArtifact({
-          bytecode: result.bytecode,
-          zplcFile: result.zplcFile,
-        });
-        await loadProgram(dataToUpload, result.debugMap);
-        if (!isCompileResultCurrent(result.compilerRunId, useIDEStore.getState().compilerRunId)) {
-          pendingExecutionFocusRef.current = null;
-          setProgramLoadState(PROGRAM_LOAD_STATE.EMPTY);
-          addConsoleEntry({ type: 'warning', message: t('toolbarMsg.simulatorReceivedAnEarlier'), source: 'runtime' });
-          return;
-        }
-        setProgramLoadState(PROGRAM_LOAD_STATE.LOADED);
+        await controller.loadProgram(selectRuntimeArtifact({ bytecode: result.bytecode, zplcFile: result.zplcFile }), result.debugMap);
       } catch (e) {
-        pendingExecutionFocusRef.current = null;
-        addConsoleEntry({
-          type: 'error',
-          message: t('toolbarMsg.failedToLoad', { value: e instanceof Error ? e.message : String(e) }),
-          source: 'runtime',
-        });
-        return;
+        const message = e instanceof Error ? e.message : String(e);
+        addConsoleEntry({ type: 'error', message: t('toolbarMsg.failedToLoad', { value: message }), source: 'runtime' });
+        throw e;
       }
-    }
+      if (!isCompileResultCurrent(result.compilerRunId, useIDEStore.getState().compilerRunId)) {
+        setProgramLoadState(PROGRAM_LOAD_STATE.EMPTY);
+        addConsoleEntry({ type: 'warning', message: t('toolbarMsg.simulatorReceivedAnEarlier'), source: 'runtime' });
+        throw new Error(t('toolbarMsg.simulatorReceivedAnEarlier'));
+      }
+      setProgramLoadState(PROGRAM_LOAD_STATE.LOADED);
+    },
+    run: async () => {
+      await activeTransport(controllerRef.current).run();
+      addConsoleEntry({ type: 'info', message: t('toolbarMsg.executionStarted'), source: 'runtime' });
+    },
+    // The session is ready and nothing has scanned: the next Step runs the first scan.
+    holdBeforeFirstScan: async () => undefined,
+  };
 
+  /** Runs the steps of a simulation plan under one notice. */
+  const executeSteps = async (plan: Extract<ReturnType<typeof planRun>, { kind: 'steps' }>, keyboardInitiated: boolean) => {
+    runInFlightRef.current = true;
+    setIsRunPreparing(true);
+    pendingExecutionFocusRef.current = keyboardInitiated ? 'running' : null;
+    const notices = useNotifications.getState();
+    try {
+      const outcome = await runSequence(
+        plan,
+        runActions,
+        {
+          begin: (title, onCancel) => notices.begin({ kind: 'run', title, details: 'output', cancel: onCancel }),
+          advance: (id, step) => notices.advance(id, step),
+          finish: (id, result) => notices.finish(id, result),
+        },
+        { plantBound: transport.kind === 'plant' },
+      );
+      if (outcome !== 'done') pendingExecutionFocusRef.current = null;
+    } finally {
+      runInFlightRef.current = false;
+      setIsRunPreparing(false);
+    }
+  };
+
+  const handleStart = async (keyboardInitiated = false) => {
+    if (controlsBusy || runInFlightRef.current) return;
+    const plan = planRun(runSituation(), 'run');
+    if (plan.kind === 'offer') return offerStep(plan.offer);
+    if (plan.kind === 'nothing') return;
+    if (executionMode === EXECUTION_MODE.SIMULATE) return executeSteps(plan, keyboardInitiated);
+
+    // A board: the plan is `run` alone, and the program is on the board already.
+    pendingExecutionFocusRef.current = keyboardInitiated ? 'running' : null;
     try {
       await transport.run();
       addConsoleEntry({ type: 'info', message: t('toolbarMsg.executionStarted'), source: 'runtime' });
@@ -632,6 +862,35 @@ export function Toolbar({ debugController }: ToolbarProps) {
         message: t('toolbarMsg.runFailed', { value: e instanceof Error ? e.message : String(e) }),
         source: 'runtime',
       });
+    }
+  };
+
+  /** "Rebuild and restart" (FLW-012): in simulation the program stops, is saved, built, loaded and run again; a board gets the offer. */
+  const handleRebuildAndRestart = async () => {
+    if (controlsBusy || runInFlightRef.current) return;
+    const plan = planRun(runSituation(), 'rebuildAndRestart');
+    if (plan.kind === 'offer') return offerStep(plan.offer);
+    if (plan.kind !== 'steps') return;
+    if (isRunning || isPaused) await transport.stop();
+    await executeSteps(plan, false);
+  };
+
+  /** "Restart the simulator" (FLW-008): a new session; the program is loaded again by the next Run. */
+  const handleRestartSimulator = async () => {
+    if (executionMode !== EXECUTION_MODE.SIMULATE || controlsBusy) return;
+    setIsConnecting(true);
+    try {
+      await startSimulation();
+      setProgramLoadState(nextProgramLoadStateAfterConnect());
+      setLiveValues(true);
+      useNotifications
+        .getState()
+        .report({ kind: 'connection', status: 'success', title: t('studio.flow.simulatorRestarted'), details: 'output' });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      addConsoleEntry({ type: 'error', message: t('toolbarMsg.connectionFailed', { msg }), source: 'runtime' });
+    } finally {
+      setIsConnecting(false);
     }
   };
 
@@ -651,9 +910,13 @@ export function Toolbar({ debugController }: ToolbarProps) {
     }
   };
 
+  // A paused simulation resumes whatever the state of the build; a board only runs what is deployed (UX-020, P7).
+  const canResumeOrStep = () =>
+    executionMode === EXECUTION_MODE.SIMULATE || canRunCurrentProgram(executionMode, Boolean(currentCompileResult()), programLoadState);
+
   const handleResume = async (keyboardInitiated = false) => {
     if (controlsBusy) return;
-    if (!canRunCurrentProgram(executionMode, Boolean(currentCompileResult()), programLoadState)) {
+    if (!canResumeOrStep()) {
       addConsoleEntry({ type: 'error', message: t('toolbarMsg.deployTheCurrentBuild2'), source: 'runtime' });
       return;
     }
@@ -685,12 +948,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     }
   };
 
-  const handleStep = async () => {
-    if (controlsBusy) return;
-    if (!canRunCurrentProgram(executionMode, Boolean(currentCompileResult()), programLoadState)) {
-      addConsoleEntry({ type: 'error', message: t('toolbarMsg.deployTheCurrentBuild3'), source: 'runtime' });
-      return;
-    }
+  const stepOnce = async () => {
     try {
       await transport.step();
     } catch (e) {
@@ -700,6 +958,27 @@ export function Toolbar({ debugController }: ToolbarProps) {
         source: 'runtime',
       });
     }
+  };
+
+  /**
+   * Step. From paused it is the transport's. From stopped in simulation it prepares the session as Run does and holds before
+   * the first scan (FLW-002); when nothing is left to prepare it runs that scan. On a board it needs the program deployed.
+   */
+  const handleStep = async () => {
+    if (controlsBusy || runInFlightRef.current) return;
+    if (isPaused) {
+      if (!canResumeOrStep()) {
+        addConsoleEntry({ type: 'error', message: t('toolbarMsg.deployTheCurrentBuild3'), source: 'runtime' });
+        return;
+      }
+      return stepOnce();
+    }
+    const plan = planRun(runSituation(), 'step');
+    if (plan.kind === 'offer') return offerStep(plan.offer);
+    if (plan.kind !== 'steps') return;
+    if (executionMode === EXECUTION_MODE.HARDWARE || (plan.steps.length === 1 && plan.steps[0] === 'holdBeforeFirstScan'))
+      return stepOnce();
+    return executeSteps(plan, false);
   };
 
   const handleReset = async () => {
@@ -726,6 +1005,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const runToolbarCommand = useEffectEvent((id: ToolbarCommandId) => {
     const handlers: Record<ToolbarCommandId, () => void | Promise<void>> = {
       'file.save': handleSaveFile,
+      'file.saveAll': handleSaveAll,
       'build.compile': handleCompile,
       'build.generateSt': () => {
         if (isVisualLanguage) handleGenerateST();
@@ -734,13 +1014,16 @@ export function Toolbar({ debugController }: ToolbarProps) {
       'build.viewAssembly': handleViewAssembly,
       'online.simulation': () => handleExecutionModeChange(EXECUTION_MODE.SIMULATE),
       'online.hardware': () => handleExecutionModeChange(EXECUTION_MODE.HARDWARE),
+      // Connect and Disconnect belong to a board: the simulator session is Studio's concern (FLW-008).
       'online.connect': () => {
-        if (!isConnected) return handleConnect();
+        if (executionMode === EXECUTION_MODE.HARDWARE && !isConnected) return handleConnect();
       },
       'online.disconnect': () => {
-        if (isConnected) return handleConnect();
+        if (executionMode === EXECUTION_MODE.HARDWARE && isConnected) return handleConnect();
       },
       'online.deploy': handleUpload,
+      'online.restartSimulator': handleRestartSimulator,
+      'debug.rebuildAndRestart': handleRebuildAndRestart,
       // Already running: nothing to do. Paused: resume. Otherwise start.
       'debug.run': () => {
         if (isRunning) return;
@@ -754,7 +1037,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
         if (isRunning || isPaused) return handleStop();
       },
       'debug.step': () => {
-        if (isPaused || isIdle) return handleStep();
+        if (isPaused || isStopped) return handleStep();
       },
       'debug.reset': () => {
         if (isConnected) return handleReset();
@@ -790,42 +1073,17 @@ export function Toolbar({ debugController }: ToolbarProps) {
   // Render Helpers
   // ==========================================================================
 
-  // Status text and color
-  const getStatusDisplay = () => {
-    if (!isConnected) {
-      return { text: t('toolbarMsg.disconnected'), tone: 'neutral' as const };
-    }
-    switch (vmState) {
-      case 'running':
-        return hasCurrentCompileResult
-          ? { text: t('toolbarMsg.status.running'), tone: 'success' as const }
-          : { text: t('toolbarMsg.status.runningRebuild'), tone: 'attention' as const };
-      case 'paused':
-        return hasCurrentCompileResult
-          ? { text: t('toolbarMsg.status.paused'), tone: 'attention' as const }
-          : { text: t('toolbarMsg.status.pausedRebuild'), tone: 'attention' as const };
-      case 'idle':
-        if (executionMode === EXECUTION_MODE.HARDWARE) {
-          if (programLoadState === PROGRAM_LOAD_STATE.LOADED && hasCurrentCompileResult) {
-            return { text: t('toolbarMsg.status.deployedStopped'), tone: 'info' as const };
-          }
-          return hasCurrentCompileResult
-            ? { text: t('toolbarMsg.status.connectedDeploy'), tone: 'info' as const }
-            : lastCompileResult
-              ? { text: t('toolbarMsg.status.connectedRebuild'), tone: 'attention' as const }
-              : { text: t('toolbarMsg.status.connectedBuild'), tone: 'info' as const };
-        }
-        return lastCompileResult && !hasCurrentCompileResult
-          ? { text: t('toolbarMsg.status.readyRebuild'), tone: 'attention' as const }
-          : { text: t('toolbarMsg.status.ready'), tone: 'info' as const };
-      case 'error':
-        return { text: t('toolbarMsg.status.error'), tone: 'danger' as const };
-      default:
-        return { text: vmState, tone: 'neutral' as const };
-    }
-  };
-
-  const status = getStatusDisplay();
+  const status = getStatusDisplay(
+    {
+      isConnected,
+      vmState,
+      executionMode,
+      programLoaded: programLoadState === PROGRAM_LOAD_STATE.LOADED,
+      currentBuild: hasCurrentCompileResult,
+      anyBuild: lastCompileResult !== null,
+    },
+    t,
+  );
 
   // Check if running in Electron on macOS
   const isElectronMac = typeof window !== 'undefined' && window.electronAPI?.isElectron && window.electronAPI?.platform === 'darwin';
@@ -860,53 +1118,63 @@ export function Toolbar({ debugController }: ToolbarProps) {
         {/* Separator */}
         <div className="w-px h-6 bg-[var(--color-surface-600)]" />
 
-        {/* Save Button */}
-        <Button
-          variant="bare"
-          type="button"
-          onClick={() => {
-            void handleSaveFile();
-          }}
-          disabled={!activeFile}
-          className={
-            'focus-ring p-2 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)] disabled:opacity-40 ' +
-            'disabled:cursor-not-allowed transition-colors'
-          }
-          aria-label={withShortcut(t('toolbar.save.label'), 'file.save')}
-          tooltip={withShortcut(t('toolbar.save.title'), 'file.save')}
-        >
-          <Save size={18} />
-        </Button>
-
-        {/* Separator */}
-        <div className="w-px h-6 bg-[var(--color-surface-600)]" />
-
-        {/* Generate ST button - only for visual languages */}
-        {isVisualLanguage && (
+        {/* Save: one control; Save all joins it when it would save more than the active file (FLW-005) */}
+        {othersModified ? (
+          <MenuButton
+            label={withShortcut(t('toolbar.save.label'), 'file.save')}
+            variant="bare"
+            size="sm"
+            className="focus-ring p-2 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)]"
+            items={[
+              { id: 'save', label: t('toolbar.save.label'), disabled: !activeFile, onSelect: () => void handleSaveFile() },
+              { id: 'saveAll', label: t('studio.flow.saveAll.label'), onSelect: () => void handleSaveAll() },
+            ]}
+          >
+            <Save size={18} aria-hidden="true" />
+          </MenuButton>
+        ) : (
           <Button
             variant="bare"
             type="button"
-            onClick={handleGenerateST}
+            onClick={() => {
+              void handleSaveFile();
+            }}
+            disabled={!activeFile}
             className={
-              'focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-accent-purple)] hover:brightness-110 ' +
-              'text-[var(--color-on-accent)] text-xs font-medium transition-colors'
+              'focus-ring p-2 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)] disabled:opacity-40 ' +
+              'disabled:cursor-not-allowed transition-colors'
             }
-            aria-label={t('toolbar.toSt.label')}
-            tooltip={t('toolbar.toSt.label')}
+            aria-label={withShortcut(t('toolbar.save.label'), 'file.save')}
+            tooltip={withShortcut(t('toolbar.save.title'), 'file.save')}
           >
-            <FileCode size={14} />
-            <span className="hidden md:inline">{t('toolbar.toSt.text')}</span>
+            <Save size={18} />
           </Button>
         )}
+
+        {/* Separator */}
+        <div className="w-px h-6 bg-[var(--color-surface-600)]" />
 
         <BuildMenu
           menu={buildMenu}
           onCompile={() => {
             void handleCompile();
           }}
+          onGenerateSt={isVisualLanguage ? handleGenerateST : undefined}
           onDownloadBytecode={handleDownloadBytecode}
           onViewAssembly={handleViewAssembly}
           hasCurrentCompileResult={hasCurrentCompileResult}
+        />
+
+        <TargetSelector
+          mode={executionMode}
+          boardName={boardName}
+          degraded={adapter?.type === 'wasm'}
+          onChange={(mode) => {
+            void handleExecutionModeChange(mode);
+          }}
+          onChangeBoard={() => {
+            runCommand('project.target');
+          }}
         />
 
         {/* Separator */}
@@ -919,15 +1187,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
           isUploading={isUploading}
           controlsBusy={controlsBusy}
           hasCurrentCompileResult={hasCurrentCompileResult}
-          programLoadState={programLoadState}
           isRunning={isRunning}
           isPaused={isPaused}
-          isIdle={isIdle}
-          mpeekEnabled={mpeekEnabled}
-          toggleMpeek={toggleMpeek}
+          isStopped={isStopped}
           connectionButtonRef={connectionButtonRef}
           executionButtonRef={executionButtonRef}
-          onExecutionModeChange={handleExecutionModeChange}
           onConnect={handleConnect}
           onUpload={handleUpload}
           onStart={handleStart}
@@ -939,11 +1203,6 @@ export function Toolbar({ debugController }: ToolbarProps) {
         />
 
         <CommandBarCenter />
-
-        {/* Separator */}
-        <div className="w-px h-6 bg-[var(--color-surface-600)]" />
-
-        <ThemeMenu />
 
         {/* Settings */}
         <Button

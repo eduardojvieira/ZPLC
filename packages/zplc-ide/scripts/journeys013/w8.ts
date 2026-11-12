@@ -41,10 +41,6 @@ export const journeysW8: Journey[] = [
       await app.click(css('#console-tab-output'));
       await assertClear('the build');
 
-      await app.click(button('Connect'));
-      await app.until('the simulation to connect', async () => (await app.visible(button('Disconnect'))) || undefined);
-      await app.until('a notice after connecting', async () => (await app.visible(css(NOTICES))) || undefined);
-      await assertClear('the connection');
       await app.click(button('Run (F5)', 'prefix'));
       await app.until('a notice after Run', async () => (await app.visible(css(NOTICES))) || undefined);
       await assertClear('Run');

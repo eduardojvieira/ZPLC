@@ -43,13 +43,11 @@ export const journeysW4: Journey[] = [
       await app.until('the Learn home', async () => (await app.visible(css('[data-learn-start]'))) || undefined);
       app.answer(folder);
       await app.click(css(`[data-learn-start="${lesson.id}"]`), 'the start of the motor plant lesson');
-      await app.until('the project workbench', async () => (await app.visible(button('Connect', 'prefix'))) || undefined);
+      await app.until('the project workbench', async () => (await app.visible(button('Run (F5)', 'prefix'))) || undefined);
 
       // Build, connect, Run: the command bar, with no control of the plant involved.
       await app.click(button('Build', 'prefix'));
       await app.click(menuItem('Compile'));
-      await app.click(button('Connect'));
-      await app.until('the simulation to connect', async () => (await app.visible(button('Disconnect'))) || undefined);
       await patiently('Run to be ready', async () => (await app.clickable(button('Run (F5)', 'prefix'))) || undefined);
       await app.click(button('Run (F5)', 'prefix'));
       await patiently('the program to run', async () => (await app.visible(button('Pause (F6)', 'prefix'))) || undefined);

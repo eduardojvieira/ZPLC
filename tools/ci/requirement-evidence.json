@@ -983,7 +983,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"3 Edit Structured Text, save, reopen","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"5 Build successfully","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"54 Instruction List is edited, saved and reopened","partial":true},
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"6 Simulate: connect, run, watch a value change","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"6 Simulate: one press of Run, watch a value change","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"64a Structured Text from a new project to a deployed program that is watched"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"64b Instruction List from a new project to a deployed program that is watched"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"64c Ladder Diagram from a new project to a deployed program that is watched"},
@@ -2224,6 +2224,7 @@
   ],
   "IDE-025": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/wasmRuntimePlugin.test.ts","test":"the build of the browser runtime inside the IDE build (IDE-025)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/TargetSelector.test.tsx","test":"IDE-025 the degraded label of the WASM runtime shows in the selector"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/simulationAdapterFactory.test.ts","test":"the runtime a simulation runs on (IDE-025)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmAdapter.test.ts","test":"WASMAdapter (IDE-025)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmConformance.test.ts","test":"the conformance cases on the WebAssembly runtime, through the adapter (IDE-025)"},

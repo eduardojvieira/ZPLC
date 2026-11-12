@@ -350,9 +350,8 @@ async function buildWithUndeclaredVariable(app: App, project: string): Promise<v
   );
 }
 
+/** One press of Run in simulation: it starts the simulator session, loads the build and runs (spec 013 FLW-001). */
 async function connectAndRun(app: App): Promise<void> {
-  await app.click(button(ui('toolbar.connect')));
-  await app.until('the simulation to connect', async () => (await app.visible(button(ui('toolbar.disconnect')))) || undefined);
   await app.click(button(`${ui('toolbar.run.label')} (F5)`, 'prefix'));
   await app
     .until('the program to run', async () => (await app.visible(button(`${ui('toolbar.pause.label')} (F6)`, 'prefix'))) || undefined)
@@ -1457,9 +1456,9 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '6 Simulate: connect, run, watch a value change',
+    name: '6 Simulate: one press of Run, watch a value change',
     example: 'blinky_st',
-    proves: [],
+    proves: ['FLW-001'],
     partly: ['LNG-001'],
     run: async (app, { project }) => {
       await openFolder(app, project);
@@ -1501,8 +1500,6 @@ export const JOURNEYS: Journey[] = [
               `lines: ${JSON.stringify(await decoratedLines(app, 'glyphMarginClassName', 'breakpoint-glyph'))})`,
           );
         });
-      await app.click(button('Connect'));
-      await app.until('the simulation to connect', async () => (await app.visible(button('Disconnect'))) || undefined);
       await app.click(button('Run (F5)', 'prefix'));
       await app
         .until(`execution to stop at line ${line}`, async () => (await app.visible(button('Resume (F5)', 'prefix'))) || undefined)
