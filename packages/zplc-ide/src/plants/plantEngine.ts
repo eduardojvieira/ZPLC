@@ -147,25 +147,21 @@ export const PLANT_MODELS: Record<PlantKind, PlantModel> = {
   'pedestrian-v1': crossing,
 };
 
-/** One running plant: play, pause, step and the fault actions. `tick` is called once per PLC scan. */
+/** One running plant: its state and the fault actions. `tick` is called once per PLC scan; the command bar is the one transport. */
 export function createPlantRun(kind: PlantKind) {
   const model = PLANT_MODELS[kind];
   const run = {
     model,
     state: model.initial(),
     tickCount: 0,
-    paused: false,
-    /** One scan of the plant; does nothing while paused. */
+    /** One scan of the plant. */
     tick(reads: Signals): void {
-      if (!run.paused) run.step(reads);
+      run.step(reads);
     },
-    /** Exactly one scan, paused or not. */
+    /** One scan of the plant (the scripted traces call it directly). */
     step(reads: Signals): void {
       run.state = model.step(run.state, reads);
       run.tickCount += 1;
-    },
-    setPaused(paused: boolean): void {
-      run.paused = paused;
     },
     act(action: string): void {
       if (model.actions.includes(action)) run.state = model.act(run.state, action);

@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it, mock } from 'bun:test';
+import { beforeAll, describe, expect, it } from 'bun:test';
 import { setupDom, stubProjectLoader } from '../test/dom';
 
 const dom = await setupDom();
@@ -14,26 +14,41 @@ beforeAll(() => {
   });
 });
 
-describe('Lab (LRN-018, LRN-020) in a DOM', () => {
-  it('without a recorded run is a named region with a heading that says what to do', () => {
-    dom.render(<LabPanel presentation={null} runDisabled={false} running={false} onRun={() => undefined} />);
-    expect(dom.screen.getByRole('region', { name: dom.t('console.tab.lab') })).toBeTruthy();
-    expect(dom.screen.getByRole('heading', { level: 2, name: dom.t('console.tab.lab') })).toBeTruthy();
-    expect(dom.screen.getByText(dom.t('lab.runTheSavedHost'))).toBeTruthy();
+const motorRun = {
+  kind: 'passed',
+  message: 'ok',
+  diagnostics: [],
+  artifacts: [],
+  hasEvidence: true,
+  preview: {
+    scenarios: [
+      {
+        id: 'motor-run',
+        passed: true,
+        truncated: false,
+        assertions: [],
+        samples: [
+          {
+            atMs: 100,
+            outputs: { 'MotorPlant.Command': true, 'MotorPlant.Running': true },
+            plant: { kind: 'motor-v1', atSpeedInput: true, speedPermilleAfterTick: 1000 },
+          },
+        ],
+      },
+    ],
+  },
+} as never;
+
+describe('the replay of a recorded plant trace (LRN-018, LRN-020) in a DOM', () => {
+  it('without a recorded run shows nothing: the plant document owns the empty state', () => {
+    const { container } = dom.render(<LabPanel presentation={null} />);
+    expect(container.textContent).toBe('');
   });
 
-  it('runs the saved scenarios by click and by keyboard', async () => {
-    const onRun = mock(() => undefined);
-    const { user } = dom.render(<LabPanel presentation={null} runDisabled={false} running={false} onRun={onRun} />);
-    const run = dom.screen.getByRole('button', { name: dom.t('console.runHostScenarios') });
-    await user.click(run);
-    run.focus();
-    await user.keyboard('{Enter}');
-    expect(onRun).toHaveBeenCalledTimes(2);
-  });
-
-  it('disables the run while it is disabled or running, and names the running state', () => {
-    dom.render(<LabPanel presentation={null} runDisabled={false} running onRun={() => undefined} />);
-    expect((dom.screen.getByRole('button', { name: dom.t('lab.runningScenarios') }) as HTMLButtonElement).disabled).toBe(true);
+  it('with a recorded run is a named region that says it is a replay and not live', () => {
+    dom.render(<LabPanel presentation={motorRun} />);
+    expect(dom.screen.getByRole('region', { name: dom.t('lab.labRecordedScenario') })).toBeTruthy();
+    expect(dom.screen.getByText(dom.t('lab.recordedNativePosixHost'))).toBeTruthy();
+    expect(dom.screen.queryByRole('button', { name: dom.t('console.runHostScenarios') })).toBeNull();
   });
 });

@@ -4,7 +4,7 @@
  */
 import { lazy, Suspense, useCallback, useMemo, type KeyboardEvent } from 'react';
 import { useT } from '../i18n';
-import { X, FileCode, File, Settings, Undo2, Redo2, Columns2, ArrowLeftRight, Maximize2 } from 'lucide-react';
+import { X, FileCode, File, Settings, Undo2, Redo2, Columns2, ArrowLeftRight, Maximize2, Boxes } from 'lucide-react';
 import { PLC_LANGUAGES, type PLCLanguage, type ProjectFileWithHandle } from '../types';
 import { serializeFBDModel, type FBDModel } from '../models/fbd';
 import { serializeLDModel, type LDModel } from '../models/ld';
@@ -16,7 +16,8 @@ import { DevFaultProbe } from './DevFaultProbe';
 import type { VisualGesture } from '../editors/visualHistory';
 import { ConfigEditorTab } from '../navigator/ConfigEditorTab';
 import { configEditorViewId, isConfigEditorKind, type ConfigEditorKind } from '../navigator/configEditors';
-import { SETTINGS_VIEW_ID, isVisualWorkflow, type ViewId } from '../layout/documentKinds';
+import { PLANT_VIEW_ID, SETTINGS_VIEW_ID, isVisualWorkflow, type ViewId } from '../layout/documentKinds';
+import type { DebugController } from '../hooks/useDebugController';
 import { Button, IconButton } from '../ui';
 
 // Each view loads when it is first shown (IDE-015): a project of Structured Text files never fetches the visual editors,
@@ -26,6 +27,7 @@ const LDEditor = lazy(() => import('../editors/ld').then((module) => ({ default:
 const SFCEditor = lazy(() => import('../editors/sfc').then((module) => ({ default: module.SFCEditor })));
 const ConfigEditorHost = lazy(() => import('../navigator/ConfigEditorHost').then((module) => ({ default: module.ConfigEditorHost })));
 const ProjectSettings = lazy(() => import('./settings/ProjectSettings').then((module) => ({ default: module.ProjectSettings })));
+const PlantDocument = lazy(() => import('../shell/PlantDocument').then((module) => ({ default: module.PlantDocument })));
 const CodeEditor = lazy(() => import('./CodeEditor').then((module) => ({ default: module.CodeEditor })));
 
 const configKindOf = (viewId: ViewId): ConfigEditorKind | null => {
@@ -73,6 +75,8 @@ export interface EditorGroupProps {
   maximised: boolean;
   /** False below the compact width, where the area is one group (UX-023). */
   canMove: boolean;
+  /** The runtime the plant document shows; the plant is a view of the editor area (PLS-001). */
+  debugController?: DebugController;
 }
 
 export function EditorGroup({
@@ -95,11 +99,14 @@ export function EditorGroup({
   onMaximise,
   maximised,
   canMove,
+  debugController,
 }: EditorGroupProps) {
   const { t } = useT();
   const activeFile = activeViewId ? (files.get(activeViewId) ?? null) : null;
   const configActive = activeViewId ? configKindOf(activeViewId) : null;
   const showSettings = activeViewId === SETTINGS_VIEW_ID;
+  const plantOpen = views.includes(PLANT_VIEW_ID);
+  const plantActive = activeViewId === PLANT_VIEW_ID;
 
   const fbdLoad = useMemo(
     (): VisualFileLoad<FBDModel> | null =>
@@ -289,6 +296,45 @@ export function EditorGroup({
             />
           ))}
 
+          {/* The plant document (PLS-001) */}
+          {plantOpen && (
+            <div
+              role="presentation"
+              className={
+                'group flex items-center gap-2 px-3 h-full border-r border-[var(--color-surface-600)] cursor-pointer select-none ' +
+                'transition-colors bg-[var(--color-surface-700)] text-[var(--color-surface-100)]'
+              }
+            >
+              <Button
+                variant="bare"
+                id={`editor-tab-${PLANT_VIEW_ID}`}
+                role="tab"
+                aria-selected={plantActive}
+                aria-controls={panelId}
+                tabIndex={plantActive ? 0 : -1}
+                onClick={() => onSelect(PLANT_VIEW_ID)}
+                onKeyDown={(event) => handleTabKeyDown(event, PLANT_VIEW_ID)}
+                className="flex min-w-0 items-center gap-2 rounded text-left focus-visible:outline"
+              >
+                <Boxes size={14} className="text-[var(--color-accent-green)]" />
+                <span className="text-sm whitespace-nowrap">{t('studio.surface.plant')}</span>
+              </Button>
+              <Button
+                variant="bare"
+                type="button"
+                onClick={() => onClose(PLANT_VIEW_ID)}
+                className={
+                  'p-0.5 rounded opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 ' +
+                  'hover:bg-[var(--color-surface-500)] focus-visible:opacity-100 focus-visible:outline transition-opacity'
+                }
+                aria-label={t('studio.plant.close')}
+                tooltip={t('studio.plant.close')}
+              >
+                <X size={14} />
+              </Button>
+            </div>
+          )}
+
           {/* File Tabs */}
           {fileViews.map((file) => {
             const isActive = file.id === activeViewId;
@@ -424,6 +470,12 @@ export function EditorGroup({
                 />
               )
             ) : null}
+            {/* Kept while its tab is open so that it can stop drawing while hidden (PLS-010) */}
+            {plantOpen && (
+              <div className={plantActive ? 'h-full' : 'hidden'}>
+                <PlantDocument controller={debugController} visible={plantActive} />
+              </div>
+            )}
           </Suspense>
         </ErrorBoundary>
       </div>

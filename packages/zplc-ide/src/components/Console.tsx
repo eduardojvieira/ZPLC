@@ -1,7 +1,7 @@
 /**
  * Console Component
  *
- * The results panel under the editor (UX-011): Output, Problems, Tests, Interlocks, Lab, Changes, Agent, Trace, Watch and Terminal tabs.
+ * The results panel under the editor (UX-011): Output, Problems, Tests, Interlocks, Changes, Agent, Trace, Watch and Terminal tabs.
  * The Explorer, the Inspector and the lessons are views of the sidebars (shell/Sidebars.tsx).
  * The Terminal tab provides direct shell access to ZPLC devices.
  * The Watch tab shows live debug values.
@@ -29,7 +29,6 @@ import {
   Bot,
   Send,
   CircleStop,
-  Boxes,
   ShieldCheck,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -65,7 +64,6 @@ import { ErrorBoundary } from './ErrorBoundary';
 import { DevFaultProbe } from './DevFaultProbe';
 import { resultsTabFor } from '../shell/shellRouting';
 import { usePublishWorkspaceTestResult } from '../shell/workspaceTestResult';
-import { LabPanel } from './LabPanel';
 import { elementToSelect } from '../editors/diagnosticElement';
 import { requestElementSelection } from '../editors/elementSelectionRequests';
 import { useProjectBlocks } from '../editors/useProjectBlocks';
@@ -288,7 +286,6 @@ export function Console({ debugController }: ConsoleProps) {
       ariaLabel: t('console.tab.testsAria'),
     },
     { id: 'interlocks', label: t('console.tab.interlocks'), icon: <ShieldCheck size={14} />, ariaLabel: t('console.tab.interlocksAria') },
-    { id: 'lab', label: t('console.tab.lab'), icon: <Boxes size={14} />, ariaLabel: t('console.tab.labAria') },
     { id: 'changes', label: t('console.tab.changes'), icon: <FileDiff size={14} />, ariaLabel: t('console.tab.changesAria') },
     { id: 'agent', label: t('console.tab.agent'), icon: <Bot size={14} />, ariaLabel: t('console.tab.agentAria') },
     {
@@ -1515,18 +1512,6 @@ export function Console({ debugController }: ConsoleProps) {
                 </div>
               )}
             </div>
-          )}
-
-          {activeConsoleTab === 'lab' && (
-            <LabPanel
-              presentation={typeof workspaceTestStateForLink === 'object' ? workspaceTestStateForLink.presentation : null}
-              runDisabled={workspaceTestAvailabilityState !== 'ready'}
-              running={workspaceTestBusy}
-              onRun={() => {
-                void runWorkspaceTests();
-              }}
-              controller={debugController}
-            />
           )}
 
           {activeConsoleTab === 'terminal' && <TerminalTab isActive={activeConsoleTab === 'terminal'} />}

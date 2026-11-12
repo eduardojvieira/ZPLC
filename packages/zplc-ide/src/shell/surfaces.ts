@@ -38,7 +38,6 @@ export const SURFACES: readonly Surface[] = [
   tab('problems', 'panel.problems', 'view.problems'),
   tab('tests', 'panel.tests', 'view.tests'),
   tab('interlocks', 'console.tab.interlocks', 'view.interlocks'),
-  tab('lab', 'console.tab.lab', 'view.plant'),
   tab('changes', 'console.tab.changes', 'view.changes'),
   tab('agent', 'console.tab.agent', 'view.agent'),
   tab('trace', 'panel.trace', 'view.trace'),

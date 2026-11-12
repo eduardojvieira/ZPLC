@@ -1,4 +1,242 @@
-/** Stub: Task V4 replaces it in place. */
-export function PlantPanel(): null {
-  return null;
+/**
+ * The 3D plant as the content of the plant document (spec 013 PLS-001, Task V4). It has no run controls: while a session is bound
+ * it is the command bar's transport (PLS-003, `usePlantSession`). The toolbar holds only what belongs to a plant: the view switch,
+ * the camera presets, "Reset plant" and "Edit scene" (PLS-004). A failure of the view is said here, with the schematic offered,
+ * while the program, the plant core and grading keep running (VIS-006, PLS-009); the facts are always there as text (VIS-008).
+ */
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { DebugController } from '../../hooks/debugControllerTypes';
+import { useT } from '../../i18n';
+import { SCENE_INDEX } from '../../generated/sceneIndex';
+import { useAppSettings } from '../../store/useAppSettings';
+import { useIDEStore } from '../../store/useIDEStore';
+import { announce } from '../../utils/announce';
+import { Button, Select, ToggleGroup } from '../../ui';
+import { catalogue } from '../core/catalogue';
+import { schematicFor } from '../schematic/schematic';
+import { describePlant } from '../text/describe';
+import type { DisplayPrefs } from '../view/displayModes';
+import { qualityLevels, type QualityLevel } from '../view/quality';
+import type { PlantRenderer } from '../view/renderer';
+import { OperatePanel } from './OperatePanel';
+import { PlantCanvas } from './PlantCanvas';
+import { usePlantSession, type CanvasFailure, type CanvasTiming, type PlantPanelDeps, type SceneRef } from './usePlantSession';
+import type { PlantSceneFile } from '../contracts';
+
+export interface PlantPanelProps {
+  controller: DebugController | undefined;
+  /** False while the document's tab is not the active one of its group (PLS-010). */
+  visible: boolean;
+  /** Opens the scene editor; supplied by the editor's panel (Task E3). Until it is, "Edit scene" stays disabled. */
+  onEditScene?: () => void;
+  /** What a test replaces: the engine, the session factory and the timings of the fallbacks. */
+  deps?: PlantPanelDeps & { timing?: CanvasTiming };
+}
+
+const NO_DEPS: PlantPanelDeps = {};
+
+function Schematic({ scene }: { scene: PlantSceneFile }) {
+  const { t } = useT();
+  const model = useMemo(() => schematicFor(scene, catalogue), [scene]);
+  return (
+    <svg
+      data-plant-schematic
+      role="img"
+      aria-label={t('plant.panel.schematic', { scene: scene.name })}
+      viewBox={`0 0 ${model.width} ${model.height}`}
+      className="h-full min-h-64 w-full bg-[var(--color-surface-800)]"
+    >
+      {model.shapes.map((shape) => (
+        <rect
+          key={shape.id}
+          x={shape.x}
+          y={shape.y}
+          width={shape.w}
+          height={shape.h}
+          transform={`rotate(${shape.rotationDeg} ${shape.x + shape.w / 2} ${shape.y + shape.h / 2})`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+        />
+      ))}
+      {model.labels.map((label) => (
+        <text key={`${label.x}:${label.y}:${label.text}`} x={label.x} y={label.y} fontSize={14} fill="currentColor">
+          {label.text}
+        </text>
+      ))}
+    </svg>
+  );
+}
+
+const prefersReduced = (): boolean =>
+  typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+export function PlantPanel({ controller, visible, onEditScene, deps = NO_DEPS }: PlantPanelProps) {
+  const { t, locale } = useT();
+  const hasProjectScene = useIDEStore((state) => [...state.loadedFiles.values()].some((file) => file.path === 'scene.json'));
+  const theme = useIDEStore((state) => state.theme);
+  const quality = useAppSettings((state) => state.settings.plantQuality);
+  const [ref, setRef] = useState<SceneRef>(() =>
+    hasProjectScene ? { kind: 'project' } : { kind: 'shipped', id: SCENE_INDEX[0]?.id ?? '' },
+  );
+  const [view, setView] = useState<'3d' | 'schematic'>('3d');
+  // A failure belongs to the scene it was reported for.
+  const [failed, setFailed] = useState<{ key: string; failure: CanvasFailure } | undefined>();
+  const [renderer, setRenderer] = useState<PlantRenderer | undefined>();
+  const binding = usePlantSession(controller, ref, deps);
+  const { load, snapshot, state } = binding;
+  const ready = load.phase === 'ready' ? load : undefined;
+
+  const display = useMemo<DisplayPrefs>(() => {
+    const dark =
+      theme === 'system'
+        ? typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-color-scheme: dark)').matches
+        : theme === 'dark';
+    return { mode: theme === 'high-contrast' ? 'high-contrast' : dark ? 'dark' : 'light', reducedMotion: prefersReduced() };
+  }, [theme]);
+
+  const refKey = ref.kind === 'project' ? 'project' : ref.id;
+  const failure = failed?.key === refKey ? failed.failure : undefined;
+  const setFailure = (next: CanvasFailure | undefined) => setFailed(next && { key: refKey, failure: next });
+
+  // The facts as live text, announced only when the situation changes, not on every scan (VIS-008).
+  const facts = useMemo(
+    () => (ready && snapshot ? describePlant(snapshot, ready.scene, locale === 'es' ? 'es' : 'en') : undefined),
+    [ready, snapshot, locale],
+  );
+  const announced = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (!facts) return;
+    if (announced.current !== undefined && announced.current !== facts.key) announce(facts.text);
+    announced.current = facts.key;
+  }, [facts]);
+
+  const stopped = state === 'stopped';
+  const message =
+    failure?.kind === 'unavailable'
+      ? t('plant.panel.unavailable', { reason: failure.reason })
+      : failure?.kind === 'lost'
+        ? t('plant.panel.contextLost')
+        : failure?.kind === 'slow'
+          ? t('plant.panel.slowFrames')
+          : undefined;
+  const sceneOptions = [
+    ...(hasProjectScene ? [{ value: 'project', label: t('plant.panel.projectScene') }] : []),
+    ...SCENE_INDEX.map((scene) => ({ value: scene.id, label: scene.names[locale === 'es' ? 'es' : 'en'] })),
+  ];
+
+  return (
+    <div data-plant-panel data-visible={visible} className="flex min-h-0 flex-1 flex-col">
+      <div role="toolbar" aria-label={t('plant.panel.toolbar')} className="flex flex-wrap items-end gap-3 p-2">
+        <Select
+          label={t('plant.panel.scene')}
+          value={refKey}
+          onChange={(event) => setRef(event.target.value === 'project' ? { kind: 'project' } : { kind: 'shipped', id: event.target.value })}
+        >
+          {sceneOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </Select>
+        <ToggleGroup
+          label={t('plant.panel.view')}
+          options={[
+            { value: '3d', label: t('plant.panel.view3d') },
+            { value: 'schematic', label: t('plant.panel.viewSchematic') },
+          ]}
+          value={view}
+          onValueChange={(value) => {
+            setView(value === 'schematic' ? 'schematic' : '3d');
+            setFailure(undefined);
+          }}
+        />
+        {ready && view === '3d' && ready.scene.cameras.length > 0 && (
+          <Select
+            label={t('plant.panel.camera')}
+            disabled={!renderer}
+            defaultValue={ready.scene.cameras[0]?.name}
+            onChange={(event) => renderer?.setCameraPreset(event.target.value)}
+          >
+            {ready.scene.cameras.map((camera) => (
+              <option key={camera.name} value={camera.name}>
+                {camera.name}
+              </option>
+            ))}
+          </Select>
+        )}
+        <Button
+          data-plant-reset
+          disabled={!ready || !stopped}
+          onClick={() => {
+            ready?.core.reset();
+            binding.publish();
+          }}
+        >
+          {t('plant.panel.resetPlant')}
+        </Button>
+        <Button data-plant-edit-scene disabled={!stopped || !onEditScene} onClick={onEditScene}>
+          {t('plant.panel.editScene')}
+        </Button>
+      </div>
+      {message && (
+        <div role="alert" data-plant-failure={failure?.kind} className="flex flex-wrap items-center gap-3 p-2 text-sm">
+          <span>{message}</span>
+          {view === '3d' && (
+            <Button
+              data-plant-show-schematic
+              onClick={() => {
+                setView('schematic');
+                setFailure(undefined);
+              }}
+            >
+              {t('plant.panel.showSchematic')}
+            </Button>
+          )}
+        </div>
+      )}
+      {binding.slowdownMessage && (
+        <p data-plant-slowdown className="p-2 text-sm">
+          {binding.slowdownMessage}
+        </p>
+      )}
+      {load.phase === 'loading' && <p className="p-2 text-sm">{t('plant.panel.loading')}</p>}
+      {load.phase === 'failed' && (
+        <p role="alert" data-plant-load-failed className="p-2 text-sm">
+          {t('plant.panel.sceneFailed', { scene: refKey, detail: load.detail })}
+        </p>
+      )}
+      {ready && (
+        <>
+          <div className="min-h-64 flex-1">
+            {view === '3d' ? (
+              <PlantCanvas
+                engine={ready.engine}
+                scene={ready.scene}
+                feed={binding.feed}
+                visible={visible}
+                quality={qualityLevels.includes(quality as QualityLevel) ? (quality as QualityLevel) : undefined}
+                display={display}
+                label={t('plant.panel.canvas', { scene: ready.scene.name })}
+                {...(deps.timing ? { timing: deps.timing } : {})}
+                onRenderer={setRenderer}
+                onFailure={setFailure}
+              />
+            ) : (
+              <Schematic scene={ready.scene} />
+            )}
+          </div>
+          <OperatePanel scene={ready.scene} core={ready.core} snapshot={snapshot} onChange={binding.publish} />
+          {!binding.bound && (
+            <p data-plant-unbound className="px-2 text-sm text-[var(--text-secondary)]">
+              {ready.map ? t('plant.panel.waitingRun') : t('plant.panel.noRuntime')}
+            </p>
+          )}
+          <section aria-label={t('plant.panel.facts')} className="p-2 text-sm">
+            <p data-plant-text>{facts?.text}</p>
+          </section>
+        </>
+      )}
+    </div>
+  );
 }

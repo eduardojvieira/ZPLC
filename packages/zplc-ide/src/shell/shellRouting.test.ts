@@ -49,6 +49,7 @@ describe('requests for the views that left the lower panel (UX-011)', () => {
     const stop = startShellRouting(workbench, () => ({
       showActivity: (view) => shown.push(view),
       setSecondaryVisible: (visible) => shown.push(`secondary:${visible}`),
+      showPlant: () => shown.push('plant'),
     }));
     workbench.getState().setActiveConsoleTab('learn');
     expect(workbench.getState().activeConsoleTab).toBe('problems');
@@ -67,5 +68,31 @@ describe('the shell density (UX-023)', () => {
     expect(shellDensity(COMPACT_MAX_WIDTH)).toBe('compact');
     expect(shellDensity(COMPACT_MAX_WIDTH + 1)).toBe('regular');
     expect(shellDensity(1366)).toBe('regular');
+  });
+});
+
+describe('the Lab tab of a stored session (SHL-004, PLS-002)', () => {
+  it('SHL-004 a stored session whose tab is lab opens the plant document and leaves the results panel on its last tab', () => {
+    expect(routeConsoleTab('lab')).toEqual({ plant: true });
+    expect(resultsTabFor('lab')).toBe('output');
+    const shown: string[] = [];
+    const actions = () => ({
+      showActivity: (view: string) => shown.push(view),
+      setSecondaryVisible: (visible: boolean) => shown.push(`secondary:${visible}`),
+      showPlant: () => shown.push('plant'),
+    });
+    // a session saved by 2.0 with the Lab tab active: the plant opens at once and the results panel does not keep Lab
+    const stored = fakeWorkbench('lab');
+    const stop = startShellRouting(stored, actions);
+    expect(shown).toEqual(['plant']);
+    expect(stored.getState().activeConsoleTab).toBe('output');
+    stop();
+    // asked again while the panel is on Problems: the document opens, the panel stays on Problems
+    shown.length = 0;
+    const live = fakeWorkbench('problems');
+    startShellRouting(live, actions);
+    live.getState().setActiveConsoleTab('lab');
+    expect(shown).toEqual(['plant']);
+    expect(live.getState().activeConsoleTab).toBe('problems');
   });
 });

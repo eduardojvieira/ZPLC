@@ -3,27 +3,27 @@ import { createElement } from 'react';
 import { setupDom } from '../test/dom';
 import { en } from '../i18n/en';
 import { es } from '../i18n/es';
-import { CONFIG_EDITOR_KINDS } from '../navigator/configEditors';
-import { getCommandState, listedCommands, resetCommandsForTest, runCommand } from '../commands/bus';
-import { COMMAND_LIST, commandById, isCommandEnabled, isCommandId } from '../commands/registry';
-import { ACTIVITY_VIEWS } from '../store/useShellLayout';
 import type { ConsoleTab } from '../types';
-import { SURFACES, surfacesIn, type Region } from './surfaces';
+import type { Region } from './surfaces';
 
 const dom = await setupDom();
 await (await import('../test/dom')).stubProjectLoader();
 const { useIDEStore } = await import('../store/useIDEStore');
+const { CONFIG_EDITOR_KINDS } = await import('../navigator/configEditors');
+const { getCommandState, listedCommands, resetCommandsForTest, runCommand } = await import('../commands/bus');
+const { COMMAND_LIST, commandById, isCommandEnabled, isCommandId } = await import('../commands/registry');
+const { ACTIVITY_VIEWS } = await import('../store/useShellLayout');
+const { SURFACES, surfacesIn } = await import('./surfaces');
 const { useConfigEditors } = await import('../store/useConfigEditors');
 const { useShellCommands } = await import('../commands/useCommandHost');
 
 const REGIONS: readonly Region[] = ['commandBar', 'activity', 'editor', 'secondary', 'results', 'status', 'dialog'];
 
 /** Every tab of the results panel; a new `ConsoleTab` that is not listed here fails the build (SHL-002). */
-const RESULTS_TABS: Record<Exclude<ConsoleTab, 'explorer' | 'inspector' | 'learn'>, true> = {
+const RESULTS_TABS: Record<Exclude<ConsoleTab, 'explorer' | 'inspector' | 'learn' | 'lab'>, true> = {
   output: true,
   problems: true,
   tests: true,
-  lab: true,
   changes: true,
   agent: true,
   terminal: true,

@@ -4,15 +4,9 @@ import type { WorkspaceTestPresentation } from './workspaceTestPresentation';
 import { labSampleIndex, labSceneFrame, nextLabPlayback, recordedLabScenes, type LabScene } from './labPlayback';
 import { Button, RangeField, Select } from '../ui';
 import { useT } from '../i18n';
-import type { DebugController } from '../hooks/useDebugController';
-import { PlantLivePanel } from '../plants/PlantLivePanel';
 
 interface LabPanelProps {
   presentation: WorkspaceTestPresentation | null;
-  runDisabled: boolean;
-  running: boolean;
-  onRun: () => void;
-  controller?: DebugController;
 }
 
 function SceneDrawing({ scene, index }: { scene: LabScene; index: number }) {
@@ -195,7 +189,8 @@ function SceneDrawing({ scene, index }: { scene: LabScene; index: number }) {
   );
 }
 
-export function LabPanel({ presentation, runDisabled, running, onRun, controller }: LabPanelProps) {
+/** The replay of the plant trace the last test run recorded, a view of the plant document (LRN-020): never live, and it says so. */
+export function LabPanel({ presentation }: LabPanelProps) {
   const { t } = useT();
   const scenes = useMemo(() => recordedLabScenes(presentation), [presentation]);
   const [sceneId, setSceneId] = useState('');
@@ -218,29 +213,15 @@ export function LabPanel({ presentation, runDisabled, running, onRun, controller
     return () => window.clearInterval(timer);
   }, [playing, reducedMotion, scene]);
 
-  const live = <PlantLivePanel controller={controller} />;
-  if (!scene)
-    return (
-      <div>
-        {live}
-        <section className="p-3 text-sm text-[var(--text-secondary)]" aria-label={t('console.tab.lab')}>
-          <h2 className="font-medium text-[var(--text-primary)]">{t('console.tab.lab')}</h2>
-          <p className="mt-2">{t('lab.runTheSavedHost')}</p>
-          <Button variant="secondary" size="sm" onClick={onRun} disabled={runDisabled || running} className="mt-3">
-            {running ? t('lab.runningScenarios') : t('console.runHostScenarios')}
-          </Button>
-        </section>
-      </div>
-    );
+  if (!scene) return null;
 
   const current = labSampleIndex(index, scene.samples.length);
   const sample = scene.samples[current]!;
   return (
     <div>
-      {live}
       <section
         className="grid gap-3 p-3 text-sm text-[var(--text-secondary)] lg:grid-cols-[minmax(0,1fr)_14rem]"
-        aria-label={t('console.tab.lab')}
+        aria-label={t('lab.labRecordedScenario')}
       >
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">

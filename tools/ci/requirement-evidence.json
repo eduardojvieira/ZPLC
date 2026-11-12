@@ -2644,6 +2644,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/components/panelStates.test.tsx","test":"UX-021 offers the first next step the state allows: Step once connected, Connect before"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/panelStates.test.tsx","test":"UX-021 shows a title, a sentence and the next action, which is the registered command by its title"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/panelStates.test.tsx","test":"panel empty states (UX-021)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/shell/PlantDocument.test.tsx","test":"PLS-001 with neither it shows an empty state that names the next action (UX-021)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/store/notifications.test.ts","test":"a failure offers its way back (IDE-021, UX-021)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"UX-021 renders an error state as an alert with its reason and a recovery action"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"UX-021 shows nothing for a loading state before its delay, and the spinner with its phrase once there is none"},
@@ -2983,7 +2984,7 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"LRN-017, RT-009: the writes to the input image that a running program receives are staged and reach the image at"}
   ],
   "LRN-018": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/LabPanel.dom.test.tsx","test":"Lab (LRN-018, LRN-020) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LabPanel.dom.test.tsx","test":"the replay of a recorded plant trace (LRN-018, LRN-020) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/PlantLivePanel.dom.test.tsx","test":"LRN-018 pausing the program freezes the plant"},
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/PlantLivePanel.dom.test.tsx","test":"Live plant panel (PLS-003, LRN-018) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/plants/PlantView.test.tsx","test":"plant schematics (LRN-018, LRN-037)"},
@@ -2998,8 +2999,9 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"52 A lesson plant runs live in closed loop, with pause, step and a fault action, and the recorded run stays a labelled replay","partial":true}
   ],
   "LRN-020": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/components/LabPanel.dom.test.tsx","test":"Lab (LRN-018, LRN-020) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/LabPanel.dom.test.tsx","test":"the replay of a recorded plant trace (LRN-018, LRN-020) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/labPlayback.test.ts","test":"keeps the Lab view recorded, manually controllable, and explicitly non-HIL","note":"LRN-020: the recorded run stays available as a replay of recorded samples and is labelled as a replay that is not live runtime, hardware or HIL evidence; the live closed loop is journey 52"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/shell/PlantDocument.test.tsx","test":"PLS-001 with a recorded plant trace it offers the replay, labelled as a replay (LRN-020)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"52 A lesson plant runs live in closed loop, with pause, step and a fault action, and the recorded run stays a labelled replay","partial":true}
   ],
   "LRN-021": [

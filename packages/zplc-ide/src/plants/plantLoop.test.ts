@@ -86,21 +86,15 @@ describe('closed-loop plant session (LRN-018)', () => {
     expect(run.tickCount).toBe(2);
   });
 
-  it('holds the plant while paused, advances exactly one scan on step, and a fault action reaches the program input', async () => {
+  it('a fault action reaches the program input at the next poll', async () => {
     const plc = fakePlc();
     const run = createPlantRun('tank-v1');
     const loop = createPlantLoop({ run, resolved, read: plc.read, write: plc.write, cycles: async () => plc.cycles });
     await loop.poll();
-    run.setPaused(true);
-    plc.scan();
-    plc.scan();
+    run.act('pumpFault');
     plc.scan();
     await loop.poll();
-    expect(run.tickCount).toBe(0);
-    await loop.step();
     expect(run.tickCount).toBe(1);
-    run.act('pumpFault');
-    await loop.step();
     expect(plc.writes.at(-1)).toEqual(['Tank.PumpFault', true]);
   });
 });

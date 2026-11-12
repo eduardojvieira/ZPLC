@@ -134,7 +134,8 @@ describe('malformed FBD and SFC files are rejected the same way', () => {
 
 describe('the editor opens visual files through the validating loaders', () => {
   it('no longer parses a visual model inline', () => {
-    const source = readFileSync(join(import.meta.dir, '../components/EditorArea.tsx'), 'utf8');
+    // The editor area renders documents through EditorGroup since the split of spec 013 (plan-m1 W2).
+    const source = readFileSync(join(import.meta.dir, '../components/EditorGroup.tsx'), 'utf8');
     for (const loader of ['loadLDFile', 'loadFBDFile', 'loadSFCFile'])
       expect(source).toContain(`${loader}(activeFile.path || activeFile.name, activeFile.content)`);
     for (const parser of ['parseLDModel(', 'parseFBDModel(', 'parseSFCModel(']) expect(source).not.toContain(parser);

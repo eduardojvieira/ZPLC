@@ -36,6 +36,7 @@ describe('application settings (IDE-007, IDE-010)', () => {
         unlockAllLessons: false,
         hideSolutions: false,
         saveBeforeRun: 'always',
+        plantQuality: 'auto',
       });
       expect(AUTOSAVE_CHOICES[0]).toBe(0);
     },
@@ -53,6 +54,7 @@ describe('application settings (IDE-007, IDE-010)', () => {
         unlockAllLessons: true,
         hideSolutions: true,
         saveBeforeRun: 'ask',
+        plantQuality: 'high',
       }),
     ).toEqual({
       editorFontSize: 18,
@@ -64,6 +66,7 @@ describe('application settings (IDE-007, IDE-010)', () => {
       unlockAllLessons: true,
       hideSolutions: true,
       saveBeforeRun: 'ask',
+      plantQuality: 'high',
     });
     expect(
       parseSettings({
@@ -113,5 +116,16 @@ describe('application settings (IDE-007, IDE-010)', () => {
   it('FLW-006 a settings file written before the preference existed still loads, with 2.0 behaviour', () => {
     const storage = memory({ [SETTINGS_STORAGE_KEY]: JSON.stringify({ editorFontSize: 18, autosaveSeconds: 15 }) });
     expect(loadSettings(storage)).toEqual({ ...DEFAULT_SETTINGS, editorFontSize: 18, autosaveSeconds: 15 });
+  });
+
+  it('PLS-012 the plant quality defaults to automatic, and an unknown stored value falls back to it', () => {
+    expect(DEFAULT_SETTINGS.plantQuality).toBe('auto');
+    for (const good of ['low', 'medium', 'high', 'auto'] as const) expect(parseSettings({ plantQuality: good }).plantQuality).toBe(good);
+    for (const bad of ['ultra', 2, null, undefined, {}]) expect(parseSettings({ plantQuality: bad }).plantQuality).toBe('auto');
+  });
+
+  it('PLS-012 a settings file written before the plant quality existed still loads', () => {
+    const storage = memory({ [SETTINGS_STORAGE_KEY]: JSON.stringify({ saveBeforeRun: 'ask' }) });
+    expect(loadSettings(storage)).toEqual({ ...DEFAULT_SETTINGS, saveBeforeRun: 'ask' });
   });
 });

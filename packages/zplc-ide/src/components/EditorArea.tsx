@@ -37,7 +37,9 @@ import { configCloseNeedsConfirmation, configEditorViewId, isConfigEditorKind, t
 import { discardProjectConfigEdits } from '../navigator/discardConfigEdits';
 import { bindCommands, runCommand } from '../commands/bus';
 import { shownGroups } from '../layout/editorGroups';
-import { SETTINGS_VIEW_ID, isVisualWorkflow, type ViewId } from '../layout/documentKinds';
+import { PLANT_VIEW_ID, SETTINGS_VIEW_ID, isVisualWorkflow, type ViewId } from '../layout/documentKinds';
+import { usePlantDocument } from '../store/usePlantDocument';
+import type { DebugController } from '../hooks/useDebugController';
 import { useShellLayout } from '../store/useShellLayout';
 import { useShellDensity } from '../shell/shellDensity';
 
@@ -59,7 +61,7 @@ const configKindOf = (viewId: ViewId): ConfigEditorKind | null => {
   return isConfigEditorKind(kind) ? kind : null;
 };
 
-export function EditorArea() {
+export function EditorArea({ debugController }: { debugController?: DebugController }) {
   const { t } = useT();
   const compact = useShellDensity() === 'compact';
   const maximised = useShellLayout((state) => state.maximised);
@@ -85,7 +87,16 @@ export function EditorArea() {
   const selectedFileId = tabFiles.some((file) => file.id === activeFileId) ? activeFileId : (tabFiles[0]?.id ?? null);
   const configOpen = useConfigEditors((state) => state.open);
   const configActive = useConfigEditors((state) => state.active);
-  const selectedViewId = showSettings ? SETTINGS_VIEW_ID : configActive ? configEditorViewId(configActive) : selectedFileId;
+  const plantOpen = usePlantDocument((state) => state.open);
+  const plantActive = usePlantDocument((state) => state.active);
+  const plantRequests = usePlantDocument((state) => state.requests);
+  const selectedViewId = showSettings
+    ? SETTINGS_VIEW_ID
+    : configActive
+      ? configEditorViewId(configActive)
+      : plantOpen && plantActive
+        ? PLANT_VIEW_ID
+        : selectedFileId;
   const [closingConfig, setClosingConfig] = useState<ConfigEditorKind | null>(null);
   const [savingConfig, setSavingConfig] = useState(false);
   const initialVisualHistoryState: VisualHistoryState = {
@@ -103,6 +114,7 @@ export function EditorArea() {
   const allViews: ViewId[] = [
     ...(showSettings ? [SETTINGS_VIEW_ID] : []),
     ...configOpen.map(configEditorViewId),
+    ...(plantOpen ? [PLANT_VIEW_ID] : []),
     ...tabFiles.map((file) => file.id),
   ];
   const viewsKey = allViews.join('\n');
@@ -143,8 +155,10 @@ export function EditorArea() {
   useEffect(
     () =>
       useIDEStore.subscribe((state, previous) => {
-        if (state.activeFileId !== previous.activeFileId || state.compilerNavigationTarget !== previous.compilerNavigationTarget)
+        if (state.activeFileId !== previous.activeFileId || state.compilerNavigationTarget !== previous.compilerNavigationTarget) {
           useConfigEditors.getState().deselect();
+          usePlantDocument.getState().deselect();
+        }
         if (state.projectSession !== previous.projectSession) useConfigEditors.getState().reset();
       }),
     [],
@@ -274,6 +288,13 @@ export function EditorArea() {
   const selectView = useCallback(
     (viewId: ViewId) => {
       const config = configKindOf(viewId);
+      if (viewId === PLANT_VIEW_ID) {
+        if (showSettings) toggleSettings();
+        useConfigEditors.getState().deselect();
+        usePlantDocument.getState().select();
+        return;
+      }
+      usePlantDocument.getState().deselect();
       if (viewId === SETTINGS_VIEW_ID) {
         if (!showSettings) toggleSettings();
       } else if (config) selectConfigTab(config);
@@ -351,7 +372,10 @@ export function EditorArea() {
 
   const closeView = (viewId: ViewId) => {
     const config = configKindOf(viewId);
-    if (viewId === SETTINGS_VIEW_ID) handleCloseSettings();
+    if (viewId === PLANT_VIEW_ID) {
+      usePlantDocument.getState().close();
+      focusTab(selectedFileId);
+    } else if (viewId === SETTINGS_VIEW_ID) handleCloseSettings();
     else if (config) handleCloseConfigTab(config);
     else handleCloseTab(viewId);
   };
@@ -386,6 +410,14 @@ export function EditorArea() {
     [moveActive],
   );
 
+  // PLS-001: the plant opens beside the program when the window is wide enough and the first group has a view, else as a tab.
+  useEffect(() => {
+    const { allViews: open, compact: narrow } = latest.current;
+    const store = useEditorGroups.getState();
+    if (plantRequests > 0 && !narrow && open.length > 1 && open.includes(PLANT_VIEW_ID) && !store.groups.second.includes(PLANT_VIEW_ID))
+      store.move(PLANT_VIEW_ID, open);
+  }, [plantRequests]);
+
   const focusGroup = (which: 'first' | 'second') => {
     if (shown !== 2 || useEditorGroups.getState().groups.focused === which) return;
     const target = which === 'first' ? firstActive : secondActive;
@@ -409,6 +441,7 @@ export function EditorArea() {
     moveLabel: t(shown === 2 ? 'studio.document.moveToOther' : 'studio.document.splitRight'),
     onMove: () => moveActive(false),
     canMove: !compact,
+    debugController,
   };
 
   // No open tabs state (only if settings not shown)
