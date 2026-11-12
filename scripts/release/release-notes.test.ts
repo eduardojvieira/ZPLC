@@ -14,6 +14,22 @@ const withAsset = (patch: Partial<RunResults['assets'][number]>, index = 0): Run
   results.assets[index] = { ...results.assets[index]!, ...patch };
   return results;
 };
+/** The address of a file on the release of the fixture. */
+const BASE = 'https://github.com/example/zplc/releases/download/v2.0.0-rc.4/';
+const rowOf = (text: string, first: string) => text.split('\n').find((line) => line.startsWith(`| ${first} |`));
+/** Whether the first occurrence of `text` sits inside a collapsed `<details>` block. */
+const insideDetails = (notes: string, text: string): boolean => {
+  const at = notes.indexOf(text);
+  const open = notes.lastIndexOf('<details>', at);
+  return at >= 0 && open >= 0 && notes.lastIndexOf('</details>', at) < open;
+};
+const asset = (name: string, platform: RunResults['assets'][number]['platform']): RunResults['assets'][number] => ({
+  name,
+  platform,
+  job: 'build',
+  signing: 'unsigned',
+  checks: { signature: 'not-run', launch: 'passed', install: 'not-run' },
+});
 
 describe('the title of a release says how complete a prerelease is (REL-031)', () => {
   test('names the version and the completeness of a release candidate', () => {
@@ -34,6 +50,167 @@ describe('the title of a release says how complete a prerelease is (REL-031)', (
     results.tag = 'v2.0.0';
     delete results.completeness;
     expect(releaseTitle(results)).toBe('ZPLC v2.0.0');
+  });
+});
+
+describe('the notes open with the downloads, one row per system, linked by their address on the release (S4)', () => {
+  const notes = renderReleaseNotes(fixture());
+
+  test('starts with the Download section, before what changed', () => {
+    expect(notes.startsWith('### Download\n')).toBe(true);
+    expect(notes.indexOf('### Download')).toBeLessThan(notes.indexOf('### What changed'));
+  });
+
+  test('links the recommended file of each system that the run produced, labelled for a person', () => {
+    expect(rowOf(notes, 'Windows, Intel or AMD (x64)')).toBe(
+      `| Windows, Intel or AMD (x64) | **[Installer](${BASE}zplc-2.0.0-rc.4-win-x64-setup-unsigned.exe)** |  |`,
+    );
+    expect(rowOf(notes, 'macOS, Apple silicon (M1 and later)')).toContain(`**[Disk image](${BASE}zplc-2.0.0-rc.4-mac-arm64.dmg)**`);
+    expect(rowOf(notes, 'Linux, Intel or AMD (x86_64)')).toContain(`**[Debian, Ubuntu (.deb)](${BASE}zplc-2.0.0-rc.4-linux-x64.deb)**`);
+  });
+
+  test('gives the other formats of a system as smaller links', () => {
+    const results = fixture();
+    results.assets.push(
+      asset('zplc-2.0.0-rc.4-mac-arm64.zip', 'macos'),
+      asset('zplc-2.0.0-rc.4-win-arm64-setup-unsigned.exe', 'windows'),
+      asset('zplc-2.0.0-rc.4-win-arm64-portable-unsigned.exe', 'windows'),
+      asset('zplc-2.0.0-rc.4-linux-aarch64.rpm', 'linux'),
+      asset('zplc-2.0.0-rc.4-linux-arm64.AppImage', 'linux'),
+    );
+    const text = renderReleaseNotes(results);
+    expect(rowOf(text, 'macOS, Apple silicon (M1 and later)')).toContain(`<sub>[Zip](${BASE}zplc-2.0.0-rc.4-mac-arm64.zip)</sub>`);
+    expect(rowOf(text, 'Windows on ARM (arm64)')).toBe(
+      `| Windows on ARM (arm64) | **[Installer](${BASE}zplc-2.0.0-rc.4-win-arm64-setup-unsigned.exe)** | ` +
+        `<sub>[Portable](${BASE}zplc-2.0.0-rc.4-win-arm64-portable-unsigned.exe)</sub> |`,
+    );
+    // with no .deb for ARM, the .rpm is the first format of the row
+    expect(rowOf(text, 'Linux on ARM (arm64, aarch64)')).toBe(
+      `| Linux on ARM (arm64, aarch64) | **[Fedora (.rpm)](${BASE}zplc-2.0.0-rc.4-linux-aarch64.rpm)** | ` +
+        `<sub>[Other distributions (AppImage)](${BASE}zplc-2.0.0-rc.4-linux-arm64.AppImage)</sub> |`,
+    );
+  });
+
+  test('links no file that the run did not produce', () => {
+    expect(rowOf(notes, 'macOS, Intel')).toBe('| macOS, Intel | Not in this release |  |');
+    expect(rowOf(notes, 'Windows on ARM (arm64)')).toBe('| Windows on ARM (arm64) | Not in this release |  |');
+    const linked = (text: string) =>
+      [...text.matchAll(/\]\(https:\/\/github\.com\/example\/zplc\/releases\/download\/v2\.0\.0-rc\.4\/([^)]+)\)/g)].map((match) =>
+        decodeURIComponent(match[1]!),
+      );
+    const names = new Set(fixture().assets.map((entry) => entry.name));
+    expect(linked(notes).length).toBeGreaterThan(0);
+    expect(linked(notes).filter((name) => !names.has(name))).toEqual([]);
+    const none = fixture();
+    none.assets = [];
+    expect(linked(renderReleaseNotes(none))).toEqual([]);
+  });
+
+  test('says how to tell which system you have, and where the first launch is explained', () => {
+    const download = notes.slice(0, notes.indexOf('### What changed'));
+    expect(download).toContain('**About This Mac**');
+    expect(download).toContain('`uname -m`');
+    expect(download).toContain('(https://eduardojvieira.github.io/ZPLC/docs/getting-started/install#first-launch)');
+  });
+
+  test('puts the command line tool, the MCP server and the firmware images in collapsed blocks', () => {
+    const results = fixture();
+    results.assets.push(
+      asset('zplc-mcp-2.0.0-rc.4-linux-x64', 'cli'),
+      asset('zplc-cli-2.0.0-rc.4-win-arm64.exe', 'cli'),
+      { ...asset('zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2', 'firmware'), evidenceLevel: 'cross-build' },
+      { ...asset('zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin', 'firmware'), evidenceLevel: 'cross-build' },
+      { ...asset('zplc-runtime-2.0.0-rc.4-nucleo-h743zi.elf', 'firmware'), evidenceLevel: 'cross-build' },
+      asset('zplc-runtime-2.0.0-rc.4.manifest.json', 'firmware'),
+    );
+    const text = renderReleaseNotes(results);
+    expect(text).toContain('<summary>Command line tool and MCP server</summary>');
+    expect(rowOf(text, 'Linux, Intel or AMD (x86_64)')).toBeDefined();
+    const tools = text.split('\n').filter((line) => line.startsWith('| Linux, Intel or AMD (x86_64) |'))[1];
+    expect(tools).toBe(
+      `| Linux, Intel or AMD (x86_64) | [Download](${BASE}zplc-cli-2.0.0-rc.4-linux-x64) | ` +
+        `[Download](${BASE}zplc-mcp-2.0.0-rc.4-linux-x64) |`,
+    );
+    expect(insideDetails(text, `[Download](${BASE}zplc-cli-2.0.0-rc.4-linux-x64)`)).toBe(true);
+    expect(insideDetails(text, `[Download](${BASE}zplc-cli-2.0.0-rc.4-win-arm64.exe)`)).toBe(true);
+    // the firmware images, by the name of the board in firmware/app/boards/boards.json
+    expect(text).toContain('<summary>Runtime firmware for the boards</summary>');
+    expect(rowOf(text, 'Raspberry Pi Pico (RP2040)')).toBe(
+      `| Raspberry Pi Pico (RP2040) | **[Flash image (.uf2)](${BASE}zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2)** | cross-build |`,
+    );
+    expect(rowOf(text, 'STM32 Nucleo-H743ZI')).toBe(
+      `| STM32 Nucleo-H743ZI | **[Flash image (.bin)](${BASE}zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin)** · ` +
+        `<sub>[Debug image (.elf)](${BASE}zplc-runtime-2.0.0-rc.4-nucleo-h743zi.elf)</sub> | cross-build |`,
+    );
+    expect(insideDetails(text, `(${BASE}zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2)`)).toBe(true);
+    expect(insideDetails(text, `[Firmware manifest](${BASE}zplc-runtime-2.0.0-rc.4.manifest.json)`)).toBe(true);
+    expect(insideDetails(text, 'has not been flashed or run on it')).toBe(true);
+    // the blocks stay above what changed, and a run with no tool or image has neither block
+    expect(text.indexOf('<summary>Runtime firmware for the boards</summary>')).toBeLessThan(text.indexOf('### What changed'));
+    const bare = fixture();
+    bare.assets = bare.assets.filter((entry) => entry.platform !== 'cli');
+    expect(renderReleaseNotes(bare)).not.toContain('<summary>Command line tool and MCP server</summary>');
+    expect(renderReleaseNotes(bare)).not.toContain('<summary>Runtime firmware for the boards</summary>');
+  });
+
+  test('links SHA256SUMS and the verify section of the install guide on one line, when the run has the checksums', () => {
+    const results = fixture();
+    results.sha256sums = true;
+    const line = renderReleaseNotes(results)
+      .split('\n')
+      .find((candidate) => candidate.startsWith('**Check the file:**'))!;
+    expect(line).toContain(`[SHA256SUMS](${BASE}SHA256SUMS)`);
+    expect(line).toContain('(https://eduardojvieira.github.io/ZPLC/docs/getting-started/install#verify-the-download)');
+    expect(renderReleaseNotes(results).indexOf('**Check the file:**')).toBeLessThan(
+      renderReleaseNotes(results).indexOf('### What changed'),
+    );
+    // no checksum file in the run, no link to it
+    expect(notes).not.toContain(`(${BASE}SHA256SUMS)`);
+  });
+
+  test('refuses a run address that names no repository, since it could not link the files', () => {
+    const results = fixture();
+    results.runUrl = 'https://example.test/run/1';
+    expect(() => renderReleaseNotes(results)).toThrow(/repository/);
+  });
+});
+
+describe('the long technical sections are collapsed, and what a user must read stays open (S4)', () => {
+  const results = fixture();
+  results.breaking = ['Programs built before contract draft 4 are refused.'];
+  results.migration = ['Rebuild every program.'];
+  const notes = renderReleaseNotes(results);
+
+  test.each([
+    '<summary>Signing state and checks of every asset (4 files)</summary>',
+    '<summary>Tests executed in this run: 1530 executed, 0 failed, 2 skipped</summary>',
+    '<summary>Windows channels</summary>',
+    '<summary>Verify what you downloaded: checksums and build provenance</summary>',
+    '<summary>Evidence boundary: what this release does not establish</summary>',
+    '| zplc-2.0.0-rc.4-mac-arm64.dmg |',
+    '1530 tests executed, 0 failed, 2 skipped',
+    'gh attestation verify',
+    'do not establish HIL',
+    '0123456789abcdef0123456789abcdef01234567',
+  ])('%s is inside a <details> block', (text) => {
+    expect(insideDetails(notes, text)).toBe(true);
+  });
+
+  test.each([
+    '### What changed',
+    '### Breaking changes',
+    '### Migration',
+    '### Known issues',
+    '### Windows: unsigned installers',
+    '### Documentation',
+  ])('%s stays visible', (heading) => {
+    expect(notes).toContain(`${heading}\n`);
+    expect(insideDetails(notes, heading)).toBe(false);
+  });
+
+  test('closes every block it opens', () => {
+    expect(notes.match(/<details>/g)?.length).toBe(notes.match(/<\/details>/g)?.length);
+    expect(notes.trimEnd().endsWith('</details>')).toBe(false);
   });
 });
 
@@ -337,7 +514,7 @@ describe('the command line (REL-027)', () => {
     expect(readFileSync(join(directory, 'title.txt'), 'utf8')).toBe(
       'ZPLC v2.0.0-rc.4: release candidate, the Windows channels are not live and no board has a hardware record yet',
     );
-    expect(readFileSync(join(directory, 'notes.md'), 'utf8')).toContain('### Signing state and checks of every asset');
+    expect(readFileSync(join(directory, 'notes.md'), 'utf8')).toContain('<summary>Signing state and checks of every asset');
   });
 
   test('exits 1 on a results file that is not for the schema', () => {

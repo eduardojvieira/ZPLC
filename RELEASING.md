@@ -93,6 +93,11 @@ firmware images is a draft whose firmware job failed: the images are all of the 
 it as a release that has them; the notes name the job. Each firmware image is labelled with the evidence level of
 its board in the notes, and no board has a level above `cross-build` until a person records a hardware run.
 
+The notes open with a Download table, one row per system, that links each installer, and below it, collapsed, the
+`zplc-cli` and `zplc-mcp` executables and the firmware images, then `SHA256SUMS`. Each link is the address of the file
+on the published release (`releases/download/<tag>/<file>`), so it works once the release is published; a file that no
+bundle of the run holds gets no link. The signing, test, channel and evidence sections follow, collapsed.
+
 ### 6. Manual checks
 
 These need a person at a real machine. Record the result in [Recorded runs](#recorded-runs).
