@@ -254,8 +254,8 @@ async function main(): Promise<void> {
   for (const locale of LOCALES) samples.push(...(await runLocale(locale)));
   const record = {
     what:
-      'The 2.0.0 interface baseline of spec 013 section 8.1 (rows 2, 3, 6, 7 and 8), '
-      + 'measured on the running application by scripts/interfaceBudget.ts',
+      'The 2.0.0 interface baseline of spec 013 section 8.1 (rows 2, 3, 6, 7 and 8), ' +
+      'measured on the running application by scripts/interfaceBudget.ts',
     runtime: 'Electron development host, headless, native POSIX runtime; example Blinky; Linux only (no macOS or Windows evidence)',
     measuredOn: new Date().toISOString().slice(0, 10),
     rows: budgetRows(samples),
