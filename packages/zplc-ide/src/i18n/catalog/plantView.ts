@@ -10,6 +10,9 @@ export const plantViewEn = {
   'plant.text.fact': '{name}: {value}.',
   'plant.text.active': 'Active: {names}.',
   'plant.text.item': 'Item {id} at x {x} m, z {z} m.',
+  'plant.session.slowdown':
+    'The plant cannot keep up with real time: the plant and the program now run together at {percent} % speed. No scan is skipped.',
+  'plant.session.realtime': 'The plant keeps up again: real time.',
 } as const;
 export const plantViewEs: Record<keyof typeof plantViewEn, string> = {
   'plant.text.summary': '{scene}: {count} elementos en la planta.',
@@ -22,4 +25,7 @@ export const plantViewEs: Record<keyof typeof plantViewEn, string> = {
   'plant.text.fact': '{name}: {value}.',
   'plant.text.active': 'Activos: {names}.',
   'plant.text.item': 'Elemento {id} en x {x} m, z {z} m.',
+  'plant.session.slowdown':
+    'La planta no alcanza el tiempo real: la planta y el programa van ahora juntos al {percent} % de la velocidad. No se omite ningún ciclo.',
+  'plant.session.realtime': 'La planta vuelve a alcanzar el tiempo real.',
 };
