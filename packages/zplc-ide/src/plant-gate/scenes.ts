@@ -12,10 +12,59 @@ export function dropBox(): GateScene {
   return {
     name: 'dropBox',
     boxes: [
-      { id: 'floor', halfExtents: [10, 0.5, 10], position: [0, -0.5, 0], massKg: 0, friction: 0.6, motion: 'static' },
+      floor(),
       { id: 'box', halfExtents: [CUBE, CUBE, CUBE], position: [0, 1, 0], massKg: 5, friction: 0.6, motion: 'dynamic' },
     ],
     belts: [],
+    eyes: [],
+  };
+}
+
+export const BELT_SPEED_MPS = 0.5;
+
+const BELT_TOP = 0.5;
+
+const floor = (): BoxSpec => ({ id: 'floor', halfExtents: [10, 0.5, 10], position: [0, -0.5, 0], massKg: 0, friction: 0.6, motion: 'static' });
+
+const belt = (lengthM: number): BeltSpec => ({
+  id: 'belt',
+  halfExtents: [lengthM / 2, 0.05, 0.3],
+  position: [0, BELT_TOP - 0.05, 0],
+  axis: [1, 0, 0],
+  friction: 0.6,
+  accelMps2: 1.0,
+});
+
+const cubeOnBelt = (x: number): BoxSpec => ({ id: 'box', halfExtents: [CUBE, CUBE, CUBE], position: [x, BELT_TOP + CUBE + 0.001, 0], massKg: 5, friction: 0.6, motion: 'dynamic' });
+
+export function beltBox(): GateScene {
+  return {
+    name: 'beltBox',
+    boxes: [floor(), cubeOnBelt(-1.5)],
+    belts: [belt(4)],
+    eyes: [{ id: 'eye', from: [1, BELT_TOP + 0.1, -0.5], to: [1, BELT_TOP + 0.1, 0.5] }],
+  };
+}
+
+export function palletStack(): GateScene {
+  const palletHalf: Vec3 = [0.6, 0.072, 0.4];
+  const palletY = BELT_TOP + palletHalf[1] + 0.001;
+  const boxes: BoxSpec[] = [floor(), { id: 'pallet', halfExtents: palletHalf, position: [-3, palletY, 0], massKg: 25, friction: 0.6, motion: 'dynamic' }];
+  for (let i = 0; i < 5; i += 1) {
+    boxes.push({ id: `box${i}`, halfExtents: [0.2, 0.1, 0.15], position: [-3, palletY + palletHalf[1] + 0.1 + 0.001 + i * 0.2002, 0], massKg: 5, friction: 0.6, motion: 'dynamic' });
+  }
+  return { name: 'palletStack', boxes, belts: [belt(8)], eyes: [] };
+}
+
+export function restSoak(): GateScene {
+  return {
+    name: 'restSoak',
+    boxes: [
+      floor(),
+      cubeOnBelt(0),
+      { id: 'floorBox', halfExtents: [CUBE, CUBE, CUBE], position: [5, CUBE + 0.001, 0], massKg: 5, friction: 0.6, motion: 'dynamic' },
+    ],
+    belts: [belt(4)],
     eyes: [],
   };
 }

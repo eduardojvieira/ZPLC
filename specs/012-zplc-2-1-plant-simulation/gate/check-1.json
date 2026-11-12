@@ -1,0 +1,47 @@
+{
+  "schema": "zplc.plant-gate/1",
+  "check": 1,
+  "commit": "406d7a74",
+  "commitNote": "pre-amend hash of the commit that adds this file; code identical to the final commit",
+  "plantStepMs": 5,
+  "machine": {
+    "platform": "linux",
+    "arch": "x64",
+    "cpu": "AMD Ryzen 5 8600G w/ Radeon 760M Graphics",
+    "gpu": "none used (headless)"
+  },
+  "tuning": [],
+  "thresholds": {
+    "boxSpeedToleranceMps": 0.01,
+    "stoppedSpeedMps": 0.005,
+    "lateralDriftM": 0.005,
+    "stackOffsetM": 0.01,
+    "stackTiltDeg": 1,
+    "restDriftM": 0.001,
+    "restRotDeg": 0.1,
+    "restSpeedMps": 0.001
+  },
+  "measured": {
+    "boxOnBelt": {
+      "vxAtBeltSpeedMps": 0.5,
+      "lateralZM": 2.262585923062943e-7,
+      "speedAfterBeltStopMps": 0,
+      "lateralZAfterStopM": 2.2579020253488125e-7
+    },
+    "stack": {
+      "palletTravelM": 2.999950993405946,
+      "maxOffsetXM": 0.00009152638813247904,
+      "maxOffsetZM": 0.000031948429409567325,
+      "maxTiltDeg": 0.018164137916065602,
+      "orderKept": true
+    },
+    "restTenMinutes": {
+      "maxSpeedMps": 0,
+      "maxDriftM": 0,
+      "maxRotDeg": 0
+    },
+    "asleepBoxVxAfterBeltStartMps": 0.5,
+    "eyeSeesBoxOnBeam": true
+  },
+  "verdict": "pass"
+}

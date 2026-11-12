@@ -1,5 +1,5 @@
 import type { JoltModule } from './jolt';
-import type { GateScene, Quat, Vec3 } from './scenes';
+import type { BeltSpec, GateScene, Quat, Vec3 } from './scenes';
 
 export const PLANT_STEP_MS = 5;
 
@@ -65,6 +65,42 @@ export function createWorld(Jolt: JoltModule, scene: GateScene, stepMs: number =
   };
   for (const box of scene.boxes) makeBox(box.id, box.halfExtents, box.position, box.massKg, box.friction, box.motion);
 
+  // A belt is a static box whose surface velocity is applied in the contact listener.
+  interface Belt { spec: BeltSpec; target: number; speed: number }
+  const belts = new Map<string, Belt>();
+  const beltByBodyId = new Map<number, Belt>();
+  for (const spec of scene.belts) {
+    const body = makeBox(spec.id, spec.halfExtents, spec.position, 0, spec.friction, 'static');
+    const belt: Belt = { spec, target: 0, speed: 0 };
+    belts.set(spec.id, belt);
+    beltByBodyId.set(body.GetID().GetIndexAndSequenceNumber(), belt);
+  }
+  const listener = new Jolt.ContactListenerJS();
+  listener.OnContactValidate = () => Jolt.ValidateResult_AcceptAllContactsForThisBodyPair;
+  const surface = (b1: number, b2: number, ioSettings: number) => {
+    const id1 = Jolt.wrapPointer(b1, Jolt.Body).GetID().GetIndexAndSequenceNumber();
+    const id2 = Jolt.wrapPointer(b2, Jolt.Body).GetID().GetIndexAndSequenceNumber();
+    const belt1 = beltByBodyId.get(id1);
+    const belt2 = beltByBodyId.get(id2);
+    const belt = belt1 ?? belt2;
+    if (!belt) return;
+    // The setting is the surface velocity of body 2 relative to body 1.
+    const sign = belt1 ? -1 : 1;
+    const a = belt.spec.axis;
+    Jolt.wrapPointer(ioSettings, Jolt.ContactSettings).mRelativeLinearSurfaceVelocity.Set(sign * a[0] * belt.speed, sign * a[1] * belt.speed, sign * a[2] * belt.speed);
+  };
+  listener.OnContactAdded = (b1: number, b2: number, _m: number, set: number) => surface(b1, b2, set);
+  listener.OnContactPersisted = (b1: number, b2: number, _m: number, set: number) => surface(b1, b2, set);
+  listener.OnContactRemoved = () => {};
+  physics.SetContactListener(listener);
+
+  const eyes = new Map(scene.eyes.map((e) => [e.id, e]));
+  const narrow = physics.GetNarrowPhaseQuery();
+  const movingBp = new Jolt.SpecifiedBroadPhaseLayerFilter(bpMoving);
+  const movingObj = new Jolt.SpecifiedObjectLayerFilter(MOVING);
+  const bodyFilter = new Jolt.BodyFilter();
+  const shapeFilter = new Jolt.ShapeFilter();
+
   let timeMs = 0;
   let disposed = false;
   return {
@@ -72,12 +108,39 @@ export function createWorld(Jolt: JoltModule, scene: GateScene, stepMs: number =
     step(ms: number) {
       if (!Number.isInteger(ms / stepMs) || ms <= 0) throw new RangeError(`step must be a positive multiple of ${stepMs} ms`);
       for (let i = 0; i < ms / stepMs; i += 1) {
+        for (const belt of belts.values()) {
+          if (belt.speed === belt.target) continue;
+          const delta = belt.spec.accelMps2 * (stepMs / 1000);
+          belt.speed = Math.abs(belt.target - belt.speed) <= delta ? belt.target : belt.speed + Math.sign(belt.target - belt.speed) * delta;
+          // ponytail: wakes every dynamic body while any belt ramps; per-belt contact lookup if the stress scene needs it
+          for (const { body } of dynamic) bodyInterface.ActivateBody(body.GetID());
+        }
         jolt.Step(stepMs / 1000, 1);
         timeMs += stepMs;
       }
     },
-    setBeltTarget(id: string) { throw new Error(`unknown belt ${id}`); },
-    eye() { return false; },
+    setBeltTarget(id: string, speedMps: number) {
+      const belt = belts.get(id);
+      if (!belt) throw new Error(`unknown belt ${id}`);
+      belt.target = speedMps;
+    },
+    eye(id: string) {
+      const spec = eyes.get(id);
+      if (!spec) throw new Error(`unknown eye ${id}`);
+      const dir = new Jolt.Vec3(spec.to[0] - spec.from[0], spec.to[1] - spec.from[1], spec.to[2] - spec.from[2]);
+      const origin = new Jolt.RVec3(spec.from[0], spec.from[1], spec.from[2]);
+      const ray = new Jolt.RRayCast(origin, dir);
+      const rayCastSettings = new Jolt.RayCastSettings();
+      const collector = new Jolt.CastRayClosestHitCollisionCollector();
+      narrow.CastRay(ray, rayCastSettings, collector, movingBp, movingObj, bodyFilter, shapeFilter);
+      const hit = collector.HadHit();
+      Jolt.destroy(collector);
+      Jolt.destroy(rayCastSettings);
+      Jolt.destroy(ray);
+      Jolt.destroy(origin);
+      Jolt.destroy(dir);
+      return hit;
+    },
     bodies() {
       return dynamic.map(({ id, body }) => {
         const p = body.GetPosition();
@@ -103,6 +166,11 @@ export function createWorld(Jolt: JoltModule, scene: GateScene, stepMs: number =
         bodyInterface.RemoveBody(body.GetID());
         bodyInterface.DestroyBody(body.GetID());
       }
+      Jolt.destroy(movingBp);
+      Jolt.destroy(movingObj);
+      Jolt.destroy(bodyFilter);
+      Jolt.destroy(shapeFilter);
+      Jolt.destroy(listener);
       Jolt.destroy(jolt); // owns the layer filters and the broad-phase interface
       Jolt.destroy(bpNonMoving);
       Jolt.destroy(bpMoving);
