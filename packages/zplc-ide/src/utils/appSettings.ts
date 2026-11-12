@@ -18,9 +18,13 @@ export const LANGUAGE_CHOICES = LANGUAGE_SETTINGS;
 /** Seconds after the last change before a modified file is saved; 0 is off. */
 export const AUTOSAVE_CHOICES = [0, 5, 15, 30, 60] as const;
 
+/** Whether Run and Build save a modified project first (`always`, the 2.0 behaviour) or ask (FLW-006). */
+export const SAVE_BEFORE_RUN_CHOICES = ['always', 'ask'] as const;
+
 export type TabSize = (typeof TAB_SIZE_CHOICES)[number];
 export type Density = (typeof DENSITY_CHOICES)[number];
 export type Language = LanguageSetting;
+export type SaveBeforeRun = (typeof SAVE_BEFORE_RUN_CHOICES)[number];
 export type AutosaveSeconds = (typeof AUTOSAVE_CHOICES)[number];
 
 export interface AppSettings {
@@ -37,6 +41,7 @@ export interface AppSettings {
    * account.
    */
   hideSolutions: boolean;
+  saveBeforeRun: SaveBeforeRun;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -49,6 +54,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   checkForUpdates: false,
   unlockAllLessons: false,
   hideSolutions: false,
+  saveBeforeRun: 'always',
 };
 
 /** What the settings need of a storage; the renderer's `localStorage` has it. */
@@ -63,6 +69,7 @@ const oneOf = <T extends readonly unknown[]>(choices: T, value: unknown): value 
 export function parseSettings(raw: unknown, defaults: AppSettings = DEFAULT_SETTINGS): AppSettings {
   const value = typeof raw === 'object' && raw !== null && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
   const { editorFontSize, editorTabSize, density, language, autosaveSeconds, checkForUpdates, unlockAllLessons, hideSolutions } = value;
+  const { saveBeforeRun } = value;
   return {
     editorFontSize:
       typeof editorFontSize === 'number' &&
@@ -78,6 +85,7 @@ export function parseSettings(raw: unknown, defaults: AppSettings = DEFAULT_SETT
     checkForUpdates: typeof checkForUpdates === 'boolean' ? checkForUpdates : defaults.checkForUpdates,
     unlockAllLessons: typeof unlockAllLessons === 'boolean' ? unlockAllLessons : defaults.unlockAllLessons,
     hideSolutions: typeof hideSolutions === 'boolean' ? hideSolutions : defaults.hideSolutions,
+    saveBeforeRun: oneOf(SAVE_BEFORE_RUN_CHOICES, saveBeforeRun) ? saveBeforeRun : defaults.saveBeforeRun,
   };
 }
 

@@ -14,10 +14,12 @@ import {
   AUTOSAVE_CHOICES,
   DENSITY_CHOICES,
   LANGUAGE_CHOICES,
+  SAVE_BEFORE_RUN_CHOICES,
   TAB_SIZE_CHOICES,
   type AppSettings,
   type Density,
   type Language,
+  type SaveBeforeRun,
 } from '../../utils/appSettings';
 import { describeUpdateCheck, runUpdateCheck } from '../../ipc/updateCheckBridge';
 import { ZPLC_REPO_VERSION } from '../../version';
@@ -30,6 +32,10 @@ const LANGUAGE_NAMES = {
   en: 'preferences.language.en',
   es: 'preferences.language.es',
 } as const satisfies Record<Language, MessageKey>;
+const SAVE_BEFORE_RUN_NAMES = {
+  always: 'studio.flow.saveBeforeRun.always',
+  ask: 'studio.flow.saveBeforeRun.ask',
+} as const satisfies Record<SaveBeforeRun, MessageKey>;
 const DENSITY_NAMES = { comfortable: 'preferences.density.comfortable', compact: 'preferences.density.compact' } as const satisfies Record<
   Density,
   MessageKey
@@ -120,6 +126,12 @@ export function AppPreferences({ includeTheme = true }: { includeTheme?: boolean
           field="autosaveSeconds"
           options={AUTOSAVE_CHOICES}
           name={(seconds) => (seconds === 0 ? t('preferences.autosave.off') : tn('preferences.autosave.after', seconds))}
+        />
+        <Choice
+          label={t('studio.flow.saveBeforeRun')}
+          field="saveBeforeRun"
+          options={SAVE_BEFORE_RUN_CHOICES}
+          name={(choice) => t(SAVE_BEFORE_RUN_NAMES[choice])}
         />
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-[var(--color-surface-600)] pt-3">

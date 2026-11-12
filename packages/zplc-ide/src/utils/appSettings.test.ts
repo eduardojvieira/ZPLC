@@ -35,6 +35,7 @@ describe('application settings (IDE-007, IDE-010)', () => {
         checkForUpdates: false,
         unlockAllLessons: false,
         hideSolutions: false,
+        saveBeforeRun: 'always',
       });
       expect(AUTOSAVE_CHOICES[0]).toBe(0);
     },
@@ -51,6 +52,7 @@ describe('application settings (IDE-007, IDE-010)', () => {
         checkForUpdates: true,
         unlockAllLessons: true,
         hideSolutions: true,
+        saveBeforeRun: 'ask',
       }),
     ).toEqual({
       editorFontSize: 18,
@@ -61,6 +63,7 @@ describe('application settings (IDE-007, IDE-010)', () => {
       checkForUpdates: true,
       unlockAllLessons: true,
       hideSolutions: true,
+      saveBeforeRun: 'ask',
     });
     expect(
       parseSettings({
@@ -99,5 +102,16 @@ describe('application settings (IDE-007, IDE-010)', () => {
     };
     expect(loadSettings(broken)).toEqual(DEFAULT_SETTINGS);
     expect(() => saveSettings(broken, DEFAULT_SETTINGS)).not.toThrow();
+  });
+
+  it('FLW-006 the preference defaults to Always, and an unknown stored value falls back to it', () => {
+    expect(DEFAULT_SETTINGS.saveBeforeRun).toBe('always');
+    expect(parseSettings({ saveBeforeRun: 'ask' }).saveBeforeRun).toBe('ask');
+    for (const bad of ['never', 1, null, undefined, {}]) expect(parseSettings({ saveBeforeRun: bad }).saveBeforeRun).toBe('always');
+  });
+
+  it('FLW-006 a settings file written before the preference existed still loads, with 2.0 behaviour', () => {
+    const storage = memory({ [SETTINGS_STORAGE_KEY]: JSON.stringify({ editorFontSize: 18, autosaveSeconds: 15 }) });
+    expect(loadSettings(storage)).toEqual({ ...DEFAULT_SETTINGS, editorFontSize: 18, autosaveSeconds: 15 });
   });
 });
