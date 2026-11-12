@@ -178,7 +178,7 @@ describe('changelog: what changed for a user, what breaks, how to migrate and wh
 
   it('prints the breaking changes, the migration and the limits in the notes of a release', () => {
     const unreleased = unreleasedSection(changelog);
-    const parts = changelogParts(unreleased.replace(/^## 2\.0\.0 - .*$/m, '## 2.0.0-rc.4 - 2026-10-20'), '2.0.0-rc.4');
+    const parts = changelogParts(unreleased.replace(/^## \d+\.\d+\.\d+(?:-[\w.]+)? - .*$/m, '## 2.0.0-rc.4 - 2026-10-20'), '2.0.0-rc.4');
     const notes = renderReleaseNotes({
       ...results(),
       changes: parts.changes,
@@ -189,7 +189,8 @@ describe('changelog: what changed for a user, what breaks, how to migrate and wh
     expect(notes).toContain('### What changed');
     expect(notes).toContain('### Breaking changes');
     expect(notes).toContain('### Migration');
-    expect(notes).toContain('Rebuild every program and reflash every board');
+    expect(parts.migration.length).toBeGreaterThan(0);
+    expect(notes).toContain(parts.migration[0]!.slice(0, 40));
     expect(notes).toContain('### Known issues');
     expect(notes).not.toContain('Details for contributors');
   });

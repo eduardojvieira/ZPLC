@@ -29,8 +29,8 @@ ZPLC 2.0.1 fixes the simulation for anyone who used an earlier ZPLC on the same 
 ### What changed for you
 
 - The simulation loads your program again when an earlier ZPLC left programs in `~/.zplc`. ZPLC 2.0.0 refused every
-  load there with "Request denied"; the runtime now stores the new program beside the old one, and a damaged file
-  still stops the load.
+  load there with "Request denied"; the runtime now stores the new program beside the old one. A store whose programs
+  are all damaged, or a disk error, still stops the load.
 - ZPLC keeps the program of the simulation in its own data folder (`native-simulation` in the user-data folder of the
   application), no longer in `~/.zplc`, which the command line keeps using.
 - When the runtime refuses a request, ZPLC says why, for example "The native runtime could not load or store the
@@ -39,6 +39,38 @@ ZPLC 2.0.1 fixes the simulation for anyone who used an earlier ZPLC on the same 
   offers the installer of your computer.
 - A release holds fewer files: the per-platform checksum and evidence files are no longer on it, and `SHA256SUMS`
   still lists every file you download.
+
+### Breaking changes
+
+None.
+
+### Migration
+
+1. The program that the simulation of ZPLC 2.0.0 or an earlier version kept in `~/.zplc`, with its retained values, is
+   not carried over to the new folder: open your project and start the simulation again. `~/.zplc` stays in place for
+   the command line.
+
+### Known limits
+
+- The known limits of 2.0.0 still hold: no board has been flashed or run, and ZPLC is not a safety PLC
+  ([Safety and limitations](docs/docs/safety-and-limitations.md)).
+- The main process writes a refusal of the runtime to its standard error, which an application opened from the desktop
+  does not show; the sentence on the screen names the reason.
+
+### Details for contributors
+
+- Program store (`zplc_program_store.c`): an intact program of another contract draft or ISA version (its CRC-32
+  matches) is a stale rollback, `ZPLC_PSTORE_ROLLBACK_STALE`; the commit writes the slot that does not hold it, so a
+  power cut during the write leaves the store usable. Damaged records and I/O errors still fail closed, and the
+  persisted format is unchanged. A real store from before the draft counter is the fixture
+  `firmware/lib/zplc_core/tests/fixtures/store-before-draft-counter/`.
+- Studio gives the runtime `ZPLC_PERSIST_ROOT=<userData>/native-simulation`: always when packaged, and when unpackaged
+  unless the environment names one; `nativeSimulationEnvironment` takes the userData path.
+- `registerIpcHandlers` logs every handler failure, and the native simulation request answers a refusal of the runtime
+  with a fixed sentence chosen by its error code (`NATIVE_RUNTIME_REFUSALS`); anything else stays "Request denied".
+- Release: the notes open with a Download table built from `run-results.json` (new field `sha256sums`), and the upload
+  jobs keep `SHA256SUMS-<platform>` and `release-evidence-<platform>.json` in the bundle artifacts.
+- Site: the `/download` page (`docs/src/pages/download.js`) detects the system and links its installers.
 
 ## 2.0.0 - 2026-11-12
 
