@@ -4714,6 +4714,195 @@ static void test_io_trace_requests(void) {
   zplc_native_runtime_session_shutdown(&session);
 }
 
+/* R1 (plant simulation): a session switches to the virtual clock by request, and a held scan costs no clock. */
+static const char *clock_set_call(zplc_native_runtime_session_t *session, const char *params) {
+  char request[256];
+
+  snprintf(request, sizeof(request), "{\"id\":\"clock\",\"type\":\"request\",\"method\":\"simulation.clock.set\",\"params\":%s}", params);
+  return session_call(session, request);
+}
+
+static const char *step_call(zplc_native_runtime_session_t *session, uint32_t at_ms) {
+  char request[160];
+
+  snprintf(request, sizeof(request), "{\"id\":\"s\",\"type\":\"request\",\"method\":\"scenario.step\",\"params\":{\"at_ms\":%u}}",
+           (unsigned)at_ms);
+  return session_call(session, request);
+}
+
+/* PC 0 GET_TICKS, PC 1 STORE32 %Q0.0, PC 4 GET_TICKS, PC 5 STORE32 %Q4.0, PC 8 HALT: a breakpoint at PC 4 holds the scan
+ * between the two reads of the clock. The task interval is 10 ms. */
+static void load_two_tick_program(zplc_native_runtime_session_t *session) {
+  uint8_t code[16];
+  uint8_t artifact[160];
+  char hex[512];
+  char request[1024];
+  size_t length = 0U;
+  size_t size;
+
+  code[length++] = OP_GET_TICKS;
+  length = emit_store32(code, length, ZPLC_MEM_OPI_BASE);
+  code[length++] = OP_GET_TICKS;
+  length = emit_store32(code, length, ZPLC_MEM_OPI_BASE + 4U);
+  length = emit_halt(code, length);
+  size = build_task_zplc(artifact, sizeof(artifact), code, length, 10000U);
+  bytes_to_hex(artifact, size, hex, sizeof(hex));
+  snprintf(request, sizeof(request),
+           "{\"id\":\"load\",\"type\":\"request\",\"method\":\"program.load\",\"params\":{\"bytecode_hex\":\"%s\"}}", hex);
+  (void)session_call(session, request);
+}
+
+static uint32_t opi_word(unsigned offset) {
+  const uint8_t *opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE) + offset;
+
+  return (uint32_t)opi[0] | ((uint32_t)opi[1] << 8) | ((uint32_t)opi[2] << 16) | ((uint32_t)opi[3] << 24);
+}
+
+static void test_clock_set_virtual_then_scenario_step(void) {
+  zplc_native_runtime_session_t session;
+  const char *response;
+
+  printf("\n=== Test: simulation.clock.set virtual ===\n");
+  zplc_native_runtime_session_init(&session);
+  load_two_tick_program(&session);
+  TEST_ASSERT_CONTAINS(step_call(&session, 0U), "scenario.step is unavailable", "a session on the free clock refuses scenario.step");
+  response = clock_set_call(&session, "{\"mode\":\"virtual\"}");
+  TEST_ASSERT_CONTAINS(response, "\"result\"", "simulation.clock.set virtual succeeds while stopped");
+  TEST_ASSERT_CONTAINS(response, "\"clock_mode\":\"virtual\"", "the result names the clock mode");
+  TEST_ASSERT_CONTAINS(response, "\"scan_interval_ms\":10", "the result carries the scan interval of the program");
+  TEST_ASSERT_CONTAINS(response, "\"state\":\"idle\"", "the result is the normal status");
+  TEST_ASSERT_CONTAINS(step_call(&session, 0U), "\"result\"", "scenario.step works after the request");
+  TEST_ASSERT_CONTAINS(session_call(&session, "{\"id\":\"st\",\"type\":\"request\",\"method\":\"execution.start\",\"params\":{}}"),
+                       "scenario session only accepts scenario.step", "start is refused in virtual mode");
+  zplc_hal_posix_clear_tick_override();
+  zplc_native_runtime_session_shutdown(&session);
+}
+
+static void test_clock_set_refused_while_running(void) {
+  zplc_native_runtime_session_t session;
+  const char *response;
+
+  printf("\n=== Test: simulation.clock.set while running ===\n");
+  zplc_native_runtime_session_init(&session);
+  load_two_tick_program(&session);
+  (void)session_call(&session, "{\"id\":\"st\",\"type\":\"request\",\"method\":\"execution.start\",\"params\":{}}");
+  response = clock_set_call(&session, "{\"mode\":\"virtual\"}");
+  TEST_ASSERT_CONTAINS(response, "INVALID_STATE", "the clock cannot change while the program runs");
+  TEST_ASSERT_CONTAINS(response, "clock mode can only change while the runtime is stopped", "the refusal says why");
+  TEST_ASSERT(session.scenario_clock_enabled == 0U && session.state == ZPLC_NATIVE_SESSION_RUNNING, "a refused request changes nothing");
+  (void)session_call(&session, "{\"id\":\"sp\",\"type\":\"request\",\"method\":\"execution.stop\",\"params\":{}}");
+  TEST_ASSERT_CONTAINS(clock_set_call(&session, "{\"mode\":\"virtual\"}"), "\"clock_mode\":\"virtual\"", "allowed again once stopped");
+  response = clock_set_call(&session, "{\"mode\":\"free\"}");
+  TEST_ASSERT_CONTAINS(response, "\"clock_mode\":\"free\"", "free is accepted");
+  TEST_ASSERT_CONTAINS(session_call(&session, "{\"id\":\"st\",\"type\":\"request\",\"method\":\"execution.start\",\"params\":{}}"),
+                       "\"result\"", "free restores start");
+  TEST_ASSERT(session.state == ZPLC_NATIVE_SESSION_RUNNING, "the session runs on the wall clock again");
+  zplc_native_runtime_session_shutdown(&session);
+}
+
+static void test_clock_set_rejects_bad_params(void) {
+  static const char *const bad[] = {"{}",
+                                    "{\"mode\":\"real\"}",
+                                    "{\"mode\":\"virtual\",\"extra\":1}",
+                                    "{\"mode\":1}",
+                                    "{\"mode\":\"virtualx\"}",
+                                    "{\"mode\":\"virtual\",\"mode\":\"free\"}",
+                                    "{\"mode\":\"virtual\"} "};
+  zplc_native_runtime_session_t session;
+  size_t index;
+
+  printf("\n=== Test: simulation.clock.set rejects bad params ===\n");
+  zplc_native_runtime_session_init(&session);
+  load_two_tick_program(&session);
+  for (index = 0U; index < sizeof(bad) / sizeof(bad[0]); index++) {
+    TEST_ASSERT_CONTAINS(clock_set_call(&session, bad[index]), "INVALID_REQUEST", "a malformed clock request is rejected");
+    TEST_ASSERT(session.scenario_clock_enabled == 0U, "a rejected clock request leaves the clock mode alone");
+  }
+  (void)clock_set_call(&session, "{\"mode\":\"virtual\"}");
+  (void)step_call(&session, 0U);
+  TEST_ASSERT_CONTAINS(clock_set_call(&session, "{\"mode\":\"bogus\"}"), "INVALID_REQUEST", "bad mode while virtual is rejected");
+  TEST_ASSERT(session.scenario_clock_enabled == 1U && session.scenario_timestamp_started == 1U,
+              "a rejected request keeps the scenario clock");
+  zplc_hal_posix_clear_tick_override();
+  zplc_native_runtime_session_shutdown(&session);
+}
+
+static void test_held_scan_is_clock_neutral(void) {
+  zplc_native_runtime_session_t session;
+  const char *response;
+  uint32_t at;
+  uint32_t reference_second_read;
+  uint32_t reference_cycles;
+
+  printf("\n=== Test: a held scan is clock-neutral ===\n");
+  /* The reference: four unheld scans, at 0, 10, 20 and 30 ms. */
+  zplc_native_runtime_session_init(&session);
+  load_two_tick_program(&session);
+  (void)clock_set_call(&session, "{\"mode\":\"virtual\"}");
+  for (at = 0U; at <= 30U; at += 10U) {
+    (void)step_call(&session, at);
+  }
+  reference_second_read = opi_word(4U);
+  reference_cycles = session.cycle_count;
+  TEST_ASSERT(reference_second_read == 30U && reference_cycles == 4U, "the unheld run reads 30 ms after four scans");
+  zplc_native_runtime_session_shutdown(&session);
+
+  /* The same run, with a breakpoint between the two clock reads of the first two scans. */
+  zplc_native_runtime_session_init(&session);
+  load_two_tick_program(&session);
+  (void)clock_set_call(&session, "{\"mode\":\"virtual\"}");
+  (void)session_call(&session, "{\"id\":\"bp\",\"type\":\"request\",\"method\":\"breakpoint.add\",\"params\":{\"pc\":4}}");
+  (void)step_call(&session, 0U);
+  TEST_ASSERT(session.cycle_count == 0U && session.scan_in_flight == 1U, "the first scan is held at the breakpoint");
+  TEST_ASSERT_CONTAINS(step_call(&session, 10U), "must repeat the held timestamp", "a held scan is continued at its own timestamp");
+  TEST_ASSERT(session.cycle_count == 0U && session.scan_in_flight == 1U, "a refused step leaves the held scan alone");
+  response = step_call(&session, 0U);
+  TEST_ASSERT_CONTAINS(response, "\"result\"", "the held scan continues at the held timestamp");
+  TEST_ASSERT(session.cycle_count == 1U && opi_word(4U) == 0U, "the held scan completes as scan 1 and read 0 ms after the breakpoint");
+  (void)step_call(&session, 10U);
+  TEST_ASSERT(session.cycle_count == 1U && opi_word(0U) == 10U, "the second scan is held at 10 ms");
+  (void)step_call(&session, 10U);
+  TEST_ASSERT(session.cycle_count == 2U && opi_word(4U) == 10U, "the second held scan completes with the clock it began with");
+  (void)session_call(&session, "{\"id\":\"bc\",\"type\":\"request\",\"method\":\"breakpoint.clear\",\"params\":{}}");
+  (void)step_call(&session, 20U);
+  (void)step_call(&session, 30U);
+  TEST_ASSERT(opi_word(4U) == reference_second_read && session.cycle_count == reference_cycles,
+              "after the holds the timers stand where the unheld run left them");
+  zplc_hal_posix_clear_tick_override();
+  zplc_native_runtime_session_shutdown(&session);
+}
+
+static void test_virtual_mode_matches_env_flag_mode(void) {
+  zplc_native_runtime_session_t session;
+  char by_request[8][4096];
+  char by_flag[8][4096];
+  uint32_t at;
+  size_t index = 0U;
+
+  printf("\n=== Test: the request and the flag give the same session ===\n");
+  zplc_native_runtime_session_init(&session);
+  load_two_tick_program(&session);
+  (void)clock_set_call(&session, "{\"mode\":\"virtual\"}");
+  for (at = 0U; at <= 70U; at += 10U) {
+    snprintf(by_request[index++], sizeof(by_request[0]), "%s", step_call(&session, at));
+  }
+  zplc_hal_posix_clear_tick_override();
+  zplc_native_runtime_session_shutdown(&session);
+
+  index = 0U;
+  zplc_native_runtime_session_init(&session);
+  load_two_tick_program(&session);
+  zplc_native_runtime_session_set_scenario_clock_enabled(&session, 1);
+  for (at = 0U; at <= 70U; at += 10U) {
+    snprintf(by_flag[index++], sizeof(by_flag[0]), "%s", step_call(&session, at));
+  }
+  zplc_hal_posix_clear_tick_override();
+  zplc_native_runtime_session_shutdown(&session);
+  for (index = 0U; index < 8U; index++) {
+    TEST_ASSERT(strcmp(by_request[index], by_flag[index]) == 0 && by_request[index][0] != '\0', "step results are byte-identical");
+  }
+}
+
 int main(void) {
   TEST_ASSERT(mkdtemp(test_persist_root) != NULL, "test binary creates an isolated persistence root before session init");
   if (fail_count != 0)
@@ -4774,6 +4963,11 @@ int main(void) {
   test_simulation_input_protocol();
   test_canonical_request_envelope();
   test_scenario_virtual_clock();
+  test_clock_set_virtual_then_scenario_step();
+  test_clock_set_refused_while_running();
+  test_clock_set_rejects_bad_params();
+  test_held_scan_is_clock_neutral();
+  test_virtual_mode_matches_env_flag_mode();
   test_retain_survives_a_new_session();
   test_retain_periodic_save_follows_the_interval();
   test_retain_reset_and_fault();
