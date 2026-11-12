@@ -24,6 +24,8 @@ const NATIVE_SIMULATION_METHODS = new Set([
   'force.clear',
   'force.clear_all',
   'force.list',
+  'simulation.clock.set',
+  'scenario.step',
 ]);
 
 const REQUEST_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,62}$/;
@@ -264,6 +266,15 @@ function isAllowedNativeSimulationParams(method: string, params: Record<string, 
     case 'breakpoint.add':
     case 'breakpoint.remove':
       return hasExactKeys(params, ['pc']) && isUint16(params.pc);
+    case 'simulation.clock.set':
+      return hasExactKeys(params, ['mode']) && (params.mode === 'virtual' || params.mode === 'free');
+    case 'scenario.step':
+      return (
+        hasExactKeys(params, ['at_ms']) &&
+        Number.isInteger(params.at_ms) &&
+        (params.at_ms as number) >= 0 &&
+        (params.at_ms as number) <= 0xffff_ffff
+      );
     default:
       return false;
   }

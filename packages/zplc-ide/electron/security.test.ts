@@ -93,6 +93,104 @@ describe('Electron security boundary', () => {
     expect(isAllowedNativeSimulationRequest({ id: 'req-1', type: 'request', method: 'status.get', params: {}, extra: true })).toBe(false);
   });
 
+  const nativeRequest = (method: string, params: unknown) => ({ id: 'req-1', type: 'request', method, params });
+
+  it('VIS-012 the renderer may send simulation.clock.set with mode virtual or free and nothing else', () => {
+    const allowed = (params: unknown) => isAllowedNativeSimulationRequest(nativeRequest('simulation.clock.set', params));
+    expect(allowed({ mode: 'virtual' })).toBe(true);
+    expect(allowed({ mode: 'free' })).toBe(true);
+    for (const params of [
+      { mode: 'x' },
+      {},
+      { mode: 'virtual', extra: 1 },
+      { mode: 1 },
+      { mode: 'Virtual' },
+      { mode: null },
+      { Mode: 'free' },
+    ]) {
+      expect(allowed(params)).toBe(false);
+    }
+  });
+
+  it('VIS-012 the renderer may send scenario.step with an integer at_ms in uint32 range', () => {
+    const allowed = (params: unknown) => isAllowedNativeSimulationRequest(nativeRequest('scenario.step', params));
+    for (const at_ms of [0, 1, 20, 4294967295]) expect(allowed({ at_ms })).toBe(true);
+    for (const at_ms of [-1, 1.5, 4294967296, '5', null, NaN, Infinity]) expect(allowed({ at_ms })).toBe(false);
+    expect(allowed({})).toBe(false);
+    expect(allowed({ at_ms: 5, extra: true })).toBe(false);
+    expect(allowed({ atMs: 5 })).toBe(false);
+  });
+
+  it('VIS-012 no other method was added: the allowed methods are the 2.0 list plus exactly these two', () => {
+    const v20 = [
+      'program.load',
+      'execution.start',
+      'execution.stop',
+      'execution.pause',
+      'execution.resume',
+      'execution.step',
+      'execution.reset',
+      'status.get',
+      'simulation.input.set',
+      'memory.read',
+      'memory.write',
+      'breakpoint.add',
+      'breakpoint.remove',
+      'breakpoint.clear',
+      'breakpoint.list',
+      'force.set',
+      'force.clear',
+      'force.clear_all',
+      'force.list',
+    ];
+    const none = {};
+    const valid: Record<string, unknown> = {
+      'program.load': { bytecode_hex: '00' },
+      'simulation.input.set': { input_id: 'motor.start', active: true, program_generation: 1 },
+      'memory.read': { address: 0, length: 1 },
+      'memory.write': { address: 0, bytes_hex: '00' },
+      'breakpoint.add': { pc: 1 },
+      'breakpoint.remove': { pc: 1 },
+      'force.set': { address: 0, bytes_hex: '00' },
+      'force.clear': { address: 0 },
+      'simulation.clock.set': { mode: 'free' },
+      'scenario.step': { at_ms: 1 },
+    };
+    const listed = [...v20, 'simulation.clock.set', 'scenario.step'];
+    for (const method of listed) {
+      expect(isAllowedNativeSimulationRequest(nativeRequest(method, valid[method] ?? none))).toBe(true);
+    }
+    // any other name is refused whatever its params look like
+    const shapes = [none, { mode: 'free' }, { at_ms: 1 }, { pc: 1 }, { address: 0, length: 1 }];
+    for (const method of [
+      'simulation.clock.get',
+      'simulation.clock',
+      'scenario.run',
+      'scenario.reset',
+      'scenario',
+      'session.shutdown',
+      'shell.exec',
+      'flash',
+      'hello',
+    ]) {
+      for (const params of shapes) expect(isAllowedNativeSimulationRequest(nativeRequest(method, params))).toBe(false);
+    }
+  });
+
+  it('the content security policy is unchanged', () => {
+    // the strings of 2.0 (baseline c5fb2130): M1 adds no allowance to the renderer
+    const tail = "style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:;";
+    const dev = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline';";
+    const end = "object-src 'none'; base-uri 'self'; frame-src 'none'";
+    expect(createContentSecurityPolicy(false)).toBe(
+      `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; ${tail} connect-src 'self'; ${end}`,
+    );
+    expect(createContentSecurityPolicy(true)).toBe(`${dev} ${tail} connect-src 'self' http://localhost:3000 ws://localhost:3000; ${end}`);
+    expect(createContentSecurityPolicy(true, 43127)).toBe(
+      `${dev} ${tail} connect-src 'self' http://localhost:43127 ws://localhost:43127; ${end}`,
+    );
+  });
+
   it('accepts only a canonical opaque workspace test token envelope', () => {
     const valid = { workspaceId: '0f2ce877-e0d6-43ca-89a7-df17a4927f51' };
     expect(isAllowedWorkspaceTestRequest(valid)).toBe(true);

@@ -560,6 +560,25 @@ export class NativeAdapter implements IDebugAdapter {
     this.events.onStepComplete?.(normalizedSnapshot.focusedVm?.pc ?? 0);
   }
 
+  /** Asks the idle session for the scenario (virtual) clock or the free clock; the answer names the clock and the scan interval. */
+  async setClockMode(mode: 'virtual' | 'free'): Promise<{ scanIntervalMs: number }> {
+    if (mode !== 'virtual' && mode !== 'free') throw new Error('Clock mode must be virtual or free');
+    const generation = this.sessionGeneration;
+    const result = await this.request<Record<string, unknown>>('simulation.clock.set', { mode });
+    const interval = result?.scan_interval_ms;
+    if (
+      result?.clock_mode !== mode ||
+      typeof interval !== 'number' ||
+      !Number.isInteger(interval) ||
+      interval < 0 ||
+      interval > 0xffff_ffff
+    ) {
+      throw new Error('Invalid native clock reply');
+    }
+    this.publishSnapshot(result as unknown as NativeRuntimeSnapshot, generation);
+    return { scanIntervalMs: interval };
+  }
+
   async reset(): Promise<void> {
     const result = await this.request<unknown>('execution.reset');
     if (!isProgramResetResult(result)) {
