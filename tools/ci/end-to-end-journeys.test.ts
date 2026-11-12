@@ -11,7 +11,7 @@ const FLOWS: Array<[string, string]> = [
   ['edit Structured Text', '3 Edit Structured Text, save, reopen'],
   ['build with an error and reach it from Problems', '4 Build with an error, reach it from Problems'],
   ['build successfully', '5 Build successfully'],
-  ['simulate', '6 Simulate: connect, run, watch a value change'],
+  ['simulate', '6 Simulate: one press of Run, watch a value change'],
   ['watch a value', '8c The Watch table completes, sorts, and writes a prepared value'],
   ['hit a breakpoint', '7 Breakpoint stops execution'],
   ['force and release an input', '8 Force an input and release it'],

@@ -1,11 +1,12 @@
 /**
- * The mode toggle and the connect, deploy, run, pause, step, stop and reset controls of the toolbar (IDE-014: split out of Toolbar.tsx).
+ * The connect, deploy, run, pause, step, stop and reset controls of the toolbar (IDE-014: split out of Toolbar.tsx). The target is
+ * the selector's (FLW-007). Run, Step, Stop and Reset are always there: Run prepares what is missing (FLW-001), and on a board it
+ * offers the missing step instead (FLW-003). Connect and Deploy are shown for a board only (FLW-007, FLW-008).
  */
 
-import { Play, Square, Upload, Usb, Loader2, Pause, SkipForward, Cpu, RotateCcw, Radio, Unplug, Zap } from 'lucide-react';
+import { Play, Square, Upload, Usb, Loader2, Pause, SkipForward, RotateCcw, Unplug } from 'lucide-react';
 import { useT } from '../i18n';
 import { withShortcut } from '../commands/shortcutLabels';
-import { canRunCurrentProgram, type ProgramLoadState } from './debugSessionState';
 import { EXECUTION_MODE, type ExecutionMode } from './runtimeArtifactSelection';
 import { Button } from '../ui';
 
@@ -16,15 +17,11 @@ export function RunControls({
   isUploading,
   controlsBusy,
   hasCurrentCompileResult,
-  programLoadState,
   isRunning,
   isPaused,
-  isIdle,
-  mpeekEnabled,
-  toggleMpeek,
+  isStopped,
   connectionButtonRef,
   executionButtonRef,
-  onExecutionModeChange,
   onConnect,
   onUpload,
   onStart,
@@ -40,15 +37,12 @@ export function RunControls({
   isUploading: boolean;
   controlsBusy: boolean;
   hasCurrentCompileResult: boolean;
-  programLoadState: ProgramLoadState;
   isRunning: boolean;
   isPaused: boolean;
-  isIdle: boolean;
-  mpeekEnabled: boolean;
-  toggleMpeek: () => void;
+  /** Not running and not paused: idle, or a simulation whose session has not started. */
+  isStopped: boolean;
   connectionButtonRef: React.RefObject<HTMLButtonElement | null>;
   executionButtonRef: React.RefObject<HTMLButtonElement | null>;
-  onExecutionModeChange: (mode: ExecutionMode) => Promise<void>;
   onConnect: () => Promise<void>;
   onUpload: () => Promise<void>;
   onStart: (keyboardInitiated: boolean) => Promise<void>;
@@ -61,87 +55,30 @@ export function RunControls({
   const { t } = useT();
   return (
     <>
-      {/* Mode Toggle */}
-      <div
-        role="group"
-        aria-label={t('toolbar.mode.label')}
-        className="flex shrink-0 items-center bg-[var(--color-surface-700)] rounded overflow-hidden"
-      >
-        <Button
-          variant="bare"
-          type="button"
-          onClick={() => {
-            void onExecutionModeChange(EXECUTION_MODE.SIMULATE);
-          }}
-          disabled={controlsBusy}
-          className={`focus-ring flex items-center gap-1 whitespace-nowrap px-2.5 py-1.5 text-xs font-medium transition-colors ${
-            executionMode === EXECUTION_MODE.SIMULATE
-              ? 'bg-[var(--color-accent-blue)] text-[var(--color-on-accent)]'
-              : 'text-[var(--color-surface-300)] hover:bg-[var(--menu-item-bg-active)]'
-          } disabled:opacity-50`}
-          aria-label={t('toolbar.simulation.label')}
-          aria-pressed={executionMode === EXECUTION_MODE.SIMULATE}
-          tooltip={t('toolbar.simulation.title')}
-        >
-          <Cpu size={14} />
-          <span className="hidden sm:inline">{t('toolbar.simulation.text')}</span>
-        </Button>
-        <Button
-          variant="bare"
-          type="button"
-          onClick={() => {
-            void onExecutionModeChange(EXECUTION_MODE.HARDWARE);
-          }}
-          disabled={controlsBusy}
-          className={`focus-ring flex items-center gap-1 whitespace-nowrap px-2.5 py-1.5 text-xs font-medium transition-colors ${
-            executionMode === EXECUTION_MODE.HARDWARE
-              ? 'bg-[var(--color-accent-blue)] text-[var(--color-on-accent)]'
-              : 'text-[var(--color-surface-300)] hover:bg-[var(--menu-item-bg-active)]'
-          } disabled:opacity-50`}
-          aria-label={t('toolbar.hardware.label')}
-          aria-pressed={executionMode === EXECUTION_MODE.HARDWARE}
-          tooltip={t('toolbar.hardware.title')}
-        >
-          <Radio size={14} />
-          <span className="hidden sm:inline">{t('toolbar.hardware.text')}</span>
-        </Button>
-      </div>
-
-      {/* Separator */}
-      <div className="w-px h-6 bg-[var(--color-surface-600)]" />
-
       {/* Connection / Execution Controls */}
       <div className="flex items-center gap-1">
-        {/* Connect/Disconnect */}
-        <Button
-          variant="bare"
-          ref={connectionButtonRef}
-          type="button"
-          onClick={() => {
-            void onConnect();
-          }}
-          disabled={controlsBusy}
-          className={`focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ${
-            isConnected
-              ? 'bg-[var(--color-surface-700)] text-[var(--color-surface-200)] hover:brightness-110 hover:text-[var(--color-on-accent)]'
-              : executionMode === 'simulate'
-                ? 'bg-[var(--button-primary-bg)] hover:bg-[var(--button-primary-bg-hover)] text-[var(--button-primary-fg)]'
+        {/* Connect/Disconnect: a board only */}
+        {executionMode === EXECUTION_MODE.HARDWARE && (
+          <Button
+            variant="bare"
+            ref={connectionButtonRef}
+            type="button"
+            onClick={() => {
+              void onConnect();
+            }}
+            disabled={controlsBusy}
+            className={`focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ${
+              isConnected
+                ? 'bg-[var(--color-surface-700)] text-[var(--color-surface-200)] hover:brightness-110 hover:text-[var(--color-on-accent)]'
                 : 'bg-[var(--button-primary-bg)] hover:bg-[var(--button-primary-bg-hover)] text-[var(--button-primary-fg)]'
-          } disabled:opacity-50`}
-          aria-label={isConnected ? t('toolbar.disconnect') : t('toolbar.connect')}
-          tooltip={isConnected ? t('toolbar.disconnect') : t('toolbar.connect')}
-        >
-          {isConnecting ? (
-            <Loader2 size={14} className="animate-spin" />
-          ) : isConnected ? (
-            <Unplug size={14} />
-          ) : executionMode === 'simulate' ? (
-            <Cpu size={14} />
-          ) : (
-            <Usb size={14} />
-          )}
-          <span className="hidden md:inline">{isConnected ? t('toolbar.disconnect') : t('toolbar.connect')}</span>
-        </Button>
+            } disabled:opacity-50`}
+            aria-label={isConnected ? t('toolbar.disconnect') : t('toolbar.connect')}
+            tooltip={isConnected ? t('toolbar.disconnect') : t('toolbar.connect')}
+          >
+            {isConnecting ? <Loader2 size={14} className="animate-spin" /> : isConnected ? <Unplug size={14} /> : <Usb size={14} />}
+            <span className="hidden md:inline">{isConnected ? t('toolbar.disconnect') : t('toolbar.connect')}</span>
+          </Button>
+        )}
 
         {/* Upload - only for hardware mode when connected */}
         {executionMode === 'hardware' && isConnected && (
@@ -165,134 +102,110 @@ export function RunControls({
           </Button>
         )}
 
-        {/* Live Values (mpeek) toggle */}
-        {isConnected && (
-          <Button
-            variant="bare"
-            type="button"
-            onClick={toggleMpeek}
-            disabled={controlsBusy}
-            className={
-              'focus-ring flex shrink-0 items-center gap-1 whitespace-nowrap rounded px-2 py-1.5 text-xs font-medium transition-colors ' +
-              (mpeekEnabled
-                ? 'bg-[var(--color-accent-yellow)] hover:brightness-110 text-[var(--color-on-accent)]'
-                : 'bg-[var(--color-surface-700)] hover:bg-[var(--menu-item-bg-active)] text-[var(--color-surface-400)]')
-            }
-            aria-label={mpeekEnabled ? t('toolbar.live.disable') : t('toolbar.live.enable')}
-            tooltip={mpeekEnabled ? t('toolbar.live.enabledTitle') : t('toolbar.live.disabledTitle')}
-          >
-            <Zap size={13} />
-            <span className="hidden xl:inline">{t('toolbar.live.text')}</span>
-          </Button>
-        )}
+        {/* Execution controls: always shown, so that Run is one press from any state (FLW-001) */}
+        <>
+          {/* Run/Resume or Pause based on state */}
+          {isRunning ? (
+            <Button
+              variant="bare"
+              type="button"
+              ref={executionButtonRef}
+              onClick={(event) => {
+                void onPause(event.detail === 0);
+              }}
+              disabled={controlsBusy}
+              className={
+                'focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-accent-yellow)] ' +
+                'hover:brightness-110 text-[var(--color-on-accent)] text-xs font-medium transition-colors'
+              }
+              aria-label={withShortcut(t('toolbar.pause.label'), 'debug.pause')}
+              tooltip={withShortcut(t('toolbar.pause.label'), 'debug.pause')}
+            >
+              <Pause size={14} />
+              <span className="hidden sm:inline">{t('toolbar.pause.text')}</span>
+            </Button>
+          ) : isPaused ? (
+            <Button
+              variant="bare"
+              type="button"
+              ref={executionButtonRef}
+              onClick={(event) => {
+                void onResume(event.detail === 0);
+              }}
+              disabled={controlsBusy}
+              className={
+                'focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-accent-green)] ' +
+                'hover:brightness-110 text-[var(--color-on-accent)] text-xs font-medium transition-colors'
+              }
+              aria-label={withShortcut(t('toolbar.resume.label'), 'debug.run')}
+              tooltip={withShortcut(t('toolbar.resume.label'), 'debug.run')}
+            >
+              <Play size={14} />
+              <span className="hidden sm:inline">{t('toolbar.resume.text')}</span>
+            </Button>
+          ) : (
+            <Button
+              variant="bare"
+              type="button"
+              ref={executionButtonRef}
+              onClick={(event) => {
+                void onStart(event.detail === 0);
+              }}
+              disabled={controlsBusy}
+              className={
+                'focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-accent-green)] ' +
+                'hover:brightness-110 text-[var(--color-on-accent)] text-xs font-medium transition-colors disabled:opacity-40'
+              }
+              aria-label={withShortcut(t('toolbar.run.label'), 'debug.run')}
+              tooltip={withShortcut(t('toolbar.run.label'), 'debug.run')}
+            >
+              <Play size={14} />
+              <span className="hidden sm:inline">{t('toolbar.run.text')}</span>
+            </Button>
+          )}
 
-        {/* Separator when connected */}
-        {isConnected && <div className="w-px h-5 bg-[var(--color-surface-600)] mx-0.5" />}
+          {/* Step - when paused or stopped; on a board only with a session */}
+          {(isPaused || isStopped) && (executionMode === EXECUTION_MODE.SIMULATE || isConnected) && (
+            <Button
+              variant="bare"
+              type="button"
+              onClick={() => {
+                void onStep();
+              }}
+              disabled={controlsBusy}
+              className={
+                'focus-ring flex items-center gap-1.5 px-2 py-1.5 rounded bg-[var(--color-surface-700)] ' +
+                'hover:bg-[var(--menu-item-bg-active)] text-[var(--color-surface-200)] text-xs font-medium transition-colors'
+              }
+              aria-label={withShortcut(t('toolbar.step.label'), 'debug.step')}
+              tooltip={withShortcut(t('toolbar.step.label'), 'debug.step')}
+            >
+              <SkipForward size={14} />
+            </Button>
+          )}
 
-        {/* Execution Controls - only when connected */}
-        {isConnected && (
-          <>
-            {/* Run/Resume or Pause based on state */}
-            {isRunning ? (
-              <Button
-                variant="bare"
-                type="button"
-                ref={executionButtonRef}
-                onClick={(event) => {
-                  void onPause(event.detail === 0);
-                }}
-                disabled={controlsBusy}
-                className={
-                  'focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-accent-yellow)] ' +
-                  'hover:brightness-110 text-[var(--color-on-accent)] text-xs font-medium transition-colors'
-                }
-                aria-label={withShortcut(t('toolbar.pause.label'), 'debug.pause')}
-                tooltip={withShortcut(t('toolbar.pause.label'), 'debug.pause')}
-              >
-                <Pause size={14} />
-                <span className="hidden sm:inline">{t('toolbar.pause.text')}</span>
-              </Button>
-            ) : isPaused ? (
-              <Button
-                variant="bare"
-                type="button"
-                ref={executionButtonRef}
-                onClick={(event) => {
-                  void onResume(event.detail === 0);
-                }}
-                disabled={!canRunCurrentProgram(executionMode, hasCurrentCompileResult, programLoadState) || controlsBusy}
-                className={
-                  'focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-accent-green)] ' +
-                  'hover:brightness-110 text-[var(--color-on-accent)] text-xs font-medium transition-colors'
-                }
-                aria-label={withShortcut(t('toolbar.resume.label'), 'debug.run')}
-                tooltip={withShortcut(t('toolbar.resume.label'), 'debug.run')}
-              >
-                <Play size={14} />
-                <span className="hidden sm:inline">{t('toolbar.resume.text')}</span>
-              </Button>
-            ) : (
-              <Button
-                variant="bare"
-                type="button"
-                ref={executionButtonRef}
-                onClick={(event) => {
-                  void onStart(event.detail === 0);
-                }}
-                disabled={!canRunCurrentProgram(executionMode, hasCurrentCompileResult, programLoadState) || controlsBusy}
-                className={
-                  'focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-accent-green)] ' +
-                  'hover:brightness-110 text-[var(--color-on-accent)] text-xs font-medium transition-colors disabled:opacity-40'
-                }
-                aria-label={withShortcut(t('toolbar.run.label'), 'debug.run')}
-                tooltip={withShortcut(t('toolbar.run.label'), 'debug.run')}
-              >
-                <Play size={14} />
-                <span className="hidden sm:inline">{t('toolbar.run.text')}</span>
-              </Button>
-            )}
+          {/* Stop - when running or paused */}
+          {(isRunning || isPaused) && (
+            <Button
+              variant="bare"
+              type="button"
+              onClick={() => {
+                void onStop();
+              }}
+              disabled={controlsBusy}
+              className={
+                'focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-accent-red)] hover:brightness-110 ' +
+                'text-[var(--color-on-accent)] text-xs font-medium transition-colors'
+              }
+              aria-label={withShortcut(t('toolbar.stop.label'), 'debug.stop')}
+              tooltip={withShortcut(t('toolbar.stop.label'), 'debug.stop')}
+            >
+              <Square size={14} />
+            </Button>
+          )}
 
-            {/* Step - only when paused or idle */}
-            {(isPaused || isIdle) && (
-              <Button
-                variant="bare"
-                type="button"
-                onClick={() => {
-                  void onStep();
-                }}
-                disabled={!canRunCurrentProgram(executionMode, hasCurrentCompileResult, programLoadState) || controlsBusy}
-                className={
-                  'focus-ring flex items-center gap-1.5 px-2 py-1.5 rounded bg-[var(--color-surface-700)] ' +
-                  'hover:bg-[var(--menu-item-bg-active)] text-[var(--color-surface-200)] text-xs font-medium transition-colors'
-                }
-                aria-label={withShortcut(t('toolbar.step.label'), 'debug.step')}
-                tooltip={withShortcut(t('toolbar.step.label'), 'debug.step')}
-              >
-                <SkipForward size={14} />
-              </Button>
-            )}
-
-            {/* Stop - when running or paused */}
-            {(isRunning || isPaused) && (
-              <Button
-                variant="bare"
-                type="button"
-                onClick={() => {
-                  void onStop();
-                }}
-                disabled={controlsBusy}
-                className={
-                  'focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-accent-red)] hover:brightness-110 ' +
-                  'text-[var(--color-on-accent)] text-xs font-medium transition-colors'
-                }
-                aria-label={withShortcut(t('toolbar.stop.label'), 'debug.stop')}
-                tooltip={withShortcut(t('toolbar.stop.label'), 'debug.stop')}
-              >
-                <Square size={14} />
-              </Button>
-            )}
-
-            {/* Reset */}
+          {/* Reset - with a session */}
+          {isConnected && (
             <Button
               variant="bare"
               type="button"
@@ -309,8 +222,8 @@ export function RunControls({
             >
               <RotateCcw size={14} />
             </Button>
-          </>
-        )}
+          )}
+        </>
       </div>
     </>
   );

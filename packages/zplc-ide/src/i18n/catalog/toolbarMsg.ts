@@ -57,7 +57,6 @@ export const toolbarMsgEn = {
   'toolbarMsg.connectionCancelled': 'Connection cancelled',
   'toolbarMsg.modeChangeFailed': 'Mode change failed: {value}',
   'toolbarMsg.connectFirst': 'Connect first.',
-  'toolbarMsg.deployTheCurrentBuild': 'Deploy the current build before running.',
   'toolbarMsg.noCompiledBytecodeCompile': 'No compiled bytecode. Compile first.',
   'toolbarMsg.simulatorReceivedAnEarlier': 'Simulator received an earlier build. Build the current source before running.',
   'toolbarMsg.failedToLoad': 'Failed to load: {value}',
@@ -133,7 +132,6 @@ export const toolbarMsgEs: Record<keyof typeof toolbarMsgEn, string> = {
   'toolbarMsg.connectionCancelled': 'Conexión cancelada',
   'toolbarMsg.modeChangeFailed': 'No se pudo cambiar el modo: {value}',
   'toolbarMsg.connectFirst': 'Conéctese primero.',
-  'toolbarMsg.deployTheCurrentBuild': 'Despliegue la compilación actual antes de ejecutar.',
   'toolbarMsg.noCompiledBytecodeCompile': 'No hay bytecode compilado. Compile primero.',
   'toolbarMsg.simulatorReceivedAnEarlier':
     'El simulador recibió una compilación anterior. Compile el código fuente actual antes de ejecutar.',

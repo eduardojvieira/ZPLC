@@ -81,11 +81,7 @@ export async function runSequence(
     kind: 'run',
     status: 'success',
     title:
-      last === 'holdBeforeFirstScan'
-        ? t('studio.flow.done.hold')
-        : plantBound
-          ? t('studio.flow.done.runPlant')
-          : t('studio.flow.done.run'),
+      last === 'holdBeforeFirstScan' ? t('studio.flow.done.hold') : plantBound ? t('studio.flow.done.runPlant') : t('studio.flow.done.run'),
     details: 'output',
   });
   return 'done';

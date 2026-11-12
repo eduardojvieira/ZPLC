@@ -52,7 +52,14 @@ describe('runSequence (FLW-001, FLW-006)', () => {
     const h = harness();
     expect(await runSequence(plan(), h.actions, h.notice)).toBe('done');
     expect(h.calls).toEqual(['save', 'build', 'startSimulator', 'load', 'run']);
-    expect(h.titles).toEqual(['Saving the project', 'Saving the project', 'Building the project', 'Starting the simulator', 'Loading the program', 'Running']);
+    expect(h.titles).toEqual([
+      'Saving the project',
+      'Saving the project',
+      'Building the project',
+      'Starting the simulator',
+      'Loading the program',
+      'Running',
+    ]);
     expect(h.finished).toHaveLength(1);
     expect(h.finished[0]).toMatchObject({ kind: 'run', status: 'success' });
   });
