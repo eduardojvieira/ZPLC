@@ -21,7 +21,13 @@ const conveyor: PartDefinition = {
   snapPoints: () => [{ name: 'end', position: [1, 0, 0], normalYDeg: 0, accepts: ['conveyor'] }],
   doc: { en: '', es: '' },
 };
-const lamp: PartDefinition = { ...conveyor, id: 'lamp', config: {}, signals: (p) => [{ name: `${p.name}.on`, direction: 'command', type: 'BOOL' }], snapPoints: () => [] };
+const lamp: PartDefinition = {
+  ...conveyor,
+  id: 'lamp',
+  config: {},
+  signals: (p) => [{ name: `${p.name}.on`, direction: 'command', type: 'BOOL' }],
+  snapPoints: () => [],
+};
 const cat = createCatalogue([conveyor, lamp]);
 const fresh = () => createSceneEditor(cat);
 

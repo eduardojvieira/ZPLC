@@ -61,7 +61,10 @@ export function freshIdentity(scene: PlantSceneFile, def: Pick<PartDefinition, '
 }
 
 export const withPart = (scene: PlantSceneFile, part: ScenePart): PlantSceneFile => ({ ...scene, parts: [...scene.parts, part] });
-export const withoutPart = (scene: PlantSceneFile, id: string): PlantSceneFile => ({ ...scene, parts: scene.parts.filter((p) => p.id !== id) });
+export const withoutPart = (scene: PlantSceneFile, id: string): PlantSceneFile => ({
+  ...scene,
+  parts: scene.parts.filter((p) => p.id !== id),
+});
 export const updatePart = (scene: PlantSceneFile, id: string, patch: Partial<ScenePart>): PlantSceneFile => ({
   ...scene,
   parts: scene.parts.map((p) => (p.id === id ? { ...p, ...patch } : p)),

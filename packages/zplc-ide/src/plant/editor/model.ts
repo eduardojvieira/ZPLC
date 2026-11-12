@@ -124,7 +124,8 @@ export function createSceneEditor(catalogue: Catalogue, initial: PlantSceneFile 
       });
       const here = validateAt(next, catalogue).filter((q) => q.partId === id);
       // A duplicate name stays visible as a problem (SCN-015); anything else that is wrong is not applied (SCN-009).
-      const duplicateName = patch.name !== undefined && NAME.test(patch.name) && scene.parts.some((q) => q.id !== id && q.name === patch.name);
+      const duplicateName =
+        patch.name !== undefined && NAME.test(patch.name) && scene.parts.some((q) => q.id !== id && q.name === patch.name);
       const refused = here.filter((q) => !(duplicateName && q.path.endsWith('.name')));
       if (refused.length > 0) return refused;
       commit(next);
