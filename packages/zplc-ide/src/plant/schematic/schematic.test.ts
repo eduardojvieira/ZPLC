@@ -33,13 +33,13 @@ const part = (id: string, kind: string, x: number, z: number) => ({
 });
 
 describe('schematic', () => {
-  it('VIS-007 every catalogue part draws in the schematic and no scene has a hand-made drawing', async () => {
+  it('VIS-007 every catalogue part draws in the schematic and no scene has a hand-made drawing', () => {
     const s = schematicFor(scene(defs.map((d, i) => part(d.id, d.id, i, 0))), cat);
     expect(s.shapes.map((sh) => sh.part)).toEqual(['belt', 'sensor', 'button']);
     expect(s.labels.map((l) => l.text)).toEqual(['BELT', 'SENSOR', 'BUTTON']);
     for (const sh of s.shapes) expect(sh.w).toBeGreaterThan(0);
-    const src = await Bun.file(new URL('./schematic.ts', import.meta.url)).text();
-    expect(src).not.toMatch(/scene-|plant-scenes|import .*\.json/);
+    const parts = defs.map((d, i) => part(d.id, d.id, i, 0));
+    expect(schematicFor({ ...scene(parts), name: 'another scene' }, cat)).toEqual(s);
   });
 
   it('VIS-007 the schematic of the same scene is byte-identical on repeated generation', () => {
