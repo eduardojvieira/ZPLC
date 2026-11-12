@@ -36,6 +36,7 @@ import { flushSession, resetViewStates } from './sessionPersistence';
 import { DEFAULT_DEBUG_POLLING_INTERVAL_MS } from './debugDefaults';
 import type { Theme, IDEState } from './ideStoreTypes';
 import { firstTreeFile } from './fileTreeLookup';
+import { entryTabs } from '../project/entryProgram';
 import { createFileActions } from './fileActions';
 import { t } from '../i18n';
 export type { Theme, CompilerNavigationTarget, CloseProjectOptions, DebugMode, LiveValue, DebugState, IDEState } from './ideStoreTypes';
@@ -199,6 +200,12 @@ async function openExistingProject(
     if (!isCurrent()) return false;
     const restored = await restoreSession(dirHandle, fileTree);
     if (!isCurrent()) return false;
+    // A project with no saved session opens its entry program (SHL-014); a restored session is never replaced.
+    const entry = await entryTabs(restored !== null, config, fileTree, async (path) => {
+      const node = findFileInTree(fileTree, path);
+      return node ? loadFileFromTree(node) : null;
+    });
+    if (!isCurrent()) return false;
     if (blockUnsafeOpen()) return false;
 
     resetViewStates(restored?.viewStates);
@@ -212,9 +219,9 @@ async function openExistingProject(
           : null,
       directoryHandle: dirHandle,
       fileTree,
-      loadedFiles: restored?.files ?? new Map(),
-      activeFileId: restored?.activeFileId ?? null,
-      openTabs: restored?.openTabs ?? [],
+      loadedFiles: restored?.files ?? entry?.files ?? new Map(),
+      activeFileId: restored?.activeFileId ?? entry?.activeFileId ?? null,
+      openTabs: restored?.openTabs ?? entry?.openTabs ?? [],
       sessionLayout: restored?.layout ?? null,
       ...(restored?.consoleCollapsed != null ? { isConsoleCollapsed: restored.consoleCollapsed } : {}),
       projectSession: expectedProjectSession + 1,
