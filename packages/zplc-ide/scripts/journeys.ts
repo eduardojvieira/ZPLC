@@ -33,6 +33,7 @@ import { button, css, launchPackagedApp, menuItem, notPossible, tab, type App, t
 import { domAuditExpression, type DomAuditResult } from './domAudit';
 import { attachEmulatedDevice } from './emulatedDevice';
 import { findTextOutOfBox } from './textFit';
+import { JOURNEYS_013 } from './journeys013';
 
 export interface JourneyContext {
   root: string;
@@ -8328,6 +8329,7 @@ export const JOURNEYS: Journey[] = [
       assert(report.length === 0, `Text runs out of its box in ${report.length} places:\n${report.slice(0, 60).join('\n')}`);
     },
   },
+  ...JOURNEYS_013,
 ];
 
 /** Walks a native select to the option with this text with the arrow keys, as a keyboard user would. */

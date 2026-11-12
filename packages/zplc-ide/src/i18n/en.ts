@@ -11,6 +11,13 @@ import { projectEn } from './catalog/project';
 import { labEn } from './catalog/lab';
 import { plantEditorEn } from './catalog/plantEditor';
 import { plantViewEn } from './catalog/plantView';
+import { studioCommandsEn } from './catalog/studioCommands';
+import { studioSurfacesEn } from './catalog/studioSurfaces';
+import { studioDocumentsEn } from './catalog/studioDocuments';
+import { studioTransportEn } from './catalog/studioTransport';
+import { studioFlowEn } from './catalog/studioFlow';
+import { studioNoticesEn } from './catalog/studioNotices';
+import { studioStatusEn } from './catalog/studioStatus';
 import { editorGesturesEn } from './catalog/editorGestures';
 import { ldEn } from './catalog/ld';
 import { importArchiveEn } from './catalog/importArchive';
@@ -630,6 +637,13 @@ export const en = {
   ...projectEn,
   ...labEn,
   ...plantViewEn,
+  ...studioCommandsEn,
+  ...studioSurfacesEn,
+  ...studioDocumentsEn,
+  ...studioTransportEn,
+  ...studioFlowEn,
+  ...studioNoticesEn,
+  ...studioStatusEn,
   ...plantEditorEn,
   ...editorGesturesEn,
   ...ldEn,

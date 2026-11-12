@@ -145,6 +145,26 @@ export const COMMANDS = [
   { id: 'debug.reset', titleKey: 'command.debug.reset', category: 'debug', shortcut: 'F8', physical: true, enabled: online },
   { id: 'debug.liveValues', titleKey: 'command.debug.liveValues', category: 'debug', enabled: online },
 
+  // Lane W of the M1 plan (spec 013): declared here by task W0 with no handler; the task named in plan-m1.md binds each one.
+  { id: 'file.saveAll', titleKey: 'command.file.saveAll', category: 'file', enabled: open },
+  { id: 'view.splitRight', titleKey: 'command.view.splitRight', category: 'view', enabled: open },
+  { id: 'view.moveToOtherGroup', titleKey: 'command.view.moveToOtherGroup', category: 'view', enabled: open },
+  { id: 'view.focusOtherGroup', titleKey: 'command.view.focusOtherGroup', category: 'view', enabled: open },
+  { id: 'view.maximiseDocument', titleKey: 'command.view.maximiseDocument', category: 'view', enabled: open },
+  { id: 'view.plant', titleKey: 'command.view.plant', category: 'view', enabled: open },
+  { id: 'view.interlocks', titleKey: 'command.view.interlocks', category: 'view', enabled: open },
+  { id: 'view.changes', titleKey: 'command.view.changes', category: 'view', enabled: open },
+  { id: 'view.agent', titleKey: 'command.view.agent', category: 'view', enabled: open },
+  { id: 'view.terminal', titleKey: 'command.view.terminal', category: 'view', enabled: open },
+  { id: 'view.statusDetails', titleKey: 'command.view.statusDetails', category: 'view', enabled: open },
+  { id: 'project.tasks', titleKey: 'command.project.tasks', category: 'project', enabled: open },
+  { id: 'project.io', titleKey: 'command.project.io', category: 'project', enabled: open },
+  { id: 'project.network', titleKey: 'command.project.network', category: 'project', enabled: open },
+  { id: 'project.communication', titleKey: 'command.project.communication', category: 'project', enabled: open },
+  { id: 'project.target', titleKey: 'command.project.target', category: 'project', enabled: open },
+  { id: 'online.restartSimulator', titleKey: 'command.online.restartSimulator', category: 'online', enabled: idle },
+  { id: 'debug.rebuildAndRestart', titleKey: 'command.debug.rebuildAndRestart', category: 'debug', enabled: idle },
+
   { id: 'help.shortcuts', titleKey: 'command.help.shortcuts', category: 'help', shortcut: 'Mod+K Mod+S' },
   // The Learn home opens with no project open: the Help menu is where a person who has not opened one looks (LRN-001).
   { id: 'help.learn', titleKey: 'command.help.learn', category: 'help' },

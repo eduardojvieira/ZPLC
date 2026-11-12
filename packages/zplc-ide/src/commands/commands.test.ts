@@ -3,10 +3,19 @@ import type { MenuItemConstructorOptions } from 'electron';
 import { buildMenuTemplate } from '../../electron/appMenu';
 import { en } from '../i18n/en';
 import { es } from '../i18n/es';
-import { bindCommands, getCommandState, publishCommandState, resetCommandsForTest, runCommand } from './bus';
+import {
+  bindCommands,
+  getCommandState,
+  isCommandBound,
+  listedCommands,
+  publishCommandState,
+  resetCommandsForTest,
+  runCommand,
+} from './bus';
 import { menuCategories, menuCommands, menuTranslator } from './menuEntry';
 import { filterEntries, fuzzyScore, nextIndex } from './palette';
 import { COMMAND_CATEGORIES, COMMAND_LIST, INITIAL_COMMAND_STATE, commandById, isCommandEnabled, isCommandId } from './registry';
+import { studioCommandsEn, studioCommandsEs } from '../i18n/catalog/studioCommands';
 import {
   CHORD_TIMEOUT_MS,
   chordMatches,
@@ -299,5 +308,76 @@ describe('running a command (UX-015)', () => {
     publishCommandState({ projectOpen: true });
     expect(getCommandState()).toBe(published);
     expect(published.projectOpen).toBe(true);
+  });
+});
+
+/** The ids of the contract of lane W (plan-m1.md, "Command ids"), each with its category. */
+const LANE_W_COMMANDS = {
+  'file.saveAll': 'file',
+  'view.splitRight': 'view',
+  'view.moveToOtherGroup': 'view',
+  'view.focusOtherGroup': 'view',
+  'view.maximiseDocument': 'view',
+  'view.plant': 'view',
+  'view.interlocks': 'view',
+  'view.changes': 'view',
+  'view.agent': 'view',
+  'view.terminal': 'view',
+  'project.tasks': 'project',
+  'project.io': 'project',
+  'project.network': 'project',
+  'project.communication': 'project',
+  'project.target': 'project',
+  'online.restartSimulator': 'online',
+  'debug.rebuildAndRestart': 'debug',
+  'view.statusDetails': 'view',
+} as const;
+
+describe('lane W command contract (FND-002)', () => {
+  it('FND-002 every id of the lane W contract is registered with a title in English and Spanish', () => {
+    for (const [id, category] of Object.entries(LANE_W_COMMANDS)) {
+      expect([id, isCommandId(id)]).toEqual([id, true]);
+      const command = commandById(id as never);
+      expect([id, command.category]).toEqual([id, category]);
+      expect(typeof (en as Record<string, string>)[command.titleKey]).toBe('string');
+      expect(typeof (es as Record<string, string>)[command.titleKey]).toBe('string');
+      expect((en as Record<string, string>)[command.titleKey]).not.toBe((es as Record<string, string>)[command.titleKey]);
+    }
+  });
+
+  it('FND-002 gives the new titles to the studioCommands catalog, with the same keys in both languages', () => {
+    expect(Object.keys(studioCommandsEs).sort()).toEqual(Object.keys(studioCommandsEn).sort());
+    expect(Object.keys(studioCommandsEn).length).toBe(Object.keys(LANE_W_COMMANDS).length);
+    for (const key of Object.keys(studioCommandsEn)) {
+      const placeholders = (text: string) => (text.match(/\{\w+\}/g) ?? []).sort();
+      expect(placeholders((studioCommandsEs as Record<string, string>)[key]!)).toEqual(
+        placeholders((studioCommandsEn as Record<string, string>)[key]!),
+      );
+    }
+  });
+
+  it('FND-002 the palette does not list a command that has no handler', () => {
+    publishCommandState({ projectOpen: true });
+    const titles = () => listedCommands(COMMAND_LIST, isCommandBound).map((command) => command.id);
+    expect(titles()).not.toContain('view.plant');
+    const unbind = bindCommands({ 'view.plant': () => undefined });
+    expect(titles()).toContain('view.plant');
+    unbind();
+    expect(titles()).not.toContain('view.plant');
+    expect(isCommandBound('view.plant')).toBe(false);
+  });
+
+  it('a registered command with no handler is refused as unavailable', () => {
+    for (const id of Object.keys(LANE_W_COMMANDS)) expect([id, runCommand(id)]).toEqual([id, 'unavailable']);
+    expect(runCommand('view.plant', { respectEnabled: true })).toBe('unavailable');
+  });
+
+  it('FND-002 keeps the 38 commands of 2.0, in their order, ahead of the new ones', () => {
+    const ids = COMMAND_LIST.map((command) => command.id);
+    const old = ids.filter((id) => !(id in LANE_W_COMMANDS));
+    expect(old.length).toBe(38);
+    expect(old.slice(0, 5)).toEqual(['file.save', 'file.open', 'file.new', 'file.export', 'view.commandPalette']);
+    expect(old.at(-1)).toBe('help.learn');
+    expect(runCommand('file.save')).toBe('unavailable');
   });
 });
