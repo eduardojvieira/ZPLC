@@ -1,0 +1,25 @@
+{
+  "schema": "zplc.plant-gate/1",
+  "check": 4,
+  "side": "graded",
+  "commit": "98955984",
+  "commitNote": "code commit; this file is added by the commit after it",
+  "host": { "platform": "linux", "arch": "x64", "cpu": "AMD Ryzen 5 8600G w/ Radeon 760M Graphics", "gpu": "none used (headless)" },
+  "gradedHash": "d49abaf2985f0f641662ee9ef235094e4e98072319d977fcf58f24d99de462cb",
+  "timerScans": { "eyeOn": 505, "beltOff": 555, "beltOffMinusEyeOn": 50, "expected": [50, 51] },
+  "paceInvariance": "a seeded 0 to 5 ms pause after every step gives the same hash",
+  "pauseAndSingleStep": "cycles 100 and plant 1000 ms while paused; 101 and 1010 ms after one step",
+  "runtimeFailure": "a rejected 51st scenarioStep rejects runLockStep and leaves the plant at 500 ms",
+  "breakpoint": {
+    "pc": 132,
+    "statement": "Belt := Run (line 12)",
+    "stepReturnedNormally": true,
+    "heldSteps": 1,
+    "plantTimeAtHoldMs": 1000,
+    "afterRemoval": "100 further steps ran; 200 completed scans, plant at 2000 ms (completedScans x 10)",
+    "timerSkewScans": -1,
+    "timerSkewNote": "hold at step 520 (between eyeOn 505 and beltOff 555): beltOff - eyeOn was 49 instead of 50. The runtime clock moved during the held step, so the 500 ms timer fired one scan early relative to completed scans. The plant stays frozen (clause holds) but a held scan is not clock-neutral."
+  },
+  "verdict": "pass",
+  "verdictNote": "the live side (Task 7) still has to match gradedHash; the breakpoint clause passes on the baseline runtime, with a one-scan timer skew reported for M1"
+}
