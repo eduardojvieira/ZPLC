@@ -14,27 +14,37 @@ describe('text equivalent of a plant state (LRN-037)', () => {
     expect(facts('motor-v1', () => {})).toEqual({ key: 'plant.motor.stopped', params: { speed: 0 } });
     expect(
       facts('motor-v1', (r) => {
-        for (let i = 0; i < 3; i += 1) r.tick({ command: true });
+        r.tick({ command: true });
       }),
-    ).toEqual({ key: 'plant.motor.spinning', params: { speed: 300 } });
+    ).toEqual({ key: 'plant.motor.spinning', params: { speed: 500 } });
     expect(
       facts('motor-v1', (r) => {
-        for (let i = 0; i < 10; i += 1) r.tick({ command: true });
+        for (let i = 0; i < 2; i += 1) r.tick({ command: true });
       }).key,
     ).toBe('plant.motor.atSpeed');
     expect(facts('motor-v1', (r) => r.act('stall')).key).toBe('plant.motor.stalled');
     expect(facts('tank-v1', (r) => r.act('pumpFault')).key).toBe('plant.tank.pumpFault');
     expect(
       facts('tank-v1', (r) => {
-        for (let i = 0; i < 70; i += 1) r.tick({ pump: false });
+        r.tick({ pump: false });
       }).key,
     ).toBe('plant.tank.low');
+    expect(
+      facts('tank-v1', (r) => {
+        for (let i = 0; i < 6; i += 1) r.tick({ pump: true });
+      }).key,
+    ).toBe('plant.tank.high');
     expect(facts('tank-v1', (r) => r.tick({ pump: true })).key).toBe('plant.tank.filling');
-    expect(facts('tank-v1', (r) => r.tick({ pump: false })).key).toBe('plant.tank.draining');
+    expect(
+      facts('tank-v1', (r) => {
+        r.tick({ pump: true });
+        r.tick({ pump: false });
+      }).key,
+    ).toBe('plant.tank.draining');
     expect(facts('conveyor-v1', (r) => r.act('jam')).key).toBe('plant.conveyor.jam');
     expect(
       facts('conveyor-v1', (r) => {
-        for (let i = 0; i < 5; i += 1) r.tick({ belt: true });
+        r.tick({ belt: true });
       }).key,
     ).toBe('plant.conveyor.classifier');
     expect(facts('pedestrian-v1', (r) => r.act('request')).key).toBe('plant.crossing.waiting');

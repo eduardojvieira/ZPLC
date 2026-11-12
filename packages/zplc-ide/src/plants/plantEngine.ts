@@ -26,8 +26,12 @@ export interface PlantModel {
   sense(state: PlantState): Record<string, boolean>;
 }
 
-const clamp = (value: number, low: number, high: number): number => Math.min(high, Math.max(low, value));
 const toggle = (state: PlantState, key: string): PlantState => ({ ...state, [key]: !state[key] });
+
+// Each model below is the one the scenario engine grades with (`test-engine/index.ts`, `runScenario`), step for step, so a
+// program that passes the live panel passes its check (PLT-013, D-19). The graded models live inline in `runScenario` and
+// cannot be called from here; `plantParity.test.ts` drives both with one script and fails if they drift apart.
+// The fault actions are the live-only addition (PLT-011) and change nothing until a person or a script triggers them.
 
 const motor: PlantModel = {
   kind: 'motor-v1',
@@ -35,35 +39,61 @@ const motor: PlantModel = {
   drives: ['atSpeed'],
   actions: ['stall'],
   initial: () => ({ speed: 0, stall: false }),
-  step: (s, r) => ({ ...s, speed: s.stall ? 0 : clamp((s.speed as number) + (r.command ? 100 : -100), 0, 1000) }),
+  step: (s, r) => ({
+    ...s,
+    speed: s.stall ? 0 : r.command ? Math.min(1000, (s.speed as number) + 500) : Math.max(0, (s.speed as number) - 1000),
+  }),
   act: (s, a) => (a === 'stall' ? toggle(s, 'stall') : s),
-  sense: (s) => ({ atSpeed: (s.speed as number) >= 900 }),
+  sense: (s) => ({ atSpeed: (s.speed as number) >= 1000 }),
 };
+
+/** Where the part is on the belt, per graded phase (`position` is only what the view draws). */
+const CONVEYOR_POSITION = { idle: 0, classifier: 250, diverter: 750, transfer: 900, jammed: 900 } as const;
+type ConveyorPhase = keyof typeof CONVEYOR_POSITION;
+const conveyorAt = (s: PlantState, phase: ConveyorPhase, extra: PlantState = {}): PlantState => ({
+  ...s,
+  ...extra,
+  phase,
+  position: CONVEYOR_POSITION[phase],
+});
 
 const conveyor: PlantModel = {
   kind: 'conveyor-v1',
   reads: ['belt', 'diverter'],
   drives: ['partAtClassifier', 'metalDetected', 'partAtDiverter', 'jamDetected'],
   actions: ['jam', 'metalPart'],
-  initial: () => ({ position: 0, classified: 0, moving: false, jam: false, metalPart: false }),
+  initial: () => ({ phase: 'idle', position: 0, classified: 0, moving: false, jam: false, metalPart: false }),
   step: (s, r) => {
     if (!r.belt || s.jam) return { ...s, moving: false };
-    const moved = (s.position as number) + 50;
-    return moved >= 1000
-      ? { ...s, position: 0, classified: (s.classified as number) + 1, moving: true }
-      : { ...s, position: moved, moving: true };
+    const moving = { moving: true };
+    switch (s.phase) {
+      case 'idle':
+        return conveyorAt(s, 'classifier', moving);
+      case 'classifier':
+        return conveyorAt(s, 'diverter', moving);
+      case 'diverter':
+        return conveyorAt(s, 'transfer', { ...moving, classified: r.diverter ? 1 : s.classified });
+      case 'transfer':
+        // the graded belt jams by itself once the part reaches the transfer
+        return conveyorAt(s, 'jammed', { moving: false, jam: true });
+      default:
+        return { ...s, moving: false };
+    }
   },
-  act: (s, a) => (a === 'jam' || a === 'metalPart' ? toggle(s, a) : s),
-  sense: (s) => {
-    const at = s.position as number;
-    const atClassifier = at >= 200 && at < 300;
-    return {
-      partAtClassifier: atClassifier,
-      metalDetected: atClassifier && s.metalPart === true,
-      partAtDiverter: at >= 700 && at < 800,
-      jamDetected: s.jam === true,
-    };
+  // the jam toggles: it stops the belt where it is, and clearing it also frees a belt that jammed by itself
+  act: (s, a) => {
+    if (a === 'metalPart') return toggle(s, a);
+    if (a !== 'jam') return s;
+    if (!s.jam) return { ...s, jam: true };
+    return s.phase === 'jammed' ? conveyorAt(s, 'idle', { jam: false }) : { ...s, jam: false };
   },
+  // metalDetected follows the part at the classifier, as graded: the metalPart action does not change what the grader sees
+  sense: (s) => ({
+    partAtClassifier: s.phase === 'classifier',
+    metalDetected: s.phase === 'classifier',
+    partAtDiverter: s.phase === 'diverter',
+    jamDetected: s.jam === true,
+  }),
 };
 
 const tank: PlantModel = {
@@ -71,29 +101,35 @@ const tank: PlantModel = {
   reads: ['pump'],
   drives: ['levelLow', 'levelHigh', 'pumpFault'],
   actions: ['pumpFault'],
-  initial: () => ({ level: 500, filling: false, pumpFault: false }),
-  step: (s, r) => ({
-    ...s,
-    filling: r.pump === true && !s.pumpFault,
-    level: clamp((s.level as number) + (r.pump && !s.pumpFault ? 20 : 0) - 8, 0, 1000),
-  }),
+  initial: () => ({ level: 200, filling: false, pumpFault: false }),
+  step: (s, r) => {
+    const filling = r.pump === true && !s.pumpFault;
+    const level = s.level as number;
+    return { ...s, filling, level: filling ? Math.min(1000, level + 100) : Math.max(0, level - 20) };
+  },
   act: (s, a) => (a === 'pumpFault' ? toggle(s, 'pumpFault') : s),
-  sense: (s) => ({ levelLow: (s.level as number) <= 200, levelHigh: (s.level as number) >= 800, pumpFault: s.pumpFault === true }),
+  sense: (s) => ({ levelLow: (s.level as number) <= 250, levelHigh: (s.level as number) >= 750, pumpFault: s.pumpFault === true }),
 };
 
 /** Scans a pedestrian takes to cross once WALK shows. */
-const CROSSING_SCANS = 30;
+const CROSSING_SCANS = 3;
+/** The pedestrian asks to cross from the second scan on (10 ms in), until the crossing starts. */
+const pedRequest = (s: PlantState): boolean => s.phase === 'waiting' || (s.phase === 'approaching' && (s.elapsed as number) >= 1);
 const crossing: PlantModel = {
   kind: 'pedestrian-v1',
   reads: ['vehicleRed', 'vehicleYellow', 'vehicleGreen', 'pedWalk', 'pedStop'],
   drives: ['pedRequest'],
   actions: ['request', 'blocked'],
-  initial: () => ({ phase: 'approaching', scans: 0, blocked: false }),
+  initial: () => ({ phase: 'approaching', scans: 0, elapsed: 0, blocked: false }),
   step: (s, r) => {
-    if (s.phase === 'waiting' && r.pedWalk && r.vehicleRed && !s.blocked) return { ...s, phase: 'crossing', scans: 0 };
-    if (s.phase !== 'crossing') return s;
-    const scans = (s.scans as number) + 1;
-    return scans >= CROSSING_SCANS ? { ...s, phase: 'cleared', scans: 0 } : { ...s, scans };
+    const next = { ...s, elapsed: (s.elapsed as number) + 1 };
+    const phase = s.phase === 'approaching' && pedRequest(s) ? 'waiting' : s.phase;
+    if (phase === 'waiting' && r.pedWalk && !s.blocked) return { ...next, phase: 'crossing', scans: 0 };
+    if (phase === 'crossing') {
+      const scans = (s.scans as number) + 1;
+      return scans >= CROSSING_SCANS ? { ...next, phase: 'cleared', scans: 0 } : { ...next, phase, scans };
+    }
+    return { ...next, phase };
   },
   act: (s, a) =>
     a === 'blocked'
@@ -101,7 +137,7 @@ const crossing: PlantModel = {
       : a === 'request' && (s.phase === 'approaching' || s.phase === 'cleared')
         ? { ...s, phase: 'waiting', scans: 0 }
         : s,
-  sense: (s) => ({ pedRequest: s.phase === 'waiting' }),
+  sense: (s) => ({ pedRequest: pedRequest(s) }),
 };
 
 export const PLANT_MODELS: Record<PlantKind, PlantModel> = {
