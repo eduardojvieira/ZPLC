@@ -160,7 +160,7 @@ export function PlantLivePanel({ controller }: { controller: DebugController | u
               >
                 {candidates.map((item) => (
                   <option key={item.lessonId} value={item.lessonId}>
-                    {t('plant.mappingOption', { plant: item.map.plant, lesson: item.title })}
+                    {t('plant.mappingOption', { plant: plantKindOf(item.map) ?? '', lesson: item.title })}
                   </option>
                 ))}
               </Select>
