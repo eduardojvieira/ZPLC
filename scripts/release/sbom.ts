@@ -9,6 +9,7 @@
 // projects of west.yml. The projects that Zephyr's own west.yml imports are listed only when a manifest for them
 // is given with --west-import (the firmware CI jobs have one); the repository alone cannot know them.
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { integrityHex, parseLockfile, productionClosure, resolveDependency, type Lockfile } from './lockfile';
@@ -47,6 +48,8 @@ export interface Component {
 export interface Sbom {
   bomFormat: 'CycloneDX';
   specVersion: '1.5';
+  /** actions/attest refuses a CycloneDX document without one. */
+  serialNumber: string;
   version: 1;
   metadata: Record<string, unknown>;
   components: Component[];
@@ -167,10 +170,7 @@ export function buildSbom(input: SbomInput): Sbom {
 
   const productPurl = genericPurl('zplc', input.productVersion);
   const sorted = [...components.values()].sort((a, b) => a.purl.localeCompare(b.purl));
-  return {
-    bomFormat: 'CycloneDX',
-    specVersion: '1.5',
-    version: 1,
+  const body = {
     metadata: {
       ...(input.epoch === undefined ? {} : { timestamp: new Date(input.epoch * 1000).toISOString() }),
       tools: { components: [{ type: 'application', name: 'zplc-sbom', version: input.productVersion }] },
@@ -186,6 +186,17 @@ export function buildSbom(input: SbomInput): Sbom {
     components: sorted,
     dependencies: sorted.map((component) => ({ ref: component.purl, dependsOn: [...(edges.get(component.purl) ?? [])].sort() })),
   };
+  return { bomFormat: 'CycloneDX', specVersion: '1.5', serialNumber: contentSerial(JSON.stringify(body)), version: 1, ...body };
+}
+
+/** `urn:uuid:` of a UUID with the version 5 layout, taken from the SHA-1 of the content: the same document always gets the
+ * same serial number, so the file stays reproducible. */
+function contentSerial(text: string): string {
+  const bytes = createHash('sha1').update(text).digest().subarray(0, 16);
+  bytes[6] = (bytes[6]! & 0x0f) | 0x50;
+  bytes[8] = (bytes[8]! & 0x3f) | 0x80;
+  const hex = bytes.toString('hex');
+  return `urn:uuid:${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
 export interface SbomCheckOptions {
