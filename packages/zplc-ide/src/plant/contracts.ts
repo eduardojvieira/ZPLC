@@ -21,7 +21,11 @@ export interface ScenePart {
   rotationYDeg: number; // multiple of 15 in the editor; any value in a file
   config: Readonly<Record<string, number | string | boolean>>;
 }
-export interface CameraPreset { name: string; position: Vec3; target: Vec3 }
+export interface CameraPreset {
+  name: string;
+  position: Vec3;
+  target: Vec3;
+}
 
 /** C2. One catalogue part, defined once (PRT-002). `physics` and `behave` are the only parts that know Jolt. */
 export interface PartDefinition {
@@ -34,14 +38,51 @@ export interface PartDefinition {
   snapPoints(part: ScenePart): readonly SnapPoint[];
   doc: { en: string; es: string };
 }
-export interface ConfigField { kind: 'number' | 'enum' | 'boolean'; min?: number; max?: number; values?: readonly string[]; default: number | string | boolean; unit?: string }
-export interface SnapPoint { name: string; position: Vec3; normalYDeg: number; accepts: readonly string[] }
-export interface PlantSignalDef { name: string; direction: 'command' | 'sensor'; type: SignalType; unit?: string }
+export interface ConfigField {
+  kind: 'number' | 'enum' | 'boolean';
+  min?: number;
+  max?: number;
+  values?: readonly string[];
+  default: number | string | boolean;
+  unit?: string;
+}
+export interface SnapPoint {
+  name: string;
+  position: Vec3;
+  normalYDeg: number;
+  accepts: readonly string[];
+}
+export interface PlantSignalDef {
+  name: string;
+  direction: 'command' | 'sensor';
+  type: SignalType;
+  unit?: string;
+}
 
 /** C3. A drawable state; the view reads nothing else (P14). */
-export interface BodyPose { id: string; part: string; kind: 'box' | 'pallet' | 'item'; size: Vec3; p: Vec3; q: Quat }
-export interface PartView { id: string; part: string; name: string; pose: BodyPose; state: Readonly<Record<string, FactValue>>; signals: Readonly<Record<string, boolean | number>> }
-export interface PlantSnapshot { timeMs: number; scans: number; parts: readonly PartView[]; items: readonly BodyPose[]; facts: Readonly<Record<string, FactValue>> }
+export interface BodyPose {
+  id: string;
+  part: string;
+  kind: 'box' | 'pallet' | 'item';
+  size: Vec3;
+  p: Vec3;
+  q: Quat;
+}
+export interface PartView {
+  id: string;
+  part: string;
+  name: string;
+  pose: BodyPose;
+  state: Readonly<Record<string, FactValue>>;
+  signals: Readonly<Record<string, boolean | number>>;
+}
+export interface PlantSnapshot {
+  timeMs: number;
+  scans: number;
+  parts: readonly PartView[];
+  items: readonly BodyPose[];
+  facts: Readonly<Record<string, FactValue>>;
+}
 
 /** C4. The plant core. Created by `createPlantCore` (Task P4). All times are multiples of `stepMs`. */
 export interface PlantCore {
@@ -81,14 +122,27 @@ export type PlantSessionState = 'idle' | 'running' | 'paused' | 'held' | 'faulte
 export interface PlantSession {
   readonly state: PlantSessionState;
   readonly slowdown: number; // 1 = real time; below 1 the plant and program are slowed together (PLT-016)
-  start(): Promise<void>; pause(): void; resume(): void; step(): Promise<void>; stop(): Promise<void>; reset(): Promise<void>;
+  start(): Promise<void>;
+  pause(): void;
+  resume(): void;
+  step(): Promise<void>;
+  stop(): Promise<void>;
+  reset(): Promise<void>;
   onChange(listener: (event: PlantSessionEvent) => void): () => void;
 }
 export type PlantSessionEvent =
   | { kind: 'scan'; scans: number; snapshot: PlantSnapshot }
   | { kind: 'state'; state: PlantSessionState; reason?: string }
   | { kind: 'slowdown'; factor: number; message: string };
-export declare function createPlantSession(ports: { core: PlantCore; runtime: PlantRuntimePort; map: PlantMapV2; paceMs?: (ms: number) => Promise<void> }): PlantSession;
+export declare function createPlantSession(ports: {
+  core: PlantCore;
+  runtime: PlantRuntimePort;
+  map: PlantMapV2;
+  paceMs?: (ms: number) => Promise<void>;
+}): PlantSession;
 
 /** C7. Scenario seam (Task S1): the optional port `runScenario` uses for a scene scenario. */
-export interface ScenarioPlantPort { core: PlantCore; map: PlantMapV2 }
+export interface ScenarioPlantPort {
+  core: PlantCore;
+  map: PlantMapV2;
+}
