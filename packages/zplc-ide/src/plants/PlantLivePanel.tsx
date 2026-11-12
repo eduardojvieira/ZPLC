@@ -1,9 +1,11 @@
 /**
  * The live plant of the Lab tab (LRN-018, LRN-037): picks the mapping of a lesson that fits the loaded program, runs the plant
- * in closed loop with the simulation (`plantLoop.ts`), and offers play, pause, step, reset and the fault actions of the plant
- * as keyboard-operable buttons. A change of situation is announced with `announce()` in the words of the text equivalent.
+ * in closed loop with the simulation (`plantLoop.ts`), and offers reset and the fault actions of the plant as keyboard-operable
+ * buttons. It has no play, pause or step: the command bar is the one transport (PLS-003, decision D-26), and the plant follows
+ * the runtime's scan counter, so pausing or stepping the program pauses or steps the plant (LRN-018, PLT-005). A change of
+ * situation is announced with `announce()` in the words of the text equivalent.
  */
-import { Pause, Play, RotateCcw, SkipForward } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { FaceplatePanel } from '../components/FaceplatePanel';
@@ -125,9 +127,12 @@ export function PlantLivePanel({ controller }: { controller: DebugController | u
     hasMap: Boolean(debugMap),
     connected,
     simulated,
-    vmState: controller?.vmState ?? 'disconnected',
+    // A paused program is the transport's state, not a reason to hide the plant: it holds, and a step of the command bar moves it.
+    vmState: controller?.vmState === 'paused' ? 'running' : (controller?.vmState ?? 'disconnected'),
     supported: true,
   });
+  // The word is the runtime's state; the panel holds no state of its own that could stop the plant while the program runs.
+  const state = controller?.vmState === 'running' ? t('plant.running') : controller?.vmState === 'paused' ? t('plant.paused') : '';
   const unavailable =
     !connected || !simulated || why !== null
       ? t('plant.unavailable.noSimulation')
@@ -170,40 +175,6 @@ export function PlantLivePanel({ controller }: { controller: DebugController | u
                 variant="secondary"
                 size="sm"
                 onClick={() => {
-                  run.setPaused(!run.paused);
-                  refresh();
-                  announce(t(run.paused ? 'plant.paused' : 'plant.running'));
-                }}
-                data-plant-control="play-pause"
-              >
-                {run.paused ? (
-                  <>
-                    <Play className="mr-1 inline" size={14} />
-                    {t('plant.play')}
-                  </>
-                ) : (
-                  <>
-                    <Pause className="mr-1 inline" size={14} />
-                    {t('plant.pause')}
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  void attempt(() => loop.step());
-                }}
-                disabled={!run.paused}
-                data-plant-control="step"
-              >
-                <SkipForward className="mr-1 inline" size={14} />
-                {t('plant.step')}
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
                   run.reset();
                   loop.forget();
                   refresh();
@@ -214,7 +185,8 @@ export function PlantLivePanel({ controller }: { controller: DebugController | u
                 {t('plant.reset')}
               </Button>
               <output className="font-mono text-xs text-[var(--text-primary)]" data-plant-scans>
-                {t('plant.scans', { count: run.tickCount })} · {run.paused ? t('plant.paused') : t('plant.running')}
+                {t('plant.scans', { count: run.tickCount })}
+                {state && ` · ${state}`}
               </output>
             </div>
             <div role="group" aria-label={t('plant.faults')} className="flex flex-wrap gap-2">
