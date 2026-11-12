@@ -1,0 +1,34 @@
+{
+  "schema": "zplc.plant-gate/1",
+  "commit": "cbca1894020ac27da222b111d63b3a22c4620320",
+  "host": {
+    "platform": "linux",
+    "arch": "x64",
+    "cpu": "AMD Ryzen 5 8600G w/ Radeon 760M Graphics",
+    "memoryGb": 60
+  },
+  "loadAverage": [
+    11.79,
+    13.7,
+    9.8
+  ],
+  "scene": "stress",
+  "scans": 3000,
+  "scanMs": 10,
+  "runs": [
+    {
+      "plantStepMs": 5,
+      "stepMsP50": 1.6967869999998584,
+      "stepMsP95": 3.1034310000004552,
+      "stepMsMax": 13.655980999999997,
+      "realTimeFactor": 5.166954044699264
+    },
+    {
+      "plantStepMs": 10,
+      "stepMsP50": 0.8515539999998509,
+      "stepMsP95": 1.571179999999913,
+      "stepMsMax": 15.516426000000138,
+      "realTimeFactor": 10.407144292250884
+    }
+  ]
+}
