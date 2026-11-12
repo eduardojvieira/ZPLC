@@ -1,0 +1,44 @@
+{
+  "schema": "zplc.plant-gate-bundle-size/1",
+  "commit": "2f14ed97",
+  "base": {
+    "bytes": 35807124,
+    "gzipBytes": 8180089,
+    "fileCount": 71,
+    "worktree": "feat/plant-simulation"
+  },
+  "gate": {
+    "bytes": 51311082,
+    "gzipBytes": 11090782,
+    "fileCount": 73,
+    "worktree": "spike/plant-gate"
+  },
+  "deltaBytes": 15503958,
+  "deltaGzipBytes": 2910693,
+  "deltaExcludingSourceMaps": {
+    "bytes": 4107562,
+    "gzipBytes": 1089917
+  },
+  "filesOnlyInPrototype": [
+    {
+      "file": "assets/gateEntry-NL4rK1GY.js",
+      "bytes": 4107405,
+      "gzipBytes": 1089858
+    },
+    {
+      "file": "assets/gateEntry-NL4rK1GY.js.map",
+      "bytes": 11395883,
+      "gzipBytes": 1820622
+    }
+  ],
+  "unpackedLinuxBytes": 392681394,
+  "specLimit": "50 MB of installer growth per platform",
+  "bundleGuards": {
+    "command": "bun test scripts/welcomeBundle.test.ts",
+    "pass": 9,
+    "fail": 0,
+    "failures": [],
+    "finding": "The guard passes because main.tsx reaches the prototype only through a dynamic import() of the gateEntry chunk, which never joins the start chunks of the Welcome screen. It says nothing about a merged, statically reachable simulation."
+  },
+  "note": "The delta covers the two libraries (three and jolt-physics) only, with no part and no asset. It is renderer dist/ output (js, wasm and source maps; hashed file names are matched after stripping the hash), not an installer. No baseline Electron package was built (too slow), so installer growth per platform is not measured; unpackedLinuxBytes is the du -sb of the spike dist-electron/linux-unpacked, built from 6b92110f plus the bench files."
+}
