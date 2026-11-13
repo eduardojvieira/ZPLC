@@ -554,6 +554,8 @@ describe('opening and saving scenes (SCN-001, SCN-006, SCN-016)', () => {
   });
 
   it('SCN-001 any shipped scene opens from the chooser with no file in the project', async () => {
+    // The precondition is set here, not inherited: another test file can leave a file loaded in the shared store.
+    dom.patchStore(useIDEStore, { loadedFiles: new Map() as never });
     const r = rig();
     dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
     await ready();
