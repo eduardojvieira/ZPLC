@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 2,
+  "target": { "scene": "buffer-release" },
+  "signals": {
+    "StartButton.pressed": { "direction": "sensor", "type": "BOOL", "point": "BufferRelease.Start" },
+    "ReleaseButton.pressed": { "direction": "sensor", "type": "BOOL", "point": "BufferRelease.ReleaseCmd" },
+    "EyeFull.detect": { "direction": "sensor", "type": "BOOL", "point": "BufferRelease.EyeFull" },
+    "EyeBlade.detect": { "direction": "sensor", "type": "BOOL", "point": "BufferRelease.EyeBlade" },
+    "EyeRelease.detect": { "direction": "sensor", "type": "BOOL", "point": "BufferRelease.EyeRelease" },
+    "Buffer1.run": { "direction": "command", "type": "BOOL", "point": "BufferRelease.RunBuffer" },
+    "Release1.run": { "direction": "command", "type": "BOOL", "point": "BufferRelease.RunRelease" },
+    "Emitter1.emit": { "direction": "command", "type": "BOOL", "point": "BufferRelease.Emit" },
+    "Blade1.extend": { "direction": "command", "type": "BOOL", "point": "BufferRelease.Hold" },
+    "DoneLight.lit": { "direction": "command", "type": "BOOL", "point": "BufferRelease.Done" },
+    "FaultLight.lit": { "direction": "command", "type": "BOOL", "point": "BufferRelease.Fault" }
+  }
+}
