@@ -30,7 +30,8 @@ const FIXED_FACTS = ['itemsEmitted', 'itemsRemoved', 'itemsDropped', 'itemsColli
 const FACT_GRAMMAR =
   'itemsEmitted, itemsRemoved, itemsDropped, itemsCollided, emitted:<Name>, delivered:<Name>, count:<Name>, position:<kind>:<index>, ' +
   'level:<Name>, volume:<Name>, spilledL:<Name>, highs:<Name>, inBand:<Name>, picked:<Name>, placed:<Name>, drops:<Name>, ' +
-  'axis:<Name>:<x|y|z>, itemsAssembled, stacked:pallet:<index>, layers:pallet:<index>, sorted:<Name>, misrouted:<Name>';
+  'axis:<Name>:<x|y|z>, itemsAssembled, stacked:pallet:<index>, layers:pallet:<index>, sorted:<Name>, misrouted:<Name>, ' +
+  'stored:<Name>, produced:<Name>, misfires:<Name>, blocked:<Name>, cell:<Name>:<column>:<level>, loaded:crate:<index>';
 
 /** Why a fact name is wrong, or undefined when it matches the fact grammar and names a part the scene has. */
 function factFault(fact: string, parts: readonly string[]): string | undefined {
@@ -38,6 +39,13 @@ function factFault(fact: string, parts: readonly string[]): string | undefined {
   const grammar = `"fact:${fact}" is not a plant fact; the facts are ${FACT_GRAMMAR}`;
   if (rest.length === 0) return FIXED_FACTS.includes(head!) ? undefined : grammar;
   if (head === 'position') return rest.length === 2 && ['box', 'pallet'].includes(rest[0]!) && /^\d+$/.test(rest[1]!) ? undefined : grammar;
+  if (head === 'loaded') return rest.length === 2 && rest[0] === 'crate' && /^\d+$/.test(rest[1]!) ? undefined : grammar;
+  if (head === 'cell') {
+    if (rest.length !== 3 || !/^\d+$/.test(rest[1]!) || !/^\d+$/.test(rest[2]!)) return grammar;
+    return parts.includes(rest[0]!)
+      ? undefined
+      : `"fact:${fact}" names "${rest[0]}", which is not a part of the scene; it has: ${parts.join(', ')}`;
+  }
   if (head === 'stacked' || head === 'layers')
     return rest.length === 2 && rest[0] === 'pallet' && /^\d+$/.test(rest[1]!) ? undefined : grammar;
   const axisFact = head === 'axis' && rest.length === 2 && ['x', 'y', 'z'].includes(rest[1]!);
@@ -55,6 +63,10 @@ function factFault(fact: string, parts: readonly string[]): string | undefined {
     'drops',
     'sorted',
     'misrouted',
+    'stored',
+    'produced',
+    'misfires',
+    'blocked',
   ];
   if (!axisFact && (!named.includes(head!) || rest.length !== 1)) return grammar;
   return parts.includes(rest[0]!)

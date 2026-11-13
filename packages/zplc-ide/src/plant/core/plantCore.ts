@@ -13,16 +13,22 @@ import { catalogue, registerParts } from './catalogue';
 import { buildFacts, createContactTracker } from './facts';
 import { loadJolt } from './jolt';
 import { chainParts } from './parts/chainTransfer';
+import { completionParts } from './parts/completion';
 import { conveyorParts } from './parts/conveyors';
 import { diverterParts } from './parts/diverters';
 import { flowParts } from './parts/flow';
 import { indicatorParts } from './parts/indicators';
+import { liftParts } from './parts/lift';
 import { stationParts } from './parts/layerPalletizer';
+import { machiningParts } from './parts/machining';
 import { manipulatorParts } from './parts/manipulators';
 import { createSupportTracker, type SupportItem } from './support';
 import {
   itemParts,
   boxSize,
+  CRATE_MASS_KG,
+  CRATE_OUTER,
+  crateShapes,
   PALLET_SIZE,
   removeTrackedItem,
   spawnItem,
@@ -37,6 +43,7 @@ import { processParts } from './parts/process';
 import { sensorParts } from './parts/sensors';
 import { numericSensorParts } from './parts/sensorsNumeric';
 import { sourceParts } from './parts/sources';
+import { stackerParts } from './parts/stackerCrane';
 import { turntableParts } from './parts/turntable';
 import { sceneSignals, validateScene } from './scene';
 import { createTrace } from './trace';
@@ -58,6 +65,10 @@ const SHIPPED: readonly RuntimePartDefinition[] = [
   ...diverterParts,
   ...chainParts,
   ...turntableParts,
+  ...liftParts,
+  ...stackerParts,
+  ...machiningParts,
+  ...completionParts,
 ];
 const RUNTIMES = new Map(SHIPPED.map((d) => [d.id, d]));
 registerParts(SHIPPED.filter((d) => !catalogue.get(d.id)));
@@ -99,7 +110,8 @@ export async function createPlantCore(scene: PlantSceneFile, options: { seed?: n
   const shown = (v: unknown) => (typeof v === 'string' ? JSON.stringify(v) : String(v));
 
   /**
-   * R-X2: the value types and ranges of a command set. A numeric command saturates at its range; a bad one throws before anything changes.
+   * R-X2: the value types and ranges of a command set. A REAL command saturates at its range; an INT one outside it, or a bad one,
+   * throws before anything changes (R-F).
    */
   function checked(commands: Readonly<Record<string, boolean | number>>): Record<string, boolean | number> {
     const out: Record<string, boolean | number> = {};
@@ -116,6 +128,12 @@ export async function createPlantCore(scene: PlantSceneFile, options: { seed?: n
       }
       if (typeof v !== 'number') throw new Error(`plant: ${name} is ${def.type}, got ${shown(v)}`);
       if (!Number.isFinite(v)) throw new RangeError(`plant: ${name} must be a finite number, got ${v}`);
+      // R-F (M5): an INT setpoint (a crane bay or level) is an address, not a quantity: outside its range it is refused, never clamped.
+      if (def.type === 'INT' && def.range !== undefined && (v > def.range.max || v < def.range.min)) {
+        const above = v > def.range.max;
+        const limit = above ? def.range.max : def.range.min;
+        throw new RangeError(`plant: ${name} ${v} is ${above ? 'above' : 'below'} the limit ${limit}${def.unit ? ` ${def.unit}` : ''}`);
+      }
       out[name] = def.range === undefined ? v : Math.min(def.range.max, Math.max(def.range.min, v));
     }
     return out;
@@ -238,18 +256,21 @@ export async function createPlantCore(scene: PlantSceneFile, options: { seed?: n
         if (trackedItems(m.world).size >= MAX_ITEMS) throw new RangeError(`plant: the scene already holds ${MAX_ITEMS} items`);
         const pallet = op[1] === 'pallet';
         const workpiece = op[1] === 'workpiece';
-        if (!pallet && !workpiece && op[1] !== 'box') throw new Error(`plant: unknown item kind "${op[1]}"; use box, workpiece or pallet`);
+        const crate = op[1] === 'crate';
+        if (!pallet && !workpiece && !crate && op[1] !== 'box')
+          throw new Error(`plant: unknown item kind "${op[1]}"; use box, workpiece, crate or pallet`);
         m.added += 1;
         spawnItem(
           m.world,
           `added-${m.added}`,
           pallet ? 'pallet' : 'item',
-          pallet ? PALLET_SIZE : workpiece ? WORKPIECE_SIZE : boxSize(0.3),
-          pallet ? ADDED_PALLET_KG : workpiece ? WORKPIECE_MASS_KG : ADDED_BOX_KG,
+          pallet ? PALLET_SIZE : workpiece ? WORKPIECE_SIZE : crate ? CRATE_OUTER : boxSize(0.3),
+          pallet ? ADDED_PALLET_KG : workpiece ? WORKPIECE_MASS_KG : crate ? CRATE_MASS_KG : ADDED_BOX_KG,
           op[2],
           0,
-          undefined,
+          crate ? 'crate' : undefined,
           workpiece ? { colour: 'red', metal: false } : undefined, // a red plastic workpiece, unlabelled
+          crate ? crateShapes() : undefined,
         );
         return;
       }
