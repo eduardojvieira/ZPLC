@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 2,
+  "target": { "scene": "sorting-fixture" },
+  "signals": {
+    "Start1.pressed": { "direction": "sensor", "type": "BOOL", "point": "SortCycle.Start" },
+    "Scale1.stable": { "direction": "sensor", "type": "BOOL", "point": "SortCycle.Stable" },
+    "Eye1.code": {
+      "direction": "sensor",
+      "type": "INT",
+      "point": "SortCycle.Code",
+      "range": { "raw_min": 0, "raw_max": 9, "eng_min": 0, "eng_max": 9, "unit": "code" }
+    },
+    "Scale1.weight": {
+      "direction": "sensor",
+      "type": "REAL",
+      "point": "SortCycle.Weight",
+      "range": { "raw_min": 0, "raw_max": 2000, "eng_min": 0, "eng_max": 20, "unit": "kg" }
+    },
+    "Array1.height": {
+      "direction": "sensor",
+      "type": "REAL",
+      "point": "SortCycle.Height",
+      "range": { "raw_min": 0, "raw_max": 60, "eng_min": 0, "eng_max": 0.6, "unit": "m" }
+    },
+    "Belt1.run": { "direction": "command", "type": "BOOL", "point": "SortCycle.BeltRun" },
+    "Side1.run": { "direction": "command", "type": "BOOL", "point": "SortCycle.SideRun" },
+    "Blade1.extend": { "direction": "command", "type": "BOOL", "point": "SortCycle.BladeOut" },
+    "Arm1.divert": { "direction": "command", "type": "BOOL", "point": "SortCycle.Divert" }
+  }
+}
