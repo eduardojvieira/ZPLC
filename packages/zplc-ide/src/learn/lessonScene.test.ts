@@ -5,6 +5,78 @@ import { join } from 'node:path';
 
 import { LESSONS_DIRECTORY, buildIndex, loadCourse, loadLessonPackages, scenarioHash } from './lessonPackageFiles';
 
+/** The 68 packages of 2.0 (modules 0 to 11), named by id so that new modules cannot change what this test freezes. */
+const PACKAGES_2_0 = [
+  'analog-scaling-fbd',
+  'analog-scaling-integer',
+  'blink-structured-text',
+  'blinky-ladder-timer-feedback',
+  'boolean-logic-two-hand-guard',
+  'boolean-logic-two-hand-guard-fbd',
+  'boolean-logic-two-hand-guard-il',
+  'boolean-logic-two-hand-guard-ladder',
+  'capstone-packing-station',
+  'conveyor-classification-jam',
+  'conveyor-sorting-sfc',
+  'conveyor-two-parts-diagnosis',
+  'counter-batch-fbd',
+  'edge-counter-pulses',
+  'edge-counter-pulses-il',
+  'edge-counter-pulses-ladder',
+  'fault-stop-reset-sfc',
+  'first-blink-simulation',
+  'function-block-call-il',
+  'function-block-pump-pair',
+  'function-block-valves-fbd',
+  'instruction-list-door-alarm',
+  'interlock-guard-permissive',
+  'interlock-guard-permissive-fbd',
+  'interlock-guard-permissive-il',
+  'interlock-reversing-ladder',
+  'ld-analog-scaling',
+  'ld-compare-math',
+  'ld-diagnosis-debugger',
+  'ld-edges',
+  'ld-final-project',
+  'ld-function-blocks',
+  'ld-no-nc-contacts',
+  'ld-scan-cycle',
+  'ld-sequence-step-bits',
+  'ld-series-parallel',
+  'ld-variables-and-types',
+  'ld-what-is-a-plc',
+  'modbus-coil-fbd',
+  'modbus-register-round-trip',
+  'motor-plant-feedback',
+  'motor-start-stop-safe',
+  'mqtt-publish-subscribe',
+  'one-logic-five-languages',
+  'packing-station-sfc',
+  'pedestrian-crossing-sfc',
+  'pedestrian-crossing-states',
+  'scan-cycle-one-scan-memory',
+  'seal-in-ladder',
+  'selection-branches-sfc',
+  'set-reset-alarm-latch',
+  'set-reset-alarm-latch-il',
+  'set-reset-alarm-latch-ladder',
+  'sfc-fill-mix-sequence',
+  'simultaneous-branches-sfc',
+  'step-times-sfc',
+  'structures-arrays-call-panel',
+  'tank-level-fault-reset',
+  'tank-level-fault-reset-ladder',
+  'temporal-assertions-jam-fault',
+  'timers-on-delay-off-delay',
+  'timers-on-delay-off-delay-fbd',
+  'timers-on-delay-off-delay-il',
+  'timers-on-delay-off-delay-ladder',
+  'types-arithmetic-comparison',
+  'types-arithmetic-comparison-fbd',
+  'types-arithmetic-comparison-il',
+  'verify-my-board',
+];
+
 const temporary: string[] = [];
 afterEach(() => {
   for (const path of temporary.splice(0)) rmSync(path, { recursive: true, force: true });
@@ -77,13 +149,14 @@ describe('a lesson package may name a scene (CRS-003, CRS-004, LNK-001, PLT-013)
     expect(loadLessonPackages(lessons, undefined, scenes).packages.some((p) => p.id === LESSON)).toBe(true);
   });
 
-  it('PLT-013 a 2.0 manifest, with scene absent, validates exactly as before: 68 packages, none naming a scene', () => {
+  it('PLT-013 the 68 packages of 2.0, named by id, name no scene and validate as before', () => {
     const loaded = loadLessonPackages();
     expect(loaded.problems).toEqual([]);
-    expect(loaded.packages).toHaveLength(68);
-    expect(loaded.packages.filter((p) => p.manifest.scene !== undefined)).toEqual([]);
+    const legacy = loaded.packages.filter((p) => PACKAGES_2_0.includes(p.id));
+    expect(legacy.map((p) => p.id).sort()).toEqual([...PACKAGES_2_0]);
+    expect(legacy.filter((p) => p.manifest.scene !== undefined)).toEqual([]);
     const { index } = buildIndex(loaded.packages, loadCourse().course!);
-    expect(index.lessons.filter((entry) => 'scene' in entry)).toEqual([]);
+    expect(index.lessons.filter((entry) => PACKAGES_2_0.includes(entry.id) && 'scene' in entry)).toEqual([]);
   });
 
   it('LNK-001 a manifest with both plant and scene is rejected with a located message', () => {
