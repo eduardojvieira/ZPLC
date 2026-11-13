@@ -52,6 +52,7 @@ export const ENUMS = {
   FORCE_CHANGE: { SET: 0, CLEARED: 1, CLEARED_ALL: 2, RELEASED: 3, CHANGED: 4 },
   LOG_LEVEL: { ERROR: 0, WARNING: 1, INFO: 2, DEBUG: 3 },
   CREDENTIAL: { CA: 0, CLIENT: 1, KEY: 2 },
+  PLANT_EXIT_REASON: { CLOSED: 0, TIMEOUT: 1, SESSION_END: 2, LINK_LOST: 3, RUN_CONTROL: 4, FAULT: 5, PROTOCOL: 6 },
 } as const;
 
 export const ERROR = {
@@ -90,6 +91,7 @@ export const CAPABILITY = {
   CONFIG: 0x00000200,
   CREDENTIALS: 0x00000400,
   SIGNATURE: 0x00000800,
+  PLANT: 0x00001000,
 } as const;
 
 export const EVENT_MASK = {
@@ -99,6 +101,7 @@ export const EVENT_MASK = {
   FORCE: 0x00000008,
   LOG: 0x00000010,
   WATCH: 0x00000020,
+  PLANT: 0x00000040,
 } as const;
 
 /** The layout of the detail of an ERROR.RANGE response (after the status byte). */
@@ -164,6 +167,11 @@ export const MESSAGES = {
   KEY_CLEAR: { id: 97, access: 'SERIAL_SESSION', request: [], response: [] },
   SIGNING_KEY_SET: { id: 98, access: 'SERIAL_SESSION', request: [{ name: 'public_key', type: 'bytes:32' }], response: [] },
   SIGNING_KEY_CLEAR: { id: 99, access: 'SERIAL_SESSION', request: [], response: [] },
+  PLANT_ENTER: { id: 112, access: 'SESSION', request: [{ name: 'timeout_ms', type: 'u16' }, { name: 'n_in', type: 'u8' }, { name: 'n_out', type: 'u8' }, { name: 'descriptors', type: 'tail' }], response: [{ name: 'plant_id', type: 'u16' }, { name: 'in_bytes', type: 'u16' }, { name: 'out_bytes', type: 'u16' }, { name: 'max_slots', type: 'u8' }, { name: 'timeout_ms', type: 'u16' }] },
+  PLANT_FRAME: { id: 113, access: 'SESSION', request: [{ name: 'plant_id', type: 'u16' }, { name: 'seq', type: 'u32' }, { name: 'values', type: 'tail' }], response: [{ name: 'applied_seq', type: 'u32' }, { name: 'scans', type: 'u32' }, { name: 'flags', type: 'u8' }, { name: 'late', type: 'u16' }, { name: 'rejected', type: 'u16' }, { name: 'values', type: 'tail' }] },
+  PLANT_EXIT: { id: 114, access: 'SESSION', request: [], response: [{ name: 'reason', type: 'u8', enum: 'PLANT_EXIT_REASON' }, { name: 'frames', type: 'u32' }, { name: 'late', type: 'u16' }, { name: 'rejected', type: 'u16' }] },
+  PLANT_MIRROR: { id: 115, access: 'SESSION', request: [{ name: 'enable', type: 'u8' }], response: [{ name: 'mirror', type: 'u8' }] },
+  PLANT_STATUS: { id: 116, access: 'SESSION', request: [], response: [{ name: 'active', type: 'u8' }, { name: 'plant_id', type: 'u16' }, { name: 'mirror', type: 'u8' }, { name: 'frames', type: 'u32' }, { name: 'late', type: 'u16' }, { name: 'rejected', type: 'u16' }, { name: 'age_ms', type: 'u16' }] },
 } as const satisfies Record<string, MessageSpec>;
 
 export const EVENTS = {
@@ -175,6 +183,7 @@ export const EVENTS = {
   EVT_WATCH: { id: 133, mask: EVENT_MASK.WATCH, fields: [{ name: 'cycle', type: 'u32' }, { name: 'data', type: 'tail' }] },
   EVT_SESSION_END: { id: 134, mask: 0, fields: [{ name: 'reason', type: 'u8', enum: 'SESSION_END' }, { name: 'forces_released', type: 'u8' }] },
   EVT_DROPPED: { id: 135, mask: 0, fields: [{ name: 'count', type: 'u32' }] },
+  EVT_PLANT_EXIT: { id: 136, mask: EVENT_MASK.PLANT, fields: [{ name: 'reason', type: 'u8', enum: 'PLANT_EXIT_REASON' }, { name: 'frames', type: 'u32' }] },
 } as const satisfies Record<string, EventSpec>;
 
 export type MessageName = keyof typeof MESSAGES;

@@ -167,6 +167,25 @@ config ZPLC_DEVICE_LINK
 
       A board that has no RAM for it turns it off: ZPLC then talks to the text shell and says so.
 
+config ZPLC_PLANT_IO
+    bool "Plant I/O mode: inputs fed from a plant link (LNK-012)"
+    default y
+    depends on ZPLC_DEVICE_LINK
+    help
+      Adds the plant I/O mode to the device link: the inputs bound in the plant map take their values from plant
+      frames, the output image is published to the plant, and the physical outputs stay in their safe state unless
+      a person turns mirroring on. The mode ends into a stopped program with safe outputs on exit, timeout, end of
+      the session and loss of the link. Without it the hello does not advertise the PLANT capability.
+
+config ZPLC_PLANT_MAX_SLOTS
+    int "Plant slots per direction"
+    default 32
+    range 8 64
+    depends on ZPLC_PLANT_IO
+    help
+      The most input slots, and the most output slots, one plant entry can bind. A frame carries at most
+      6 + 4 * slots bytes, so 32 slots fit the smallest payload of a board (288 bytes).
+
 config ZPLC_PROTO_PAYLOAD_MAX
     int "Largest payload of one frame of the device link, in bytes"
     default 512

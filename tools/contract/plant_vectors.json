@@ -1,0 +1,76 @@
+{
+  "comment": "Byte-exact payloads (not frames: no header, no CRC) of one plant I/O mode exchange, computed by hand from C-M6-1 of specs/012-zplc-2-1-plant-simulation/plan-m6.md and cross-checked with struct.pack. Entry: 3 BOOL, 1 INT, 1 REAL inputs and 2 BOOL outputs. A response payload starts with the status byte (00 = OK), as in golden/protocol-vectors.json; its body is the payload without that byte. F1 (C) and S1 (TypeScript) test against this file.",
+  "schema": 1,
+  "vectors": [
+    {
+      "name": "plant_enter_request",
+      "kind": "request",
+      "message": "PLANT_ENTER",
+      "payload": "f401050200000000000401001c02000104000200000000000c",
+      "comment": "timeout_ms 500 = 0x01F4 -> f4 01; n_in 5; n_out 2. Input descriptors (offset u16 LE, spec u8; spec = type | bit << 2): BOOL IPI 0 bit 0 = 00 00 00; BOOL IPI 0 bit 1 = 00 00 04; BOOL IPI 1 bit 7 (7 << 2 = 0x1c) = 01 00 1c; INT IPI 2 (type 1) = 02 00 01; REAL IPI 4 (type 2) = 04 00 02. Output descriptors: BOOL OPI 0 bit 0 = 00 00 00; BOOL OPI 0 bit 3 (3 << 2 = 0x0c) = 00 00 0c."
+    },
+    {
+      "name": "plant_enter_response",
+      "kind": "response",
+      "message": "PLANT_ENTER",
+      "payload": "0001000700010020f401",
+      "comment": "status 00; plant_id 1 = 01 00; in_bytes = ceil(3 BOOL / 8) 1 + INT 2 + REAL 4 = 7 = 07 00; out_bytes = ceil(2 BOOL / 8) = 1 = 01 00; max_slots 32 = 20; timeout_ms granted 500 = f4 01."
+    },
+    {
+      "name": "plant_frame_request",
+      "kind": "request",
+      "message": "PLANT_FRAME",
+      "payload": "01000201000005feff0000c03f",
+      "comment": "plant_id 1 = 01 00; seq 258 = 0x102 = 02 01 00 00; bitmap: BOOL values 1, 0, 1 in descriptor order = bits 0 and 2 = 0x05; INT -2 = 0xfffe = fe ff; REAL 1.5 = 0x3fc00000 = 00 00 c0 3f. Length 6 + in_bytes 7 = 13."
+    },
+    {
+      "name": "plant_frame_response",
+      "kind": "response",
+      "message": "PLANT_FRAME",
+      "payload": "0002010000e8030000010300010002",
+      "comment": "status 00; applied_seq 258 = 02 01 00 00; scans 1000 = 0x3e8 = e8 03 00 00; flags 0x01 (mirror on, not held) = 01; late 3 = 03 00; rejected 1 = 01 00; output bitmap: BOOL values 0, 1 in descriptor order = bit 1 = 0x02."
+    },
+    {
+      "name": "plant_mirror_request",
+      "kind": "request",
+      "message": "PLANT_MIRROR",
+      "payload": "01",
+      "comment": "enable 1 = 01."
+    },
+    {
+      "name": "plant_mirror_response",
+      "kind": "response",
+      "message": "PLANT_MIRROR",
+      "payload": "0001",
+      "comment": "status 00; mirror 1 = 01."
+    },
+    {
+      "name": "plant_status_response",
+      "kind": "response",
+      "message": "PLANT_STATUS",
+      "payload": "0001010001d2040000030001001400",
+      "comment": "status 00; active 1 = 01; plant_id 1 = 01 00; mirror 1 = 01; frames 1234 = 0x4d2 = d2 04 00 00; late 3 = 03 00; rejected 1 = 01 00; age_ms 20 = 0x14 = 14 00."
+    },
+    {
+      "name": "plant_exit_request",
+      "kind": "request",
+      "message": "PLANT_EXIT",
+      "payload": "",
+      "comment": "Empty payload."
+    },
+    {
+      "name": "plant_exit_response",
+      "kind": "response",
+      "message": "PLANT_EXIT",
+      "payload": "0000d204000003000100",
+      "comment": "status 00; reason CLOSED 0 = 00; frames 1234 = d2 04 00 00; late 3 = 03 00; rejected 1 = 01 00."
+    },
+    {
+      "name": "plant_exit_event",
+      "kind": "event",
+      "message": "EVT_PLANT_EXIT",
+      "payload": "01d2040000",
+      "comment": "EVT_PLANT_EXIT id 136, mask PLANT 0x00000040; reason TIMEOUT 1 = 01; frames 1234 = d2 04 00 00."
+    }
+  ]
+}
