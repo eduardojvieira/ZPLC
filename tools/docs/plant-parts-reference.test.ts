@@ -53,7 +53,7 @@ describe('PRT-002 parts reference generated from the part definitions', () => {
     expect(rows(partsBody(PARTS, 'es'))).toEqual(rows(partsBody(PARTS, 'en')));
   });
 
-  it('PRT-002 the parts reference orders a Process section after the others in both languages', () => {
+  it('PRT-002 the parts reference orders a Process section after the shipped families and before the M3 ones', () => {
     const process: PartDefinition = { ...PARTS[0]!, id: 'zz-process', family: 'process' };
     const titles = { en: 'Process', es: 'Proceso' } as const;
     for (const lang of LANGS) {
@@ -61,7 +61,12 @@ describe('PRT-002 parts reference generated from the part definitions', () => {
       const at = body.indexOf(`## ${titles[lang]}`);
       expect(at).toBeGreaterThan(-1);
       expect(body.indexOf('`zz-process`')).toBeGreaterThan(at);
-      for (const other of body.matchAll(/^## (.+)$/gm)) if (other[1] !== titles[lang]) expect(other.index!).toBeLessThan(at);
+      const later = lang === 'es' ? ['Manipuladores', 'Estaciones'] : ['Manipulators', 'Stations'];
+      for (const other of body.matchAll(/^## (.+)$/gm)) {
+        if (other[1] === titles[lang]) continue;
+        if (later.includes(other[1]!)) expect(other.index!).toBeGreaterThan(at);
+        else expect(other.index!).toBeLessThan(at);
+      }
     }
   });
 
@@ -93,6 +98,23 @@ describe('PRT-002 parts reference generated from the part definitions', () => {
     for (const lang of LANGS) {
       const body = partsBody(stand, lang);
       expect([...body.matchAll(/^## (.+)$/gm)].map((m) => m[1])).toEqual([...titles[lang]]);
+    }
+  });
+
+  it('PRT-002 the reference lists the manipulator and station parts with their variants, ranges and equations', () => {
+    for (const id of ['pick-place', 'gantry', 'layer-palletizer', 'lid', 'base']) expect(PARTS.map((p) => p.id)).toContain(id);
+    for (const lang of LANGS) {
+      const body = partsBody(PARTS, lang);
+      for (const family of ['manipulators', 'stations'] as const) {
+        const heading = { manipulators: ['Manipulators', 'Manipuladores'], stations: ['Stations', 'Estaciones'] }[family][
+          lang === 'es' ? 1 : 0
+        ];
+        expect(body).toContain(`## ${heading}`);
+      }
+      expect(body).toContain('| `variant` | `numeric` |');
+      expect(body).toContain('| `variant` | `numeric` | xSet REAL, ySet REAL, xPos REAL, yPos REAL');
+      expect(body).toContain('| `layerReady` | sensor | BOOL |');
+      expect(body).toContain('#### ' + (lang === 'es' ? 'Ecuaciones' : 'Equations'));
     }
   });
 });
