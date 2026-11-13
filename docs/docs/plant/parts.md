@@ -52,19 +52,59 @@ None.
 
 None.
 
+### Lid
+
+`lid`
+
+A 0.4 by 0.3 m lid, 0.04 m high, with a chosen mass. It rests on a base. Its position is the centre of its bottom face.
+
+#### Settings
+
+| Setting | Kind | Range or values | Default | Unit |
+| --- | --- | --- | --- | --- |
+| `mass` | number | 0.1 to 50 | `1` | kg |
+
+#### Signals
+
+None.
+
+#### Fault actions
+
+None.
+
+### Base
+
+`base`
+
+A 0.4 by 0.3 m base, 0.15 m high, with a chosen mass. A lid rests on it. Its position is the centre of its bottom face.
+
+#### Settings
+
+| Setting | Kind | Range or values | Default | Unit |
+| --- | --- | --- | --- | --- |
+| `mass` | number | 0.1 to 50 | `1` | kg |
+
+#### Signals
+
+None.
+
+#### Fault actions
+
+None.
+
 ## Sources
 
 ### Item emitter
 
 `emitter`
 
-Emits one item on each rising edge of its signal, and by itself every intervalMs when that is above zero (random mode, seeded).
+Emits one item on each rising edge of its signal, and by itself every intervalMs when that is above zero (random mode, seeded). Kinds: box, pallet, lid, base; a lid or base takes its mass from the mass setting and ignores height.
 
 #### Settings
 
 | Setting | Kind | Range or values | Default | Unit |
 | --- | --- | --- | --- | --- |
-| `kind` | enum | `box`, `pallet` | `box` |   |
+| `kind` | enum | `box`, `pallet`, `lid`, `base` | `box` |   |
 | `height` | enum | `0.2`, `0.3`, `0.4` | `0.3` | m |
 | `mass` | enum | `2`, `5` | `2` | kg |
 | `intervalMs` | number | 0 to 600000 | `0` | ms |
@@ -479,7 +519,7 @@ A tank filled through an inlet valve and drained by gravity through an outlet va
 
 #### Equations
 
-State: level h (m), valve openings uIn and uOut (0 to 1), spilled volume (L). Area A = widthM * depthM (m2); step dt = 0.005 s. Per step, in order: (1) valve target: digital TRUE is 1 and FALSE is 0, numeric is clamp(value, 0, 100) / 100; a stuck valve keeps its opening. (2) First-order valve lag: u = target if valveTauS &lt;= dt, else u = u + (target - u) * dt / valveTauS. (3) Flows in L/s: qIn = inletMaxLps * uIn; gravity discharge (Torricelli) qOut = outletCoef * uOut * sqrt(h); with the leak fault a constant leakLps also leaves. (4) Level: h = h + (qIn - qOut - qLeak) * dt / (1000 * A), never below 0. (5) Overflow: if h > heightM then spilled = spilled + (h - heightM) * 1000 * A and h = heightM. The square root is Newton iteration with + - * / only (12 iterations, seed 1 for h >= 1 and h otherwise), so a run is bit for bit repeatable. At full opening a tank empties in finite time 2 * sqrt(h0) * 1000 * A / outletCoef.
+State: level h (m), valve openings uIn and uOut (0 to 1), spilled volume (L). Area A = widthM * depthM (m2); step dt = 0.005 s. Per step, in order: (1) valve target: digital TRUE is 1 and FALSE is 0, numeric is clamp(value, 0, 100) / 100; a stuck valve keeps its opening. (2) First-order valve lag: u = target if valveTauS &lt;= dt, else u = u + (target - u) * dt / valveTauS. (3) Flows in L/s: qIn = inletMaxLps * uIn; gravity discharge (Torricelli) qOut = outletCoef * uOut * sqrt(h); with the leak fault a constant leakLps also leaves. (4) Level: h = h + (qIn - qOut - qLeak) * dt / (1000 * A), never below 0. (5) Overflow: if h > heightM then spilled = spilled + (h - heightM) * 1000 * A and h = heightM. The square root is Newton iteration with + - * / only (40 iterations, seed (1 + h) / 2), so a run is bit for bit repeatable. At full opening a tank empties in finite time 2 * sqrt(h0) * 1000 * A / outletCoef.
 
 {/* <<< END GENERATED: plant/parts <<< */}
 

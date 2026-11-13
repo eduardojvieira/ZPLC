@@ -52,19 +52,59 @@ Ninguna.
 
 Ninguna.
 
+### Tapa
+
+`lid`
+
+Una tapa de 0,4 por 0,3 m, de 0,04 m de alto y con masa a elegir. Se apoya sobre una base. Su posición es el centro de su cara inferior.
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `mass` | number | 0.1 a 50 | `1` | kg |
+
+#### Señales
+
+Ninguna.
+
+#### Acciones de falla
+
+Ninguna.
+
+### Base
+
+`base`
+
+Una base de 0,4 por 0,3 m, de 0,15 m de alto y con masa a elegir. Una tapa se apoya sobre ella. Su posición es el centro de su cara inferior.
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `mass` | number | 0.1 a 50 | `1` | kg |
+
+#### Señales
+
+Ninguna.
+
+#### Acciones de falla
+
+Ninguna.
+
 ## Fuentes
 
 ### Emisor de piezas
 
 `emitter`
 
-Emite una pieza en cada flanco de subida de su señal, y por sí solo cada intervalMs cuando es mayor que cero (modo aleatorio, con semilla).
+Emite una pieza en cada flanco de subida de su señal, y por sí solo cada intervalMs cuando es mayor que cero (modo aleatorio, con semilla). Tipos: caja, tarima, tapa, base; una tapa o base toma su masa del ajuste de masa e ignora la altura.
 
 #### Ajustes
 
 | Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
 | --- | --- | --- | --- | --- |
-| `kind` | enum | `box`, `pallet` | `box` |   |
+| `kind` | enum | `box`, `pallet`, `lid`, `base` | `box` |   |
 | `height` | enum | `0.2`, `0.3`, `0.4` | `0.3` | m |
 | `mass` | enum | `2`, `5` | `2` | kg |
 | `intervalMs` | number | 0 a 600000 | `0` | ms |
@@ -479,7 +519,7 @@ Un tanque que se llena por una válvula de entrada y se vacía por gravedad por 
 
 #### Ecuaciones
 
-Estado: nivel h (m), aperturas de válvula uIn y uOut (0 a 1), volumen derramado (L). Área A = widthM * depthM (m2); paso dt = 0,005 s. En cada paso, en orden: (1) objetivo de la válvula: en digital VERDADERO es 1 y FALSO es 0, en numérico es clamp(valor, 0, 100) / 100; una válvula atascada conserva su apertura. (2) Retardo de primer orden de la válvula: u = objetivo si valveTauS &lt;= dt, si no u = u + (objetivo - u) * dt / valveTauS. (3) Caudales en L/s: qIn = inletMaxLps * uIn; descarga por gravedad (Torricelli) qOut = outletCoef * uOut * raíz(h); con la falla de fuga sale además una constante leakLps. (4) Nivel: h = h + (qIn - qOut - qLeak) * dt / (1000 * A), nunca por debajo de 0. (5) Desborde: si h > heightM entonces derramado = derramado + (h - heightM) * 1000 * A y h = heightM. La raíz cuadrada es una iteración de Newton solo con + - * / (12 iteraciones, semilla 1 si h >= 1 y h en otro caso), de modo que una ejecución se repite bit a bit. Con apertura total un tanque se vacía en un tiempo finito 2 * raíz(h0) * 1000 * A / outletCoef.
+Estado: nivel h (m), aperturas de válvula uIn y uOut (0 a 1), volumen derramado (L). Área A = widthM * depthM (m2); paso dt = 0,005 s. En cada paso, en orden: (1) objetivo de la válvula: en digital VERDADERO es 1 y FALSO es 0, en numérico es clamp(valor, 0, 100) / 100; una válvula atascada conserva su apertura. (2) Retardo de primer orden de la válvula: u = objetivo si valveTauS &lt;= dt, si no u = u + (objetivo - u) * dt / valveTauS. (3) Caudales en L/s: qIn = inletMaxLps * uIn; descarga por gravedad (Torricelli) qOut = outletCoef * uOut * raíz(h); con la falla de fuga sale además una constante leakLps. (4) Nivel: h = h + (qIn - qOut - qLeak) * dt / (1000 * A), nunca por debajo de 0. (5) Desborde: si h > heightM entonces derramado = derramado + (h - heightM) * 1000 * A y h = heightM. La raíz cuadrada es una iteración de Newton solo con + - * / (40 iteraciones, semilla (1 + h) / 2), de modo que una ejecución se repite bit a bit. Con apertura total un tanque se vacía en un tiempo finito 2 * raíz(h0) * 1000 * A / outletCoef.
 
 {/* <<< END GENERATED: plant/parts <<< */}
 
