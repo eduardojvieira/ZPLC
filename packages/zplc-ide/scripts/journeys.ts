@@ -35,6 +35,7 @@ import { domAuditExpression, type DomAuditResult } from './domAudit';
 import { attachEmulatedDevice } from './emulatedDevice';
 import { findTextOutOfBox } from './textFit';
 import { JOURNEYS_013 } from './journeys013';
+import { journeysManipulator } from './journeys/plantManipulator';
 import { journeysOperator } from './journeys/plantOperator';
 
 export interface JourneyContext {
@@ -8339,6 +8340,7 @@ export const JOURNEYS: Journey[] = [
   },
   ...JOURNEYS_013,
   ...journeysOperator,
+  ...journeysManipulator,
 ];
 
 /** Walks a native select to the option with this text with the arrow keys, as a keyboard user would. */
