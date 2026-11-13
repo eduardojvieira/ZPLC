@@ -33,7 +33,7 @@ export const plantBoardEs = {
   'plantIo.exit.SESSION_END': 'El modo de E/S de planta terminó: terminó la sesión en la placa.',
   'plantIo.exit.LINK_LOST': 'El modo de E/S de planta terminó: se perdió la conexión con la placa.',
   'plantIo.exit.RUN_CONTROL': 'El modo de E/S de planta terminó: el programa se detuvo, se pausó o se reinició.',
-  'plantIo.exit.FAULT': 'El modo de E/S de planta terminó: la placa informó de un fallo.',
+  'plantIo.exit.FAULT': 'El modo de E/S de planta terminó: la placa informó una falla.',
   'plantIo.exit.PROTOCOL': 'El modo de E/S de planta terminó: la placa rechazó un frame que no cumplía el protocolo.',
   'plantIo.warn.pulse':
     'El pulso más corto de esta escena es de {sceneMs} ms, pero el enlace puede dejar {worstGapMs} ms entre dos frames con un ciclo de ' +
