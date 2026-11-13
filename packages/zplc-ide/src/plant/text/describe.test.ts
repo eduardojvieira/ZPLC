@@ -161,3 +161,29 @@ describe('describePlant support facts', () => {
     expect(describePlant(withFacts({ itemsAssembled: 2 }), scene, 'es').text).toContain('Piezas ensambladas: 2.');
   });
 });
+
+describe('describePlant tank facts', () => {
+  const tankFacts = (extra: Record<string, number | boolean>): PlantSnapshot => {
+    const base = snap(1, 2);
+    return { ...base, facts: { ...base.facts, ...extra } };
+  };
+
+  it('VIS-011 the high-mark count reads as a sentence in both languages and is silent at 0', () => {
+    expect(describePlant(tankFacts({ 'highs:Tank1': 2 }), scene, 'en').text).toContain('Tank1 reached the high mark 2 time(s).');
+    expect(describePlant(tankFacts({ 'highs:Tank1': 2 }), scene, 'es').text).toContain('Tank1 llegó a la marca alta 2 vez (veces).');
+    for (const locale of ['en', 'es'] as const)
+      expect(describePlant(tankFacts({ 'highs:Tank1': 0 }), scene, locale)).toEqual(describePlant(snap(1, 2), scene, locale));
+  });
+
+  it('VIS-011 the band fact reads as a sentence in both languages, never as its raw key', () => {
+    const inBand = tankFacts({ 'inBand:Tank1': true });
+    const out = tankFacts({ 'inBand:Tank1': false });
+    expect(describePlant(inBand, scene, 'en').text).toContain('Tank1 level is in its band.');
+    expect(describePlant(out, scene, 'en').text).toContain('Tank1 level is out of its band.');
+    expect(describePlant(inBand, scene, 'es').text).toContain('El nivel de Tank1 está dentro de su banda.');
+    expect(describePlant(out, scene, 'es').text).toContain('El nivel de Tank1 está fuera de su banda.');
+    for (const locale of ['en', 'es'] as const) expect(describePlant(inBand, scene, locale).text).not.toMatch(/inBand|highs:/);
+    // the key still changes when the tank enters or leaves its band (VIS-008)
+    expect(describePlant(inBand, scene, 'en').key).not.toBe(describePlant(out, scene, 'en').key);
+  });
+});

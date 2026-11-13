@@ -5,8 +5,9 @@ const TOTALS = ['itemsEmitted', 'itemsRemoved', 'itemsDropped', 'itemsCollided']
 // Continuous measurements of a tank or an axis: whole numbers only by chance, so they are never a change of situation. The tank is told
 // by its level band and `spilling` below.
 const CONTINUOUS = ['level:', 'volume:', 'spilledL:', 'axis:'];
-// The support facts (K5) are told in words and stay silent at 0, so a scene that assembles or stacks nothing reads as it did before them.
-const SUPPORT = /^(itemsAssembled|stacked:pallet:\d+|layers:pallet:\d+)$/;
+// The support facts (K5) and a tank's high-mark count are told in words and stay silent at 0, so a scene that assembles or stacks nothing
+// reads as it did before them.
+const SUPPORT = /^(itemsAssembled|stacked:pallet:\d+|layers:pallet:\d+|highs:.+)$/;
 const kindOf = (k: string) => (k.startsWith('layers:pallet:') ? 'layers' : '');
 const m = (n: number) => String(Math.round(n * 10) / 10);
 
@@ -44,6 +45,8 @@ export function describePlant(snapshot: PlantSnapshot, scene: PlantSceneFile, lo
     else if (kind === 'count' && k.includes(':')) parts.push(t('plant.text.count', { name, count: String(v) }));
     else if ((kind === 'picked' || kind === 'placed' || kind === 'drops') && k.includes(':'))
       parts.push(t(`plant.text.${kind}`, { name, count: String(v) }));
+    else if (kind === 'highs' && k.includes(':')) parts.push(t('plant.text.highs', { name, count: String(v) }));
+    else if (kind === 'inBand' && k.includes(':')) parts.push(t(v ? 'plant.text.inBand' : 'plant.text.outOfBand', { name }));
     else parts.push(t('plant.text.fact', { name: k, value: String(v) }));
   }
   const active = snapshot.parts.flatMap((p) => (Object.values(p.signals).some((v) => v === true) ? [p.name] : []));
