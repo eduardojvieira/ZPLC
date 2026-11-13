@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Pick from one belt, place on another",
+  "summary": "Sequence a clamp carriage with limit sensors and a grip feedback to move four boxes from an infeed belt to an outfeed belt.",
+  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Sequence a pick and place with one state per move, each move waiting for its limit sensor.",
+    "Wait for the grip feedback before lifting, and keep the receiving belt still while a box is put down."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/BeltTransfer.st, write a CASE state machine: for each box lower the clamp, close it and wait for Gripped, lift, carry the box over the outfeed, lower, open the clamp and let the box settle, lift and return. Do it for four boxes and light Done when the fourth has passed EyeOut.",
+      "checkpoint": "Every move starts when the limit sensor of the previous one is on, and the outputs follow the state."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, follow one box: the blade holds it at EyePick, the clamp comes down, closes, lifts and crosses to XMax, and the outfeed belt stands still while the box is put down and settles.",
+      "checkpoint": "Grip is on from the moment the clamp closes until the box is on the outfeed; Hold stays on during the job; the outfeed runs again after the box is at rest."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter drives no output, so nothing moves; write the transfer: feed one box at a time, grip, carry and release each one over the outfeed, and light Done after the fourth.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the belt-to-belt-transfer scenario; watch the 3D view while it runs.",
+      "checkpoint": "The required scenario is named belt-to-belt-transfer and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Watch the clamp in the 3D view: it stays closed and still until the box is held, and the box lies still on the outfeed before that belt runs again.",
+      "checkpoint": "No box falls, and the clamp opens only over the outfeed belt."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The scenario proves that the clamp picked a box and put it down, that a box reached the end of the outfeed, that nothing was dropped and that Done is lit at the end. It does not count that exactly four boxes crossed: that count is in your program.",
+      "checkpoint": "It does not establish physical gripper timing, axis speed, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Give each move its own state number and let the transition wait for one limit sensor: YMin after lowering, Gripped after closing, YMax after lifting, XMax after carrying."
+    },
+    {
+      "level": 2,
+      "text": "The clamp takes time to close and a box that still moves is not taken: wait for EyePick to hold for a moment before lowering, and wait for Gripped before lifting. Stop the outfeed belt while the box is put down."
+    }
+  ],
+  "faultCases": [
+    "The starter drives no output, so nothing moves; write the transfer: feed one box at a time, grip, carry and release each one over the outfeed, and light Done after the fourth."
+  ]
+}
