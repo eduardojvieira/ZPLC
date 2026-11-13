@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "level": "native-sim",
+  "board": "rpi_pico",
+  "transport": "usb-serial",
+  "date": "2026-11-13T16:27:27.153Z",
+  "repository": {
+    "commit": "a49227a3ce3defcae602a9eec0c276790b36c0ef",
+    "dirty": false
+  },
+  "tools": {
+    "harness": "1",
+    "platform": "Linux 7.2.15-arch1-1 x86_64",
+    "python": "3.14.10",
+    "bun": "1.4.4",
+    "compiler_draft_counter": null,
+    "bench": "1"
+  },
+  "run": {
+    "frames": 500,
+    "frame_ms": 20,
+    "timeout_ms": 500,
+    "phase_s": 5.0,
+    "negotiated_payload": 512,
+    "plant_id": 1,
+    "in_bytes": 7,
+    "out_bytes": 1,
+    "max_slots": 32,
+    "timeout_ms_granted": 500
+  },
+  "device": {
+    "kind": "serial"
+  },
+  "firmware": {
+    "commit": "a49227a3ce3defcae602a9eec0c276790b36c0ef",
+    "version": "2.0.0",
+    "dirty": false,
+    "board_target": "native_sim/native/64",
+    "version_output": "ZPLC Runtime v2.0.0\nCommit:         a49227a3ce3defcae602a9eec0c276790b36c0ef\nDirty:          no\nBoard:          native_sim/native/64\nBytecode ABI:   1.0\nContract draft: 6\nOptions hash:   03f40785\nOptions:        CALL_STACK_DEPTH=32,CODE_SIZE_MAX=24576,COMM_THREAD_PRIORITY=8,DEADLINE_MISS_LIMIT=3,DEVICE_LINK=y,EMU_SHELL=y,EXCHANGE_QUEUE_BYTES=1024,FAILSAFE=y,FATAL_HANDLER=y,IO_INPUT_IMAGE_BYTES=0,IO_OUTPUT_IMAGE_BYTES=0,LOG_LEVEL=3,MAX_TASKS=4,PLANT_IO=y,PLANT_MAX_SLOTS=32,PROGRAM_STORE_CHUNK_SIZE=1024,PROTO_EVENT_QUEUE=16,PROTO_PAYLOAD_MAX=512,PROTO_SESSION_IDLE_S=30,REQUIRED_GPIO_OUTPUT_MASK=0x0,RETAIN_MEMORY_SIZE=4096,SCHEDULER=y,SCHED_HIGH_PRIO_PRIORITY=2,SCHED_HIGH_PRIO_STACK_SIZE=2048,SCHED_HIGH_PRIO_WORKQ=y,SCHED_WORKQ_PRIORITY=5,SCHED_WORKQ_STACK_SIZE=2048,STACK_DEPTH=256,VM_CYCLE_INSTRUCTION_BUDGET=100000,WORK_MEMORY_SIZE=8192\nzplc:~$"
+  },
+  "program": {
+    "size": 136,
+    "crc32": "e3ab27e9"
+  },
+  "events": [],
+  "closed": {
+    "reason": "CLOSED",
+    "frames": 502,
+    "late": 0,
+    "rejected": 0
+  },
+  "measurements": {
+    "rtt_ms": {
+      "count": 500,
+      "p50": 19.023036998987664,
+      "p95": 19.490457998472266,
+      "p99": 19.792121998762013,
+      "max": 20.266692001314368
+    },
+    "gap_ms": {
+      "count": 499,
+      "p50": 19.91397900201264,
+      "p95": 20.46111799791106,
+      "p99": 20.54366700031096,
+      "max": 20.844341001065914
+    },
+    "frames_sent": 500,
+    "frames_ok": 500,
+    "late": 0,
+    "rejected": 0,
+    "timeouts": 0,
+    "refused": 0,
+    "applied_seq": {
+      "regressions": 0,
+      "max_lag": 3
+    },
+    "echo_mismatches": 0
+  },
+  "limits": {
+    "max_gap_ms": 250
+  },
+  "physical": []
+}
