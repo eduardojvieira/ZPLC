@@ -1,7 +1,7 @@
 import type * as THREE_NS from 'three';
 import type { PlantSceneFile, PlantSnapshot } from '../contracts';
 import { cameraFromPreset, cameraPosition, orbitCamera, panCamera, zoomCamera, type CameraState } from './camera';
-import { instanceColors, instanceMatrices, itemTone, partDecor, partShape, type Decor, type ShapeSpec } from './geometry';
+import { instanceColors, instanceMatrices, itemToneOf, OUTLINED_PARTS, partDecor, partShape, type Decor, type ShapeSpec } from './geometry';
 import type { Palette } from './displayModes';
 import { chooseInitialQuality, qualitySettings, type QualityLevel } from './quality';
 
@@ -140,6 +140,14 @@ const PART_COLORS: Readonly<Record<string, number>> = {
   'layer-palletizer': 0x2563eb,
   'manipulator-frame': 0x64748b,
   'manipulator-beam': 0x94a3b8,
+  'light-array': 0x0f766e,
+  scale: 0x64748b,
+  'vision-sensor': 0x7c3aed,
+  pusher: 0xb45309,
+  'diverter-arm': 0xb45309,
+  'chain-transfer': 0x4b5563,
+  turntable: 0x4b5563,
+  workpiece: 0xb91c1c,
 };
 /** Colours of the boxes drawn inside a part: the liquid, and each lamp lit and dark. Shape differs too (VIS-003). */
 const DECOR_COLORS: Readonly<Record<string, number>> = {
@@ -270,7 +278,7 @@ export function createRenderer(
   const paintItems = (): void => {
     const colors = instanceColors(lastItems);
     for (let i = 0; i < lastItems.length; i++)
-      if (palette) items.setColorAt(i, new THREE.Color(itemTone(lastItems[i]?.tag, palette)));
+      if (palette && lastItems[i]) items.setColorAt(i, new THREE.Color(itemToneOf(lastItems[i]!, palette)));
       else items.setColorAt(i, new THREE.Color(colors[i * 3], colors[i * 3 + 1], colors[i * 3 + 2]));
     if (items.instanceColor) items.instanceColor.needsUpdate = true;
   };
@@ -347,7 +355,7 @@ export function createRenderer(
     for (const [id, entry] of partMeshes) {
       const part = (entry.mesh.userData as { part?: string }).part;
       const current = partOutlines.get(id);
-      if (part !== 'sensor' && part !== 'stop-blade') continue;
+      if (!part || !OUTLINED_PARTS.has(part)) continue;
       if (current?.key === entry.key) continue;
       if (current) entry.mesh.remove(current.line);
       let g = edges.get(entry.key);
