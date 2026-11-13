@@ -14,8 +14,11 @@ import { buildFacts, createContactTracker } from './facts';
 import { loadJolt } from './jolt';
 import { conveyorParts } from './parts/conveyors';
 import { flowParts } from './parts/flow';
+import { indicatorParts } from './parts/indicators';
 import { itemParts, boxSize, PALLET_SIZE, removeTrackedItem, spawnItem, trackedItems, type RuntimePartDefinition } from './parts/items';
+import { operableParts } from './parts/operable';
 import { isOperable, panelParts } from './parts/panel';
+import { processParts } from './parts/process';
 import { sensorParts } from './parts/sensors';
 import { sourceParts } from './parts/sources';
 import { sceneSignals, validateScene } from './scene';
@@ -29,6 +32,9 @@ const SHIPPED: readonly RuntimePartDefinition[] = [
   ...sensorParts,
   ...flowParts,
   ...panelParts,
+  ...processParts,
+  ...operableParts,
+  ...indicatorParts,
 ];
 const RUNTIMES = new Map(SHIPPED.map((d) => [d.id, d]));
 registerParts(SHIPPED.filter((d) => !catalogue.get(d.id)));
@@ -66,6 +72,31 @@ export async function createPlantCore(scene: PlantSceneFile, options: { seed?: n
   const signals: readonly PlantSignalDef[] = sceneSignals(scene, catalogue);
   const commandNames = signals.filter((s) => s.direction === 'command').map((s) => s.name);
   const known = signals.map((s) => s.name).join(', ');
+  const signalOf = new Map(signals.map((s) => [s.name, s]));
+  const shown = (v: unknown) => (typeof v === 'string' ? JSON.stringify(v) : String(v));
+
+  /**
+   * R-X2: the value types and ranges of a command set. A numeric command saturates at its range; a bad one throws before anything changes.
+   */
+  function checked(commands: Readonly<Record<string, boolean | number>>): Record<string, boolean | number> {
+    const out: Record<string, boolean | number> = {};
+    for (const [name, v] of Object.entries(commands)) {
+      const def = signalOf.get(name);
+      if (def === undefined || def.direction !== 'command') {
+        out[name] = v; // an unknown name is reported by `exec`, with the signals of the scene
+        continue;
+      }
+      if (def.type === 'BOOL') {
+        if (typeof v !== 'boolean') throw new Error(`plant: ${name} is BOOL, got ${shown(v)}`);
+        out[name] = v;
+        continue;
+      }
+      if (typeof v !== 'number') throw new Error(`plant: ${name} is ${def.type}, got ${shown(v)}`);
+      if (!Number.isFinite(v)) throw new RangeError(`plant: ${name} must be a finite number, got ${v}`);
+      out[name] = def.range === undefined ? v : Math.min(def.range.max, Math.max(def.range.min, v));
+    }
+    return out;
+  }
 
   function build() {
     const world: PhysicsWorld = createWorld(Jolt, PLANT_STEP_MS);
@@ -224,9 +255,10 @@ export async function createPlantCore(scene: PlantSceneFile, options: { seed?: n
   const core: PlantCore = {
     stepMs: 5,
     signals,
-    apply(commands) {
+    apply(input) {
+      const commands = checked(input);
       const changed = Object.entries(commands).some(([k, v]) => m.latched[k] !== v);
-      if (changed) run(['c', { ...commands }]);
+      if (changed) run(['c', commands]);
       else exec(['c', commands]); // still validates the names
     },
     advance: (ms) => run(['a', ms, 1]),

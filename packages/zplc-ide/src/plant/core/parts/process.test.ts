@@ -154,6 +154,21 @@ describe('tank process model', () => {
     expect(detSqrt(Number.NaN)).toBe(0);
   });
 
+  it('PLT-006 detSqrt has a relative error below 1e-12 across the tank domain, 1e-12 to 1e6', () => {
+    const cases: Array<[number, number]> = [
+      [1e-12, 1e-6],
+      [1e-8, 1e-4],
+      [2.5e-5, 5e-3],
+      [0.01, 0.1],
+      [0.25, 0.5],
+      [1, 1],
+      [2, Math.SQRT2],
+      [900, 30],
+      [1e6, 1e3],
+    ];
+    for (const [v, root] of cases) expect(Math.abs(detSqrt(v) - root) / root).toBeLessThan(1e-12);
+  });
+
   it('PRT-004 the digital variant has on/off valves and level switches, the numeric variant proportional valves and meters', () => {
     const d = def.signals(tankPart({ variant: 'digital' }));
     expect(d.map((s) => [s.name, s.direction, s.type])).toEqual([
