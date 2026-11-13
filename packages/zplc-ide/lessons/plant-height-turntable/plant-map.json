@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 2,
+  "target": {
+    "scene": "height-sorting-turntable"
+  },
+  "signals": {
+    "StartButton.pressed": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "HeightSort.Start"
+    },
+    "LightArray1.detect": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "HeightSort.ArrayBusy"
+    },
+    "EyeStop.detect": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "HeightSort.AtBlade"
+    },
+    "EyeTable.detect": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "HeightSort.OnTable"
+    },
+    "Table1.atCentre": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "HeightSort.AtCentre"
+    },
+    "Table1.atLeft": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "HeightSort.AtLeft"
+    },
+    "Table1.atRight": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "HeightSort.AtRight"
+    },
+    "LightArray1.height": {
+      "direction": "sensor",
+      "type": "REAL",
+      "point": "HeightSort.HeightCm",
+      "range": {
+        "raw_min": 0,
+        "raw_max": 60,
+        "eng_min": 0,
+        "eng_max": 0.6,
+        "unit": "m"
+      }
+    },
+    "Infeed.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "HeightSort.RunIn"
+    },
+    "Table1.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "HeightSort.RunTable"
+    },
+    "OutCentre.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "HeightSort.RunCentre"
+    },
+    "OutRight.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "HeightSort.RunRight"
+    },
+    "OutLeft.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "HeightSort.RunLeft"
+    },
+    "Stop1.extend": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "HeightSort.Hold"
+    },
+    "Table1.toLeft": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "HeightSort.ToLeft"
+    },
+    "Table1.toRight": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "HeightSort.ToRight"
+    },
+    "Beacon.amber": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "HeightSort.Busy"
+    },
+    "Beacon.green": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "HeightSort.Done"
+    }
+  }
+}

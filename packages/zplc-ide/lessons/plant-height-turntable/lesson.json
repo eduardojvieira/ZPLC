@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-height-turntable",
+  "version": 1,
+  "order": 165,
+  "module": 16,
+  "level": "advanced",
+  "prerequisites": ["plant-height-chain"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson needs a light array that measures height, a turntable and three outfeed belts; a learner board has none of them, and the scene supplies all three.",
+        "es": "La lección necesita una cortina de luz que mide la altura, una mesa giratoria y tres bandas de salida; una placa del estudiante no tiene ninguna, y la escena aporta las tres."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its items are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus piezas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "height-sorting-turntable",
+  "estimatedMinutes": 60,
+  "starter": {
+    "project": "plant_height_turntable_starter",
+    "program": "src/HeightSort.st"
+  },
+  "solution": {
+    "project": "plant_height_turntable",
+    "program": "src/HeightSort.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "height-sorting-turntable",
+    "path": "tests/height-sorting-turntable.scenario.json",
+    "sha256": "9ca3e93da56ce62ec234d41db3550876a92e0c2861413af3d996982b5e98b565"
+  },
+  "regressionScenarios": []
+}

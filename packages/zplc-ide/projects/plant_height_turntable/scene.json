@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "name": "Height sorting with turntable",
+  "shortestPulseMs": 800,
+  "parts": [
+    {
+      "id": "infeed",
+      "part": "belt",
+      "name": "Infeed",
+      "position": [-1.65, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "length": 2.4,
+        "speedMps": 0.5
+      }
+    },
+    {
+      "id": "source",
+      "part": "emitter",
+      "name": "Source1",
+      "position": [-2.6, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "intervalMs": 8500,
+        "maxItems": 7
+      }
+    },
+    {
+      "id": "array",
+      "part": "light-array",
+      "name": "LightArray1",
+      "position": [-1.9, 0.5, -0.4],
+      "rotationYDeg": 0,
+      "config": {}
+    },
+    {
+      "id": "stop",
+      "part": "stop-blade",
+      "name": "Stop1",
+      "position": [-0.75, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {}
+    },
+    {
+      "id": "eye-stop",
+      "part": "sensor-diffuse",
+      "name": "EyeStop",
+      "position": [-0.975, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": {
+        "rangeM": 1
+      }
+    },
+    {
+      "id": "table",
+      "part": "turntable",
+      "name": "Table1",
+      "position": [0, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "sizeM": 0.6
+      }
+    },
+    {
+      "id": "eye-table",
+      "part": "sensor-diffuse",
+      "name": "EyeTable",
+      "position": [0.1, 0.5, -0.35],
+      "rotationYDeg": 270,
+      "config": {
+        "rangeM": 0.7
+      }
+    },
+    {
+      "id": "out-centre",
+      "part": "belt",
+      "name": "OutCentre",
+      "position": [1.2, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "length": 1.5,
+        "speedMps": 0.5
+      }
+    },
+    {
+      "id": "out-right",
+      "part": "belt",
+      "name": "OutRight",
+      "position": [0, 0.5, 1.2],
+      "rotationYDeg": 270,
+      "config": {
+        "length": 1.5,
+        "speedMps": 0.5
+      }
+    },
+    {
+      "id": "out-left",
+      "part": "belt",
+      "name": "OutLeft",
+      "position": [0, 0.5, -1.2],
+      "rotationYDeg": 90,
+      "config": {
+        "length": 1.5,
+        "speedMps": 0.5
+      }
+    },
+    {
+      "id": "bin-short",
+      "part": "remover",
+      "name": "BinShort",
+      "position": [2.1, 0.65, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "width": 0.4,
+        "depth": 0.6,
+        "height": 0.6,
+        "accepts": "short"
+      }
+    },
+    {
+      "id": "bin-medium",
+      "part": "remover",
+      "name": "BinMedium",
+      "position": [0, 0.65, 2.1],
+      "rotationYDeg": 0,
+      "config": {
+        "width": 0.6,
+        "depth": 0.4,
+        "height": 0.6,
+        "accepts": "medium"
+      }
+    },
+    {
+      "id": "bin-tall",
+      "part": "remover",
+      "name": "BinTall",
+      "position": [0, 0.65, -2.1],
+      "rotationYDeg": 0,
+      "config": {
+        "width": 0.6,
+        "depth": 0.4,
+        "height": 0.6,
+        "accepts": "tall"
+      }
+    },
+    {
+      "id": "start",
+      "part": "push-button",
+      "name": "StartButton",
+      "position": [-2.6, 0.5, -0.7],
+      "rotationYDeg": 0,
+      "config": {}
+    },
+    {
+      "id": "beacon",
+      "part": "stack-light",
+      "name": "Beacon",
+      "position": [2.1, 0.5, -0.7],
+      "rotationYDeg": 0,
+      "config": {}
+    }
+  ],
+  "cameras": [
+    {
+      "name": "Overview",
+      "position": [0, 3.4, 4.2],
+      "target": [0, 0.6, 0]
+    }
+  ]
+}

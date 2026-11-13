@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Clasificar por altura, mesa giratoria",
+  "summary": "Mida la altura de cada caja con una cortina de luz, conserve la lectura mayor y gire una mesa para que la caja salga por la banda de su clase.",
+  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "objectives": [
+    "Reducir un flujo de lecturas a un valor, el máximo, y clasificarlo con dos límites.",
+    "Coordinar una mesa giratoria con la decisión: detener, girar, sacar la caja y volver a girar."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/HeightSort.st, conserve el mayor HeightCm mientras ArrayBusy sea TRUE y clasifique la caja cuando haya pasado: hasta 25 cm baja, hasta 35 cm media, por encima alta. Lleve la caja a la mesa, deténgala, gire la mesa, saque la caja y vuelva al centro.",
+      "checkpoint": "Las cajas bajas salen por la banda central, las medias a la derecha, las altas a la izquierda, y Done se enciende tras siete cajas."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "Antes de ejecutar, diga qué lee HeightCm mientras una caja cruza la cortina y por qué una sola lectura no basta: es 0 antes y después de la caja. ¿Qué valores dan cajas de 20, 30 y 40 cm y dónde quedan los límites entre ellos?",
+      "checkpoint": "La cortina lee 20, 30 o 40 mientras una caja está en ella, y el programa conserva el máximo y clasifica en el flanco de bajada de ArrayBusy."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna banda se mueve y no se clasifica ninguna caja; ponga en marcha las bandas tras Start, mida cada caja, gire la mesa hacia la banda de su clase y vuélvala al centro.",
+      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario height-sorting-turntable; observe la vista 3D mientras se ejecuta.",
+      "checkpoint": "El escenario requerido se llama height-sorting-turntable y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Observe la vista 3D y la traza de HeightCm: sube cuando la caja entra en la cortina y vuelve a 0. La mesa gira solo cuando la caja se ha detenido sobre ella y vuelve al centro antes de la caja siguiente.",
+      "checkpoint": "ToLeft o ToRight es TRUE solo mientras la caja está en la mesa, y RunTable es FALSE mientras la mesa gira."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "La calificación no puede comparar números: ve los contenedores, no el máximo que midió ni los límites que eligió. Límites en cualquier punto entre 20 y 30 cm y entre 30 y 40 cm dan la misma calificación.",
+      "checkpoint": "Una caja en la banda equivocada incumple la aserción ALWAYS; la calificación no establece la exactitud de la cortina, la velocidad de la mesa, la temporización de hardware, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Use un R_TRIG sobre ArrayBusy para poner Peak a 0, actualice Peak con HeightCm mientras ArrayBusy sea TRUE y un F_TRIG para clasificar: Peak > 35.0 alta, Peak > 25.0 media."
+    },
+    {
+      "level": 2,
+      "text": "Lea la clase cuando la caja se libera de la cuchilla, en Route, para que la medición siguiente no la cambie. Gire solo con la caja quieta sobre la mesa y permanezca en el estado de giro hasta que AtCentre vuelva a ser TRUE."
+    }
+  ],
+  "faultCases": [
+    "El inicial no gobierna ninguna salida, así que ninguna banda se mueve y no se clasifica ninguna caja; ponga en marcha las bandas tras Start, mida cada caja, gire la mesa hacia la banda de su clase y vuélvala al centro."
+  ]
+}

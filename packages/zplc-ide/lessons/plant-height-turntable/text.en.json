@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Sort by height, turntable",
+  "summary": "Measure the height of each box with a light array, keep the largest reading, and turn a turntable so the box leaves on the belt of its class.",
+  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Reduce a stream of readings to one value, the peak, and classify it with two limits.",
+    "Coordinate a turntable with the decision: stop, turn, run out, turn back."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/HeightSort.st, keep the highest HeightCm while ArrayBusy is TRUE, and classify the box when it has passed: up to 25 cm short, up to 35 cm medium, above that tall. Run the box onto the turntable, stop it, turn the table, run the box out and turn back to the centre.",
+      "checkpoint": "Short boxes leave on the centre belt, medium to the right, tall to the left, and Done lights after seven boxes."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, say what HeightCm reads while a box crosses the array and why one reading is not enough: it is 0 before and after the box. Which values do 20, 30 and 40 cm boxes give and where do the limits sit between them?",
+      "checkpoint": "The array reads 20, 30 or 40 while a box is in it, and the program keeps the peak and classifies on the falling edge of ArrayBusy."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter drives no output, so no belt moves and no box is sorted; run the belts after Start, measure each box, turn the table to the belt of its class and turn it back to the centre.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the height-sorting-turntable scenario; watch the 3D view while it runs.",
+      "checkpoint": "The required scenario is named height-sorting-turntable and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Watch the 3D view and the trace of HeightCm: it rises while the box enters the array and returns to 0. The table turns only after the box has stopped on it, and returns to the centre before the next box.",
+      "checkpoint": "ToLeft or ToRight is TRUE only while the box is on the table, and RunTable is FALSE while the table turns."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The grade cannot compare numbers: it sees the bins, not the peak you measured or the limits you chose. Limits anywhere between 20 and 30 cm and between 30 and 40 cm give the same grade.",
+      "checkpoint": "A box on the wrong belt fails the ALWAYS assertion; the grade does not establish the accuracy of the array, turntable speed, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Use an R_TRIG on ArrayBusy to reset Peak to 0, update Peak with HeightCm while ArrayBusy is TRUE, and an F_TRIG to classify: Peak > 35.0 tall, Peak > 25.0 medium."
+    },
+    {
+      "level": 2,
+      "text": "Read the class when the box is released from the blade, into Route, so the next measurement cannot change it. Turn only while the box stands still on the table, and stay in the turn state until AtCentre is TRUE again."
+    }
+  ],
+  "faultCases": [
+    "The starter drives no output, so no belt moves and no box is sorted; run the belts after Start, measure each box, turn the table to the belt of its class and turn it back to the centre."
+  ]
+}
