@@ -4309,7 +4309,7 @@ static int lk_plant_enter(void *context, const uint8_t *request, uint16_t length
   if (zplc_sched_get_state() != ZPLC_SCHED_STATE_RUNNING) {
     return (int)ZPLC_PROTO_ERR_STATE;
   }
-  rc = zplc_plant_enter(request, length, response, response_length);
+  rc = zplc_plant_enter_bounded(request, length, response, *response_length, response_length);
   if (rc == 0) {
     lk_plant_id = (uint16_t)(response[0] | (response[1] << 8));
     lk_plant_live = true;
@@ -4319,7 +4319,7 @@ static int lk_plant_enter(void *context, const uint8_t *request, uint16_t length
 
 static int lk_plant_frame(void *context, const uint8_t *request, uint16_t length, uint8_t *response, uint16_t *response_length) {
   ARG_UNUSED(context);
-  return zplc_plant_frame(request, length, response, response_length);
+  return zplc_plant_frame_bounded(request, length, response, *response_length, response_length);
 }
 
 /* Every exit that is not decided inside a scan (the person's PLANT_EXIT, the end of the session, the loss of the

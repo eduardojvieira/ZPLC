@@ -400,6 +400,7 @@ static int leave_plant(zplc_proto_dev_t *dev, uint8_t reason, uint8_t *out) {
   (void)memset(body, 0, sizeof(scratch));
   result = ops_error(dev->ops->plant_exit(dev->ops->context, reason, body, &length));
   if (result == 0) {
+    dev->plant_session = 0U;
     event[ZPLC_PROTO_EVT_PLANT_EXIT_REASON_OFF] = reason;
     (void)memcpy(event + ZPLC_PROTO_EVT_PLANT_EXIT_FRAMES_OFF, body + 1U, 4U);
     post_internal(dev, ZPLC_PROTO_EVT_PLANT_EXIT, event, ZPLC_PROTO_EVT_PLANT_EXIT_FIXED);
@@ -1448,6 +1449,18 @@ static int plant_supported(const request_t *r) {
   return 1;
 }
 
+/** A mode belongs to the session that entered it (D-16): frames, mirror and exit from any other session are a STATE
+ *  error, so a mode left behind by a stop that was refused stays held until the staleness bound ends it. */
+static int plant_not_ours(const request_t *r) {
+  const zplc_proto_dev_t *dev = r->link->dev;
+
+  if (dev->plant_session != 0U && dev->plant_session != dev->session_id) {
+    respond_error(r->link, r->frame, (int)ZPLC_PROTO_ERR_STATE);
+    return 1;
+  }
+  return 0;
+}
+
 static void respond_plant_body(const request_t *r, int result, uint16_t length) {
   if (result == 0 && (size_t)length > body_capacity(r->link)) {
     result = (int)ZPLC_PROTO_ERR_FAILED; /* a port that wrote past the frame: nothing of it is sent */
@@ -1464,10 +1477,16 @@ static void do_plant_enter_or_frame(const request_t *r) {
   if (plant_supported(r) == 0) {
     return;
   }
+  if (r->frame->message == ZPLC_PROTO_MSG_PLANT_FRAME && plant_not_ours(r) != 0) {
+    return;
+  }
   length = (uint16_t)body_capacity(r->link);
   result = ops_error(r->frame->message == ZPLC_PROTO_MSG_PLANT_ENTER
                          ? dev->ops->plant_enter(dev->ops->context, r->payload, (uint16_t)r->length, body_of(dev), &length)
                          : dev->ops->plant_frame(dev->ops->context, r->payload, (uint16_t)r->length, body_of(dev), &length));
+  if (result == 0 && r->frame->message == ZPLC_PROTO_MSG_PLANT_ENTER) {
+    dev->plant_session = dev->session_id;
+  }
   respond_plant_body(r, result, length);
 }
 
@@ -1475,7 +1494,7 @@ static void do_plant_exit(const request_t *r) {
   zplc_proto_dev_t *dev = r->link->dev;
   int result;
 
-  if (plant_supported(r) == 0) {
+  if (plant_supported(r) == 0 || plant_not_ours(r) != 0) {
     return;
   }
   result = leave_plant(dev, (uint8_t)ZPLC_PROTO_PLANT_EXIT_REASON_CLOSED, body_of(dev));
@@ -1489,6 +1508,9 @@ static void do_plant_mirror(const request_t *r) {
   int result;
 
   if (plant_supported(r) == 0) {
+    return;
+  }
+  if (plant_not_ours(r) != 0) {
     return;
   }
   if (enable > 1U) {

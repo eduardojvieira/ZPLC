@@ -56,8 +56,16 @@ void zplc_plant_init(const zplc_plant_hooks_t *hooks);
 /** @brief PLANT_ENTER: request payload in, response payload (after the status byte) out. ZPLC_PROTO_ERR_*. */
 int zplc_plant_enter(const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t *rsp_len);
 
+/** @brief PLANT_ENTER with the capacity of @p rsp in bytes. An entry whose PLANT_FRAME response (13 + output bytes) or
+ *         own response would not fit is refused with ZPLC_PROTO_ERR_RANGE (LNK-018). Link code must use this form. */
+int zplc_plant_enter_bounded(const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t cap, uint16_t *rsp_len);
+
 /** @brief PLANT_FRAME: request payload in, response payload (after the status byte) out. ZPLC_PROTO_ERR_*. */
 int zplc_plant_frame(const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t *rsp_len);
+
+/** @brief PLANT_FRAME with the capacity of @p rsp: a response that does not fit is never written; the frame is then
+ *         answered ZPLC_PROTO_ERR_RANGE and neither staged nor counted. Link code must use this form. */
+int zplc_plant_frame_bounded(const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t cap, uint16_t *rsp_len);
 
 /** @brief Leave the mode for @p reason (ZPLC_PROTO_PLANT_EXIT_REASON_*). Idempotent; posts the exit once. */
 int zplc_plant_exit(uint8_t reason);

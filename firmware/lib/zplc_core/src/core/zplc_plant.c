@@ -72,6 +72,17 @@ static volatile uint8_t g_reason;
 static volatile uint32_t g_last_ms;
 static volatile uint16_t g_miss; /* scans that could not take the lock; written by the scan only */
 
+/* The values the scan last applied, copied under the lock and owned by the scan thread alone: a latch that cannot take
+ * the lock re-applies them without it, so the bound inputs never fall back to the pin level (LNK-007) and the scan
+ * never waits (LNK-015). Valid only for the entry it was taken from (snap_id). */
+static struct {
+  slot_t in[SLOTS];
+  uint8_t staged[VALUES_MAX];
+  uint8_t n_in;
+  uint8_t valid;
+  uint16_t id;
+} g_snap;
+
 static int take(void) { return g.hooks.lock == NULL ? 0 : g.hooks.lock(g.hooks.ctx); }
 static void give(void) {
   if (g.hooks.unlock != NULL) {
@@ -102,6 +113,7 @@ void zplc_plant_init(const zplc_plant_hooks_t *hooks) {
   g_reason = (uint8_t)ZPLC_PROTO_PLANT_EXIT_REASON_CLOSED;
   g_last_ms = 0U;
   g_miss = 0U;
+  g_snap.valid = 0U;
 }
 
 static uint8_t type_len(uint8_t type) { return type == T_BOOL ? 1U : (type == T_INT ? 2U : 4U); }
@@ -159,7 +171,7 @@ static int build_slots(const uint8_t *d, uint8_t n, slot_t *s, uint32_t limit, u
   return 0;
 }
 
-int zplc_plant_enter(const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t *rsp_len) {
+int zplc_plant_enter_bounded(const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t cap, uint16_t *rsp_len) {
   int rc = (int)ZPLC_PROTO_ERR_BAD_REQUEST;
   uint8_t n_in, n_out;
   uint16_t timeout;
@@ -182,7 +194,8 @@ int zplc_plant_enter(const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t *r
   }
   n_in = req[2];
   n_out = req[3];
-  if (n_in > SLOTS || n_out > SLOTS || len != ENTER_FIXED + DESC_BYTES * ((uint16_t)n_in + (uint16_t)n_out)) {
+  if ((n_in == 0U && n_out == 0U) || n_in > SLOTS || n_out > SLOTS ||
+      len != ENTER_FIXED + DESC_BYTES * ((uint16_t)n_in + (uint16_t)n_out)) {
     goto out;
   }
   for (uint16_t i = 0U; i < (uint16_t)n_in + (uint16_t)n_out; i++) {
@@ -197,6 +210,11 @@ int zplc_plant_enter(const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t *r
     rc = build_slots(req + ENTER_FIXED + DESC_BYTES * n_in, n_out, g.out, ZPLC_MEM_OPI_SIZE, &g.out_bool, &g.out_bytes);
   }
   if (rc != 0) {
+    goto out;
+  }
+  /* LNK-018: an entry whose answers cannot fit the payload is refused now, not failed at every frame. */
+  if (cap < ENTER_RSP_BYTES || (uint32_t)FRAME_RSP_FIXED + g.out_bytes > cap) {
+    rc = (int)ZPLC_PROTO_ERR_RANGE;
     goto out;
   }
   timeout = rd16(req);
@@ -233,6 +251,10 @@ int zplc_plant_enter(const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t *r
 out:
   give();
   return rc;
+}
+
+int zplc_plant_enter(const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t *rsp_len) {
+  return zplc_plant_enter_bounded(req, len, rsp, 0xFFFFU, rsp_len); /* caller sizes rsp for the worst case */
 }
 
 static int reject(void) {
@@ -273,7 +295,7 @@ static int check_frame(const uint8_t *req, uint16_t len) {
   return 0;
 }
 
-int zplc_plant_frame(const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t *rsp_len) {
+int zplc_plant_frame_bounded(const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t cap, uint16_t *rsp_len) {
   slot_t out[SLOTS];
   uint8_t n_out, flags;
   uint16_t out_bytes, late, rejected;
@@ -292,6 +314,10 @@ int zplc_plant_frame(const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t *r
   if (g_active == 0U || g_fired != 0U) {
     give();
     return (int)ZPLC_PROTO_ERR_STATE;
+  }
+  if ((uint32_t)FRAME_RSP_FIXED + g.out_bytes > cap) {
+    give();
+    return (int)ZPLC_PROTO_ERR_RANGE; /* nothing is staged or counted: the response could not be written */
   }
   if (check_frame(req, len) != 0) {
     rc = reject();
@@ -349,6 +375,10 @@ int zplc_plant_frame(const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t *r
   return 0;
 }
 
+int zplc_plant_frame(const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t *rsp_len) {
+  return zplc_plant_frame_bounded(req, len, rsp, 0xFFFFU, rsp_len); /* caller sizes rsp for the worst case */
+}
+
 int zplc_plant_exit(uint8_t reason) {
   int held = take() == 0;
   int rc = (int)ZPLC_PROTO_ERR_STATE;
@@ -379,40 +409,57 @@ int zplc_plant_active(void) { return g_active != 0U; }
 
 int zplc_plant_holds_outputs(void) { return g_active != 0U && (g_fired != 0U || g_mirror == 0U); }
 
-void zplc_plant_latch(void) {
-  uint8_t *ipi;
+static void apply_inputs(const slot_t *in, uint8_t n, const uint8_t *vals) {
+  uint8_t *ipi = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
 
+  if (ipi == NULL) {
+    return;
+  }
+  for (uint8_t i = 0U; i < n; i++) {
+    const slot_t *s = &in[i];
+
+    if (s->type == T_BOOL) {
+      uint8_t byte = ipi[s->off];
+      if (((vals[s->vpos / 8U] >> (s->vpos % 8U)) & 1U) != 0U) {
+        byte = (uint8_t)(byte | (1U << s->bit));
+      } else {
+        byte = (uint8_t)(byte & ~(1U << s->bit));
+      }
+      (void)zplc_force_write_bytes((uint16_t)(ZPLC_MEM_IPI_BASE + s->off), &byte, 1U);
+    } else {
+      (void)zplc_force_write_bytes((uint16_t)(ZPLC_MEM_IPI_BASE + s->off), vals + s->vpos, s->len);
+    }
+  }
+}
+
+void zplc_plant_latch(void) {
   if (g_active == 0U || g_fired != 0U) {
+    g_snap.valid = 0U;
     return;
   }
   if (take() != 0) {
     g_miss++;
+    /* No lock: the link thread may be changing g, so only the scan's own copy is read. The port has just sampled the
+     * pins over the bound inputs; put the last plant values back. */
+    if (g_snap.valid != 0U && g_snap.id == g.plant_id) {
+      apply_inputs(g_snap.in, g_snap.n_in, g_snap.staged);
+    }
     return;
   }
   if (g_active != 0U && g_fired == 0U) {
     g.scans += (uint32_t)g_miss + 1U;
     g.late = (uint16_t)(g.late + g_miss);
     g_miss = 0U;
-    ipi = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
     /* The staged values are applied at every latch once a frame was accepted, not only the first one after it: the
      * pins are sampled again each scan and would take a bound input back (LNK-007). A latch with no new frame
      * still counts as late; the staleness bound (R-M6-4) limits how long the values persist. */
-    if (g.have_seq != 0U && ipi != NULL) {
-      for (uint8_t i = 0U; i < g.n_in; i++) {
-        const slot_t *s = &g.in[i];
-
-        if (s->type == T_BOOL) {
-          uint8_t byte = ipi[s->off];
-          if (((g.staged[s->vpos / 8U] >> (s->vpos % 8U)) & 1U) != 0U) {
-            byte = (uint8_t)(byte | (1U << s->bit));
-          } else {
-            byte = (uint8_t)(byte & ~(1U << s->bit));
-          }
-          (void)zplc_force_write_bytes((uint16_t)(ZPLC_MEM_IPI_BASE + s->off), &byte, 1U);
-        } else {
-          (void)zplc_force_write_bytes((uint16_t)(ZPLC_MEM_IPI_BASE + s->off), g.staged + s->vpos, s->len);
-        }
-      }
+    if (g.have_seq != 0U) {
+      apply_inputs(g.in, g.n_in, g.staged);
+      memcpy(g_snap.in, g.in, sizeof(slot_t) * g.n_in);
+      memcpy(g_snap.staged, g.staged, g.in_bytes);
+      g_snap.n_in = g.n_in;
+      g_snap.id = g.plant_id;
+      g_snap.valid = 1U;
       if (g.fresh != 0U) {
         g.fresh = 0U;
         g.applied_seq = g.staged_seq;
