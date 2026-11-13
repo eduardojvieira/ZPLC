@@ -35,7 +35,10 @@ const MARKERS: Readonly<Record<CueState, CueMarker>> = {
   fault: 'outline',
 };
 // Signal suffixes, in order, that say whether a part is active: sensors detect, actuators run, extend, light, press.
-const ACTIVE_SUFFIXES = ['gripped', 'divert', 'lift', 'detect', 'extended', 'run', 'extend', 'pressed', 'lit', 'emit'] as const;
+export const ACTIVE_SUFFIXES = [
+  ...['gripped', 'divert', 'lift', 'detect', 'extended', 'run', 'extend', 'pressed', 'lit', 'emit'],
+  ...['up', 'down', 'raise', 'start', 'align', 'contact'],
+] as const;
 
 function stateOf(view: PartView): CueState {
   if (view.state.fault === true) return 'fault';
