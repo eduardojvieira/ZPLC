@@ -55,8 +55,10 @@ export function OperatePanel(props: { scene: PlantSceneFile; core: PlantCore; sn
   const buttons = panelParts.filter((part) => part.part === 'push-button');
   const lights = panelParts.filter((part) => part.part === 'indicator-light');
   const viewOf = (part: ScenePart) => snapshot?.parts.find((candidate) => candidate.id === part.id);
-  const numeric = scene.parts.filter((part) =>
-    ['potentiometer', 'selector-switch', 'emergency-stop', 'numeric-display', 'stack-light', 'tank'].includes(part.part),
+  const numeric = scene.parts.filter(
+    (part) =>
+      ['potentiometer', 'selector-switch', 'emergency-stop', 'numeric-display', 'stack-light', 'tank'].includes(part.part) ||
+      ['manipulators', 'stations'].includes(catalogue.get(part.part)?.family ?? ''),
   );
   const faulty = scene.parts.filter((part) => (catalogue.get(part.part)?.actions.length ?? 0) > 0);
   const emitter = scene.parts.find((part) => part.part === 'emitter');

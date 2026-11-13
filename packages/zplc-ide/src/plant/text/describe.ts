@@ -2,9 +2,9 @@ import { translatorFor } from '../../i18n';
 import type { PlantSceneFile, PlantSnapshot } from '../contracts';
 
 const TOTALS = ['itemsEmitted', 'itemsRemoved', 'itemsDropped', 'itemsCollided'] as const;
-// Continuous measurements of a tank: whole numbers only by chance, so they are never a change of situation. The tank is told
+// Continuous measurements of a tank or an axis: whole numbers only by chance, so they are never a change of situation. The tank is told
 // by its level band and `spilling` below.
-const CONTINUOUS = ['level:', 'volume:', 'spilledL:'];
+const CONTINUOUS = ['level:', 'volume:', 'spilledL:', 'axis:'];
 const m = (n: number) => String(Math.round(n * 10) / 10);
 
 /**
@@ -25,6 +25,8 @@ export function describePlant(snapshot: PlantSnapshot, scene: PlantSceneFile, lo
     const [kind, name] = [k.slice(0, k.indexOf(':')), k.slice(k.indexOf(':') + 1)];
     if (kind === 'delivered' && k.includes(':')) parts.push(t('plant.text.delivered', { name, count: String(v) }));
     else if (kind === 'count' && k.includes(':')) parts.push(t('plant.text.count', { name, count: String(v) }));
+    else if ((kind === 'picked' || kind === 'placed' || kind === 'drops') && k.includes(':'))
+      parts.push(t(`plant.text.${kind}`, { name, count: String(v) }));
     else parts.push(t('plant.text.fact', { name: k, value: String(v) }));
   }
   const active = snapshot.parts.flatMap((p) => (Object.values(p.signals).some((v) => v === true) ? [p.name] : []));

@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { useT } from '../../i18n';
 import { Button, RangeField, Select } from '../../ui';
 import type { PartView, PlantCore, ScenePart } from '../contracts';
+import { catalogue } from '../core/catalogue';
 
 const num = (view: PartView, key: string, fallback = 0) => (typeof view.state[key] === 'number' ? (view.state[key] as number) : fallback);
 const str = (view: PartView, key: string) => (typeof view.state[key] === 'string' ? (view.state[key] as string) : '');
@@ -94,6 +95,8 @@ const LAMPS = [
   ['green', 'plant.panel.lampGreen'],
 ] as const;
 
+const isManipulator = (id: string) => ['manipulators', 'stations'].includes(catalogue.get(id)?.family ?? '');
+
 /** A readout: a numeric display, a stack light or a tank, as text. */
 export function Readout({ part, view }: Pick<ControlProps, 'part' | 'view'>) {
   const { t } = useT();
@@ -104,6 +107,16 @@ export function Readout({ part, view }: Pick<ControlProps, 'part' | 'view'>) {
         {t('plant.panel.display', { name: part.name, text: str(view, 'text') })}
       </span>
     );
+  if (isManipulator(part.part))
+    return (
+      <span data-plant-manipulator={part.name} className="text-sm">
+        {t('plant.panel.manipulator', {
+          name: part.name,
+          text: str(view, 'text'),
+          state: t(view.state.holding === true ? 'plant.panel.holding' : 'plant.panel.empty'),
+        })}
+      </span>
+    );
   if (part.part === 'tank')
     return (
       <span data-plant-tank={part.name} className="text-sm">
@@ -111,6 +124,7 @@ export function Readout({ part, view }: Pick<ControlProps, 'part' | 'view'>) {
         {view.state.spilling === true ? ` ${t('plant.panel.tankSpilling')}` : ''}
       </span>
     );
+  if (part.part !== 'stack-light') return null;
   return (
     <span data-plant-stack={part.name} className="text-sm">
       {LAMPS.map(([lamp, key]) => (
