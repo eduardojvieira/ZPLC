@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "en": {
+    "name": "Merge two lines",
+    "goal": "Two feeder lines each load three boxes and meet at one merge zone. The program grants the zone to one line at a time, line A first. A grant ends when its box has left the zone.",
+    "teaches": "Sharing one resource between two requesters, so that two boxes never meet in the zone."
+  },
+  "es": {
+    "name": "Unión de dos líneas",
+    "goal": "Dos líneas de alimentación cargan tres cajas cada una y se encuentran en una zona de unión. El programa concede la zona a una línea a la vez, primero la línea A. Una concesión termina cuando su caja salió de la zona.",
+    "teaches": "Compartir un recurso entre dos solicitantes, de modo que dos cajas nunca coincidan en la zona."
+  }
+}

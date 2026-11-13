@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "en": {
+    "name": "Timed tank",
+    "goal": "Fill a tank for a set time with a timer, hold it, then drain it until the low level switch reports a low level. A press of the start button begins the cycle. The emergency stop closes both valves at any time and lights the red lamp.",
+    "teaches": "Sequencing a process with on-delay timers, and an emergency stop that wins over the sequence."
+  },
+  "es": {
+    "name": "Tanque temporizado",
+    "goal": "Llene un tanque durante un tiempo fijo con un temporizador, manténgalo lleno un momento y luego vacíelo hasta que el interruptor de nivel bajo indique un nivel bajo. Una pulsación del botón de inicio comienza el ciclo. El paro de emergencia cierra las dos válvulas en cualquier momento y enciende la luz roja.",
+    "teaches": "Secuenciar un proceso con temporizadores con retardo a la conexión y un paro de emergencia que se impone a la secuencia."
+  }
+}

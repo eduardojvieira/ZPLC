@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "en": {
+    "name": "Weight sorting",
+    "goal": "Sort boxes by weight with a scale and a pusher. Each box waits on the scale at a stop blade until the reading is stable; a pusher sends boxes heavier than 3.5 kg to a side belt and lighter boxes go straight on. The weight arrives as a REAL value in kilograms.",
+    "teaches": "Waiting for a noisy reading to settle before comparing it with a threshold."
+  },
+  "es": {
+    "name": "Clasificación por peso",
+    "goal": "Clasifique cajas por peso con una báscula y un empujador. Cada caja espera sobre la báscula en un tope retráctil hasta que la lectura es estable; un empujador envía las cajas de más de 3.5 kg a una cinta lateral y las más livianas siguen de largo. El peso llega como un valor REAL en kilogramos.",
+    "teaches": "Esperar a que una lectura con ruido se estabilice antes de compararla con un umbral."
+  }
+}

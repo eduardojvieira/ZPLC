@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "en": {
+    "name": "Buffer and release",
+    "goal": "Load five boxes on a buffer belt, hold them at a stop blade, and release one box for each press of the release button. The next box must not follow the released one.",
+    "teaches": "Accumulating items and releasing them one at a time on a request."
+  },
+  "es": {
+    "name": "Búfer y liberación",
+    "goal": "Cargue cinco cajas en una cinta de almacén, retenga las cajas en un tope retráctil y libere una caja por cada pulsación del botón de liberación. La caja siguiente no debe seguir a la liberada.",
+    "teaches": "Acumular piezas y liberarlas de una en una a petición."
+  }
+}

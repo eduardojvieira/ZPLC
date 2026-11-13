@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "en": {
+    "name": "Lift with stacking",
+    "goal": "Gather up to five workpieces into one crate with a lift. A crate waits in the middle of the lift, the lift rises to the feeder, workpieces are fed one at a time and counted into the crate, and the full crate is lowered and sent out.",
+    "teaches": "A sequence of lift moves with a count, in which the program waits for each position switch before the next move."
+  },
+  "es": {
+    "name": "Elevador con apilado",
+    "goal": "Reúna hasta cinco piezas en una caja con un elevador. Una caja espera en el centro del elevador, el elevador sube hasta el alimentador, las piezas se alimentan una a una y se cuentan dentro de la caja, y la caja llena se baja y sale.",
+    "teaches": "Una secuencia de movimientos del elevador con una cuenta, en la que el programa espera cada interruptor de posición antes del movimiento siguiente."
+  }
+}

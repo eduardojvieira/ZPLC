@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "en": {
+    "name": "Three-level lifts",
+    "goal": "Move five boxes from level 1 to level 3 with two lifts and the belts between them. Lift A takes a box from the infeed to level 2, a transfer belt carries it to lift B, and lift B raises it to the outfeed at level 3. An emergency stop halts the line.",
+    "teaches": "Coordinating two lifts that hand over a box, and an emergency stop that stops every movement."
+  },
+  "es": {
+    "name": "Elevadores de tres niveles",
+    "goal": "Lleve cinco cajas del nivel 1 al nivel 3 con dos elevadores y las cintas entre ellos. El elevador A lleva una caja de la entrada al nivel 2, una cinta de transferencia la lleva al elevador B, y el elevador B la sube a la salida en el nivel 3. Un paro de emergencia detiene la línea.",
+    "teaches": "Coordinar dos elevadores que se entregan una caja y un paro de emergencia que detiene todos los movimientos."
+  }
+}

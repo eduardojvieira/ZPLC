@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "en": {
+    "name": "Stacker-crane warehouse",
+    "goal": "Store boxes from an infeed belt in the cells of a rack with a stacker crane, and bring the box of a cell to the outfeed belt when its request button is pressed.",
+    "teaches": "Keeping a table of occupied cells and a queue of requests, positioning two axes by number and moving a fork in a fixed order."
+  },
+  "es": {
+    "name": "Almacén con transelevador",
+    "goal": "Almacene en las celdas de un estante, con un transelevador, las cajas que llegan por una cinta de entrada, y lleve la caja de una celda a la cinta de salida cuando se pulsa su botón de solicitud.",
+    "teaches": "Llevar una tabla de celdas ocupadas y una cola de solicitudes, posicionar dos ejes por número y mover una horquilla en un orden fijo."
+  }
+}

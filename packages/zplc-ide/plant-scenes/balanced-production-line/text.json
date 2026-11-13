@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "en": {
+    "name": "Balanced production line",
+    "goal": "Produce equal numbers of lids and bases with two machining centres. Blanks arrive on one belt and a diverter arm sends every second blank to the machine that makes bases; the other machine makes lids and is faster. The finished products leave on two belts.",
+    "teaches": "One function block used for two machines, and sharing the work of machines with different cycle times by alternating the blanks."
+  },
+  "es": {
+    "name": "Línea de producción balanceada",
+    "goal": "Produzca la misma cantidad de tapas y de bases con dos centros de maquinado. Las piezas en bruto llegan por una cinta y un brazo desviador envía una de cada dos a la máquina que hace bases; la otra máquina hace tapas y es más rápida. Los productos terminados salen por dos cintas.",
+    "teaches": "Un bloque de función usado para dos máquinas y el reparto del trabajo entre máquinas con distinto tiempo de ciclo alternando las piezas."
+  }
+}

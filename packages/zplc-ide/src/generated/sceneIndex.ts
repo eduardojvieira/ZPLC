@@ -7,7 +7,7 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "dir": "plant-scenes/belt-to-sensor",
     "names": {
       "en": "Belt to sensor",
-      "es": "Belt to sensor"
+      "es": "Cinta hasta un sensor"
     }
   },
   {
@@ -15,7 +15,7 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "dir": "plant-scenes/latch-two-sensors",
     "names": {
       "en": "Latch between two sensors",
-      "es": "Latch between two sensors"
+      "es": "Biestable entre dos sensores"
     }
   },
   {
@@ -23,7 +23,7 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "dir": "plant-scenes/timed-tank",
     "names": {
       "en": "Timed tank",
-      "es": "Timed tank"
+      "es": "Tanque temporizado"
     }
   },
   {
@@ -31,7 +31,7 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "dir": "plant-scenes/counted-queue",
     "names": {
       "en": "Counted queue",
-      "es": "Counted queue"
+      "es": "Cola contada"
     }
   },
   {
@@ -39,7 +39,7 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "dir": "plant-scenes/two-axis-assembly",
     "names": {
       "en": "Two-axis assembly",
-      "es": "Two-axis assembly"
+      "es": "Ensamble de dos ejes"
     }
   },
   {
@@ -47,7 +47,7 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "dir": "plant-scenes/two-axis-assembly-numeric",
     "names": {
       "en": "Two-axis assembly, numeric",
-      "es": "Two-axis assembly, numeric"
+      "es": "Ensamble de dos ejes, numérico"
     }
   },
   {
@@ -55,7 +55,7 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "dir": "plant-scenes/stacker-crane-warehouse",
     "names": {
       "en": "Stacker-crane warehouse",
-      "es": "Stacker-crane warehouse"
+      "es": "Almacén con transelevador"
     }
   },
   {
@@ -63,7 +63,7 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "dir": "plant-scenes/buffer-release",
     "names": {
       "en": "Buffer and release",
-      "es": "Buffer and release"
+      "es": "Búfer y liberación"
     }
   },
   {
@@ -71,7 +71,7 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "dir": "plant-scenes/merge-lines",
     "names": {
       "en": "Merge two lines",
-      "es": "Merge two lines"
+      "es": "Unión de dos líneas"
     }
   },
   {
@@ -79,7 +79,7 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "dir": "plant-scenes/lift-stacking",
     "names": {
       "en": "Lift with stacking",
-      "es": "Lift with stacking"
+      "es": "Elevador con apilado"
     }
   },
   {
@@ -87,7 +87,7 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "dir": "plant-scenes/three-level-lifts",
     "names": {
       "en": "Three-level lifts",
-      "es": "Three-level lifts"
+      "es": "Elevadores de tres niveles"
     }
   },
   {
@@ -95,7 +95,7 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "dir": "plant-scenes/tank-level-control",
     "names": {
       "en": "Tank level control",
-      "es": "Tank level control"
+      "es": "Control de nivel de un tanque"
     }
   },
   {
@@ -103,7 +103,7 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "dir": "plant-scenes/layer-palletizer",
     "names": {
       "en": "Layer palletizer",
-      "es": "Layer palletizer"
+      "es": "Paletizador de capas"
     }
   },
   {
@@ -111,7 +111,7 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "dir": "plant-scenes/belt-to-belt-transfer",
     "names": {
       "en": "Transfer between belts",
-      "es": "Transfer between belts"
+      "es": "Transferencia entre cintas"
     }
   },
   {
@@ -119,7 +119,7 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "dir": "plant-scenes/three-axis-palletizing",
     "names": {
       "en": "Three-axis palletizing",
-      "es": "Three-axis palletizing"
+      "es": "Paletizado de tres ejes"
     }
   },
   {
@@ -127,7 +127,7 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "dir": "plant-scenes/balanced-production-line",
     "names": {
       "en": "Balanced production line",
-      "es": "Balanced production line"
+      "es": "Línea de producción balanceada"
     }
   },
   {
@@ -135,7 +135,7 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "dir": "plant-scenes/colour-separation",
     "names": {
       "en": "Colour separation",
-      "es": "Colour separation"
+      "es": "Separación por color"
     }
   },
   {
@@ -143,7 +143,7 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "dir": "plant-scenes/height-sorting-turntable",
     "names": {
       "en": "Height sorting with turntable",
-      "es": "Height sorting with turntable"
+      "es": "Clasificación por altura con mesa giratoria"
     }
   },
   {
@@ -151,7 +151,7 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "dir": "plant-scenes/height-sorting-chain",
     "names": {
       "en": "Height sorting with a chain transfer",
-      "es": "Height sorting with a chain transfer"
+      "es": "Clasificación por altura con transferencia de cadenas"
     }
   },
   {
@@ -159,7 +159,7 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "dir": "plant-scenes/weight-sorting",
     "names": {
       "en": "Weight sorting",
-      "es": "Weight sorting"
+      "es": "Clasificación por peso"
     }
   },
   {
@@ -167,7 +167,7 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     "dir": "plant-scenes/vision-sorting",
     "names": {
       "en": "Vision sorting",
-      "es": "Vision sorting"
+      "es": "Clasificación con visión"
     }
   }
 ];

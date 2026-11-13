@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "en": {
+    "name": "Two-axis assembly, numeric",
+    "goal": "The same task with the numeric variant: the program sets the X and Y positions of the pick and place in metres and reads its position back, instead of jogging to limit switches.",
+    "teaches": "Commanding positions with numeric signals and reading the position back."
+  },
+  "es": {
+    "name": "Ensamble de dos ejes, numérico",
+    "goal": "La misma tarea con la variante numérica: el programa fija las posiciones X e Y del manipulador en metros y lee su posición, en lugar de moverlo hasta los finales de carrera.",
+    "teaches": "Ordenar posiciones con señales numéricas y leer la posición de vuelta."
+  }
+}

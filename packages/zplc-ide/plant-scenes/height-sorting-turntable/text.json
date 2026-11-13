@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "en": {
+    "name": "Height sorting with turntable",
+    "goal": "Sort boxes by height into three bins with a light array and a turntable. The light array reads each box's height as it passes; the box stops on the turntable, which turns to send short boxes straight on, medium boxes to the right and tall boxes to the left. The height arrives as a REAL value.",
+    "teaches": "Classifying a number into three classes with thresholds and routing each class to its own output."
+  },
+  "es": {
+    "name": "Clasificación por altura con mesa giratoria",
+    "goal": "Clasifique cajas por altura en tres retiradores con una cortina de luz y una mesa giratoria. La cortina de luz lee la altura de cada caja al pasar; la caja se detiene sobre la mesa, que gira para enviar las bajas de frente, las medianas a la derecha y las altas a la izquierda. La altura llega como un valor REAL.",
+    "teaches": "Clasificar un número en tres clases con umbrales y encaminar cada clase a su propia salida."
+  }
+}

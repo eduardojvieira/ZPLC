@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "en": {
+    "name": "Belt to sensor",
+    "goal": "Start the belt and send one box. The belt stops when the far sensor sees the box.",
+    "teaches": "Starting an actuator from a button press, remembering that it runs, and stopping it from a sensor."
+  },
+  "es": {
+    "name": "Cinta hasta un sensor",
+    "goal": "Arranque la cinta y envíe una caja. La cinta se detiene cuando el sensor lejano ve la caja.",
+    "teaches": "Arrancar un actuador con un pulsador, recordar que está en marcha y detenerlo con un sensor."
+  }
+}

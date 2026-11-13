@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "en": {
+    "name": "Vision sorting",
+    "goal": "Separate two products with a vision sensor and a diverter arm. The vision sensor reads each box's product code as it passes; the arm swings across the belt to send code 2 to a side belt, and code 1 goes straight on. The code arrives as an INT value.",
+    "teaches": "Routing by an integer code and returning the arm home after each box."
+  },
+  "es": {
+    "name": "Clasificación con visión",
+    "goal": "Separe dos productos con un sensor de visión y un brazo desviador. El sensor de visión lee el código de producto de cada caja al pasar; el brazo gira sobre la cinta para enviar el código 2 a una cinta lateral, y el código 1 sigue de largo. El código llega como un valor INT.",
+    "teaches": "Encaminar por un código entero y devolver el brazo a su posición inicial después de cada caja."
+  }
+}

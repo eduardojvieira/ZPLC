@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "en": {
+    "name": "Counted queue",
+    "goal": "Send three boxes one after another and stop when three have left the belt. Each next box goes out when the previous one has left the emitter. A counter keeps the total.",
+    "teaches": "Counting events with a counter and releasing the next item only when the previous one has gone."
+  },
+  "es": {
+    "name": "Cola contada",
+    "goal": "Envíe tres cajas una tras otra y deténgase cuando las tres hayan salido de la cinta. Cada caja siguiente sale cuando la anterior dejó el emisor. Un contador lleva el total.",
+    "teaches": "Contar eventos con un contador y liberar la pieza siguiente solo cuando la anterior se fue."
+  }
+}
