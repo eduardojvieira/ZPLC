@@ -17,7 +17,7 @@ Every part of the plant catalogue, with its settings, signals and fault actions.
 
 `box`
 
-A 0.4 by 0.3 m box with a chosen height and mass. Its position is the centre of its bottom face.
+A 0.4 by 0.3 m box with a chosen height and mass, and an optional code 1 to 9 (0 means none). Its position is the centre of its bottom face.
 
 #### Settings
 
@@ -25,6 +25,30 @@ A 0.4 by 0.3 m box with a chosen height and mass. Its position is the centre of 
 | --- | --- | --- | --- | --- |
 | `height` | enum | `0.2`, `0.3`, `0.4` | `0.3` | m |
 | `mass` | enum | `2`, `5` | `2` | kg |
+| `code` | number | 0 to 9 | `0` |   |
+
+#### Signals
+
+None.
+
+#### Fault actions
+
+None.
+
+### Workpiece
+
+`workpiece`
+
+A 0.2 by 0.2 m block, 0.1 m high, in red or blue, plastic or metal, with an optional code 1 to 9 (0 means none) and a chosen mass. Sensors and removers read its colour, material and code. Its position is the centre of its bottom face.
+
+#### Settings
+
+| Setting | Kind | Range or values | Default | Unit |
+| --- | --- | --- | --- | --- |
+| `colour` | enum | `red`, `blue` | `red` |   |
+| `material` | enum | `plastic`, `metal` | `plastic` |   |
+| `code` | number | 0 to 9 | `0` |   |
+| `mass` | number | 0.1 to 5 | `0.5` | kg |
 
 #### Signals
 
@@ -98,13 +122,18 @@ None.
 
 `emitter`
 
-Emits one item on each rising edge of its signal, and by itself every intervalMs when that is above zero (random mode, seeded). Kinds: box, pallet, lid, base; a lid or base takes its mass from the mass setting and ignores height.
+Emits one item on each rising edge of its signal, and by itself every intervalMs when that is above zero (random mode, seeded). Kinds: box, pallet, lid, base, workpiece; a lid or base takes its mass from the mass setting and ignores height; a workpiece takes colour, material and code (0.5 kg). vary draws one seeded number per item: colour (workpiece), weight (box, 2 or 5 kg) or code (workpiece or box, 1 to codes); a vary that does not apply to the kind has no effect.
 
 #### Settings
 
 | Setting | Kind | Range or values | Default | Unit |
 | --- | --- | --- | --- | --- |
-| `kind` | enum | `box`, `pallet`, `lid`, `base` | `box` |   |
+| `kind` | enum | `box`, `pallet`, `lid`, `base`, `workpiece` | `box` |   |
+| `vary` | enum | `none`, `colour`, `weight`, `code` | `none` |   |
+| `codes` | number | 1 to 9 | `3` |   |
+| `colour` | enum | `red`, `blue` | `red` |   |
+| `material` | enum | `plastic`, `metal` | `plastic` |   |
+| `code` | number | 0 to 9 | `0` |   |
 | `height` | enum | `0.2`, `0.3`, `0.4` | `0.3` | m |
 | `mass` | enum | `2`, `5` | `2` | kg |
 | `intervalMs` | number | 0 to 600000 | `0` | ms |
@@ -124,7 +153,7 @@ None.
 
 `remover`
 
-A volume that removes every item whose centre enters it and counts them as delivered.
+A volume that removes every item whose centre enters it and counts them as delivered. When accepts is not any (red, blue, metal, plastic, light up to 3.5 kg, heavy, short up to 0.25 m, medium up to 0.35 m, tall, or code with acceptsCode), it also counts them as sorted when they match and misrouted when they do not; a pallet never matches a class.
 
 #### Settings
 
@@ -133,6 +162,8 @@ A volume that removes every item whose centre enters it and counts them as deliv
 | `width` | number | 0.2 to 2 | `0.6` | m |
 | `depth` | number | 0.2 to 2 | `0.6` | m |
 | `height` | number | 0.2 to 2 | `0.6` | m |
+| `accepts` | enum | `any`, `red`, `blue`, `metal`, `plastic`, `light`, `heavy`, `short`, `medium`, `tall`, `code` | `any` |   |
+| `acceptsCode` | number | 0 to 9 | `0` |   |
 
 #### Signals
 

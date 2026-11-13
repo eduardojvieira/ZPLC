@@ -17,7 +17,7 @@ Cada pieza del catálogo de la planta, con sus ajustes, señales y acciones de f
 
 `box`
 
-Una caja de 0,4 por 0,3 m con altura y masa a elegir. Su posición es el centro de su cara inferior.
+Una caja de 0,4 por 0,3 m con altura y masa a elegir, y un código opcional de 1 a 9 (0 significa ninguno). Su posición es el centro de su cara inferior.
 
 #### Ajustes
 
@@ -25,6 +25,30 @@ Una caja de 0,4 por 0,3 m con altura y masa a elegir. Su posición es el centro 
 | --- | --- | --- | --- | --- |
 | `height` | enum | `0.2`, `0.3`, `0.4` | `0.3` | m |
 | `mass` | enum | `2`, `5` | `2` | kg |
+| `code` | number | 0 a 9 | `0` |   |
+
+#### Señales
+
+Ninguna.
+
+#### Acciones de falla
+
+Ninguna.
+
+### Pieza
+
+`workpiece`
+
+Un bloque de 0,2 por 0,2 m y 0,1 m de alto, rojo o azul, de plástico o metal, con un código opcional de 1 a 9 (0 significa ninguno) y una masa a elegir. Los sensores y los retiradores leen su color, su material y su código. Su posición es el centro de su cara inferior.
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `colour` | enum | `red`, `blue` | `red` |   |
+| `material` | enum | `plastic`, `metal` | `plastic` |   |
+| `code` | number | 0 a 9 | `0` |   |
+| `mass` | number | 0.1 a 5 | `0.5` | kg |
 
 #### Señales
 
@@ -98,13 +122,18 @@ Ninguna.
 
 `emitter`
 
-Emite una pieza en cada flanco de subida de su señal, y por sí solo cada intervalMs cuando es mayor que cero (modo aleatorio, con semilla). Tipos: caja, tarima, tapa, base; una tapa o base toma su masa del ajuste de masa e ignora la altura.
+Emite una pieza en cada flanco de subida de su señal, y por sí solo cada intervalMs cuando es mayor que cero (modo aleatorio, con semilla). Tipos: caja, tarima, tapa, base, pieza; una tapa o base toma su masa del ajuste de masa e ignora la altura; una pieza toma color, material y código (0,5 kg). vary sortea un número con semilla por pieza: color (pieza), peso (caja, 2 o 5 kg) o código (pieza o caja, de 1 a codes); un vary que no aplica al tipo no tiene efecto.
 
 #### Ajustes
 
 | Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
 | --- | --- | --- | --- | --- |
-| `kind` | enum | `box`, `pallet`, `lid`, `base` | `box` |   |
+| `kind` | enum | `box`, `pallet`, `lid`, `base`, `workpiece` | `box` |   |
+| `vary` | enum | `none`, `colour`, `weight`, `code` | `none` |   |
+| `codes` | number | 1 a 9 | `3` |   |
+| `colour` | enum | `red`, `blue` | `red` |   |
+| `material` | enum | `plastic`, `metal` | `plastic` |   |
+| `code` | number | 0 a 9 | `0` |   |
 | `height` | enum | `0.2`, `0.3`, `0.4` | `0.3` | m |
 | `mass` | enum | `2`, `5` | `2` | kg |
 | `intervalMs` | number | 0 a 600000 | `0` | ms |
@@ -124,7 +153,7 @@ Ninguna.
 
 `remover`
 
-Un volumen que retira cada pieza cuyo centro entra en él y las cuenta como entregadas.
+Un volumen que retira cada pieza cuyo centro entra en él y las cuenta como entregadas. Cuando accepts no es any (red, blue, metal, plastic, light hasta 3,5 kg, heavy, short hasta 0,25 m, medium hasta 0,35 m, tall, o code con acceptsCode), también las cuenta como clasificadas si coinciden y como mal enrutadas si no; una tarima nunca coincide con una clase.
 
 #### Ajustes
 
@@ -133,6 +162,8 @@ Un volumen que retira cada pieza cuyo centro entra en él y las cuenta como entr
 | `width` | number | 0.2 a 2 | `0.6` | m |
 | `depth` | number | 0.2 a 2 | `0.6` | m |
 | `height` | number | 0.2 a 2 | `0.6` | m |
+| `accepts` | enum | `any`, `red`, `blue`, `metal`, `plastic`, `light`, `heavy`, `short`, `medium`, `tall`, `code` | `any` |   |
+| `acceptsCode` | number | 0 a 9 | `0` |   |
 
 #### Señales
 
