@@ -169,8 +169,8 @@ describe('describePlant tank facts', () => {
   };
 
   it('VIS-011 the high-mark count reads as a sentence in both languages and is silent at 0', () => {
-    expect(describePlant(tankFacts({ 'highs:Tank1': 2 }), scene, 'en').text).toContain('Tank1 reached the high mark 2 time(s).');
-    expect(describePlant(tankFacts({ 'highs:Tank1': 2 }), scene, 'es').text).toContain('Tank1 llegó a la marca alta 2 vez (veces).');
+    expect(describePlant(tankFacts({ 'highs:Tank1': 2 }), scene, 'en').text).toContain('Tank1 reached the high mark 2 times.');
+    expect(describePlant(tankFacts({ 'highs:Tank1': 2 }), scene, 'es').text).toContain('Tank1 llegó a la marca alta 2 veces.');
     for (const locale of ['en', 'es'] as const)
       expect(describePlant(tankFacts({ 'highs:Tank1': 0 }), scene, locale)).toEqual(describePlant(snap(1, 2), scene, locale));
   });
@@ -185,5 +185,38 @@ describe('describePlant tank facts', () => {
     for (const locale of ['en', 'es'] as const) expect(describePlant(inBand, scene, locale).text).not.toMatch(/inBand|highs:/);
     // the key still changes when the tank enters or leaves its band (VIS-008)
     expect(describePlant(inBand, scene, 'en').key).not.toBe(describePlant(out, scene, 'en').key);
+  });
+});
+
+describe('describePlant plurals and emitters', () => {
+  const withFacts = (extra: Record<string, number>): PlantSnapshot => {
+    const base = snap(1, 2);
+    return { ...base, facts: { ...base.facts, ...extra } };
+  };
+  const text = (extra: Record<string, number>, locale: 'en' | 'es') => describePlant(withFacts(extra), scene, locale).text;
+
+  it('VIS-011 the high-mark count has a singular and a plural form in both languages', () => {
+    expect(text({ 'highs:Tank1': 1 }, 'en')).toContain('Tank1 reached the high mark once.');
+    expect(text({ 'highs:Tank1': 3 }, 'en')).toContain('Tank1 reached the high mark 3 times.');
+    expect(text({ 'highs:Tank1': 1 }, 'es')).toContain('Tank1 llegó a la marca alta una vez.');
+    expect(text({ 'highs:Tank1': 3 }, 'es')).toContain('Tank1 llegó a la marca alta 3 veces.');
+  });
+
+  it('VIS-011 a pallet counts its boxes and layers in the singular and the plural', () => {
+    expect(text({ 'stacked:pallet:0': 1, 'layers:pallet:0': 1 }, 'en')).toContain('Pallet 1: 1 box in 1 layer.');
+    expect(text({ 'stacked:pallet:0': 8, 'layers:pallet:0': 2 }, 'en')).toContain('Pallet 1: 8 boxes in 2 layers.');
+    expect(text({ 'stacked:pallet:0': 1, 'layers:pallet:0': 1 }, 'es')).toContain('Tarima 1: 1 caja en 1 capa.');
+    expect(text({ 'stacked:pallet:0': 8, 'layers:pallet:0': 2 }, 'es')).toContain('Tarima 1: 8 cajas en 2 capas.');
+  });
+
+  it('VIS-011 an emitter is told in words, singular and plural, and is silent at 0', () => {
+    expect(text({ 'emitted:Emitter1': 1 }, 'en')).toContain('Emitter1 emitted 1 item.');
+    expect(text({ 'emitted:Emitter1': 3 }, 'en')).toContain('Emitter1 emitted 3 items.');
+    expect(text({ 'emitted:Emitter1': 1 }, 'es')).toContain('Emitter1 emitió 1 elemento.');
+    expect(text({ 'emitted:Emitter1': 3 }, 'es')).toContain('Emitter1 emitió 3 elementos.');
+    for (const locale of ['en', 'es'] as const) {
+      expect(text({ 'emitted:Emitter1': 3 }, locale)).not.toContain('emitted:');
+      expect(describePlant(withFacts({ 'emitted:Emitter1': 0 }), scene, locale)).toEqual(describePlant(snap(1, 2), scene, locale));
+    }
   });
 });
