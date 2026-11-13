@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 2,
+  "target": { "scene": "two-axis-assembly" },
+  "signals": {
+    "StartButton.pressed": { "direction": "sensor", "type": "BOOL", "point": "Assembler.Start" },
+    "LidEye.detect": { "direction": "sensor", "type": "BOOL", "point": "Assembler.LidReady" },
+    "BaseEye.detect": { "direction": "sensor", "type": "BOOL", "point": "Assembler.BaseReady" },
+    "Pick1.xAtMin": { "direction": "sensor", "type": "BOOL", "point": "Assembler.XAtMin" },
+    "Pick1.xAtMax": { "direction": "sensor", "type": "BOOL", "point": "Assembler.XAtMax" },
+    "Pick1.yAtMin": { "direction": "sensor", "type": "BOOL", "point": "Assembler.YAtMin" },
+    "Pick1.yAtMax": { "direction": "sensor", "type": "BOOL", "point": "Assembler.YAtMax" },
+    "Pick1.gripped": { "direction": "sensor", "type": "BOOL", "point": "Assembler.Gripped" },
+    "Pick1.xPlus": { "direction": "command", "type": "BOOL", "point": "Assembler.XPlus" },
+    "Pick1.xMinus": { "direction": "command", "type": "BOOL", "point": "Assembler.XMinus" },
+    "Pick1.yPlus": { "direction": "command", "type": "BOOL", "point": "Assembler.YPlus" },
+    "Pick1.yMinus": { "direction": "command", "type": "BOOL", "point": "Assembler.YMinus" },
+    "Pick1.grip": { "direction": "command", "type": "BOOL", "point": "Assembler.Grip" },
+    "LidBelt.run": { "direction": "command", "type": "BOOL", "point": "Assembler.RunLid" },
+    "BaseBelt.run": { "direction": "command", "type": "BOOL", "point": "Assembler.RunBase" },
+    "ExitBelt.run": { "direction": "command", "type": "BOOL", "point": "Assembler.RunExit" },
+    "LidBlade.extend": { "direction": "command", "type": "BOOL", "point": "Assembler.HoldLid" },
+    "BaseBlade.extend": { "direction": "command", "type": "BOOL", "point": "Assembler.HoldBase" },
+    "LidEmitter.emit": { "direction": "command", "type": "BOOL", "point": "Assembler.EmitLid" },
+    "BaseEmitter.emit": { "direction": "command", "type": "BOOL", "point": "Assembler.EmitBase" },
+    "StackLight1.green": { "direction": "command", "type": "BOOL", "point": "Assembler.Green" },
+    "StackLight1.amber": { "direction": "command", "type": "BOOL", "point": "Assembler.Amber" }
+  }
+}
