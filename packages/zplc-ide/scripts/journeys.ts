@@ -17,6 +17,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { cyclesFromDetails } from './journeys013/statusDetails';
 import { readZip } from '../electron/projectArchiveZip';
 import { learnLessonCatalog } from '../src/components/learnLesson';
 import { LESSON_INDEX } from '../src/generated/lessonIndex';
@@ -366,14 +367,7 @@ async function chooseTarget(app: App, item: string): Promise<void> {
   await app.click(menuItem(item), `the target ${item}`);
 }
 
-const cycles = async (app: App) =>
-  Number(
-    (
-      /cycles\s+(\d[\d,]*)/.exec(
-        await app.eval<string>(`document.querySelector('[aria-label="Operational status"]')?.innerText ?? ''`),
-      )?.[1] ?? 'NaN'
-    ).replace(/,/g, ''),
-  );
+const cycles = cyclesFromDetails;
 
 async function watch(app: App, variable: string): Promise<void> {
   const path = css(`input[placeholder^=${JSON.stringify(ui('workbench.watch.pathPlaceholder').split(' (')[0])}]`);
@@ -1058,6 +1052,8 @@ async function languageChain(app: App, { root, project, runtime }: JourneyContex
   config.target.board = CHAIN_BOARD;
   writeFileSync(join(project, 'zplc.json'), JSON.stringify(config, null, 2));
   await openFolder(app, project);
+  // the notice of the build above is over the top right of the editor until it goes: a click there would land on it, not on the editor
+  await app.until('the notices to go', async () => !(await app.visible(css('[data-notification]'))) || undefined, 30_000);
   const persisted = await spec.edit(app, project);
   await app.click(button('Close project'));
   await app.until('the Welcome screen', async () => (await app.visible(button('Open project', 'contains'))) || undefined);
@@ -7047,7 +7043,7 @@ export const JOURNEYS: Journey[] = [
         return (said !== '' && !/^Building/.test(said) && /build|built/i.test(said)) || undefined;
       });
 
-      // 4. Simulate: Connect from the palette and Run with F5
+      // 4. Simulate: Run from the palette, Stop and Run with F5
       const palette = async (title: string) => {
         await app.press('Ctrl+Shift+P');
         await app.until(
@@ -7061,9 +7057,13 @@ export const JOURNEYS: Journey[] = [
           async () => !(await app.eval<boolean>(`Boolean(document.querySelector('[role="dialog"] [role="combobox"]'))`)) || undefined,
         );
       };
-      await palette('Connect');
-      await app.until('the simulation to connect', async () => (await app.visible(button('Disconnect'))) || undefined);
-      await app.until('the connection to be announced', async () => /ready|connected/i.test(await live('polite')) || undefined);
+      // Connect is a board's command now: Run in simulation starts the simulator itself, so the palette runs the program, the announcer
+      // says so, and F5 runs it again after a keyboard Stop.
+      await palette('Run');
+      await app.until('the program to run', async () => (await app.visible(button('Pause (F6)', 'prefix'))) || undefined);
+      await app.until('the run to be announced', async () => /Running|simulation/i.test(await live('polite')) || undefined);
+      await app.press('Shift+F5');
+      await app.until('the program to stop', async () => (await app.visible(button('Run (F5)', 'prefix'))) || undefined);
       await app.press('F5');
       await app.until('the program to run', async () => (await app.visible(button('Pause (F6)', 'prefix'))) || undefined);
       assert(
@@ -8315,8 +8315,9 @@ export const JOURNEYS: Journey[] = [
             60_000,
           );
           await check('a paused program');
-          await app.click(button(ui('toolbar.disconnect')), 'the Disconnect button');
-          await app.until('the simulation to disconnect', async () => (await app.visible(button(ui('toolbar.connect')))) || undefined);
+          // no Disconnect in simulation: Stop ends the run, and the next language starts it again
+          await app.click(button(ui('toolbar.stop.label'), 'prefix'), 'the Stop button');
+          await app.until('the program to stop', async () => (await app.visible(button(ui('toolbar.run.label'), 'prefix'))) || undefined);
         }
       } finally {
         journeyLocale = 'en';
