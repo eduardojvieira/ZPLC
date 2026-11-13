@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-colour-separation-il",
+  "version": 1,
+  "order": 162,
+  "module": 16,
+  "level": "advanced",
+  "prerequisites": ["plant-colour-separation", "instruction-list-door-alarm"],
+  "languages": ["IL"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson needs a stop blade, a colour sensor, a pusher and two bins to sort workpieces; a learner board has none of them, and the scene supplies all of them.",
+        "es": "La lección necesita una cuchilla de parada, un sensor de color, un empujador y dos contenedores para clasificar piezas; una placa del estudiante no tiene ninguno, y la escena los aporta todos."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its items are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus piezas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "colour-separation",
+  "estimatedMinutes": 50,
+  "starter": {
+    "project": "plant_colour_separation_il_starter",
+    "program": "src/ColourSeparation.il"
+  },
+  "solution": {
+    "project": "plant_colour_separation_il",
+    "program": "src/ColourSeparation.il"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "colour-separation",
+    "path": "tests/colour-separation.scenario.json",
+    "sha256": "56cc492b39de2608ab1588fe978f76c9a56da800b47a47bce97076a567e33db7"
+  },
+  "regressionScenarios": []
+}

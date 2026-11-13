@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Clasificar por código de identidad",
+  "summary": "Lea el código de cada pieza que ve el sensor de visión y accione un brazo desviador para que las piezas de código 2 salgan por la banda lateral.",
+  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "objectives": [
+    "Encaminar piezas por un código entero y no por un interruptor.",
+    "Sincronizar un actuador con el recorrido de una pieza ya leída."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/VisionSorting.st, ponga en marcha ambas bandas tras Start. Lea Code mientras la pieza está en el campo del sensor de visión: la de código 1 sigue de frente; para código 2, cruce el brazo antes de que llegue la pieza, manténgalo hasta que haya pasado su extremo libre y vuelva a llevarlo a su posición.",
+      "checkpoint": "Las piezas de código 1 terminan en Product1, las de código 2 en Product2, y Done se enciende tras doce piezas."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "Antes de ejecutar, calcule cuándo debe girar el brazo: el código se lee unos dos segundos antes de que la pieza llegue al brazo, y la pieza anterior puede seguir pasando por el extremo libre. ¿Qué ocurre si el brazo gira demasiado pronto o demasiado tarde?",
+      "checkpoint": "Divert pasa a TRUE para una pieza de código 2 poco antes de que llegue y vuelve a FALSE cuando ha pasado; la pieza siguiente no se lee hasta que el brazo esté libre."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna banda se mueve y no se clasifica ninguna pieza; ponga en marcha ambas bandas tras Start y accione el brazo para cada pieza de código 2.",
+      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario vision-sorting; observe la vista 3D mientras se ejecuta.",
+      "checkpoint": "El escenario requerido se llama vision-sorting y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Observe la vista 3D y la lectura del sensor de visión: el código aparece mientras la pieza está en el campo, el brazo gira delante de una pieza de código 2 y esta se desliza a la banda lateral.",
+      "checkpoint": "Una pieza de código 1 nunca mueve el brazo, y el brazo está en reposo antes de que llegue la pieza siguiente."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "La calificación ve las dos bandas de producto y que nada cayó; no ve su temporización, así que un tiempo que golpee una pieza solo se nota como una pieza mal encaminada o caída.",
+      "checkpoint": "No establece el tiempo de lectura de un sensor de visión real, la velocidad de la banda, la temporización de hardware, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Cuente ciclos en vez de usar un temporizador: cuando Code no sea 0 y el bloqueo esté libre, sume uno a Handled, fije un bloqueo hasta que la pieza salga del campo y, para código 2, un retardo antes del giro."
+    },
+    {
+      "level": 2,
+      "text": "Cuando el retardo llegue a 0 active Divert y cargue un contador de retención; cuando este llegue a 0 desactive Divert. Done := Handled >= 12."
+    }
+  ],
+  "faultCases": [
+    "El inicial no gobierna ninguna salida, así que ninguna banda se mueve y no se clasifica ninguna pieza; ponga en marcha ambas bandas tras Start y accione el brazo para cada pieza de código 2."
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-weight-sorting",
+  "version": 1,
+  "order": 163,
+  "module": 16,
+  "level": "advanced",
+  "prerequisites": ["plant-colour-separation", "plant-tank-level-scaling"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson needs a scale under a stop blade, a pusher and two bins; a learner board has no scale and no boxes of two masses, and the scene supplies both.",
+        "es": "La lección necesita una báscula bajo una cuchilla de parada, un empujador y dos contenedores; una placa del estudiante no tiene báscula ni cajas de dos masas, y la escena aporta ambas."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its items are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus piezas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "weight-sorting",
+  "estimatedMinutes": 50,
+  "starter": {
+    "project": "plant_weight_sorting_starter",
+    "program": "src/WeightSorter.st"
+  },
+  "solution": {
+    "project": "plant_weight_sorting",
+    "program": "src/WeightSorter.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "weight-sorting",
+    "path": "tests/weight-sorting.scenario.json",
+    "sha256": "5b923d84974efc3d904c835c8b47c150b56daab31f1a3a4108185b41cfda4ab2"
+  },
+  "regressionScenarios": []
+}

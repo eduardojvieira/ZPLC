@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Enviar cada color a su banda",
+  "summary": "Lea el color de cada pieza que espera en la cuchilla de parada, empuje las rojas a la banda lateral y deje pasar las azules.",
+  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "objectives": [
+    "Decidir una ruta a partir del resultado de un sensor cuando la pieza está quieta.",
+    "Ejecutar un empuje como una secuencia corta: extender hasta Extended, retraer hasta Retracted."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/ColourSeparation.st, ponga en marcha las tres bandas tras Start y retenga cada pieza en la cuchilla. Espere a que esté quieta (T#300ms) y lea IsRed: empuje la roja a la banda lateral y suelte la azul.",
+      "checkpoint": "Las piezas rojas terminan en RedBin, las azules en BlueBin, y Done se enciende tras la octava."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "Antes de ejecutar, decida qué hacen la cuchilla y el empujador con cada color. Una pieza roja queda retenida mientras la placa la empuja; una azul se suelta. ¿Cuándo puede volver a retener la cuchilla?",
+      "checkpoint": "Hold baja solo para una pieza azul y vuelve a subir cuando esta ha salido de la cuchilla; Push es TRUE solo mientras se empuja una roja."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que ninguna banda se mueve y ninguna pieza se clasifica; ponga en marcha las bandas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules.",
+      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario colour-separation; observe la vista 3D mientras se ejecuta.",
+      "checkpoint": "El escenario requerido se llama colour-separation y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Observe la vista 3D: una pieza roja se detiene en la cuchilla, la placa la empuja a la banda lateral y la siguiente espera; una azul pasa de largo hacia la salida.",
+      "checkpoint": "Push nunca pasa a TRUE con una pieza azul, y la placa está de vuelta (Retracted) antes de que la cuchilla retenga la siguiente."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "La aserción EVENTUALLY prueba que ambos contenedores recibieron una pieza; la aserción ALWAYS prueba que ninguna fue al contenedor equivocado ni cayó; las aserciones AT fijan las lámparas.",
+      "checkpoint": "La calificación ve los contenedores, no el color que leyó su programa; no establece el tiempo de respuesta del sensor, la velocidad de la banda, la temporización de hardware, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Guarde el paso en un número de estado: 0 esperar una pieza quieta, 1 empujar, 2 retraer, 3 dejar pasar una azul. Un TON de T#300ms sobre Waiting da el tiempo de reposo."
+    },
+    {
+      "level": 2,
+      "text": "Memorice la ruta al salir del estado 0. Una pieza empujada queda atendida cuando Retracted es TRUE; una soltada, cuando ha salido de la cuchilla (un TON de T#1500ms sobre NOT Waiting). Hold := Active AND State <> 3."
+    }
+  ],
+  "faultCases": [
+    "El inicial no gobierna ninguna salida, así que ninguna banda se mueve y ninguna pieza se clasifica; ponga en marcha las bandas tras Start, lea IsRed cuando la pieza esté quieta, empuje las rojas y suelte las azules."
+  ]
+}
