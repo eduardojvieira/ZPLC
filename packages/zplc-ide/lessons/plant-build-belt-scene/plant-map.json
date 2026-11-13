@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 2,
+  "target": {
+    "scene": "belt-to-sensor"
+  },
+  "signals": {
+    "StartButton.pressed": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "BeltToSensor.Start"
+    },
+    "EyeFar.detect": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "BeltToSensor.EyeFar"
+    },
+    "Belt1.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "BeltToSensor.Run"
+    },
+    "Emitter1.emit": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "BeltToSensor.Emit"
+    }
+  }
+}

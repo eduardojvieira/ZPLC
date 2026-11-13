@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Build a belt scene from the empty floor",
+  "summary": "Open the Scene editor on an empty floor, place a belt, an emitter, a sensor and a start button with the names the lesson gives, bind their signals in the plant map and write the program that runs on them.",
+  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Place the parts of a scene by name and bind each signal of the plant map to a program variable.",
+    "Run a program on the scene you built and see the Check grade that scene, not a copy of it."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "Open scene.json in the Scene editor and place four parts with exactly these names: Belt1 (a belt), Emitter1 (an emitter at the near end of the belt), EyeFar (a diffuse sensor beside the far end of the belt, facing it) and StartButton (a push button). In plant-map.json bind StartButton.pressed to BeltToSensor.Start, EyeFar.detect to BeltToSensor.EyeFar, Belt1.run to BeltToSensor.Run and Emitter1.emit to BeltToSensor.Emit; then, in src/BeltToSensor.st, keep a Running memory: set it with Start, clear it with EyeFar, and wire Run and Emit.",
+      "checkpoint": "The scene has four parts with those names, the plant map has four signals, and Run follows the memory while Emit puts one box on the belt when Start is pressed."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, follow the box: the emitter puts it on the near end, the belt carries it to the far end, and the sensor tells the program to stop the belt. A part that is missing or misnamed cannot do any of that, and the Check says which one it cannot find.",
+      "checkpoint": "Belt off before the press; on after it, with one box on it; off again as soon as EyeFar sees the box, and it stays off."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save the scene, the plant map and the program, then run: The starter scene is an empty floor, so there is nothing to run; place Belt1, Emitter1, EyeFar and StartButton, bind their four signals in the plant map, and write the program that starts the belt and stops it when EyeFar sees the box.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the build-belt-scene scenario; watch the 3D view while it runs.",
+      "checkpoint": "The required scenario is named build-belt-scene and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Watch the box ride the belt you placed and stop under the sensor you placed; if a part is missing, read the message of the Check: it names the part and the file where the fix goes.",
+      "checkpoint": "Run falls when the sensor turns on, not before, and the box is never dropped."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The scenario reads plant facts of the parts you named, so a scene with other names has nothing to grade; the names are part of the contract between the scene, the plant map and the program.",
+      "checkpoint": "It does not establish physical belt speed, sensor response, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "In the Scene editor choose the Empty floor template, add the four parts and rename each one; the belt has length 2.4 and speed 0.5, and the sensor has range 1."
+    },
+    {
+      "level": 2,
+      "text": "Write the clear after the set so EyeFar wins when both are TRUE, then Run := Running and Emit := Start."
+    }
+  ],
+  "faultCases": [
+    "The starter scene is an empty floor, so there is nothing to run; place Belt1, Emitter1, EyeFar and StartButton, bind their four signals in the plant map, and write the program that starts the belt and stops it when EyeFar sees the box."
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 2,
+  "target": {
+    "scene": "belt-to-sensor"
+  },
+  "signals": {
+    "StartButton.pressed": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "BeltToSensor.Start"
+    }
+  }
+}

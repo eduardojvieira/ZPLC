@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "name": "Belt to sensor",
+  "shortestPulseMs": 800,
+  "parts": [
+    {
+      "id": "belt",
+      "part": "belt",
+      "name": "Belt1",
+      "position": [0, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "length": 2.4,
+        "speedMps": 0.5
+      }
+    },
+    {
+      "id": "emitter",
+      "part": "emitter",
+      "name": "Emitter1",
+      "position": [-0.9, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "maxItems": 1
+      }
+    },
+    {
+      "id": "eye-far",
+      "part": "sensor-diffuse",
+      "name": "EyeFar",
+      "position": [0.7, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": {
+        "rangeM": 1
+      }
+    },
+    {
+      "id": "start",
+      "part": "push-button",
+      "name": "StartButton",
+      "position": [-0.9, 0.5, -0.7],
+      "rotationYDeg": 0,
+      "config": {}
+    }
+  ],
+  "cameras": [
+    {
+      "name": "Overview",
+      "position": [0, 2.2, 2.6],
+      "target": [0, 0.5, 0]
+    }
+  ]
+}
