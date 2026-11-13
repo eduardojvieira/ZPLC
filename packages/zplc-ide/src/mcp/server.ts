@@ -8,8 +8,9 @@ import idePackage from '../../package.json';
 import { directoryIdentity, sameDirectoryIdentity, type DirectoryIdentity } from '../cli/firmwareBuildRunner';
 import * as toolApi from '../cli/toolApi';
 import { readWorkspace } from '../cli/workspace';
-import { LESSON_IDS as LEARN_LESSON_IDS, LESSON_INDEX } from '../generated/lessonIndex';
-import { passedIn } from '../learn/course';
+import { LESSON_INDEX } from '../generated/lessonIndex';
+import { courseCounts, passedIn } from '../learn/course';
+import type { LessonIndex } from '../learn/lessonPackage';
 import {
   LEARN_PROGRESS_FILENAME,
   LEARN_PROGRESS_LEGACY_FILENAME,
@@ -1181,7 +1182,7 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
  * Read-only (LRN-034): this reads the progress file the Studio keeps and answers which lessons are passed. It has no
  * operation that writes progress, and a file of the first release is migrated in memory only, never written back.
  */
-export async function courseProgressResource(workspace: McpWorkspace): Promise<Record<string, unknown>> {
+export async function courseProgressResource(workspace: McpWorkspace, index: LessonIndex = LESSON_INDEX): Promise<Record<string, unknown>> {
   if (!workspace.userData) return { ok: false, error: 'MCP_CAPABILITY_UNAVAILABLE', reason: 'requires-explicit-user-data' };
   // This directory is user-managed progress storage, so its entry generation changes when the progress file is created.
   const sameUserData = async (): Promise<boolean> => {
@@ -1220,8 +1221,10 @@ export async function courseProgressResource(workspace: McpWorkspace): Promise<R
   if (!progress) return { ok: false, error: 'MCP_INTERNAL_ERROR' };
   // Only lessons this build knows are reported; progress for any other lesson is kept inert in the file. A lesson is passed
   // as the course counts it: a hardware-only lesson by its passing hardware check (LRN-024).
-  const mastered = LEARN_LESSON_IDS.filter((id) => passedIn(LESSON_INDEX, id, progress!));
-  return { ok: true, schemaVersion: 1, mastered, completed: mastered.length, total: LEARN_LESSON_IDS.length };
+  const mastered = index.lessons.map((lesson) => lesson.id).filter((id) => passedIn(index, id, progress!));
+  // The count is the course's: an alternative pair counts once, and the sibling not taken is never listed as passed (M7-K5).
+  const { passed, total } = courseCounts(index, progress);
+  return { ok: true, schemaVersion: 1, mastered, completed: passed, total };
 }
 
 /**
