@@ -67,6 +67,14 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     }
   },
   {
+    "id": "lift-stacking",
+    "dir": "plant-scenes/lift-stacking",
+    "names": {
+      "en": "Lift with stacking",
+      "es": "Lift with stacking"
+    }
+  },
+  {
     "id": "tank-level-control",
     "dir": "plant-scenes/tank-level-control",
     "names": {

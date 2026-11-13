@@ -23,6 +23,7 @@ describe('shipped scenes use the public format and catalogue', () => {
       'two-axis-assembly-numeric',
       'buffer-release',
       'merge-lines',
+      'lift-stacking',
       'tank-level-control',
       'layer-palletizer',
       'belt-to-belt-transfer',
