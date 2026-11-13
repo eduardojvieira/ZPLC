@@ -1,8 +1,9 @@
 /**
  * The sorting journeys of Task Q5 (spec 012: VIS-010, VIS-011, VIS-008, PLT-008, SCN-004). The first runs scene 20 (weight sorting),
  * waits for a sorted item and then triggers `readingOffset` on the scale with the keyboard alone (the arrow keys only choose, Tab
- * reaches the trigger button, Enter acts); the second checks that the scale readout follows the items while the live region stays
- * quiet. Scene 21 (vision sorting) is not merged yet: the quiet-readout journey runs on the scale of scene 20 until it is. Like the
+ * reaches the trigger button, Enter acts); the second opens scene 21 (vision sorting) and checks that the vision readout shows a code while
+ * the live region stays
+ * quiet. Like the
  * other plant journeys they run on the development host and give no timing evidence.
  */
 import { join } from 'node:path';
@@ -48,7 +49,7 @@ async function walkTab(app: App, count: number): Promise<string[]> {
   return seen;
 }
 
-const readout = (app: App) => app.eval<string>(`document.querySelector('[data-plant-reading="Scale1"]')?.textContent.trim() ?? ''`);
+const readout = (app: App) => app.eval<string>(`document.querySelector('[data-plant-reading="Vision1"]')?.textContent.trim() ?? ''`);
 /** The total of every `<bin> <verb> <n> item(s)` sentence of the facts text; 0 until the text says one. */
 const total = (facts: string, verb: string): number =>
   [...facts.matchAll(new RegExp(`${verb} (\\d+) items?`, 'g'))].reduce((sum, match) => sum + Number(match[1]), 0);
@@ -107,42 +108,42 @@ export const journeysSorting: Journey[] = [
     },
   },
   {
-    name: 'Q5 The scale readout follows the items and the live region stays quiet while it changes',
+    name: 'Q5 The vision readout shows a code and the live region stays quiet while it changes',
     example: 'none',
     proves: [],
     partly: ['VIS-010', 'VIS-011', 'VIS-008'],
     run: async (app, { root }) => {
-      await openScene(app, root, 'weight-sorting');
+      await openScene(app, root, 'vision-sorting');
       await runInSimulation(app);
-      const shape = /^Scale1: (\d+\.\d\d kg|no reading|\.\.\.).*$/;
-      const first = await untilFacts(app, 'the scale readout', async () => shape.test(await readout(app)) && (await readout(app)));
-      app.note(`Scale readout: ${first}`);
+      const shape = /^Vision1: code \d$/;
+      const first = await untilFacts(app, 'the vision readout', async () => shape.test(await readout(app)) && (await readout(app)));
+      app.note(`Vision readout: ${first}`);
       await app.eval(
         `(() => { window.__live = []; const region = document.querySelector('[data-live-region="polite"]'); ` +
           `new MutationObserver(() => { const text = region.textContent.trim(); if (text) window.__live.push(text); })` +
           `.observe(region, { childList: true, characterData: true, subtree: true }); })()`,
       );
       await holdPushButton(app, 'StartButton', 'keyboard');
-      // The readout moves with every item that crosses the scale, and no announcement may carry a weight (VIS-008: a continuous
+      // The readout moves with every item that crosses the camera, and no announcement may carry a code (VIS-008: a continuous
       // value never enters the announced key). The host's own pacing notice ("the plant cannot keep up") is not a fact and is skipped.
       const readings = new Set<string>();
       let heard: string[] = [];
       await untilFacts(
         app,
-        'the readout to show three different readings and the live region to announce a fact',
+        'the readout to show a code and two different readings and the live region to announce a fact',
         async () => {
           readings.add(await readout(app));
           heard = (await app.eval<string[]>('window.__live')).filter((message) => !/keep up|keeps up/.test(message));
-          for (const message of heard) assert(!/\d+(\.\d+)? kg/.test(message), `An announcement carries a weight: ${message}`);
-          return readings.size >= 3 && heard.length >= 1;
+          for (const message of heard) assert(!/\bcode \d/.test(message), `An announcement carries a code: ${message}`);
+          return readings.size >= 2 && [...readings].some((text) => !text.endsWith('code 0')) && heard.length >= 1;
         },
         150_000,
       );
       const stretch = [...readings];
       app.note(
-        `the scale read ${stretch.length} different values (${stretch
-          .slice(0, 3)
-          .join(' | ')}) and no announcement of ${heard.length} carried a weight`,
+        `the vision sensor read ${stretch.length} different values (${stretch.join(
+          ' | ',
+        )}) and no announcement of ${heard.length} carried a code`,
       );
     },
   },
