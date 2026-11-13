@@ -107,6 +107,14 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     }
   },
   {
+    "id": "height-sorting-turntable",
+    "dir": "plant-scenes/height-sorting-turntable",
+    "names": {
+      "en": "Height sorting with turntable",
+      "es": "Height sorting with turntable"
+    }
+  },
+  {
     "id": "height-sorting-chain",
     "dir": "plant-scenes/height-sorting-chain",
     "names": {
