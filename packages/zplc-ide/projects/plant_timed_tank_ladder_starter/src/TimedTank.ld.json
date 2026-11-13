@@ -1,0 +1,105 @@
+{
+  "name": "TimedTank",
+  "description": "One fill, hold and drain cycle with a timer for each step and an emergency stop.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Step",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "0 idle, 1 fill, 2 hold, 3 drain"
+      },
+      {
+        "name": "Done",
+        "type": "BOOL",
+        "comment": "A cycle has finished"
+      },
+      {
+        "name": "FillT",
+        "type": "TON",
+        "comment": "Times the fill"
+      },
+      {
+        "name": "HoldT",
+        "type": "TON",
+        "comment": "Times the hold"
+      },
+      {
+        "name": "DrainT",
+        "type": "TON",
+        "comment": "Limits the drain"
+      },
+      {
+        "name": "DrainLimit",
+        "type": "BOOL",
+        "comment": "DrainT.Q: the drain has taken twenty seconds"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "StartButton.pressed: start the cycle"
+      },
+      {
+        "name": "EStopOk",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "EStop1.ok: TRUE while the emergency stop is released"
+      },
+      {
+        "name": "LevelLow",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "Tank1.levelLow: the level is at or below the low switch"
+      },
+      {
+        "name": "LevelHigh",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "Tank1.levelHigh: the level is at or above the high switch"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Fill",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Tank1.fill: open the fill valve"
+      },
+      {
+        "name": "Drain",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Tank1.drain: open the drain valve"
+      },
+      {
+        "name": "Green",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "StackLight1.green: the cycle finished"
+      },
+      {
+        "name": "Amber",
+        "type": "BOOL",
+        "address": "%Q0.3",
+        "comment": "StackLight1.amber: the cycle is running"
+      },
+      {
+        "name": "Red",
+        "type": "BOOL",
+        "address": "%Q0.4",
+        "comment": "StackLight1.red: emergency stop"
+      }
+    ]
+  },
+  "rungs": [],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

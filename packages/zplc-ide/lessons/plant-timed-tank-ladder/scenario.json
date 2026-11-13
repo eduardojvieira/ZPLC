@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "timed-tank",
+  "tickMs": 10,
+  "durationMs": 25000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      { "atMs": 200, "operate": { "signal": "StartButton.pressed", "value": true } },
+      { "atMs": 400, "operate": { "signal": "StartButton.pressed", "value": false } },
+      { "atMs": 1000, "operate": { "signal": "EStop1.pressed", "value": true } },
+      { "atMs": 3000, "operate": { "signal": "EStop1.pressed", "value": false } },
+      { "atMs": 4000, "operate": { "signal": "StartButton.pressed", "value": true } },
+      { "atMs": 4200, "operate": { "signal": "StartButton.pressed", "value": false } }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 100,
+      "condition": { "TimedTank.Fill": false, "TimedTank.Drain": false, "TimedTank.Green": false, "TimedTank.Red": false }
+    },
+    { "kind": "AT", "atMs": 800, "condition": { "TimedTank.Fill": true, "TimedTank.Amber": true, "TimedTank.Green": false } },
+    { "kind": "AT", "atMs": 1500, "condition": { "TimedTank.Fill": false, "TimedTank.Drain": false, "TimedTank.Red": true } },
+    { "kind": "AT", "atMs": 25000, "condition": { "TimedTank.Green": true, "TimedTank.Drain": false, "TimedTank.Red": false } },
+    { "kind": "ALWAYS", "condition": { "fact:spilledL:Tank1": false } }
+  ]
+}

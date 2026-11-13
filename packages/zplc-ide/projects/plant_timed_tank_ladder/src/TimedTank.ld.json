@@ -1,0 +1,993 @@
+{
+  "name": "TimedTank",
+  "description": "One fill, hold and drain cycle with a timer for each step and an emergency stop.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Step",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "0 idle, 1 fill, 2 hold, 3 drain"
+      },
+      {
+        "name": "Done",
+        "type": "BOOL",
+        "comment": "A cycle has finished"
+      },
+      {
+        "name": "FillT",
+        "type": "TON",
+        "comment": "Times the fill"
+      },
+      {
+        "name": "HoldT",
+        "type": "TON",
+        "comment": "Times the hold"
+      },
+      {
+        "name": "DrainT",
+        "type": "TON",
+        "comment": "Limits the drain"
+      },
+      {
+        "name": "DrainLimit",
+        "type": "BOOL",
+        "comment": "DrainT.Q: the drain has taken twenty seconds"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "StartButton.pressed: start the cycle"
+      },
+      {
+        "name": "EStopOk",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "EStop1.ok: TRUE while the emergency stop is released"
+      },
+      {
+        "name": "LevelLow",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "Tank1.levelLow: the level is at or below the low switch"
+      },
+      {
+        "name": "LevelHigh",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "Tank1.levelHigh: the level is at or above the high switch"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Fill",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Tank1.fill: open the fill valve"
+      },
+      {
+        "name": "Drain",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Tank1.drain: open the drain valve"
+      },
+      {
+        "name": "Green",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "StackLight1.green: the cycle finished"
+      },
+      {
+        "name": "Amber",
+        "type": "BOOL",
+        "address": "%Q0.3",
+        "comment": "StackLight1.amber: the cycle is running"
+      },
+      {
+        "name": "Red",
+        "type": "BOOL",
+        "address": "%Q0.4",
+        "comment": "StackLight1.red: emergency stop"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "An emergency stop aborts the cycle: back to idle.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r1_0_0",
+              "type": "contact_nc",
+              "variable": "EStopOk",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r1_0_1",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["0"],
+              "output": "Step",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "A Start press while idle and with the emergency stop released begins a cycle.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r2_0_0",
+              "type": "contact_no",
+              "variable": "EStopOk",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r2_0_1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "0"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r2_0_2",
+              "type": "contact_no",
+              "variable": "Start",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r2_0_3",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["1"],
+              "output": "Step",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "The finished mark goes out on an emergency stop and while a cycle is running.",
+      "branches": [
+        {
+          "id": "branch_1",
+          "startCol": 0,
+          "endCol": 0,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r3_0_0",
+              "type": "contact_nc",
+              "variable": "EStopOk",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r3_0_1",
+              "type": "coil_reset",
+              "variable": "Done",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "r3_1_0",
+              "type": "function",
+              "functionName": "NE",
+              "operands": ["Step", "0"],
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_4",
+      "number": 4,
+      "comment": "Fill for a fixed time: the tank has no sensor at this level, the timer is the lesson.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r4_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "1"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r4_0_1",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "FillT",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#3500ms"
+              },
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r4_0_2",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["2"],
+              "output": "Step",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_5",
+      "number": 5,
+      "comment": "Hold for two seconds.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r5_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "2"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r5_0_1",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "HoldT",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#2s"
+              },
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r5_0_2",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["3"],
+              "output": "Step",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_6",
+      "number": 6,
+      "comment": "Drain: the timer is a safety limit while the step is active.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r6_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "3"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r6_0_1",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "DrainT",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#20s"
+              },
+              "outputs": {
+                "Q": "DrainLimit"
+              },
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_7",
+      "number": 7,
+      "comment": "The drain ends at the low switch or at the limit: back to idle and the cycle is finished.",
+      "branches": [
+        {
+          "id": "branch_1",
+          "startCol": 1,
+          "endCol": 1,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r7_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "3"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_0_1",
+              "type": "contact_no",
+              "variable": "LevelLow",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_0_2",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["0"],
+              "output": "Step",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_0_3",
+              "type": "coil_set",
+              "variable": "Done",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": {
+              "id": "r7_1_1",
+              "type": "contact_no",
+              "variable": "DrainLimit",
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_8",
+      "number": 8,
+      "comment": "Fill valve while the step is 1.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r8_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "1"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r8_0_1",
+              "type": "coil",
+              "variable": "Fill",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_9",
+      "number": 9,
+      "comment": "Drain valve while the step is 3.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r9_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "3"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r9_0_1",
+              "type": "coil",
+              "variable": "Drain",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_10",
+      "number": 10,
+      "comment": "Amber while a cycle is running.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r10_0_0",
+              "type": "function",
+              "functionName": "NE",
+              "operands": ["Step", "0"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r10_0_1",
+              "type": "coil",
+              "variable": "Amber",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_11",
+      "number": 11,
+      "comment": "Green after a finished cycle.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r11_0_0",
+              "type": "contact_no",
+              "variable": "Done",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r11_0_1",
+              "type": "coil",
+              "variable": "Green",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_12",
+      "number": 12,
+      "comment": "Red while the emergency stop is pressed.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r12_0_0",
+              "type": "contact_nc",
+              "variable": "EStopOk",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r12_0_1",
+              "type": "coil",
+              "variable": "Red",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

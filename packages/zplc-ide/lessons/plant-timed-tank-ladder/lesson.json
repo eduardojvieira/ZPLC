@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-timed-tank-ladder",
+  "version": 1,
+  "order": 1131,
+  "module": 13,
+  "level": "advanced",
+  "prerequisites": ["timers-on-delay-off-delay"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The tank, the valves and the emergency stop that the contacts and coils of this timed cycle read and drive are simulated; a learner board has no tank to fill, so the three TON blocks would time nothing.",
+        "es": "El tanque, las válvulas y la parada de emergencia que leen y gobiernan los contactos y bobinas de este ciclo temporizado son simulados; una placa del estudiante no tiene un tanque que llenar, así que los tres bloques TON no medirían nada."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the tank, its valves and the emergency stop are part of the scenario.",
+        "es": "Complétela en Simulación, donde el tanque, sus válvulas y la parada de emergencia forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "timed-tank",
+  "estimatedMinutes": 30,
+  "starter": {
+    "project": "plant_timed_tank_ladder_starter",
+    "program": "src/TimedTank.ld.json"
+  },
+  "solution": {
+    "project": "plant_timed_tank_ladder",
+    "program": "src/TimedTank.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "timed-tank",
+    "path": "tests/timed-tank.scenario.json",
+    "sha256": "c4a53eaaa6932bd20ae2fb370135f9508121cc759ac4ff54ededa266661c082a"
+  },
+  "regressionScenarios": []
+}
