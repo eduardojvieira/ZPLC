@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Load and unload three boxes",
+  "summary": "Count boxes with two counters to run a fixed batch: load three, unload three, then light Done.",
+  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Count items with a counter that has a preset value.",
+    "Use one counter to stop loading and another to know the batch is finished."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/CountedQueue.st, count the boxes at EyeIn with a CTU of preset 3 and the boxes at EyeOut with a second CTU of preset 3.",
+      "checkpoint": "Load one box at a time, stop loading at the third, and light Done when the second counter reaches 3."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, count the boxes: three are loaded, one after the other, and then the belt unloads them.",
+      "checkpoint": "The belt runs and boxes appear until three have passed EyeIn; Done stays off until the third box has passed EyeOut, and then the belt stops."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter has no counters; load three boxes with a counter at EyeIn, count the unloaded boxes with a counter at EyeOut, light Done when all three are out, and stop the belt then.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the counted-queue scenario; watch the 3D view while it runs.",
+      "checkpoint": "The required scenario is named counted-queue and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Watch the boxes enter one by one and leave at the other end; the counters change once per box, not once per scan.",
+      "checkpoint": "All three boxes are delivered, none is dropped or collides, and Done is on when the belt stops."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "A counter counts rising edges, so a box that stays under a sensor counts once; the final AT assertion pins Done and the stopped belt.",
+      "checkpoint": "It does not establish physical belt speed, sensor response, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Declare two CTU instances and call each with CU wired to its sensor, R := FALSE and PV := 3; the Q output turns on when the count reaches the preset."
+    },
+    {
+      "level": 2,
+      "text": "Emit a new box on Start and each time the previous box has left EyeIn (an F_TRIG on EyeIn), until the first counter is done; then Done := Unloaded.Q and Run := Active AND NOT Unloaded.Q."
+    }
+  ],
+  "faultCases": [
+    "The starter has no counters; load three boxes with a counter at EyeIn, count the unloaded boxes with a counter at EyeOut, light Done when all three are out, and stop the belt then."
+  ]
+}

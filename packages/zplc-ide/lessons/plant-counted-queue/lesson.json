@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-counted-queue",
+  "version": 1,
+  "order": 123,
+  "module": 12,
+  "level": "advanced",
+  "prerequisites": ["plant-latch-two-sensors", "edge-counter-pulses"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "Three boxes are loaded and unloaded by a simulated emitter and belt, and a learner board cannot provide boxes for the two counters to count.",
+        "es": "Tres cajas se cargan y descargan con un emisor y una banda simulados, y una placa del estudiante no puede aportar cajas para que las cuenten los dos contadores."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus cajas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "counted-queue",
+  "estimatedMinutes": 30,
+  "starter": {
+    "project": "plant_counted_queue_starter",
+    "program": "src/CountedQueue.st"
+  },
+  "solution": {
+    "project": "plant_counted_queue",
+    "program": "src/CountedQueue.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "counted-queue",
+    "path": "tests/counted-queue.scenario.json",
+    "sha256": "681b439b42a4844d35c84c8f1aed454f59eaaae194982add56de7c36bb91c092"
+  },
+  "regressionScenarios": []
+}

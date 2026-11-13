@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Cargar y descargar tres cajas",
+  "summary": "Cuente cajas con dos contadores para ejecutar un lote fijo: cargue tres, descargue tres y encienda Done.",
+  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "objectives": [
+    "Contar elementos con un contador de valor preestablecido.",
+    "Usar un contador para dejar de cargar y otro para saber que el lote terminó."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/CountedQueue.st, cuente las cajas en EyeIn con un CTU de preset 3 y las cajas en EyeOut con un segundo CTU de preset 3.",
+      "checkpoint": "Cargue una caja a la vez, deje de cargar en la tercera y encienda Done cuando el segundo contador llegue a 3."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "Antes de ejecutar, cuente las cajas: se cargan tres, una tras otra, y luego la banda las descarga.",
+      "checkpoint": "La banda corre y aparecen cajas hasta que tres han pasado por EyeIn; Done sigue apagada hasta que la tercera caja pasa por EyeOut, y entonces la banda se detiene."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la banda.",
+      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario counted-queue; observe la vista 3D mientras se ejecuta.",
+      "checkpoint": "El escenario requerido se llama counted-queue y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Observe las cajas entrar una a una y salir por el otro extremo; los contadores cambian una vez por caja, no una vez por ciclo.",
+      "checkpoint": "Las tres cajas se entregan, ninguna cae ni choca, y Done está encendida cuando la banda se detiene."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "Un contador cuenta flancos ascendentes, así que una caja que permanece bajo un sensor cuenta una sola vez; la aserción AT final fija Done y la banda detenida.",
+      "checkpoint": "No establece la velocidad física de la banda, la respuesta del sensor, la temporización de hardware, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Declare dos instancias CTU y llame a cada una con CU conectado a su sensor, R := FALSE y PV := 3; la salida Q se enciende cuando la cuenta llega al preset."
+    },
+    {
+      "level": 2,
+      "text": "Emita una caja nueva con Start y cada vez que la anterior haya salido de EyeIn (un F_TRIG sobre EyeIn), hasta que el primer contador termine; luego Done := Unloaded.Q y Run := Active AND NOT Unloaded.Q."
+    }
+  ],
+  "faultCases": [
+    "El inicial no tiene contadores; cargue tres cajas con un contador en EyeIn, cuente las cajas descargadas con un contador en EyeOut, encienda Done cuando las tres hayan salido y detenga entonces la banda."
+  ]
+}
