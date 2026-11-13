@@ -5,11 +5,14 @@
 //
 // The source is the part arrays that plantCore registers. Names, configuration, signals, fault actions and the part text
 // all come from the definition; nothing on the page is written by hand but the introduction and the headings.
-import type { ConfigField, PartDefinition, ScenePart } from '../../packages/zplc-ide/src/plant/contracts.ts';
+import type { ConfigField, PartDefinition, PlantSignalDef, ScenePart } from '../../packages/zplc-ide/src/plant/contracts.ts';
 import { conveyorParts } from '../../packages/zplc-ide/src/plant/core/parts/conveyors.ts';
 import { flowParts } from '../../packages/zplc-ide/src/plant/core/parts/flow.ts';
+import { indicatorParts } from '../../packages/zplc-ide/src/plant/core/parts/indicators.ts';
 import { itemParts } from '../../packages/zplc-ide/src/plant/core/parts/items.ts';
+import { operableParts } from '../../packages/zplc-ide/src/plant/core/parts/operable.ts';
 import { panelParts } from '../../packages/zplc-ide/src/plant/core/parts/panel.ts';
+import { processParts } from '../../packages/zplc-ide/src/plant/core/parts/process.ts';
 import { sensorParts } from '../../packages/zplc-ide/src/plant/core/parts/sensors.ts';
 import { sourceParts } from '../../packages/zplc-ide/src/plant/core/parts/sources.ts';
 import { code, outputsOf, prose, runGenerator, table, type L10n, type Lang, type ReferencePage } from './reference-lib';
@@ -23,6 +26,9 @@ export const PARTS: readonly PartDefinition[] = [
   ...sensorParts,
   ...flowParts,
   ...panelParts,
+  ...operableParts,
+  ...indicatorParts,
+  ...processParts,
 ];
 
 const FAMILY: Record<PartDefinition['family'], L10n> = {
@@ -41,12 +47,18 @@ const HEAD = {
     en: ['Setting', 'Kind', 'Range or values', 'Default', 'Unit'],
     es: ['Ajuste', 'Tipo', 'Rango o valores', 'Valor por defecto', 'Unidad'],
   },
-  signals: { en: ['Signal', 'Direction', 'Type', 'Unit'], es: ['Señal', 'Dirección', 'Tipo', 'Unidad'] },
+  signals: {
+    en: ['Signal', 'Direction', 'Type', 'Unit', 'Range'],
+    es: ['Señal', 'Dirección', 'Tipo', 'Unidad', 'Rango'],
+  },
+  variants: { en: ['Setting', 'Value', 'Signals'], es: ['Ajuste', 'Valor', 'Señales'] },
 } as const;
 const LABEL = {
   config: { en: 'Settings', es: 'Ajustes' },
   signals: { en: 'Signals', es: 'Señales' },
   actions: { en: 'Fault actions', es: 'Acciones de falla' },
+  variants: { en: 'Variants', es: 'Variantes' },
+  equations: { en: 'Equations', es: 'Ecuaciones' },
   none: { en: 'None.', es: 'Ninguna.' },
 } satisfies Record<string, L10n>;
 const INTRO: L10n = {
@@ -61,10 +73,36 @@ const INTRO: L10n = {
 const range = (f: ConfigField): string =>
   f.kind === 'enum' ? (f.values ?? []).map((v) => code(v)).join(', ') : f.kind === 'number' ? `${f.min ?? ''} to ${f.max ?? ''}` : '';
 
+const sampleOf = (part: PartDefinition, config: ScenePart['config'] = {}): ScenePart => ({
+  id: 'sample',
+  part: part.id,
+  name: 'Name',
+  position: [0, 0, 0],
+  rotationYDeg: 0,
+  config,
+});
+const short = (name: string) => name.replace(/^Name\./, '');
+const span = (s: PlantSignalDef, lang: Lang) => (s.range ? `${s.range.min} ${lang === 'es' ? 'a' : 'to'} ${s.range.max}` : '');
+
+/** The settings that change which signals a part has or their type: one row per value whose signals differ from the default. */
+function variantRows(part: PartDefinition): string[][] {
+  const shape = (config: ScenePart['config']) =>
+    part
+      .signals(sampleOf(part, config))
+      .map((s) => `${short(s.name)} ${s.type}`)
+      .join(', ');
+  const base = shape({});
+  return Object.entries(part.config).flatMap(([key, f]) =>
+    f.kind !== 'enum'
+      ? []
+      : (f.values ?? []).filter((v) => shape({ [key]: v }) !== base).map((v) => [code(key), code(v), shape({ [key]: v })]),
+  );
+}
+
 function partSection(part: PartDefinition, lang: Lang): string {
   const fields = Object.entries(part.config);
-  const sample: ScenePart = { id: 'sample', part: part.id, name: 'Name', position: [0, 0, 0], rotationYDeg: 0, config: {} };
-  const signals = part.signals(sample);
+  const signals = part.signals(sampleOf(part));
+  const variants = variantRows(part);
   return [
     `### ${part.names[lang]}`,
     '',
@@ -93,12 +131,14 @@ function partSection(part: PartDefinition, lang: Lang): string {
       ? LABEL.none[lang]
       : table(
           [...HEAD.signals[lang]],
-          signals.map((s) => [code(s.name.replace(/^Name\./, '')), s.direction, s.type, s.unit ?? '']),
+          signals.map((s) => [code(short(s.name)), s.direction, s.type, s.unit ?? '', span(s, lang)]),
         ),
     '',
     `#### ${LABEL.actions[lang]}`,
     '',
     part.actions.length === 0 ? LABEL.none[lang] : part.actions.map((a) => code(a)).join(', '),
+    ...(variants.length === 0 ? [] : ['', `#### ${LABEL.variants[lang]}`, '', table([...HEAD.variants[lang]], variants)]),
+    ...(part.equations ? ['', `#### ${LABEL.equations[lang]}`, '', prose(part.equations[lang])] : []),
   ].join('\n');
 }
 
