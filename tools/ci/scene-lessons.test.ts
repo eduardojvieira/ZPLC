@@ -7,10 +7,12 @@ import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'bun:test';
 
 import { LESSON_INDEX } from '../../packages/zplc-ide/src/generated/lessonIndex';
-import { canonicalJson, type LessonIndexEntry } from '../../packages/zplc-ide/src/learn/lessonPackage';
+import { canonicalJson, type LessonIndex, type LessonIndexEntry } from '../../packages/zplc-ide/src/learn/lessonPackage';
 import { scenarioHash } from '../../packages/zplc-ide/src/learn/lessonPackageFiles';
 import {
   PLANT_LESSON_PINS,
+  TWO_ZERO_LESSON_IDS,
+  alternativePairFaults,
   SCENES_DIRECTORY,
   checkSceneLessons,
   missingSceneLessons,
@@ -40,6 +42,15 @@ function fixtureLesson(id: string, scenario: unknown = baseScenario, over: Parti
     },
     ...over,
   } as unknown as LessonIndexEntry;
+}
+
+/** The 2.0 index plus a Ladder twin of `first-blink-simulation`, changed by `over` (a lesson not a prerequisite of it, so a pair). */
+function withTwin(over: Partial<LessonIndexEntry> = {}): LessonIndex {
+  const base = LESSON_INDEX.lessons.find((lesson) => lesson.id === 'first-blink-simulation')!;
+  return {
+    ...LESSON_INDEX,
+    lessons: [...LESSON_INDEX.lessons, { ...base, id: 'first-blink-simulation-ladder', order: base.order + 0.5, ...over }],
+  };
 }
 
 const roots: string[] = [];
@@ -107,5 +118,45 @@ describe('the scene-lesson guard (CRS-003, CRS-005, CRS-006, CRS-010)', () => {
     expect(plantLessonPinFaults(lessons.filter((entry) => entry.id !== 'motor-plant-feedback')).join('\n')).toContain(
       'motor-plant-feedback',
     );
+  });
+});
+
+describe('the alternative pairs (M7-K5)', () => {
+  const base = LESSON_INDEX.lessons.find((lesson) => lesson.id === 'first-blink-simulation')!;
+
+  it('the 2.0 tree has no pair, and the 2.0 course total stays 68', () => {
+    expect(TWO_ZERO_LESSON_IDS).toHaveLength(68);
+    expect(alternativePairFaults(LESSON_INDEX)).toEqual([]);
+    // each of the 7 -ladder lessons of 2.0 requires its ST twin or has none
+    const ladders = LESSON_INDEX.lessons.filter((lesson) => lesson.id.endsWith('-ladder'));
+    expect(ladders).toHaveLength(7);
+    for (const ladder of ladders) {
+      const twin = LESSON_INDEX.lessons.find((lesson) => lesson.id === ladder.id.slice(0, -'-ladder'.length));
+      expect(twin === undefined || ladder.prerequisites.includes(twin.id)).toBe(true);
+    }
+  });
+
+  it('a pair whose twin has the same scene, scenario and text structure is accepted', () => {
+    expect(alternativePairFaults(withTwin())).toEqual([]);
+  });
+
+  it('refuses a pair with another scene, another scenario file or another text structure', () => {
+    expect(alternativePairFaults(withTwin({ scene: 'other-scene' })).join('\n')).toContain('scene differs');
+    const canonical = base.scenario.canonical + ' ';
+    expect(alternativePairFaults(withTwin({ scenario: { ...base.scenario, canonical } })).join('\n')).toContain('scenario file differs');
+    const text = { ...base.text, es: { ...base.text.es, hints: base.text.es.hints.slice(1) } };
+    expect(alternativePairFaults(withTwin({ text })).join('\n')).toContain('text structure differs');
+  });
+
+  it('refuses a pair that the course order separates', () => {
+    expect(alternativePairFaults(withTwin({ order: base.order + 40 })).join('\n')).toContain('not next to');
+  });
+
+  it('refuses a 2.0 lesson that became an alternative, and a 2.0 lesson that went missing', () => {
+    const tank = LESSON_INDEX.lessons.map((lesson) =>
+      lesson.id === 'tank-level-fault-reset-ladder' ? { ...lesson, prerequisites: [] } : lesson,
+    );
+    expect(alternativePairFaults({ ...LESSON_INDEX, lessons: tank }).join('\n')).toContain('must not be an alternative');
+    expect(alternativePairFaults({ ...LESSON_INDEX, lessons: LESSON_INDEX.lessons.slice(1) }).join('\n')).toContain('missing');
   });
 });

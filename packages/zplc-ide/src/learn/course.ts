@@ -7,6 +7,7 @@
 import { emptyProgress, type LearnProgress } from '../../shared/learnProgressModel';
 import type { CoursePath } from './courseDefinition';
 import type { LessonIndex, LessonIndexEntry, LessonLevel, LessonLocale } from './lessonPackage';
+import { alternativeOf } from './lessonSiblings';
 
 export type LessonState = 'locked' | 'available' | 'in-progress' | 'passed';
 
@@ -76,7 +77,7 @@ export function passedIn(index: LessonIndex, id: string, document: LearnProgress
 /**
  * The state of a lesson. With a `path`, a lesson of that path is available once the lesson before it in the path is passed
  * (the first one always), and the path order replaces its prerequisites; a lesson that is not in the path, or no path, keeps
- * the prerequisites of the full course (LRN-043).
+ * the prerequisites of the full course (LRN-043). A required lesson is met by its alternative sibling too (see lessonSiblings).
  */
 export function lessonStateOf(
   index: LessonIndex,
@@ -92,7 +93,12 @@ export function lessonStateOf(
   const position = path?.lessons.indexOf(id) ?? -1;
   const required =
     path && position >= 0 ? path.lessons.slice(Math.max(0, position - 1), position) : (entryOf(index, id)?.prerequisites ?? []);
-  const missing = unlockAll ? [] : required.filter((prerequisite) => !passedIn(index, prerequisite, document));
+  // A prerequisite is also met by its alternative sibling (M7-K5); that never makes the sibling itself "passed".
+  const met = (prerequisite: string) => {
+    const alternative = alternativeOf(index, prerequisite);
+    return passedIn(index, prerequisite, document) || (alternative !== undefined && passedIn(index, alternative, document));
+  };
+  const missing = unlockAll ? [] : required.filter((prerequisite) => !met(prerequisite));
   return missing.length > 0 ? { state: 'locked', missing } : { state: 'available', missing: [] };
 }
 

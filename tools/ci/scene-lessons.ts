@@ -6,7 +6,8 @@
 // exists; the scenario has a `scene` block and at least one expectation on a plant fact that the scene can answer; its hash is
 // the pinned `scenario.sha256`; the reference solution passes and the starter fails through the application's own Check
 // (`lessonCheck`), headless, each grade within 60 s of wall time (printed per lesson); a Ladder sibling shares the hash of its
-// ST lesson. It also pins the scenario hash and the starter and solution projects of the ten 2.0 plant lessons: only a manifest's
+// ST lesson; alternative pairs (M7-K5) share scene, scenario and text structure, and 2.0 has none. It also pins the scenario hash and the
+// starter and solution projects of the ten 2.0 plant lessons: only a manifest's
 // `tracks` and `unsupported` may change (CRS-010). `missingSceneLessons` states the rule "every scene has a lesson"; the last
 // lesson task asserts it empty, so the command only reports it.
 // Exit 0 when nothing is wrong, 1 otherwise; every problem is printed.
@@ -15,8 +16,10 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 import { LESSON_INDEX } from '../../packages/zplc-ide/src/generated/lessonIndex';
+import { courseOrder } from '../../packages/zplc-ide/src/learn/course';
 import { lessonCheck } from '../../packages/zplc-ide/src/learn/lessonCheck';
-import type { LessonIndexEntry } from '../../packages/zplc-ide/src/learn/lessonPackage';
+import type { LessonIndex, LessonIndexEntry } from '../../packages/zplc-ide/src/learn/lessonPackage';
+import { alternativePairs } from '../../packages/zplc-ide/src/learn/lessonSiblings';
 import { scenarioHash } from '../../packages/zplc-ide/src/learn/lessonPackageFiles';
 import { checkSceneFacts } from '../../packages/zplc-ide/src/plant/ci/sceneCheck';
 import { parseScene } from '../../packages/zplc-ide/src/plant/core/scene';
@@ -47,6 +50,45 @@ export function plantLessonPinFaults(lessons: readonly LessonIndexEntry[]): stri
       faults.push(`${id}: solution project ${lesson.solution.project} is not the pinned ${pin.solution}`);
     return faults;
   });
+}
+
+/** The 68 lessons of 2.0 (course total 68), as data so lesson ids keep one source in code (LRN-028). A 2.1 lesson is never added. */
+export const TWO_ZERO_LESSON_IDS: readonly string[] = JSON.parse(readFileSync(join(import.meta.dir, 'two-zero-lesson-ids.json'), 'utf8'));
+
+/** The text a sibling must share with its twin: the lesson.json keys and the number of steps, hints and objectives, in both languages. */
+const textShape = (lesson: LessonIndexEntry) =>
+  JSON.stringify(
+    (['en', 'es'] as const).map((locale) => {
+      const text = lesson.text[locale];
+      return [Object.keys(text).sort(), text.stages.length, text.hints.length, text.objectives.length, text.faultCases.length];
+    }),
+  );
+
+/**
+ * The rules for the alternative pairs (M7-K5): same scene, scenario file content and hash, same text structure, and next to each
+ * other in the course order. Among the 2.0 lessons there is no pair, and the 2.0 course total stays 68.
+ */
+export function alternativePairFaults(index: LessonIndex = LESSON_INDEX): string[] {
+  const faults: string[] = [];
+  const order = courseOrder(index).map((lesson) => lesson.id);
+  for (const [baseId, ladderId] of alternativePairs(index)) {
+    const base = index.lessons.find((lesson) => lesson.id === baseId)!;
+    const ladder = index.lessons.find((lesson) => lesson.id === ladderId)!;
+    const at = `${ladderId}:`;
+    if (base.scene !== ladder.scene) faults.push(`${at} scene differs from ${baseId}; alternatives share the scene (M7-K5)`);
+    if (base.scenario.canonical !== ladder.scenario.canonical || base.scenario.sha256 !== ladder.scenario.sha256)
+      faults.push(`${at} scenario file differs from ${baseId}; alternatives share the scenario (M7-K5)`);
+    if (textShape(base) !== textShape(ladder))
+      faults.push(`${at} text structure differs from ${baseId}: keys, steps, hints or objectives (M7-K5)`);
+    if (Math.abs(order.indexOf(baseId) - order.indexOf(ladderId)) !== 1)
+      faults.push(`${at} is not next to ${baseId} in the course order (M7-K5)`);
+  }
+  const twoZero = { ...index, lessons: index.lessons.filter((lesson) => TWO_ZERO_LESSON_IDS.includes(lesson.id)) };
+  if (twoZero.lessons.length !== TWO_ZERO_LESSON_IDS.length) faults.push('a 2.0 lesson is missing from the index (M7-K5)');
+  for (const [baseId, ladderId] of alternativePairs(twoZero))
+    faults.push(`${ladderId}: a 2.0 lesson must not be an alternative of ${baseId} (M7-K5)`);
+  if (twoZero.lessons.length !== 68) faults.push('the 2.0 course total is not 68 (M7-K5)');
+  return faults;
 }
 
 /** The scene directories no lesson names (CRS-003). */
@@ -160,7 +202,7 @@ export async function checkSceneLessons(options: GuardOptions = {}): Promise<{ p
 if (import.meta.main) {
   process.env.ZPLC_NATIVE_SIM_BIN ??= resolve(IDE, '../../firmware/lib/zplc_core/build/zplc_runtime');
   const { problems, report } = await checkSceneLessons();
-  problems.push(...plantLessonPinFaults(LESSON_INDEX.lessons));
+  problems.push(...plantLessonPinFaults(LESSON_INDEX.lessons), ...alternativePairFaults());
   for (const line of report) console.log(line);
   const missing = missingSceneLessons();
   if (missing.length > 0) console.log(`scenes with no lesson yet (CRS-003, asserted empty by the last lesson task): ${missing.join(', ')}`);
