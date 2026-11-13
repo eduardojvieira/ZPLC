@@ -39,6 +39,16 @@ import { workbenchEn } from './catalog/workbench';
 import { moduleTextEn } from './catalog/moduleText';
 import { boardsEn } from './catalog/boards';
 import { statusTextEn } from './catalog/statusText';
+import { u2CommandsEn } from './catalog/u2Commands';
+import { u2TestsEn } from './catalog/u2Tests';
+import { u2FindEn } from './catalog/u2Find';
+import { u2SearchEn } from './catalog/u2Search';
+import { u2ReviewEn } from './catalog/u2Review';
+import { u2AssistantEn } from './catalog/u2Assistant';
+import { u2NavigatorEn } from './catalog/u2Navigator';
+import { u2LayoutEn } from './catalog/u2Layout';
+import { u2PreferencesEn } from './catalog/u2Preferences';
+import { u2PanelEn } from './catalog/u2Panel';
 
 /**
  * The English catalog of ZPLC (UX-029): the source of truth for every user-visible string. A key is a dotted path
@@ -668,6 +678,16 @@ export const en = {
   ...moduleTextEn,
   ...boardsEn,
   ...statusTextEn,
+  ...u2CommandsEn,
+  ...u2TestsEn,
+  ...u2FindEn,
+  ...u2SearchEn,
+  ...u2ReviewEn,
+  ...u2AssistantEn,
+  ...u2NavigatorEn,
+  ...u2LayoutEn,
+  ...u2PreferencesEn,
+  ...u2PanelEn,
 } as const;
 
 export type MessageKey = keyof typeof en;

@@ -14,11 +14,12 @@ import { openConfigEditorFromNavigator } from '../navigator/openConfigEditor';
 import { useNewProjectDialog } from '../store/newProjectDialog';
 import { useShellLayout } from '../store/useShellLayout';
 import { usePlantDocument } from '../store/usePlantDocument';
-import type { ConsoleTab } from '../types';
 import { bindCommands, publishCommandState, runCommand } from './bus';
 import { COMMAND_LIST, commandById, isCommandId, type CommandId } from './registry';
 import { createShortcutMatcher, parseShortcut } from './shortcuts';
 import { openPalette, openShortcuts } from './surfaces';
+import { useU2Commands } from './bind';
+import { focusSoon, showActivity, showPanel } from './bind/layout';
 
 /** Commands that also work while the focus is in a text field: the others leave a field its own keys. */
 const WORKS_IN_TEXT_FIELDS: ReadonlySet<string> = new Set<CommandId>(['view.commandPalette', 'help.shortcuts']);
@@ -49,31 +50,15 @@ export function useCommandShortcuts(): void {
   }, []);
 }
 
-/** A command that shows a surface also takes the keyboard there (UX-025), once the palette has given its focus back. */
-const focusSoon = (selector: string): void => {
-  window.setTimeout(() => window.requestAnimationFrame(() => document.querySelector<HTMLElement>(selector)?.focus()), 0);
-};
-
-const showPanel = (tab: ConsoleTab) => (): void => {
-  const state = useIDEStore.getState();
-  if (state.isConsoleCollapsed) state.toggleConsole();
-  state.setActiveConsoleTab(tab);
-  focusSoon(`#console-tab-${tab}`);
-};
-
 const showPlant = (): void => {
   usePlantDocument.getState().show();
   focusSoon('#editor-tab-plant');
 };
 
-const showActivity = (view: 'project' | 'search' | 'learn' | 'tests'): void => {
-  useShellLayout.getState().showActivity(view);
-  focusSoon(`[data-activity="${view}"]`);
-};
-
 /** The commands the shell owns; the toolbar binds the ones about building and running. */
 export function useShellCommands(): void {
   const projectOpen = useIDEStore((s) => s.isProjectOpen);
+  useU2Commands();
   useEffect(() => {
     publishCommandState({ projectOpen });
   }, [projectOpen]);
@@ -99,15 +84,8 @@ export function useShellCommands(): void {
         'view.plant': showPlant,
         'view.output': showPanel('output'),
         'view.problems': showPanel('problems'),
-        'view.tests': () => {
-          showActivity('tests');
-          showPanel('tests')();
-        },
         'view.trace': showPanel('trace'),
         'view.watch': showPanel('watch'),
-        'view.interlocks': showPanel('interlocks'),
-        'view.changes': showPanel('changes'),
-        'view.agent': showPanel('agent'),
         'view.terminal': showPanel('terminal'),
         'project.tasks': () => openConfigEditorFromNavigator('tasks'),
         'project.io': () => openConfigEditorFromNavigator('io'),

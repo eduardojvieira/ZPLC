@@ -16,6 +16,7 @@ import { menuCategories, menuCommands, menuTranslator } from './menuEntry';
 import { filterEntries, fuzzyScore, nextIndex } from './palette';
 import { COMMAND_CATEGORIES, COMMAND_LIST, INITIAL_COMMAND_STATE, commandById, isCommandEnabled, isCommandId } from './registry';
 import { studioCommandsEn, studioCommandsEs } from '../i18n/catalog/studioCommands';
+import { u2CommandsEn, u2CommandsEs } from '../i18n/catalog/u2Commands';
 import {
   CHORD_TIMEOUT_MS,
   chordMatches,
@@ -388,10 +389,101 @@ describe('lane W command contract (FND-002)', () => {
 
   it('FND-002 keeps the 38 commands of 2.0, in their order, ahead of the new ones', () => {
     const ids = COMMAND_LIST.map((command) => command.id);
-    const old = ids.filter((id) => !(id in LANE_W_COMMANDS));
+    const old = ids.filter((id) => !(id in LANE_W_COMMANDS) && !(id in U2_COMMANDS));
     expect(old.length).toBe(38);
     expect(old.slice(0, 5)).toEqual(['file.save', 'file.open', 'file.new', 'file.export', 'view.commandPalette']);
     expect(old.at(-1)).toBe('help.learn');
     expect(runCommand('file.save')).toBe('unavailable');
+  });
+});
+
+/** The ids of the contract of milestone U2 (plan-u2.md, "C-X"), each with its category and default shortcut. */
+const U2_COMMANDS = {
+  'view.testResults': ['view'],
+  'view.resetLayout': ['view'],
+  'view.showInspector': ['view'],
+  'file.closeProject': ['file'],
+  'file.preferences': ['file', 'Mod+Comma'],
+  'build.runAllTests': ['build', 'Mod+Alt+T'],
+  'build.runFailedTests': ['build'],
+  'build.runTestAtCursor': ['build'],
+  'build.newTest': ['build'],
+  'build.checkInterlocks': ['build'],
+  'edit.goToDefinition': ['edit', 'F12'],
+  'edit.findAllReferences': ['edit', 'Shift+F12'],
+  'edit.goBack': ['edit', 'Alt+Left'],
+  'edit.goForward': ['edit', 'Alt+Right'],
+  'project.newProgram': ['project'],
+  'project.newFunctionBlock': ['project'],
+  'project.newFunction': ['project'],
+  'project.newDataType': ['project'],
+  'project.newGlobals': ['project'],
+  'project.newTask': ['project'],
+  'project.rename': ['project'],
+  'project.moveFile': ['project'],
+  'project.duplicate': ['project'],
+  'project.delete': ['project'],
+} as const satisfies Record<string, readonly [string, string?]>;
+
+describe('milestone U2 command contract (FND-002)', () => {
+  it('FND-002 every id of the U2 contract is registered with a title in English and Spanish', () => {
+    expect(Object.keys(U2_COMMANDS).length).toBe(24);
+    for (const [id, [category, shortcut]] of Object.entries(U2_COMMANDS) as Array<[string, readonly [string, string?]]>) {
+      expect([id, isCommandId(id)]).toEqual([id, true]);
+      const command = commandById(id as never);
+      expect([id, command.category, command.shortcut]).toEqual([id, category, shortcut]);
+      expect(typeof (en as Record<string, string>)[command.titleKey]).toBe('string');
+      expect(typeof (es as Record<string, string>)[command.titleKey]).toBe('string');
+      expect((en as Record<string, string>)[command.titleKey]).not.toBe((es as Record<string, string>)[command.titleKey]);
+    }
+    expect(Object.keys(u2CommandsEs).sort()).toEqual(Object.keys(u2CommandsEn).sort());
+    expect(Object.keys(u2CommandsEn).length).toBe(24);
+  });
+
+  it('UX-015 keeps the commands of 2.0 and of lane W, in their order, ahead of the U2 ones', () => {
+    const ids = COMMAND_LIST.map((command) => command.id as string);
+    const firstU2 = ids.findIndex((id) => id in U2_COMMANDS);
+    expect(ids.slice(0, firstU2).length).toBe(38 + Object.keys(LANE_W_COMMANDS).length);
+    expect(ids.slice(firstU2)).toEqual(Object.keys(U2_COMMANDS));
+    expect(ids[firstU2 - 1]).toBe('help.learn');
+    expect(ids.slice(0, 5)).toEqual(['file.save', 'file.open', 'file.new', 'file.export', 'view.commandPalette']);
+  });
+
+  it('UX-014 lists every U2 command in the menu of its category once, and keeps the Edit menu roles after them', () => {
+    const template = buildMenuTemplate('linux', menuCommands, menuTranslator('en'), {
+      isPackaged: true,
+      appName: 'ZPLC',
+      categories: menuCategories,
+      run: () => undefined,
+      requestReload: () => undefined,
+    });
+    for (const [id, [category]] of Object.entries(U2_COMMANDS) as Array<[string, readonly [string, string?]]>) {
+      const holders = template.filter((menu) => {
+        const items = (menu.submenu ?? []) as MenuItemConstructorOptions[];
+        return items.some((item) => item.label === (en as Record<string, string>)[commandById(id as never).titleKey]);
+      });
+      expect([id, holders.map((menu) => menu.label)]).toEqual([id, [(en as Record<string, string>)[`menu.${category}`]]]);
+    }
+    const edit = (template[1]!.submenu ?? []) as MenuItemConstructorOptions[];
+    expect(edit.slice(0, 4).map((item) => item.label)).toEqual(['Go to definition', 'Find all references', 'Go back', 'Go forward']);
+    expect(edit.slice(5).map((item) => item.role)).toEqual(['undo', 'redo', undefined, 'cut', 'copy', 'paste', 'selectAll']);
+  });
+
+  it('UX-015 gives the new shortcuts no clash', () => {
+    for (const [id, [, shortcut]] of Object.entries(U2_COMMANDS) as Array<[string, readonly [string, string?]]>) {
+      if (!shortcut) continue;
+      expect(COMMAND_LIST.filter((command) => command.shortcut === shortcut).map((command) => command.id)).toEqual([id]);
+    }
+  });
+
+  it('UX-015 no U2 command is physical, and the ones that need a project are offered only with one open', () => {
+    expect(COMMAND_LIST.filter((command) => command.id in U2_COMMANDS && command.physical)).toEqual([]);
+    const closed = INITIAL_COMMAND_STATE;
+    const open = { ...closed, projectOpen: true };
+    const always = ['file.preferences', 'edit.goBack', 'edit.goForward'];
+    for (const id of Object.keys(U2_COMMANDS)) {
+      expect([id, isCommandEnabled(commandById(id as never), open)]).toEqual([id, true]);
+      expect([id, isCommandEnabled(commandById(id as never), closed)]).toEqual([id, always.includes(id)]);
+    }
   });
 });
