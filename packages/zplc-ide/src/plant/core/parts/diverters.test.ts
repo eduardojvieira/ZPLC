@@ -145,14 +145,22 @@ describe('pusher', () => {
 });
 
 describe('diverter arm', () => {
-  // Measured: a 0.4 m box jams against an arm steeper than about 38 degrees, so the scenes keep the arm at 30 or less.
+  // Measured: a 0.4 m box jams against an arm steeper than about 38 degrees, so angleDeg is capped at 35.
   const ARM = { lengthM: 1.2, angleDeg: 30, degPerS: 90 };
-  const scene = () => [
+  const scene = (angleDeg = 30) => [
     belt('belt-a', 0, { length: 4 }),
     belt('belt-b', 0.6, { length: 4 }),
-    part('arm1', 'diverter-arm', [-0.2, TOP, -0.35], ARM),
+    part('arm1', 'diverter-arm', [-0.2, TOP, -0.35], { ...ARM, angleDeg }),
     box('b1', -1.7),
   ];
+
+  it('PLT-007 a box crosses to the side belt at the smallest and the largest accepted angle', async () => {
+    for (const angle of [25, 35]) {
+      const p = await plant(scene(angle));
+      p.run(8000, { 'arm1.divert': true, 'belt_a.run': true, 'belt_b.run': true });
+      expect(p.body('b1').p[2]).toBeGreaterThan(0.3); // its centre is over the side belt (z 0.3 to 0.9)
+    }
+  });
 
   it('PRT-003 the arm swings to angleDeg at degPerS and back, reporting diverted and home within 0.5 degrees', async () => {
     const p = await plant([part('arm1', 'diverter-arm', [0, TOP, 0], { angleDeg: 40, degPerS: 80 })]);
@@ -206,7 +214,7 @@ describe('diverters, shared rules', () => {
 
   it('PRT-003 settings outside their limits are refused with a located message', () => {
     expect(check(part('p', 'pusher', [0, 0, 0], { strokeM: 1, widthM: 0.8, heightM: 0.4, speedMps: 1.5, accelMps2: 10 }))).toEqual([]);
-    expect(check(part('a', 'diverter-arm', [0, 0, 0], { lengthM: 1.2, heightM: 0.4, angleDeg: 60, degPerS: 180 }))).toEqual([]);
+    expect(check(part('a', 'diverter-arm', [0, 0, 0], { lengthM: 1.2, heightM: 0.4, angleDeg: 35, degPerS: 180 }))).toEqual([]);
     const bad: [string, string, number][] = [
       ['pusher', 'strokeM', 0.1],
       ['pusher', 'strokeM', 1.1],
@@ -216,7 +224,8 @@ describe('diverters, shared rules', () => {
       ['pusher', 'accelMps2', 0.5],
       ['diverter-arm', 'lengthM', 0.3],
       ['diverter-arm', 'heightM', 0.5],
-      ['diverter-arm', 'angleDeg', 70],
+      ['diverter-arm', 'angleDeg', 40],
+      ['diverter-arm', 'angleDeg', 10],
       ['diverter-arm', 'degPerS', 20],
     ];
     for (const [id, key, value] of bad) {
