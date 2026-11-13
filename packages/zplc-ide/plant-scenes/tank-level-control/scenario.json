@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "tank-level-control",
+  "tickMs": 10,
+  "durationMs": 90000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      { "atMs": 200, "operate": { "signal": "SetPoint.value", "value": 0.5 } },
+      { "atMs": 40000, "operate": { "signal": "DrainPot.value", "value": 40 } },
+      { "atMs": 70000, "operate": { "signal": "SetPoint.value", "value": 0.3 } }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    { "kind": "FOR", "fromMs": 30000, "forMs": 8000, "condition": { "fact:inBand:Tank1": true } },
+    { "kind": "EVENTUALLY", "fromMs": 40000, "withinMs": 20000, "condition": { "fact:inBand:Tank1": true } },
+    { "kind": "FOR", "fromMs": 60000, "forMs": 8000, "condition": { "fact:inBand:Tank1": true } },
+    { "kind": "FOR", "fromMs": 85000, "forMs": 5000, "condition": { "fact:inBand:Tank1": false } },
+    { "kind": "ALWAYS", "condition": { "fact:spilledL:Tank1": false } }
+  ]
+}
