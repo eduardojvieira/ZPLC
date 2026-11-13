@@ -199,14 +199,15 @@ export interface ResolvedPlantMap {
   problems: string[];
 }
 
-/** Binds a valid mapping to the I/O map of the loaded program, checking the type of every signal against its point. */
+/** Binds a valid mapping to the I/O map of the loaded program, checking the type of every signal against its point:
+ * BOOL against BOOL, and an INT or REAL signal against a variable of exactly that type (LNK-002). */
 export function resolvePlantMap(map: PlantMap, ioMap: IoMap): ResolvedPlantMap {
   const resolved: ResolvedPlantMap = { reads: {}, drives: {}, problems: [] };
   for (const { name, direction, type, point } of normalizePlantMap(map).signals) {
     const found =
       direction === 'command' ? ioMap.outputs.find((output) => output.path === point) : ioMap.inputs.find((input) => input.path === point);
     if (!found) resolved.problems.push(`${name}: the program has no ${direction === 'command' ? 'output' : 'input'} ${point}`);
-    else if ((type === 'BOOL') !== (found.type === 'BOOL'))
+    else if (type === 'BOOL' ? found.type !== 'BOOL' : found.type !== type)
       resolved.problems.push(`${name}: ${point} is ${found.type}, the signal is ${type}`);
     else if (direction === 'command') resolved.reads[name] = found as DeclaredOutput;
     else resolved.drives[name] = found as DeclaredInput;

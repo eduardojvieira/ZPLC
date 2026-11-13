@@ -30,13 +30,15 @@ export interface CameraPreset {
 /** C2. One catalogue part, defined once (PRT-002). `physics` and `behave` are the only parts that know Jolt. */
 export interface PartDefinition {
   id: string;
-  family: 'items' | 'sources' | 'conveyors' | 'flow' | 'sensors' | 'panel';
+  family: 'items' | 'sources' | 'conveyors' | 'flow' | 'sensors' | 'panel' | 'process';
   names: { en: string; es: string };
   config: Readonly<Record<string, ConfigField>>;
   signals(part: ScenePart): PlantSignalDef[]; // derived: `${part.name}.${signal}`
   actions: readonly string[]; // fault actions (PLT-011, PRT-008)
   snapPoints(part: ScenePart): readonly SnapPoint[];
   doc: { en: string; es: string };
+  /** The equations of a process model, in prose and symbols, both languages (PLT-009). Required for family 'process'. */
+  equations?: { en: string; es: string };
 }
 export interface ConfigField {
   kind: 'number' | 'enum' | 'boolean';
@@ -57,6 +59,8 @@ export interface PlantSignalDef {
   direction: 'command' | 'sensor';
   type: SignalType;
   unit?: string;
+  /** The engineering range of a numeric signal, in `unit`; the plant map's `eng_min`, `eng_max` and `unit` MUST equal it. */
+  range?: { min: number; max: number };
 }
 
 /** C3. A drawable state; the view reads nothing else (P14). */
