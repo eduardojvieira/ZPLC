@@ -99,6 +99,17 @@ describe('OperatePanel numeric parts', () => {
     expect(log).toEqual(['operate Pot1.value 60', 'operate Pot1.value 26']);
   });
 
+  it('VIS-010 a potentiometer keeps the value being set until the plant reports it', () => {
+    const { log, ui } = rig();
+    const slider = ui.container.querySelector<HTMLInputElement>('input[type="range"]')!;
+    // Two arrow-up presses with no new snapshot between them: each steps from what the slider shows.
+    slide(slider, Number(slider.value) + Number(slider.step));
+    expect(slider.value).toBe('26');
+    slide(slider, Number(slider.value) + Number(slider.step));
+    expect(slider.value).toBe('27');
+    expect(log).toEqual(['operate Pot1.value 26', 'operate Pot1.value 27']);
+  });
+
   it('VIS-010 a selector is operated from a list by keyboard', () => {
     const { log, ui } = rig();
     const lists = [...ui.container.querySelectorAll<HTMLSelectElement>('[data-plant-selector]')];
