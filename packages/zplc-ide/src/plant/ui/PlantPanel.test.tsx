@@ -19,6 +19,7 @@ const { flowParts } = await import('../core/parts/flow');
 const { panelParts } = await import('../core/parts/panel');
 const { PlantPanel } = await import('./PlantPanel');
 const { PlantDocument } = await import('../../shell/PlantDocument');
+import { SCENE_INDEX } from '../../generated/sceneIndex';
 import type { PlantCore, PlantSession, PlantSessionEvent, PlantSnapshot } from '../contracts';
 import type { PlantRenderer } from '../view/renderer';
 import type { PlantEngine } from './loadPlantEngine';
@@ -511,5 +512,117 @@ describe('the plant panel (VIS-001, VIS-006, VIS-010, PLS-003, PLS-004, PLS-010)
       dom.fireEvent.change(dom.screen.getByLabelText(dom.t('plant.panel.camera')), { target: { value: 'Overview' } });
     });
     expect(r.renderer.presets).toEqual(['Overview']);
+  });
+});
+
+/** A project folder with the file API the plant panel uses: `scenes/` of named texts, listable, readable and writable. */
+function fakeProject(initial: Record<string, string> = {}) {
+  const files = new Map(Object.entries(initial));
+  const entry = (name: string) => ({
+    getFile: async () => ({ size: (files.get(name) ?? '').length, text: async () => files.get(name) ?? '' }),
+    createWritable: async () => ({
+      write: async (value: string) => void files.set(name, value),
+      close: async () => undefined,
+    }),
+  });
+  const folder = {
+    async *values() {
+      for (const name of files.keys()) yield { kind: 'file', name };
+    },
+    getFileHandle: async (name: string, options?: { create?: boolean }) => {
+      if (!files.has(name) && !options?.create) throw new Error('not found');
+      return entry(name);
+    },
+  };
+  const root = { getDirectoryHandle: async () => folder } as unknown as FileSystemDirectoryHandle;
+  return { root, files };
+}
+
+const choices = () => [...dom.screen.getByLabelText(dom.t('plant.panel.scene')).querySelectorAll('option')].map((o) => o.textContent);
+
+describe('opening and saving scenes (SCN-001, SCN-006, SCN-016)', () => {
+  it('SCN-016 the chooser lists the empty floor and every shipped scene, and the empty floor opens with no parts', async () => {
+    const r = rig();
+    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    await ready();
+    expect(choices()).toContain(dom.t('plant.panel.emptyFloor'));
+    expect(choices().length).toBe(SCENE_INDEX.length + 1);
+    await dom.act(async () => {
+      dom.fireEvent.change(dom.screen.getByLabelText(dom.t('plant.panel.scene')), { target: { value: 'empty' } });
+    });
+    await dom.waitFor(() => expect(r.scenes.at(-1)?.parts.length).toBe(0));
+  });
+
+  it('SCN-001 any shipped scene opens from the chooser with no file in the project', async () => {
+    const r = rig();
+    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    await ready();
+    expect(useIDEStore.getState().loadedFiles.size).toBe(0);
+    await dom.act(async () => {
+      dom.fireEvent.change(dom.screen.getByLabelText(dom.t('plant.panel.scene')), { target: { value: 'merge-lines' } });
+    });
+    await dom.waitFor(() => expect(r.scenes.length).toBe(2));
+    expect((r.scenes.at(-1) as { name?: string }).name).toBe('Merge two lines');
+  });
+
+  it('SCN-006 the scenes of the project folder are listed from the folder and one opens from there', async () => {
+    const project = fakeProject({ 'line.scene.json': sceneFiles('counted-queue').scene, 'notes.txt': 'x' });
+    dom.patchStore(useIDEStore, { directoryHandle: project.root });
+    const r = rig();
+    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    await dom.waitFor(() => expect(choices()).toContain('line'));
+    expect(choices()).not.toContain('notes');
+    await dom.act(async () => {
+      dom.fireEvent.change(dom.screen.getByLabelText(dom.t('plant.panel.scene')), { target: { value: 'file:line' } });
+    });
+    await dom.waitFor(() => expect((r.scenes.at(-1) as { name?: string }).name).toBe('Counted queue'));
+  });
+
+  it('SCN-006 a project with saved scenes and no scene.json opens its first saved scene until a person chooses', async () => {
+    const project = fakeProject({ 'line.scene.json': sceneFiles('counted-queue').scene });
+    dom.patchStore(useIDEStore, { directoryHandle: project.root });
+    const r = rig();
+    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    await dom.waitFor(() => expect((dom.screen.getByLabelText(dom.t('plant.panel.scene')) as HTMLSelectElement).value).toBe('file:line'));
+    await dom.waitFor(() => expect((r.scenes.at(-1) as { name?: string }).name).toBe('Counted queue'));
+  });
+
+  it('SCN-016 a template is saved into the project under a name, then listed and open as a project scene', async () => {
+    const project = fakeProject();
+    dom.patchStore(useIDEStore, { directoryHandle: project.root });
+    const r = rig();
+    const { user } = dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    await ready();
+    await user.click(dom.screen.getByRole('button', { name: dom.t('plant.panel.saveToProject') }));
+    const field = dom.screen.getByLabelText(dom.t('plant.panel.saveName'));
+    await user.clear(field);
+    await user.type(field, 'my line');
+    await user.click(dom.screen.getByRole('button', { name: dom.t('plant.panel.saveConfirm') }));
+    await dom.waitFor(() => expect(project.files.has('my line.scene.json')).toBe(true));
+    expect(project.files.get('my line.plant-map.json')).toContain('"schemaVersion":2');
+    await dom.waitFor(() => expect(choices()).toContain('my line'));
+    expect((dom.screen.getByLabelText(dom.t('plant.panel.scene')) as HTMLSelectElement).value).toBe('file:my line');
+    expect(document.querySelector('[data-plant-save-scene]')).toBeNull();
+  });
+
+  it('SCN-006 a name the project already holds, or a path, is refused and nothing is written', async () => {
+    const project = fakeProject({ 'line.scene.json': sceneFiles('counted-queue').scene });
+    dom.patchStore(useIDEStore, { directoryHandle: project.root });
+    const r = rig();
+    const { user } = dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    await dom.waitFor(() => expect(choices()).toContain('line'));
+    await dom.act(async () => {
+      dom.fireEvent.change(dom.screen.getByLabelText(dom.t('plant.panel.scene')), { target: { value: 'empty' } });
+    });
+    await ready();
+    await user.click(dom.screen.getByRole('button', { name: dom.t('plant.panel.saveToProject') }));
+    const field = dom.screen.getByLabelText(dom.t('plant.panel.saveName'));
+    for (const name of ['line', '../zplc']) {
+      await user.clear(field);
+      await user.type(field, name);
+      await user.click(dom.screen.getByRole('button', { name: dom.t('plant.panel.saveConfirm') }));
+      expect(document.querySelector('[role="dialog"] [role="alert"], [role="dialog"] [aria-invalid="true"]')).toBeTruthy();
+    }
+    expect([...project.files.keys()]).toEqual(['line.scene.json']);
   });
 });

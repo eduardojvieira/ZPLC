@@ -14,10 +14,60 @@ import { registerPlantTransport } from '../../store/useTransport';
 import { announce } from '../../utils/announce';
 import type { PlantCore, PlantSceneFile, PlantSnapshot } from '../contracts';
 import { parseScene } from '../core/scene';
+import { listScenes, readSceneTexts } from '../persistence/sceneFiles';
 import { createPlantSession, type PlantSessionHandle, type PlantSessionPorts } from '../session/plantSession';
 import { loadPlantEngine, type PlantEngine } from './loadPlantEngine';
 
-export type SceneRef = { kind: 'project' } | { kind: 'shipped'; id: string };
+/** `project` is the `scene.json` at the project root, `file` a scene of `<project>/scenes/`, `empty` the empty floor of SCN-016. */
+export type SceneRef = { kind: 'project' } | { kind: 'file'; name: string } | { kind: 'shipped'; id: string } | { kind: 'empty' };
+
+export const PROJECT = 'project';
+export const EMPTY = 'empty';
+export const FILE = 'file:';
+
+/** The value an option carries; a shipped scene's is its plain id. */
+export const refValue = (ref: SceneRef): string =>
+  ref.kind === 'project' ? PROJECT : ref.kind === 'empty' ? EMPTY : ref.kind === 'file' ? `${FILE}${ref.name}` : ref.id;
+
+export const refFromValue = (value: string): SceneRef =>
+  value === PROJECT
+    ? { kind: 'project' }
+    : value === EMPTY
+      ? { kind: 'empty' }
+      : value.startsWith(FILE)
+        ? { kind: 'file', name: value.slice(FILE.length) }
+        : { kind: 'shipped', id: value };
+
+/** The empty floor: a template with no parts and one camera, to be built on in the editor (SCN-016). */
+const EMPTY_FLOOR: SceneOverride = {
+  scene: JSON.stringify({
+    schemaVersion: 1,
+    name: 'Empty floor',
+    parts: [],
+    cameras: [{ name: 'Overview', position: [0, 8, 8], target: [0, 0, 0] }],
+  }),
+  map: '',
+};
+
+/** The scenes saved in the open project (`scenes/*.scene.json`), listed from its directory and not from the open files. */
+export function useProjectScenes(): { names: string[]; refresh: () => void } {
+  const handle = useIDEStore((state) => state.directoryHandle);
+  const [listed, setListed] = useState<{ handle: FileSystemDirectoryHandle; names: string[] } | undefined>();
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (!handle) return;
+    let cancelled = false;
+    void listScenes(handle)
+      .then((names) => !cancelled && setListed({ handle, names }))
+      .catch(() => !cancelled && setListed({ handle, names: [] }));
+    return () => {
+      cancelled = true;
+    };
+  }, [handle, tick]);
+  const refresh = useCallback(() => setTick((n) => n + 1), []);
+  return { names: listed?.handle === handle && handle ? listed.names : NO_NAMES, refresh };
+}
+const NO_NAMES: string[] = [];
 
 /** What a test replaces: the engine (three and Jolt) and the session factory. */
 export interface PlantPanelDeps {
@@ -132,7 +182,14 @@ export function usePlantSession(
 
   // The core of the scene. A result belongs to the scene (and, for the project's, the files) it was built for;
   // for any other it reads as loading.
-  const base = ref.kind === 'project' ? JSON.stringify(['project', projectScene, projectMap]) : `shipped:${ref.id}`;
+  const base =
+    ref.kind === 'project'
+      ? JSON.stringify(['project', projectScene, projectMap])
+      : ref.kind === 'file'
+        ? JSON.stringify(['file', ref.name, projectMap])
+        : ref.kind === 'empty'
+          ? 'empty'
+          : `shipped:${ref.id}`;
   const key = override ? JSON.stringify([base, override]) : base;
   const [loaded, setLoaded] = useState<{ key: string; load: Load } | undefined>();
   const load: Load = loaded?.key === key ? loaded.load : { phase: 'loading' };
@@ -140,16 +197,22 @@ export function usePlantSession(
   useEffect(() => {
     let cancelled = false;
     let created: PlantCore | undefined;
+    // A saved scene brings its own plant map, else the project's.
+    const sceneTexts = async (engine: PlantEngine): Promise<SceneOverride | undefined> => {
+      if (ref.kind === 'empty') return EMPTY_FLOOR;
+      if (ref.kind === 'shipped') return (await engine.shippedScene(ref.id)) ?? undefined;
+      if (ref.kind === 'file') {
+        const handle = useIDEStore.getState().directoryHandle;
+        if (!handle) return undefined;
+        const saved = await readSceneTexts(handle, ref.name);
+        return { scene: saved.scene, map: saved.map || (projectMap ?? '') };
+      }
+      return projectScene === undefined ? undefined : { scene: projectScene, map: projectMap ?? '' };
+    };
     void (async () => {
       const engine = await loadEngine();
-      const texts = override
-        ? override
-        : ref.kind === 'project'
-          ? projectScene === undefined
-            ? undefined
-            : { scene: projectScene, map: projectMap ?? '' }
-          : await engine.shippedScene(ref.id);
-      if (!texts) throw new Error(ref.kind === 'project' ? 'scene.json' : ref.id);
+      const texts = override ?? (await sceneTexts(engine));
+      if (!texts) throw new Error(ref.kind === 'shipped' ? ref.id : ref.kind === 'file' ? ref.name : 'scene.json');
       const parsed = parseScene(texts.scene);
       if ('problems' in parsed) throw new Error(parsed.problems.map((problem) => `${problem.path}: ${problem.message}`).join('; '));
       const core = await engine.createPlantCore(parsed.scene);

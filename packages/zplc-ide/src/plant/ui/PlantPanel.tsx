@@ -8,10 +8,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DebugController } from '../../hooks/debugControllerTypes';
 import { useT } from '../../i18n';
 import { SCENE_INDEX } from '../../generated/sceneIndex';
+import { saveScene } from '../persistence/sceneFiles';
 import { useAppSettings } from '../../store/useAppSettings';
 import { useIDEStore } from '../../store/useIDEStore';
 import { announce } from '../../utils/announce';
 import { Button, Select, ToggleGroup } from '../../ui';
+import { SaveSceneButton, SceneChooser } from './SceneChooser';
 import { catalogue } from '../core/catalogue';
 import { EditorPanel } from '../editor/EditorPanel';
 import { createMapEditor, type MapEditor } from '../editor/mapEditor';
@@ -24,7 +26,9 @@ import type { PlantRenderer } from '../view/renderer';
 import { OperatePanel } from './OperatePanel';
 import { PlantCanvas } from './PlantCanvas';
 import {
+  refValue,
   usePlantSession,
+  useProjectScenes,
   type CanvasFailure,
   type CanvasTiming,
   type PlantPanelDeps,
@@ -42,6 +46,13 @@ export interface PlantPanelProps {
 }
 
 const NO_DEPS: PlantPanelDeps = {};
+
+/** A scene name as `sceneFilePath` accepts it, from a scene's display name. */
+const saveName = (name: string) =>
+  name
+    .replace(/[^A-Za-z0-9._ -]/g, '-')
+    .replace(/^[^A-Za-z0-9]+/, '')
+    .slice(0, 64);
 
 function Schematic({ scene }: { scene: PlantSceneFile }) {
   const { t } = useT();
@@ -84,9 +95,14 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
   const hasProjectScene = useIDEStore((state) => [...state.loadedFiles.values()].some((file) => file.path === 'scene.json'));
   const theme = useIDEStore((state) => state.theme);
   const quality = useAppSettings((state) => state.settings.plantQuality);
-  const [ref, setRef] = useState<SceneRef>(() =>
-    hasProjectScene ? { kind: 'project' } : { kind: 'shipped', id: SCENE_INDEX[0]?.id ?? '' },
-  );
+  const handle = useIDEStore((state) => state.directoryHandle);
+  const saved = useProjectScenes();
+  // Until a person chooses, the panel shows the project's own scene, else its first saved one, else the first shipped scene.
+  const [choice, setRef] = useState<SceneRef | undefined>();
+  const first = saved.names[0];
+  const ref: SceneRef =
+    choice ??
+    (hasProjectScene ? { kind: 'project' } : first ? { kind: 'file', name: first } : { kind: 'shipped', id: SCENE_INDEX[0]?.id ?? '' });
   const [view, setView] = useState<'3d' | 'schematic'>('3d');
   // A failure belongs to the scene it was reported for.
   const [failed, setFailed] = useState<{ key: string; failure: CanvasFailure } | undefined>();
@@ -95,7 +111,7 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
   const [editing, setEditing] = useState<{ editor: SceneEditor; mapEditor: MapEditor } | undefined>();
   const [edited, setEdited] = useState<{ key: string; texts: SceneOverride } | undefined>();
   const [version, setVersion] = useState(0);
-  const refKey = ref.kind === 'project' ? 'project' : ref.id;
+  const refKey = refValue(ref);
   const binding = usePlantSession(controller, ref, deps, edited?.key === refKey ? edited.texts : undefined);
   const { load, snapshot, state } = binding;
   const ready = load.phase === 'ready' ? load : undefined;
@@ -152,28 +168,27 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
         : failure?.kind === 'slow'
           ? t('plant.panel.slowFrames')
           : undefined;
-  const sceneOptions = [
-    ...(hasProjectScene ? [{ value: 'project', label: t('plant.panel.projectScene') }] : []),
-    ...SCENE_INDEX.map((scene) => ({ value: scene.id, label: scene.names[locale === 'es' ? 'es' : 'en'] })),
-  ];
+  const saveToProject = async (name: string) => {
+    if (!handle || !ready) return;
+    await saveScene(handle, name, ready.scene, ready.map ? JSON.stringify(ready.map) : undefined);
+    saved.refresh();
+    setEditing(undefined);
+    setRef({ kind: 'file', name });
+    announce(t('plant.panel.saved', { name }));
+  };
 
   return (
     <div data-plant-panel data-visible={visible} className="flex min-h-0 flex-1 flex-col">
       <div role="toolbar" aria-label={t('plant.panel.toolbar')} className="flex flex-wrap items-end gap-3 p-2">
-        <Select
-          label={t('plant.panel.scene')}
+        <SceneChooser
           value={refKey}
-          onChange={(event) => {
+          rootScene={hasProjectScene}
+          saved={saved.names}
+          onChoose={(next) => {
             setEditing(undefined);
-            setRef(event.target.value === 'project' ? { kind: 'project' } : { kind: 'shipped', id: event.target.value });
+            setRef(next);
           }}
-        >
-          {sceneOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </Select>
+        />
         <ToggleGroup
           label={t('plant.panel.view')}
           options={[
@@ -210,6 +225,9 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
         >
           {t('plant.panel.resetPlant')}
         </Button>
+        {handle && ready && ref.kind !== 'file' && !editing && (
+          <SaveSceneButton initialName={saveName(ready.scene.name)} existing={saved.names} onSave={saveToProject} />
+        )}
         {editing ? (
           <>
             <Button data-plant-undo disabled={!stopped} onClick={() => history(true)}>

@@ -6,7 +6,7 @@
  */
 import { join } from 'node:path';
 import { assert } from '../run-desktop-smoke';
-import { button, css, notPossible, type App } from '../journeyApp';
+import { button, css, type App } from '../journeyApp';
 import type { Journey } from '../journeys';
 import {
   holdPushButton,
@@ -116,17 +116,15 @@ export const journeysPlant: Journey[] = [
     },
   },
   {
-    // SCN-014 asks for a path with no pointer from an empty floor to a running scene. The editor panel exists (E3) but "Edit scene" is
-    // not wired to it yet (it is disabled while the panel has no handler), so there is nothing to walk. This journey is a known gap
-    // in run-journeys.ts until E3b wires the panel; then it asserts the first step of the path and the entry may go.
+    // SCN-014 asks for a path with no pointer from an empty floor to a running scene. This asserts its first step: the project's scene
+    // opens from the plant document and "Edit scene" opens the editor panel from the keyboard.
     name: 'Q2 A scene is built, bound and run from the keyboard alone',
     example: 'none',
     proves: [],
     partly: ['SCN-014'],
     run: async (app, { root }) => {
       await openScene(app, root, SHIPPED.smallest);
-      if (!(await app.clickable(css('[data-plant-edit-scene]'))))
-        notPossible('"Edit scene" has no editor panel to open yet (E3b wires it).');
+      assert(await app.clickable(css('[data-plant-edit-scene]')), '"Edit scene" cannot be pressed.');
       await app.eval(`document.querySelector('[data-plant-edit-scene]').focus()`);
       await app.press('Enter');
       await app.until(

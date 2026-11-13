@@ -1,8 +1,8 @@
 /**
  * What the plant journeys and the plant bench share: a project holding a scene, a way to reach the plant document of a running
  * application, and a launcher for the packaged application with the flags a measurement needs (a window with the GPU, or software
- * GL). It reaches the application only through the DevTools protocol, as a person would through input, plus one read of the
- * application's store: the scene of a project is a file of the project, and no control of the interface opens it yet.
+ * GL). It reaches the application only through the DevTools protocol, as a person would through input: the scene of a project is
+ * a file of the project (`scenes/<name>.scene.json`), which the plant document lists and opens by itself (SCN-006).
  */
 import { createHash } from 'node:crypto';
 import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -79,54 +79,25 @@ export function stressSceneProject(): SceneProject {
   };
 }
 
-/** A folder Studio opens as a project: the blinky configuration, the scene's program as `src/main.st`, and the scene files at the root. */
+/**
+ * A folder Studio opens as a project: the blinky configuration, the scene's program as `src/main.st`, and the scene and its plant map in
+ * `scenes/`.
+ */
 export function writeSceneProject(folder: string, project: SceneProject): string {
   mkdirSync(join(folder, 'src'), { recursive: true });
   const config = JSON.parse(readFileSync(join(packageRoot, 'projects', 'blinky_st', 'zplc.json'), 'utf8')) as Record<string, unknown>;
   config.name = `Plant ${project.name}`;
   writeFileSync(join(folder, 'zplc.json'), `${JSON.stringify(config, null, 2)}\n`);
   writeFileSync(join(folder, 'src', 'main.st'), project.program);
-  writeFileSync(join(folder, 'scene.json'), project.scene);
-  writeFileSync(join(folder, 'plant-map.json'), project.map);
+  mkdirSync(join(folder, 'scenes'), { recursive: true });
+  writeFileSync(join(folder, 'scenes', `${project.name}.scene.json`), project.scene);
+  writeFileSync(join(folder, 'scenes', `${project.name}.plant-map.json`), project.map);
   return folder;
 }
 export const copyExample = (folder: string, example: string): string => (
   cpSync(join(packageRoot, 'projects', example), folder, { recursive: true }),
   folder
 );
-
-/**
- * The scene is a file of the project; until an action of the interface opens it, put the two files among the open ones, as that action
- * will.
- */
-export async function openSceneFiles(app: DriveApp, project: SceneProject): Promise<void> {
-  const found = await app.eval<string>(
-    `(async () => {
-    const dev = location.protocol !== 'http:' ? undefined : await import('/src/store/useIDEStore.ts').then((m) => ` +
-      `m.useIDEStore).catch(() => undefined);
-    const urls = [...document.querySelectorAll('script[src], link[rel=modulepreload]')].map((e) => e.src || e.href);
-    const stores = dev ? [dev] : [];
-    for (const url of urls) {
-      const mod = await import(url).catch(() => ({}));
-      for (const value of Object.values(mod)) stores.push(value);
-    }
-    for (const store of stores) {
-      if (typeof store !== 'function' || typeof store.getState !== 'function' || typeof store.setState !== 'function') continue;
-      const state = store.getState();
-      if (!state || !('loadedFiles' in state) || !('setActiveConsoleTab' in state)) continue;
-      const files = new Map(state.loadedFiles);
-      const make = (path, content) => ({ id: 'file:' + path, name: path, language: 'ST', content, isModified: false, path, parentPath: ` +
-      `'', diskContent: content });
-      files.set('file:scene.json', make('scene.json', ${JSON.stringify(project.scene)}));
-      files.set('file:plant-map.json', make('plant-map.json', ${JSON.stringify(project.map)}));
-      store.setState({ loadedFiles: files });
-      return 'ok';
-    }
-    return 'no store';
-  })()`,
-  );
-  assert(found === 'ok', `The scene files could not be put among the open files: ${found}`);
-}
 
 /** The recent project is the way into a project of a packaged application (it has no folder dialog). */
 export async function openRecentProject(app: DriveApp): Promise<void> {
@@ -149,9 +120,24 @@ export async function runFromPalette(app: DriveApp, command: string, filter: str
 }
 
 export async function openPlantDocument(app: DriveApp, project: SceneProject): Promise<void> {
-  await openSceneFiles(app, project);
   await runFromPalette(app, 'view.plant', 'show the plant');
   await app.until('the plant document', async () => (await app.visible(css('[data-plant-document]'))) || undefined, 30_000);
+  // The document lists the project's scenes from its folder; choose this one as a person would from the scene chooser.
+  const value = `file:${project.name}`;
+  await app.until(
+    'the project scene in the scene chooser',
+    async () =>
+      (await app.eval<boolean>(
+        `Boolean([...document.querySelectorAll('[data-plant-panel] select option')].some((o) => o.value === ${JSON.stringify(value)}))`,
+      )) || undefined,
+    30_000,
+  );
+  await app.eval(
+    `(() => { const select = [...document.querySelectorAll('[data-plant-panel] select')].find((s) => ` +
+      `[...s.options].some((o) => o.value === ${JSON.stringify(value)})); select.focus(); ` +
+      `Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(select, ${JSON.stringify(value)}); ` +
+      `select.dispatchEvent(new Event('change', { bubbles: true })); })()`,
+  );
   await app.until(
     'the scene to load',
     async () => (await app.eval<boolean>(`Boolean(document.querySelector('[data-plant-panel] [data-plant-text]'))`)) || undefined,
