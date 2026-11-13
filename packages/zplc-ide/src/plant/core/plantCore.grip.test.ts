@@ -126,7 +126,8 @@ describe('PlantCore manipulators, support facts and the M3 pins', () => {
     const facts = core.facts();
     expect(facts).toMatchObject({ 'picked:Pick1': 1, 'placed:Pick1': 1, 'drops:Pick1': 0 });
     expect(facts['axis:Pick1:x']).toBeGreaterThan(0.9);
-    for (const k of ['x', 'y']) expect(Math.round((facts[`axis:Pick1:${k}`] as number) * 1000) / 1000).toBe(facts[`axis:Pick1:${k}`]);
+    for (const k of ['x', 'y'])
+      expect(Math.round((facts[`axis:Pick1:${k}`] as number) * 1000) / 1000).toBe(facts[`axis:Pick1:${k}`] as number);
     expect(facts).not.toHaveProperty(['axis:Pick1:z']);
     expect(facts['stacked:pallet:0']).toBe(1);
     expect(core.snapshot().items.find((i) => i.id.includes('box'))?.tag).toBe('box');
@@ -235,7 +236,7 @@ describe('PlantCore manipulators, support facts and the M3 pins', () => {
   }, 120_000);
 
   it('PLT-006 the hash does not depend on host pacing', async () => {
-    const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+    const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
     let state = 4242;
     const random = () => (state = (Math.imul(state, 1103515245) + 12345) >>> 0) / 4294967296;
     const core = await make(GANTRY_SCENE());

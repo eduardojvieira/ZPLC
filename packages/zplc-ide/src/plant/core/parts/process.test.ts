@@ -120,7 +120,7 @@ describe('tank process model', () => {
       const out: number[] = [];
       for (let i = 0; i < 400; i += 1) {
         run(rt, 0.05, { 'Tank1.fill': i % 3 === 0 ? 80 : 10, 'Tank1.drain': i % 2 === 0 ? 100 : 30 });
-        out.push(rt.sense()['Tank1.level']!, rt.sense()['Tank1.flowOut']!);
+        out.push(rt.sense()['Tank1.level'] as number, rt.sense()['Tank1.flowOut'] as number); // the plant senses numbers here
       }
       return out;
     };
