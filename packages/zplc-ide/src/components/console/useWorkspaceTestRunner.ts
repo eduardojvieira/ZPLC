@@ -23,12 +23,7 @@ export type WorkspaceTestRunner = ReturnType<typeof useWorkspaceTestRunner>;
 export function useWorkspaceTestRunner(
   state: Pick<
     ConsoleState,
-    | 'isProjectOpen'
-    | 'projectSession'
-    | 'compilerRunId'
-    | 'workspaceScenarioLink'
-    | 'linkWorkspaceScenarios'
-    | 'hasUnsavedChanges'
+    'isProjectOpen' | 'projectSession' | 'compilerRunId' | 'workspaceScenarioLink' | 'linkWorkspaceScenarios' | 'hasUnsavedChanges'
   >,
 ) {
   const { isProjectOpen, projectSession, compilerRunId, workspaceScenarioLink, linkWorkspaceScenarios, hasUnsavedChanges } = state;

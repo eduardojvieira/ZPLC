@@ -156,17 +156,20 @@ describe('M5 views from a real snapshot', () => {
     expect(instanceColors(items)).toHaveLength(6);
   });
 
-  it('VIS-003 the real stacker rack publishes its grid, the lift its stroke, and the view draws cell rails and full guide rails', async () => {
-    const core = await make([part('stacker-crane', 'Crane1', 0, {}, 0), part('lift', 'Lift1', 6)]);
-    const rack = viewsOf(core, 'stacker-rack')[0]!;
-    const { columns, levels, bayPitchM, levelPitchM } = rack.state as Record<string, number>;
-    expect(columns).toBeGreaterThan(1);
-    expect(levels).toBeGreaterThan(1);
-    expect(bayPitchM).toBeGreaterThan(0);
-    expect(levelPitchM).toBeGreaterThan(0);
-    expect(slots(rack)).toHaveLength(levels + 1 + (columns - 1));
-    const lift = viewsOf(core, 'lift')[0]!;
-    expect(lift.state.strokeM).toBeGreaterThan(0);
-    expect(lift.state.levelPitchM).toBeGreaterThan(0);
-  });
+  it(
+    'VIS-003 the real stacker rack publishes its grid, the lift its stroke, and the view draws cell rails and full guide ' + 'rails',
+    async () => {
+      const core = await make([part('stacker-crane', 'Crane1', 0, {}, 0), part('lift', 'Lift1', 6)]);
+      const rack = viewsOf(core, 'stacker-rack')[0]!;
+      const { columns, levels, bayPitchM, levelPitchM } = rack.state as Record<string, number>;
+      expect(columns).toBeGreaterThan(1);
+      expect(levels).toBeGreaterThan(1);
+      expect(bayPitchM).toBeGreaterThan(0);
+      expect(levelPitchM).toBeGreaterThan(0);
+      expect(slots(rack)).toHaveLength(levels + 1 + (columns - 1));
+      const lift = viewsOf(core, 'lift')[0]!;
+      expect(lift.state.strokeM).toBeGreaterThan(0);
+      expect(lift.state.levelPitchM).toBeGreaterThan(0);
+    },
+  );
 });
