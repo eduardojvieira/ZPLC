@@ -168,7 +168,7 @@ function fakeThree() {
     lookAt() {}
   }
   const mats: Material[] = [];
-  const scenes: { background: Color | null }[] = [];
+  const scenes: { background: Color | null; children: unknown[] }[] = [];
   class Material {
     color: Color;
     constructor(o: { color?: number } = {}) {

@@ -368,6 +368,7 @@ export function parseScenarioFormat(engine: string, workspace: string): Scenario
   );
   const plain = /exact\(\s*source,\s*hasPlant\s*\?\s*\[([^\]]*)\]\s*:\s*\[([^\]]*)\],\s*'scenario',?\s*\)/;
   const top = spread.exec(engine) ?? plain.exec(engine);
+  if (!top) throw new Error('test-engine/index.ts: the keys of a scenario were not found');
   const list = (text: string) => [...text.matchAll(/'(\w+)'/g)].map((match) => match[1]!);
   const withPlant = list(top[1]!);
   const without = list(top[2]!);
