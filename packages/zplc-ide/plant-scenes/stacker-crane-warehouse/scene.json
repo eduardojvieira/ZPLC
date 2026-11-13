@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "name": "Stacker-crane warehouse",
+  "shortestPulseMs": 400,
+  "parts": [
+    {
+      "id": "crane",
+      "part": "stacker-crane",
+      "name": "Crane1",
+      "position": [0, 0, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "columns": 3,
+        "levels": 2,
+        "speedXMps": 1.2,
+        "speedYMps": 0.8,
+        "forkSpeedMps": 0.6,
+        "beltSpeedMps": 0.5
+      }
+    },
+    {
+      "id": "infeed",
+      "part": "belt",
+      "name": "Infeed",
+      "position": [0, 0.13, -1.87],
+      "rotationYDeg": 270,
+      "config": { "length": 1.5, "speedMps": 0.5 }
+    },
+    {
+      "id": "source",
+      "part": "emitter",
+      "name": "Source1",
+      "position": [0, 0.13, -2.4],
+      "rotationYDeg": 270,
+      "config": { "kind": "box", "intervalMs": 8000, "maxItems": 3 }
+    },
+    {
+      "id": "outfeed",
+      "part": "belt",
+      "name": "Outfeed",
+      "position": [0, 0.13, 1.87],
+      "rotationYDeg": 270,
+      "config": { "length": 1.5, "speedMps": 0.5 }
+    },
+    {
+      "id": "out-bin",
+      "part": "remover",
+      "name": "OutBin",
+      "position": [0, 0.28, 2.9],
+      "rotationYDeg": 0,
+      "config": { "width": 0.6, "height": 0.6, "depth": 0.4 }
+    },
+    {
+      "id": "in-eye",
+      "part": "sensor-diffuse",
+      "name": "InEye",
+      "position": [0.5, 0.13, -1.3],
+      "rotationYDeg": 180,
+      "config": { "rangeM": 1 }
+    },
+    { "id": "start", "part": "push-button", "name": "StartButton", "position": [-1.2, 0.5, -1.6], "rotationYDeg": 0, "config": {} },
+    { "id": "req1", "part": "push-button", "name": "Req1", "position": [-1.2, 0.5, -0.9], "rotationYDeg": 0, "config": {} },
+    { "id": "req2", "part": "push-button", "name": "Req2", "position": [-1.2, 0.5, -0.5], "rotationYDeg": 0, "config": {} },
+    { "id": "req3", "part": "push-button", "name": "Req3", "position": [-1.2, 0.5, -0.1], "rotationYDeg": 0, "config": {} },
+    { "id": "light", "part": "stack-light", "name": "StackLight1", "position": [-1.2, 0.35, 1.8], "rotationYDeg": 0, "config": {} }
+  ],
+  "cameras": [
+    { "name": "Aisle", "position": [-4, 2.2, 0], "target": [1.5, 0.8, 0.5] },
+    { "name": "Rack", "position": [2.5, 2, -3], "target": [2, 0.8, 1] },
+    { "name": "Dock", "position": [2.4, 1.6, -3.4], "target": [0, 0.3, -1.2] }
+  ]
+}
