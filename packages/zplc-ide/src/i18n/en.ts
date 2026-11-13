@@ -10,6 +10,8 @@ import { commtagsEn } from './catalog/commtags';
 import { projectEn } from './catalog/project';
 import { labEn } from './catalog/lab';
 import { plantEditorEn } from './catalog/plantEditor';
+import { plantEditorLearnerEn } from './catalog/plantEditorLearner';
+import { plantCourseEn } from './catalog/plantCourse';
 import { plantViewEn } from './catalog/plantView';
 import { studioCommandsEn } from './catalog/studioCommands';
 import { studioSurfacesEn } from './catalog/studioSurfaces';
@@ -645,6 +647,8 @@ export const en = {
   ...studioNoticesEn,
   ...studioStatusEn,
   ...plantEditorEn,
+  ...plantEditorLearnerEn,
+  ...plantCourseEn,
   ...editorGesturesEn,
   ...ldEn,
   ...importArchiveEn,

@@ -11,6 +11,8 @@ import { commtagsEs } from './catalog/commtags';
 import { projectEs } from './catalog/project';
 import { labEs } from './catalog/lab';
 import { plantEditorEs } from './catalog/plantEditor';
+import { plantEditorLearnerEs } from './catalog/plantEditorLearner';
+import { plantCourseEs } from './catalog/plantCourse';
 import { plantViewEs } from './catalog/plantView';
 import { studioCommandsEs } from './catalog/studioCommands';
 import { studioSurfacesEs } from './catalog/studioSurfaces';
@@ -649,6 +651,8 @@ export const es: Record<MessageKey, string> = {
   ...studioNoticesEs,
   ...studioStatusEs,
   ...plantEditorEs,
+  ...plantEditorLearnerEs,
+  ...plantCourseEs,
   ...editorGesturesEs,
   ...ldEs,
   ...importArchiveEs,
