@@ -1,0 +1,52 @@
+{
+  "conveyor-sorting-sfc": {
+    "sha256": "0cb610ab3f754cf939fe1b80356d9629134beeed93a2900b1996000d596562d0",
+    "starter": "sfc_conveyor_sorting_starter",
+    "solution": "sfc_conveyor_sorting"
+  },
+  "pedestrian-crossing-sfc": {
+    "sha256": "5198bc53be8c78281c0b7f9afaa653e04a7c0bc310bb3efaa95012fb303eda71",
+    "starter": "sfc_pedestrian_crossing_starter",
+    "solution": "sfc_pedestrian_crossing"
+  },
+  "pedestrian-crossing-states": {
+    "sha256": "c4119948a8468a29f2530057b85cccd9090e9824331d99fe1dd5858951f67683",
+    "starter": "pedestrian_crossing_starter",
+    "solution": "pedestrian_crossing"
+  },
+  "interlock-guard-permissive": {
+    "sha256": "6ffc4a74fd39e3cec015cfce8d79a9860e8fd254f143438bea0d61d1794b8a63",
+    "starter": "interlock_guard_starter",
+    "solution": "interlock_guard"
+  },
+  "interlock-guard-permissive-fbd": {
+    "sha256": "6ffc4a74fd39e3cec015cfce8d79a9860e8fd254f143438bea0d61d1794b8a63",
+    "starter": "fbd_interlock_guard_starter",
+    "solution": "fbd_interlock_guard"
+  },
+  "interlock-guard-permissive-il": {
+    "sha256": "6ffc4a74fd39e3cec015cfce8d79a9860e8fd254f143438bea0d61d1794b8a63",
+    "starter": "il_interlock_guard_starter",
+    "solution": "il_interlock_guard"
+  },
+  "motor-plant-feedback": {
+    "sha256": "8e545033f57a6ec3df9019b295286a575bffd0010d174ffd6683f10a74631468",
+    "starter": "motor_plant_starter",
+    "solution": "motor_plant"
+  },
+  "tank-level-fault-reset": {
+    "sha256": "881a8c7220930e5be4ad73a8ad6d25d172784b508ee94937c958b60d9f13f81a",
+    "starter": "tank_level_starter",
+    "solution": "tank_level"
+  },
+  "tank-level-fault-reset-ladder": {
+    "sha256": "881a8c7220930e5be4ad73a8ad6d25d172784b508ee94937c958b60d9f13f81a",
+    "starter": "ld_tank_level_starter",
+    "solution": "ld_tank_level"
+  },
+  "conveyor-classification-jam": {
+    "sha256": "e77da7a6e13e4c5e8b1d3ec2ffdfc050ff4d4d54f9f7b4aadad77dc6263be58d",
+    "starter": "conveyor_01_starter",
+    "solution": "conveyor_01"
+  }
+}

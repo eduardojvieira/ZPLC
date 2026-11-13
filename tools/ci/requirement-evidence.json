@@ -1935,6 +1935,7 @@
   ],
   "COM-025": [
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/framedSerialAdapter.native.test.ts","test":"the serial adapter on firmware that speaks the link (COM-019, COM-023, COM-025, COM-028)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/framedSerialAdapter.plant.test.ts","test":"FramedSerialAdapter.plantBoardPort (LNK-012, COM-025)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/link/deviceLink.native.test.ts","test":"a download: chunks with progress, a read-back that is the announced CRC-32, STOP afterwards, RUN as its own request (COM-028, COM-025)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/link/deviceLink.native.test.ts","test":"breakpoints, and a watch batch with the values of one scan (COM-025)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/link/deviceLink.native.test.ts","test":"the device link over the serial rules, the native runtime on a pipe (COM-019, COM-020, COM-023, COM-024, COM-025, COM-028)"},

@@ -153,7 +153,8 @@ describe('lift', () => {
   it('PLT-007 a box carried down two levels arrives at rest', async () => {
     for (const massKg of [2, 5]) {
       for (const travelSpeedMps of [0.4, 1]) {
-        const up = await plant([lift({ levels: 3, travelSpeedMps, accelMps2: travelSpeedMps === 1 ? 3 : 0.8 }), box('b1', [0, TOP, 0], massKg)]);
+        const accelMps2 = travelSpeedMps === 1 ? 3 : 0.8;
+        const up = await plant([lift({ levels: 3, travelSpeedMps, accelMps2 }), box('b1', [0, TOP, 0], massKg)]);
         up.set({ up: true });
         up.run(4000);
         const start = up.body('b1');
@@ -190,7 +191,7 @@ describe('lift', () => {
     }
   }, 120_000);
 
-  it('PRT-008 stuck freezes the axis, stall stops the surface, levelStuckOff makes every atLevelK read FALSE, unknown action throws', async () => {
+  it('PRT-008 stuck freezes the axis, stall stops the surface, levelStuckOff hides every atLevelK, unknown action throws', async () => {
     const stuck = await plant([lift()]);
     stuck.set({ up: true });
     stuck.run(300);
