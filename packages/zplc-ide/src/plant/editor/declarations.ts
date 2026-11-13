@@ -27,3 +27,32 @@ export function generateDeclarations(signals: readonly PlantSignalDef[], languag
   };
   return [...block('VAR_INPUT', 'sensor'), ...block('VAR_OUTPUT', 'command')].join('\n') + '\n';
 }
+
+export type DeclarationLanguage = 'ST' | 'LD' | 'FBD' | 'SFC' | 'IL';
+
+/**
+ * The variables a program needs to talk to a scene (SCN-013): text for a text language, rows for a diagram language whose
+ * own variable table takes them. Pure: it chooses no address (LNK-002) and touches no document; applying it is the caller's.
+ */
+export type Declarations =
+  | { kind: 'text'; language: 'ST' | 'IL'; block: string }
+  | {
+      kind: 'variables';
+      language: 'LD' | 'FBD' | 'SFC';
+      rows: readonly { name: string; type: 'BOOL' | 'INT' | 'REAL'; direction: 'input' | 'output'; comment?: string }[];
+    };
+
+export function declarationsFor(signals: readonly PlantSignalDef[], language: DeclarationLanguage): Declarations {
+  if (language === 'ST' || language === 'IL') return { kind: 'text', language, block: generateDeclarations(signals, 'st') };
+  const ids = identifiers(signals);
+  return {
+    kind: 'variables',
+    language,
+    rows: signals.map((s, i) => ({
+      name: ids[i]!,
+      type: s.type,
+      direction: s.direction === 'sensor' ? 'input' : 'output',
+      ...(s.unit ? { comment: s.unit } : {}),
+    })),
+  };
+}

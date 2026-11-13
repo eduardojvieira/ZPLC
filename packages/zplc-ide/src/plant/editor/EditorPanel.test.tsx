@@ -9,6 +9,8 @@ const { createCatalogue } = await import('../core/catalogue');
 const { createSceneEditor } = await import('./model');
 const { createMapEditor } = await import('./mapEditor');
 const { EditorPanel } = await import('./EditorPanel');
+const { SignalTable } = await import('./SignalTable');
+const { plantEditorLearnerEn, plantEditorLearnerEs } = await import('../../i18n/catalog/plantEditorLearner');
 const { plantEditorEn, plantEditorEs } = await import('../../i18n/catalog/plantEditor');
 import type { PartDefinition, ScenePart } from '../contracts';
 
@@ -102,6 +104,25 @@ describe('scene editor panel', () => {
     expect(run.getByText('BOOL')).toBeTruthy();
     expect(run.getByText('Command')).toBeTruthy();
     expect(within(rows.querySelector('[data-signal="Sensor1.seen"]') as HTMLElement).getByText('Sensor')).toBeTruthy();
+  });
+
+  it('SCN-013 the button appears only with the prop and calls it with the chosen language', async () => {
+    const signals = [{ name: 'Belt1.run', direction: 'command' as const, type: 'BOOL' as const }];
+    const props = { signals, bindings: {}, problems: [], disabled: false, onBind() {}, onUnbind() {} };
+    const without = dom.render(<SignalTable {...props} />);
+    expect(without.container.querySelector('table')).toBeTruthy();
+    expect(dom.screen.queryByRole('button', { name: 'Create declarations' })).toBeNull();
+    without.unmount();
+    const chosen: string[] = [];
+    const { user } = dom.render(<SignalTable {...props} onCreateDeclarations={(l) => chosen.push(l)} />);
+    await user.click(dom.screen.getByRole('button', { name: 'Create declarations' }));
+    dom.fireEvent.change(dom.screen.getByLabelText('Language of the program'), { target: { value: 'IL' } });
+    await user.click(dom.screen.getByRole('button', { name: 'Create declarations' }));
+    expect(chosen).toEqual(['ST', 'IL']);
+  });
+
+  it('SCN-013 the declarations text exists in Spanish for every English key', () => {
+    expect(Object.keys(plantEditorLearnerEs).sort()).toEqual(Object.keys(plantEditorLearnerEn).sort());
   });
 
   it('SCN-008 the form is disabled with a message while the plant runs', () => {
