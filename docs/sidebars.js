@@ -161,6 +161,10 @@ const sidebars = {
           items: [
             'reference/project-file',
             'reference/scenario-file',
+            'plant/index',
+            'plant/clock',
+            'plant/scene-format',
+            'plant/scenes',
             'plant/parts',
             'reference/cli',
             'reference/mcp',

@@ -2224,6 +2224,7 @@
   ],
   "IDE-025": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/wasmRuntimePlugin.test.ts","test":"the build of the browser runtime inside the IDE build (IDE-025)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/OperationalStatusBar.dom.test.tsx","test":"IDE-025 the degraded label is visible without opening the details"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/TargetSelector.test.tsx","test":"IDE-025 the degraded label of the WASM runtime shows in the selector"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/simulationAdapterFactory.test.ts","test":"the runtime a simulation runs on (IDE-025)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/wasmAdapter.test.ts","test":"WASMAdapter (IDE-025)"},
@@ -2247,6 +2248,7 @@
     {"kind":"unit","ref":"tools/ci/electron-support.test.ts","test":"the Electron line (IDE-028)","partial":true,"note":"fails when the dependency is outside the supported majors of tools/ci/electron-support.json or is not an exact pin; the latest patch is the release check (bun tools/ci/electron-support.ts --release, RELEASING.md), and it fails today: electron 43.4.1, the latest patch of 43 recorded on 2026-10-10 is 43.7.9"}
   ],
   "IDE-029": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/OperationalStatusBar.dom.test.tsx","test":"IDE-029 the force banner and the unconfirmed alert are unchanged"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/OperationalStatusBar.dom.test.tsx","test":"Operational status bar and force banner (IDE-029, UX-018) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/debugSessionState.test.ts","test":"accepts only the compile result built for the current compiler generation","note":"stale-build detection: a compile result of an older compiler generation is not current"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/debugSessionState.test.ts","test":"marks a deploy loaded only when its revision and compiler generation are still current","note":"stale-build detection across a deploy: a program built before an edit is not marked loaded"},
@@ -2567,6 +2569,7 @@
   "UX-018": [
     {"kind":"unit","ref":"packages/zplc-ide/src/components/ControllerView.dom.test.tsx","test":"Controller view (UX-011, UX-018) in a DOM"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/OperationalStatusBar.dom.test.tsx","test":"Operational status bar and force banner (IDE-029, UX-018) in a DOM"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/OperationalStatusBar.dom.test.tsx","test":"UX-018 the hardware indicator differs from simulation in text, icon and colour"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/connectionPresentation.test.tsx","test":"UX-018 connection indicator presentation"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/connectionPresentation.test.tsx","test":"UX-018 connection indicator rendering"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/connectionPresentation.test.tsx","test":"UX-018 force banner stays in the status bar"},

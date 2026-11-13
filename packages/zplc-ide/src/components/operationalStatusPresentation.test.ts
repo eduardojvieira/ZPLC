@@ -186,4 +186,10 @@ describe('presentOperationalStatus', () => {
     expect(result.force).toBeUndefined();
     expect(JSON.stringify(result)).not.toContain('secret');
   });
+
+  it('FLW-011 carries the count of active forces for the line, and none when there are none', () => {
+    const connected = { ...base, adapterType: 'native' as const, connected: true, vmInfo: { cycles: 1 } };
+    expect(presentOperationalStatus({ ...connected, forcedValuesCount: 3 }).forceCount).toBe(3);
+    expect(presentOperationalStatus({ ...connected, forcedValuesCount: 0 }).forceCount).toBeUndefined();
+  });
 });

@@ -107,8 +107,20 @@ export const COMMANDS = [
     category: 'online',
     enabled: (s) => idle(s) && s.mode !== 'hardware',
   },
-  { id: 'online.connect', titleKey: 'command.online.connect', category: 'online', physical: true, enabled: (s) => idle(s) && !s.connected },
-  { id: 'online.disconnect', titleKey: 'command.online.disconnect', category: 'online', physical: true, enabled: online },
+  {
+    id: 'online.connect',
+    titleKey: 'command.online.connect',
+    category: 'online',
+    physical: true,
+    enabled: (s) => s.mode === 'hardware' && idle(s) && !s.connected,
+  },
+  {
+    id: 'online.disconnect',
+    titleKey: 'command.online.disconnect',
+    category: 'online',
+    physical: true,
+    enabled: (s) => s.mode === 'hardware' && online(s),
+  },
   {
     id: 'online.deploy',
     titleKey: 'command.online.deploy',
