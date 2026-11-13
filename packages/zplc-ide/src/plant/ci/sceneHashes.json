@@ -3,6 +3,7 @@
     "belt-to-belt-transfer": "c84e13e87ffe3c9024192850717467bf2bef0a05f4f553a07fc2f7e723830f97",
     "belt-to-sensor": "a2702d6b64df68852fe49052422f3d03064a994d00a3c5489df520c5001f4dc0",
     "buffer-release": "9a2149fb9b6655b073e402b71239b81aeaa00b8a4b4cba19529231ebb754a263",
+    "colour-separation": "a1616743e3c0321a03b30e03af442e4b1073a10233bdf7c05953fbf9b4bc4cdd",
     "counted-queue": "336693e4224e9599139238c2ef24a388cb1e24de4295a3c7de615c146bcd8598",
     "latch-two-sensors": "d339eedd6b964496606d402050dcdb1ccaa7c31ef7c1d3141fa5fd6fbe501d03",
     "layer-palletizer": "5db253a342e97fc69acf7a26307ad82c29427cae8d38f151691968a18fe81617",

@@ -97,5 +97,13 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
       "en": "Three-axis palletizing",
       "es": "Three-axis palletizing"
     }
+  },
+  {
+    "id": "colour-separation",
+    "dir": "plant-scenes/colour-separation",
+    "names": {
+      "en": "Colour separation",
+      "es": "Colour separation"
+    }
   }
 ];

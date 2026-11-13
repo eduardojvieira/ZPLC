@@ -27,6 +27,7 @@ describe('shipped scenes use the public format and catalogue', () => {
       'layer-palletizer',
       'belt-to-belt-transfer',
       'three-axis-palletizing',
+      'colour-separation',
     ]);
   });
 
