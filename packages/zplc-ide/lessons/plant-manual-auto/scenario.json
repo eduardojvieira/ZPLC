@@ -1,0 +1,266 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-manual-auto",
+  "tickMs": 10,
+  "durationMs": 56000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      {
+        "atMs": 500,
+        "operate": {
+          "signal": "JogXPlus.pressed",
+          "value": true
+        }
+      },
+      {
+        "atMs": 4500,
+        "operate": {
+          "signal": "JogXPlus.pressed",
+          "value": false
+        }
+      },
+      {
+        "atMs": 5200,
+        "operate": {
+          "signal": "StartButton.pressed",
+          "value": true
+        }
+      },
+      {
+        "atMs": 5600,
+        "operate": {
+          "signal": "StartButton.pressed",
+          "value": false
+        }
+      },
+      {
+        "atMs": 6800,
+        "operate": {
+          "signal": "JogXMinus.pressed",
+          "value": true
+        }
+      },
+      {
+        "atMs": 10500,
+        "operate": {
+          "signal": "JogXMinus.pressed",
+          "value": false
+        }
+      },
+      {
+        "atMs": 11200,
+        "operate": {
+          "signal": "JogYPlus.pressed",
+          "value": true
+        }
+      },
+      {
+        "atMs": 12800,
+        "operate": {
+          "signal": "JogYPlus.pressed",
+          "value": false
+        }
+      },
+      {
+        "atMs": 13200,
+        "operate": {
+          "signal": "ModeButton.pressed",
+          "value": true
+        }
+      },
+      {
+        "atMs": 13600,
+        "operate": {
+          "signal": "ModeButton.pressed",
+          "value": false
+        }
+      },
+      {
+        "atMs": 13800,
+        "operate": {
+          "signal": "StartButton.pressed",
+          "value": true
+        }
+      },
+      {
+        "atMs": 14200,
+        "operate": {
+          "signal": "StartButton.pressed",
+          "value": false
+        }
+      },
+      {
+        "atMs": 16000,
+        "operate": {
+          "signal": "JogXPlus.pressed",
+          "value": true
+        }
+      },
+      {
+        "atMs": 34000,
+        "operate": {
+          "signal": "JogXPlus.pressed",
+          "value": false
+        }
+      },
+      {
+        "atMs": 54000,
+        "operate": {
+          "signal": "ModeButton.pressed",
+          "value": true
+        }
+      },
+      {
+        "atMs": 54400,
+        "operate": {
+          "signal": "ModeButton.pressed",
+          "value": false
+        }
+      }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 100,
+      "condition": {
+        "ManualAuto.Grip": false,
+        "ManualAuto.YMinus": false,
+        "ManualAuto.Green": false,
+        "ManualAuto.XPlus": false,
+        "ManualAuto.Amber": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 1000,
+      "condition": {
+        "ManualAuto.XPlus": true,
+        "ManualAuto.XMinus": false,
+        "ManualAuto.Grip": false,
+        "ManualAuto.YMinus": false,
+        "ManualAuto.Green": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 4000,
+      "condition": {
+        "ManualAuto.XPlus": false,
+        "ManualAuto.Grip": false,
+        "ManualAuto.YMinus": false,
+        "ManualAuto.Green": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 6500,
+      "condition": {
+        "ManualAuto.Grip": false,
+        "ManualAuto.YMinus": false,
+        "ManualAuto.Green": false,
+        "ManualAuto.RunLid": false,
+        "ManualAuto.Amber": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 7000,
+      "condition": {
+        "ManualAuto.XMinus": true,
+        "ManualAuto.XPlus": false,
+        "ManualAuto.Grip": false,
+        "ManualAuto.YMinus": false,
+        "ManualAuto.Green": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 10000,
+      "condition": {
+        "ManualAuto.XMinus": false,
+        "ManualAuto.Grip": false,
+        "ManualAuto.YMinus": false,
+        "ManualAuto.Green": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 11500,
+      "condition": {
+        "ManualAuto.YPlus": true,
+        "ManualAuto.YMinus": false,
+        "ManualAuto.Grip": false,
+        "ManualAuto.Green": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 12700,
+      "condition": {
+        "ManualAuto.YPlus": false,
+        "ManualAuto.Grip": false,
+        "ManualAuto.YMinus": false,
+        "ManualAuto.Green": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 15000,
+      "condition": {
+        "ManualAuto.Amber": true,
+        "ManualAuto.RunLid": true
+      }
+    },
+    {
+      "kind": "EVENTUALLY",
+      "fromMs": 0,
+      "withinMs": 56000,
+      "condition": {
+        "fact:itemsAssembled": true
+      }
+    },
+    {
+      "kind": "EVENTUALLY",
+      "fromMs": 0,
+      "withinMs": 56000,
+      "condition": {
+        "fact:delivered:Remover1": true
+      }
+    },
+    {
+      "kind": "ALWAYS",
+      "condition": {
+        "fact:itemsDropped": false,
+        "fact:drops:Pick1": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 53500,
+      "condition": {
+        "ManualAuto.Green": true,
+        "ManualAuto.XPlus": false,
+        "ManualAuto.XMinus": false,
+        "ManualAuto.YPlus": false,
+        "ManualAuto.YMinus": false,
+        "ManualAuto.Grip": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 56000,
+      "condition": {
+        "ManualAuto.Green": false,
+        "ManualAuto.Amber": false,
+        "ManualAuto.RunLid": false,
+        "ManualAuto.XPlus": false,
+        "ManualAuto.YMinus": false,
+        "ManualAuto.Grip": false
+      }
+    }
+  ]
+}
