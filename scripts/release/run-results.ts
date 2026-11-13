@@ -143,7 +143,11 @@ export function collectRunResults(input: CollectInput): RunResults {
 
   const suites = input.junit.map(({ suite, job, path }) => ({ suite, job, ...countJunit(readFileSync(path, 'utf8')) }));
   const status = input.status[input.version] ?? {};
-  const limits = Object.entries(input.knownLimits ?? {}).map(([id, limit]) => `${id}: ${limit.en}`);
+  // A limit is open only while a case of its requirement is an expected failure, the rule of tools/docs/generate_known_limits.py.
+  const open = new Set(input.expectedFailures.map((entry) => entry.requirement));
+  const limits = Object.entries(input.knownLimits ?? {})
+    .filter(([id]) => open.has(id))
+    .map(([id, limit]) => `${id}: ${limit.en}`);
   return {
     schemaVersion: 1,
     version: input.version,

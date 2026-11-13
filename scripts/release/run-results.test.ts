@@ -160,6 +160,14 @@ describe('collectRunResults (REL-027)', () => {
     expect(results.jobs).toContainEqual({ job: 'build-macos', result: 'success' });
   });
 
+  test('lists a known limit only while a case of its requirement is an expected failure, as the docs tables do (T20)', () => {
+    const knownLimits = { 'CMP-012': { en: 'a conversion is wrong' }, 'CMP-018': { en: 'fixed long ago' } };
+    const results = collectRunResults({ ...common, knownLimits, needs: needs({ 'build-macos': 'success' }) });
+    expect(results.knownIssues).toEqual(['a known issue', 'CMP-012: a conversion is wrong']);
+    const none = collectRunResults({ ...common, knownLimits, expectedFailures: [], needs: needs({ 'build-macos': 'success' }) });
+    expect(none.knownIssues).toEqual(['a known issue']);
+  });
+
   test('has no completeness for a version the status record does not know, so the title refuses it', () => {
     const results = collectRunResults({ ...common, status: {}, needs: needs({ 'build-macos': 'success' }) });
     expect(results.completeness).toBeUndefined();
