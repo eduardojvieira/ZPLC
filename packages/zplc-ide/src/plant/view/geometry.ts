@@ -302,7 +302,7 @@ const mix = (c: number, t: number): number => {
  */
 export function itemToneOf(item: Pick<BodyPose, 'tag' | 'colour' | 'metal'>, palette: Palette): number {
   if (item.tag === 'lid' || item.tag === 'base') return itemTone(item.tag, palette);
-  const kind = item.colour ?? (item.metal ? 'metal' : undefined);
+  const kind = item.metal ? 'metal' : item.colour;
   if (!kind) return palette.item;
   if (palette.outline !== null) return { red: 0x909090, blue: 0xc8c8c8, metal: 0xffffff }[kind];
   return mix(palette.item, { red: 0, blue: 0.35, metal: 0.7 }[kind]);
@@ -312,7 +312,7 @@ export function instanceColors(items: readonly BodyPose[], out?: Float32Array): 
   const c = out && out.length >= items.length * 3 ? out : new Float32Array(items.length * 3);
   items.forEach((item, i) => {
     const tagged = item.tag === 'lid' || item.tag === 'base' ? TAG_COLORS[item.tag] : undefined;
-    const prop = item.colour ?? (item.metal ? 'metal' : undefined);
+    const prop = item.metal ? 'metal' : item.colour; // a metal part is drawn metal; its colour stays data
     c.set(tagged ?? (prop ? PROP_COLORS[prop] : undefined) ?? ITEM_COLORS[item.kind] ?? ITEM_COLORS.item, i * 3);
   });
   return c;

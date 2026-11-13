@@ -67,9 +67,7 @@ describe('M4 views from a real snapshot', () => {
     for (const kind of ['pusher', 'diverter-arm', 'workpiece']) expect(decor(kind)).toEqual([]);
   });
 
-  // Finding for V6/B2: V6 draws the beams from state.beams and state.pitchM, but the real light array publishes neither, so it is
-  // drawn with no beam. `failing` keeps the suite green and flips red the moment the keys are published: then remove it.
-  it.failing('VIS-003 the real light array publishes state.beams and state.pitchM and is drawn with one line per beam', async () => {
+  it('VIS-003 the real light array publishes state.beams and state.pitchM and is drawn with one line per beam', async () => {
     const v = viewOf(await make(all()), 'light-array');
     expect(v.state.beams).toBe(12);
     expect(v.state.pitchM).toBe(0.05);
@@ -140,7 +138,7 @@ describe('M4 views from a real snapshot', () => {
 
   // Finding for V6: a real workpiece always carries a colour (red by default), and itemToneOf and instanceColors read
   // `colour ?? (metal ? 'metal')`, so a metal workpiece is drawn in its colour and never in the metal tone (VIS-009).
-  it.failing('VIS-009 a real metal workpiece is drawn in the metal tone, not in its colour', async () => {
+  it('VIS-009 a real metal workpiece is drawn in the metal tone, not in its colour', async () => {
     const core = await make([part('workpiece', 'Red1', {}, 0), part('workpiece', 'Metal1', { material: 'metal' }, 3)]);
     const [plastic, metal] = core.snapshot().items;
     expect(metal!.metal).toBe(true);
