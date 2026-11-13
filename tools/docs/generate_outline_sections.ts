@@ -1,6 +1,7 @@
 // Rewrites the module sections of the hand-checked course outline pages (EN and ES) from the generated lesson index, from a
 // module id on (default 12) to the hardware section: `bun tools/docs/generate_outline_sections.ts [fromModule]`.
-// tools/ci/course-outline.test.ts checks the result against the index, so run this after adding or changing lessons.
+// tools/ci/course-outline.test.ts checks the result against the index, so run this after adding or changing lessons, then
+// the pinned formatter (`tools/ci/format.ts --write`), which aligns the tables it writes.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { LESSON_INDEX as I } from '../../packages/zplc-ide/src/generated/lessonIndex';

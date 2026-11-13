@@ -330,11 +330,11 @@ Avanzado. Requiere el módulo: 3. Rutas: Simulación.
 
 Sus primeros programas ahora mueven piezas. Cada uno lee un sensor y gobierna una banda o una compuerta en una planta que se puede observar, con las habilidades de set, reset, flancos y contadores del módulo 3.
 
-| Lección | Estado | Lenguajes | Rutas | Planta | Minutos | Requiere |
-| --- | --- | --- | --- | --- | --- | --- |
-| `plant-belt-to-sensor` Mover una caja hasta un sensor | Disponible | ST | Simulación | - | 20 | `motor-start-stop-safe` |
-| `plant-latch-two-sensors` Del sensor A al sensor B | Disponible | ST | Simulación | - | 20 | `plant-belt-to-sensor` |
-| `plant-counted-queue` Cargar y descargar tres cajas | Disponible | ST | Simulación | - | 30 | `plant-latch-two-sensors`, `edge-counter-pulses` |
+| Lección                                               | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                         |
+| ----------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | ------------------------------------------------ |
+| `plant-belt-to-sensor` Mover una caja hasta un sensor | Disponible | ST        | Simulación | -      | 20      | `motor-start-stop-safe`                          |
+| `plant-latch-two-sensors` Del sensor A al sensor B    | Disponible | ST        | Simulación | -      | 20      | `plant-belt-to-sensor`                           |
+| `plant-counted-queue` Cargar y descargar tres cajas   | Disponible | ST        | Simulación | -      | 30      | `plant-latch-two-sensors`, `edge-counter-pulses` |
 
 Objetivos de las lecciones disponibles:
 
@@ -348,12 +348,12 @@ Avanzado. Requiere el módulo: 12. Rutas: Simulación.
 
 Las plantas tienen tiempo y valores continuos. Los temporizadores, el escalado analógico y el lazo PID van después de las primeras plantas porque necesitan una planta en movimiento para verse trabajar.
 
-| Lección | Estado | Lenguajes | Rutas | Planta | Minutos | Requiere |
-| --- | --- | --- | --- | --- | --- | --- |
-| `plant-timed-tank` Llenar y vaciar con temporizadores | Disponible | ST | Simulación | - | 30 | `timers-on-delay-off-delay` |
-| `plant-tank-level-scaling` Leer el nivel | Disponible | ST | Simulación | - | 30 | `analog-scaling-integer`, `plant-timed-tank` |
-| `plant-tank-pid` Mantener el nivel con PID | Disponible | ST | Simulación | - | 40 | `plant-tank-level-scaling` |
-| `plant-tank-pid-fbd` El mismo lazo con bloques de función | Disponible | FBD | Simulación | - | 40 | `plant-tank-pid` |
+| Lección                                                   | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                     |
+| --------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | -------------------------------------------- |
+| `plant-timed-tank` Llenar y vaciar con temporizadores     | Disponible | ST        | Simulación | -      | 30      | `timers-on-delay-off-delay`                  |
+| `plant-tank-level-scaling` Leer el nivel                  | Disponible | ST        | Simulación | -      | 30      | `analog-scaling-integer`, `plant-timed-tank` |
+| `plant-tank-pid` Mantener el nivel con PID                | Disponible | ST        | Simulación | -      | 40      | `plant-tank-level-scaling`                   |
+| `plant-tank-pid-fbd` El mismo lazo con bloques de función | Disponible | FBD       | Simulación | -      | 40      | `plant-tank-pid`                             |
 
 Objetivos de las lecciones disponibles:
 
@@ -368,10 +368,10 @@ Avanzado. Requiere el módulo: 12. Rutas: Simulación.
 
 Cuando las piezas comparten un camino, el orden importa. Las máquinas de estados y la fusión de dos líneas organizan ese flujo, a partir de las primeras plantas.
 
-| Lección | Estado | Lenguajes | Rutas | Planta | Minutos | Requiere |
-| --- | --- | --- | --- | --- | --- | --- |
-| `plant-buffer-release` Acumular y liberar | Disponible | SFC | Simulación | - | 45 | `sfc-fill-mix-sequence`, `plant-counted-queue` |
-| `plant-merge-lines` Fusionar dos líneas | Disponible | ST | Simulación | - | 45 | `plant-counted-queue`, `interlock-guard-permissive` |
+| Lección                                   | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                            |
+| ----------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | --------------------------------------------------- |
+| `plant-buffer-release` Acumular y liberar | Disponible | SFC       | Simulación | -      | 45      | `sfc-fill-mix-sequence`, `plant-counted-queue`      |
+| `plant-merge-lines` Fusionar dos líneas   | Disponible | ST        | Simulación | -      | 45      | `plant-counted-queue`, `interlock-guard-permissive` |
 
 Objetivos de las lecciones disponibles:
 
@@ -384,13 +384,13 @@ Avanzado. Requiere el módulo: 14. Rutas: Simulación.
 
 Los manipuladores añaden pasos que deben ocurrir en orden. Tomar, colocar y ensamblar usan las máquinas de estados del control de flujo.
 
-| Lección | Estado | Lenguajes | Rutas | Planta | Minutos | Requiere |
-| --- | --- | --- | --- | --- | --- | --- |
-| `plant-belt-transfer` Tomar de una banda y dejar en otra | Disponible | ST | Simulación | - | 40 | `plant-counted-queue` |
-| `plant-assembler` Ensamblar tapas y bases | Disponible | SFC | Simulación | - | 50 | `sfc-fill-mix-sequence`, `plant-belt-transfer` |
-| `plant-assembler-numeric` Lo mismo con posiciones numéricas | Disponible | ST | Simulación | - | 40 | `plant-assembler` |
-| `plant-layer-palletizer` Paletizar por capas | Disponible | ST | Simulación | - | 50 | `structures-arrays-call-panel`, `plant-assembler-numeric` |
-| `plant-xyz-palletizing` Paletizar con un pórtico | Disponible | ST | Simulación | - | 50 | `plant-layer-palletizer` |
+| Lección                                                     | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                                  |
+| ----------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | --------------------------------------------------------- |
+| `plant-belt-transfer` Tomar de una banda y dejar en otra    | Disponible | ST        | Simulación | -      | 40      | `plant-counted-queue`                                     |
+| `plant-assembler` Ensamblar tapas y bases                   | Disponible | SFC       | Simulación | -      | 50      | `sfc-fill-mix-sequence`, `plant-belt-transfer`            |
+| `plant-assembler-numeric` Lo mismo con posiciones numéricas | Disponible | ST        | Simulación | -      | 40      | `plant-assembler`                                         |
+| `plant-layer-palletizer` Paletizar por capas                | Disponible | ST        | Simulación | -      | 50      | `structures-arrays-call-panel`, `plant-assembler-numeric` |
+| `plant-xyz-palletizing` Paletizar con un pórtico            | Disponible | ST        | Simulación | -      | 50      | `plant-layer-palletizer`                                  |
 
 Objetivos de las lecciones disponibles:
 
@@ -406,14 +406,14 @@ Avanzado. Requiere el módulo: 14. Rutas: Simulación.
 
 La clasificación convierte combinaciones de sensores en rutas. Reutiliza las habilidades de control de flujo y prepara las estaciones que siguen.
 
-| Lección | Estado | Lenguajes | Rutas | Planta | Minutos | Requiere |
-| --- | --- | --- | --- | --- | --- | --- |
-| `plant-colour-separation` Enviar cada color a su banda | Disponible | ST | Simulación | - | 45 | `plant-counted-queue` |
-| `plant-colour-separation-il` La misma clasificación en Lista de instrucciones | Disponible | IL | Simulación | - | 50 | `plant-colour-separation`, `instruction-list-door-alarm` |
-| `plant-weight-sorting` Clasificar por peso | Disponible | ST | Simulación | - | 50 | `plant-colour-separation`, `plant-tank-level-scaling` |
-| `plant-height-chain` Clasificar por altura, transferencia de cadenas | Disponible | ST | Simulación | - | 60 | `plant-colour-separation` |
-| `plant-height-turntable` Clasificar por altura, mesa giratoria | Disponible | ST | Simulación | - | 60 | `plant-height-chain` |
-| `plant-vision-sorting` Clasificar por código de identidad | Disponible | ST | Simulación | - | 50 | `plant-colour-separation` |
+| Lección                                                                       | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                                 |
+| ----------------------------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | -------------------------------------------------------- |
+| `plant-colour-separation` Enviar cada color a su banda                        | Disponible | ST        | Simulación | -      | 45      | `plant-counted-queue`                                    |
+| `plant-colour-separation-il` La misma clasificación en Lista de instrucciones | Disponible | IL        | Simulación | -      | 50      | `plant-colour-separation`, `instruction-list-door-alarm` |
+| `plant-weight-sorting` Clasificar por peso                                    | Disponible | ST        | Simulación | -      | 50      | `plant-colour-separation`, `plant-tank-level-scaling`    |
+| `plant-height-chain` Clasificar por altura, transferencia de cadenas          | Disponible | ST        | Simulación | -      | 60      | `plant-colour-separation`                                |
+| `plant-height-turntable` Clasificar por altura, mesa giratoria                | Disponible | ST        | Simulación | -      | 60      | `plant-height-chain`                                     |
+| `plant-vision-sorting` Clasificar por código de identidad                     | Disponible | ST        | Simulación | -      | 50      | `plant-colour-separation`                                |
 
 Objetivos de las lecciones disponibles:
 
@@ -430,12 +430,12 @@ Avanzado. Requiere el módulo: 16. Rutas: Simulación.
 
 Una estación agrupa clasificación, transferencia y secuencia en una sola unidad. Va después de la clasificación porque combina sus decisiones.
 
-| Lección | Estado | Lenguajes | Rutas | Planta | Minutos | Requiere |
-| --- | --- | --- | --- | --- | --- | --- |
-| `plant-three-level-lifts` Mover cajas entre tres niveles | Disponible | SFC | Simulación | - | 50 | `plant-buffer-release` |
-| `plant-lift-stacking` Reunir piezas en un cajón | Disponible | ST | Simulación | - | 45 | `plant-counted-queue` |
-| `plant-warehouse` Almacenar y recuperar | Disponible | SFC | Simulación | - | 60 | `plant-three-level-lifts` |
-| `plant-production-line` Equilibrar una línea de producción | Disponible | ST | Simulación | - | 50 | `function-block-pump-pair`, `plant-lift-stacking` |
+| Lección                                                    | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                          |
+| ---------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | ------------------------------------------------- |
+| `plant-three-level-lifts` Mover cajas entre tres niveles   | Disponible | SFC       | Simulación | -      | 50      | `plant-buffer-release`                            |
+| `plant-lift-stacking` Reunir piezas en un cajón            | Disponible | ST        | Simulación | -      | 45      | `plant-counted-queue`                             |
+| `plant-warehouse` Almacenar y recuperar                    | Disponible | SFC       | Simulación | -      | 60      | `plant-three-level-lifts`                         |
+| `plant-production-line` Equilibrar una línea de producción | Disponible | ST        | Simulación | -      | 50      | `function-block-pump-pair`, `plant-lift-stacking` |
 
 Objetivos de las lecciones disponibles:
 
@@ -450,10 +450,10 @@ Avanzado. Requiere el módulo: 17. Rutas: Simulación.
 
 Una máquina debe detenerse de forma segura y mostrar qué falló. Los enclavamientos, los modos y el diagnóstico de fallas se enseñan sobre estaciones que ya se conocen.
 
-| Lección | Estado | Lenguajes | Rutas | Planta | Minutos | Requiere |
-| --- | --- | --- | --- | --- | --- | --- |
-| `plant-estop-interlocks` Paro de emergencia y enclavamientos | Disponible | ST | Simulación | - | 40 | `plant-three-level-lifts`, `interlock-guard-permissive` |
-| `plant-fault-actions` Encontrar la falla | Disponible | ST | Simulación | - | 45 | `plant-height-chain` |
+| Lección                                                      | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                                |
+| ------------------------------------------------------------ | ---------- | --------- | ---------- | ------ | ------- | ------------------------------------------------------- |
+| `plant-estop-interlocks` Paro de emergencia y enclavamientos | Disponible | ST        | Simulación | -      | 40      | `plant-three-level-lifts`, `interlock-guard-permissive` |
+| `plant-fault-actions` Encontrar la falla                     | Disponible | ST        | Simulación | -      | 45      | `plant-height-chain`                                    |
 
 Objetivos de las lecciones disponibles:
 

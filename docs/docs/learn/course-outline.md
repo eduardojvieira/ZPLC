@@ -330,11 +330,11 @@ Advanced. Requires module: 3. Tracks: Simulation.
 
 Your first programs now move real parts. Each one reads a sensor and drives a belt or a gate in a plant you can watch, using the set, reset, edge and counter skills of module 3.
 
-| Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
-| --- | --- | --- | --- | --- | --- | --- |
-| `plant-belt-to-sensor` Move a box to a sensor | Available | ST | Simulation | - | 20 | `motor-start-stop-safe` |
-| `plant-latch-two-sensors` From sensor A to sensor B | Available | ST | Simulation | - | 20 | `plant-belt-to-sensor` |
-| `plant-counted-queue` Load and unload three boxes | Available | ST | Simulation | - | 30 | `plant-latch-two-sensors`, `edge-counter-pulses` |
+| Lesson                                              | Status    | Languages | Tracks     | Plant | Minutes | Requires                                         |
+| --------------------------------------------------- | --------- | --------- | ---------- | ----- | ------- | ------------------------------------------------ |
+| `plant-belt-to-sensor` Move a box to a sensor       | Available | ST        | Simulation | -     | 20      | `motor-start-stop-safe`                          |
+| `plant-latch-two-sensors` From sensor A to sensor B | Available | ST        | Simulation | -     | 20      | `plant-belt-to-sensor`                           |
+| `plant-counted-queue` Load and unload three boxes   | Available | ST        | Simulation | -     | 30      | `plant-latch-two-sensors`, `edge-counter-pulses` |
 
 Objectives of the available lessons:
 
@@ -348,12 +348,12 @@ Advanced. Requires module: 12. Tracks: Simulation.
 
 Plants have time and continuous values. Timers, analog scaling and a PID loop come after the first plants because they need a plant that moves to be seen at work.
 
-| Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
-| --- | --- | --- | --- | --- | --- | --- |
-| `plant-timed-tank` Fill and drain with timers | Available | ST | Simulation | - | 30 | `timers-on-delay-off-delay` |
-| `plant-tank-level-scaling` Read the level | Available | ST | Simulation | - | 30 | `analog-scaling-integer`, `plant-timed-tank` |
-| `plant-tank-pid` Hold the level with PID | Available | ST | Simulation | - | 40 | `plant-tank-level-scaling` |
-| `plant-tank-pid-fbd` The same loop in function blocks | Available | FBD | Simulation | - | 40 | `plant-tank-pid` |
+| Lesson                                                | Status    | Languages | Tracks     | Plant | Minutes | Requires                                     |
+| ----------------------------------------------------- | --------- | --------- | ---------- | ----- | ------- | -------------------------------------------- |
+| `plant-timed-tank` Fill and drain with timers         | Available | ST        | Simulation | -     | 30      | `timers-on-delay-off-delay`                  |
+| `plant-tank-level-scaling` Read the level             | Available | ST        | Simulation | -     | 30      | `analog-scaling-integer`, `plant-timed-tank` |
+| `plant-tank-pid` Hold the level with PID              | Available | ST        | Simulation | -     | 40      | `plant-tank-level-scaling`                   |
+| `plant-tank-pid-fbd` The same loop in function blocks | Available | FBD       | Simulation | -     | 40      | `plant-tank-pid`                             |
 
 Objectives of the available lessons:
 
@@ -368,10 +368,10 @@ Advanced. Requires module: 12. Tracks: Simulation.
 
 When parts share a path, order matters. State machines and merging two lines organise that flow, building on the first plants.
 
-| Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
-| --- | --- | --- | --- | --- | --- | --- |
-| `plant-buffer-release` Accumulate and release | Available | SFC | Simulation | - | 45 | `sfc-fill-mix-sequence`, `plant-counted-queue` |
-| `plant-merge-lines` Merge two lines | Available | ST | Simulation | - | 45 | `plant-counted-queue`, `interlock-guard-permissive` |
+| Lesson                                        | Status    | Languages | Tracks     | Plant | Minutes | Requires                                            |
+| --------------------------------------------- | --------- | --------- | ---------- | ----- | ------- | --------------------------------------------------- |
+| `plant-buffer-release` Accumulate and release | Available | SFC       | Simulation | -     | 45      | `sfc-fill-mix-sequence`, `plant-counted-queue`      |
+| `plant-merge-lines` Merge two lines           | Available | ST        | Simulation | -     | 45      | `plant-counted-queue`, `interlock-guard-permissive` |
 
 Objectives of the available lessons:
 
@@ -384,13 +384,13 @@ Advanced. Requires module: 14. Tracks: Simulation.
 
 Manipulators add steps that must happen in order. Pick, place and assembly use the state machines of flow control.
 
-| Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
-| --- | --- | --- | --- | --- | --- | --- |
-| `plant-belt-transfer` Pick from one belt, place on another | Available | ST | Simulation | - | 40 | `plant-counted-queue` |
-| `plant-assembler` Assemble lids and bases | Available | SFC | Simulation | - | 50 | `sfc-fill-mix-sequence`, `plant-belt-transfer` |
-| `plant-assembler-numeric` The same with numeric positions | Available | ST | Simulation | - | 40 | `plant-assembler` |
-| `plant-layer-palletizer` Palletize in layers | Available | ST | Simulation | - | 50 | `structures-arrays-call-panel`, `plant-assembler-numeric` |
-| `plant-xyz-palletizing` Palletize with a gantry | Available | ST | Simulation | - | 50 | `plant-layer-palletizer` |
+| Lesson                                                     | Status    | Languages | Tracks     | Plant | Minutes | Requires                                                  |
+| ---------------------------------------------------------- | --------- | --------- | ---------- | ----- | ------- | --------------------------------------------------------- |
+| `plant-belt-transfer` Pick from one belt, place on another | Available | ST        | Simulation | -     | 40      | `plant-counted-queue`                                     |
+| `plant-assembler` Assemble lids and bases                  | Available | SFC       | Simulation | -     | 50      | `sfc-fill-mix-sequence`, `plant-belt-transfer`            |
+| `plant-assembler-numeric` The same with numeric positions  | Available | ST        | Simulation | -     | 40      | `plant-assembler`                                         |
+| `plant-layer-palletizer` Palletize in layers               | Available | ST        | Simulation | -     | 50      | `structures-arrays-call-panel`, `plant-assembler-numeric` |
+| `plant-xyz-palletizing` Palletize with a gantry            | Available | ST        | Simulation | -     | 50      | `plant-layer-palletizer`                                  |
 
 Objectives of the available lessons:
 
@@ -406,14 +406,14 @@ Advanced. Requires module: 14. Tracks: Simulation.
 
 Sorting turns sensor combinations into routes. It reuses the flow-control skills and prepares the stations that follow.
 
-| Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
-| --- | --- | --- | --- | --- | --- | --- |
-| `plant-colour-separation` Send each colour to its belt | Available | ST | Simulation | - | 45 | `plant-counted-queue` |
-| `plant-colour-separation-il` The same sorting in Instruction List | Available | IL | Simulation | - | 50 | `plant-colour-separation`, `instruction-list-door-alarm` |
-| `plant-weight-sorting` Sort by weight | Available | ST | Simulation | - | 50 | `plant-colour-separation`, `plant-tank-level-scaling` |
-| `plant-height-chain` Sort by height, chain transfer | Available | ST | Simulation | - | 60 | `plant-colour-separation` |
-| `plant-height-turntable` Sort by height, turntable | Available | ST | Simulation | - | 60 | `plant-height-chain` |
-| `plant-vision-sorting` Sort by identity code | Available | ST | Simulation | - | 50 | `plant-colour-separation` |
+| Lesson                                                            | Status    | Languages | Tracks     | Plant | Minutes | Requires                                                 |
+| ----------------------------------------------------------------- | --------- | --------- | ---------- | ----- | ------- | -------------------------------------------------------- |
+| `plant-colour-separation` Send each colour to its belt            | Available | ST        | Simulation | -     | 45      | `plant-counted-queue`                                    |
+| `plant-colour-separation-il` The same sorting in Instruction List | Available | IL        | Simulation | -     | 50      | `plant-colour-separation`, `instruction-list-door-alarm` |
+| `plant-weight-sorting` Sort by weight                             | Available | ST        | Simulation | -     | 50      | `plant-colour-separation`, `plant-tank-level-scaling`    |
+| `plant-height-chain` Sort by height, chain transfer               | Available | ST        | Simulation | -     | 60      | `plant-colour-separation`                                |
+| `plant-height-turntable` Sort by height, turntable                | Available | ST        | Simulation | -     | 60      | `plant-height-chain`                                     |
+| `plant-vision-sorting` Sort by identity code                      | Available | ST        | Simulation | -     | 50      | `plant-colour-separation`                                |
 
 Objectives of the available lessons:
 
@@ -430,12 +430,12 @@ Advanced. Requires module: 16. Tracks: Simulation.
 
 A station groups sorting, transfer and sequencing into one unit. It comes after sorting because it combines its decisions.
 
-| Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
-| --- | --- | --- | --- | --- | --- | --- |
-| `plant-three-level-lifts` Move boxes between three levels | Available | SFC | Simulation | - | 50 | `plant-buffer-release` |
-| `plant-lift-stacking` Gather items into a crate | Available | ST | Simulation | - | 45 | `plant-counted-queue` |
-| `plant-warehouse` Store and retrieve | Available | SFC | Simulation | - | 60 | `plant-three-level-lifts` |
-| `plant-production-line` Balance a production line | Available | ST | Simulation | - | 50 | `function-block-pump-pair`, `plant-lift-stacking` |
+| Lesson                                                    | Status    | Languages | Tracks     | Plant | Minutes | Requires                                          |
+| --------------------------------------------------------- | --------- | --------- | ---------- | ----- | ------- | ------------------------------------------------- |
+| `plant-three-level-lifts` Move boxes between three levels | Available | SFC       | Simulation | -     | 50      | `plant-buffer-release`                            |
+| `plant-lift-stacking` Gather items into a crate           | Available | ST        | Simulation | -     | 45      | `plant-counted-queue`                             |
+| `plant-warehouse` Store and retrieve                      | Available | SFC       | Simulation | -     | 60      | `plant-three-level-lifts`                         |
+| `plant-production-line` Balance a production line         | Available | ST        | Simulation | -     | 50      | `function-block-pump-pair`, `plant-lift-stacking` |
 
 Objectives of the available lessons:
 
@@ -450,10 +450,10 @@ Advanced. Requires module: 17. Tracks: Simulation.
 
 A machine must stop safely and show what went wrong. Interlocks, modes and fault diagnosis are taught on stations the learner already knows.
 
-| Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
-| --- | --- | --- | --- | --- | --- | --- |
-| `plant-estop-interlocks` Emergency stop and interlocks | Available | ST | Simulation | - | 40 | `plant-three-level-lifts`, `interlock-guard-permissive` |
-| `plant-fault-actions` Find the fault | Available | ST | Simulation | - | 45 | `plant-height-chain` |
+| Lesson                                                 | Status    | Languages | Tracks     | Plant | Minutes | Requires                                                |
+| ------------------------------------------------------ | --------- | --------- | ---------- | ----- | ------- | ------------------------------------------------------- |
+| `plant-estop-interlocks` Emergency stop and interlocks | Available | ST        | Simulation | -     | 40      | `plant-three-level-lifts`, `interlock-guard-permissive` |
+| `plant-fault-actions` Find the fault                   | Available | ST        | Simulation | -     | 45      | `plant-height-chain`                                    |
 
 Objectives of the available lessons:
 
