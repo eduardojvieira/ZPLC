@@ -2,6 +2,7 @@ import type * as THREE_NS from 'three';
 import type { PlantSceneFile, PlantSnapshot } from '../contracts';
 import { cameraFromPreset, cameraPosition, orbitCamera, panCamera, zoomCamera, type CameraState } from './camera';
 import { instanceColors, instanceMatrices, partShape, type ShapeSpec } from './geometry';
+import type { Palette } from './displayModes';
 import { chooseInitialQuality, qualitySettings, type QualityLevel } from './quality';
 
 type Three = typeof THREE_NS;
@@ -12,6 +13,10 @@ export interface PlantRenderer {
   setSnapshot(snapshot: PlantSnapshot): void;
   setQuality(level: QualityLevel): void;
   setCameraPreset(name: string): void;
+  /** Colours for floor, belts, items and sensors (VIS-009). */
+  setPalette?(palette: Palette): void;
+  /** Off means preset changes jump instead of easing (reduced motion, VIS-009). */
+  setCameraAnimation?(enabled: boolean): void;
   orbit(dxDeg: number, dyDeg: number): void;
   pan(dx: number, dz: number): void;
   zoom(factor: number): void;
@@ -95,6 +100,20 @@ function buildGeometry(THREE: Three, spec: ShapeSpec): THREE_NS.BufferGeometry {
     }
   }
 }
+
+/** Fraction of the remaining distance a preset change covers each frame while camera animation is on. */
+const EASE = 0.2;
+const near = (a: CameraState, b: CameraState): boolean =>
+  Math.abs(a.azimuthDeg - b.azimuthDeg) < 0.05 &&
+  Math.abs(a.polarDeg - b.polarDeg) < 0.05 &&
+  Math.abs(a.distance - b.distance) < 0.005 &&
+  a.target.every((v, i) => Math.abs(v - (b.target[i] ?? 0)) < 0.005);
+const easeToward = (a: CameraState, b: CameraState): CameraState => ({
+  azimuthDeg: a.azimuthDeg + (b.azimuthDeg - a.azimuthDeg) * EASE,
+  polarDeg: a.polarDeg + (b.polarDeg - a.polarDeg) * EASE,
+  distance: a.distance + (b.distance - a.distance) * EASE,
+  target: a.target.map((v, i) => v + ((b.target[i] ?? 0) - v) * EASE) as unknown as CameraState['target'],
+});
 
 const PART_COLORS: Readonly<Record<string, number>> = {
   belt: 0x4b5563,
@@ -185,13 +204,29 @@ export function createRenderer(
   const materialFor = (part: string): THREE_NS.MeshStandardMaterial => {
     let m = partMaterials.get(part);
     if (!m) {
-      m = new THREE.MeshStandardMaterial({ color: PART_COLORS[part] ?? 0x9ca3af, roughness: 0.7 });
+      m = new THREE.MeshStandardMaterial({ color: partColor(part), roughness: 0.7 });
       partMaterials.set(part, m);
     }
     return m;
   };
 
   let camState: CameraState = cameraFromPreset(scene.cameras[0] ?? { name: 'default', position: [6, 6, 8], target: [0, 0, 0] });
+  let goal: CameraState | null = null; // a preset the camera is still easing toward
+  let animate = true;
+  let palette: Palette | null = null;
+  let lastItems: PlantSnapshot['items'] = [];
+  const partColor = (part: string): number => {
+    if (palette && part === 'sensor') return palette.sensorOn;
+    if (palette && part !== 'blade') return palette.belt;
+    return PART_COLORS[part] ?? 0x9ca3af;
+  };
+  const paintItems = (): void => {
+    const colors = instanceColors(lastItems);
+    for (let i = 0; i < lastItems.length; i++)
+      if (palette) items.setColorAt(i, new THREE.Color(palette.item));
+      else items.setColorAt(i, new THREE.Color(colors[i * 3], colors[i * 3 + 1], colors[i * 3 + 2]));
+    if (items.instanceColor) items.instanceColor.needsUpdate = true;
+  };
   let width = canvas.width || 1280;
   let height = canvas.height || 720;
   let dirty = true;
@@ -231,6 +266,11 @@ export function createRenderer(
     raf = requestAnimationFrame(frame);
     if (paused || !dirty) return;
     dirty = false;
+    if (goal) {
+      camState = animate && !near(camState, goal) ? easeToward(camState, goal) : goal;
+      if (camState === goal) goal = null;
+      else dirty = true;
+    }
     const [cx, cy, cz] = cameraPosition(camState);
     camera.position.set(cx, cy, cz);
     camera.lookAt(...camState.target);
@@ -258,12 +298,10 @@ export function createRenderer(
       if (disposed) return;
       if (snapshot.items.length > capacity) growItems(snapshot.items.length);
       instanceMatrices(snapshot.items, items.instanceMatrix.array as Float32Array);
-      const colors = instanceColors(snapshot.items);
-      for (let i = 0; i < snapshot.items.length; i++)
-        items.setColorAt(i, new THREE.Color(colors[i * 3], colors[i * 3 + 1], colors[i * 3 + 2]));
+      lastItems = snapshot.items;
+      paintItems();
       items.count = snapshot.items.length;
       items.instanceMatrix.needsUpdate = true;
-      if (items.instanceColor) items.instanceColor.needsUpdate = true;
 
       const seen = new Set<string>();
       for (const view of snapshot.parts) {
@@ -301,20 +339,39 @@ export function createRenderer(
     setCameraPreset(name) {
       const preset = scene.cameras.find((c) => c.name === name);
       if (preset) {
-        camState = cameraFromPreset(preset);
+        goal = cameraFromPreset(preset);
+        if (!animate) camState = goal;
         dirty = true;
       }
     },
     orbit(dx, dy) {
+      goal = null;
       camState = orbitCamera(camState, dx, dy);
       dirty = true;
     },
     pan(dx, dz) {
+      goal = null;
       camState = panCamera(camState, dx, dz);
       dirty = true;
     },
     zoom(factor) {
+      goal = null;
       camState = zoomCamera(camState, factor);
+      dirty = true;
+    },
+    setPalette(next) {
+      if (disposed) return;
+      palette = next;
+      world.background = new THREE.Color(next.floor);
+      (floor.material as THREE_NS.MeshStandardMaterial).color.set(next.floor);
+      partMaterials.forEach((m, part) => m.color.set(partColor(part)));
+      paintItems();
+      dirty = true;
+    },
+    setCameraAnimation(enabled) {
+      animate = enabled;
+      if (!enabled && goal) camState = goal;
+      if (!enabled) goal = null;
       dirty = true;
     },
     onContext(listener) {
