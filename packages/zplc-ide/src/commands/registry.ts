@@ -181,6 +181,33 @@ export const COMMANDS = [
   { id: 'help.shortcuts', titleKey: 'command.help.shortcuts', category: 'help', shortcut: 'Mod+K Mod+S' },
   // The Learn home opens with no project open: the Help menu is where a person who has not opened one looks (LRN-001).
   { id: 'help.learn', titleKey: 'command.help.learn', category: 'help' },
+
+  // Milestone U2 of spec 013 (plan-u2.md, C-X): declared by task X0b with no handler; the task named in the plan binds each one.
+  // Appended after the commands of 2.0 and of lane W, never before them: commands.test.ts pins their order.
+  { id: 'view.testResults', titleKey: 'command.view.testResults', category: 'view', enabled: open },
+  { id: 'view.resetLayout', titleKey: 'command.view.resetLayout', category: 'view', enabled: open },
+  { id: 'view.showInspector', titleKey: 'command.view.showInspector', category: 'view', enabled: open },
+  { id: 'file.closeProject', titleKey: 'command.file.closeProject', category: 'file', enabled: open },
+  { id: 'file.preferences', titleKey: 'command.file.preferences', category: 'file', shortcut: 'Mod+Comma' },
+  { id: 'build.runAllTests', titleKey: 'command.build.runAllTests', category: 'build', shortcut: 'Mod+Alt+T', enabled: open },
+  { id: 'build.runFailedTests', titleKey: 'command.build.runFailedTests', category: 'build', enabled: open },
+  { id: 'build.runTestAtCursor', titleKey: 'command.build.runTestAtCursor', category: 'build', enabled: open },
+  { id: 'build.newTest', titleKey: 'command.build.newTest', category: 'build', enabled: open },
+  { id: 'build.checkInterlocks', titleKey: 'command.build.checkInterlocks', category: 'build', enabled: open },
+  { id: 'edit.goToDefinition', titleKey: 'command.edit.goToDefinition', category: 'edit', shortcut: 'F12', enabled: open },
+  { id: 'edit.findAllReferences', titleKey: 'command.edit.findAllReferences', category: 'edit', shortcut: 'Shift+F12', enabled: open },
+  { id: 'edit.goBack', titleKey: 'command.edit.goBack', category: 'edit', shortcut: 'Alt+Left' },
+  { id: 'edit.goForward', titleKey: 'command.edit.goForward', category: 'edit', shortcut: 'Alt+Right' },
+  { id: 'project.newProgram', titleKey: 'command.project.newProgram', category: 'project', enabled: open },
+  { id: 'project.newFunctionBlock', titleKey: 'command.project.newFunctionBlock', category: 'project', enabled: open },
+  { id: 'project.newFunction', titleKey: 'command.project.newFunction', category: 'project', enabled: open },
+  { id: 'project.newDataType', titleKey: 'command.project.newDataType', category: 'project', enabled: open },
+  { id: 'project.newGlobals', titleKey: 'command.project.newGlobals', category: 'project', enabled: open },
+  { id: 'project.newTask', titleKey: 'command.project.newTask', category: 'project', enabled: open },
+  { id: 'project.rename', titleKey: 'command.project.rename', category: 'project', enabled: open },
+  { id: 'project.moveFile', titleKey: 'command.project.moveFile', category: 'project', enabled: open },
+  { id: 'project.duplicate', titleKey: 'command.project.duplicate', category: 'project', enabled: open },
+  { id: 'project.delete', titleKey: 'command.project.delete', category: 'project', enabled: open },
 ] as const satisfies readonly CommandDefinition[];
 
 export type CommandId = (typeof COMMANDS)[number]['id'];

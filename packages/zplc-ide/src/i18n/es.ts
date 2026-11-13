@@ -38,6 +38,16 @@ import { workbenchEs } from './catalog/workbench';
 import { moduleTextEs } from './catalog/moduleText';
 import { boardsEs } from './catalog/boards';
 import { statusTextEs } from './catalog/statusText';
+import { u2CommandsEs } from './catalog/u2Commands';
+import { u2TestsEs } from './catalog/u2Tests';
+import { u2FindEs } from './catalog/u2Find';
+import { u2SearchEs } from './catalog/u2Search';
+import { u2ReviewEs } from './catalog/u2Review';
+import { u2AssistantEs } from './catalog/u2Assistant';
+import { u2NavigatorEs } from './catalog/u2Navigator';
+import { u2LayoutEs } from './catalog/u2Layout';
+import { u2PreferencesEs } from './catalog/u2Preferences';
+import { u2PanelEs } from './catalog/u2Panel';
 
 /**
  * The Spanish catalog (UX-029, UX-030): neutral Latin American Spanish with impersonal or "usted" forms, as in
@@ -668,4 +678,14 @@ export const es: Record<MessageKey, string> = {
   ...moduleTextEs,
   ...boardsEs,
   ...statusTextEs,
+  ...u2CommandsEs,
+  ...u2TestsEs,
+  ...u2FindEs,
+  ...u2SearchEs,
+  ...u2ReviewEs,
+  ...u2AssistantEs,
+  ...u2NavigatorEs,
+  ...u2LayoutEs,
+  ...u2PreferencesEs,
+  ...u2PanelEs,
 };
