@@ -23,14 +23,14 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "El inicial declara las entradas y las salidas y no tiene peldaños. Guarde un número de paso (0 reposo, 1 llenado, 2 retención, 3 vaciado) en una variable INT, un bloque TON por cada paso temporizado, y gobierne las salidas desde el paso con un peldaño por cada salida. El llenado dura 3,5 segundos: un bloque TON con PT de T#3500ms.",
+      "body": "El inicial no tiene peldaños: ninguna válvula se abre, así que el ciclo nunca se ejecuta. Declara las entradas y las salidas. Guarde un número de paso (0 reposo, 1 llenado, 2 retención, 3 vaciado) en una variable INT, un bloque TON por cada paso temporizado, y gobierne las salidas desde el paso con un peldaño por cada salida. El llenado dura 3,5 segundos: un bloque TON con PT de T#3500ms.",
       "checkpoint": "El programa tiene una variable de paso, tres temporizadores y un peldaño por cada salida."
     },
     {
       "key": "run",
       "title": "Ejecutar",
       "body": "Pulse Check. ZPLC ejecuta src/TimedTank.ld.json contra el tanque de la escena timed-tank, pulsa Start, opera la parada de emergencia y pulsa Start otra vez, y prueba {{assertions}} aserciones: las salidas en tiempos fijos, y que el tanque nunca se derrame.",
-      "checkpoint": "El escenario se llama timed-tank y pasa las {{assertions}} aserciones con evidencia guardada del host."
+      "checkpoint": "El escenario se llama timed-tank y contiene {{assertions}} aserciones y las pasa todas con evidencia guardada del host."
     },
     {
       "key": "observe",

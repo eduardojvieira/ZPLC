@@ -23,14 +23,14 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Draw the six wires from the constants (KP, KI, KD, DT, OUT_MIN, OUT_MAX) first, then the two process wires. Delete the constant 0.0 that feeds FillCmd and connect Pid.OUT to it. The constants carry the reference tuning: change them if you tuned your own in the previous lesson. A diagram has no INT_TO_REAL block: the variable blocks LevelRawR, SetPointRawR and DrainRawR copy each whole number into a REAL variable, and the divisions work on those.",
+      "body": "The starter leaves the loop unwired and sends a constant 0.0 to FillCmd: the inlet never opens and the tank stays empty. Draw the six wires from the constants (KP, KI, KD, DT, OUT_MIN, OUT_MAX) first, then the two process wires. Delete the constant 0.0 that feeds FillCmd and connect Pid.OUT to it. The constants carry the reference tuning: change them if you tuned your own in the previous lesson. A diagram has no INT_TO_REAL block: the variable blocks LevelRawR, SetPointRawR and DrainRawR copy each whole number into a REAL variable, and the divisions work on those.",
       "checkpoint": "No input of Pid is left open and the diagram has no constant on the FillCmd output."
     },
     {
       "key": "run",
       "title": "Run",
       "body": "Press Check. ZPLC translates the diagram, runs it against the tank of scene tank-level-control, raises the set point, opens the drain and lowers the set point, and tests {{assertions}} assertions: the level in the band in two windows, out of it at the end, and no spill.",
-      "checkpoint": "The scenario is named tank-pid-fbd and passes all {{assertions}} assertions with saved host evidence."
+      "checkpoint": "The scenario is named tank-pid-fbd and contains {{assertions}} assertions and passes them all with saved host evidence."
     },
     {
       "key": "observe",

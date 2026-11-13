@@ -23,14 +23,14 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "The starter declares the inputs and outputs and has no rungs. Declare local REAL variables for the converted values and the metres. Copy each raw value into a REAL variable with a MOVE box, then divide with a DIV box by 27648.0 or 1000.0: an integer division would give 0 for every level below 1 m. Then write FillCmd from the error with a MUL box and limit it with a LIMIT box.",
+      "body": "The starter has no rungs: the inlet never opens, so the tank stays empty and never reaches its band. It declares the inputs and outputs. Declare local REAL variables for the converted values and the metres. Copy each raw value into a REAL variable with a MOVE box, then divide with a DIV box by 27648.0 or 1000.0: an integer division would give 0 for every level below 1 m. Then write FillCmd from the error with a MUL box and limit it with a LIMIT box.",
       "checkpoint": "The program has the converted REAL variables, the limited FillCmd and one rung for each of the other three outputs."
     },
     {
       "key": "run",
       "title": "Run",
       "body": "Press Check. ZPLC runs src/TankLevel.ld.json against the tank of scene tank-level-control, raises the set point and opens the drain, and tests {{assertions}} assertions on the tank: it stays in its band in two windows and it never spills.",
-      "checkpoint": "The scenario is named tank-level-scaling and passes all {{assertions}} assertions with saved host evidence."
+      "checkpoint": "The scenario is named tank-level-scaling and contains {{assertions}} assertions and passes them all with saved host evidence."
     },
     {
       "key": "observe",

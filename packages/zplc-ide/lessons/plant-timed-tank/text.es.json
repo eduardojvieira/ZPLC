@@ -23,14 +23,14 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "El código inicial declara las entradas y las salidas y no tiene lógica. Mantenga un número de paso (0 reposo, 1 llenado, 2 espera, 3 vaciado), un TON para cada paso temporizado, y escriba las salidas a partir del paso al final del programa. El llenado dura 3,5 segundos: un TON con PT := T#3500ms.",
+      "body": "El código inicial no tiene lógica: ninguna válvula se abre nunca, así que el ciclo no se ejecuta. Declara las entradas y las salidas. Mantenga un número de paso (0 reposo, 1 llenado, 2 espera, 3 vaciado), un TON para cada paso temporizado, y escriba las salidas a partir del paso al final del programa. El llenado dura 3,5 segundos: un TON con PT := T#3500ms.",
       "checkpoint": "El programa tiene una variable de paso, tres temporizadores y una asignación para cada salida."
     },
     {
       "key": "run",
       "title": "Ejecutar",
       "body": "Pulse Check. ZPLC ejecuta src/TimedTank.st con el tanque de la escena timed-tank, pulsa Start, acciona la parada de emergencia y vuelve a pulsar Start, y comprueba {{assertions}} aserciones: las salidas en tiempos fijos y que el tanque nunca se derrame.",
-      "checkpoint": "El escenario se llama timed-tank y pasa las {{assertions}} aserciones con evidencia guardada del host."
+      "checkpoint": "El escenario se llama timed-tank y contiene {{assertions}} aserciones y las pasa todas con evidencia guardada del host."
     },
     {
       "key": "observe",

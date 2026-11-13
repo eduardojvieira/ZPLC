@@ -23,14 +23,14 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "El código inicial declara las entradas y las salidas y no tiene lógica. Declare dos variables REAL para el nivel y la consigna en metros. Divida el nivel por 27648.0 y la consigna por 1000.0 después de INT_TO_REAL: una división entera daría 0 para cualquier nivel inferior a 1 m. Luego escriba FillCmd a partir del error y limítela con dos sentencias IF.",
+      "body": "El código inicial no tiene lógica: la entrada nunca se abre, así que el tanque permanece vacío y nunca llega a su banda. Declara las entradas y las salidas. Declare dos variables REAL para el nivel y la consigna en metros. Divida el nivel por 27648.0 y la consigna por 1000.0 después de INT_TO_REAL: una división entera daría 0 para cualquier nivel inferior a 1 m. Luego escriba FillCmd a partir del error y limítela con dos sentencias IF.",
       "checkpoint": "El programa tiene dos variables REAL, FillCmd limitada y una asignación para cada una de las otras tres salidas."
     },
     {
       "key": "run",
       "title": "Ejecutar",
       "body": "Pulse Check. ZPLC ejecuta src/TankLevel.st con el tanque de la escena tank-level-control, sube la consigna y abre el vaciado, y comprueba {{assertions}} aserciones sobre el tanque: se mantiene en su banda en dos ventanas y nunca se derrama.",
-      "checkpoint": "El escenario se llama tank-level-scaling y pasa las {{assertions}} aserciones con evidencia guardada del host."
+      "checkpoint": "El escenario se llama tank-level-scaling y contiene {{assertions}} aserciones y las pasa todas con evidencia guardada del host."
     },
     {
       "key": "observe",

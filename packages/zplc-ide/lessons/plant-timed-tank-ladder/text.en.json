@@ -23,14 +23,14 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "The starter declares the inputs and outputs and has no rungs. Keep a step number (0 idle, 1 fill, 2 hold, 3 drain) in an INT variable, one TON block for each timed step, and drive the outputs from the step with one rung for each output. The fill lasts 3.5 seconds: a TON block with PT of T#3500ms.",
+      "body": "The starter has no rungs: no valve ever opens, so the cycle never runs. It declares the inputs and outputs. Keep a step number (0 idle, 1 fill, 2 hold, 3 drain) in an INT variable, one TON block for each timed step, and drive the outputs from the step with one rung for each output. The fill lasts 3.5 seconds: a TON block with PT of T#3500ms.",
       "checkpoint": "The program has a step variable, three timers and one rung for each output."
     },
     {
       "key": "run",
       "title": "Run",
       "body": "Press Check. ZPLC runs src/TimedTank.ld.json against the tank of scene timed-tank, presses Start, operates the emergency stop and presses Start again, and tests {{assertions}} assertions: the outputs at fixed times, and that the tank never spills.",
-      "checkpoint": "The scenario is named timed-tank and passes all {{assertions}} assertions with saved host evidence."
+      "checkpoint": "The scenario is named timed-tank and contains {{assertions}} assertions and passes them all with saved host evidence."
     },
     {
       "key": "observe",

@@ -23,14 +23,14 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "El inicial declara las entradas y las salidas y no tiene peldaños. Declare variables REAL locales para los valores convertidos y los metros. Copie cada valor crudo a una variable REAL con un cuadro MOVE y luego divida con un cuadro DIV entre 27648.0 o 1000.0: una división entera daría 0 para todo nivel menor de 1 m. Después escriba FillCmd a partir del error con un cuadro MUL y límitela con un cuadro LIMIT.",
+      "body": "El inicial no tiene peldaños: la entrada nunca se abre, así que el tanque queda vacío y nunca llega a su banda. Declara las entradas y las salidas. Declare variables REAL locales para los valores convertidos y los metros. Copie cada valor crudo a una variable REAL con un cuadro MOVE y luego divida con un cuadro DIV entre 27648.0 o 1000.0: una división entera daría 0 para todo nivel menor de 1 m. Después escriba FillCmd a partir del error con un cuadro MUL y límitela con un cuadro LIMIT.",
       "checkpoint": "El programa tiene las variables REAL convertidas, FillCmd limitada y un peldaño por cada una de las otras tres salidas."
     },
     {
       "key": "run",
       "title": "Ejecutar",
       "body": "Pulse Check. ZPLC ejecuta src/TankLevel.ld.json contra el tanque de la escena tank-level-control, sube la consigna y abre el vaciado, y prueba {{assertions}} aserciones sobre el tanque: se mantiene en su banda en dos ventanas y nunca se derrama.",
-      "checkpoint": "El escenario se llama tank-level-scaling y pasa las {{assertions}} aserciones con evidencia guardada del host."
+      "checkpoint": "El escenario se llama tank-level-scaling y contiene {{assertions}} aserciones y las pasa todas con evidencia guardada del host."
     },
     {
       "key": "observe",

@@ -23,14 +23,14 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "The starter declares the inputs and outputs and has no logic. Declare two REAL variables for the level and the set point in metres. Divide the level by 27648.0 and the set point by 1000.0 after INT_TO_REAL: an integer division would give 0 for every level below 1 m. Then write FillCmd from the error and limit it with two IF statements.",
+      "body": "The starter has no logic: the inlet never opens, so the tank stays empty and never reaches its band. It declares the inputs and outputs. Declare two REAL variables for the level and the set point in metres. Divide the level by 27648.0 and the set point by 1000.0 after INT_TO_REAL: an integer division would give 0 for every level below 1 m. Then write FillCmd from the error and limit it with two IF statements.",
       "checkpoint": "The program has two REAL variables, the limited FillCmd and one assignment for each of the other three outputs."
     },
     {
       "key": "run",
       "title": "Run",
       "body": "Press Check. ZPLC runs src/TankLevel.st against the tank of scene tank-level-control, raises the set point and opens the drain, and tests {{assertions}} assertions on the tank: it stays in its band in two windows and it never spills.",
-      "checkpoint": "The scenario is named tank-level-scaling and passes all {{assertions}} assertions with saved host evidence."
+      "checkpoint": "The scenario is named tank-level-scaling and contains {{assertions}} assertions and passes them all with saved host evidence."
     },
     {
       "key": "observe",

@@ -23,14 +23,14 @@
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Dibuje primero los seis cables desde las constantes (KP, KI, KD, DT, OUT_MIN, OUT_MAX) y luego los dos cables del proceso. Elimine la constante 0.0 que alimenta FillCmd y conecte Pid.OUT a esa salida. Las constantes llevan el ajuste de referencia: cámbielas si ajustó las suyas en la lección anterior. Un diagrama no tiene un bloque INT_TO_REAL: los bloques de variable LevelRawR, SetPointRawR y DrainRawR copian cada número entero en una variable REAL, y las divisiones trabajan con ellas.",
+      "body": "El código inicial deja el lazo sin cablear y envía una constante 0.0 a FillCmd: la entrada nunca se abre y el tanque permanece vacío. Dibuje primero los seis cables desde las constantes (KP, KI, KD, DT, OUT_MIN, OUT_MAX) y luego los dos cables del proceso. Elimine la constante 0.0 que alimenta FillCmd y conecte Pid.OUT a esa salida. Las constantes llevan el ajuste de referencia: cámbielas si ajustó las suyas en la lección anterior. Un diagrama no tiene un bloque INT_TO_REAL: los bloques de variable LevelRawR, SetPointRawR y DrainRawR copian cada número entero en una variable REAL, y las divisiones trabajan con ellas.",
       "checkpoint": "Ninguna entrada de Pid queda abierta y el diagrama no tiene una constante en la salida FillCmd."
     },
     {
       "key": "run",
       "title": "Ejecutar",
       "body": "Pulse Check. ZPLC traduce el diagrama, lo ejecuta con el tanque de la escena tank-level-control, sube la consigna, abre el vaciado y baja la consigna, y comprueba {{assertions}} aserciones: el nivel dentro de la banda en dos ventanas, fuera de ella al final y sin derrame.",
-      "checkpoint": "El escenario se llama tank-pid-fbd y pasa las {{assertions}} aserciones con evidencia guardada del host."
+      "checkpoint": "El escenario se llama tank-pid-fbd y contiene {{assertions}} aserciones y las pasa todas con evidencia guardada del host."
     },
     {
       "key": "observe",
