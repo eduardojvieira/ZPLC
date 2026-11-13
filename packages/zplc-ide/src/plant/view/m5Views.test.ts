@@ -81,11 +81,11 @@ describe('M5 views from a real snapshot', () => {
     expect(slots(views.find((v) => v.part === 'lift')!)).toEqual(['direction', 'rail-a', 'rail-b']);
     expect(slots(views.find((v) => v.part === 'stacker-crane')!)).toEqual(['extension']);
     expect(slots(views.find((v) => v.part === 'machining-centre')!)).toEqual(['roof', 'post-a', 'post-b', 'post-c', 'post-d', 'progress']);
-    for (const kind of ['stacker-mast', 'stacker-rack', 'machining-door', 'limit-switch', 'aligner', 'chute'])
+    for (const kind of ['stacker-mast', 'machining-door', 'limit-switch', 'aligner', 'chute'])
       expect(slots(views.find((v) => v.part === kind)!)).toEqual([]);
   });
 
-  it('VIS-003 the real lift publishes fraction, text and level, the cue shows them and the rails follow the platform', async () => {
+  it('VIS-003 the real lift publishes fraction, text and level, the cue shows them and the rails span the stroke', async () => {
     const core = await make([part('lift', 'Lift1', 0)]);
     const at = () => viewsOf(core, 'lift')[0]!;
     expect(at().state).toMatchObject({ fraction: 0, text: 'level 1', level: 1 });
@@ -97,7 +97,7 @@ describe('M5 views from a real snapshot', () => {
     const mid = at().state.fraction as number;
     expect(mid).toBeGreaterThan(0.1);
     expect(mid).toBeLessThan(1);
-    expect(partDecor(at())[1]!.size[1]).toBeGreaterThan(homeRail.size[1]); // the rails reach down to the floor from the platform
+    expect(partDecor(at())[1]!.size[1]).toBe(homeRail.size[1]); // the guide rails span the whole stroke, whatever the platform height
     run(core, 3000);
     expect(at().state).toMatchObject({ fraction: 1, text: 'level 2', level: 2 });
     expect(cuesFor(at()).value).toEqual({ text: 'level 2', fraction: 1 });
@@ -156,10 +156,17 @@ describe('M5 views from a real snapshot', () => {
     expect(instanceColors(items)).toHaveLength(6);
   });
 
-  // Gaps for V7 (not fixed here: lift.ts and stacker-crane.ts are not K10's files): see the K10 report.
-  it('VIS-003 the real stacker rack publishes a view without levels and columns, and the lift one without its stroke', async () => {
+  it('VIS-003 the real stacker rack publishes its grid, the lift its stroke, and the view draws cell rails and full guide rails', async () => {
     const core = await make([part('stacker-crane', 'Crane1', 0, {}, 0), part('lift', 'Lift1', 6)]);
-    expect(viewsOf(core, 'stacker-rack')[0]!.state).toEqual({});
-    expect(Object.keys(viewsOf(core, 'lift')[0]!.state)).not.toContain('strokeM');
+    const rack = viewsOf(core, 'stacker-rack')[0]!;
+    const { columns, levels, bayPitchM, levelPitchM } = rack.state as Record<string, number>;
+    expect(columns).toBeGreaterThan(1);
+    expect(levels).toBeGreaterThan(1);
+    expect(bayPitchM).toBeGreaterThan(0);
+    expect(levelPitchM).toBeGreaterThan(0);
+    expect(slots(rack)).toHaveLength(levels + 1 + (columns - 1));
+    const lift = viewsOf(core, 'lift')[0]!;
+    expect(lift.state.strokeM).toBeGreaterThan(0);
+    expect(lift.state.levelPitchM).toBeGreaterThan(0);
   });
 });

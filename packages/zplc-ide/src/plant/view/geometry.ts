@@ -248,13 +248,29 @@ function m5Decor(view: PartView): Decor[] {
   const top = h / 2 + thin / 2;
   switch (view.part) {
     case 'lift': {
-      const rail = Math.max(0, view.pose.p[1] + h / 2);
+      // Full guide rails: from the floor to the top of the platform at the end of its stroke.
+      const stroke = num(view.state.strokeM, 0);
+      const top3 = view.pose.p[1] - num(view.state.fraction, 0) * stroke + stroke + h / 2;
+      const rail = Math.max(0, top3);
       const out: Decor[] = [{ slot: 'direction', tone: 'jaw', lit: true, size: [w * 0.8, thin, d * 0.12], centre: [0, top, 0] }];
       for (const [slot, z] of [
         ['rail-a', -(d / 2 + thin)],
         ['rail-b', d / 2 + thin],
       ] as const)
-        out.push({ slot, tone: 'jaw', lit: true, size: [thin, rail, thin], centre: [0, (h / 2 - view.pose.p[1]) / 2, z] });
+        out.push({ slot, tone: 'jaw', lit: true, size: [thin, rail, thin], centre: [0, rail / 2 - view.pose.p[1], z] });
+      return out;
+    }
+    case 'stacker-rack': {
+      // Cell rails: one bar per level boundary and one divider between neighbouring bays.
+      const cols = Math.max(1, Math.round(num(view.state.columns, 1)));
+      const levels = Math.max(1, Math.round(num(view.state.levels, 1)));
+      const bay = num(view.state.bayPitchM, 0);
+      const lvl = num(view.state.levelPitchM, 0);
+      const out: Decor[] = [];
+      for (let k = 0; k <= levels; k += 1)
+        out.push({ slot: `level-${k}`, tone: 'jaw', lit: true, size: [w, thin, d * 1.5], centre: [0, -h / 2 + k * lvl, 0] });
+      for (let c = 1; c < cols; c += 1)
+        out.push({ slot: `bay-${c}`, tone: 'jaw', lit: true, size: [thin, h, d * 1.5], centre: [-w / 2 + 0.2 + (c - 0.5) * bay, 0, 0] });
       return out;
     }
     case 'stacker-crane': {
