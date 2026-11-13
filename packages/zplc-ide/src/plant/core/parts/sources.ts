@@ -3,9 +3,11 @@ import type { PhysicsWorld } from '../world';
 import {
   BOX_HEIGHTS,
   BOX_MASSES,
+  BASE_SIZE,
   boxSize,
   cfg,
   cfgNumber,
+  LID_SIZE,
   PALLET_SIZE,
   removeTrackedItem,
   spawnItem,
@@ -19,7 +21,7 @@ const STEP_MS = 5;
 const JITTER_M = 0.05; // random mode: lateral offset of an emitted item, either side
 
 const emitterConfig: Record<string, ConfigField> = {
-  kind: { kind: 'enum', values: ['box', 'pallet'], default: 'box' },
+  kind: { kind: 'enum', values: ['box', 'pallet', 'lid', 'base'], default: 'box' },
   height: { kind: 'enum', values: BOX_HEIGHTS, default: '0.3', unit: 'm' },
   mass: { kind: 'enum', values: BOX_MASSES, default: '2', unit: 'kg' },
   intervalMs: { kind: 'number', min: 0, max: 600000, default: 0, unit: 'ms' }, // 0: scripted, only the signal emits
@@ -44,7 +46,8 @@ function emitterRuntime(part: ScenePart, rng: () => number): PartRuntime {
   const cfgs = emitterConfig;
   const interval = cfgNumber(part, cfgs, 'intervalMs');
   const max = cfgNumber(part, cfgs, 'maxItems');
-  const pallet = cfg(part, cfgs, 'kind') === 'pallet';
+  const kind = cfg(part, cfgs, 'kind');
+  const pallet = kind === 'pallet';
   let world: PhysicsWorld | undefined;
   let emitted = 0;
   let sinceMs = 0;
@@ -54,11 +57,24 @@ function emitterRuntime(part: ScenePart, rng: () => number): PartRuntime {
     emitted += 1;
     const id = `${part.id}-${emitted}`;
     if (pallet) return spawnItem(world, id, 'pallet', PALLET_SIZE, 25, part.position, part.rotationYDeg);
+    if (kind === 'lid' || kind === 'base') {
+      // Height is ignored for lids and bases; mass comes from the config.
+      return spawnItem(
+        world,
+        id,
+        'item',
+        kind === 'lid' ? LID_SIZE : BASE_SIZE,
+        cfgNumber(part, cfgs, 'mass'),
+        part.position,
+        part.rotationYDeg,
+        kind,
+      );
+    }
     const random = interval > 0; // random mode draws height and lateral offset from the seeded generator
     const height = random ? Number(BOX_HEIGHTS[Math.floor(rng() * BOX_HEIGHTS.length)]) : cfgNumber(part, cfgs, 'height');
     const side = random ? (rng() * 2 - 1) * JITTER_M : 0;
     const at: Vec3 = [part.position[0], part.position[1], part.position[2] + side];
-    spawnItem(world, id, 'item', boxSize(height), cfgNumber(part, cfgs, 'mass'), at, part.rotationYDeg);
+    spawnItem(world, id, 'item', boxSize(height), cfgNumber(part, cfgs, 'mass'), at, part.rotationYDeg, 'box');
   };
   return {
     build(w) {
@@ -135,10 +151,12 @@ export const sourceParts: readonly RuntimePartDefinition[] = [
     actions: [],
     snapPoints: () => [{ name: 'out', position: [0, 0, 0], normalYDeg: 0, accepts: ['belt', 'roller', 'curved'] }],
     doc: {
-      en: 'Emits one item on each rising edge of its signal, and by itself every intervalMs when that is above zero (random mode, seeded).',
+      en:
+        'Emits one item on each rising edge of its signal, and by itself every intervalMs when that is above zero (random mode, ' +
+        'seeded). Kinds: box, pallet, lid, base; a lid or base takes its mass from the mass setting and ignores height.',
       es:
         'Emite una pieza en cada flanco de subida de su señal, y por sí solo cada intervalMs cuando es mayor que cero (modo aleatorio, ' +
-        'con semilla).',
+        'con semilla). Tipos: caja, tarima, tapa, base; una tapa o base toma su masa del ajuste de masa e ignora la altura.',
     },
     runtime: emitterRuntime,
   },
