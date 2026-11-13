@@ -133,7 +133,8 @@ describe('the alternative pairs (M7-K5)', () => {
     expect(TWO_ZERO_LESSON_IDS).toHaveLength(68);
     expect(alternativePairFaults(LESSON_INDEX)).toEqual([]);
     // each of the 7 -ladder lessons of 2.0 requires its ST twin or has none
-    const ladders = LESSON_INDEX.lessons.filter((lesson) => lesson.id.endsWith('-ladder'));
+    const twoZero = new Set<string>(TWO_ZERO_LESSON_IDS);
+    const ladders = LESSON_INDEX.lessons.filter((lesson) => twoZero.has(lesson.id) && lesson.id.endsWith('-ladder'));
     expect(ladders).toHaveLength(7);
     for (const ladder of ladders) {
       const twin = LESSON_INDEX.lessons.find((lesson) => lesson.id === ladder.id.slice(0, -'-ladder'.length));
@@ -153,8 +154,9 @@ describe('the alternative pairs (M7-K5)', () => {
     expect(alternativePairFaults(withTwin({ text })).join('\n')).toContain('text structure differs');
   });
 
-  it('refuses a pair that the course order separates', () => {
-    expect(alternativePairFaults(withTwin({ order: base.order + 40 })).join('\n')).toContain('not next to');
+  it('refuses a pair that the course order separates: the twin waits for a lesson its sibling does not', () => {
+    // courseOrder keeps a twin next to its sibling whatever its order (7d498e46), so only a prerequisite can part them.
+    expect(alternativePairFaults(withTwin({ prerequisites: ['scan-cycle-one-scan-memory'] })).join('\n')).toContain('not next to');
   });
 
   it('refuses a 2.0 lesson that became an alternative, and a 2.0 lesson that went missing', () => {
