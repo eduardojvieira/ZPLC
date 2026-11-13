@@ -88,7 +88,7 @@ describe('the fact names a scenario reads', () => {
         'itemsDropped, ' +
         'itemsCollided, emitted:<Name>, delivered:<Name>, count:<Name>, position:<kind>:<index>, level:<Name>, volume:<Name>, ' +
         'spilledL:<Name>, highs:<Name>, inBand:<Name>, picked:<Name>, placed:<Name>, drops:<Name>, axis:<Name>:<x|y|z>, itemsAssembled, ' +
-        'stacked:pallet:<index>, layers:pallet:<index>',
+        'stacked:pallet:<index>, layers:pallet:<index>, sorted:<Name>, misrouted:<Name>',
     ]);
     expect(checkSceneFacts(withFacts('position:crate:x'), fixtureScene)).toHaveLength(1);
     expect(checkSceneFacts(withFacts('itemsRemoved:extra'), fixtureScene)).toHaveLength(1);
@@ -137,6 +137,20 @@ describe('the fact names a scenario reads', () => {
     expect(checkSceneFacts(withFacts('placed'), gantryScene)[0]).toContain(
       'picked:<Name>, placed:<Name>, drops:<Name>, axis:<Name>:<x|y|z>',
     );
+  });
+
+  it('SCN-004 the fact grammar accepts sorted and misrouted and names the unknown ones', () => {
+    const binScene: PlantSceneFile = {
+      ...fixtureScene,
+      parts: [{ id: 'binred', part: 'remover', name: 'BinRed', position: [0, 0, 0], rotationYDeg: 0, config: {} }],
+    };
+    expect(checkSceneFacts(withFacts('sorted:BinRed', 'misrouted:BinRed'), binScene)).toEqual([]);
+    for (const bad of ['sorted', 'misrouted', 'sorted:BinRed:x', 'sortedd:BinRed'])
+      expect(checkSceneFacts(withFacts(bad), binScene)).toHaveLength(1);
+    expect(checkSceneFacts(withFacts('sorted'), binScene)[0]).toContain('sorted:<Name>, misrouted:<Name>');
+    expect(checkSceneFacts(withFacts('misrouted:Nope'), binScene)).toEqual([
+      'scenario.json expectations[0].condition: "fact:misrouted:Nope" names "Nope", which is not a part of the scene; it has: BinRed',
+    ]);
   });
 
   it('SCN-004 refuses a fact that names a part the scene does not have', () => {

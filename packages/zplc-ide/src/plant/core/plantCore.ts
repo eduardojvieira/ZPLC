@@ -12,18 +12,32 @@ import type {
 import { catalogue, registerParts } from './catalogue';
 import { buildFacts, createContactTracker } from './facts';
 import { loadJolt } from './jolt';
+import { chainParts } from './parts/chainTransfer';
 import { conveyorParts } from './parts/conveyors';
+import { diverterParts } from './parts/diverters';
 import { flowParts } from './parts/flow';
 import { indicatorParts } from './parts/indicators';
 import { stationParts } from './parts/layerPalletizer';
 import { manipulatorParts } from './parts/manipulators';
 import { createSupportTracker, type SupportItem } from './support';
-import { itemParts, boxSize, PALLET_SIZE, removeTrackedItem, spawnItem, trackedItems, type RuntimePartDefinition } from './parts/items';
+import {
+  itemParts,
+  boxSize,
+  PALLET_SIZE,
+  removeTrackedItem,
+  spawnItem,
+  trackedItems,
+  WORKPIECE_MASS_KG,
+  WORKPIECE_SIZE,
+  type RuntimePartDefinition,
+} from './parts/items';
 import { operableParts } from './parts/operable';
 import { isOperable, panelParts } from './parts/panel';
 import { processParts } from './parts/process';
 import { sensorParts } from './parts/sensors';
+import { numericSensorParts } from './parts/sensorsNumeric';
 import { sourceParts } from './parts/sources';
+import { turntableParts } from './parts/turntable';
 import { sceneSignals, validateScene } from './scene';
 import { createTrace } from './trace';
 import { createWorld, PLANT_STEP_MS, type PhysicsWorld } from './world';
@@ -40,6 +54,10 @@ const SHIPPED: readonly RuntimePartDefinition[] = [
   ...indicatorParts,
   ...manipulatorParts,
   ...stationParts,
+  ...numericSensorParts,
+  ...diverterParts,
+  ...chainParts,
+  ...turntableParts,
 ];
 const RUNTIMES = new Map(SHIPPED.map((d) => [d.id, d]));
 registerParts(SHIPPED.filter((d) => !catalogue.get(d.id)));
@@ -219,16 +237,19 @@ export async function createPlantCore(scene: PlantSceneFile, options: { seed?: n
       case '+': {
         if (trackedItems(m.world).size >= MAX_ITEMS) throw new RangeError(`plant: the scene already holds ${MAX_ITEMS} items`);
         const pallet = op[1] === 'pallet';
-        if (!pallet && op[1] !== 'box') throw new Error(`plant: unknown item kind "${op[1]}"; use box or pallet`);
+        const workpiece = op[1] === 'workpiece';
+        if (!pallet && !workpiece && op[1] !== 'box') throw new Error(`plant: unknown item kind "${op[1]}"; use box, workpiece or pallet`);
         m.added += 1;
         spawnItem(
           m.world,
           `added-${m.added}`,
           pallet ? 'pallet' : 'item',
-          pallet ? PALLET_SIZE : boxSize(0.3),
-          pallet ? ADDED_PALLET_KG : ADDED_BOX_KG,
+          pallet ? PALLET_SIZE : workpiece ? WORKPIECE_SIZE : boxSize(0.3),
+          pallet ? ADDED_PALLET_KG : workpiece ? WORKPIECE_MASS_KG : ADDED_BOX_KG,
           op[2],
           0,
+          undefined,
+          workpiece ? { colour: 'red', metal: false } : undefined, // a red plastic workpiece, unlabelled
         );
         return;
       }
@@ -300,6 +321,9 @@ export async function createPlantCore(scene: PlantSceneFile, options: { seed?: n
                 p: b.p,
                 q: b.q,
                 ...(info.tag ? { tag: info.tag } : {}),
+                ...(info.colour ? { colour: info.colour } : {}),
+                ...(info.metal !== undefined ? { metal: info.metal } : {}),
+                ...(info.code ? { code: info.code } : {}),
               },
             ]
           : [];
