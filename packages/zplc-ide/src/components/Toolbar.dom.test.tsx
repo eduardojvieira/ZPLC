@@ -456,6 +456,80 @@ describe('Run with a plant document open (PLS-003, FLW-014) in a DOM', () => {
   });
 });
 
+describe('An offer acts on the current state (FLW-003, LNK-009) in a DOM', () => {
+  const chooseSimulation = async (user: ReturnType<typeof dom.render>['user']) => {
+    await user.click(dom.screen.getByRole('button', { name: /rpi_pico/ }));
+    await user.click(dom.screen.getByRole('menuitem', { name: new RegExp(dom.t('studio.flow.target.simulation')) }));
+  };
+  const offerHandler = () => notices().find((n) => n.status === 'warning')!.recover!.run;
+
+  it(
+    'FLW-003 a stale Connect offer, used after the target went back to Simulation, connects nothing and Run never reaches a ' + 'board',
+    async () => {
+      openProject(BUILD_OK, { board: 'rpi_pico' });
+      const { controller, calls } = simulatorController();
+      const { user } = dom.render(<Toolbar debugController={controller} />);
+      await chooseBoard(user);
+      await user.click(runButton());
+      const stale = offerHandler();
+      await chooseSimulation(user);
+      stale();
+      await dom.settle();
+      expect(calls).not.toContain('connectHardware');
+      expect(notices().filter((n) => n.status === 'warning')).toEqual([]);
+      await user.click(runButton());
+      await dom.waitFor(() => expect(calls).toContain('start'));
+      expect(calls).not.toContain('connectHardware');
+    },
+  );
+
+  it('FLW-003 a stale Deploy offer, used after the target went back to Simulation, does nothing', async () => {
+    openProject(BUILD_OK, { board: 'rpi_pico' });
+    const { controller, calls } = simulatorController({ state: 'idle', session: true });
+    (controller as unknown as { disconnect: () => Promise<void> }).disconnect = async () => undefined;
+    const { user } = dom.render(<Toolbar debugController={controller} />);
+    await chooseBoard(user);
+    await user.click(dom.screen.getByRole('button', { name: new RegExp(dom.t('toolbar.build.label')) }));
+    await user.click(dom.screen.getByRole('menuitem', { name: new RegExp(dom.t('toolbar.compile.label')) }));
+    await dom.waitFor(() => expect(notices().some((n) => n.title === dom.t('toolbarMsg.buildSucceeded'))).toBe(true));
+    await user.click(runButton());
+    const stale = offerHandler();
+    await chooseSimulation(user);
+    stale();
+    await dom.settle();
+    expect(calls).toEqual([]);
+  });
+
+  it('LNK-009 Run on the Simulation target refuses when the session it finds is a board, and loads and starts nothing', async () => {
+    openProject(BUILD_OK);
+    const { controller, calls } = simulatorController({ state: 'idle', session: true });
+    (controller as unknown as { adapter: unknown }).adapter = { connected: true, type: 'serial' };
+    const { user } = dom.render(<Toolbar debugController={controller} />);
+    await user.click(runButton());
+    await dom.waitFor(() => expect(notices().some((n) => n.status === 'error')).toBe(true));
+    expect(calls).toEqual([]);
+  });
+
+  it('FLW-001 a sequence started before the project closed does not act on what comes next', async () => {
+    openProject(BUILD_OK);
+    const { controller, calls } = simulatorController();
+    let release: () => void = () => undefined;
+    const open = (controller as unknown as { startSimulation: () => Promise<void> }).startSimulation;
+    (controller as unknown as { startSimulation: () => Promise<void> }).startSimulation = () =>
+      new Promise<void>((resolve) => {
+        release = () => void open().then(resolve);
+      });
+    const { user } = dom.render(<Toolbar debugController={controller} />);
+    await user.click(runButton());
+    await dom.waitFor(() => expect((runButton() as HTMLButtonElement).disabled).toBe(true));
+    useIDEStore.setState({ projectSession: useIDEStore.getState().projectSession + 1 });
+    release();
+    await dom.waitFor(() => expect(notices().some((n) => n.status === 'error')).toBe(true));
+    expect(calls).not.toContain('loadProgram');
+    expect(calls).not.toContain('start');
+  });
+});
+
 describe('Save all (FLW-005) in a DOM', () => {
   it('FLW-005 Save all is offered when any document is modified, and saves the configuration too', async () => {
     const { saved } = openProject(BUILD_OK);

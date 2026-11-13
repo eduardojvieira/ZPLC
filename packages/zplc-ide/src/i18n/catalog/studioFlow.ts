@@ -51,6 +51,8 @@ export const studioFlowEn = {
   'studio.flow.saveAll.title': 'Save every modified document',
   // The simulator session is implicit (FLW-008).
   'studio.flow.simulatorRestarted': 'Simulator restarted',
+  'studio.flow.projectChanged': 'The project changed while the run was preparing. Nothing else ran.',
+  'studio.flow.notSimulator': 'The simulation target found a board session. Nothing was loaded or started.',
 } as const;
 export const studioFlowEs: Record<keyof typeof studioFlowEn, string> = {
   'studio.flow.saveBeforeRun': 'Antes de ejecutar y compilar',
@@ -98,4 +100,6 @@ export const studioFlowEs: Record<keyof typeof studioFlowEn, string> = {
   'studio.flow.saveAll.label': 'Guardar todo',
   'studio.flow.saveAll.title': 'Guardar todos los documentos modificados',
   'studio.flow.simulatorRestarted': 'Simulador reiniciado',
+  'studio.flow.projectChanged': 'El proyecto cambió mientras se preparaba la ejecución. No se ejecutó nada más.',
+  'studio.flow.notSimulator': 'El destino de simulación encontró una sesión de placa. No se cargó ni se inició nada.',
 };

@@ -213,6 +213,17 @@ export function Toolbar({ debugController }: ToolbarProps) {
   useEffect(() => {
     executionModeRef.current = executionMode;
   });
+  // What an offer's button acts on is the state of now, not the render that offered it: a button outlives its render.
+  const latestRef = useRef({ handleConnect: async () => {}, handleUpload: async () => {}, handleCompile: async () => {} });
+  const offerStateRef = useRef({ executionMode, isConnected, hasCurrentCompileResult, projectSession });
+  useEffect(() => {
+    offerStateRef.current = { executionMode, isConnected, hasCurrentCompileResult, projectSession };
+  });
+  // An offer is for the target, the session and the build it was made for; when one changes, the offer is gone.
+  useEffect(() => {
+    const { items, dismiss } = useNotifications.getState();
+    for (const item of items) if (item.kind === 'run' && item.status === 'warning') dismiss(item.id);
+  }, [executionMode, isConnected, hasCurrentCompileResult, projectSession]);
   useEffect(
     () => () => {
       const controller = controllerRef.current;
@@ -753,17 +764,33 @@ export function Toolbar({ debugController }: ToolbarProps) {
 
   /** A refusal is an offer: the notice names the step that is missing and has it as its button (FLW-004). */
   const offerStep = (offer: RunOffer) => {
+    const offered = { ...offerStateRef.current };
+    // The button acts only while what it was offered for still holds, and then through the latest handlers.
+    const holds = () => {
+      const now = offerStateRef.current;
+      return (
+        now.executionMode === EXECUTION_MODE.HARDWARE &&
+        now.projectSession === offered.projectSession &&
+        now.isConnected === offered.isConnected &&
+        now.hasCurrentCompileResult === offered.hasCurrentCompileResult
+      );
+    };
     const actions: Record<RunOffer, () => void> = {
-      connect: () => void handleConnect(),
-      build: () => void handleCompile(),
-      deploy: () => void handleUpload(),
+      connect: () => void latestRef.current.handleConnect(),
+      build: () => void latestRef.current.handleCompile(),
+      deploy: () => void latestRef.current.handleUpload(),
     };
     useNotifications.getState().report({
       kind: 'run',
       status: 'warning',
       title: t(`studio.flow.offer.${offer}`),
       details: 'output',
-      recover: { label: t(`studio.flow.offer.${offer}.action`), run: actions[offer] },
+      recover: {
+        label: t(`studio.flow.offer.${offer}.action`),
+        run: () => {
+          if (holds()) actions[offer]();
+        },
+      },
     });
   };
 
@@ -777,7 +804,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
 
   /**
    * With the plant document open, the panel binds its session once the simulator has a session and the program is loaded, and binds
-   * it again when either changes. Run waits for that transport to be registered and to stay the same for four ticks (100 ms) (at most 3 s), so
+   * it again when either changes. Run waits for that transport to be registered and to stay the same for four ticks (100 ms) (at most 3 s),
+   * so
    * that it does not drive the program alone and then race the re-bind (PLS-003).
    */
   const settlePlantTransport = async () => {
@@ -793,6 +821,19 @@ export function Toolbar({ debugController }: ToolbarProps) {
     }
   };
 
+  useEffect(() => {
+    latestRef.current = { handleConnect, handleUpload, handleCompile };
+  });
+
+  /** The simulation target runs on the simulator only: a session that is a board is refused, whatever the interface shows. */
+  const requireSimulator = (startedIn: number) => {
+    const state = useIDEStore.getState();
+    if (!state.isProjectOpen || state.projectSession !== startedIn) throw new Error(t('studio.flow.projectChanged'));
+    if (executionModeRef.current !== EXECUTION_MODE.SIMULATE || controllerRef.current.adapter?.type === 'serial')
+      throw new Error(t('studio.flow.notSimulator'));
+  };
+  const startedInRef = useRef(0);
+
   const runActions: RunActions = {
     save: async () => {
       await saveModified();
@@ -807,15 +848,19 @@ export function Toolbar({ debugController }: ToolbarProps) {
       return false;
     },
     startSimulator: async () => {
+      requireSimulator(startedInRef.current);
       await startSimulation();
+      requireSimulator(startedInRef.current);
       setProgramLoadState(nextProgramLoadStateAfterConnect());
       setLiveValues(true);
       addConsoleEntry({ type: 'success', message: t('toolbarMsg.simulatorReady'), source: 'runtime' });
     },
     load: async () => {
+      requireSimulator(startedInRef.current);
       const result = currentCompileResult();
       if (!result) throw new Error(t('toolbarMsg.noCompiledBytecodeCompile'));
       const controller = await settledController();
+      requireSimulator(startedInRef.current);
       try {
         await controller.loadProgram(selectRuntimeArtifact({ bytecode: result.bytecode, zplcFile: result.zplcFile }), result.debugMap);
       } catch (e) {
@@ -831,7 +876,9 @@ export function Toolbar({ debugController }: ToolbarProps) {
       setProgramLoadState(PROGRAM_LOAD_STATE.LOADED);
     },
     run: async () => {
+      requireSimulator(startedInRef.current);
       await settlePlantTransport();
+      requireSimulator(startedInRef.current);
       await activeTransport(controllerRef.current).run();
       addConsoleEntry({ type: 'info', message: t('toolbarMsg.executionStarted'), source: 'runtime' });
     },
@@ -842,6 +889,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
   /** Runs the steps of a simulation plan under one notice. */
   const executeSteps = async (plan: Extract<ReturnType<typeof planRun>, { kind: 'steps' }>, keyboardInitiated: boolean) => {
     runInFlightRef.current = true;
+    startedInRef.current = useIDEStore.getState().projectSession;
     setIsRunPreparing(true);
     pendingExecutionFocusRef.current = keyboardInitiated ? 'running' : null;
     const notices = useNotifications.getState();
@@ -885,7 +933,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     }
   };
 
-  /** "Rebuild and restart" (FLW-012): in simulation the program stops, is saved, built, loaded and run again; a board gets the offer. */
+  /** "Rebuild and restart" (FLW-012): in simulation the program stops, is saved, built, loaded and run again; a board gets it. */
   const handleRebuildAndRestart = async () => {
     if (controlsBusy || runInFlightRef.current) return;
     const plan = planRun(runSituation(), 'rebuildAndRestart');
