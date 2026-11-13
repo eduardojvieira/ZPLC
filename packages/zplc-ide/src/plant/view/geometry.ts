@@ -58,9 +58,55 @@ export function partShape(view: PartView): ShapeSpec {
       return bladeShape(view);
     case 'sensor':
       return sensorShape(view);
+    // Tank and operator panel parts (PRT-009): the pose box, drawn by the renderer; the tank is translucent and carries a fill.
+    case 'tank':
+    case 'selector-switch':
+    case 'emergency-stop':
+    case 'stack-light':
+    case 'potentiometer':
+    case 'numeric-display':
     default:
       return { shape: 'box', size: view.pose.size };
   }
+}
+
+/** A box drawn inside a part: `centre` is relative to the part's own centre. `tone` names its colour in the renderer. */
+export interface Decor {
+  slot: string;
+  tone: 'fill' | 'red' | 'amber' | 'green';
+  lit: boolean;
+  size: Vec3;
+  centre: Vec3;
+}
+
+const clamp01 = (v: number): number => Math.min(Math.max(v, 0), 1);
+const LAMPS = ['red', 'amber', 'green'] as const;
+
+/** The tank's liquid: a box as wide as the tank and `fraction` of its height, resting on the bottom. */
+export function tankFill(view: PartView): Decor {
+  const [w, h, d] = view.pose.size;
+  const f = clamp01(num(view.state.fraction, 0));
+  return { slot: 'fill', tone: 'fill', lit: true, size: [w * 0.96, f * h, d * 0.96], centre: [0, (f * h - h) / 2, 0] };
+}
+
+/** The stack light's three lamps from top to bottom: red, amber, green; each is lit by its own state key. */
+export function stackLamps(view: PartView): Decor[] {
+  const [w, h, d] = view.pose.size;
+  const lampH = h / 3;
+  return LAMPS.map((tone, i) => ({
+    slot: tone,
+    tone,
+    lit: view.state[tone] === true,
+    size: [w, lampH * 0.9, d] as Vec3,
+    centre: [0, h / 2 - lampH * (i + 0.5), 0] as Vec3,
+  }));
+}
+
+/** Boxes drawn inside a part, by catalogue id; empty for a part with none. */
+export function partDecor(view: PartView): readonly Decor[] {
+  if (view.part === 'tank') return [tankFill(view)];
+  if (view.part === 'stack-light') return stackLamps(view);
+  return [];
 }
 
 /** Column-major 4x4 matrix for translation `p`, rotation `q` and scale `s` (same layout as three's Matrix4). */

@@ -49,4 +49,64 @@ describe('cues', () => {
     expect(c.beam).toBeUndefined();
     expect(c.stateWord).toBe('Confirmed TRUE');
   });
+
+  it('VIS-003 a numeric part has a value text and a fill, and a cue other than colour for each state', () => {
+    const pot = (value: number, over: Partial<PartView> = {}) =>
+      cuesFor(
+        view({
+          part: 'potentiometer',
+          name: 'Pot1',
+          state: { value, fraction: value / 100, text: `${value.toFixed(1)} %` },
+          signals: { 'Pot1.value': value },
+          ...over,
+        }),
+      );
+    const zero = pot(0);
+    expect(zero.state).toBe('true'); // 0 is a reading, not FALSE
+    expect(zero.value).toEqual({ text: '0.0 %', fraction: 0 });
+    expect(pot(40).value).toEqual({ text: '40.0 %', fraction: 0.4 });
+    expect(pot(250).value?.fraction).toBe(1); // clamped to the range
+    expect(pot(0, { signals: {} }).state).toBe('unknown');
+    const states = [pot(40), pot(0, { signals: {} }), pot(0, { state: { forced: true } }), pot(0, { state: { fault: true } })];
+    expect(new Set(states.map((s) => s.marker)).size).toBe(3);
+    expect(states.map((s) => s.stateKey)).toEqual(['signal.cue.true', 'signal.cue.unknown', 'signal.cue.forced', 'signal.cue.fault']);
+  });
+
+  it('VIS-003 a tank is true while it has a reading and shows its level and fill', () => {
+    const c = cuesFor(
+      view({ part: 'tank', name: 'T1', state: { level: 0.6, fraction: 0.3 }, signals: { 'T1.level': 0, 'T1.flowIn': 0, 'T1.flowOut': 0 } }),
+    );
+    expect(c.state).toBe('true');
+    expect(c.value).toEqual({ text: '0.60 m', fraction: 0.3 });
+    // the digital tank reads its level switches: both open is FALSE, one closed is TRUE
+    const digital = (low: boolean) =>
+      cuesFor(
+        view({ part: 'tank', name: 'T1', state: { level: 0.1, fraction: 0.1 }, signals: { 'T1.levelLow': low, 'T1.levelHigh': false } }),
+      );
+    expect(digital(true).state).toBe('true');
+    expect(digital(false).state).toBe('false');
+  });
+
+  it('VIS-003 the emergency stop is told by its ok contact, with the outline marker when it is open', () => {
+    const estop = (pressed: boolean, ok: boolean) =>
+      cuesFor(view({ part: 'emergency-stop', name: 'E1', state: { pressed, ok }, signals: { 'E1.pressed': pressed, 'E1.ok': ok } }));
+    expect(estop(false, true).state).toBe('true');
+    expect(estop(true, false).state).toBe('false');
+    expect(estop(true, false).marker).toBe('outline');
+    expect(estop(false, false).state).toBe('false'); // a broken wire reads as pressed
+    expect(estop(false, true).marker).not.toBe(estop(true, false).marker);
+    expect(estop(false, true).value).toBeUndefined();
+  });
+
+  it('VIS-003 the stack light is true when any lamp is lit, and the M1 cues still hold', () => {
+    const lamps = (red: boolean, amber: boolean, green: boolean) =>
+      cuesFor(view({ part: 'stack-light', name: 'L1', state: { red, amber, green }, signals: { red, amber, green } }));
+    expect(lamps(false, false, false).state).toBe('false');
+    expect(lamps(false, true, false).state).toBe('true');
+    // M1 parts keep their cues and gain no value
+    const eye = cuesFor(view({ signals: { 'EyeA.detect': true } }));
+    expect(eye.value).toBeUndefined();
+    expect(eye.state).toBe('true');
+    expect(cuesFor(view({ part: 'belt', name: 'B', signals: { 'B.run': false } })).state).toBe('false');
+  });
 });

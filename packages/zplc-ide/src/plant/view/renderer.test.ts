@@ -3,7 +3,7 @@ import type * as THREE from 'three';
 import type { BodyPose, PartView, PlantSceneFile } from '../contracts';
 import { createFrameStats, createRenderer, loadRenderer, watchContext } from './renderer';
 import { paletteFor } from './displayModes';
-import { instanceColors, instanceMatrices, partShape, boxShape, palletShape } from './geometry';
+import { instanceColors, instanceMatrices, partDecor, partShape, boxShape, palletShape } from './geometry';
 
 const scene: PlantSceneFile = { schemaVersion: 1, name: 't', parts: [], cameras: [] };
 
@@ -277,6 +277,48 @@ function outlinesOf(world: { children: unknown[] } | undefined): { kind: 'line' 
   return found;
 }
 
+describe('tank and panel geometry', () => {
+  const PANEL = ['tank', 'selector-switch', 'emergency-stop', 'stack-light', 'potentiometer', 'numeric-display'];
+  const tank = (fraction: number): PartView => view('tank', { size: [1, 2, 0.5] }, { fraction });
+
+  it(
+    'PRT-009 the tank, selector, emergency stop, stack light, potentiometer and display shapes are generated in code and name no ' +
+      'asset',
+    () => {
+      for (const p of PANEL) {
+        const spec = partShape(view(p, { size: [1, 2, 0.5] }));
+        expect(spec).toEqual({ shape: 'box', size: [1, 2, 0.5] });
+        expect(JSON.stringify(spec)).not.toMatch(/\.(glb|gltf|png|svg|obj)|http|url/i);
+      }
+      // the M1 shapes are unchanged by the new cases
+      expect(partShape(view('roller', { size: [2, 0.1, 0.5] }))).toEqual({ shape: 'cylinder', radius: 0.05, length: 2 });
+      expect(partDecor(view('belt'))).toEqual([]);
+      expect(partDecor(view('sensor'))).toEqual([]);
+    },
+  );
+
+  it('VIS-003 a tank at 40 percent has a fill of 0.4 of its height, resting on the bottom', () => {
+    const [fill] = partDecor(tank(0.4));
+    expect(fill?.size[1]).toBeCloseTo(0.8, 9);
+    expect(fill?.centre[1]).toBeCloseTo(-1 + 0.4, 9); // bottom of the tank is y = -1 from its centre
+    expect(partDecor(tank(0))[0]?.size[1]).toBe(0);
+    expect(partDecor(tank(1))[0]?.size[1]).toBeCloseTo(2, 9);
+    expect(partDecor(tank(7))[0]?.size[1]).toBeCloseTo(2, 9); // a value above 1 never overfills
+    expect(partDecor(tank(-1))[0]?.size[1]).toBe(0);
+    expect(partDecor(view('tank', { size: [1, 2, 0.5] }))[0]?.size[1]).toBe(0); // no fraction yet
+  });
+
+  it('VIS-003 the stack light draws three lamps, each lit by its own state key', () => {
+    const lamps = partDecor(view('stack-light', { size: [0.08, 0.3, 0.08] }, { red: true, amber: false, green: true }));
+    expect(lamps.map((l) => [l.slot, l.lit])).toEqual([
+      ['red', true],
+      ['amber', false],
+      ['green', true],
+    ]);
+    expect(new Set(lamps.map((l) => l.centre[1])).size).toBe(3);
+  });
+});
+
 describe('display preferences reach the renderer', () => {
   const frames: ((t: number) => void)[] = [];
   const saved = { raf: globalThis.requestAnimationFrame, caf: globalThis.cancelAnimationFrame };
@@ -357,6 +399,33 @@ describe('display preferences reach the renderer', () => {
     expect(first?.z).toBeGreaterThan(1); // not there yet
     for (let i = 0; i < 80; i++) runFrame(32 + i * 16);
     expect(drawn[drawn.length - 1]?.z).toBeCloseTo(0, 1);
+  });
+
+  it('VIS-003 the tank fill changes with the snapshot and allocates no new mesh per frame', () => {
+    const { r, mats, scenes } = build();
+    const snap = (fraction: number) =>
+      ({ items: [], parts: [{ ...view('tank', { size: [1, 2, 0.5] }, { fraction }), id: 'tk' }] }) as unknown as Parameters<
+        typeof r.setSnapshot
+      >[0];
+    type Node = { children: Node[]; scale: { y: number }; position: { y: number }; visible: boolean; userData: { part?: string } };
+    const count = (o: Node): number => 1 + o.children.reduce((n, c) => n + count(c), 0);
+    const world = scenes[0] as unknown as Node;
+    r.setSnapshot(snap(0.4));
+    const tankMesh = world.children.find((c) => c.userData.part === 'tank');
+    const fill = tankMesh?.children[0];
+    expect(tankMesh?.children).toHaveLength(1);
+    expect(fill?.scale.y).toBeCloseTo(0.8, 9);
+    expect(fill?.position.y).toBeCloseTo(-0.6, 9);
+    const nodes = count(world);
+    const materials = mats.length;
+    for (const f of [0.1, 0.9, 0, 1]) r.setSnapshot(snap(f));
+    expect(fill?.scale.y).toBeCloseTo(2, 9);
+    expect(fill?.visible).toBe(true);
+    r.setSnapshot(snap(0));
+    expect(fill?.visible).toBe(false);
+    expect(count(world)).toBe(nodes);
+    expect(mats.length).toBe(materials);
+    expect(world.children.find((c) => c.userData.part === 'tank')).toBe(tankMesh);
   });
 
   it('VIS-009 setPalette and setCameraAnimation do not throw after dispose', () => {
