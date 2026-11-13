@@ -18,7 +18,14 @@ La clasificación convierte combinaciones de sensores en rutas. Reutiliza las ha
 
 ## Lecciones
 
-ninguna
+| Lección | Id | Lenguajes | minutos |
+| --- | --- | --- | --- |
+| [Enviar cada color a su banda](../lessons/plant-colour-separation.md) | `plant-colour-separation` | ST | 45 |
+| [La misma clasificación en Lista de instrucciones](../lessons/plant-colour-separation-il.md) | `plant-colour-separation-il` | IL | 50 |
+| [Clasificar por peso](../lessons/plant-weight-sorting.md) | `plant-weight-sorting` | ST | 50 |
+| [Clasificar por altura, transferencia de cadenas](../lessons/plant-height-chain.md) | `plant-height-chain` | ST | 60 |
+| [Clasificar por altura, mesa giratoria](../lessons/plant-height-turntable.md) | `plant-height-turntable` | ST | 60 |
+| [Clasificar por código de identidad](../lessons/plant-vision-sorting.md) | `plant-vision-sorting` | ST | 50 |
 
 {/* <<< END GENERATED: learn/modules/module-16 <<< */}
 

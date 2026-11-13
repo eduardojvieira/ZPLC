@@ -18,7 +18,14 @@ Sorting turns sensor combinations into routes. It reuses the flow-control skills
 
 ## Lessons
 
-none
+| Lesson | Id | Languages | minutes |
+| --- | --- | --- | --- |
+| [Send each colour to its belt](../lessons/plant-colour-separation.md) | `plant-colour-separation` | ST | 45 |
+| [The same sorting in Instruction List](../lessons/plant-colour-separation-il.md) | `plant-colour-separation-il` | IL | 50 |
+| [Sort by weight](../lessons/plant-weight-sorting.md) | `plant-weight-sorting` | ST | 50 |
+| [Sort by height, chain transfer](../lessons/plant-height-chain.md) | `plant-height-chain` | ST | 60 |
+| [Sort by height, turntable](../lessons/plant-height-turntable.md) | `plant-height-turntable` | ST | 60 |
+| [Sort by identity code](../lessons/plant-vision-sorting.md) | `plant-vision-sorting` | ST | 50 |
 
 {/* <<< END GENERATED: learn/modules/module-16 <<< */}
 

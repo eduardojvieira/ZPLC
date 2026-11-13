@@ -12,7 +12,7 @@
     "hardware": {
       "reason": {
         "en": "The program stacks layers of four boxes with a clamp head and a squaring pusher; the boxes, the pallet and the head exist only in the simulated scene.",
-        "es": "El programa apila capas de cuatro cajas con un cabezal de pinza y un empujador de escuadrado; las cajas, el palé y el cabezal existen solo en la escena simulada."
+        "es": "El programa apila capas de cuatro cajas con un cabezal de pinza y un empujador de escuadrado; las cajas, la tarima y el cabezal existen solo en la escena simulada."
       },
       "instead": {
         "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",

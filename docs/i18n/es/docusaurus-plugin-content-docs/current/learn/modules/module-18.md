@@ -18,7 +18,10 @@ Una máquina debe detenerse de forma segura y mostrar qué falló. Los enclavami
 
 ## Lecciones
 
-ninguna
+| Lección | Id | Lenguajes | minutos |
+| --- | --- | --- | --- |
+| [Paro de emergencia y enclavamientos](../lessons/plant-estop-interlocks.md) | `plant-estop-interlocks` | ST | 40 |
+| [Encontrar la falla](../lessons/plant-fault-actions.md) | `plant-fault-actions` | ST | 45 |
 
 {/* <<< END GENERATED: learn/modules/module-18 <<< */}
 

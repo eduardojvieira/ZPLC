@@ -2,6 +2,7 @@
 // module id on (default 12) to the hardware section: `bun tools/docs/generate_outline_sections.ts [fromModule]`.
 // tools/ci/course-outline.test.ts checks the result against the index, so run this after adding or changing lessons.
 import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { LESSON_INDEX as I } from '../../packages/zplc-ide/src/generated/lessonIndex';
 const FROM = Number(process.argv[2] ?? 12);
 const L = {
@@ -56,7 +57,7 @@ for (const loc of ['en', 'es'] as const) {
       } |\n`;
     out += `\n${l.obj}\n\n${ls.map((x) => `- **${x.text[loc].title}**: ${x.text[loc].objectives.join(' ')}`).join('\n')}\n\n`;
   }
-  const p = '/home/eduardo/Documents/Repositorios/ZPLC-worktrees/m7-d3/' + l.file;
+  const p = join(import.meta.dir, '../..', l.file);
   const s = readFileSync(p, 'utf8');
   const a = s.search(new RegExp(`^## ${l.mod} ${FROM}: `, 'm'));
   const b = s.indexOf(l.hw);

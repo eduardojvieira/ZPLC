@@ -83,6 +83,23 @@ export const LESSON_IDS = [
   "plant-tank-pid-fbd",
   "plant-buffer-release",
   "plant-merge-lines",
+  "plant-belt-transfer",
+  "plant-assembler",
+  "plant-assembler-numeric",
+  "plant-layer-palletizer",
+  "plant-xyz-palletizing",
+  "plant-colour-separation",
+  "plant-colour-separation-il",
+  "plant-weight-sorting",
+  "plant-height-chain",
+  "plant-height-turntable",
+  "plant-vision-sorting",
+  "plant-three-level-lifts",
+  "plant-lift-stacking",
+  "plant-warehouse",
+  "plant-production-line",
+  "plant-estop-interlocks",
+  "plant-fault-actions",
 ] as const;
 
 export type LessonId = typeof LESSON_IDS[number];

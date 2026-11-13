@@ -12,7 +12,7 @@
     "hardware": {
       "reason": {
         "en": "The program drives three axes with integer counts and a vacuum pad over a pallet; a learner board has no gantry, and the scene supplies one.",
-        "es": "El programa gobierna tres ejes con cuentas enteras y una ventosa sobre un palé; una placa del estudiante no tiene pórtico, y la escena aporta uno."
+        "es": "El programa gobierna tres ejes con cuentas enteras y una ventosa sobre una tarima; una placa del estudiante no tiene pórtico, y la escena aporta uno."
       },
       "instead": {
         "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",

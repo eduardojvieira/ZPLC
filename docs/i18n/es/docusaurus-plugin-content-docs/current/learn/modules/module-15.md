@@ -18,7 +18,13 @@ Los manipuladores añaden pasos que deben ocurrir en orden. Tomar, colocar y ens
 
 ## Lecciones
 
-ninguna
+| Lección | Id | Lenguajes | minutos |
+| --- | --- | --- | --- |
+| [Tomar de una banda y dejar en otra](../lessons/plant-belt-transfer.md) | `plant-belt-transfer` | ST | 40 |
+| [Ensamblar tapas y bases](../lessons/plant-assembler.md) | `plant-assembler` | SFC | 50 |
+| [Lo mismo con posiciones numéricas](../lessons/plant-assembler-numeric.md) | `plant-assembler-numeric` | ST | 40 |
+| [Paletizar por capas](../lessons/plant-layer-palletizer.md) | `plant-layer-palletizer` | ST | 50 |
+| [Paletizar con un pórtico](../lessons/plant-xyz-palletizing.md) | `plant-xyz-palletizing` | ST | 50 |
 
 {/* <<< END GENERATED: learn/modules/module-15 <<< */}
 

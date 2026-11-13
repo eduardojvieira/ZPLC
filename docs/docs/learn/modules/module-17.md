@@ -18,7 +18,12 @@ A station groups sorting, transfer and sequencing into one unit. It comes after 
 
 ## Lessons
 
-none
+| Lesson | Id | Languages | minutes |
+| --- | --- | --- | --- |
+| [Move boxes between three levels](../lessons/plant-three-level-lifts.md) | `plant-three-level-lifts` | SFC | 50 |
+| [Gather items into a crate](../lessons/plant-lift-stacking.md) | `plant-lift-stacking` | ST | 45 |
+| [Store and retrieve](../lessons/plant-warehouse.md) | `plant-warehouse` | SFC | 60 |
+| [Balance a production line](../lessons/plant-production-line.md) | `plant-production-line` | ST | 50 |
 
 {/* <<< END GENERATED: learn/modules/module-17 <<< */}
 

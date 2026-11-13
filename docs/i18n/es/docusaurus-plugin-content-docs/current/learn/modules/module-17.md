@@ -18,7 +18,12 @@ Una estación agrupa clasificación, transferencia y secuencia en una sola unida
 
 ## Lecciones
 
-ninguna
+| Lección | Id | Lenguajes | minutos |
+| --- | --- | --- | --- |
+| [Mover cajas entre tres niveles](../lessons/plant-three-level-lifts.md) | `plant-three-level-lifts` | SFC | 50 |
+| [Reunir piezas en un cajón](../lessons/plant-lift-stacking.md) | `plant-lift-stacking` | ST | 45 |
+| [Almacenar y recuperar](../lessons/plant-warehouse.md) | `plant-warehouse` | SFC | 60 |
+| [Equilibrar una línea de producción](../lessons/plant-production-line.md) | `plant-production-line` | ST | 50 |
 
 {/* <<< END GENERATED: learn/modules/module-17 <<< */}
 

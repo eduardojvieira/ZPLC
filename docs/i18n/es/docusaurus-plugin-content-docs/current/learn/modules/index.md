@@ -27,10 +27,10 @@ unlisted: true
 | [12: Primeras plantas: mover una caja con un sensor, una retención y un contador](./module-12.md) | Avanzado | 3 |
 | [13: Temporizadores y control de procesos: retardos, escalado de nivel y un lazo PID](./module-13.md) | Avanzado | 4 |
 | [14: Control de flujo: máquinas de estados y fusión de dos líneas](./module-14.md) | Avanzado | 2 |
-| [15: Manipuladores y ensamblaje: tomar, colocar y secuenciar](./module-15.md) | Avanzado | 0 |
-| [16: Clasificación: decidir una ruta según lo que informan los sensores](./module-16.md) | Avanzado | 0 |
-| [17: Estaciones: varias máquinas que trabajan como una](./module-17.md) | Avanzado | 0 |
-| [18: Máquinas seguras y diagnosticables: enclavamientos, manual y automático, y fallas](./module-18.md) | Avanzado | 0 |
+| [15: Manipuladores y ensamblaje: tomar, colocar y secuenciar](./module-15.md) | Avanzado | 5 |
+| [16: Clasificación: decidir una ruta según lo que informan los sensores](./module-16.md) | Avanzado | 6 |
+| [17: Estaciones: varias máquinas que trabajan como una](./module-17.md) | Avanzado | 4 |
+| [18: Máquinas seguras y diagnosticables: enclavamientos, manual y automático, y fallas](./module-18.md) | Avanzado | 2 |
 | [19: Construya sus propias escenas: colocar piezas, enlazar señales y ejecutar](./module-19.md) | Avanzado | 0 |
 
 {/* <<< END GENERATED: learn/modules/index <<< */}

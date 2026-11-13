@@ -18,7 +18,10 @@ A machine must stop safely and show what went wrong. Interlocks, modes and fault
 
 ## Lessons
 
-none
+| Lesson | Id | Languages | minutes |
+| --- | --- | --- | --- |
+| [Emergency stop and interlocks](../lessons/plant-estop-interlocks.md) | `plant-estop-interlocks` | ST | 40 |
+| [Find the fault](../lessons/plant-fault-actions.md) | `plant-fault-actions` | ST | 45 |
 
 {/* <<< END GENERATED: learn/modules/module-18 <<< */}
 

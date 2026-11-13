@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "title": "Paletizar por capas",
-  "summary": "Cargue cuatro cajas en una capa, escuádrela, llévela con un cabezal de pinza y apile tres capas sobre un palé.",
+  "summary": "Cargue cuatro cajas en una capa, escuádrela, llévela con un cabezal de pinza y apile tres capas sobre una tarima.",
   "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
   "objectives": [
     "Formar una capa contando pares de cajas y escuadrarla antes de que la pinza la tome.",
@@ -18,12 +18,12 @@
       "key": "predict",
       "title": "Predecir",
       "body": "Antes de ejecutar, siga el cabezal: parte de su posición más baja y sube primero, la primera capa baja hasta YMin y cada capa posterior se detiene una altura de caja más arriba que la anterior.",
-      "checkpoint": "El empujador se retrae antes de que el cabezal se mueva; la pinza se abre solo sobre el palé; Green se enciende tras la tercera capa."
+      "checkpoint": "El empujador se retrae antes de que el cabezal se mueva; la pinza se abre solo sobre la tarima; Green se enciende tras la tercera capa."
     },
     {
       "key": "edit",
       "title": "Editar",
-      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que el cabezal nunca sube y no llega ninguna caja; cargue, escuadre, lleve y coloque tres capas de cuatro cajas sobre el palé y encienda Green al final.",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que el cabezal nunca sube y no llega ninguna caja; cargue, escuadre, lleve y coloque tres capas de cuatro cajas sobre la tarima y encienda Green al final.",
       "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
     },
     {
@@ -35,13 +35,13 @@
     {
       "key": "observe",
       "title": "Observar",
-      "body": "Observe la capa: cuatro cajas en bloque en la zona, llevadas juntas y colocadas sobre el palé o sobre la capa inferior sin caer.",
+      "body": "Observe la capa: cuatro cajas en bloque en la zona, llevadas juntas y colocadas sobre la tarima o sobre la capa inferior sin caer.",
       "checkpoint": "Ninguna caja se cae, y Amber está encendido desde el inicio hasta que la tercera capa está abajo."
     },
     {
       "key": "reflect",
       "title": "Reflexionar",
-      "body": "Un solo ciclo de estados atiende todas las capas porque Layer cambia lo único que difiere: el descenso. El escenario prueba que la pinza colocó elementos, que hay cajas en reposo sobre el palé 0, que ninguna caja se cayó y que Green está encendido al final. Los hechos no cuentan exactamente tres capas de cuatro, y los tiempos de descenso son temporizados, no medidos.",
+      "body": "Un solo ciclo de estados atiende todas las capas porque Layer cambia lo único que difiere: el descenso. El escenario prueba que la pinza colocó elementos, que hay cajas en reposo sobre la tarima 0, que ninguna caja se cayó y que Green está encendido al final. Los hechos no cuentan exactamente tres capas de cuatro, y los tiempos de descenso son temporizados, no medidos.",
       "checkpoint": "No establece la temporización física de la pinza, la velocidad de los ejes, la temporización de hardware, HIL ni certificación."
     }
   ],
@@ -56,6 +56,6 @@
     }
   ],
   "faultCases": [
-    "El inicial no gobierna ninguna salida, así que el cabezal nunca sube y no llega ninguna caja; cargue, escuadre, lleve y coloque tres capas de cuatro cajas sobre el palé y encienda Green al final."
+    "El inicial no gobierna ninguna salida, así que el cabezal nunca sube y no llega ninguna caja; cargue, escuadre, lleve y coloque tres capas de cuatro cajas sobre la tarima y encienda Green al final."
   ]
 }

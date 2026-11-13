@@ -9,7 +9,7 @@ tags: [learn, lessons, course]
 
 # Course outline
 
-This page is the map of the whole course: every module in order, with its 77 lessons, and for each lesson the languages, tracks, plant, time and prerequisites. Use it to pick where to start or to see what a module needs first. If you have never programmed a PLC, take the Ladder path of 21 of these lessons, _Ladder diagram from zero_, described in [Learn](./index.md).
+This page is the map of the whole course: every module in order, with its 94 lessons, and for each lesson the languages, tracks, plant, time and prerequisites. Use it to pick where to start or to see what a module needs first. If you have never programmed a PLC, take the Ladder path of 21 of these lessons, _Ladder diagram from zero_, described in [Learn](./index.md).
 
 The page follows `packages/zplc-ide/lessons/course.json` and the lesson packages beside it. A CI check fails when a lesson is missing here or a row disagrees with its lesson. Each module and each lesson also has its own generated page: start from the [course modules](./modules/index.md), and see the [lesson plants](./plants.md) for the simulated machines.
 
@@ -26,7 +26,7 @@ You see a result first: the tour of module 0 ends in a blinking output in simula
 
 Each module below says why it sits where it does. The Learn home shows the same words, because both read the same course file.
 
-Available today: **77**. Planned: **0**. In all: **77**.
+Available today: **94**. Planned: **0**. In all: **94**.
 
 ## Languages
 
@@ -330,11 +330,11 @@ Advanced. Requires module: 3. Tracks: Simulation.
 
 Your first programs now move real parts. Each one reads a sensor and drives a belt or a gate in a plant you can watch, using the set, reset, edge and counter skills of module 3.
 
-| Lesson                                              | Status    | Languages | Tracks     | Plant | Minutes | Requires                                         |
-| --------------------------------------------------- | --------- | --------- | ---------- | ----- | ------- | ------------------------------------------------ |
-| `plant-belt-to-sensor` Move a box to a sensor       | Available | ST        | Simulation | -     | 20      | `motor-start-stop-safe`                          |
-| `plant-latch-two-sensors` From sensor A to sensor B | Available | ST        | Simulation | -     | 20      | `plant-belt-to-sensor`                           |
-| `plant-counted-queue` Load and unload three boxes   | Available | ST        | Simulation | -     | 30      | `plant-latch-two-sensors`, `edge-counter-pulses` |
+| Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
+| --- | --- | --- | --- | --- | --- | --- |
+| `plant-belt-to-sensor` Move a box to a sensor | Available | ST | Simulation | - | 20 | `motor-start-stop-safe` |
+| `plant-latch-two-sensors` From sensor A to sensor B | Available | ST | Simulation | - | 20 | `plant-belt-to-sensor` |
+| `plant-counted-queue` Load and unload three boxes | Available | ST | Simulation | - | 30 | `plant-latch-two-sensors`, `edge-counter-pulses` |
 
 Objectives of the available lessons:
 
@@ -348,12 +348,12 @@ Advanced. Requires module: 12. Tracks: Simulation.
 
 Plants have time and continuous values. Timers, analog scaling and a PID loop come after the first plants because they need a plant that moves to be seen at work.
 
-| Lesson                                                | Status    | Languages | Tracks     | Plant | Minutes | Requires                                     |
-| ----------------------------------------------------- | --------- | --------- | ---------- | ----- | ------- | -------------------------------------------- |
-| `plant-timed-tank` Fill and drain with timers         | Available | ST        | Simulation | -     | 30      | `timers-on-delay-off-delay`                  |
-| `plant-tank-level-scaling` Read the level             | Available | ST        | Simulation | -     | 30      | `analog-scaling-integer`, `plant-timed-tank` |
-| `plant-tank-pid` Hold the level with PID              | Available | ST        | Simulation | -     | 40      | `plant-tank-level-scaling`                   |
-| `plant-tank-pid-fbd` The same loop in function blocks | Available | FBD       | Simulation | -     | 40      | `plant-tank-pid`                             |
+| Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
+| --- | --- | --- | --- | --- | --- | --- |
+| `plant-timed-tank` Fill and drain with timers | Available | ST | Simulation | - | 30 | `timers-on-delay-off-delay` |
+| `plant-tank-level-scaling` Read the level | Available | ST | Simulation | - | 30 | `analog-scaling-integer`, `plant-timed-tank` |
+| `plant-tank-pid` Hold the level with PID | Available | ST | Simulation | - | 40 | `plant-tank-level-scaling` |
+| `plant-tank-pid-fbd` The same loop in function blocks | Available | FBD | Simulation | - | 40 | `plant-tank-pid` |
 
 Objectives of the available lessons:
 
@@ -368,10 +368,10 @@ Advanced. Requires module: 12. Tracks: Simulation.
 
 When parts share a path, order matters. State machines and merging two lines organise that flow, building on the first plants.
 
-| Lesson                                        | Status    | Languages | Tracks     | Plant | Minutes | Requires                                            |
-| --------------------------------------------- | --------- | --------- | ---------- | ----- | ------- | --------------------------------------------------- |
-| `plant-buffer-release` Accumulate and release | Available | SFC       | Simulation | -     | 45      | `sfc-fill-mix-sequence`, `plant-counted-queue`      |
-| `plant-merge-lines` Merge two lines           | Available | ST        | Simulation | -     | 45      | `plant-counted-queue`, `interlock-guard-permissive` |
+| Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
+| --- | --- | --- | --- | --- | --- | --- |
+| `plant-buffer-release` Accumulate and release | Available | SFC | Simulation | - | 45 | `sfc-fill-mix-sequence`, `plant-counted-queue` |
+| `plant-merge-lines` Merge two lines | Available | ST | Simulation | - | 45 | `plant-counted-queue`, `interlock-guard-permissive` |
 
 Objectives of the available lessons:
 
@@ -384,7 +384,21 @@ Advanced. Requires module: 14. Tracks: Simulation.
 
 Manipulators add steps that must happen in order. Pick, place and assembly use the state machines of flow control.
 
-No lesson of this module is available yet.
+| Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
+| --- | --- | --- | --- | --- | --- | --- |
+| `plant-belt-transfer` Pick from one belt, place on another | Available | ST | Simulation | - | 40 | `plant-counted-queue` |
+| `plant-assembler` Assemble lids and bases | Available | SFC | Simulation | - | 50 | `sfc-fill-mix-sequence`, `plant-belt-transfer` |
+| `plant-assembler-numeric` The same with numeric positions | Available | ST | Simulation | - | 40 | `plant-assembler` |
+| `plant-layer-palletizer` Palletize in layers | Available | ST | Simulation | - | 50 | `structures-arrays-call-panel`, `plant-assembler-numeric` |
+| `plant-xyz-palletizing` Palletize with a gantry | Available | ST | Simulation | - | 50 | `plant-layer-palletizer` |
+
+Objectives of the available lessons:
+
+- **Pick from one belt, place on another**: Sequence a pick and place with one state per move, each move waiting for its limit sensor. Wait for the grip feedback before lifting, and keep the receiving belt still while a box is put down.
+- **Assemble lids and bases**: Coordinate two axes and a vacuum pad in one sequence, with one step for each move. Choose between two next steps with transition conditions that exclude each other.
+- **The same with numeric positions**: Send an axis to a named position with a setpoint and read its position back. Decide that a move is done when the position is within a tolerance of the setpoint, not when it is equal to it.
+- **Palletize in layers**: Build a layer by counting pairs of boxes, and square it before the clamp takes it. Set each layer at its own height, one box height higher than the one below.
+- **Palletize with a gantry**: Command three axes with integer counts and compare each position with its command within one count. Choose the place of each box from its number: the slot in the layer and the height of the layer.
 
 ## Module 16: Sorting: decide a route from what the sensors report
 
@@ -392,7 +406,23 @@ Advanced. Requires module: 14. Tracks: Simulation.
 
 Sorting turns sensor combinations into routes. It reuses the flow-control skills and prepares the stations that follow.
 
-No lesson of this module is available yet.
+| Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
+| --- | --- | --- | --- | --- | --- | --- |
+| `plant-colour-separation` Send each colour to its belt | Available | ST | Simulation | - | 45 | `plant-counted-queue` |
+| `plant-colour-separation-il` The same sorting in Instruction List | Available | IL | Simulation | - | 50 | `plant-colour-separation`, `instruction-list-door-alarm` |
+| `plant-weight-sorting` Sort by weight | Available | ST | Simulation | - | 50 | `plant-colour-separation`, `plant-tank-level-scaling` |
+| `plant-height-chain` Sort by height, chain transfer | Available | ST | Simulation | - | 60 | `plant-colour-separation` |
+| `plant-height-turntable` Sort by height, turntable | Available | ST | Simulation | - | 60 | `plant-height-chain` |
+| `plant-vision-sorting` Sort by identity code | Available | ST | Simulation | - | 50 | `plant-colour-separation` |
+
+Objectives of the available lessons:
+
+- **Send each colour to its belt**: Decide a route from one sensor result once the part lies still. Run a push as a short sequence: extend until Extended, retract until Retracted.
+- **The same sorting in Instruction List**: Turn the states of a sorting sequence into compare-and-jump blocks. Call a TON from Instruction List with CAL and read its Q output.
+- **Sort by weight**: Classify an item by comparing an analog value with a limit. Read the value only when the scale says it is stable.
+- **Sort by height, chain transfer**: Decide a route from a combination of two sensors. Remember a decision while the next box is already passing the sensors.
+- **Sort by height, turntable**: Reduce a stream of readings to one value, the peak, and classify it with two limits. Coordinate a turntable with the decision: stop, turn, run out, turn back.
+- **Sort by identity code**: Route items by an integer code instead of a switch. Time an actuator against the travel of an item that has already been read.
 
 ## Module 17: Stations: several machines working as one
 
@@ -400,7 +430,19 @@ Advanced. Requires module: 16. Tracks: Simulation.
 
 A station groups sorting, transfer and sequencing into one unit. It comes after sorting because it combines its decisions.
 
-No lesson of this module is available yet.
+| Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
+| --- | --- | --- | --- | --- | --- | --- |
+| `plant-three-level-lifts` Move boxes between three levels | Available | SFC | Simulation | - | 50 | `plant-buffer-release` |
+| `plant-lift-stacking` Gather items into a crate | Available | ST | Simulation | - | 45 | `plant-counted-queue` |
+| `plant-warehouse` Store and retrieve | Available | SFC | Simulation | - | 60 | `plant-three-level-lifts` |
+| `plant-production-line` Balance a production line | Available | ST | Simulation | - | 50 | `function-block-pump-pair`, `plant-lift-stacking` |
+
+Objectives of the available lessons:
+
+- **Move boxes between three levels**: Describe each lift as its own chain of steps that loops back to its first step. Start both chains with one transition and let them meet only at the belt between the lifts.
+- **Gather items into a crate**: Combine a count, a lift and a crate in one sequence of steps. Move the lift only with its surface stopped, and feed the next workpiece only after the last one has landed.
+- **Store and retrieve**: Write the store and the retrieve sequences of a crane as chains of steps. Keep a table of occupied cells and the requests that wait, and choose the next job from them.
+- **Balance a production line**: Move the control of one machine into a function block and use one instance for each machine. Balance two machines of different speeds by alternating the blanks between them.
 
 ## Module 18: Safe and diagnosable machines: interlocks, manual and automatic, and faults
 
@@ -408,7 +450,15 @@ Advanced. Requires module: 17. Tracks: Simulation.
 
 A machine must stop safely and show what went wrong. Interlocks, modes and fault diagnosis are taught on stations the learner already knows.
 
-No lesson of this module is available yet.
+| Lesson | Status | Languages | Tracks | Plant | Minutes | Requires |
+| --- | --- | --- | --- | --- | --- | --- |
+| `plant-estop-interlocks` Emergency stop and interlocks | Available | ST | Simulation | - | 40 | `plant-three-level-lifts`, `interlock-guard-permissive` |
+| `plant-fault-actions` Find the fault | Available | ST | Simulation | - | 45 | `plant-height-chain` |
+
+Objectives of the available lessons:
+
+- **Emergency stop and interlocks**: Stop every output while the emergency stop is pressed. Remember the stop, so that releasing the button does not restart the line.
+- **Find the fault**: Diagnose a stuck sensor from a fact the program can read, not from the sensor itself. Choose a safe reaction: stop what brings new boxes and let the boxes already moving arrive.
 
 ## Module 19: Build your own scenes: place parts, bind signals and run
 
