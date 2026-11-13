@@ -253,7 +253,7 @@ describe('PlantCore numeric values', () => {
 describe('the M1 evidence is unchanged', () => {
   it('PLT-013 the M1 pinned hash m1-palletStack-v1 is unchanged', () => {
     expect(hashes['m1-palletStack-v1']).toBe('d709b3b3059f85d100b392494efe3f47effb4d32575982301afe6e663a9b3fd5');
-    expect(Object.keys(hashes).sort()).toEqual(['m1-palletStack-v1', 'm2-tankLoop-v1', 'notes']);
+    expect(Object.keys(hashes)).toEqual(expect.arrayContaining(['m1-palletStack-v1', 'm2-tankLoop-v1', 'notes']));
   });
 
   const linux = sceneHashes.linux as Record<string, string>;

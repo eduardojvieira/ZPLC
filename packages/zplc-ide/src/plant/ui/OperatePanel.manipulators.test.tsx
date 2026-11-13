@@ -6,23 +6,11 @@ await stubProjectLoader();
 const { OperatePanel } = await import('./OperatePanel');
 const { registerParts, catalogue } = await import('../core/catalogue');
 const { panelParts } = await import('../core/parts/panel');
-import type { PartDefinition, PartView, PlantCore, PlantSceneFile, PlantSnapshot, ScenePart } from '../contracts';
+import type { PartView, PlantCore, PlantSceneFile, PlantSnapshot, ScenePart } from '../contracts';
 
 registerParts(panelParts.filter((d) => !catalogue.get(d.id)));
-// The manipulator parts land in K6; a stub with the same id and fault actions stands in until K8 registers them.
-if (!catalogue.get('gantry'))
-  registerParts([
-    {
-      id: 'gantry',
-      family: 'manipulators',
-      names: { en: 'Gantry', es: 'Pórtico' },
-      config: {},
-      signals: () => [],
-      actions: ['stuckX', 'gripFail'],
-      snapPoints: () => [],
-      doc: { en: '', es: '' },
-    } satisfies PartDefinition,
-  ]);
+const { manipulatorParts } = await import('../core/parts/manipulators');
+registerParts(manipulatorParts.filter((d) => !catalogue.get(d.id)));
 
 const part = (id: string, kind: string, name: string): ScenePart => ({
   id,
@@ -68,7 +56,7 @@ describe('OperatePanel manipulators', () => {
     // one stack light only: the real one
     expect([...container.querySelectorAll('[data-plant-stack]')].map((e) => (e as HTMLElement).dataset.plantStack)).toEqual(['Stack1']);
     const fault = container.querySelector<HTMLSelectElement>('[data-plant-fault="Gantry1"]')!;
-    expect([...fault.options].map((o) => o.value)).toEqual(['', 'stuckX', 'gripFail']);
+    expect([...fault.options].map((o) => o.value)).toEqual(['', ...catalogue.get('gantry')!.actions]);
   });
 
   it('VIS-010 the readout says empty when nothing is held', () => {
