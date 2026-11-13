@@ -20,15 +20,13 @@ import { NativeSimulationSupervisor } from '../../shared/nativeSimulationSupervi
 import { createNativeScenarioSession } from '../cli/nativeScenarioRuntime';
 import { scenarioRun, type TestRunResult, type TestsRunOptions, type ToolEvidence } from '../cli/toolApi';
 import { artifactEvidence, evidence } from '../cli/toolEvidence';
-import { readWorkspace, readWorkspaceProjectFile, type ToolDiagnostic, type WorkspaceProject } from '../cli/workspace';
+import { readWorkspace, type ToolDiagnostic, type WorkspaceProject } from '../cli/workspace';
 import { assertTaskProgramCardinality, compileMultiTaskProject } from '../compiler';
 import { LESSON_INDEX } from '../generated/lessonIndex';
-import { validatePlantMap, type PlantMapV2 } from '../plants/plantMap';
-import { checkSceneFacts } from '../plant/ci/sceneCheck';
 import { createPlantCore } from '../plant/core/plantCore';
-import { parseScene } from '../plant/core/scene';
 import { compileScenario, runScenario } from '../test-engine';
 import { resolveProgramSource } from '../utils/programSourceResolution';
+import { loadSceneContext, sceneBindingProblem } from './sceneRun';
 import { gradeRecordOf, type TraceSample } from './gradeRecord';
 import { parseScenarioFile, type LessonIndexEntry } from './lessonPackage';
 
@@ -64,7 +62,6 @@ export async function runSuppliedScenario(
   }
 }
 
-const SCENE_FILE_MAX_BYTES = 512 * 1024;
 const SCENE_RUN_TIMEOUT_MS = 30_000;
 const greatestCommonDivisor = (a: number, b: number): number => (b === 0 ? a : greatestCommonDivisor(b, a % b));
 const problem = (code: string, path: string, message: string): ToolDiagnostic => ({ code, message, path });
@@ -147,32 +144,9 @@ async function runSceneLesson(
   const loaded = await readWorkspace(root);
   if (!loaded.ok) return fail(...loaded.diagnostics);
   const { file, map: mapFile } = scenarioInput.scene;
-  const files: string[] = [];
-  for (const path of [file, mapFile]) {
-    const read = await readWorkspaceProjectFile(root, path, SCENE_FILE_MAX_BYTES);
-    if (!read.ok) return fail(...read.diagnostics);
-    files.push(Buffer.from(read.bytes).toString('utf8'));
-  }
-  const parsed = parseScene(files[0]!);
-  if ('problems' in parsed)
-    return fail(...parsed.problems.map((entry) => problem('SCENE_INVALID', file, `${entry.path}: ${entry.message}`)));
-  let mapValue: unknown;
-  try {
-    mapValue = JSON.parse(files[1]!);
-  } catch {
-    return fail(problem('SCENE_MAP_INVALID', mapFile, 'The plant map is not valid JSON'));
-  }
-  const mapProblems = validatePlantMap(mapValue);
-  if (mapProblems.length > 0 || (mapValue as { schemaVersion?: unknown }).schemaVersion !== 2)
-    return fail(
-      ...(mapProblems.length > 0 ? mapProblems : ['a scene map must be schema 2']).map((message) =>
-        problem('SCENE_MAP_INVALID', mapFile, message),
-      ),
-    );
-  const scene = parsed.scene;
-  const map = mapValue as PlantMapV2;
-  const facts = checkSceneFacts(scenarioInput, scene);
-  if (facts.length > 0) return fail(...facts.map((message) => problem('SCENE_FACT_UNKNOWN', file, message)));
+  const context = await loadSceneContext(root, scenarioInput);
+  if (!context.ok) return fail(...context.diagnostics);
+  const { scene, map } = context;
   let compiledProject: ReturnType<typeof compileLessonProject>;
   try {
     compiledProject = compileLessonProject(loaded.workspace);
@@ -190,7 +164,7 @@ async function runSceneLesson(
       compiled = compileScenario(scenarioInput, compiledProject.debugMap, { port: { core, map }, scene });
     } catch (error) {
       // The engine names the signal or the variable it could not bind; the map is where the learner fixes it.
-      return fail(problem('SCENE_BINDING_INVALID', mapFile, error instanceof Error ? error.message : String(error)));
+      return fail(sceneBindingProblem(mapFile, error));
     }
     if (compiled.tickMs !== compiledProject.tickMs)
       return fail(

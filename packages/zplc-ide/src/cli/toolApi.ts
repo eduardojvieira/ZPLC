@@ -5,6 +5,8 @@ import { isAbsolute, join, win32 } from 'node:path';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { CANDIDATE_CHANGE_CAP, isCandidateSourcePath } from '../ai/candidatePaths';
 import { manifestSensitivePaths } from '../ai/manifestPrivacy';
+import { loadSceneContext, sceneBindingProblem, sceneBlockOf } from '../learn/sceneRun';
+import { createPlantCore } from '../plant/core/plantCore';
 import { markProgramInputs } from './programInputs';
 import { collectUnboundedLoopDiagnostics, safetyDiagnostic } from './safetyDiagnostics';
 import {
@@ -31,6 +33,7 @@ import {
   type CompiledScenario,
   type ScenarioKind,
   type ScenarioRunResult,
+  type SceneScenarioContext,
 } from '../test-engine';
 import { createNativeScenarioSession } from './nativeScenarioRuntime';
 export * from './toolEvidence';
@@ -810,6 +813,7 @@ async function runWorkspaceScenarios(
   options: TestsRunOptions,
 ): Promise<TestRunResult> {
   const deadline = createTestDeadline(options);
+  const sceneCores: Array<Awaited<ReturnType<typeof createPlantCore>>> = [];
   const interrupted = (artifacts: ToolArtifact[] = []): TestRunResult | undefined => {
     const kind = deadline.kind();
     return kind ? testAbort(operation, kind, artifacts) : undefined;
@@ -855,6 +859,22 @@ async function runWorkspaceScenarios(
     for (const source of scenariosRead.scenarios) {
       if (interrupted([zplcArtifact])) return interrupted([zplcArtifact])!;
       try {
+        const sceneBlock = sceneBlockOf(source.input);
+        if (sceneBlock) {
+          // A scene scenario runs headless on the project's scene and map, the same loader the Learn Check uses (LNK-009).
+          const context = await loadSceneContext(workspace.root, { scene: sceneBlock });
+          if (!context.ok) return testFailed(operation, context.diagnostics);
+          const core = await createPlantCore(context.scene);
+          sceneCores.push(core);
+          const sceneContext: SceneScenarioContext = { port: { core, map: context.map }, scene: context.scene };
+          try {
+            const scenario = compileScenario(source.input, compiled.debugMap, sceneContext);
+            scenarios.push({ id: scenario.id, path: source.path, compiled: scenario, source });
+            continue;
+          } catch (error) {
+            return testFailed(operation, [sceneBindingProblem(context.mapFile, error)]);
+          }
+        }
         const scenario = compileScenario(source.input, compiled.debugMap);
         scenarios.push({ id: scenario.id, path: source.path, compiled: scenario, source });
       } catch {
@@ -872,7 +892,11 @@ async function runWorkspaceScenarios(
     const selected =
       scenarioId === undefined ? scenarios : scenarios.filter((scenario) => scenario.id.toLowerCase() === scenarioId.toLowerCase());
     if (selected.length === 0) return testFailed(operation, [testDiagnostic('TEST_SCENARIO_NOT_FOUND', 'tests')]);
-    if (selected.reduce((total, scenario) => total + runtimeOperationCost(scenario.compiled), 0) > MAX_SCENARIO_RUNTIME_OPERATIONS) {
+    // A scene scenario is bounded by the run deadline, as in the Learn Check, not by the operation budget of the fixed plants.
+    if (
+      selected.reduce((total, scenario) => total + (scenario.compiled.scene ? 0 : runtimeOperationCost(scenario.compiled)), 0) >
+      MAX_SCENARIO_RUNTIME_OPERATIONS
+    ) {
       return testFailed(operation, [testDiagnostic('TEST_BUDGET_EXCEEDED', 'tests')]);
     }
 
@@ -970,6 +994,7 @@ async function runWorkspaceScenarios(
     Object.defineProperty(response, 'traceFile', { value: aggregateTrace });
     return response;
   } finally {
+    for (const core of sceneCores) core.dispose();
     deadline.dispose();
   }
 }
