@@ -17,6 +17,10 @@ export interface PlantRenderer {
   setPalette?(palette: Palette): void;
   /** Off means preset changes jump instead of easing (reduced motion, VIS-009). */
   setCameraAnimation?(enabled: boolean): void;
+  /** The orbit camera as it is now; the editor turns a pointer into a ground point with it (SCN-008). */
+  cameraState(): CameraState;
+  /** A translucent marker at a ground point while a part is dragged (SCN-008); null removes it. */
+  setGhost?(position: readonly [number, number, number] | null): void;
   orbit(dxDeg: number, dyDeg: number): void;
   pan(dx: number, dz: number): void;
   zoom(factor: number): void;
@@ -292,8 +296,23 @@ export function createRenderer(
     world.add(items);
   };
 
+  let ghost: THREE_NS.Mesh | undefined;
   return {
     webgl2: true,
+    cameraState: () => camState,
+    setGhost(position) {
+      if (disposed) return;
+      if (position && !ghost) {
+        ghost = new THREE.Mesh(unitBox, new THREE.MeshStandardMaterial({ color: 0x2563eb, transparent: true, opacity: 0.45 }));
+        ghost.scale.set(1, 0.5, 1);
+        world.add(ghost);
+      }
+      if (ghost) {
+        ghost.visible = position !== null;
+        if (position) ghost.position.set(position[0], 0.25, position[2]);
+      }
+      dirty = true;
+    },
     setSnapshot(snapshot) {
       if (disposed) return;
       if (snapshot.items.length > capacity) growItems(snapshot.items.length);
@@ -395,6 +414,7 @@ export function createRenderer(
       listeners.clear();
       geometries.forEach((g) => g.dispose());
       partMaterials.forEach((m) => m.dispose());
+      (ghost?.material as THREE_NS.Material | undefined)?.dispose();
       unitBox.dispose();
       itemMaterial.dispose();
       items.dispose();

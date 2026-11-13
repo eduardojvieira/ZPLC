@@ -153,6 +153,8 @@ function fakeThree() {
   }
   class Obj {
     position = new Vec();
+    scale = new Vec();
+    visible = true;
     rotation = { x: 0 };
     quaternion = { set() {} };
     children: unknown[] = [];
@@ -275,6 +277,19 @@ describe('display preferences reach the renderer', () => {
     colorsSet.length = 0;
     r.setSnapshot(snapshot);
     expect(colorsSet).toEqual([0xfbbf24]);
+  });
+
+  it('SCN-008 the renderer exposes its camera and draws a ghost marker only while one is set', () => {
+    const { r, mats } = build();
+    expect(r.cameraState().target).toEqual([0, 0, 0]);
+    const before = mats.length;
+    r.setGhost?.(null);
+    expect(mats.length).toBe(before); // nothing is built for a ghost that was never shown
+    r.setGhost?.([1, 0, 2]);
+    expect(mats.length).toBe(before + 1);
+    r.setGhost?.(null);
+    r.setGhost?.([3, 0, 4]);
+    expect(mats.length).toBe(before + 1); // one marker, reused
   });
 
   it('VIS-009 reduced motion makes a camera preset change land on the next frame', () => {
