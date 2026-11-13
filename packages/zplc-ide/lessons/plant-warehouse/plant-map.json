@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 2,
+  "target": { "scene": "stacker-crane-warehouse" },
+  "signals": {
+    "StartButton.pressed": { "direction": "sensor", "type": "BOOL", "point": "Warehouse.Start" },
+    "Req1.pressed": { "direction": "sensor", "type": "BOOL", "point": "Warehouse.Req1" },
+    "Req2.pressed": { "direction": "sensor", "type": "BOOL", "point": "Warehouse.Req2" },
+    "Req3.pressed": { "direction": "sensor", "type": "BOOL", "point": "Warehouse.Req3" },
+    "InEye.detect": { "direction": "sensor", "type": "BOOL", "point": "Warehouse.InEye" },
+    "Crane1.inPosition": { "direction": "sensor", "type": "BOOL", "point": "Warehouse.InPos" },
+    "Crane1.raised": { "direction": "sensor", "type": "BOOL", "point": "Warehouse.Raised" },
+    "Crane1.forkCentre": { "direction": "sensor", "type": "BOOL", "point": "Warehouse.Centre" },
+    "Crane1.forkAtLeft": { "direction": "sensor", "type": "BOOL", "point": "Warehouse.AtLeft" },
+    "Crane1.forkAtRight": { "direction": "sensor", "type": "BOOL", "point": "Warehouse.AtRight" },
+    "Crane1.loaded": { "direction": "sensor", "type": "BOOL", "point": "Warehouse.Loaded" },
+    "Crane1.bay": {
+      "direction": "command",
+      "type": "INT",
+      "point": "Warehouse.Bay",
+      "range": { "raw_min": 0, "raw_max": 3, "eng_min": 0, "eng_max": 3, "unit": "bay" }
+    },
+    "Crane1.level": {
+      "direction": "command",
+      "type": "INT",
+      "point": "Warehouse.Level",
+      "range": { "raw_min": 0, "raw_max": 2, "eng_min": 0, "eng_max": 2, "unit": "level" }
+    },
+    "Crane1.raise": { "direction": "command", "type": "BOOL", "point": "Warehouse.Raise" },
+    "Crane1.forkLeft": { "direction": "command", "type": "BOOL", "point": "Warehouse.ForkLeft" },
+    "Crane1.forkRight": { "direction": "command", "type": "BOOL", "point": "Warehouse.ForkRight" },
+    "Crane1.beltRight": { "direction": "command", "type": "BOOL", "point": "Warehouse.BeltRight" },
+    "Infeed.run": { "direction": "command", "type": "BOOL", "point": "Warehouse.RunIn" },
+    "Outfeed.run": { "direction": "command", "type": "BOOL", "point": "Warehouse.RunOut" },
+    "StackLight1.green": { "direction": "command", "type": "BOOL", "point": "Warehouse.Green" }
+  }
+}

@@ -1,0 +1,1147 @@
+{
+  "name": "Warehouse",
+  "description": "A stacker-crane warehouse: store each box on the infeed in the first free cell and retrieve a cell on request.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Cell",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "The cell of the job: its column, on level 1"
+      },
+      {
+        "name": "Served",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "Retrievals finished"
+      },
+      {
+        "name": "Held1",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "Cell 1 holds a box"
+      },
+      {
+        "name": "Held2",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "Cell 2 holds a box"
+      },
+      {
+        "name": "Held3",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "Cell 3 holds a box"
+      },
+      {
+        "name": "Want1",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "A retrieval of cell 1 is waiting"
+      },
+      {
+        "name": "Want2",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "A retrieval of cell 2 is waiting"
+      },
+      {
+        "name": "Want3",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "A retrieval of cell 3 is waiting"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%IX0.0",
+        "comment": "StartButton.pressed: start the warehouse"
+      },
+      {
+        "name": "Req1",
+        "type": "BOOL",
+        "address": "%IX0.1",
+        "comment": "Req1.pressed: retrieve the box of cell 1"
+      },
+      {
+        "name": "Req2",
+        "type": "BOOL",
+        "address": "%IX0.2",
+        "comment": "Req2.pressed: retrieve the box of cell 2"
+      },
+      {
+        "name": "Req3",
+        "type": "BOOL",
+        "address": "%IX0.3",
+        "comment": "Req3.pressed: retrieve the box of cell 3"
+      },
+      {
+        "name": "InEye",
+        "type": "BOOL",
+        "address": "%IX0.4",
+        "comment": "InEye.detect: a box waits at the end of the infeed belt"
+      },
+      {
+        "name": "InPos",
+        "type": "BOOL",
+        "address": "%IX0.5",
+        "comment": "Crane1.inPosition: both axes are at their setpoint"
+      },
+      {
+        "name": "Raised",
+        "type": "BOOL",
+        "address": "%IX0.6",
+        "comment": "Crane1.raised: the fork is raised"
+      },
+      {
+        "name": "Centre",
+        "type": "BOOL",
+        "address": "%IX0.7",
+        "comment": "Crane1.forkCentre: the fork is retracted"
+      },
+      {
+        "name": "AtLeft",
+        "type": "BOOL",
+        "address": "%IX1.0",
+        "comment": "Crane1.forkAtLeft: the fork is out towards the infeed"
+      },
+      {
+        "name": "AtRight",
+        "type": "BOOL",
+        "address": "%IX1.1",
+        "comment": "Crane1.forkAtRight: the fork is out towards the rack and the outfeed"
+      },
+      {
+        "name": "Loaded",
+        "type": "BOOL",
+        "address": "%IX1.2",
+        "comment": "Crane1.loaded: a box rests on the fork"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Bay",
+        "type": "INT",
+        "address": "%QW1",
+        "comment": "Crane1.bay: 0 is the dock, 1 to 3 are the columns"
+      },
+      {
+        "name": "Level",
+        "type": "INT",
+        "address": "%QW2",
+        "comment": "Crane1.level: 0 is the dock, 1 and 2 are the shelves"
+      },
+      {
+        "name": "Raise",
+        "type": "BOOL",
+        "address": "%QX0.0",
+        "comment": "Crane1.raise"
+      },
+      {
+        "name": "ForkLeft",
+        "type": "BOOL",
+        "address": "%QX0.1",
+        "comment": "Crane1.forkLeft"
+      },
+      {
+        "name": "ForkRight",
+        "type": "BOOL",
+        "address": "%QX0.2",
+        "comment": "Crane1.forkRight"
+      },
+      {
+        "name": "BeltRight",
+        "type": "BOOL",
+        "address": "%QX0.3",
+        "comment": "Crane1.beltRight"
+      },
+      {
+        "name": "RunIn",
+        "type": "BOOL",
+        "address": "%QX0.4",
+        "comment": "Infeed.run"
+      },
+      {
+        "name": "RunOut",
+        "type": "BOOL",
+        "address": "%QX0.5",
+        "comment": "Outfeed.run"
+      },
+      {
+        "name": "Green",
+        "type": "BOOL",
+        "address": "%QX0.6",
+        "comment": "StackLight1.green: every request is served"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "step_off",
+      "name": "OFF",
+      "isInitial": true,
+      "position": {
+        "x": 200,
+        "y": 50
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_OFF",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_idle",
+      "name": "IDLE",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 200
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_IDLE",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_s_pick",
+      "name": "S_PICK",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 350
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_S_PICK",
+          "comment": ""
+        },
+        {
+          "qualifier": "P1",
+          "actionName": "A_S_PICK_ONCE",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_s_take",
+      "name": "S_TAKE",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 500
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_S_TAKE",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_s_settle",
+      "name": "S_SETTLE",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 650
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_S_SETTLE",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_s_retract",
+      "name": "S_RETRACT",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 800
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_S_RETRACT",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_s_to_cell",
+      "name": "S_TO_CELL",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 950
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_S_TO_CELL",
+          "comment": ""
+        },
+        {
+          "qualifier": "P1",
+          "actionName": "A_S_TO_CELL_ONCE",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_s_fork_out",
+      "name": "S_FORK_OUT",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 1100
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_S_FORK_OUT",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_s_lower",
+      "name": "S_LOWER",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 1250
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_S_LOWER",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_s_lowered",
+      "name": "S_LOWERED",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 1400
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_S_LOWERED",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_s_retract2",
+      "name": "S_RETRACT2",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 1550
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_S_RETRACT2",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_s_home",
+      "name": "S_HOME",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 1700
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_S_HOME",
+          "comment": ""
+        },
+        {
+          "qualifier": "P1",
+          "actionName": "A_S_HOME_ONCE",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_r_pick",
+      "name": "R_PICK",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 1850
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_R_PICK",
+          "comment": ""
+        },
+        {
+          "qualifier": "P1",
+          "actionName": "A_R_PICK_ONCE",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_r_fork_out",
+      "name": "R_FORK_OUT",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 2000
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_R_FORK_OUT",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_r_raise",
+      "name": "R_RAISE",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 2150
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_R_RAISE",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_r_lifted",
+      "name": "R_LIFTED",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 2300
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_R_LIFTED",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_r_retract",
+      "name": "R_RETRACT",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 2450
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_R_RETRACT",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_r_to_dock",
+      "name": "R_TO_DOCK",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 2600
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_R_TO_DOCK",
+          "comment": ""
+        },
+        {
+          "qualifier": "P1",
+          "actionName": "A_R_TO_DOCK_ONCE",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_r_dock_out",
+      "name": "R_DOCK_OUT",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 2750
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_R_DOCK_OUT",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_r_unload",
+      "name": "R_UNLOAD",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 2900
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_R_UNLOAD",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_r_clear",
+      "name": "R_CLEAR",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 3050
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_R_CLEAR",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_r_back",
+      "name": "R_BACK",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 3200
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_R_BACK",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_r_finish",
+      "name": "R_FINISH",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 3350
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_R_FINISH",
+          "comment": ""
+        },
+        {
+          "qualifier": "P1",
+          "actionName": "A_R_FINISH_ONCE",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t_1",
+      "fromStep": "step_off",
+      "toStep": "step_idle",
+      "condition": "Start",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 100
+      }
+    },
+    {
+      "id": "t_2",
+      "fromStep": "step_idle",
+      "toStep": "step_s_pick",
+      "condition": "InEye AND NOT (Held1 AND Held2 AND Held3)",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 250
+      },
+      "priority": 1
+    },
+    {
+      "id": "t_3",
+      "fromStep": "step_s_pick",
+      "toStep": "step_s_take",
+      "condition": "Raised AND AtLeft",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 400
+      }
+    },
+    {
+      "id": "t_4",
+      "fromStep": "step_s_take",
+      "toStep": "step_s_settle",
+      "condition": "Loaded",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 550
+      }
+    },
+    {
+      "id": "t_5",
+      "fromStep": "step_s_settle",
+      "toStep": "step_s_retract",
+      "condition": "step_s_settle.T >= T#200ms",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 700
+      }
+    },
+    {
+      "id": "t_6",
+      "fromStep": "step_s_retract",
+      "toStep": "step_s_to_cell",
+      "condition": "Centre",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 850
+      }
+    },
+    {
+      "id": "t_7",
+      "fromStep": "step_s_to_cell",
+      "toStep": "step_s_fork_out",
+      "condition": "step_s_to_cell.T >= T#300ms AND InPos",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 1000
+      }
+    },
+    {
+      "id": "t_8",
+      "fromStep": "step_s_fork_out",
+      "toStep": "step_s_lower",
+      "condition": "AtRight",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 1150
+      }
+    },
+    {
+      "id": "t_9",
+      "fromStep": "step_s_lower",
+      "toStep": "step_s_lowered",
+      "condition": "NOT Raised",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 1300
+      }
+    },
+    {
+      "id": "t_10",
+      "fromStep": "step_s_lowered",
+      "toStep": "step_s_retract2",
+      "condition": "step_s_lowered.T >= T#300ms",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 1450
+      }
+    },
+    {
+      "id": "t_11",
+      "fromStep": "step_s_retract2",
+      "toStep": "step_s_home",
+      "condition": "Centre",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 1600
+      }
+    },
+    {
+      "id": "t_12",
+      "fromStep": "step_s_home",
+      "toStep": "step_idle",
+      "condition": "step_s_home.T >= T#300ms AND InPos",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 1750
+      }
+    },
+    {
+      "id": "t_13",
+      "fromStep": "step_idle",
+      "toStep": "step_r_pick",
+      "condition": "(Want1 AND Held1) OR (Want2 AND Held2) OR (Want3 AND Held3)",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 1900
+      },
+      "priority": 2
+    },
+    {
+      "id": "t_14",
+      "fromStep": "step_r_pick",
+      "toStep": "step_r_fork_out",
+      "condition": "step_r_pick.T >= T#300ms AND InPos",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 2050
+      }
+    },
+    {
+      "id": "t_15",
+      "fromStep": "step_r_fork_out",
+      "toStep": "step_r_raise",
+      "condition": "AtRight",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 2200
+      }
+    },
+    {
+      "id": "t_16",
+      "fromStep": "step_r_raise",
+      "toStep": "step_r_lifted",
+      "condition": "Raised",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 2350
+      }
+    },
+    {
+      "id": "t_17",
+      "fromStep": "step_r_lifted",
+      "toStep": "step_r_retract",
+      "condition": "step_r_lifted.T >= T#300ms",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 2500
+      }
+    },
+    {
+      "id": "t_18",
+      "fromStep": "step_r_retract",
+      "toStep": "step_r_to_dock",
+      "condition": "Centre",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 2650
+      }
+    },
+    {
+      "id": "t_19",
+      "fromStep": "step_r_to_dock",
+      "toStep": "step_r_dock_out",
+      "condition": "step_r_to_dock.T >= T#300ms AND InPos",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 2800
+      }
+    },
+    {
+      "id": "t_20",
+      "fromStep": "step_r_dock_out",
+      "toStep": "step_r_unload",
+      "condition": "AtRight",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 2950
+      }
+    },
+    {
+      "id": "t_21",
+      "fromStep": "step_r_unload",
+      "toStep": "step_r_clear",
+      "condition": "NOT Loaded",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 3100
+      }
+    },
+    {
+      "id": "t_22",
+      "fromStep": "step_r_clear",
+      "toStep": "step_r_back",
+      "condition": "step_r_clear.T >= T#800ms",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 3250
+      }
+    },
+    {
+      "id": "t_23",
+      "fromStep": "step_r_back",
+      "toStep": "step_r_finish",
+      "condition": "Centre",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 3400
+      }
+    },
+    {
+      "id": "t_24",
+      "fromStep": "step_r_finish",
+      "toStep": "step_idle",
+      "condition": "step_r_finish.T >= T#500ms",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 3550
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "A_OFF",
+      "name": "A_OFF",
+      "type": "ST",
+      "body": "Raise := FALSE; ForkLeft := FALSE; ForkRight := FALSE; BeltRight := FALSE; RunIn := FALSE; RunOut := FALSE; Green := FALSE;"
+    },
+    {
+      "id": "A_IDLE",
+      "name": "A_IDLE",
+      "type": "ST",
+      "body": "Raise := FALSE; ForkLeft := FALSE; ForkRight := FALSE; BeltRight := FALSE; RunIn := NOT InEye;"
+    },
+    {
+      "id": "A_S_PICK",
+      "name": "A_S_PICK",
+      "type": "ST",
+      "body": "Raise := TRUE; ForkLeft := TRUE; ForkRight := FALSE; BeltRight := FALSE; RunIn := FALSE;"
+    },
+    {
+      "id": "A_S_PICK_ONCE",
+      "name": "A_S_PICK_ONCE",
+      "type": "ST",
+      "body": "IF NOT Held1 THEN Cell := 1; ELSIF NOT Held2 THEN Cell := 2; ELSE Cell := 3; END_IF;"
+    },
+    {
+      "id": "A_S_TAKE",
+      "name": "A_S_TAKE",
+      "type": "ST",
+      "body": "Raise := TRUE; ForkLeft := TRUE; ForkRight := FALSE; BeltRight := TRUE; RunIn := TRUE;"
+    },
+    {
+      "id": "A_S_SETTLE",
+      "name": "A_S_SETTLE",
+      "type": "ST",
+      "body": "Raise := TRUE; ForkLeft := TRUE; ForkRight := FALSE; BeltRight := FALSE; RunIn := FALSE;"
+    },
+    {
+      "id": "A_S_RETRACT",
+      "name": "A_S_RETRACT",
+      "type": "ST",
+      "body": "Raise := TRUE; ForkLeft := FALSE; ForkRight := FALSE; BeltRight := FALSE; RunIn := FALSE;"
+    },
+    {
+      "id": "A_S_TO_CELL",
+      "name": "A_S_TO_CELL",
+      "type": "ST",
+      "body": "Raise := TRUE; ForkLeft := FALSE; ForkRight := FALSE; BeltRight := FALSE; RunIn := FALSE;"
+    },
+    {
+      "id": "A_S_TO_CELL_ONCE",
+      "name": "A_S_TO_CELL_ONCE",
+      "type": "ST",
+      "body": "Bay := Cell; Level := 1;"
+    },
+    {
+      "id": "A_S_FORK_OUT",
+      "name": "A_S_FORK_OUT",
+      "type": "ST",
+      "body": "Raise := TRUE; ForkLeft := FALSE; ForkRight := TRUE; BeltRight := FALSE; RunIn := FALSE;"
+    },
+    {
+      "id": "A_S_LOWER",
+      "name": "A_S_LOWER",
+      "type": "ST",
+      "body": "Raise := FALSE; ForkLeft := FALSE; ForkRight := TRUE; BeltRight := FALSE; RunIn := FALSE;"
+    },
+    {
+      "id": "A_S_LOWERED",
+      "name": "A_S_LOWERED",
+      "type": "ST",
+      "body": "Raise := FALSE; ForkLeft := FALSE; ForkRight := TRUE; BeltRight := FALSE; RunIn := FALSE;"
+    },
+    {
+      "id": "A_S_RETRACT2",
+      "name": "A_S_RETRACT2",
+      "type": "ST",
+      "body": "Raise := FALSE; ForkLeft := FALSE; ForkRight := FALSE; BeltRight := FALSE; RunIn := FALSE;"
+    },
+    {
+      "id": "A_S_HOME",
+      "name": "A_S_HOME",
+      "type": "ST",
+      "body": "Raise := FALSE; ForkLeft := FALSE; ForkRight := FALSE; BeltRight := FALSE; RunIn := NOT InEye;"
+    },
+    {
+      "id": "A_S_HOME_ONCE",
+      "name": "A_S_HOME_ONCE",
+      "type": "ST",
+      "body": "IF Cell = 1 THEN Held1 := TRUE; ELSIF Cell = 2 THEN Held2 := TRUE; ELSE Held3 := TRUE; END_IF; Bay := 0; Level := 0;"
+    },
+    {
+      "id": "A_R_PICK",
+      "name": "A_R_PICK",
+      "type": "ST",
+      "body": "Raise := FALSE; ForkLeft := FALSE; ForkRight := FALSE; BeltRight := FALSE; RunIn := FALSE;"
+    },
+    {
+      "id": "A_R_PICK_ONCE",
+      "name": "A_R_PICK_ONCE",
+      "type": "ST",
+      "body": "IF Want1 AND Held1 THEN Cell := 1; ELSIF Want2 AND Held2 THEN Cell := 2; ELSE Cell := 3; END_IF; Bay := Cell; Level := 1;"
+    },
+    {
+      "id": "A_R_FORK_OUT",
+      "name": "A_R_FORK_OUT",
+      "type": "ST",
+      "body": "Raise := FALSE; ForkLeft := FALSE; ForkRight := TRUE; BeltRight := FALSE; RunIn := FALSE;"
+    },
+    {
+      "id": "A_R_RAISE",
+      "name": "A_R_RAISE",
+      "type": "ST",
+      "body": "Raise := TRUE; ForkLeft := FALSE; ForkRight := TRUE; BeltRight := FALSE; RunIn := FALSE;"
+    },
+    {
+      "id": "A_R_LIFTED",
+      "name": "A_R_LIFTED",
+      "type": "ST",
+      "body": "Raise := TRUE; ForkLeft := FALSE; ForkRight := TRUE; BeltRight := FALSE; RunIn := FALSE;"
+    },
+    {
+      "id": "A_R_RETRACT",
+      "name": "A_R_RETRACT",
+      "type": "ST",
+      "body": "Raise := TRUE; ForkLeft := FALSE; ForkRight := FALSE; BeltRight := FALSE; RunIn := FALSE;"
+    },
+    {
+      "id": "A_R_TO_DOCK",
+      "name": "A_R_TO_DOCK",
+      "type": "ST",
+      "body": "Raise := TRUE; ForkLeft := FALSE; ForkRight := FALSE; BeltRight := FALSE; RunIn := FALSE;"
+    },
+    {
+      "id": "A_R_TO_DOCK_ONCE",
+      "name": "A_R_TO_DOCK_ONCE",
+      "type": "ST",
+      "body": "Bay := 0; Level := 0;"
+    },
+    {
+      "id": "A_R_DOCK_OUT",
+      "name": "A_R_DOCK_OUT",
+      "type": "ST",
+      "body": "Raise := TRUE; ForkLeft := FALSE; ForkRight := TRUE; BeltRight := FALSE; RunIn := FALSE;"
+    },
+    {
+      "id": "A_R_UNLOAD",
+      "name": "A_R_UNLOAD",
+      "type": "ST",
+      "body": "Raise := TRUE; ForkLeft := FALSE; ForkRight := TRUE; BeltRight := TRUE; RunIn := FALSE;"
+    },
+    {
+      "id": "A_R_CLEAR",
+      "name": "A_R_CLEAR",
+      "type": "ST",
+      "body": "Raise := TRUE; ForkLeft := FALSE; ForkRight := TRUE; BeltRight := TRUE; RunIn := FALSE;"
+    },
+    {
+      "id": "A_R_BACK",
+      "name": "A_R_BACK",
+      "type": "ST",
+      "body": "Raise := TRUE; ForkLeft := FALSE; ForkRight := FALSE; BeltRight := FALSE; RunIn := FALSE;"
+    },
+    {
+      "id": "A_R_FINISH",
+      "name": "A_R_FINISH",
+      "type": "ST",
+      "body": "Raise := FALSE; ForkLeft := FALSE; ForkRight := FALSE; BeltRight := FALSE; RunIn := FALSE;"
+    },
+    {
+      "id": "A_R_FINISH_ONCE",
+      "name": "A_R_FINISH_ONCE",
+      "type": "ST",
+      "body": "IF Cell = 1 THEN Held1 := FALSE; Want1 := FALSE; ELSIF Cell = 2 THEN Held2 := FALSE; Want2 := FALSE; ELSE Held3 := FALSE; Want3 := FALSE; END_IF; Served := Served + 1;"
+    },
+    {
+      "id": "A_COMMON",
+      "name": "A_COMMON",
+      "type": "ST",
+      "body": "IF Req1 THEN Want1 := TRUE; END_IF; IF Req2 THEN Want2 := TRUE; END_IF; IF Req3 THEN Want3 := TRUE; END_IF; RunOut := TRUE; Green := Served >= 2;"
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
