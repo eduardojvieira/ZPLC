@@ -22,6 +22,14 @@ import {
   type RequestOf,
   type ResponseOf,
 } from './messages';
+import type {
+  PlantEnterGrant,
+  PlantEnterRequest,
+  PlantExitReasonName,
+  PlantExitResult,
+  PlantFrameResult,
+  PlantSlotDescriptor,
+} from '../../plant/board/portTypes';
 import { CAPABILITY, ENUMS, ERROR, KIND, LIMITS, MESSAGES, PROTOCOL_VERSION, type EventName, type MessageName } from './protocol.generated';
 
 /** A byte transport. A transport that frames its own lines hands over one whole frame per `onData` call. */
@@ -123,6 +131,25 @@ function equalBytes(a: Uint8Array, b: Uint8Array): boolean {
   let difference = 0;
   for (let index = 0; index < a.length; index++) difference |= a[index]! ^ b[index]!;
   return difference === 0;
+}
+
+const PLANT_TYPE_CODE = { BOOL: 0, INT: 1, REAL: 2 } as const;
+const PLANT_REASON_NAMES = Object.fromEntries(Object.entries(ENUMS.PLANT_EXIT_REASON).map(([name, code]) => [code, name])) as Record<
+  number,
+  PlantExitReasonName
+>;
+
+/** The name of a PLANT_EXIT_REASON code; a code this build does not know reads as FAULT. */
+export function plantReasonName(code: number): PlantExitReasonName {
+  return PLANT_REASON_NAMES[code] ?? 'FAULT';
+}
+
+function encodeDescriptor(slot: PlantSlotDescriptor): number[] {
+  const bit = slot.type === 'BOOL' ? (slot.bit ?? 0) : 0;
+  if (!Number.isInteger(slot.offset) || slot.offset < 0 || slot.offset > 0xffff) throw new RangeError('a plant slot offset is a u16');
+  if (!Number.isInteger(bit) || bit < 0 || bit > 7) throw new RangeError('a plant slot bit is 0 to 7');
+  if (slot.type !== 'BOOL' && slot.bit !== undefined && slot.bit !== 0) throw new RangeError('only a BOOL slot has a bit');
+  return [slot.offset & 0xff, slot.offset >>> 8, PLANT_TYPE_CODE[slot.type] | (bit << 2)];
 }
 
 const SESSION_STATE_NAMES = ['NONE', 'THIS_LINK', 'OTHER_LINK'] as const;
@@ -228,6 +255,68 @@ export class DeviceLink {
 
   has(capability: keyof typeof CAPABILITY): boolean {
     return this._hello !== null && (this._hello.capabilities & CAPABILITY[capability]) !== 0;
+  }
+
+  // -------------------------------------------------------------------------------------------------------------
+  // Plant I/O mode (LNK-012). These are calls only: nothing here enters the mode by itself.
+
+  async plantEnter(request: PlantEnterRequest): Promise<PlantEnterGrant> {
+    const descriptors = new Uint8Array([...request.inputs, ...request.outputs].flatMap(encodeDescriptor));
+    const response = await this.request('PLANT_ENTER', {
+      timeout_ms: request.timeoutMs,
+      n_in: request.inputs.length,
+      n_out: request.outputs.length,
+      descriptors,
+    });
+    return {
+      plantId: response.plant_id,
+      inBytes: response.in_bytes,
+      outBytes: response.out_bytes,
+      maxSlots: response.max_slots,
+      timeoutMs: response.timeout_ms,
+    };
+  }
+
+  async plantFrame(plantId: number, seq: number, values: Uint8Array): Promise<PlantFrameResult> {
+    const response = await this.request('PLANT_FRAME', { plant_id: plantId, seq, values });
+    return {
+      appliedSeq: response.applied_seq,
+      scans: response.scans,
+      flags: response.flags,
+      late: response.late,
+      rejected: response.rejected,
+      values: response.values,
+    };
+  }
+
+  async plantExit(): Promise<PlantExitResult> {
+    const response = await this.request('PLANT_EXIT', {});
+    return { reason: plantReasonName(response.reason), frames: response.frames, late: response.late, rejected: response.rejected };
+  }
+
+  async plantMirror(enable: boolean): Promise<boolean> {
+    return (await this.request('PLANT_MIRROR', { enable: enable ? 1 : 0 })).mirror === 1;
+  }
+
+  async plantStatus(): Promise<{
+    active: boolean;
+    plantId: number;
+    mirror: boolean;
+    frames: number;
+    late: number;
+    rejected: number;
+    ageMs: number;
+  }> {
+    const r = await this.request('PLANT_STATUS', {});
+    return {
+      active: r.active === 1,
+      plantId: r.plant_id,
+      mirror: r.mirror === 1,
+      frames: r.frames,
+      late: r.late,
+      rejected: r.rejected,
+      ageMs: r.age_ms,
+    };
   }
 
   /**

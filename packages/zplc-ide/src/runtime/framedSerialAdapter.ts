@@ -22,7 +22,8 @@ import {
 import { assertMemoryAccess } from './memoryAccess';
 import { SerialAdapter } from './serialAdapter';
 import { addDataListener, removeDataListener } from '../uploader/webserial';
-import { DeviceLink, LinkError, type LinkEvent } from './link/deviceLink';
+import { DeviceLink, LinkError, plantReasonName, type LinkEvent } from './link/deviceLink';
+import type { PlantBoardPort } from '../plant/board/portTypes';
 import { EventRouter, type RouterStatus } from './link/eventRouter';
 import { crc32 } from './link/frame';
 import { describeFirmware, type FirmwareReport } from './link/firmwareProtocol';
@@ -181,7 +182,14 @@ export class FramedSerialAdapter extends SerialAdapter {
     try {
       await this.withCommandMutex(() =>
         link.request('EVENTS_SET', {
-          mask: EVENT_MASK.STATUS | EVENT_MASK.FAULT | EVENT_MASK.BREAKPOINT | EVENT_MASK.FORCE | EVENT_MASK.LOG,
+          mask:
+            EVENT_MASK.STATUS |
+            EVENT_MASK.FAULT |
+            EVENT_MASK.BREAKPOINT |
+            EVENT_MASK.FORCE |
+            EVENT_MASK.LOG |
+            // listening for the end of the plant I/O mode does not enter it (LNK-008)
+            (link.has('PLANT') ? EVENT_MASK.PLANT : 0),
         }),
       );
       this.linkEvents.useEvents();
@@ -240,6 +248,25 @@ export class FramedSerialAdapter extends SerialAdapter {
       }
       return run(link);
     });
+  }
+
+  // -------------------------------------------------------------------------------------------------------------
+  // Plant I/O mode (LNK-012): the calls of the single link owner, through the same discipline as every request
+
+  plantBoardPort(): PlantBoardPort {
+    return {
+      supported: () => this.link !== null && this.link.has('PLANT'),
+      enter: (request) => this.changing((link) => link.plantEnter(request)),
+      frame: (plantId, seq, values) => this.changing((link) => link.plantFrame(plantId, seq, values)),
+      exit: () => this.changing((link) => link.plantExit()),
+      mirror: (on) => this.changing((link) => link.plantMirror(on)),
+      onExit: (listener) =>
+        this.linkEvents.subscribe((event) => {
+          if (event.name !== 'EVT_PLANT_EXIT') return;
+          const values = event.values as { reason: number; frames: number };
+          listener({ reason: plantReasonName(values.reason), frames: values.frames });
+        }),
+    };
   }
 
   // -------------------------------------------------------------------------------------------------------------
