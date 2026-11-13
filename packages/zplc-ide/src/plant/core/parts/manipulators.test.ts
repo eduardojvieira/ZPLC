@@ -419,6 +419,27 @@ describe('manipulator parts', () => {
     expect(p.rt('gan1').views()[0]!.state).toMatchObject({ z: 0.5, strokeZ: 1, text: 'X 0.00 m, Y 0.00 m, Z 0.50 m' });
   });
 
+  it('PLT-010 the view shows the physical hold while a gripped fault changes only the sensor', async () => {
+    const q = await pickAndPlace();
+    goto(q, 'pick1', 0, 0.5, false);
+    goto(q, 'pick1', 0.4, 0.5, false);
+    goto(q, 'pick1', 0.4, 0.3, false);
+    goto(q, 'pick1', 0.4, 0.3, true);
+    q.rt('pick1').act('grippedStuckOff');
+    q.run(10, { 'pick1.grip': true });
+    const held = q.rt('pick1').views()[0]!;
+    expect(held.state.holding).toBe(true);
+    expect(q.sense('pick1')['pick1.gripped']).toBe(false);
+    expect(held.signals.gripped).toBe(false);
+    const e = await plant([part('pick1', 'pick-place', [0, 0, 0])]);
+    e.rt('pick1').act('grippedStuckOn');
+    e.run(10);
+    const empty = e.rt('pick1').views()[0]!;
+    expect(empty.state.holding).toBe(false);
+    expect(e.sense('pick1')['pick1.gripped']).toBe(true);
+    expect(empty.signals.gripped).toBe(true);
+  });
+
   it('PLT-006 a pick and place cycle gives the same trace on three fresh worlds', async () => {
     const run = async () => {
       const p = await pickAndPlace();

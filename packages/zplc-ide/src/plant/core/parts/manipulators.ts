@@ -172,7 +172,7 @@ function runtimeOf(axes: 2 | 3, partId: 'pick-place' | 'gantry') {
         const text = `X ${fixed2(x)} m, Y ${fixed2(y)} m${axes === 3 ? `, Z ${fixed2(z)} m` : ''}`;
         const signalsNow: Record<string, boolean | number> = {};
         for (const [k, v] of Object.entries(sensed())) signalsNow[k.slice(n.length + 1)] = v;
-        const holding = gripped();
+        const holding = (gripper?.held().length ?? 0) > 0; // physical truth; a sensor fault changes only the signal
         const railY = stroke[1]! + RAIL_ABOVE_M;
         const midZ = axes === 3 ? stroke[2]! / 2 : 0;
         const secondary = (suffix: 'frame' | 'beam', size: Vec3, at: Vec3): PartView => {
