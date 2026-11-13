@@ -27,6 +27,7 @@ These scenes ship with ZPLC, in order of difficulty. Each has a scene file, a pl
 | Height sorting with turntable        | 77 s                   | four belts, emitter, light array, stop blade, two diffuse sensors, turntable, three removers, push button, stack light      |
 | Height sorting with a chain transfer | 62 s                   | four belts, emitter, stop blade, three diffuse sensors, chain transfer, three removers, push button, stack light            |
 | Weight sorting                       | 85 s                   | three belts, emitter, stop blade, scale, pusher, two removers, push button, stack light                                     |
+| Vision sorting                       | 78 s                   | two belts, emitter, vision sensor, diverter arm, two removers, push button, stack light                                     |
 
 ## Belt to sensor
 
@@ -123,6 +124,12 @@ The scenario presses start and checks that each bin receives its height class, t
 Sort boxes by weight with a scale and a pusher. Each box waits on the scale at a stop blade until the reading is stable; a pusher sends boxes heavier than 3.5 kg to a side belt and lighter boxes go straight on. The weight arrives as a `REAL` value in kilograms.
 
 The scenario presses start and checks that the heavy bin and the light bin each receive their class, that no box reaches the wrong bin, that nothing is dropped, and that the green lamp is on at 85 s.
+
+## Vision sorting
+
+Separate two products with a vision sensor and a diverter arm. The vision sensor reads each box's product code as it passes; the arm swings across the belt to send code 2 to a side belt, and code 1 goes straight on. The code arrives as an `INT` value: see [numeric signals](./numeric-signals.md).
+
+The scenario presses start and checks that each product reaches its own bin, that no box reaches the wrong bin, that nothing is dropped, and that the done lamp is on and the arm is home at 78 s.
 
 ## What is not claimed
 

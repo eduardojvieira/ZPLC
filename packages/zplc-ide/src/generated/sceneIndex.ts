@@ -129,5 +129,13 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
       "en": "Weight sorting",
       "es": "Weight sorting"
     }
+  },
+  {
+    "id": "vision-sorting",
+    "dir": "plant-scenes/vision-sorting",
+    "names": {
+      "en": "Vision sorting",
+      "es": "Vision sorting"
+    }
   }
 ];

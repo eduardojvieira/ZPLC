@@ -1,10 +1,7 @@
 import { afterEach, describe, expect, it } from 'bun:test';
-import { resolve } from 'node:path';
-import { itNative } from '../../cli/nativeRuntimeGuard';
 import { SCENE_INDEX } from '../../generated/sceneIndex';
 import type { PartDefinition, PlantCore, PlantSceneFile, ScenePart } from '../contracts';
 import sceneHashes from '../ci/sceneHashes.json';
-import { runSceneCheck } from '../ci/sceneCheck';
 import { catalogue } from './catalogue';
 import hashes from './hashes.json';
 import { createPlantCore } from './plantCore';
@@ -312,18 +309,8 @@ describe('the M1 to M3 evidence is unchanged by the M4 registration', () => {
   });
 
   const linux = sceneHashes.linux as Record<string, string>;
-  it('PLT-006 the twelve shipped scenes are pinned', () => {
-    expect(SCENE_INDEX.filter((e) => e.id in linux)).toHaveLength(12);
+  it('PLT-006 every shipped scene is pinned', () => {
+    expect(SCENE_INDEX.filter((e) => !(e.id in linux)).map((e) => e.id)).toEqual([]);
   });
-  for (const entry of SCENE_INDEX.filter((e) => e.id in linux)) {
-    itNative(
-      `PLT-006 the twelve shipped scenes keep their pinned hashes: ${entry.id}`,
-      async () => {
-        const result = await runSceneCheck(resolve(import.meta.dir, '../../..', entry.dir), 'native');
-        expect(result.problems).toEqual([]);
-        if (process.platform === 'linux') expect(result.traceHash).toBe(linux[entry.id]!);
-      },
-      240_000,
-    );
-  }
+  // Each shipped scene's reference run and pinned hash are checked once, by the SCN-004 scene test in src/plant/ci/sceneCheck.test.ts.
 });

@@ -31,6 +31,7 @@ describe('shipped scenes use the public format and catalogue', () => {
       'height-sorting-turntable',
       'height-sorting-chain',
       'weight-sorting',
+      'vision-sorting',
     ]);
   });
 

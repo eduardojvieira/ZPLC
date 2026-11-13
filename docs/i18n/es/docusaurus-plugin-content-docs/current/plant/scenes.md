@@ -27,6 +27,7 @@ ZPLC incluye estas escenas, en orden de dificultad. Cada una tiene un archivo de
 | `Height sorting with turntable`        | 77 s                   | cuatro cintas, emisor, cortina de luz, tope retráctil, dos sensores difusos, mesa giratoria, tres retiradores, pulsador, torre de luces |
 | `Height sorting with a chain transfer` | 62 s                   | cuatro cintas, emisor, tope retráctil, tres sensores difusos, transferencia de cadenas, tres retiradores, pulsador, torre de luces      |
 | `Weight sorting`                       | 85 s                   | tres cintas, emisor, tope retráctil, báscula, empujador, dos retiradores, pulsador, torre de luces                                      |
+| `Vision sorting`                       | 78 s                   | dos cintas, emisor, sensor de visión, brazo desviador, dos retiradores, pulsador, torre de luces                                        |
 
 ## Belt to sensor
 
@@ -123,6 +124,12 @@ El escenario pulsa el inicio y comprueba que cada retirador recibe su clase de a
 Clasifique cajas por peso con una báscula y un empujador. Cada caja espera sobre la báscula en un tope retráctil hasta que la lectura es estable; un empujador envía las cajas de más de 3.5 kg a una cinta lateral y las más livianas siguen de largo. El peso llega como un valor `REAL` en kilogramos.
 
 El escenario pulsa el inicio y comprueba que el retirador de pesadas y el de livianas reciben cada uno su clase, que ninguna caja llega al retirador equivocado, que no cae nada y que la luz verde está encendida a los 85 s.
+
+## Vision sorting
+
+Separe dos productos con un sensor de visión y un brazo desviador. El sensor de visión lee el código de producto de cada caja al pasar; el brazo gira sobre la cinta para enviar el código 2 a una cinta lateral, y el código 1 sigue de largo. El código llega como un valor `INT`: consulte [señales numéricas](./numeric-signals.md).
+
+El escenario pulsa el inicio y comprueba que cada producto llega a su retirador, que ninguna caja llega al retirador equivocado, que no cae nada y que la luz de fin está encendida y el brazo en reposo a los 78 s.
 
 ## Lo que no se afirma
 
