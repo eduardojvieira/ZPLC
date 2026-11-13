@@ -73,6 +73,9 @@ export interface ItemProps {
   code?: number;
 }
 
+/** C3 amended in M5: the tag of a body pose gains 'crate'. */
+export type BodyTag = 'box' | 'lid' | 'base' | 'crate';
+
 /** C3. A drawable state; the view reads nothing else (P14). */
 export interface BodyPose extends ItemProps {
   id: string;
@@ -82,7 +85,7 @@ export interface BodyPose extends ItemProps {
   p: Vec3;
   q: Quat;
   /** An optional tag of an item, so the view can draw a lid or a base differently from a box. Pallets have none. */
-  tag?: 'box' | 'lid' | 'base';
+  tag?: BodyTag;
 }
 export interface PartView {
   id: string;

@@ -1,11 +1,11 @@
-import type { Vec3 } from '../contracts';
+import type { BodyTag, Vec3 } from '../contracts';
 
 // IDE/src/plant/core/support.ts (Task K5; pure, synchronous, no clock, no random).
 // Support facts read the poses of one plant step; they know nothing about how an item got there.
 export interface SupportItem {
   id: string;
   kind: 'item' | 'pallet';
-  tag?: 'box' | 'lid' | 'base';
+  tag?: BodyTag;
   size: Vec3;
   p: Vec3;
   v: Vec3;
