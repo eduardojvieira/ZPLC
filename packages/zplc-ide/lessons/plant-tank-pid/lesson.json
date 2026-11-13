@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-tank-pid",
+  "version": 1,
+  "order": 133,
+  "module": 13,
+  "level": "advanced",
+  "prerequisites": [
+    "plant-tank-level-scaling"
+  ],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The loop of this lesson closes through the simulated tank and its drain disturbance, and the hardware track of the plant lessons opens in a later release, after the loop's scan time has been measured through plant I/O mode on a learner board.",
+        "es": "El lazo de esta lección se cierra a través del tanque simulado y su perturbación de vaciado, y la ruta de hardware de las lecciones de planta se abre en una versión posterior, cuando el tiempo de ciclo del lazo se haya medido con el modo de E/S de planta en una placa del estudiante."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the tank and the loop disturbance are part of the scenario.",
+        "es": "Complétela en Simulación, donde el tanque y la perturbación del lazo forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "tank-level-control",
+  "estimatedMinutes": 40,
+  "starter": {
+    "project": "plant_tank_pid_starter",
+    "program": "src/TankLevel.st"
+  },
+  "solution": {
+    "project": "plant_tank_pid",
+    "program": "src/TankLevel.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "tank-pid",
+    "path": "tests/tank-pid.scenario.json",
+    "sha256": "2d11150870092ca502ff0f30c2e8a5a9c6d37eb21a7219d11f1b7794401ac3c4"
+  },
+  "regressionScenarios": []
+}
