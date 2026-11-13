@@ -31,6 +31,7 @@ The Spanish wrapper text is localized, while API names, signatures, and source-d
 - `firmware/lib/zplc_core/include/zplc_io_trace.h`
 - `firmware/lib/zplc_core/include/zplc_isa.h`
 - `firmware/lib/zplc_core/include/zplc_loader.h`
+- `firmware/lib/zplc_core/include/zplc_plant.h`
 - `firmware/lib/zplc_core/include/zplc_program_store.h`
 - `firmware/lib/zplc_core/include/zplc_proto.h`
 - `firmware/lib/zplc_core/include/zplc_proto_dev.h`
@@ -3134,6 +3135,190 @@ Reads header word 28 and nothing else. The magic, the CRC and the rest of the ar
 | `ZPLC_VERIFY_FRAME_BYTES` | `7U` | — |
 | `ZPLC_VERIFY_STEPS_PER_BYTE` | `64U` | — |
 | `ZPLC_LOADER_VERIFY_WORKSPACE_SIZE` | `\\ (((ZPLC_MEM_CODE_SIZE + 7U) / 8U) + 2U * ((ZPLC_MEM_CODE_SIZE + 127U) / 128U) + 2U * ZPLC_VERIFY_MAX_LEADERS + \\ (ZPLC_VERIFY_MAX_LEADERS + 7U) / 8U + ZPLC_VERIFY_MAX_FRAMES * ZPLC_VERIFY_FRAME_BYTES)` | — |
+
+## `zplc_plant.h`
+
+Plant I/O mode: inputs bound in the plant map take their values from a plant link, the output image is published to the plant, and the physical outputs stay safe unless a person turns mirroring on (LNK-007, LNK-010, LNK-011, LNK-018).
+
+Portable C99: no Zephyr header, no allocation. The locks and the clock are hooks, as in zplc_exchange.h. The scan never waits for the link: the latch takes the plant lock with a try and works for a bounded number of bytes. Lock order, everywhere: image lock, then plant lock. The wire is in zplc_proto_defs.h (ZPLC_PROTO_MSG_PLANT_*), generated from tools/contract/protocol.json. Entry, frame validation, latch, staleness bound, hold and exit follow rules R-M6-1 to R-M6-7 of specs/012-zplc-2-1-plant-simulation/plan-m6.md.
+
+Source: `firmware/lib/zplc_core/include/zplc_plant.h`
+
+### Functions
+
+#### `zplc_plant_init`
+
+```c
+void zplc_plant_init(const zplc_plant_hooks_t *hooks);
+```
+
+**Source summary:** Inactive, counters zero.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `hooks` | `const zplc_plant_hooks_t *` | — |
+
+#### `zplc_plant_enter`
+
+```c
+int zplc_plant_enter(const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t *rsp_len);
+```
+
+**Source summary:** PLANT_ENTER: request payload in, response payload (after the status byte) out. ZPLC_PROTO_ERR_*.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `req` | `const uint8_t *` | — |
+| `len` | `uint16_t` | — |
+| `rsp` | `uint8_t *` | — |
+| `rsp_len` | `uint16_t *` | — |
+
+#### `zplc_plant_frame`
+
+```c
+int zplc_plant_frame(const uint8_t *req, uint16_t len, uint8_t *rsp, uint16_t *rsp_len);
+```
+
+**Source summary:** PLANT_FRAME: request payload in, response payload (after the status byte) out. ZPLC_PROTO_ERR_*.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `req` | `const uint8_t *` | — |
+| `len` | `uint16_t` | — |
+| `rsp` | `uint8_t *` | — |
+| `rsp_len` | `uint16_t *` | — |
+
+#### `zplc_plant_exit`
+
+```c
+int zplc_plant_exit(uint8_t reason);
+```
+
+**Source summary:** Leave the mode for @p reason (ZPLC_PROTO_PLANT_EXIT_REASON_*). Idempotent; posts the exit once.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `reason` | `uint8_t` | — |
+
+#### `zplc_plant_set_mirror`
+
+```c
+void zplc_plant_set_mirror(uint8_t on);
+```
+
+**Source summary:** Turn mirroring of the output image to the pins on or off. Off at entry.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `on` | `uint8_t` | — |
+
+#### `zplc_plant_active`
+
+```c
+int zplc_plant_active(void);
+```
+
+**Source summary:** Non-zero while the mode is active. Lock-free read.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
+#### `zplc_plant_holds_outputs`
+
+```c
+int zplc_plant_holds_outputs(void);
+```
+
+**Source summary:** Non-zero while the mode is active and mirroring is off, or an exit rule has fired.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
+#### `zplc_plant_latch`
+
+```c
+void zplc_plant_latch(void);
+```
+
+**Source summary:** At the scan's input latch, image lock held: apply the staged inputs. Bounded; never blocks.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
+#### `zplc_plant_tick`
+
+```c
+int zplc_plant_tick(void);
+```
+
+**Source summary:** In the scan, after the latch: non-zero when the exit rule fired (the reason is kept).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
+#### `zplc_plant_exit_reason`
+
+```c
+uint8_t zplc_plant_exit_reason(void);
+```
+
+**Source summary:** The reason of the last exit (ZPLC_PROTO_PLANT_EXIT_REASON_*).
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
+#### `zplc_plant_get_stats`
+
+```c
+void zplc_plant_get_stats(zplc_plant_stats_t *out);
+```
+
+**Source summary:** Copy the counters.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| `out` | `zplc_plant_stats_t *` | — |
+
+### Types
+
+| Name | Kind | Source summary |
+| --- | --- | --- |
+| `ctx` | Struct | Hooks of the module. @c lock may fail and the scan never waits for it; @c now_ms is a monotonic clock. |
+| `frames` | Struct | Counters of the mode. |
+
+### Constants and macros
+
+| Name | Value | Source summary |
+| --- | --- | --- |
+| `ZPLC_PLANT_H` | `—` | — |
+| `ZPLC_PLANT_MAX_SLOTS` | `32U` | — |
 
 ## `zplc_program_store.h`
 

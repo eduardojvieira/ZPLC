@@ -1039,13 +1039,152 @@
    "fields": {}
   },
   {
+   "name": "plant_enter_request",
+   "kind": 0,
+   "message": 112,
+   "sequence": 89,
+   "auth": false,
+   "payload": "34120a114344454647",
+   "wire": "5aa501007059000000090034120a114344454647ce6c25ae",
+   "fields": {
+    "timeout_ms": 4660,
+    "n_in": 10,
+    "n_out": 17,
+    "descriptors": "4344454647"
+   }
+  },
+  {
+   "name": "plant_enter_response",
+   "kind": 1,
+   "message": 112,
+   "sequence": 90,
+   "auth": false,
+   "payload": "00341235133614183816",
+   "wire": "5aa50101705a0000000a0000341235133614183816821b57dd",
+   "fields": {
+    "plant_id": 4660,
+    "in_bytes": 4917,
+    "out_bytes": 5174,
+    "max_slots": 24,
+    "timeout_ms": 5688
+   }
+  },
+  {
+   "name": "plant_frame_request",
+   "kind": 0,
+   "message": 113,
+   "sequence": 91,
+   "auth": false,
+   "payload": "3412d1c1b1a14243444546",
+   "wire": "5aa50100715b0000000b003412d1c1b1a14243444546a33db8bb",
+   "fields": {
+    "plant_id": 4660,
+    "seq": 2712781265,
+    "values": "4243444546"
+   }
+  },
+  {
+   "name": "plant_frame_response",
+   "kind": 1,
+   "message": 113,
+   "sequence": 92,
+   "auth": false,
+   "payload": "00d0c0b0a0d1c1b1a111371538164546474849",
+   "wire": "5aa50101715c000000130000d0c0b0a0d1c1b1a1113715381645464748497b10914e",
+   "fields": {
+    "applied_seq": 2695938256,
+    "scans": 2712781265,
+    "flags": 17,
+    "late": 5431,
+    "rejected": 5688,
+    "values": "4546474849"
+   }
+  },
+  {
+   "name": "plant_exit_request",
+   "kind": 0,
+   "message": 114,
+   "sequence": 93,
+   "auth": false,
+   "payload": "",
+   "wire": "5aa50100725d0000000000b13b7b62",
+   "fields": {}
+  },
+  {
+   "name": "plant_exit_response",
+   "kind": 1,
+   "message": 114,
+   "sequence": 94,
+   "auth": false,
+   "payload": "0003d1c1b1a136143715",
+   "wire": "5aa50101725e0000000a000003d1c1b1a13614371586ac50d9",
+   "fields": {
+    "reason": 3,
+    "frames": 2712781265,
+    "late": 5174,
+    "rejected": 5431
+   }
+  },
+  {
+   "name": "plant_mirror_request",
+   "kind": 0,
+   "message": 115,
+   "sequence": 95,
+   "auth": false,
+   "payload": "03",
+   "wire": "5aa50100735f000000010003963df8ad",
+   "fields": {
+    "enable": 3
+   }
+  },
+  {
+   "name": "plant_mirror_response",
+   "kind": 1,
+   "message": 115,
+   "sequence": 96,
+   "auth": false,
+   "payload": "0003",
+   "wire": "5aa50101736000000002000003b9a67dd8",
+   "fields": {
+    "mirror": 3
+   }
+  },
+  {
+   "name": "plant_status_request",
+   "kind": 0,
+   "message": 116,
+   "sequence": 97,
+   "auth": false,
+   "payload": "",
+   "wire": "5aa50100746100000000005dc91372",
+   "fields": {}
+  },
+  {
+   "name": "plant_status_response",
+   "kind": 1,
+   "message": 116,
+   "sequence": 98,
+   "auth": false,
+   "payload": "0003351311d3c3b3a3381639173a18",
+   "wire": "5aa5010174620000000f000003351311d3c3b3a3381639173a18941312e2",
+   "fields": {
+    "active": 3,
+    "plant_id": 4917,
+    "mirror": 17,
+    "frames": 2746467283,
+    "late": 5688,
+    "rejected": 5945,
+    "age_ms": 6202
+   }
+  },
+  {
    "name": "evt_status_event",
    "kind": 2,
    "message": 128,
-   "sequence": 89,
+   "sequence": 99,
    "auth": false,
    "payload": "030ad2c2b2a2",
-   "wire": "5aa5010280590000000600030ad2c2b2a2779d7423",
+   "wire": "5aa5010280630000000600030ad2c2b2a212436add",
    "fields": {
     "state": 3,
     "fault": 10,
@@ -1056,10 +1195,10 @@
    "name": "evt_fault_event",
    "kind": 2,
    "message": 129,
-   "sequence": 90,
+   "sequence": 100,
    "auth": false,
    "payload": "030a3614",
-   "wire": "5aa50102815a0000000400030a361476f570ca",
+   "wire": "5aa5010281640000000400030a3614fd474abc",
    "fields": {
     "fault": 3,
     "task": 10,
@@ -1070,10 +1209,10 @@
    "name": "evt_breakpoint_event",
    "kind": 2,
    "message": 130,
-   "sequence": 91,
+   "sequence": 101,
    "auth": false,
    "payload": "033513",
-   "wire": "5aa50102825b0000000300033513e801eb98",
+   "wire": "5aa5010282650000000300033513a81a187e",
    "fields": {
     "task": 3,
     "pc": 4917
@@ -1083,10 +1222,10 @@
    "name": "evt_force_event",
    "kind": 2,
    "message": 131,
-   "sequence": 92,
+   "sequence": 102,
    "auth": false,
    "payload": "03351311",
-   "wire": "5aa50102835c00000004000335131135baac28",
+   "wire": "5aa501028366000000040003351311c4a87d57",
    "fields": {
     "change": 3,
     "address": 4917,
@@ -1097,10 +1236,10 @@
    "name": "evt_log_event",
    "kind": 2,
    "message": 132,
-   "sequence": 93,
+   "sequence": 103,
    "auth": false,
    "payload": "034142434445",
-   "wire": "5aa50102845d00000006000341424344453504d7ee",
+   "wire": "5aa501028467000000060003414243444550dac910",
    "fields": {
     "level": 3,
     "text": "4142434445"
@@ -1110,10 +1249,10 @@
    "name": "evt_watch_event",
    "kind": 2,
    "message": 133,
-   "sequence": 94,
+   "sequence": 104,
    "auth": false,
    "payload": "d0c0b0a04142434445",
-   "wire": "5aa50102855e0000000900d0c0b0a04142434445f072b5e9",
+   "wire": "5aa5010285680000000900d0c0b0a04142434445d307e807",
    "fields": {
     "cycle": 2695938256,
     "data": "4142434445"
@@ -1123,10 +1262,10 @@
    "name": "evt_session_end_event",
    "kind": 2,
    "message": 134,
-   "sequence": 95,
+   "sequence": 105,
    "auth": false,
    "payload": "030a",
-   "wire": "5aa50102865f0000000200030ad93137e1",
+   "wire": "5aa5010286690000000200030a236b95a2",
    "fields": {
     "reason": 3,
     "forces_released": 10
@@ -1136,22 +1275,35 @@
    "name": "evt_dropped_event",
    "kind": 2,
    "message": 135,
-   "sequence": 96,
+   "sequence": 106,
    "auth": false,
    "payload": "d0c0b0a0",
-   "wire": "5aa5010287600000000400d0c0b0a07d601854",
+   "wire": "5aa50102876a0000000400d0c0b0a0b4f03a43",
    "fields": {
     "count": 2695938256
+   }
+  },
+  {
+   "name": "evt_plant_exit_event",
+   "kind": 2,
+   "message": 136,
+   "sequence": 107,
+   "auth": false,
+   "payload": "03d1c1b1a1",
+   "wire": "5aa50102886b000000050003d1c1b1a1976eeb8a",
+   "fields": {
+    "reason": 3,
+    "frames": 2712781265
    }
   },
   {
    "name": "mem_write_range_error",
    "kind": 1,
    "message": 17,
-   "sequence": 97,
+   "sequence": 108,
    "auth": false,
    "payload": "09fe4f040000400050",
-   "wire": "5aa501011161000000090009fe4f040000400050cc4ab3db",
+   "wire": "5aa50101116c000000090009fe4f040000400050c038bd27",
    "fields": {}
   },
   {

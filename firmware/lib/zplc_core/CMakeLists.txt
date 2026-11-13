@@ -93,6 +93,7 @@ add_library(zplc_core STATIC
     src/core/zplc_retain.c
     src/core/zplc_program_store.c
     src/core/zplc_exchange.c
+    src/core/zplc_plant.c
     src/core/zplc_sched_core.c
     src/core/zplc_single_task.c
     src/core/zplc_io_trace.c
@@ -761,6 +762,102 @@ if(UNIX AND NOT APPLE)
 endif()
 
 add_test(NAME test_proto_session COMMAND test_proto_session)
+
+# Test: plant I/O mode, the module: entry, frame validation, latch, staleness bound, exit (LNK-011, LNK-015, LNK-018).
+add_executable(test_plant
+    tests/test_plant.c
+    src/core/zplc_plant.c
+    src/core/zplc_exchange.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_plant PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests
+)
+
+target_compile_definitions(test_plant PRIVATE
+    ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
+    ZPLC_CORE_TESTING
+)
+
+find_package(Threads REQUIRED)
+target_link_libraries(test_plant PRIVATE Threads::Threads)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_plant PRIVATE rt)
+endif()
+
+add_test(NAME test_plant COMMAND test_plant)
+
+# Test: plant I/O mode through the scheduler core: bound inputs, hold, exit after the scan (LNK-006, LNK-007, LNK-010, LNK-011).
+add_executable(test_plant_sched
+    tests/test_plant_sched.c
+    src/core/zplc_sched_core.c
+    src/core/zplc_plant.c
+    src/core/zplc_exchange.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_plant_sched PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests
+)
+
+target_compile_definitions(test_plant_sched PRIVATE
+    ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
+    ZPLC_CORE_TESTING
+)
+
+find_package(Threads REQUIRED)
+target_link_libraries(test_plant_sched PRIVATE Threads::Threads)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_plant_sched PRIVATE rt)
+endif()
+
+add_test(NAME test_plant_sched COMMAND test_plant_sched)
+
+# Test: the five plant messages through the device link engine, the capability and the session rules (LNK-012, COM-020).
+add_executable(test_proto_plant
+    tests/test_proto_plant.c
+    src/core/zplc_proto.c
+    src/core/zplc_proto_dev.c
+    src/core/zplc_sha256.c
+    src/core/zplc_sha512.c
+    src/core/zplc_ed25519.c
+    src/core/zplc_plant.c
+    src/core/zplc_exchange.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_proto_plant PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests
+)
+
+target_compile_definitions(test_proto_plant PRIVATE
+    ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
+    ZPLC_CORE_TESTING
+)
+
+find_package(Threads REQUIRED)
+target_link_libraries(test_proto_plant PRIVATE Threads::Threads)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_proto_plant PRIVATE rt)
+endif()
+
+add_test(NAME test_proto_plant COMMAND test_proto_plant)
 
 # Test: SHA-512 and Ed25519 verification against FIPS 180-4, RFC 8032 and the signatures of a Python reference,
 # valid and damaged (COM-026). Also run under the sanitizers.

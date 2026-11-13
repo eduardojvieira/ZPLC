@@ -143,6 +143,19 @@
         { "name": "CLIENT", "value": 1, "doc": "The client certificate." },
         { "name": "KEY", "value": 2, "doc": "The client private key." }
       ]
+    },
+    {
+      "name": "PLANT_EXIT_REASON",
+      "doc": "Why plant I/O mode ended.",
+      "members": [
+        { "name": "CLOSED", "value": 0, "doc": "A person asked for it (PLANT_EXIT)." },
+        { "name": "TIMEOUT", "value": 1, "doc": "No valid frame arrived within the granted timeout." },
+        { "name": "SESSION_END", "value": 2, "doc": "The session that started the mode ended." },
+        { "name": "LINK_LOST", "value": 3, "doc": "The link of the session was lost." },
+        { "name": "RUN_CONTROL", "value": 4, "doc": "STOP, RESET, a program load, a pause or a resume of another program." },
+        { "name": "FAULT", "value": 5, "doc": "The runtime latched a fault." },
+        { "name": "PROTOCOL", "value": 6, "doc": "Eight frames in a row were rejected." }
+      ]
     }
   ],
   "errors": [
@@ -353,6 +366,14 @@
         "en": "The device accepts only artifacts signed with the key it holds (COM-026).",
         "es": "El dispositivo acepta solo artefactos firmados con la clave que tiene (COM-026)."
       }
+    },
+    {
+      "name": "PLANT",
+      "bit": 12,
+      "doc": {
+        "en": "Plant I/O mode: bound inputs take their values from a plant link and the outputs are published to it (LNK-012).",
+        "es": "Modo E/S de planta: las entradas enlazadas toman sus valores de un enlace de planta y las salidas se publican hacia él (LNK-012)."
+      }
     }
   ],
   "eventMask": [
@@ -361,7 +382,8 @@
     { "name": "BREAKPOINT", "bit": 2, "doc": "Execution stopped at a breakpoint." },
     { "name": "FORCE", "bit": 3, "doc": "A force was set, cleared or released." },
     { "name": "LOG", "bit": 4, "doc": "The device wrote a log line." },
-    { "name": "WATCH", "bit": 5, "doc": "A batch of watched values." }
+    { "name": "WATCH", "bit": 5, "doc": "A batch of watched values." },
+    { "name": "PLANT", "bit": 6, "doc": "Plant I/O mode ended." }
   ],
   "access": [
     {
@@ -992,6 +1014,101 @@
       },
       "request": [],
       "response": []
+    },
+    {
+      "name": "PLANT_ENTER",
+      "id": 112,
+      "access": "SESSION",
+      "summary": {
+        "en": "Start plant I/O mode: the inputs listed take their values from plant frames and the outputs listed are published to the plant. Mirroring to the pins is off.",
+        "es": "Iniciar el modo E/S de planta: las entradas listadas toman sus valores de tramas de planta y las salidas listadas se publican hacia la planta. El reflejo hacia los pines está apagado."
+      },
+      "request": [
+        { "name": "timeout_ms", "type": "u16", "doc": "Milliseconds without a valid frame after which the mode ends; 50 to 2000." },
+        { "name": "n_in", "type": "u8", "doc": "Number of input descriptors." },
+        { "name": "n_out", "type": "u8", "doc": "Number of output descriptors." },
+        {
+          "name": "descriptors",
+          "type": "tail",
+          "doc": "n_in input descriptors, then n_out output descriptors. A descriptor is 3 bytes: offset (u16; an IPI byte offset for an input, an OPI byte offset for an output) and spec (u8; bits 0-1 the type: 0 BOOL, 1 INT, 2 REAL; bits 2-4 the bit index, BOOL only; bits 5-7 zero)."
+        }
+      ],
+      "response": [
+        { "name": "plant_id", "type": "u16", "doc": "The number of this entry; every frame carries it." },
+        { "name": "in_bytes", "type": "u16", "doc": "Bytes of input values in a frame." },
+        { "name": "out_bytes", "type": "u16", "doc": "Bytes of output values in a response." },
+        { "name": "max_slots", "type": "u8", "doc": "Slots per direction this build accepts." },
+        { "name": "timeout_ms", "type": "u16", "doc": "The timeout granted." }
+      ]
+    },
+    {
+      "name": "PLANT_FRAME",
+      "id": 113,
+      "access": "SESSION",
+      "summary": {
+        "en": "Send the plant inputs of one exchange and receive the outputs of one scan.",
+        "es": "Enviar las entradas de planta de un intercambio y recibir las salidas de un ciclo."
+      },
+      "request": [
+        { "name": "plant_id", "type": "u16", "doc": "The entry the device granted." },
+        { "name": "seq", "type": "u32", "doc": "Strictly newer than the last accepted, by a wrap-aware 32-bit difference." },
+        {
+          "name": "values",
+          "type": "tail",
+          "doc": "A bitmap of ceil(n_bool / 8) bytes with the BOOL values in descriptor order, then the INT (2 bytes, little endian, signed) and REAL (4 bytes, IEEE 754 binary32, little endian) values in descriptor order."
+        }
+      ],
+      "response": [
+        { "name": "applied_seq", "type": "u32", "doc": "The last sequence a scan latched before the snapshot." },
+        { "name": "scans", "type": "u32", "doc": "Scans completed." },
+        { "name": "flags", "type": "u8", "doc": "Bit 0: mirror is on. Bit 1: the outputs were held since the last exchange." },
+        { "name": "late", "type": "u16", "doc": "Scans that found no new frame, or could not take the lock." },
+        { "name": "rejected", "type": "u16", "doc": "Frames rejected." },
+        { "name": "values", "type": "tail", "doc": "The output values of one scan, encoded as the input values, in descriptor order." }
+      ]
+    },
+    {
+      "name": "PLANT_EXIT",
+      "id": 114,
+      "access": "SESSION",
+      "summary": {
+        "en": "End plant I/O mode: the program is stopped and the outputs go to their safe state.",
+        "es": "Terminar el modo E/S de planta: el programa se detiene y las salidas pasan a su estado seguro."
+      },
+      "request": [],
+      "response": [
+        { "name": "reason", "type": "u8", "enum": "PLANT_EXIT_REASON", "doc": "Why the mode ended (CLOSED for this request)." },
+        { "name": "frames", "type": "u32", "doc": "Frames accepted during the mode." },
+        { "name": "late", "type": "u16", "doc": "Scans counted late." },
+        { "name": "rejected", "type": "u16", "doc": "Frames rejected." }
+      ]
+    },
+    {
+      "name": "PLANT_MIRROR",
+      "id": 115,
+      "access": "SESSION",
+      "summary": {
+        "en": "Turn mirroring of the output image to the physical outputs on or off. Off at entry.",
+        "es": "Activar o desactivar el reflejo de la imagen de salidas en las salidas físicas. Apagado al entrar."
+      },
+      "request": [{ "name": "enable", "type": "u8", "doc": "1 to mirror, 0 to hold the physical outputs in their safe state." }],
+      "response": [{ "name": "mirror", "type": "u8", "doc": "The state in force." }]
+    },
+    {
+      "name": "PLANT_STATUS",
+      "id": 116,
+      "access": "SESSION",
+      "summary": { "en": "The state of plant I/O mode.", "es": "El estado del modo E/S de planta." },
+      "request": [],
+      "response": [
+        { "name": "active", "type": "u8", "doc": "1 while the mode is active." },
+        { "name": "plant_id", "type": "u16", "doc": "The current entry, 0 when inactive." },
+        { "name": "mirror", "type": "u8", "doc": "1 when mirroring is on." },
+        { "name": "frames", "type": "u32", "doc": "Frames accepted." },
+        { "name": "late", "type": "u16", "doc": "Scans counted late." },
+        { "name": "rejected", "type": "u16", "doc": "Frames rejected." },
+        { "name": "age_ms", "type": "u16", "doc": "Milliseconds since the last accepted frame." }
+      ]
     }
   ],
   "events": [
@@ -1083,6 +1200,16 @@
         "es": "Se perdieron eventos porque la cola estaba llena. Se envía cuando vuelve a haber espacio."
       },
       "fields": [{ "name": "count", "type": "u32", "doc": "Events lost since the last report." }]
+    },
+    {
+      "name": "EVT_PLANT_EXIT",
+      "id": 136,
+      "mask": "PLANT",
+      "summary": { "en": "Plant I/O mode ended.", "es": "El modo E/S de planta terminó." },
+      "fields": [
+        { "name": "reason", "type": "u8", "enum": "PLANT_EXIT_REASON", "doc": "Why it ended." },
+        { "name": "frames", "type": "u32", "doc": "Frames accepted during the mode." }
+      ]
     }
   ]
 }
