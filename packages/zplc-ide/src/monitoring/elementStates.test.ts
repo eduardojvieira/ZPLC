@@ -138,6 +138,11 @@ describe('every variable that a translated source says it reads exists in the de
       const diagram = { name: 'Main', content: readFileSync(join(root, path), 'utf8'), language, sourceRef: path };
       const map: DebugMap = compileMultiTaskProject(project, [diagram, ...declarationsBeside(path)]).debugMap;
       const pou = Object.values(map.pou).find((candidate) => candidate.sourceRef === path)!;
+      // A Ladder starter with no rung yet (a 2.1 sibling's starter) has nothing to monitor, and must say so.
+      if (language === 'LD' && (JSON.parse(diagram.content) as { rungs: unknown[] }).rungs.length === 0) {
+        expect(pou.monitor ?? []).toEqual([]);
+        return;
+      }
       expect(pou.monitor?.length).toBeGreaterThan(0);
       const missing = variablesOf(pou.monitor!).filter((variable) => resolveVariable(map, path, variable) === undefined);
       expect(missing).toEqual([]);

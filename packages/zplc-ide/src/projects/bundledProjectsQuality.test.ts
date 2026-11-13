@@ -197,6 +197,9 @@ describe('hardware demos read their pins from the board overlay', () => {
   // The HAL stores ADC channel n at input-image byte 8 + 2n, which is word %IW(4 + n); the manifest and the source must agree.
   it('analog inputs sit at %IW(4 + channel) and every %IW a source reads is declared', () => {
     for (const name of exampleProjects) {
+      // A plant project (scene.json at its root) gets its analog words from the plant map, bound by variable name, never from a
+      // board ADC; its lessons offer the simulation track only.
+      if (existsSync(join(rootOf(name), 'scene.json'))) continue;
       const adc = manifestOf(name).io?.analog?.adc ?? [];
       for (const point of adc) expect(point.address, `${name}: ${point.name}`).toBe(`%IW${4 + (point.channel ?? -1)}`);
       const used = new Set(

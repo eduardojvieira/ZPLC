@@ -81,6 +81,8 @@ describe('plant-map editor', () => {
         continue;
       }
       const v1 = JSON.parse(raw) as PlantMap;
+      // Only the 2.0 maps: a 2.1 scene lesson ships a typed schema 2 map, which this all-BOOL io map cannot satisfy.
+      if (v1.schemaVersion !== 1) continue;
       expect(validatePlantMap(v1)).toEqual([]);
       const typed = normalizePlantMap(v1).signals;
       const ed = createMapEditor(
@@ -100,7 +102,7 @@ describe('plant-map editor', () => {
       expect(ed.map()).toEqual(v2);
       seen++;
     }
-    expect(seen).toBeGreaterThan(0);
+    expect(seen).toBe(10);
   });
 
   it('LNK-001 an entry for a signal the scene lacks is kept out of the map and reported', () => {
