@@ -4,7 +4,7 @@
  * button is held for as long as the pointer, Space or Enter is held.
  */
 import { useState, type KeyboardEvent } from 'react';
-import { useT } from '../../i18n';
+import { useT, type MessageKey } from '../../i18n';
 import { Button, Select } from '../../ui';
 import type { PlantCore, PlantSceneFile, PlantSnapshot, ScenePart } from '../contracts';
 import { catalogue } from '../core/catalogue';
@@ -43,6 +43,39 @@ function HoldButton({ part, core }: { part: ScenePart; core: PlantCore }) {
     >
       {t('plant.panel.press', { name: part.name })}
     </Button>
+  );
+}
+
+/** A select that only chooses and a button that acts, so arrowing through the list never fires a fault. */
+function FaultControl({ part, run, act }: { part: ScenePart; run: (action: () => void) => void; act: (action: string) => void }) {
+  const { t } = useT();
+  const [chosen, setChosen] = useState('');
+  return (
+    <>
+      <Select
+        label={t('plant.panel.fault', { name: part.name })}
+        data-plant-fault={part.name}
+        value={chosen}
+        onChange={(event) => setChosen(event.target.value)}
+      >
+        <option value="">{t('plant.panel.faultChoose')}</option>
+        {catalogue.get(part.part)?.actions.map((action) => (
+          <option key={action} value={action}>
+            {t(`plant.action.${action}` as MessageKey)}
+          </option>
+        ))}
+      </Select>
+      <Button
+        data-plant-fault-trigger={part.name}
+        disabled={chosen === ''}
+        onClick={() => {
+          run(() => act(chosen));
+          setChosen('');
+        }}
+      >
+        {t('plant.panel.triggerFault', { name: part.name })}
+      </Button>
+    </>
   );
 }
 
@@ -105,23 +138,7 @@ export function OperatePanel(props: { scene: PlantSceneFile; core: PlantCore; sn
         return <Readout key={part.id} part={part} view={props.view} />;
       })}
       {faulty.map((part) => (
-        <Select
-          key={part.id}
-          label={t('plant.panel.fault', { name: part.name })}
-          data-plant-fault={part.name}
-          value=""
-          onChange={(event) => {
-            const action = event.target.value;
-            if (action) attempt(() => core.act(part.name, action));
-          }}
-        >
-          <option value="">{t('plant.panel.faultChoose')}</option>
-          {catalogue.get(part.part)?.actions.map((action) => (
-            <option key={action} value={action}>
-              {action}
-            </option>
-          ))}
-        </Select>
+        <FaultControl key={part.id} part={part} run={attempt} act={(action) => core.act(part.name, action)} />
       ))}
       <Button data-plant-add-item onClick={addItem}>
         {t('plant.panel.addItem')}

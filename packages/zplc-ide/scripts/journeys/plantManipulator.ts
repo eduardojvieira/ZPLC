@@ -98,21 +98,17 @@ export const journeysManipulator: Journey[] = [
       await untilFacts(app, 'the first box to be placed', async () => (count(await plantFacts(app), 'Pick1 placed') ?? 0) >= 1, 90_000);
       const before = count(await plantFacts(app), 'Pick1 drops');
       assert(before === 0, `The pick and place had dropped ${before} boxes before any fault.`);
-      // a second cycle: when the pick and place holds a box, choose dropLoad in its fault select with the keyboard
+      // a second cycle: when the pick and place holds a box, choose dropLoad in its fault select and trigger it with the keyboard
       await holdPushButton(app, 'StartButton', 'keyboard');
       await untilFacts(app, 'the pick and place to hold a box', async () => (await readout(app)).endsWith('holding'), 90_000);
-      // Typeahead: the select returns to "Choose an action" after every change, so an arrow key would only ever choose its first action;
-      // the letter D reaches dropLoad directly, as it does in any native select.
+      // the arrow keys only choose: dropLoad is the fourth action after stuckX, stuckY and gripFail, and nothing fires until the button
       await app.eval(`document.querySelector('[data-plant-fault="Pick1"]').focus()`);
-      await app.cdp.command('Input.dispatchKeyEvent', {
-        type: 'keyDown',
-        key: 'd',
-        code: 'KeyD',
-        text: 'd',
-        unmodifiedText: 'd',
-        windowsVirtualKeyCode: 68,
-      });
-      await app.cdp.command('Input.dispatchKeyEvent', { type: 'keyUp', key: 'd', code: 'KeyD', windowsVirtualKeyCode: 68 });
+      for (let step = 0; step < 4; step++) await app.press('ArrowDown');
+      const chosen = await app.eval<string>(`document.querySelector('[data-plant-fault="Pick1"]').value`);
+      assert(chosen === 'dropLoad', `The arrow keys chose "${chosen}", not dropLoad.`);
+      assert(count(await plantFacts(app), 'Pick1 drops') === 0, 'A fault fired while the action was only being chosen.');
+      await app.press('Tab');
+      await app.press('Enter');
       const after = await untilFacts(app, 'the drops fact to change', async () => (count(await plantFacts(app), 'Pick1 drops') ?? 0) >= 1);
       assert(after >= 1, `The drops fact is ${after} after the fault.`);
     },
