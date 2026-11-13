@@ -141,13 +141,26 @@ async function withScene<T>(
   }
 }
 
-/** A real window keeps its real size; the bench asks for the size of the spec's budget (1920 by 1080). */
+/**
+ * The size the spec's budget names (1920 by 1080). A real window is asked for it; where the application's window does not take it (it
+ * sets its own size, or the screen is smaller), the page is laid out at that size by the protocol and the record says so.
+ */
 async function resizeWindow(app: DriveApp, width: number, height: number): Promise<void> {
   if (smoke) return;
-  const { windowId } = (await app.cdp.command('Browser.getWindowForTarget')) as { windowId: number };
-  await app.cdp.command('Browser.setWindowBounds', { windowId, bounds: { windowState: 'normal', width, height } });
-  await Bun.sleep(500);
+  try {
+    const { windowId } = (await app.cdp.command('Browser.getWindowForTarget')) as { windowId: number };
+    await app.cdp.command('Browser.setWindowBounds', { windowId, bounds: { windowState: 'normal', width, height } });
+    await Bun.sleep(500);
+  } catch {
+    /* the window keeps its size: the check below decides */
+  }
+  const size = await app.eval<{ width: number; height: number }>(`({ width: innerWidth, height: innerHeight })`);
+  if (size.width !== width || size.height !== height) {
+    await app.cdp.command('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
+    windowSizing = 'the page is laid out at 1920 by 1080 by the protocol; the window itself did not take that size';
+  } else windowSizing = 'the window is 1920 by 1080';
 }
+let windowSizing = 'not a windowed run';
 
 // ---------------------------------------------------------------------------------------------------------------------
 // The machine
@@ -341,7 +354,19 @@ async function framesSequence(): Promise<Json> {
           await Bun.sleep(FRAME_SECONDS * 1000);
           const frames = await app.eval<number[]>(`(() => { window.__recording = false; return window.__frames.slice(); })()`);
           const stats = frameStats(frames);
-          return { renderer: gpu.renderer, window: size, seconds: FRAME_SECONDS, ...stats, verdict: frameVerdict(stats) };
+          const qualitySetting = await app.eval<string | null>(
+            `(() => { const stored = JSON.parse(localStorage.getItem('zplc-ide-settings') || '{}'); return (stored.settings ?? ` +
+              `stored).plantQuality ?? null; })()`,
+          );
+          return {
+            quality: qualitySetting,
+            renderer: gpu.renderer,
+            window: size,
+            windowSizing,
+            seconds: FRAME_SECONDS,
+            ...stats,
+            verdict: frameVerdict(stats),
+          };
         },
         { quality, window: true },
       );
@@ -811,6 +836,19 @@ async function securitySequence(): Promise<Json> {
   );
   const remote = [...new Set(requests.values())].filter((url) => !/^(file|data|blob|devtools):/.test(url));
   const cspTest = runChecked(['bun', 'test', 'electron/security.test.ts']);
+  // The policy and its test are the ones of 2.0: since the tag only lines were added (the two methods the plant asks the native session
+  // for).
+  const sinceV2 = (() => {
+    try {
+      const counts = (file: string) => {
+        const diff = execSync(`git diff v2.0.0 -- electron/${file}`, { cwd: packageRoot, encoding: 'utf8' }).split('\n');
+        return { added: diff.filter((line) => /^\+(?!\+)/.test(line)).length, removed: diff.filter((line) => /^-(?!-)/.test(line)).length };
+      };
+      return { base: 'v2.0.0', 'security.ts': counts('security.ts'), 'security.test.ts': counts('security.test.ts') };
+    } catch {
+      return null;
+    }
+  })();
   const bundleTest = runChecked(['bun', 'test', 'scripts/welcomeBundle.test.ts']);
   const ok =
     live.webgl2 &&
@@ -821,13 +859,17 @@ async function securitySequence(): Promise<Json> {
     live.policyErrors.length === 0 &&
     remote.length === 0 &&
     cspTest.exitCode === 0 &&
+    sinceV2 !== null &&
+    sinceV2['security.ts'].removed === 0 &&
+    sinceV2['security.test.ts'].removed === 0 &&
     bundleTest.exitCode === 0;
   return {
     ...live,
     requestsSeen: requests.size,
     failedRequests: failed,
     remoteRequests: remote,
-    cspTestOf20: cspTest,
+    cspTest,
+    securityChangesSinceV2: sinceV2,
     bundleTest,
     verdict: verdict(ok),
   };
@@ -874,7 +916,7 @@ const host = hostRecord({
 });
 if (smoke) {
   console.log(JSON.stringify({ smoke: true, sequences: results }, null, 2));
-  process.exit(sequences.every((name) => ['pass', 'fail'].includes(String(results[name]!.verdict))) ? 0 : 1);
+  process.exit(Object.values(results).every((result) => ['pass', 'fail'].includes(String(result.verdict))) ? 0 : 1);
 }
 
 mkdirSync(out, { recursive: true });
@@ -902,4 +944,4 @@ if (leaks.length > 0)
 writeFileSync(file, `${JSON.stringify(record, null, 2)}\n`);
 console.log(`wrote ${file}`);
 console.log(JSON.stringify(Object.fromEntries(Object.entries(results).map(([name, value]) => [name, value.verdict])), null, 2));
-process.exit(sequences.every((name) => results[name]!.verdict === 'pass') ? 0 : 1);
+process.exit(Object.values(results).every((result) => result.verdict === 'pass') ? 0 : 1);
