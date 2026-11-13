@@ -32,6 +32,16 @@ describe('plantIoSupport (LNK-012, LRN-011)', () => {
     expect(shell).not.toEqual(framedWithout);
   });
 
+  it('LNK-011 no exit text says the board gives its outputs back to the program; the timeout one says they stay safe', () => {
+    for (const reason of Object.keys(ENUMS.PLANT_EXIT_REASON)) {
+      const key = `plantIo.exit.${reason}` as keyof typeof plantBoardEn;
+      expect(plantBoardEn[key]).not.toMatch(/returned its outputs|back to the program/i);
+      expect(plantBoardEs[key]).not.toMatch(/devolvió sus salidas|al programa/i);
+    }
+    expect(plantBoardEn['plantIo.exit.TIMEOUT']).toContain('safe level');
+    expect(plantBoardEs['plantIo.exit.TIMEOUT']).toContain('nivel seguro');
+  });
+
   it('i18n parity of the new keys: same keys, no empty text, an exit text for every exit reason, registered in en and es', () => {
     expect(Object.keys(plantBoardEs).sort()).toEqual(Object.keys(plantBoardEn).sort());
     for (const reason of Object.keys(ENUMS.PLANT_EXIT_REASON)) expect(`plantIo.exit.${reason}` in plantBoardEn).toBe(true);

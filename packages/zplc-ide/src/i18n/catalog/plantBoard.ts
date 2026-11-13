@@ -7,7 +7,7 @@ export const plantBoardEn = {
   'plantIo.unsupported.reason.noCapability':
     'This firmware does not offer plant I/O. Update the firmware to a version that does, or run the scene in simulation.',
   'plantIo.exit.CLOSED': 'Plant I/O mode ended: you closed it.',
-  'plantIo.exit.TIMEOUT': 'Plant I/O mode ended: the board received no frame in time and returned its outputs to the program.',
+  'plantIo.exit.TIMEOUT': 'Plant I/O mode ended: the board received no frame in time and keeps its outputs at the safe level.',
   'plantIo.exit.SESSION_END': 'Plant I/O mode ended: the session on the board ended.',
   'plantIo.exit.LINK_LOST': 'Plant I/O mode ended: the connection to the board was lost.',
   'plantIo.exit.RUN_CONTROL': 'Plant I/O mode ended: the program was stopped, paused or reset.',
@@ -29,7 +29,8 @@ export const plantBoardEs = {
   'plantIo.unsupported.reason.noCapability':
     'Este firmware no ofrece E/S de planta. Actualice el firmware a una versión que la ofrezca, o ejecute la escena en simulación.',
   'plantIo.exit.CLOSED': 'El modo de E/S de planta terminó: usted lo cerró.',
-  'plantIo.exit.TIMEOUT': 'El modo de E/S de planta terminó: la placa no recibió ningún frame a tiempo y devolvió sus salidas al programa.',
+  'plantIo.exit.TIMEOUT':
+    'El modo de E/S de planta terminó: la placa no recibió ningún frame a tiempo y mantiene sus salidas en el nivel seguro.',
   'plantIo.exit.SESSION_END': 'El modo de E/S de planta terminó: terminó la sesión en la placa.',
   'plantIo.exit.LINK_LOST': 'El modo de E/S de planta terminó: se perdió la conexión con la placa.',
   'plantIo.exit.RUN_CONTROL': 'El modo de E/S de planta terminó: el programa se detuvo, se pausó o se reinició.',
