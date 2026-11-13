@@ -7,12 +7,12 @@ export const DT_S = 0.005;
 
 /**
  * Square root by Newton iteration with `+ - * /` only, so it is identical on every platform (PLT-009, determinism).
- * Fixed 12 iterations: seed 1 for v >= 1, v otherwise. Accurate for v from about 1e-5 up to the tank heights used here.
+ * Fixed 40 iterations from the seed (1 + v) / 2 (never below the root): reaches double precision for v from 1e-12 to 1e6.
  */
 export function detSqrt(v: number): number {
   if (!(v > 0)) return 0;
-  let x = v >= 1 ? 1 : v;
-  for (let i = 0; i < 12; i += 1) x = (x + v / x) / 2;
+  let x = (1 + v) / 2;
+  for (let i = 0; i < 40; i += 1) x = (x + v / x) / 2;
   return x;
 }
 
