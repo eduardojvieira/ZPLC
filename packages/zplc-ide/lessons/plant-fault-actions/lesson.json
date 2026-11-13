@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-fault-actions",
+  "version": 1,
+  "order": 183,
+  "module": 18,
+  "level": "advanced",
+  "prerequisites": ["plant-height-chain"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson triggers a stuck sensor on a simulated plant with a chain transfer and three bins; a learner board has no such plant, and the scene supplies it together with the fault action.",
+        "es": "La lección provoca un sensor atascado en una planta simulada con una transferencia de cadenas y tres contenedores; una placa del estudiante no tiene esa planta, y la escena la aporta junto con la acción de fallo."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its items are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus piezas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "height-sorting-chain",
+  "estimatedMinutes": 45,
+  "starter": {
+    "project": "plant_fault_actions_starter",
+    "program": "src/HeightSortChain.st"
+  },
+  "solution": {
+    "project": "plant_fault_actions",
+    "program": "src/HeightSortChain.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "fault-actions",
+    "path": "tests/fault-actions.scenario.json",
+    "sha256": "728f278eab69a720a0f977c2460340c01993caff46108272c4114e9d779917b1"
+  },
+  "regressionScenarios": []
+}

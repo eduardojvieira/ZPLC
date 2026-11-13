@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 2,
+  "target": {
+    "scene": "height-sorting-chain"
+  },
+  "signals": {
+    "StartButton.pressed": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "HeightSortChain.Start"
+    },
+    "BeamLow.detect": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "HeightSortChain.Low"
+    },
+    "BeamHigh.detect": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "HeightSortChain.High"
+    },
+    "EyeChain.detect": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "HeightSortChain.AtBlade"
+    },
+    "Chain1.raised": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "HeightSortChain.Raised"
+    },
+    "Chain1.lowered": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "HeightSortChain.Lowered"
+    },
+    "Infeed.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "HeightSortChain.RunIn"
+    },
+    "Chain1.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "HeightSortChain.RunChain"
+    },
+    "Chain1.lift": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "HeightSortChain.Lift"
+    },
+    "Chain1.moveRight": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "HeightSortChain.MoveRight"
+    },
+    "Chain1.moveLeft": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "HeightSortChain.MoveLeft"
+    },
+    "Straight.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "HeightSortChain.RunStraight"
+    },
+    "SideRight.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "HeightSortChain.RunRight"
+    },
+    "SideLeft.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "HeightSortChain.RunLeft"
+    },
+    "Stop1.extend": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "HeightSortChain.Hold"
+    },
+    "Beacon.amber": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "HeightSortChain.Busy"
+    },
+    "Beacon.green": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "HeightSortChain.Done"
+    }
+  }
+}

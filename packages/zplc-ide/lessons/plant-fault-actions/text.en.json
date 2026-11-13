@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Find the fault",
+  "summary": "Diagnose a beam that sticks on while the line is sorting: compare its signal with how long a box can really break it, and stop the line before it misroutes a box.",
+  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Diagnose a stuck sensor from a fact the program can read, not from the sensor itself.",
+    "Choose a safe reaction: stop what brings new boxes and let the boxes already moving arrive."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/HeightSortChain.st the sorter of lesson 16.4 works while the sensors tell the truth. Add a diagnosis: a box breaks BeamHigh for about a second, so a TON of three seconds on High marks the beam as stuck. Latch a Fault, then stop the infeed and the chain module, keep the blade holding and put Busy out.",
+      "checkpoint": "After the fault the infeed is off, Busy and Done are off, the blade still holds, and no box has gone to the wrong bin."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "The scenario triggers the fault action stuckOn on BeamHigh at {{t:21000}} ms, while boxes keep arriving every five seconds. Before running, say which boxes the stuck beam makes look different, and which bin a program without a diagnosis sends them to.",
+      "checkpoint": "Every box that is not tall breaks BeamLow and the stuck BeamHigh, so it looks tall and goes left to BinTall; the diagnosis must stop the line before that."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter sorts correctly but trusts BeamHigh for ever; when the beam sticks on, boxes that are not tall are sent to BinTall, so latch a fault when High stays on for three seconds and stop the line.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the fault-actions scenario; watch the 3D view while it runs.",
+      "checkpoint": "The required scenario is named fault-actions and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Trigger the fault yourself in the 3D view (BeamHigh, stuckOn) and watch High in the trace: it stays TRUE while boxes come and go. About three seconds later Fault latches, the infeed stops and Busy goes out.",
+      "checkpoint": "High stays TRUE for far longer than any box needs to pass, and the stop follows the fault, not a box."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The grade sees what the plant did: no misrouted box in any bin, the infeed off and the blade holding at the end. It does not see your Fault variable or the three seconds you chose; a limit that is too short stops the line at the first tall box and fails.",
+      "checkpoint": "This rule catches a beam stuck on. A beam stuck off, or a jam of the chain module, needs another rule; the grade does not establish sensor behaviour on real hardware, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "A normal box breaks BeamHigh for about a second. Use Stuck(IN := High, PT := T#3000ms), latch Fault := TRUE when Stuck.Q is TRUE and never clear it."
+    },
+    {
+      "level": 2,
+      "text": "Stop what brings new boxes: RunIn and RunChain get AND NOT Fault, Stand gets AND NOT Fault so that no box is routed on a reading you do not trust, and Busy goes out. Leave the three outfeed belts running so that a box already on its way arrives."
+    }
+  ],
+  "faultCases": [
+    "The starter sorts correctly but trusts BeamHigh for ever; when the beam sticks on, boxes that are not tall are sent to BinTall, so latch a fault when High stays on for three seconds and stop the line."
+  ]
+}
