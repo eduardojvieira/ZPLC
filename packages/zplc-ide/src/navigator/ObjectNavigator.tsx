@@ -30,12 +30,12 @@ interface ObjectNavigatorViewProps {
   onOpen: (target: NavigatorTarget) => void;
 }
 
-const ITEM_COMMANDS = [
+const ITEM_COMMANDS: ReadonlyArray<{ id: string; command: CommandId; key: MessageKey; destructive?: boolean }> = [
   { id: 'rename', command: 'project.rename', key: 'command.project.rename' },
   { id: 'move', command: 'project.moveFile', key: 'command.project.moveFile' },
   { id: 'duplicate', command: 'project.duplicate', key: 'command.project.duplicate' },
   { id: 'delete', command: 'project.delete', key: 'command.project.delete', destructive: true },
-] as const satisfies ReadonlyArray<{ id: string; command: CommandId; key: MessageKey; destructive?: boolean }>;
+];
 
 /** The item menu of the object view: the commands of the tree menu, run on the item's file (a task is only renamed, in place). */
 function ItemMenu({ item }: { item: NavigatorItem }) {
