@@ -13,9 +13,9 @@ const problemsOf = (change: (value: Editable) => void): string[] => {
 };
 
 describe('the course definition file', () => {
-  it('is valid as shipped, with the twelve modules of the curriculum in order', () => {
+  it('is valid as shipped, with the twenty modules of the curriculum (0 to 11 of 2.0, 12 to 19 of the plant course) in order', () => {
     expect(validateCourseDefinition(course)).toEqual([]);
-    expect(course.modules.map((module) => module.id)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+    expect(course.modules.map((module) => module.id)).toEqual(Array.from({ length: 20 }, (_, id) => id));
     expect(course.modules.map((module) => module.level)).toEqual([
       'foundation',
       'foundation',
@@ -25,6 +25,14 @@ describe('the course definition file', () => {
       'intermediate',
       'intermediate',
       'intermediate',
+      'advanced',
+      'advanced',
+      'advanced',
+      'advanced',
+      'advanced',
+      'advanced',
+      'advanced',
+      'advanced',
       'advanced',
       'advanced',
       'advanced',

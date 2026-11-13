@@ -13728,6 +13728,134 @@
           "en": "The course ends with a small machine taken from a written description to a tested program, using everything before it.",
           "es": "El curso termina con una máquina pequeña, llevada de una descripción escrita a un programa probado, con todo lo anterior."
         }
+      },
+      {
+        "id": 12,
+        "level": "advanced",
+        "requires": 3,
+        "tracks": [
+          "simulation"
+        ],
+        "title": {
+          "en": "First plants: move a box with a sensor, a latch and a counter",
+          "es": "Primeras plantas: mover una caja con un sensor, una retención y un contador"
+        },
+        "why": {
+          "en": "Your first programs now move real parts. Each one reads a sensor and drives a belt or a gate in a plant you can watch, using the set, reset, edge and counter skills of module 3.",
+          "es": "Sus primeros programas ahora mueven piezas. Cada uno lee un sensor y gobierna una banda o una compuerta en una planta que se puede observar, con las habilidades de set, reset, flancos y contadores del módulo 3."
+        }
+      },
+      {
+        "id": 13,
+        "level": "advanced",
+        "requires": 12,
+        "tracks": [
+          "simulation"
+        ],
+        "title": {
+          "en": "Timers and process control: delays, level scaling and a PID loop",
+          "es": "Temporizadores y control de procesos: retardos, escalado de nivel y un lazo PID"
+        },
+        "why": {
+          "en": "Plants have time and continuous values. Timers, analog scaling and a PID loop come after the first plants because they need a plant that moves to be seen at work.",
+          "es": "Las plantas tienen tiempo y valores continuos. Los temporizadores, el escalado analógico y el lazo PID van después de las primeras plantas porque necesitan una planta en movimiento para verse trabajar."
+        }
+      },
+      {
+        "id": 14,
+        "level": "advanced",
+        "requires": 12,
+        "tracks": [
+          "simulation"
+        ],
+        "title": {
+          "en": "Flow control: state machines and merging two lines",
+          "es": "Control de flujo: máquinas de estados y fusión de dos líneas"
+        },
+        "why": {
+          "en": "When parts share a path, order matters. State machines and merging two lines organise that flow, building on the first plants.",
+          "es": "Cuando las piezas comparten un camino, el orden importa. Las máquinas de estados y la fusión de dos líneas organizan ese flujo, a partir de las primeras plantas."
+        }
+      },
+      {
+        "id": 15,
+        "level": "advanced",
+        "requires": 14,
+        "tracks": [
+          "simulation"
+        ],
+        "title": {
+          "en": "Manipulators and assembly: pick, place and sequence",
+          "es": "Manipuladores y ensamblaje: tomar, colocar y secuenciar"
+        },
+        "why": {
+          "en": "Manipulators add steps that must happen in order. Pick, place and assembly use the state machines of flow control.",
+          "es": "Los manipuladores añaden pasos que deben ocurrir en orden. Tomar, colocar y ensamblar usan las máquinas de estados del control de flujo."
+        }
+      },
+      {
+        "id": 16,
+        "level": "advanced",
+        "requires": 14,
+        "tracks": [
+          "simulation"
+        ],
+        "title": {
+          "en": "Sorting: decide a route from what the sensors report",
+          "es": "Clasificación: decidir una ruta según lo que informan los sensores"
+        },
+        "why": {
+          "en": "Sorting turns sensor combinations into routes. It reuses the flow-control skills and prepares the stations that follow.",
+          "es": "La clasificación convierte combinaciones de sensores en rutas. Reutiliza las habilidades de control de flujo y prepara las estaciones que siguen."
+        }
+      },
+      {
+        "id": 17,
+        "level": "advanced",
+        "requires": 16,
+        "tracks": [
+          "simulation"
+        ],
+        "title": {
+          "en": "Stations: several machines working as one",
+          "es": "Estaciones: varias máquinas que trabajan como una"
+        },
+        "why": {
+          "en": "A station groups sorting, transfer and sequencing into one unit. It comes after sorting because it combines its decisions.",
+          "es": "Una estación agrupa clasificación, transferencia y secuencia en una sola unidad. Va después de la clasificación porque combina sus decisiones."
+        }
+      },
+      {
+        "id": 18,
+        "level": "advanced",
+        "requires": 17,
+        "tracks": [
+          "simulation"
+        ],
+        "title": {
+          "en": "Safe and diagnosable machines: interlocks, manual and automatic, and faults",
+          "es": "Máquinas seguras y diagnosticables: enclavamientos, manual y automático, y fallas"
+        },
+        "why": {
+          "en": "A machine must stop safely and show what went wrong. Interlocks, modes and fault diagnosis are taught on stations the learner already knows.",
+          "es": "Una máquina debe detenerse de forma segura y mostrar qué falló. Los enclavamientos, los modos y el diagnóstico de fallas se enseñan sobre estaciones que ya se conocen."
+        }
+      },
+      {
+        "id": 19,
+        "level": "advanced",
+        "requires": 18,
+        "tracks": [
+          "simulation"
+        ],
+        "title": {
+          "en": "Build your own scenes: place parts, bind signals and run",
+          "es": "Construya sus propias escenas: colocar piezas, enlazar señales y ejecutar"
+        },
+        "why": {
+          "en": "The course ends by building the plant itself: parts, signals and a program that runs on them, using everything before it.",
+          "es": "El curso termina construyendo la propia planta: piezas, señales y un programa que corre sobre ellas, con todo lo anterior."
+        }
       }
     ],
     "paths": [
