@@ -63,7 +63,7 @@ A numeric signal needs its own bytes. It cannot share a byte with another numeri
 
 ## Force
 
-A forced `BOOL` input keeps its forced value: the plant's write does not change it. A forced numeric input, a value of 2 or 4 bytes, is not verified yet: do not rely on it. The check for it is still to be done.
+A forced `BOOL` input keeps its forced value: the plant's write does not change it. A forced numeric input keeps its whole forced value too: an `INT` of 2 bytes and a `REAL` of 4 bytes stay as forced while the plant writes the input image every scan. This is checked by a test on the native runtime on Linux; macOS and Windows are not yet checked.
 
 ## Not yet measured
 

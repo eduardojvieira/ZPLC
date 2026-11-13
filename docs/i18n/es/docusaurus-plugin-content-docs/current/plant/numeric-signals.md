@@ -63,7 +63,7 @@ Una señal numérica necesita sus propios bytes. No puede compartir un byte con 
 
 ## Forzado
 
-Una entrada `BOOL` forzada conserva su valor forzado: la escritura de la planta no lo cambia. Una entrada numérica forzada, un valor de 2 o 4 bytes, todavía no está verificada: no cuente con ella. La comprobación está pendiente.
+Una entrada `BOOL` forzada conserva su valor forzado: la escritura de la planta no lo cambia. Una entrada numérica forzada también conserva todo su valor forzado: un `INT` de 2 bytes y un `REAL` de 4 bytes quedan como se forzaron mientras la planta escribe la imagen de entradas en cada ciclo. Lo comprueba una prueba en el entorno de ejecución nativo en Linux; macOS y Windows aún no se han comprobado.
 
 ## Sin medir todavía
 
