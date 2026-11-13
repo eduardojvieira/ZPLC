@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "title": "Hold the level with PID",
+  "summary": "Hold the level of a tank at a set point with PID_Compact, keep it there when the drain opens, and tune the gains from what the level does.",
+  "scope": "The grade is a headless run of the simulated tank on the native POSIX runtime. It tests where the level goes, not the values of the gains: several tunings pass. It does not establish the behaviour of a real tank or valve, hardware timing, HIL, or certification.",
+  "objectives": [
+    "Run a PID loop with PID_Compact: set point, process value, gains, scan time and output limits.",
+    "Tune the gains from the response of the level, and tell the effect of the proportional, integral and derivative terms apart."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "The tank has no passive outlet: its level only falls when the discharge valve opens. In src/TankLevel.st the level and the set point are already scaled to metres. Add the call to PID_Compact so that the inlet (FillCmd, 0 to 100 percent) keeps the level at the set point, pass the drain potentiometer to the discharge valve, show the level on the display, and light green while the level is within 5 percent of the set point. Choose KP, KI and KD yourself.",
+      "checkpoint": "Pid is called once per scan with SP, PV, the three gains, DT := 0.01, OUT_MIN := 0.0 and OUT_MAX := 100.0, and FillCmd is Pid.OUT."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "The set point goes to 0.5 m at {{t:200}} ms, the drain potentiometer to 40 percent at {{t:40000}} ms and the set point to 0.3 m at {{t:70000}} ms. Predict what the level does in each case. Think about the drain: it takes water out, so the loop has to put in the same flow to hold the level.",
+      "checkpoint": "The level is in the band from 0.45 m to 0.55 m in the window that starts at {{t:30000}} ms and in the window that starts at {{t:60000}} ms; after the set point drops to 0.3 m the level leaves that band."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Start with KP := 100.0, KI := 0.0 and KD := 0.0 and look at the level after the drain opens: the inlet only grows with the error, so the level settles below the band. Raise KP until it holds. Then try a small KI to remove the last offset: the tank integrates the flow, so an integral term makes the level overshoot unless a derivative term damps it.",
+      "checkpoint": "A tuning is saved in src/TankLevel.st and you can say what each gain did when you changed it."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs src/TankLevel.st against the tank of scene tank-level-control, raises the set point, opens the drain and lowers the set point, and tests {{assertions}} assertions: the level in the band in two windows, out of it at the end, and no spill.",
+      "checkpoint": "The scenario is named tank-pid and passes all {{assertions}} assertions with saved host evidence."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare two tunings on the display: KP alone, and KP with a small KI and no KD. The second rises past the set point and comes back slowly, and its level can leave the band. With KD the overshoot is damped.",
+      "checkpoint": "You can name the tuning that overshoots and the term that damps it."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The grade does not see the gains: any tuning that keeps the level in the band passes. A real loop is judged by overshoot, settling time and offset, and these need a recorded response and a numeric limit that this lesson does not grade.",
+      "checkpoint": "State one thing a passing tuning could still get wrong that the scenario does not check."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Pid(SP := SetM, PV := LevelM, KP := 400.0, KI := 0.0, KD := 0.0, DT := 0.01, OUT_MIN := 0.0, OUT_MAX := 100.0); FillCmd := Pid.OUT; With KP at 100.0 the drain leaves the level under the band; 400.0 holds it."
+    },
+    {
+      "level": 2,
+      "text": "The reference tuning is KP := 800.0, KI := 10.0, KD := 150.0: a large KP holds the level under the drain, KI slowly removes the offset and KD stops the integral term from making the level overshoot. Then DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
+    }
+  ],
+  "faultCases": ["The starter never calls the loop: FillCmd stays at 0 percent and the tank stays empty."]
+}

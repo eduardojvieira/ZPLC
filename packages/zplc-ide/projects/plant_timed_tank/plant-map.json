@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 2,
+  "target": { "scene": "timed-tank" },
+  "signals": {
+    "StartButton.pressed": { "direction": "sensor", "type": "BOOL", "point": "TimedTank.Start" },
+    "EStop1.ok": { "direction": "sensor", "type": "BOOL", "point": "TimedTank.EStopOk" },
+    "Tank1.levelLow": { "direction": "sensor", "type": "BOOL", "point": "TimedTank.LevelLow" },
+    "Tank1.levelHigh": { "direction": "sensor", "type": "BOOL", "point": "TimedTank.LevelHigh" },
+    "Tank1.fill": { "direction": "command", "type": "BOOL", "point": "TimedTank.Fill" },
+    "Tank1.drain": { "direction": "command", "type": "BOOL", "point": "TimedTank.Drain" },
+    "StackLight1.green": { "direction": "command", "type": "BOOL", "point": "TimedTank.Green" },
+    "StackLight1.amber": { "direction": "command", "type": "BOOL", "point": "TimedTank.Amber" },
+    "StackLight1.red": { "direction": "command", "type": "BOOL", "point": "TimedTank.Red" }
+  }
+}

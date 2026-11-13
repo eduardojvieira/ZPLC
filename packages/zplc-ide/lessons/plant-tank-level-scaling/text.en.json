@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "title": "Read the level",
+  "summary": "Scale the raw level of a tank, a whole number from 0 to 27648, to metres, and use it to hold the level near a set point with a proportional inlet.",
+  "scope": "The grade is a headless run of the simulated tank on the native POSIX runtime, with an analog level that follows the scaling rules of the plant map. It does not establish the accuracy, noise or calibration of a real level transmitter, hardware timing, HIL, or certification.",
+  "objectives": [
+    "Scale an analog value to engineering units: convert to REAL first, then divide by the raw span.",
+    "Read the plant map to find the raw range of each signal, and see what a wrong scale does to the process."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "The tank reports its level as a whole number: 0 to 27648 is 0 to 1 m. The set point potentiometer gives 0 to 1000 for 0 to 1 m, and the drain potentiometer 0 to 1000 for 0 to 100 percent. In src/TankLevel.st, scale the level and the set point to metres; set the inlet to 800 percent for each metre by which the level is below the set point, limited to 0 to 100 percent; pass the drain potentiometer to the discharge valve in percent; show the level in metres on the display, and light green while the level is within 5 percent of the set point.",
+      "checkpoint": "The program scales both raw values once, at the top, and every later line uses metres."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "The set point is raised to 0.5 m at {{t:200}} ms and the drain potentiometer is turned to 40 percent at {{t:40000}} ms. Predict the level between {{t:30000}} ms and {{t:38000}} ms, and after the drain opens.",
+      "checkpoint": "The level rises to about 0.5 m without ringing and stays in the band from 0.45 m to 0.55 m, before and after the drain opens: the inlet makes up the water the drain takes, with a small offset."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "The starter declares the inputs and outputs and has no logic. Declare two REAL variables for the level and the set point in metres. Divide the level by 27648.0 and the set point by 1000.0 after INT_TO_REAL: an integer division would give 0 for every level below 1 m. Then write FillCmd from the error and limit it with two IF statements.",
+      "checkpoint": "The program has two REAL variables, the limited FillCmd and one assignment for each of the other three outputs."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC runs src/TankLevel.st against the tank of scene tank-level-control, raises the set point and opens the drain, and tests {{assertions}} assertions on the tank: it stays in its band in two windows and it never spills.",
+      "checkpoint": "The scenario is named tank-level-scaling and passes all {{assertions}} assertions with saved host evidence."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Watch the display while the inlet closes as the level nears the set point. Open the plant map and find the range of Tank1.level: it is the 27648 you divided by.",
+      "checkpoint": "The level display reads the same number of metres as the tank."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "A proportional inlet has no memory: when the drain opens the level settles a little below the set point, because the inlet only opens in proportion to the error. The next lesson adds integral and derivative terms. A wrong scale does not give a small error: with an integer division the program reads 0 m, keeps the inlet open and the tank spills.",
+      "checkpoint": "State why the same mistake in the set point scale would leave the tank empty."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "LevelM := INT_TO_REAL(LevelRaw) / 27648.0; SetM := INT_TO_REAL(SetPointRaw) / 1000.0; the error is SetM - LevelM, in metres."
+    },
+    {
+      "level": 2,
+      "text": "FillCmd := 800.0 * (SetM - LevelM); IF FillCmd > 100.0 THEN FillCmd := 100.0; END_IF; IF FillCmd < 0.0 THEN FillCmd := 0.0; END_IF; DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
+    }
+  ],
+  "faultCases": ["The starter has no logic: the inlet never opens, so the tank stays empty and never reaches its band."]
+}

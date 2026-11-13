@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "title": "The same loop in function blocks",
+  "summary": "Wire the level loop of a tank as a function block diagram: a PID_Compact block between the scaled level and set point and the inlet valve.",
+  "scope": "The grade is a headless run of the simulated tank on the native POSIX runtime. It tests where the level goes, not how the diagram is drawn or the values of the gains. It does not establish the behaviour of a real tank or valve, hardware timing, HIL, or certification.",
+  "objectives": [
+    "Wire a PID_Compact function block in a diagram: set point, process value, gains, scan time and output limits on the left, the output on the right.",
+    "Follow one value across the diagram, from the raw whole number of the level to metres and on to the inlet valve."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "This is the loop of the previous lesson drawn as a diagram. In src/TankLevel.fbd.json the level, the set point and the drain are already converted to metres and percent, the display and the green light are wired, and the PID_Compact block (instance Pid) is placed with its six constants. Wire the block: the scaled set point to SP, the scaled level to PV, each constant to its input, and its OUT to the FillCmd output, which now holds a constant 0.0.",
+      "checkpoint": "Eight inputs of Pid are wired and FillCmd takes Pid.OUT."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "The tank, the scenario and the tuning are those of the previous lesson. Predict what the level does when the set point goes to 0.5 m at {{t:200}} ms, when the drain opens at {{t:40000}} ms and when the set point falls to 0.3 m at {{t:70000}} ms.",
+      "checkpoint": "The level is in the band from 0.45 m to 0.55 m in the window that starts at {{t:30000}} ms and in the window that starts at {{t:60000}} ms, and out of it at the end."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Draw the six wires from the constants (KP, KI, KD, DT, OUT_MIN, OUT_MAX) first, then the two process wires. Delete the constant 0.0 that feeds FillCmd and connect Pid.OUT to it. The constants carry the reference tuning: change them if you tuned your own in the previous lesson. A diagram has no INT_TO_REAL block: the variable blocks LevelRawR, SetPointRawR and DrainRawR copy each whole number into a REAL variable, and the divisions work on those.",
+      "checkpoint": "No input of Pid is left open and the diagram has no constant on the FillCmd output."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "Press Check. ZPLC translates the diagram, runs it against the tank of scene tank-level-control, raises the set point, opens the drain and lowers the set point, and tests {{assertions}} assertions: the level in the band in two windows, out of it at the end, and no spill.",
+      "checkpoint": "The scenario is named tank-pid-fbd and passes all {{assertions}} assertions with saved host evidence."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Leave one gain input unwired and run again: a block input left open keeps the default of the block, which is zero for a gain, so that term does nothing. Leave KD open and the level overshoots the band in the first window. Follow the level from LevelRaw through LevelRawR and the division by 27648.0 to PV.",
+      "checkpoint": "You can say what an open input of PID_Compact does and where the level turns into metres."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The diagram and the Structured Text of the previous lesson are the same loop. A diagram shows the signal path at a glance, one block for each operation; text shows the order of the operations and is faster to change when a number changes.",
+      "checkpoint": "Name one change you would rather make in the diagram and one in text."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Each constant has one output: drag from it to the input of Pid with the same name (KP to KP). The scaled set point is the output of the division fed by SetPointRawR, and the scaled level is the output of the division fed by LevelRawR."
+    },
+    {
+      "level": 2,
+      "text": "Eight wires reach Pid: sp_div to SP, lvl_div to PV, c_kp to KP, c_ki to KI, c_kd to KD, c_dt to DT, c_omin to OUT_MIN and c_omax to OUT_MAX. Then delete the constant c_zero and wire Pid.OUT to the FillCmd output."
+    }
+  ],
+  "faultCases": ["The starter leaves the loop unwired and sends a constant 0.0 to FillCmd: the inlet never opens and the tank stays empty."]
+}

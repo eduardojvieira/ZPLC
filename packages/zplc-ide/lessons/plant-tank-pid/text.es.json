@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "title": "Mantener el nivel con PID",
+  "summary": "Mantenga el nivel de un tanque en una consigna con PID_Compact, consérvelo cuando se abra el vaciado y ajuste las ganancias a partir de lo que hace el nivel.",
+  "scope": "La calificación es una ejecución sin interfaz del tanque simulado en el entorno de ejecución POSIX nativo. Comprueba hacia dónde va el nivel, no los valores de las ganancias: varios ajustes pasan. No establece el comportamiento de un tanque o una válvula reales, la temporización en hardware, HIL ni la certificación.",
+  "objectives": [
+    "Ejecutar un lazo PID con PID_Compact: consigna, variable de proceso, ganancias, tiempo de ciclo y límites de la salida.",
+    "Ajustar las ganancias a partir de la respuesta del nivel y distinguir el efecto de los términos proporcional, integral y derivativo."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "El tanque no tiene una salida pasiva: su nivel solo baja cuando se abre la válvula de descarga. En src/TankLevel.st el nivel y la consigna ya están escalados a metros. Añada la llamada a PID_Compact para que la entrada (FillCmd, de 0 a 100 por ciento) mantenga el nivel en la consigna, pase el potenciómetro de vaciado a la válvula de descarga, muestre el nivel en el visualizador y encienda el verde mientras el nivel esté dentro del 5 por ciento de la consigna. Elija usted KP, KI y KD.",
+      "checkpoint": "Pid se llama una vez por ciclo con SP, PV, las tres ganancias, DT := 0.01, OUT_MIN := 0.0 y OUT_MAX := 100.0, y FillCmd es Pid.OUT."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "La consigna pasa a 0,5 m en {{t:200}} ms, el potenciómetro de vaciado al 40 por ciento en {{t:40000}} ms y la consigna a 0,3 m en {{t:70000}} ms. Prediga qué hace el nivel en cada caso. Piense en el vaciado: saca agua, así que el lazo debe meter el mismo caudal para mantener el nivel.",
+      "checkpoint": "El nivel está en la banda de 0,45 m a 0,55 m en la ventana que empieza en {{t:30000}} ms y en la que empieza en {{t:60000}} ms; cuando la consigna baja a 0,3 m, el nivel sale de esa banda."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "Empiece con KP := 100.0, KI := 0.0 y KD := 0.0 y observe el nivel después de que se abra el vaciado: la entrada solo crece con el error, así que el nivel se estabiliza por debajo de la banda. Suba KP hasta que se mantenga. Luego pruebe un KI pequeño para quitar el último desvío: el tanque integra el caudal, así que un término integral hace que el nivel se pase de la consigna salvo que un término derivativo lo amortigüe.",
+      "checkpoint": "Un ajuste queda guardado en src/TankLevel.st y usted puede decir qué hizo cada ganancia al cambiarla."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "Pulse Check. ZPLC ejecuta src/TankLevel.st con el tanque de la escena tank-level-control, sube la consigna, abre el vaciado y baja la consigna, y comprueba {{assertions}} aserciones: el nivel dentro de la banda en dos ventanas, fuera de ella al final y sin derrame.",
+      "checkpoint": "El escenario se llama tank-pid y pasa las {{assertions}} aserciones con evidencia guardada del host."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Compare dos ajustes en el visualizador: solo KP, y KP con un KI pequeño y sin KD. El segundo sube por encima de la consigna y vuelve despacio, y su nivel puede salir de la banda. Con KD el sobreimpulso se amortigua.",
+      "checkpoint": "Puede nombrar el ajuste que se pasa de la consigna y el término que lo amortigua."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "La calificación no ve las ganancias: cualquier ajuste que mantenga el nivel en la banda pasa. Un lazo real se juzga por el sobreimpulso, el tiempo de establecimiento y el desvío, y eso requiere una respuesta registrada y un límite numérico que esta lección no califica.",
+      "checkpoint": "Indique una cosa que un ajuste que pasa aún podría hacer mal y que el escenario no comprueba."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Pid(SP := SetM, PV := LevelM, KP := 400.0, KI := 0.0, KD := 0.0, DT := 0.01, OUT_MIN := 0.0, OUT_MAX := 100.0); FillCmd := Pid.OUT; Con KP en 100.0 el vaciado deja el nivel por debajo de la banda; con 400.0 se mantiene."
+    },
+    {
+      "level": 2,
+      "text": "El ajuste de referencia es KP := 800.0, KI := 10.0, KD := 150.0: un KP grande mantiene el nivel frente al vaciado, KI quita despacio el desvío y KD evita que el término integral haga que el nivel se pase. Luego DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
+    }
+  ],
+  "faultCases": ["El código inicial nunca llama al lazo: FillCmd se queda en 0 por ciento y el tanque permanece vacío."]
+}
