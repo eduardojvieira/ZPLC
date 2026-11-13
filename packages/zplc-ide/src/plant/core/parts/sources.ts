@@ -5,6 +5,9 @@ import {
   BOX_HEIGHTS,
   BOX_MASSES,
   BASE_SIZE,
+  CRATE_MASS_KG,
+  CRATE_OUTER,
+  crateShapes,
   boxSize,
   cfg,
   cfgNumber,
@@ -25,7 +28,7 @@ const STEP_MS = 5;
 const JITTER_M = 0.05; // random mode: lateral offset of an emitted item, either side
 
 const emitterConfig: Record<string, ConfigField> = {
-  kind: { kind: 'enum', values: ['box', 'pallet', 'lid', 'base', 'workpiece'], default: 'box' },
+  kind: { kind: 'enum', values: ['box', 'pallet', 'lid', 'base', 'workpiece', 'crate'], default: 'box' },
   vary: { kind: 'enum', values: ['none', 'colour', 'weight', 'code'], default: 'none' },
   codes: { kind: 'number', min: 1, max: 9, default: 3 },
   colour: { kind: 'enum', values: ['red', 'blue'], default: 'red' },
@@ -70,6 +73,10 @@ function emitterRuntime(part: ScenePart, rng: () => number): PartRuntime {
     emitted += 1;
     const id = `${part.id}-${emitted}`;
     if (pallet) return spawnItem(world, id, 'pallet', PALLET_SIZE, 25, part.position, part.rotationYDeg);
+    // The crate ignores vary, height and mass: a fixed open box (R5-C).
+    if (kind === 'crate') {
+      return spawnItem(world, id, 'item', CRATE_OUTER, CRATE_MASS_KG, part.position, part.rotationYDeg, 'crate', undefined, crateShapes());
+    }
     if (kind === 'lid' || kind === 'base') {
       // Height is ignored for lids and bases; mass comes from the config.
       return spawnItem(

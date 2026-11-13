@@ -1,5 +1,5 @@
 import type { BodyPose, ConfigField, FactValue, PartDefinition, PartView, Quat, ScenePart, Vec3 } from '../../contracts';
-import type { PhysicsWorld } from '../world';
+import type { PhysicsWorld, WorldBodySpec } from '../world';
 import type { ItemProps } from '../classify';
 
 /** What the core (P4) composes per scene part. Called once per 5 ms plant step: beforeStep, world.step, afterStep. */
@@ -23,6 +23,24 @@ export const PALLET_SIZE: Vec3 = [1.2, 0.144, 0.8];
 const PALLET_MASS_KG = 25;
 export const LID_SIZE: Vec3 = [0.4, 0.04, 0.3];
 export const BASE_SIZE: Vec3 = [0.4, 0.15, 0.3];
+export const CRATE_OUTER: Vec3 = [0.8, 0.25, 0.6];
+export const CRATE_WALL_M = 0.02; // floor and wall thickness // floor and wall thickness // floor and wall thickness
+export const CRATE_MASS_KG = 4;
+
+/** The compound of an open box (floor and four walls) in the body frame, whose origin is the centre of the outer box. */
+export function crateShapes(): NonNullable<WorldBodySpec['shapes']> {
+  const [lx, h, lz] = CRATE_OUTER;
+  const w = CRATE_WALL_M;
+  const wallY = w / 2; // the walls span from the floor top to the rim: their centre sits w / 2 above the box centre
+  const wallHalfY = (h - w) / 2;
+  return [
+    { half: [lx / 2, w / 2, lz / 2], offset: [0, -h / 2 + w / 2, 0] },
+    { half: [w / 2, wallHalfY, lz / 2], offset: [-(lx / 2 - w / 2), wallY, 0] },
+    { half: [w / 2, wallHalfY, lz / 2], offset: [lx / 2 - w / 2, wallY, 0] },
+    { half: [lx / 2 - w, wallHalfY, w / 2], offset: [0, wallY, -(lz / 2 - w / 2)] },
+    { half: [lx / 2 - w, wallHalfY, w / 2], offset: [0, wallY, lz / 2 - w / 2] },
+  ];
+}
 
 /** The value of a config field with the definition's default; numbers also accept the enum's text form. */
 export function cfg(part: ScenePart, fields: Readonly<Record<string, ConfigField>>, key: string): number | string | boolean {
@@ -47,7 +65,7 @@ export interface ItemInfo extends ItemProps {
   massKg: number;
   tag?: ItemTag;
 }
-/** C3 amended (K0 declares it as BodyPose['tag']): lets the view draw a lid or a base differently from a box. */
+/** C3 amended (K0 declares it as BodyPose['tag']): lets the view draw a lid, a base or a crate differently from a box. */
 export type ItemTag = NonNullable<BodyPose['tag']>;
 const tracked = new WeakMap<PhysicsWorld, Map<string, ItemInfo>>(); // Map keeps insertion order: creation order
 export const trackedItems = (world: PhysicsWorld): ReadonlyMap<string, ItemInfo> => tracked.get(world) ?? new Map();
@@ -63,6 +81,7 @@ export function spawnItem(
   rotationYDeg: number,
   tag?: ItemTag,
   props?: ItemProps,
+  shapes?: WorldBodySpec['shapes'],
 ): void {
   world.addBody({
     id,
@@ -74,6 +93,7 @@ export function spawnItem(
     friction: ITEM_FRICTION,
     motion: 'dynamic',
     layer: 'moving',
+    ...(shapes ? { shapes } : {}),
   });
   const map = tracked.get(world) ?? new Map<string, ItemInfo>();
   map.set(id, { kind, size, massKg, ...(tag ? { tag } : {}), ...props });
@@ -116,7 +136,7 @@ export function itemProps(part: ScenePart, fields: Readonly<Record<string, Confi
 
 const lidBaseConfig: Record<string, ConfigField> = { mass: { kind: 'number', min: 0.1, max: 50, default: 1, unit: 'kg' } };
 
-function itemRuntime(partId: 'box' | 'pallet' | 'lid' | 'base' | 'workpiece'): PartRuntimeFactory {
+function itemRuntime(partId: 'box' | 'pallet' | 'lid' | 'base' | 'workpiece' | 'crate'): PartRuntimeFactory {
   return (part) => {
     let world: PhysicsWorld | undefined;
     const size = (): Vec3 =>
@@ -128,7 +148,9 @@ function itemRuntime(partId: 'box' | 'pallet' | 'lid' | 'base' | 'workpiece'): P
             ? LID_SIZE
             : partId === 'base'
               ? BASE_SIZE
-              : PALLET_SIZE;
+              : partId === 'crate'
+                ? CRATE_OUTER
+                : PALLET_SIZE;
     return {
       build(w, p) {
         world = w;
@@ -139,14 +161,27 @@ function itemRuntime(partId: 'box' | 'pallet' | 'lid' | 'base' | 'workpiece'): P
               ? cfgNumber(p, workpieceConfig, 'mass')
               : partId === 'pallet'
                 ? PALLET_MASS_KG
-                : cfgNumber(p, lidBaseConfig, 'mass');
+                : partId === 'crate'
+                  ? CRATE_MASS_KG
+                  : cfgNumber(p, lidBaseConfig, 'mass');
         // A workpiece has no tag (its pose says part 'workpiece'); the view reads the properties from the pose.
         const tag = partId === 'pallet' || partId === 'workpiece' ? undefined : partId === 'box' ? 'box' : partId;
         const props =
           partId === 'box' || partId === 'workpiece'
             ? itemProps(p, partId === 'box' ? boxConfig : workpieceConfig, partId === 'workpiece')
             : undefined;
-        spawnItem(w, p.id, partId === 'pallet' ? 'pallet' : 'item', size(), mass, p.position, p.rotationYDeg, tag, props);
+        spawnItem(
+          w,
+          p.id,
+          partId === 'pallet' ? 'pallet' : 'item',
+          size(),
+          mass,
+          p.position,
+          p.rotationYDeg,
+          tag,
+          props,
+          partId === 'crate' ? crateShapes() : undefined,
+        );
       },
       beforeStep() {},
       afterStep() {},
@@ -222,6 +257,25 @@ export const itemParts: readonly RuntimePartDefinition[] = [
       'Una tarima de 1,2 por 0,8 m, de 0,144 m de alto y 25 kg. Su posición es el centro de su cara inferior.',
     ),
     runtime: itemRuntime('pallet'),
+  },
+  {
+    id: 'crate',
+    family: 'items',
+    names: { en: 'Crate', es: 'Cajón' },
+    config: {},
+    signals: NO_SIGNALS,
+    actions: [],
+    snapPoints: () => [],
+    doc: itemDoc(
+      'A stackable open crate, 0.8 by 0.6 m and 0.25 m high, 4 kg: a floor and four 0.02 m walls in one rigid body. Items dropped into ' +
+        'it ' +
+        'stay inside, and a second crate rests on its rims. An emitter of crates ignores its vary option. Its position is the centre of ' +
+        'its bottom face.',
+      'Un cajón abierto y apilable de 0,8 por 0,6 m y 0,25 m de alto, de 4 kg: un piso y cuatro paredes de 0,02 m en un solo cuerpo ' +
+        'rígido. Los objetos que caen dentro se quedan, y un segundo cajón se apoya en sus bordes. Un emisor de cajones ignora su opción ' +
+        'vary. Su posición es el centro de su cara inferior.',
+    ),
+    runtime: itemRuntime('crate'),
   },
   ...(['lid', 'base'] as const).map((id): RuntimePartDefinition => ({
     id,
