@@ -118,8 +118,8 @@ describe('the Tests activity', () => {
     dom.render(<TestsView />);
     await dom.settle();
     await dom.screen.findByRole('list', { name: dom.t('u2Tests.list') });
-    expect(dom.screen.queryByText(dom.t('testsView.show'))).toBeNull();
-    expect(dom.screen.queryByText(dom.t('testsView.description'))).toBeNull();
+    expect(dom.screen.queryByText('Show test results')).toBeNull();
+    expect(dom.screen.queryByText('Run the scenarios of the project on the host and read the results in the results panel.')).toBeNull();
   });
 
   it('TST-001 with no project open the activity says so', async () => {

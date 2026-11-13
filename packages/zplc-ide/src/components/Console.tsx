@@ -92,8 +92,6 @@ export function Console({ debugController }: ConsoleProps) {
     canonicalWorkspaceBuildEvidence,
     linkWorkspaceScenarios,
     hasUnsavedChanges,
-    saveAllFiles,
-    saveProjectConfig,
     saveFile,
   } = useConsoleState();
   // a request for a view that left this panel (the explorer, the inspector, the lessons) is shown by the sidebars; this panel keeps its own
@@ -108,8 +106,6 @@ export function Console({ debugController }: ConsoleProps) {
     workspaceScenarioLink,
     linkWorkspaceScenarios,
     hasUnsavedChanges,
-    saveAllFiles,
-    saveProjectConfig,
   });
   const {
     workspaceTests,

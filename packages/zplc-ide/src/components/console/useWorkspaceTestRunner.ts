@@ -29,8 +29,6 @@ export function useWorkspaceTestRunner(
     | 'workspaceScenarioLink'
     | 'linkWorkspaceScenarios'
     | 'hasUnsavedChanges'
-    | 'saveAllFiles'
-    | 'saveProjectConfig'
   >,
 ) {
   const { isProjectOpen, projectSession, compilerRunId, workspaceScenarioLink, linkWorkspaceScenarios, hasUnsavedChanges } = state;
