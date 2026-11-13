@@ -4,6 +4,7 @@
  * and every readout carries text and a marker other than colour. They read a part's `PartView` (the view state keys of
  * `plan-m2.md`) and write through `core.operate`.
  */
+import { useState } from 'react';
 import { useT } from '../../i18n';
 import { Button, RangeField, Select } from '../../ui';
 import type { PartView, PlantCore, ScenePart } from '../contracts';
@@ -21,8 +22,13 @@ export interface ControlProps {
 
 export function PotentiometerControl({ part, view, core, run }: ControlProps) {
   const { t } = useT();
+  // The value being set, until the plant reports one: a controlled input is put back to its prop right after onChange, so
+  // without it a drag snaps back and the next arrow press steps from the old value. `base` is the reported value it was set
+  // against; once the plant reports another value the draft is dropped (derived, no effect), and so it is on blur.
+  const [draft, setDraft] = useState<{ value: number; base: number } | undefined>();
   if (!view) return null;
-  const [min, max, value, unit] = [num(view, 'min'), num(view, 'max', 100), num(view, 'value'), str(view, 'unit')];
+  const [min, max, reported, unit] = [num(view, 'min'), num(view, 'max', 100), num(view, 'value'), str(view, 'unit')];
+  const value = draft && draft.base === reported ? draft.value : reported;
   return (
     <RangeField
       label={part.name}
@@ -32,7 +38,12 @@ export function PotentiometerControl({ part, view, core, run }: ControlProps) {
       step={(max - min) / 100 || 1}
       value={value}
       aria-valuetext={t('plant.panel.valueText', { value: String(Math.round(value * 10) / 10), unit })}
-      onChange={(event) => run(() => void core.operate(`${part.name}.value`, Number(event.target.value)))}
+      onBlur={() => setDraft(undefined)}
+      onChange={(event) => {
+        const next = Number(event.target.value);
+        setDraft({ value: next, base: reported });
+        run(() => void core.operate(`${part.name}.value`, next));
+      }}
     />
   );
 }
