@@ -3,6 +3,14 @@
 
 export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: string; es: string } }[] = [
   {
+    "id": "belt-to-belt-transfer",
+    "dir": "plant-scenes/belt-to-belt-transfer",
+    "names": {
+      "en": "Transfer between belts",
+      "es": "Transfer between belts"
+    }
+  },
+  {
     "id": "belt-to-sensor",
     "dir": "plant-scenes/belt-to-sensor",
     "names": {
