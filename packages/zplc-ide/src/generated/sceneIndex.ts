@@ -43,6 +43,14 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     }
   },
   {
+    "id": "layer-palletizer",
+    "dir": "plant-scenes/layer-palletizer",
+    "names": {
+      "en": "Layer palletizer",
+      "es": "Layer palletizer"
+    }
+  },
+  {
     "id": "merge-lines",
     "dir": "plant-scenes/merge-lines",
     "names": {
