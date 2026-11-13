@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "id": "layer-palletizer",
+  "tickMs": 10,
+  "durationMs": 60000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      { "atMs": 200, "operate": { "signal": "StartButton.pressed", "value": true } },
+      { "atMs": 400, "operate": { "signal": "StartButton.pressed", "value": false } }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 100,
+      "condition": {
+        "LayerPalletizer.Green": false,
+        "LayerPalletizer.Amber": false,
+        "LayerPalletizer.Grip": false,
+        "LayerPalletizer.Run": false
+      }
+    },
+    { "kind": "AT", "atMs": 1000, "condition": { "LayerPalletizer.Amber": true, "LayerPalletizer.Green": false } },
+    {
+      "kind": "EVENTUALLY",
+      "fromMs": 0,
+      "withinMs": 60000,
+      "condition": { "fact:placed:Palletizer1": true, "fact:stacked:pallet:0": true, "fact:layers:pallet:0": true }
+    },
+    { "kind": "ALWAYS", "condition": { "fact:itemsDropped": false, "fact:drops:Palletizer1": false } },
+    {
+      "kind": "AT",
+      "atMs": 60000,
+      "condition": {
+        "LayerPalletizer.Green": true,
+        "LayerPalletizer.Grip": false,
+        "LayerPalletizer.Run": false,
+        "LayerPalletizer.XPlus": false,
+        "LayerPalletizer.XMinus": false,
+        "LayerPalletizer.YPlus": false,
+        "LayerPalletizer.YMinus": false,
+        "LayerPalletizer.Square": false
+      }
+    }
+  ]
+}

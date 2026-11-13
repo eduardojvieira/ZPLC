@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "name": "Layer palletizer",
+  "shortestPulseMs": 20,
+  "parts": [
+    {
+      "id": "infeed",
+      "part": "belt",
+      "name": "Infeed",
+      "position": [-0.7, 0.54, 0],
+      "rotationYDeg": 0,
+      "config": { "length": 2.2, "width": 0.8, "speedMps": 0.5 }
+    },
+    {
+      "id": "emitter-near",
+      "part": "emitter",
+      "name": "Emitter1",
+      "position": [-1.5, 0.7, -0.13],
+      "rotationYDeg": 0,
+      "config": { "maxItems": 6 }
+    },
+    {
+      "id": "emitter-far",
+      "part": "emitter",
+      "name": "Emitter2",
+      "position": [-1.5, 0.7, 0.18],
+      "rotationYDeg": 0,
+      "config": { "maxItems": 6 }
+    },
+    {
+      "id": "eye-in",
+      "part": "sensor-diffuse",
+      "name": "EyeIn",
+      "position": [-0.9, 0.54, -0.5],
+      "rotationYDeg": 270,
+      "config": { "rangeM": 1 }
+    },
+    {
+      "id": "palletizer",
+      "part": "layer-palletizer",
+      "name": "Palletizer1",
+      "position": [0, 0.54, 0],
+      "rotationYDeg": 0,
+      "config": { "variant": "digital", "strokeXM": 1.6, "strokeYM": 1, "speedMps": 1.5, "accelMps2": 2, "columns": 2, "rows": 2 }
+    },
+    { "id": "pallet", "part": "pallet", "name": "Pallet1", "position": [1.6, 0.075, 0], "rotationYDeg": 0, "config": {} },
+    { "id": "start", "part": "push-button", "name": "StartButton", "position": [-1.5, 0.54, -0.7], "rotationYDeg": 0, "config": {} },
+    { "id": "light", "part": "stack-light", "name": "StackLight1", "position": [1.6, 0, -0.9], "rotationYDeg": 0, "config": {} }
+  ],
+  "cameras": [{ "name": "Overview", "position": [0.4, 2.4, 3.6], "target": [0.4, 0.6, 0] }]
+}

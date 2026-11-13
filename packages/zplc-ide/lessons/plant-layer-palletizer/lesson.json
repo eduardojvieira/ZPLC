@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-layer-palletizer",
+  "version": 1,
+  "order": 154,
+  "module": 15,
+  "level": "advanced",
+  "prerequisites": ["structures-arrays-call-panel", "plant-assembler-numeric"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The program stacks layers of four boxes with a clamp head and a squaring pusher; the boxes, the pallet and the head exist only in the simulated scene.",
+        "es": "El programa apila capas de cuatro cajas con un cabezal de pinza y un empujador de escuadrado; las cajas, el palé y el cabezal existen solo en la escena simulada."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus cajas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "layer-palletizer",
+  "estimatedMinutes": 50,
+  "starter": {
+    "project": "plant_layer_palletizer_starter",
+    "program": "src/LayerPalletizer.st"
+  },
+  "solution": {
+    "project": "plant_layer_palletizer",
+    "program": "src/LayerPalletizer.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "layer-palletizer",
+    "path": "tests/layer-palletizer.scenario.json",
+    "sha256": "7b74c845e60d0cc700ed617352e16ca9eb38b7b02d317b69f154dea9d923c812"
+  },
+  "regressionScenarios": []
+}
