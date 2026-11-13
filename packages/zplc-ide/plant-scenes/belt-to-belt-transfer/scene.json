@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "name": "Transfer between belts",
+  "shortestPulseMs": 330,
+  "parts": [
+    {
+      "id": "infeed",
+      "part": "belt",
+      "name": "Infeed",
+      "position": [-1.5, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "length": 2,
+        "speedMps": 0.5
+      }
+    },
+    {
+      "id": "outfeed",
+      "part": "belt",
+      "name": "Outfeed",
+      "position": [1, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "length": 2.5,
+        "speedMps": 0.5
+      }
+    },
+    {
+      "id": "source",
+      "part": "emitter",
+      "name": "Source1",
+      "position": [-2.3, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "maxItems": 4,
+        "height": "0.2"
+      }
+    },
+    {
+      "id": "stop",
+      "part": "stop-blade",
+      "name": "Stop1",
+      "position": [-0.7, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {}
+    },
+    {
+      "id": "eye-pick",
+      "part": "sensor-diffuse",
+      "name": "EyePick",
+      "position": [-0.925, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": {
+        "rangeM": 1
+      }
+    },
+    {
+      "id": "eye-out",
+      "part": "sensor-diffuse",
+      "name": "EyeOut",
+      "position": [1.6, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": {
+        "rangeM": 1
+      }
+    },
+    {
+      "id": "pick",
+      "part": "pick-place",
+      "name": "Pick1",
+      "position": [-0.925, 0.72, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "variant": "digital",
+        "gripper": "clamp",
+        "strokeXM": 1.2,
+        "strokeYM": 0.5
+      }
+    },
+    {
+      "id": "remover",
+      "part": "remover",
+      "name": "Remover1",
+      "position": [2.1, 0.65, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "width": 0.4,
+        "height": 0.6,
+        "depth": 0.6
+      }
+    },
+    {
+      "id": "start",
+      "part": "push-button",
+      "name": "StartButton",
+      "position": [-2.3, 0.5, -0.7],
+      "rotationYDeg": 0,
+      "config": {}
+    },
+    {
+      "id": "beacon",
+      "part": "stack-light",
+      "name": "Beacon",
+      "position": [2.1, 0.5, -0.7],
+      "rotationYDeg": 0,
+      "config": {}
+    }
+  ],
+  "cameras": [
+    {
+      "name": "Overview",
+      "position": [0, 2.6, 3.4],
+      "target": [0, 0.8, 0]
+    }
+  ]
+}
