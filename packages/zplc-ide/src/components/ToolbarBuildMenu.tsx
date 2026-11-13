@@ -16,6 +16,7 @@ export function BuildMenu({
   onDownloadBytecode,
   onViewAssembly,
   hasCurrentCompileResult,
+  stale = !hasCurrentCompileResult,
 }: {
   menu: ReturnType<typeof useDropdownMenu>;
   onCompile: () => void;
@@ -24,6 +25,8 @@ export function BuildMenu({
   onDownloadBytecode: () => void;
   onViewAssembly: () => void;
   hasCurrentCompileResult: boolean;
+  /** The last build is not of the current sources: Build carries a mark (MSG-007). Without a build it is true as well. */
+  stale?: boolean;
 }) {
   const { open, menuRef, triggerRef, firstItemRef, openMenu: onOpen, closeMenu: onClose } = menu;
   const { t } = useT();
@@ -51,10 +54,11 @@ export function BuildMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls="toolbar-build-menu"
-        tooltip={t('toolbar.build.label')}
+        tooltip={stale ? `${t('toolbar.build.label')} · ${t('studio.status.buildStale')}` : t('toolbar.build.label')}
       >
         <Hammer size={14} />
         <span>{t('toolbar.build.text')}</span>
+        {stale && <span data-build-stale className="h-1.5 w-1.5 rounded-full bg-[var(--signal-forced-border)]" aria-hidden="true" />}
         <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
       </Button>
 

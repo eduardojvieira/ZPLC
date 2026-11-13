@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import { useIDEStore } from '../store/useIDEStore';
 import { useVmInfo } from '../store/vmInfo';
 import { useCurrentExecution } from '../hooks/useDebugValue';
@@ -6,6 +6,10 @@ import { useT } from '../i18n';
 import { connectionManager, type LinkInfo } from '../runtime/connectionManager';
 import { ConnectionIndicator } from './ConnectionIndicator';
 import { presentConnection, type ConnectionIndicatorView } from './connectionPresentation';
+import { runCommand } from '../commands/bus';
+import { Button } from '../ui';
+import { StatusDetails, type StatusDetailRow } from './StatusDetails';
+import { boundPlantTransport, programStateOf, programStateText, type ProgramState, type ProgramStateInput } from './programState';
 import type { DebugAdapterType } from '../runtime/debugAdapter';
 import type { ExecutionMode } from './runtimeArtifactSelection';
 import {
@@ -19,7 +23,8 @@ interface OperationalStatusBarProps {
   mode: ExecutionMode;
   adapterType: DebugAdapterType | null;
   connected: boolean;
-  status: { text: string; tone: OperationalStatusTone };
+  /** The program's state in words; `input` lets the rail word it again with a plant session and the place of a pause. */
+  status: { text: string; tone: OperationalStatusTone; input?: ProgramStateInput };
   /** A connection to hardware is being made (UX-018). */
   connecting: boolean;
   /** The runtime reports a fault. */
@@ -37,7 +42,7 @@ const TONE_DOT: Record<OperationalStatusTone, string> = {
 
 function Detail({ label, value, numeric = false }: { label: string; value: string; numeric?: boolean }) {
   return (
-    <span className="flex items-center gap-1.5 text-xs">
+    <span className="flex items-center gap-1.5 text-xs" data-status-item>
       <span className="text-[var(--text-muted)]">{label}</span>
       <span className={numeric ? 'font-mono tabular-nums text-[var(--color-surface-100)]' : 'text-[var(--color-surface-100)]'}>
         {value}
@@ -57,18 +62,32 @@ export function OperationalStatusBar({ mode, adapterType, connected, status, con
   const forcesUnconfirmed = useIDEStore((state) => state.debug.forcesUnconfirmed);
   const vmInfo = useVmInfo();
   const nativeTrace = useIDEStore((state) => state.debug.nativeTrace);
-  const debugMode = useIDEStore((state) => state.debug.mode);
-  const { isPaused, currentLine } = useCurrentExecution();
+  const { isPaused, currentLine, currentPOU } = useCurrentExecution();
   const [linkInfo, setLinkInfo] = useState<LinkInfo>(connectionManager.linkInfo);
   useEffect(() => connectionManager.onLinkInfoUpdate(setLinkInfo), []);
 
+  // A bound plant session speaks through the same line (PLS-013): the rail follows its changes.
+  const [, refresh] = useReducer((n: number) => n + 1, 0);
+  const plant = boundPlantTransport();
+  useEffect(() => plant?.onChange(refresh), [plant]);
+
   if (!isProjectOpen) return null;
+  const place = isPaused
+    ? t('studio.status.place', { unit: currentPOU ?? t('studio.status.detail.none'), line: currentLine ?? 0 })
+    : undefined;
+  const stateInput = status.input && {
+    ...status.input,
+    ...(plant ? { transport: plant.state, slowdown: plant.slowdown } : {}),
+    ...(place ? { place } : {}),
+  };
+  const state = stateInput ? programStateOf(stateInput) : undefined;
+  const shownStatus = state ? { text: programStateText(state, t), tone: state.tone } : status;
   const presentation = presentOperationalStatus({
     mode,
     adapterType,
     connected,
     vmInfo,
-    status,
+    status: shownStatus,
     projectTargetBoard: projectConfig?.target?.board,
     projectTasks: projectConfig?.tasks,
     controllerInfo,
@@ -82,8 +101,9 @@ export function OperationalStatusBar({ mode, adapterType, connected, status, con
   const indicator = presentConnection(
     {
       mode,
-      adapterType,
-      connected,
+      // A simulation needs no Connect: its session is implicit, so the indicator never says "not connected" for it (FLW-008, MSG-007).
+      adapterType: mode === 'simulate' ? (adapterType ?? 'native') : adapterType,
+      connected: mode === 'simulate' ? true : connected,
       connecting,
       faulted,
       ...(board ? { board } : {}),
@@ -91,21 +111,51 @@ export function OperationalStatusBar({ mode, adapterType, connected, status, con
     },
     t,
   );
-  // the debug state of the code editor (UX-034): it was drawn over the code before
-  const debug =
-    debugMode === 'none' ? undefined : isPaused ? t('status.debug.paused', { line: currentLine ?? 0 }) : t('status.debug.attached');
-  return <OperationalStatusView presentation={presentation} indicator={indicator} debug={debug} />;
+  const none = t('studio.status.detail.none');
+  const rows: StatusDetailRow[] = [
+    { label: t('studio.status.detail.runtime'), value: presentation.runtime },
+    {
+      label: t('studio.status.detail.cycles'),
+      value: presentation.cycles?.toLocaleString() ?? none,
+      numeric: presentation.cycles !== undefined,
+    },
+    {
+      label: t('studio.status.detail.tasks'),
+      value: presentation.taskCount !== undefined ? String(presentation.taskCount) : presentation.taskIntervalMs !== undefined ? '1' : none,
+      numeric: true,
+    },
+    { label: t('studio.status.detail.firmware'), value: linkInfo.firmware?.firmwareVersion ?? none },
+    { label: t('studio.status.detail.protocol'), value: protocol ?? none },
+  ];
+  const action = state?.action ? actionOf(state, t) : undefined;
+  return <OperationalStatusView presentation={presentation} indicator={indicator} rows={rows} {...(action ? { action } : {})} />;
 }
 
-/** What the status bar shows, from values already worked out: the container above reads the store, this one only draws. */
+function actionOf(state: ProgramState, t: ReturnType<typeof useT>['t']): { label: string; run: () => void } | undefined {
+  if (state.action === 'debug.rebuildAndRestart')
+    return { label: t('studio.status.action.rebuildAndRestart'), run: () => void runCommand('debug.rebuildAndRestart') };
+  if (state.action === 'build.compile') return { label: t('studio.status.action.build'), run: () => void runCommand('build.compile') };
+  return undefined;
+}
+
+/**
+ * What the status bar shows, from values already worked out: the container above reads the store, this one only draws. One line:
+ * the connection indicator, the program state (with its one action), the scan interval, the count of active forces, and the
+ * overruns only when there are some (FLW-011). The rest is behind the details control.
+ */
 export function OperationalStatusView({
   presentation,
   indicator,
   debug,
+  rows = [],
+  action,
 }: {
   presentation: OperationalStatusPresentation;
   indicator: ConnectionIndicatorView;
+  /** The debug state of the code editor (UX-034). The container no longer passes it: a pause is worded at its place in the state. */
   debug?: string;
+  rows?: StatusDetailRow[];
+  action?: { label: string; run: () => void };
 }) {
   const { t } = useT();
   return (
@@ -114,38 +164,43 @@ export function OperationalStatusView({
       className="min-h-[34px] border-b border-[var(--color-surface-700)] bg-[var(--color-surface-900)] px-3 py-1.5"
     >
       <div className="overflow-x-auto [scrollbar-width:thin]">
-        {/* each detail stays on one line; in a narrow window the row goes on to a second line instead of scrolling sideways */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 whitespace-nowrap">
-          <ConnectionIndicator indicator={indicator} />
-          <span className="h-3.5 w-px bg-[var(--color-surface-700)]" aria-hidden="true" />
-          <Detail
-            label={t('status.mode')}
-            value={presentation.mode === 'HARDWARE' ? t('statusText.mode.hardware') : t('statusText.mode.simulation')}
-          />
-          <span className="h-3.5 w-px bg-[var(--color-surface-700)]" aria-hidden="true" />
-          <Detail label={t('status.runtime')} value={presentation.runtime} />
-          {presentation.target && <Detail label={t('status.target')} value={presentation.target} />}
-          {debug !== undefined && <Detail label={t('status.debug')} value={debug} />}
-          <span
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
-            className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-surface-100)]"
-          >
-            <span
-              className={`h-1.5 w-1.5 rounded-full ring-1 ring-[var(--color-surface-100)] ${TONE_DOT[presentation.status.tone]}`}
-              aria-hidden="true"
-            />
-            <span>{presentation.status.text}</span>
+        <div className="flex flex-nowrap items-center gap-x-3 whitespace-nowrap" data-status-line>
+          <span data-status-item>
+            <ConnectionIndicator indicator={indicator} />
           </span>
-          {presentation.cycles !== undefined && <Detail label={t('status.cycles')} value={presentation.cycles.toLocaleString()} numeric />}
+          <span className="h-3.5 w-px bg-[var(--color-surface-700)]" aria-hidden="true" />
+          <span className="flex items-center gap-2" data-status-item>
+            <span
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-surface-100)]"
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ring-1 ring-[var(--color-surface-100)] ${TONE_DOT[presentation.status.tone]}`}
+                aria-hidden="true"
+              />
+              <span>{presentation.status.text}</span>
+            </span>
+            {action && (
+              <Button variant="secondary" size="sm" onClick={action.run}>
+                {action.label}
+              </Button>
+            )}
+          </span>
           {presentation.taskIntervalMs !== undefined && (
-            <Detail label={t('status.taskInterval')} value={`${presentation.taskIntervalMs.toLocaleString()} ms`} numeric />
+            <Detail label={t('studio.status.interval')} value={`${presentation.taskIntervalMs.toLocaleString()} ms`} numeric />
           )}
-          {presentation.taskCount !== undefined && <Detail label={t('status.tasks')} value={String(presentation.taskCount)} numeric />}
-          {presentation.overruns !== undefined && (
-            <Detail label={t('status.overruns')} value={presentation.overruns.toLocaleString()} numeric />
+          {debug !== undefined && <Detail label={t('status.debug')} value={debug} />}
+          {presentation.forceCount !== undefined && (
+            <Detail label={t('studio.status.forces')} value={presentation.forceCount.toLocaleString()} numeric />
           )}
+          {presentation.overruns !== undefined && presentation.overruns > 0 && (
+            <Detail label={t('studio.status.overruns')} value={presentation.overruns.toLocaleString()} numeric />
+          )}
+          <span className="ml-auto">
+            <StatusDetails rows={rows} />
+          </span>
         </div>
         {presentation.limits && (
           <div role="note" className="mt-1 border-l-2 border-[var(--color-accent-orange)] px-2 text-xs text-[var(--color-surface-100)]">

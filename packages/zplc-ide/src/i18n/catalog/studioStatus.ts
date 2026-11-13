@@ -1,3 +1,68 @@
-/** The text of the Studio status (W7) of spec 013, in English and in Spanish. Keys `studio.status.*`. Registered empty by task W0; the task named fills it. */
-export const studioStatusEn = {} as const;
-export const studioStatusEs: Record<keyof typeof studioStatusEn, string> = {};
+/** The text of the Studio status (W7) of spec 013, in English and in Spanish. Keys `studio.status.*`. */
+export const studioStatusEn = {
+  // The table of state words (MSG-007).
+  'studio.status.state.stopped': 'Stopped',
+  'studio.status.state.notConnected': 'Not connected',
+  'studio.status.state.buildNeeded': 'Connected · build needed',
+  'studio.status.state.rebuildNeeded': 'Connected · rebuild needed',
+  'studio.status.state.deployNeeded': 'Connected · deploy needed',
+  'studio.status.state.deployedStopped': 'Deployed · stopped',
+  'studio.status.state.running': 'Running',
+  'studio.status.state.runningOlder': 'Running an older build',
+  'studio.status.state.runningSlow': 'Running slower than real time',
+  'studio.status.state.paused': 'Paused',
+  'studio.status.state.pausedAt': 'Paused at {place}',
+  'studio.status.state.pausedOlder': 'Paused on an older build',
+  'studio.status.state.fault': 'Fault',
+  'studio.status.state.faultReason': 'Fault: {reason}',
+  // The offer on a stale build (FLW-012).
+  'studio.status.action.rebuildAndRestart': 'Rebuild and restart',
+  'studio.status.action.build': 'Build',
+  // The line and its details (FLW-011).
+  'studio.status.place': '{unit}, line {line}',
+  'studio.status.interval': 'Scan',
+  'studio.status.forces': 'Forces',
+  'studio.status.overruns': 'Overruns',
+  'studio.status.details': 'Details',
+  'studio.status.detailsLabel': 'Status details',
+  'studio.status.detail.runtime': 'Runtime',
+  'studio.status.detail.cycles': 'Cycles',
+  'studio.status.detail.tasks': 'Tasks',
+  'studio.status.detail.firmware': 'Firmware',
+  'studio.status.detail.protocol': 'Protocol',
+  'studio.status.detail.none': 'Not reported',
+  // The mark on Build while the last build is not of the current sources (MSG-007).
+  'studio.status.buildStale': 'The last build is not of the current sources',
+} as const;
+
+export const studioStatusEs: Record<keyof typeof studioStatusEn, string> = {
+  'studio.status.state.stopped': 'Detenido',
+  'studio.status.state.notConnected': 'No conectado',
+  'studio.status.state.buildNeeded': 'Conectado · falta compilar',
+  'studio.status.state.rebuildNeeded': 'Conectado · compilación desactualizada',
+  'studio.status.state.deployNeeded': 'Conectado · falta cargar',
+  'studio.status.state.deployedStopped': 'Cargado · detenido',
+  'studio.status.state.running': 'En ejecución',
+  'studio.status.state.runningOlder': 'En ejecución con una compilación anterior',
+  'studio.status.state.runningSlow': 'En ejecución más lenta que el tiempo real',
+  'studio.status.state.paused': 'En pausa',
+  'studio.status.state.pausedAt': 'En pausa en {place}',
+  'studio.status.state.pausedOlder': 'En pausa con una compilación anterior',
+  'studio.status.state.fault': 'Falla',
+  'studio.status.state.faultReason': 'Falla: {reason}',
+  'studio.status.action.rebuildAndRestart': 'Compilar y reiniciar',
+  'studio.status.action.build': 'Compilar',
+  'studio.status.place': '{unit}, línea {line}',
+  'studio.status.interval': 'Ciclo',
+  'studio.status.forces': 'Forzados',
+  'studio.status.overruns': 'Sobrepasos',
+  'studio.status.details': 'Detalles',
+  'studio.status.detailsLabel': 'Detalles del estado',
+  'studio.status.detail.runtime': 'Entorno de ejecución',
+  'studio.status.detail.cycles': 'Ciclos',
+  'studio.status.detail.tasks': 'Tareas',
+  'studio.status.detail.firmware': 'Firmware',
+  'studio.status.detail.protocol': 'Protocolo',
+  'studio.status.detail.none': 'Sin información',
+  'studio.status.buildStale': 'La última compilación no es de las fuentes actuales',
+};
