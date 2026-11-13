@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "The same sorting in Instruction List",
+  "summary": "Write the colour-sorting logic as an instruction list: one current result, labels and jumps, and two timers called with CAL.",
+  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Turn the states of a sorting sequence into compare-and-jump blocks.",
+    "Call a TON from Instruction List with CAL and read its Q output."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/ColourSeparation.il, write each state as a block: LD State, EQ n, AND the condition that leaves it, JMPCN to the next block, then the instructions that change State. Store a condition in Gate before CAL, because CAL takes variables.",
+      "checkpoint": "The program sorts the same eight workpieces as in Structured Text: red ones into RedBin, blue ones into BlueBin, then Done."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, write the four states on paper and, for each, the condition that leaves it. A JMPCN skips its block when the current result is FALSE: which result does each block test?",
+      "checkpoint": "Every block ends with the current result decided by State and one input; no block changes State unless its own condition holds."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter only latches Start and runs the infeed belt, so no workpiece is read or sorted; add the four state blocks and drive the other outputs.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the colour-separation scenario; watch the 3D view while it runs.",
+      "checkpoint": "The required scenario is named colour-separation and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Watch the 3D view and the trace: State is not an output, so follow Hold and Push. A red workpiece gives one Push pulse; a blue one gives none and Hold drops for about a second and a half.",
+      "checkpoint": "The outputs are the same as with the Structured Text solution, scan for scan, because both express the same four states."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The grade checks the bins, the lamps and that nothing was dropped; it does not read how the program is written, so the same behaviour in another language passes.",
+      "checkpoint": "It does not establish scan timing of the instruction list, sensor response, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "A block looks like: LD State, EQ 1, AND Extended, JMPCN next, LD 2, ST State, then the label next:. Put the labels at the start of a line."
+    },
+    {
+      "level": 2,
+      "text": "Gate the timers: LD State, EQ 0, AND Waiting, ST Gate, CAL Settle(IN := Gate, PT := T#300ms). Read the result with AND Settle.Q."
+    }
+  ],
+  "faultCases": [
+    "The starter only latches Start and runs the infeed belt, so no workpiece is read or sorted; add the four state blocks and drive the other outputs."
+  ]
+}

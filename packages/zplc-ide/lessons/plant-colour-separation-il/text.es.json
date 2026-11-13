@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "La misma clasificación en Lista de instrucciones",
+  "summary": "Escriba la lógica de clasificación por color como una lista de instrucciones: un resultado actual, etiquetas y saltos, y dos temporizadores llamados con CAL.",
+  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "objectives": [
+    "Convertir los estados de una secuencia de clasificación en bloques de comparar y saltar.",
+    "Llamar a un TON desde Lista de instrucciones con CAL y leer su salida Q."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/ColourSeparation.il, escriba cada estado como un bloque: LD State, EQ n, AND la condición que lo abandona, JMPCN al bloque siguiente y las instrucciones que cambian State. Guarde una condición en Gate antes de CAL, porque CAL recibe variables.",
+      "checkpoint": "El programa clasifica las mismas ocho piezas que en Texto estructurado: las rojas a RedBin, las azules a BlueBin y después Done."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "Antes de ejecutar, escriba en papel los cuatro estados y, para cada uno, la condición que lo abandona. Un JMPCN salta su bloque cuando el resultado actual es FALSE: ¿qué resultado comprueba cada bloque?",
+      "checkpoint": "Cada bloque termina con el resultado actual decidido por State y una entrada; ningún bloque cambia State salvo que se cumpla su propia condición."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial solo memoriza Start y hace girar la banda de entrada, así que no se lee ni se clasifica ninguna pieza; añada los cuatro bloques de estado y gobierne las demás salidas.",
+      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario colour-separation; observe la vista 3D mientras se ejecuta.",
+      "checkpoint": "El escenario requerido se llama colour-separation y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Observe la vista 3D y la traza: State no es una salida, así que siga Hold y Push. Una pieza roja da un pulso de Push; una azul no da ninguno y Hold baja cerca de un segundo y medio.",
+      "checkpoint": "Las salidas son las de la solución en Texto estructurado, ciclo a ciclo, porque ambas expresan los mismos cuatro estados."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "La calificación comprueba los contenedores, las lámparas y que nada cayó; no lee cómo está escrito el programa, así que el mismo comportamiento en otro lenguaje también pasa.",
+      "checkpoint": "No establece la temporización de ciclo de la lista de instrucciones, la respuesta del sensor, la temporización de hardware, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Un bloque tiene esta forma: LD State, EQ 1, AND Extended, JMPCN next, LD 2, ST State y la etiqueta next:. Ponga las etiquetas al inicio de la línea."
+    },
+    {
+      "level": 2,
+      "text": "Condicione los temporizadores: LD State, EQ 0, AND Waiting, ST Gate, CAL Settle(IN := Gate, PT := T#300ms). Lea el resultado con AND Settle.Q."
+    }
+  ],
+  "faultCases": [
+    "El inicial solo memoriza Start y hace girar la banda de entrada, así que no se lee ni se clasifica ninguna pieza; añada los cuatro bloques de estado y gobierne las demás salidas."
+  ]
+}
