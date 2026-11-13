@@ -98,7 +98,7 @@ Una báscula vacía que no es estable, con la falla `readingOffset` activa, lee 
 ## Límites de este modelo
 
 - La báscula es estática y no lee fuerza de contacto.
-- Los ángulos usan una tabla con una resolución de 0,25 grados.
+- La rotación de una pieza en la escena se redondea a 0,25 grados. La mesa giratoria interpola entre los pasos de esa tabla mientras gira, así que su ángulo no tiene ese paso.
 - Los topes de los desviadores son los únicos cuerpos de esas piezas.
 - La planta es un modelo. Un resultado aquí no dice cómo se comporta una máquina clasificadora real.
 

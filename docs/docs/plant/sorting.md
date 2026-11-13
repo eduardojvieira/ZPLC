@@ -98,7 +98,7 @@ An empty scale that is not stable, with `readingOffset` on, reads 2 kg: the offs
 ## Limits of this model
 
 - The scale is static and reads no contact force.
-- Angles use a table with a resolution of 0.25 degrees.
+- A part's rotation in the scene is rounded to 0.25 degrees. The turntable blends between the steps of that table while it turns, so its angle has no such step.
 - The plates of the diverters are the only bodies of those parts.
 - The plant is a model. A result here does not say how a real sorting machine behaves.
 
