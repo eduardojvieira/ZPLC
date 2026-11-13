@@ -25,6 +25,8 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 import { getAllFBNames, getAllFnNames } from '../../packages/zplc-compiler/src/compiler/stdlib/index.ts';
+import { alternativePairs } from '../../packages/zplc-ide/src/learn/lessonSiblings';
+import type { LessonIndex } from '../../packages/zplc-ide/src/learn/lessonPackage';
 import { getWasmCapabilities } from '../../packages/zplc-ide/src/runtime/debugCapabilities';
 import { markdownFiles } from './check_doc_claims';
 import { loadInputs, type RowFacts } from './generate_language_reference';
@@ -84,6 +86,8 @@ export interface Surface {
   file: string;
   kind: Kind;
   text: string;
+  /** The page describes a past release (its notes): the numbers that count a thing are true of that release, so they are not compared. */
+  historical?: boolean;
 }
 export interface Finding {
   file: string;
@@ -299,6 +303,7 @@ export function checkSentence(
   registry: Registry,
   truth: Truth,
   cites: string[] = [],
+  historical = false,
 ): Finding[] {
   const findings: Finding[] = [];
   const limited = LIMITS.test(sentence);
@@ -316,7 +321,7 @@ export function checkSentence(
         });
     }
   }
-  if (!HISTORICAL.test(sentence)) {
+  if (!historical && !HISTORICAL.test(sentence)) {
     for (const count of registry.counts) {
       if (count.requires && !new RegExp(count.requires, 'i').test(sentence)) continue;
       // "six Zephyr boards", "all seven board profiles", "21 example projects"; "the two boards" is a subset and is not a total,
@@ -345,7 +350,9 @@ export function checkSentence(
 
 export function checkSurface(surface: Surface, registry: Registry, truth: Truth): Finding[] {
   const parts = [...(surface.kind === 'page' ? metadataOf(surface.text) : []), ...sentencesOf(surface.text)];
-  return parts.flatMap(({ line, sentence, cites }) => checkSentence(surface.file, line, sentence, registry, truth, cites));
+  return parts.flatMap(({ line, sentence, cites }) =>
+    checkSentence(surface.file, line, sentence, registry, truth, cites, surface.historical),
+  );
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -386,6 +393,14 @@ export function welcomeExamples(root = ROOT): number {
   return folders.filter((name) => !name.endsWith('_starter') && !hidden.has(name)).length;
 }
 
+/**
+ * What the public text counts as lessons: a Ladder sibling pair (alternatives, one scenario) is one lesson ("97 lessons, 14 in two
+ * languages").
+ */
+export function publicLessonCount(index: LessonIndex): number {
+  return index.lessons.length - alternativePairs(index).length;
+}
+
 export function loadTruth(root = ROOT): Truth {
   const inputs = loadInputs(root);
   const rows = new Map(inputs.facts.map((fact: RowFacts) => [fact.row.id, fact.state]));
@@ -404,9 +419,9 @@ print(json.dumps([b["ide_id"] for b in boards if library.support_level(b, root)[
 `;
   const run = Bun.spawnSync(['python3', '-B', '-c', script, root], { stdout: 'pipe', stderr: 'pipe' });
   if (run.exitCode !== 0) throw new Error(`the board levels could not be read: ${run.stderr.toString()}`);
-  const lessons = (
-    JSON.parse(readFileSync(join(root, 'packages/zplc-ide/src/generated/lessonIndex.json'), 'utf8')) as { lessons: unknown[] }
-  ).lessons.length;
+  const lessons = publicLessonCount(
+    JSON.parse(readFileSync(join(root, 'packages/zplc-ide/src/generated/lessonIndex.json'), 'utf8')) as LessonIndex,
+  );
   const wasm = getWasmCapabilities();
   return {
     rows,
@@ -430,7 +445,8 @@ print(json.dumps([b["ide_id"] for b in boards if library.support_level(b, root)[
 export function surfaces(root = ROOT): Surface[] {
   const found: Surface[] = [];
   const add = (file: string, kind: Kind) => {
-    if (existsSync(join(root, file))) found.push({ file, kind, text: readFileSync(join(root, file), 'utf8') });
+    if (existsSync(join(root, file)))
+      found.push({ file, kind, text: readFileSync(join(root, file), 'utf8'), historical: /\/release-notes\/index\.md$/.test(file) });
   };
   add('README.md', 'readme');
   for (const file of ['packages/zplc-compiler/README.md', 'packages/zplc-ide/README.md']) add(file, 'package');

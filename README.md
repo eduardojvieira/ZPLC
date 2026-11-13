@@ -42,8 +42,8 @@ the only channel that exists today. Check the file against `SHA256SUMS`, then op
 - Write programs in Structured Text, Instruction List, Ladder, FBD or SFC in ZPLC.
 - Compile them to `.zplc` bytecode and run them in the simulator, with no hardware.
 - Test them with scenarios: scripted inputs and timed checks on outputs, run from the Tests tab.
-- Start from one of 81 example projects, such as a tank level controller, a conveyor, motor start/stop and a pedestrian crossing. They are in [`packages/zplc-ide/projects/`](packages/zplc-ide/projects/) and on the Welcome screen.
-- Learn PLC programming from zero with the built-in course: 68 lessons in English and Spanish, with a Ladder path whose lessons open on a reading page over the workbench, with a try-it lab.
+- Start from one of 90 example projects, such as a tank level controller, a conveyor, motor start/stop and a pedestrian crossing. They are in [`packages/zplc-ide/projects/`](packages/zplc-ide/projects/) and on the Welcome screen.
+- Learn PLC programming from zero with the built-in course: 77 lessons in English and Spanish, with a Ladder path whose lessons open on a reading page over the workbench, with a try-it lab.
 - Build the runtime for seven Zephyr boards.
 
 ## What it runs on
