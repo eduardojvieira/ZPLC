@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Mover cajas entre tres niveles",
+  "summary": "Secuencie dos elevadores como dos cadenas que corren en paralelo y se encuentran solo en la banda de transferencia compartida.",
+  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "objectives": [
+    "Describir cada elevador como su propia cadena de pasos que vuelve a su primer paso.",
+    "Arrancar ambas cadenas con una sola transición y dejar que se encuentren solo en la banda entre los elevadores."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/ThreeLevelLifts.sfc.json, añada la cadena del elevador B: B_LOAD, B_SETTLE, B_RISE, B_UNLOAD y B_LOWER, los mismos cinco pasos del elevador A un nivel más arriba.",
+      "checkpoint": "Cada paso fija todas las salidas de su elevador, así que leer los pasos activos indica qué hace cada elevador."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "Antes de ejecutar, siga una caja: recorre la banda de entrada hasta el elevador A, A sube con su superficie detenida, pasa la caja a la banda de transferencia del nivel 2 y baja; B hace lo mismo un nivel más arriba y entrega la caja a la banda de salida.",
+      "checkpoint": "Un elevador se mueve solo mientras su superficie está detenida, una banda corre hacia un elevador solo mientras ese elevador espera en su nivel de carga, y Green se enciende cuando cinco cajas han pasado por EyeTop."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la banda de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A.",
+      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario three-level-lifts; observe la vista 3D mientras se ejecuta.",
+      "checkpoint": "El escenario requerido se llama three-level-lifts y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Observe ambos elevadores en la vista 3D: pueden moverse a la vez, y la banda de transferencia del nivel 2 es el único lugar donde sus cadenas se encuentran.",
+      "checkpoint": "Ningún elevador se mueve mientras su superficie corre, y no cae ninguna caja."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "La aserción EVENTUALLY prueba que una caja llegó al depósito superior, la aserción AT prueba que Green está encendida al final y la aserción ALWAYS prueba que no cayó ninguna caja.",
+      "checkpoint": "La calificación no puede ver el orden de los pasos de cada elevador ni si un elevador se movió con su superficie en marcha; solo ve qué llegó y qué cayó. No establece la velocidad física del elevador, la temporización de hardware, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Copie los cinco pasos del elevador A y renómbrelos de B_LOAD a B_LOWER; el elevador B lee BAtLow, BAtHigh y BoxOnB, y fija BLoading en lugar de RunInfeed."
+    },
+    {
+      "level": 2,
+      "text": "Arranque ambas cadenas con una transición: dé a la transición de arranque un segundo destino en toSteps, y mantenga las dos cadenas separadas desde ahí."
+    }
+  ],
+  "faultCases": [
+    "El inicial hace funcionar solo el elevador A, así que las cajas se acumulan en la banda de transferencia; añada la cadena del elevador B y arránquela con la misma transición que el elevador A."
+  ]
+}

@@ -1,0 +1,398 @@
+{
+  "name": "ThreeLevelLifts",
+  "description": "Starter: lift A works; lift B has no chain yet.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "AUnloading",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "Lift A is running a box onto the transfer belt"
+      },
+      {
+        "name": "BLoading",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "Lift B waits at its bottom level for a box"
+      },
+      {
+        "name": "TopSeen",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "BoxAtTop in the previous scan"
+      },
+      {
+        "name": "Boxes",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "Boxes that reached the top"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%IX0.0",
+        "comment": "StartButton.pressed: start the line"
+      },
+      {
+        "name": "EStopOk",
+        "type": "BOOL",
+        "address": "%IX0.1",
+        "comment": "EStop1.ok: TRUE while the emergency stop is released"
+      },
+      {
+        "name": "BoxOnA",
+        "type": "BOOL",
+        "address": "%IX0.2",
+        "comment": "EyeFoot.detect: a box has reached the middle of lift A at level 1"
+      },
+      {
+        "name": "BoxOnB",
+        "type": "BOOL",
+        "address": "%IX0.3",
+        "comment": "EyeMid.detect: a box has reached the middle of lift B at its bottom level"
+      },
+      {
+        "name": "BoxAtTop",
+        "type": "BOOL",
+        "address": "%IX0.4",
+        "comment": "EyeTop.detect: a box is on the outfeed belt at level 3"
+      },
+      {
+        "name": "AAtLow",
+        "type": "BOOL",
+        "address": "%IX0.5",
+        "comment": "LiftA.atLevel1: lift A rests at level 1"
+      },
+      {
+        "name": "AAtHigh",
+        "type": "BOOL",
+        "address": "%IX0.6",
+        "comment": "LiftA.atLevel2: lift A rests at level 2"
+      },
+      {
+        "name": "BAtLow",
+        "type": "BOOL",
+        "address": "%IX0.7",
+        "comment": "LiftB.atLevel1: lift B rests at its bottom level (level 2 of the plant)"
+      },
+      {
+        "name": "BAtHigh",
+        "type": "BOOL",
+        "address": "%IX1.0",
+        "comment": "LiftB.atLevel2: lift B rests at its top level (level 3 of the plant)"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "RunInfeed",
+        "type": "BOOL",
+        "address": "%QX0.0",
+        "comment": "Infeed.run"
+      },
+      {
+        "name": "RunTransfer",
+        "type": "BOOL",
+        "address": "%QX0.1",
+        "comment": "Transfer.run"
+      },
+      {
+        "name": "RunOutfeed",
+        "type": "BOOL",
+        "address": "%QX0.2",
+        "comment": "Outfeed.run"
+      },
+      {
+        "name": "AUp",
+        "type": "BOOL",
+        "address": "%QX0.3",
+        "comment": "LiftA.up"
+      },
+      {
+        "name": "ADown",
+        "type": "BOOL",
+        "address": "%QX0.4",
+        "comment": "LiftA.down"
+      },
+      {
+        "name": "ARun",
+        "type": "BOOL",
+        "address": "%QX0.5",
+        "comment": "LiftA.run"
+      },
+      {
+        "name": "BUp",
+        "type": "BOOL",
+        "address": "%QX0.6",
+        "comment": "LiftB.up"
+      },
+      {
+        "name": "BDown",
+        "type": "BOOL",
+        "address": "%QX0.7",
+        "comment": "LiftB.down"
+      },
+      {
+        "name": "BRun",
+        "type": "BOOL",
+        "address": "%QX1.0",
+        "comment": "LiftB.run"
+      },
+      {
+        "name": "Green",
+        "type": "BOOL",
+        "address": "%QX1.1",
+        "comment": "StackLight1.green: all five boxes reached the top"
+      },
+      {
+        "name": "Red",
+        "type": "BOOL",
+        "address": "%QX1.2",
+        "comment": "StackLight1.red: the line is stopped"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "step_off",
+      "name": "OFF",
+      "isInitial": true,
+      "position": {
+        "x": 200,
+        "y": 50
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_OFF",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_a_load",
+      "name": "A_LOAD",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 200
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_A_LOAD",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_a_settle",
+      "name": "A_SETTLE",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 350
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_A_SETTLE",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_a_rise",
+      "name": "A_RISE",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 500
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_A_RISE",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_a_unload",
+      "name": "A_UNLOAD",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 650
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_A_UNLOAD",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "step_a_lower",
+      "name": "A_LOWER",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 800
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_A_LOWER",
+          "comment": ""
+        },
+        {
+          "qualifier": "N",
+          "actionName": "A_COMMON",
+          "comment": ""
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t_1",
+      "fromStep": "step_off",
+      "toStep": "step_a_load",
+      "condition": "Start",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 100
+      }
+    },
+    {
+      "id": "t_2",
+      "fromStep": "step_a_load",
+      "toStep": "step_a_settle",
+      "condition": "AAtLow AND BoxOnA",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 250
+      }
+    },
+    {
+      "id": "t_3",
+      "fromStep": "step_a_settle",
+      "toStep": "step_a_rise",
+      "condition": "step_a_settle.T >= T#500ms",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 400
+      }
+    },
+    {
+      "id": "t_4",
+      "fromStep": "step_a_rise",
+      "toStep": "step_a_unload",
+      "condition": "AAtHigh",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 550
+      }
+    },
+    {
+      "id": "t_5",
+      "fromStep": "step_a_unload",
+      "toStep": "step_a_lower",
+      "condition": "step_a_unload.T >= T#2500ms",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 700
+      }
+    },
+    {
+      "id": "t_6",
+      "fromStep": "step_a_lower",
+      "toStep": "step_a_load",
+      "condition": "AAtLow",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 850
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "A_OFF",
+      "name": "A_OFF",
+      "type": "ST",
+      "body": "RunInfeed := FALSE; RunTransfer := FALSE; RunOutfeed := FALSE; AUp := FALSE; ADown := FALSE; ARun := FALSE; BUp := FALSE; BDown := FALSE; BRun := FALSE; Green := FALSE; Red := FALSE;"
+    },
+    {
+      "id": "A_A_LOAD",
+      "name": "A_A_LOAD",
+      "type": "ST",
+      "body": "ARun := AAtLow AND NOT BoxOnA; AUp := FALSE; ADown := FALSE; RunInfeed := AAtLow AND NOT BoxOnA; AUnloading := FALSE;"
+    },
+    {
+      "id": "A_A_SETTLE",
+      "name": "A_A_SETTLE",
+      "type": "ST",
+      "body": "ARun := FALSE; AUp := FALSE; ADown := FALSE; RunInfeed := FALSE; AUnloading := FALSE;"
+    },
+    {
+      "id": "A_A_RISE",
+      "name": "A_A_RISE",
+      "type": "ST",
+      "body": "ARun := FALSE; AUp := TRUE; ADown := FALSE; RunInfeed := FALSE; AUnloading := FALSE;"
+    },
+    {
+      "id": "A_A_UNLOAD",
+      "name": "A_A_UNLOAD",
+      "type": "ST",
+      "body": "ARun := AAtHigh; AUp := FALSE; ADown := FALSE; RunInfeed := FALSE; AUnloading := TRUE;"
+    },
+    {
+      "id": "A_A_LOWER",
+      "name": "A_A_LOWER",
+      "type": "ST",
+      "body": "ARun := FALSE; AUp := FALSE; ADown := TRUE; RunInfeed := FALSE; AUnloading := FALSE;"
+    },
+    {
+      "id": "A_COMMON",
+      "name": "A_COMMON",
+      "type": "ST",
+      "body": "RunOutfeed := TRUE; RunTransfer := AUnloading OR BLoading; IF BoxAtTop AND NOT TopSeen THEN Boxes := Boxes + 1; END_IF; TopSeen := BoxAtTop; Green := Boxes >= 5;"
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
