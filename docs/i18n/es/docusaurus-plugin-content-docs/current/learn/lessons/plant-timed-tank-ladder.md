@@ -1,12 +1,12 @@
 ---
-title: "Llenar y vaciar con temporizadores en Ladder"
+title: "Llenar y vaciar con temporizadores en diagrama de escalera"
 sidebar_label: "plant-timed-tank-ladder"
 description: "La lección plant-timed-tank-ladder: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Llenar y vaciar con temporizadores en Ladder
+# Llenar y vaciar con temporizadores en diagrama de escalera
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-timed-tank-ladder. Do not edit. >>> */}
 

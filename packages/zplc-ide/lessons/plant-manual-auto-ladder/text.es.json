@@ -11,7 +11,7 @@
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/ManualAuto.ld.json, el ciclo automático ya está escrito. En el editor Ladder, añada el modo como peldaños: una memoria Auto que cambia con ModeBtn, salidas de avance que siguen a JogXPlus, JogXMinus, JogYPlus y JogYMinus en manual, y un Start que cuenta solo en automático.",
+      "body": "En src/ManualAuto.ld.json, el ciclo automático ya está escrito. En el editor de diagrama de escalera, añada el modo como peldaños: una memoria Auto que cambia con ModeBtn, salidas de avance que siguen a JogXPlus, JogXMinus, JogYPlus y JogYMinus en manual, y un Start que cuenta solo en automático.",
       "checkpoint": "Auto empieza en FALSE (manual); cada salida del brazo es el ciclo en automático y el avance en manual, nunca los dos."
     },
     {

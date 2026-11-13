@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "title": "Fusionar dos líneas en Ladder",
+  "title": "Fusionar dos líneas en diagrama de escalera",
   "summary": "Arbitre con peldaños de enclavamiento dos alimentadores que comparten una salida: dé prioridad a la línea A, deje pasar una caja a la vez y bloquee entre sí las dos cuchillas.",
   "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
   "objectives": [

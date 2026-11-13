@@ -22,7 +22,7 @@ Cuando las piezas comparten un camino, el orden importa. Las máquinas de estado
 | --- | --- | --- | --- |
 | [Acumular y liberar](../lessons/plant-buffer-release.md) | `plant-buffer-release` | SFC | 45 |
 | [Fusionar dos líneas](../lessons/plant-merge-lines.md) | `plant-merge-lines` | ST | 45 |
-| [Fusionar dos líneas en Ladder](../lessons/plant-merge-lines-ladder.md) | `plant-merge-lines-ladder` | LD | 45 |
+| [Fusionar dos líneas en diagrama de escalera](../lessons/plant-merge-lines-ladder.md) | `plant-merge-lines-ladder` | LD | 45 |
 
 {/* <<< END GENERATED: learn/modules/module-14 <<< */}
 

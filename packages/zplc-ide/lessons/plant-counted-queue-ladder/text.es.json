@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "title": "Cargar y descargar tres cajas en Ladder",
+  "title": "Cargar y descargar tres cajas en diagrama de escalera",
   "summary": "Cuente cajas con dos bloques CTU para ejecutar un lote fijo: cargue tres, descargue tres y encienda Done.",
   "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
   "objectives": [

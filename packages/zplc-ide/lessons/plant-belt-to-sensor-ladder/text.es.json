@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "title": "Mover una caja hasta un sensor en Ladder",
+  "title": "Mover una caja hasta un sensor en diagrama de escalera",
   "summary": "Arranque una banda con un botón mediante una bobina de activación y deténgala con una bobina de borrado cuando una caja llegue al sensor del extremo.",
   "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
   "objectives": [

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "title": "Del sensor A al sensor B en Ladder",
+  "title": "Del sensor A al sensor B en diagrama de escalera",
   "summary": "Secuencie un movimiento con una bobina de activación y una de borrado: haga correr la banda desde el sensor A hasta que la caja llegue al sensor B.",
   "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
   "objectives": [

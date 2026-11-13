@@ -1,12 +1,12 @@
 ---
-title: "Fusionar dos líneas en Ladder"
+title: "Fusionar dos líneas en diagrama de escalera"
 sidebar_label: "plant-merge-lines-ladder"
 description: "La lección plant-merge-lines-ladder: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Fusionar dos líneas en Ladder
+# Fusionar dos líneas en diagrama de escalera
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-merge-lines-ladder. Do not edit. >>> */}
 

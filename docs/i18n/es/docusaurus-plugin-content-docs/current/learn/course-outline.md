@@ -330,23 +330,23 @@ Avanzado. Requiere el módulo: 3. Rutas: Simulación.
 
 Sus primeros programas ahora mueven piezas. Cada uno lee un sensor y gobierna una banda o una compuerta en una planta que se puede observar, con las habilidades de set, reset, flancos y contadores del módulo 3.
 
-| Lección                                                                | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                         |
-| ---------------------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | ------------------------------------------------ |
-| `plant-belt-to-sensor` Mover una caja hasta un sensor                  | Disponible | ST        | Simulación | -      | 20      | `motor-start-stop-safe`                          |
-| `plant-belt-to-sensor-ladder` Mover una caja hasta un sensor en Ladder | Disponible | LD        | Simulación | -      | 20      | `motor-start-stop-safe`                          |
-| `plant-latch-two-sensors` Del sensor A al sensor B                     | Disponible | ST        | Simulación | -      | 20      | `plant-belt-to-sensor`                           |
-| `plant-latch-two-sensors-ladder` Del sensor A al sensor B en Ladder    | Disponible | LD        | Simulación | -      | 20      | `plant-belt-to-sensor`                           |
-| `plant-counted-queue` Cargar y descargar tres cajas                    | Disponible | ST        | Simulación | -      | 30      | `plant-latch-two-sensors`, `edge-counter-pulses` |
-| `plant-counted-queue-ladder` Cargar y descargar tres cajas en Ladder   | Disponible | LD        | Simulación | -      | 30      | `plant-latch-two-sensors`, `edge-counter-pulses` |
+| Lección                                                                              | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                         |
+| ------------------------------------------------------------------------------------ | ---------- | --------- | ---------- | ------ | ------- | ------------------------------------------------ |
+| `plant-belt-to-sensor` Mover una caja hasta un sensor                                | Disponible | ST        | Simulación | -      | 20      | `motor-start-stop-safe`                          |
+| `plant-belt-to-sensor-ladder` Mover una caja hasta un sensor en diagrama de escalera | Disponible | LD        | Simulación | -      | 20      | `motor-start-stop-safe`                          |
+| `plant-latch-two-sensors` Del sensor A al sensor B                                   | Disponible | ST        | Simulación | -      | 20      | `plant-belt-to-sensor`                           |
+| `plant-latch-two-sensors-ladder` Del sensor A al sensor B en diagrama de escalera    | Disponible | LD        | Simulación | -      | 20      | `plant-belt-to-sensor`                           |
+| `plant-counted-queue` Cargar y descargar tres cajas                                  | Disponible | ST        | Simulación | -      | 30      | `plant-latch-two-sensors`, `edge-counter-pulses` |
+| `plant-counted-queue-ladder` Cargar y descargar tres cajas en diagrama de escalera   | Disponible | LD        | Simulación | -      | 30      | `plant-latch-two-sensors`, `edge-counter-pulses` |
 
 Objetivos de las lecciones disponibles:
 
 - **Mover una caja hasta un sensor**: Arrancar un actuador con la pulsación de un botón y recordar que está en marcha. Detener el actuador cuando un sensor ve la caja.
-- **Mover una caja hasta un sensor en Ladder**: Arrancar un actuador con la pulsación de un botón mediante una bobina de activación y recordar que está en marcha. Detener el actuador con una bobina de borrado cuando un sensor ve la caja.
+- **Mover una caja hasta un sensor en diagrama de escalera**: Arrancar un actuador con la pulsación de un botón mediante una bobina de activación y recordar que está en marcha. Detener el actuador con una bobina de borrado cuando un sensor ve la caja.
 - **Del sensor A al sensor B**: Usar un set y un reset para mantener una salida entre dos eventos. Explicar por qué un sensor que se apaga no puede mantener la salida por sí solo.
-- **Del sensor A al sensor B en Ladder**: Usar un set y un reset para mantener una salida entre dos eventos. Explicar por qué un sensor que se apaga no puede mantener la salida por sí solo.
+- **Del sensor A al sensor B en diagrama de escalera**: Usar un set y un reset para mantener una salida entre dos eventos. Explicar por qué un sensor que se apaga no puede mantener la salida por sí solo.
 - **Cargar y descargar tres cajas**: Contar elementos con un contador de valor preestablecido. Usar un contador para dejar de cargar y otro para saber que el lote terminó.
-- **Cargar y descargar tres cajas en Ladder**: Contar elementos con un contador de valor preestablecido. Usar un contador para dejar de cargar y otro para saber que el lote terminó.
+- **Cargar y descargar tres cajas en diagrama de escalera**: Contar elementos con un contador de valor preestablecido. Usar un contador para dejar de cargar y otro para saber que el lote terminó.
 
 ## Módulo 13: Temporizadores y control de procesos: retardos, escalado de nivel y un lazo PID
 
@@ -354,21 +354,21 @@ Avanzado. Requiere el módulo: 12. Rutas: Simulación.
 
 Las plantas tienen tiempo y valores continuos. Los temporizadores, el escalado analógico y el lazo PID van después de las primeras plantas porque necesitan una planta en movimiento para verse trabajar.
 
-| Lección                                                                | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                     |
-| ---------------------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | -------------------------------------------- |
-| `plant-timed-tank` Llenar y vaciar con temporizadores                  | Disponible | ST        | Simulación | -      | 30      | `timers-on-delay-off-delay`                  |
-| `plant-timed-tank-ladder` Llenar y vaciar con temporizadores en Ladder | Disponible | LD        | Simulación | -      | 30      | `timers-on-delay-off-delay`                  |
-| `plant-tank-level-scaling` Leer el nivel                               | Disponible | ST        | Simulación | -      | 30      | `analog-scaling-integer`, `plant-timed-tank` |
-| `plant-tank-level-scaling-ladder` Leer el nivel en Ladder              | Disponible | LD        | Simulación | -      | 30      | `analog-scaling-integer`, `plant-timed-tank` |
-| `plant-tank-pid` Mantener el nivel con PID                             | Disponible | ST        | Simulación | -      | 40      | `plant-tank-level-scaling`                   |
-| `plant-tank-pid-fbd` El mismo lazo con bloques de función              | Disponible | FBD       | Simulación | -      | 40      | `plant-tank-pid`                             |
+| Lección                                                                              | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                     |
+| ------------------------------------------------------------------------------------ | ---------- | --------- | ---------- | ------ | ------- | -------------------------------------------- |
+| `plant-timed-tank` Llenar y vaciar con temporizadores                                | Disponible | ST        | Simulación | -      | 30      | `timers-on-delay-off-delay`                  |
+| `plant-timed-tank-ladder` Llenar y vaciar con temporizadores en diagrama de escalera | Disponible | LD        | Simulación | -      | 30      | `timers-on-delay-off-delay`                  |
+| `plant-tank-level-scaling` Leer el nivel                                             | Disponible | ST        | Simulación | -      | 30      | `analog-scaling-integer`, `plant-timed-tank` |
+| `plant-tank-level-scaling-ladder` Leer el nivel en diagrama de escalera              | Disponible | LD        | Simulación | -      | 30      | `analog-scaling-integer`, `plant-timed-tank` |
+| `plant-tank-pid` Mantener el nivel con PID                                           | Disponible | ST        | Simulación | -      | 40      | `plant-tank-level-scaling`                   |
+| `plant-tank-pid-fbd` El mismo lazo con bloques de función                            | Disponible | FBD       | Simulación | -      | 40      | `plant-tank-pid`                             |
 
 Objetivos de las lecciones disponibles:
 
 - **Llenar y vaciar con temporizadores**: Medir un paso de un proceso con un temporizador de retardo a la conexión (TON), con un temporizador para cada paso. Usar un temporizador como límite de seguridad en un paso que normalmente termina con un sensor, y dejar que la parada de emergencia aborte el ciclo.
-- **Llenar y vaciar con temporizadores en Ladder**: Medir un paso de un proceso con un temporizador de retardo a la conexión (TON), con un temporizador para cada paso. Usar un temporizador como límite de seguridad en un paso que normalmente termina con un sensor, y dejar que la parada de emergencia aborte el ciclo.
+- **Llenar y vaciar con temporizadores en diagrama de escalera**: Medir un paso de un proceso con un temporizador de retardo a la conexión (TON), con un temporizador para cada paso. Usar un temporizador como límite de seguridad en un paso que normalmente termina con un sensor, y dejar que la parada de emergencia aborte el ciclo.
 - **Leer el nivel**: Escalar un valor analógico a unidades de ingeniería: convertir primero a REAL y luego dividir por el rango bruto. Leer el mapa de la planta para hallar el rango bruto de cada señal, y ver qué hace una escala errónea en el proceso.
-- **Leer el nivel en Ladder**: Escalar con cuadros un valor analógico a unidades de ingeniería: convertir primero a REAL y luego dividir entre el rango crudo. Leer el mapa de planta para hallar el rango crudo de cada señal, y ver qué hace al proceso una escala equivocada.
+- **Leer el nivel en diagrama de escalera**: Escalar con cuadros un valor analógico a unidades de ingeniería: convertir primero a REAL y luego dividir entre el rango crudo. Leer el mapa de planta para hallar el rango crudo de cada señal, y ver qué hace al proceso una escala equivocada.
 - **Mantener el nivel con PID**: Ejecutar un lazo PID con PID_Compact: consigna, variable de proceso, ganancias, tiempo de ciclo y límites de la salida. Ajustar las ganancias a partir de la respuesta del nivel y distinguir el efecto de los términos proporcional, integral y derivativo.
 - **El mismo lazo con bloques de función**: Cablear un bloque de función PID_Compact en un diagrama: consigna, variable de proceso, ganancias, tiempo de ciclo y límites de salida a la izquierda, la salida a la derecha. Seguir un valor por el diagrama, desde el número entero bruto del nivel hasta metros y de ahí a la válvula de entrada.
 
@@ -378,17 +378,17 @@ Avanzado. Requiere el módulo: 12. Rutas: Simulación.
 
 Cuando las piezas comparten un camino, el orden importa. Las máquinas de estados y la fusión de dos líneas organizan ese flujo, a partir de las primeras plantas.
 
-| Lección                                                  | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                            |
-| -------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | --------------------------------------------------- |
-| `plant-buffer-release` Acumular y liberar                | Disponible | SFC       | Simulación | -      | 45      | `sfc-fill-mix-sequence`, `plant-counted-queue`      |
-| `plant-merge-lines` Fusionar dos líneas                  | Disponible | ST        | Simulación | -      | 45      | `plant-counted-queue`, `interlock-guard-permissive` |
-| `plant-merge-lines-ladder` Fusionar dos líneas en Ladder | Disponible | LD        | Simulación | -      | 45      | `plant-counted-queue`, `interlock-guard-permissive` |
+| Lección                                                                | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                            |
+| ---------------------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | --------------------------------------------------- |
+| `plant-buffer-release` Acumular y liberar                              | Disponible | SFC       | Simulación | -      | 45      | `sfc-fill-mix-sequence`, `plant-counted-queue`      |
+| `plant-merge-lines` Fusionar dos líneas                                | Disponible | ST        | Simulación | -      | 45      | `plant-counted-queue`, `interlock-guard-permissive` |
+| `plant-merge-lines-ladder` Fusionar dos líneas en diagrama de escalera | Disponible | LD        | Simulación | -      | 45      | `plant-counted-queue`, `interlock-guard-permissive` |
 
 Objetivos de las lecciones disponibles:
 
 - **Acumular y liberar**: Modelar una estación con pasos y transiciones, un paso por cada cosa que hace la estación. Elegir entre dos pasos siguientes con condiciones de transición que se excluyen entre sí.
 - **Fusionar dos líneas**: Arbitrar dos peticiones con una prioridad: la línea A gana cuando ambas esperan. Enclavar dos salidas para que nunca estén activas juntas y liberar la concesión solo cuando la caja haya despejado la fusión.
-- **Fusionar dos líneas en Ladder**: Arbitrar dos peticiones con una prioridad: la línea A gana cuando ambas esperan. Enclavar dos salidas para que nunca estén activas juntas y liberar la concesión solo cuando la caja haya despejado la fusión.
+- **Fusionar dos líneas en diagrama de escalera**: Arbitrar dos peticiones con una prioridad: la línea A gana cuando ambas esperan. Enclavar dos salidas para que nunca estén activas juntas y liberar la concesión solo cuando la caja haya despejado la fusión.
 
 ## Módulo 15: Manipuladores y ensamblaje: tomar, colocar y secuenciar
 

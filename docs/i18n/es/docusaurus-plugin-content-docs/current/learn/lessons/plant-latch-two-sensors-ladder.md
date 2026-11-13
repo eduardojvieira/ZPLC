@@ -1,12 +1,12 @@
 ---
-title: "Del sensor A al sensor B en Ladder"
+title: "Del sensor A al sensor B en diagrama de escalera"
 sidebar_label: "plant-latch-two-sensors-ladder"
 description: "La lección plant-latch-two-sensors-ladder: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Del sensor A al sensor B en Ladder
+# Del sensor A al sensor B en diagrama de escalera
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-latch-two-sensors-ladder. Do not edit. >>> */}
 
