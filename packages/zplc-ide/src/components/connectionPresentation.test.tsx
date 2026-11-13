@@ -132,7 +132,7 @@ describe('UX-018 force banner stays in the status bar', () => {
     const out = view(0, false);
     expect(out).toContain('aria-label="Operational status"');
     expect(out.indexOf('Simulation · native runtime')).toBeGreaterThan(0);
-    expect(out.indexOf('Simulation · native runtime')).toBeLessThan(out.indexOf('Native POSIX'));
+    expect(out.indexOf('Simulation · native runtime')).toBeLessThan(out.indexOf('Running'));
   });
 
   it('UX-018 keeps the amber banner for active forces', () => {
