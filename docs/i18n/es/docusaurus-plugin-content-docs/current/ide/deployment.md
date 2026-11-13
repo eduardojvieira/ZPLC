@@ -20,7 +20,7 @@ Use esta página para poner un programa en un dispositivo con seguridad y para l
 
 ## A qué está conectado ZPLC
 
-La barra de estado bajo la barra de herramientas siempre dice a qué está conectado ZPLC, con palabras, un icono y un color. El color nunca es la única señal.
+La línea de estado bajo la barra de comandos siempre dice a qué está conectado ZPLC, con palabras, un icono y un color. El color nunca es la única señal.
 
 | Indicador                        | Icono y color             | Significado                                                                                                                                              |
 | -------------------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -30,6 +30,8 @@ La barra de estado bajo la barra de herramientas siempre dice a qué está conec
 | Conectando con el hardware       | Indicador de carga, ámbar | ZPLC está abriendo el enlace con un dispositivo.                                                                                                         |
 | Hardware real · placa · enlace   | Chip, ámbar               | ZPLC está conectado a un dispositivo real. La placa es la que el dispositivo informó, y el enlace es el enlace enmarcado o la consola de texto anterior. |
 | Falla del hardware · placa       | Triángulo de aviso, rojo  | El dispositivo conectado informa una falla.                                                                                                              |
+
+En una simulación el indicador nunca dice **Sin conexión**, porque la sesión es implícita; solo una placa se conecta y se desconecta, con **Conectar** y **Desconectar** en la barra de comandos. La línea de estado es una sola línea: el indicador, el estado del programa, el intervalo de ciclo y, si los hay, los forzados y los sobrepasos. **Detalles** abre el runtime, los ciclos, las tareas, el firmware y el protocolo.
 
 Un aviso ámbar permanece bajo el indicador mientras haya forzados activos. Una alerta roja lo reemplaza cuando no se puede confirmar un forzado: reconecte y verifique antes de operar.
 

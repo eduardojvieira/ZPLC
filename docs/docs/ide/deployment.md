@@ -20,7 +20,7 @@ Use this page to put a program on a device safely, and to read what the ZPLC app
 
 ## What ZPLC is attached to
 
-The status bar under the toolbar always says what ZPLC is attached to, with words, an icon and a colour. The colour is never the only signal.
+The status line under the command bar always says what ZPLC is attached to, with words, an icon and a colour. The colour is never the only signal.
 
 | Indicator                     | Icon and colour       | Meaning                                                                                                                               |
 | ----------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
@@ -30,6 +30,8 @@ The status bar under the toolbar always says what ZPLC is attached to, with word
 | Connecting to hardware        | Spinner, amber        | ZPLC is opening the link to a device.                                                                                                 |
 | Real hardware · board · link  | Chip, amber           | ZPLC is attached to a real device. The board is the one the device reported, and the link is the framed link or the older text shell. |
 | Hardware fault · board        | Warning triangle, red | The attached device reports a fault.                                                                                                  |
+
+In a simulation the indicator never says **Not connected**, because the session is implicit; only a board is connected and disconnected, with **Connect** and **Disconnect** in the command bar. The status line holds one line: the indicator, the program state, the scan interval, and the forces and overruns when there are any. **Details** opens the runtime, the cycles, the tasks, the firmware and the protocol.
 
 An amber banner stays under the indicator while forces are active. A red alert replaces it when a force cannot be confirmed: reconnect and verify before you operate.
 

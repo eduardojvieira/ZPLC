@@ -24,7 +24,7 @@ verified PLC task without needing a terminal for the main path of the ZPLC appli
 ## Positioning
 
 ZPLC shares one project model, PLC semantics, Tool API, and evidence spine
-across the ZPLC application, CLI, AI, MCP, Lab, Learn, and supported hardware workflows.
+across the ZPLC application, CLI, AI, MCP, the plant, Learn, and supported hardware workflows.
 AI can explain and prepare locally verifiable changes, but it is structurally
 prevented from initiating physical operations.
 
@@ -42,6 +42,11 @@ human-controlled.
   evidence, and staged hardware workflows through shared contracts.
 - Build runtime firmware, flash runtime firmware, deploy a `.zplc` program,
   and run/debug are separate operations.
+- The main path is one action. In simulation, Run saves what is unsaved, builds
+  what is stale and starts the program on the native runtime; there is no Connect
+  because the session is implicit. A board keeps Connect and Deploy as separate,
+  explicit steps. The target is chosen in one selector, the plant opens as a document
+  next to the program, and the status line shows one line of what is true now.
 - AI and MCP can inspect, validate, compile, test, simulate, and retrieve
   evidence inside a workspace. They cannot initiate physical operations,
   expose a shell, or use raw serial.

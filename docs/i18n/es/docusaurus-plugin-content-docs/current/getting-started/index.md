@@ -56,7 +56,7 @@ con una prueba de escenario.
 2. En la pantalla de bienvenida, bajo **Ejemplos**, en el grupo **Recorrido por los lenguajes**, elija **Blinky (texto
    estructurado)** y luego elija una carpeta vacía. ZPLC copia allí el ejemplo y lo abre.
 3. Elija **Compilación** y luego **Compilar** (Ctrl+B, o Cmd+B en macOS).
-4. En la barra de herramientas elija **Simular**, pulse **Conectar** y luego **Ejecutar** (F5).
+4. Compruebe que el selector de destino de la barra de comandos dice **Simulación** y pulse **Ejecutar** (F5). Ejecutar guarda lo que no está guardado, compila lo que está desactualizado e inicia el programa; una simulación no necesita **Conectar**.
 5. Abra la pestaña **Observación**, pulse **+** y escriba `LED_Output`. Su valor cambia entre verdadero y falso
    aproximadamente cada medio segundo.
 
