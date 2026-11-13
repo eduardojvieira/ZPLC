@@ -1,7 +1,7 @@
 import type * as THREE_NS from 'three';
 import type { PlantSceneFile, PlantSnapshot } from '../contracts';
 import { cameraFromPreset, cameraPosition, orbitCamera, panCamera, zoomCamera, type CameraState } from './camera';
-import { instanceColors, instanceMatrices, partShape, type ShapeSpec } from './geometry';
+import { instanceColors, instanceMatrices, partDecor, partShape, type Decor, type ShapeSpec } from './geometry';
 import type { Palette } from './displayModes';
 import { chooseInitialQuality, qualitySettings, type QualityLevel } from './quality';
 
@@ -128,6 +128,22 @@ const PART_COLORS: Readonly<Record<string, number>> = {
   curve: 0x4b5563,
   blade: 0xb45309,
   sensor: 0x15803d,
+  tank: 0x94a3b8,
+  'selector-switch': 0x475569,
+  'emergency-stop': 0xb91c1c,
+  'stack-light': 0x1f2937,
+  potentiometer: 0x475569,
+  'numeric-display': 0x111827,
+};
+/** Colours of the boxes drawn inside a part: the liquid, and each lamp lit and dark. Shape differs too (VIS-003). */
+const DECOR_COLORS: Readonly<Record<string, number>> = {
+  'fill:true': 0x2563eb,
+  'red:true': 0xef4444,
+  'red:false': 0x7f1d1d,
+  'amber:true': 0xf59e0b,
+  'amber:false': 0x78350f,
+  'green:true': 0x22c55e,
+  'green:false': 0x14532d,
 };
 
 function probeGpu(): { webgl2: boolean; rendererString: string; maxTextureSize: number } | null {
@@ -197,7 +213,17 @@ export function createRenderer(
   items.count = 0;
   world.add(items);
 
-  const partMeshes = new Map<string, { mesh: THREE_NS.Mesh; key: string }>();
+  const partMeshes = new Map<string, { mesh: THREE_NS.Mesh; key: string; decor: Map<string, THREE_NS.Mesh> }>();
+  const decorMaterials = new Map<string, THREE_NS.MeshStandardMaterial>();
+  const decorMaterial = (d: Decor): THREE_NS.MeshStandardMaterial => {
+    const key = `${d.tone}:${d.lit}`;
+    let m = decorMaterials.get(key);
+    if (!m) {
+      m = new THREE.MeshStandardMaterial({ color: DECOR_COLORS[key] ?? 0x9ca3af, roughness: 0.5 });
+      decorMaterials.set(key, m);
+    }
+    return m;
+  };
   const partMaterials = new Map<string, THREE_NS.MeshStandardMaterial>();
   const geometries = new Map<string, THREE_NS.BufferGeometry>();
   const geometryFor = (spec: ShapeSpec, key: string): THREE_NS.BufferGeometry => {
@@ -211,7 +237,8 @@ export function createRenderer(
   const materialFor = (part: string): THREE_NS.MeshStandardMaterial => {
     let m = partMaterials.get(part);
     if (!m) {
-      m = new THREE.MeshStandardMaterial({ color: partColor(part), roughness: 0.7, ...NO_Z_FIGHT });
+      const glass = part === 'tank' ? { transparent: true, opacity: 0.3, depthWrite: false } : {};
+      m = new THREE.MeshStandardMaterial({ color: partColor(part), roughness: 0.7, ...NO_Z_FIGHT, ...glass });
       partMaterials.set(part, m);
     }
     return m;
@@ -386,7 +413,7 @@ export function createRenderer(
           mesh.receiveShadow = true;
           mesh.userData = { part: view.part };
           world.add(mesh);
-          entry = { mesh, key };
+          entry = { mesh, key, decor: new Map() };
           partMeshes.set(view.id, entry);
         } else if (entry.key !== key) {
           entry.mesh.geometry = geometryFor(spec, key);
@@ -394,6 +421,19 @@ export function createRenderer(
         }
         entry.mesh.position.set(...view.pose.p);
         entry.mesh.quaternion.set(...view.pose.q);
+        // Boxes inside the part (the tank's liquid, the stack light's lamps): created once, then only moved and recoloured.
+        for (const d of partDecor(view)) {
+          let box = entry.decor.get(d.slot);
+          if (!box) {
+            box = new THREE.Mesh(unitBox, decorMaterial(d));
+            entry.mesh.add(box);
+            entry.decor.set(d.slot, box);
+          }
+          box.material = decorMaterial(d);
+          box.visible = d.size[1] > 0;
+          box.scale.set(...d.size);
+          box.position.set(...d.centre);
+        }
       }
       for (const [id, entry] of partMeshes) {
         if (!seen.has(id)) {
@@ -472,6 +512,7 @@ export function createRenderer(
       lineMaterial?.dispose();
       wireMaterial?.dispose();
       partMaterials.forEach((m) => m.dispose());
+      decorMaterials.forEach((m) => m.dispose());
       (ghost?.material as THREE_NS.Material | undefined)?.dispose();
       unitBox.dispose();
       itemMaterial.dispose();
