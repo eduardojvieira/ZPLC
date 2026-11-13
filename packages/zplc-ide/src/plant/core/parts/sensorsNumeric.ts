@@ -57,6 +57,8 @@ function numericRuntime(
     max: number;
     offset: number;
     viewPart: string;
+    /** Extra view state (never the trace): constants the view draws from. */
+    viewState?: Record<string, FactValue>;
     size: Vec3;
     text: (reading: number, stable: boolean) => string;
     sample: (world: PhysicsWorld) => Reading;
@@ -108,7 +110,7 @@ function numericRuntime(
           part: o.viewPart,
           name: n,
           pose: marker(part, o.viewPart, o.size),
-          state: { text: o.text(r, last.stable ?? false), fraction: o.max > 0 ? r / o.max : 0, detect: last.detect, count },
+          state: { text: o.text(r, last.stable ?? false), fraction: o.max > 0 ? r / o.max : 0, detect: last.detect, count, ...o.viewState },
           signals: sensed(),
         },
       ];
@@ -140,6 +142,7 @@ function lightArrayRuntime(part: ScenePart): PartRuntime {
     max,
     offset: pitch,
     viewPart: 'light-array',
+    viewState: { beams, pitchM: pitch },
     size: [0.05, 0.05, span],
     text: (h) => `${h.toFixed(2)} m`,
     countEdges: true,
