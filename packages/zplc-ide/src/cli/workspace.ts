@@ -397,3 +397,29 @@ export async function readWorkspace(rootInput: string): Promise<WorkspaceResult>
   Object.defineProperty(workspace, 'unlistedSources', { enumerable: false });
   return { ok: true, workspace };
 }
+
+/**
+ * Reads one data file of the project (a scene lesson's `scene.json` or `plant-map.json`, R-K1): a relative path with `/` separators
+ * inside the project root, no `..`, no links, at most `maxBytes`. A refusal names the path as it was given.
+ */
+export async function readWorkspaceProjectFile(
+  rootInput: string,
+  path: string,
+  maxBytes: number,
+): Promise<{ ok: true; bytes: Uint8Array } | WorkspaceFailure> {
+  const segments = path.split('/');
+  if (path === '' || path.includes('\\') || path.includes('\0') || segments.some((part) => part === '' || part === '.' || part === '..'))
+    return failed('WORKSPACE_INVALID_FILE', 'A project file is a relative path inside the project, with no ".."', path);
+  const rootIdentity = await directoryIdentity(rootInput);
+  if (!rootIdentity) return failed('WORKSPACE_MISSING', 'Workspace root is unavailable');
+  const directories = [rootIdentity];
+  let folder = rootIdentity.path;
+  for (const part of segments.slice(0, -1)) {
+    folder = join(folder, part);
+    const identity = await directoryIdentity(folder);
+    if (!identity || identity.path !== folder) return failed('WORKSPACE_INVALID_DIRECTORY', 'Directory must be a real directory', path);
+    directories.push(identity);
+  }
+  const read = await readStableFile(join(folder, segments[segments.length - 1]!), path, maxBytes, directories);
+  return read.ok ? { ok: true, bytes: Uint8Array.from(read.bytes) } : read.result;
+}
