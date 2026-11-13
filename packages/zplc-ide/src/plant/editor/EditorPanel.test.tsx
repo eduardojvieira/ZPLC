@@ -42,10 +42,10 @@ const part = (id: string, name: string, kind = 'belt'): ScenePart => ({
   config: {},
 });
 
-function mount(stopped = true, scene?: Parameters<typeof createSceneEditor>[1]) {
+function mount(stopped = true, scene?: Parameters<typeof createSceneEditor>[1], projectScene = false) {
   const editor = createSceneEditor(catalogue, scene);
   const mapEditor = createMapEditor(editor.signals(), 'floor');
-  const view = dom.render(<EditorPanel editor={editor} mapEditor={mapEditor} stopped={stopped} catalogue={catalogue} />);
+  const view = dom.render(<EditorPanel editor={editor} mapEditor={mapEditor} stopped={stopped} catalogue={catalogue} projectScene={projectScene} />);
   return { editor, mapEditor, screen: dom.screen, within: dom.within, ...view };
 }
 
@@ -159,6 +159,23 @@ describe('scene editor panel', () => {
     expect((await saveAllDocuments()).saved).toBe(1);
     expect(written[0]).toContain('Empty floor.scene.json');
     expect((await saveAllDocuments()).saved).toBe(0);
+  });
+
+  it('CRS-012 the project scene is saved by Save all as the root scene.json, with no scenes folder', async () => {
+    const written: string[] = [];
+    const created: string[] = [];
+    const fake = {
+      getDirectoryHandle: async (name: string) => void created.push(name),
+      getFileHandle: async (name: string) => ({
+        createWritable: async () => ({ write: async () => void written.push(name), close: async () => {} }),
+      }),
+    } as unknown as FileSystemDirectoryHandle;
+    dom.patchStore(useIDEStore, { directoryHandle: fake });
+    const { user, screen } = mount(true, undefined, true);
+    await user.click(screen.getByRole('button', { name: 'Add part' }));
+    expect((await saveAllDocuments()).saved).toBe(1);
+    expect(written).toEqual(['scene.json']);
+    expect(created).toEqual([]);
   });
 
   it('VIS-011 English and Spanish render with no missing key', () => {

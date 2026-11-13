@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DebugController } from '../../hooks/debugControllerTypes';
 import { useT } from '../../i18n';
 import { SCENE_INDEX } from '../../generated/sceneIndex';
-import { saveScene } from '../persistence/sceneFiles';
+import { saveProjectScene, saveScene } from '../persistence/sceneFiles';
 import { useAppSettings } from '../../store/useAppSettings';
 import { useIDEStore } from '../../store/useIDEStore';
 import { announce } from '../../utils/announce';
@@ -168,6 +168,11 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
         : failure?.kind === 'slow'
           ? t('plant.panel.slowFrames')
           : undefined;
+  const saveProject = async () => {
+    if (!handle || !ready) return;
+    await saveProjectScene(handle, ready.scene, ready.map ? JSON.stringify(ready.map) : undefined);
+    announce(t('plant.panel.saved', { name: 'scene.json' }));
+  };
   const saveToProject = async (name: string) => {
     if (!handle || !ready) return;
     await saveScene(handle, name, ready.scene, ready.map ? JSON.stringify(ready.map) : undefined);
@@ -225,7 +230,12 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
         >
           {t('plant.panel.resetPlant')}
         </Button>
-        {handle && ready && ref.kind !== 'file' && !editing && (
+        {handle && ready && ref.kind === 'project' && !editing && (
+          <Button data-plant-save-scene onClick={() => void saveProject()}>
+            {t('plant.panel.saveToProject')}
+          </Button>
+        )}
+        {handle && ready && ref.kind !== 'file' && ref.kind !== 'project' && !editing && (
           <SaveSceneButton initialName={saveName(ready.scene.name)} existing={saved.names} onSave={saveToProject} />
         )}
         {editing ? (
@@ -254,6 +264,7 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
             mapEditor={editing.mapEditor}
             stopped={stopped}
             catalogue={catalogue}
+            projectScene={ref.kind === 'project'}
             onMapEditor={(mapEditor) => setEditing((current) => current && { ...current, mapEditor })}
           />
         </div>

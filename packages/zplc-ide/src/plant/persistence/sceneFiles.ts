@@ -39,6 +39,17 @@ export async function saveScene(root: FileSystemDirectoryHandle, name: string, s
   if (map) await write(folder, `${name}.plant-map.json`, map);
 }
 
+/**
+ * Saves the project's own scene: `scene.json` and `plant-map.json` at the project root, where a scene lesson's Check and the Tool API
+ * read them. Creates no folder.
+ */
+export async function saveProjectScene(root: FileSystemDirectoryHandle, scene: PlantSceneFile, map?: string): Promise<void> {
+  const text = `${JSON.stringify(scene, null, 2)}\n`;
+  if (new TextEncoder().encode(text).length > MAX_SCENE_BYTES) throw tooLarge(scene.name);
+  await write(root, 'scene.json', text);
+  if (map) await write(root, 'plant-map.json', map);
+}
+
 /** The names of the scenes saved in the project, sorted; none when the project has no scenes folder. */
 export async function listScenes(root: FileSystemDirectoryHandle): Promise<string[]> {
   const folder = await root.getDirectoryHandle(SCENES_FOLDER).catch(() => undefined);
