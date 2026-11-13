@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-latch-two-sensors",
+  "version": 1,
+  "order": 122,
+  "module": 12,
+  "level": "advanced",
+  "prerequisites": ["plant-belt-to-sensor"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The box travels from sensor A to sensor B on a simulated belt; a learner board has no belt to carry it between the two sensors.",
+        "es": "La caja viaja del sensor A al sensor B sobre una banda simulada; una placa del estudiante no tiene una banda que la lleve entre los dos sensores."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus cajas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "latch-two-sensors",
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "plant_latch_two_sensors_starter",
+    "program": "src/LatchTwoSensors.st"
+  },
+  "solution": {
+    "project": "plant_latch_two_sensors",
+    "program": "src/LatchTwoSensors.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "latch-two-sensors",
+    "path": "tests/latch-two-sensors.scenario.json",
+    "sha256": "d65ac93c9aee341b8fb30407768a19321b209fbb19cacd4fd438c8b6bee1b059"
+  },
+  "regressionScenarios": []
+}
