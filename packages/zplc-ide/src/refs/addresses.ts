@@ -28,7 +28,7 @@ export function sameAddress(a: NormalizedAddress, b: NormalizedAddress): boolean
 }
 
 /** The canonical written form: `%IX0.0`, `%IB0`, `%IW1`. */
-export function addressText(address: NormalizedAddress): string {
+export function canonicalAddress(address: NormalizedAddress): string {
   if (address.width === 1) return `%${address.area}X${address.byte}.${address.bit ?? 0}`;
   const size = address.width === 8 ? 'B' : address.width === 16 ? 'W' : address.width === 32 ? 'D' : 'L';
   return `%${address.area}${size}${address.byte / (address.width / 8)}`;
