@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "tank-level-scaling",
+  "tickMs": 10,
+  "durationMs": 70000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      { "atMs": 200, "operate": { "signal": "SetPoint.value", "value": 0.5 } },
+      { "atMs": 40000, "operate": { "signal": "DrainPot.value", "value": 40 } }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    { "kind": "FOR", "fromMs": 30000, "forMs": 8000, "condition": { "fact:inBand:Tank1": true } },
+    { "kind": "FOR", "fromMs": 60000, "forMs": 8000, "condition": { "fact:inBand:Tank1": true } },
+    { "kind": "ALWAYS", "condition": { "fact:spilledL:Tank1": false } }
+  ]
+}

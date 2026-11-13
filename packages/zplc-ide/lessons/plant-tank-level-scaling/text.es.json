@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Leer el nivel",
+  "summary": "Escale el nivel bruto de un tanque, un número entero de 0 a 27648, a metros, y úselo para mantener el nivel cerca de una consigna con una entrada proporcional.",
+  "scope": "La calificación es una ejecución sin interfaz del tanque simulado en el entorno de ejecución POSIX nativo, con un nivel analógico que sigue las reglas de escala del mapa de la planta. No establece la exactitud, el ruido ni la calibración de un transmisor de nivel real, la temporización en hardware, HIL ni la certificación.",
+  "objectives": [
+    "Escalar un valor analógico a unidades de ingeniería: convertir primero a REAL y luego dividir por el rango bruto.",
+    "Leer el mapa de la planta para hallar el rango bruto de cada señal, y ver qué hace una escala errónea en el proceso."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "El tanque informa su nivel como un número entero: de 0 a 27648 equivale a 0 a 1 m. El potenciómetro de consigna da de 0 a 1000 para 0 a 1 m, y el potenciómetro de vaciado de 0 a 1000 para 0 a 100 por ciento. En src/TankLevel.st, escale el nivel y la consigna a metros; ajuste la entrada a 800 por ciento por cada metro que el nivel esté por debajo de la consigna, limitada de 0 a 100 por ciento; pase el potenciómetro de vaciado a la válvula de descarga en porcentaje; muestre el nivel en metros en el visualizador y encienda el verde mientras el nivel esté dentro del 5 por ciento de la consigna.",
+      "checkpoint": "El programa escala ambos valores brutos una sola vez, al principio, y todas las líneas siguientes usan metros."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "La consigna sube a 0,5 m en {{t:200}} ms y el potenciómetro de vaciado se gira al 40 por ciento en {{t:40000}} ms. Prediga el nivel entre {{t:30000}} ms y {{t:38000}} ms, y después de que se abra el vaciado.",
+      "checkpoint": "El nivel sube hasta cerca de 0,5 m sin oscilar y se mantiene en la banda de 0,45 m a 0,55 m, antes y después de que se abra el vaciado: la entrada repone el agua que saca el vaciado, con un pequeño desvío."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "El código inicial declara las entradas y las salidas y no tiene lógica. Declare dos variables REAL para el nivel y la consigna en metros. Divida el nivel por 27648.0 y la consigna por 1000.0 después de INT_TO_REAL: una división entera daría 0 para cualquier nivel inferior a 1 m. Luego escriba FillCmd a partir del error y limítela con dos sentencias IF.",
+      "checkpoint": "El programa tiene dos variables REAL, FillCmd limitada y una asignación para cada una de las otras tres salidas."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "Pulse Check. ZPLC ejecuta src/TankLevel.st con el tanque de la escena tank-level-control, sube la consigna y abre el vaciado, y comprueba {{assertions}} aserciones sobre el tanque: se mantiene en su banda en dos ventanas y nunca se derrama.",
+      "checkpoint": "El escenario se llama tank-level-scaling y pasa las {{assertions}} aserciones con evidencia guardada del host."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Observe el visualizador mientras la entrada se cierra al acercarse el nivel a la consigna. Abra el mapa de la planta y busque el rango de Tank1.level: es el 27648 por el que dividió.",
+      "checkpoint": "El visualizador de nivel muestra los mismos metros que el tanque."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "Una entrada proporcional no tiene memoria: cuando se abre el vaciado, el nivel se estabiliza algo por debajo de la consigna, porque la entrada solo se abre en proporción al error. La lección siguiente añade los términos integral y derivativo. Una escala errónea no da un error pequeño: con una división entera el programa lee 0 m, deja la entrada abierta y el tanque se derrama.",
+      "checkpoint": "Explique por qué el mismo error en la escala de la consigna dejaría el tanque vacío."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "LevelM := INT_TO_REAL(LevelRaw) / 27648.0; SetM := INT_TO_REAL(SetPointRaw) / 1000.0; el error es SetM - LevelM, en metros."
+    },
+    {
+      "level": 2,
+      "text": "FillCmd := 800.0 * (SetM - LevelM); IF FillCmd > 100.0 THEN FillCmd := 100.0; END_IF; IF FillCmd < 0.0 THEN FillCmd := 0.0; END_IF; DrainCmd := INT_TO_REAL(DrainRaw) / 10.0; LevelShown := LevelM; Green := ABS(SetM - LevelM) <= 0.05 * SetM;"
+    }
+  ],
+  "faultCases": [
+    "El código inicial no tiene lógica: la entrada nunca se abre, así que el tanque permanece vacío y nunca llega a su banda."
+  ]
+}
