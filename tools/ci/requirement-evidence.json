@@ -2888,7 +2888,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/courseDefinition.test.ts","test":"refuses a track with no reason and no instead-action for the lesson that does not support it (LRN-011)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"LRN-011 lets a hardware-only lesson say why it has no simulation grade, and what to do instead"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"LRN-011 requires a reason and an instead, in both languages, for every track the lesson does not support"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of the course reaches every module that offers it (LRN-011, LRN-013)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackageHardware.test.ts","test":"the hardware track of the course reaches every module that offers it (LRN-011, LRN-013)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/plant/board/support.test.ts","test":"plantIoSupport (LNK-012, LRN-011)"}
   ],
   "LRN-012": [
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/courseDefinition.test.ts","test":"LRN-012 refuses a Foundation or Intermediate lesson that cannot be done in simulation, except the board check of module 0"},
@@ -2955,6 +2956,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareRecorder.test.ts","test":"LRN-015 stops, keeping what it read, when the session stops running or a read fails, and never restarts it"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/hardwareRecorder.test.ts","test":"the hardware recorder starts no physical operation (LRN-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/learnPhysical.test.tsx","test":"LRN-015 drives every Learn control and no connect, deploy, RUN, STOP, force, raw serial or flash happens"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/learnPhysical.test.tsx","test":"Learn cannot start plant I/O mode (LRN-015, LNK-009)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/learn/learnPhysical.test.tsx","test":"Learn starts no physical operation by itself (LRN-015)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/boardSession.test.ts","test":"LRN-015 gives Learn the connected state, the VM state and the Watch read, and no other operation of the session"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/boardSession.test.ts","test":"LRN-015 has no session to give when Studio is not connected to a board"},
