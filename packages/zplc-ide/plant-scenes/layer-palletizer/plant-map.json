@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 2,
+  "target": { "scene": "layer-palletizer" },
+  "signals": {
+    "StartButton.pressed": { "direction": "sensor", "type": "BOOL", "point": "LayerPalletizer.Start" },
+    "EyeIn.detect": { "direction": "sensor", "type": "BOOL", "point": "LayerPalletizer.Eye" },
+    "Palletizer1.xAtMin": { "direction": "sensor", "type": "BOOL", "point": "LayerPalletizer.XMin" },
+    "Palletizer1.xAtMax": { "direction": "sensor", "type": "BOOL", "point": "LayerPalletizer.XMax" },
+    "Palletizer1.yAtMin": { "direction": "sensor", "type": "BOOL", "point": "LayerPalletizer.YMin" },
+    "Palletizer1.yAtMax": { "direction": "sensor", "type": "BOOL", "point": "LayerPalletizer.YMax" },
+    "Palletizer1.squared": { "direction": "sensor", "type": "BOOL", "point": "LayerPalletizer.Squared" },
+    "Palletizer1.layerReady": { "direction": "sensor", "type": "BOOL", "point": "LayerPalletizer.LayerReady" },
+    "Palletizer1.gripped": { "direction": "sensor", "type": "BOOL", "point": "LayerPalletizer.Gripped" },
+    "Infeed.run": { "direction": "command", "type": "BOOL", "point": "LayerPalletizer.Run" },
+    "Emitter1.emit": { "direction": "command", "type": "BOOL", "point": "LayerPalletizer.Emit1" },
+    "Emitter2.emit": { "direction": "command", "type": "BOOL", "point": "LayerPalletizer.Emit2" },
+    "Palletizer1.xPlus": { "direction": "command", "type": "BOOL", "point": "LayerPalletizer.XPlus" },
+    "Palletizer1.xMinus": { "direction": "command", "type": "BOOL", "point": "LayerPalletizer.XMinus" },
+    "Palletizer1.yPlus": { "direction": "command", "type": "BOOL", "point": "LayerPalletizer.YPlus" },
+    "Palletizer1.yMinus": { "direction": "command", "type": "BOOL", "point": "LayerPalletizer.YMinus" },
+    "Palletizer1.square": { "direction": "command", "type": "BOOL", "point": "LayerPalletizer.Square" },
+    "Palletizer1.grip": { "direction": "command", "type": "BOOL", "point": "LayerPalletizer.Grip" },
+    "StackLight1.amber": { "direction": "command", "type": "BOOL", "point": "LayerPalletizer.Amber" },
+    "StackLight1.green": { "direction": "command", "type": "BOOL", "point": "LayerPalletizer.Green" }
+  }
+}
