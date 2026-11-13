@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "name": "Stations fixture",
+  "parts": [
+    {
+      "id": "crane",
+      "part": "stacker-crane",
+      "name": "Crane1",
+      "position": [0, 0, 0],
+      "rotationYDeg": 0,
+      "config": { "columns": 2, "levels": 2 }
+    },
+    { "id": "stock", "part": "box", "name": "BoxA", "position": [0, 0.07, 0], "rotationYDeg": 90, "config": { "height": "0.2" } },
+    { "id": "feed", "part": "belt", "name": "Feed1", "position": [7, 0.45, -4], "rotationYDeg": 0, "config": { "length": 1 } },
+    { "id": "mc", "part": "machining-centre", "name": "Mc1", "position": [8, 0.45, -4], "rotationYDeg": 0, "config": { "cycleMs": 1000 } },
+    { "id": "blank", "part": "workpiece", "name": "Blank1", "position": [6.7, 0.45, -4], "rotationYDeg": 0, "config": { "colour": "red" } },
+    { "id": "dock", "part": "belt", "name": "In1", "position": [-1, 0.45, 4], "rotationYDeg": 0, "config": { "length": 1 } },
+    { "id": "lift", "part": "lift", "name": "Lift1", "position": [0, 0.45, 4], "rotationYDeg": 0, "config": {} },
+    { "id": "out", "part": "belt", "name": "Out1", "position": [1, 1.05, 4], "rotationYDeg": 0, "config": { "length": 1 } },
+    {
+      "id": "crates",
+      "part": "emitter",
+      "name": "Crate1",
+      "position": [0, 0.45, 4],
+      "rotationYDeg": 0,
+      "config": { "kind": "crate", "maxItems": 2 }
+    },
+    { "id": "bin", "part": "remover", "name": "Bin1", "position": [1.8, 0.85, 4], "rotationYDeg": 0, "config": {} },
+    { "id": "start", "part": "push-button", "name": "Start1", "position": [-1.5, 0.5, 2], "rotationYDeg": 0, "config": {} }
+  ],
+  "cameras": [{ "name": "Overview", "position": [4, 4, 9], "target": [3, 0.5, 0] }]
+}

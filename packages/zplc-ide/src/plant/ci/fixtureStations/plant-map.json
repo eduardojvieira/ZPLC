@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 2,
+  "target": { "scene": "stations-fixture" },
+  "signals": {
+    "Start1.pressed": { "direction": "sensor", "type": "BOOL", "point": "StationCycle.Start" },
+    "Crane1.inPosition": { "direction": "sensor", "type": "BOOL", "point": "StationCycle.InPos" },
+    "Crane1.raised": { "direction": "sensor", "type": "BOOL", "point": "StationCycle.Raised" },
+    "Crane1.forkCentre": { "direction": "sensor", "type": "BOOL", "point": "StationCycle.Centre" },
+    "Crane1.forkAtRight": { "direction": "sensor", "type": "BOOL", "point": "StationCycle.AtRight" },
+    "Lift1.atLevel1": { "direction": "sensor", "type": "BOOL", "point": "StationCycle.AtL1" },
+    "Lift1.atLevel2": { "direction": "sensor", "type": "BOOL", "point": "StationCycle.AtL2" },
+    "Mc1.ready": { "direction": "sensor", "type": "BOOL", "point": "StationCycle.Ready" },
+    "Crane1.bay": {
+      "direction": "command",
+      "type": "INT",
+      "point": "StationCycle.Bay",
+      "range": { "raw_min": 0, "raw_max": 2, "eng_min": 0, "eng_max": 2, "unit": "bay" }
+    },
+    "Crane1.level": {
+      "direction": "command",
+      "type": "INT",
+      "point": "StationCycle.Level",
+      "range": { "raw_min": 0, "raw_max": 2, "eng_min": 0, "eng_max": 2, "unit": "level" }
+    },
+    "Crane1.raise": { "direction": "command", "type": "BOOL", "point": "StationCycle.Raise" },
+    "Crane1.forkRight": { "direction": "command", "type": "BOOL", "point": "StationCycle.ForkRight" },
+    "Lift1.up": { "direction": "command", "type": "BOOL", "point": "StationCycle.LiftUp" },
+    "Lift1.down": { "direction": "command", "type": "BOOL", "point": "StationCycle.LiftDown" },
+    "Crate1.emit": { "direction": "command", "type": "BOOL", "point": "StationCycle.CrateEmit" },
+    "Feed1.run": { "direction": "command", "type": "BOOL", "point": "StationCycle.FeedRun" },
+    "Mc1.feed": { "direction": "command", "type": "BOOL", "point": "StationCycle.McFeed" },
+    "Mc1.start": { "direction": "command", "type": "BOOL", "point": "StationCycle.McStart" }
+  }
+}
