@@ -65,6 +65,18 @@ A numeric signal needs its own bytes. It cannot share a byte with another numeri
 
 A forced `BOOL` input keeps its forced value: the plant's write does not change it. A forced numeric input keeps its whole forced value too: an `INT` of 2 bytes and a `REAL` of 4 bytes stay as forced while the plant writes the input image every scan. This is checked by a test on the native runtime on Linux; macOS and Windows are not yet checked.
 
+## Sorting sensors
+
+Three sensors of the sorting scenes publish a number, with the ranges below. They follow the same scaling and the same 64-byte exchange span as every other numeric signal. The [sorting page](./sorting.md) gives the rule of each reading.
+
+| Signal   | Part          | Type   | Unit | Range                       | Reads                                                   |
+| -------- | ------------- | ------ | ---- | --------------------------- | ------------------------------------------------------- |
+| `height` | light array   | `REAL` | m    | 0 to `beams` times `pitchM` | The top edge of the highest item, in steps of the pitch |
+| `weight` | scale         | `REAL` | kg   | 0 to `rangeKg`              | The mass at rest, 0 while the load moves                |
+| `code`   | vision sensor | `INT`  | code | 0 to 9                      | The code of the item nearest the field centre           |
+
+An empty scale that is not stable and has the `readingOffset` fault reads 2 kg, not 0.
+
 ## Not yet measured
 
 Nothing on this page states a time, a rate or a hardware result. The cost of numeric exchange per cycle is not yet measured on the reference machines.

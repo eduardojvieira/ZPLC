@@ -34,3 +34,4 @@ Frame rate, link latency and supported boards are claims that need recorded evid
 - [Plant parts reference](./parts.md): every part, its settings and its signals.
 - [Numeric signals](./numeric-signals.md): how an INT or REAL value travels between a part and the program.
 - [Manipulators and gripping](./manipulators.md): the axes, the grip rules and the layer palletizer.
+- [Sorting and diverting](./sorting.md): item properties, the sorting sensors, the diverting parts and how a remover grades.

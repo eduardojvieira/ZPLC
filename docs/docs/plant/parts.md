@@ -254,7 +254,127 @@ A quarter-turn conveyor with the given centreline radius. Items travel at the ca
 
 `stall`, `jam`
 
+### Chain transfer
+
+`chain-transfer`
+
+A module in a belt line. Its position is the centre of the top surface when lowered. Lowered, it moves items along +x like a belt (run, runReverse when reverse is allowed). With lift TRUE it rises liftM over liftTravelMs (0.4 s by default); raised, it moves items sideways: moveRight along +z, moveLeft along -z. The surface stops before it changes direction, and commands in conflict (run with lift, moveLeft with moveRight) do nothing. Signals: lift, run, runReverse, moveRight, moveLeft, raised, lowered. Faults: liftStuck, stall, jam.
+
+#### Settings
+
+| Setting | Kind | Range or values | Default | Unit |
+| --- | --- | --- | --- | --- |
+| `lengthM` | number | 0.4 to 2 | `0.8` | m |
+| `widthM` | number | 0.4 to 0.8 | `0.6` | m |
+| `liftM` | number | 0.02 to 0.2 | `0.05` | m |
+| `liftTravelMs` | number | 100 to 2000 | `400` | ms |
+| `speedMps` | number | 0.1 to 1 | `0.5` | m/s |
+| `accelMps2` | number | 0.1 to 5 | `1` | m/s2 |
+| `allowReverse` | boolean |   | `false` |   |
+
+#### Signals
+
+| Signal | Direction | Type | Unit | Range |
+| --- | --- | --- | --- | --- |
+| `lift` | command | BOOL |   |   |
+| `run` | command | BOOL |   |   |
+| `moveRight` | command | BOOL |   |   |
+| `moveLeft` | command | BOOL |   |   |
+| `raised` | sensor | BOOL |   |   |
+| `lowered` | sensor | BOOL |   |   |
+
+#### Fault actions
+
+`liftStuck`, `stall`, `jam`
+
+### Turntable
+
+`turntable`
+
+A square platform whose position is the centre of its top surface. It turns about its vertical axis to three positions: centre, left (towards -z) and right (towards +z, the side of a belt's right edge), and its surface carries items along its own +x. toLeft or toRight chooses the position, neither returns to the centre, both hold the angle. The surface stops before the platform turns and starts again once it has arrived, so run can stay TRUE. Contradictory commands do nothing. Angles use a table in steps of 0.25 degrees. Signals: run, runReverse, toLeft, toRight, atCentre, atLeft, atRight (within 0.5 degrees). Faults: stall, turnStuck, jam.
+
+#### Settings
+
+| Setting | Kind | Range or values | Default | Unit |
+| --- | --- | --- | --- | --- |
+| `sizeM` | number | 0.6 to 1.2 | `0.9` | m |
+| `speedMps` | number | 0.1 to 1 | `0.5` | m/s |
+| `accelMps2` | number | 0.1 to 5 | `1` | m/s2 |
+| `angleDeg` | number | 30 to 90 | `90` | deg |
+| `degPerS` | number | 30 to 120 | `90` | deg/s |
+| `allowReverse` | boolean |   | `false` |   |
+
+#### Signals
+
+| Signal | Direction | Type | Unit | Range |
+| --- | --- | --- | --- | --- |
+| `run` | command | BOOL |   |   |
+| `toLeft` | command | BOOL |   |   |
+| `toRight` | command | BOOL |   |   |
+| `atCentre` | sensor | BOOL |   |   |
+| `atLeft` | sensor | BOOL |   |   |
+| `atRight` | sensor | BOOL |   |   |
+
+#### Fault actions
+
+`stall`, `turnStuck`, `jam`
+
 ## Flow
+
+### Pusher
+
+`pusher`
+
+A plate that pushes items sideways. Its position is the retracted centre of the plate, just above the surface; it moves along its own +z (right) by strokeM at speedMps, with accelMps2, while extend is TRUE and back otherwise. Settings: strokeM, widthM, heightM, speedMps, accelMps2. Signals: extend, extended, retracted (within 1 mm of an end). Fault: stuck freezes the plate.
+
+#### Settings
+
+| Setting | Kind | Range or values | Default | Unit |
+| --- | --- | --- | --- | --- |
+| `strokeM` | number | 0.2 to 1 | `0.6` | m |
+| `widthM` | number | 0.2 to 0.8 | `0.4` | m |
+| `heightM` | number | 0.1 to 0.4 | `0.25` | m |
+| `speedMps` | number | 0.2 to 1.5 | `0.8` | m/s |
+| `accelMps2` | number | 1 to 10 | `4` | m/s2 |
+
+#### Signals
+
+| Signal | Direction | Type | Unit | Range |
+| --- | --- | --- | --- | --- |
+| `extend` | command | BOOL |   |   |
+| `extended` | sensor | BOOL |   |   |
+| `retracted` | sensor | BOOL |   |   |
+
+#### Fault actions
+
+`stuck`
+
+### Diverter arm
+
+`diverter-arm`
+
+A plate hinged at the part position that lies along its own +x at rest (home). While divert is TRUE it swings towards its own +z (right) by angleDeg at degPerS, with a short ramp, and back otherwise; a box that travels along +x is deflected to the right. Settings: lengthM, heightM, angleDeg (15 to 35: a steeper arm stops boxes against it), degPerS. The default length 0.8 m at 35 degrees reaches only 0.46 m across, so a scene that needs a side belt sets a longer arm. Signals: divert, diverted, home (within 0.5 degrees of an end). Fault: stuck freezes the arm.
+
+#### Settings
+
+| Setting | Kind | Range or values | Default | Unit |
+| --- | --- | --- | --- | --- |
+| `lengthM` | number | 0.4 to 1.2 | `0.8` | m |
+| `heightM` | number | 0.1 to 0.4 | `0.25` | m |
+| `angleDeg` | number | 15 to 35 | `35` | deg |
+| `degPerS` | number | 30 to 180 | `90` | deg/s |
+
+#### Signals
+
+| Signal | Direction | Type | Unit | Range |
+| --- | --- | --- | --- | --- |
+| `divert` | command | BOOL |   |   |
+| `diverted` | sensor | BOOL |   |   |
+| `home` | sensor | BOOL |   |   |
+
+#### Fault actions
+
+`stuck`
 
 ### Stop blade
 
@@ -399,6 +519,82 @@ Teach-in colour sensor: detect is TRUE for any item in its beam, match is TRUE w
 #### Fault actions
 
 `stuckOn`, `stuckOff`, `wrongColour`
+
+### Light array
+
+`light-array`
+
+A row of beams across the line, one every pitchM, the first at half a pitch above the part. Signals: height (REAL, m, 0 to beams * pitchM) is the top edge of the highest tracked item that breaks a beam, in steps of pitchM (0.20, 0.30 and 0.40 for the three boxes at the default 0.05 m; a lid on a base reads the top of the lid), 0 when no beam is broken; detect (BOOL) is TRUE while any beam is broken. Fact: count (rising edges of detect). Faults: readingStuck holds the reading, readingOffset adds one pitch.
+
+#### Settings
+
+| Setting | Kind | Range or values | Default | Unit |
+| --- | --- | --- | --- | --- |
+| `beams` | number | 4 to 32 | `12` |   |
+| `pitchM` | number | 0.025 to 0.1 | `0.05` | m |
+| `spanM` | number | 0.4 to 1.2 | `0.8` | m |
+
+#### Signals
+
+| Signal | Direction | Type | Unit | Range |
+| --- | --- | --- | --- | --- |
+| `height` | sensor | REAL | m | 0 to 0.6 |
+| `detect` | sensor | BOOL |   |   |
+
+#### Fault actions
+
+`readingStuck`, `readingOffset`
+
+### Scale
+
+`scale`
+
+A static scale: it adds the masses of the items and pallets whose centre is inside its weighing volume (lengthM along the part, widthM across, heightM up from the part). Signals: weight (REAL, kg, 0 to rangeKg) is that sum, rounded to 0.01 kg, only while stable, else 0 (a heavier load reads rangeKg); stable (BOOL) is TRUE once at least one item has been at rest (at most 0.05 m/s) for settleMs. It does not read contact force. Faults: readingStuck holds the weight, readingOffset adds 2 kg.
+
+#### Settings
+
+| Setting | Kind | Range or values | Default | Unit |
+| --- | --- | --- | --- | --- |
+| `rangeKg` | number | 5 to 200 | `20` | kg |
+| `lengthM` | number | 0.3 to 1.5 | `0.6` | m |
+| `widthM` | number | 0.3 to 1.2 | `0.6` | m |
+| `heightM` | number | 0.2 to 1 | `0.5` | m |
+| `settleMs` | number | 0 to 2000 | `300` | ms |
+
+#### Signals
+
+| Signal | Direction | Type | Unit | Range |
+| --- | --- | --- | --- | --- |
+| `weight` | sensor | REAL | kg | 0 to 20 |
+| `stable` | sensor | BOOL |   |   |
+
+#### Fault actions
+
+`readingStuck`, `readingOffset`
+
+### Vision sensor
+
+`vision-sensor`
+
+Reads the identity of the item in view as a code, not an image. The field is a square fieldM by fieldM centred on the part, from its position up heightM. Signals: code (INT, 0 to 9) is the code of the item whose centre is nearest to the field centre, 0 when the field is empty or the item is unlabelled; detect (BOOL) is TRUE while any item is in the field. Faults: blind reads 0, misread reads another code.
+
+#### Settings
+
+| Setting | Kind | Range or values | Default | Unit |
+| --- | --- | --- | --- | --- |
+| `fieldM` | number | 0.2 to 1 | `0.5` | m |
+| `heightM` | number | 0.2 to 1 | `0.5` | m |
+
+#### Signals
+
+| Signal | Direction | Type | Unit | Range |
+| --- | --- | --- | --- | --- |
+| `code` | sensor | INT | code | 0 to 9 |
+| `detect` | sensor | BOOL |   |   |
+
+#### Fault actions
+
+`blind`, `misread`
 
 ## Panel
 

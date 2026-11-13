@@ -6,7 +6,9 @@
 // The source is the part arrays that plantCore registers. Names, configuration, signals, fault actions and the part text
 // all come from the definition; nothing on the page is written by hand but the introduction and the headings.
 import type { ConfigField, PartDefinition, PlantSignalDef, ScenePart } from '../../packages/zplc-ide/src/plant/contracts.ts';
+import { chainParts } from '../../packages/zplc-ide/src/plant/core/parts/chainTransfer.ts';
 import { conveyorParts } from '../../packages/zplc-ide/src/plant/core/parts/conveyors.ts';
+import { diverterParts } from '../../packages/zplc-ide/src/plant/core/parts/diverters.ts';
 import { flowParts } from '../../packages/zplc-ide/src/plant/core/parts/flow.ts';
 import { indicatorParts } from '../../packages/zplc-ide/src/plant/core/parts/indicators.ts';
 import { itemParts } from '../../packages/zplc-ide/src/plant/core/parts/items.ts';
@@ -16,7 +18,9 @@ import { operableParts } from '../../packages/zplc-ide/src/plant/core/parts/oper
 import { panelParts } from '../../packages/zplc-ide/src/plant/core/parts/panel.ts';
 import { processParts } from '../../packages/zplc-ide/src/plant/core/parts/process.ts';
 import { sensorParts } from '../../packages/zplc-ide/src/plant/core/parts/sensors.ts';
+import { numericSensorParts } from '../../packages/zplc-ide/src/plant/core/parts/sensorsNumeric.ts';
 import { sourceParts } from '../../packages/zplc-ide/src/plant/core/parts/sources.ts';
+import { turntableParts } from '../../packages/zplc-ide/src/plant/core/parts/turntable.ts';
 import { code, outputsOf, prose, runGenerator, table, type L10n, type Lang, type ReferencePage } from './reference-lib';
 
 export const GENERATOR = 'tools/docs/plant-parts-reference.ts';
@@ -26,6 +30,10 @@ export const PARTS: readonly PartDefinition[] = [
   ...conveyorParts,
   ...sourceParts,
   ...sensorParts,
+  ...numericSensorParts,
+  ...diverterParts,
+  ...chainParts,
+  ...turntableParts,
   ...flowParts,
   ...panelParts,
   ...operableParts,

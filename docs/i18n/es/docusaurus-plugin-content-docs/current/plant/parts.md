@@ -254,7 +254,127 @@ Un transportador de cuarto de vuelta con el radio de línea central indicado. La
 
 `stall`, `jam`
 
+### Transferencia de cadenas
+
+`chain-transfer`
+
+Un módulo dentro de una línea de cintas. Su posición es el centro de la superficie superior cuando está bajado. Bajado, mueve las piezas a lo largo de +x como una cinta (run, y runReverse si se permite el sentido inverso). Con lift en TRUE sube liftM en liftTravelMs (0,4 s por defecto); subido, mueve las piezas de lado: moveRight a lo largo de +z, moveLeft a lo largo de -z. La superficie se detiene antes de cambiar de sentido, y las órdenes en conflicto (run con lift, moveLeft con moveRight) no hacen nada. Señales: lift, run, runReverse, moveRight, moveLeft, raised, lowered. Fallas: liftStuck, stall, jam.
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `lengthM` | number | 0.4 a 2 | `0.8` | m |
+| `widthM` | number | 0.4 a 0.8 | `0.6` | m |
+| `liftM` | number | 0.02 a 0.2 | `0.05` | m |
+| `liftTravelMs` | number | 100 a 2000 | `400` | ms |
+| `speedMps` | number | 0.1 a 1 | `0.5` | m/s |
+| `accelMps2` | number | 0.1 a 5 | `1` | m/s2 |
+| `allowReverse` | boolean |   | `false` |   |
+
+#### Señales
+
+| Señal | Dirección | Tipo | Unidad | Rango |
+| --- | --- | --- | --- | --- |
+| `lift` | command | BOOL |   |   |
+| `run` | command | BOOL |   |   |
+| `moveRight` | command | BOOL |   |   |
+| `moveLeft` | command | BOOL |   |   |
+| `raised` | sensor | BOOL |   |   |
+| `lowered` | sensor | BOOL |   |   |
+
+#### Acciones de falla
+
+`liftStuck`, `stall`, `jam`
+
+### Mesa giratoria
+
+`turntable`
+
+Una plataforma cuadrada cuya posición es el centro de su superficie superior. Gira sobre su eje vertical a tres posiciones: centro, izquierda (hacia -z) y derecha (hacia +z), y su superficie lleva las piezas a lo largo de su propio +x. toLeft o toRight eligen la posición, sin ninguna vuelve al centro y con ambas conserva el ángulo. La superficie se detiene antes de que la plataforma gire y arranca de nuevo al llegar, de modo que run puede seguir en TRUE. Las órdenes contradictorias no hacen nada. Los ángulos usan una tabla en pasos de 0,25 grados. Señales: run, runReverse, toLeft, toRight, atCentre, atLeft, atRight (a 0,5 grados). Fallas: stall, turnStuck, jam.
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `sizeM` | number | 0.6 a 1.2 | `0.9` | m |
+| `speedMps` | number | 0.1 a 1 | `0.5` | m/s |
+| `accelMps2` | number | 0.1 a 5 | `1` | m/s2 |
+| `angleDeg` | number | 30 a 90 | `90` | deg |
+| `degPerS` | number | 30 a 120 | `90` | deg/s |
+| `allowReverse` | boolean |   | `false` |   |
+
+#### Señales
+
+| Señal | Dirección | Tipo | Unidad | Rango |
+| --- | --- | --- | --- | --- |
+| `run` | command | BOOL |   |   |
+| `toLeft` | command | BOOL |   |   |
+| `toRight` | command | BOOL |   |   |
+| `atCentre` | sensor | BOOL |   |   |
+| `atLeft` | sensor | BOOL |   |   |
+| `atRight` | sensor | BOOL |   |   |
+
+#### Acciones de falla
+
+`stall`, `turnStuck`, `jam`
+
 ## Flujo
+
+### Empujador
+
+`pusher`
+
+Una placa que empuja piezas hacia un lado. Su posición es el centro de la placa retraída, justo sobre la superficie; se mueve a lo largo de su propio +z (derecha) strokeM a speedMps, con accelMps2, mientras extend es TRUE y vuelve en caso contrario. Ajustes: strokeM, widthM, heightM, speedMps, accelMps2. Señales: extend, extended, retracted (a menos de 1 mm de un extremo). Falla: stuck detiene la placa donde está.
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `strokeM` | number | 0.2 a 1 | `0.6` | m |
+| `widthM` | number | 0.2 a 0.8 | `0.4` | m |
+| `heightM` | number | 0.1 a 0.4 | `0.25` | m |
+| `speedMps` | number | 0.2 a 1.5 | `0.8` | m/s |
+| `accelMps2` | number | 1 a 10 | `4` | m/s2 |
+
+#### Señales
+
+| Señal | Dirección | Tipo | Unidad | Rango |
+| --- | --- | --- | --- | --- |
+| `extend` | command | BOOL |   |   |
+| `extended` | sensor | BOOL |   |   |
+| `retracted` | sensor | BOOL |   |   |
+
+#### Acciones de falla
+
+`stuck`
+
+### Brazo desviador
+
+`diverter-arm`
+
+Una placa articulada en la posición de la pieza que reposa a lo largo de su propio +x (home). Mientras divert es TRUE gira hacia su propio +z (derecha) angleDeg a degPerS, con una rampa corta, y vuelve en caso contrario; una caja que viaja a lo largo de +x se desvía hacia la derecha. Ajustes: lengthM, heightM, angleDeg (15 a 35: un brazo más inclinado detiene las cajas contra él), degPerS. La longitud predeterminada de 0,8 m a 35 grados solo alcanza 0,46 m de lado, así que una escena que necesite una cinta lateral define un brazo más largo. Señales: divert, diverted, home (a menos de 0,5 grados de un extremo). Falla: stuck detiene el brazo donde está.
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `lengthM` | number | 0.4 a 1.2 | `0.8` | m |
+| `heightM` | number | 0.1 a 0.4 | `0.25` | m |
+| `angleDeg` | number | 15 a 35 | `35` | deg |
+| `degPerS` | number | 30 a 180 | `90` | deg/s |
+
+#### Señales
+
+| Señal | Dirección | Tipo | Unidad | Rango |
+| --- | --- | --- | --- | --- |
+| `divert` | command | BOOL |   |   |
+| `diverted` | sensor | BOOL |   |   |
+| `home` | sensor | BOOL |   |   |
+
+#### Acciones de falla
+
+`stuck`
 
 ### Tope retráctil
 
@@ -399,6 +519,82 @@ Sensor de color con aprendizaje: detect es TRUE con cualquier pieza en su haz y 
 #### Acciones de falla
 
 `stuckOn`, `stuckOff`, `wrongColour`
+
+### Cortina de luz
+
+`light-array`
+
+Una fila de haces a través de la línea, uno cada pitchM, el primero a medio paso por encima de la pieza. Señales: height (REAL, m, 0 a beams * pitchM) es el borde superior de la pieza más alta que corta un haz, en pasos de pitchM (0,20, 0,30 y 0,40 para las tres cajas con el 0,05 m por defecto; una tapa sobre una base lee la parte superior de la tapa), 0 cuando ningún haz está cortado; detect (BOOL) es VERDADERO mientras algún haz esté cortado. Hecho: count (flancos de subida de detect). Fallas: readingStuck mantiene la lectura, readingOffset suma un paso.
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `beams` | number | 4 a 32 | `12` |   |
+| `pitchM` | number | 0.025 a 0.1 | `0.05` | m |
+| `spanM` | number | 0.4 a 1.2 | `0.8` | m |
+
+#### Señales
+
+| Señal | Dirección | Tipo | Unidad | Rango |
+| --- | --- | --- | --- | --- |
+| `height` | sensor | REAL | m | 0 a 0.6 |
+| `detect` | sensor | BOOL |   |   |
+
+#### Acciones de falla
+
+`readingStuck`, `readingOffset`
+
+### Báscula
+
+`scale`
+
+Una báscula estática: suma las masas de las piezas y palés cuyo centro está dentro de su volumen de pesaje (lengthM a lo largo de la pieza, widthM a lo ancho, heightM hacia arriba). Señales: weight (REAL, kg, 0 a rangeKg) es esa suma, redondeada a 0,01 kg, solo mientras es estable y, si no, 0 (una carga mayor lee rangeKg); stable (BOOL) es VERDADERO cuando al menos una pieza lleva settleMs en reposo (como máximo 0,05 m/s). No lee la fuerza de contacto. Fallas: readingStuck mantiene el peso, readingOffset suma 2 kg.
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `rangeKg` | number | 5 a 200 | `20` | kg |
+| `lengthM` | number | 0.3 a 1.5 | `0.6` | m |
+| `widthM` | number | 0.3 a 1.2 | `0.6` | m |
+| `heightM` | number | 0.2 a 1 | `0.5` | m |
+| `settleMs` | number | 0 a 2000 | `300` | ms |
+
+#### Señales
+
+| Señal | Dirección | Tipo | Unidad | Rango |
+| --- | --- | --- | --- | --- |
+| `weight` | sensor | REAL | kg | 0 a 20 |
+| `stable` | sensor | BOOL |   |   |
+
+#### Acciones de falla
+
+`readingStuck`, `readingOffset`
+
+### Sensor de visión
+
+`vision-sensor`
+
+Lee la identidad de la pieza a la vista como un código, no como una imagen. El campo es un cuadrado de fieldM por fieldM centrado en la pieza, desde su posición hacia arriba heightM. Señales: code (INT, 0 a 9) es el código de la pieza cuyo centro está más cerca del centro del campo, 0 cuando el campo está vacío o la pieza no tiene código; detect (BOOL) es VERDADERO mientras haya una pieza en el campo. Fallas: blind lee 0, misread lee otro código.
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `fieldM` | number | 0.2 a 1 | `0.5` | m |
+| `heightM` | number | 0.2 a 1 | `0.5` | m |
+
+#### Señales
+
+| Señal | Dirección | Tipo | Unidad | Rango |
+| --- | --- | --- | --- | --- |
+| `code` | sensor | INT | code | 0 a 9 |
+| `detect` | sensor | BOOL |   |   |
+
+#### Acciones de falla
+
+`blind`, `misread`
 
 ## Panel
 

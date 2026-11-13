@@ -65,6 +65,18 @@ Una señal numérica necesita sus propios bytes. No puede compartir un byte con 
 
 Una entrada `BOOL` forzada conserva su valor forzado: la escritura de la planta no lo cambia. Una entrada numérica forzada también conserva todo su valor forzado: un `INT` de 2 bytes y un `REAL` de 4 bytes quedan como se forzaron mientras la planta escribe la imagen de entradas en cada ciclo. Lo comprueba una prueba en el entorno de ejecución nativo en Linux; macOS y Windows aún no se han comprobado.
 
+## Sensores de clasificación
+
+Tres sensores de las escenas de clasificación publican un número, con los rangos de abajo. Siguen el mismo escalado y el mismo tramo de intercambio de 64 bytes que cualquier otra señal numérica. La [página de clasificación](./sorting.md) da la regla de cada lectura.
+
+| Señal    | Pieza            | Tipo   | Unidad | Rango                    | Lee                                                       |
+| -------- | ---------------- | ------ | ------ | ------------------------ | --------------------------------------------------------- |
+| `height` | cortina de luz   | `REAL` | m      | 0 a `beams` por `pitchM` | El borde superior de la pieza más alta, en pasos del paso |
+| `weight` | báscula          | `REAL` | kg     | 0 a `rangeKg`            | La masa en reposo, 0 mientras la carga se mueve           |
+| `code`   | sensor de visión | `INT`  | code   | 0 a 9                    | El código de la pieza más cercana al centro del campo     |
+
+Una báscula vacía que no es estable y tiene la falla `readingOffset` lee 2 kg, no 0.
+
 ## Sin medir todavía
 
 Nada en esta página afirma un tiempo, una tasa ni un resultado de hardware. El costo del intercambio numérico por ciclo todavía no se mide en las máquinas de referencia.
