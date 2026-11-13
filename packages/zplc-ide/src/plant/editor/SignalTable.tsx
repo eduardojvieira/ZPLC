@@ -1,7 +1,7 @@
 /** The signals of the scene with type and direction, and a bind control for each (SCN-011, SCN-012, SCN-014). Props only. */
 import { useState } from 'react';
 import { useT } from '../../i18n';
-import { Button, NumberField, TextField } from '../../ui';
+import { Button, NumberField, Select, TextField } from '../../ui';
 import type { PlantSignalDef } from '../contracts';
 import type { SignalRange } from '../../plants/plantMap';
 import type { ProblemAt } from './validate';
@@ -12,10 +12,11 @@ export interface SignalTableProps {
   bindings: Readonly<Record<string, string>>;
   problems: readonly ProblemAt[];
   disabled: boolean;
-  onBind(signal: string, point: string, range?: SignalRange): void;
+  onBind(signal: string, point: string, range?: SignalRange, type?: 'INT' | 'REAL'): void;
   onUnbind(signal: string): void;
 }
 
+const VAR_TYPES = ['INT', 'REAL'] as const;
 const NO_RANGE = { rawMin: '0', rawMax: '100', engMin: '0', engMax: '100', unit: '' };
 
 function Row(
@@ -27,8 +28,15 @@ function Row(
   const { signal, point, error, disabled } = props;
   const { t } = useT();
   const [text, setText] = useState(point ?? '');
-  const [range, setRange] = useState(NO_RANGE);
   const scaled = signal.type !== 'BOOL';
+  // The engineering range and unit belong to the part (PLT-003): shown, never typed, when the part declares them.
+  const fixed = scaled && signal.range ? signal.range : undefined;
+  const [range, setRange] = useState(
+    fixed
+      ? { ...NO_RANGE, rawMin: '0', rawMax: '1000', engMin: String(fixed.min), engMax: String(fixed.max), unit: signal.unit ?? '' }
+      : NO_RANGE,
+  );
+  const [varType, setVarType] = useState<'INT' | 'REAL'>(signal.type === 'INT' ? 'INT' : 'REAL');
   const bind = () =>
     props.onBind(
       signal.name,
@@ -42,19 +50,24 @@ function Row(
             unit: range.unit,
           }
         : undefined,
+      scaled ? varType : undefined,
     );
   const num = (key: 'rawMin' | 'rawMax' | 'engMin' | 'engMax', label: Parameters<typeof t>[0]) => (
     <NumberField
       label={t(label, { signal: signal.name })}
       value={range[key]}
       disabled={disabled}
+      readOnly={fixed !== undefined && key.startsWith('eng')}
       onChange={(e) => setRange({ ...range, [key]: e.target.value })}
     />
   );
   return (
     <tr data-signal={signal.name}>
       <th scope="row">{signal.name}</th>
-      <td>{signal.type}</td>
+      <td>
+        {signal.type}
+        {fixed && [' ', fixed.min, '..', fixed.max, signal.unit && ' ' + signal.unit]}
+      </td>
       <td>{signal.direction === 'command' ? t('plantEditor.dirCommand') : t('plantEditor.dirSensor')}</td>
       <td>
         <div className="flex flex-wrap items-end gap-2">
@@ -72,10 +85,23 @@ function Row(
               {num('rawMax', 'plantEditor.rawMax')}
               {num('engMin', 'plantEditor.engMin')}
               {num('engMax', 'plantEditor.engMax')}
+              <Select
+                label={t('plantEditor.colType')}
+                value={varType}
+                disabled={disabled}
+                onChange={(e) => setVarType(e.target.value as 'INT' | 'REAL')}
+              >
+                {VAR_TYPES.map((v) => (
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </Select>
               <TextField
                 label={t('plantEditor.unit', { signal: signal.name })}
                 value={range.unit}
                 disabled={disabled}
+                readOnly={fixed !== undefined}
                 onChange={(e) => setRange({ ...range, unit: e.target.value })}
               />
             </>
