@@ -13,6 +13,9 @@ import { useIDEStore } from '../../store/useIDEStore';
 import { announce } from '../../utils/announce';
 import { Button, Select, ToggleGroup } from '../../ui';
 import { catalogue } from '../core/catalogue';
+import { EditorPanel } from '../editor/EditorPanel';
+import { createMapEditor, type MapEditor } from '../editor/mapEditor';
+import { createSceneEditor, type SceneEditor } from '../editor/model';
 import { schematicFor } from '../schematic/schematic';
 import { describePlant } from '../text/describe';
 import type { DisplayPrefs } from '../view/displayModes';
@@ -20,15 +23,20 @@ import { qualityLevels, type QualityLevel } from '../view/quality';
 import type { PlantRenderer } from '../view/renderer';
 import { OperatePanel } from './OperatePanel';
 import { PlantCanvas } from './PlantCanvas';
-import { usePlantSession, type CanvasFailure, type CanvasTiming, type PlantPanelDeps, type SceneRef } from './usePlantSession';
+import {
+  usePlantSession,
+  type CanvasFailure,
+  type CanvasTiming,
+  type PlantPanelDeps,
+  type SceneOverride,
+  type SceneRef,
+} from './usePlantSession';
 import type { PlantSceneFile } from '../contracts';
 
 export interface PlantPanelProps {
   controller: DebugController | undefined;
   /** False while the document's tab is not the active one of its group (PLS-010). */
   visible: boolean;
-  /** Opens the scene editor; supplied by the editor's panel (Task E3). Until it is, "Edit scene" stays disabled. */
-  onEditScene?: () => void;
   /** What a test replaces: the engine, the session factory and the timings of the fallbacks. */
   deps?: PlantPanelDeps & { timing?: CanvasTiming };
 }
@@ -71,7 +79,7 @@ function Schematic({ scene }: { scene: PlantSceneFile }) {
 const prefersReduced = (): boolean =>
   typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export function PlantPanel({ controller, visible, onEditScene, deps = NO_DEPS }: PlantPanelProps) {
+export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelProps) {
   const { t, locale } = useT();
   const hasProjectScene = useIDEStore((state) => [...state.loadedFiles.values()].some((file) => file.path === 'scene.json'));
   const theme = useIDEStore((state) => state.theme);
@@ -83,7 +91,12 @@ export function PlantPanel({ controller, visible, onEditScene, deps = NO_DEPS }:
   // A failure belongs to the scene it was reported for.
   const [failed, setFailed] = useState<{ key: string; failure: CanvasFailure } | undefined>();
   const [renderer, setRenderer] = useState<PlantRenderer | undefined>();
-  const binding = usePlantSession(controller, ref, deps);
+  // The scene being edited (SCN-008) and, once editing ends, the edited scene the plant core is rebuilt from.
+  const [editing, setEditing] = useState<{ editor: SceneEditor; mapEditor: MapEditor } | undefined>();
+  const [edited, setEdited] = useState<{ key: string; texts: SceneOverride } | undefined>();
+  const [version, setVersion] = useState(0);
+  const refKey = ref.kind === 'project' ? 'project' : ref.id;
+  const binding = usePlantSession(controller, ref, deps, edited?.key === refKey ? edited.texts : undefined);
   const { load, snapshot, state } = binding;
   const ready = load.phase === 'ready' ? load : undefined;
 
@@ -95,7 +108,6 @@ export function PlantPanel({ controller, visible, onEditScene, deps = NO_DEPS }:
     return { mode: theme === 'high-contrast' ? 'high-contrast' : dark ? 'dark' : 'light', reducedMotion: prefersReduced() };
   }, [theme]);
 
-  const refKey = ref.kind === 'project' ? 'project' : ref.id;
   const failure = failed?.key === refKey ? failed.failure : undefined;
   const setFailure = (next: CanvasFailure | undefined) => setFailed(next && { key: refKey, failure: next });
 
@@ -112,6 +124,26 @@ export function PlantPanel({ controller, visible, onEditScene, deps = NO_DEPS }:
   }, [facts]);
 
   const stopped = state === 'stopped';
+  const startEditing = () => {
+    if (!ready) return;
+    const editor = createSceneEditor(catalogue, ready.scene);
+    const mapEditor = createMapEditor(editor.signals(), ready.scene.name);
+    if (ready.map) mapEditor.load(ready.map);
+    setEditing({ editor, mapEditor });
+  };
+  const finishEditing = () => {
+    if (!editing) return;
+    const map = editing.mapEditor.map();
+    const bound = Object.keys(map.signals).length > 0 || ready?.map;
+    setEdited({ key: refKey, texts: { scene: JSON.stringify(editing.editor.toFile()), map: bound ? JSON.stringify(map) : '' } });
+    setEditing(undefined);
+  };
+  const history = (undo: boolean) => {
+    if (!editing || !stopped) return;
+    if (undo) editing.editor.undo();
+    else editing.editor.redo();
+    setVersion((n) => n + 1);
+  };
   const message =
     failure?.kind === 'unavailable'
       ? t('plant.panel.unavailable', { reason: failure.reason })
@@ -131,7 +163,10 @@ export function PlantPanel({ controller, visible, onEditScene, deps = NO_DEPS }:
         <Select
           label={t('plant.panel.scene')}
           value={refKey}
-          onChange={(event) => setRef(event.target.value === 'project' ? { kind: 'project' } : { kind: 'shipped', id: event.target.value })}
+          onChange={(event) => {
+            setEditing(undefined);
+            setRef(event.target.value === 'project' ? { kind: 'project' } : { kind: 'shipped', id: event.target.value });
+          }}
         >
           {sceneOptions.map((option) => (
             <option key={option.value} value={option.value}>
@@ -175,10 +210,36 @@ export function PlantPanel({ controller, visible, onEditScene, deps = NO_DEPS }:
         >
           {t('plant.panel.resetPlant')}
         </Button>
-        <Button data-plant-edit-scene disabled={!stopped || !onEditScene} onClick={onEditScene}>
-          {t('plant.panel.editScene')}
-        </Button>
+        {editing ? (
+          <>
+            <Button data-plant-undo disabled={!stopped} onClick={() => history(true)}>
+              {t('plantEditor.undo')}
+            </Button>
+            <Button data-plant-redo disabled={!stopped} onClick={() => history(false)}>
+              {t('plantEditor.redo')}
+            </Button>
+            <Button data-plant-edit-done disabled={!stopped} onClick={finishEditing}>
+              {t('plantEditor.done')}
+            </Button>
+          </>
+        ) : (
+          <Button data-plant-edit-scene disabled={!stopped || !ready} onClick={startEditing}>
+            {t('plant.panel.editScene')}
+          </Button>
+        )}
       </div>
+      {editing && (
+        <div data-plant-editor className="p-2">
+          <EditorPanel
+            key={version}
+            editor={editing.editor}
+            mapEditor={editing.mapEditor}
+            stopped={stopped}
+            catalogue={catalogue}
+            onMapEditor={(mapEditor) => setEditing((current) => current && { ...current, mapEditor })}
+          />
+        </div>
+      )}
       {message && (
         <div role="alert" data-plant-failure={failure?.kind} className="flex flex-wrap items-center gap-3 p-2 text-sm">
           <span>{message}</span>
@@ -206,7 +267,7 @@ export function PlantPanel({ controller, visible, onEditScene, deps = NO_DEPS }:
           {t('plant.panel.sceneFailed', { scene: refKey, detail: load.detail })}
         </p>
       )}
-      {ready && (
+      {ready && !editing && (
         <>
           <div className="min-h-64 flex-1">
             {view === '3d' ? (
