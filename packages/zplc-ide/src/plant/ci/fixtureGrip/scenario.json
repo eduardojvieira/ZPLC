@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "gripping-fixture",
+  "tickMs": 10,
+  "durationMs": 10000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      { "atMs": 20, "emit": { "kind": "box", "at": [0.4, 0, 0] } },
+      { "atMs": 20, "emit": { "kind": "pallet", "at": [1.3, 0, 0] } },
+      { "atMs": 300, "operate": { "signal": "Start1.pressed", "value": true } }
+    ]
+  },
+  "events": [],
+  "expectations": [{ "kind": "NEVER", "condition": { "fact:drops:Pick1": true } }]
+}
