@@ -31,7 +31,7 @@ unlisted: true
 | [16: Sorting: decide a route from what the sensors report](./module-16.md) | Advanced | 9 |
 | [17: Stations: several machines working as one](./module-17.md) | Advanced | 4 |
 | [18: Safe and diagnosable machines: interlocks, manual and automatic, and faults](./module-18.md) | Advanced | 5 |
-| [19: Build your own scenes: place parts, bind signals and run](./module-19.md) | Advanced | 0 |
+| [19: Build your own scenes: place parts, bind signals and run](./module-19.md) | Advanced | 4 |
 
 {/* <<< END GENERATED: learn/modules/index <<< */}
 

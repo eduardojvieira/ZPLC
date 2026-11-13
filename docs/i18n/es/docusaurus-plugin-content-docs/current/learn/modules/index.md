@@ -31,7 +31,7 @@ unlisted: true
 | [16: Clasificación: decidir una ruta según lo que informan los sensores](./module-16.md) | Avanzado | 9 |
 | [17: Estaciones: varias máquinas que trabajan como una](./module-17.md) | Avanzado | 4 |
 | [18: Máquinas seguras y diagnosticables: enclavamientos, manual y automático, y fallas](./module-18.md) | Avanzado | 5 |
-| [19: Construya sus propias escenas: colocar piezas, enlazar señales y ejecutar](./module-19.md) | Avanzado | 0 |
+| [19: Construya sus propias escenas: colocar piezas, enlazar señales y ejecutar](./module-19.md) | Avanzado | 4 |
 
 {/* <<< END GENERATED: learn/modules/index <<< */}
 

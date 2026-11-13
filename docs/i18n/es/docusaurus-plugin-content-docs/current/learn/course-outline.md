@@ -9,7 +9,7 @@ tags: [learn, lessons, course]
 
 # Esquema del curso
 
-Esta página es el mapa de todo el curso: cada módulo en orden, con sus 95 lecciones, y para cada lección los lenguajes, las rutas, la planta, el tiempo y los requisitos. Úsela para elegir por dónde empezar o para ver qué necesita un módulo antes. Si nunca programó un PLC, tome la ruta de escalera de 21 de estas lecciones, _Diagrama de escalera desde cero_, descrita en [Aprender](./index.md).
+Esta página es el mapa de todo el curso: cada módulo en orden, con sus 97 lecciones, y para cada lección los lenguajes, las rutas, la planta, el tiempo y los requisitos. Úsela para elegir por dónde empezar o para ver qué necesita un módulo antes. Si nunca programó un PLC, tome la ruta de escalera de 21 de estas lecciones, _Diagrama de escalera desde cero_, descrita en [Aprender](./index.md).
 
 La página sigue `packages/zplc-ide/lessons/course.json` y los paquetes de lección que lo acompañan. Una verificación de CI falla cuando falta una lección o cuando una fila no coincide con su lección. Cada módulo y cada lección tiene además su propia página generada: empiece por los [módulos del curso](./modules/index.md) y vea las [plantas de las lecciones](./plants.md) para las máquinas simuladas.
 
@@ -26,7 +26,7 @@ Primero se ve un resultado: el recorrido del módulo 0 termina con una salida qu
 
 Cada módulo indica a continuación por qué está donde está. La página de inicio de Aprender muestra las mismas palabras, porque ambas leen el mismo archivo del curso.
 
-Disponibles hoy: **95**. Planeadas: **0**. En total: **95**.
+Disponibles hoy: **97**. Planeadas: **0**. En total: **97**.
 
 ## Lenguajes
 
@@ -492,7 +492,19 @@ Avanzado. Requiere el módulo: 18. Rutas: Simulación.
 
 El curso termina construyendo la propia planta: piezas, señales y un programa que corre sobre ellas, con todo lo anterior.
 
-Todavía no hay ninguna lección disponible en este módulo.
+| Lección                                                                            | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                             |
+| ---------------------------------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | ---------------------------------------------------- |
+| `plant-build-belt-scene` Construir una escena de banda desde el suelo vacío        | Disponible | ST        | Simulación | -      | 25      | `plant-belt-to-sensor`, `plant-fault-actions`        |
+| `plant-build-belt-scene-ladder` Construir una escena de banda desde el suelo vacío | Disponible | LD        | Simulación | -      | 25      | `plant-belt-to-sensor`, `plant-fault-actions`        |
+| `plant-change-scene` Modificar una escena: agregar el segundo emisor               | Disponible | ST        | Simulación | -      | 20      | `plant-build-belt-scene`, `plant-merge-lines`        |
+| `plant-change-scene-ladder` Modificar una escena: agregar el segundo emisor        | Disponible | LD        | Simulación | -      | 20      | `plant-build-belt-scene-ladder`, `plant-merge-lines` |
+
+Objetivos de las lecciones disponibles:
+
+- **Construir una escena de banda desde el suelo vacío**: Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa. Ejecutar un programa sobre la escena que usted construyó y ver que la Comprobación califica esa escena, no una copia.
+- **Construir una escena de banda desde el suelo vacío**: Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa. Ejecutar un programa sobre la escena que usted construyó y ver que la Comprobación califica esa escena, no una copia.
+- **Modificar una escena: agregar el segundo emisor**: Agregar una pieza a una escena existente y colocarla donde el resto de la escena la espera. Enlazar la señal de la pieza nueva en el mapa de la planta con la variable del programa que ya la gobierna, sin cambiar el programa.
+- **Modificar una escena: agregar el segundo emisor**: Agregar una pieza a una escena existente y colocarla donde el resto de la escena la espera. Enlazar la señal de la pieza nueva en el mapa de la planta con la variable del programa que ya la gobierna, sin cambiar el programa.
 
 ## Páginas de cableado por placa
 

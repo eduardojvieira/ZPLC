@@ -3,7 +3,7 @@ slug: /learn
 id: index
 title: Aprender
 sidebar_label: Aprender
-description: 'El curso de ZPLC: 95 lecciones en 20 módulos, una ruta de escalera para quien nunca programó un PLC, páginas de lectura con un laboratorio para probar, solo simulación y una ruta de hardware opcional.'
+description: 'El curso de ZPLC: 97 lecciones en 20 módulos, una ruta de escalera para quien nunca programó un PLC, páginas de lectura con un laboratorio para probar, solo simulación y una ruta de hardware opcional.'
 tags: [learn, lessons, examples]
 ---
 
@@ -15,10 +15,10 @@ Aprender es un curso de programación de PLC que se ejecuta dentro de la aplicac
 
 |           |                                                                                                                                                                       |
 | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Lecciones | 95, en 20 módulos (del 0 al 19), unas 46 horas en total                                                                                                               |
-| Niveles   | Base 27, intermedias 29 y avanzadas 39                                                                                                                                |
+| Lecciones | 97, en 20 módulos (del 0 al 19), unas 47 horas en total; 14 de ellas en dos lenguajes (texto estructurado o escalera)                                                 |
+| Niveles   | Base 27, intermedias 29 y avanzadas 41                                                                                                                                |
 | Lenguajes | Texto estructurado, diagrama de escalera, diagrama de bloques de función, diagrama funcional secuencial y lista de instrucciones, cada uno presentado por una lección |
-| Rutas     | Simulación, que ofrecen 94 de ellas, y Hardware, que ofrecen 34 de ellas                                                                                              |
+| Rutas     | Simulación, que ofrecen 96 de ellas, y Hardware, que ofrecen 34 de ellas                                                                                              |
 | Práctica  | Cada lección tiene seis etapas, dos niveles de pista, una solución de referencia a petición y un escenario que califica su programa                                   |
 
 El [esquema del curso](./course-outline.md) enumera cada módulo y cada lección con sus lenguajes, rutas y duración. Los [módulos del curso](./modules/index.md) y las [plantas de las lecciones](./plants.md) describen las máquinas simuladas.
@@ -53,7 +53,7 @@ Nivel de evidencia: host. Una ejecución guionada de la aplicación en el host d
 
 ## Más allá de las lecciones
 
-- **Proyectos de ejemplo.** La pantalla de bienvenida incluye 120 ejemplos, agrupados por tema (primeros pasos, motores, control de procesos, los cinco lenguajes y placas) y por nivel, cada uno con su lenguaje y, si es de hardware, su placa. Un ejemplo de hardware trae un escenario o dice por qué no lo tiene. Están en `packages/zplc-ide/projects/`. Elija uno en **Ejemplos** para copiarlo a una carpeta propia, o siga [Blink sin hardware](../tutorials/blink-without-hardware.md).
+- **Proyectos de ejemplo.** La pantalla de bienvenida incluye 124 ejemplos, agrupados por tema (primeros pasos, motores, control de procesos, los cinco lenguajes y placas) y por nivel, cada uno con su lenguaje y, si es de hardware, su placa. Un ejemplo de hardware trae un escenario o dice por qué no lo tiene. Están en `packages/zplc-ide/projects/`. Elija uno en **Ejemplos** para copiarlo a una carpeta propia, o siga [Blink sin hardware](../tutorials/blink-without-hardware.md).
 - **Pruebas de escenario.** Un escenario es un guion corto que fija entradas, deja correr el programa un tiempo fijo y comprueba las salidas. [Escribir y ejecutar pruebas de escenario](../guides/scenario-tests.md) explica cómo, el [formato del archivo de escenario](../reference/scenario-file.md) enumera cada campo y la [línea de comandos](../reference/cli.md) las ejecuta sin la aplicación ZPLC.
 - **Referencia de lenguajes.** La [referencia de texto estructurado](../reference/language-st.md) dice, elemento por elemento, qué funciona hoy, y las [guías de lenguaje](../languages/index.md) cubren los cinco lenguajes de IEC 61131-3.
 

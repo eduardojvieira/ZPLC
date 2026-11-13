@@ -9,7 +9,7 @@ tags: [learn, lessons, course]
 
 # Course outline
 
-This page is the map of the whole course: every module in order, with its 95 lessons, and for each lesson the languages, tracks, plant, time and prerequisites. Use it to pick where to start or to see what a module needs first. If you have never programmed a PLC, take the Ladder path of 21 of these lessons, _Ladder diagram from zero_, described in [Learn](./index.md).
+This page is the map of the whole course: every module in order, with its 97 lessons, and for each lesson the languages, tracks, plant, time and prerequisites. Use it to pick where to start or to see what a module needs first. If you have never programmed a PLC, take the Ladder path of 21 of these lessons, _Ladder diagram from zero_, described in [Learn](./index.md).
 
 The page follows `packages/zplc-ide/lessons/course.json` and the lesson packages beside it. A CI check fails when a lesson is missing here or a row disagrees with its lesson. Each module and each lesson also has its own generated page: start from the [course modules](./modules/index.md), and see the [lesson plants](./plants.md) for the simulated machines.
 
@@ -26,7 +26,7 @@ You see a result first: the tour of module 0 ends in a blinking output in simula
 
 Each module below says why it sits where it does. The Learn home shows the same words, because both read the same course file.
 
-Available today: **95**. Planned: **0**. In all: **95**.
+Available today: **97**. Planned: **0**. In all: **97**.
 
 ## Languages
 
@@ -492,7 +492,19 @@ Advanced. Requires module: 18. Tracks: Simulation.
 
 The course ends by building the plant itself: parts, signals and a program that runs on them, using everything before it.
 
-No lesson of this module is available yet.
+| Lesson                                                                  | Status    | Languages | Tracks     | Plant | Minutes | Requires                                             |
+| ----------------------------------------------------------------------- | --------- | --------- | ---------- | ----- | ------- | ---------------------------------------------------- |
+| `plant-build-belt-scene` Build a belt scene from the empty floor        | Available | ST        | Simulation | -     | 25      | `plant-belt-to-sensor`, `plant-fault-actions`        |
+| `plant-build-belt-scene-ladder` Build a belt scene from the empty floor | Available | LD        | Simulation | -     | 25      | `plant-belt-to-sensor`, `plant-fault-actions`        |
+| `plant-change-scene` Change a scene: add the second emitter             | Available | ST        | Simulation | -     | 20      | `plant-build-belt-scene`, `plant-merge-lines`        |
+| `plant-change-scene-ladder` Change a scene: add the second emitter      | Available | LD        | Simulation | -     | 20      | `plant-build-belt-scene-ladder`, `plant-merge-lines` |
+
+Objectives of the available lessons:
+
+- **Build a belt scene from the empty floor**: Place the parts of a scene by name and bind each signal of the plant map to a program variable. Run a program on the scene you built and see the Check grade that scene, not a copy of it.
+- **Build a belt scene from the empty floor**: Place the parts of a scene by name and bind each signal of the plant map to a program variable. Run a program on the scene you built and see the Check grade that scene, not a copy of it.
+- **Change a scene: add the second emitter**: Add a part to an existing scene and place it where the rest of the scene expects it. Bind the new part's signal in the plant map to the program variable that already drives it, leaving the program unchanged.
+- **Change a scene: add the second emitter**: Add a part to an existing scene and place it where the rest of the scene expects it. Bind the new part's signal in the plant map to the program variable that already drives it, leaving the program unchanged.
 
 ## Hardware wiring pages
 

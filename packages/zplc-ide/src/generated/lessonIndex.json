@@ -20452,6 +20452,448 @@
       }
     },
     {
+      "id": "plant-build-belt-scene",
+      "version": 1,
+      "order": 191,
+      "module": 19,
+      "level": "advanced",
+      "prerequisites": [
+        "plant-belt-to-sensor",
+        "plant-fault-actions"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson is about placing parts and binding signals in the Scene editor; a learner board has no scene to edit, and the editor only exists in Simulation.",
+            "es": "La lección trata de colocar piezas y enlazar señales en el Editor de escenas; una placa del estudiante no tiene escena que editar, y el editor solo existe en Simulación."
+          },
+          "instead": {
+            "en": "Complete it in Simulation, where the scene editor and the scene are part of the lesson.",
+            "es": "Complétela en Simulación, donde el editor de escenas y la escena forman parte de la lección."
+          }
+        }
+      },
+      "plant": null,
+      "scene": "belt-to-sensor",
+      "plantMap": {
+        "schemaVersion": 2,
+        "target": {
+          "scene": "belt-to-sensor"
+        },
+        "signals": {
+          "StartButton.pressed": {
+            "direction": "sensor",
+            "type": "BOOL",
+            "point": "BeltToSensor.Start"
+          },
+          "EyeFar.detect": {
+            "direction": "sensor",
+            "type": "BOOL",
+            "point": "BeltToSensor.EyeFar"
+          },
+          "Belt1.run": {
+            "direction": "command",
+            "type": "BOOL",
+            "point": "BeltToSensor.Run"
+          },
+          "Emitter1.emit": {
+            "direction": "command",
+            "type": "BOOL",
+            "point": "BeltToSensor.Emit"
+          }
+        }
+      },
+      "estimatedMinutes": 25,
+      "starter": {
+        "project": "plant_build_belt_scene_starter",
+        "program": "src/BeltToSensor.st"
+      },
+      "solution": {
+        "project": "plant_build_belt_scene",
+        "program": "src/BeltToSensor.st"
+      },
+      "scenario": {
+        "id": "build-belt-scene",
+        "path": "tests/build-belt-scene.scenario.json",
+        "sha256": "f453087a009c4cdfc4ff453637e09270b51834031909d0a3a66a7a87a0386dc9",
+        "tickMs": 10,
+        "durationMs": 8000,
+        "assertions": 4,
+        "canonical": "{\"durationMs\":8000,\"events\":[],\"expectations\":[{\"atMs\":100,\"condition\":{\"BeltToSensor.Run\":false},\"kind\":\"AT\"},{\"condition\":{\"fact:count:EyeFar\":true},\"fromMs\":0,\"kind\":\"EVENTUALLY\",\"withinMs\":8000},{\"atMs\":8000,\"condition\":{\"BeltToSensor.Run\":false},\"kind\":\"AT\"},{\"condition\":{\"fact:itemsDropped\":false},\"kind\":\"ALWAYS\"}],\"id\":\"build-belt-scene\",\"scene\":{\"file\":\"scene.json\",\"map\":\"plant-map.json\",\"script\":[{\"atMs\":200,\"operate\":{\"signal\":\"StartButton.pressed\",\"value\":true}},{\"atMs\":400,\"operate\":{\"signal\":\"StartButton.pressed\",\"value\":false}}]},\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "hardware": null,
+      "text": {
+        "en": {
+          "title": "Build a belt scene from the empty floor",
+          "summary": "Open the Scene editor on an empty floor, place a belt, an emitter, a sensor and a start button with the names the lesson gives, bind their signals in the plant map and write the program that runs on them.",
+          "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+          "objectives": [
+            "Place the parts of a scene by name and bind each signal of the plant map to a program variable.",
+            "Run a program on the scene you built and see the Check grade that scene, not a copy of it."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "Open scene.json in the Scene editor and place four parts with exactly these names: Belt1 (a belt), Emitter1 (an emitter at the near end of the belt), EyeFar (a diffuse sensor beside the far end of the belt, facing it) and StartButton (a push button). In plant-map.json bind StartButton.pressed to BeltToSensor.Start, EyeFar.detect to BeltToSensor.EyeFar, Belt1.run to BeltToSensor.Run and Emitter1.emit to BeltToSensor.Emit; then, in src/BeltToSensor.st, keep a Running memory: set it with Start, clear it with EyeFar, and wire Run and Emit.",
+              "checkpoint": "The scene has four parts with those names, the plant map has four signals, and Run follows the memory while Emit puts one box on the belt when Start is pressed."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Before running, follow the box: the emitter puts it on the near end, the belt carries it to the far end, and the sensor tells the program to stop the belt. A part that is missing or misnamed cannot do any of that, and the Check says which one it cannot find.",
+              "checkpoint": "Belt off before the press; on after it, with one box on it; off again as soon as EyeFar sees the box, and it stays off."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save the scene, the plant map and the program, then run: The starter scene is an empty floor, so there is nothing to run; place Belt1, Emitter1, EyeFar and StartButton, bind their four signals in the plant map, and write the program that starts the belt and stops it when EyeFar sees the box.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "In Tests, choose the saved zplc.json and run only the build-belt-scene scenario; watch the 3D view while it runs.",
+              "checkpoint": "The required scenario is named build-belt-scene and contains 4 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Watch the box ride the belt you placed and stop under the sensor you placed; if a part is missing, read the message of the Check: it names the part and the file where the fix goes.",
+              "checkpoint": "Run falls when the sensor turns on, not before, and the box is never dropped."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "The scenario reads plant facts of the parts you named, so a scene with other names has nothing to grade; the names are part of the contract between the scene, the plant map and the program.",
+              "checkpoint": "It does not establish physical belt speed, sensor response, hardware timing, HIL, or certification."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "In the Scene editor choose the Empty floor template, add the four parts and rename each one; the belt has length 2.4 and speed 0.5, and the sensor has range 1."
+            },
+            {
+              "level": 2,
+              "text": "Write the clear after the set so EyeFar wins when both are TRUE, then Run := Running and Emit := Start."
+            }
+          ],
+          "faultCases": [
+            "The starter scene is an empty floor, so there is nothing to run; place Belt1, Emitter1, EyeFar and StartButton, bind their four signals in the plant map, and write the program that starts the belt and stops it when EyeFar sees the box."
+          ]
+        },
+        "es": {
+          "title": "Construir una escena de banda desde el suelo vacío",
+          "summary": "Abra el Editor de escenas sobre un suelo vacío, coloque una banda, un emisor, un sensor y un botón de inicio con los nombres que da la lección, enlace sus señales en el mapa de la planta y escriba el programa que corre sobre ellos.",
+          "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+          "objectives": [
+            "Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa.",
+            "Ejecutar un programa sobre la escena que usted construyó y ver que la Comprobación califica esa escena, no una copia."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "Abra scene.json en el Editor de escenas y coloque cuatro piezas con exactamente estos nombres: Belt1 (una banda), Emitter1 (un emisor en el extremo cercano de la banda), EyeFar (un sensor difuso junto al extremo lejano de la banda, mirándola) y StartButton (un pulsador). En plant-map.json enlace StartButton.pressed con BeltToSensor.Start, EyeFar.detect con BeltToSensor.EyeFar, Belt1.run con BeltToSensor.Run y Emitter1.emit con BeltToSensor.Emit; luego, en src/BeltToSensor.st, mantenga una memoria Running: actívela con Start, bórrela con EyeFar y conecte Run y Emit.",
+              "checkpoint": "La escena tiene cuatro piezas con esos nombres, el mapa de la planta tiene cuatro señales, y Run sigue a la memoria mientras Emit pone una caja en la banda cuando se pulsa Start."
+            },
+            {
+              "key": "predict",
+              "title": "Predecir",
+              "body": "Antes de ejecutar, siga la caja: el emisor la pone en el extremo cercano, la banda la lleva al extremo lejano y el sensor avisa al programa para detener la banda. Una pieza que falta o tiene otro nombre no puede hacer nada de eso, y la Comprobación dice cuál no encuentra.",
+              "checkpoint": "Banda apagada antes de la pulsación; encendida después, con una caja encima; apagada otra vez en cuanto EyeFar ve la caja, y así se queda."
+            },
+            {
+              "key": "edit",
+              "title": "Editar",
+              "body": "Corrija esta omisión del inicial, guarde la escena, el mapa de la planta y el programa, y ejecute: La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la banda y la detiene cuando EyeFar ve la caja.",
+              "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+            },
+            {
+              "key": "run",
+              "title": "Ejecutar",
+              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario build-belt-scene; observe la vista 3D mientras se ejecuta.",
+              "checkpoint": "El escenario requerido se llama build-belt-scene y contiene 4 aserciones."
+            },
+            {
+              "key": "observe",
+              "title": "Observar",
+              "body": "Observe la caja avanzar por la banda que usted colocó y detenerse bajo el sensor que usted colocó; si falta una pieza, lea el mensaje de la Comprobación: nombra la pieza y el archivo donde se corrige.",
+              "checkpoint": "Run baja cuando el sensor se activa, no antes, y la caja nunca cae."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexionar",
+              "body": "El escenario lee hechos de la planta de las piezas que usted nombró, así que una escena con otros nombres no tiene nada que calificar; los nombres forman parte del contrato entre la escena, el mapa de la planta y el programa.",
+              "checkpoint": "No establece la velocidad física de la banda, la respuesta del sensor, la temporización de hardware, HIL ni certificación."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "En el Editor de escenas elija la plantilla Suelo vacío, agregue las cuatro piezas y renombre cada una; la banda tiene longitud 2.4 y velocidad 0.5, y el sensor tiene alcance 1."
+            },
+            {
+              "level": 2,
+              "text": "Escriba el borrado después de la activación para que EyeFar gane cuando ambos sean TRUE, y luego Run := Running y Emit := Start."
+            }
+          ],
+          "faultCases": [
+            "La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la banda y la detiene cuando EyeFar ve la caja."
+          ]
+        }
+      }
+    },
+    {
+      "id": "plant-change-scene",
+      "version": 1,
+      "order": 192,
+      "module": 19,
+      "level": "advanced",
+      "prerequisites": [
+        "plant-build-belt-scene",
+        "plant-merge-lines"
+      ],
+      "languages": [
+        "ST"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The lesson changes a finished scene by adding a part and re-binding its signal; a learner board has no scene to change, and the scene is edited only in Simulation.",
+            "es": "La lección modifica una escena terminada añadiendo una pieza y volviendo a enlazar su señal; una placa del estudiante no tiene escena que modificar, y la escena solo se edita en Simulación."
+          },
+          "instead": {
+            "en": "Complete it in Simulation, where the scene editor and the scene are part of the lesson.",
+            "es": "Complétela en Simulación, donde el editor de escenas y la escena forman parte de la lección."
+          }
+        }
+      },
+      "plant": null,
+      "scene": "merge-lines",
+      "plantMap": {
+        "schemaVersion": 2,
+        "target": {
+          "scene": "merge-lines"
+        },
+        "signals": {
+          "StartButton.pressed": {
+            "direction": "sensor",
+            "type": "BOOL",
+            "point": "MergeLines.Start"
+          },
+          "EyeA.detect": {
+            "direction": "sensor",
+            "type": "BOOL",
+            "point": "MergeLines.WaitA"
+          },
+          "EyeB.detect": {
+            "direction": "sensor",
+            "type": "BOOL",
+            "point": "MergeLines.WaitB"
+          },
+          "EyeZone.detect": {
+            "direction": "sensor",
+            "type": "BOOL",
+            "point": "MergeLines.Zone"
+          },
+          "FeedA.run": {
+            "direction": "command",
+            "type": "BOOL",
+            "point": "MergeLines.RunA"
+          },
+          "FeedB.run": {
+            "direction": "command",
+            "type": "BOOL",
+            "point": "MergeLines.RunB"
+          },
+          "Outfeed.run": {
+            "direction": "command",
+            "type": "BOOL",
+            "point": "MergeLines.RunOut"
+          },
+          "EmitterA.emit": {
+            "direction": "command",
+            "type": "BOOL",
+            "point": "MergeLines.EmitA"
+          },
+          "EmitterB.emit": {
+            "direction": "command",
+            "type": "BOOL",
+            "point": "MergeLines.EmitB"
+          },
+          "BladeA.extend": {
+            "direction": "command",
+            "type": "BOOL",
+            "point": "MergeLines.HoldA"
+          },
+          "BladeB.extend": {
+            "direction": "command",
+            "type": "BOOL",
+            "point": "MergeLines.HoldB"
+          },
+          "DoneLight.lit": {
+            "direction": "command",
+            "type": "BOOL",
+            "point": "MergeLines.Done"
+          }
+        }
+      },
+      "estimatedMinutes": 20,
+      "starter": {
+        "project": "plant_change_scene_starter",
+        "program": "src/MergeLines.st"
+      },
+      "solution": {
+        "project": "plant_change_scene",
+        "program": "src/MergeLines.st"
+      },
+      "scenario": {
+        "id": "change-scene",
+        "path": "tests/change-scene.scenario.json",
+        "sha256": "8d890f9d7479f4b1e528b8fa1dea867082085080f3362e9034401b40fb15eb05",
+        "tickMs": 10,
+        "durationMs": 25000,
+        "assertions": 5,
+        "canonical": "{\"durationMs\":25000,\"events\":[],\"expectations\":[{\"atMs\":100,\"condition\":{\"MergeLines.Done\":false,\"MergeLines.HoldA\":false,\"MergeLines.HoldB\":false},\"kind\":\"AT\"},{\"atMs\":1000,\"condition\":{\"MergeLines.HoldA\":true,\"MergeLines.HoldB\":true,\"fact:itemsRemoved\":false},\"kind\":\"AT\"},{\"condition\":{\"fact:delivered:Remover1\":true,\"fact:emitted:EmitterA\":true,\"fact:emitted:EmitterB\":true},\"fromMs\":0,\"kind\":\"EVENTUALLY\",\"withinMs\":25000},{\"atMs\":25000,\"condition\":{\"MergeLines.Done\":true,\"MergeLines.HoldA\":true,\"MergeLines.HoldB\":true},\"kind\":\"AT\"},{\"condition\":{\"fact:itemsCollided\":false,\"fact:itemsDropped\":false},\"kind\":\"ALWAYS\"}],\"id\":\"change-scene\",\"scene\":{\"file\":\"scene.json\",\"map\":\"plant-map.json\",\"script\":[{\"atMs\":200,\"operate\":{\"signal\":\"StartButton.pressed\",\"value\":true}},{\"atMs\":400,\"operate\":{\"signal\":\"StartButton.pressed\",\"value\":false}}]},\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "hardware": null,
+      "text": {
+        "en": {
+          "title": "Change a scene: add the second emitter",
+          "summary": "Open the finished merge scene, add the emitter of line B that it lacks and bind its signal in the plant map, without touching the program that already arbitrates the two lines.",
+          "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+          "objectives": [
+            "Add a part to an existing scene and place it where the rest of the scene expects it.",
+            "Bind the new part's signal in the plant map to the program variable that already drives it, leaving the program unchanged."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "Open scene.json in the Scene editor: the merge scene has no emitter for line B. Add an emitter named EmitterB at the start of feeder B, with a limit of three boxes, and in plant-map.json bind EmitterB.emit to MergeLines.EmitB. The program in src/MergeLines.st already drives EmitB; leave it as it is.",
+              "checkpoint": "The scene has EmitterB, the plant map binds EmitterB.emit, and the program is the one you were given."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Before running, think about what changes when line B gets its emitter: three boxes now arrive on each feeder, and the arbitration has to let them through one at a time, as before.",
+              "checkpoint": "Both blades hold the lines at first; then one blade opens at a time, line A first; all six boxes leave and Done turns on."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save the scene and the plant map, then run: The starter scene has no emitter for line B, so no box ever comes from feeder B; add EmitterB at the start of feeder B with a limit of three boxes, and bind EmitterB.emit to MergeLines.EmitB in the plant map.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "In Tests, choose the saved zplc.json and run only the change-scene scenario; watch the 3D view while it runs.",
+              "checkpoint": "The required scenario is named change-scene and contains 5 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Watch feeder B fill with boxes and wait at its blade; if the part or its binding is missing, read the message of the Check: it names what it cannot find.",
+              "checkpoint": "All six boxes are delivered in turn, no box collides or drops, and Done is on at the end."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "The program did not change, so the scene alone decided the result; a part that is added but not bound is as absent as a part that was never added.",
+              "checkpoint": "It does not establish physical belt speed, sensor response, hardware timing, HIL, safety function, or certification."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Copy the settings of EmitterA: an emitter with a limit of three boxes; EmitterB sits on the line of feeder B, at position 0, 0.65, 1.95 and rotated 90 degrees."
+            },
+            {
+              "level": 2,
+              "text": "In the plant map the signal is EmitterB.emit, a command, and its point is MergeLines.EmitB; check the name letter by letter, because the Check reads it exactly."
+            }
+          ],
+          "faultCases": [
+            "The starter scene has no emitter for line B, so no box ever comes from feeder B; add EmitterB at the start of feeder B with a limit of three boxes, and bind EmitterB.emit to MergeLines.EmitB in the plant map."
+          ]
+        },
+        "es": {
+          "title": "Modificar una escena: agregar el segundo emisor",
+          "summary": "Abra la escena de fusión terminada, agregue el emisor de la línea B que le falta y enlace su señal en el mapa de la planta, sin tocar el programa que ya arbitra las dos líneas.",
+          "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+          "objectives": [
+            "Agregar una pieza a una escena existente y colocarla donde el resto de la escena la espera.",
+            "Enlazar la señal de la pieza nueva en el mapa de la planta con la variable del programa que ya la gobierna, sin cambiar el programa."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "Abra scene.json en el Editor de escenas: la escena de fusión no tiene emisor para la línea B. Agregue un emisor llamado EmitterB al inicio del alimentador B, con un límite de tres cajas, y en plant-map.json enlace EmitterB.emit con MergeLines.EmitB. El programa de src/MergeLines.st ya gobierna EmitB; déjelo como está.",
+              "checkpoint": "La escena tiene EmitterB, el mapa de la planta enlaza EmitterB.emit y el programa es el que se le dio."
+            },
+            {
+              "key": "predict",
+              "title": "Predecir",
+              "body": "Antes de ejecutar, piense en qué cambia cuando la línea B recibe su emisor: ahora llegan tres cajas a cada alimentador, y el arbitraje debe dejarlas pasar de una en una, como antes.",
+              "checkpoint": "Al principio ambas cuchillas retienen las líneas; luego se abre una cuchilla a la vez, primero la línea A; las seis cajas salen y Done se enciende."
+            },
+            {
+              "key": "edit",
+              "title": "Editar",
+              "body": "Corrija esta omisión del inicial, guarde la escena y el mapa de la planta, y ejecute: La escena inicial no tiene emisor para la línea B, así que nunca llega una caja desde el alimentador B; agregue EmitterB al inicio del alimentador B con un límite de tres cajas, y enlace EmitterB.emit con MergeLines.EmitB en el mapa de la planta.",
+              "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+            },
+            {
+              "key": "run",
+              "title": "Ejecutar",
+              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario change-scene; observe la vista 3D mientras se ejecuta.",
+              "checkpoint": "El escenario requerido se llama change-scene y contiene 5 aserciones."
+            },
+            {
+              "key": "observe",
+              "title": "Observar",
+              "body": "Observe cómo el alimentador B se llena de cajas y espera en su cuchilla; si falta la pieza o su enlace, lea el mensaje de la Comprobación: nombra lo que no encuentra.",
+              "checkpoint": "Las seis cajas se entregan por turnos, ninguna choca ni cae, y Done está encendida al final."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexionar",
+              "body": "El programa no cambió, así que la escena sola decidió el resultado; una pieza agregada pero sin enlazar está tan ausente como una pieza que nunca se agregó.",
+              "checkpoint": "No establece la velocidad física de la banda, la respuesta del sensor, la temporización de hardware, HIL, función de seguridad ni certificación."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Copie los ajustes de EmitterA: un emisor con un límite de tres cajas; EmitterB va sobre la línea del alimentador B, en la posición 0, 0.65, 1.95 y girado 90 grados."
+            },
+            {
+              "level": 2,
+              "text": "En el mapa de la planta la señal es EmitterB.emit, un comando, y su punto es MergeLines.EmitB; revise el nombre letra por letra, porque la Comprobación lo lee exactamente."
+            }
+          ],
+          "faultCases": [
+            "La escena inicial no tiene emisor para la línea B, así que nunca llega una caja desde el alimentador B; agregue EmitterB al inicio del alimentador B con un límite de tres cajas, y enlace EmitterB.emit con MergeLines.EmitB en el mapa de la planta."
+          ]
+        }
+      }
+    },
+    {
       "id": "plant-belt-to-sensor-ladder",
       "version": 1,
       "order": 1121,
@@ -23397,6 +23839,448 @@
           ],
           "faultCases": [
             "El programa inicial no tiene modo: una pulsación de Start en manual arranca el ciclo y los botones de avance no hacen nada; cambie con ModeBtn, admita Start solo en automático y mueva el brazo con los botones de avance solo en manual."
+          ]
+        }
+      }
+    },
+    {
+      "id": "plant-build-belt-scene-ladder",
+      "version": 1,
+      "order": 1191,
+      "module": 19,
+      "level": "advanced",
+      "prerequisites": [
+        "plant-belt-to-sensor",
+        "plant-fault-actions"
+      ],
+      "languages": [
+        "LD"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The Ladder version of the lesson is about placing parts and binding signals in the Scene editor; a learner board has no scene to edit, and the editor only exists in Simulation.",
+            "es": "La versión en Ladder de la lección trata de colocar piezas y enlazar señales en el Editor de escenas; una placa del estudiante no tiene escena que editar, y el editor solo existe en Simulación."
+          },
+          "instead": {
+            "en": "Complete it in Simulation, where the scene editor and the scene are part of the lesson.",
+            "es": "Complétela en Simulación, donde el editor de escenas y la escena forman parte de la lección."
+          }
+        }
+      },
+      "plant": null,
+      "scene": "belt-to-sensor",
+      "plantMap": {
+        "schemaVersion": 2,
+        "target": {
+          "scene": "belt-to-sensor"
+        },
+        "signals": {
+          "StartButton.pressed": {
+            "direction": "sensor",
+            "type": "BOOL",
+            "point": "BeltToSensor.Start"
+          },
+          "EyeFar.detect": {
+            "direction": "sensor",
+            "type": "BOOL",
+            "point": "BeltToSensor.EyeFar"
+          },
+          "Belt1.run": {
+            "direction": "command",
+            "type": "BOOL",
+            "point": "BeltToSensor.Run"
+          },
+          "Emitter1.emit": {
+            "direction": "command",
+            "type": "BOOL",
+            "point": "BeltToSensor.Emit"
+          }
+        }
+      },
+      "estimatedMinutes": 25,
+      "starter": {
+        "project": "plant_build_belt_scene_ladder_starter",
+        "program": "src/BeltToSensor.ld.json"
+      },
+      "solution": {
+        "project": "plant_build_belt_scene_ladder",
+        "program": "src/BeltToSensor.ld.json"
+      },
+      "scenario": {
+        "id": "build-belt-scene",
+        "path": "tests/build-belt-scene.scenario.json",
+        "sha256": "f453087a009c4cdfc4ff453637e09270b51834031909d0a3a66a7a87a0386dc9",
+        "tickMs": 10,
+        "durationMs": 8000,
+        "assertions": 4,
+        "canonical": "{\"durationMs\":8000,\"events\":[],\"expectations\":[{\"atMs\":100,\"condition\":{\"BeltToSensor.Run\":false},\"kind\":\"AT\"},{\"condition\":{\"fact:count:EyeFar\":true},\"fromMs\":0,\"kind\":\"EVENTUALLY\",\"withinMs\":8000},{\"atMs\":8000,\"condition\":{\"BeltToSensor.Run\":false},\"kind\":\"AT\"},{\"condition\":{\"fact:itemsDropped\":false},\"kind\":\"ALWAYS\"}],\"id\":\"build-belt-scene\",\"scene\":{\"file\":\"scene.json\",\"map\":\"plant-map.json\",\"script\":[{\"atMs\":200,\"operate\":{\"signal\":\"StartButton.pressed\",\"value\":true}},{\"atMs\":400,\"operate\":{\"signal\":\"StartButton.pressed\",\"value\":false}}]},\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "hardware": null,
+      "text": {
+        "en": {
+          "title": "Build a belt scene from the empty floor",
+          "summary": "Open the Scene editor on an empty floor, place a belt, an emitter, a sensor and a start button with the names the lesson gives, bind their signals in the plant map and write the program that runs on them.",
+          "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+          "objectives": [
+            "Place the parts of a scene by name and bind each signal of the plant map to a program variable.",
+            "Run a program on the scene you built and see the Check grade that scene, not a copy of it."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "Open scene.json in the Scene editor and place four parts with exactly these names: Belt1 (a belt), Emitter1 (an emitter at the near end of the belt), EyeFar (a diffuse sensor beside the far end of the belt, facing it) and StartButton (a push button). In plant-map.json bind StartButton.pressed to BeltToSensor.Start, EyeFar.detect to BeltToSensor.EyeFar, Belt1.run to BeltToSensor.Run and Emitter1.emit to BeltToSensor.Emit; then, in src/BeltToSensor.ld.json, draw two rungs: one with a normally closed contact on EyeFar in series with Start in parallel with a holding contact on Run, ending in the coil Run, and one from Start to the coil Emit.",
+              "checkpoint": "The scene has four parts with those names, the plant map has four signals, and Run follows the memory while Emit puts one box on the belt when Start is pressed."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Before running, follow the box: the emitter puts it on the near end, the belt carries it to the far end, and the sensor tells the program to stop the belt. A part that is missing or misnamed cannot do any of that, and the Check says which one it cannot find.",
+              "checkpoint": "Belt off before the press; on after it, with one box on it; off again as soon as EyeFar sees the box, and it stays off."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save the scene, the plant map and the program, then run: The starter scene is an empty floor, so there is nothing to run; place Belt1, Emitter1, EyeFar and StartButton, bind their four signals in the plant map, and write the program that starts the belt and stops it when EyeFar sees the box.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "In Tests, choose the saved zplc.json and run only the build-belt-scene scenario; watch the 3D view while it runs.",
+              "checkpoint": "The required scenario is named build-belt-scene and contains 4 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Watch the box ride the belt you placed and stop under the sensor you placed; if a part is missing, read the message of the Check: it names the part and the file where the fix goes.",
+              "checkpoint": "Run falls when the sensor turns on, not before, and the box is never dropped."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "The scenario reads plant facts of the parts you named, so a scene with other names has nothing to grade; the names are part of the contract between the scene, the plant map and the program.",
+              "checkpoint": "It does not establish physical belt speed, sensor response, hardware timing, HIL, or certification."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "In the Scene editor choose the Empty floor template, add the four parts and rename each one; the belt has length 2.4 and speed 0.5, and the sensor has range 1."
+            },
+            {
+              "level": 2,
+              "text": "Put a contact on Run in parallel with the Start contact so the belt holds itself on, and keep the EyeFar contact normally closed so it breaks the rung when the box arrives."
+            }
+          ],
+          "faultCases": [
+            "The starter scene is an empty floor, so there is nothing to run; place Belt1, Emitter1, EyeFar and StartButton, bind their four signals in the plant map, and write the program that starts the belt and stops it when EyeFar sees the box."
+          ]
+        },
+        "es": {
+          "title": "Construir una escena de banda desde el suelo vacío",
+          "summary": "Abra el Editor de escenas sobre un suelo vacío, coloque una banda, un emisor, un sensor y un botón de inicio con los nombres que da la lección, enlace sus señales en el mapa de la planta y escriba el programa que corre sobre ellos.",
+          "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+          "objectives": [
+            "Colocar las piezas de una escena por su nombre y enlazar cada señal del mapa de la planta con una variable del programa.",
+            "Ejecutar un programa sobre la escena que usted construyó y ver que la Comprobación califica esa escena, no una copia."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "Abra scene.json en el Editor de escenas y coloque cuatro piezas con exactamente estos nombres: Belt1 (una banda), Emitter1 (un emisor en el extremo cercano de la banda), EyeFar (un sensor difuso junto al extremo lejano de la banda, mirándola) y StartButton (un pulsador). En plant-map.json enlace StartButton.pressed con BeltToSensor.Start, EyeFar.detect con BeltToSensor.EyeFar, Belt1.run con BeltToSensor.Run y Emitter1.emit con BeltToSensor.Emit; luego, en src/BeltToSensor.ld.json, dibuje dos peldaños: uno con un contacto normalmente cerrado en EyeFar en serie con Start en paralelo con un contacto de retención en Run, que termine en la bobina Run, y otro de Start a la bobina Emit.",
+              "checkpoint": "La escena tiene cuatro piezas con esos nombres, el mapa de la planta tiene cuatro señales, y Run sigue a la memoria mientras Emit pone una caja en la banda cuando se pulsa Start."
+            },
+            {
+              "key": "predict",
+              "title": "Predecir",
+              "body": "Antes de ejecutar, siga la caja: el emisor la pone en el extremo cercano, la banda la lleva al extremo lejano y el sensor avisa al programa para detener la banda. Una pieza que falta o tiene otro nombre no puede hacer nada de eso, y la Comprobación dice cuál no encuentra.",
+              "checkpoint": "Banda apagada antes de la pulsación; encendida después, con una caja encima; apagada otra vez en cuanto EyeFar ve la caja, y así se queda."
+            },
+            {
+              "key": "edit",
+              "title": "Editar",
+              "body": "Corrija esta omisión del inicial, guarde la escena, el mapa de la planta y el programa, y ejecute: La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la banda y la detiene cuando EyeFar ve la caja.",
+              "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+            },
+            {
+              "key": "run",
+              "title": "Ejecutar",
+              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario build-belt-scene; observe la vista 3D mientras se ejecuta.",
+              "checkpoint": "El escenario requerido se llama build-belt-scene y contiene 4 aserciones."
+            },
+            {
+              "key": "observe",
+              "title": "Observar",
+              "body": "Observe la caja avanzar por la banda que usted colocó y detenerse bajo el sensor que usted colocó; si falta una pieza, lea el mensaje de la Comprobación: nombra la pieza y el archivo donde se corrige.",
+              "checkpoint": "Run baja cuando el sensor se activa, no antes, y la caja nunca cae."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexionar",
+              "body": "El escenario lee hechos de la planta de las piezas que usted nombró, así que una escena con otros nombres no tiene nada que calificar; los nombres forman parte del contrato entre la escena, el mapa de la planta y el programa.",
+              "checkpoint": "No establece la velocidad física de la banda, la respuesta del sensor, la temporización de hardware, HIL ni certificación."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "En el Editor de escenas elija la plantilla Suelo vacío, agregue las cuatro piezas y renombre cada una; la banda tiene longitud 2.4 y velocidad 0.5, y el sensor tiene alcance 1."
+            },
+            {
+              "level": 2,
+              "text": "Ponga un contacto de Run en paralelo con el contacto de Start para que la banda se mantenga encendida, y deje el contacto de EyeFar normalmente cerrado para que abra el peldaño cuando llegue la caja."
+            }
+          ],
+          "faultCases": [
+            "La escena inicial es un suelo vacío, así que no hay nada que ejecutar; coloque Belt1, Emitter1, EyeFar y StartButton, enlace sus cuatro señales en el mapa de la planta y escriba el programa que arranca la banda y la detiene cuando EyeFar ve la caja."
+          ]
+        }
+      }
+    },
+    {
+      "id": "plant-change-scene-ladder",
+      "version": 1,
+      "order": 1192,
+      "module": 19,
+      "level": "advanced",
+      "prerequisites": [
+        "plant-build-belt-scene-ladder",
+        "plant-merge-lines"
+      ],
+      "languages": [
+        "LD"
+      ],
+      "tracks": [
+        "simulation"
+      ],
+      "unsupported": {
+        "hardware": {
+          "reason": {
+            "en": "The Ladder version of the lesson changes a finished scene by adding a part and re-binding its signal; a learner board has no scene to change, and the scene is edited only in Simulation.",
+            "es": "La versión en Ladder de la lección modifica una escena terminada añadiendo una pieza y volviendo a enlazar su señal; una placa del estudiante no tiene escena que modificar, y la escena solo se edita en Simulación."
+          },
+          "instead": {
+            "en": "Complete it in Simulation, where the scene editor and the scene are part of the lesson.",
+            "es": "Complétela en Simulación, donde el editor de escenas y la escena forman parte de la lección."
+          }
+        }
+      },
+      "plant": null,
+      "scene": "merge-lines",
+      "plantMap": {
+        "schemaVersion": 2,
+        "target": {
+          "scene": "merge-lines"
+        },
+        "signals": {
+          "StartButton.pressed": {
+            "direction": "sensor",
+            "type": "BOOL",
+            "point": "MergeLines.Start"
+          },
+          "EyeA.detect": {
+            "direction": "sensor",
+            "type": "BOOL",
+            "point": "MergeLines.WaitA"
+          },
+          "EyeB.detect": {
+            "direction": "sensor",
+            "type": "BOOL",
+            "point": "MergeLines.WaitB"
+          },
+          "EyeZone.detect": {
+            "direction": "sensor",
+            "type": "BOOL",
+            "point": "MergeLines.Zone"
+          },
+          "FeedA.run": {
+            "direction": "command",
+            "type": "BOOL",
+            "point": "MergeLines.RunA"
+          },
+          "FeedB.run": {
+            "direction": "command",
+            "type": "BOOL",
+            "point": "MergeLines.RunB"
+          },
+          "Outfeed.run": {
+            "direction": "command",
+            "type": "BOOL",
+            "point": "MergeLines.RunOut"
+          },
+          "EmitterA.emit": {
+            "direction": "command",
+            "type": "BOOL",
+            "point": "MergeLines.EmitA"
+          },
+          "EmitterB.emit": {
+            "direction": "command",
+            "type": "BOOL",
+            "point": "MergeLines.EmitB"
+          },
+          "BladeA.extend": {
+            "direction": "command",
+            "type": "BOOL",
+            "point": "MergeLines.HoldA"
+          },
+          "BladeB.extend": {
+            "direction": "command",
+            "type": "BOOL",
+            "point": "MergeLines.HoldB"
+          },
+          "DoneLight.lit": {
+            "direction": "command",
+            "type": "BOOL",
+            "point": "MergeLines.Done"
+          }
+        }
+      },
+      "estimatedMinutes": 20,
+      "starter": {
+        "project": "plant_change_scene_ladder_starter",
+        "program": "src/MergeLines.ld.json"
+      },
+      "solution": {
+        "project": "plant_change_scene_ladder",
+        "program": "src/MergeLines.ld.json"
+      },
+      "scenario": {
+        "id": "change-scene",
+        "path": "tests/change-scene.scenario.json",
+        "sha256": "8d890f9d7479f4b1e528b8fa1dea867082085080f3362e9034401b40fb15eb05",
+        "tickMs": 10,
+        "durationMs": 25000,
+        "assertions": 5,
+        "canonical": "{\"durationMs\":25000,\"events\":[],\"expectations\":[{\"atMs\":100,\"condition\":{\"MergeLines.Done\":false,\"MergeLines.HoldA\":false,\"MergeLines.HoldB\":false},\"kind\":\"AT\"},{\"atMs\":1000,\"condition\":{\"MergeLines.HoldA\":true,\"MergeLines.HoldB\":true,\"fact:itemsRemoved\":false},\"kind\":\"AT\"},{\"condition\":{\"fact:delivered:Remover1\":true,\"fact:emitted:EmitterA\":true,\"fact:emitted:EmitterB\":true},\"fromMs\":0,\"kind\":\"EVENTUALLY\",\"withinMs\":25000},{\"atMs\":25000,\"condition\":{\"MergeLines.Done\":true,\"MergeLines.HoldA\":true,\"MergeLines.HoldB\":true},\"kind\":\"AT\"},{\"condition\":{\"fact:itemsCollided\":false,\"fact:itemsDropped\":false},\"kind\":\"ALWAYS\"}],\"id\":\"change-scene\",\"scene\":{\"file\":\"scene.json\",\"map\":\"plant-map.json\",\"script\":[{\"atMs\":200,\"operate\":{\"signal\":\"StartButton.pressed\",\"value\":true}},{\"atMs\":400,\"operate\":{\"signal\":\"StartButton.pressed\",\"value\":false}}]},\"schemaVersion\":1,\"tickMs\":10}"
+      },
+      "regressionScenarios": [],
+      "hardware": null,
+      "text": {
+        "en": {
+          "title": "Change a scene: add the second emitter",
+          "summary": "Open the finished merge scene, add the emitter of line B that it lacks and bind its signal in the plant map, without touching the program that already arbitrates the two lines.",
+          "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+          "objectives": [
+            "Add a part to an existing scene and place it where the rest of the scene expects it.",
+            "Bind the new part's signal in the plant map to the program variable that already drives it, leaving the program unchanged."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objective",
+              "body": "Open scene.json in the Scene editor: the merge scene has no emitter for line B. Add an emitter named EmitterB at the start of feeder B, with a limit of three boxes, and in plant-map.json bind EmitterB.emit to MergeLines.EmitB. The program in src/MergeLines.ld.json already drives EmitB; leave it as it is.",
+              "checkpoint": "The scene has EmitterB, the plant map binds EmitterB.emit, and the program is the one you were given."
+            },
+            {
+              "key": "predict",
+              "title": "Predict",
+              "body": "Before running, think about what changes when line B gets its emitter: three boxes now arrive on each feeder, and the arbitration has to let them through one at a time, as before.",
+              "checkpoint": "Both blades hold the lines at first; then one blade opens at a time, line A first; all six boxes leave and Done turns on."
+            },
+            {
+              "key": "edit",
+              "title": "Edit",
+              "body": "Correct this starter omission, save the scene and the plant map, then run: The starter scene has no emitter for line B, so no box ever comes from feeder B; add EmitterB at the start of feeder B with a limit of three boxes, and bind EmitterB.emit to MergeLines.EmitB in the plant map.",
+              "checkpoint": "The visible scenario must pass with saved host evidence."
+            },
+            {
+              "key": "run",
+              "title": "Run",
+              "body": "In Tests, choose the saved zplc.json and run only the change-scene scenario; watch the 3D view while it runs.",
+              "checkpoint": "The required scenario is named change-scene and contains 5 assertions."
+            },
+            {
+              "key": "observe",
+              "title": "Observe",
+              "body": "Watch feeder B fill with boxes and wait at its blade; if the part or its binding is missing, read the message of the Check: it names what it cannot find.",
+              "checkpoint": "All six boxes are delivered in turn, no box collides or drops, and Done is on at the end."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflect",
+              "body": "The program did not change, so the scene alone decided the result; a part that is added but not bound is as absent as a part that was never added.",
+              "checkpoint": "It does not establish physical belt speed, sensor response, hardware timing, HIL, safety function, or certification."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Copy the settings of EmitterA: an emitter with a limit of three boxes; EmitterB sits on the line of feeder B, at position 0, 0.65, 1.95 and rotated 90 degrees."
+            },
+            {
+              "level": 2,
+              "text": "In the plant map the signal is EmitterB.emit, a command, and its point is MergeLines.EmitB; check the name letter by letter, because the Check reads it exactly."
+            }
+          ],
+          "faultCases": [
+            "The starter scene has no emitter for line B, so no box ever comes from feeder B; add EmitterB at the start of feeder B with a limit of three boxes, and bind EmitterB.emit to MergeLines.EmitB in the plant map."
+          ]
+        },
+        "es": {
+          "title": "Modificar una escena: agregar el segundo emisor",
+          "summary": "Abra la escena de fusión terminada, agregue el emisor de la línea B que le falta y enlace su señal en el mapa de la planta, sin tocar el programa que ya arbitra las dos líneas.",
+          "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+          "objectives": [
+            "Agregar una pieza a una escena existente y colocarla donde el resto de la escena la espera.",
+            "Enlazar la señal de la pieza nueva en el mapa de la planta con la variable del programa que ya la gobierna, sin cambiar el programa."
+          ],
+          "stages": [
+            {
+              "key": "objective",
+              "title": "Objetivo",
+              "body": "Abra scene.json en el Editor de escenas: la escena de fusión no tiene emisor para la línea B. Agregue un emisor llamado EmitterB al inicio del alimentador B, con un límite de tres cajas, y en plant-map.json enlace EmitterB.emit con MergeLines.EmitB. El programa de src/MergeLines.ld.json ya gobierna EmitB; déjelo como está.",
+              "checkpoint": "La escena tiene EmitterB, el mapa de la planta enlaza EmitterB.emit y el programa es el que se le dio."
+            },
+            {
+              "key": "predict",
+              "title": "Predecir",
+              "body": "Antes de ejecutar, piense en qué cambia cuando la línea B recibe su emisor: ahora llegan tres cajas a cada alimentador, y el arbitraje debe dejarlas pasar de una en una, como antes.",
+              "checkpoint": "Al principio ambas cuchillas retienen las líneas; luego se abre una cuchilla a la vez, primero la línea A; las seis cajas salen y Done se enciende."
+            },
+            {
+              "key": "edit",
+              "title": "Editar",
+              "body": "Corrija esta omisión del inicial, guarde la escena y el mapa de la planta, y ejecute: La escena inicial no tiene emisor para la línea B, así que nunca llega una caja desde el alimentador B; agregue EmitterB al inicio del alimentador B con un límite de tres cajas, y enlace EmitterB.emit con MergeLines.EmitB en el mapa de la planta.",
+              "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+            },
+            {
+              "key": "run",
+              "title": "Ejecutar",
+              "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario change-scene; observe la vista 3D mientras se ejecuta.",
+              "checkpoint": "El escenario requerido se llama change-scene y contiene 5 aserciones."
+            },
+            {
+              "key": "observe",
+              "title": "Observar",
+              "body": "Observe cómo el alimentador B se llena de cajas y espera en su cuchilla; si falta la pieza o su enlace, lea el mensaje de la Comprobación: nombra lo que no encuentra.",
+              "checkpoint": "Las seis cajas se entregan por turnos, ninguna choca ni cae, y Done está encendida al final."
+            },
+            {
+              "key": "reflect",
+              "title": "Reflexionar",
+              "body": "El programa no cambió, así que la escena sola decidió el resultado; una pieza agregada pero sin enlazar está tan ausente como una pieza que nunca se agregó.",
+              "checkpoint": "No establece la velocidad física de la banda, la respuesta del sensor, la temporización de hardware, HIL, función de seguridad ni certificación."
+            }
+          ],
+          "hints": [
+            {
+              "level": 1,
+              "text": "Copie los ajustes de EmitterA: un emisor con un límite de tres cajas; EmitterB va sobre la línea del alimentador B, en la posición 0, 0.65, 1.95 y girado 90 grados."
+            },
+            {
+              "level": 2,
+              "text": "En el mapa de la planta la señal es EmitterB.emit, un comando, y su punto es MergeLines.EmitB; revise el nombre letra por letra, porque la Comprobación lo lee exactamente."
+            }
+          ],
+          "faultCases": [
+            "La escena inicial no tiene emisor para la línea B, así que nunca llega una caja desde el alimentador B; agregue EmitterB al inicio del alimentador B con un límite de tres cajas, y enlace EmitterB.emit con MergeLines.EmitB en el mapa de la planta."
           ]
         }
       }
