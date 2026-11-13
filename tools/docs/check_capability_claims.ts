@@ -59,7 +59,7 @@ export interface Registry {
   counts: Array<{
     id: string;
     noun: string;
-    truth: 'boards' | 'examples' | 'lessons' | 'functions' | 'function-blocks' | 'languages';
+    truth: 'boards' | 'examples' | 'lessons' | 'two-language-lessons' | 'functions' | 'function-blocks' | 'languages';
     requires?: string;
   }>;
 }
@@ -419,9 +419,8 @@ print(json.dumps([b["ide_id"] for b in boards if library.support_level(b, root)[
 `;
   const run = Bun.spawnSync(['python3', '-B', '-c', script, root], { stdout: 'pipe', stderr: 'pipe' });
   if (run.exitCode !== 0) throw new Error(`the board levels could not be read: ${run.stderr.toString()}`);
-  const lessons = publicLessonCount(
-    JSON.parse(readFileSync(join(root, 'packages/zplc-ide/src/generated/lessonIndex.json'), 'utf8')) as LessonIndex,
-  );
+  const index = JSON.parse(readFileSync(join(root, 'packages/zplc-ide/src/generated/lessonIndex.json'), 'utf8')) as LessonIndex;
+  const lessons = publicLessonCount(index);
   const wasm = getWasmCapabilities();
   return {
     rows,
@@ -435,6 +434,7 @@ print(json.dumps([b["ide_id"] for b in boards if library.support_level(b, root)[
       boards: boards.length,
       examples: welcomeExamples(root),
       lessons,
+      'two-language-lessons': alternativePairs(index).length,
       functions: getAllFnNames().length,
       'function-blocks': getAllFBNames().length,
       languages: 5,

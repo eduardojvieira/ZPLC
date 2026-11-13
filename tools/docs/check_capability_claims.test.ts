@@ -16,6 +16,7 @@ import {
   type Registry,
   type Truth,
 } from './check_capability_claims';
+import { alternativePairs } from '../../packages/zplc-ide/src/learn/lessonSiblings';
 
 const FENCE = '`'.repeat(3);
 const registry = loadRegistry();
@@ -170,6 +171,25 @@ describe('capability claims: what the public text says ZPLC can do is backed by 
       publicLessonCount(JSON.parse(readFileSync('packages/zplc-ide/src/generated/lessonIndex.json', 'utf8'))),
     );
   });
+
+  it(
+    'holds "N of them in two languages" to the number of Ladder sibling pairs (owner, 2026-11-13: "97 lessons, 14 in two ' + 'languages")',
+    () => {
+      const pairs = real.counts['two-language-lessons'];
+      expect(pairs).toBe(alternativePairs(JSON.parse(readFileSync('packages/zplc-ide/src/generated/lessonIndex.json', 'utf8'))).length);
+      const say = (n: number, es = false) => ({
+        file: 'README.md',
+        kind: 'readme' as const,
+        text: es
+          ? `El curso tiene ${real.counts.lessons} lecciones, ${n} de ellas en dos lenguajes.`
+          : `The course has ${real.counts.lessons} lessons, ${n} of them in two languages.`,
+      });
+      expect(checkSurface(say(pairs), registry, real)).toEqual([]);
+      expect(checkSurface(say(pairs, true), registry, real)).toEqual([]);
+      expect(checkSurface(say(pairs + 1), registry, real).map((finding) => finding.rule)).toEqual(['count-two-language-lessons']);
+      expect(checkSurface(say(pairs + 1, true), registry, real).map((finding) => finding.rule)).toEqual(['count-two-language-lessons']);
+    },
+  );
 
   it('holds the counts of a release page to the release, not to the present', () => {
     const text = 'Learn has ' + (real.counts.lessons + 5) + ' lessons in English and Spanish.';

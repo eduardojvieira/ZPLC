@@ -98,6 +98,11 @@
       "truth": "lessons"
     },
     {
+      "id": "two-language-lessons",
+      "noun": "of them in two languages|de ellas en dos lenguajes",
+      "truth": "two-language-lessons"
+    },
+    {
       "id": "functions",
       "noun": "standard functions|library functions|functions in the (?:standard )?library",
       "truth": "functions"
