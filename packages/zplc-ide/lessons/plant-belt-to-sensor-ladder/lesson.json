@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-belt-to-sensor-ladder",
+  "version": 1,
+  "order": 1121,
+  "module": 12,
+  "level": "advanced",
+  "prerequisites": ["motor-start-stop-safe"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The Ladder rungs of this lesson drive a belt and read a sensor that only the simulated scene provides; a learner board has no belt, no box and no far-end sensor for the contacts to read.",
+        "es": "Los peldaños de esta lección gobiernan una banda y leen un sensor que solo aporta la escena simulada; una placa del estudiante no tiene banda, caja ni sensor en el extremo para que los contactos lean."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus cajas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "belt-to-sensor",
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "plant_belt_to_sensor_ladder_starter",
+    "program": "src/BeltToSensor.ld.json"
+  },
+  "solution": {
+    "project": "plant_belt_to_sensor_ladder",
+    "program": "src/BeltToSensor.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "belt-to-sensor",
+    "path": "tests/belt-to-sensor.scenario.json",
+    "sha256": "71033f94eeff085d1585c868aae8aa327c184c5048ec59bad5ad9bc013f02adb"
+  },
+  "regressionScenarios": []
+}
