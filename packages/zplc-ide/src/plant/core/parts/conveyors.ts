@@ -127,18 +127,21 @@ function runtime(layoutId: Layout, fields: Record<string, ConfigField>): (part: 
       },
       views() {
         const first = segments[0]!;
-        const span = layoutId === 'curved' ? cfgNumber(part, fields, 'radius') + width : first.length;
         const curved = layoutId === 'curved';
-        // A curved view is an arc: `size[0]` is the belt width (what the view reads as the band), and the state names the arc.
-        const size: Vec3 = curved ? [width, THICKNESS, span] : [span, THICKNESS, width];
-        const arc: Record<string, number> = curved ? { radius: cfgNumber(part, fields, 'radius') + width / 2, angleDeg: 90 } : {};
+        const radius = curved ? cfgNumber(part, fields, 'radius') : 0;
+        const sign = curved && cfg(part, fields, 'hand') === 'left' ? -1 : 1;
+        // A curved view is an arc drawn about its own centre, `sign * radius` to the side of the 'in' point: `size[0]` is the
+        // belt width (the band the view reads), and the pose turns the view's quarter turn (0..90 degrees) onto the belt for either hand.
+        const size: Vec3 = curved ? [width, THICKNESS, radius + width] : [first.length, THICKNESS, width];
+        const arc: Record<string, number> = curved ? { radius: radius + width / 2, angleDeg: 90 } : {};
+        const [cx, cz] = curved ? rotateY(part.rotationYDeg, 0, sign * radius) : [0, 0];
         const pose: PartView['pose'] = {
           id: part.id,
           part: layoutId,
           kind: 'box',
           size,
-          p: [part.position[0], part.position[1] - THICKNESS / 2, part.position[2]],
-          q: yawQuat(part.rotationYDeg),
+          p: [part.position[0] + cx, part.position[1] - THICKNESS / 2, part.position[2] + cz],
+          q: yawQuat(part.rotationYDeg + (sign < 0 ? -90 : 0)),
         };
         return [{ id: part.id, part: layoutId, name: part.name, pose, state: { speedMps: target, stalled, jammed, ...arc }, signals: {} }];
       },

@@ -100,6 +100,7 @@ function buildGeometry(THREE: Three, spec: ShapeSpec): THREE_NS.BufferGeometry {
       shape.absarc(0, 0, spec.innerRadius, a, 0, true);
       const g = new THREE.ExtrudeGeometry(shape, { depth: spec.height, bevelEnabled: false });
       g.rotateX(-Math.PI / 2);
+      g.translate(0, -spec.height / 2, 0); // centred on the pose, like the box it replaces
       return g;
     }
   }
