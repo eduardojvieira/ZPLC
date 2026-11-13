@@ -14,6 +14,7 @@
  *    cannot compute HMAC-SHA-256 under a key it does not have);
  *  - a serial link reaches them only through a session: every counted change happened while a session was open
  *    on that link;
+ *  - the five plant messages (0x70 to 0x74) are ports that change the device like any other: they count too;
  *  - the key is never in what the engine sends;
  *  - the engine is still usable afterwards: a hello is answered.
  * Memory errors and undefined behaviour are found by the sanitizers.
@@ -33,6 +34,7 @@ typedef struct {
   uint8_t key[32];
   int key_set;
   int key_leaked;
+  int plant_active;
   uint8_t out[8192];
   size_t out_len;
 } port_t;
@@ -93,6 +95,55 @@ static void note_change(port_t *p) {
   if (!zplc_proto_session_is_open(p->dev)) {
     p->changes_without_session++;
   }
+}
+
+/* Plant I/O mode (LNK-018): every call that enters, feeds or leaves the mode counts as a change of the device. */
+static int p_plant_enter(void *c, const uint8_t *req, uint16_t n, uint8_t *rsp, uint16_t *rsp_len) {
+  port_t *p = (port_t *)c;
+
+  (void)req;
+  (void)n;
+  note_change(p);
+  p->plant_active = 1;
+  memset(rsp, 0, 9U);
+  *rsp_len = 9U;
+  return 0;
+}
+static int p_plant_frame(void *c, const uint8_t *req, uint16_t n, uint8_t *rsp, uint16_t *rsp_len) {
+  port_t *p = (port_t *)c;
+
+  (void)req;
+  (void)n;
+  note_change(p);
+  memset(rsp, 0, 14U);
+  *rsp_len = 14U;
+  return p->plant_active ? 0 : (int)ZPLC_PROTO_ERR_STATE;
+}
+static int p_plant_exit(void *c, uint8_t reason, uint8_t *rsp, uint16_t *rsp_len) {
+  port_t *p = (port_t *)c;
+
+  if (!p->plant_active) {
+    return (int)ZPLC_PROTO_ERR_STATE;
+  }
+  note_change(p);
+  p->plant_active = 0;
+  if (rsp != NULL) {
+    memset(rsp, 0, 9U);
+    rsp[0] = reason;
+    *rsp_len = 9U;
+  }
+  return 0;
+}
+static int p_plant_mirror(void *c, uint8_t on, uint8_t *mirror) {
+  note_change((port_t *)c);
+  *mirror = on;
+  return 0;
+}
+static int p_plant_status(void *c, uint8_t *rsp, uint16_t *rsp_len) {
+  (void)c;
+  memset(rsp, 0, 14U);
+  *rsp_len = 14U;
+  return 0;
 }
 
 static int p_status(void *c, zplc_proto_status_t *s) {
@@ -235,6 +286,11 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   ops.program_abort = p_program_abort;
   ops.program_info = p_program_info;
   ops.config_set = p_config_set;
+  ops.plant_enter = p_plant_enter;
+  ops.plant_frame = p_plant_frame;
+  ops.plant_exit = p_plant_exit;
+  ops.plant_mirror = p_plant_mirror;
+  ops.plant_status = p_plant_status;
   FZ_REQUIRE(zplc_proto_dev_init(&dev, &ops, 30U) == 0, "the engine starts");
   zplc_proto_link_init(&link, &dev, (mode & 1U) != 0U ? ZPLC_PROTO_TRANSPORT_NETWORK : ZPLC_PROTO_TRANSPORT_SERIAL, sink, &g_port);
   links[0] = &link;

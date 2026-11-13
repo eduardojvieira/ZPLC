@@ -100,6 +100,8 @@ static int capability_bit(const zplc_proto_ops_t *ops, uint32_t bit) {
     return ops->signing_key_load != NULL && ops->signing_key_store != NULL && ops->signing_key_erase != NULL && ops->program_verify != NULL;
   case ZPLC_PROTO_CAP_CONFIG:
     return ops->config_set != NULL && ops->config_save != NULL && ops->config_reset != NULL;
+  case ZPLC_PROTO_CAP_PLANT:
+    return ops->plant_enter != NULL && ops->plant_frame != NULL && ops->plant_exit != NULL && ops->plant_mirror != NULL;
   case ZPLC_PROTO_CAP_CREDENTIALS:
     return ops->cred_begin != NULL && ops->cred_chunk != NULL && ops->cred_commit != NULL && ops->cred_erase != NULL;
   default:
@@ -286,14 +288,21 @@ static uint32_t mask_of(uint8_t id) {
     return ZPLC_PROTO_EVT_LOG_MASK;
   case ZPLC_PROTO_EVT_WATCH:
     return ZPLC_PROTO_EVT_WATCH_MASK;
+  case ZPLC_PROTO_EVT_PLANT_EXIT:
+    return ZPLC_PROTO_EVT_PLANT_EXIT_MASK;
   default:
     return 0U;
   }
 }
 
-static uint32_t all_event_bits(void) {
-  return ZPLC_PROTO_EVTMASK_STATUS | ZPLC_PROTO_EVTMASK_FAULT | ZPLC_PROTO_EVTMASK_BREAKPOINT | ZPLC_PROTO_EVTMASK_FORCE |
-         ZPLC_PROTO_EVTMASK_LOG | ZPLC_PROTO_EVTMASK_WATCH;
+static uint32_t all_event_bits(const zplc_proto_dev_t *dev) {
+  uint32_t bits = ZPLC_PROTO_EVTMASK_STATUS | ZPLC_PROTO_EVTMASK_FAULT | ZPLC_PROTO_EVTMASK_BREAKPOINT | ZPLC_PROTO_EVTMASK_FORCE |
+                  ZPLC_PROTO_EVTMASK_LOG | ZPLC_PROTO_EVTMASK_WATCH;
+
+  if (capability_bit(dev->ops, ZPLC_PROTO_CAP_PLANT) != 0) {
+    bits |= ZPLC_PROTO_EVTMASK_PLANT; /* a device without the mode never offers its event */
+  }
+  return bits;
 }
 
 /** An event the engine produced itself (a force it set): into the queue, without the lock of the producers. */
@@ -377,6 +386,27 @@ static void abandon_transfers(zplc_proto_dev_t *dev) {
   }
 }
 
+/** Leave plant I/O mode for `reason` and push EVT_PLANT_EXIT once; the body of the response is filled when asked. */
+static int leave_plant(zplc_proto_dev_t *dev, uint8_t reason, uint8_t *out) {
+  uint8_t scratch[ZPLC_PROTO_PLANT_EXIT_RSP_FIXED - 1U];
+  uint8_t *body = out != NULL ? out : scratch;
+  uint8_t event[ZPLC_PROTO_EVT_PLANT_EXIT_FIXED];
+  uint16_t length = (uint16_t)sizeof(scratch);
+  int result;
+
+  if (capability_bit(dev->ops, ZPLC_PROTO_CAP_PLANT) == 0) {
+    return (int)ZPLC_PROTO_ERR_UNSUPPORTED;
+  }
+  (void)memset(body, 0, sizeof(scratch));
+  result = ops_error(dev->ops->plant_exit(dev->ops->context, reason, body, &length));
+  if (result == 0) {
+    event[ZPLC_PROTO_EVT_PLANT_EXIT_REASON_OFF] = reason;
+    (void)memcpy(event + ZPLC_PROTO_EVT_PLANT_EXIT_FRAMES_OFF, body + 1U, 4U);
+    post_internal(dev, ZPLC_PROTO_EVT_PLANT_EXIT, event, ZPLC_PROTO_EVT_PLANT_EXIT_FIXED);
+  }
+  return result;
+}
+
 static void end_session(zplc_proto_dev_t *dev, uint8_t reason, int notify) {
   zplc_proto_link_t *link = dev->owner;
   uint8_t released;
@@ -385,6 +415,11 @@ static void end_session(zplc_proto_dev_t *dev, uint8_t reason, int notify) {
   if (dev->session_open == 0U) {
     return;
   }
+  /* Plant I/O mode belongs to the session (COM-020): it ends first, before anything else is released. */
+  leave_plant(dev,
+              reason == (uint8_t)ZPLC_PROTO_SESSION_END_LINK_LOST ? (uint8_t)ZPLC_PROTO_PLANT_EXIT_REASON_LINK_LOST
+                                                                  : (uint8_t)ZPLC_PROTO_PLANT_EXIT_REASON_SESSION_END,
+              NULL);
   released = release_owned_forces(dev);
   abandon_transfers(dev);
   if (released != 0U) {
@@ -965,7 +1000,7 @@ static void do_events_set(const request_t *r) {
   const uint32_t requested = zplc_get_u32_le(r->payload + ZPLC_PROTO_EVENTS_SET_REQ_MASK_OFF);
   uint8_t *b = body_of(r->link->dev);
 
-  r->link->event_mask = requested & all_event_bits();
+  r->link->event_mask = requested & all_event_bits(r->link->dev);
   r->link->dev->reported_unsupported = 0U; /* IO-007: a client that subscribes is told what the board cannot serve */
   zplc_put_u32_le(b, r->link->event_mask);
   respond(r->link, r->frame, (uint8_t)ZPLC_PROTO_ERR_OK, 4U);
@@ -1404,6 +1439,83 @@ static void do_key_clear(const request_t *r) {
   respond(r->link, r->frame, (uint8_t)ops_error(dev->ops->key_erase(dev->ops->context)), 0U);
 }
 
+/* Plant I/O mode: the engine owns the session gate and the length floor, the module behind the port owns the rest. */
+static int plant_supported(const request_t *r) {
+  if (capability_bit(r->link->dev->ops, ZPLC_PROTO_CAP_PLANT) == 0) {
+    respond_error(r->link, r->frame, (int)ZPLC_PROTO_ERR_UNSUPPORTED);
+    return 0;
+  }
+  return 1;
+}
+
+static void respond_plant_body(const request_t *r, int result, uint16_t length) {
+  if (result == 0 && (size_t)length > body_capacity(r->link)) {
+    result = (int)ZPLC_PROTO_ERR_FAILED; /* a port that wrote past the frame: nothing of it is sent */
+    length = 0U;
+  }
+  respond(r->link, r->frame, (uint8_t)result, result == 0 ? (size_t)length : 0U);
+}
+
+static void do_plant_enter_or_frame(const request_t *r) {
+  zplc_proto_dev_t *dev = r->link->dev;
+  uint16_t length;
+  int result;
+
+  if (plant_supported(r) == 0) {
+    return;
+  }
+  length = (uint16_t)body_capacity(r->link);
+  result = ops_error(r->frame->message == ZPLC_PROTO_MSG_PLANT_ENTER
+                         ? dev->ops->plant_enter(dev->ops->context, r->payload, (uint16_t)r->length, body_of(dev), &length)
+                         : dev->ops->plant_frame(dev->ops->context, r->payload, (uint16_t)r->length, body_of(dev), &length));
+  respond_plant_body(r, result, length);
+}
+
+static void do_plant_exit(const request_t *r) {
+  zplc_proto_dev_t *dev = r->link->dev;
+  int result;
+
+  if (plant_supported(r) == 0) {
+    return;
+  }
+  result = leave_plant(dev, (uint8_t)ZPLC_PROTO_PLANT_EXIT_REASON_CLOSED, body_of(dev));
+  respond_plant_body(r, result, (uint16_t)(ZPLC_PROTO_PLANT_EXIT_RSP_FIXED - 1U));
+}
+
+static void do_plant_mirror(const request_t *r) {
+  zplc_proto_dev_t *dev = r->link->dev;
+  const uint8_t enable = r->payload[ZPLC_PROTO_PLANT_MIRROR_REQ_ENABLE_OFF];
+  uint8_t mirror = 0U;
+  int result;
+
+  if (plant_supported(r) == 0) {
+    return;
+  }
+  if (enable > 1U) {
+    respond_error(r->link, r->frame, (int)ZPLC_PROTO_ERR_BAD_REQUEST);
+    return;
+  }
+  result = ops_error(dev->ops->plant_mirror(dev->ops->context, enable, &mirror));
+  body_of(dev)[0] = mirror;
+  respond_plant_body(r, result, 1U);
+}
+
+static void do_plant_status(const request_t *r) {
+  zplc_proto_dev_t *dev = r->link->dev;
+  uint16_t length = (uint16_t)body_capacity(r->link);
+  int result;
+
+  if (plant_supported(r) == 0) {
+    return;
+  }
+  if (dev->ops->plant_status == NULL) {
+    respond_error(r->link, r->frame, (int)ZPLC_PROTO_ERR_UNSUPPORTED);
+    return;
+  }
+  result = ops_error(dev->ops->plant_status(dev->ops->context, body_of(dev), &length));
+  respond_plant_body(r, result, length);
+}
+
 static void dispatch(const request_t *r) {
   const zplc_proto_ops_t *ops = r->link->dev->ops;
 
@@ -1548,6 +1660,19 @@ static void dispatch(const request_t *r) {
   case ZPLC_PROTO_MSG_SIGNING_KEY_CLEAR:
     do_signing_key_clear(r);
     break;
+  case ZPLC_PROTO_MSG_PLANT_ENTER:
+  case ZPLC_PROTO_MSG_PLANT_FRAME:
+    do_plant_enter_or_frame(r);
+    break;
+  case ZPLC_PROTO_MSG_PLANT_EXIT:
+    do_plant_exit(r);
+    break;
+  case ZPLC_PROTO_MSG_PLANT_MIRROR:
+    do_plant_mirror(r);
+    break;
+  case ZPLC_PROTO_MSG_PLANT_STATUS:
+    do_plant_status(r);
+    break;
   default:
     respond_error(r->link, r->frame, (int)ZPLC_PROTO_ERR_UNKNOWN_MESSAGE);
     break;
@@ -1628,7 +1753,7 @@ int zplc_proto_dev_init(zplc_proto_dev_t *dev, const zplc_proto_ops_t *ops, uint
 
     if ((flag & (ZPLC_PROTO_CAP_MEMORY | ZPLC_PROTO_CAP_FORCE | ZPLC_PROTO_CAP_RUN_CONTROL | ZPLC_PROTO_CAP_BREAKPOINTS |
                  ZPLC_PROTO_CAP_PROGRAM | ZPLC_PROTO_CAP_WATCH | ZPLC_PROTO_CAP_AUTH | ZPLC_PROTO_CAP_CONFIG | ZPLC_PROTO_CAP_CREDENTIALS |
-                 ZPLC_PROTO_CAP_SIGNATURE)) != 0U &&
+                 ZPLC_PROTO_CAP_SIGNATURE | ZPLC_PROTO_CAP_PLANT)) != 0U &&
         capability_bit(ops, flag) != 0) {
       dev->capabilities |= flag;
     }
