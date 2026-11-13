@@ -471,20 +471,24 @@ async function stepLearn({ app, recorder: rec, language }: Session): Promise<voi
   });
   order.push('continue');
   await rec.shot('8-learn-home');
-  for (let step = 0; step < 6; step++) {
-    const stop = await rec.key('Tab', 'Tab through the Learn home');
-    order.push(
-      await app.eval<string>(
-        `(() => { const el = document.activeElement; return el.hasAttribute('data-learn-unlock-all') ? 'unlock' : ` +
-          `el.hasAttribute('data-learn-hide-solutions') ? 'hide' : el.hasAttribute('data-learn-export') ? 'export' : ` +
-          `el.hasAttribute('data-learn-import') ? 'import' : el.hasAttribute('data-learn-start') ? 'start' : 'other'; })()`,
-      ),
-    );
-    void stop;
+  // the path-first home puts "Continue the path" and one Start per lesson between Continue and the switches
+  await rec.reach('the Unlock all lessons switch', `el.hasAttribute('data-learn-unlock-all')`, 'Tab', 40);
+  const pathStops = await app.eval<string>(
+    `String(document.querySelectorAll('[data-learn-path-continue], [data-learn-path-start]').length)`,
+  );
+  rec.fact('pathStops', pathStops);
+  order.push('unlock');
+  for (const [name, attribute] of [
+    ['hide', 'data-learn-hide-solutions'],
+    ['export', 'data-learn-export'],
+    ['import', 'data-learn-import'],
+  ] as const) {
+    await rec.reach(`the ${name} control`, `el.hasAttribute('${attribute}')`, 'Tab', 2);
+    order.push(name);
   }
   rec.fact('homeOrder', order.join(' > '));
   rec.check(
-    'Tab walks the Learn home in reading order (Continue, the two switches, Export, Import)',
+    'Tab walks the Learn home in reading order (Continue, the path, the two switches, Export, Import)',
     ['continue', 'unlock', 'hide', 'export', 'import'].every((name, index) => order[index] === name),
     order.join(' > '),
   );
@@ -493,7 +497,7 @@ async function stepLearn({ app, recorder: rec, language }: Session): Promise<voi
   await rec.key('Space', 'flip Unlock all lessons');
   await rec.expectAnnounced('the switch change is announced', /unlocked|desbloquead/i);
   // start the course
-  await rec.reach('Continue', `el.hasAttribute('data-learn-continue')`, 'Shift+Tab', 8);
+  await rec.reach('Continue', `el.hasAttribute('data-learn-continue')`, 'Shift+Tab', 40);
   await rec.key('Enter', 'Start the course', true);
   await app.until(
     'the lesson beside the editor',
@@ -641,8 +645,27 @@ async function stepPlant({ app, recorder: rec, language, project }: Session): Pr
   // the program is paused. The bar's buttons are reached by name, the way Connect is.
   const inBar = (name: string) =>
     `el.closest('[role="toolbar"]') !== null && (el.getAttribute('aria-label') ?? el.textContent ?? '').includes(${JSON.stringify(name)})`;
+  // Monaco consumes Tab and Shift+Tab; its own way out is Ctrl+M, so leave the editor before the walk continues
+  const leaveEditor = async () => {
+    if (await app.eval<boolean>(`(() => { const el = document.activeElement; return Boolean(el) && (${inEditor}); })()`))
+      await rec.key('Ctrl+M', 'leave the code editor (Ctrl+M makes Tab move focus)');
+  };
+  const walk = async (what: string, condition: string, key: string, max: number, record = true) => {
+    for (let presses = 0; presses <= max; presses++) {
+      await leaveEditor();
+      if (
+        await app.eval<boolean>(
+          `(() => { const el = document.activeElement; return Boolean(el) && el !== document.body && (${condition}); })()`,
+        )
+      )
+        return rec.stop(`on ${what}`);
+      await rec.key(key, `${key} toward ${what}`);
+    }
+    if (record) rec.check(`${what} is reached with ${key}`, false, `not reached in ${max} presses`);
+    throw new Error(`${what} was not reached with ${key} in ${max} presses`);
+  };
   const reachBar = (what: string, name: string) =>
-    rec.reach(what, inBar(name), 'Shift+Tab', 80, false).catch(() => rec.reach(what, inBar(name), 'Tab', 120));
+    walk(what, inBar(name), 'Shift+Tab', 80, false).catch(() => walk(what, inBar(name), 'Tab', 120));
   await reachBar('the pause button of the command bar', w.pause);
   await rec.key('Enter', 'pause the program');
   await app.until(
@@ -654,9 +677,10 @@ async function stepPlant({ app, recorder: rec, language, project }: Session): Pr
   rec.fact('pausedText', await app.eval<string>(`document.querySelector('[data-plant-scans]')?.textContent ?? ''`));
   await reachBar('the resume button of the command bar', w.resume);
   await rec.key('Enter', 'resume the program');
-  await rec
-    .reach('the stall fault action', `el.getAttribute('data-plant-action') === 'stall'`, 'Tab', 120, false)
-    .catch(() => rec.reach('the stall fault action', `el.getAttribute('data-plant-action') === 'stall'`, 'Shift+Tab', 120));
+  const stallAction = `el.getAttribute('data-plant-action') === 'stall'`;
+  await walk('the stall fault action', stallAction, 'Tab', 120, false).catch(() =>
+    walk('the stall fault action', stallAction, 'Shift+Tab', 120),
+  );
   await rec.key('Enter', 'switch the stall fault on');
   await app.until('the motor to stall', async () => (await state('stalled')).fact === 'plant.motor.stalled' || undefined, 45_000);
   await rec.expectAnnounced(
