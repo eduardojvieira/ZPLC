@@ -1681,6 +1681,7 @@
     {"kind":"unit","ref":"tools/ci/port-conformance.test.ts","test":"port conformance suite: the legs name real checks (IO-013)"},
     {"kind":"unit","ref":"tools/docs/generate_port_interface.test.ts","test":"port interface page: every function of the HAL and every callback of the scheduler port is on it (IO-013)"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/src/hal/freertos/tests/test_hal_freertos.c","test":"IO-016, IO-013: the HAL of the FreeRTOS port on the kernel: the clock, the sleep, the locks and the storage."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_plant_sched.c","test":"(LNK-003, LNK-006, LNK-007, LNK-010, LNK-011, LNK-015, LNK-016, IO-013)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_port_timing.c","test":"The timing self-test of the port conformance suite on the POSIX port (IO-013)."},
     {"kind":"c-test","ref":"firmware/tests/port_timing/src/main.c","test":"IO-013: the timing self-test of the port conformance suite, on the clock of the Zephyr port."}
   ],
@@ -1879,6 +1880,7 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_proto_codec.c","test":"COM-019: every frame of the definition is encoded to the bytes the generator computed"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_proto_codec.c","test":"COM-019: the decoder is bounded under hostile input"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_proto_codec.c","test":"The codec of the device link protocol against the generated frames (COM-019)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_proto_plant.c","test":"session ends, network authentication (LNK-012, LNK-017, LNK-018, COM-019, COM-020, COM-025)."},
     {"kind":"manual","ref":"firmware/tests/app_device_link/test_app_device_link.py","note":"the frames run against the real Zephyr application shell on native_sim (zplc link <hex> answers ZF:<hex>), in the app-device-link step of the zephyr job; a board over a real UART is not run"},
     {"kind":"manual","ref":"tools/contract/test_protocol.py","note":"the generator's own tests: the definition is validated, the generated header, TypeScript and vectors are byte-for-byte what --check expects, and the Python encoder and decoder agree on every frame"}
   ],
@@ -1888,6 +1890,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/link/deviceLink.native.test.ts","test":"one session at a time, replaced by its own link, and taken over from the serial link (COM-020)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/link/deviceLink.native.test.ts","test":"the device link over the serial rules, the native runtime on a pipe (COM-019, COM-020, COM-023, COM-024, COM-025, COM-028)"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_proto_link.c","test":"libFuzzer target for the device engine of the device link protocol (COM-020, COM-021, VF-014)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_plant_attack.c","test":"ADVISORY: the mode outlived its session (COM-020) for at most the staleness bound; in that window another session"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_proto_plant.c","test":"session ends, network authentication (LNK-012, LNK-017, LNK-018, COM-019, COM-020, COM-025)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_proto_session.c","test":"COM-020, HIL-003: a force from the console belongs to a session, and ends with it"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_proto_session.c","test":"COM-020: configuration and credentials follow the session rule"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_proto_session.c","test":"COM-020: nothing that changes the device works without a session, and none of it reaches the port"},
@@ -1940,6 +1944,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/link/deviceLink.native.test.ts","test":"breakpoints, and a watch batch with the values of one scan (COM-025)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/link/deviceLink.native.test.ts","test":"the device link over the serial rules, the native runtime on a pipe (COM-019, COM-020, COM-023, COM-024, COM-025, COM-028)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/runtime/link/linkParts.test.ts","test":"one router for what the device reports (COM-025)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_proto_plant.c","test":"session ends, network authentication (LNK-012, LNK-017, LNK-018, COM-019, COM-020, COM-025)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_proto_session.c","test":"COM-025: status, fault, breakpoint, force, log and watch events, a bounded queue that counts what it drops"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_proto_session.c","test":"program transfer (COM-020, COM-021, COM-023, COM-024, COM-025, COM-028)."},
     {"kind":"manual","ref":"firmware/tests/app_device_link/test_app_device_link.py","partial":true,"note":"events are proven on the engine, the native runtime and the shell port; the watch values of the debug panel are still polled by useDebugController (a labelled fallback, not rewired to WATCH events), and that a telemetry burst never delays a scan is not measured on a board"}
