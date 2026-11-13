@@ -7,7 +7,8 @@ import { css, type App } from '../journeyApp';
 export async function cyclesFromDetails(app: App): Promise<number> {
   const rail = '[aria-label="Operational status"]';
   await app.click(
-    `[...document.querySelectorAll('button')].find((item) => item.closest(${JSON.stringify(rail)}) && item.textContent?.includes('Details'))`,
+    `[...document.querySelectorAll('button')].find((item) => ` +
+      `item.closest(${JSON.stringify(rail)}) && item.textContent?.includes('Details'))`,
     'the status details',
   );
   await app.until('the status details', async () => (await app.visible(css('[role="dialog"]'))) || undefined);
