@@ -12,14 +12,33 @@ const SCENES = join(ROOT, 'plant-scenes');
 const OUT = join(ROOT, 'src/generated/sceneIndex.ts');
 const FILES = ['scene.json', 'plant-map.json', 'reference.st', 'starter.st', 'scenario.json'];
 
+// The shipped scenes in the order of difficulty of spec 012's table of reference scenes (its scene numbers), so the chooser lists
+// them in that order and the plant document opens scene 1 first. A new scene is added here with its number.
+const SCENE_ORDER: Record<string, number> = {
+  'belt-to-sensor': 1,
+  'latch-two-sensors': 2,
+  'timed-tank': 3,
+  'counted-queue': 4,
+  'two-axis-assembly': 5,
+  'two-axis-assembly-numeric': 6,
+  'buffer-release': 8,
+  'merge-lines': 9,
+  'tank-level-control': 12,
+  'layer-palletizer': 13,
+  'belt-to-belt-transfer': 14,
+  'three-axis-palletizing': 15,
+};
+
 function generate(): { problems: string[]; source: string } {
   const problems: string[] = [];
   const entries: { id: string; dir: string; names: { en: string; es: string } }[] = [];
   const ids = existsSync(SCENES)
     ? readdirSync(SCENES)
         .filter((id) => statSync(join(SCENES, id)).isDirectory())
-        .sort()
+        .sort((a, b) => (SCENE_ORDER[a] ?? Infinity) - (SCENE_ORDER[b] ?? Infinity) || a.localeCompare(b))
     : [];
+  for (const id of ids)
+    if (!(id in SCENE_ORDER)) problems.push(`plant-scenes/${id}: add it to SCENE_ORDER in scripts/generate-scene-index.ts`);
   for (const id of ids) {
     const missing = FILES.filter((file) => !existsSync(join(SCENES, id, file)));
     if (missing.length > 0) {

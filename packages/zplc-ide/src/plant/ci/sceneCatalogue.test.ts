@@ -13,6 +13,23 @@ const load = (dir: string): unknown => JSON.parse(readFileSync(resolve(import.me
 const kindsOf = (scene: unknown) => (scene as { parts: { part: string }[] }).parts.map((p) => p.part);
 
 describe('shipped scenes use the public format and catalogue', () => {
+  it('SCN-001 the shipped scenes are listed in the order of the reference scene table, scene 1 first', () => {
+    expect(SCENE_INDEX.map((e) => e.id)).toEqual([
+      'belt-to-sensor',
+      'latch-two-sensors',
+      'timed-tank',
+      'counted-queue',
+      'two-axis-assembly',
+      'two-axis-assembly-numeric',
+      'buffer-release',
+      'merge-lines',
+      'tank-level-control',
+      'layer-palletizer',
+      'belt-to-belt-transfer',
+      'three-axis-palletizing',
+    ]);
+  });
+
   it('SCN-002 every shipped scene validates against the public scene format and uses only catalogue parts', () => {
     expect(SCENE_INDEX.length).toBeGreaterThan(0);
     const known = new Set(catalogue.list().map((d) => d.id));

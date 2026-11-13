@@ -3,35 +3,11 @@
 
 export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: string; es: string } }[] = [
   {
-    "id": "belt-to-belt-transfer",
-    "dir": "plant-scenes/belt-to-belt-transfer",
-    "names": {
-      "en": "Transfer between belts",
-      "es": "Transfer between belts"
-    }
-  },
-  {
     "id": "belt-to-sensor",
     "dir": "plant-scenes/belt-to-sensor",
     "names": {
       "en": "Belt to sensor",
       "es": "Belt to sensor"
-    }
-  },
-  {
-    "id": "buffer-release",
-    "dir": "plant-scenes/buffer-release",
-    "names": {
-      "en": "Buffer and release",
-      "es": "Buffer and release"
-    }
-  },
-  {
-    "id": "counted-queue",
-    "dir": "plant-scenes/counted-queue",
-    "names": {
-      "en": "Counted queue",
-      "es": "Counted queue"
     }
   },
   {
@@ -43,11 +19,43 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     }
   },
   {
-    "id": "layer-palletizer",
-    "dir": "plant-scenes/layer-palletizer",
+    "id": "timed-tank",
+    "dir": "plant-scenes/timed-tank",
     "names": {
-      "en": "Layer palletizer",
-      "es": "Layer palletizer"
+      "en": "Timed tank",
+      "es": "Timed tank"
+    }
+  },
+  {
+    "id": "counted-queue",
+    "dir": "plant-scenes/counted-queue",
+    "names": {
+      "en": "Counted queue",
+      "es": "Counted queue"
+    }
+  },
+  {
+    "id": "two-axis-assembly",
+    "dir": "plant-scenes/two-axis-assembly",
+    "names": {
+      "en": "Two-axis assembly",
+      "es": "Two-axis assembly"
+    }
+  },
+  {
+    "id": "two-axis-assembly-numeric",
+    "dir": "plant-scenes/two-axis-assembly-numeric",
+    "names": {
+      "en": "Two-axis assembly, numeric",
+      "es": "Two-axis assembly, numeric"
+    }
+  },
+  {
+    "id": "buffer-release",
+    "dir": "plant-scenes/buffer-release",
+    "names": {
+      "en": "Buffer and release",
+      "es": "Buffer and release"
     }
   },
   {
@@ -67,27 +75,27 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     }
   },
   {
+    "id": "layer-palletizer",
+    "dir": "plant-scenes/layer-palletizer",
+    "names": {
+      "en": "Layer palletizer",
+      "es": "Layer palletizer"
+    }
+  },
+  {
+    "id": "belt-to-belt-transfer",
+    "dir": "plant-scenes/belt-to-belt-transfer",
+    "names": {
+      "en": "Transfer between belts",
+      "es": "Transfer between belts"
+    }
+  },
+  {
     "id": "three-axis-palletizing",
     "dir": "plant-scenes/three-axis-palletizing",
     "names": {
       "en": "Three-axis palletizing",
       "es": "Three-axis palletizing"
-    }
-  },
-  {
-    "id": "timed-tank",
-    "dir": "plant-scenes/timed-tank",
-    "names": {
-      "en": "Timed tank",
-      "es": "Timed tank"
-    }
-  },
-  {
-    "id": "two-axis-assembly",
-    "dir": "plant-scenes/two-axis-assembly",
-    "names": {
-      "en": "Two-axis assembly",
-      "es": "Two-axis assembly"
     }
   }
 ];
