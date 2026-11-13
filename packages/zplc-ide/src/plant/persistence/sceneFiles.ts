@@ -50,7 +50,9 @@ export async function saveProjectScene(root: FileSystemDirectoryHandle, scene: P
   if (map) await write(root, 'plant-map.json', map);
 }
 
-/** The texts of the project's own scene at its root (`plant-map.json` empty when it has none), or none when the project has no `scene.json`. */
+/**
+ * The texts of the project's own scene at its root (`plant-map.json` empty when it has none), or none when the project has no `scene.json`.
+ */
 export async function readProjectSceneTexts(root: FileSystemDirectoryHandle): Promise<{ scene: string; map: string } | undefined> {
   const read = async (file: string) => {
     const opened = await (await root.getFileHandle(file)).getFile();

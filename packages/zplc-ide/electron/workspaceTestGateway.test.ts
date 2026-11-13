@@ -158,7 +158,11 @@ describe('Workspace test gateway', () => {
     await rm(root, { recursive: true, force: true });
     await mkdir(root);
     let called = false;
-    await expect(gateway.run(7, token, async () => { called = true; })).rejects.toThrow('Workspace is unavailable');
+    await expect(
+      gateway.run(7, token, async () => {
+        called = true;
+      }),
+    ).rejects.toThrow('Workspace is unavailable');
     expect(called).toBe(false);
   });
 

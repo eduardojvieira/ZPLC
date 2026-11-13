@@ -45,7 +45,9 @@ const part = (id: string, name: string, kind = 'belt'): ScenePart => ({
 function mount(stopped = true, scene?: Parameters<typeof createSceneEditor>[1], projectScene = false) {
   const editor = createSceneEditor(catalogue, scene);
   const mapEditor = createMapEditor(editor.signals(), 'floor');
-  const view = dom.render(<EditorPanel editor={editor} mapEditor={mapEditor} stopped={stopped} catalogue={catalogue} projectScene={projectScene} />);
+  const view = dom.render(
+    <EditorPanel editor={editor} mapEditor={mapEditor} stopped={stopped} catalogue={catalogue} projectScene={projectScene} />,
+  );
   return { editor, mapEditor, screen: dom.screen, within: dom.within, ...view };
 }
 
