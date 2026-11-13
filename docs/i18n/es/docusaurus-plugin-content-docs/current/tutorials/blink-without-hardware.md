@@ -24,7 +24,7 @@ Necesita ZPLC instalado. Si todavía no lo hizo, siga primero [Instalar ZPLC](..
 2. Copiar el ejemplo en una carpeta vacía.
 3. Leer el programa.
 4. Compilarlo.
-5. Conectarse al simulador y ejecutar el programa.
+5. Ejecutar el programa en el simulador.
 6. Observar cómo cambia la salida `LED_Output`.
 7. Ejecutar la prueba de escenario del proyecto.
 
@@ -94,9 +94,9 @@ Si la compilación falla, **Problemas** enumera cada error con su línea y su co
 
 ## 5. Ejecútelo en el simulador
 
-1. En la barra de herramientas, compruebe que **Simular** esté seleccionado y pulse **Conectar**. ZPLC inicia el simulador
-   que viene con la aplicación.
-2. Pulse **Ejecutar** (F5).
+1. En la barra de comandos, compruebe que el selector de destino diga **Simulación**.
+2. Pulse **Ejecutar** (F5). ZPLC guarda el proyecto, lo compila si la compilación está desactualizada, inicia el simulador
+   que viene con la aplicación y ejecuta el programa. Una simulación no necesita **Conectar**.
 
 La línea de estado muestra **En marcha** y el contador de ciclos sube. El simulador es el runtime de ZPLC construido para su
 computadora. Ejecuta su programa con un temporizador, y no modela el lado eléctrico de una placa ni sus tiempos reales.

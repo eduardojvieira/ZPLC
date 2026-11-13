@@ -85,10 +85,10 @@ If a board does not come back, use the recovery procedure of its profile: [Recov
 
 ## 3. Connect ZPLC
 
-1. Open the project of the example, build it (**Build**, **Compile**) and choose **Hardware** in the toolbar instead of
-   **Simulate**.
+1. Open the project of the example, build it (**Build**, **Compile**) and choose the board in the target selector of the
+   command bar instead of **Simulation**. **Connect**, **Disconnect** and **Deploy** appear once a board is the target.
 
-   ![The Raspberry Pi Pico example built, with Hardware chosen and no board connected](/img/screens/first-board-hardware.png)
+   ![The Raspberry Pi Pico example built, with the board as target and no board connected](/img/screens/first-board-hardware.png)
 
 2. Press **Connect**. A dialog lists each serial port with its name and its USB identifiers and marks the boards it
    knows. If the board is not listed, plug it in and press **Refresh**. Choose its port and press **Use this port**: ZPLC
@@ -110,7 +110,9 @@ has run those steps on a board, and this page shows no picture that the capture 
 1. Press **Deploy**. ZPLC shows the SHA-256 of the program, its size, the number of tasks and the board of the device,
    and asks you to confirm. A deploy stops the current program and leaves the runtime **stopped**: it does not run it.
 2. Check that the machine is in a state where an output may change.
-3. Press **Run** (F5) yourself. The LED should switch every half second if the program is the example.
+3. Press **Run** (F5) yourself. On a board, Run never connects or deploys: if the board is not connected or does not hold the current
+   program, it offers **Connect**, **Build** or **Deploy** in a notice. The LED should switch every half second if the
+   program is the example.
 
 ## 5. Observe
 
@@ -119,13 +121,13 @@ drives the physical outputs to their safe state, off ([Scheduler](../runtime/sch
 
 ## What is verified
 
-| Step                | Evidence today                                                                                       | Status                       |
-| ------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------- |
-| 1. Get the firmware | Continuous integration runs `west build` and the same flash and RAM budget check as the build script | Builds in CI: `cross-build`  |
-| 2. Flash it         | None                                                                                                 | Not yet verified on hardware |
-| 3. Connect ZPLC     | The dialog is pictured above with no board; the Blink tutorial exercises connecting in the simulator | Not yet verified on hardware |
-| 4. Deploy and run   | The Blink tutorial exercises running in the simulator; no board has received a program               | Not yet verified on hardware |
-| 5. Observe          | The Watch table is exercised in the simulator; no physical output has been seen to change            | Not yet verified on hardware |
+| Step                | Evidence today                                                                                                  | Status                       |
+| ------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| 1. Get the firmware | Continuous integration runs `west build` and the same flash and RAM budget check as the build script            | Builds in CI: `cross-build`  |
+| 2. Flash it         | None                                                                                                            | Not yet verified on hardware |
+| 3. Connect ZPLC     | The dialog is pictured above with no board; the Blink tutorial runs in the simulator, which has no Connect      | Not yet verified on hardware |
+| 4. Deploy and run   | The Blink tutorial exercises running in the simulator, where Run is one action; no board has received a program | Not yet verified on hardware |
+| 5. Observe          | The Watch table is exercised in the simulator; no physical output has been seen to change                       | Not yet verified on hardware |
 
 ## What you can report
 

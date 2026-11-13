@@ -142,7 +142,7 @@ Evidence level: host, against the real runtime. `packages/zplc-ide/src/monitorin
 
 ## One vocabulary for signal states
 
-Every place that shows the value of a signal uses the same five states: the inline values of the code editor, the Watch table, Ladder, FBD, SFC, the instance monitor, the controller view and the recorded scenarios of the Lab. Colour never carries a state alone.
+Every place that shows the value of a signal uses the same five states: the inline values of the code editor, the Watch table, Ladder, FBD, SFC, the instance monitor, the controller view and the recorded scenarios in the **Replay** view of the plant document (the **Plant** command). Colour never carries a state alone.
 
 | State   | Colour                                            | Glyph | Also shown as                                                                     |
 | ------- | ------------------------------------------------- | ----- | --------------------------------------------------------------------------------- |

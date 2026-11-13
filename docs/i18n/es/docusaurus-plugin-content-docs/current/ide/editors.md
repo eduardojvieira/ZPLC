@@ -142,7 +142,7 @@ Nivel de evidencia: host, contra el runtime real. `packages/zplc-ide/src/monitor
 
 ## Un solo vocabulario para los estados de señal
 
-Todos los lugares que muestran el valor de una señal usan los mismos cinco estados: los valores en línea del editor de código, la tabla de observación, la escalera, FBD, SFC, el monitor de instancia, la vista del controlador y los escenarios registrados del Laboratorio. El color nunca transmite un estado por sí solo.
+Todos los lugares que muestran el valor de una señal usan los mismos cinco estados: los valores en línea del editor de código, la tabla de observación, la escalera, FBD, SFC, el monitor de instancia, la vista del controlador y los escenarios registrados en la vista **Repetición** del documento de la planta (el comando **Planta**). El color nunca transmite un estado por sí solo.
 
 | Estado      | Color                                        | Glifo | También se muestra como                                                                      |
 | ----------- | -------------------------------------------- | ----- | -------------------------------------------------------------------------------------------- |
