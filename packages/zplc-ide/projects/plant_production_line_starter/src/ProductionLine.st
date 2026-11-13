@@ -39,7 +39,6 @@ VAR
     WantB    : BOOL;   (* the blank last read at the gate is for machine B *)
     Across   : BOOL;   (* the arm is across the belt *)
     Hold     : TON;
-    Made     : INT;
 END_VAR
 
 IF Start THEN
