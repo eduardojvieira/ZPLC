@@ -28,7 +28,8 @@ export const expectedHash = (hashes: Partial<SceneHashes>, platform: keyof Scene
 
 const FIXED_FACTS = ['itemsEmitted', 'itemsRemoved', 'itemsDropped', 'itemsCollided'];
 const FACT_GRAMMAR =
-  'itemsEmitted, itemsRemoved, itemsDropped, itemsCollided, emitted:<Name>, delivered:<Name>, count:<Name>, position:<kind>:<index>';
+  'itemsEmitted, itemsRemoved, itemsDropped, itemsCollided, emitted:<Name>, delivered:<Name>, count:<Name>, position:<kind>:<index>, ' +
+  'level:<Name>, volume:<Name>, spilledL:<Name>, highs:<Name>, inBand:<Name>';
 
 /** Why a fact name is wrong, or undefined when it matches the fact grammar and names a part the scene has. */
 function factFault(fact: string, parts: readonly string[]): string | undefined {
@@ -36,7 +37,8 @@ function factFault(fact: string, parts: readonly string[]): string | undefined {
   const grammar = `"fact:${fact}" is not a plant fact; the facts are ${FACT_GRAMMAR}`;
   if (rest.length === 0) return FIXED_FACTS.includes(head!) ? undefined : grammar;
   if (head === 'position') return rest.length === 2 && ['box', 'pallet'].includes(rest[0]!) && /^\d+$/.test(rest[1]!) ? undefined : grammar;
-  if (!['emitted', 'delivered', 'count'].includes(head!) || rest.length !== 1) return grammar;
+  if (!['emitted', 'delivered', 'count', 'level', 'volume', 'spilledL', 'highs', 'inBand'].includes(head!) || rest.length !== 1)
+    return grammar;
   return parts.includes(rest[0]!)
     ? undefined
     : `"fact:${fact}" names "${rest[0]}", which is not a part of the scene; it has: ${parts.join(', ')}`;

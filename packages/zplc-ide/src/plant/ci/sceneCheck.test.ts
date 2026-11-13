@@ -86,10 +86,28 @@ describe('the fact names a scenario reads', () => {
     expect(checkSceneFacts(withFacts('itemsRemovd'), fixtureScene)).toEqual([
       'scenario.json expectations[0].condition: "fact:itemsRemovd" is not a plant fact; the facts are itemsEmitted, itemsRemoved, ' +
         'itemsDropped, ' +
-        'itemsCollided, emitted:<Name>, delivered:<Name>, count:<Name>, position:<kind>:<index>',
+        'itemsCollided, emitted:<Name>, delivered:<Name>, count:<Name>, position:<kind>:<index>, level:<Name>, volume:<Name>, ' +
+        'spilledL:<Name>, highs:<Name>, inBand:<Name>',
     ]);
     expect(checkSceneFacts(withFacts('position:crate:x'), fixtureScene)).toHaveLength(1);
     expect(checkSceneFacts(withFacts('itemsRemoved:extra'), fixtureScene)).toHaveLength(1);
+  });
+
+  it('SCN-005 the fact grammar accepts level, volume, spilledL, highs and inBand and names the part', () => {
+    const tankScene: PlantSceneFile = {
+      ...fixtureScene,
+      parts: [{ id: 'tank1', part: 'tank', name: 'Tank1', position: [0, 0, 0], rotationYDeg: 0, config: {} }],
+    };
+    expect(checkSceneFacts(withFacts('level:Tank1', 'volume:Tank1', 'spilledL:Tank1', 'highs:Tank1', 'inBand:Tank1'), tankScene)).toEqual(
+      [],
+    );
+    expect(checkSceneFacts(withFacts('level:Nope'), tankScene)).toEqual([
+      'scenario.json expectations[0].condition: "fact:level:Nope" names "Nope", which is not a part of the scene; it has: Tank1',
+    ]);
+    expect(checkSceneFacts(withFacts('level'), tankScene)).toHaveLength(1); // a bare name is not a fact
+    expect(checkSceneFacts(withFacts('level:Tank1:x'), tankScene)).toHaveLength(1);
+    expect(checkSceneFacts(withFacts('levels:Tank1'), tankScene)).toHaveLength(1);
+    expect(checkSceneFacts(withFacts('level:Tank1'), tankScene)[0]).toBeUndefined();
   });
 
   it('SCN-004 refuses a fact that names a part the scene does not have', () => {

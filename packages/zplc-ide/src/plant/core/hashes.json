@@ -1,4 +1,5 @@
 {
   "m1-palletStack-v1": "d709b3b3059f85d100b392494efe3f47effb4d32575982301afe6e663a9b3fd5",
-  "notes": "pinned on Linux by Task P4; macOS: pending, Windows: pending"
+  "m2-tankLoop-v1": "4808d3f020c559020a0e7d47c893e9c690bb95903505e4fe4f5f14cb3b10fd02",
+  "notes": "pinned on Linux by Tasks P4 (m1-palletStack-v1) and N6 (m2-tankLoop-v1); macOS: pending, Windows: pending"
 }
