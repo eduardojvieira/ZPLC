@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 2,
+  "target": {
+    "scene": "colour-separation"
+  },
+  "signals": {
+    "StartButton.pressed": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "ColourSeparation.Start"
+    },
+    "EyeStop.detect": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "ColourSeparation.Waiting"
+    },
+    "Colour1.match": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "ColourSeparation.IsRed"
+    },
+    "Pusher1.extended": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "ColourSeparation.Extended"
+    },
+    "Pusher1.retracted": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "ColourSeparation.Retracted"
+    },
+    "Infeed.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "ColourSeparation.RunIn"
+    },
+    "Outfeed.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "ColourSeparation.RunOut"
+    },
+    "SideBelt.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "ColourSeparation.RunSide"
+    },
+    "Stop1.extend": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "ColourSeparation.Hold"
+    },
+    "Pusher1.extend": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "ColourSeparation.Push"
+    },
+    "Beacon.amber": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "ColourSeparation.Busy"
+    },
+    "Beacon.green": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "ColourSeparation.Done"
+    }
+  }
+}
