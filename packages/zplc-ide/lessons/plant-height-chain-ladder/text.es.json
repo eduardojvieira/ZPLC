@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Clasificar por altura, transferencia de cadenas en diagrama de escalera",
+  "summary": "Distinga tres alturas de caja con dos barreras, recuerde la respuesta hasta que la caja llegue a la transferencia de cadenas y envíela de frente, a la derecha o a la izquierda.",
+  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "objectives": [
+    "Decidir una ruta a partir de una combinación de dos sensores.",
+    "Recordar una decisión mientras la caja siguiente ya pasa por los sensores."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/HeightSortChain.ld.json, memorice lo que ven las dos barreras mientras pasa una caja: 0.20 m no rompe ninguno, 0.30 m solo BeamLow, 0.40 m ambos. Cuando la caja haya estado quieta un segundo en la cuchilla, envíela de frente, o eleve el módulo y deslícela a la derecha o a la izquierda.",
+      "checkpoint": "Las cajas bajas terminan en BinShort, las medias en BinMedium, las altas en BinTall, y Done se enciende tras nueve cajas."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "Antes de ejecutar, complete una tabla de las dos barreras para las tres alturas y diga cuándo debe borrarse la memoria: la caja siguiente pasa por las barreras mientras esta sigue en el módulo.",
+      "checkpoint": "Una caja se clasifica cuando ha estado quieta en la cuchilla, y la memoria se borra en ese momento, no cuando la caja se va."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que ninguna banda se mueve y no se clasifica ninguna caja; ponga en marcha las bandas tras Start, clasifique cada caja con las dos barreras y envíela de frente, a la derecha o a la izquierda.",
+      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario height-sorting-chain; observe la vista 3D mientras se ejecuta.",
+      "checkpoint": "El escenario requerido se llama height-sorting-chain y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Observe la vista 3D: el módulo permanece abajo para una caja baja; para las demás se detiene, sube, desliza la caja de lado y baja otra vez. Lift y run nunca son TRUE a la vez.",
+      "checkpoint": "MoveRight es TRUE solo para cajas medias y MoveLeft solo para altas, y ambos solo mientras Lift es TRUE."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "La calificación ve los tres contenedores y que ninguna caja se desvió ni cayó; no lee su memoria, así que una respuesta errónea solo se nota como una caja mal encaminada.",
+      "checkpoint": "No establece la velocidad del módulo, la temporización de la elevación, la temporización de hardware, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Active SawLow y SawHigh con bobinas SET siempre que Low y High sean TRUE, y decida la dirección con ellos cuando la caja lleve un segundo quieta (un TON sobre AtBlade). Desactive ambas memorias justo después con bobinas RESET, en peldaños posteriores del mismo ciclo."
+    },
+    {
+      "level": 2,
+      "text": "Un estado por paso: 1 esperar la caja, 2 de frente, 3 elevar y esperar a que Raised se mantenga T#300ms, 4 deslizar, 5 bajar y esperar a Lowered. No haga girar el módulo mientras Lift es TRUE."
+    }
+  ],
+  "faultCases": [
+    "El inicial no tiene peldaños, así que ninguna banda se mueve y no se clasifica ninguna caja; ponga en marcha las bandas tras Start, clasifique cada caja con las dos barreras y envíela de frente, a la derecha o a la izquierda."
+  ]
+}

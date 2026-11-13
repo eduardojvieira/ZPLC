@@ -1,0 +1,177 @@
+{
+  "name": "HeightSortChain",
+  "description": "Height sorting on a chain transfer: short boxes go straight on, medium ones right, tall ones left, nine boxes.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Active",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "The line was started"
+      },
+      {
+        "name": "State",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "One state per step: 0 idle, 1 wait for a box, 2 straight on (short), 3 lift, 4 slide sideways, 5 lower"
+      },
+      {
+        "name": "Dir",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "Where the box goes: 0 short (straight), 1 medium (right), 2 tall (left)"
+      },
+      {
+        "name": "SawLow",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "The box broke the low beam"
+      },
+      {
+        "name": "SawHigh",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "The box broke the high beam"
+      },
+      {
+        "name": "Stand",
+        "type": "TON",
+        "comment": "A box must stand still against the blade before anything moves"
+      },
+      {
+        "name": "Clear",
+        "type": "TON",
+        "comment": "Time for a short box to cross the module"
+      },
+      {
+        "name": "Lifted",
+        "type": "TON",
+        "comment": "A moment at the top before the module slides a box"
+      },
+      {
+        "name": "Slide",
+        "type": "TON",
+        "comment": "Time to slide a box off the module"
+      },
+      {
+        "name": "Handled",
+        "type": "CTU",
+        "comment": "Counts the boxes dealt with"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "StartButton.pressed: start the line"
+      },
+      {
+        "name": "Low",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "BeamLow.detect: the low beam (0.25 m) is broken"
+      },
+      {
+        "name": "High",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "BeamHigh.detect: the high beam (0.35 m) is broken"
+      },
+      {
+        "name": "AtBlade",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "EyeBlade.detect: a box waits against the blade"
+      },
+      {
+        "name": "Raised",
+        "type": "BOOL",
+        "address": "%I0.4",
+        "comment": "Chain1.raised: the chain module is up"
+      },
+      {
+        "name": "Lowered",
+        "type": "BOOL",
+        "address": "%I0.5",
+        "comment": "Chain1.lowered: the chain module is down"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "RunIn",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Infeed.run: run the infeed belt"
+      },
+      {
+        "name": "RunChain",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Chain1.run: run the chain module surface"
+      },
+      {
+        "name": "Lift",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "Chain1.lift: lift the chain module"
+      },
+      {
+        "name": "MoveRight",
+        "type": "BOOL",
+        "address": "%Q0.3",
+        "comment": "Chain1.right: slide the chain module right"
+      },
+      {
+        "name": "MoveLeft",
+        "type": "BOOL",
+        "address": "%Q0.4",
+        "comment": "Chain1.left: slide the chain module left"
+      },
+      {
+        "name": "RunStraight",
+        "type": "BOOL",
+        "address": "%Q0.5",
+        "comment": "Straight.run: run the belt to the short bin"
+      },
+      {
+        "name": "RunRight",
+        "type": "BOOL",
+        "address": "%Q0.6",
+        "comment": "RightBelt.run: run the belt to the medium bin"
+      },
+      {
+        "name": "RunLeft",
+        "type": "BOOL",
+        "address": "%Q0.7",
+        "comment": "LeftBelt.run: run the belt to the tall bin"
+      },
+      {
+        "name": "Hold",
+        "type": "BOOL",
+        "address": "%Q1.0",
+        "comment": "Blade1.extend: the blade holds the box while true"
+      },
+      {
+        "name": "Busy",
+        "type": "BOOL",
+        "address": "%Q1.1",
+        "comment": "Beacon.amber: the line is running"
+      },
+      {
+        "name": "Done",
+        "type": "BOOL",
+        "address": "%Q1.2",
+        "comment": "Beacon.green: all nine boxes are handled"
+      }
+    ]
+  },
+  "rungs": [],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
