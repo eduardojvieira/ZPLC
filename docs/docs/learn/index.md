@@ -31,6 +31,10 @@ Each lesson of the path opens with a **reading page**. The page covers the main 
 
 When you are ready, choose **Practice**: the page closes and the lesson panel opens beside the editor. **Read again** brings the page back. The path is also on the Learn home, with how many of its lessons you have passed and a button to continue where you stopped.
 
+## The plant paths
+
+Two more paths follow the plant lessons of modules 12 to 19: _Structured Text on simulated plants_ and _Ladder diagram on simulated plants_. A path carries each lesson in its own language only: a lesson that comes in two languages appears once in each path, in the language of that path, and the lessons that are only FBD, SFC or IL stay in their modules. In a path, a lesson opens when the lesson before it is passed. In the full course, passing either version of a two-language lesson opens what follows it.
+
 ## Take the course
 
 1. On the Welcome screen choose **Learn**. The Learn home opens with no project and no network, and lists the modules in order with their level, what each requires and how long it takes.

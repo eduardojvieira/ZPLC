@@ -1,12 +1,12 @@
 ---
-title: "Cargar y descargar tres cajas en Ladder"
+title: "Cargar y descargar tres cajas en diagrama de escalera"
 sidebar_label: "plant-counted-queue-ladder"
 description: "La lección plant-counted-queue-ladder: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Cargar y descargar tres cajas en Ladder
+# Cargar y descargar tres cajas en diagrama de escalera
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-counted-queue-ladder. Do not edit. >>> */}
 

@@ -1,12 +1,12 @@
 ---
-title: "Leer el nivel en Ladder"
+title: "Leer el nivel en diagrama de escalera"
 sidebar_label: "plant-tank-level-scaling-ladder"
 description: "La lección plant-tank-level-scaling-ladder: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Leer el nivel en Ladder
+# Leer el nivel en diagrama de escalera
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-tank-level-scaling-ladder. Do not edit. >>> */}
 

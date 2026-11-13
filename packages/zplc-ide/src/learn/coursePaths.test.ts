@@ -3,7 +3,7 @@ import { describe, expect, it } from 'bun:test';
 
 import { emptyProgress, withNote, withPassedIds } from '../../shared/learnProgressModel';
 import { LESSON_INDEX } from '../generated/lessonIndex';
-import { buildCourseView, continueTarget, lessonStateOf, pathContinueTarget } from './course';
+import { buildCourseView, continueTarget, courseOrder, lessonStateOf, pathContinueTarget } from './course';
 import { validateCourseDefinition, validateCoursePlacement, type CoursePath } from './courseDefinition';
 import course from '../../lessons/course.json';
 
@@ -199,5 +199,45 @@ describe('the Ladder path teaches from zero (LRN-044)', () => {
       expect(lesson?.languages, `${id} languages`).toContain('LD');
     }
     expect(ladder?.language).toBe('LD');
+  });
+});
+
+// The two plant paths (M7-K4, CRS-002): each path carries only the sibling of its language (owner, 2026-11-13); the lessons
+// that are only FBD, SFC or IL stay in their modules.
+describe('the plant paths plant-st and plant-ld (CRS-002)', () => {
+  const pathOf = (id: string) => LESSON_INDEX.course.paths?.find((entry) => entry.id === id);
+  const plant = courseOrder(LESSON_INDEX).filter((lesson) => lesson.module >= 12);
+
+  it('CRS-002 the course has the paths ladder, plant-st and plant-ld, each with lessons of its language only', () => {
+    expect(LESSON_INDEX.course.paths?.map((entry) => [entry.id, entry.language])).toEqual([
+      ['ladder', 'LD'],
+      ['plant-st', 'ST'],
+      ['plant-ld', 'LD'],
+    ]);
+    for (const id of ['plant-st', 'plant-ld']) {
+      const entry = pathOf(id)!;
+      for (const lesson of entry.lessons) {
+        expect(LESSON_INDEX.lessons.find((candidate) => candidate.id === lesson)?.languages, `${id}: ${lesson}`).toContain(entry.language);
+      }
+    }
+  });
+
+  it('CRS-002 plant-st holds every ST lesson of modules 12 to 19 and plant-ld every Ladder one, in course order', () => {
+    expect(pathOf('plant-st')?.lessons).toEqual(plant.filter((lesson) => lesson.languages.includes('ST')).map((lesson) => lesson.id));
+    expect(pathOf('plant-ld')?.lessons).toEqual(plant.filter((lesson) => lesson.languages.includes('LD')).map((lesson) => lesson.id));
+    expect(pathOf('plant-st')?.lessons).toHaveLength(23);
+    expect(pathOf('plant-ld')?.lessons).toHaveLength(14);
+    // a path never holds both siblings of a pair
+    for (const id of pathOf('plant-st')!.lessons) expect(pathOf('plant-st')!.lessons).not.toContain(`${id}-ladder`);
+  });
+
+  it('CRS-002 the first lesson of a path is open and the next opens when it is passed', () => {
+    for (const id of ['plant-st', 'plant-ld']) {
+      const entry = pathOf(id)!;
+      const [first, second] = entry.lessons;
+      expect(lessonStateOf(LESSON_INDEX, first!, emptyProgress(), false, entry)).toEqual({ state: 'available', missing: [] });
+      expect(lessonStateOf(LESSON_INDEX, second!, emptyProgress(), false, entry)).toEqual({ state: 'locked', missing: [first] });
+      expect(lessonStateOf(LESSON_INDEX, second!, passed(first!), false, entry)).toEqual({ state: 'available', missing: [] });
+    }
   });
 });

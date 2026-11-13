@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "title": "Llenar y vaciar con temporizadores en Ladder",
+  "title": "Llenar y vaciar con temporizadores en diagrama de escalera",
   "summary": "Ejecute un ciclo de llenado, retención y vaciado de un tanque con bloques TON en peldaños, un arranque de panel y una parada de emergencia.",
   "scope": "La calificación es una ejecución sin interfaz del tanque simulado en el entorno de ejecución POSIX nativo. No establece el comportamiento de un tanque, una válvula o un sensor reales, la temporización en hardware, HIL ni la certificación.",
   "objectives": [

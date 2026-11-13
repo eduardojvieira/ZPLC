@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "title": "Leer el nivel en Ladder",
+  "title": "Leer el nivel en diagrama de escalera",
   "summary": "Escale con cuadros de función el nivel crudo de un tanque, un número entero de 0 a 27648, a metros, y úselo para mantener el nivel cerca de un valor de consigna con una entrada proporcional.",
   "scope": "La calificación es una ejecución sin interfaz del tanque simulado en el entorno de ejecución POSIX nativo, con un nivel analógico que sigue las reglas de escala del mapa de la planta. No establece la exactitud, el ruido ni la calibración de un transmisor de nivel real, la temporización en hardware, HIL ni la certificación.",
   "objectives": [

@@ -1,12 +1,12 @@
 ---
-title: "Mover una caja hasta un sensor en Ladder"
+title: "Mover una caja hasta un sensor en diagrama de escalera"
 sidebar_label: "plant-belt-to-sensor-ladder"
 description: "La lección plant-belt-to-sensor-ladder: nivel, tiempo, lenguajes y objetivos, generados de su paquete."
 tags: [learn, generated]
 unlisted: true
 ---
 
-# Mover una caja hasta un sensor en Ladder
+# Mover una caja hasta un sensor en diagrama de escalera
 
 {/* >>> GENERATED (tools/docs/generate_course_pages.ts): learn/lessons/plant-belt-to-sensor-ladder. Do not edit. >>> */}
 
