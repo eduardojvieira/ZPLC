@@ -102,14 +102,14 @@ describe('geometry', () => {
     expect(palletShape(pose({ size: [1.2, 0.15, 0.8] }))).toEqual({ shape: 'box', size: [1.2, 0.15, 0.8] });
     expect(partShape(view('belt', { size: [2, 0.1, 0.5] }))).toEqual({ shape: 'box', size: [2, 0.1, 0.5] });
     expect(partShape(view('roller', { size: [2, 0.1, 0.5] }))).toEqual({ shape: 'cylinder', radius: 0.05, length: 2 });
-    expect(partShape(view('curve', { size: [0.5, 0.1, 0.5] }, { radius: 1.5, angleDeg: 45 }))).toEqual({
+    expect(partShape(view('curved', { size: [0.5, 0.1, 0.5] }, { radius: 1.5, angleDeg: 45 }))).toEqual({
       shape: 'curve',
       innerRadius: 1,
       outerRadius: 1.5,
       height: 0.1,
       angleDeg: 45,
     });
-    for (const p of ['blade', 'sensor', 'unknown']) {
+    for (const p of ['stop-blade', 'sensor', 'unknown']) {
       expect(partShape(view(p, { size: [3, 4, 5] }))).toEqual({ shape: 'box', size: [3, 4, 5] });
     }
     const v = view('belt');
@@ -442,7 +442,7 @@ describe('display preferences reach the renderer', () => {
 
   const withBlade = {
     items: snapshot.items,
-    parts: [view('belt'), { ...view('sensor'), id: 's' }, { ...view('blade'), id: 'k' }],
+    parts: [view('belt'), { ...view('sensor'), id: 's' }, { ...view('stop-blade'), id: 'k' }],
   } as unknown as Parameters<ReturnType<typeof build>['r']['setSnapshot']>[0];
   const hc = paletteFor({ mode: 'high-contrast', reducedMotion: false });
 
@@ -455,6 +455,34 @@ describe('display preferences reach the renderer', () => {
     expect(found.filter((o) => o.kind === 'line').length).toBe(2); // sensor + blade, not the belt
     expect(found.filter((o) => o.kind === 'items').length).toBe(1);
     expect(found.every((o) => o.hex === 0xffffff)).toBe(true);
+  });
+
+  it('VIS-009 the views the real core publishes for a curved conveyor and a stop blade get their shape, colour and outline', async () => {
+    const { createPlantCore } = await import('../core/plantCore');
+    const part = (id: string, kind: string, config = {}) => ({
+      id,
+      part: kind,
+      name: id,
+      position: [0, 0.5, 0] as [number, number, number],
+      rotationYDeg: 0,
+      config,
+    });
+    const core = await createPlantCore({ ...scene, parts: [part('arc', 'curved'), part('blade', 'stop-blade')] });
+    let parts: Parameters<ReturnType<typeof build>['r']['setSnapshot']>[0]['parts'];
+    try {
+      parts = core.snapshot().parts;
+    } finally {
+      core.dispose();
+    }
+    const arc = parts.find((p) => p.id === 'arc')!;
+    const blade = parts.find((p) => p.id === 'blade')!;
+    expect(partShape(arc).shape).toBe('curve');
+    expect(partShape(blade).shape).toBe('box');
+    const { r, scenes, mats } = build();
+    r.setSnapshot({ items: [], parts: [blade] } as unknown as Parameters<typeof r.setSnapshot>[0]);
+    r.setPalette?.(hc);
+    expect(mats.some((m) => m.color.hex === 0xb45309)).toBe(true); // the blade keeps its own colour under a palette
+    expect(outlinesOf(scenes[0]).filter((o) => o.kind === 'line').length).toBe(1); // the blade (the fake three has no Shape for the arc)
   });
 
   it('VIS-009 the light and dark palettes draw no outlines, and switching back removes them', () => {
