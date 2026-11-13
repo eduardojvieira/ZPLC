@@ -9,6 +9,7 @@ const { panelParts } = await import('../core/parts/panel');
 const { plantViewEn, plantViewEs } = await import('../../i18n/catalog/plantView');
 import type { PartView, PlantCore, PlantSceneFile, PlantSnapshot, ScenePart } from '../contracts';
 
+await import('../core/plantCore'); // registers every shipped part
 registerParts(panelParts.filter((d) => !catalogue.get(d.id)));
 
 const part = (id: string, kind: string, name: string, config: ScenePart['config'] = {}): ScenePart => ({
@@ -179,5 +180,44 @@ describe('OperatePanel numeric parts', () => {
     const ui = dom.render(<OperatePanel scene={scene} core={core} snapshot={snapshot()} onChange={() => undefined} />);
     slide(ui.container.querySelector<HTMLInputElement>('input[type="range"]')!, 60);
     expect(ui.container.querySelector('[data-plant-message]')!.textContent).toContain('is above the limit');
+  });
+});
+
+describe('OperatePanel fault actions', () => {
+  const belt = part('f', 'belt', 'Belt1');
+  const faultScene: PlantSceneFile = { ...scene, parts: [belt] };
+  const mount = () => {
+    const log: string[] = [];
+    const core = {
+      operate: () => undefined,
+      act: (n: string, a: string) => void log.push(`act ${n} ${a}`),
+      addItem: () => 'x',
+      removeItem: () => undefined,
+    } as unknown as PlantCore;
+    const ui = dom.render(<OperatePanel scene={faultScene} core={core} snapshot={undefined} onChange={() => undefined} />);
+    const select = ui.container.querySelector<HTMLSelectElement>('[data-plant-fault="Belt1"]')!;
+    const trigger = ui.container.querySelector<HTMLButtonElement>('[data-plant-fault-trigger="Belt1"]')!;
+    return { log, select, trigger };
+  };
+
+  it('VIS-010 choosing a fault action fires nothing and the trigger button fires exactly that action once', () => {
+    const { log, select, trigger } = mount();
+    expect(trigger.disabled).toBe(true);
+    dom.fireEvent.change(select, { target: { value: 'jam' } });
+    expect(log).toEqual([]);
+    expect(trigger.disabled).toBe(false);
+    dom.fireEvent.click(trigger);
+    expect(log).toEqual(['act Belt1 jam']);
+    expect(select.value).toBe('');
+    expect(trigger.disabled).toBe(true);
+  });
+
+  it('VIS-011 every action of every registered part has a label in English and Spanish', async () => {
+    const actions = catalogue.list().flatMap((d) => d.actions);
+    expect(actions.length).toBeGreaterThan(10);
+    for (const action of actions) {
+      expect(Object.keys(plantViewEn)).toContain(`plant.action.${action}`);
+      expect(Object.keys(plantViewEs)).toContain(`plant.action.${action}`);
+    }
   });
 });

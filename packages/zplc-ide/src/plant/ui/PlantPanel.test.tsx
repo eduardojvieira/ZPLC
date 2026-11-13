@@ -282,6 +282,8 @@ describe('the plant panel (VIS-001, VIS-006, VIS-010, PLS-003, PLS-004, PLS-010)
     await dom.act(async () => {
       dom.fireEvent.change(menu, { target: { value: action } });
     });
+    expect(r.log.filter((line) => line.startsWith('act'))).toEqual([]);
+    await dom.act(async () => void document.querySelector<HTMLButtonElement>('[data-plant-fault-trigger="Belt1"]')!.click());
     expect(r.log).toContain(`act Belt1 ${action}`);
   });
 
