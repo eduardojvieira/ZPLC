@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "El mismo lazo con bloques de función",
+  "summary": "Cablee el lazo de nivel de un tanque como un diagrama de bloques de función: un bloque PID_Compact entre el nivel y la consigna escalados y la válvula de entrada.",
+  "scope": "La calificación es una ejecución sin interfaz del tanque simulado en el entorno de ejecución POSIX nativo. Comprueba hacia dónde va el nivel, no cómo se dibuja el diagrama ni los valores de las ganancias. No establece el comportamiento de un tanque o una válvula reales, la temporización en hardware, HIL ni la certificación.",
+  "objectives": [
+    "Cablear un bloque de función PID_Compact en un diagrama: consigna, variable de proceso, ganancias, tiempo de ciclo y límites de salida a la izquierda, la salida a la derecha.",
+    "Seguir un valor por el diagrama, desde el número entero bruto del nivel hasta metros y de ahí a la válvula de entrada."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "Este es el lazo de la lección anterior dibujado como diagrama. En src/TankLevel.fbd.json el nivel, la consigna y el vaciado ya están convertidos a metros y a porcentaje, el visualizador y la luz verde están cableados, y el bloque PID_Compact (instancia Pid) está colocado con sus seis constantes. Cablee el bloque: la consigna escalada a SP, el nivel escalado a PV, cada constante a su entrada y su OUT a la salida FillCmd, que ahora tiene una constante 0.0.",
+      "checkpoint": "Ocho entradas de Pid están cableadas y FillCmd toma Pid.OUT."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "El tanque, el escenario y el ajuste son los de la lección anterior. Prediga qué hace el nivel cuando la consigna pasa a 0,5 m en {{t:200}} ms, cuando se abre el vaciado en {{t:40000}} ms y cuando la consigna baja a 0,3 m en {{t:70000}} ms.",
+      "checkpoint": "El nivel está en la banda de 0,45 m a 0,55 m en la ventana que empieza en {{t:30000}} ms y en la que empieza en {{t:60000}} ms, y fuera de ella al final."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "Dibuje primero los seis cables desde las constantes (KP, KI, KD, DT, OUT_MIN, OUT_MAX) y luego los dos cables del proceso. Elimine la constante 0.0 que alimenta FillCmd y conecte Pid.OUT a esa salida. Las constantes llevan el ajuste de referencia: cámbielas si ajustó las suyas en la lección anterior. Un diagrama no tiene un bloque INT_TO_REAL: los bloques de variable LevelRawR, SetPointRawR y DrainRawR copian cada número entero en una variable REAL, y las divisiones trabajan con ellas.",
+      "checkpoint": "Ninguna entrada de Pid queda abierta y el diagrama no tiene una constante en la salida FillCmd."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "Pulse Check. ZPLC traduce el diagrama, lo ejecuta con el tanque de la escena tank-level-control, sube la consigna, abre el vaciado y baja la consigna, y comprueba {{assertions}} aserciones: el nivel dentro de la banda en dos ventanas, fuera de ella al final y sin derrame.",
+      "checkpoint": "El escenario se llama tank-pid-fbd y pasa las {{assertions}} aserciones con evidencia guardada del host."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Deje una entrada de ganancia sin cablear y ejecute de nuevo: una entrada abierta de un bloque conserva el valor por defecto del bloque, que es cero para una ganancia, así que ese término no hace nada. Deje KD abierta y el nivel se pasa de la banda en la primera ventana. Siga el nivel desde LevelRaw por LevelRawR y la división por 27648.0 hasta PV.",
+      "checkpoint": "Puede decir qué hace una entrada abierta de PID_Compact y dónde el nivel se convierte en metros."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "El diagrama y el texto estructurado de la lección anterior son el mismo lazo. Un diagrama muestra el camino de la señal de un vistazo, con un bloque por operación; el texto muestra el orden de las operaciones y es más rápido de cambiar cuando cambia un número.",
+      "checkpoint": "Nombre un cambio que prefiera hacer en el diagrama y otro en texto."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Cada constante tiene una salida: arrastre desde ella hasta la entrada de Pid con el mismo nombre (KP a KP). La consigna escalada es la salida de la división alimentada por SetPointRawR, y el nivel escalado es la salida de la división alimentada por LevelRawR."
+    },
+    {
+      "level": 2,
+      "text": "Ocho cables llegan a Pid: sp_div a SP, lvl_div a PV, c_kp a KP, c_ki a KI, c_kd a KD, c_dt a DT, c_omin a OUT_MIN y c_omax a OUT_MAX. Luego elimine la constante c_zero y cablee Pid.OUT a la salida FillCmd."
+    }
+  ],
+  "faultCases": [
+    "El código inicial deja el lazo sin cablear y envía una constante 0.0 a FillCmd: la entrada nunca se abre y el tanque permanece vacío."
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-tank-pid-fbd",
+  "version": 1,
+  "order": 134,
+  "module": 13,
+  "level": "advanced",
+  "prerequisites": [
+    "plant-tank-pid"
+  ],
+  "languages": [
+    "FBD"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The diagram of this lesson drives the same simulated tank as the Structured Text loop, and the hardware track of the plant lessons opens in a later release, once its loop timing has been measured through plant I/O mode on a learner board.",
+        "es": "El diagrama de esta lección maneja el mismo tanque simulado que el lazo en texto estructurado, y la ruta de hardware de las lecciones de planta se abre en una versión posterior, cuando su temporización de lazo se haya medido con el modo de E/S de planta en una placa del estudiante."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the tank and the loop disturbance are part of the scenario.",
+        "es": "Complétela en Simulación, donde el tanque y la perturbación del lazo forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "tank-level-control",
+  "estimatedMinutes": 40,
+  "starter": {
+    "project": "plant_tank_pid_fbd_starter",
+    "program": "src/TankLevel.fbd.json"
+  },
+  "solution": {
+    "project": "plant_tank_pid_fbd",
+    "program": "src/TankLevel.fbd.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "tank-pid-fbd",
+    "path": "tests/tank-pid-fbd.scenario.json",
+    "sha256": "c0d81e5660890789cfd51de3af25bfa26525700e6c919f424d1555005847851c"
+  },
+  "regressionScenarios": []
+}
