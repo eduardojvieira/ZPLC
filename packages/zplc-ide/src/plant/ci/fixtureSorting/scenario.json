@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "sorting-fixture",
+  "tickMs": 10,
+  "durationMs": 22000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      { "atMs": 100, "operate": { "signal": "Start1.pressed", "value": true } },
+      { "atMs": 300, "operate": { "signal": "Start1.pressed", "value": false } }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 22000, "condition": { "fact:sorted:Bin1": true } },
+    { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 22000, "condition": { "fact:sorted:Bin2": true } },
+    { "kind": "ALWAYS", "condition": { "fact:misrouted:Bin1": false, "fact:misrouted:Bin2": false, "fact:itemsDropped": false } }
+  ]
+}
