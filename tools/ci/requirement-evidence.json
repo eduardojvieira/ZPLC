@@ -156,6 +156,7 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-003-ldt-is-rejected.expect.json","test":"CMP-003 a declaration of type LDT is rejected naming the type"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-003-ltime-is-rejected.expect.json","test":"CMP-003 a declaration of type LTIME is rejected naming the type"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-003-ltod-is-rejected.expect.json","test":"CMP-003 a declaration of type LTOD is rejected naming the type"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-003-unknown-type-in-a-function-parameter.expect.json","test":"CMP-003 an unknown type name in a function parameter is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-003-unknown-type-name.expect.json","test":"CMP-003 a declaration with an unknown type name is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-003-wchar-is-rejected.expect.json","test":"CMP-003 a declaration of type WCHAR is rejected naming the type"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/names.test.ts","test":"a declaration that names no type is an error (CMP-003)"}
@@ -163,6 +164,7 @@
   "CMP-004": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-004-identifier-case-insensitive.expect.json","test":"CMP-004 identifiers are matched without regard to case"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-004-lowercase-direct-address.expect.json","test":"CMP-004 direct address written in lower case"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-004-lowercase-output-member.expect.json","test":"CMP-004 a standard block output member is read without regard to case"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-004-std-block-parameter-case-insensitive.expect.json","test":"CMP-004 standard block parameters are matched without regard to case"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-004-type-name-case-insensitive.expect.json","test":"CMP-004 type names are matched without regard to case"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-004-user-names-case-insensitive.expect.json","test":"CMP-004 user functions, structure members, block members and enumeration values are matched without regard to case"},
@@ -433,6 +435,8 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-017-ton-with-a-30-day-preset-is-not-done.expect.json","test":"CMP-017 a TON with a 30 day preset is not done after 20 ms"}
   ],
   "CMP-018": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-018-argument-does-not-fit.expect.json","test":"CMP-018 a constant argument that does not fit its parameter type is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-018-array-initializer-does-not-fit.expect.json","test":"CMP-018 an array initializer element that does not fit its type is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-018-assigned-constant-does-not-fit.expect.json","test":"CMP-018 a negative constant assigned to an unsigned variable is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-018-constant-does-not-fit.expect.json","test":"CMP-018 a constant that does not fit its type is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-018-constant-expression-does-not-fit.expect.json","test":"CMP-018 a constant expression whose value does not fit its type is rejected"},
