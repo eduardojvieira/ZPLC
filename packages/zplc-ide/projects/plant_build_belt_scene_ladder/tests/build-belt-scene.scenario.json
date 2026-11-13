@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "build-belt-scene",
+  "tickMs": 10,
+  "durationMs": 8000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      {
+        "atMs": 200,
+        "operate": {
+          "signal": "StartButton.pressed",
+          "value": true
+        }
+      },
+      {
+        "atMs": 400,
+        "operate": {
+          "signal": "StartButton.pressed",
+          "value": false
+        }
+      }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 100,
+      "condition": {
+        "BeltToSensor.Run": false
+      }
+    },
+    {
+      "kind": "EVENTUALLY",
+      "fromMs": 0,
+      "withinMs": 8000,
+      "condition": {
+        "fact:count:EyeFar": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 8000,
+      "condition": {
+        "BeltToSensor.Run": false
+      }
+    },
+    {
+      "kind": "ALWAYS",
+      "condition": {
+        "fact:itemsDropped": false
+      }
+    }
+  ]
+}

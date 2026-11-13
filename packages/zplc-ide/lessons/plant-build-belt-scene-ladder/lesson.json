@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-build-belt-scene-ladder",
+  "version": 1,
+  "order": 1191,
+  "module": 19,
+  "level": "advanced",
+  "prerequisites": ["plant-belt-to-sensor", "plant-fault-actions"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The Ladder version of the lesson is about placing parts and binding signals in the Scene editor; a learner board has no scene to edit, and the editor only exists in Simulation.",
+        "es": "La versión en Ladder de la lección trata de colocar piezas y enlazar señales en el Editor de escenas; una placa del estudiante no tiene escena que editar, y el editor solo existe en Simulación."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene editor and the scene are part of the lesson.",
+        "es": "Complétela en Simulación, donde el editor de escenas y la escena forman parte de la lección."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "belt-to-sensor",
+  "estimatedMinutes": 25,
+  "starter": {
+    "project": "plant_build_belt_scene_ladder_starter",
+    "program": "src/BeltToSensor.ld.json"
+  },
+  "solution": {
+    "project": "plant_build_belt_scene_ladder",
+    "program": "src/BeltToSensor.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "build-belt-scene",
+    "path": "tests/build-belt-scene.scenario.json",
+    "sha256": "f453087a009c4cdfc4ff453637e09270b51834031909d0a3a66a7a87a0386dc9"
+  },
+  "regressionScenarios": []
+}
