@@ -17,11 +17,20 @@ import { dirname, join } from 'node:path';
 import productManifest from '../../../../package.json';
 import type { GradeRecord } from '../../shared/learnProgressModel';
 import { NativeSimulationSupervisor } from '../../shared/nativeSimulationSupervisor';
+import { createNativeScenarioSession } from '../cli/nativeScenarioRuntime';
 import { scenarioRun, type TestRunResult, type TestsRunOptions, type ToolEvidence } from '../cli/toolApi';
-import { readWorkspace } from '../cli/workspace';
+import { artifactEvidence, evidence } from '../cli/toolEvidence';
+import { readWorkspace, readWorkspaceProjectFile, type ToolDiagnostic, type WorkspaceProject } from '../cli/workspace';
+import { assertTaskProgramCardinality, compileMultiTaskProject } from '../compiler';
 import { LESSON_INDEX } from '../generated/lessonIndex';
+import { validatePlantMap, type PlantMapV2 } from '../plants/plantMap';
+import { checkSceneFacts } from '../plant/ci/sceneCheck';
+import { createPlantCore } from '../plant/core/plantCore';
+import { parseScene } from '../plant/core/scene';
+import { compileScenario, runScenario } from '../test-engine';
+import { resolveProgramSource } from '../utils/programSourceResolution';
 import { gradeRecordOf, type TraceSample } from './gradeRecord';
-import { parseScenarioFile } from './lessonPackage';
+import { parseScenarioFile, type LessonIndexEntry } from './lessonPackage';
 
 /**
  * Runs the program of `root` against one scenario the caller supplies, ignoring the `tests/` folder of `root`.
@@ -52,6 +61,171 @@ export async function runSuppliedScenario(
     return await scenarioRun(scratch, scenarioId, options);
   } finally {
     await rm(scratch, { recursive: true, force: true });
+  }
+}
+
+const SCENE_FILE_MAX_BYTES = 512 * 1024;
+const SCENE_RUN_TIMEOUT_MS = 30_000;
+const greatestCommonDivisor = (a: number, b: number): number => (b === 0 ? a : greatestCommonDivisor(b, a % b));
+const problem = (code: string, path: string, message: string): ToolDiagnostic => ({ code, message, path });
+
+/**
+ * Compiles the project of `workspace` the way the Tool API does for a lesson (one cyclic task per program, the other sources of
+ * `src` as libraries). ponytail: a copy of the helpers private to toolApi.ts (above its size ratchet); one shared home when U2 splits it.
+ */
+function compileLessonProject(workspace: WorkspaceProject): {
+  zplcFile: Uint8Array;
+  debugMap: ReturnType<typeof compileMultiTaskProject>['debugMap'];
+  tickMs: number;
+} {
+  assertTaskProgramCardinality(workspace.project);
+  const programSources = workspace.sources.filter((source) => source.library === undefined);
+  let tickMs = 0;
+  const programs = new Map<string, NonNullable<ReturnType<typeof resolveProgramSource>>>();
+  for (const task of workspace.project.tasks) {
+    if (task.trigger !== 'cyclic' || !Number.isInteger(task.interval_ms) || task.interval_ms! < 1)
+      throw new Error('the lesson project must have cyclic tasks with an interval');
+    tickMs = greatestCommonDivisor(tickMs, task.interval_ms!);
+    for (const program of task.programs) {
+      const source = resolveProgramSource(program, programSources);
+      if (!source) throw new Error(`task program "${program}" could not be resolved from src`);
+      programs.set(program, source);
+    }
+  }
+  const bytesByPath = new Map(workspace.sources.map((source) => [source.path, source.bytes]));
+  const run = new Set([...programs.values()].map((source) => source.sourceRef));
+  const sources = [
+    ...[...programs].map(([name, source]) => ({
+      ...source,
+      name,
+      sourceRef: source.sourceRef!,
+      bytes: bytesByPath.get(source.sourceRef!)!,
+    })),
+    ...workspace.sources
+      .filter((source) => source.language === 'ST' && !run.has(source.path))
+      .map((source) => ({
+        name: source.path,
+        content: source.content,
+        language: source.language,
+        sourceRef: source.path,
+        bytes: source.bytes,
+        ...(source.library === undefined ? {} : { library: source.library }),
+      })),
+  ];
+  const compiled = compileMultiTaskProject(workspace.project, sources);
+  return { zplcFile: compiled.zplcFile, debugMap: compiled.debugMap, tickMs };
+}
+
+/** What a run of a lesson hands the grade record: either a finished run, or the evidence of why there is none. */
+type LessonRunAssertions = Array<{ kind: string; passed: boolean; atMs?: number }>;
+type LessonRun =
+  | { finished: false; evidence: ToolEvidence }
+  | {
+      finished: true;
+      evidence: ToolEvidence;
+      zplcSha256: string;
+      traceSha256: string;
+      trace: TraceSample[];
+      assertions: LessonRunAssertions;
+    };
+
+/**
+ * Runs the program of `root` on the scene of the project (R-K1): `scene.json` and `plant-map.json` are read from the project root,
+ * at the paths the scenario's `scene` block names, and the run is built exactly as the CI scene harness builds it (`sceneCheck.ts`),
+ * so a lesson's verdict in the application is the harness's verdict. Anything wrong with the files is a located message, never a
+ * silent false: a scene or map that does not parse, a mapped signal the scene or the program lacks, a `fact:` naming a missing part.
+ */
+async function runSceneLesson(
+  root: string,
+  scenarioInput: { scene: { file: string; map: string } },
+  options: TestsRunOptions,
+): Promise<LessonRun> {
+  const fail = (...diagnostics: ToolDiagnostic[]): LessonRun => ({
+    finished: false,
+    evidence: evidence('scenario-run', 'failed', diagnostics),
+  });
+  const loaded = await readWorkspace(root);
+  if (!loaded.ok) return fail(...loaded.diagnostics);
+  const { file, map: mapFile } = scenarioInput.scene;
+  const files: string[] = [];
+  for (const path of [file, mapFile]) {
+    const read = await readWorkspaceProjectFile(root, path, SCENE_FILE_MAX_BYTES);
+    if (!read.ok) return fail(...read.diagnostics);
+    files.push(Buffer.from(read.bytes).toString('utf8'));
+  }
+  const parsed = parseScene(files[0]!);
+  if ('problems' in parsed)
+    return fail(...parsed.problems.map((entry) => problem('SCENE_INVALID', file, `${entry.path}: ${entry.message}`)));
+  let mapValue: unknown;
+  try {
+    mapValue = JSON.parse(files[1]!);
+  } catch {
+    return fail(problem('SCENE_MAP_INVALID', mapFile, 'The plant map is not valid JSON'));
+  }
+  const mapProblems = validatePlantMap(mapValue);
+  if (mapProblems.length > 0 || (mapValue as { schemaVersion?: unknown }).schemaVersion !== 2)
+    return fail(
+      ...(mapProblems.length > 0 ? mapProblems : ['a scene map must be schema 2']).map((message) =>
+        problem('SCENE_MAP_INVALID', mapFile, message),
+      ),
+    );
+  const scene = parsed.scene;
+  const map = mapValue as PlantMapV2;
+  const facts = checkSceneFacts(scenarioInput, scene);
+  if (facts.length > 0) return fail(...facts.map((message) => problem('SCENE_FACT_UNKNOWN', file, message)));
+  let compiledProject: ReturnType<typeof compileLessonProject>;
+  try {
+    compiledProject = compileLessonProject(loaded.workspace);
+  } catch (error) {
+    return fail(problem('COMPILE_FAILED', 'src', error instanceof Error ? error.message : String(error)));
+  }
+  const core = await createPlantCore(scene);
+  const signal = AbortSignal.any([
+    ...(options.signal ? [options.signal] : []),
+    AbortSignal.timeout(options.timeoutMs ?? SCENE_RUN_TIMEOUT_MS),
+  ]);
+  try {
+    let compiled: ReturnType<typeof compileScenario>;
+    try {
+      compiled = compileScenario(scenarioInput, compiledProject.debugMap, { port: { core, map }, scene });
+    } catch (error) {
+      // The engine names the signal or the variable it could not bind; the map is where the learner fixes it.
+      return fail(problem('SCENE_BINDING_INVALID', mapFile, error instanceof Error ? error.message : String(error)));
+    }
+    if (compiled.tickMs !== compiledProject.tickMs)
+      return fail(
+        problem(
+          'SCENARIO_TICK_MISMATCH',
+          'zplc.json',
+          `the scenario ticks every ${compiled.tickMs} ms and the tasks every ${compiledProject.tickMs} ms`,
+        ),
+      );
+    const session = await createNativeScenarioSession(process.env, { signal });
+    let result: Awaited<ReturnType<typeof runScenario>>;
+    const closeOnAbort = () => void session.close().catch(() => undefined);
+    signal.addEventListener('abort', closeOnAbort, { once: true });
+    try {
+      result = await runScenario(compiled, compiledProject.zplcFile, session.runtime);
+    } catch {
+      return fail(problem('RUNTIME_FAILED', file, 'The scene run did not finish'));
+    } finally {
+      signal.removeEventListener('abort', closeOnAbort);
+      await session.close().catch(() => undefined);
+    }
+    const zplc = artifactEvidence('zplc', compiledProject.zplcFile);
+    const traceBytes = new TextEncoder().encode(JSON.stringify(result.trace));
+    const trace = artifactEvidence('trace', traceBytes);
+    const failures = result.passed ? [] : [problem('SCENARIO_ASSERTION_FAILED', file, 'A scenario assertion failed')];
+    return {
+      finished: true,
+      evidence: evidence('scenario-run', result.passed ? 'passed' : 'failed', failures, [zplc, trace]),
+      zplcSha256: zplc.sha256,
+      traceSha256: trace.sha256,
+      trace: result.trace as TraceSample[],
+      assertions: result.assertions,
+    };
+  } finally {
+    core.dispose();
   }
 }
 
@@ -87,53 +261,70 @@ export interface LessonCheckOptions extends TestsRunOptions {
   clock?: () => Date;
   /** Overrides the runtime version read from the native runtime (tests). */
   runtimeVersion?: string;
+  /** Test seam: the lessons to look in instead of the generated index (a scene lesson fixture). */
+  lessons?: readonly LessonIndexEntry[];
 }
 export type LessonCheckResult =
   | { ok: true; record: GradeRecord; evidence: ToolEvidence }
   | { ok: false; reason: 'unknown-lesson' | 'index-tampered' | 'not-graded'; evidence?: ToolEvidence };
 
-export async function lessonCheck(root: string, lessonId: string, options: LessonCheckOptions = {}): Promise<LessonCheckResult> {
-  const lesson = LESSON_INDEX.lessons.find((entry) => entry.id === lessonId);
-  if (!lesson) return { ok: false, reason: 'unknown-lesson' };
-  const bytes = new TextEncoder().encode(lesson.scenario.canonical);
-  if (createHash('sha256').update(bytes).digest('hex') !== lesson.scenario.sha256) return { ok: false, reason: 'index-tampered' };
-  const parsed = parseScenarioFile(JSON.parse(lesson.scenario.canonical) as unknown);
-  if (!parsed.scenario) return { ok: false, reason: 'index-tampered' };
+/** The 2.0 route: the program is copied next to the package scenario and run by the Tool API on a fresh native session. */
+async function runPlantLesson(root: string, lesson: LessonIndexEntry, bytes: Uint8Array, options: TestsRunOptions): Promise<LessonRun> {
   const result = await runSuppliedScenario(root, { path: lesson.scenario.path, bytes }, lesson.scenario.id, options);
   const codes = result.evidence.diagnostics.map(({ code }) => code);
   const zplc = result.evidence.artifacts.find((artifact) => artifact.kind === 'zplc');
   const traceArtifact = result.evidence.artifacts.find((artifact) => artifact.kind === 'trace');
   // Only a finished run is graded: either every assertion passed, or the only complaint is that some assertion failed.
   const finished = result.ok || (codes.length > 0 && codes.every((code) => code === 'SCENARIO_ASSERTION_FAILED'));
-  if (!finished || !zplc || !traceArtifact) return { ok: false, reason: 'not-graded', evidence: result.evidence };
+  if (!finished || !zplc || !traceArtifact) return { finished: false, evidence: result.evidence };
   let trace: TraceSample[] = [];
-  let assertions = result.preview?.scenarios[0]?.assertions ?? [];
+  let assertions: LessonRunAssertions = result.preview?.scenarios[0]?.assertions ?? [];
   try {
     const full = JSON.parse(new TextDecoder().decode(result.traceFile)) as {
-      scenarios?: Array<{ id?: unknown; trace?: TraceSample[]; assertions?: Array<{ kind: string; passed: boolean; atMs?: number }> }>;
+      scenarios?: Array<{ id?: unknown; trace?: TraceSample[]; assertions?: LessonRunAssertions }>;
     };
     const run = full.scenarios?.find((entry) => entry.id === lesson.scenario.id);
     if (run?.trace && run.assertions) {
       trace = run.trace;
-      assertions = run.assertions as typeof assertions;
+      assertions = run.assertions;
     }
   } catch {
     /* the preview holds the failing samples; the record then carries less of the trace */
   }
   if (trace.length === 0) trace = (result.preview?.scenarios[0]?.samples ?? []).map(({ atMs, outputs }) => ({ atMs, outputs }));
-  if (assertions.length !== lesson.scenario.assertions) return { ok: false, reason: 'not-graded', evidence: result.evidence };
+  return { finished: true, evidence: result.evidence, zplcSha256: zplc.sha256, traceSha256: traceArtifact.sha256, trace, assertions };
+}
+
+/** A lesson that names a scene runs on the scene of the learner's project; any other lesson runs as it did in 2.0. */
+function runLesson(root: string, lesson: LessonIndexEntry, bytes: Uint8Array, options: TestsRunOptions): Promise<LessonRun> {
+  return lesson.scene
+    ? runSceneLesson(root, JSON.parse(lesson.scenario.canonical) as { scene: { file: string; map: string } }, options)
+    : runPlantLesson(root, lesson, bytes, options);
+}
+
+export async function lessonCheck(root: string, lessonId: string, options: LessonCheckOptions = {}): Promise<LessonCheckResult> {
+  const lesson = (options.lessons ?? LESSON_INDEX.lessons).find((entry) => entry.id === lessonId);
+  if (!lesson) return { ok: false, reason: 'unknown-lesson' };
+  const bytes = new TextEncoder().encode(lesson.scenario.canonical);
+  if (createHash('sha256').update(bytes).digest('hex') !== lesson.scenario.sha256) return { ok: false, reason: 'index-tampered' };
+  const parsed = parseScenarioFile(JSON.parse(lesson.scenario.canonical) as unknown);
+  if (!parsed.scenario) return { ok: false, reason: 'index-tampered' };
+  const lessonRun = await runLesson(root, lesson, bytes, options);
+  if (!lessonRun.finished) return { ok: false, reason: 'not-graded', evidence: lessonRun.evidence };
+  const { trace, assertions } = lessonRun;
+  if (assertions.length !== lesson.scenario.assertions) return { ok: false, reason: 'not-graded', evidence: lessonRun.evidence };
   const runtimeVersion = options.runtimeVersion ?? (await nativeRuntimeVersion(process.env));
   const record = gradeRecordOf({
     lessonId: lesson.id,
     lessonVersion: lesson.version,
     scenario: parsed.scenario,
     scenarioSha256: lesson.scenario.sha256,
-    programSha256: zplc.sha256,
+    programSha256: lessonRun.zplcSha256,
     runtimeVersion,
     time: (options.clock ?? (() => new Date()))(),
     assertions,
     trace,
-    traceSha256: traceArtifact.sha256,
+    traceSha256: lessonRun.traceSha256,
   });
-  return { ok: true, record, evidence: result.evidence };
+  return { ok: true, record, evidence: lessonRun.evidence };
 }
