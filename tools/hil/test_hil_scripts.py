@@ -60,7 +60,7 @@ LIBRARIES = {
     "bench", "hil_steps", "hil_endpoints",  # the bench of the chain, its measuring steps and its fieldbus endpoints (test_hil_bench.py)
 }
 # unit tests of the board I/O description (WS-29, IO-001): unittest modules of their own, not device scripts
-OTHER_UNIT_TESTS = {"test_board_io_description", "test_io_table_generator"}
+OTHER_UNIT_TESTS = {"test_board_io_description", "test_io_table_generator", "test_plant_io_bench"}
 HOST_CHECKS = {
     "audit_repo_hygiene", "audit_specs_scope", "validate_docs_parity", "validate_release_evidence", "validate_supported_boards",
     "run_board_matrix", "verify_compilation", "run_all_hil_tests", "run_all_languages",
@@ -69,6 +69,7 @@ HOST_CHECKS = {
     "community_report",  # writes a community-reported record (HIL-011); test_hil_community.py checks it
     "compare_sim",  # native simulation against a bench (HIL-015); test_hil_compare.py runs it on stand-ins
     "check_storage_partitions",  # IO-008, test_hil_storage_partitions.py; `run.sh size` runs it on every board build
+    "validate_plant_io_evidence",  # LNK-014, test_plant_io_bench.py: exits 1 on a gap above the limit or a wrong level
 }
 
 

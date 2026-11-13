@@ -2,6 +2,10 @@
   "schema": 1,
   "note": "Scripts of tools/hil that do not judge a result and so cannot fail a run: bench utilities that a person runs at the bench (HIL-004). Every other script of the directory either exits non-zero when a check fails or is a library. tools/hil/README.md repeats this list; test_hil_scripts.py keeps the two, and the directory, in agreement.",
   "scripts": {
+    "plant_io_bench.py": {
+      "purpose": "Feed a board from a synthetic plant over the framed link, record the round-trip latency and ask a person to confirm three physical behaviours (LNK-011, LNK-014).",
+      "reason": "A person runs it at the bench with a board connected; it flashes nothing, and whether the evidence holds is judged only by validate_plant_io_evidence.py."
+    },
     "check_alive.py": {
       "purpose": "Wake a board's shell with a CR, ask `help`, and print what comes back.",
       "reason": "Shows the shell's answer for a person to read; whether the board is alive is the person's call. It exits 1 only when nothing came back at all."

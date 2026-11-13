@@ -623,6 +623,7 @@ jobs:
           python3 tools/hil/test_validate_supported_boards.py
           python3 tools/hil/test_board_io_description.py
           python3 tools/hil/test_io_table_generator.py
+          python3 tools/hil/test_plant_io_bench.py
           python3 tools/ci/test_check_hal_contract.py
           python3 tools/ci/check_hal_contract.py
           python3 tools/hil/test_validate_release_evidence.py
