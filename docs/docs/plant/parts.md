@@ -329,6 +329,77 @@ A beam to a reflector rangeM away; detects an item that breaks the beam. Signal:
 
 `stuckOn`, `stuckOff`
 
+### Inductive sensor
+
+`sensor-inductive`
+
+Detects metal items only; plastic items, boxes and pallets pass unseen. The beam starts at the part position, runs along +x for rangeM and sits heightM above it. Signal: detect. Faults: stuckOn, stuckOff.
+
+#### Settings
+
+| Setting | Kind | Range or values | Default | Unit |
+| --- | --- | --- | --- | --- |
+| `rangeM` | number | 0.02 to 0.3 | `0.1` | m |
+| `heightM` | number | 0 to 2 | `0.1` | m |
+
+#### Signals
+
+| Signal | Direction | Type | Unit | Range |
+| --- | --- | --- | --- | --- |
+| `detect` | sensor | BOOL |   |   |
+
+#### Fault actions
+
+`stuckOn`, `stuckOff`
+
+### Capacitive sensor
+
+`sensor-capacitive`
+
+Detects any item or pallet, metal or not. The beam starts at the part position, runs along +x for rangeM and sits heightM above it. Signal: detect. Faults: stuckOn, stuckOff.
+
+#### Settings
+
+| Setting | Kind | Range or values | Default | Unit |
+| --- | --- | --- | --- | --- |
+| `rangeM` | number | 0.02 to 0.5 | `0.15` | m |
+| `heightM` | number | 0 to 2 | `0.1` | m |
+
+#### Signals
+
+| Signal | Direction | Type | Unit | Range |
+| --- | --- | --- | --- | --- |
+| `detect` | sensor | BOOL |   |   |
+
+#### Fault actions
+
+`stuckOn`, `stuckOff`
+
+### Colour sensor
+
+`sensor-colour`
+
+Teach-in colour sensor: detect is TRUE for any item in its beam, match is TRUE when that item has the colour set in target (red or blue); an item without a colour never matches. The beam runs along +x for rangeM at heightM. Signals: detect, match. Faults: stuckOn, stuckOff, wrongColour (inverts match).
+
+#### Settings
+
+| Setting | Kind | Range or values | Default | Unit |
+| --- | --- | --- | --- | --- |
+| `rangeM` | number | 0.05 to 1 | `0.3` | m |
+| `heightM` | number | 0 to 2 | `0.1` | m |
+| `target` | enum | `red`, `blue` | `red` |   |
+
+#### Signals
+
+| Signal | Direction | Type | Unit | Range |
+| --- | --- | --- | --- | --- |
+| `detect` | sensor | BOOL |   |   |
+| `match` | sensor | BOOL |   |   |
+
+#### Fault actions
+
+`stuckOn`, `stuckOff`, `wrongColour`
+
 ## Panel
 
 ### Push button

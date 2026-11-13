@@ -329,6 +329,77 @@ Un haz hasta un reflector a rangeM de distancia; detecta una pieza que corte el 
 
 `stuckOn`, `stuckOff`
 
+### Sensor inductivo
+
+`sensor-inductive`
+
+Detecta solo piezas metálicas; las piezas de plástico, las cajas y las paletas pasan sin ser vistas. El haz parte de la posición de la pieza, corre a lo largo de +x durante rangeM y está heightM por encima. Señal: detect. Fallas: stuckOn, stuckOff.
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `rangeM` | number | 0.02 a 0.3 | `0.1` | m |
+| `heightM` | number | 0 a 2 | `0.1` | m |
+
+#### Señales
+
+| Señal | Dirección | Tipo | Unidad | Rango |
+| --- | --- | --- | --- | --- |
+| `detect` | sensor | BOOL |   |   |
+
+#### Acciones de falla
+
+`stuckOn`, `stuckOff`
+
+### Sensor capacitivo
+
+`sensor-capacitive`
+
+Detecta cualquier pieza o paleta, sea metálica o no. El haz parte de la posición de la pieza, corre a lo largo de +x durante rangeM y está heightM por encima. Señal: detect. Fallas: stuckOn, stuckOff.
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `rangeM` | number | 0.02 a 0.5 | `0.15` | m |
+| `heightM` | number | 0 a 2 | `0.1` | m |
+
+#### Señales
+
+| Señal | Dirección | Tipo | Unidad | Rango |
+| --- | --- | --- | --- | --- |
+| `detect` | sensor | BOOL |   |   |
+
+#### Acciones de falla
+
+`stuckOn`, `stuckOff`
+
+### Sensor de color
+
+`sensor-colour`
+
+Sensor de color con aprendizaje: detect es TRUE con cualquier pieza en su haz y match es TRUE cuando esa pieza tiene el color de target (rojo o azul); una pieza sin color nunca coincide. El haz corre a lo largo de +x durante rangeM a heightM. Señales: detect, match. Fallas: stuckOn, stuckOff, wrongColour (invierte match).
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `rangeM` | number | 0.05 a 1 | `0.3` | m |
+| `heightM` | number | 0 a 2 | `0.1` | m |
+| `target` | enum | `red`, `blue` | `red` |   |
+
+#### Señales
+
+| Señal | Dirección | Tipo | Unidad | Rango |
+| --- | --- | --- | --- | --- |
+| `detect` | sensor | BOOL |   |   |
+| `match` | sensor | BOOL |   |   |
+
+#### Acciones de falla
+
+`stuckOn`, `stuckOff`, `wrongColour`
+
 ## Panel
 
 ### Pulsador
