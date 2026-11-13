@@ -3,8 +3,8 @@
  * mounted.
  */
 import { useState } from 'react';
-import { useT } from '../../i18n';
-import { Button, Select } from '../../ui';
+import { translatorFor, useT } from '../../i18n';
+import { Button, Select, TextField } from '../../ui';
 import type { PartDefinition, ScenePart } from '../contracts';
 import type { ProblemAt } from './validate';
 
@@ -16,33 +16,62 @@ export interface PartListProps {
   selection: string | null;
   problems: readonly ProblemAt[];
   disabled: boolean;
+  /** Options in `<optgroup>`s by family (default). `false` keeps the flat list. */
+  grouped?: boolean;
   onSelect(id: string): void;
   onAdd(catalogueId: string): void;
   onDuplicate(id: string): void;
   onRemove(id: string): void;
 }
 
+/** The one-line description: the text up to the first full stop (the whole text when it has none). */
+const firstSentence = (doc: string) => doc.match(/^.*?[.!?](?=\s|$)/s)?.[0] ?? doc;
+
 export function PartList(props: PartListProps) {
-  const { parts, catalogue, locale, selection, problems, disabled } = props;
+  const { parts, catalogue, locale, selection, problems, disabled, grouped = true } = props;
   const { t } = useT();
+  const text = translatorFor(locale).t; // the catalogue speaks the language it is shown in
   const [choice, setChoice] = useState('');
-  const chosen = choice || catalogue[0]?.id || '';
+  const [filter, setFilter] = useState('');
+  const needle = filter.trim().toLowerCase();
+  const shown = needle ? catalogue.filter((d) => d.names[locale].toLowerCase().includes(needle)) : catalogue;
+  const chosen = shown.find((d) => d.id === choice)?.id ?? shown[0]?.id ?? '';
+  const families = [...new Set(shown.map((d) => d.family))];
+  const option = (d: PartDefinition) => (
+    <option key={d.id} value={d.id}>
+      {d.names[locale]}
+    </option>
+  );
+  const description =
+    shown.length === 0 ? text('plantEditor.noPartMatches') : firstSentence(catalogue.find((d) => d.id === chosen)?.doc[locale] ?? '');
   const label = (id: string) => catalogue.find((d) => d.id === id)?.names[locale] ?? id;
   return (
     <section aria-labelledby="plant-editor-parts" className="flex flex-col gap-2">
       <h3 id="plant-editor-parts">{t('plantEditor.partsHeading')}</h3>
+      <TextField label={text('plantEditor.filterLabel')} value={filter} disabled={disabled} onChange={(e) => setFilter(e.target.value)} />
       <div className="flex items-end gap-2">
-        <Select label={t('plantEditor.addLabel')} value={chosen} disabled={disabled} onChange={(e) => setChoice(e.target.value)}>
-          {catalogue.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.names[locale]}
-            </option>
-          ))}
+        <Select
+          label={t('plantEditor.addLabel')}
+          value={chosen}
+          disabled={disabled}
+          aria-describedby="plant-editor-part-doc"
+          onChange={(e) => setChoice(e.target.value)}
+        >
+          {grouped
+            ? families.map((f) => (
+                <optgroup key={f} label={text(`plantEditor.family.${f}`)}>
+                  {shown.filter((d) => d.family === f).map(option)}
+                </optgroup>
+              ))
+            : shown.map(option)}
         </Select>
         <Button variant="primary" disabled={disabled || !chosen} onClick={() => props.onAdd(chosen)}>
           {t('plantEditor.add')}
         </Button>
       </div>
+      <p id="plant-editor-part-doc" aria-live="polite">
+        {description}
+      </p>
       {parts.length === 0 ? (
         <p>{t('plantEditor.listEmpty')}</p>
       ) : (
