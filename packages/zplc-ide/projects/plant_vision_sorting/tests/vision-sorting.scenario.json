@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "vision-sorting",
+  "tickMs": 10,
+  "durationMs": 78000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      { "atMs": 200, "operate": { "signal": "StartButton.pressed", "value": true } },
+      { "atMs": 400, "operate": { "signal": "StartButton.pressed", "value": false } }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 78000, "condition": { "fact:sorted:Product1": true, "fact:sorted:Product2": true } },
+    { "kind": "AT", "atMs": 78000, "condition": { "VisionSorting.Done": true, "VisionSorting.Divert": false } },
+    { "kind": "ALWAYS", "condition": { "fact:misrouted:Product1": false, "fact:misrouted:Product2": false, "fact:itemsDropped": false } }
+  ]
+}

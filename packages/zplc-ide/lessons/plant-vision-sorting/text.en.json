@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Sort by identity code",
+  "summary": "Read the code of each item that the vision sensor sees and swing a diverter arm so that code 2 items leave on the side belt.",
+  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Route items by an integer code instead of a switch.",
+    "Time an actuator against the travel of an item that has already been read."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/VisionSorting.st, run both belts after Start. Read Code while the item is in the field of the vision sensor: code 1 rides straight on; for code 2, swing the arm across before the item reaches it, hold it until the item has passed its free end, then swing it back.",
+      "checkpoint": "Code 1 items end in Product1, code 2 items in Product2, and Done lights after twelve items."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, work out when the arm must swing: the code is read about two seconds before the item reaches the arm, and the item ahead may still be passing the free end of the arm. What happens if the arm swings too early, or too late?",
+      "checkpoint": "Divert goes TRUE for a code 2 item shortly before it arrives and returns to FALSE after it has passed; the next item is not read until the arm is clear."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter drives no output, so no belt moves and no item is sorted; run both belts after Start and swing the arm for each code 2 item.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the vision-sorting scenario; watch the 3D view while it runs.",
+      "checkpoint": "The required scenario is named vision-sorting and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Watch the 3D view and the vision readout: the code shows while the item is in the field, the arm swings in front of a code 2 item and the item slides onto the side belt.",
+      "checkpoint": "A code 1 item never moves the arm, and the arm is back home before the next item arrives."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The grade sees the two product belts and that nothing was dropped; it cannot see your timing, so a timing that clips an item shows only as a misrouted or dropped item.",
+      "checkpoint": "It does not establish the reading time of a real vision sensor, belt speed, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Count scans instead of using a timer: when Code is not 0 and the lock is free, add one to Handled, set a lock for the item to leave the field and, for code 2, a delay before the swing."
+    },
+    {
+      "level": 2,
+      "text": "When the delay reaches 0 set Divert and load a hold counter; when the hold counter reaches 0 clear Divert. Done := Handled >= 12."
+    }
+  ],
+  "faultCases": [
+    "The starter drives no output, so no belt moves and no item is sorted; run both belts after Start and swing the arm for each code 2 item."
+  ]
+}

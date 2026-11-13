@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-vision-sorting",
+  "version": 1,
+  "order": 166,
+  "module": 16,
+  "level": "advanced",
+  "prerequisites": ["plant-colour-separation"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson needs a vision sensor that reads item codes, a diverter arm and two product belts; a learner board has no camera and no coded items, and the scene supplies both.",
+        "es": "La lección necesita un sensor de visión que lea códigos de pieza, un brazo desviador y dos bandas de producto; una placa del estudiante no tiene cámara ni piezas con código, y la escena aporta ambas."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its items are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus piezas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "vision-sorting",
+  "estimatedMinutes": 50,
+  "starter": {
+    "project": "plant_vision_sorting_starter",
+    "program": "src/VisionSorting.st"
+  },
+  "solution": {
+    "project": "plant_vision_sorting",
+    "program": "src/VisionSorting.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "vision-sorting",
+    "path": "tests/vision-sorting.scenario.json",
+    "sha256": "5796ba053bfc6aefa46d441a3ee9d02931000473e69beddad44c2e1e9d5f5ee3"
+  },
+  "regressionScenarios": []
+}

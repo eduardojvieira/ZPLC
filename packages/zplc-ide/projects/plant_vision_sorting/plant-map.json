@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 2,
+  "target": { "scene": "vision-sorting" },
+  "signals": {
+    "StartButton.pressed": { "direction": "sensor", "type": "BOOL", "point": "VisionSorting.Start" },
+    "Vision1.detect": { "direction": "sensor", "type": "BOOL", "point": "VisionSorting.Seen" },
+    "Vision1.code": {
+      "direction": "sensor",
+      "type": "INT",
+      "point": "VisionSorting.Code",
+      "range": { "raw_min": 0, "raw_max": 9, "eng_min": 0, "eng_max": 9, "unit": "code" }
+    },
+    "Infeed.run": { "direction": "command", "type": "BOOL", "point": "VisionSorting.RunIn" },
+    "SideBelt.run": { "direction": "command", "type": "BOOL", "point": "VisionSorting.RunSide" },
+    "Arm1.divert": { "direction": "command", "type": "BOOL", "point": "VisionSorting.Divert" },
+    "Beacon.amber": { "direction": "command", "type": "BOOL", "point": "VisionSorting.Busy" },
+    "Beacon.green": { "direction": "command", "type": "BOOL", "point": "VisionSorting.Done" }
+  }
+}
