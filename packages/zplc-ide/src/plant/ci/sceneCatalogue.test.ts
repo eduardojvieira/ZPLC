@@ -28,6 +28,7 @@ describe('shipped scenes use the public format and catalogue', () => {
       'layer-palletizer',
       'belt-to-belt-transfer',
       'three-axis-palletizing',
+      'balanced-production-line',
       'colour-separation',
       'height-sorting-turntable',
       'height-sorting-chain',

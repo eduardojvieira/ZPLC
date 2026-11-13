@@ -107,6 +107,14 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     }
   },
   {
+    "id": "balanced-production-line",
+    "dir": "plant-scenes/balanced-production-line",
+    "names": {
+      "en": "Balanced production line",
+      "es": "Balanced production line"
+    }
+  },
+  {
     "id": "colour-separation",
     "dir": "plant-scenes/colour-separation",
     "names": {

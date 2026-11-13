@@ -41,7 +41,7 @@ describe('the course view', () => {
   const view = buildCourseView(LESSON_INDEX, emptyProgress(), { locale: 'en', unlockAll: false });
 
   it('lists the modules in order with level, required module, estimated minutes and the lessons placed in them', () => {
-    expect(view.modules.map((module) => module.id)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+    expect(view.modules.map((module) => module.id)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
     const one = view.modules[1]!;
     expect(one).toMatchObject({ level: 'foundation', requires: 0 });
     expect(one.lessons.map((lesson) => lesson.id)).toEqual([SECOND, THIRD, 'blink-structured-text', 'ld-what-is-a-plc', 'ld-scan-cycle']);

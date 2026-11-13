@@ -92,7 +92,7 @@ describe('the generated lesson index (LRN-027, LRN-028)', () => {
   });
 
   it('holds the course structure of lessons/course.json, and refuses a missing or broken course file (LRN-005)', () => {
-    expect(LESSON_INDEX.course.modules).toHaveLength(12);
+    expect(LESSON_INDEX.course.modules).toHaveLength(20);
     const missing = copyOfLessons();
     rmSync(join(missing, 'course.json'));
     expect(generate(missing).problems).toEqual(['course.json: the course file is missing']);
