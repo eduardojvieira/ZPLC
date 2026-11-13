@@ -20,7 +20,7 @@ Modele un ensamblador de dos ejes como un diagrama: tome una tapa de una banda, 
 - Lenguajes: SFC
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Ensamble de dos ejes](../../plant/scenes/two-axis-assembly.md)
 - Requisitos previos: [sfc-fill-mix-sequence](./sfc-fill-mix-sequence.md), [plant-belt-transfer](./plant-belt-transfer.md)
 
 ## Objetivos

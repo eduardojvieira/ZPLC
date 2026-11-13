@@ -20,7 +20,7 @@ Secuencie un movimiento con un set y un reset: haga correr la banda desde el sen
 - Lenguajes: ST
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Biestable entre dos sensores](../../plant/scenes/latch-two-sensors.md)
 - Requisitos previos: [plant-belt-to-sensor](./plant-belt-to-sensor.md)
 
 ## Objetivos

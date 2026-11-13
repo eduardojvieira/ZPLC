@@ -20,7 +20,7 @@ Lleve un cajón a un elevador, alimente cinco piezas dentro de él una por una y
 - Lenguajes: ST
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Elevador con apilado](../../plant/scenes/lift-stacking.md)
 - Requisitos previos: [plant-counted-queue](./plant-counted-queue.md)
 
 ## Objetivos

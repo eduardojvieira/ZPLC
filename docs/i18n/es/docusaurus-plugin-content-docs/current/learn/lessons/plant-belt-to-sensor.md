@@ -20,7 +20,7 @@ Arranque una banda con un botón y deténgala cuando una caja llegue al sensor d
 - Lenguajes: ST
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Cinta hasta un sensor](../../plant/scenes/belt-to-sensor.md)
 - Requisitos previos: [motor-start-stop-safe](./motor-start-stop-safe.md)
 
 ## Objetivos

@@ -20,7 +20,7 @@ Cuente cajas con dos contadores para ejecutar un lote fijo: cargue tres, descarg
 - Lenguajes: ST
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Cola contada](../../plant/scenes/counted-queue.md)
 - Requisitos previos: [plant-latch-two-sensors](./plant-latch-two-sensors.md), [edge-counter-pulses](./edge-counter-pulses.md)
 
 ## Objetivos

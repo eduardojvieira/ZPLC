@@ -20,7 +20,7 @@ Start a belt from a button with a set coil and stop it with a reset coil when a 
 - Languages: LD
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Belt to sensor](../../plant/scenes/belt-to-sensor.md)
 - Prerequisites: [motor-start-stop-safe](./motor-start-stop-safe.md)
 
 ## Objectives

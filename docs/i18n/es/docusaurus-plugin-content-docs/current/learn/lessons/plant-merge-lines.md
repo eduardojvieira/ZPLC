@@ -20,7 +20,7 @@ Arbitre dos alimentadores que comparten una salida: dé prioridad a la línea A,
 - Lenguajes: ST
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Unión de dos líneas](../../plant/scenes/merge-lines.md)
 - Requisitos previos: [plant-counted-queue](./plant-counted-queue.md), [interlock-guard-permissive](./interlock-guard-permissive.md)
 
 ## Objetivos

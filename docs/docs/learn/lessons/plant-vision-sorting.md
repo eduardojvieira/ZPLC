@@ -20,7 +20,7 @@ Read the code of each item that the vision sensor sees and swing a diverter arm 
 - Languages: ST
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Vision sorting](../../plant/scenes/vision-sorting.md)
 - Prerequisites: [plant-colour-separation](./plant-colour-separation.md)
 
 ## Objectives

@@ -20,7 +20,7 @@ Maneje un transelevador desde un diagrama: almacene cada caja en la primera celd
 - Lenguajes: SFC
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Almacén con transelevador](../../plant/scenes/stacker-crane-warehouse.md)
 - Requisitos previos: [plant-three-level-lifts](./plant-three-level-lifts.md)
 
 ## Objetivos

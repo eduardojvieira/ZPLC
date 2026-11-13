@@ -20,7 +20,7 @@ Compare the reading of a scale with a limit and send heavy boxes to the side bel
 - Languages: LD
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Weight sorting](../../plant/scenes/weight-sorting.md)
 - Prerequisites: [plant-colour-separation](./plant-colour-separation.md), [plant-tank-level-scaling](./plant-tank-level-scaling.md)
 
 ## Objectives

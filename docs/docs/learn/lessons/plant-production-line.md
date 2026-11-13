@@ -20,7 +20,7 @@ Split a line into one function block per machine, and send alternate blanks to e
 - Languages: ST
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Balanced production line](../../plant/scenes/balanced-production-line.md)
 - Prerequisites: [function-block-pump-pair](./function-block-pump-pair.md), [plant-lift-stacking](./plant-lift-stacking.md)
 
 ## Objectives

@@ -20,7 +20,7 @@ Measure the height of each box with a light array, keep the largest reading, and
 - Languages: ST
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Height sorting with turntable](../../plant/scenes/height-sorting-turntable.md)
 - Prerequisites: [plant-height-chain](./plant-height-chain.md)
 
 ## Objectives

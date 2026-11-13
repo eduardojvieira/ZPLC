@@ -20,7 +20,7 @@ Load four boxes into a layer, square it, carry it with a clamp head and stack th
 - Languages: ST
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Layer palletizer](../../plant/scenes/layer-palletizer.md)
 - Prerequisites: [structures-arrays-call-panel](./structures-arrays-call-panel.md), [plant-assembler-numeric](./plant-assembler-numeric.md)
 
 ## Objectives

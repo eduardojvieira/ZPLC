@@ -20,7 +20,7 @@ Tell three box heights apart with two beams, remember the answer until the box r
 - Languages: ST
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Height sorting with a chain transfer](../../plant/scenes/height-sorting-chain.md)
 - Prerequisites: [plant-colour-separation](./plant-colour-separation.md)
 
 ## Objectives

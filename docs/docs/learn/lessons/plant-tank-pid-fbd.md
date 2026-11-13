@@ -20,7 +20,7 @@ Wire the level loop of a tank as a function block diagram: a PID_Compact block b
 - Languages: FBD
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Tank level control](../../plant/scenes/tank-level-control.md)
 - Prerequisites: [plant-tank-pid](./plant-tank-pid.md)
 
 ## Objectives

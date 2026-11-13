@@ -20,7 +20,7 @@ Secuencie dos elevadores como dos cadenas que corren en paralelo y se encuentran
 - Lenguajes: SFC
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Elevadores de tres niveles](../../plant/scenes/three-level-lifts.md)
 - Requisitos previos: [plant-buffer-release](./plant-buffer-release.md)
 
 ## Objetivos

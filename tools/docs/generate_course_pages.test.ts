@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'bun:test';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 import { LESSON_INDEX } from '../../packages/zplc-ide/src/generated/lessonIndex';
 import { courseOrder } from '../../packages/zplc-ide/src/learn/course';
 import { faceplateEn, faceplateEs } from '../../packages/zplc-ide/src/i18n/catalog/faceplate';
 import { PAGES, outputs } from './generate_course_pages';
-import { LANGS, ROOT } from './reference-lib';
+import { LANGS, LANG_DIR, ROOT } from './reference-lib';
 
 describe('LRN-035 course pages: a page for every module and lesson, generated from the lesson packages', () => {
   it('has a page for every module and every lesson of the index, in both languages, and the plants page', () => {
@@ -64,6 +64,38 @@ describe('LRN-035 course pages: a page for every module and lesson, generated fr
   it('lists each plant with the lessons that use it', () => {
     const body = PAGES.find((entry) => entry.path === 'learn/plants.md')!.body('en');
     for (const lesson of LESSON_INDEX.lessons) if (lesson.plant) expect(body).toContain(`\`${lesson.plant}\``);
+  });
+
+  it('CRS-011 a scene lesson page links the page of its scene, and the target exists in both languages', () => {
+    const lesson = LESSON_INDEX.lessons.find((entry) => entry.scene === 'belt-to-sensor')!;
+    const page = PAGES.find((entry) => entry.path === `learn/lessons/${lesson.id}.md`)!;
+    expect(page.body('en')).toContain('- Plant: [Belt to sensor](../../plant/scenes/belt-to-sensor.md)');
+    expect(page.body('en')).not.toContain('- Plant: none');
+    for (const lang of LANGS) expect(existsSync(`${ROOT}${LANG_DIR[lang]}/plant/scenes/belt-to-sensor.md`)).toBe(true);
+  });
+
+  it('CRS-011 the Spanish page links the Spanish scene page', () => {
+    const lesson = LESSON_INDEX.lessons.find((entry) => entry.scene === 'buffer-release')!;
+    const page = PAGES.find((entry) => entry.path === `learn/lessons/${lesson.id}.md`)!;
+    expect(page.body('es')).toContain('- Planta: [Búfer y liberación](../../plant/scenes/buffer-release.md)');
+  });
+
+  it('PLT-013 the pages of the lessons that name no scene keep their Plant line as before', () => {
+    const plain = LESSON_INDEX.lessons.filter((entry) => !entry.scene);
+    expect(plain.length).toBeGreaterThan(60);
+    for (const lesson of plain) {
+      const body = PAGES.find((entry) => entry.path === `learn/lessons/${lesson.id}.md`)!.body('en');
+      expect(body).toContain(`- Plant: ${lesson.plant ? `[\`${lesson.plant}\`](../plants.md)` : 'none'}`);
+      expect(body).not.toContain('plant/scenes/');
+    }
+  });
+
+  it('CRS-011 the plants page lists scenes and their lessons', () => {
+    const body = PAGES.find((entry) => entry.path === 'learn/plants.md')!.body('en');
+    expect(body).toContain('## Scenes');
+    for (const lesson of LESSON_INDEX.lessons.filter((entry) => entry.scene)) expect(body).toContain(`(./lessons/${lesson.id}.md)`);
+    expect(body).toContain('[Belt to sensor](../plant/scenes/belt-to-sensor.md)');
+    expect(PAGES.find((entry) => entry.path === 'learn/plants.md')!.body('es')).toContain('## Escenas');
   });
 
   it('keeps the committed pages in step with the packages (drift check) and unlisted from the sidebar', () => {

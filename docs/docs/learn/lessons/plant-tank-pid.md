@@ -20,7 +20,7 @@ Hold the level of a tank at a set point with PID_Compact, keep it there when the
 - Languages: ST
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Tank level control](../../plant/scenes/tank-level-control.md)
 - Prerequisites: [plant-tank-level-scaling](./plant-tank-level-scaling.md)
 
 ## Objectives

@@ -20,7 +20,7 @@ Read the colour of each workpiece that waits at the stop blade, push the red one
 - Languages: ST
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Colour separation](../../plant/scenes/colour-separation.md)
 - Prerequisites: [plant-counted-queue](./plant-counted-queue.md)
 
 ## Objectives

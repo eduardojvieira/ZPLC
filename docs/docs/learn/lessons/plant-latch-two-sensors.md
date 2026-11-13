@@ -20,7 +20,7 @@ Sequence a move with a set and a reset: run the belt from sensor A until the box
 - Languages: ST
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Latch between two sensors](../../plant/scenes/latch-two-sensors.md)
 - Prerequisites: [plant-belt-to-sensor](./plant-belt-to-sensor.md)
 
 ## Objectives

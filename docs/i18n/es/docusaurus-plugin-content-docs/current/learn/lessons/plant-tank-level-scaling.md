@@ -20,7 +20,7 @@ Escale el nivel bruto de un tanque, un número entero de 0 a 27648, a metros, y 
 - Lenguajes: ST
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Control de nivel de un tanque](../../plant/scenes/tank-level-control.md)
 - Requisitos previos: [analog-scaling-integer](./analog-scaling-integer.md), [plant-timed-tank](./plant-timed-tank.md)
 
 ## Objetivos

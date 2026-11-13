@@ -20,7 +20,7 @@ Run a stacker crane from a chart: store each box in the first free cell and brin
 - Languages: SFC
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Stacker-crane warehouse](../../plant/scenes/stacker-crane-warehouse.md)
 - Prerequisites: [plant-three-level-lifts](./plant-three-level-lifts.md)
 
 ## Objectives

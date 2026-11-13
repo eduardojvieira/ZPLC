@@ -20,7 +20,7 @@ Abra la escena de fusión terminada, agregue el emisor de la línea B que le fal
 - Lenguajes: LD
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Unión de dos líneas](../../plant/scenes/merge-lines.md)
 - Requisitos previos: [plant-build-belt-scene-ladder](./plant-build-belt-scene-ladder.md), [plant-merge-lines](./plant-merge-lines.md)
 
 ## Objetivos

@@ -20,7 +20,7 @@ Drive a three-axis gantry through a computed 2 by 2 pattern to stack eight boxes
 - Languages: ST
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Three-axis palletizing](../../plant/scenes/three-axis-palletizing.md)
 - Prerequisites: [plant-layer-palletizer](./plant-layer-palletizer.md)
 
 ## Objectives

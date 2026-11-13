@@ -20,7 +20,7 @@ Add a mode to the two-axis assembly: jog the pad by hand in manual, run the asse
 - Languages: LD
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Two-axis assembly](../../plant/scenes/two-axis-assembly.md)
 - Prerequisites: [plant-assembler](./plant-assembler.md), [plant-estop-interlocks](./plant-estop-interlocks.md)
 
 ## Objectives

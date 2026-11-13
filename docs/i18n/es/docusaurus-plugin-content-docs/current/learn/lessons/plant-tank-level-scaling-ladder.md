@@ -20,7 +20,7 @@ Escale con cuadros de función el nivel crudo de un tanque, un número entero de
 - Lenguajes: LD
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Control de nivel de un tanque](../../plant/scenes/tank-level-control.md)
 - Requisitos previos: [analog-scaling-integer](./analog-scaling-integer.md), [plant-timed-tank](./plant-timed-tank.md)
 
 ## Objetivos

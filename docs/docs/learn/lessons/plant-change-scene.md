@@ -20,7 +20,7 @@ Open the finished merge scene, add the emitter of line B that it lacks and bind 
 - Languages: ST
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Merge two lines](../../plant/scenes/merge-lines.md)
 - Prerequisites: [plant-build-belt-scene](./plant-build-belt-scene.md), [plant-merge-lines](./plant-merge-lines.md)
 
 ## Objectives

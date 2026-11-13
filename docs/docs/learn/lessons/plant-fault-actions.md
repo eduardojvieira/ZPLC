@@ -20,7 +20,7 @@ Diagnose a beam that sticks on while the line is sorting: compare its signal wit
 - Languages: ST
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Height sorting with a chain transfer](../../plant/scenes/height-sorting-chain.md)
 - Prerequisites: [plant-height-chain](./plant-height-chain.md)
 
 ## Objectives

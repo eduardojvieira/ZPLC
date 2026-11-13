@@ -20,7 +20,7 @@ Run one fill, hold and drain cycle of a tank with TON blocks in rungs, a panel s
 - Languages: LD
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Timed tank](../../plant/scenes/timed-tank.md)
 - Prerequisites: [timers-on-delay-off-delay](./timers-on-delay-off-delay.md)
 
 ## Objectives

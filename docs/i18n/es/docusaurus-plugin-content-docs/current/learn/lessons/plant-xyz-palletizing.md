@@ -20,7 +20,7 @@ Gobierne un pórtico de tres ejes a través de un patrón calculado de 2 por 2 p
 - Lenguajes: ST
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Paletizado de tres ejes](../../plant/scenes/three-axis-palletizing.md)
 - Requisitos previos: [plant-layer-palletizer](./plant-layer-palletizer.md)
 
 ## Objetivos

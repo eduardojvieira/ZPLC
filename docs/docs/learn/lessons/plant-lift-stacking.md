@@ -20,7 +20,7 @@ Bring a crate onto a lift, feed five workpieces into it one at a time and send i
 - Languages: ST
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Lift with stacking](../../plant/scenes/lift-stacking.md)
 - Prerequisites: [plant-counted-queue](./plant-counted-queue.md)
 
 ## Objectives

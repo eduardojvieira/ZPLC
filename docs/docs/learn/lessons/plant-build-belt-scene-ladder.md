@@ -20,7 +20,7 @@ Open the Scene editor on an empty floor, place a belt, an emitter, a sensor and 
 - Languages: LD
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Belt to sensor](../../plant/scenes/belt-to-sensor.md)
 - Prerequisites: [plant-belt-to-sensor](./plant-belt-to-sensor.md), [plant-fault-actions](./plant-fault-actions.md)
 
 ## Objectives

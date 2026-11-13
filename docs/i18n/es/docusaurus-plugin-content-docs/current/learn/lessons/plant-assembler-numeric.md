@@ -20,7 +20,7 @@ Ordene a un ensamblador de dos ejes con consignas numéricas en centímetros y u
 - Lenguajes: ST
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Ensamble de dos ejes, numérico](../../plant/scenes/two-axis-assembly-numeric.md)
 - Requisitos previos: [plant-assembler](./plant-assembler.md)
 
 ## Objetivos

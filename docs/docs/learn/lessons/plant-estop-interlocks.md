@@ -20,7 +20,7 @@ Make a running line stop when the emergency stop is pressed, show it with the re
 - Languages: ST
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Three-level lifts](../../plant/scenes/three-level-lifts.md)
 - Prerequisites: [plant-three-level-lifts](./plant-three-level-lifts.md), [interlock-guard-permissive](./interlock-guard-permissive.md)
 
 ## Objectives
