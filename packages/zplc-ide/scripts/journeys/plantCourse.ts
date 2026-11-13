@@ -212,8 +212,8 @@ async function check(app: App): Promise<{ grade: string | null; status: string }
   return { grade: await grade(app), status: await checkStatus(app) };
 }
 
-/** The plant document of a lesson workspace: its "Open a scene" button, then the empty floor of the scene chooser. */
-async function openEmptyFloorInLesson(app: App): Promise<void> {
+/** The plant document of a lesson workspace: it opens the scene of the project (its root scene.json) by itself. */
+async function openProjectSceneInLesson(app: App): Promise<void> {
   await app.press('Ctrl+Shift+P');
   await app.type('show the plant');
   await app.until(
@@ -221,15 +221,7 @@ async function openEmptyFloorInLesson(app: App): Promise<void> {
     async () => (await app.eval<boolean>(`Boolean(document.querySelector('[role="option"][data-command="view.plant"]'))`)) || undefined,
   );
   await app.press('Enter');
-  await app.click(css('[data-plant-open-scene]'), 'Open a scene');
   await app.until('the scene panel', async () => (await app.visible(css('[data-plant-edit-scene]'))) || undefined, 30_000);
-  await app.eval(
-    `(() => { const select = [...document.querySelectorAll('[data-plant-panel] select')].find((s) => [...s.options].some((o) => o.value ` +
-      `=== 'empty')); ` +
-      `Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(select, 'empty'); ` +
-      `select.dispatchEvent(new Event('change', { bubbles: true })); })()`,
-  );
-  await app.until('the empty floor to load', async () => (await app.text()).includes('Empty floor') || undefined, 30_000);
 }
 
 journeysCourse.push(
@@ -280,7 +272,7 @@ journeysCourse.push(
         `Check of the starter says: ${JSON.stringify(missing)}`,
       );
       // the scene is built in the editor, with the names of the lesson, and saved to the project
-      await openEmptyFloorInLesson(app);
+      await openProjectSceneInLesson(app);
       await app.click(css('[data-plant-edit-scene]'), 'Edit scene');
       await app.until('the plant editor', async () => (await app.visible(css('[data-plant-editor]'))) || undefined);
       await addPart(app, 'keyboard', 'Belt conveyor');
@@ -295,36 +287,23 @@ journeysCourse.push(
       await bindSignals(app, 'keyboard', 4);
       await app.click(css('[data-plant-edit-done]'), 'Done editing');
       await app.click(css('[data-plant-save-scene]'), 'Save to project');
-      await fill(app, 'keyboard', 'Scene name', 'built');
-      await app.click(css('[data-plant-save-confirm]'), 'Save');
-      const saved = join(folder, 'scenes', 'built.scene.json');
-      const savedMap = join(folder, 'scenes', 'built.plant-map.json');
-      await app.until('the scene and its map saved in the project', () => (existsSync(saved) && existsSync(savedMap)) || undefined);
+      const saved = join(folder, 'scene.json');
+      const savedMap = join(folder, 'plant-map.json');
+      await app.until(
+        'the scene and its map saved at the project root',
+        () => (readFileSync(saved, 'utf8').includes('Belt1') && readFileSync(savedMap, 'utf8').includes('EyeFar')) || undefined,
+      );
       const built = JSON.parse(readFileSync(saved, 'utf8')) as { parts: { name: string }[] };
       assert(
         ['Belt1', 'Emitter1', 'EyeFar', 'StartButton'].every((name) => built.parts.some((part) => part.name === name)),
         'The saved scene lacks a part of the lesson.',
       );
-      // Gap 1 (reported): the editor saves to scenes/<name>.scene.json, and the Files tree does not list the project root, so a learner
-      // cannot put the scene where the Check reads it (scene.json and plant-map.json). The journey moves the files itself.
-      app.note(
-        'The saved scene is copied to scene.json and plant-map.json by the journey: the editor cannot write the files the Check reads.',
-      );
-      writeFileSync(join(folder, 'scene.json'), readFileSync(saved, 'utf8'));
-      writeFileSync(join(folder, 'plant-map.json'), readFileSync(savedMap, 'utf8'));
       writeFileSync(
         join(folder, entry.starter.program),
         readFileSync(join(packageRoot, 'projects', entry.solution.project, entry.solution.program), 'utf8'),
       );
-      // Gap 2 (reported): creating scenes/ changes the ctime of the workspace root, which the workspace gateway compares with the one it
-      // registered, so the Check refuses ("did not finish") until the workspace is opened again. The journey opens it again.
-      const first = await check(app);
-      if (first.grade !== 'passed') {
-        assert(first.status.includes('did not finish'), `Check of the built scene says: ${JSON.stringify(first)}`);
-        app.note('Check refuses once scenes/ exists (the workspace root changed); the journey opens the lesson again.');
-        await startLesson(app, id);
-      }
-      const after = first.grade === 'passed' ? first : await check(app);
+      assert(!existsSync(join(folder, 'scenes')), 'Saving the project scene must not create scenes/.');
+      const after = await check(app);
       assert(after.grade === 'passed', `Check of the built scene grades "${after.grade}": ${after.status}`);
     },
   },
