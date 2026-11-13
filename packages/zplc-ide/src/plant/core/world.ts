@@ -29,6 +29,18 @@ export interface PhysicsWorld {
   removeBody(id: string): void;
   addBelt(spec: WorldBeltSpec): void;
   setBeltTarget(id: string, speedMps: number): void;
+  /**
+   * Changes the world-space surface-velocity axis of belt `id` (a unit vector in the xz plane). Throws a located Error for an unknown belt.
+   */
+  setBeltAxis(id: string, axis: Vec3): void;
+  /**
+   * The current surface speed of belt `id` in m/s along its axis (after the acceleration ramp); throws a located Error for an unknown belt.
+   */
+  beltSpeed(id: string): number;
+  /**
+   * Moves a kinematic body to the pose over one plant step. Jolt keeps the velocity this gives the body until the next call, so a part
+   * that wants a kinematic body to hold still calls it every step with the pose it holds.
+   */
   setKinematicPose(id: string, p: Vec3, q: Quat): void;
   /** A positive multiple of the plant step, else RangeError. */
   step(ms: number): void;
@@ -64,6 +76,8 @@ const MOVING = 1;
 const WAKE_MARGIN = 0.05;
 // Longest downward cast of `gapBelow`; a body higher than this above any surface reports Infinity.
 const GAP_RANGE_M = 100;
+// A kinematic pose closer than this to the body's current pose is not a move (sum of absolute component differences).
+const POSE_EPS = 1e-6;
 
 export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): PhysicsWorld {
   const settings = new Jolt.JoltSettings();
@@ -96,6 +110,10 @@ export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): P
     target: number;
     speed: number;
     wake: InstanceType<typeof Jolt.AABox>;
+    /** A kinematic belt may rise, sink or turn: its wake box follows the body's current bounds. */
+    kinematic: boolean;
+    /** Set by `setKinematicPose` when the pose differs from the body's current pose; cleared by the next step. */
+    moved: boolean;
   }
   interface Attachment {
     anchorId: string;
@@ -148,6 +166,17 @@ export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): P
   let timeMs = 0;
   let disposed = false;
 
+  // The wake box covers the top of a belt body: only bodies whose bounds touch it are activated.
+  const wakeBoxOf = (body: InstanceType<typeof Jolt.Body>) => {
+    const bounds = body.GetWorldSpaceBounds();
+    const lo = new Jolt.Vec3(bounds.mMin.GetX(), bounds.mMax.GetY() - WAKE_MARGIN, bounds.mMin.GetZ());
+    const hi = new Jolt.Vec3(bounds.mMax.GetX(), bounds.mMax.GetY() + WAKE_MARGIN, bounds.mMax.GetZ());
+    const wake = new Jolt.AABox(lo, hi);
+    Jolt.destroy(lo);
+    Jolt.destroy(hi);
+    return wake;
+  };
+
   const detach = (itemId: string) => {
     const a = attachments.get(itemId);
     if (!a) return;
@@ -199,13 +228,7 @@ export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): P
     },
     addBelt(spec) {
       const e = entry(spec.bodyId);
-      const bounds = e.body.GetWorldSpaceBounds();
-      const lo = new Jolt.Vec3(bounds.mMin.GetX(), bounds.mMax.GetY() - WAKE_MARGIN, bounds.mMin.GetZ());
-      const hi = new Jolt.Vec3(bounds.mMax.GetX(), bounds.mMax.GetY() + WAKE_MARGIN, bounds.mMax.GetZ());
-      const wake = new Jolt.AABox(lo, hi);
-      Jolt.destroy(lo);
-      Jolt.destroy(hi);
-      const belt: Belt = { spec, target: 0, speed: 0, wake };
+      const belt: Belt = { spec, target: 0, speed: 0, wake: wakeBoxOf(e.body), kinematic: e.spec.motion === 'kinematic', moved: false };
       belts.set(spec.id, belt);
       beltByKey.set(e.key, belt);
     },
@@ -214,8 +237,26 @@ export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): P
       if (!belt) throw new Error(`unknown belt ${id}`);
       belt.target = speedMps;
     },
+    setBeltAxis(id, axis) {
+      const belt = belts.get(id);
+      if (!belt) throw new Error(`unknown belt ${id}`);
+      belt.spec = { ...belt.spec, axis: [axis[0], axis[1], axis[2]] };
+    },
+    beltSpeed(id) {
+      const belt = belts.get(id);
+      if (!belt) throw new Error(`unknown belt ${id}`);
+      return belt.speed;
+    },
     setKinematicPose(id, p, q) {
       const e = entry(id);
+      const belt = beltByKey.get(e.key);
+      if (belt) {
+        const c = e.body.GetPosition();
+        const r = e.body.GetRotation();
+        const dp = Math.abs(c.GetX() - p[0]) + Math.abs(c.GetY() - p[1]) + Math.abs(c.GetZ() - p[2]);
+        const dq = Math.abs(r.GetX() - q[0]) + Math.abs(r.GetY() - q[1]) + Math.abs(r.GetZ() - q[2]) + Math.abs(r.GetW() - q[3]);
+        if (dp > POSE_EPS || dq > POSE_EPS) belt.moved = true;
+      }
       const pos = new Jolt.RVec3(p[0], p[1], p[2]);
       const rot = new Jolt.Quat(q[0], q[1], q[2], q[3]);
       bodyInterface.MoveKinematic(e.body.GetID(), pos, rot, stepMs / 1000);
@@ -226,9 +267,19 @@ export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): P
       if (!Number.isInteger(ms / stepMs) || ms <= 0) throw new RangeError(`step must be a positive multiple of ${stepMs} ms`);
       for (let i = 0; i < ms / stepMs; i += 1) {
         for (const belt of belts.values()) {
-          if (belt.speed === belt.target) continue;
-          const delta = belt.spec.accelMps2 * (stepMs / 1000);
-          belt.speed = Math.abs(belt.target - belt.speed) <= delta ? belt.target : belt.speed + Math.sign(belt.target - belt.speed) * delta;
+          const ramping = belt.speed !== belt.target;
+          // A static belt only wakes while its speed changes; a kinematic one also while it moves or carries a surface speed.
+          if (!ramping && !(belt.kinematic && (belt.speed !== 0 || belt.moved))) continue;
+          if (ramping) {
+            const delta = belt.spec.accelMps2 * (stepMs / 1000);
+            belt.speed =
+              Math.abs(belt.target - belt.speed) <= delta ? belt.target : belt.speed + Math.sign(belt.target - belt.speed) * delta;
+          }
+          if (belt.kinematic) {
+            Jolt.destroy(belt.wake);
+            belt.wake = wakeBoxOf(entry(belt.spec.bodyId).body);
+            belt.moved = false;
+          }
           // Per-belt wake: only bodies whose bounds touch this belt's top, so a sleeping box starts moving
           // with its belt and bodies on other belts stay asleep.
           bodyInterface.ActivateBodiesInAABox(belt.wake, movingBp, movingObj);
