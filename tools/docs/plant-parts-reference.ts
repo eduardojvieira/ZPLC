@@ -10,6 +10,8 @@ import { conveyorParts } from '../../packages/zplc-ide/src/plant/core/parts/conv
 import { flowParts } from '../../packages/zplc-ide/src/plant/core/parts/flow.ts';
 import { indicatorParts } from '../../packages/zplc-ide/src/plant/core/parts/indicators.ts';
 import { itemParts } from '../../packages/zplc-ide/src/plant/core/parts/items.ts';
+import { stationParts } from '../../packages/zplc-ide/src/plant/core/parts/layerPalletizer.ts';
+import { manipulatorParts } from '../../packages/zplc-ide/src/plant/core/parts/manipulators.ts';
 import { operableParts } from '../../packages/zplc-ide/src/plant/core/parts/operable.ts';
 import { panelParts } from '../../packages/zplc-ide/src/plant/core/parts/panel.ts';
 import { processParts } from '../../packages/zplc-ide/src/plant/core/parts/process.ts';
@@ -29,6 +31,8 @@ export const PARTS: readonly PartDefinition[] = [
   ...operableParts,
   ...indicatorParts,
   ...processParts,
+  ...manipulatorParts,
+  ...stationParts,
 ];
 
 const FAMILY: Record<PartDefinition['family'], L10n> = {

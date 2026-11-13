@@ -166,6 +166,7 @@ const sidebars = {
             'plant/scene-format',
             'plant/scenes',
             'plant/parts',
+            'plant/manipulators',
             'plant/numeric-signals',
             'reference/cli',
             'reference/mcp',

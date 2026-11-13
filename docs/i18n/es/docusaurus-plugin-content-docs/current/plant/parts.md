@@ -521,6 +521,160 @@ Un tanque que se llena por una válvula de entrada y se vacía por gravedad por 
 
 Estado: nivel h (m), aperturas de válvula uIn y uOut (0 a 1), volumen derramado (L). Área A = widthM * depthM (m2); paso dt = 0,005 s. En cada paso, en orden: (1) objetivo de la válvula: en digital VERDADERO es 1 y FALSO es 0, en numérico es clamp(valor, 0, 100) / 100; una válvula atascada conserva su apertura. (2) Retardo de primer orden de la válvula: u = objetivo si valveTauS &lt;= dt, si no u = u + (objetivo - u) * dt / valveTauS. (3) Caudales en L/s: qIn = inletMaxLps * uIn; descarga por gravedad (Torricelli) qOut = outletCoef * uOut * raíz(h); con la falla de fuga sale además una constante leakLps. (4) Nivel: h = h + (qIn - qOut - qLeak) * dt / (1000 * A), nunca por debajo de 0. (5) Desborde: si h > heightM entonces derramado = derramado + (h - heightM) * 1000 * A y h = heightM. La raíz cuadrada es una iteración de Newton solo con + - * / (40 iteraciones, semilla (1 + h) / 2), de modo que una ejecución se repite bit a bit. Con apertura total un tanque se vacía en un tiempo finito 2 * raíz(h0) * 1000 * A / outletCoef.
 
+## Manipuladores
+
+### Manipulador de dos ejes
+
+`pick-place`
+
+Un manipulador de dos ejes con pinza de vacío o de mordazas (ajuste gripper). X corre a lo largo de la pieza, Y es vertical. Su posición es el punto del piso bajo la ventosa en la posición 0 de los ejes; la cara inferior de la ventosa queda a la altura de la pieza más la posición Y. Variante digital: órdenes que mueven mientras se mantienen (xPlus, xMinus, yPlus, yMinus) y sensores de límite (xAtMin, xAtMax, yAtMin, yAtMax); con ambos sentidos a la vez no se mueve. Variante numérica: consignas (xSet, ySet) y posiciones (xPos, yPos) en metros, limitadas a la carrera. Ambas variantes tienen grip (vacío activo o mordazas cerradas) y gripped. Un agarre sobre una pieza en movimiento falla, y una pieza por encima de maxLoadKg nunca se sujeta. Fallas: stuckX, stuckY, gripFail, dropLoad, grippedStuckOn, grippedStuckOff. Hechos: picked, placed y drops por pieza (picked\:Nombre, placed\:Nombre, drops\:Nombre) y las posiciones de los ejes (axis\:Nombre\:x, axis\:Nombre\:y) en metros, redondeadas a 0,001.
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `variant` | enum | `digital`, `numeric` | `digital` |   |
+| `gripper` | enum | `vacuum`, `clamp` | `vacuum` |   |
+| `strokeXM` | number | 0.4 a 3 | `1.2` | m |
+| `strokeYM` | number | 0.2 a 1.2 | `0.5` | m |
+| `speedMps` | number | 0.1 a 2 | `0.8` | m/s |
+| `accelMps2` | number | 0.5 a 10 | `3` | m/s2 |
+| `maxLoadKg` | number | 1 a 25 | `5` | kg |
+
+#### Señales
+
+| Señal | Dirección | Tipo | Unidad | Rango |
+| --- | --- | --- | --- | --- |
+| `xPlus` | command | BOOL |   |   |
+| `xMinus` | command | BOOL |   |   |
+| `yPlus` | command | BOOL |   |   |
+| `yMinus` | command | BOOL |   |   |
+| `xAtMin` | sensor | BOOL |   |   |
+| `xAtMax` | sensor | BOOL |   |   |
+| `yAtMin` | sensor | BOOL |   |   |
+| `yAtMax` | sensor | BOOL |   |   |
+| `grip` | command | BOOL |   |   |
+| `gripped` | sensor | BOOL |   |   |
+
+#### Acciones de falla
+
+`stuckX`, `stuckY`, `gripFail`, `dropLoad`, `grippedStuckOn`, `grippedStuckOff`
+
+#### Variantes
+
+| Ajuste | Valor | Señales |
+| --- | --- | --- |
+| `variant` | `numeric` | xSet REAL, ySet REAL, xPos REAL, yPos REAL, grip BOOL, gripped BOOL |
+
+#### Ecuaciones
+
+Por eje y por paso de la planta dt = 0,005 s: la velocidad se acerca a la velocidad objetivo en como máximo accel * dt y luego p = p + v * dt, limitada a 0..carrera (v = 0 en un tope). Con orden mantenida, la velocidad objetivo es el sentido por speed. Con consigna, el eje frena cuando la distancia restante es como máximo v * v / (2 * accel) y se ajusta a la consigna a menos de 0,5 mm. Un eje atascado no se mueve.
+
+### Pórtico de tres ejes
+
+`gantry`
+
+Un manipulador de tres ejes con pinza de vacío o de mordazas (ajuste gripper). X corre a lo largo de la pieza, Y es vertical y Z corre a través de ella. Su posición es el punto del piso bajo la ventosa en la posición 0 de los ejes; la cara inferior de la ventosa queda a la altura de la pieza más la posición Y. Variante digital: órdenes que mueven mientras se mantienen (xPlus, xMinus, yPlus, yMinus) y sensores de límite (xAtMin, xAtMax, yAtMin, yAtMax); con ambos sentidos a la vez no se mueve. Variante numérica: consignas (xSet, ySet) y posiciones (xPos, yPos) en metros, limitadas a la carrera. Ambas variantes tienen grip (vacío activo o mordazas cerradas) y gripped. Un agarre sobre una pieza en movimiento falla, y una pieza por encima de maxLoadKg nunca se sujeta. Fallas: stuckX, stuckY, stuckZ, gripFail, dropLoad, grippedStuckOn, grippedStuckOff. Hechos: picked, placed y drops por pieza (picked\:Nombre, placed\:Nombre, drops\:Nombre) y las posiciones de los ejes (axis\:Nombre\:x, axis\:Nombre\:y, axis\:Nombre\:z) en metros, redondeadas a 0,001.
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `variant` | enum | `digital`, `numeric` | `digital` |   |
+| `gripper` | enum | `vacuum`, `clamp` | `vacuum` |   |
+| `strokeXM` | number | 0.4 a 3 | `1.2` | m |
+| `strokeYM` | number | 0.2 a 1.2 | `0.5` | m |
+| `strokeZM` | number | 0.4 a 3 | `1` | m |
+| `speedMps` | number | 0.1 a 2 | `0.8` | m/s |
+| `accelMps2` | number | 0.5 a 10 | `3` | m/s2 |
+| `maxLoadKg` | number | 1 a 25 | `5` | kg |
+
+#### Señales
+
+| Señal | Dirección | Tipo | Unidad | Rango |
+| --- | --- | --- | --- | --- |
+| `xPlus` | command | BOOL |   |   |
+| `xMinus` | command | BOOL |   |   |
+| `yPlus` | command | BOOL |   |   |
+| `yMinus` | command | BOOL |   |   |
+| `zPlus` | command | BOOL |   |   |
+| `zMinus` | command | BOOL |   |   |
+| `xAtMin` | sensor | BOOL |   |   |
+| `xAtMax` | sensor | BOOL |   |   |
+| `yAtMin` | sensor | BOOL |   |   |
+| `yAtMax` | sensor | BOOL |   |   |
+| `zAtMin` | sensor | BOOL |   |   |
+| `zAtMax` | sensor | BOOL |   |   |
+| `grip` | command | BOOL |   |   |
+| `gripped` | sensor | BOOL |   |   |
+
+#### Acciones de falla
+
+`stuckX`, `stuckY`, `stuckZ`, `gripFail`, `dropLoad`, `grippedStuckOn`, `grippedStuckOff`
+
+#### Variantes
+
+| Ajuste | Valor | Señales |
+| --- | --- | --- |
+| `variant` | `numeric` | xSet REAL, ySet REAL, zSet REAL, xPos REAL, yPos REAL, zPos REAL, grip BOOL, gripped BOOL |
+
+#### Ecuaciones
+
+Por eje y por paso de la planta dt = 0,005 s: la velocidad se acerca a la velocidad objetivo en como máximo accel * dt y luego p = p + v * dt, limitada a 0..carrera (v = 0 en un tope). Con orden mantenida, la velocidad objetivo es el sentido por speed. Con consigna, el eje frena cuando la distancia restante es como máximo v * v / (2 * accel) y se ajusta a la consigna a menos de 0,5 mm. Un eje atascado no se mueve.
+
+## Estaciones
+
+### Paletizador de capas
+
+`layer-palletizer`
+
+Una estación que escuadra cajas en una capa, levanta la capa completa con una cabeza de pinza y la coloca sobre una tarima. Los ejes siguen al mundo: X es el traslado a lo largo de la pieza (+x local), Y es hacia arriba. La posición de la pieza es el punto del piso bajo la cabeza en reposo, que es el centro de la zona de formación; la base de la placa está a la altura de la pieza más la posición Y. La zona de formación mide columns x 0,4 m por rows x 0,3 m; placas fijas la cierran en +x y -z, y el empujador de escuadra la cierra en +z (tarda 0,4 s); las cajas llegan por una cinta en -x (punto de unión infeed). La placa es tan grande como la zona. Ponga el centro de la tarima a strokeXM a lo largo de la pieza. La pinza se cierra en 0,3 s y toma hasta columns x rows cajas en reposo a menos de 0,25 m bajo la placa; toma la capa solo si su masa total es a lo sumo maxLoadKg. layerReady es TRUE cuando exactamente columns x rows cajas están en reposo en la zona. Variante digital: xPlus, xMinus, yPlus, yMinus (mantener para mover) y los sensores de límite xAtMin, xAtMax, yAtMin, yAtMax; variante numérica: xSet, ySet y xPos, yPos en metros. Ambas: square, squared, layerReady, grip, gripped. Hechos: picked, placed y drops cuentan cajas; axis:&lt;Name>\:x y axis:&lt;Name>\:y son posiciones en metros. Fallas: stuckX, stuckY, squareStuck, gripFail, dropLoad, grippedStuckOn, grippedStuckOff, layerReadyStuckOff. Los ejes inician en 0, con la cabeza en su punto más bajo: levántela primero.
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `variant` | enum | `digital`, `numeric` | `digital` |   |
+| `strokeXM` | number | 0.8 a 3 | `1.6` | m |
+| `strokeYM` | number | 0.3 a 1.5 | `0.8` | m |
+| `speedMps` | number | 0.1 a 2 | `0.8` | m/s |
+| `accelMps2` | number | 0.5 a 10 | `3` | m/s2 |
+| `columns` | number | 1 a 3 | `2` |   |
+| `rows` | number | 1 a 3 | `2` |   |
+| `maxLoadKg` | number | 5 a 60 | `40` | kg |
+
+#### Señales
+
+| Señal | Dirección | Tipo | Unidad | Rango |
+| --- | --- | --- | --- | --- |
+| `xPlus` | command | BOOL |   |   |
+| `xMinus` | command | BOOL |   |   |
+| `yPlus` | command | BOOL |   |   |
+| `yMinus` | command | BOOL |   |   |
+| `xAtMin` | sensor | BOOL |   |   |
+| `xAtMax` | sensor | BOOL |   |   |
+| `yAtMin` | sensor | BOOL |   |   |
+| `yAtMax` | sensor | BOOL |   |   |
+| `square` | command | BOOL |   |   |
+| `squared` | sensor | BOOL |   |   |
+| `layerReady` | sensor | BOOL |   |   |
+| `grip` | command | BOOL |   |   |
+| `gripped` | sensor | BOOL |   |   |
+
+#### Acciones de falla
+
+`stuckX`, `stuckY`, `squareStuck`, `gripFail`, `dropLoad`, `grippedStuckOn`, `grippedStuckOff`, `layerReadyStuckOff`
+
+#### Variantes
+
+| Ajuste | Valor | Señales |
+| --- | --- | --- |
+| `variant` | `numeric` | xSet REAL, ySet REAL, xPos REAL, yPos REAL, square BOOL, squared BOOL, layerReady BOOL, grip BOOL, gripped BOOL |
+
+#### Ecuaciones
+
+Ley del eje por paso de 5 ms con a = accelMps2, v_max = speedMps: v se acerca a la velocidad objetivo en a * dt como máximo; p = p + v * dt, limitado a 0..carrera. Un valor de consigna frena cuando \|d - v * dt\| &lt;= v * v / (2 * a), d = objetivo - p. Empujador: el recorrido t va de 0 a 400 ms; squared cuando t = 400 ms.
+
 {/* <<< END GENERATED: plant/parts <<< */}
 
 Esta página se genera: para cambiarla, se cambia su fuente y se ejecuta `bun run docs:generate`.
