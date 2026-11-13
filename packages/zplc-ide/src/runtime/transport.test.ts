@@ -120,8 +120,14 @@ describe('Transport (PLS-003, decision D-26)', () => {
     const off = transport.onChange((state, reason) => heard.push([state, reason]));
     expect(listeners.size).toBe(1);
     emit({ kind: 'state', state: 'held', reason: 'breakpoint' });
+    session.slowdown = 0.5;
     emit({ kind: 'slowdown', factor: 0.5, message: 'slow' });
-    expect(heard).toEqual([['held', 'breakpoint']]);
+    // a slowdown is a change too (PLS-013): the listener repaints and reads `slowdown` again
+    expect(heard).toEqual([
+      ['held', 'breakpoint'],
+      ['stopped', undefined],
+    ]);
+    expect(transport.slowdown).toBe(0.5);
     off();
     expect(listeners.size).toBe(0);
   });

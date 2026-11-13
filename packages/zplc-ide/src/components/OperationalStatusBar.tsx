@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useIDEStore } from '../store/useIDEStore';
 import { useVmInfo } from '../store/vmInfo';
 import { useCurrentExecution } from '../hooks/useDebugValue';
@@ -9,7 +9,8 @@ import { presentConnection, type ConnectionIndicatorView } from './connectionPre
 import { runCommand } from '../commands/bus';
 import { Button } from '../ui';
 import { StatusDetails, type StatusDetailRow } from './StatusDetails';
-import { boundPlantTransport, programStateOf, programStateText, type ProgramState, type ProgramStateInput } from './programState';
+import { programStateOf, programStateText, type ProgramState, type ProgramStateInput } from './programState';
+import { useRegisteredPlantTransport } from '../store/useTransport';
 import type { DebugAdapterType } from '../runtime/debugAdapter';
 import type { ExecutionMode } from './runtimeArtifactSelection';
 import {
@@ -67,9 +68,7 @@ export function OperationalStatusBar({ mode, adapterType, connected, status, con
   useEffect(() => connectionManager.onLinkInfoUpdate(setLinkInfo), []);
 
   // A bound plant session speaks through the same line (PLS-013): the rail follows its changes.
-  const [, refresh] = useReducer((n: number) => n + 1, 0);
-  const plant = boundPlantTransport();
-  useEffect(() => plant?.onChange(refresh), [plant]);
+  const plant = useRegisteredPlantTransport();
 
   if (!isProjectOpen) return null;
   const place = isPaused

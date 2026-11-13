@@ -7,8 +7,7 @@ import { EXECUTION_MODE, type ExecutionMode } from './runtimeArtifactSelection';
 import type { OperationalStatusTone } from './operationalStatusPresentation';
 import type { VMState } from '../runtime/debugAdapter';
 import type { TransportState } from '../runtime/transport';
-import { activeTransport } from '../store/useTransport';
-import type { DebugController } from '../hooks/debugControllerTypes';
+import { registeredPlantTransport } from '../store/useTransport';
 import type { Translator } from '../i18n';
 
 export type ProgramStateKey =
@@ -123,14 +122,9 @@ export function programStateInputOf(input: StatusInput): ProgramStateInput {
   };
 }
 
-// ponytail: the registry holds the plant transport and exposes it only through `activeTransport(controller)`; a stub controller
-// that is never started reads "program" when none is registered. A `registeredPlantTransport()` accessor would replace this.
-const NO_PROGRAM = { vmState: 'idle' } as unknown as DebugController;
-
 /** The plant session's transport while a plant document has bound one (PLS-013). */
 export function boundPlantTransport() {
-  const transport = activeTransport(NO_PROGRAM);
-  return transport.kind === 'plant' ? transport : undefined;
+  return registeredPlantTransport();
 }
 
 export function getStatusDisplay(
