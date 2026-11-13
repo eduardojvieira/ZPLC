@@ -51,7 +51,7 @@ Un `stacker-crane` guarda cajas en un estante y las saca de nuevo.
 
 `bay` lleva X a bahía por `bayPitchM` y `level` lleva Y a nivel por `levelPitchM`. `inPosition` es TRUE cuando ambos están a menos de 5 mm y en reposo.
 
-- **Saturación.** Un `bay` o un `level` fuera de su rango se detiene en el extremo del rango. Un valor que no es un número finito no cambia nada.
+- **Rango.** Un `bay` o un `level` es una dirección, no una cantidad. Cuando una persona o la API aplican uno fuera de su rango, se rechaza con un mensaje que nombra la señal, el valor y el límite, y no cambia nada. Un valor que viene del programa lo limita al rango el intercambio. Un comando REAL sigue saturándose en su rango. Un valor que no es un número finito se rechaza.
 - **La horquilla.** `forkLeft` la extiende hacia -z y `forkRight` hacia +z. Mantener la orden la extiende, soltarla la centra, y con ambas se mantiene. La superficie de la horquilla es una cinta: `beltRight` la mueve hacia +z y `beltLeft` hacia -z. Con ambas no hace nada.
 - **El muelle y el estante.** El nivel 0 es el muelle: los estantes son los niveles 1 en adelante. Las cintas del muelle van con su superficie a 0,13 m sobre la posición de la pieza, terminando en la punta de la horquilla (puntos de unión `dockIn` en -z y `dockOut` en +z). El estante está del lado +z. La columna c y el nivel l son un par de rieles separados 0,24 m, con su parte superior a l por `levelPitchM` más 0,1 m sobre la posición de la pieza. Una caja de 0,3 m de ancho y 0,4 m de largo descansa sobre ambos rieles y la horquilla de 0,16 m de ancho pasa entre ellos.
 - **Cargado.** `loaded` es TRUE mientras una caja descansa en el centro de la horquilla.
