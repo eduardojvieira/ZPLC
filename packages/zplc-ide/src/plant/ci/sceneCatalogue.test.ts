@@ -29,6 +29,7 @@ describe('shipped scenes use the public format and catalogue', () => {
       'three-axis-palletizing',
       'colour-separation',
       'height-sorting-chain',
+      'weight-sorting',
     ]);
   });
 

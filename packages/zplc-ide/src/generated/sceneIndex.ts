@@ -113,5 +113,13 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
       "en": "Height sorting with a chain transfer",
       "es": "Height sorting with a chain transfer"
     }
+  },
+  {
+    "id": "weight-sorting",
+    "dir": "plant-scenes/weight-sorting",
+    "names": {
+      "en": "Weight sorting",
+      "es": "Weight sorting"
+    }
   }
 ];

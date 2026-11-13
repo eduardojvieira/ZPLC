@@ -13,7 +13,8 @@
     "three-axis-palletizing": "683d3c2d3b46ae189bf8cbc918eeb4a9f7c6c130a12316f89177944aaf0069dd",
     "timed-tank": "54ae870d8b3c5851d17fc5dcc1b38416c504c176fb928e53567a19f15086fc06",
     "two-axis-assembly": "730182dd3a825f86ff45917ed86e93937664582bab2bd1228d24b68204c68cfb",
-    "two-axis-assembly-numeric": "d41606d179383e5f7900e6e40378d883d88ff3085200f80d4fcccf27f02efdbf"
+    "two-axis-assembly-numeric": "d41606d179383e5f7900e6e40378d883d88ff3085200f80d4fcccf27f02efdbf",
+    "weight-sorting": "f13437bfd1a0b6e3cecd7ddb9e10444b84fc55de371bd2838f5accf9d83e77d4"
   },
   "darwin": null,
   "win32": null
