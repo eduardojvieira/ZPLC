@@ -9,7 +9,7 @@ tags: [learn, lessons, course]
 
 # Course outline
 
-This page is the map of the whole course: every module in order, with its 68 lessons, and for each lesson the languages, tracks, plant, time and prerequisites. Use it to pick where to start or to see what a module needs first. If you have never programmed a PLC, take the Ladder path of 21 of these lessons, _Ladder diagram from zero_, described in [Learn](./index.md).
+This page is the map of the whole course: every module in order, with its 77 lessons, and for each lesson the languages, tracks, plant, time and prerequisites. Use it to pick where to start or to see what a module needs first. If you have never programmed a PLC, take the Ladder path of 21 of these lessons, _Ladder diagram from zero_, described in [Learn](./index.md).
 
 The page follows `packages/zplc-ide/lessons/course.json` and the lesson packages beside it. A CI check fails when a lesson is missing here or a row disagrees with its lesson. Each module and each lesson also has its own generated page: start from the [course modules](./modules/index.md), and see the [lesson plants](./plants.md) for the simulated machines.
 
@@ -26,7 +26,7 @@ You see a result first: the tour of module 0 ends in a blinking output in simula
 
 Each module below says why it sits where it does. The Learn home shows the same words, because both read the same course file.
 
-Available today: **68**. Planned: **0**. In all: **68**.
+Available today: **77**. Planned: **0**. In all: **77**.
 
 ## Languages
 
@@ -323,6 +323,100 @@ Objectives of the available lessons:
 - **Capstone: a packing station, from description to tested program**: Turn five written requirements into one Structured Text program that combines a seal-in, an emergency stop, a counter, a timer and a latched fault. Read a scenario that checks both what must happen and what must not happen, and use its failed assertions to find the requirement you missed.
 - **Capstone: a packing station as a chart**: Turn five written requirements into a chart of steps, transitions and actions, and decide which behaviour is a step and which is a transition. Read a scenario that checks both what must happen and what must not happen, and use its failed assertions to find the requirement you missed.
 - **Final project in Ladder: a packing station, from description to tested program**: Turn five written requirements into one Ladder program that combines a seal-in, normally closed stops, a counter, a timer and a latched fault. Read a scenario that checks both what must happen and what must not happen, and use its failed assertions to find the requirement you missed.
+
+## Module 12: First plants: move a box with a sensor, a latch and a counter
+
+Advanced. Requires module: 3. Tracks: Simulation.
+
+Your first programs now move real parts. Each one reads a sensor and drives a belt or a gate in a plant you can watch, using the set, reset, edge and counter skills of module 3.
+
+| Lesson                                              | Status    | Languages | Tracks     | Plant | Minutes | Requires                                         |
+| --------------------------------------------------- | --------- | --------- | ---------- | ----- | ------- | ------------------------------------------------ |
+| `plant-belt-to-sensor` Move a box to a sensor       | Available | ST        | Simulation | -     | 20      | `motor-start-stop-safe`                          |
+| `plant-latch-two-sensors` From sensor A to sensor B | Available | ST        | Simulation | -     | 20      | `plant-belt-to-sensor`                           |
+| `plant-counted-queue` Load and unload three boxes   | Available | ST        | Simulation | -     | 30      | `plant-latch-two-sensors`, `edge-counter-pulses` |
+
+Objectives of the available lessons:
+
+- **Move a box to a sensor**: Start an actuator from a button press and remember that it is running. Stop the actuator when a sensor sees the box.
+- **From sensor A to sensor B**: Use a set and a reset to hold an output between two events. Explain why a sensor that goes dark cannot hold the output by itself.
+- **Load and unload three boxes**: Count items with a counter that has a preset value. Use one counter to stop loading and another to know the batch is finished.
+
+## Module 13: Timers and process control: delays, level scaling and a PID loop
+
+Advanced. Requires module: 12. Tracks: Simulation.
+
+Plants have time and continuous values. Timers, analog scaling and a PID loop come after the first plants because they need a plant that moves to be seen at work.
+
+| Lesson                                                | Status    | Languages | Tracks     | Plant | Minutes | Requires                                     |
+| ----------------------------------------------------- | --------- | --------- | ---------- | ----- | ------- | -------------------------------------------- |
+| `plant-timed-tank` Fill and drain with timers         | Available | ST        | Simulation | -     | 30      | `timers-on-delay-off-delay`                  |
+| `plant-tank-level-scaling` Read the level             | Available | ST        | Simulation | -     | 30      | `analog-scaling-integer`, `plant-timed-tank` |
+| `plant-tank-pid` Hold the level with PID              | Available | ST        | Simulation | -     | 40      | `plant-tank-level-scaling`                   |
+| `plant-tank-pid-fbd` The same loop in function blocks | Available | FBD       | Simulation | -     | 40      | `plant-tank-pid`                             |
+
+Objectives of the available lessons:
+
+- **Fill and drain with timers**: Time one step of a process with an on-delay timer (TON), using one timer for each step. Use a timer as a safety limit on a step that normally ends on a sensor, and let an emergency stop abort the cycle.
+- **Read the level**: Scale an analog value to engineering units: convert to REAL first, then divide by the raw span. Read the plant map to find the raw range of each signal, and see what a wrong scale does to the process.
+- **Hold the level with PID**: Run a PID loop with PID_Compact: set point, process value, gains, scan time and output limits. Tune the gains from the response of the level, and tell the effect of the proportional, integral and derivative terms apart.
+- **The same loop in function blocks**: Wire a PID_Compact function block in a diagram: set point, process value, gains, scan time and output limits on the left, the output on the right. Follow one value across the diagram, from the raw whole number of the level to metres and on to the inlet valve.
+
+## Module 14: Flow control: state machines and merging two lines
+
+Advanced. Requires module: 12. Tracks: Simulation.
+
+When parts share a path, order matters. State machines and merging two lines organise that flow, building on the first plants.
+
+| Lesson                                        | Status    | Languages | Tracks     | Plant | Minutes | Requires                                            |
+| --------------------------------------------- | --------- | --------- | ---------- | ----- | ------- | --------------------------------------------------- |
+| `plant-buffer-release` Accumulate and release | Available | SFC       | Simulation | -     | 45      | `sfc-fill-mix-sequence`, `plant-counted-queue`      |
+| `plant-merge-lines` Merge two lines           | Available | ST        | Simulation | -     | 45      | `plant-counted-queue`, `interlock-guard-permissive` |
+
+Objectives of the available lessons:
+
+- **Accumulate and release**: Model a station as steps and transitions, one step for each thing the station does. Choose between two next steps with transition conditions that exclude each other.
+- **Merge two lines**: Arbitrate two requests with a priority: line A wins when both lines wait. Interlock two outputs so they are never active together, and release the grant only when the box has cleared the merge.
+
+## Module 15: Manipulators and assembly: pick, place and sequence
+
+Advanced. Requires module: 14. Tracks: Simulation.
+
+Manipulators add steps that must happen in order. Pick, place and assembly use the state machines of flow control.
+
+No lesson of this module is available yet.
+
+## Module 16: Sorting: decide a route from what the sensors report
+
+Advanced. Requires module: 14. Tracks: Simulation.
+
+Sorting turns sensor combinations into routes. It reuses the flow-control skills and prepares the stations that follow.
+
+No lesson of this module is available yet.
+
+## Module 17: Stations: several machines working as one
+
+Advanced. Requires module: 16. Tracks: Simulation.
+
+A station groups sorting, transfer and sequencing into one unit. It comes after sorting because it combines its decisions.
+
+No lesson of this module is available yet.
+
+## Module 18: Safe and diagnosable machines: interlocks, manual and automatic, and faults
+
+Advanced. Requires module: 17. Tracks: Simulation.
+
+A machine must stop safely and show what went wrong. Interlocks, modes and fault diagnosis are taught on stations the learner already knows.
+
+No lesson of this module is available yet.
+
+## Module 19: Build your own scenes: place parts, bind signals and run
+
+Advanced. Requires module: 18. Tracks: Simulation.
+
+The course ends by building the plant itself: parts, signals and a program that runs on them, using everything before it.
+
+No lesson of this module is available yet.
 
 ## Hardware wiring pages
 

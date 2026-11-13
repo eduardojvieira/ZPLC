@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path';
 import kit from '../../packages/zplc-ide/lessons/kit.json';
 import { LESSON_INDEX } from '../../packages/zplc-ide/src/generated/lessonIndex';
 import { courseOrder } from '../../packages/zplc-ide/src/learn/course';
+import { alternativePairs } from '../../packages/zplc-ide/src/learn/lessonSiblings';
 import { getLanguageFromFilename } from '../../packages/zplc-ide/src/types';
 
 /**
@@ -23,6 +24,8 @@ const PAGES = {
     why: 'Why this order',
     languages: 'Languages',
     hardware: 'Hardware wiring pages',
+    intro: (count: number) => `with its ${count} lessons`,
+    today: (count: number) => `Available today: **${count}**. Planned: **0**. In all: **${count}**.`,
   },
   es: {
     file: 'docs/i18n/es/docusaurus-plugin-content-docs/current/learn/course-outline.md',
@@ -30,9 +33,19 @@ const PAGES = {
     why: 'Por qué este orden',
     languages: 'Lenguajes',
     hardware: 'Páginas de cableado por placa',
+    intro: (count: number) => `con sus ${count} lecciones`,
+    today: (count: number) => `Disponibles hoy: **${count}**. Planeadas: **0**. En total: **${count}**.`,
   },
 } as const;
 type Locale = keyof typeof PAGES;
+
+/**
+ * The lessons that the public text counts: a Ladder sibling pair (alternatives, one scenario) is one lesson, so the text says
+ * "97 lessons, 14 in two languages" and never the sum of the packages. Nothing here is a number of this file: it all comes from the index.
+ */
+const SECOND_OF_PAIR = new Set(alternativePairs(LESSON_INDEX).map(([, ladder]) => ladder));
+const PUBLIC = LESSON_INDEX.lessons.filter((lesson) => !SECOND_OF_PAIR.has(lesson.id));
+const MODULES = LESSON_INDEX.course.modules.length;
 
 /** The paragraphs of the section that starts at a heading, up to the next second-level heading. */
 function paragraphsUnder(markdown: string, heading: RegExp): string[] {
@@ -47,8 +60,10 @@ function paragraphsUnder(markdown: string, heading: RegExp): string[] {
 }
 
 export function outlineProblems(markdown: string, locale: Locale): string[] {
-  const { module: moduleWord, why, languages, hardware } = PAGES[locale];
+  const { module: moduleWord, why, languages, hardware, intro, today } = PAGES[locale];
   const problems: string[] = [];
+  if (!markdown.includes(intro(PUBLIC.length))) problems.push(`the page does not say "${intro(PUBLIC.length)}"`);
+  if (!markdown.includes(today(PUBLIC.length))) problems.push(`the page does not say "${today(PUBLIC.length)}"`);
   if (paragraphsUnder(markdown, new RegExp(`^## ${why}$`, 'm'))[0] !== LESSON_INDEX.course.rationale[locale])
     problems.push(`"${why}" is not the rationale of the course file`);
   // LRN-008: the lesson that introduces each language is the first one, in course order, whose edited program is in it.
@@ -108,6 +123,41 @@ export function outlineProblems(markdown: string, locale: Locale): string[] {
     problems.push(`the rows are not in course order: ${expected.join(', ')}`);
   return problems;
 }
+
+const HOME = {
+  en: {
+    file: 'docs/docs/learn/index.md',
+    lessons: (n: number, m: number, hours: number) => `| ${n}, in ${m} modules (0 to ${m - 1}), about ${hours} hours in all`,
+    levels: (f: number, i: number, a: number) => `Foundation ${f}, intermediate ${i} and advanced ${a}`,
+    tracks: (s: number, h: number) => `Simulation, which ${s} of them offer, and Hardware, which ${h} of them offer`,
+    description: (n: number, m: number) => `The ZPLC course: ${n} lessons in ${m} modules`,
+  },
+  es: {
+    file: 'docs/i18n/es/docusaurus-plugin-content-docs/current/learn/index.md',
+    lessons: (n: number, m: number, hours: number) => `| ${n}, en ${m} módulos (del 0 al ${m - 1}), unas ${hours} horas en total`,
+    levels: (f: number, i: number, a: number) => `Base ${f}, intermedias ${i} y avanzadas ${a}`,
+    tracks: (s: number, h: number) => `Simulación, que ofrecen ${s} de ellas, y Hardware, que ofrecen ${h} de ellas`,
+    description: (n: number, m: number) => `El curso de ZPLC: ${n} lecciones en ${m} módulos`,
+  },
+} as const;
+
+describe('the Learn home states the counts of the index (LRN-007, CRS-013)', () => {
+  const by = (level: string) => PUBLIC.filter((lesson) => lesson.level === level).length;
+  const on = (track: string) => PUBLIC.filter((lesson) => (lesson.tracks as readonly string[]).includes(track)).length;
+  const hours = Math.round(PUBLIC.reduce((sum, lesson) => sum + lesson.estimatedMinutes, 0) / 60);
+  for (const [locale, home] of Object.entries(HOME)) {
+    it(`${locale}: lessons, modules, hours, levels, tracks and the description`, () => {
+      const text = readFileSync(join(ROOT, home.file), 'utf8').replace(/ {2,}/g, ' ');
+      for (const sentence of [
+        home.lessons(PUBLIC.length, MODULES, hours),
+        home.levels(by('foundation'), by('intermediate'), by('advanced')),
+        home.tracks(on('simulation'), on('hardware')),
+        home.description(PUBLIC.length, MODULES),
+      ])
+        expect(text).toContain(sentence);
+    });
+  }
+});
 
 describe('course outline pages (LRN-007)', () => {
   for (const [locale, page] of Object.entries(PAGES)) {

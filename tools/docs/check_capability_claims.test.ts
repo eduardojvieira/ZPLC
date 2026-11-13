@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'bun:test';
+import { readFileSync } from 'node:fs';
 
 import {
   applyAllowlist,
   checkSentence,
+  checkSurface,
+  publicLessonCount,
   loadRegistry,
   loadTruth,
   numberOf,
@@ -154,6 +157,27 @@ describe('capability claims: what the public text says ZPLC can do is backed by 
     expect(ids('Release 2.0.0-rc.3 cross-built the six board profiles.')).toEqual([]);
     expect(numberOf('Seis')).toBe(6);
     expect(numberOf('12')).toBe(12);
+  });
+
+  it('counts a Ladder sibling pair as one lesson, the way the public text does', () => {
+    const lesson = (id: string, sha256: string, prerequisites: string[] = []) => ({ id, prerequisites, scenario: { sha256 } });
+    const index = {
+      lessons: [lesson('a', 'x'), lesson('a-ladder', 'x'), lesson('b', 'y'), lesson('b-ladder', 'y', ['b']), lesson('c', 'z')],
+    };
+    // a and a-ladder are alternatives (one lesson); b-ladder requires b, so it is a lesson of its own
+    expect(publicLessonCount(index as never)).toBe(4);
+    expect(real.counts.lessons).toBe(
+      publicLessonCount(JSON.parse(readFileSync('packages/zplc-ide/src/generated/lessonIndex.json', 'utf8'))),
+    );
+  });
+
+  it('holds the counts of a release page to the release, not to the present', () => {
+    const text = 'Learn has ' + (real.counts.lessons + 5) + ' lessons in English and Spanish.';
+    const surface = { file: 'docs/docs/release-notes/index.md', kind: 'page' as const, text };
+    expect(checkSurface(surface, registry, real).map((finding) => finding.rule)).toEqual(['count-lessons']);
+    expect(checkSurface({ ...surface, historical: true }, registry, real)).toEqual([]);
+    // a capability claim of a release page is still checked
+    expect(checkSurface({ ...surface, text: 'ZPLC is certified.', historical: true }, registry, real).length).toBeGreaterThan(0);
   });
 
   it('keeps only the unreleased part of a changelog', () => {

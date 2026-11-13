@@ -9,7 +9,7 @@ tags: [learn, lessons, course]
 
 # Esquema del curso
 
-Esta página es el mapa de todo el curso: cada módulo en orden, con sus 68 lecciones, y para cada lección los lenguajes, las rutas, la planta, el tiempo y los requisitos. Úsela para elegir por dónde empezar o para ver qué necesita un módulo antes. Si nunca programó un PLC, tome la ruta de escalera de 21 de estas lecciones, _Diagrama de escalera desde cero_, descrita en [Aprender](./index.md).
+Esta página es el mapa de todo el curso: cada módulo en orden, con sus 77 lecciones, y para cada lección los lenguajes, las rutas, la planta, el tiempo y los requisitos. Úsela para elegir por dónde empezar o para ver qué necesita un módulo antes. Si nunca programó un PLC, tome la ruta de escalera de 21 de estas lecciones, _Diagrama de escalera desde cero_, descrita en [Aprender](./index.md).
 
 La página sigue `packages/zplc-ide/lessons/course.json` y los paquetes de lección que lo acompañan. Una verificación de CI falla cuando falta una lección o cuando una fila no coincide con su lección. Cada módulo y cada lección tiene además su propia página generada: empiece por los [módulos del curso](./modules/index.md) y vea las [plantas de las lecciones](./plants.md) para las máquinas simuladas.
 
@@ -26,7 +26,7 @@ Primero se ve un resultado: el recorrido del módulo 0 termina con una salida qu
 
 Cada módulo indica a continuación por qué está donde está. La página de inicio de Aprender muestra las mismas palabras, porque ambas leen el mismo archivo del curso.
 
-Disponibles hoy: **68**. Planeadas: **0**. En total: **68**.
+Disponibles hoy: **77**. Planeadas: **0**. En total: **77**.
 
 ## Lenguajes
 
@@ -323,6 +323,100 @@ Objetivos de las lecciones disponibles:
 - **Proyecto final: una estación de empaque, de la descripción al programa probado**: Convierta cinco requisitos escritos en un solo programa en texto estructurado que combine una autorretención, una parada de emergencia, un contador, un temporizador y una falla retenida. Lea un escenario que comprueba tanto lo que debe ocurrir como lo que no debe ocurrir, y use sus aserciones fallidas para encontrar el requisito que pasó por alto.
 - **Proyecto final: una estación de empaque como diagrama**: Convierta cinco requisitos escritos en un diagrama de pasos, transiciones y acciones, y decida qué comportamiento es un paso y cuál es una transición. Lea un escenario que comprueba tanto lo que debe ocurrir como lo que no debe ocurrir, y use sus aserciones fallidas para encontrar el requisito que omitió.
 - **Proyecto final en escalera: una estación de empaque, de la descripción al programa probado**: Convertir cinco requisitos escritos en un programa en escalera que combine una autorretención, paros normalmente cerrados, un contador, un temporizador y una falla retenida. Leer un escenario que verifica tanto lo que debe ocurrir como lo que no debe ocurrir, y usar sus aserciones fallidas para encontrar el requisito que omitió.
+
+## Módulo 12: Primeras plantas: mover una caja con un sensor, una retención y un contador
+
+Avanzado. Requiere el módulo: 3. Rutas: Simulación.
+
+Sus primeros programas ahora mueven piezas. Cada uno lee un sensor y gobierna una banda o una compuerta en una planta que se puede observar, con las habilidades de set, reset, flancos y contadores del módulo 3.
+
+| Lección                                               | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                         |
+| ----------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | ------------------------------------------------ |
+| `plant-belt-to-sensor` Mover una caja hasta un sensor | Disponible | ST        | Simulación | -      | 20      | `motor-start-stop-safe`                          |
+| `plant-latch-two-sensors` Del sensor A al sensor B    | Disponible | ST        | Simulación | -      | 20      | `plant-belt-to-sensor`                           |
+| `plant-counted-queue` Cargar y descargar tres cajas   | Disponible | ST        | Simulación | -      | 30      | `plant-latch-two-sensors`, `edge-counter-pulses` |
+
+Objetivos de las lecciones disponibles:
+
+- **Mover una caja hasta un sensor**: Arrancar un actuador con la pulsación de un botón y recordar que está en marcha. Detener el actuador cuando un sensor ve la caja.
+- **Del sensor A al sensor B**: Usar un set y un reset para mantener una salida entre dos eventos. Explicar por qué un sensor que se apaga no puede mantener la salida por sí solo.
+- **Cargar y descargar tres cajas**: Contar elementos con un contador de valor preestablecido. Usar un contador para dejar de cargar y otro para saber que el lote terminó.
+
+## Módulo 13: Temporizadores y control de procesos: retardos, escalado de nivel y un lazo PID
+
+Avanzado. Requiere el módulo: 12. Rutas: Simulación.
+
+Las plantas tienen tiempo y valores continuos. Los temporizadores, el escalado analógico y el lazo PID van después de las primeras plantas porque necesitan una planta en movimiento para verse trabajar.
+
+| Lección                                                   | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                     |
+| --------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | -------------------------------------------- |
+| `plant-timed-tank` Llenar y vaciar con temporizadores     | Disponible | ST        | Simulación | -      | 30      | `timers-on-delay-off-delay`                  |
+| `plant-tank-level-scaling` Leer el nivel                  | Disponible | ST        | Simulación | -      | 30      | `analog-scaling-integer`, `plant-timed-tank` |
+| `plant-tank-pid` Mantener el nivel con PID                | Disponible | ST        | Simulación | -      | 40      | `plant-tank-level-scaling`                   |
+| `plant-tank-pid-fbd` El mismo lazo con bloques de función | Disponible | FBD       | Simulación | -      | 40      | `plant-tank-pid`                             |
+
+Objetivos de las lecciones disponibles:
+
+- **Llenar y vaciar con temporizadores**: Medir un paso de un proceso con un temporizador de retardo a la conexión (TON), con un temporizador para cada paso. Usar un temporizador como límite de seguridad en un paso que normalmente termina con un sensor, y dejar que la parada de emergencia aborte el ciclo.
+- **Leer el nivel**: Escalar un valor analógico a unidades de ingeniería: convertir primero a REAL y luego dividir por el rango bruto. Leer el mapa de la planta para hallar el rango bruto de cada señal, y ver qué hace una escala errónea en el proceso.
+- **Mantener el nivel con PID**: Ejecutar un lazo PID con PID_Compact: consigna, variable de proceso, ganancias, tiempo de ciclo y límites de la salida. Ajustar las ganancias a partir de la respuesta del nivel y distinguir el efecto de los términos proporcional, integral y derivativo.
+- **El mismo lazo con bloques de función**: Cablear un bloque de función PID_Compact en un diagrama: consigna, variable de proceso, ganancias, tiempo de ciclo y límites de salida a la izquierda, la salida a la derecha. Seguir un valor por el diagrama, desde el número entero bruto del nivel hasta metros y de ahí a la válvula de entrada.
+
+## Módulo 14: Control de flujo: máquinas de estados y fusión de dos líneas
+
+Avanzado. Requiere el módulo: 12. Rutas: Simulación.
+
+Cuando las piezas comparten un camino, el orden importa. Las máquinas de estados y la fusión de dos líneas organizan ese flujo, a partir de las primeras plantas.
+
+| Lección                                   | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                            |
+| ----------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | --------------------------------------------------- |
+| `plant-buffer-release` Acumular y liberar | Disponible | SFC       | Simulación | -      | 45      | `sfc-fill-mix-sequence`, `plant-counted-queue`      |
+| `plant-merge-lines` Fusionar dos líneas   | Disponible | ST        | Simulación | -      | 45      | `plant-counted-queue`, `interlock-guard-permissive` |
+
+Objetivos de las lecciones disponibles:
+
+- **Acumular y liberar**: Modelar una estación con pasos y transiciones, un paso por cada cosa que hace la estación. Elegir entre dos pasos siguientes con condiciones de transición que se excluyen entre sí.
+- **Fusionar dos líneas**: Arbitrar dos peticiones con una prioridad: la línea A gana cuando ambas esperan. Enclavar dos salidas para que nunca estén activas juntas y liberar la concesión solo cuando la caja haya despejado la fusión.
+
+## Módulo 15: Manipuladores y ensamblaje: tomar, colocar y secuenciar
+
+Avanzado. Requiere el módulo: 14. Rutas: Simulación.
+
+Los manipuladores añaden pasos que deben ocurrir en orden. Tomar, colocar y ensamblar usan las máquinas de estados del control de flujo.
+
+Todavía no hay ninguna lección disponible en este módulo.
+
+## Módulo 16: Clasificación: decidir una ruta según lo que informan los sensores
+
+Avanzado. Requiere el módulo: 14. Rutas: Simulación.
+
+La clasificación convierte combinaciones de sensores en rutas. Reutiliza las habilidades de control de flujo y prepara las estaciones que siguen.
+
+Todavía no hay ninguna lección disponible en este módulo.
+
+## Módulo 17: Estaciones: varias máquinas que trabajan como una
+
+Avanzado. Requiere el módulo: 16. Rutas: Simulación.
+
+Una estación agrupa clasificación, transferencia y secuencia en una sola unidad. Va después de la clasificación porque combina sus decisiones.
+
+Todavía no hay ninguna lección disponible en este módulo.
+
+## Módulo 18: Máquinas seguras y diagnosticables: enclavamientos, manual y automático, y fallas
+
+Avanzado. Requiere el módulo: 17. Rutas: Simulación.
+
+Una máquina debe detenerse de forma segura y mostrar qué falló. Los enclavamientos, los modos y el diagnóstico de fallas se enseñan sobre estaciones que ya se conocen.
+
+Todavía no hay ninguna lección disponible en este módulo.
+
+## Módulo 19: Construya sus propias escenas: colocar piezas, enlazar señales y ejecutar
+
+Avanzado. Requiere el módulo: 18. Rutas: Simulación.
+
+El curso termina construyendo la propia planta: piezas, señales y un programa que corre sobre ellas, con todo lo anterior.
+
+Todavía no hay ninguna lección disponible en este módulo.
 
 ## Páginas de cableado por placa
 
