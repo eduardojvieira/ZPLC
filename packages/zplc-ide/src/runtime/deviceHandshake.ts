@@ -1,6 +1,6 @@
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { getZephyrBoardTarget, isKnownZephyrBoardTarget } from '../config/boardProfiles';
-import { checkProgramIo, type DeviceIoIdentity } from '../boards/ioAdmission';
+import { checkProgramIo, type DeviceIoIdentity, type PlantProvidedInput } from '../boards/ioAdmission';
 import { processImageAccesses } from '../boards/programIo';
 import { artifactDraftCounter, draftMismatchMessage } from './draftCounter';
 
@@ -274,6 +274,7 @@ export function validateHardwareDeployAdmission(
   bytes: Uint8Array,
   projectBoard: string | undefined,
   handshake: DeviceHandshake,
+  plantProvided: readonly PlantProvidedInput[] = [],
 ): DeviceHandshake {
   if (!projectBoard) fail(DEVICE_ADMISSION_CODE.PROJECT_TARGET_MISSING);
   const target = getZephyrBoardTarget(projectBoard);
@@ -307,7 +308,7 @@ export function validateHardwareDeployAdmission(
     fail(DEVICE_ADMISSION_CODE.BYTECODE_ABI_MISMATCH);
   }
   // IO-004: the I/O the program uses is compared with the description of the board the firmware was built for
-  const io = checkProgramIo({ accesses: processImageAccesses(bytes), board: projectBoard, device: handshake.io });
+  const io = checkProgramIo({ accesses: processImageAccesses(bytes), board: projectBoard, device: handshake.io, plantProvided });
   if (!io.ok)
     fail(
       io.code === 'ZPLC_DEVICE_IO_DESCRIPTION_MISSING'

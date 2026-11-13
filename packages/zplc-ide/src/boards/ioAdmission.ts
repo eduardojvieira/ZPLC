@@ -23,7 +23,23 @@ export interface DeviceIoIdentity {
   readonly outputBytes: number;
 }
 
-export type IoAdmission = { readonly ok: true } | { readonly ok: false; readonly code: IoAdmissionCode; readonly detail: string };
+/** An input the plant of the project feeds (LNK-013): the plant never provides an output. */
+export interface PlantProvidedInput {
+  readonly region: 'I';
+  readonly byte: number;
+  readonly width: number;
+  readonly bit?: number;
+}
+
+export type IoAdmission =
+  | { readonly ok: true; readonly plantFed?: readonly string[] }
+  | { readonly ok: false; readonly code: IoAdmissionCode; readonly detail: string };
+
+function plantBytes(provided: readonly PlantProvidedInput[]): Set<number> {
+  const bytes = new Set<number>();
+  for (const slot of provided) for (let offset = 0; offset < slot.width; offset += 1) bytes.add(slot.byte + offset);
+  return bytes;
+}
 
 function label(board: string): string {
   return getBoardIoIdentity(board)?.displayName ?? board;
@@ -60,10 +76,13 @@ export function checkProgramIo({
   accesses,
   board,
   device,
+  plantProvided = [],
 }: {
   readonly accesses: readonly ProcessImageAccess[] | undefined;
   readonly board: string | undefined;
   readonly device: DeviceIoIdentity | null;
+  /** The inputs the plant map of the project feeds; absent without a plant map. */
+  readonly plantProvided?: readonly PlantProvidedInput[];
 }): IoAdmission {
   const identity = getBoardIoIdentity(board);
   if (!board || !identity) return { ok: true };
@@ -98,18 +117,23 @@ export function checkProgramIo({
   }
   const inputBytes = coveredBytes(channelsOf(board, 'I'));
   const outputBytes = coveredBytes(channelsOf(board, 'Q'));
+  const fed = plantBytes(plantProvided);
   const problems: string[] = [];
+  const plantFed = new Set<string>();
   for (const access of touched) {
     const covered = access.region === 'I' ? inputBytes : outputBytes;
     for (let offset = 0; offset < access.width; offset += 1) {
       const byte = access.byte + offset;
-      if (!covered.has(byte)) {
-        problems.push(`${byteAddress(access.region, byte)}`);
-        break;
+      if (covered.has(byte)) continue;
+      if (access.region === 'I' && fed.has(byte)) {
+        plantFed.add(byteAddress('I', byte));
+        continue;
       }
+      problems.push(`${byteAddress(access.region, byte)}`);
+      break;
     }
   }
-  if (problems.length === 0) return { ok: true };
+  if (problems.length === 0) return plantFed.size === 0 ? { ok: true } : { ok: true, plantFed: [...plantFed] };
   const unique = [...new Set(problems)];
   return {
     ok: false,
@@ -139,10 +163,12 @@ export function checkLocatedVariables(
   board: string | undefined,
   located: readonly LocatedVariable[],
   virtualAddresses: ReadonlySet<string> = new Set(),
+  plantProvided: readonly PlantProvidedInput[] = [],
 ): string[] {
   const io = board ? getBoardIo(board) : undefined;
   if (!board || !io) return [];
   const errors: string[] = [];
+  const fed = plantBytes(plantProvided);
   for (const variable of located) {
     const region: 'I' | 'Q' = variable.region === 'IPI' ? 'I' : 'Q';
     const base = region === 'I' ? 0x0000 : 0x1000;
@@ -176,6 +202,9 @@ export function checkLocatedVariables(
         ? Array.from({ length: Math.max(1, variable.size) }, (_, offset) => byte + offset).every((each) => coveredBytes(channels).has(each))
         : false;
     if (found || wholeBytes) continue;
+    // LNK-013: an input the plant feeds counts as provided; an output never does
+    if (region === 'I' && Array.from({ length: Math.max(1, variable.size) }, (_, offset) => byte + offset).every((each) => fed.has(each)))
+      continue;
     const address =
       variable.bitOffset !== undefined
         ? `%${region}X${byte}.${variable.bitOffset}`
