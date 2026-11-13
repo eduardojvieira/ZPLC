@@ -174,6 +174,22 @@ typedef struct {
   int (*cred_erase)(void *context, uint8_t kind);
   void (*cred_abort)(void *context);
 
+  /* Plant I/O mode (LNK-012, LNK-018). The engine does not read the slots: it passes the payload through, after the
+   * session gate and the length floor of the message, and the module behind the port validates every frame. The
+   * capability is advertised only when plant_enter, plant_frame, plant_exit and plant_mirror are all present.
+   * A response body is what follows the status byte; `*response_length` holds the capacity on entry and the length
+   * written on return. A port returns 0 or a ZPLC_PROTO_ERR_* number. */
+  int (*plant_enter)(void *context, const uint8_t *request, uint16_t length, uint8_t *response, uint16_t *response_length);
+  int (*plant_frame)(void *context, const uint8_t *request, uint16_t length, uint8_t *response, uint16_t *response_length);
+  /** Leave the mode for `reason` (ZPLC_PROTO_PLANT_EXIT_REASON_*). Fills the 9-byte body of PLANT_EXIT (reason, frames,
+   *  late, rejected); `response` may be NULL. Returns ZPLC_PROTO_ERR_STATE when the mode is not active: nothing was
+   *  left, and the engine posts no event. A 0 result means the engine pushes EVT_PLANT_EXIT once. The engine calls
+   *  it with SESSION_END or LINK_LOST whenever a session ends, whatever the reason (COM-020). */
+  int (*plant_exit)(void *context, uint8_t reason, uint8_t *response, uint16_t *response_length);
+  int (*plant_mirror)(void *context, uint8_t enable, uint8_t *mirror);
+  /** Optional: PLANT_STATUS; answers UNSUPPORTED when absent. */
+  int (*plant_status)(void *context, uint8_t *response, uint16_t *response_length);
+
   /** Optional: a try-lock for the event queue, so that zplc_proto_log() may be called from any thread. */
   int (*event_lock)(void *context);
   void (*event_unlock)(void *context);
