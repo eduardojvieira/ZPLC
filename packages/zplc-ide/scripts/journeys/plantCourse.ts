@@ -1,9 +1,11 @@
 /** The journeys of the learner scene editor and the industrial automation course (spec 012, plan-m7 Tasks Q6 and Q7). */
 import { join } from 'node:path';
-import { rmSync } from 'node:fs';
-import { assert } from '../run-desktop-smoke';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { assert, packageRoot } from '../run-desktop-smoke';
 import { button, css, type App } from '../journeyApp';
 import type { Journey } from '../journeys';
+import { LESSON_INDEX } from '../../src/generated/lessonIndex';
+import { courseOrder } from '../../src/learn/course';
 import {
   holdPushButton,
   openPlantDocument,
@@ -155,3 +157,175 @@ export const journeysCourse: Journey[] = [
     },
   },
 ];
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Q7: a scene lesson end to end (CRS-004 to CRS-006, CRS-012)
+// ---------------------------------------------------------------------------------------------------------------------
+
+const lessonEntry = (id: string) => LESSON_INDEX.lessons.find((lesson) => lesson.id === id)!;
+const workspaceOf = (root: string, id: string) => join(root, 'profile', 'learn-workspaces', id);
+
+/** Opens a lesson from the Learn home with every lesson unlocked (the course order is the learner's, not this journey's). */
+async function startLesson(app: App, id: string): Promise<void> {
+  await app.eval(
+    `(() => { const key = 'zplc-ide-settings'; const stored = JSON.parse(localStorage.getItem(key) || '{}'); const target = ` +
+      `stored.settings ?? stored; target.unlockAllLessons = true; localStorage.setItem(key, JSON.stringify(stored)); })()`,
+  );
+  await app.cdp.command('Page.reload');
+  await app.until('the Welcome screen', async () => (await app.visible(button('Open project', 'contains'))) || undefined);
+  await app.click(button('Learn', 'prefix'), 'the Learn button on the Welcome screen');
+  const start = css(`[data-learn-start="${id}"]`);
+  await app.until(`${id} to be startable`, async () => (await app.clickable(start)) || undefined);
+  await app.click(start, `Start for ${id}`);
+  await app.until(
+    `the lesson ${id} beside its workspace`,
+    async () => ((await app.visible(css('[role="toolbar"]'))) && (await app.visible(css('[data-learn-check]')))) || undefined,
+    45_000,
+  );
+}
+
+const checkStatus = (app: App) => app.eval<string>(`document.querySelector('[data-learn-check-status]')?.textContent ?? ''`);
+const grade = (app: App) =>
+  app.eval<string | null>(`document.querySelector('[data-learn-grade]')?.getAttribute('data-learn-grade') ?? null`);
+
+/** Presses Check and waits for the grade it ends on (`passed` or `failed`), or a refusal in the status line. */
+async function check(app: App): Promise<{ grade: string | null; status: string }> {
+  await app.until(
+    'the Check button to be enabled',
+    async () => (await app.eval<boolean>(`document.querySelector('[data-learn-check]')?.disabled === false`)) || undefined,
+  );
+  const before = await app.eval<number>(`Date.now()`);
+  await app.click(css('[data-learn-check]'), 'the Check button');
+  await app.until(
+    'the Check to end',
+    async () => {
+      const running = await app.eval<boolean>(`document.querySelector('[data-learn-check]')?.getAttribute('aria-disabled') === 'true'`);
+      if (running) return undefined;
+      return (
+        ((await grade(app)) !== 'none' && (await app.eval<number>(`Date.now()`)) - before > 1500) ||
+        (await checkStatus(app)).length > 0 ||
+        undefined
+      );
+    },
+    120_000,
+  );
+  return { grade: await grade(app), status: await checkStatus(app) };
+}
+
+/** The plant document of a lesson workspace: its "Open a scene" button, then the empty floor of the scene chooser. */
+async function openEmptyFloorInLesson(app: App): Promise<void> {
+  await app.press('Ctrl+Shift+P');
+  await app.type('show the plant');
+  await app.until(
+    'the palette to list Show the plant',
+    async () => (await app.eval<boolean>(`Boolean(document.querySelector('[role="option"][data-command="view.plant"]'))`)) || undefined,
+  );
+  await app.press('Enter');
+  await app.click(css('[data-plant-open-scene]'), 'Open a scene');
+  await app.until('the scene panel', async () => (await app.visible(css('[data-plant-edit-scene]'))) || undefined, 30_000);
+  await app.eval(
+    `(() => { const select = [...document.querySelectorAll('[data-plant-panel] select')].find((s) => [...s.options].some((o) => o.value ` +
+      `=== 'empty')); ` +
+      `Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(select, 'empty'); ` +
+      `select.dispatchEvent(new Event('change', { bubbles: true })); })()`,
+  );
+  await app.until('the empty floor to load', async () => (await app.text()).includes('Empty floor') || undefined, 30_000);
+}
+
+journeysCourse.push(
+  {
+    name: 'Q7 Lesson 12.1 is read beside its plant, its program is edited, Check passes',
+    example: 'none',
+    proves: [],
+    partly: ['CRS-004', 'CRS-005', 'CRS-012'],
+    run: async (app, { root }) => {
+      const first = courseOrder(LESSON_INDEX).find((lesson) => lesson.module === 12)!;
+      const entry = lessonEntry(first.id);
+      await startLesson(app, first.id);
+      // the plant is shown beside the program (the document of the plant, with its scene panel)
+      await app.press('Ctrl+Shift+P');
+      await app.type('show the plant');
+      await app.until(
+        'the palette to list Show the plant',
+        async () => (await app.eval<boolean>(`Boolean(document.querySelector('[role="option"][data-command="view.plant"]'))`)) || undefined,
+      );
+      await app.press('Enter');
+      await app.until('the plant document', async () => (await app.visible(css('[data-plant-document]'))) || undefined, 30_000);
+      // the starter does not pass: the program does nothing yet
+      const before = await check(app);
+      assert(before.grade !== 'passed', `The starter of ${first.id} already passes.`);
+      // the learner edits the program (the reference solution goes where the program is), Check grades the saved workspace
+      writeFileSync(
+        join(workspaceOf(root, first.id), entry.starter.program),
+        readFileSync(join(packageRoot, 'projects', entry.solution.project, entry.solution.program), 'utf8'),
+      );
+      const after = await check(app);
+      assert(after.grade === 'passed', `Check of ${first.id} grades "${after.grade}": ${after.status}`);
+    },
+  },
+  {
+    name: 'Q7 Lesson 19.1: the scene is built in the editor, Check names the missing part, then passes',
+    example: 'none',
+    proves: [],
+    partly: ['CRS-004', 'CRS-005', 'CRS-006', 'CRS-012'],
+    run: async (app, { root }) => {
+      const id = 'plant-build-belt-scene';
+      const entry = lessonEntry(id);
+      const folder = workspaceOf(root, id);
+      await startLesson(app, id);
+      // the starter scene is an empty floor: Check says a part is missing, with the code of the diagnostic
+      const missing = await check(app);
+      assert(
+        missing.grade !== 'passed' && missing.status.includes('SCENE_FACT_UNKNOWN'),
+        `Check of the starter says: ${JSON.stringify(missing)}`,
+      );
+      // the scene is built in the editor, with the names of the lesson, and saved to the project
+      await openEmptyFloorInLesson(app);
+      await app.click(css('[data-plant-edit-scene]'), 'Edit scene');
+      await app.until('the plant editor', async () => (await app.visible(css('[data-plant-editor]'))) || undefined);
+      await addPart(app, 'keyboard', 'Belt conveyor');
+      await addPart(app, 'keyboard', 'Item emitter');
+      await addPart(app, 'keyboard', 'Diffuse optical sensor');
+      await addPart(app, 'keyboard', 'Push button');
+      const ids = await parts(app);
+      await placePart(app, 'keyboard', ids[0]!, { name: 'Belt1', x: 0, z: 0 });
+      await placePart(app, 'keyboard', ids[1]!, { name: 'Emitter1', x: -0.9, z: 0 });
+      await placePart(app, 'keyboard', ids[2]!, { name: 'EyeFar', x: 0.7, z: -0.5, rotation: 270 });
+      await placePart(app, 'keyboard', ids[3]!, { name: 'StartButton', x: -0.9, z: -0.7 });
+      await bindSignals(app, 'keyboard', 4);
+      await app.click(css('[data-plant-edit-done]'), 'Done editing');
+      await app.click(css('[data-plant-save-scene]'), 'Save to project');
+      await fill(app, 'keyboard', 'Scene name', 'built');
+      await app.click(css('[data-plant-save-confirm]'), 'Save');
+      const saved = join(folder, 'scenes', 'built.scene.json');
+      const savedMap = join(folder, 'scenes', 'built.plant-map.json');
+      await app.until('the scene and its map saved in the project', () => (existsSync(saved) && existsSync(savedMap)) || undefined);
+      const built = JSON.parse(readFileSync(saved, 'utf8')) as { parts: { name: string }[] };
+      assert(
+        ['Belt1', 'Emitter1', 'EyeFar', 'StartButton'].every((name) => built.parts.some((part) => part.name === name)),
+        'The saved scene lacks a part of the lesson.',
+      );
+      // Gap 1 (reported): the editor saves to scenes/<name>.scene.json, and the Files tree does not list the project root, so a learner
+      // cannot put the scene where the Check reads it (scene.json and plant-map.json). The journey moves the files itself.
+      app.note(
+        'The saved scene is copied to scene.json and plant-map.json by the journey: the editor cannot write the files the Check reads.',
+      );
+      writeFileSync(join(folder, 'scene.json'), readFileSync(saved, 'utf8'));
+      writeFileSync(join(folder, 'plant-map.json'), readFileSync(savedMap, 'utf8'));
+      writeFileSync(
+        join(folder, entry.starter.program),
+        readFileSync(join(packageRoot, 'projects', entry.solution.project, entry.solution.program), 'utf8'),
+      );
+      // Gap 2 (reported): creating scenes/ changes the ctime of the workspace root, which the workspace gateway compares with the one it
+      // registered, so the Check refuses ("did not finish") until the workspace is opened again. The journey opens it again.
+      const first = await check(app);
+      if (first.grade !== 'passed') {
+        assert(first.status.includes('did not finish'), `Check of the built scene says: ${JSON.stringify(first)}`);
+        app.note('Check refuses once scenes/ exists (the workspace root changed); the journey opens the lesson again.');
+        await startLesson(app, id);
+      }
+      const after = first.grade === 'passed' ? first : await check(app);
+      assert(after.grade === 'passed', `Check of the built scene grades "${after.grade}": ${after.status}`);
+    },
+  },
+);
