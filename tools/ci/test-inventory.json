@@ -66,6 +66,11 @@
       "pattern": "firmware/tests/app_device_link/test_*.py",
       "job": "zephyr-twister",
       "command": "firmware/tests/app_device_link/test_app_device_link.py"
+    },
+    {
+      "pattern": "firmware/tests/app_plant_link/test_*.py",
+      "job": "zephyr-twister",
+      "command": "firmware/tests/app_plant_link/test_app_plant_link.py"
     }
   ],
   "notRunInCi": [
