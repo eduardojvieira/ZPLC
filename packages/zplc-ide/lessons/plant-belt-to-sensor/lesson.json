@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-belt-to-sensor",
+  "version": 1,
+  "order": 121,
+  "module": 12,
+  "level": "advanced",
+  "prerequisites": ["motor-start-stop-safe"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson needs a belt, a box that rides it and a sensor at the far end; a learner board has none of them, and the scene supplies all three.",
+        "es": "La lección necesita una banda, una caja que la recorra y un sensor en el extremo; una placa del estudiante no tiene ninguno, y la escena aporta los tres."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus cajas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "belt-to-sensor",
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "plant_belt_to_sensor_starter",
+    "program": "src/BeltToSensor.st"
+  },
+  "solution": {
+    "project": "plant_belt_to_sensor",
+    "program": "src/BeltToSensor.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "belt-to-sensor",
+    "path": "tests/belt-to-sensor.scenario.json",
+    "sha256": "71033f94eeff085d1585c868aae8aa327c184c5048ec59bad5ad9bc013f02adb"
+  },
+  "regressionScenarios": []
+}
