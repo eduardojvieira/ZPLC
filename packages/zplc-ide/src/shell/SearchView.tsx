@@ -1,10 +1,23 @@
-/** Search in the project (UX-011): a text field, the matches grouped by file, and a click that opens the file at the line. */
+/**
+ * Search in the project (UX-011, FND-003): a text field, the matches grouped by file, and a click that opens the file at the line,
+ * or, for a match in a diagram, with the element selected as a Problem does.
+ */
 import { useEffect, useState } from 'react';
+import { requestElementSelection } from '../editors/elementSelectionRequests';
 import { useT } from '../i18n';
+import { describeElement } from '../models/sourceElements';
 import { useIDEStore } from '../store/useIDEStore';
 import { loadFileFromTree } from '../utils/fileSystem';
 import { Button, Checkbox, TextField } from '../ui';
-import { EMPTY_RESULTS, SEARCH_LIMITS, readSearchableFiles, searchProject, type SearchResults } from './projectSearch';
+import {
+  EMPTY_RESULTS,
+  SEARCHABLE_LANGUAGES,
+  SEARCH_LIMITS,
+  readSearchableFiles,
+  searchProject,
+  type SearchMatch,
+  type SearchResults,
+} from './projectSearch';
 
 const SETTLE_MS = 200;
 
@@ -29,9 +42,11 @@ export function SearchView() {
     if (blank) return undefined;
     let current = true;
     const timer = setTimeout(() => {
-      void readSearchableFiles({ tree: fileTree, loaded: loadedFiles, read: readFromDisk }).then((files) => {
-        if (current) setSettled({ key, results: searchProject(files, query, { caseSensitive }) });
-      });
+      void readSearchableFiles({ tree: fileTree, loaded: loadedFiles, read: readFromDisk, languages: SEARCHABLE_LANGUAGES }).then(
+        (files) => {
+          if (current) setSettled({ key, results: searchProject(files, query, { caseSensitive }) });
+        },
+      );
     }, SETTLE_MS);
     return () => {
       current = false;
@@ -41,6 +56,8 @@ export function SearchView() {
 
   // what is shown is the last search that finished for this very text; until then the search is running
   const results = blank || settled.key !== key ? EMPTY_RESULTS : settled.results;
+  const place = (match: SearchMatch): string | undefined =>
+    match.element ? describeElement(match.element) : match.table !== undefined ? t('search.table', { name: match.table }) : undefined;
   const searching = !blank && settled.key !== key;
 
   return (
@@ -54,12 +71,12 @@ export function SearchView() {
           onChange={(event) => setQuery(event.target.value)}
         />
         <Checkbox label={t('search.matchCase')} checked={caseSensitive} onChange={(event) => setCaseSensitive(event.target.checked)} />
-        <p className="text-[length:var(--font-size-caption)] text-[var(--color-surface-300)]">{t('search.scope')}</p>
+        <p className="text-[length:var(--font-size-caption)] text-[var(--color-surface-300)]">{t('search.scopeAll')}</p>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto py-1" aria-live="polite">
         {searching && <p className="px-3 py-1 text-[var(--color-surface-300)]">{t('search.searching')}</p>}
         {!searching && query.trim() !== '' && results.total === 0 && (
-          <p className="px-3 py-1 text-[var(--color-surface-300)]">{t('search.none')}</p>
+          <p className="px-3 py-1 text-[var(--color-surface-300)]">{t('search.noneSearched', { files: results.searched })}</p>
         )}
         {results.total > 0 && (
           <p className="px-3 py-1 text-[var(--color-surface-300)]" data-search-summary>
@@ -73,18 +90,23 @@ export function SearchView() {
           <section key={file.path} data-search-file={file.path}>
             <h3 className="truncate px-3 pt-2 font-medium text-[var(--color-surface-100)]">{file.path}</h3>
             <ul>
-              {file.matches.map((match) => (
-                <li key={`${match.line}:${match.column}`}>
+              {file.matches.map((match, index) => (
+                <li key={`${match.line}:${match.column}:${index}`}>
                   <Button
                     variant="ghost"
                     size="sm"
-                    aria-label={t('search.open', { file: file.path, line: match.line })}
+                    aria-label={
+                      place(match)
+                        ? t('search.openPlace', { file: file.path, place: place(match)! })
+                        : t('search.open', { file: file.path, line: match.line })
+                    }
                     onClick={() => {
+                      if (match.element) requestElementSelection(file.path, match.element);
                       void open(file.path, match.line, match.column);
                     }}
                     className="h-auto w-full justify-start gap-2 py-0.5 pl-5 pr-2 text-left font-mono"
                   >
-                    <span className="text-[var(--color-surface-400)] tabular-nums">{match.line}</span>
+                    <span className="text-[var(--color-surface-400)] tabular-nums">{place(match) ?? match.line}</span>
                     <span className="truncate">
                       {match.text.slice(0, match.start)}
                       <mark>{match.text.slice(match.start, match.start + match.length)}</mark>
