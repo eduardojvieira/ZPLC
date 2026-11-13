@@ -113,8 +113,10 @@ function runtime(part: ScenePart): PartRuntime {
     const [wx, wz] = world2(0, D / 2 + PLATE_T / 2 + (1 - travelMs / TRAVEL_MS) * PUSH_RETRACT_M);
     return [wx, py + PLATE_H / 2, wz];
   };
+  const plates: { id: string; p: Vec3; size: Vec3 }[] = [];
   const plate = (id: string, lx: number, lz: number, half: Vec3) => {
     const [wx, wz] = world2(lx, lz);
+    plates.push({ id, p: [wx, py + PLATE_H / 2, wz], size: [half[0] * 2, half[1] * 2, half[2] * 2] });
     world!.addBody({
       id,
       kind: 'box',
@@ -327,6 +329,22 @@ function runtime(part: ScenePart): PartRuntime {
           state: {},
           signals: {},
         },
+        {
+          id: `${part.id}-pusher`,
+          part: 'layer-pusher',
+          name: part.name,
+          pose: pose(`${part.id}-pusher`, 'layer-pusher', [W, PLATE_H, PLATE_T], pusherPose()),
+          state: {},
+          signals: {},
+        },
+        ...plates.map((pl) => ({
+          id: pl.id,
+          part: 'layer-plate',
+          name: part.name,
+          pose: pose(pl.id, 'layer-plate', pl.size, pl.p),
+          state: {},
+          signals: {},
+        })),
       ];
     },
   };
