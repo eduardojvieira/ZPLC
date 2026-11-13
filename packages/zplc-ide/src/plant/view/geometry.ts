@@ -59,6 +59,17 @@ export function partShape(view: PartView): ShapeSpec {
       return bladeShape(view);
     case 'sensor':
       return sensorShape(view);
+    // M4 parts (PRT-009): each is its pose box (a numeric sensor's pose is already a thin marker); the strings are the ones the parts
+    // publish.
+    case 'light-array':
+    case 'scale':
+    case 'vision-sensor':
+    case 'pusher':
+    case 'diverter-arm':
+    case 'chain-transfer':
+    case 'turntable':
+    case 'workpiece':
+      return { shape: 'box', size: view.pose.size };
     // Manipulator parts (PRT-009): the pad is the pose box; the frame and beam are secondary views drawn from their own poses.
     case 'pick-place':
     case 'gantry':
@@ -134,12 +145,85 @@ export function gripperDecor(view: PartView): Decor[] {
   ];
 }
 
+/** Parts that get edge lines in high contrast (VIS-009): sensors, blades and the M4 parts. */
+export const OUTLINED_PARTS: ReadonlySet<string> = new Set([
+  'sensor',
+  'stop-blade',
+  'light-array',
+  'scale',
+  'vision-sensor',
+  'pusher',
+  'diverter-arm',
+  'chain-transfer',
+  'turntable',
+]);
+
+const thin = 0.02;
+const MAX_BEAMS = 32; // PRT-003
+
+/**
+ * Decor of the M4 parts. The surface direction of a turntable (its pose yaws with the platform) and a chain transfer
+ * (along x lowered, across when raised) is a bar on top, so the direction is told by shape, not colour (VIS-003).
+ */
+function m4Decor(view: PartView): Decor[] {
+  const [w, h, d] = view.pose.size;
+  const top = h / 2 + thin / 2;
+  switch (view.part) {
+    case 'turntable':
+      return [{ slot: 'direction', tone: 'jaw', lit: true, size: [w * 0.8, thin, d * 0.12], centre: [0, top, 0] }];
+    case 'chain-transfer': {
+      const raised = view.state.text === 'raised';
+      const out: Decor[] = [
+        {
+          slot: 'direction',
+          tone: 'jaw',
+          lit: true,
+          size: raised ? [w * 0.12, thin, d * 0.8] : [w * 0.8, thin, d * 0.12],
+          centre: [0, top, 0],
+        },
+      ];
+      if (raised)
+        for (const [slot, z] of [
+          ['chain-a', -d * 0.3],
+          ['chain-b', d * 0.3],
+        ] as const)
+          out.push({ slot, tone: 'jaw', lit: true, size: [w, thin, d * 0.06], centre: [0, top, z] });
+      return out;
+    }
+    case 'light-array': {
+      const n = Math.min(MAX_BEAMS, Math.max(0, Math.floor(num(view.state.beams, 0))));
+      const pitch = num(view.state.pitchM, 0.05);
+      return Array.from({ length: n }, (_, i) => ({
+        slot: `beam-${i}`,
+        tone: 'jaw' as const,
+        lit: true,
+        size: [w, thin / 2, thin / 2] as Vec3,
+        centre: [0, h / 2 + (i + 0.5) * pitch, 0] as Vec3,
+      }));
+    }
+    case 'scale':
+      return [{ slot: 'plate', tone: 'jaw', lit: true, size: [w * 0.9, thin, d * 0.9], centre: [0, top, 0] }];
+    case 'vision-sensor': {
+      const f = num(view.state.fieldM, Math.max(w, d));
+      const c = h / 2 + f / 2;
+      return [
+        { slot: 'frame-n', tone: 'jaw', lit: true, size: [f, thin, thin], centre: [0, c, -f / 2] },
+        { slot: 'frame-s', tone: 'jaw', lit: true, size: [f, thin, thin], centre: [0, c, f / 2] },
+        { slot: 'frame-e', tone: 'jaw', lit: true, size: [thin, thin, f], centre: [f / 2, c, 0] },
+        { slot: 'frame-w', tone: 'jaw', lit: true, size: [thin, thin, f], centre: [-f / 2, c, 0] },
+      ];
+    }
+    default:
+      return [];
+  }
+}
+
 /** Boxes drawn inside a part, by catalogue id; empty for a part with none. */
 export function partDecor(view: PartView): readonly Decor[] {
   if (GRIPPER_PARTS.has(view.part)) return gripperDecor(view);
   if (view.part === 'tank') return [tankFill(view)];
   if (view.part === 'stack-light') return stackLamps(view);
-  return [];
+  return m4Decor(view);
 }
 
 /** Column-major 4x4 matrix for translation `p`, rotation `q` and scale `s` (same layout as three's Matrix4). */
@@ -183,6 +267,13 @@ export function instanceMatrices(items: readonly BodyPose[], out?: Float32Array)
   return m;
 }
 
+/** Red and blue differ in lightness, and metal is a lighter neutral (VIS-009, open question 7: never colour alone). */
+const PROP_COLORS: Readonly<Record<'red' | 'blue' | 'metal', Vec3>> = {
+  red: [0.7, 0.1, 0.1],
+  blue: [0.45, 0.7, 1],
+  metal: [0.78, 0.8, 0.82],
+};
+
 const ITEM_COLORS: Readonly<Record<BodyPose['kind'], Vec3>> = {
   box: [0.82, 0.58, 0.28],
   pallet: [0.62, 0.48, 0.32],
@@ -200,11 +291,29 @@ export function itemTone(tag: BodyPose['tag'], palette: Palette): number {
   return tag === 'lid' ? palette.sensorOn : tag === 'base' ? palette.belt : palette.item;
 }
 
+const mix = (c: number, t: number): number => {
+  const ch = (s: number): number => Math.round(((c >> s) & 255) * (1 - t) + 255 * t);
+  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
+};
+
+/**
+ * The tone of an item under a palette: its tag, else its colour or metal. `palette.item` is the one spare tone, so red,
+ * blue and metal are derived from it by lightness (darkest to lightest); high contrast uses grey steps plus the outline.
+ */
+export function itemToneOf(item: Pick<BodyPose, 'tag' | 'colour' | 'metal'>, palette: Palette): number {
+  if (item.tag === 'lid' || item.tag === 'base') return itemTone(item.tag, palette);
+  const kind = item.colour ?? (item.metal ? 'metal' : undefined);
+  if (!kind) return palette.item;
+  if (palette.outline !== null) return { red: 0x909090, blue: 0xc8c8c8, metal: 0xffffff }[kind];
+  return mix(palette.item, { red: 0, blue: 0.35, metal: 0.7 }[kind]);
+}
+
 export function instanceColors(items: readonly BodyPose[], out?: Float32Array): Float32Array {
   const c = out && out.length >= items.length * 3 ? out : new Float32Array(items.length * 3);
   items.forEach((item, i) => {
     const tagged = item.tag === 'lid' || item.tag === 'base' ? TAG_COLORS[item.tag] : undefined;
-    c.set(tagged ?? ITEM_COLORS[item.kind] ?? ITEM_COLORS.item, i * 3);
+    const prop = item.colour ?? (item.metal ? 'metal' : undefined);
+    c.set(tagged ?? (prop ? PROP_COLORS[prop] : undefined) ?? ITEM_COLORS[item.kind] ?? ITEM_COLORS.item, i * 3);
   });
   return c;
 }
