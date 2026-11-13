@@ -25,8 +25,13 @@ export type NavigatorGroupId = (typeof NAVIGATOR_GROUP_IDS)[number];
 
 export type NavigatorTarget = { kind: 'source'; path: string; line: number; column: number } | { kind: 'config'; editor: ConfigEditorKind };
 
+/** What an item operation acts on: a file or folder of the project by its path, or a task row by its position. */
+export type ItemSubject = { kind: 'path'; path: string } | { kind: 'task'; index: number };
+
 export interface NavigatorItem {
   key: string;
+  /** What rename, move, duplicate and delete act on; absent for an item that is not a file or a task row. */
+  subject?: ItemSubject;
   label: string;
   /** What kind of thing it is or its main setting, as a short phrase. */
   detail?: string;
@@ -93,6 +98,7 @@ export function buildNavigatorGroups({ declarations, globals, fileTree, config }
     key: `${kind}:${file}:${name}`,
     label: name,
     detail: detail ?? file,
+    subject: { kind: 'path', path: file },
     target: { kind: 'source', path: file, line, column },
   });
   const ofKind = (...kinds: DeclarationKind[]): NavigatorItem[] =>
@@ -121,6 +127,7 @@ export function buildNavigatorGroups({ declarations, globals, fileTree, config }
       : tasks.map((task, index) => ({
           key: `task:${index}:${task.name}`,
           label: task.name,
+          subject: { kind: 'task', index },
           detail: words.task({ trigger: task.trigger, intervalMs: task.interval_ms, priority: task.priority }),
           target: { kind: 'config', editor: 'tasks' },
         }));

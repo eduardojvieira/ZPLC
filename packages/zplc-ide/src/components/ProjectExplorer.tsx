@@ -3,6 +3,7 @@
  * under the tree (IDE-023). The mode is a toggle in its header and is remembered.
  */
 import { useT } from '../i18n';
+import { NavigatorDialogs } from '../navigator/NewObjectMenu';
 import { ObjectNavigator } from '../navigator/ObjectNavigator';
 import { useShellLayout, type NavigatorMode } from '../store/useShellLayout';
 import { ToggleGroup } from '../ui';
@@ -38,6 +39,7 @@ export function ProjectExplorer() {
           <ProjectDeclarations />
         </>
       )}
+      <NavigatorDialogs />
     </div>
   );
 }

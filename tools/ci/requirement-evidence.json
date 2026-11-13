@@ -2653,6 +2653,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/components/panelStates.test.tsx","test":"UX-021 offers the first next step the state allows: Step once connected, Connect before"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/panelStates.test.tsx","test":"UX-021 shows a title, a sentence and the next action, which is the registered command by its title"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/panelStates.test.tsx","test":"panel empty states (UX-021)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/navigator/ObjectNavigator.dom.test.tsx","test":"UX-021 an empty group shows the New action"},
     {"kind":"unit","ref":"packages/zplc-ide/src/shell/PlantDocument.test.tsx","test":"PLS-001 with neither it shows an empty state that names the next action (UX-021)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/store/notifications.test.ts","test":"a failure offers its way back (IDE-021, UX-021)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/ui/kit.test.tsx","test":"UX-021 renders an error state as an alert with its reason and a recovery action"},
