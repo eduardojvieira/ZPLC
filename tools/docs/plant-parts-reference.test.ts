@@ -52,4 +52,16 @@ describe('PRT-002 parts reference generated from the part definitions', () => {
     expect(headings(partsBody(PARTS, 'es'))).toEqual(headings(partsBody(PARTS, 'en')));
     expect(rows(partsBody(PARTS, 'es'))).toEqual(rows(partsBody(PARTS, 'en')));
   });
+
+  it('PRT-002 the parts reference orders a Process section after the others in both languages', () => {
+    const process: PartDefinition = { ...PARTS[0]!, id: 'zz-process', family: 'process' };
+    const titles = { en: 'Process', es: 'Proceso' } as const;
+    for (const lang of LANGS) {
+      const body = partsBody([process, ...PARTS], lang);
+      const at = body.indexOf(`## ${titles[lang]}`);
+      expect(at).toBeGreaterThan(-1);
+      expect(body.indexOf('`zz-process`')).toBeGreaterThan(at);
+      for (const other of body.matchAll(/^## (.+)$/gm)) if (other[1] !== titles[lang]) expect(other.index!).toBeLessThan(at);
+    }
+  });
 });

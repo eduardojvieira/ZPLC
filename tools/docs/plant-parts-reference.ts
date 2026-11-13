@@ -32,6 +32,7 @@ const FAMILY: Record<PartDefinition['family'], L10n> = {
   flow: { en: 'Flow', es: 'Flujo' },
   sensors: { en: 'Sensors', es: 'Sensores' },
   panel: { en: 'Panel', es: 'Panel' },
+  process: { en: 'Process', es: 'Proceso' },
 };
 const FAMILIES = Object.keys(FAMILY) as PartDefinition['family'][];
 
