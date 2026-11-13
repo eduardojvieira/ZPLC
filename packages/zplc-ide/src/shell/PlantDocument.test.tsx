@@ -97,6 +97,32 @@ describe('the plant document (PLS-001, PLS-002)', () => {
     expect(dom.screen.getByRole('button', { name: dom.t('studio.plant.showTests') })).toBeTruthy();
   });
 
+  it(
+    'SCN-001 with no scene and no plant lesson, "Open a scene" brings the scene panel with the shipped scenes to choose ' + 'from',
+    async () => {
+      const { user } = dom.render(<PlantDocument controller={undefined} visible />);
+      await user.click(dom.screen.getByRole('button', { name: dom.t('studio.plant.openScene') }));
+      expect(dom.screen.getByLabelText(dom.t('plant.panel.scene'))).toBeTruthy();
+      expect(dom.screen.queryByRole('button', { name: dom.t('studio.plant.openScene') })).toBeNull();
+    },
+  );
+
+  it('SCN-006 a project with scenes in its scenes folder shows the scene panel without a file among the open ones', async () => {
+    const folder = {
+      async *values() {
+        yield { kind: 'file', name: 'line.scene.json' };
+      },
+    };
+    useIDEStore.setState({ directoryHandle: { getDirectoryHandle: async () => folder } as unknown as FileSystemDirectoryHandle });
+    try {
+      dom.render(<PlantDocument controller={undefined} visible />);
+      await dom.waitFor(() => expect(dom.screen.getByLabelText(dom.t('plant.panel.scene'))).toBeTruthy());
+      expect(dom.screen.queryByRole('button', { name: dom.t('studio.plant.openScene') })).toBeNull();
+    } finally {
+      useIDEStore.setState({ directoryHandle: null });
+    }
+  });
+
   it('PLS-010 visible is false while another tab of the group is active', () => {
     const { container } = dom.render(<PlantDocument controller={undefined} visible={false} />);
     expect(container.querySelector('[data-plant-document]')?.getAttribute('data-visible')).toBe('false');

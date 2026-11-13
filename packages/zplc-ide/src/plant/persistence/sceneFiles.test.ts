@@ -1,7 +1,7 @@
 // A scene is saved with its project, as <project>/scenes/<name>.scene.json (SCN-006).
 import { describe, expect, it } from 'bun:test';
 import type { PlantSceneFile } from '../contracts';
-import { MAX_SCENE_BYTES, openScene, sceneFilePath, saveScene } from './sceneFiles';
+import { MAX_SCENE_BYTES, listScenes, openScene, readSceneTexts, sceneFilePath, saveScene } from './sceneFiles';
 
 class FakeFile {
   constructor(public text = '') {}
@@ -25,6 +25,10 @@ class FakeDirectory {
     if (!directory && options?.create) this.directories.set(name, (directory = new FakeDirectory()));
     if (!directory) throw new Error('not found');
     return directory;
+  }
+  async *values() {
+    for (const [name] of this.files) yield { kind: 'file' as const, name };
+    for (const [name] of this.directories) yield { kind: 'directory' as const, name };
   }
   async getFileHandle(name: string, options?: { create?: boolean }) {
     let file = this.files.get(name);
@@ -94,5 +98,26 @@ describe('scene files', () => {
     for (const name of ['../zplc', '..', 'a/b', 'a\\b', '', '.hidden', 'x.scene.json/../../zplc', 'a\0b'])
       await expect(openScene(asHandle(root), name)).rejects.toThrow('scene name');
     await expect(saveScene(asHandle(root), '../zplc', scene())).rejects.toThrow('scene name');
+  });
+
+  it('SCN-006 the scenes of a project are listed from its scenes folder, not from open files', async () => {
+    const root = await project('b-line', JSON.stringify(scene()));
+    await saveScene(asHandle(root), 'a-line', scene());
+    root.directories.get('scenes')!.files.set('notes.txt', new FakeFile('x'));
+    root.directories.get('scenes')!.files.set('a-line.plant-map.json', new FakeFile('{}'));
+    expect(await listScenes(asHandle(root))).toEqual(['a-line', 'b-line']);
+    expect(await listScenes(asHandle(new FakeDirectory()))).toEqual([]);
+  });
+
+  it('SCN-016 a scene saved with its plant map is read back with both texts, and without a map reads an empty map', async () => {
+    const root = new FakeDirectory();
+    await saveScene(asHandle(root), 'with-map', scene(), '{"schemaVersion":2}');
+    await saveScene(asHandle(root), 'bare', scene());
+    expect(root.directories.get('scenes')!.files.get('with-map.plant-map.json')!.text).toBe('{"schemaVersion":2}');
+    expect(await readSceneTexts(asHandle(root), 'with-map')).toEqual({
+      scene: root.directories.get('scenes')!.files.get('with-map.scene.json')!.text,
+      map: '{"schemaVersion":2}',
+    });
+    expect((await readSceneTexts(asHandle(root), 'bare')).map).toBe('');
   });
 });

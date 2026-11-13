@@ -14,6 +14,7 @@ export const studioDocumentsEn = {
   'studio.plant.replay': 'Replay',
   'studio.plant.empty': 'There is no plant to show yet. Open a plant lesson, or run the project tests to record a replay.',
   'studio.plant.showTests': 'Show the tests',
+  'studio.plant.openScene': 'Open a scene',
 } as const;
 export const studioDocumentsEs: Record<keyof typeof studioDocumentsEn, string> = {
   'studio.document.group.first': 'Grupo de editor izquierdo',
@@ -31,4 +32,5 @@ export const studioDocumentsEs: Record<keyof typeof studioDocumentsEn, string> =
   'studio.plant.empty':
     'Todavía no hay una planta para mostrar. Abre una lección con planta, o ejecuta las pruebas del proyecto para grabar una repetición.',
   'studio.plant.showTests': 'Mostrar las pruebas',
+  'studio.plant.openScene': 'Abrir una escena',
 };

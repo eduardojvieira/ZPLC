@@ -10,6 +10,7 @@ import { LESSON_INDEX } from '../generated/lessonIndex';
 import type { DebugController } from '../hooks/useDebugController';
 import { useT } from '../i18n';
 import { PlantPanel } from '../plant/ui/PlantPanel';
+import { useProjectScenes } from '../plant/ui/usePlantSession';
 import { PlantLivePanel } from '../plants/PlantLivePanel';
 import { resolvePlantMap } from '../plants/plantMap';
 import { listIoMap } from '../runtime/ioMap';
@@ -18,14 +19,18 @@ import { useIDEStore } from '../store/useIDEStore';
 import { Button, ToggleGroup } from '../ui';
 import { useWorkspaceTestResult } from './workspaceTestResult';
 
-/** The project's scene file (`scene.json` at the project root, spec 012 SCN-006). */
+/** The project's scene file (`scene.json` at the project root, kept from 2.0; scenes of `scenes/` are listed from the folder). */
 const hasProjectScene = (files: ReadonlyMap<string, { path: string }>): boolean =>
   [...files.values()].some((file) => file.path === 'scene.json');
 
 export function PlantDocument({ controller, visible }: { controller: DebugController | undefined; visible: boolean }) {
   const { t } = useT();
   const debugMap = useIDEStore((state) => state.debug.debugMap);
-  const sceneOpen = useIDEStore((state) => hasProjectScene(state.loadedFiles));
+  const rootScene = useIDEStore((state) => hasProjectScene(state.loadedFiles));
+  const savedScenes = useProjectScenes().names.length > 0;
+  // A person asked for a scene: shipped, empty or saved (SCN-001, SCN-016); the scene panel stays until the project changes.
+  const [asked, setAsked] = useState(false);
+  const sceneOpen = rootScene || savedScenes || asked;
   const presentation = useWorkspaceTestResult((state) => state.presentation);
   const [view, setView] = useState<'live' | 'replay'>('live');
 
@@ -57,6 +62,11 @@ export function PlantDocument({ controller, visible }: { controller: DebugContro
           value={showing}
           onValueChange={(value) => setView(value === 'replay' ? 'replay' : 'live')}
         />
+      )}
+      {!sceneOpen && (
+        <Button data-plant-open-scene variant="secondary" size="sm" className="m-2 self-start" onClick={() => setAsked(true)}>
+          {t('studio.plant.openScene')}
+        </Button>
       )}
       {showing === 'live' &&
         (sceneOpen ? <PlantPanel controller={controller} visible={visible} /> : <PlantLivePanel controller={controller} />)}

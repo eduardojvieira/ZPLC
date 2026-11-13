@@ -23,14 +23,44 @@ export function sceneFilePath(name: string): string {
 
 const tooLarge = (name: string) => new Error(`The scene "${name}" is larger than ${MAX_SCENE_BYTES} bytes.`);
 
-export async function saveScene(root: FileSystemDirectoryHandle, name: string, scene: PlantSceneFile): Promise<void> {
+async function write(folder: FileSystemDirectoryHandle, file: string, text: string): Promise<void> {
+  const writable = await (await folder.getFileHandle(file, { create: true })).createWritable();
+  await writable.write(text);
+  await writable.close();
+}
+
+/** Saves the scene, and its plant map next to it (`<name>.plant-map.json`) when one is given. */
+export async function saveScene(root: FileSystemDirectoryHandle, name: string, scene: PlantSceneFile, map?: string): Promise<void> {
   sceneFilePath(name);
   const text = `${JSON.stringify(scene, null, 2)}\n`;
   if (new TextEncoder().encode(text).length > MAX_SCENE_BYTES) throw tooLarge(name);
   const folder = await root.getDirectoryHandle(SCENES_FOLDER, { create: true });
-  const writable = await (await folder.getFileHandle(`${name}.scene.json`, { create: true })).createWritable();
-  await writable.write(text);
-  await writable.close();
+  await write(folder, `${name}.scene.json`, text);
+  if (map) await write(folder, `${name}.plant-map.json`, map);
+}
+
+/** The names of the scenes saved in the project, sorted; none when the project has no scenes folder. */
+export async function listScenes(root: FileSystemDirectoryHandle): Promise<string[]> {
+  const folder = await root.getDirectoryHandle(SCENES_FOLDER).catch(() => undefined);
+  if (!folder) return [];
+  const names: string[] = [];
+  for await (const entry of folder.values()) {
+    const name = entry.kind === 'file' && entry.name.endsWith('.scene.json') ? entry.name.slice(0, -'.scene.json'.length) : '';
+    if (NAME.test(name)) names.push(name);
+  }
+  return names.sort();
+}
+
+/** The texts of a saved scene and of its plant map (empty when it has none), for the plant core to be built from. */
+export async function readSceneTexts(root: FileSystemDirectoryHandle, name: string): Promise<{ scene: string; map: string }> {
+  sceneFilePath(name);
+  const folder = await root.getDirectoryHandle(SCENES_FOLDER);
+  const read = async (file: string) => {
+    const opened = await (await folder.getFileHandle(file)).getFile();
+    if (opened.size > MAX_SCENE_BYTES) throw tooLarge(name);
+    return opened.text();
+  };
+  return { scene: await read(`${name}.scene.json`), map: await read(`${name}.plant-map.json`).catch(() => '') };
 }
 
 /** The scene, or its located problems; an older schema opens through the migration, a newer one names its version. */
