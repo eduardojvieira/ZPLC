@@ -7,7 +7,7 @@
 import { emptyProgress, type LearnProgress } from '../../shared/learnProgressModel';
 import type { CoursePath } from './courseDefinition';
 import type { LessonIndex, LessonIndexEntry, LessonLevel, LessonLocale } from './lessonPackage';
-import { alternativeOf } from './lessonSiblings';
+import { alternativeOf, alternativePairs } from './lessonSiblings';
 
 export type LessonState = 'locked' | 'available' | 'in-progress' | 'passed';
 
@@ -123,6 +123,16 @@ export function courseOrder(index: LessonIndex): readonly LessonIndexEntry[] {
   return result;
 }
 
+/** The course counter: an alternative pair counts once, as one lesson of the course, and is passed when either sibling is (M7-K5). */
+export function courseCounts(index: LessonIndex, document: LearnProgress): { passed: number; total: number } {
+  const pairs = alternativePairs(index);
+  const bothPassed = pairs.filter((ids) => ids.every((id) => passedIn(index, id, document))).length;
+  return {
+    passed: index.lessons.filter((lesson) => passedIn(index, lesson.id, document)).length - bothPassed,
+    total: index.lessons.length - pairs.length,
+  };
+}
+
 export function buildCourseView(
   index: LessonIndex,
   progress: LearnProgress | null,
@@ -177,8 +187,7 @@ export function buildCourseView(
     modules,
     paths,
     titles: Object.fromEntries(lessons.map((lesson) => [lesson.id, lesson.title])),
-    passed: lessons.filter((lesson) => lesson.state === 'passed').length,
-    total: lessons.length,
+    ...courseCounts(index, progress ?? emptyProgress()),
   };
 }
 

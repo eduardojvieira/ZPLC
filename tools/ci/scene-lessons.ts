@@ -16,11 +16,12 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 import { LESSON_INDEX } from '../../packages/zplc-ide/src/generated/lessonIndex';
-import { courseOrder } from '../../packages/zplc-ide/src/learn/course';
+import { courseCounts, courseOrder } from '../../packages/zplc-ide/src/learn/course';
 import { lessonCheck } from '../../packages/zplc-ide/src/learn/lessonCheck';
 import type { LessonIndex, LessonIndexEntry } from '../../packages/zplc-ide/src/learn/lessonPackage';
 import { alternativePairs } from '../../packages/zplc-ide/src/learn/lessonSiblings';
 import { scenarioHash } from '../../packages/zplc-ide/src/learn/lessonPackageFiles';
+import { emptyProgress } from '../../packages/zplc-ide/shared/learnProgressModel';
 import { checkSceneFacts } from '../../packages/zplc-ide/src/plant/ci/sceneCheck';
 import { parseScene } from '../../packages/zplc-ide/src/plant/core/scene';
 
@@ -87,7 +88,7 @@ export function alternativePairFaults(index: LessonIndex = LESSON_INDEX): string
   if (twoZero.lessons.length !== TWO_ZERO_LESSON_IDS.length) faults.push('a 2.0 lesson is missing from the index (M7-K5)');
   for (const [baseId, ladderId] of alternativePairs(twoZero))
     faults.push(`${ladderId}: a 2.0 lesson must not be an alternative of ${baseId} (M7-K5)`);
-  if (twoZero.lessons.length !== 68) faults.push('the 2.0 course total is not 68 (M7-K5)');
+  if (courseCounts(twoZero, emptyProgress()).total !== 68) faults.push('the 2.0 course total is not 68 (M7-K5)');
   return faults;
 }
 

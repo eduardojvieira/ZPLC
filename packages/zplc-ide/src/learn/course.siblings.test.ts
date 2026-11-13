@@ -55,3 +55,30 @@ describe('courseOrder with siblings', () => {
     expect(ids).toHaveLength(68);
   });
 });
+
+describe('the course counter with alternative siblings', () => {
+  const index = withTwin();
+  const count = (ids: string[], source = index) => {
+    const { passed: done, total } = buildCourseView(source, passed(...ids), opts);
+    return [done, total];
+  };
+
+  it('counts the pair once in the total, and once in passed whichever sibling (or both) was passed', () => {
+    expect(count([])).toEqual([0, 68]);
+    expect(count([ST])).toEqual([1, 68]);
+    expect(count([LADDER])).toEqual([1, 68]);
+    expect(count([ST, LADDER])).toEqual([1, 68]);
+    expect(count([ST, LADDER, NEXT])).toEqual([2, 68]);
+  });
+
+  it('keeps the 2.0 counter of a 2.0-only index', () => {
+    expect(count([], LESSON_INDEX)).toEqual([0, 68]);
+    expect(count([ST, NEXT, 'tank-level-fault-reset-ladder'], LESSON_INDEX)).toEqual([3, 68]);
+  });
+
+  it('does not change a path counter: a path holds one sibling', () => {
+    const paths = buildCourseView(index, passed(LADDER), opts).paths;
+    const plain = buildCourseView(LESSON_INDEX, passed(ST), opts).paths;
+    expect(paths.map((path) => [path.passed, path.total])).toEqual(plain.map((path) => [path.passed, path.total]));
+  });
+});
