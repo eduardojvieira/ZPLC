@@ -5,9 +5,11 @@ import productManifest from '../../../../package.json';
 import { withNativeCommunicationEnvironment } from '../../shared/nativeSimulationEnvironment';
 import { NativeSimulationSupervisor } from '../../shared/nativeSimulationSupervisor';
 import { NativeAdapter } from '../runtime/nativeAdapter';
-import type { ScenarioRuntimePort } from '../test-engine';
+import type { NumericType, ScenarioRuntimePort } from '../test-engine';
 
-type NativeScenarioAdapter = Pick<NativeAdapter, 'loadProgram' | 'reset' | 'scenarioStep' | 'listForcedValues' | 'peek' | 'poke'>;
+// `pokeN` is optional so an adapter that only knows bits still builds a runtime; that runtime then has no numeric methods.
+type NativeScenarioAdapter = Pick<NativeAdapter, 'loadProgram' | 'reset' | 'scenarioStep' | 'listForcedValues' | 'peek' | 'poke'> &
+  Partial<Pick<NativeAdapter, 'pokeN'>>;
 
 type NativeScenarioLifecycleAdapter = NativeScenarioAdapter & {
   connect: () => Promise<void>;
@@ -51,8 +53,35 @@ async function readByte(adapter: NativeScenarioAdapter, address: number): Promis
   return bytes[0]!;
 }
 
+function validateNumber(address: number, width: number, start: number, end: number, region: string): void {
+  if (!Number.isInteger(address) || address < start || address + width > end) throw new Error(`Scenario ${region} address is invalid`);
+}
+
+const widthOf = (type: NumericType) => (type === 'INT' ? 2 : 4);
+
 export function createNativeScenarioRuntime(adapter: NativeScenarioAdapter): ScenarioRuntimePort {
+  const numeric: Pick<ScenarioRuntimePort, 'setInputNumber' | 'readOutputNumber'> =
+    'pokeN' in adapter
+      ? {
+          setInputNumber: async (address, type, raw) => {
+            validateNumber(address, widthOf(type), 0, IPI_END, 'IPI');
+            const bytes = new Uint8Array(widthOf(type));
+            const view = new DataView(bytes.buffer);
+            if (type === 'INT') view.setInt16(0, raw, true);
+            else view.setFloat32(0, raw, true);
+            await adapter.pokeN!(address, bytes);
+          },
+          readOutputNumber: async (address, type) => {
+            validateNumber(address, widthOf(type), OPI_START, OPI_END, 'OPI');
+            const bytes = await adapter.peek(address, widthOf(type));
+            if (bytes.length !== widthOf(type)) throw new Error(`Scenario memory read must return exactly ${widthOf(type)} bytes`);
+            const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+            return type === 'INT' ? view.getInt16(0, true) : view.getFloat32(0, true);
+          },
+        }
+      : {};
   return {
+    ...numeric,
     loadProgram: (zplc) => adapter.loadProgram(zplc),
     reset: () => adapter.reset(),
     step: (atMs) => adapter.scenarioStep(atMs),

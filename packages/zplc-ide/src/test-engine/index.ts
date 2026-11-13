@@ -29,6 +29,17 @@ export interface ScenarioRuntimePort {
   setInput(address: number, bitOffset: number, value: boolean): Promise<void>;
   step(atMs: number): Promise<void>;
   readOutput(address: number, bitOffset: number): Promise<boolean>;
+  /** Writes a raw INT (int16) or REAL (float32) into the input image; a runtime without it cannot run numeric scenes (R-G). */
+  setInputNumber?(address: number, type: NumericType, raw: number): Promise<void>;
+  /** Reads a raw INT or REAL from the output image. */
+  readOutputNumber?(address: number, type: NumericType): Promise<number>;
+}
+
+export type NumericType = 'INT' | 'REAL';
+/** How a numeric scene signal sits in the image: its program type and byte width. */
+export interface NumericBinding {
+  readonly type: NumericType;
+  readonly size: 2 | 4;
 }
 
 export interface ResolvedSignal {
@@ -42,8 +53,13 @@ export interface ResolvedSignal {
 export interface CompiledScene {
   readonly port: ScenarioPlantPort;
   readonly script: ReadonlyArray<SceneScriptEvent>;
-  readonly commands: ReadonlyArray<{ readonly name: string; readonly point: string; readonly signal: ResolvedSignal }>;
-  readonly sensors: ReadonlyArray<{ readonly name: string; readonly signal: ResolvedSignal }>;
+  readonly commands: ReadonlyArray<{
+    readonly name: string;
+    readonly point: string;
+    readonly signal: ResolvedSignal;
+    readonly numeric?: NumericBinding;
+  }>;
+  readonly sensors: ReadonlyArray<{ readonly name: string; readonly signal: ResolvedSignal; readonly numeric?: NumericBinding }>;
 }
 
 /** What `compileScenario` needs to bind a scenario that has a `"scene"` block (S1). */
@@ -235,6 +251,26 @@ function resolve(debugMap: DebugMap, signal: string, expectedRegion: 'IPI' | 'OP
   return { signal: found.signal, address: found.variable.addr, bitOffset: found.variable.bitOffset!, value };
 }
 
+/** A numeric scene signal: an INT (2 bytes) or REAL (4 bytes) variable of the image the direction needs, inside that image. */
+function resolveNumeric(
+  debugMap: DebugMap,
+  signal: string,
+  type: NumericType,
+  region: 'IPI' | 'OPI',
+): { signal: ResolvedSignal; numeric: NumericBinding } | string {
+  const found = findSignalVariable(debugMap, signal);
+  if (!found) return `unknown signal ${signal}`;
+  const { variable } = found;
+  const size = type === 'INT' ? 2 : 4;
+  if (variable.type !== type || variable.region !== region || variable.size !== size)
+    return `${found.signal} must be a ${type} ${region} signal of ${size} bytes`;
+  const base = region === 'IPI' ? debugMap.memoryLayout.ipiBase : debugMap.memoryLayout.opiBase;
+  const span = region === 'IPI' ? debugMap.memoryLayout.ipiSize : debugMap.memoryLayout.opiSize;
+  if (!Number.isInteger(variable.addr) || variable.addr < base || variable.addr + size > base + span)
+    return `${found.signal} is outside ${region} memory`;
+  return { signal: { signal: found.signal, address: variable.addr, bitOffset: 0, value: false }, numeric: { type, size } };
+}
+
 function validateAddress(variable: DebugVarInfo, debugMap: DebugMap, expectedRegion: 'IPI' | 'OPI', signal: string): void {
   if (variable.type !== 'BOOL' || variable.region !== expectedRegion || variable.size < 1 || !Number.isInteger(variable.size))
     fail(`${signal} must be a BOOL ${expectedRegion} signal`);
@@ -267,6 +303,7 @@ function freezeScenario(scenario: CompiledScenario): CompiledScenario {
   if (scenario.scene) {
     for (const bound of [...scenario.scene.commands, ...scenario.scene.sensors]) {
       Object.freeze(bound.signal);
+      if (bound.numeric) Object.freeze(bound.numeric);
       Object.freeze(bound);
     }
     Object.freeze(scenario.scene.commands);
@@ -313,14 +350,19 @@ function bindScene(input: unknown, context: SceneScenarioContext, debugMap: Debu
   });
   const problems = validateSceneScript(block.script, context.scene, port, context.catalogue ?? shippedCatalogue);
   const plantSignals = new Map(port.core.signals.map((signal) => [signal.name, signal]));
-  const commands: Array<{ name: string; point: string; signal: ResolvedSignal }> = [];
-  const sensors: Array<{ name: string; signal: ResolvedSignal }> = [];
+  const commands: Array<{ name: string; point: string; signal: ResolvedSignal; numeric?: NumericBinding }> = [];
+  const sensors: Array<{ name: string; signal: ResolvedSignal; numeric?: NumericBinding }> = [];
   for (const [name, mapped] of Object.entries(port.map.signals)) {
     const plantSignal = plantSignals.get(name);
     if (!plantSignal || plantSignal.direction !== mapped.direction)
       problems.push(`scene map: "${name}" is not a ${mapped.direction} signal of the scene`);
-    else if (mapped.type !== 'BOOL') problems.push(`scene map: "${name}" is ${mapped.type}; scene scenarios drive BOOL signals only`);
-    else if (mapped.direction === 'command')
+    else if (mapped.type !== 'BOOL') {
+      const region = mapped.direction === 'command' ? 'OPI' : 'IPI';
+      const bound = resolveNumeric(debugMap, mapped.point, mapped.type, region);
+      if (typeof bound === 'string') problems.push(`scene map: "${name}": ${bound}`);
+      else if (mapped.direction === 'command') commands.push({ name, point: mapped.point, ...bound });
+      else sensors.push({ name, ...bound });
+    } else if (mapped.direction === 'command')
       commands.push({ name, point: mapped.point, signal: resolve(debugMap, mapped.point, 'OPI', false) });
     else sensors.push({ name, signal: resolve(debugMap, mapped.point, 'IPI', false) });
   }
@@ -525,6 +567,11 @@ function matches(reads: ReadonlyArray<ResolvedSignal>, outputs: Record<string, b
 export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, runtime: ScenarioRuntimePort): Promise<ScenarioRunResult> {
   if (!compiledScenarios.has(scenario)) throw new Error('Scenario must be produced by compileScenario');
   if (await runtime.hasForces()) throw new Error('Cannot run scenario with active forces');
+  for (const bound of [...(scenario.scene?.commands ?? []), ...(scenario.scene?.sensors ?? [])])
+    if (bound.numeric && (!runtime.setInputNumber || !runtime.readOutputNumber))
+      throw new Error(
+        `scene map: "${bound.name}" is ${bound.numeric.type}; the runtime has no numeric methods (setInputNumber, readOutputNumber)`,
+      );
   await runtime.loadProgram(zplc);
   await runtime.reset();
   const reads = new Map<string, ResolvedSignal>();
@@ -540,13 +587,15 @@ export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, 
   for (const expectation of scenario.expectations) for (const read of expectation.untilReads ?? []) terminalReads.set(read.signal, read);
   const scene = scenario.scene;
   if (scene) {
-    for (const command of scene.commands) reads.set(command.signal.signal, command.signal);
+    for (const command of scene.commands) if (!command.numeric) reads.set(command.signal.signal, command.signal);
     scene.port.core.reset();
   }
   const bySignal = (left: ResolvedSignal, right: ResolvedSignal) => (left.signal < right.signal ? -1 : left.signal > right.signal ? 1 : 0);
   const factReads = [...reads.values()].filter((read) => read.address < 0).sort(bySignal);
   const orderedReads = [...reads.values()].filter((read) => read.address >= 0).sort(bySignal);
   let lastOutputs: Record<string, boolean> = {};
+  // raw values of the numeric commands, read after each step like `lastOutputs` for BOOL
+  const commandValues: Record<string, number> = {};
   const trace: ScenarioTraceSample[] = [];
   const inputs = new Map<string, boolean>([...terminalReads.values()].map((read) => [location(read), false]));
   const inputSnapshots: Record<string, boolean>[] = [];
@@ -609,10 +658,17 @@ export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, 
     if (scene)
       await exchangeScan(
         scene.port,
-        async (point) => lastOutputs[scene.commands.find((command) => command.point === point)!.signal.signal] ?? false,
+        async (point) => {
+          const command = scene.commands.find((candidate) => candidate.point === point)!;
+          return command.numeric ? (commandValues[command.name] ?? 0) : (lastOutputs[command.signal.signal] ?? false);
+        },
         async (sensed) => {
           for (const sensor of scene.sensors) {
             if (!(sensor.name in sensed)) continue;
+            if (sensor.numeric) {
+              await runtime.setInputNumber!(sensor.signal.address, sensor.numeric.type, Number(sensed[sensor.name]));
+              continue;
+            }
             const value = Boolean(sensed[sensor.name]);
             inputs.set(location(sensor.signal), value);
             await runtime.setInput(sensor.signal.address, sensor.signal.bitOffset, value);
@@ -626,6 +682,8 @@ export async function runScenario(scenario: CompiledScenario, zplc: Uint8Array, 
     const outputs: Record<string, boolean> = {};
     for (const read of orderedReads) outputs[read.signal] = await runtime.readOutput(read.address, read.bitOffset);
     if (scene) {
+      for (const command of scene.commands)
+        if (command.numeric) commandValues[command.name] = await runtime.readOutputNumber!(command.signal.address, command.numeric.type);
       const facts = scene.port.core.facts();
       for (const read of factReads) outputs[read.signal] = factTruthy(facts[read.signal.slice('fact:'.length)]);
       lastOutputs = outputs;
