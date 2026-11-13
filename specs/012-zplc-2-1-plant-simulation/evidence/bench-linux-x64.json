@@ -1,0 +1,223 @@
+{
+  "schema": "zplc.plant-bench/1",
+  "commit": "6fd2843e47f2bb70d374972ea8eb465588c13064",
+  "dirtyTree": false,
+  "started": "2026-11-13T01:30:12.664Z",
+  "finished": "2026-11-13T01:31:34.150Z",
+  "host": {
+    "platform": "linux",
+    "arch": "x64",
+    "cpu": "AMD Ryzen 5 8600G w/ Radeon 760M Graphics",
+    "gpu": "Phoenix1",
+    "memoryGb": 60,
+    "screen": null
+  },
+  "sequencesRun": [
+    "capacity",
+    "noGpu",
+    "contextLoss",
+    "keyboard",
+    "displayModes",
+    "security"
+  ],
+  "sequences": {
+    "capacity": {
+      "commit": "6fd2843e47f2bb70d374972ea8eb465588c13064",
+      "scans": 3000,
+      "scansPerScene": 3000,
+      "merge-lines": {
+        "headless": {
+          "stepMs": {
+            "samples": 3000,
+            "p50": 0.04203949999964607,
+            "p95": 0.1034429999999702,
+            "max": 2.053875500000231
+          },
+          "realTimeFactor": 93.30224950230713,
+          "items": 6,
+          "verdict": "pass"
+        },
+        "renderer": {
+          "stepMs": {
+            "samples": 3000,
+            "p50": 0,
+            "p95": 0.09999999776482582,
+            "max": 2.350000001490116
+          },
+          "realTimeFactor": 169.01408450704224,
+          "items": 6,
+          "verdict": "pass"
+        }
+      },
+      "stress": {
+        "headless": {
+          "stepMs": {
+            "samples": 3000,
+            "p50": 1.1456230000003416,
+            "p95": 1.7616410000000542,
+            "max": 6.087658000000374
+          },
+          "realTimeFactor": 4.288718369348042,
+          "items": 200,
+          "verdict": "pass"
+        },
+        "renderer": {
+          "stepMs": {
+            "samples": 3000,
+            "p50": 1.0499999970197678,
+            "p95": 1.550000000745058,
+            "max": 2.75
+          },
+          "realTimeFactor": 4.980906524987548,
+          "items": 200,
+          "verdict": "pass"
+        }
+      },
+      "verdict": "pass",
+      "recorded": 4
+    },
+    "noGpu": {
+      "commit": "6fd2843e47f2bb70d374972ea8eb465588c13064",
+      "webgl2": false,
+      "failure": "unavailable",
+      "messageSaysUnavailable": true,
+      "schematicOffered": true,
+      "plantRanInLockStep": true,
+      "facts": "Belt to sensor: 1 items on the plant. Emitted: 1. Removed: 0. Dropped: 0. Collided: 0. emitted:Emitter1: 1. EyeFar: 1 pulses. Active: EyeFar. Item emitter-1 at x 0.5 m, z 0 m.",
+      "traceHash": {
+        "headless": "fd30ef5600c4af9e0a20ee4be6424dd959bcacf3544c056ac42fb3f6c3367790",
+        "renderer": "fd30ef5600c4af9e0a20ee4be6424dd959bcacf3544c056ac42fb3f6c3367790",
+        "equal": true
+      },
+      "verdict": "pass"
+    },
+    "contextLoss": {
+      "commit": "6fd2843e47f2bb70d374972ea8eb465588c13064",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "restoredInTimeSaysNothing": true,
+      "failure": "lost",
+      "messageText": "The graphics context was lost and was not restored. The plant, the program and the grading keep running.\nShow the schematic",
+      "schematicOffered": true,
+      "plantKeptRunning": true,
+      "verdict": "pass"
+    },
+    "keyboard": {
+      "commit": "6fd2843e47f2bb70d374972ea8eb465588c13064",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "keys": {
+        "orbit left": {
+          "changedTheView": true
+        },
+        "orbit up": {
+          "changedTheView": true
+        },
+        "zoom in": {
+          "changedTheView": true
+        },
+        "pan forward": {
+          "changedTheView": true
+        }
+      },
+      "presetNames": [
+        "Overview",
+        "Side",
+        "Top"
+      ],
+      "presetChangesTheView": true,
+      "verdict": "pass"
+    },
+    "displayModes": {
+      "commit": "6fd2843e47f2bb70d374972ea8eb465588c13064",
+      "renderer": {
+        "light": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "dark": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "high-contrast": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      },
+      "stats": {
+        "light": {
+          "meanLuminance": 186.98897085177893,
+          "corner": 211.1443999999992,
+          "p99": 212,
+          "pixels": 137216,
+          "hash": -1616945824
+        },
+        "dark": {
+          "meanLuminance": 38.07378291309515,
+          "corner": 30.80475859374992,
+          "p99": 75,
+          "pixels": 137216,
+          "hash": -349871016
+        },
+        "high-contrast": {
+          "meanLuminance": 36.527177397679026,
+          "corner": 19.999999999999996,
+          "p99": 112,
+          "pixels": 137216,
+          "hash": -1477220882
+        }
+      },
+      "floorsFollowTheMode": true,
+      "itemsBrighterInHighContrast": true,
+      "reducedMotion": {
+        "reduced": {
+          "matches": true,
+          "start": -568218355,
+          "early": 1721409218,
+          "late": 1721409218
+        },
+        "motionOn": {
+          "matches": false,
+          "start": -1616945824,
+          "early": 1615114795,
+          "late": -1790040041
+        },
+        "noEasingWithTheMode": true,
+        "easingSeenWithoutIt": true
+      },
+      "highContrastOutline": {
+        "drawn": false,
+        "evidence": "static: no code of src/plant/view/renderer.ts reads palette.outline"
+      },
+      "verdict": "fail"
+    },
+    "security": {
+      "commit": "6fd2843e47f2bb70d374972ea8eb465588c13064",
+      "webgl2": true,
+      "posture": {
+        "require": "undefined",
+        "process": "undefined",
+        "isolated": true
+      },
+      "sharedMemory": false,
+      "cspViolationsBeforeAnyPlant": [
+        "script-src eval at file:43712 "
+      ],
+      "cspViolations": [],
+      "policyErrors": [],
+      "consoleErrors": [],
+      "requestsSeen": 34,
+      "failedRequests": [],
+      "remoteRequests": [],
+      "cspTest": {
+        "exitCode": 0,
+        "summary": "35 pass, 0 fail"
+      },
+      "securityChangesSinceV2": {
+        "base": "v2.0.0",
+        "security.ts": {
+          "added": 11,
+          "removed": 0
+        },
+        "security.test.ts": {
+          "added": 98,
+          "removed": 0
+        }
+      },
+      "bundleTest": {
+        "exitCode": 0,
+        "summary": "11 pass, 0 fail"
+      },
+      "verdict": "pass"
+    }
+  }
+}
