@@ -5,6 +5,7 @@
  */
 import type { FactValue, PlantCore, PlantSceneFile, Vec3 } from '../plant/contracts';
 import type { Catalogue } from '../plant/core/catalogue';
+import { toEngineering, toRaw, type ScaledSignal } from '../plant/scaling';
 import type { PlantMapV2 } from '../plants/plantMap';
 
 export interface ScenarioPlantPort {
@@ -108,7 +109,8 @@ export const factTruthy = (value: FactValue | undefined): boolean =>
 /**
  * One scan of the plant, the same for the graded run and the live session. Order: the script events due at `atMs`; read
  * the command image (one read of every mapped command); `apply`; `advance(scanMs)`; write the sensor image (one write of
- * every mapped sensor). The runtime's own scan for `atMs` follows the write.
+ * every mapped sensor). A numeric command is read raw and handed to the plant scaled to engineering units; a numeric sensor
+ * is scaled to the raw value the program variable holds before the write. The runtime's own scan for `atMs` follows the write.
  */
 export async function exchangeScan(
   port: ScenarioPlantPort,
@@ -126,13 +128,31 @@ export async function exchangeScan(
     else core.act(event.fault.part, event.fault.action);
   }
   const commands: Record<string, boolean | number> = {};
-  for (const [name, signal] of Object.entries(map.signals))
-    if (signal.direction === 'command') commands[name] = await readCommand(signal.point);
+  for (const [name, signal] of Object.entries(map.signals)) {
+    if (signal.direction !== 'command') continue;
+    const raw = await readCommand(signal.point);
+    if (signal.type === 'BOOL') commands[name] = raw;
+    else {
+      // A non-finite REAL is ignored: the plant keeps the command it has latched (R-X1).
+      const value = Number(raw);
+      if (Number.isFinite(value)) commands[name] = toEngineering(scaled(name, signal), value);
+    }
+  }
   core.apply(commands);
   core.advance(scanMs);
   const sensed = core.sense();
   const sensors: Record<string, boolean | number> = {};
-  for (const [name, signal] of Object.entries(map.signals))
-    if (signal.direction === 'sensor' && name in sensed) sensors[name] = sensed[name]!;
+  for (const [name, signal] of Object.entries(map.signals)) {
+    if (signal.direction !== 'sensor' || !(name in sensed)) continue;
+    const value = sensed[name]!;
+    if (signal.type === 'BOOL') sensors[name] = value;
+    else if (typeof value === 'number' && Number.isFinite(value)) sensors[name] = toRaw(scaled(name, signal), value);
+  }
   await writeSensors(sensors);
+}
+
+/** The one place a numeric map signal becomes a `ScaledSignal`, so the live and the graded path scale the same (PLT-017). */
+function scaled(name: string, signal: PlantMapV2['signals'][string]): ScaledSignal {
+  if (signal.type === 'BOOL' || !signal.range) throw new Error(`scene map: ${name} is a numeric signal and needs its range`);
+  return { type: signal.type, range: signal.range };
 }
