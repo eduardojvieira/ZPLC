@@ -103,7 +103,8 @@ export function captureExpression(locale: Locale): string {
   const [run, pause, resume] = ['toolbar.run.label', 'toolbar.pause.label', 'toolbar.resume.label'].map((key) =>
     translate(locale, key as Parameters<typeof translate>[1]),
   );
-  return `(() => {
+  return (
+    `(() => {
     const box = (element) => element.getBoundingClientRect();
     const bar = document.querySelector('[role="toolbar"][aria-label=${JSON.stringify(toolbar)}]');
     const name = document.querySelector('[data-project-name]');
@@ -132,12 +133,14 @@ export function captureExpression(locale: Locale): string {
       .map((child) => ({ text: (child.innerText ?? '').trim() })) : [];
     const transport = [${JSON.stringify(run)}, ${JSON.stringify(pause)}, ${JSON.stringify(resume)}];
     const sets = [...document.querySelectorAll('button')]
-      .filter((element) => box(element).width > 0 && transport.some((word) => (element.getAttribute('aria-label') ?? '').startsWith(word + ' (')))
+      .filter((element) => box(element).width > 0 && transport.some((word) => (element.getAttribute('aria-label') ?? '').startsWith(word ` +
+    `+ ' (')))
       .length;
     return { runControlSets: sets, commandBar: { projectNameX: name ? Math.round(box(name).x) : null, controls },
       tabStrip: strip ? { left: Math.round(box(strip).left), right: Math.round(box(strip).right) } : null,
       resultsTabs: tabs, statusRail: items };
-  })()`;
+  })()`
+  );
 }
 
 const VIEWPORTS = [
@@ -266,7 +269,10 @@ export function checkBudget(samples: BudgetSample[], targets: BudgetTargets): st
     over('status rail', sample.statusRail.count, targets.statusRailItems, sample.statusRail.items);
     over('the target shown', sample.targetPlaces.length, targets.targetPlaces, sample.targetPlaces);
     over('run controls', sample.runControlSets, targets.runControlSets, ['Run, Pause or Resume of the page']);
-    over('results panel tabs', sample.resultsTabs.total, targets.resultsTabs.total, [...sample.resultsTabs.namedIds, ...sample.resultsTabs.unnamedIds]);
+    over('results panel tabs', sample.resultsTabs.total, targets.resultsTabs.total, [
+      ...sample.resultsTabs.namedIds,
+      ...sample.resultsTabs.unnamedIds,
+    ]);
   }
   return violations;
 }

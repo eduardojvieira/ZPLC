@@ -113,7 +113,12 @@ describe('interface budget check (spec 013 section 8.2 item 2)', () => {
       locale: 'es',
       commandBar: {
         ...snapshot.commandBar,
-        controls: [...snapshot.commandBar.controls, control('Conectar', 460, 60), control('Guardar todo', 40, 30), control('Extra', 80, 30)],
+        controls: [
+          ...snapshot.commandBar.controls,
+          control('Conectar', 460, 60),
+          control('Guardar todo', 40, 30),
+          control('Extra', 80, 30),
+        ],
       },
     };
     const violations = checkBudget([measure(over)], targets);
