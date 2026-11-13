@@ -1,5 +1,7 @@
 {
   "m1-palletStack-v1": "d709b3b3059f85d100b392494efe3f47effb4d32575982301afe6e663a9b3fd5",
   "m2-tankLoop-v1": "4808d3f020c559020a0e7d47c893e9c690bb95903505e4fe4f5f14cb3b10fd02",
-  "notes": "pinned on Linux by Tasks P4 (m1-palletStack-v1) and N6 (m2-tankLoop-v1); macOS: pending, Windows: pending"
+  "m3-gripCycle-v1": "be5ead7684a90f27a38869491861eda7185439d3dc94bbc20d7bfa27b6d66de6",
+  "m3-gantryNumeric-v1": "bc6ac85d01bdf3fbb164423e8b98182d3a532f44ceaffc83670ce1d82e8e45d3",
+  "notes": "pinned on Linux by Tasks P4 (m1-palletStack-v1), N6 (m2-tankLoop-v1) and K8 (m3-gripCycle-v1, m3-gantryNumeric-v1); macOS: pending, Windows: pending"
 }

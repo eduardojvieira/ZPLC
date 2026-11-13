@@ -1,4 +1,4 @@
-import type { ConfigField, FactValue, PartDefinition, PartView, Quat, ScenePart, Vec3 } from '../../contracts';
+import type { BodyPose, ConfigField, FactValue, PartDefinition, PartView, Quat, ScenePart, Vec3 } from '../../contracts';
 import type { PhysicsWorld } from '../world';
 
 /** What the core (P4) composes per scene part. Called once per 5 ms plant step: beforeStep, world.step, afterStep. */
@@ -46,8 +46,8 @@ export interface ItemInfo {
   massKg: number;
   tag?: ItemTag;
 }
-/** C3 amended (Task K0 declares it in contracts.ts): lets the view draw a lid or a base differently from a box. */
-export type ItemTag = 'box' | 'lid' | 'base';
+/** C3 amended (K0 declares it as BodyPose['tag']): lets the view draw a lid or a base differently from a box. */
+export type ItemTag = NonNullable<BodyPose['tag']>;
 const tracked = new WeakMap<PhysicsWorld, Map<string, ItemInfo>>(); // Map keeps insertion order: creation order
 export const trackedItems = (world: PhysicsWorld): ReadonlyMap<string, ItemInfo> => tracked.get(world) ?? new Map();
 
