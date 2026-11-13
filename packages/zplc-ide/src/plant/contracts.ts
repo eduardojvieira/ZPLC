@@ -63,8 +63,18 @@ export interface PlantSignalDef {
   range?: { min: number; max: number };
 }
 
+/** C3 amended: optional properties of an item that a sensor reads and the view draws. Pallets have none. */
+export type ItemColour = 'red' | 'blue';
+export interface ItemProps {
+  colour?: ItemColour;
+  /** True for a metal item (an inductive sensor sees only these). Absent means false. */
+  metal?: boolean;
+  /** An identity code 1 to 9 a vision sensor reads; absent means unlabelled (0). */
+  code?: number;
+}
+
 /** C3. A drawable state; the view reads nothing else (P14). */
-export interface BodyPose {
+export interface BodyPose extends ItemProps {
   id: string;
   part: string;
   kind: 'box' | 'pallet' | 'item';
