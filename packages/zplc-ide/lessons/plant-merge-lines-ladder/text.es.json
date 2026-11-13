@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Fusionar dos líneas en Ladder",
+  "summary": "Arbitre con peldaños de enclavamiento dos alimentadores que comparten una salida: dé prioridad a la línea A, deje pasar una caja a la vez y bloquee entre sí las dos cuchillas.",
+  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "objectives": [
+    "Arbitrar dos peticiones con una prioridad: la línea A gana cuando ambas esperan.",
+    "Enclavar dos salidas para que nunca estén activas juntas y liberar la concesión solo cuando la caja haya despejado la fusión."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/MergeLines.ld.json, guarde dos memorias de concesión, GrantA y GrantB, como bobinas de activación y de borrado: conceda primero a la línea A cuando ambas esperan, conceda a una línea solo cuando no haya una concesión activa y la zona de fusión esté vacía, y termine la concesión cuando su caja haya salido de la zona.",
+      "checkpoint": "HoldA y HoldB son verdaderas salvo que esa línea tenga la concesión, así que las dos cuchillas nunca están abiertas a la vez."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "Antes de ejecutar, piense en el punto de fusión: ambos alimentadores llevan cajas, pero la salida admite una caja a la vez.",
+      "checkpoint": "Al principio ambas cuchillas retienen las líneas; luego se abre una cuchilla a la vez, primero la línea A, y la siguiente solo después de que la caja salió de la zona; las seis cajas salen y Done se enciende."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no tiene peldaños, así que no se carga nada y ninguna cuchilla se mueve; cargue tres cajas en cada alimentador, abra una cuchilla a la vez, con la línea A primero y nunca ambas juntas, y abra la siguiente solo cuando la caja anterior haya salido de la zona de fusión.",
+      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario merge-lines; observe la vista 3D mientras se ejecuta.",
+      "checkpoint": "El escenario requerido se llama merge-lines y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Observe qué cuchilla se abre primero y cómo espera la segunda línea; ninguna pareja de cajas se encuentra en la fusión.",
+      "checkpoint": "Las seis cajas se entregan por turnos, ninguna choca ni cae, y Done está encendida al final."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "La aserción ALWAYS sobre colisiones es la comprobación del enclavamiento: un diseño que abriera ambas cuchillas podría pasar la entrega y aun así fallar esa aserción.",
+      "checkpoint": "No establece la velocidad física de la banda, la respuesta del sensor, la temporización de hardware, HIL, función de seguridad ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Una concesión es un enclavamiento: un peldaño activa GrantA cuando WaitA es TRUE, nada está concedido y la zona está vacía; el peldaño de GrantB va después, así que la línea A gana cuando ambas esperan."
+    },
+    {
+      "level": 2,
+      "text": "Recuerde que el sensor de la zona vio la caja con un enclavamiento Seen, y borre ambas concesiones y Seen cuando Zone pase de TRUE a FALSE (un contacto de flanco de bajada sobre Zone); luego HoldA es Active Y NO GrantA y HoldB es Active Y NO GrantB."
+    }
+  ],
+  "faultCases": [
+    "El inicial no tiene peldaños, así que no se carga nada y ninguna cuchilla se mueve; cargue tres cajas en cada alimentador, abra una cuchilla a la vez, con la línea A primero y nunca ambas juntas, y abra la siguiente solo cuando la caja anterior haya salido de la zona de fusión."
+  ]
+}

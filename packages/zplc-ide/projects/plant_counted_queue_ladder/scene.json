@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "name": "Counted queue",
+  "shortestPulseMs": 800,
+  "parts": [
+    {
+      "id": "belt",
+      "part": "belt",
+      "name": "Belt1",
+      "position": [0, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": { "length": 3, "speedMps": 0.5 }
+    },
+    { "id": "emitter", "part": "emitter", "name": "Emitter1", "position": [-1.3, 0.5, 0], "rotationYDeg": 0, "config": { "maxItems": 3 } },
+    {
+      "id": "eye-in",
+      "part": "sensor-diffuse",
+      "name": "EyeIn",
+      "position": [-0.6, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": { "rangeM": 1 }
+    },
+    {
+      "id": "eye-out",
+      "part": "sensor-diffuse",
+      "name": "EyeOut",
+      "position": [0.7, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": { "rangeM": 1 }
+    },
+    {
+      "id": "remover",
+      "part": "remover",
+      "name": "Remover1",
+      "position": [1.35, 0.65, 0],
+      "rotationYDeg": 0,
+      "config": { "width": 0.4, "height": 0.6, "depth": 0.6 }
+    },
+    { "id": "start", "part": "push-button", "name": "StartButton", "position": [-1.3, 0.5, -0.7], "rotationYDeg": 0, "config": {} },
+    { "id": "done", "part": "indicator-light", "name": "DoneLight", "position": [1.3, 0.5, -0.7], "rotationYDeg": 0, "config": {} }
+  ],
+  "cameras": [{ "name": "Overview", "position": [0, 2.4, 3], "target": [0, 0.5, 0] }]
+}

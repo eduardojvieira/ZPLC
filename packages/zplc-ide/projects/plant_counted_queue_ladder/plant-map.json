@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 2,
+  "target": { "scene": "counted-queue" },
+  "signals": {
+    "StartButton.pressed": { "direction": "sensor", "type": "BOOL", "point": "CountedQueue.Start" },
+    "EyeIn.detect": { "direction": "sensor", "type": "BOOL", "point": "CountedQueue.EyeIn" },
+    "EyeOut.detect": { "direction": "sensor", "type": "BOOL", "point": "CountedQueue.EyeOut" },
+    "Belt1.run": { "direction": "command", "type": "BOOL", "point": "CountedQueue.Run" },
+    "Emitter1.emit": { "direction": "command", "type": "BOOL", "point": "CountedQueue.Emit" },
+    "DoneLight.lit": { "direction": "command", "type": "BOOL", "point": "CountedQueue.Done" }
+  }
+}

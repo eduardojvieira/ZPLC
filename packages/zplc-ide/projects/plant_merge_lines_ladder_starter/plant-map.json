@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "target": { "scene": "merge-lines" },
+  "signals": {
+    "StartButton.pressed": { "direction": "sensor", "type": "BOOL", "point": "MergeLines.Start" },
+    "EyeA.detect": { "direction": "sensor", "type": "BOOL", "point": "MergeLines.WaitA" },
+    "EyeB.detect": { "direction": "sensor", "type": "BOOL", "point": "MergeLines.WaitB" },
+    "EyeZone.detect": { "direction": "sensor", "type": "BOOL", "point": "MergeLines.Zone" },
+    "FeedA.run": { "direction": "command", "type": "BOOL", "point": "MergeLines.RunA" },
+    "FeedB.run": { "direction": "command", "type": "BOOL", "point": "MergeLines.RunB" },
+    "Outfeed.run": { "direction": "command", "type": "BOOL", "point": "MergeLines.RunOut" },
+    "EmitterA.emit": { "direction": "command", "type": "BOOL", "point": "MergeLines.EmitA" },
+    "EmitterB.emit": { "direction": "command", "type": "BOOL", "point": "MergeLines.EmitB" },
+    "BladeA.extend": { "direction": "command", "type": "BOOL", "point": "MergeLines.HoldA" },
+    "BladeB.extend": { "direction": "command", "type": "BOOL", "point": "MergeLines.HoldB" },
+    "DoneLight.lit": { "direction": "command", "type": "BOOL", "point": "MergeLines.Done" }
+  }
+}

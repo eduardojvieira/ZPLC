@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-merge-lines-ladder",
+  "version": 1,
+  "order": 1142,
+  "module": 14,
+  "level": "advanced",
+  "prerequisites": ["plant-counted-queue", "interlock-guard-permissive"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The grant latches and interlocked coils of this lesson arbitrate boxes that two simulated feeders deliver to one merge zone; a learner board has no feeders, blades or boxes for the contacts to arbitrate.",
+        "es": "Los enclavamientos de concesión y las bobinas bloqueadas entre sí de esta lección arbitran cajas que dos alimentadores simulados entregan a una zona de fusión; una placa del estudiante no tiene alimentadores, cuchillas ni cajas que los contactos puedan arbitrar."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus cajas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "merge-lines",
+  "estimatedMinutes": 45,
+  "starter": {
+    "project": "plant_merge_lines_ladder_starter",
+    "program": "src/MergeLines.ld.json"
+  },
+  "solution": {
+    "project": "plant_merge_lines_ladder",
+    "program": "src/MergeLines.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "merge-lines",
+    "path": "tests/merge-lines.scenario.json",
+    "sha256": "0f72f715a529629c82856a3a13eadd6a4dad664c4b4064da02e7e8e05522c2f6"
+  },
+  "regressionScenarios": []
+}

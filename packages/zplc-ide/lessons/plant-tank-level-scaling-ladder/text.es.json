@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "title": "Leer el nivel en Ladder",
+  "summary": "Escale con cuadros de función el nivel crudo de un tanque, un número entero de 0 a 27648, a metros, y úselo para mantener el nivel cerca de un valor de consigna con una entrada proporcional.",
+  "scope": "La calificación es una ejecución sin interfaz del tanque simulado en el entorno de ejecución POSIX nativo, con un nivel analógico que sigue las reglas de escala del mapa de la planta. No establece la exactitud, el ruido ni la calibración de un transmisor de nivel real, la temporización en hardware, HIL ni la certificación.",
+  "objectives": [
+    "Escalar con cuadros un valor analógico a unidades de ingeniería: convertir primero a REAL y luego dividir entre el rango crudo.",
+    "Leer el mapa de planta para hallar el rango crudo de cada señal, y ver qué hace al proceso una escala equivocada."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "El tanque informa su nivel como un número entero: de 0 a 27648 es de 0 a 1 m. El potenciómetro de consigna da de 0 a 1000 para de 0 a 1 m, y el potenciómetro de vaciado de 0 a 1000 para de 0 a 100 por ciento. En src/TankLevel.ld.json, escale el nivel y la consigna a metros; fije la entrada en 800 por ciento por cada metro que el nivel esté por debajo de la consigna, limitada de 0 a 100 por ciento; pase el potenciómetro de vaciado a la válvula de descarga en por ciento; muestre el nivel en metros en la pantalla y encienda el verde mientras el nivel esté a menos del 5 por ciento de la consigna.",
+      "checkpoint": "El programa escala ambos valores crudos una sola vez, en los primeros peldaños, y todos los peldaños siguientes usan metros."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "La consigna sube a 0,5 m en {{t:200}} ms y el potenciómetro de vaciado se gira al 40 por ciento en {{t:40000}} ms. Prediga el nivel entre {{t:30000}} ms y {{t:38000}} ms, y después de que se abra el vaciado.",
+      "checkpoint": "El nivel sube hasta cerca de 0,5 m sin oscilar y se mantiene en la banda de 0,45 m a 0,55 m, antes y después de que se abra el vaciado: la entrada repone el agua que saca el vaciado, con un pequeño desvío."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "El inicial declara las entradas y las salidas y no tiene peldaños. Declare variables REAL locales para los valores convertidos y los metros. Copie cada valor crudo a una variable REAL con un cuadro MOVE y luego divida con un cuadro DIV entre 27648.0 o 1000.0: una división entera daría 0 para todo nivel menor de 1 m. Después escriba FillCmd a partir del error con un cuadro MUL y límitela con un cuadro LIMIT.",
+      "checkpoint": "El programa tiene las variables REAL convertidas, FillCmd limitada y un peldaño por cada una de las otras tres salidas."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "Pulse Check. ZPLC ejecuta src/TankLevel.ld.json contra el tanque de la escena tank-level-control, sube la consigna y abre el vaciado, y prueba {{assertions}} aserciones sobre el tanque: se mantiene en su banda en dos ventanas y nunca se derrama.",
+      "checkpoint": "El escenario se llama tank-level-scaling y pasa las {{assertions}} aserciones con evidencia guardada del host."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Observe el visualizador mientras la entrada se cierra al acercarse el nivel a la consigna. Abra el mapa de la planta y busque el rango de Tank1.level: es el 27648 por el que dividió.",
+      "checkpoint": "El visualizador de nivel muestra los mismos metros que el tanque."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "Una entrada proporcional no tiene memoria: cuando se abre el vaciado, el nivel se estabiliza algo por debajo de la consigna, porque la entrada solo se abre en proporción al error. La lección siguiente añade los términos integral y derivativo. Una escala errónea no da un error pequeño: con una división entera el programa lee 0 m, deja la entrada abierta y el tanque se derrama.",
+      "checkpoint": "Explique por qué el mismo error en la escala de la consigna dejaría el tanque vacío."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Un cuadro MOVE de LevelRaw a LevelF, luego un cuadro DIV de LevelF y 27648.0 hacia LevelM; haga lo mismo con SetPointRaw y 1000.0 para SetM; el error es un cuadro SUB de SetM y LevelM, en metros."
+    },
+    {
+      "level": 2,
+      "text": "Un cuadro MUL de 800.0 y el error hacia FillCmd, luego un cuadro LIMIT de 0.0, FillCmd y 100.0 de vuelta a FillCmd; DrainCmd es el valor crudo de vaciado convertido a REAL y dividido entre 10.0; LevelShown es un MOVE de LevelM; para Green, un cuadro GE de LevelM y un borde inferior y un cuadro LE de LevelM y un borde superior, el 5 por ciento de la consigna por debajo y por encima de ella."
+    }
+  ],
+  "faultCases": ["El inicial no tiene peldaños: la entrada nunca se abre, así que el tanque queda vacío y nunca llega a su banda."]
+}

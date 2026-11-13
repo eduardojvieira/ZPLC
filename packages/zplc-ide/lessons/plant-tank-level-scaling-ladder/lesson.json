@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-tank-level-scaling-ladder",
+  "version": 1,
+  "order": 1132,
+  "module": 13,
+  "level": "advanced",
+  "prerequisites": ["analog-scaling-integer", "plant-timed-tank"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The MOVE, DIV and LIMIT boxes of this lesson scale a level that comes from the simulated tank, and the hardware track of the plant lessons opens in a later release, once the analog exchange of plant I/O mode has been measured on a learner board.",
+        "es": "Los cuadros MOVE, DIV y LIMIT de esta lección escalan un nivel que proviene del tanque simulado, y la ruta de hardware de las lecciones de planta se abre en una versión posterior, cuando el intercambio analógico del modo de E/S de planta se haya medido en una placa del estudiante."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the tank, its level sensor and the potentiometers are part of the scenario.",
+        "es": "Complétela en Simulación, donde el tanque, su sensor de nivel y los potenciómetros forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "tank-level-control",
+  "estimatedMinutes": 30,
+  "starter": {
+    "project": "plant_tank_level_scaling_ladder_starter",
+    "program": "src/TankLevel.ld.json"
+  },
+  "solution": {
+    "project": "plant_tank_level_scaling_ladder",
+    "program": "src/TankLevel.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "tank-level-scaling",
+    "path": "tests/tank-level-scaling.scenario.json",
+    "sha256": "f2c5857705fc49ac80e91b2ecf9ce6b035a2bf8547d3474c922cb6ba3860df95"
+  },
+  "regressionScenarios": []
+}

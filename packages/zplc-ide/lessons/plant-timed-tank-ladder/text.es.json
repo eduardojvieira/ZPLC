@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "title": "Llenar y vaciar con temporizadores en Ladder",
+  "summary": "Ejecute un ciclo de llenado, retención y vaciado de un tanque con bloques TON en peldaños, un arranque de panel y una parada de emergencia.",
+  "scope": "La calificación es una ejecución sin interfaz del tanque simulado en el entorno de ejecución POSIX nativo. No establece el comportamiento de un tanque, una válvula o un sensor reales, la temporización en hardware, HIL ni la certificación.",
+  "objectives": [
+    "Medir un paso de un proceso con un temporizador de retardo a la conexión (TON), con un temporizador para cada paso.",
+    "Usar un temporizador como límite de seguridad en un paso que normalmente termina con un sensor, y dejar que la parada de emergencia aborte el ciclo."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "La escena es un tanque con una válvula de llenado, una válvula de vaciado y un interruptor de nivel bajo, un botón Start, una parada de emergencia y una torre de luces. En src/TimedTank.ld.json, ejecute un ciclo por cada pulsación de Start mientras la parada de emergencia está liberada y el tanque está en reposo: ámbar encendido, Fill abierta durante un tiempo fijado por un temporizador (el tanque no tiene sensor a este nivel, así que el temporizador es la medición), una retención de dos segundos, luego Drain abierta hasta LevelLow o veinte segundos, y después verde encendido. La parada de emergencia cierra ambas válvulas y enciende el rojo.",
+      "checkpoint": "El ciclo es una cadena de pasos y cada paso temporizado tiene su propio temporizador."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "Antes de ejecutar, prediga las salidas en {{t:100}} ms (antes de la pulsación), en {{t:800}} ms (el ciclo ha comenzado) y en {{t:1500}} ms (se pulsa la parada de emergencia). Luego prediga dónde está el ciclo en {{t:25000}} ms, después de una segunda pulsación en {{t:4000}} ms.",
+      "checkpoint": "{{v:TimedTank.Fill=false,TimedTank.Drain=false,TimedTank.Green=false,TimedTank.Red=false@100|Todo apagado}} en {{t:100}} ms; {{v:TimedTank.Fill=true,TimedTank.Amber=true,TimedTank.Green=false@800|Fill y Amber encendidas}} en {{t:800}} ms; {{v:TimedTank.Fill=false,TimedTank.Drain=false,TimedTank.Red=true@1500|ambas válvulas cerradas y Red encendida}} en {{t:1500}} ms; {{v:TimedTank.Green=true,TimedTank.Drain=false,TimedTank.Red=false@25000|Green encendida y el vaciado cerrado}} en {{t:25000}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "El inicial declara las entradas y las salidas y no tiene peldaños. Guarde un número de paso (0 reposo, 1 llenado, 2 retención, 3 vaciado) en una variable INT, un bloque TON por cada paso temporizado, y gobierne las salidas desde el paso con un peldaño por cada salida. El llenado dura 3,5 segundos: un bloque TON con PT de T#3500ms.",
+      "checkpoint": "El programa tiene una variable de paso, tres temporizadores y un peldaño por cada salida."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "Pulse Check. ZPLC ejecuta src/TimedTank.ld.json contra el tanque de la escena timed-tank, pulsa Start, opera la parada de emergencia y pulsa Start otra vez, y prueba {{assertions}} aserciones: las salidas en tiempos fijos, y que el tanque nunca se derrame.",
+      "checkpoint": "El escenario se llama timed-tank y pasa las {{assertions}} aserciones con evidencia guardada del host."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Observe cómo se llena el tanque mientras Amber está encendida, espera y luego se vacía hasta el interruptor de nivel bajo. Relacione la parada de emergencia de {{t:1000}} ms con el paso: el ciclo vuelve a reposo, así que la pulsación de {{t:4000}} ms inicia uno nuevo.",
+      "checkpoint": "La traza muestra un primer ciclo abortado en la parada y un segundo ciclo que termina en Green."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "Un temporizador mide tiempo, no volumen: si la válvula de llenado fuera más lenta, el tanque tendría menos tras los mismos 3,5 segundos. El vaciado espera a un sensor y el temporizador solo limita la espera.",
+      "checkpoint": "Nombre el paso donde un temporizador sustituye a un sensor y el paso donde lo respalda."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Cada peldaño de temporizador empieza con una comparación del paso: un bloque EQ sobre Step y 1 alimenta un bloque TON con PT de T#3500ms, y cuando su Q es TRUE un bloque MOVE escribe el paso siguiente."
+    },
+    {
+      "level": 2,
+      "text": "Un peldaño por cada transición: un contacto EStopOk en forma normalmente cerrada alimenta un MOVE de 0 a Step, y EStopOk, un EQ de Step y 0, y Start alimentan un MOVE de 1. Luego HoldT para dos segundos y DrainT para veinte segundos, cuyo peldaño de salida necesita LevelLow O la salida de DrainT. Por último un peldaño por cada salida: Fill cuando Step es 1, Drain cuando Step es 3, Amber cuando Step difiere de 0, Red cuando EStopOk está apagado, y Green es TRUE tras un ciclo terminado."
+    }
+  ],
+  "faultCases": ["El inicial no tiene peldaños: ninguna válvula se abre, así que el ciclo nunca se ejecuta."]
+}
