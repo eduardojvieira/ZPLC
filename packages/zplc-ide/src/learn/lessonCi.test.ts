@@ -57,6 +57,18 @@ function scratchStarter(lesson: LessonPackage): string {
   return root;
 }
 
+/**
+ * A scene-building lesson's starter has not built its scene yet, so a program of a check cannot be graded on it: the check runs
+ * on the scene and plant map of the solution (a learner who built the scene right and wrote another program).
+ */
+function onBuiltScene(root: string, lesson: LessonPackage): void {
+  if (!lesson.manifest.scene) return;
+  const starter = join(PROJECTS_DIRECTORY, lesson.manifest.starter.project);
+  const solution = join(PROJECTS_DIRECTORY, lesson.manifest.solution.project);
+  if (readFileSync(join(starter, 'scene.json'), 'utf8') === readFileSync(join(solution, 'scene.json'), 'utf8')) return;
+  for (const file of ['scene.json', 'plant-map.json']) cpSync(join(solution, file), join(root, file));
+}
+
 function apply(root: string, check: LessonProgramCheck): void {
   for (const file of check.remove ?? []) rmSync(join(root, file), { force: true });
   for (const [file, content] of Object.entries(check.files)) writeFileSync(join(root, file), content);
@@ -207,6 +219,7 @@ for (const lesson of packages) {
       `reference solution (${manifest.solution.project}/${manifest.solution.program}) PASSES the reference scenario`,
       async () => {
         const root = scratchStarter(lesson);
+        onBuiltScene(root, lesson);
         writeFileSync(
           join(root, manifest.starter.program),
           readFileSync(join(PROJECTS_DIRECTORY, manifest.solution.project, manifest.solution.program), 'utf8'),
@@ -228,6 +241,7 @@ for (const lesson of packages) {
         `another correct solution (${intent}) also PASSES`,
         async () => {
           const root = scratchStarter(lesson);
+          onBuiltScene(root, lesson);
           apply(root, { intent, ...check });
           expect({ intent, ...(await grade(root, lesson)) }).toMatchObject({ intent, built: true, result: 'passed' });
         },
@@ -240,6 +254,7 @@ for (const lesson of packages) {
         `wrong program that ${intent} stays RED`,
         async () => {
           const root = scratchStarter(lesson);
+          onBuiltScene(root, lesson);
           apply(root, { intent, ...check });
           expect({ intent, ...(await grade(root, lesson)) }).toMatchObject({ intent, built: true, result: 'failed' });
         },

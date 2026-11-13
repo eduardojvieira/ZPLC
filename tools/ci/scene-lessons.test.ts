@@ -148,7 +148,7 @@ describe('the alternative pairs (M7-K5)', () => {
     expect(TWO_ZERO_LESSON_IDS).toHaveLength(68);
     expect(alternativePairFaults(LESSON_INDEX)).toEqual([]);
     // each of the 7 -ladder lessons of 2.0 requires its ST twin or has none
-    const ladders = LESSON_INDEX.lessons.filter((lesson) => lesson.id.endsWith('-ladder'));
+    const ladders = LESSON_INDEX.lessons.filter((lesson) => lesson.id.endsWith('-ladder') && TWO_ZERO_LESSON_IDS.includes(lesson.id));
     expect(ladders).toHaveLength(7);
     for (const ladder of ladders) {
       const twin = LESSON_INDEX.lessons.find((lesson) => lesson.id === ladder.id.slice(0, -'-ladder'.length));
