@@ -431,6 +431,13 @@ jobs:
           ZPLC_FW_WS: ${{ github.workspace }}
         run: python3 zplc/firmware/tests/app_device_link/test_app_device_link.py
 
+      # LNK-007, LNK-010, LNK-011, LNK-012, LNK-018: the firmware application serves plant I/O mode on the device link,
+      # on a real shell (native_sim), and a build without CONFIG_ZPLC_PLANT_IO has no bit 12.
+      - name: Check plant I/O mode on the device link of the application
+        env:
+          ZPLC_FW_WS: ${{ github.workspace }}
+        run: python3 zplc/firmware/tests/app_plant_link/test_app_plant_link.py
+
   zephyr-cross-build:
     name: Zephyr cross-build (${{ matrix.id }})
     runs-on: ubuntu-latest
