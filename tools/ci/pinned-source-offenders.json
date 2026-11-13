@@ -198,6 +198,11 @@
     "added": "2026-10-10",
     "reads": [
       "packages/zplc-ide/src/components/Console.tsx",
+      "packages/zplc-ide/src/components/console/TestsTab.tsx",
+      "packages/zplc-ide/src/components/console/InterlocksTab.tsx",
+      "packages/zplc-ide/src/components/console/ChangesTab.tsx",
+      "packages/zplc-ide/src/components/console/AgentTab.tsx",
+      "packages/zplc-ide/src/components/console/useWorkspaceTestRunner.ts",
       "packages/zplc-ide/src/components/ConsoleTabStrip.tsx",
       "packages/zplc-ide/src/components/ConsoleReviewPanels.tsx",
       "packages/zplc-ide/src/components/LiveNativeMotorControls.tsx",
