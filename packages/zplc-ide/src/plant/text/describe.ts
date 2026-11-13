@@ -7,7 +7,7 @@ const TOTALS = ['itemsEmitted', 'itemsRemoved', 'itemsDropped', 'itemsCollided']
 const CONTINUOUS = ['level:', 'volume:', 'spilledL:', 'axis:'];
 // The support facts (K5) and a tank's high-mark count are told in words and stay silent at 0, so a scene that assembles or stacks nothing
 // reads as it did before them.
-const SUPPORT = /^(itemsAssembled|stacked:pallet:\d+|layers:pallet:\d+|highs:.+)$/;
+const SUPPORT = /^(itemsAssembled|stacked:pallet:\d+|layers:pallet:\d+|highs:.+|emitted:.+)$/;
 const kindOf = (k: string) => (k.startsWith('layers:pallet:') ? 'layers' : '');
 const m = (n: number) => String(Math.round(n * 10) / 10);
 
@@ -16,7 +16,7 @@ const m = (n: number) => String(Math.round(n * 10) / 10);
  * facts, active signals), never a position, so announcing on key change does not announce every scan.
  */
 export function describePlant(snapshot: PlantSnapshot, scene: PlantSceneFile, locale: 'en' | 'es'): { text: string; key: string } {
-  const { t } = translatorFor(locale);
+  const { t, tn } = translatorFor(locale);
   const parts = [t('plant.text.summary', { scene: scene.name, count: snapshot.items.length })];
   // position:<kind>:<index> facts are positions, never part of a change of situation.
   const facts = Object.entries(snapshot.facts).filter(
@@ -37,7 +37,13 @@ export function describePlant(snapshot: PlantSnapshot, scene: PlantSceneFile, lo
     }
     if (pallet) {
       const layers = snapshot.facts[`layers:pallet:${pallet[1]}`] ?? 0;
-      parts.push(t('plant.text.pallet', { number: String(Number(pallet[1]) + 1), boxes: String(v), layers: String(layers) }));
+      parts.push(
+        t('plant.text.pallet', {
+          number: String(Number(pallet[1]) + 1),
+          boxes: tn('plant.text.palletBoxes', Number(v)),
+          layers: tn('plant.text.palletLayers', Number(layers)),
+        }),
+      );
       continue;
     }
     const [kind, name] = [k.slice(0, k.indexOf(':')), k.slice(k.indexOf(':') + 1)];
@@ -45,7 +51,8 @@ export function describePlant(snapshot: PlantSnapshot, scene: PlantSceneFile, lo
     else if (kind === 'count' && k.includes(':')) parts.push(t('plant.text.count', { name, count: String(v) }));
     else if ((kind === 'picked' || kind === 'placed' || kind === 'drops') && k.includes(':'))
       parts.push(t(`plant.text.${kind}`, { name, count: String(v) }));
-    else if (kind === 'highs' && k.includes(':')) parts.push(t('plant.text.highs', { name, count: String(v) }));
+    else if (kind === 'highs' && k.includes(':')) parts.push(tn('plant.text.highs', Number(v), { name }));
+    else if (kind === 'emitted' && k.includes(':')) parts.push(tn('plant.text.emitted', Number(v), { name }));
     else if (kind === 'inBand' && k.includes(':')) parts.push(t(v ? 'plant.text.inBand' : 'plant.text.outOfBand', { name }));
     else parts.push(t('plant.text.fact', { name: k, value: String(v) }));
   }
