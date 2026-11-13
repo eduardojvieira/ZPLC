@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "name": "Balanced production line",
+  "shortestPulseMs": 400,
+  "parts": [
+    {
+      "id": "infeed",
+      "part": "belt",
+      "name": "Infeed",
+      "position": [0, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": { "length": 3, "speedMps": 0.5 }
+    },
+    {
+      "id": "branch-b",
+      "part": "belt",
+      "name": "BranchB",
+      "position": [0.9, 0.5, 0.6],
+      "rotationYDeg": 0,
+      "config": { "length": 2.2, "speedMps": 0.5 }
+    },
+    {
+      "id": "source",
+      "part": "emitter",
+      "name": "Source1",
+      "position": [-1.3, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": { "kind": "workpiece", "intervalMs": 6000, "maxItems": 8 }
+    },
+    {
+      "id": "gate",
+      "part": "sensor-diffuse",
+      "name": "Gate",
+      "position": [-0.6, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": { "rangeM": 0.8, "heightM": 0.05 }
+    },
+    {
+      "id": "arm",
+      "part": "diverter-arm",
+      "name": "Arm1",
+      "position": [0.2, 0.5, -0.35],
+      "rotationYDeg": 0,
+      "config": { "lengthM": 1.2, "angleDeg": 30 }
+    },
+    {
+      "id": "eye-a",
+      "part": "sensor-diffuse",
+      "name": "EyeA",
+      "position": [1.2, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": { "rangeM": 0.55, "heightM": 0.05 }
+    },
+    {
+      "id": "eye-b",
+      "part": "sensor-diffuse",
+      "name": "EyeB",
+      "position": [1.7, 0.5, 1.1],
+      "rotationYDeg": 90,
+      "config": { "rangeM": 0.8, "heightM": 0.05 }
+    },
+    {
+      "id": "machine-a",
+      "part": "machining-centre",
+      "name": "MachineA",
+      "position": [2, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": { "product": "lid", "cycleMs": 3000 }
+    },
+    {
+      "id": "machine-b",
+      "part": "machining-centre",
+      "name": "MachineB",
+      "position": [2.5, 0.5, 0.6],
+      "rotationYDeg": 0,
+      "config": { "product": "base", "cycleMs": 6000 }
+    },
+    {
+      "id": "out-a",
+      "part": "belt",
+      "name": "OutA",
+      "position": [3.25, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": { "length": 1.5, "speedMps": 0.5 }
+    },
+    {
+      "id": "out-b",
+      "part": "belt",
+      "name": "OutB",
+      "position": [3.75, 0.5, 0.6],
+      "rotationYDeg": 0,
+      "config": { "length": 1.5, "speedMps": 0.5 }
+    },
+    { "id": "lid-bin", "part": "remover", "name": "LidBin", "position": [4.3, 0.3, 0], "rotationYDeg": 0, "config": {} },
+    { "id": "base-bin", "part": "remover", "name": "BaseBin", "position": [4.8, 0.3, 0.6], "rotationYDeg": 0, "config": {} },
+    { "id": "start", "part": "push-button", "name": "StartButton", "position": [-1.3, 0.5, -0.7], "rotationYDeg": 0, "config": {} },
+    { "id": "beacon", "part": "stack-light", "name": "Beacon", "position": [1.2, 0.5, -0.9], "rotationYDeg": 0, "config": {} }
+  ],
+  "cameras": [{ "name": "Overview", "position": [1.7, 3.2, 3.4], "target": [1.7, 0.5, 0.3] }]
+}

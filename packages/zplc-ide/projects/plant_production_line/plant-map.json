@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 2,
+  "target": { "scene": "balanced-production-line" },
+  "signals": {
+    "StartButton.pressed": { "direction": "sensor", "type": "BOOL", "point": "ProductionLine.Start" },
+    "Gate.detect": { "direction": "sensor", "type": "BOOL", "point": "ProductionLine.Gate" },
+    "EyeA.detect": { "direction": "sensor", "type": "BOOL", "point": "ProductionLine.EyeA" },
+    "EyeB.detect": { "direction": "sensor", "type": "BOOL", "point": "ProductionLine.EyeB" },
+    "MachineA.ready": { "direction": "sensor", "type": "BOOL", "point": "ProductionLine.ReadyA" },
+    "MachineA.done": { "direction": "sensor", "type": "BOOL", "point": "ProductionLine.DoneA" },
+    "MachineB.ready": { "direction": "sensor", "type": "BOOL", "point": "ProductionLine.ReadyB" },
+    "MachineB.done": { "direction": "sensor", "type": "BOOL", "point": "ProductionLine.DoneB" },
+    "Infeed.run": { "direction": "command", "type": "BOOL", "point": "ProductionLine.RunInfeed" },
+    "BranchB.run": { "direction": "command", "type": "BOOL", "point": "ProductionLine.RunBranch" },
+    "OutA.run": { "direction": "command", "type": "BOOL", "point": "ProductionLine.RunOutA" },
+    "OutB.run": { "direction": "command", "type": "BOOL", "point": "ProductionLine.RunOutB" },
+    "Arm1.divert": { "direction": "command", "type": "BOOL", "point": "ProductionLine.Divert" },
+    "MachineA.feed": { "direction": "command", "type": "BOOL", "point": "ProductionLine.FeedA" },
+    "MachineA.start": { "direction": "command", "type": "BOOL", "point": "ProductionLine.StartA" },
+    "MachineB.feed": { "direction": "command", "type": "BOOL", "point": "ProductionLine.FeedB" },
+    "MachineB.start": { "direction": "command", "type": "BOOL", "point": "ProductionLine.StartB" },
+    "Beacon.green": { "direction": "command", "type": "BOOL", "point": "ProductionLine.Green" }
+  }
+}

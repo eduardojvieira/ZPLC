@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Balance a production line",
+  "summary": "Split a line into one function block per machine, and send alternate blanks to each so that both machines make four products.",
+  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Move the control of one machine into a function block and use one instance for each machine.",
+    "Balance two machines of different speeds by alternating the blanks between them."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/ProductionLine.st, turn the inline control of machine A into a function block Cell, call one instance for machine A and another for machine B, and light Green when both have finished four cycles.",
+      "checkpoint": "Both machines run the same function block, so a change to the block changes both."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, count the blanks: eight arrive, one every six seconds, and the arm sends every second one to machine B; machine A needs 3 s per cycle and machine B 6 s, so each makes four with the same block.",
+      "checkpoint": "Each machine feeds until a blank has entered, waits for Ready before it pulses Start, and feeds again after Done; no Start is a misfire."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter controls only machine A, written inline; move that control into a function block, call it for machine A and for machine B, and light Green when both have finished four cycles.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the balanced-production-line scenario; watch the 3D view while it runs.",
+      "checkpoint": "The required scenario is named balanced-production-line and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Watch both machines in the 3D view and read produced: and misfires: in the facts text.",
+      "checkpoint": "Machine A makes a lid and machine B a base on each cycle, and misfires stays at zero."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The EVENTUALLY assertion proves both machines made a product and both bins received one; the ALWAYS assertion proves no Start was a misfire and nothing fell.",
+      "checkpoint": "The grade cannot count the products: it reads Green, which the program lights from its own count, so read produced: in the facts for the real number. It does not establish physical machine timing, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "A function block keeps its own variables in each instance: Step, the timers and the count belong inside Cell, so two instances never share them."
+    },
+    {
+      "level": 2,
+      "text": "Pass Active, Seen, Ready and Done in and take Feed, Start and Cycles out; set Start to FALSE at the top so that it lasts one scan, and call each instance once per scan."
+    }
+  ],
+  "faultCases": [
+    "The starter controls only machine A, written inline; move that control into a function block, call it for machine A and for machine B, and light Green when both have finished four cycles."
+  ]
+}
