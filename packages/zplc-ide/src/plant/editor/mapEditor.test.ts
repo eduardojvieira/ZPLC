@@ -83,7 +83,10 @@ describe('plant-map editor', () => {
       const v1 = JSON.parse(raw) as PlantMap;
       expect(validatePlantMap(v1)).toEqual([]);
       const typed = normalizePlantMap(v1).signals;
-      const ed = createMapEditor(typed, 'lesson');
+      const ed = createMapEditor(
+        typed.map(({ name, direction, type }) => ({ name, direction, type })),
+        'lesson',
+      );
       ed.load(v1);
       const v2 = ed.map();
       expect(v2.schemaVersion).toBe(2);

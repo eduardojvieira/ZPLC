@@ -134,7 +134,7 @@ describe('typed plant map, schema 2 (LNK-001, PLT-003)', () => {
   it('reports a signal whose type does not fit the program variable, and an unbound one', () => {
     const typed = {
       inputs: [
-        { ...input('Lvl'), type: 'REAL' },
+        { ...input('Lvl'), type: 'INT' },
         { ...input('Flag'), type: 'BOOL' },
       ],
       outputs: [{ ...output('Cmd'), type: 'INT' }],
