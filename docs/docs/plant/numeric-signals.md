@@ -77,6 +77,17 @@ Three sensors of the sorting scenes publish a number, with the ranges below. The
 
 An empty scale that is not stable and has the `readingOffset` fault reads 2 kg, not 0.
 
+## Stacker crane
+
+The `stacker-crane` has two `INT` command signals. They are setpoints, so the crane keeps the last value; a value outside the range saturates, as in the [Saturation](#saturation) section. The [stations page](./stations.md) explains how the crane uses them.
+
+| Signal  | Part          | Type  | Unit  | Range          | Commands                                         |
+| ------- | ------------- | ----- | ----- | -------------- | ------------------------------------------------ |
+| `bay`   | stacker crane | `INT` | bay   | 0 to `columns` | The column the crane goes to (0 is the dock end) |
+| `level` | stacker crane | `INT` | level | 0 to `levels`  | The level the mast goes to (0 is the dock)       |
+
+The same 64-byte exchange span applies. The crane has two `INT` commands (2 bytes each) and eleven `BOOL` signals.
+
 ## Not yet measured
 
 Nothing on this page states a time, a rate or a hardware result. The cost of numeric exchange per cycle is not yet measured on the reference machines.

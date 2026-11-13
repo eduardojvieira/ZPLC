@@ -6,6 +6,7 @@
 // The source is the part arrays that plantCore registers. Names, configuration, signals, fault actions and the part text
 // all come from the definition; nothing on the page is written by hand but the introduction and the headings.
 import type { ConfigField, PartDefinition, PlantSignalDef, ScenePart } from '../../packages/zplc-ide/src/plant/contracts.ts';
+import { completionParts } from '../../packages/zplc-ide/src/plant/core/parts/completion.ts';
 import { chainParts } from '../../packages/zplc-ide/src/plant/core/parts/chainTransfer.ts';
 import { conveyorParts } from '../../packages/zplc-ide/src/plant/core/parts/conveyors.ts';
 import { diverterParts } from '../../packages/zplc-ide/src/plant/core/parts/diverters.ts';
@@ -13,6 +14,8 @@ import { flowParts } from '../../packages/zplc-ide/src/plant/core/parts/flow.ts'
 import { indicatorParts } from '../../packages/zplc-ide/src/plant/core/parts/indicators.ts';
 import { itemParts } from '../../packages/zplc-ide/src/plant/core/parts/items.ts';
 import { stationParts } from '../../packages/zplc-ide/src/plant/core/parts/layerPalletizer.ts';
+import { liftParts } from '../../packages/zplc-ide/src/plant/core/parts/lift.ts';
+import { machiningParts } from '../../packages/zplc-ide/src/plant/core/parts/machining.ts';
 import { manipulatorParts } from '../../packages/zplc-ide/src/plant/core/parts/manipulators.ts';
 import { operableParts } from '../../packages/zplc-ide/src/plant/core/parts/operable.ts';
 import { panelParts } from '../../packages/zplc-ide/src/plant/core/parts/panel.ts';
@@ -20,6 +23,7 @@ import { processParts } from '../../packages/zplc-ide/src/plant/core/parts/proce
 import { sensorParts } from '../../packages/zplc-ide/src/plant/core/parts/sensors.ts';
 import { numericSensorParts } from '../../packages/zplc-ide/src/plant/core/parts/sensorsNumeric.ts';
 import { sourceParts } from '../../packages/zplc-ide/src/plant/core/parts/sources.ts';
+import { stackerParts } from '../../packages/zplc-ide/src/plant/core/parts/stackerCrane.ts';
 import { turntableParts } from '../../packages/zplc-ide/src/plant/core/parts/turntable.ts';
 import { code, outputsOf, prose, runGenerator, table, type L10n, type Lang, type ReferencePage } from './reference-lib';
 
@@ -41,6 +45,10 @@ export const PARTS: readonly PartDefinition[] = [
   ...processParts,
   ...manipulatorParts,
   ...stationParts,
+  ...liftParts,
+  ...stackerParts,
+  ...machiningParts,
+  ...completionParts,
 ];
 
 const FAMILY: Record<PartDefinition['family'], L10n> = {

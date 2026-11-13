@@ -76,6 +76,24 @@ None.
 
 None.
 
+### Crate
+
+`crate`
+
+A stackable open crate, 0.8 by 0.6 m and 0.25 m high, 4 kg: a floor and four 0.02 m walls in one rigid body. Items dropped into it stay inside, and a second crate rests on its rims. An emitter of crates ignores its vary option. Its position is the centre of its bottom face.
+
+#### Settings
+
+None.
+
+#### Signals
+
+None.
+
+#### Fault actions
+
+None.
+
 ### Lid
 
 `lid`
@@ -128,7 +146,7 @@ Emits one item on each rising edge of its signal, and by itself every intervalMs
 
 | Setting | Kind | Range or values | Default | Unit |
 | --- | --- | --- | --- | --- |
-| `kind` | enum | `box`, `pallet`, `lid`, `base`, `workpiece` | `box` |   |
+| `kind` | enum | `box`, `pallet`, `lid`, `base`, `workpiece`, `crate` | `box` |   |
 | `vary` | enum | `none`, `colour`, `weight`, `code` | `none` |   |
 | `codes` | number | 1 to 9 | `3` |   |
 | `colour` | enum | `red`, `blue` | `red` |   |
@@ -319,6 +337,39 @@ A square platform whose position is the centre of its top surface. It turns abou
 
 `stall`, `turnStuck`, `jam`
 
+### Lift
+
+`lift`
+
+A platform with a belt surface that travels vertically between levels. Its position is the centre of the top surface at level 1, the lowest; level K is (K - 1) times levelPitchM above it, for levels 2 to 4. up TRUE moves it up and down TRUE moves it down at travelSpeedMps with accelMps2; both or neither hold it, and it stops at the ends. The surface carries items along its own +x (right is +z): run, and runReverse when reverse is allowed, at speedMps. atLevelK is TRUE within 0.01 m of level K once the platform moves at 0.02 m/s or less. It has in and out landings at every level (in1 to inN, out1 to outN). The setting lengthM and widthM size the platform. Do not confuse it with the chain transfer, whose lift signal raises a short module; here the commands are up and down. The plant inhibits nothing: a platform that travels while its surface runs may lose its load. Facts: axis\:Name\:y, the height above level 1 in metres. Faults: stuck, stall, levelStuckOff.
+
+#### Settings
+
+| Setting | Kind | Range or values | Default | Unit |
+| --- | --- | --- | --- | --- |
+| `levels` | number | 2 to 4 | `2` |   |
+| `levelPitchM` | number | 0.3 to 1.5 | `0.6` | m |
+| `lengthM` | number | 0.8 to 1.6 | `1` | m |
+| `widthM` | number | 0.5 to 1 | `0.7` | m |
+| `speedMps` | number | 0.1 to 1 | `0.5` | m/s |
+| `travelSpeedMps` | number | 0.1 to 1 | `0.4` | m/s |
+| `accelMps2` | number | 0.1 to 3 | `0.8` | m/s2 |
+| `allowReverse` | boolean |   | `false` |   |
+
+#### Signals
+
+| Signal | Direction | Type | Unit | Range |
+| --- | --- | --- | --- | --- |
+| `up` | command | BOOL |   |   |
+| `down` | command | BOOL |   |   |
+| `run` | command | BOOL |   |   |
+| `atLevel1` | sensor | BOOL |   |   |
+| `atLevel2` | sensor | BOOL |   |   |
+
+#### Fault actions
+
+`stuck`, `stall`, `levelStuckOff`
+
 ## Flow
 
 ### Pusher
@@ -400,6 +451,54 @@ A plate across a belt at the part position (the centre of the belt surface). It 
 #### Fault actions
 
 `stuck`
+
+### Aligner
+
+`aligner`
+
+Two guides at the sides of a belt, at the part position (the centre of the belt surface), lengthM long. Open, they sit at widthM apart; align TRUE closes them to gapM in 0.4 s and releasing it opens them again. A skewed box between the guides is squared to the belt axis when gapM is close to its width. gapM wider than widthM closes to widthM. aligned and open report the two limits. Signals: align, aligned, open. Fault: stuck (the guides hold where they are).
+
+#### Settings
+
+| Setting | Kind | Range or values | Default | Unit |
+| --- | --- | --- | --- | --- |
+| `widthM` | number | 0.4 to 1 | `0.7` | m |
+| `gapM` | number | 0.2 to 0.6 | `0.35` | m |
+| `lengthM` | number | 0.2 to 0.8 | `0.4` | m |
+
+#### Signals
+
+| Signal | Direction | Type | Unit | Range |
+| --- | --- | --- | --- | --- |
+| `align` | command | BOOL |   |   |
+| `aligned` | sensor | BOOL |   |   |
+| `open` | sensor | BOOL |   |   |
+
+#### Fault actions
+
+`stuck`
+
+### Chute
+
+`chute`
+
+A fixed plate lengthM by widthM, tilted tiltDeg (5 to 35) so that items slide along +x, down from the in landing at the high end to the out landing at the low end. Its position is the centre of the top surface. Friction is low (0.2), so an item accelerates under gravity; the plate has no sides, and nothing slows the item. It has no signals and no faults.
+
+#### Settings
+
+| Setting | Kind | Range or values | Default | Unit |
+| --- | --- | --- | --- | --- |
+| `lengthM` | number | 0.4 to 2 | `1` | m |
+| `widthM` | number | 0.4 to 1 | `0.6` | m |
+| `tiltDeg` | number | 5 to 35 | `20` | deg |
+
+#### Signals
+
+None.
+
+#### Fault actions
+
+None.
 
 ## Sensors
 
@@ -595,6 +694,29 @@ Reads the identity of the item in view as a code, not an image. The field is a s
 #### Fault actions
 
 `blind`, `misread`
+
+### Limit switch
+
+`limit-switch`
+
+A mechanical lever in front of the part. The lever is a box reachM long along +x, 0.1 m across and heightM tall, starting at the part position. contact is TRUE while the centre of an item or pallet is inside it, and the fact count\:Name counts each time it turns TRUE. The lever does not block the item. Signal: contact. Faults: stuckOn, stuckOff.
+
+#### Settings
+
+| Setting | Kind | Range or values | Default | Unit |
+| --- | --- | --- | --- | --- |
+| `reachM` | number | 0.02 to 0.2 | `0.05` | m |
+| `heightM` | number | 0 to 2 | `0.1` | m |
+
+#### Signals
+
+| Signal | Direction | Type | Unit | Range |
+| --- | --- | --- | --- | --- |
+| `contact` | sensor | BOOL |   |   |
+
+#### Fault actions
+
+`stuckOn`, `stuckOff`
 
 ## Panel
 
@@ -972,6 +1094,81 @@ A station that squares boxes into a layer, lifts the whole layer with a clamp he
 #### Equations
 
 Axis law per 5 ms step with a = accelMps2, v_max = speedMps: v moves toward the target velocity by at most a * dt; p = p + v * dt, clamped to 0..stroke. A set value brakes when \|d - v * dt\| &lt;= v * v / (2 * a), d = target - p. Pusher: travel t moves 0..400 ms at 1 ms per ms; squared when t = 400 ms.
+
+### Stacker crane
+
+`stacker-crane`
+
+A crane that stores boxes in a rack and takes them out again. Axes follow the world: X runs along the aisle (local +x), Y is the mast, the fork moves across (local z) and a small raise axis lifts it by 0.06 m. The part position is the floor point under the crane at bay 0. The INT setpoint bay (0 to columns) sends X to bay x bayPitchM and the INT setpoint level (0 to levels) sends Y to level x levelPitchM; inPosition is TRUE when both are within 5 mm and at rest. Level 0 is the dock: levels start at 1 for the rack shelves. The fork top is 0.03 m under the shelf top of the addressed level, and 0.03 m over it while raise is TRUE (raised). Place the dock belts with their top 0.13 m over the part position, ending at the fork tip (snap points dockIn at -z and dockOut at +z). forkLeft extends the fork towards -z and forkRight towards +z (hold to extend, release to centre, both hold); forkCentre, forkAtLeft and forkAtRight report its place. The fork surface is a belt: beltRight runs it towards +z, beltLeft towards -z (both do nothing). The rack is on the +z side: column c (1 to columns) and level l (1 to levels) is a pair of rails, 0.24 m apart, whose tops are l x levelPitchM + 0.1 m over the part position; a box 0.3 m wide (x) and 0.4 m long (z) rests on both rails and the 0.16 m wide fork passes between them. Store: raise the fork loaded, extend it to the right, lower it, retract it. Retrieve: extend it lowered, raise it, retract it. X and Y stop while the fork is out (or the load is above maxLoadKg), and blocked counts each refused request once. The fork does not collide with the rack: the plant refuses the move. loaded is TRUE while a box rests on the centre of the fork. Facts: stored:&lt;Name> counts the cells with a box at rest, cell:&lt;Name>:&lt;c>:&lt;l> is TRUE for each occupied cell, blocked:&lt;Name> counts refused requests and axis:&lt;Name>\:x, \:y and \:z are positions in metres (z is signed, 0 at the centre). Faults: stuckX, stuckY, forkStuck, loadedStuckOff, beltStall. Known limits: one rack, on one side, one box deep; the crane starts at bay 0, level 0, fork down.
+
+#### Settings
+
+| Setting | Kind | Range or values | Default | Unit |
+| --- | --- | --- | --- | --- |
+| `columns` | number | 1 to 8 | `4` |   |
+| `levels` | number | 1 to 4 | `3` |   |
+| `bayPitchM` | number | 0.7 to 1.5 | `1` | m |
+| `levelPitchM` | number | 0.4 to 1 | `0.6` | m |
+| `forkStrokeM` | number | 0.6 to 1 | `0.8` | m |
+| `speedXMps` | number | 0.2 to 1.5 | `1` | m/s |
+| `speedYMps` | number | 0.2 to 1 | `0.5` | m/s |
+| `forkSpeedMps` | number | 0.1 to 0.8 | `0.4` | m/s |
+| `beltSpeedMps` | number | 0.1 to 0.8 | `0.4` | m/s |
+| `accelMps2` | number | 0.5 to 3 | `1.5` | m/s2 |
+| `maxLoadKg` | number | 5 to 30 | `10` | kg |
+
+#### Signals
+
+| Signal | Direction | Type | Unit | Range |
+| --- | --- | --- | --- | --- |
+| `bay` | command | INT | bay | 0 to 4 |
+| `level` | command | INT | level | 0 to 3 |
+| `inPosition` | sensor | BOOL |   |   |
+| `raise` | command | BOOL |   |   |
+| `raised` | sensor | BOOL |   |   |
+| `forkLeft` | command | BOOL |   |   |
+| `forkRight` | command | BOOL |   |   |
+| `forkCentre` | sensor | BOOL |   |   |
+| `forkAtLeft` | sensor | BOOL |   |   |
+| `forkAtRight` | sensor | BOOL |   |   |
+| `beltLeft` | command | BOOL |   |   |
+| `beltRight` | command | BOOL |   |   |
+| `loaded` | sensor | BOOL |   |   |
+
+#### Fault actions
+
+`stuckX`, `stuckY`, `forkStuck`, `loadedStuckOff`, `beltStall`
+
+### Machining centre
+
+`machining-centre`
+
+A station that turns a workpiece into a lid or a base. Its position is the centre of the top surface of its integrated belt, which runs along +x while feed is TRUE; the chamber is lengthM by widthM, with a door at each end that rises in 0.4 s. A blank is a workpiece (an item with a colour and no tag; boxes, lids and bases are not blanks). ready is TRUE when exactly one blank lies at rest in the chamber and nothing else does, so stop the belt first. A rising edge of start while ready closes the doors and starts a cycle of cycleMs: the belt holds and busy is TRUE. At the end of the cycle the blank is removed and one product (a lid or a base, as product says, 1 kg) appears in its place at the chamber centre in the same step, the doors lower and done is TRUE until the product leaves the chamber or the next start. This swap is a model event, not physics: it changes what the item is, not where it is, as the level of a tank is a model; everything else is carried, blocked and pushed by the physics. A start while not ready only adds one to misfires. Limits: one blank at a time. Signals: feed, start, ready, busy, done, doorClosed. Facts: produced counts finished cycles; misfires counts refused start edges. Faults: doorStuck, cycleSlow, readyStuckOff, stall.
+
+#### Settings
+
+| Setting | Kind | Range or values | Default | Unit |
+| --- | --- | --- | --- | --- |
+| `product` | enum | `lid`, `base` | `lid` |   |
+| `cycleMs` | number | 1000 to 30000 | `4000` | ms |
+| `lengthM` | number | 0.8 to 1.4 | `1` | m |
+| `widthM` | number | 0.5 to 0.8 | `0.6` | m |
+| `speedMps` | number | 0.2 to 1 | `0.5` | m/s |
+
+#### Signals
+
+| Signal | Direction | Type | Unit | Range |
+| --- | --- | --- | --- | --- |
+| `feed` | command | BOOL |   |   |
+| `start` | command | BOOL |   |   |
+| `ready` | sensor | BOOL |   |   |
+| `busy` | sensor | BOOL |   |   |
+| `done` | sensor | BOOL |   |   |
+| `doorClosed` | sensor | BOOL |   |   |
+
+#### Fault actions
+
+`doorStuck`, `cycleSlow`, `readyStuckOff`, `stall`
 
 {/* <<< END GENERATED: plant/parts <<< */}
 
