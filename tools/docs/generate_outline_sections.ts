@@ -5,6 +5,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { LESSON_INDEX as I } from '../../packages/zplc-ide/src/generated/lessonIndex';
+import { courseOrder } from '../../packages/zplc-ide/src/learn/course';
 const FROM = Number(process.argv[2] ?? 12);
 const L = {
   en: {
@@ -36,7 +37,8 @@ const L = {
     hw: '## Páginas de cableado por placa',
   },
 } as const;
-const order = [...I.lessons].sort((a, b) => a.order - b.order);
+// Course order, so a Ladder sibling sits right after its twin as on the Learn home (M7-K5).
+const order = courseOrder(I);
 for (const loc of ['en', 'es'] as const) {
   const l = L[loc];
   let out = '';

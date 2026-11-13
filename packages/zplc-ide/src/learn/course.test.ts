@@ -4,6 +4,7 @@ import { describe, expect, it } from 'bun:test';
 import { LESSON_INDEX } from '../generated/lessonIndex';
 import { emptyProgress, withGrade, withNote, withPassedIds, type GradeRecord, type LearnProgress } from '../../shared/learnProgressModel';
 import { buildCourseView, continueTarget, lessonStateOf, trackSupport } from './course';
+import { alternativePairs } from './lessonSiblings';
 
 const FIRST = 'first-blink-simulation';
 const SECOND = 'scan-cycle-one-scan-memory';
@@ -98,10 +99,10 @@ describe('the course view', () => {
     expect(spanish.modules[3]!.title).toBe('Temporizadores, flancos y contadores');
   });
 
-  it('counts the passed lessons', () => {
+  it('counts the passed lessons, an alternative pair once (M7-K5)', () => {
     expect(buildCourseView(LESSON_INDEX, passed(FIRST), { locale: 'en', unlockAll: false })).toMatchObject({
       passed: 1,
-      total: LESSON_INDEX.lessons.length,
+      total: LESSON_INDEX.lessons.length - alternativePairs(LESSON_INDEX).length,
     });
   });
 });

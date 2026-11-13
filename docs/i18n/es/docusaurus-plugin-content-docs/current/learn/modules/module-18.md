@@ -21,6 +21,9 @@ Una máquina debe detenerse de forma segura y mostrar qué falló. Los enclavami
 | Lección | Id | Lenguajes | minutos |
 | --- | --- | --- | --- |
 | [Paro de emergencia y enclavamientos](../lessons/plant-estop-interlocks.md) | `plant-estop-interlocks` | ST | 40 |
+| [Paro de emergencia y enclavamientos en diagrama de escalera](../lessons/plant-estop-interlocks-ladder.md) | `plant-estop-interlocks-ladder` | LD | 40 |
+| [Modos manual y automático](../lessons/plant-manual-auto.md) | `plant-manual-auto` | ST | 45 |
+| [Modos manual y automático](../lessons/plant-manual-auto-ladder.md) | `plant-manual-auto-ladder` | LD | 45 |
 | [Encontrar la falla](../lessons/plant-fault-actions.md) | `plant-fault-actions` | ST | 45 |
 
 {/* <<< END GENERATED: learn/modules/module-18 <<< */}

@@ -21,6 +21,7 @@ Manipulators add steps that must happen in order. Pick, place and assembly use t
 | Lesson | Id | Languages | minutes |
 | --- | --- | --- | --- |
 | [Pick from one belt, place on another](../lessons/plant-belt-transfer.md) | `plant-belt-transfer` | ST | 40 |
+| [Pick from one belt, place on another in Ladder](../lessons/plant-belt-transfer-ladder.md) | `plant-belt-transfer-ladder` | LD | 40 |
 | [Assemble lids and bases](../lessons/plant-assembler.md) | `plant-assembler` | SFC | 50 |
 | [The same with numeric positions](../lessons/plant-assembler-numeric.md) | `plant-assembler-numeric` | ST | 40 |
 | [Palletize in layers](../lessons/plant-layer-palletizer.md) | `plant-layer-palletizer` | ST | 50 |

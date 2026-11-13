@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { afterEach, describe, expect, test } from 'bun:test';
 import { LESSON_INDEX } from '../generated/lessonIndex';
+import { alternativePairs } from '../learn/lessonSiblings';
 import { parseMcpWorkspaceArgument } from './index';
 import {
   MCP_RESOURCE_URIS,
@@ -193,7 +194,7 @@ describe('local MCP adapter', () => {
       schemaVersion: 1,
       mastered: [],
       completed: 0,
-      total: LESSON_INDEX.lessons.length,
+      total: LESSON_INDEX.lessons.length - alternativePairs(LESSON_INDEX).length,
       ...extra,
     });
     await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual(progress());

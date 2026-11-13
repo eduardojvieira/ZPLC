@@ -99,7 +99,20 @@ export const LESSON_IDS = [
   "plant-warehouse",
   "plant-production-line",
   "plant-estop-interlocks",
+  "plant-manual-auto",
   "plant-fault-actions",
+  "plant-belt-to-sensor-ladder",
+  "plant-latch-two-sensors-ladder",
+  "plant-counted-queue-ladder",
+  "plant-timed-tank-ladder",
+  "plant-tank-level-scaling-ladder",
+  "plant-merge-lines-ladder",
+  "plant-belt-transfer-ladder",
+  "plant-colour-separation-ladder",
+  "plant-weight-sorting-ladder",
+  "plant-height-chain-ladder",
+  "plant-estop-interlocks-ladder",
+  "plant-manual-auto-ladder",
 ] as const;
 
 export type LessonId = typeof LESSON_IDS[number];

@@ -21,7 +21,9 @@ Plants have time and continuous values. Timers, analog scaling and a PID loop co
 | Lesson | Id | Languages | minutes |
 | --- | --- | --- | --- |
 | [Fill and drain with timers](../lessons/plant-timed-tank.md) | `plant-timed-tank` | ST | 30 |
+| [Fill and drain with timers in Ladder](../lessons/plant-timed-tank-ladder.md) | `plant-timed-tank-ladder` | LD | 30 |
 | [Read the level](../lessons/plant-tank-level-scaling.md) | `plant-tank-level-scaling` | ST | 30 |
+| [Read the level in Ladder](../lessons/plant-tank-level-scaling-ladder.md) | `plant-tank-level-scaling-ladder` | LD | 30 |
 | [Hold the level with PID](../lessons/plant-tank-pid.md) | `plant-tank-pid` | ST | 40 |
 | [The same loop in function blocks](../lessons/plant-tank-pid-fbd.md) | `plant-tank-pid-fbd` | FBD | 40 |
 

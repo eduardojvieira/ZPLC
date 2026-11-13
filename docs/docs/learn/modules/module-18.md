@@ -21,6 +21,9 @@ A machine must stop safely and show what went wrong. Interlocks, modes and fault
 | Lesson | Id | Languages | minutes |
 | --- | --- | --- | --- |
 | [Emergency stop and interlocks](../lessons/plant-estop-interlocks.md) | `plant-estop-interlocks` | ST | 40 |
+| [Emergency stop and interlocks in Ladder](../lessons/plant-estop-interlocks-ladder.md) | `plant-estop-interlocks-ladder` | LD | 40 |
+| [Manual and automatic modes](../lessons/plant-manual-auto.md) | `plant-manual-auto` | ST | 45 |
+| [Manual and automatic modes](../lessons/plant-manual-auto-ladder.md) | `plant-manual-auto-ladder` | LD | 45 |
 | [Find the fault](../lessons/plant-fault-actions.md) | `plant-fault-actions` | ST | 45 |
 
 {/* <<< END GENERATED: learn/modules/module-18 <<< */}

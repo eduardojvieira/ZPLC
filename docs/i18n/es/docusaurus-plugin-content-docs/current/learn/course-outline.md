@@ -9,7 +9,7 @@ tags: [learn, lessons, course]
 
 # Esquema del curso
 
-Esta página es el mapa de todo el curso: cada módulo en orden, con sus 94 lecciones, y para cada lección los lenguajes, las rutas, la planta, el tiempo y los requisitos. Úsela para elegir por dónde empezar o para ver qué necesita un módulo antes. Si nunca programó un PLC, tome la ruta de escalera de 21 de estas lecciones, _Diagrama de escalera desde cero_, descrita en [Aprender](./index.md).
+Esta página es el mapa de todo el curso: cada módulo en orden, con sus 95 lecciones, y para cada lección los lenguajes, las rutas, la planta, el tiempo y los requisitos. Úsela para elegir por dónde empezar o para ver qué necesita un módulo antes. Si nunca programó un PLC, tome la ruta de escalera de 21 de estas lecciones, _Diagrama de escalera desde cero_, descrita en [Aprender](./index.md).
 
 La página sigue `packages/zplc-ide/lessons/course.json` y los paquetes de lección que lo acompañan. Una verificación de CI falla cuando falta una lección o cuando una fila no coincide con su lección. Cada módulo y cada lección tiene además su propia página generada: empiece por los [módulos del curso](./modules/index.md) y vea las [plantas de las lecciones](./plants.md) para las máquinas simuladas.
 
@@ -26,7 +26,7 @@ Primero se ve un resultado: el recorrido del módulo 0 termina con una salida qu
 
 Cada módulo indica a continuación por qué está donde está. La página de inicio de Aprender muestra las mismas palabras, porque ambas leen el mismo archivo del curso.
 
-Disponibles hoy: **94**. Planeadas: **0**. En total: **94**.
+Disponibles hoy: **95**. Planeadas: **0**. En total: **95**.
 
 ## Lenguajes
 
@@ -330,17 +330,23 @@ Avanzado. Requiere el módulo: 3. Rutas: Simulación.
 
 Sus primeros programas ahora mueven piezas. Cada uno lee un sensor y gobierna una banda o una compuerta en una planta que se puede observar, con las habilidades de set, reset, flancos y contadores del módulo 3.
 
-| Lección                                               | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                         |
-| ----------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | ------------------------------------------------ |
-| `plant-belt-to-sensor` Mover una caja hasta un sensor | Disponible | ST        | Simulación | -      | 20      | `motor-start-stop-safe`                          |
-| `plant-latch-two-sensors` Del sensor A al sensor B    | Disponible | ST        | Simulación | -      | 20      | `plant-belt-to-sensor`                           |
-| `plant-counted-queue` Cargar y descargar tres cajas   | Disponible | ST        | Simulación | -      | 30      | `plant-latch-two-sensors`, `edge-counter-pulses` |
+| Lección                                                                | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                         |
+| ---------------------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | ------------------------------------------------ |
+| `plant-belt-to-sensor` Mover una caja hasta un sensor                  | Disponible | ST        | Simulación | -      | 20      | `motor-start-stop-safe`                          |
+| `plant-belt-to-sensor-ladder` Mover una caja hasta un sensor en Ladder | Disponible | LD        | Simulación | -      | 20      | `motor-start-stop-safe`                          |
+| `plant-latch-two-sensors` Del sensor A al sensor B                     | Disponible | ST        | Simulación | -      | 20      | `plant-belt-to-sensor`                           |
+| `plant-latch-two-sensors-ladder` Del sensor A al sensor B en Ladder    | Disponible | LD        | Simulación | -      | 20      | `plant-belt-to-sensor`                           |
+| `plant-counted-queue` Cargar y descargar tres cajas                    | Disponible | ST        | Simulación | -      | 30      | `plant-latch-two-sensors`, `edge-counter-pulses` |
+| `plant-counted-queue-ladder` Cargar y descargar tres cajas en Ladder   | Disponible | LD        | Simulación | -      | 30      | `plant-latch-two-sensors`, `edge-counter-pulses` |
 
 Objetivos de las lecciones disponibles:
 
 - **Mover una caja hasta un sensor**: Arrancar un actuador con la pulsación de un botón y recordar que está en marcha. Detener el actuador cuando un sensor ve la caja.
+- **Mover una caja hasta un sensor en Ladder**: Arrancar un actuador con la pulsación de un botón mediante una bobina de activación y recordar que está en marcha. Detener el actuador con una bobina de borrado cuando un sensor ve la caja.
 - **Del sensor A al sensor B**: Usar un set y un reset para mantener una salida entre dos eventos. Explicar por qué un sensor que se apaga no puede mantener la salida por sí solo.
+- **Del sensor A al sensor B en Ladder**: Usar un set y un reset para mantener una salida entre dos eventos. Explicar por qué un sensor que se apaga no puede mantener la salida por sí solo.
 - **Cargar y descargar tres cajas**: Contar elementos con un contador de valor preestablecido. Usar un contador para dejar de cargar y otro para saber que el lote terminó.
+- **Cargar y descargar tres cajas en Ladder**: Contar elementos con un contador de valor preestablecido. Usar un contador para dejar de cargar y otro para saber que el lote terminó.
 
 ## Módulo 13: Temporizadores y control de procesos: retardos, escalado de nivel y un lazo PID
 
@@ -348,17 +354,21 @@ Avanzado. Requiere el módulo: 12. Rutas: Simulación.
 
 Las plantas tienen tiempo y valores continuos. Los temporizadores, el escalado analógico y el lazo PID van después de las primeras plantas porque necesitan una planta en movimiento para verse trabajar.
 
-| Lección                                                   | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                     |
-| --------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | -------------------------------------------- |
-| `plant-timed-tank` Llenar y vaciar con temporizadores     | Disponible | ST        | Simulación | -      | 30      | `timers-on-delay-off-delay`                  |
-| `plant-tank-level-scaling` Leer el nivel                  | Disponible | ST        | Simulación | -      | 30      | `analog-scaling-integer`, `plant-timed-tank` |
-| `plant-tank-pid` Mantener el nivel con PID                | Disponible | ST        | Simulación | -      | 40      | `plant-tank-level-scaling`                   |
-| `plant-tank-pid-fbd` El mismo lazo con bloques de función | Disponible | FBD       | Simulación | -      | 40      | `plant-tank-pid`                             |
+| Lección                                                                | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                     |
+| ---------------------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | -------------------------------------------- |
+| `plant-timed-tank` Llenar y vaciar con temporizadores                  | Disponible | ST        | Simulación | -      | 30      | `timers-on-delay-off-delay`                  |
+| `plant-timed-tank-ladder` Llenar y vaciar con temporizadores en Ladder | Disponible | LD        | Simulación | -      | 30      | `timers-on-delay-off-delay`                  |
+| `plant-tank-level-scaling` Leer el nivel                               | Disponible | ST        | Simulación | -      | 30      | `analog-scaling-integer`, `plant-timed-tank` |
+| `plant-tank-level-scaling-ladder` Leer el nivel en Ladder              | Disponible | LD        | Simulación | -      | 30      | `analog-scaling-integer`, `plant-timed-tank` |
+| `plant-tank-pid` Mantener el nivel con PID                             | Disponible | ST        | Simulación | -      | 40      | `plant-tank-level-scaling`                   |
+| `plant-tank-pid-fbd` El mismo lazo con bloques de función              | Disponible | FBD       | Simulación | -      | 40      | `plant-tank-pid`                             |
 
 Objetivos de las lecciones disponibles:
 
 - **Llenar y vaciar con temporizadores**: Medir un paso de un proceso con un temporizador de retardo a la conexión (TON), con un temporizador para cada paso. Usar un temporizador como límite de seguridad en un paso que normalmente termina con un sensor, y dejar que la parada de emergencia aborte el ciclo.
+- **Llenar y vaciar con temporizadores en Ladder**: Medir un paso de un proceso con un temporizador de retardo a la conexión (TON), con un temporizador para cada paso. Usar un temporizador como límite de seguridad en un paso que normalmente termina con un sensor, y dejar que la parada de emergencia aborte el ciclo.
 - **Leer el nivel**: Escalar un valor analógico a unidades de ingeniería: convertir primero a REAL y luego dividir por el rango bruto. Leer el mapa de la planta para hallar el rango bruto de cada señal, y ver qué hace una escala errónea en el proceso.
+- **Leer el nivel en Ladder**: Escalar con cuadros un valor analógico a unidades de ingeniería: convertir primero a REAL y luego dividir entre el rango crudo. Leer el mapa de planta para hallar el rango crudo de cada señal, y ver qué hace al proceso una escala equivocada.
 - **Mantener el nivel con PID**: Ejecutar un lazo PID con PID_Compact: consigna, variable de proceso, ganancias, tiempo de ciclo y límites de la salida. Ajustar las ganancias a partir de la respuesta del nivel y distinguir el efecto de los términos proporcional, integral y derivativo.
 - **El mismo lazo con bloques de función**: Cablear un bloque de función PID_Compact en un diagrama: consigna, variable de proceso, ganancias, tiempo de ciclo y límites de salida a la izquierda, la salida a la derecha. Seguir un valor por el diagrama, desde el número entero bruto del nivel hasta metros y de ahí a la válvula de entrada.
 
@@ -368,15 +378,17 @@ Avanzado. Requiere el módulo: 12. Rutas: Simulación.
 
 Cuando las piezas comparten un camino, el orden importa. Las máquinas de estados y la fusión de dos líneas organizan ese flujo, a partir de las primeras plantas.
 
-| Lección                                   | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                            |
-| ----------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | --------------------------------------------------- |
-| `plant-buffer-release` Acumular y liberar | Disponible | SFC       | Simulación | -      | 45      | `sfc-fill-mix-sequence`, `plant-counted-queue`      |
-| `plant-merge-lines` Fusionar dos líneas   | Disponible | ST        | Simulación | -      | 45      | `plant-counted-queue`, `interlock-guard-permissive` |
+| Lección                                                  | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                            |
+| -------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | --------------------------------------------------- |
+| `plant-buffer-release` Acumular y liberar                | Disponible | SFC       | Simulación | -      | 45      | `sfc-fill-mix-sequence`, `plant-counted-queue`      |
+| `plant-merge-lines` Fusionar dos líneas                  | Disponible | ST        | Simulación | -      | 45      | `plant-counted-queue`, `interlock-guard-permissive` |
+| `plant-merge-lines-ladder` Fusionar dos líneas en Ladder | Disponible | LD        | Simulación | -      | 45      | `plant-counted-queue`, `interlock-guard-permissive` |
 
 Objetivos de las lecciones disponibles:
 
 - **Acumular y liberar**: Modelar una estación con pasos y transiciones, un paso por cada cosa que hace la estación. Elegir entre dos pasos siguientes con condiciones de transición que se excluyen entre sí.
 - **Fusionar dos líneas**: Arbitrar dos peticiones con una prioridad: la línea A gana cuando ambas esperan. Enclavar dos salidas para que nunca estén activas juntas y liberar la concesión solo cuando la caja haya despejado la fusión.
+- **Fusionar dos líneas en Ladder**: Arbitrar dos peticiones con una prioridad: la línea A gana cuando ambas esperan. Enclavar dos salidas para que nunca estén activas juntas y liberar la concesión solo cuando la caja haya despejado la fusión.
 
 ## Módulo 15: Manipuladores y ensamblaje: tomar, colocar y secuenciar
 
@@ -384,17 +396,19 @@ Avanzado. Requiere el módulo: 14. Rutas: Simulación.
 
 Los manipuladores añaden pasos que deben ocurrir en orden. Tomar, colocar y ensamblar usan las máquinas de estados del control de flujo.
 
-| Lección                                                     | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                                  |
-| ----------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | --------------------------------------------------------- |
-| `plant-belt-transfer` Tomar de una banda y dejar en otra    | Disponible | ST        | Simulación | -      | 40      | `plant-counted-queue`                                     |
-| `plant-assembler` Ensamblar tapas y bases                   | Disponible | SFC       | Simulación | -      | 50      | `sfc-fill-mix-sequence`, `plant-belt-transfer`            |
-| `plant-assembler-numeric` Lo mismo con posiciones numéricas | Disponible | ST        | Simulación | -      | 40      | `plant-assembler`                                         |
-| `plant-layer-palletizer` Paletizar por capas                | Disponible | ST        | Simulación | -      | 50      | `structures-arrays-call-panel`, `plant-assembler-numeric` |
-| `plant-xyz-palletizing` Paletizar con un pórtico            | Disponible | ST        | Simulación | -      | 50      | `plant-layer-palletizer`                                  |
+| Lección                                                                                 | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                                  |
+| --------------------------------------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | --------------------------------------------------------- |
+| `plant-belt-transfer` Tomar de una banda y dejar en otra                                | Disponible | ST        | Simulación | -      | 40      | `plant-counted-queue`                                     |
+| `plant-belt-transfer-ladder` Tomar de una banda y dejar en otra en diagrama de escalera | Disponible | LD        | Simulación | -      | 40      | `plant-counted-queue`                                     |
+| `plant-assembler` Ensamblar tapas y bases                                               | Disponible | SFC       | Simulación | -      | 50      | `sfc-fill-mix-sequence`, `plant-belt-transfer`            |
+| `plant-assembler-numeric` Lo mismo con posiciones numéricas                             | Disponible | ST        | Simulación | -      | 40      | `plant-assembler`                                         |
+| `plant-layer-palletizer` Paletizar por capas                                            | Disponible | ST        | Simulación | -      | 50      | `structures-arrays-call-panel`, `plant-assembler-numeric` |
+| `plant-xyz-palletizing` Paletizar con un pórtico                                        | Disponible | ST        | Simulación | -      | 50      | `plant-layer-palletizer`                                  |
 
 Objetivos de las lecciones disponibles:
 
 - **Tomar de una banda y dejar en otra**: Secuenciar un tomar y colocar con un estado por movimiento, cada uno a la espera de su final de carrera. Esperar la señal de agarre antes de elevar y mantener detenida la banda receptora mientras se deja una caja.
+- **Tomar de una banda y dejar en otra en diagrama de escalera**: Secuenciar un tomar y colocar con un estado por movimiento, cada uno a la espera de su final de carrera. Esperar la señal de agarre antes de elevar y mantener detenida la banda receptora mientras se deja una caja.
 - **Ensamblar tapas y bases**: Coordinar dos ejes y una ventosa en una sola secuencia, con un paso por movimiento. Elegir entre dos pasos siguientes con condiciones de transición que se excluyen entre sí.
 - **Lo mismo con posiciones numéricas**: Enviar un eje a una posición con nombre mediante una consigna y leer su posición de vuelta. Decidir que un movimiento terminó cuando la posición está dentro de una tolerancia de la consigna, no cuando es igual a ella.
 - **Paletizar por capas**: Formar una capa contando pares de cajas y escuadrarla antes de que la pinza la tome. Colocar cada capa a su propia altura, una altura de caja más arriba que la inferior.
@@ -406,21 +420,27 @@ Avanzado. Requiere el módulo: 14. Rutas: Simulación.
 
 La clasificación convierte combinaciones de sensores en rutas. Reutiliza las habilidades de control de flujo y prepara las estaciones que siguen.
 
-| Lección                                                                       | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                                 |
-| ----------------------------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | -------------------------------------------------------- |
-| `plant-colour-separation` Enviar cada color a su banda                        | Disponible | ST        | Simulación | -      | 45      | `plant-counted-queue`                                    |
-| `plant-colour-separation-il` La misma clasificación en Lista de instrucciones | Disponible | IL        | Simulación | -      | 50      | `plant-colour-separation`, `instruction-list-door-alarm` |
-| `plant-weight-sorting` Clasificar por peso                                    | Disponible | ST        | Simulación | -      | 50      | `plant-colour-separation`, `plant-tank-level-scaling`    |
-| `plant-height-chain` Clasificar por altura, transferencia de cadenas          | Disponible | ST        | Simulación | -      | 60      | `plant-colour-separation`                                |
-| `plant-height-turntable` Clasificar por altura, mesa giratoria                | Disponible | ST        | Simulación | -      | 60      | `plant-height-chain`                                     |
-| `plant-vision-sorting` Clasificar por código de identidad                     | Disponible | ST        | Simulación | -      | 50      | `plant-colour-separation`                                |
+| Lección                                                                                             | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                                 |
+| --------------------------------------------------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | -------------------------------------------------------- |
+| `plant-colour-separation` Enviar cada color a su banda                                              | Disponible | ST        | Simulación | -      | 45      | `plant-counted-queue`                                    |
+| `plant-colour-separation-ladder` Enviar cada color a su banda en diagrama de escalera               | Disponible | LD        | Simulación | -      | 45      | `plant-counted-queue`                                    |
+| `plant-colour-separation-il` La misma clasificación en Lista de instrucciones                       | Disponible | IL        | Simulación | -      | 50      | `plant-colour-separation`, `instruction-list-door-alarm` |
+| `plant-weight-sorting` Clasificar por peso                                                          | Disponible | ST        | Simulación | -      | 50      | `plant-colour-separation`, `plant-tank-level-scaling`    |
+| `plant-weight-sorting-ladder` Clasificar por peso en diagrama de escalera                           | Disponible | LD        | Simulación | -      | 50      | `plant-colour-separation`, `plant-tank-level-scaling`    |
+| `plant-height-chain` Clasificar por altura, transferencia de cadenas                                | Disponible | ST        | Simulación | -      | 60      | `plant-colour-separation`                                |
+| `plant-height-chain-ladder` Clasificar por altura, transferencia de cadenas en diagrama de escalera | Disponible | LD        | Simulación | -      | 60      | `plant-colour-separation`                                |
+| `plant-height-turntable` Clasificar por altura, mesa giratoria                                      | Disponible | ST        | Simulación | -      | 60      | `plant-height-chain`                                     |
+| `plant-vision-sorting` Clasificar por código de identidad                                           | Disponible | ST        | Simulación | -      | 50      | `plant-colour-separation`                                |
 
 Objetivos de las lecciones disponibles:
 
 - **Enviar cada color a su banda**: Decidir una ruta a partir del resultado de un sensor cuando la pieza está quieta. Ejecutar un empuje como una secuencia corta: extender hasta Extended, retraer hasta Retracted.
+- **Enviar cada color a su banda en diagrama de escalera**: Decidir una ruta a partir del resultado de un sensor cuando la pieza está quieta. Ejecutar un empuje como una secuencia corta: extender hasta Extended, retraer hasta Retracted.
 - **La misma clasificación en Lista de instrucciones**: Convertir los estados de una secuencia de clasificación en bloques de comparar y saltar. Llamar a un TON desde Lista de instrucciones con CAL y leer su salida Q.
 - **Clasificar por peso**: Clasificar una pieza comparando un valor analógico con un límite. Leer el valor solo cuando la báscula indica que es estable.
+- **Clasificar por peso en diagrama de escalera**: Clasificar una pieza comparando un valor analógico con un límite. Leer el valor solo cuando la báscula indica que es estable.
 - **Clasificar por altura, transferencia de cadenas**: Decidir una ruta a partir de una combinación de dos sensores. Recordar una decisión mientras la caja siguiente ya pasa por los sensores.
+- **Clasificar por altura, transferencia de cadenas en diagrama de escalera**: Decidir una ruta a partir de una combinación de dos sensores. Recordar una decisión mientras la caja siguiente ya pasa por los sensores.
 - **Clasificar por altura, mesa giratoria**: Reducir un flujo de lecturas a un valor, el máximo, y clasificarlo con dos límites. Coordinar una mesa giratoria con la decisión: detener, girar, sacar la caja y volver a girar.
 - **Clasificar por código de identidad**: Encaminar piezas por un código entero y no por un interruptor. Sincronizar un actuador con el recorrido de una pieza ya leída.
 
@@ -450,14 +470,20 @@ Avanzado. Requiere el módulo: 17. Rutas: Simulación.
 
 Una máquina debe detenerse de forma segura y mostrar qué falló. Los enclavamientos, los modos y el diagnóstico de fallas se enseñan sobre estaciones que ya se conocen.
 
-| Lección                                                      | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                                |
-| ------------------------------------------------------------ | ---------- | --------- | ---------- | ------ | ------- | ------------------------------------------------------- |
-| `plant-estop-interlocks` Paro de emergencia y enclavamientos | Disponible | ST        | Simulación | -      | 40      | `plant-three-level-lifts`, `interlock-guard-permissive` |
-| `plant-fault-actions` Encontrar la falla                     | Disponible | ST        | Simulación | -      | 45      | `plant-height-chain`                                    |
+| Lección                                                                                     | Estado     | Lenguajes | Rutas      | Planta | Minutos | Requiere                                                |
+| ------------------------------------------------------------------------------------------- | ---------- | --------- | ---------- | ------ | ------- | ------------------------------------------------------- |
+| `plant-estop-interlocks` Paro de emergencia y enclavamientos                                | Disponible | ST        | Simulación | -      | 40      | `plant-three-level-lifts`, `interlock-guard-permissive` |
+| `plant-estop-interlocks-ladder` Paro de emergencia y enclavamientos en diagrama de escalera | Disponible | LD        | Simulación | -      | 40      | `plant-three-level-lifts`, `interlock-guard-permissive` |
+| `plant-manual-auto` Modos manual y automático                                               | Disponible | ST        | Simulación | -      | 45      | `plant-assembler`, `plant-estop-interlocks`             |
+| `plant-manual-auto-ladder` Modos manual y automático                                        | Disponible | LD        | Simulación | -      | 45      | `plant-assembler`, `plant-estop-interlocks`             |
+| `plant-fault-actions` Encontrar la falla                                                    | Disponible | ST        | Simulación | -      | 45      | `plant-height-chain`                                    |
 
 Objetivos de las lecciones disponibles:
 
 - **Paro de emergencia y enclavamientos**: Detener todas las salidas mientras el paro de emergencia está pulsado. Recordar el paro, de modo que soltar el botón no reinicie la línea.
+- **Paro de emergencia y enclavamientos en diagrama de escalera**: Detener todas las salidas mientras el paro de emergencia está pulsado. Recordar el paro, de modo que soltar el botón no reinicie la línea.
+- **Modos manual y automático**: Guardar el modo en una memoria que cambie con una pulsación de ModeBtn, y dejar que la máquina arranque en manual. Mover el brazo con los botones de avance solo en manual, sin pasar de un final de carrera, y arrancar el ciclo con Start solo en automático.
+- **Modos manual y automático**: Guardar el modo en una memoria que cambie con una pulsación de ModeBtn, y dejar que la máquina arranque en manual. Mover el brazo con los botones de avance solo en manual, sin pasar de un final de carrera, y arrancar el ciclo con Start solo en automático.
 - **Encontrar la falla**: Diagnosticar un sensor atascado a partir de un hecho que el programa puede leer, no del propio sensor. Elegir una reacción segura: detener lo que trae cajas nuevas y dejar llegar las que ya se mueven.
 
 ## Módulo 19: Construya sus propias escenas: colocar piezas, enlazar señales y ejecutar

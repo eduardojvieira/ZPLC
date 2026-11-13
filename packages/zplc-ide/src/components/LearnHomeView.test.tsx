@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 
 import { emptyProgress, withNote, withPassedIds, type LearnProgress } from '../../shared/learnProgressModel';
 import { LESSON_INDEX } from '../generated/lessonIndex';
+import { alternativePairs } from '../learn/lessonSiblings';
 import { buildCourseView, continueTarget } from '../learn/course';
 import { auditMarkup } from '../ui/audit';
 import { LearnHomeView, type LearnHomeViewProps } from './LearnHomeView';
@@ -138,7 +139,9 @@ describe('the Learn home', () => {
   });
 
   it('counts the lessons passed', () => {
-    expect(render(withPassedIds(emptyProgress(), [FIRST]))).toContain(`1 of ${LESSON_INDEX.lessons.length} lessons passed`);
+    expect(render(withPassedIds(emptyProgress(), [FIRST]))).toContain(
+      `1 of ${LESSON_INDEX.lessons.length - alternativePairs(LESSON_INDEX).length} lessons passed`,
+    );
   });
 
   it('says which tracks a lesson supports and, for one it does not, why and what to do instead (LRN-011)', () => {

@@ -3,7 +3,7 @@ slug: /learn
 id: index
 title: Learn
 sidebar_label: Learn
-description: 'The ZPLC course: 94 lessons in 20 modules, a Ladder path for readers who have never programmed a PLC, reading pages with a try-it lab, simulation only with an optional hardware track.'
+description: 'The ZPLC course: 95 lessons in 20 modules, a Ladder path for readers who have never programmed a PLC, reading pages with a try-it lab, simulation only with an optional hardware track.'
 tags: [learn, lessons, examples]
 ---
 
@@ -15,10 +15,10 @@ Learn is a course in PLC programming that runs inside the ZPLC application, in E
 
 |           |                                                                                                                              |
 | --------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Lessons   | 94, in 20 modules (0 to 19), about 45 hours in all                                                                           |
-| Levels    | Foundation 27, intermediate 29 and advanced 38                                                                               |
+| Lessons   | 95, in 20 modules (0 to 19), about 46 hours in all                                                                           |
+| Levels    | Foundation 27, intermediate 29 and advanced 39                                                                               |
 | Languages | Structured Text, Ladder, Function Block Diagram, Sequential Function Chart and Instruction List, each introduced by a lesson |
-| Tracks    | Simulation, which 93 of them offer, and Hardware, which 34 of them offer                                                     |
+| Tracks    | Simulation, which 94 of them offer, and Hardware, which 34 of them offer                                                     |
 | Practice  | Each lesson has six stages, two levels of hint, a reference solution on request and a scenario that grades your program      |
 
 The [course outline](./course-outline.md) lists every module and lesson with its languages, tracks and time. The [course modules](./modules/index.md) and the [lesson plants](./plants.md) describe the simulated machines.
@@ -53,7 +53,7 @@ Evidence level: host. A scripted run of the application on the development host 
 
 ## Beyond the lessons
 
-- **Example projects.** The Welcome screen bundles 107 examples, grouped by topic (first steps, motors, process control, the five languages and boards) and by level, each showing its language and, for a hardware example, its board. A hardware example either ships a scenario or says why it has none. They live in `packages/zplc-ide/projects/`. Choose one under **Examples** to copy it into a folder of your own, or follow [Blink without hardware](../tutorials/blink-without-hardware.md).
+- **Example projects.** The Welcome screen bundles 120 examples, grouped by topic (first steps, motors, process control, the five languages and boards) and by level, each showing its language and, for a hardware example, its board. A hardware example either ships a scenario or says why it has none. They live in `packages/zplc-ide/projects/`. Choose one under **Examples** to copy it into a folder of your own, or follow [Blink without hardware](../tutorials/blink-without-hardware.md).
 - **Scenario tests.** A scenario is a short script that sets inputs, lets the program run for a fixed time and checks the outputs. [Write and run scenario tests](../guides/scenario-tests.md) shows how, the [scenario file format](../reference/scenario-file.md) lists every field, and the [command line](../reference/cli.md) runs them without the ZPLC application.
 - **Language reference.** The [Structured Text reference](../reference/language-st.md) says, element by element, what works today, and the [language guides](../languages/index.md) cover the five IEC 61131-3 languages.
 

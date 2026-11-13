@@ -21,9 +21,12 @@ La clasificación convierte combinaciones de sensores en rutas. Reutiliza las ha
 | Lección | Id | Lenguajes | minutos |
 | --- | --- | --- | --- |
 | [Enviar cada color a su banda](../lessons/plant-colour-separation.md) | `plant-colour-separation` | ST | 45 |
+| [Enviar cada color a su banda en diagrama de escalera](../lessons/plant-colour-separation-ladder.md) | `plant-colour-separation-ladder` | LD | 45 |
 | [La misma clasificación en Lista de instrucciones](../lessons/plant-colour-separation-il.md) | `plant-colour-separation-il` | IL | 50 |
 | [Clasificar por peso](../lessons/plant-weight-sorting.md) | `plant-weight-sorting` | ST | 50 |
+| [Clasificar por peso en diagrama de escalera](../lessons/plant-weight-sorting-ladder.md) | `plant-weight-sorting-ladder` | LD | 50 |
 | [Clasificar por altura, transferencia de cadenas](../lessons/plant-height-chain.md) | `plant-height-chain` | ST | 60 |
+| [Clasificar por altura, transferencia de cadenas en diagrama de escalera](../lessons/plant-height-chain-ladder.md) | `plant-height-chain-ladder` | LD | 60 |
 | [Clasificar por altura, mesa giratoria](../lessons/plant-height-turntable.md) | `plant-height-turntable` | ST | 60 |
 | [Clasificar por código de identidad](../lessons/plant-vision-sorting.md) | `plant-vision-sorting` | ST | 50 |
 

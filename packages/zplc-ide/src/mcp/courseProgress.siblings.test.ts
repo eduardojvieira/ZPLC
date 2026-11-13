@@ -7,6 +7,7 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { LESSON_INDEX } from '../generated/lessonIndex';
 import twoZeroIds from '../../../../tools/ci/two-zero-lesson-ids.json';
 import { buildCourseView } from '../learn/course';
+import { alternativePairs } from '../learn/lessonSiblings';
 import type { LessonIndex } from '../learn/lessonPackage';
 import { emptyProgress, withPassedIds } from '../../shared/learnProgressModel';
 import { courseProgressResource, openMcpUserData, openMcpWorkspace } from './server';
@@ -55,7 +56,7 @@ describe('zplc://course/progress with alternative siblings', () => {
     expect(states.filter((lesson) => lesson.state === 'passed').map((lesson) => lesson.id)).toEqual(resource.mastered as string[]);
     expect(resource.completed).toBe(view.passed);
     expect(resource.total).toBe(view.total);
-    expect(view.total).toBe(LESSON_INDEX.lessons.length);
+    expect(view.total).toBe(LESSON_INDEX.lessons.length - alternativePairs(LESSON_INDEX).length);
   });
 
   test('counts the pair once when both siblings are passed, and lists both', async () => {

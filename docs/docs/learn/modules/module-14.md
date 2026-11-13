@@ -22,6 +22,7 @@ When parts share a path, order matters. State machines and merging two lines org
 | --- | --- | --- | --- |
 | [Accumulate and release](../lessons/plant-buffer-release.md) | `plant-buffer-release` | SFC | 45 |
 | [Merge two lines](../lessons/plant-merge-lines.md) | `plant-merge-lines` | ST | 45 |
+| [Merge two lines in Ladder](../lessons/plant-merge-lines-ladder.md) | `plant-merge-lines-ladder` | LD | 45 |
 
 {/* <<< END GENERATED: learn/modules/module-14 <<< */}
 
