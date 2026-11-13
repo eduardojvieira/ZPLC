@@ -187,6 +187,31 @@ typedef struct zplc_sched_port {
   void (*fault_latched)(void *ctx, zplc_sched_fault_reason_t reason, uint16_t task_id);
 } zplc_sched_port_t;
 
+/**
+ * @brief The plant I/O mode as the core sees it (LNK-010, LNK-011). Installed once by an adapter that carries the
+ *        mode; absent, every scan and every write of the outputs behaves as before.
+ */
+typedef struct {
+  /**
+   * Phase 2, image lock held, right after the port's latch_inputs returned: apply the inputs the plant link staged,
+   * so that a bound input takes the plant value over the pin and the queued writes (LNK-007). Never blocks.
+   */
+  void (*latch)(void);
+  int (*holds_outputs)(void);  /**< non-zero: the pins stay at the safe level (zplc_plant_holds_outputs) */
+  int (*tick)(void);           /**< non-zero when the exit rule fired in this scan (zplc_plant_tick) */
+  int (*exit)(uint8_t reason); /**< leave the mode (zplc_plant_exit); 0 only for the call that performs the exit */
+} zplc_sched_plant_t;
+
+/** @brief Install the plant hooks, or NULL to remove them. Not thread safe: call it before the first scan. */
+void zplc_sched_core_set_plant(const zplc_sched_plant_t *plant);
+
+/**
+ * @brief Leave the plant mode because the run ended or was changed (STOP, pause, program load, reset or a fault),
+ *        with ZPLC_PROTO_PLANT_EXIT_REASON_RUN_CONTROL. Idempotent; a no-op without plant hooks. Call it once the
+ *        outputs are safe.
+ */
+void zplc_sched_core_plant_exit(void);
+
 /* ============================================================================
  * Core state
  * ============================================================================
@@ -237,6 +262,12 @@ typedef struct {
   uint8_t faulted;   /**< the scan latched the fault */
   uint8_t paused;    /**< the runtime paused at the end of the scan (a breakpoint or a step) */
   uint8_t committed; /**< the outputs were written */
+  /**
+   * The plant exit rule fired in this scan (timeout, protocol): the outputs were held safe, no release is
+   * pending, and the adapter stops the runtime through its STOP path (which completes the exit) with every lock
+   * released, as it does for a pause or a fault (R-M6-5).
+   */
+  uint8_t plant_exit;
 } zplc_sched_scan_report_t;
 
 /* ============================================================================

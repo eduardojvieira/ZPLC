@@ -802,12 +802,13 @@ add_executable(test_plant_sched
     src/core/zplc_core.c
     src/core/zplc_loader.c
     src/core/zplc_comm_dispatch.c
-    src/hal/posix/zplc_hal_posix.c
 )
 
+# The test brings its own board (an I/O table and a recording pin driver), so it does not link the POSIX HAL.
 target_include_directories(test_plant_sched PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/tests
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/include
 )
 
 target_compile_definitions(test_plant_sched PRIVATE

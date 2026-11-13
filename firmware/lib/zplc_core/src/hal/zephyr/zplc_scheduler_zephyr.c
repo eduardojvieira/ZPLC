@@ -63,6 +63,9 @@
 #include <zplc_hal.h>
 #include <zplc_io_trace.h>
 #include <zplc_isa.h>
+#ifdef CONFIG_ZPLC_PLANT_IO
+#include <zplc_plant.h>
+#endif
 #include <zplc_sched_core.h>
 #include <zplc_scheduler.h>
 #include <zplc_verify_scratch.h>
@@ -836,6 +839,28 @@ static void port_latch_inputs(void *ctx) {
   zplc_io_apply_samples(&buffers->samples);
 }
 
+#ifdef CONFIG_ZPLC_PLANT_IO
+/* The core reaches the mode through these four: the latch runs after the queued writes and the pins, so a bound
+ * input takes the plant value (LNK-007); the exit rule that fires in a scan is completed by plant_stop_work. */
+static const zplc_sched_plant_t plant_hooks = {
+    .latch = zplc_plant_latch,
+    .holds_outputs = zplc_plant_holds_outputs,
+    .tick = zplc_plant_tick,
+    .exit = zplc_plant_exit,
+};
+
+/* The exit rule fired inside a scan, which runs on the coordinator's work queue: zplc_sched_stop() refuses a
+ * caller on that queue (it cancels the coordinator and would wait for the scan that calls it), so the stop is
+ * deferred to the system work queue, as the fault path defers stop_releases. The mode stays "fired" (outputs held
+ * safe, no plant value applied) until the stop completes it: stop_locked() leaves the mode with its reason kept. */
+static struct k_work plant_stop_work;
+
+static void plant_stop_work_handler(struct k_work *work) {
+  ARG_UNUSED(work);
+  (void)zplc_sched_stop();
+}
+#endif
+
 static void port_capture_outputs(void *ctx) {
   scan_buffers_t *buffers = ctx;
 
@@ -1208,6 +1233,11 @@ static int execute_batch(const uint8_t *order, uint8_t count, bool single_step_m
   port.ctx = &buffers;
   result = zplc_sched_core_scan(&core, &port, order, count, single_step_mode ? 1 : 0, &report);
   print_scan_report(&report);
+#ifdef CONFIG_ZPLC_PLANT_IO
+  if (report.plant_exit != 0U) {
+    (void)k_work_submit(&plant_stop_work);
+  }
+#endif
   switch (result) {
   case ZPLC_SCHED_ERR_DEADLINE:
     return -ETIMEDOUT;
@@ -1485,6 +1515,8 @@ static int stop_locked(void) {
       safe_result = -EIO;
     }
   }
+  /* The run is over and the outputs are safe: the plant mode never outlives it (R-M6-5). */
+  zplc_sched_core_plant_exit();
   zplc_hal_log("[SCHED] Scheduler stopped\n");
   return safe_result;
 }
@@ -1587,6 +1619,7 @@ static int pause_locked(void) {
       safe_result = -EIO;
     }
   }
+  zplc_sched_core_plant_exit();
   return safe_result;
 }
 
@@ -1624,6 +1657,10 @@ int zplc_sched_init(void) {
   }
 
   k_work_init(&coordinator_work, coordinator_work_handler);
+#ifdef CONFIG_ZPLC_PLANT_IO
+  k_work_init(&plant_stop_work, plant_stop_work_handler);
+  zplc_sched_core_set_plant(&plant_hooks);
+#endif
   k_work_init_delayable(&keepalive_work, keepalive_handler);
   keepalive_running = false;
   hardware_watchdog_channel = -1;
@@ -1851,6 +1888,8 @@ int zplc_sched_load(const uint8_t *binary, size_t size) {
     control_unlock();
     return -4;
   }
+  /* A program load is a run-control change: the plant mode, if one is still open, ends here. */
+  zplc_sched_core_plant_exit();
 
   if (validate_program_locked(binary, size) != ZPLC_LOADER_OK) {
     control_unlock();
