@@ -308,7 +308,7 @@ export function validateManifest(value: unknown): string[] {
   if (typeof value.id !== 'string' || !ID.test(value.id)) problems.push('manifest.id: must be a lowercase slug of 3 to 64 characters');
   if (!isPositiveInt(value.version)) problems.push('manifest.version: must be a positive integer');
   if (!isPositiveInt(value.order)) problems.push('manifest.order: must be a positive integer');
-  if (!isNonNegativeInt(value.module) || (value.module as number) > 11) problems.push('manifest.module: must be an integer from 0 to 11');
+  if (!isNonNegativeInt(value.module) || (value.module as number) > 19) problems.push('manifest.module: must be an integer from 0 to 19');
   if (!oneOf(LESSON_LEVELS, value.level)) problems.push(`manifest.level: must be one of ${LESSON_LEVELS.join(', ')}`);
   if (
     !isStringArray(value.prerequisites) ||

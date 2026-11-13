@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
+import { afterAll, beforeAll, describe, expect } from 'bun:test';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -81,11 +81,19 @@ function fixture(starter: string, solution: string, files?: readonly string[]): 
 const guard = (entry: LessonIndexEntry, now?: () => number) => checkSceneLessons({ lessons: [entry], projectsDir: projects, now });
 
 describe('the scene-lesson guard on real programs (CRS-005, CRS-006, CRS-010)', () => {
-  it('passes on the tree today: no lesson names a scene and the ten plant lessons are as pinned', async () => {
-    expect(LESSON_INDEX.lessons.filter((candidate) => candidate.scene)).toEqual([]);
-    expect(await checkSceneLessons()).toEqual({ problems: [], report: [] });
-    expect(plantLessonPinFaults(LESSON_INDEX.lessons)).toEqual([]);
-  });
+  itNative(
+    'passes on the tree today: every scene lesson grades as it should, and the ten plant lessons are as pinned',
+    async () => {
+      const sceneLessons = LESSON_INDEX.lessons.filter((candidate) => candidate.scene);
+      expect(sceneLessons.length).toBeGreaterThan(0);
+      const { problems, report } = await checkSceneLessons();
+      expect(problems).toEqual([]);
+      // One line of grade times per scene lesson (starter and solution).
+      expect(report.filter((line) => sceneLessons.some((lesson) => line.startsWith(`${lesson.id}:`)))).toHaveLength(sceneLessons.length);
+      expect(plantLessonPinFaults(LESSON_INDEX.lessons)).toEqual([]);
+    },
+    600_000,
+  );
 
   itNative(
     'CRS-005 a lesson whose reference passes and whose starter fails is accepted, with its grade times reported',

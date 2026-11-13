@@ -18,7 +18,12 @@ Las plantas tienen tiempo y valores continuos. Los temporizadores, el escalado a
 
 ## Lecciones
 
-ninguna
+| Lección | Id | Lenguajes | minutos |
+| --- | --- | --- | --- |
+| [Llenar y vaciar con temporizadores](../lessons/plant-timed-tank.md) | `plant-timed-tank` | ST | 30 |
+| [Leer el nivel](../lessons/plant-tank-level-scaling.md) | `plant-tank-level-scaling` | ST | 30 |
+| [Mantener el nivel con PID](../lessons/plant-tank-pid.md) | `plant-tank-pid` | ST | 40 |
+| [El mismo lazo con bloques de función](../lessons/plant-tank-pid-fbd.md) | `plant-tank-pid-fbd` | FBD | 40 |
 
 {/* <<< END GENERATED: learn/modules/module-13 <<< */}
 

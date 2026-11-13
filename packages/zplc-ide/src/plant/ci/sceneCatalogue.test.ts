@@ -21,6 +21,7 @@ describe('shipped scenes use the public format and catalogue', () => {
       'counted-queue',
       'two-axis-assembly',
       'two-axis-assembly-numeric',
+      'stacker-crane-warehouse',
       'buffer-release',
       'merge-lines',
       'lift-stacking',

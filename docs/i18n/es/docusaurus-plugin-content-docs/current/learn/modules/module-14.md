@@ -18,7 +18,10 @@ Cuando las piezas comparten un camino, el orden importa. Las máquinas de estado
 
 ## Lecciones
 
-ninguna
+| Lección | Id | Lenguajes | minutos |
+| --- | --- | --- | --- |
+| [Acumular y liberar](../lessons/plant-buffer-release.md) | `plant-buffer-release` | SFC | 45 |
+| [Fusionar dos líneas](../lessons/plant-merge-lines.md) | `plant-merge-lines` | ST | 45 |
 
 {/* <<< END GENERATED: learn/modules/module-14 <<< */}
 

@@ -18,7 +18,11 @@ Sus primeros programas ahora mueven piezas. Cada uno lee un sensor y gobierna un
 
 ## Lecciones
 
-ninguna
+| Lección | Id | Lenguajes | minutos |
+| --- | --- | --- | --- |
+| [Mover una caja hasta un sensor](../lessons/plant-belt-to-sensor.md) | `plant-belt-to-sensor` | ST | 20 |
+| [Del sensor A al sensor B](../lessons/plant-latch-two-sensors.md) | `plant-latch-two-sensors` | ST | 20 |
+| [Cargar y descargar tres cajas](../lessons/plant-counted-queue.md) | `plant-counted-queue` | ST | 30 |
 
 {/* <<< END GENERATED: learn/modules/module-12 <<< */}
 

@@ -74,6 +74,15 @@ export const LESSON_IDS = [
   "ld-final-project",
   "ld-compare-math",
   "ld-analog-scaling",
+  "plant-belt-to-sensor",
+  "plant-latch-two-sensors",
+  "plant-counted-queue",
+  "plant-timed-tank",
+  "plant-tank-level-scaling",
+  "plant-tank-pid",
+  "plant-tank-pid-fbd",
+  "plant-buffer-release",
+  "plant-merge-lines",
 ] as const;
 
 export type LessonId = typeof LESSON_IDS[number];

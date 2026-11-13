@@ -1,6 +1,6 @@
 // The scene-lesson guard (K2): the static rules, proven on fixture lessons built over the shipped scene `belt-to-sensor`
-// (no real scene lesson exists yet, so the guard passes today with zero of them). The rules that grade a program on the
-// native runtime are proven in packages/zplc-ide/src/learn/sceneLessons.test.ts.
+// and on the real scene lessons of the tree. The rules that grade a program on the native runtime are proven in
+// packages/zplc-ide/src/learn/sceneLessons.test.ts.
 import { cpSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -57,9 +57,11 @@ const roots: string[] = [];
 afterAll(() => roots.forEach((root) => rmSync(root, { recursive: true, force: true })));
 
 describe('the scene-lesson guard (CRS-003, CRS-005, CRS-006, CRS-010)', () => {
-  it('passes on the tree today: no lesson names a scene, and the ten plant lessons are as pinned', async () => {
-    expect(LESSON_INDEX.lessons.filter((lesson) => lesson.scene)).toEqual([]);
-    expect(await checkSceneLessons()).toEqual({ problems: [], report: [] });
+  // Grading the real scene lessons needs the native runtime: packages/zplc-ide/src/learn/sceneLessons.test.ts does it.
+  it('passes on the tree today: every scene lesson is well formed, and the ten plant lessons are as pinned', () => {
+    const sceneLessons = LESSON_INDEX.lessons.filter((lesson) => lesson.scene);
+    expect(sceneLessons.length).toBeGreaterThan(0);
+    expect(sceneLessons.flatMap((lesson) => sceneLessonStaticFaults(lesson))).toEqual([]);
     expect(plantLessonPinFaults(LESSON_INDEX.lessons)).toEqual([]);
   });
 
@@ -90,7 +92,10 @@ describe('the scene-lesson guard (CRS-003, CRS-005, CRS-006, CRS-010)', () => {
     for (const id of ['a', 'b', 'c']) cpSync(SCENE, join(scenes, id), { recursive: true });
     expect(missingSceneLessons([fixtureLesson('x', baseScenario, { scene: 'b' })], scenes)).toEqual(['a', 'c']);
     expect(missingSceneLessons([], scenes)).toEqual(['a', 'b', 'c']);
-    expect(missingSceneLessons(LESSON_INDEX.lessons)).toEqual(expect.arrayContaining(['belt-to-sensor']));
+    // On the tree: a scene that a lesson names is never listed, and every listed scene has no lesson.
+    const named = new Set(LESSON_INDEX.lessons.flatMap((lesson) => (lesson.scene ? [lesson.scene] : [])));
+    expect(missingSceneLessons(LESSON_INDEX.lessons).filter((id) => named.has(id))).toEqual([]);
+    expect(missingSceneLessons(LESSON_INDEX.lessons)).not.toContain('belt-to-sensor');
   });
 
   it('R7-L3 a Ladder sibling has the hash of its ST lesson', async () => {

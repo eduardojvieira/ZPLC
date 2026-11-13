@@ -51,6 +51,14 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
     }
   },
   {
+    "id": "stacker-crane-warehouse",
+    "dir": "plant-scenes/stacker-crane-warehouse",
+    "names": {
+      "en": "Stacker-crane warehouse",
+      "es": "Stacker-crane warehouse"
+    }
+  },
+  {
     "id": "buffer-release",
     "dir": "plant-scenes/buffer-release",
     "names": {

@@ -91,6 +91,11 @@ describe('lesson package validators (LRN-009, LRN-010, LRN-027)', () => {
     regressionScenarios: [],
   };
 
+  it('CRS-002 accepts the modules of the 2.1 course, 12 to 19, and refuses a module past them', () => {
+    expect(validateManifest({ ...manifest, module: 19 })).toEqual([]);
+    expect(validateManifest({ ...manifest, module: 20 })).toContain('manifest.module: must be an integer from 0 to 19');
+  });
+
   it('accepts a complete manifest and names each missing or wrong field', () => {
     expect(validateManifest(manifest)).toEqual([]);
     const withoutStarter: Record<string, unknown> = { ...manifest };

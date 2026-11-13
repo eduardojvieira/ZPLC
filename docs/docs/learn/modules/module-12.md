@@ -18,7 +18,11 @@ Your first programs now move real parts. Each one reads a sensor and drives a be
 
 ## Lessons
 
-none
+| Lesson | Id | Languages | minutes |
+| --- | --- | --- | --- |
+| [Move a box to a sensor](../lessons/plant-belt-to-sensor.md) | `plant-belt-to-sensor` | ST | 20 |
+| [From sensor A to sensor B](../lessons/plant-latch-two-sensors.md) | `plant-latch-two-sensors` | ST | 20 |
+| [Load and unload three boxes](../lessons/plant-counted-queue.md) | `plant-counted-queue` | ST | 30 |
 
 {/* <<< END GENERATED: learn/modules/module-12 <<< */}
 

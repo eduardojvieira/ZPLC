@@ -1,9 +1,14 @@
 // The sibling equivalence rule in the course (M7-K5): a prerequisite is met by it or by its alternative; passed is never shared.
 import { describe, expect, it } from 'bun:test';
 import { LESSON_INDEX } from '../generated/lessonIndex';
+import twoZeroIds from '../../../../tools/ci/two-zero-lesson-ids.json';
 import { emptyProgress, withPassedIds } from '../../shared/learnProgressModel';
 import { buildCourseView, courseOrder, lessonStateOf } from './course';
 import type { LessonIndex } from './lessonPackage';
+
+/** The 2.0 lessons of the generated index (tools/ci/two-zero-lesson-ids.json): the owner fixed 2.0 at 68 lessons and no pair. */
+const TWO_ZERO = new Set<string>(twoZeroIds);
+const INDEX_2_0: LessonIndex = { ...LESSON_INDEX, lessons: LESSON_INDEX.lessons.filter((lesson) => TWO_ZERO.has(lesson.id)) };
 
 const ST = 'first-blink-simulation';
 const LADDER = `${ST}-ladder`;
@@ -11,8 +16,8 @@ const NEXT = 'scan-cycle-one-scan-memory'; // requires ST
 const passed = (...ids: string[]) => withPassedIds(emptyProgress(), ids);
 /** The 2.0 index plus a Ladder twin of the first lesson. */
 const withTwin = (): LessonIndex => {
-  const base = LESSON_INDEX.lessons.find((lesson) => lesson.id === ST)!;
-  return { ...LESSON_INDEX, lessons: [...LESSON_INDEX.lessons, { ...base, id: LADDER, order: base.order + 0.5 }] };
+  const base = INDEX_2_0.lessons.find((lesson) => lesson.id === ST)!;
+  return { ...INDEX_2_0, lessons: [...INDEX_2_0.lessons, { ...base, id: LADDER, order: base.order + 0.5 }] };
 };
 const opts = { locale: 'en', unlockAll: false } as const;
 
@@ -34,8 +39,8 @@ describe('lessonStateOf with an alternative sibling', () => {
   });
 
   it('keeps the 2.0 states of a 2.0-only index (no pair, nothing shared)', () => {
-    expect(lessonStateOf(LESSON_INDEX, NEXT, passed('tank-level-fault-reset-ladder'), false)).toEqual({ state: 'locked', missing: [ST] });
-    expect(lessonStateOf(LESSON_INDEX, NEXT, passed(ST), false).state).toBe('available');
+    expect(lessonStateOf(INDEX_2_0, NEXT, passed('tank-level-fault-reset-ladder'), false)).toEqual({ state: 'locked', missing: [ST] });
+    expect(lessonStateOf(INDEX_2_0, NEXT, passed(ST), false).state).toBe('available');
   });
 });
 
@@ -46,7 +51,7 @@ describe('courseOrder with siblings', () => {
   });
 
   it('keeps the order of the 2.0 lessons when a pair is added', () => {
-    const ids = courseOrder(LESSON_INDEX).map((lesson) => lesson.id);
+    const ids = courseOrder(INDEX_2_0).map((lesson) => lesson.id);
     expect(
       courseOrder(withTwin())
         .map((lesson) => lesson.id)
@@ -72,13 +77,13 @@ describe('the course counter with alternative siblings', () => {
   });
 
   it('keeps the 2.0 counter of a 2.0-only index', () => {
-    expect(count([], LESSON_INDEX)).toEqual([0, 68]);
-    expect(count([ST, NEXT, 'tank-level-fault-reset-ladder'], LESSON_INDEX)).toEqual([3, 68]);
+    expect(count([], INDEX_2_0)).toEqual([0, 68]);
+    expect(count([ST, NEXT, 'tank-level-fault-reset-ladder'], INDEX_2_0)).toEqual([3, 68]);
   });
 
   it('does not change a path counter: a path holds one sibling', () => {
     const paths = buildCourseView(index, passed(LADDER), opts).paths;
-    const plain = buildCourseView(LESSON_INDEX, passed(ST), opts).paths;
+    const plain = buildCourseView(INDEX_2_0, passed(ST), opts).paths;
     expect(paths.map((path) => [path.passed, path.total])).toEqual(plain.map((path) => [path.passed, path.total]));
   });
 });
