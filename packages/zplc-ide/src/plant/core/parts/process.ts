@@ -90,7 +90,7 @@ const TANK_EQUATIONS = {
     '(3) Flows in L/s: qIn = inletMaxLps * uIn; gravity discharge (Torricelli) qOut = outletCoef * uOut * sqrt(h); with the leak fault ' +
     'a constant leakLps also leaves. (4) Level: h = h + (qIn - qOut - qLeak) * dt / (1000 * A), never below 0. (5) Overflow: if h > ' +
     'heightM then spilled = spilled + (h - heightM) * 1000 * A and h = heightM. The square root is Newton iteration with + - * / only ' +
-    '(12 iterations, seed 1 for h >= 1 and h otherwise), so a run is bit for bit repeatable. At full opening a tank empties in finite ' +
+    '(40 iterations, seed (1 + h) / 2), so a run is bit for bit repeatable. At full opening a tank empties in finite ' +
     'time 2 * sqrt(h0) * 1000 * A / outletCoef.',
   es:
     'Estado: nivel h (m), aperturas de válvula uIn y uOut (0 a 1), volumen derramado (L). Área A = widthM * depthM (m2); paso ' +
@@ -99,8 +99,8 @@ const TANK_EQUATIONS = {
     'si valveTauS <= dt, si no u = u + (objetivo - u) * dt / valveTauS. (3) Caudales en L/s: qIn = inletMaxLps * uIn; descarga por ' +
     'gravedad (Torricelli) qOut = outletCoef * uOut * raíz(h); con la falla de fuga sale además una constante leakLps. (4) Nivel: ' +
     'h = h + (qIn - qOut - qLeak) * dt / (1000 * A), nunca por debajo de 0. (5) Desborde: si h > heightM entonces derramado = ' +
-    'derramado + (h - heightM) * 1000 * A y h = heightM. La raíz cuadrada es una iteración de Newton solo con + - * / (12 ' +
-    'iteraciones, semilla 1 si h >= 1 y h en otro caso), de modo que una ejecución se repite bit a bit. Con apertura total un ' +
+    'derramado + (h - heightM) * 1000 * A y h = heightM. La raíz cuadrada es una iteración de Newton solo con + - * / (40 ' +
+    'iteraciones, semilla (1 + h) / 2), de modo que una ejecución se repite bit a bit. Con apertura total un ' +
     'tanque se vacía en un tiempo finito 2 * raíz(h0) * 1000 * A / outletCoef.',
 };
 
