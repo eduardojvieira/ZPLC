@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-estop-interlocks",
+  "version": 1,
+  "order": 181,
+  "module": 18,
+  "level": "advanced",
+  "prerequisites": ["plant-three-level-lifts", "interlock-guard-permissive"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The emergency stop is a part of the simulated scene; a learner board has no emergency-stop circuit, and the hardware track comes with the HIL run.",
+        "es": "El paro de emergencia es una parte de la escena simulada; una placa del estudiante no tiene circuito de paro de emergencia, y la pista de hardware llega con la ejecución HIL."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus cajas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "three-level-lifts",
+  "estimatedMinutes": 40,
+  "starter": {
+    "project": "plant_estop_interlocks_starter",
+    "program": "src/ThreeLevelLifts.st"
+  },
+  "solution": {
+    "project": "plant_estop_interlocks",
+    "program": "src/ThreeLevelLifts.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "estop-interlocks",
+    "path": "tests/estop-interlocks.scenario.json",
+    "sha256": "6ae467a9ecfef06439a046befc16f87327865cad618af0aa7d46fd9b66b76bfe"
+  },
+  "regressionScenarios": []
+}

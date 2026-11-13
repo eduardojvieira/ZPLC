@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Paro de emergencia y enclavamientos",
+  "summary": "Haga que una línea en marcha se detenga al pulsar el paro de emergencia, muéstrelo con la luz roja y rehúse reiniciar hasta que se pulse Start de nuevo.",
+  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "objectives": [
+    "Detener todas las salidas mientras el paro de emergencia está pulsado.",
+    "Recordar el paro, de modo que soltar el botón no reinicie la línea."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/ThreeLevelLifts.st, añada una memoria Stopped: actívela cuando EStopOk sea FALSE, bórrela solo con Start, y haga que borre Active y encienda Red.",
+      "checkpoint": "Todas las salidas ya dependen de Active, así que borrar Active detiene las bandas y los elevadores a la vez."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "Antes de ejecutar, siga el paro: a los 15,5 s se pulsa el paro de emergencia mientras un elevador puede estar en movimiento; la línea debe detenerse, seguir detenida cuando se suelta el botón a los 17 s, y volver a funcionar solo tras la pulsación de Start a los 17,5 s.",
+      "checkpoint": "Red encendida y todas las salidas apagadas a los 16 s; todavía detenida a los 17,3 s; Red apagada y la línea en marcha otra vez tras Start."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial ignora el paro de emergencia, así que la línea sigue funcionando; detenga todas las salidas mientras EStopOk sea FALSE, encienda Red, mantenga recordado el paro después de soltarlo y haga funcionar la línea de nuevo solo con una nueva pulsación de Start.",
+      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario estop-interlocks; observe la vista 3D mientras se ejecuta.",
+      "checkpoint": "El escenario requerido se llama estop-interlocks y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Observe cómo la luz de la torre se pone roja y las bandas y los elevadores se detienen cuando el escenario pulsa el paro de emergencia, y vuelven a funcionar tras Start.",
+      "checkpoint": "Red sigue encendida después de soltar hasta Start, y las salidas caen en el mismo ciclo que EStopOk."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "Las aserciones AT fijan el paro a los 16 s, el paro mantenido a los 17,3 s y el reinicio a los 18 s; los enclavamientos que ya estaban en el programa son la misma idea de la lección 2.0 interlock-guard-permissive.",
+      "checkpoint": "No establece una función de seguridad: es un paro escrito en el programa del PLC, no un circuito con certificación de seguridad, y no da tiempo de parada, temporización de hardware, HIL ni certificación. La calificación no puede ver un elevador que se desplaza después del paro."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Compruebe EStopOk primero: cuando sea FALSE active Stopped y borre Active; haga funcionar la línea de nuevo solo en una rama ELSIF Start."
+    },
+    {
+      "level": 2,
+      "text": "Encienda Red desde Stopped; las salidas ya dependen de Active, así que ninguna salida necesita su propia lógica de paro."
+    }
+  ],
+  "faultCases": [
+    "El inicial ignora el paro de emergencia, así que la línea sigue funcionando; detenga todas las salidas mientras EStopOk sea FALSE, encienda Red, mantenga recordado el paro después de soltarlo y haga funcionar la línea de nuevo solo con una nueva pulsación de Start."
+  ]
+}
