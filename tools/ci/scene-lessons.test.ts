@@ -18,6 +18,7 @@ import {
   missingSceneLessons,
   plantLessonPinFaults,
   sceneLessonStaticFaults,
+  starterMayBeUngraded,
 } from './scene-lessons';
 
 const SCENE = join(SCENES_DIRECTORY, 'belt-to-sensor');
@@ -123,6 +124,20 @@ describe('the scene-lesson guard (CRS-003, CRS-005, CRS-006, CRS-010)', () => {
     expect(plantLessonPinFaults(lessons.filter((entry) => entry.id !== 'motor-plant-feedback')).join('\n')).toContain(
       'motor-plant-feedback',
     );
+  });
+});
+
+describe('a scene-building starter may not grade for a missing part', () => {
+  const solution = readFileSync(join(SCENE, 'scene.json'), 'utf8');
+  const empty = JSON.stringify({ schemaVersion: 1, name: 'Empty floor', parts: [], cameras: [] });
+
+  it('is allowed only for another scene and only for missing-part codes', () => {
+    expect(starterMayBeUngraded(empty, solution, ['SCENE_FACT_UNKNOWN'])).toBe(true);
+    expect(starterMayBeUngraded(empty, solution, ['SCENE_BINDING_INVALID', 'SCENE_FACT_UNKNOWN'])).toBe(true);
+    expect(starterMayBeUngraded(solution, solution, ['SCENE_FACT_UNKNOWN'])).toBe(false);
+    expect(starterMayBeUngraded(empty, solution, ['SCENE_FACT_UNKNOWN', 'COMPILE_FAILED'])).toBe(false);
+    expect(starterMayBeUngraded(empty, solution, ['SCENE_MAP_INVALID'])).toBe(false);
+    expect(starterMayBeUngraded(empty, solution, [])).toBe(false);
   });
 });
 

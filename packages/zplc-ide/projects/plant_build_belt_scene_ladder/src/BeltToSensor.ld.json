@@ -1,0 +1,217 @@
+{
+  "name": "BeltToSensor",
+  "description": "Belt to sensor: start the belt from a button and stop it when the box reaches the far sensor.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "StartButton.pressed: the start button"
+      },
+      {
+        "name": "EyeFar",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "EyeFar.detect: the sensor at the far end of the belt"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Run",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Belt1.run: run the belt"
+      },
+      {
+        "name": "Emit",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Emitter1.emit: put one box on the belt"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Run: Start sets the belt going, the contact on Run holds it, and EyeFar breaks the rung when the box reaches the far sensor.",
+      "branches": [
+        {
+          "id": "branch_1",
+          "startCol": 1,
+          "endCol": 4,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "contact_nc_EyeFar_00",
+              "type": "contact_nc",
+              "variable": "EyeFar",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "contact_no_Start_01",
+              "type": "contact_no",
+              "variable": "Start",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_Run_07",
+              "type": "coil",
+              "variable": "Run",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": {
+              "id": "contact_no_Run_11",
+              "type": "contact_no",
+              "variable": "Run",
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "Emit: a press of Start puts one box on the belt.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "contact_no_Start_00",
+              "type": "contact_no",
+              "variable": "Start",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_Emit_07",
+              "type": "coil",
+              "variable": "Emit",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

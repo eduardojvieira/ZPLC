@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { VOSEO_MARKERS } from '../../../../tools/ci/i18n-guard';
+import { starterMayBeUngraded } from '../../../../tools/ci/scene-lessons';
 import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
 import { lessonCheck } from './lessonCheck';
 import { citedFiles, canonicalJson, expandText, textShape, type LessonProgramCheck } from './lessonPackage';
@@ -54,6 +55,18 @@ function scratchStarter(lesson: LessonPackage): string {
   const root = join(workRoot, `${lesson.manifest.starter.project}-${counter++}`);
   cpSync(join(PROJECTS_DIRECTORY, lesson.manifest.starter.project), root, { recursive: true });
   return root;
+}
+
+/**
+ * A scene-building lesson's starter has not built its scene yet, so a program of a check cannot be graded on it: the check runs
+ * on the scene and plant map of the solution (a learner who built the scene right and wrote another program).
+ */
+function onBuiltScene(root: string, lesson: LessonPackage): void {
+  if (!lesson.manifest.scene) return;
+  const starter = join(PROJECTS_DIRECTORY, lesson.manifest.starter.project);
+  const solution = join(PROJECTS_DIRECTORY, lesson.manifest.solution.project);
+  if (readFileSync(join(starter, 'scene.json'), 'utf8') === readFileSync(join(solution, 'scene.json'), 'utf8')) return;
+  for (const file of ['scene.json', 'plant-map.json']) cpSync(join(solution, file), join(root, file));
 }
 
 function apply(root: string, check: LessonProgramCheck): void {
@@ -174,7 +187,22 @@ for (const lesson of packages) {
     itNative(
       'starter is RED because an assertion fails, not because it does not build',
       async () => {
-        expect(await grade(scratchStarter(lesson), lesson)).toMatchObject({ built: true, result: 'failed' });
+        const root = scratchStarter(lesson);
+        const first = await lessonCheck(root, lesson.id, { clock });
+        // A scene-building starter lacks parts the scenario names: the Check says which and grades nothing (the guard's rule).
+        if (!first.ok && manifest.scene) {
+          const sceneOf = (project: string) => readFileSync(join(PROJECTS_DIRECTORY, project, 'scene.json'), 'utf8');
+          const codes = (first.evidence?.diagnostics ?? []).map(({ code }) => code);
+          expect({
+            codes,
+            allowed: starterMayBeUngraded(sceneOf(manifest.starter.project), sceneOf(manifest.solution.project), codes),
+          }).toEqual({
+            codes,
+            allowed: true,
+          });
+          return;
+        }
+        expect(await grade(root, lesson)).toMatchObject({ built: true, result: 'failed' });
         const check = await lessonCheck(scratchStarter(lesson), lesson.id, { clock });
         if (!check.ok) throw new Error('the starter must build and run');
         // LRN-026: every failed assertion names what was expected and where in the trace it failed.
@@ -191,6 +219,7 @@ for (const lesson of packages) {
       `reference solution (${manifest.solution.project}/${manifest.solution.program}) PASSES the reference scenario`,
       async () => {
         const root = scratchStarter(lesson);
+        onBuiltScene(root, lesson);
         writeFileSync(
           join(root, manifest.starter.program),
           readFileSync(join(PROJECTS_DIRECTORY, manifest.solution.project, manifest.solution.program), 'utf8'),
@@ -212,6 +241,7 @@ for (const lesson of packages) {
         `another correct solution (${intent}) also PASSES`,
         async () => {
           const root = scratchStarter(lesson);
+          onBuiltScene(root, lesson);
           apply(root, { intent, ...check });
           expect({ intent, ...(await grade(root, lesson)) }).toMatchObject({ intent, built: true, result: 'passed' });
         },
@@ -224,6 +254,7 @@ for (const lesson of packages) {
         `wrong program that ${intent} stays RED`,
         async () => {
           const root = scratchStarter(lesson);
+          onBuiltScene(root, lesson);
           apply(root, { intent, ...check });
           expect({ intent, ...(await grade(root, lesson)) }).toMatchObject({ intent, built: true, result: 'failed' });
         },

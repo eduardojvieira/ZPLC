@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "name": "Merge two lines",
+  "shortestPulseMs": 800,
+  "parts": [
+    {
+      "id": "feed-a",
+      "part": "belt",
+      "name": "FeedA",
+      "position": [-1.5, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "length": 2,
+        "speedMps": 0.5
+      }
+    },
+    {
+      "id": "feed-b",
+      "part": "belt",
+      "name": "FeedB",
+      "position": [0, 0.65, 1.15],
+      "rotationYDeg": 90,
+      "config": {
+        "length": 2,
+        "speedMps": 0.5
+      }
+    },
+    {
+      "id": "outfeed",
+      "part": "belt",
+      "name": "Outfeed",
+      "position": [1, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "length": 3,
+        "speedMps": 0.5,
+        "width": 0.8
+      }
+    },
+    {
+      "id": "emitter-a",
+      "part": "emitter",
+      "name": "EmitterA",
+      "position": [-2.3, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "maxItems": 3
+      }
+    },
+    {
+      "id": "blade-a",
+      "part": "stop-blade",
+      "name": "BladeA",
+      "position": [-0.6, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {}
+    },
+    {
+      "id": "blade-b",
+      "part": "stop-blade",
+      "name": "BladeB",
+      "position": [0, 0.65, 0.55],
+      "rotationYDeg": 90,
+      "config": {}
+    },
+    {
+      "id": "eye-a",
+      "part": "sensor-diffuse",
+      "name": "EyeA",
+      "position": [-0.85, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": {
+        "rangeM": 1
+      }
+    },
+    {
+      "id": "eye-b",
+      "part": "sensor-diffuse",
+      "name": "EyeB",
+      "position": [0.5, 0.65, 0.75],
+      "rotationYDeg": 180,
+      "config": {
+        "rangeM": 1
+      }
+    },
+    {
+      "id": "eye-zone",
+      "part": "sensor-diffuse",
+      "name": "EyeZone",
+      "position": [0.8, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": {
+        "rangeM": 1
+      }
+    },
+    {
+      "id": "remover",
+      "part": "remover",
+      "name": "Remover1",
+      "position": [2.35, 0.65, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "width": 0.4,
+        "height": 0.6,
+        "depth": 0.6
+      }
+    },
+    {
+      "id": "start",
+      "part": "push-button",
+      "name": "StartButton",
+      "position": [-2.3, 0.5, -0.7],
+      "rotationYDeg": 0,
+      "config": {}
+    },
+    {
+      "id": "done",
+      "part": "indicator-light",
+      "name": "DoneLight",
+      "position": [2.1, 0.5, -0.7],
+      "rotationYDeg": 0,
+      "config": {}
+    }
+  ],
+  "cameras": [
+    {
+      "name": "Overview",
+      "position": [0, 3, 3.6],
+      "target": [0, 0.5, 0.4]
+    }
+  ]
+}
