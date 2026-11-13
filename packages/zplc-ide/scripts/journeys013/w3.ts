@@ -14,7 +14,7 @@ const inGroup = (group: string, selector: string) =>
   `Boolean(document.querySelector(${JSON.stringify(group)})?.querySelector(${JSON.stringify(selector)}))`;
 
 /** Runs a command the way a keyboard user does: the palette, a few letters of its name, Enter. */
-async function runFromPalette(app: App, command: string, filter: string): Promise<void> {
+export async function runFromPalette(app: App, command: string, filter: string): Promise<void> {
   const open = () => app.eval<boolean>(`Boolean(document.querySelector('[role="dialog"] [role="combobox"]'))`);
   await app.press('Ctrl+Shift+P');
   await app.until('the command palette to open', async () => (await open()) || undefined);
@@ -80,9 +80,7 @@ export const journeysW3: Journey[] = [
         (await app.eval<string>(`document.getElementById('editor-tab-plant')?.textContent ?? ''`)).includes('Plant'),
         'The plant tab does not say Plant.',
       );
-      // the program runs in the simulation, as the lesson does, and the plant binds to it
-      await app.click(button(en('toolbar.connect')));
-      await app.until('the simulation to connect', async () => (await app.visible(button(en('toolbar.disconnect')))) || undefined);
+      // the program runs in the simulation (Run starts the simulator itself), as the lesson does, and the plant binds to it
       await app.click(button(`${en('toolbar.run.label')} (F5)`, 'prefix'));
       await app.until(
         'the program to run',

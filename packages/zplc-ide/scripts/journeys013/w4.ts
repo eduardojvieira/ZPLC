@@ -3,8 +3,9 @@ import { join } from 'node:path';
 
 import { LESSON_INDEX } from '../../src/generated/lessonIndex';
 import { assert } from '../run-desktop-smoke';
-import { button, css, menuItem, tab, type App } from '../journeyApp';
+import { button, css, menuItem, type App } from '../journeyApp';
 import type { Journey } from '../journeys';
+import { runFromPalette } from './w3';
 
 /** The journeys of task W4 of the M1 plan (spec 013): the command bar is the one transport. */
 
@@ -43,15 +44,19 @@ export const journeysW4: Journey[] = [
       await app.until('the Learn home', async () => (await app.visible(css('[data-learn-start]'))) || undefined);
       app.answer(folder);
       await app.click(css(`[data-learn-start="${lesson.id}"]`), 'the start of the motor plant lesson');
-      await app.until('the project workbench', async () => (await app.visible(button('Run (F5)', 'prefix'))) || undefined);
+      await app.until('the project workbench', async () => (await app.visible(css('[data-activity="project"]'))) || undefined);
 
       // Build, connect, Run: the command bar, with no control of the plant involved.
       await app.click(button('Build', 'prefix'));
       await app.click(menuItem('Compile'));
+      await patiently(
+        'the build to succeed',
+        async () => /Built saved workspace/.test(await app.eval<string>(`document.body.innerText`)) || undefined,
+      );
       await patiently('Run to be ready', async () => (await app.clickable(button('Run (F5)', 'prefix'))) || undefined);
       await app.click(button('Run (F5)', 'prefix'));
       await patiently('the program to run', async () => (await app.visible(button('Pause (F6)', 'prefix'))) || undefined);
-      await app.click(tab('Lab', 'prefix'));
+      await runFromPalette(app, 'view.plant', 'show the plant'); // the plant is a document of the editor area, not a Lab tab
       await patiently('the live motor plant', async () => (await app.visible(css('[data-plant="motor-v1"]'))) || undefined);
 
       // Run: the plant's facts change.

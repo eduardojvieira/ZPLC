@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { assert, MONACO_MODULE } from '../run-desktop-smoke';
 import { button, css, menuItem, tab, type App } from '../journeyApp';
 import type { Journey } from '../journeys';
+import { cyclesFromDetails } from './statusDetails';
 
 /** The journeys of task W6 of the M1 plan (spec 013): Run in one action, the target, the implicit simulator session. */
 
@@ -12,7 +13,7 @@ const treeItem = (id: string) => css(`[role="treeitem"][data-tree-node-id="${id}
 const monacoEval = <T>(app: App, body: string) =>
   app.eval<T>(`(async () => { const monaco = await ${MONACO_MODULE}; const editor = monaco.editor.getEditors()[0]; ${body} })()`);
 const status = (app: App) => app.eval<string>(`document.querySelector('[aria-label="Operational status"]')?.innerText ?? ''`);
-const cycles = async (app: App) => Number((/cycles\s+(\d[\d,]*)/.exec(await status(app))?.[1] ?? '0').replace(/,/g, ''));
+const cycles = async (app: App) => (await cyclesFromDetails(app)) || 0; // a session that has not started reports no count: zero
 const noticeText = (app: App) => app.eval<string>(`document.querySelector(${JSON.stringify(NOTICES)})?.innerText ?? ''`);
 
 async function openProject(app: App, project: string): Promise<void> {
@@ -27,7 +28,7 @@ async function openFile(app: App, path: string): Promise<void> {
   await app
     .until('the Files tree', async () => (await app.visible(treeItem(`dir:${path.split('/')[0]}`))) || undefined)
     .catch(async () => {
-      await app.click(css('[aria-label="Navigator mode"] button:nth-of-type(2), [aria-label="Modo del navegador"] button:nth-of-type(2)'));
+      await app.click(css('[aria-label="Navigator view"] button:nth-of-type(2), [aria-label="Vista del navegador"] button:nth-of-type(2)'));
     });
   const folder = path.split('/')[0]!;
   if (await app.eval(`${treeItem(`dir:${folder}`)}?.getAttribute('aria-expanded') === 'false'`)) await app.click(treeItem(`dir:${folder}`));
@@ -68,7 +69,10 @@ export const journeysW6: Journey[] = [
       );
       await app.until('the notice to say the run stopped', async () => /Run stopped/.test(await noticeText(app)) || undefined);
       assert(!(await app.visible(button('Pause (F6)', 'prefix'))), 'The program runs although its build failed.');
-      assert(/not connected/i.test(await status(app)), `The simulator was started although the build failed: ${await status(app)}`);
+      assert(
+        /stopped|detenido/i.test(await status(app)) && Number.isNaN(await cyclesFromDetails(app)),
+        `The simulator was started although the build failed: ${await status(app)}`,
+      );
     },
   },
   {
@@ -99,14 +103,15 @@ export const journeysW6: Journey[] = [
       await openFile(app, 'src/Extra.st');
       await editActiveFile(app, '(* second edit *) ');
 
-      // The task interval of the project configuration, changed in the settings and left unsaved.
+      // The task interval of the project configuration, changed in the Tasks editor (a tab of the editor area, opened from the
+      // settings) and left unsaved.
       await app.click(button('Project settings'), 'the Project settings button');
+      await app.click(css('[data-open-config-editor="tasks"]'), 'the Tasks configuration editor');
       const interval = css('input[type="number"][min="1"][max="10000"]');
       await app.until('the task interval field', async () => (await app.visible(interval)) || undefined);
       await app.click(interval);
       await app.press('Ctrl+A');
       await app.type('25');
-      await app.click(button('Project settings'), 'the Project settings button to leave the settings');
 
       // Save all is offered because more than the active file is modified, and it saves the configuration too.
       await app.click(button('Save active file', 'prefix'));
@@ -119,6 +124,7 @@ export const journeysW6: Journey[] = [
       });
 
       // An edit after it, then Build: the build saves first and does not refuse.
+      await app.click(tab('Extra.st', 'prefix'), 'the Extra.st tab'); // the Tasks editor is the shown tab now
       await editActiveFile(app, '(* third edit *) ');
       await app.click(button('Build options'));
       await app.click(menuItem('Compile'));

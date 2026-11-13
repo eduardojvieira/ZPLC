@@ -17,6 +17,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { cyclesFromDetails, statusDetailsText } from './journeys013/statusDetails';
 import { readZip } from '../electron/projectArchiveZip';
 import { learnLessonCatalog } from '../src/components/learnLesson';
 import { LESSON_INDEX } from '../src/generated/lessonIndex';
@@ -360,14 +361,13 @@ async function connectAndRun(app: App): Promise<void> {
     });
 }
 
-const cycles = async (app: App) =>
-  Number(
-    (
-      /cycles\s+(\d[\d,]*)/.exec(
-        await app.eval<string>(`document.querySelector('[aria-label="Operational status"]')?.innerText ?? ''`),
-      )?.[1] ?? 'NaN'
-    ).replace(/,/g, ''),
-  );
+/** Picks an item of the target selector of the command bar (spec 013 FLW-007), which replaced the Simulation and Hardware toggle. */
+async function chooseTarget(app: App, item: string): Promise<void> {
+  await app.click(button('Where the run goes', 'prefix'), 'the target selector');
+  await app.click(menuItem(item), `the target ${item}`);
+}
+
+const cycles = cyclesFromDetails;
 
 async function watch(app: App, variable: string): Promise<void> {
   const path = css(`input[placeholder^=${JSON.stringify(ui('workbench.watch.pathPlaceholder').split(' (')[0])}]`);
@@ -904,6 +904,9 @@ const ladderEdit: ChainSpec['edit'] = async (app, project) => {
   const document = JSON.parse(disk(path)) as { variables: { local: Array<{ name: string; type: string }> } };
   document.variables.local.push({ name: 'Hold', type: 'BOOL' });
   writeFileSync(path, JSON.stringify(document, null, 2));
+  // the project is open: the window learns of this write from its watcher a moment later, and an edit made before that is offered as a
+  // conflict ("Changed outside ZPLC") instead of being kept; give the watcher time to report it
+  await new Promise((resolve) => setTimeout(resolve, 4000));
   await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
   const rungs = () => app.eval<number>(`document.querySelectorAll('[data-ld-rung-id]').length`);
   const before = await rungs();
@@ -1052,6 +1055,8 @@ async function languageChain(app: App, { root, project, runtime }: JourneyContex
   config.target.board = CHAIN_BOARD;
   writeFileSync(join(project, 'zplc.json'), JSON.stringify(config, null, 2));
   await openFolder(app, project);
+  // the notice of the build above is over the top right of the editor until it goes: a click there would land on it, not on the editor
+  await app.until('the notices to go', async () => !(await app.visible(css('[data-notification]'))) || undefined, 30_000);
   const persisted = await spec.edit(app, project);
   await app.click(button('Close project'));
   await app.until('the Welcome screen', async () => (await app.visible(button('Open project', 'contains'))) || undefined);
@@ -1075,13 +1080,12 @@ async function languageChain(app: App, { root, project, runtime }: JourneyContex
     },
     60_000,
   );
-  await app.click(button('Disconnect'));
-  await app.until('the simulation to disconnect', async () => (await app.visible(button('Connect'))) || undefined);
+  await app.click(button('Stop (Shift+F5)', 'prefix'), 'Stop'); // the simulator session is implicit: there is no Disconnect to press
 
   // 4. deploy by a human action to the emulated device, run it there, and watch the same value change
   const device = await attachEmulatedDevice(app, runtime, CHAIN_BOARD);
   try {
-    await app.click(button('Hardware'), 'the Hardware mode');
+    await chooseTarget(app, CHAIN_BOARD);
     await app.click(button('Connect'), 'Connect');
     await app
       .until('the device to connect', async () => (await app.visible(button('Disconnect'))) || undefined)
@@ -1659,9 +1663,11 @@ export const JOURNEYS: Journey[] = [
       assert(result.kind === 'built', `The Motor example does not build: ${result.message}`);
       await connectAndRun(app);
       const status = await app.eval<string>(`document.querySelector('[aria-label="Operational status"]')?.innerText ?? ''`);
+      // the runtime is in the details of the rail now; what the runtime does not have stays on the rail itself
+      const details = await statusDetailsText(app);
       assert(
-        status.includes('WASM fallback') && status.includes('degraded'),
-        `The status bar does not show the degraded WebAssembly runtime: ${JSON.stringify(status)}`,
+        details.includes('WASM fallback') && details.includes('degraded'),
+        `The status details do not show the degraded WebAssembly runtime: ${JSON.stringify(details)}`,
       );
       assert(
         status.includes('Not available: modbus, mqtt, cloud, serial, physical-io'),
@@ -2466,8 +2472,6 @@ export const JOURNEYS: Journey[] = [
       const hits = async () => (await outputText(app)).match(new RegExp(`Breakpoint hit at PC=0x68, line ${line}\\b`, 'g'))?.length ?? 0;
       const stoppedAgain = async (count: number) =>
         ((await hits()) >= count && (await app.visible(button('Resume (F5)', 'prefix')))) || undefined;
-      await app.click(button('Connect'));
-      await app.until('the simulation to connect', async () => (await app.visible(button('Disconnect'))) || undefined);
       await app.click(button('Run (F5)', 'prefix'));
       await app.until(`execution to stop at line ${line}`, async () => (await app.visible(button('Resume (F5)', 'prefix'))) || undefined);
 
@@ -2587,8 +2591,6 @@ export const JOURNEYS: Journey[] = [
       await openFolder(third, over);
       const built = await compile(third);
       assert(built.kind === 'built', `The ${limit + 1}-byte program does not build: ${built.message}`);
-      await third.click(button('Connect'));
-      await third.until('the simulation to connect', async () => (await third.visible(button('Disconnect'))) || undefined);
       await third.click(button('Run (F5)', 'prefix'));
       const refusal = `the program is ${limit + 1} bytes, but the native simulation loads at most ${limit} bytes`;
       await third
@@ -2620,8 +2622,6 @@ export const JOURNEYS: Journey[] = [
         `a breakpoint dot on line ${line}`,
         async () => (await decoratedLines(app, 'glyphMarginClassName', 'breakpoint-glyph')).includes(line) || undefined,
       );
-      await app.click(button('Connect'));
-      await app.until('the simulation to connect', async () => (await app.visible(button('Disconnect'))) || undefined);
       await app.click(button('Run (F5)', 'prefix'));
       await app.until(`execution to stop at line ${line}`, async () => (await app.visible(button('Resume (F5)', 'prefix'))) || undefined);
       const stopped = () => app.visible(button('Resume (F5)', 'prefix'));
@@ -3377,8 +3377,6 @@ export const JOURNEYS: Journey[] = [
         'the dot to say that the breakpoint is set',
         async () => (await app.eval<boolean>(`${dot}?.getAttribute('aria-pressed') === 'true'`)) || undefined,
       );
-      await app.click(button('Connect'));
-      await app.until('the simulation to connect', async () => (await app.visible(button('Disconnect'))) || undefined);
       await app.click(button('Run (F5)', 'prefix'));
       await app
         .until('execution to stop at the rung', async () => (await app.visible(button('Resume (F5)', 'prefix'))) || undefined)
@@ -4321,8 +4319,6 @@ export const JOURNEYS: Journey[] = [
             `document.querySelector('.react-flow__node[data-id="and_run"]')?.getAttribute('style')?.includes('accent-red') === true`,
           )) || undefined,
       );
-      await app.click(button('Connect'));
-      await app.until('the simulation to connect', async () => (await app.visible(button('Disconnect'))) || undefined);
       await app.click(button('Run (F5)', 'prefix'));
       await app
         .until('execution to stop at the block', async () => (await app.visible(button('Resume (F5)', 'prefix'))) || undefined)
@@ -4357,8 +4353,6 @@ export const JOURNEYS: Journey[] = [
             `document.querySelector('.react-flow__node[data-id="step_led_on"]')?.getAttribute('style')?.includes('accent-red') === true`,
           )) || undefined,
       );
-      await app.click(button('Connect'));
-      await app.until('the simulation to connect', async () => (await app.visible(button('Disconnect'))) || undefined);
       await app.click(button('Run (F5)', 'prefix'));
       await app
         .until('execution to stop at the step', async () => (await app.visible(button('Resume (F5)', 'prefix'))) || undefined)
@@ -4391,8 +4385,6 @@ export const JOURNEYS: Journey[] = [
         `a breakpoint dot on line ${line}`,
         async () => (await decoratedLines(app, 'glyphMarginClassName', 'breakpoint-glyph')).includes(line) || undefined,
       );
-      await app.click(button('Connect'));
-      await app.until('the simulation to connect', async () => (await app.visible(button('Disconnect'))) || undefined);
       await app.click(button('Run (F5)', 'prefix'));
       await app
         .until(`execution to stop at line ${line}`, async () => (await app.visible(button('Resume (F5)', 'prefix'))) || undefined)
@@ -5172,13 +5164,15 @@ export const JOURNEYS: Journey[] = [
       );
       assert((await followDetails('build', 'Watch')) === 'console-tab-output', 'Details of a successful build should open Output.');
 
-      // A connection change.
-      await app.click(button('Connect'));
-      await waitFor('the connection notification', 'connection', 'success');
+      // A run: the simulator session is implicit, so the one notice of Run in simulation replaces the connection change (a board's
+      // connection notice needs a board).
+      await app.click(button('Run (F5)', 'prefix'));
+      await waitFor('the run notification', 'run', 'success');
       assert(
-        (await textOf('connection')).includes('Simulator ready'),
-        `The connection notification should say the simulator is ready: ${await textOf('connection')}`,
+        (await textOf('run')).includes(ui('studio.flow.done.run')),
+        `The run notification should say the program runs: ${await textOf('run')}`,
       );
+      await app.click(button('Stop (Shift+F5)', 'prefix'), 'Stop');
 
       // A long operation shows progress and a Cancel action, and its end is a result.
       for (const name of ['LongA', 'LongB', 'LongC']) {
@@ -6108,8 +6102,6 @@ export const JOURNEYS: Journey[] = [
         45_000,
       );
       assert(buildKind(built) === 'built', `The starter of the first lesson does not build: ${built}`);
-      await press(button('Connect'), 'Connect on the toolbar');
-      await app.until('the simulation to connect', async () => (await app.visible(button('Disconnect'))) || undefined, 45_000);
       await press(button('Run (F5)', 'prefix'), 'Run on the toolbar');
       await app
         .until('the program to run', async () => (await app.visible(button('Pause (F6)', 'prefix'))) || undefined, 45_000)
@@ -6199,8 +6191,6 @@ export const JOURNEYS: Journey[] = [
         await running();
         await app.click(button('Stop (Shift+F5)', 'prefix'), 'Stop');
         await app.until('the program to stop', async () => (await app.visible(button('Run (F5)', 'prefix'))) || undefined);
-        await app.click(button('Disconnect'), 'Disconnect');
-        await app.until('the simulation to disconnect', async () => (await app.visible(button('Connect'))) || undefined);
         writeFileSync(
           join(root, 'profile', 'learn-workspaces', id, entry.starter.program),
           disk(join(packageRoot, 'projects', entry.solution.project, entry.solution.program)),
@@ -6299,7 +6289,7 @@ export const JOURNEYS: Journey[] = [
     run: async (app, { project }) => {
       const dialog = css('[data-serial-port-dialog]');
       await openFolder(app, project);
-      await app.click(button('Hardware'), 'the Hardware mode');
+      await chooseTarget(app, 'posix');
       await app.click(button('Connect'), 'Connect');
       await app
         .until('the port dialog', async () => (await app.visible(dialog)) || undefined)
@@ -7058,7 +7048,7 @@ export const JOURNEYS: Journey[] = [
         return (said !== '' && !/^Building/.test(said) && /build|built/i.test(said)) || undefined;
       });
 
-      // 4. Simulate: Connect from the palette and Run with F5
+      // 4. Simulate: Run with F5, Stop and Run again
       const palette = async (title: string) => {
         await app.press('Ctrl+Shift+P');
         await app.until(
@@ -7072,9 +7062,14 @@ export const JOURNEYS: Journey[] = [
           async () => !(await app.eval<boolean>(`Boolean(document.querySelector('[role="dialog"] [role="combobox"]'))`)) || undefined,
         );
       };
-      await palette('Connect');
-      await app.until('the simulation to connect', async () => (await app.visible(button('Disconnect'))) || undefined);
-      await app.until('the connection to be announced', async () => /ready|connected/i.test(await live('polite')) || undefined);
+      // Connect is a board's command now: Run in simulation starts the simulator itself, so F5 runs the program from the keyboard, the
+      // announcer says so, and F5 runs it again after a keyboard Stop. (The palette's Run is "not available now" until a session exists,
+      // which is reported as a defect of the bar, so the journey does not go through it.)
+      await app.press('F5');
+      await app.until('the program to run', async () => (await app.visible(button('Pause (F6)', 'prefix'))) || undefined);
+      await app.until('the run to be announced', async () => /Running|simulation/i.test(await live('polite')) || undefined);
+      await app.press('Shift+F5');
+      await app.until('the program to stop', async () => (await app.visible(button('Run (F5)', 'prefix'))) || undefined);
       await app.press('F5');
       await app.until('the program to run', async () => (await app.visible(button('Pause (F6)', 'prefix'))) || undefined);
       assert(
@@ -8166,8 +8161,6 @@ export const JOURNEYS: Journey[] = [
         `a breakpoint dot on line ${line}`,
         async () => (await decoratedLines(app, 'glyphMarginClassName', 'breakpoint-glyph')).includes(line) || undefined,
       );
-      await app.click(button('Connect'));
-      await app.until('the simulation to connect', async () => (await app.visible(button('Disconnect'))) || undefined);
       await app.click(button('Run (F5)', 'prefix'));
       await app.until(`execution to stop at line ${line}`, async () => (await app.visible(button('Resume (F5)', 'prefix'))) || undefined);
       await app.click(tab('Trace'));
@@ -8239,7 +8232,7 @@ export const JOURNEYS: Journey[] = [
       await openFolder(app, project);
       const result = await compile(app);
       assert(result.kind === 'built', `The Pico example does not build: ${result.message}`);
-      await app.click(button('Hardware'), 'the Hardware mode');
+      await chooseTarget(app, 'rpi_pico');
       await docShot(app, 'first-board-hardware');
       await app.click(button('Connect'), 'Connect');
       await app.until('the port dialog', async () => (await app.visible(css('[data-serial-port-dialog]'))) || undefined);
@@ -8328,8 +8321,9 @@ export const JOURNEYS: Journey[] = [
             60_000,
           );
           await check('a paused program');
-          await app.click(button(ui('toolbar.disconnect')), 'the Disconnect button');
-          await app.until('the simulation to disconnect', async () => (await app.visible(button(ui('toolbar.connect')))) || undefined);
+          // no Disconnect in simulation: Stop ends the run, and the next language starts it again
+          await app.click(button(ui('toolbar.stop.label'), 'prefix'), 'the Stop button');
+          await app.until('the program to stop', async () => (await app.visible(button(ui('toolbar.run.label'), 'prefix'))) || undefined);
         }
       } finally {
         journeyLocale = 'en';
