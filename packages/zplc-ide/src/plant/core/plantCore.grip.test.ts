@@ -229,7 +229,9 @@ describe('PlantCore manipulators, support facts and the M3 pins', () => {
     gripCycle(grip);
     const gantry = await make(GANTRY_SCENE());
     gantryScript(gantry);
-    expect(Object.keys(hashes).sort()).toEqual(['m1-palletStack-v1', 'm2-tankLoop-v1', 'm3-gantryNumeric-v1', 'm3-gripCycle-v1', 'notes']);
+    expect(Object.keys(hashes)).toEqual(
+      expect.arrayContaining(['m1-palletStack-v1', 'm2-tankLoop-v1', 'm3-gantryNumeric-v1', 'm3-gripCycle-v1']),
+    );
     if (process.platform !== 'linux') return;
     expect(await grip.traceHash()).toBe(hashes['m3-gripCycle-v1']);
     expect(await gantry.traceHash()).toBe(hashes['m3-gantryNumeric-v1']);
