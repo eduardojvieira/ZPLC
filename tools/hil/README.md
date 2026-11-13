@@ -57,15 +57,112 @@ These do not judge a result, so they cannot fail a run. A person runs them to lo
 listed with their reason in [`non-gating.json`](non-gating.json), which `test_hil_scripts.py` keeps in step with this
 table and with the directory.
 
-| Script             | Purpose                                                                                                      |
-| ------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `check_alive.py`   | Wake a board's shell with a CR, ask `help`, and print what comes back.                                       |
-| `check_hw.py`      | Open the port, wake the shell, ask `help` and print the first bytes of the answer.                           |
-| `debug_peek.py`    | Write the input and output images with `zplc dbg poke` while the board is stopped, then read them back.      |
-| `inspect_zplc.py`  | Print the header, segment table and contract draft of a `.zplc` file (no device).                            |
-| `rescue.py`        | Send a break, then `zplc stop` ten times and `zplc reset`, to bring back a board that is stuck.              |
-| `rescue_device.py` | Send Ctrl+C and Enter five times, then `zplc stop`, and say whether the board answered.                      |
-| `sniff.py`         | Load a four-byte program, start it in verbose HIL mode and print every line the shell says for five seconds. |
+| Script              | Purpose                                                                                                           |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `check_alive.py`    | Wake a board's shell with a CR, ask `help`, and print what comes back.                                            |
+| `check_hw.py`       | Open the port, wake the shell, ask `help` and print the first bytes of the answer.                                |
+| `debug_peek.py`     | Write the input and output images with `zplc dbg poke` while the board is stopped, then read them back.           |
+| `inspect_zplc.py`   | Print the header, segment table and contract draft of a `.zplc` file (no device).                                 |
+| `rescue.py`         | Send a break, then `zplc stop` ten times and `zplc reset`, to bring back a board that is stuck.                   |
+| `rescue_device.py`  | Send Ctrl+C and Enter five times, then `zplc stop`, and say whether the board answered.                           |
+| `sniff.py`          | Load a four-byte program, start it in verbose HIL mode and print every line the shell says for five seconds.      |
+| `plant_io_bench.py` | Plant I/O mode on a board: latency per frame, continuity and three physical checks a person confirms (see below). |
+
+## Plant I/O mode on a board (LNK-011, LNK-014, LNK-016)
+
+`plant_io_bench.py` feeds a board from a synthetic plant over the framed link (`zplc link <hex>` lines, as Studio does),
+records the round trip and the exchange gap of every frame, and asks a person to confirm three physical behaviours.
+`validate_plant_io_evidence.py` judges the file it writes against
+`specs/012-zplc-2-1-plant-simulation/evidence/plant-io.schema.json`. **A person runs both; no agent does.** The bench
+refuses to start unless stdin is a terminal and the person types the board id. It never flashes and never deploys: it
+checks that the program the board holds has the CRC-32 of the file given with `--program`. It sends RUN only if that
+program is stopped, and says so first.
+
+The synthetic map: inputs are 4 BOOL (IPI 0.0 to 0.3), an INT (IPI 2) and a REAL (IPI 4); outputs are 2 BOOL (OPI 0.0
+and OPI 0.1). The echo program copies IPI 0.0 and IPI 0.1 to OPI 0.0 and OPI 0.1, so every response must carry the
+two input bits of the frame the scan latched (`applied_seq`).
+
+What the evidence holds: `level` (`hil` only for a real serial port; `native-sim` for the rehearsal), the commit of this
+checkout, the firmware identity and `zplc version` output, the date, the tool versions, `rtt_ms` and `gap_ms`
+(`count`, `p50`, `p95`, `p99`, `max`), the counts the board reports (`late`, `rejected`) and the bench's own
+(`timeouts`, `refused`, `applied_seq` regressions, `echo_mismatches`), and the three physical sequences. `rtt_ms` is the
+time from writing a request to reading its response; `gap_ms` is the time between two consecutive responses. `late`
+counts every board scan that found no new frame: it is information, not an error. The validator fails a file when a
+frame was rejected, refused, unanswered or not an echo, when `applied_seq` went backwards, when the board ended the mode
+by itself (an `EVT_PLANT_EXIT` event), when the worst gap is above the limit the file records (the bench's `--max-gap-ms`,
+default 250; the validator's own `--max-gap-ms` replaces it), or when a physical sequence is missing or
+unconfirmed. Known firmware answers it reports by name: ENTER is refused with `RANGE` when the response cannot fit the
+negotiated payload, and a frame from a session that does not own the mode answers `STATE`.
+
+The three sequences (each announced, each confirmed by typing `yes`): **mirror off** (outputs toggle, the LED stays
+off), **mirror on** (the LED follows the outputs), **link loss** (the script keeps streaming, you pull the USB cable,
+it waits ten seconds, you plug it back; it then reads `zplc sched status --json` and the output image, which must be
+`idle` and all zero, and you confirm the LED is off).
+
+### The Owner's commands (Task H8 of specs/012-zplc-2-1-plant-simulation/plan-m6.md)
+
+1. Build the HIL firmware for the board with the command `firmware/app/boards/boards.json` gives in `build_command`
+   (`west build -b rpi_pico/rp2040 firmware/app --pristine` for the Pico; read the entry of `esp32s3_devkitc`, whose
+   N8R8 PSRAM requirement is in its `note`), and flash it as `docs/docs/development/firmware-testing.md` and the board's
+   page say. No tool of this repository flashes.
+2. Compile the echo program and deploy that file to the board (Studio: Connect, Deploy; or the shell's `zplc load` and
+   `zplc data`). Save this as `echo.st`:
+
+   ```
+   PROGRAM Echo
+
+   VAR_INPUT
+       In0 AT %IX0.0 : BOOL;
+       In1 AT %IX0.1 : BOOL;
+   END_VAR
+
+   VAR_OUTPUT
+       Out0 AT %QX0.0 : BOOL;
+       Out1 AT %QX0.1 : BOOL;
+   END_VAR
+
+   Out0 := In0;
+   Out1 := In1;
+
+   END_PROGRAM
+   ```
+
+   ```bash
+   bun packages/zplc-ide/src/cli/index.ts compile echo.st --output echo.zplc
+   ```
+
+3. Run the bench once per board and frame period (20 ms, then 10 ms and 50 ms: the latency evidence at three frame
+   periods). It needs pyserial (the Python of the firmware workspace has it) and finds the port from the USB
+   identifiers of the board, or from `--port`:
+
+   ```bash
+   python3 tools/hil/plant_io_bench.py --board esp32s3_devkitc --transport usb-serial --program echo.zplc \
+     --frames 5000 --frame-ms 20 --out specs/012-zplc-2-1-plant-simulation/evidence/plant-io-esp32s3-usb-serial.json
+   python3 tools/hil/plant_io_bench.py --board rpi_pico --transport usb-serial --program echo.zplc \
+     --frames 5000 --frame-ms 20 --out specs/012-zplc-2-1-plant-simulation/evidence/plant-io-pico-usb-serial.json
+   ```
+
+   Give the 10 ms and 50 ms runs their own `--out` (for example `...-usb-serial-10ms.json`); the bench never overwrites
+   a file.
+
+4. Validate: `python3 tools/hil/validate_plant_io_evidence.py --level hil specs/012-zplc-2-1-plant-simulation/evidence/plant-io-*-usb-serial*.json`.
+   A file that fails is still evidence of what happened: do not edit it, and report it.
+
+### The rehearsal against the native simulator
+
+The rehearsal shows that the script, the schema and the firmware agree; it says nothing about hardware, and its file
+says `level: "native-sim"`. Build `firmware/app` for `native_sim/native` (`tools/firmware-test/run.sh app-native` builds
+it), start `zephyr.exe` with `tools/hil/emulator/native_sim.py`'s `NativeSim` (it prints its pseudo-terminal, `/dev/pts/N`),
+deploy the echo program with the shell's `zplc load` and `zplc data`, then:
+
+```bash
+python3 tools/hil/plant_io_bench.py --level native-sim --port /dev/pts/N --board rpi_pico --transport usb-serial \
+  --program echo.zplc --frames 500 --frame-ms 20 --out specs/012-zplc-2-1-plant-simulation/evidence/plant-io-native-sim-rehearsal.json
+python3 tools/hil/validate_plant_io_evidence.py --level native-sim specs/012-zplc-2-1-plant-simulation/evidence/plant-io-native-sim-rehearsal.json
+```
+
+`--level native-sim` accepts only a `/dev/pts/` port (or a fake device), asks nobody and holds no physical sequence.
+`test_plant_io_bench.py` runs the bench and the validator on a Python fake of the board, with no port and no hardware.
 
 ## Fixtures
 
