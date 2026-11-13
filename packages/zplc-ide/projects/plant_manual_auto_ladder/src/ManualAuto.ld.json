@@ -1,0 +1,3850 @@
+{
+  "name": "ManualAuto",
+  "description": "Two-axis assembly with a manual and an automatic mode.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Auto",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "The mode: FALSE is manual, TRUE is automatic; the machine powers up in manual"
+      },
+      {
+        "name": "ToAuto",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "A mode press while in manual"
+      },
+      {
+        "name": "ToManual",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "A mode press while in automatic"
+      },
+      {
+        "name": "Begin",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "A Start press that counts: only in automatic"
+      },
+      {
+        "name": "Active",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "The assembly is on"
+      },
+      {
+        "name": "Step",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "0 idle, 1 home, 2 wait, 3 settle, 4 lower, 5 grip, 6 lift, 7 carry, 8 lower, 9 release, 10 raise, 11 return, 12 done"
+      },
+      {
+        "name": "Cycles",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "Assemblies finished"
+      },
+      {
+        "name": "FreeBase",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "The base blade is open and the assembled base is leaving"
+      },
+      {
+        "name": "SettleT",
+        "type": "TON",
+        "comment": "Wait before the pad lowers on the lid"
+      },
+      {
+        "name": "GripT",
+        "type": "TON",
+        "comment": "Wait for the vacuum to take hold"
+      },
+      {
+        "name": "LetGoT",
+        "type": "TON",
+        "comment": "Wait for the lid to settle on the base"
+      },
+      {
+        "name": "BaseLeft",
+        "type": "TON",
+        "comment": "Wait for the assembled base to leave"
+      },
+      {
+        "name": "LidGone",
+        "type": "F_TRIG",
+        "comment": "The pad has taken the lid"
+      },
+      {
+        "name": "Go",
+        "type": "R_TRIG",
+        "comment": "The start press"
+      },
+      {
+        "name": "GoQ",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "One scan at the start press"
+      },
+      {
+        "name": "LidGoneQ",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "One scan when the lid is taken"
+      },
+      {
+        "name": "BaseLeftQ",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "The assembled base has left"
+      },
+      {
+        "name": "SettleDone",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "SettleT elapsed"
+      },
+      {
+        "name": "GripDone",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "GripT elapsed"
+      },
+      {
+        "name": "LetGoDone",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "LetGoT elapsed"
+      },
+      {
+        "name": "LidsFed",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "Lids emitted"
+      },
+      {
+        "name": "BasesFed",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "Bases emitted"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "StartButton.pressed: start the assembly"
+      },
+      {
+        "name": "LidReady",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "LidEye.detect: a lid waits at the lid blade"
+      },
+      {
+        "name": "BaseReady",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "BaseEye.detect: a base waits at the base blade"
+      },
+      {
+        "name": "XAtMin",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "Pick1.xAtMin: the pad is over the lid belt"
+      },
+      {
+        "name": "XAtMax",
+        "type": "BOOL",
+        "address": "%I0.4",
+        "comment": "Pick1.xAtMax: the pad is over the base belt"
+      },
+      {
+        "name": "YAtMin",
+        "type": "BOOL",
+        "address": "%I0.5",
+        "comment": "Pick1.yAtMin: the pad is down"
+      },
+      {
+        "name": "YAtMax",
+        "type": "BOOL",
+        "address": "%I0.6",
+        "comment": "Pick1.yAtMax: the pad is up"
+      },
+      {
+        "name": "Gripped",
+        "type": "BOOL",
+        "address": "%I0.7",
+        "comment": "Pick1.gripped: the pad holds a part"
+      },
+      {
+        "name": "ModeBtn",
+        "type": "BOOL",
+        "address": "%I1.0",
+        "comment": "ModeButton.pressed: each press switches between manual and automatic"
+      },
+      {
+        "name": "JogXPlus",
+        "type": "BOOL",
+        "address": "%I1.1",
+        "comment": "JogXPlus.pressed: jog the pad toward the base belt"
+      },
+      {
+        "name": "JogXMinus",
+        "type": "BOOL",
+        "address": "%I1.2",
+        "comment": "JogXMinus.pressed: jog the pad toward the lid belt"
+      },
+      {
+        "name": "JogYPlus",
+        "type": "BOOL",
+        "address": "%I1.3",
+        "comment": "JogYPlus.pressed: jog the pad up"
+      },
+      {
+        "name": "JogYMinus",
+        "type": "BOOL",
+        "address": "%I1.4",
+        "comment": "JogYMinus.pressed: jog the pad down"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "XPlus",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Pick1.xPlus: move the pad toward the base belt while true"
+      },
+      {
+        "name": "XMinus",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Pick1.xMinus: move the pad toward the lid belt while true"
+      },
+      {
+        "name": "YPlus",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "Pick1.yPlus: raise the pad while true"
+      },
+      {
+        "name": "YMinus",
+        "type": "BOOL",
+        "address": "%Q0.3",
+        "comment": "Pick1.yMinus: lower the pad while true"
+      },
+      {
+        "name": "Grip",
+        "type": "BOOL",
+        "address": "%Q0.4",
+        "comment": "Pick1.grip: vacuum on"
+      },
+      {
+        "name": "RunLid",
+        "type": "BOOL",
+        "address": "%Q0.5",
+        "comment": "LidBelt.run: run the lid belt"
+      },
+      {
+        "name": "RunBase",
+        "type": "BOOL",
+        "address": "%Q0.6",
+        "comment": "BaseBelt.run: run the base belt"
+      },
+      {
+        "name": "RunExit",
+        "type": "BOOL",
+        "address": "%Q0.7",
+        "comment": "ExitBelt.run: run the exit belt"
+      },
+      {
+        "name": "HoldLid",
+        "type": "BOOL",
+        "address": "%Q1.0",
+        "comment": "LidBlade.extend: the blade holds the lid while true"
+      },
+      {
+        "name": "HoldBase",
+        "type": "BOOL",
+        "address": "%Q1.1",
+        "comment": "BaseBlade.extend: the blade holds the base while true"
+      },
+      {
+        "name": "EmitLid",
+        "type": "BOOL",
+        "address": "%Q1.2",
+        "comment": "LidEmitter.emit: put one lid on the lid belt"
+      },
+      {
+        "name": "EmitBase",
+        "type": "BOOL",
+        "address": "%Q1.3",
+        "comment": "BaseEmitter.emit: put one base on the base belt"
+      },
+      {
+        "name": "Green",
+        "type": "BOOL",
+        "address": "%Q1.4",
+        "comment": "StackLight1.green: three assemblies are done"
+      },
+      {
+        "name": "Amber",
+        "type": "BOOL",
+        "address": "%Q1.5",
+        "comment": "StackLight1.amber: the assembly is running"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "The mode: one press of ModeBtn while in manual asks for automatic.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r1_0_0",
+              "type": "contact_p",
+              "variable": "ModeBtn",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r1_0_1",
+              "type": "contact_nc",
+              "variable": "Auto",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r1_0_7",
+              "type": "coil",
+              "variable": "ToAuto",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "One press of ModeBtn while in automatic asks for manual.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r2_0_0",
+              "type": "contact_p",
+              "variable": "ModeBtn",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r2_0_1",
+              "type": "contact_no",
+              "variable": "Auto",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r2_0_7",
+              "type": "coil",
+              "variable": "ToManual",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "Switch to automatic.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r3_0_0",
+              "type": "contact_no",
+              "variable": "ToAuto",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r3_0_7",
+              "type": "coil_set",
+              "variable": "Auto",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_4",
+      "number": 4,
+      "comment": "Switch to manual.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r4_0_0",
+              "type": "contact_no",
+              "variable": "ToManual",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r4_0_7",
+              "type": "coil_reset",
+              "variable": "Auto",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_5",
+      "number": 5,
+      "comment": "Manual: the cycle forgets where it was, so automatic always starts clean.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r5_0_0",
+              "type": "contact_nc",
+              "variable": "Auto",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r5_0_1",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["0"],
+              "output": "Step",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r5_0_2",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["0"],
+              "output": "Cycles",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r5_0_3",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["0"],
+              "output": "LidsFed",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r5_0_4",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["0"],
+              "output": "BasesFed",
+              "row": 0,
+              "col": 4
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r5_0_7",
+              "type": "coil_reset",
+              "variable": "Active",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_6",
+      "number": 6,
+      "comment": "A Start press counts only in automatic.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r6_0_0",
+              "type": "contact_no",
+              "variable": "Start",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r6_0_1",
+              "type": "contact_no",
+              "variable": "Auto",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r6_0_7",
+              "type": "coil",
+              "variable": "Begin",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_7",
+      "number": 7,
+      "comment": "Start the assembly.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r7_0_0",
+              "type": "contact_no",
+              "variable": "Begin",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_0_7",
+              "type": "coil_set",
+              "variable": "Active",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_8",
+      "number": 8,
+      "comment": "The pad has taken the lid: the next lid may come.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r8_0_0",
+              "type": "contact_no",
+              "variable": "LidReady",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r8_0_1",
+              "type": "function_block",
+              "fbType": "F_TRIG",
+              "instance": "LidGone",
+              "parameters": {
+                "CLK": "CONNECTED"
+              },
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r8_0_7",
+              "type": "coil",
+              "variable": "LidGoneQ",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_9",
+      "number": 9,
+      "comment": "The assembled base has been gone for 0.6 s.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r9_0_0",
+              "type": "contact_no",
+              "variable": "FreeBase",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r9_0_1",
+              "type": "contact_nc",
+              "variable": "BaseReady",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r9_0_2",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "BaseLeft",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#600ms"
+              },
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r9_0_7",
+              "type": "coil",
+              "variable": "BaseLeftQ",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_10",
+      "number": 10,
+      "comment": "The start press as one scan.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r10_0_0",
+              "type": "contact_no",
+              "variable": "Begin",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r10_0_1",
+              "type": "function_block",
+              "fbType": "R_TRIG",
+              "instance": "Go",
+              "parameters": {
+                "CLK": "CONNECTED"
+              },
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r10_0_7",
+              "type": "coil",
+              "variable": "GoQ",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_11",
+      "number": 11,
+      "comment": "One lid at a time: at the start, then each time the pad takes one.",
+      "branches": [
+        {
+          "id": "branch_11",
+          "startCol": 0,
+          "endCol": 0,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r11_0_0",
+              "type": "contact_no",
+              "variable": "GoQ",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r11_0_1",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r11_0_2",
+              "type": "function",
+              "functionName": "LT",
+              "operands": ["LidsFed", "3"],
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r11_0_7",
+              "type": "coil",
+              "variable": "EmitLid",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "r11_1_0",
+              "type": "contact_no",
+              "variable": "LidGoneQ",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_12",
+      "number": 12,
+      "comment": "One base at a time: at the start, then each time the assembled one leaves.",
+      "branches": [
+        {
+          "id": "branch_12",
+          "startCol": 0,
+          "endCol": 0,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r12_0_0",
+              "type": "contact_no",
+              "variable": "GoQ",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r12_0_1",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r12_0_2",
+              "type": "function",
+              "functionName": "LT",
+              "operands": ["BasesFed", "3"],
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r12_0_7",
+              "type": "coil",
+              "variable": "EmitBase",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "r12_1_0",
+              "type": "contact_no",
+              "variable": "BaseLeftQ",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_13",
+      "number": 13,
+      "comment": "Count the lids emitted.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r13_0_0",
+              "type": "contact_no",
+              "variable": "EmitLid",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r13_0_7",
+              "type": "function",
+              "functionName": "ADD",
+              "operands": ["LidsFed", "1"],
+              "output": "LidsFed",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_14",
+      "number": 14,
+      "comment": "Count the bases emitted.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r14_0_0",
+              "type": "contact_no",
+              "variable": "EmitBase",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r14_0_7",
+              "type": "function",
+              "functionName": "ADD",
+              "operands": ["BasesFed", "1"],
+              "output": "BasesFed",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_15",
+      "number": 15,
+      "comment": "The base blade closes again when the assembled base has left, and in manual.",
+      "branches": [
+        {
+          "id": "branch_15",
+          "startCol": 0,
+          "endCol": 0,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r15_0_0",
+              "type": "contact_no",
+              "variable": "BaseLeftQ",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r15_0_7",
+              "type": "coil_reset",
+              "variable": "FreeBase",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "r15_1_0",
+              "type": "contact_nc",
+              "variable": "Auto",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_16",
+      "number": 16,
+      "comment": "Step 3 waits 0.8 s for the pad to settle.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r16_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "3"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r16_0_1",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "SettleT",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#800ms"
+              },
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r16_0_7",
+              "type": "coil",
+              "variable": "SettleDone",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_17",
+      "number": 17,
+      "comment": "Step 5 waits 0.4 s for the vacuum.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r17_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "5"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r17_0_1",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "GripT",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#400ms"
+              },
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r17_0_7",
+              "type": "coil",
+              "variable": "GripDone",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_18",
+      "number": 18,
+      "comment": "Step 9 waits 0.4 s for the lid to let go.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r18_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "9"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r18_0_1",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "LetGoT",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#400ms"
+              },
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r18_0_7",
+              "type": "coil",
+              "variable": "LetGoDone",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_19",
+      "number": 19,
+      "comment": "Step 11: back at the lid belt, finish after three assemblies.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r19_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "11"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r19_0_1",
+              "type": "contact_no",
+              "variable": "XAtMin",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r19_0_2",
+              "type": "function",
+              "functionName": "GE",
+              "operands": ["Cycles", "3"],
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r19_0_7",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["12"],
+              "output": "Step",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_20",
+      "number": 20,
+      "comment": "Step 11: back at the lid belt, go and wait for the next pair.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r20_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "11"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r20_0_1",
+              "type": "contact_no",
+              "variable": "XAtMin",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r20_0_2",
+              "type": "function",
+              "functionName": "LT",
+              "operands": ["Cycles", "3"],
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r20_0_7",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["2"],
+              "output": "Step",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_21",
+      "number": 21,
+      "comment": "Step 10: raise the pad.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r21_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "10"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r21_0_1",
+              "type": "contact_no",
+              "variable": "YAtMax",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r21_0_7",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["11"],
+              "output": "Step",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_22",
+      "number": 22,
+      "comment": "Step 9: the lid is released; one assembly is done and the base may leave.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r22_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "9"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r22_0_1",
+              "type": "contact_no",
+              "variable": "LetGoDone",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r22_0_2",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["10"],
+              "output": "Step",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r22_0_3",
+              "type": "function",
+              "functionName": "ADD",
+              "operands": ["Cycles", "1"],
+              "output": "Cycles",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r22_0_7",
+              "type": "coil_set",
+              "variable": "FreeBase",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_23",
+      "number": 23,
+      "comment": "Step 8: lowered on the base belt.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r23_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "8"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r23_0_1",
+              "type": "contact_no",
+              "variable": "YAtMin",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r23_0_7",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["9"],
+              "output": "Step",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_24",
+      "number": 24,
+      "comment": "Step 7: carried to the base belt.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r24_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "7"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r24_0_1",
+              "type": "contact_no",
+              "variable": "XAtMax",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r24_0_7",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["8"],
+              "output": "Step",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_25",
+      "number": 25,
+      "comment": "Step 6: lifted.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r25_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "6"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r25_0_1",
+              "type": "contact_no",
+              "variable": "YAtMax",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r25_0_7",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["7"],
+              "output": "Step",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_26",
+      "number": 26,
+      "comment": "Step 5: the vacuum holds.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r26_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "5"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r26_0_1",
+              "type": "contact_no",
+              "variable": "GripDone",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r26_0_2",
+              "type": "contact_no",
+              "variable": "Gripped",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r26_0_7",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["6"],
+              "output": "Step",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_27",
+      "number": 27,
+      "comment": "Step 4: lowered on the lid.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r27_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "4"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r27_0_1",
+              "type": "contact_no",
+              "variable": "YAtMin",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r27_0_7",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["5"],
+              "output": "Step",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_28",
+      "number": 28,
+      "comment": "Step 3: settled.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r28_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "3"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r28_0_1",
+              "type": "contact_no",
+              "variable": "SettleDone",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r28_0_7",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["4"],
+              "output": "Step",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_29",
+      "number": 29,
+      "comment": "Step 2: a lid and a base wait and the blade is closed.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r29_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "2"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r29_0_1",
+              "type": "contact_no",
+              "variable": "LidReady",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r29_0_2",
+              "type": "contact_no",
+              "variable": "BaseReady",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r29_0_3",
+              "type": "contact_nc",
+              "variable": "FreeBase",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r29_0_7",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["3"],
+              "output": "Step",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_30",
+      "number": 30,
+      "comment": "Step 1: homed, pad up and over the lid belt.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r30_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "1"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r30_0_1",
+              "type": "contact_no",
+              "variable": "YAtMax",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r30_0_2",
+              "type": "contact_no",
+              "variable": "XAtMin",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r30_0_7",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["2"],
+              "output": "Step",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_31",
+      "number": 31,
+      "comment": "Step 0: a start press begins the cycle with homing.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r31_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "0"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r31_0_1",
+              "type": "contact_no",
+              "variable": "Begin",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r31_0_7",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["1"],
+              "output": "Step",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_32",
+      "number": 32,
+      "comment": "The pad toward the base belt: the carry in automatic, the jog in manual; it stops at the limit switch.",
+      "branches": [
+        {
+          "id": "branch_32",
+          "startCol": 0,
+          "endCol": 2,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r32_0_0",
+              "type": "contact_no",
+              "variable": "Auto",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r32_0_1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "7"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r32_0_3",
+              "type": "contact_nc",
+              "variable": "XAtMax",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r32_0_7",
+              "type": "coil",
+              "variable": "XPlus",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "r32_1_0",
+              "type": "contact_nc",
+              "variable": "Auto",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r32_1_1",
+              "type": "contact_no",
+              "variable": "JogXPlus",
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r32_1_2",
+              "type": "contact_nc",
+              "variable": "JogXMinus",
+              "row": 1,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_33",
+      "number": 33,
+      "comment": "The pad toward the lid belt: homing and return in automatic, the jog in manual.",
+      "branches": [
+        {
+          "id": "branch_33",
+          "startCol": 0,
+          "endCol": 2,
+          "rows": [0, 1, 2]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 3,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r33_0_0",
+              "type": "contact_no",
+              "variable": "Auto",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r33_0_1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "1"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r33_0_3",
+              "type": "contact_nc",
+              "variable": "XAtMin",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r33_0_7",
+              "type": "coil",
+              "variable": "XMinus",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "r33_1_0",
+              "type": "contact_no",
+              "variable": "Auto",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r33_1_1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "11"],
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "r33_2_0",
+              "type": "contact_nc",
+              "variable": "Auto",
+              "row": 2,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r33_2_1",
+              "type": "contact_no",
+              "variable": "JogXMinus",
+              "row": 2,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r33_2_2",
+              "type": "contact_nc",
+              "variable": "JogXPlus",
+              "row": 2,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_34",
+      "number": 34,
+      "comment": "The pad up: homing and the lifts in automatic, the jog in manual.",
+      "branches": [
+        {
+          "id": "branch_34",
+          "startCol": 0,
+          "endCol": 2,
+          "rows": [0, 1, 2, 3]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 4,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r34_0_0",
+              "type": "contact_no",
+              "variable": "Auto",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r34_0_1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "1"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r34_0_3",
+              "type": "contact_nc",
+              "variable": "YAtMax",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r34_0_7",
+              "type": "coil",
+              "variable": "YPlus",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "r34_1_0",
+              "type": "contact_no",
+              "variable": "Auto",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r34_1_1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "6"],
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "r34_2_0",
+              "type": "contact_no",
+              "variable": "Auto",
+              "row": 2,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r34_2_1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "10"],
+              "row": 2,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "r34_3_0",
+              "type": "contact_nc",
+              "variable": "Auto",
+              "row": 3,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r34_3_1",
+              "type": "contact_no",
+              "variable": "JogYPlus",
+              "row": 3,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r34_3_2",
+              "type": "contact_nc",
+              "variable": "JogYMinus",
+              "row": 3,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_35",
+      "number": 35,
+      "comment": "The pad down: the two lowerings in automatic, the jog in manual.",
+      "branches": [
+        {
+          "id": "branch_35",
+          "startCol": 0,
+          "endCol": 2,
+          "rows": [0, 1, 2]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 3,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r35_0_0",
+              "type": "contact_no",
+              "variable": "Auto",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r35_0_1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "4"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r35_0_3",
+              "type": "contact_nc",
+              "variable": "YAtMin",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r35_0_7",
+              "type": "coil",
+              "variable": "YMinus",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "r35_1_0",
+              "type": "contact_no",
+              "variable": "Auto",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r35_1_1",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "8"],
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "r35_2_0",
+              "type": "contact_nc",
+              "variable": "Auto",
+              "row": 2,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r35_2_1",
+              "type": "contact_no",
+              "variable": "JogYMinus",
+              "row": 2,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r35_2_2",
+              "type": "contact_nc",
+              "variable": "JogYPlus",
+              "row": 2,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_36",
+      "number": 36,
+      "comment": "The vacuum holds from the grip to the release.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r36_0_0",
+              "type": "function",
+              "functionName": "GE",
+              "operands": ["Step", "5"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r36_0_1",
+              "type": "function",
+              "functionName": "LE",
+              "operands": ["Step", "8"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r36_0_7",
+              "type": "coil",
+              "variable": "Grip",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_37",
+      "number": 37,
+      "comment": "Belts run while the assembly is on.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r37_0_0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r37_0_7",
+              "type": "coil",
+              "variable": "RunLid",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_38",
+      "number": 38,
+      "comment": "Base belt.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r38_0_0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r38_0_7",
+              "type": "coil",
+              "variable": "RunBase",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_39",
+      "number": 39,
+      "comment": "Exit belt.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r39_0_0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r39_0_7",
+              "type": "coil",
+              "variable": "RunExit",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_40",
+      "number": 40,
+      "comment": "The lid blade holds the lid.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r40_0_0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r40_0_7",
+              "type": "coil",
+              "variable": "HoldLid",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_41",
+      "number": 41,
+      "comment": "The base blade holds the base until the assembled one leaves.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r41_0_0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r41_0_1",
+              "type": "contact_nc",
+              "variable": "FreeBase",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r41_0_7",
+              "type": "coil",
+              "variable": "HoldBase",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_42",
+      "number": 42,
+      "comment": "Green when three assemblies are done.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r42_0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["Step", "12"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r42_0_7",
+              "type": "coil",
+              "variable": "Green",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_43",
+      "number": 43,
+      "comment": "Amber while the assembly runs.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r43_0_0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r43_0_1",
+              "type": "function",
+              "functionName": "NE",
+              "operands": ["Step", "12"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r43_0_7",
+              "type": "coil",
+              "variable": "Amber",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "name": "Two-axis assembly with a manual panel",
+  "shortestPulseMs": 400,
+  "parts": [
+    {
+      "id": "lid-belt",
+      "part": "belt",
+      "name": "LidBelt",
+      "position": [-0.3, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "length": 1.2,
+        "speedMps": 0.5
+      }
+    },
+    {
+      "id": "base-belt",
+      "part": "belt",
+      "name": "BaseBelt",
+      "position": [1.05, 0.35, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "length": 1.3,
+        "speedMps": 0.5
+      }
+    },
+    {
+      "id": "exit-belt",
+      "part": "belt",
+      "name": "ExitBelt",
+      "position": [2.3, 0.35, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "length": 1.2,
+        "speedMps": 0.5
+      }
+    },
+    {
+      "id": "lid-emitter",
+      "part": "emitter",
+      "name": "LidEmitter",
+      "position": [-0.8, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "kind": "lid",
+        "maxItems": 3
+      }
+    },
+    {
+      "id": "base-emitter",
+      "part": "emitter",
+      "name": "BaseEmitter",
+      "position": [0.6, 0.35, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "kind": "base",
+        "maxItems": 3
+      }
+    },
+    {
+      "id": "lid-blade",
+      "part": "stop-blade",
+      "name": "LidBlade",
+      "position": [0.2, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "heightM": 0.1
+      }
+    },
+    {
+      "id": "base-blade",
+      "part": "stop-blade",
+      "name": "BaseBlade",
+      "position": [1.2, 0.35, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "heightM": 0.15
+      }
+    },
+    {
+      "id": "lid-eye",
+      "part": "sensor-diffuse",
+      "name": "LidEye",
+      "position": [0.15, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": {
+        "rangeM": 1,
+        "heightM": 0.02
+      }
+    },
+    {
+      "id": "base-eye",
+      "part": "sensor-diffuse",
+      "name": "BaseEye",
+      "position": [1.15, 0.35, -0.5],
+      "rotationYDeg": 270,
+      "config": {
+        "rangeM": 1,
+        "heightM": 0.075
+      }
+    },
+    {
+      "id": "pick",
+      "part": "pick-place",
+      "name": "Pick1",
+      "position": [0, 0.54, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "variant": "digital",
+        "gripper": "vacuum",
+        "strokeXM": 1,
+        "strokeYM": 0.3,
+        "speedMps": 0.4
+      }
+    },
+    {
+      "id": "remover",
+      "part": "remover",
+      "name": "Remover1",
+      "position": [2.7, 0.65, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "width": 0.4,
+        "height": 0.6,
+        "depth": 0.6
+      }
+    },
+    {
+      "id": "start",
+      "part": "push-button",
+      "name": "StartButton",
+      "position": [-0.8, 0.5, -0.7],
+      "rotationYDeg": 0,
+      "config": {}
+    },
+    {
+      "id": "light",
+      "part": "stack-light",
+      "name": "StackLight1",
+      "position": [2.7, 0.35, -0.7],
+      "rotationYDeg": 0,
+      "config": {}
+    },
+    {
+      "id": "mode",
+      "part": "push-button",
+      "name": "ModeButton",
+      "position": [-0.6, 0.5, -0.7],
+      "rotationYDeg": 0,
+      "config": {}
+    },
+    {
+      "id": "jog-x-plus",
+      "part": "push-button",
+      "name": "JogXPlus",
+      "position": [-0.4, 0.5, -0.7],
+      "rotationYDeg": 0,
+      "config": {}
+    },
+    {
+      "id": "jog-x-minus",
+      "part": "push-button",
+      "name": "JogXMinus",
+      "position": [-0.2, 0.5, -0.7],
+      "rotationYDeg": 0,
+      "config": {}
+    },
+    {
+      "id": "jog-y-plus",
+      "part": "push-button",
+      "name": "JogYPlus",
+      "position": [0, 0.5, -0.7],
+      "rotationYDeg": 0,
+      "config": {}
+    },
+    {
+      "id": "jog-y-minus",
+      "part": "push-button",
+      "name": "JogYMinus",
+      "position": [0.2, 0.5, -0.7],
+      "rotationYDeg": 0,
+      "config": {}
+    }
+  ],
+  "cameras": [
+    {
+      "name": "Overview",
+      "position": [1, 2, 3.2],
+      "target": [1, 0.5, 0]
+    }
+  ]
+}

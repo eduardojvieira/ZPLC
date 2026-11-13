@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-manual-auto",
+  "version": 1,
+  "order": 182,
+  "module": 18,
+  "level": "advanced",
+  "prerequisites": ["plant-assembler", "plant-estop-interlocks"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson needs a two-axis pad with limit switches, a vacuum grip and five panel buttons; a learner board has four inputs, no pad and no panel, and the scene supplies all of them.",
+        "es": "La lección necesita un brazo de dos ejes con finales de carrera, una ventosa y cinco botones de panel; una placa del estudiante tiene cuatro entradas, ni brazo ni panel, y la escena aporta todo."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus cajas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "two-axis-assembly",
+  "estimatedMinutes": 45,
+  "starter": {
+    "project": "plant_manual_auto_starter",
+    "program": "src/ManualAuto.st"
+  },
+  "solution": {
+    "project": "plant_manual_auto",
+    "program": "src/ManualAuto.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "plant-manual-auto",
+    "path": "tests/plant-manual-auto.scenario.json",
+    "sha256": "9319809d9b034b6725af279f6d051b0723c1b3603d2b13e2a452589c639a9b4e"
+  },
+  "regressionScenarios": []
+}

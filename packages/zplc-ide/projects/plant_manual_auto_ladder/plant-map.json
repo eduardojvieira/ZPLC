@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 2,
+  "target": {
+    "scene": "two-axis-assembly"
+  },
+  "signals": {
+    "StartButton.pressed": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "ManualAuto.Start"
+    },
+    "ModeButton.pressed": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "ManualAuto.ModeBtn"
+    },
+    "JogXPlus.pressed": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "ManualAuto.JogXPlus"
+    },
+    "JogXMinus.pressed": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "ManualAuto.JogXMinus"
+    },
+    "JogYPlus.pressed": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "ManualAuto.JogYPlus"
+    },
+    "JogYMinus.pressed": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "ManualAuto.JogYMinus"
+    },
+    "LidEye.detect": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "ManualAuto.LidReady"
+    },
+    "BaseEye.detect": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "ManualAuto.BaseReady"
+    },
+    "Pick1.xAtMin": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "ManualAuto.XAtMin"
+    },
+    "Pick1.xAtMax": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "ManualAuto.XAtMax"
+    },
+    "Pick1.yAtMin": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "ManualAuto.YAtMin"
+    },
+    "Pick1.yAtMax": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "ManualAuto.YAtMax"
+    },
+    "Pick1.gripped": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "ManualAuto.Gripped"
+    },
+    "Pick1.xPlus": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "ManualAuto.XPlus"
+    },
+    "Pick1.xMinus": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "ManualAuto.XMinus"
+    },
+    "Pick1.yPlus": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "ManualAuto.YPlus"
+    },
+    "Pick1.yMinus": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "ManualAuto.YMinus"
+    },
+    "Pick1.grip": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "ManualAuto.Grip"
+    },
+    "LidBelt.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "ManualAuto.RunLid"
+    },
+    "BaseBelt.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "ManualAuto.RunBase"
+    },
+    "ExitBelt.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "ManualAuto.RunExit"
+    },
+    "LidBlade.extend": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "ManualAuto.HoldLid"
+    },
+    "BaseBlade.extend": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "ManualAuto.HoldBase"
+    },
+    "LidEmitter.emit": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "ManualAuto.EmitLid"
+    },
+    "BaseEmitter.emit": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "ManualAuto.EmitBase"
+    },
+    "StackLight1.green": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "ManualAuto.Green"
+    },
+    "StackLight1.amber": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "ManualAuto.Amber"
+    }
+  }
+}
