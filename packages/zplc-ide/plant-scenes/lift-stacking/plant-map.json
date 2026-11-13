@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 2,
+  "target": { "scene": "lift-stacking" },
+  "signals": {
+    "StartButton.pressed": { "direction": "sensor", "type": "BOOL", "point": "LiftStacking.Start" },
+    "CrateEye.detect": { "direction": "sensor", "type": "BOOL", "point": "LiftStacking.CrateEye" },
+    "CountEye.detect": { "direction": "sensor", "type": "BOOL", "point": "LiftStacking.CountEye" },
+    "OutEye.detect": { "direction": "sensor", "type": "BOOL", "point": "LiftStacking.OutEye" },
+    "Lift1.atLevel1": { "direction": "sensor", "type": "BOOL", "point": "LiftStacking.AtLevel1" },
+    "Lift1.atLevel2": { "direction": "sensor", "type": "BOOL", "point": "LiftStacking.AtLevel2" },
+    "CrateSource.emit": { "direction": "command", "type": "BOOL", "point": "LiftStacking.EmitCrate" },
+    "PartSource.emit": { "direction": "command", "type": "BOOL", "point": "LiftStacking.EmitPart" },
+    "FloorIn.run": { "direction": "command", "type": "BOOL", "point": "LiftStacking.RunIn" },
+    "FloorOut.run": { "direction": "command", "type": "BOOL", "point": "LiftStacking.RunOut" },
+    "Feeder.run": { "direction": "command", "type": "BOOL", "point": "LiftStacking.RunFeeder" },
+    "Lift1.up": { "direction": "command", "type": "BOOL", "point": "LiftStacking.Up" },
+    "Lift1.down": { "direction": "command", "type": "BOOL", "point": "LiftStacking.Down" },
+    "Lift1.run": { "direction": "command", "type": "BOOL", "point": "LiftStacking.RunLift" },
+    "StackLight1.green": { "direction": "command", "type": "BOOL", "point": "LiftStacking.Green" }
+  }
+}
