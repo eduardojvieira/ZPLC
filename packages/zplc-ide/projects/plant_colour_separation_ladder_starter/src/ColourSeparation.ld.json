@@ -1,0 +1,119 @@
+{
+  "name": "ColourSeparation",
+  "description": "Colour separation: a red workpiece is pushed out, a blue one is let go, eight workpieces in all.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Active",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "The line was started"
+      },
+      {
+        "name": "State",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "One state per step: 0 wait for a workpiece, 1 push it out, 2 pull the plate back, 3 let a blue one go by"
+      },
+      {
+        "name": "Settle",
+        "type": "TON",
+        "comment": "A workpiece must lie still against the blade before its colour is read"
+      },
+      {
+        "name": "Clear",
+        "type": "TON",
+        "comment": "A released workpiece must leave the blade before the blade holds again"
+      },
+      {
+        "name": "Handled",
+        "type": "CTU",
+        "comment": "Counts the workpieces dealt with"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "StartButton.pressed: start the line"
+      },
+      {
+        "name": "Waiting",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "EyeBlade.detect: a workpiece waits against the blade"
+      },
+      {
+        "name": "IsRed",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "ColourSensor.isRed: the workpiece at the blade is red"
+      },
+      {
+        "name": "Extended",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "Pusher1.extended: the plate is at the end of its stroke"
+      },
+      {
+        "name": "Retracted",
+        "type": "BOOL",
+        "address": "%I0.4",
+        "comment": "Pusher1.retracted: the plate is back at rest"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "RunIn",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Infeed.run: run the infeed belt"
+      },
+      {
+        "name": "RunOut",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Outfeed.run: run the belt to the blue bin"
+      },
+      {
+        "name": "RunSide",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "SideBelt.run: run the belt to the red bin"
+      },
+      {
+        "name": "Hold",
+        "type": "BOOL",
+        "address": "%Q0.3",
+        "comment": "Blade1.extend: the blade holds the workpiece while true"
+      },
+      {
+        "name": "Push",
+        "type": "BOOL",
+        "address": "%Q0.4",
+        "comment": "Pusher1.extend: push the workpiece onto the side belt"
+      },
+      {
+        "name": "Busy",
+        "type": "BOOL",
+        "address": "%Q0.5",
+        "comment": "Beacon.amber: the line is running"
+      },
+      {
+        "name": "Done",
+        "type": "BOOL",
+        "address": "%Q0.6",
+        "comment": "Beacon.green: all eight workpieces are handled"
+      }
+    ]
+  },
+  "rungs": [],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

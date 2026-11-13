@@ -1,0 +1,1254 @@
+{
+  "name": "ColourSeparation",
+  "description": "Colour separation: a red workpiece is pushed out, a blue one is let go, eight workpieces in all.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Active",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "The line was started"
+      },
+      {
+        "name": "State",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "One state per step: 0 wait for a workpiece, 1 push it out, 2 pull the plate back, 3 let a blue one go by"
+      },
+      {
+        "name": "Settle",
+        "type": "TON",
+        "comment": "A workpiece must lie still against the blade before its colour is read"
+      },
+      {
+        "name": "Clear",
+        "type": "TON",
+        "comment": "A released workpiece must leave the blade before the blade holds again"
+      },
+      {
+        "name": "Handled",
+        "type": "CTU",
+        "comment": "Counts the workpieces dealt with"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "StartButton.pressed: start the line"
+      },
+      {
+        "name": "Waiting",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "EyeBlade.detect: a workpiece waits against the blade"
+      },
+      {
+        "name": "IsRed",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "ColourSensor.isRed: the workpiece at the blade is red"
+      },
+      {
+        "name": "Extended",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "Pusher1.extended: the plate is at the end of its stroke"
+      },
+      {
+        "name": "Retracted",
+        "type": "BOOL",
+        "address": "%I0.4",
+        "comment": "Pusher1.retracted: the plate is back at rest"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "RunIn",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Infeed.run: run the infeed belt"
+      },
+      {
+        "name": "RunOut",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Outfeed.run: run the belt to the blue bin"
+      },
+      {
+        "name": "RunSide",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "SideBelt.run: run the belt to the red bin"
+      },
+      {
+        "name": "Hold",
+        "type": "BOOL",
+        "address": "%Q0.3",
+        "comment": "Blade1.extend: the blade holds the workpiece while true"
+      },
+      {
+        "name": "Push",
+        "type": "BOOL",
+        "address": "%Q0.4",
+        "comment": "Pusher1.extend: push the workpiece onto the side belt"
+      },
+      {
+        "name": "Busy",
+        "type": "BOOL",
+        "address": "%Q0.5",
+        "comment": "Beacon.amber: the line is running"
+      },
+      {
+        "name": "Done",
+        "type": "BOOL",
+        "address": "%Q0.6",
+        "comment": "Beacon.green: all eight workpieces are handled"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Start: a press latches the line on.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r1_p0",
+              "type": "contact_no",
+              "variable": "Start",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r1_Active",
+              "type": "coil_set",
+              "variable": "Active",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "Settle time: the workpiece must lie still against the blade for a moment before its colour is read.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r2_p0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["State", "0"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r2_p1",
+              "type": "contact_no",
+              "variable": "Waiting",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r2_Settle",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "Settle",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#300ms"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "Clear time: a blue workpiece has gone by when the beam has been free for a while.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r3_p0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["State", "3"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r3_p1",
+              "type": "contact_nc",
+              "variable": "Waiting",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r3_Clear",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "Clear",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#1500ms"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_4",
+      "number": 4,
+      "comment": "Count a workpiece when the plate is back or the blue one has gone by.",
+      "branches": [
+        {
+          "id": "branch_4",
+          "startCol": 0,
+          "endCol": 1,
+          "rows": [0, 1]
+        }
+      ],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r4_o0_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["State", "2"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r4_o0_1",
+              "type": "contact_no",
+              "variable": "Retracted",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r4_Handled",
+              "type": "function_block",
+              "fbType": "CTU",
+              "instance": "Handled",
+              "parameters": {
+                "CU": "CONNECTED",
+                "R": "FALSE",
+                "PV": "8"
+              },
+              "row": 0,
+              "col": 6
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "r4_o1_0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["State", "3"],
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r4_o1_1",
+              "type": "contact_no",
+              "variable": "Clear.Q",
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_5",
+      "number": 5,
+      "comment": "State 3, blue workpiece gone: wait for the next one.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r5_p0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["State", "3"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r5_p1",
+              "type": "contact_no",
+              "variable": "Clear.Q",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r5_State",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["0"],
+              "output": "State",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_6",
+      "number": 6,
+      "comment": "State 2, plate back: wait for the next workpiece.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r6_p0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["State", "2"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r6_p1",
+              "type": "contact_no",
+              "variable": "Retracted",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r6_State",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["0"],
+              "output": "State",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_7",
+      "number": 7,
+      "comment": "State 1, plate out: pull it back.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r7_p0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["State", "1"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_p1",
+              "type": "contact_no",
+              "variable": "Extended",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r7_State",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["2"],
+              "output": "State",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_8",
+      "number": 8,
+      "comment": "State 0, a red workpiece lies still: push it out.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r8_p0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["State", "0"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r8_p1",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r8_p2",
+              "type": "contact_no",
+              "variable": "Settle.Q",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r8_p3",
+              "type": "contact_no",
+              "variable": "IsRed",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r8_State",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["1"],
+              "output": "State",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_9",
+      "number": 9,
+      "comment": "State 0, a blue workpiece lies still: let it go.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r9_p0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["State", "0"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r9_p1",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r9_p2",
+              "type": "contact_no",
+              "variable": "Settle.Q",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r9_p3",
+              "type": "contact_nc",
+              "variable": "IsRed",
+              "row": 0,
+              "col": 3
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r9_State",
+              "type": "function",
+              "functionName": "MOVE",
+              "operands": ["3"],
+              "output": "State",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_10",
+      "number": 10,
+      "comment": "The infeed belt runs while the line is active.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r10_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r10_RunIn",
+              "type": "coil",
+              "variable": "RunIn",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_11",
+      "number": 11,
+      "comment": "The outfeed belt runs while the line is active.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r11_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r11_RunOut",
+              "type": "coil",
+              "variable": "RunOut",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_12",
+      "number": 12,
+      "comment": "The side belt runs while the line is active.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r12_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r12_RunSide",
+              "type": "coil",
+              "variable": "RunSide",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_13",
+      "number": 13,
+      "comment": "The blade lets a blue workpiece go and holds everything else.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r13_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r13_p1",
+              "type": "function",
+              "functionName": "NE",
+              "operands": ["State", "3"],
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r13_Hold",
+              "type": "coil",
+              "variable": "Hold",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_14",
+      "number": 14,
+      "comment": "Push: the plate pushes out in state 1.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r14_p0",
+              "type": "function",
+              "functionName": "EQ",
+              "operands": ["State", "1"],
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r14_Push",
+              "type": "coil",
+              "variable": "Push",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_15",
+      "number": 15,
+      "comment": "Done: lit when eight workpieces are handled.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r15_p0",
+              "type": "contact_no",
+              "variable": "Handled.Q",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r15_Done",
+              "type": "coil",
+              "variable": "Done",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    },
+    {
+      "id": "rung_16",
+      "number": 16,
+      "comment": "Busy: lit while the line runs and not yet done.",
+      "branches": [],
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "r16_p0",
+              "type": "contact_no",
+              "variable": "Active",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r16_p1",
+              "type": "contact_nc",
+              "variable": "Handled.Q",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "r16_Busy",
+              "type": "coil",
+              "variable": "Busy",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
