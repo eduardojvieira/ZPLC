@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 2,
+  "target": { "scene": "numeric-tank-fixture" },
+  "signals": {
+    "Pot1.value": {
+      "direction": "sensor",
+      "type": "INT",
+      "point": "NumericTank.Pot",
+      "range": { "raw_min": 0, "raw_max": 1000, "eng_min": 0, "eng_max": 100, "unit": "%" }
+    },
+    "Tank1.level": {
+      "direction": "sensor",
+      "type": "REAL",
+      "point": "NumericTank.Level",
+      "range": { "raw_min": 0, "raw_max": 100, "eng_min": 0, "eng_max": 1, "unit": "m" }
+    },
+    "Tank1.fill": {
+      "direction": "command",
+      "type": "INT",
+      "point": "NumericTank.Fill",
+      "range": { "raw_min": 0, "raw_max": 1000, "eng_min": 0, "eng_max": 100, "unit": "%" }
+    },
+    "Display1.value": {
+      "direction": "command",
+      "type": "REAL",
+      "point": "NumericTank.Shown",
+      "range": { "raw_min": 0, "raw_max": 100, "eng_min": 0, "eng_max": 100, "unit": "%" }
+    }
+  }
+}

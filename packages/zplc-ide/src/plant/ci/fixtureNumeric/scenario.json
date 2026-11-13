@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "numeric-tank-fixture",
+  "tickMs": 10,
+  "durationMs": 1500,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      { "atMs": 100, "operate": { "signal": "Pot1.value", "value": 40 } },
+      { "atMs": 500, "operate": { "signal": "Pot1.value", "value": 100 } },
+      { "atMs": 1000, "operate": { "signal": "Pot1.value", "value": 0 } }
+    ]
+  },
+  "events": [],
+  "expectations": [{ "kind": "ALWAYS", "condition": { "fact:spilledL:Tank1": false } }]
+}
