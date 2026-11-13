@@ -82,6 +82,20 @@ describe('command registry (UX-015)', () => {
     },
   );
 
+  it('FLW-014 offers Run in simulation with a project open and no session, and a board only when connected', () => {
+    const run = commandById('debug.run');
+    const simulation = { ...INITIAL_COMMAND_STATE, projectOpen: true, mode: 'simulate' as const };
+    expect(isCommandEnabled(run, simulation)).toBe(true);
+    expect(isCommandEnabled(run, { ...simulation, projectOpen: false })).toBe(false);
+    expect(isCommandEnabled(run, { ...simulation, vmState: 'running' })).toBe(false);
+    expect(isCommandEnabled(run, { ...simulation, busy: true })).toBe(false);
+    const board = { ...simulation, mode: 'hardware' as const };
+    expect(isCommandEnabled(run, board)).toBe(false);
+    expect(isCommandEnabled(run, { ...board, connected: true })).toBe(true);
+    expect(isCommandEnabled(run, { ...board, connected: true, vmState: 'running' })).toBe(false);
+    expect(run.physical).toBe(true);
+  });
+
   it('UX-015 offers a command only in a state where it can work', () => {
     const state = { ...INITIAL_COMMAND_STATE, projectOpen: true, connected: true, vmState: 'running' };
     expect(isCommandEnabled(commandById('debug.pause'), state)).toBe(true);

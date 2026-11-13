@@ -135,7 +135,8 @@ export const COMMANDS = [
     category: 'debug',
     shortcut: 'F5',
     physical: true,
-    enabled: (s) => online(s) && s.vmState !== 'running',
+    // In simulation Run starts the session itself (FLW-001, FLW-014): the palette offers it with no session, as the button does.
+    enabled: (s) => (s.mode === 'simulate' ? idle(s) : online(s)) && s.vmState !== 'running',
   },
   {
     id: 'debug.pause',
