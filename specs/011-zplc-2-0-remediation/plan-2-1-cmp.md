@@ -85,23 +85,23 @@ No C change in this plan, so the host C tests are not run (a task that edits `fi
 Order: K1, K2, K3, K4, then K5 at the 2.1.0 cut. All are inline (no Writer reason: they are small and sequential); K3 is the only high-risk one.
 
 ### K1 - Prove the eleven ids on the base (read-only, no commit)
-- [ ] Run the three suites of "Verification commands" on 7d498e46 plus the 20 probes of "Reproduction". Record the counts in the K2 commit body. If any case fails, stop and report: the premise of this plan is wrong and a real fix task per failing id is needed (silent four first: CMP-003, 004, 005, 018).
+- [x] Run the three suites of "Verification commands" on 7d498e46 plus the 20 probes of "Reproduction". Record the counts in the K2 commit body. If any case fails, stop and report: the premise of this plan is wrong and a real fix task per failing id is needed (silent four first: CMP-003, 004, 005, 018). Done: 1607 pass, 0 fail (lessonCi, sceneCheck, sceneCatalogue), 20 probes as required; K2 9155ea2d (conformance 668/0; the CMP-018 cases are not linked in defects.json, which has no CMP-018 entry). K3 3d1ad5c9, independent verifier PASS.
 - Allowed edit surfaces: none.
 
 ### K2 - Pin the silent four where the cases leave a gap
 Failing test first is not possible (the fixes exist): write each case, **run it on the base and observe green**, and note in the commit that it is a regression pin. Then mutate by hand (revert the check in a scratch copy) to see it go red once, in the scratch copy only.
-- [ ] `conformance/cmp/cmp-018-array-initializer-does-not-fit.st` + `.expect.json`: `ARRAY[0..1] OF SINT := [1, 300]` fails (`"build": "fails"`, line, `messageIncludes`).
-- [ ] `conformance/cmp/cmp-018-argument-does-not-fit.st` + `.expect.json`: `F(300)` with a `SINT` parameter fails.
-- [ ] `conformance/cmp/cmp-004-lowercase-output-member.st` + `.expect.json`: `t(in := TRUE, pt := T#1s); q := t.q;` drives `%QX0.0` true after 1 s on the virtual clock.
-- [ ] `conformance/cmp/cmp-003-unknown-type-in-a-function-parameter.st` + `.expect.json`: an unknown type in `VAR_INPUT` fails (Unconfirmed that no case covers it: `fd cmp-003` lists seven, all in programs).
-- [ ] Regenerate `conformance/defect-map.md` and `matrix-gaps.json` through the generator the README names, and run `format --check`.
+- [x] `conformance/cmp/cmp-018-array-initializer-does-not-fit.st` + `.expect.json`: `ARRAY[0..1] OF SINT := [1, 300]` fails (`"build": "fails"`, line, `messageIncludes`).
+- [x] `conformance/cmp/cmp-018-argument-does-not-fit.st` + `.expect.json`: `F(300)` with a `SINT` parameter fails.
+- [x] `conformance/cmp/cmp-004-lowercase-output-member.st` + `.expect.json`: `t(in := TRUE, pt := T#1s); q := t.q;` drives `%QX0.0` true after 1 s on the virtual clock.
+- [x] `conformance/cmp/cmp-003-unknown-type-in-a-function-parameter.st` + `.expect.json`: an unknown type in `VAR_INPUT` fails (Unconfirmed that no case covers it: `fd cmp-003` lists seven, all in programs).
+- [x] Regenerate `conformance/defect-map.md` and `matrix-gaps.json` through the generator the README names, and run `format --check`.
 - Allowed edit surfaces: `conformance/cmp/cmp-018-array-initializer-does-not-fit.*`, `conformance/cmp/cmp-018-argument-does-not-fit.*`, `conformance/cmp/cmp-004-lowercase-output-member.*`, `conformance/cmp/cmp-003-unknown-type-in-a-function-parameter.*`, `conformance/defect-map.md`, `conformance/defects.json`.
 - Verify: conformance suite 668+ pass, 0 fail; `expected-failures.json` stays `[]`.
 
 ### K3 - Make the release notes list only open limits (high risk)
-- [ ] Failing test first, in `scripts/release/run-results.test.ts`: with `knownLimits` of two ids and `expectedFailures` naming only one, `results.knownIssues` contains the one open id and not the other. Observe red on the base (it lists both).
-- [ ] Fix `scripts/release/run-results.ts:146`: keep a `limits` entry only when its id is a `requirement` of an `expectedFailures` entry (the same rule as `tools/docs/generate_known_limits.py`). With an empty list the notes carry no `CMP-` line. Keep the existing test at `run-results.test.ts:158` green.
-- [ ] Read `scripts/release/release-notes.ts:209` ("### Known issues") and confirm an empty `limits` still renders the other issues, not an empty heading.
+- [x] Failing test first, in `scripts/release/run-results.test.ts`: with `knownLimits` of two ids and `expectedFailures` naming only one, `results.knownIssues` contains the one open id and not the other. Observe red on the base (it lists both).
+- [x] Fix `scripts/release/run-results.ts:146`: keep a `limits` entry only when its id is a `requirement` of an `expectedFailures` entry (the same rule as `tools/docs/generate_known_limits.py`). With an empty list the notes carry no `CMP-` line. Keep the existing test at `run-results.test.ts:158` green.
+- [x] Read `scripts/release/release-notes.ts:209` ("### Known issues") and confirm an empty `limits` still renders the other issues, not an empty heading.
 - Allowed edit surfaces: `scripts/release/run-results.ts`, `scripts/release/run-results.test.ts`.
 - Verify: `bun test scripts/release/run-results.test.ts scripts/release/release-notes.test.ts`; `python3 tools/docs/generate_known_limits.py --check`.
 - **Independent verification (required, high risk: item 3, a contract the release workflow consumes):** a fresh verifier reads this whole plan, runs `scripts/release/run-results.ts` on the base twice (real `expected-failures.json`, and a copy with one entry) and checks that `knownIssues` matches, then checks the 2.0.1 behaviour is reproduced on the old script to confirm the cause. It leaves no file in the workspace.
