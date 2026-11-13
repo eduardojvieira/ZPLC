@@ -20,7 +20,7 @@ Diagnostique una barrera que se atasca en encendido mientras la línea clasifica
 - Lenguajes: ST
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Clasificación por altura con transferencia de cadenas](../../plant/scenes/height-sorting-chain.md)
 - Requisitos previos: [plant-height-chain](./plant-height-chain.md)
 
 ## Objetivos

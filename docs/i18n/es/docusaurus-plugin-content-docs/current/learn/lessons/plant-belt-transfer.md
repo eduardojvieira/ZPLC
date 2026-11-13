@@ -20,7 +20,7 @@ Secuencie un carro con pinza usando finales de carrera y la señal de agarre par
 - Lenguajes: ST
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Transferencia entre cintas](../../plant/scenes/belt-to-belt-transfer.md)
 - Requisitos previos: [plant-counted-queue](./plant-counted-queue.md)
 
 ## Objetivos

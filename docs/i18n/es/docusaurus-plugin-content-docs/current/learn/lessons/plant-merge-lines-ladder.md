@@ -20,7 +20,7 @@ Arbitre con peldaños de enclavamiento dos alimentadores que comparten una salid
 - Lenguajes: LD
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Unión de dos líneas](../../plant/scenes/merge-lines.md)
 - Requisitos previos: [plant-counted-queue](./plant-counted-queue.md), [interlock-guard-permissive](./interlock-guard-permissive.md)
 
 ## Objetivos

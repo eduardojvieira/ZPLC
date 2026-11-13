@@ -20,7 +20,7 @@ Arbitrate two feeders that share one outfeed: give line A priority, let one box 
 - Languages: ST
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Merge two lines](../../plant/scenes/merge-lines.md)
 - Prerequisites: [plant-counted-queue](./plant-counted-queue.md), [interlock-guard-permissive](./interlock-guard-permissive.md)
 
 ## Objectives

@@ -20,7 +20,7 @@ Sequence two lifts as two chains that run side by side and meet only at the shar
 - Languages: SFC
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Three-level lifts](../../plant/scenes/three-level-lifts.md)
 - Prerequisites: [plant-buffer-release](./plant-buffer-release.md)
 
 ## Objectives

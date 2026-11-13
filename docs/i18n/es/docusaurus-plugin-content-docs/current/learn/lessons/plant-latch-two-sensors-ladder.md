@@ -20,7 +20,7 @@ Secuencie un movimiento con una bobina de activación y una de borrado: haga cor
 - Lenguajes: LD
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Biestable entre dos sensores](../../plant/scenes/latch-two-sensors.md)
 - Requisitos previos: [plant-belt-to-sensor](./plant-belt-to-sensor.md)
 
 ## Objetivos

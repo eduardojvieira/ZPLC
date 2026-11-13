@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "en": {
+    "name": "Colour separation",
+    "goal": "Sort red and blue workpieces with a colour sensor. Each workpiece waits at a stop blade while the colour sensor reads it; a pusher sends red ones to a side belt and blue ones go straight on.",
+    "teaches": "Deciding from a sensor reading while the item is held, then acting once."
+  },
+  "es": {
+    "name": "Separación por color",
+    "goal": "Clasifique piezas rojas y azules con un sensor de color. Cada pieza espera en un tope retráctil mientras el sensor de color la lee; un empujador envía las rojas a una cinta lateral y las azules siguen de largo.",
+    "teaches": "Decidir con la lectura de un sensor mientras la pieza está retenida y actuar una sola vez."
+  }
+}

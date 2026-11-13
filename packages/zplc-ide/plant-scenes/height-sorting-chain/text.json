@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "en": {
+    "name": "Height sorting with a chain transfer",
+    "goal": "Sort boxes by height into three bins with two beam sensors at different heights and a chain transfer. The two beams tell short, medium and tall boxes apart; short boxes go straight on, and the chain transfer lifts medium and tall boxes and moves them sideways to one side or the other.",
+    "teaches": "Reading a class from two on and off sensors instead of one number."
+  },
+  "es": {
+    "name": "Clasificación por altura con transferencia de cadenas",
+    "goal": "Clasifique cajas por altura en tres retiradores con dos sensores de barrera a distinta altura y una transferencia de cadenas. Las dos barreras distinguen cajas bajas, medianas y altas; las bajas siguen de largo, y la transferencia levanta las medianas y las altas y las mueve de lado hacia uno u otro costado.",
+    "teaches": "Leer una clase a partir de dos sensores de todo o nada en lugar de un solo número."
+  }
+}

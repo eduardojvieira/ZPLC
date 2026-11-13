@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "en": {
+    "name": "Tank level control",
+    "goal": "Hold the level of a tank at a set point with a PID loop. The set point comes from a potentiometer in metres, a second potentiometer opens the discharge valve as a disturbance, and a numeric display shows the level. The level and the set point arrive as INT raw values and the valves take REAL percentages.",
+    "teaches": "Closing a control loop on numeric signals, scaling raw counts and holding a set point against a disturbance."
+  },
+  "es": {
+    "name": "Control de nivel de un tanque",
+    "goal": "Mantenga el nivel de un tanque en un valor de consigna con un lazo PID. La consigna viene de un potenciómetro en metros, un segundo potenciómetro abre la válvula de descarga como perturbación y un indicador numérico muestra el nivel. El nivel y la consigna llegan como valores crudos INT y las válvulas reciben porcentajes REAL.",
+    "teaches": "Cerrar un lazo de control sobre señales numéricas, escalar cuentas crudas y mantener una consigna frente a una perturbación."
+  }
+}

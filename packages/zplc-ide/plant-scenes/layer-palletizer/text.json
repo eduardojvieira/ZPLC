@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "en": {
+    "name": "Layer palletizer",
+    "goal": "Form layers of four boxes with a layer palletizer and stack three layers on a pallet. The pusher squares each layer against the plates before the clamp lifts it. The head starts at its lowest position, so the program raises it before boxes arrive.",
+    "teaches": "A station sequence made of several machine steps, counted by layer and by pallet."
+  },
+  "es": {
+    "name": "Paletizador de capas",
+    "goal": "Forme capas de cuatro cajas con un paletizador de capas y apile tres capas sobre una tarima. El empujador escuadra cada capa contra los topes fijos antes de que la pinza la levante. El cabezal arranca en su posición más baja, así que el programa lo sube antes de que lleguen las cajas.",
+    "teaches": "Una secuencia de estación hecha de varios pasos de máquina, contada por capa y por tarima."
+  }
+}

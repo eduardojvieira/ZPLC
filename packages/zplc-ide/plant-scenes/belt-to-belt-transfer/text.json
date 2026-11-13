@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "en": {
+    "name": "Transfer between belts",
+    "goal": "Pick boxes from one belt with a two-axis pick and place and put them on another belt. The receiving belt stops while a box is set down, because a box counts as placed only once it rests.",
+    "teaches": "Handing an item from one machine to another and waiting for it to rest before moving on."
+  },
+  "es": {
+    "name": "Transferencia entre cintas",
+    "goal": "Tome cajas de una cinta con un manipulador de dos ejes y déjelas en otra cinta. La cinta que recibe se detiene mientras se deja una caja, porque una caja cuenta como colocada solo cuando queda en reposo.",
+    "teaches": "Pasar una pieza de una máquina a otra y esperar a que quede en reposo antes de seguir."
+  }
+}

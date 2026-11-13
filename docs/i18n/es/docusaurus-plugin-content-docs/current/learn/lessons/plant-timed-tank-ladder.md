@@ -20,7 +20,7 @@ Ejecute un ciclo de llenado, retención y vaciado de un tanque con bloques TON e
 - Lenguajes: LD
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Tanque temporizado](../../plant/scenes/timed-tank.md)
 - Requisitos previos: [timers-on-delay-off-delay](./timers-on-delay-off-delay.md)
 
 ## Objetivos

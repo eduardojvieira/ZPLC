@@ -20,7 +20,7 @@ Model a two-axis assembler as a chart: take a lid from one belt, set it on a bas
 - Languages: SFC
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Two-axis assembly](../../plant/scenes/two-axis-assembly.md)
 - Prerequisites: [sfc-fill-mix-sequence](./sfc-fill-mix-sequence.md), [plant-belt-transfer](./plant-belt-transfer.md)
 
 ## Objectives

@@ -20,7 +20,7 @@ Distinga tres alturas de caja con dos barreras, recuerde la respuesta hasta que 
 - Lenguajes: LD
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Clasificación por altura con transferencia de cadenas](../../plant/scenes/height-sorting-chain.md)
 - Requisitos previos: [plant-colour-separation](./plant-colour-separation.md)
 
 ## Objetivos

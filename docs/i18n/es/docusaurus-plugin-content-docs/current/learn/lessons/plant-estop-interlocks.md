@@ -20,7 +20,7 @@ Haga que una línea en marcha se detenga al pulsar el paro de emergencia, muést
 - Lenguajes: ST
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Elevadores de tres niveles](../../plant/scenes/three-level-lifts.md)
 - Requisitos previos: [plant-three-level-lifts](./plant-three-level-lifts.md), [interlock-guard-permissive](./interlock-guard-permissive.md)
 
 ## Objetivos

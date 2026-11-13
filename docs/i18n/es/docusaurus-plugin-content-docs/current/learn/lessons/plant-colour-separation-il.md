@@ -20,7 +20,7 @@ Escriba la lógica de clasificación por color como una lista de instrucciones: 
 - Lenguajes: IL
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Separación por color](../../plant/scenes/colour-separation.md)
 - Requisitos previos: [plant-colour-separation](./plant-colour-separation.md), [instruction-list-door-alarm](./instruction-list-door-alarm.md)
 
 ## Objetivos

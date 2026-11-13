@@ -20,7 +20,7 @@ Start a belt from a button and stop it when a box reaches the sensor at the far 
 - Languages: ST
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Belt to sensor](../../plant/scenes/belt-to-sensor.md)
 - Prerequisites: [motor-start-stop-safe](./motor-start-stop-safe.md)
 
 ## Objectives

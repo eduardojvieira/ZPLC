@@ -31,8 +31,10 @@ Frame rate, link latency and supported boards are claims that need recorded evid
 - [The plant clock](./clock.md): one clock, and what a breakpoint does to the plant.
 - [Scene file format](./scene-format.md): the fields, the limits and `schemaVersion`.
 - [The shipped scenes](./scenes.md): what each scene teaches and what its scenario checks.
+- [The scene editor](./scene-editor.md): build or change a scene, bind its signals to your program and save it.
 - [Plant parts reference](./parts.md): every part, its settings and its signals.
 - [Numeric signals](./numeric-signals.md): how an INT or REAL value travels between a part and the program.
 - [Manipulators and gripping](./manipulators.md): the axes, the grip rules and the layer palletizer.
 - [Sorting and diverting](./sorting.md): item properties, the sorting sensors, the diverting parts and how a remover grades.
 - [Stations](./stations.md): the crate, the lift, the stacker crane with its rack, the machining centre and the completion parts.
+- [Plant I/O mode](./io-mode.md): feeding a board from the plant, who may start it and what evidence exists.

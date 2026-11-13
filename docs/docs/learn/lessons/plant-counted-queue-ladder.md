@@ -20,7 +20,7 @@ Count boxes with two CTU blocks to run a fixed batch: load three, unload three, 
 - Languages: LD
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Counted queue](../../plant/scenes/counted-queue.md)
 - Prerequisites: [plant-latch-two-sensors](./plant-latch-two-sensors.md), [edge-counter-pulses](./edge-counter-pulses.md)
 
 ## Objectives

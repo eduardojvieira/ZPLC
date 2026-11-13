@@ -20,7 +20,7 @@ Divida una línea en un bloque de función por máquina y envíe piezas alternas
 - Lenguajes: ST
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Línea de producción balanceada](../../plant/scenes/balanced-production-line.md)
 - Requisitos previos: [function-block-pump-pair](./function-block-pump-pair.md), [plant-lift-stacking](./plant-lift-stacking.md)
 
 ## Objetivos

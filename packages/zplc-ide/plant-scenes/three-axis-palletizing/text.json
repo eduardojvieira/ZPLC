@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "en": {
+    "name": "Three-axis palletizing",
+    "goal": "Place boxes on a pallet in two layers with a three-axis gantry that takes numeric positions. The gantry raises its pad first, takes each box at the stop blade and puts it on a pallet slot.",
+    "teaches": "Computing target positions from a slot number and a layer number."
+  },
+  "es": {
+    "name": "Paletizado de tres ejes",
+    "goal": "Coloque cajas sobre una tarima en dos capas con un pórtico de tres ejes que recibe posiciones numéricas. El pórtico sube primero su ventosa, toma cada caja en el tope retráctil y la deja en un lugar de la tarima.",
+    "teaches": "Calcular posiciones de destino a partir de un número de lugar y un número de capa."
+  }
+}

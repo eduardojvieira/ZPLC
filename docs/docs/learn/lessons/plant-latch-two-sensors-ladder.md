@@ -20,7 +20,7 @@ Sequence a move with a set coil and a reset coil: run the belt from sensor A unt
 - Languages: LD
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Latch between two sensors](../../plant/scenes/latch-two-sensors.md)
 - Prerequisites: [plant-belt-to-sensor](./plant-belt-to-sensor.md)
 
 ## Objectives

@@ -20,7 +20,7 @@ Abra el Editor de escenas sobre un suelo vacío, coloque una banda, un emisor, u
 - Lenguajes: ST
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Cinta hasta un sensor](../../plant/scenes/belt-to-sensor.md)
 - Requisitos previos: [plant-belt-to-sensor](./plant-belt-to-sensor.md), [plant-fault-actions](./plant-fault-actions.md)
 
 ## Objetivos

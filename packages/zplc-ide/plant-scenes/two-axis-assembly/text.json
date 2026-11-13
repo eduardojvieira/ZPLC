@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "en": {
+    "name": "Two-axis assembly",
+    "goal": "Put a lid on each base with a two-axis pick and place. Lids and bases arrive on two belts and wait at stop blades; the vacuum pad takes a lid and sets it down centred on a base, and the assembled base leaves on the exit belt.",
+    "teaches": "Sequencing a manipulator that moves to limit switches, and synchronising two incoming flows."
+  },
+  "es": {
+    "name": "Ensamble de dos ejes",
+    "goal": "Ponga una tapa sobre cada base con un manipulador de dos ejes. Las tapas y las bases llegan por dos cintas y esperan en topes retráctiles; la ventosa toma una tapa y la deja centrada sobre una base, y la base armada sale por la cinta de salida.",
+    "teaches": "Secuenciar un manipulador que se mueve hasta finales de carrera y sincronizar dos flujos de entrada."
+  }
+}

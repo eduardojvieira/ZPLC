@@ -20,7 +20,7 @@ Cargue cuatro cajas en una capa, escuádrela, llévela con un cabezal de pinza y
 - Lenguajes: ST
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Paletizador de capas](../../plant/scenes/layer-palletizer.md)
 - Requisitos previos: [structures-arrays-call-panel](./structures-arrays-call-panel.md), [plant-assembler-numeric](./plant-assembler-numeric.md)
 
 ## Objetivos

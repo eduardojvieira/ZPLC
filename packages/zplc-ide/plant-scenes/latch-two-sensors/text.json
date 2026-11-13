@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "en": {
+    "name": "Latch between two sensors",
+    "goal": "A box rides a belt past two sensors. The first sensor starts the belt and the second stops it. This is a set and reset latch.",
+    "teaches": "The set and reset latch, driven by two sensors instead of two buttons."
+  },
+  "es": {
+    "name": "Biestable entre dos sensores",
+    "goal": "Una caja viaja por una cinta frente a dos sensores. El primer sensor arranca la cinta y el segundo la detiene. Es un biestable de activación y desactivación.",
+    "teaches": "El biestable de activación y desactivación, gobernado por dos sensores en lugar de dos pulsadores."
+  }
+}

@@ -20,7 +20,7 @@ Command a two-axis assembler with numeric setpoints in centimetres and a positio
 - Languages: ST
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Two-axis assembly, numeric](../../plant/scenes/two-axis-assembly-numeric.md)
 - Prerequisites: [plant-assembler](./plant-assembler.md)
 
 ## Objectives

@@ -20,7 +20,7 @@ Lea el código de cada pieza que ve el sensor de visión y accione un brazo desv
 - Lenguajes: ST
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Clasificación con visión](../../plant/scenes/vision-sorting.md)
 - Requisitos previos: [plant-colour-separation](./plant-colour-separation.md)
 
 ## Objetivos

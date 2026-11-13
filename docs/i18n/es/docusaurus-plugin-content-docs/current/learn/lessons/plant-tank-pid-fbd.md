@@ -20,7 +20,7 @@ Cablee el lazo de nivel de un tanque como un diagrama de bloques de función: un
 - Lenguajes: FBD
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Control de nivel de un tanque](../../plant/scenes/tank-level-control.md)
 - Requisitos previos: [plant-tank-pid](./plant-tank-pid.md)
 
 ## Objetivos

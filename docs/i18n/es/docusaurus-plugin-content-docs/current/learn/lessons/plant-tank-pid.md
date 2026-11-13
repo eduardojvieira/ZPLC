@@ -20,7 +20,7 @@ Mantenga el nivel de un tanque en una consigna con PID_Compact, consérvelo cuan
 - Lenguajes: ST
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Control de nivel de un tanque](../../plant/scenes/tank-level-control.md)
 - Requisitos previos: [plant-tank-level-scaling](./plant-tank-level-scaling.md)
 
 ## Objetivos

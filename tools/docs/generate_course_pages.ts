@@ -7,6 +7,7 @@
 // packages/zplc-ide/lessons (tools/ci/generate-lesson-index.ts --check holds it fresh). The pages are unlisted from the
 // sidebar (there are over a hundred of them) and reached from the course outline, which links the module index.
 import { LESSON_INDEX } from '../../packages/zplc-ide/src/generated/lessonIndex.ts';
+import { SCENE_INDEX } from '../../packages/zplc-ide/src/generated/sceneIndex.ts';
 import { courseOrder } from '../../packages/zplc-ide/src/learn/course.ts';
 import { code, outputsOf, prose, runGenerator, table, type L10n, type Lang, type ReferencePage } from './reference-lib';
 import { wiringSection } from './generate_hardware_pages';
@@ -51,7 +52,17 @@ const T = {
   lesson: { en: 'Lesson', es: 'Lección' },
   modules: { en: 'Modules', es: 'Módulos' },
   used: { en: 'Used by', es: 'La usan' },
+  scenes: { en: 'Scenes', es: 'Escenas' },
+  scene: { en: 'Scene', es: 'Escena' },
+  usedScene: { en: 'Used by', es: 'La usan' },
 } satisfies Record<string, L10n>;
+
+const sceneName = (id: string, lang: Lang) => SCENE_INDEX.find((scene) => scene.id === id)?.names[lang] ?? id;
+/** The Plant fact of a lesson page: the scene a scene lesson runs on (CRS-011), else its 2.0 plant, else none. */
+function plantFact(lesson: Lesson, lang: Lang): string {
+  if (lesson.scene) return `[${prose(sceneName(lesson.scene, lang))}](../../plant/scenes/${lesson.scene}.md)`;
+  return lesson.plant ? `[${code(lesson.plant)}](../plants.md)` : T.none[lang];
+}
 
 function lessonBody(lesson: Lesson, lang: Lang): string {
   const text = lesson.text[lang];
@@ -62,7 +73,7 @@ function lessonBody(lesson: Lesson, lang: Lang): string {
     `- ${T.languages[lang]}: ${lesson.languages.join(', ')}`,
     `- ${T.tracks[lang]}: ${trackNames(lesson.tracks, lang)}`,
     `- ${T.reading[lang]}: ${('reading' in lesson && lesson.reading ? T.yes : T.no)[lang]}`,
-    `- ${T.plant[lang]}: ${lesson.plant ? `[${code(lesson.plant)}](../plants.md)` : T.none[lang]}`,
+    `- ${T.plant[lang]}: ${plantFact(lesson, lang)}`,
     ...(lesson.prerequisites.length > 0
       ? [`- ${T.prerequisites[lang]}: ${lesson.prerequisites.map((id) => `[${id}](./${id}.md)`).join(', ')}`]
       : []),
@@ -124,6 +135,15 @@ function plantsBody(lang: Lang): string {
       'Una planta es una máquina simulada que una lección conecta a su programa: la lección asigna las señales de la planta a las ' +
       'entradas y salidas de su proyecto inicial. Esta lista se genera de los paquetes de lecciones.',
   };
+  const sceneIntro: L10n = {
+    en:
+      'A scene lesson runs your program on a scene of the plant simulation instead of a plant of the list above. Each scene has its ' +
+      'own page.',
+    es:
+      'Una lección de escena corre su programa en una escena de la simulación de la planta, en lugar de una planta de la lista ' +
+      'anterior. Cada escena tiene su propia página.',
+  };
+  const sceneIds = SCENE_INDEX.map((scene) => scene.id).filter((id) => LESSON_INDEX.lessons.some((lesson) => lesson.scene === id));
   return [
     intro[lang],
     table(
@@ -132,6 +152,18 @@ function plantsBody(lang: Lang): string {
         code(plant),
         LESSON_INDEX.lessons
           .filter((lesson) => lesson.plant === plant)
+          .map((lesson) => `[${prose(titleOf(lesson, lang))}](./lessons/${lesson.id}.md)`)
+          .join(', '),
+      ]),
+    ),
+    `## ${T.scenes[lang]}`,
+    sceneIntro[lang],
+    table(
+      [T.scene[lang], T.usedScene[lang]],
+      sceneIds.map((id) => [
+        `[${prose(sceneName(id, lang))}](../plant/scenes/${id}.md)`,
+        LESSON_INDEX.lessons
+          .filter((lesson) => lesson.scene === id)
           .map((lesson) => `[${prose(titleOf(lesson, lang))}](./lessons/${lesson.id}.md)`)
           .join(', '),
       ]),

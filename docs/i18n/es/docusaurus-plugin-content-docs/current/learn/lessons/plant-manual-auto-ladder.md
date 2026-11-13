@@ -20,7 +20,7 @@ Añada un modo al ensamblaje de dos ejes: avance el brazo a mano en manual, ejec
 - Lenguajes: LD
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Ensamble de dos ejes](../../plant/scenes/two-axis-assembly.md)
 - Requisitos previos: [plant-assembler](./plant-assembler.md), [plant-estop-interlocks](./plant-estop-interlocks.md)
 
 ## Objetivos

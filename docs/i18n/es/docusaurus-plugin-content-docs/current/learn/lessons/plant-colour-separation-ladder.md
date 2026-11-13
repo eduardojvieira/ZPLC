@@ -20,7 +20,7 @@ Lea el color de cada pieza que espera en la cuchilla de parada, empuje las rojas
 - Lenguajes: LD
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Separación por color](../../plant/scenes/colour-separation.md)
 - Requisitos previos: [plant-counted-queue](./plant-counted-queue.md)
 
 ## Objetivos

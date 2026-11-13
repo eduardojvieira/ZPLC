@@ -20,7 +20,7 @@ Compare la lectura de una báscula con un límite y envíe las cajas pesadas a l
 - Lenguajes: ST
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Clasificación por peso](../../plant/scenes/weight-sorting.md)
 - Requisitos previos: [plant-colour-separation](./plant-colour-separation.md), [plant-tank-level-scaling](./plant-tank-level-scaling.md)
 
 ## Objetivos

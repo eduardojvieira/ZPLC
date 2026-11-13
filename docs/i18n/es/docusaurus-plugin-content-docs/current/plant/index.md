@@ -31,8 +31,10 @@ La tasa de cuadros, la latencia del enlace y las placas compatibles son afirmaci
 - [El reloj de la planta](./clock.md): un solo reloj, y qué hace un punto de interrupción con la planta.
 - [Formato del archivo de escena](./scene-format.md): los campos, los límites y `schemaVersion`.
 - [Las escenas incluidas](./scenes.md): qué enseña cada escena y qué comprueba su escenario.
+- [El editor de escenas](./scene-editor.md): construya o cambie una escena, enlace sus señales a su programa y guárdela.
 - [Referencia de piezas de la planta](./parts.md): cada pieza, sus ajustes y sus señales.
 - [Señales numéricas](./numeric-signals.md): cómo viaja un valor INT o REAL entre una pieza y el programa.
 - [Manipuladores y agarre](./manipulators.md): los ejes, las reglas de agarre y el paletizador por capas.
 - [Clasificar y desviar](./sorting.md): propiedades de la pieza, los sensores de clasificación, las piezas desviadoras y cómo califica un retirador.
 - [Estaciones](./stations.md): el cajón, el elevador, el transelevador con su estante, el centro de mecanizado y las piezas de completado.
+- [E/S de planta](./io-mode.md): alimentar una placa desde la planta, quién puede iniciarla y qué evidencia existe.

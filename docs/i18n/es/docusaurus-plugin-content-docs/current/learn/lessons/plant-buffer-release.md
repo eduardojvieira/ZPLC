@@ -20,7 +20,7 @@ Modele una estación de búfer como una máquina de estados: cargue cinco cajas,
 - Lenguajes: SFC
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Búfer y liberación](../../plant/scenes/buffer-release.md)
 - Requisitos previos: [sfc-fill-mix-sequence](./sfc-fill-mix-sequence.md), [plant-counted-queue](./plant-counted-queue.md)
 
 ## Objetivos

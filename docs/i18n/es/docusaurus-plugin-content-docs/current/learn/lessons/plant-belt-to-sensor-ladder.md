@@ -20,7 +20,7 @@ Arranque una banda con un botón mediante una bobina de activación y deténgala
 - Lenguajes: LD
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Cinta hasta un sensor](../../plant/scenes/belt-to-sensor.md)
 - Requisitos previos: [motor-start-stop-safe](./motor-start-stop-safe.md)
 
 ## Objetivos

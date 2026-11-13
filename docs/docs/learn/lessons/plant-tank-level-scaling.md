@@ -20,7 +20,7 @@ Scale the raw level of a tank, a whole number from 0 to 27648, to metres, and us
 - Languages: ST
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Tank level control](../../plant/scenes/tank-level-control.md)
 - Prerequisites: [analog-scaling-integer](./analog-scaling-integer.md), [plant-timed-tank](./plant-timed-tank.md)
 
 ## Objectives

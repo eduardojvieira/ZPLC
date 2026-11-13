@@ -20,7 +20,7 @@ Mida la altura de cada caja con una cortina de luz, conserve la lectura mayor y 
 - Lenguajes: ST
 - Rutas: Simulación
 - Página de lectura: no
-- Planta: ninguna
+- Planta: [Clasificación por altura con mesa giratoria](../../plant/scenes/height-sorting-turntable.md)
 - Requisitos previos: [plant-height-chain](./plant-height-chain.md)
 
 ## Objetivos

@@ -20,7 +20,7 @@ Write the colour-sorting logic as an instruction list: one current result, label
 - Languages: IL
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Colour separation](../../plant/scenes/colour-separation.md)
 - Prerequisites: [plant-colour-separation](./plant-colour-separation.md), [instruction-list-door-alarm](./instruction-list-door-alarm.md)
 
 ## Objectives

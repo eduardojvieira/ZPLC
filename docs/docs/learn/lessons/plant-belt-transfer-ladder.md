@@ -20,7 +20,7 @@ Sequence a clamp carriage with limit sensors and a grip feedback to move four bo
 - Languages: LD
 - Tracks: Simulation
 - Reading page: no
-- Plant: none
+- Plant: [Transfer between belts](../../plant/scenes/belt-to-belt-transfer.md)
 - Prerequisites: [plant-counted-queue](./plant-counted-queue.md)
 
 ## Objectives
