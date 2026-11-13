@@ -125,8 +125,8 @@ const NO_Z_FIGHT = { polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetU
 const PART_COLORS: Readonly<Record<string, number>> = {
   belt: 0x4b5563,
   roller: 0x6b7280,
-  curve: 0x4b5563,
-  blade: 0xb45309,
+  curved: 0x4b5563,
+  'stop-blade': 0xb45309,
   sensor: 0x15803d,
   tank: 0x94a3b8,
   'selector-switch': 0x475569,
@@ -263,7 +263,7 @@ export function createRenderer(
   let lastItems: PlantSnapshot['items'] = [];
   const partColor = (part: string): number => {
     if (palette && part === 'sensor') return palette.sensorOn;
-    if (palette && part !== 'blade') return palette.belt;
+    if (palette && part !== 'stop-blade') return palette.belt;
     return PART_COLORS[part] ?? 0x9ca3af;
   };
   const paintItems = (): void => {
@@ -346,7 +346,7 @@ export function createRenderer(
     for (const [id, entry] of partMeshes) {
       const part = (entry.mesh.userData as { part?: string }).part;
       const current = partOutlines.get(id);
-      if (part !== 'sensor' && part !== 'blade') continue;
+      if (part !== 'sensor' && part !== 'stop-blade') continue;
       if (current?.key === entry.key) continue;
       if (current) entry.mesh.remove(current.line);
       let g = edges.get(entry.key);

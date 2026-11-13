@@ -53,9 +53,9 @@ export function partShape(view: PartView): ShapeSpec {
       return beltShape(view);
     case 'roller':
       return rollerShape(view);
-    case 'curve':
+    case 'curved':
       return curveShape(view);
-    case 'blade':
+    case 'stop-blade':
       return bladeShape(view);
     case 'sensor':
       return sensorShape(view);
