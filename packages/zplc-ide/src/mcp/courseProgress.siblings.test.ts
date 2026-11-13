@@ -5,10 +5,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, test } from 'bun:test';
 import { LESSON_INDEX } from '../generated/lessonIndex';
+import twoZeroIds from '../../../../tools/ci/two-zero-lesson-ids.json';
 import { buildCourseView } from '../learn/course';
 import type { LessonIndex } from '../learn/lessonPackage';
 import { emptyProgress, withPassedIds } from '../../shared/learnProgressModel';
 import { courseProgressResource, openMcpUserData, openMcpWorkspace } from './server';
+
+// The 2.0 lessons of the generated index (tools/ci/two-zero-lesson-ids.json): the owner fixed 2.0 at 68 lessons and no pair.
+const TWO_ZERO = new Set<string>(twoZeroIds);
+const INDEX_2_0: LessonIndex = { ...LESSON_INDEX, lessons: LESSON_INDEX.lessons.filter((lesson) => TWO_ZERO.has(lesson.id)) };
 
 const ST = 'first-blink-simulation';
 const LADDER = `${ST}-ladder`;
@@ -62,7 +67,7 @@ describe('zplc://course/progress with alternative siblings', () => {
   });
 
   test('keeps the 2.0 count of a 2.0-only index', async () => {
-    const resource = await resourceFor(LESSON_INDEX, [ST]);
+    const resource = await resourceFor(INDEX_2_0, [ST]);
     expect(resource).toMatchObject({ ok: true, mastered: [ST], completed: 1, total: 68 });
   });
 });

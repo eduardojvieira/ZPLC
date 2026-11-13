@@ -105,20 +105,28 @@ export function lessonStateOf(
 /**
  * The lessons in the order a learner takes them: by module and position, never before a prerequisite. Kahn's algorithm,
  * choosing the lowest (module, order) among the lessons whose prerequisites are done; a cycle is left to the generator to refuse.
+ * An alternative sibling (M7-K5) follows its twin at once when its prerequisites are done, whatever its own order: a manifest's
+ * order is an integer, so the pair cannot be kept together by order alone.
  */
 export function courseOrder(index: LessonIndex): readonly LessonIndexEntry[] {
   const remaining = [...index.lessons];
   const done = new Set<string>();
   const result: LessonIndexEntry[] = [];
+  const twinOf = new Map(alternativePairs(index).flatMap(([a, b]) => [[a, b] as const, [b, a] as const]));
+  const take = (lesson: LessonIndexEntry) => {
+    remaining.splice(remaining.indexOf(lesson), 1);
+    done.add(lesson.id);
+    result.push(lesson);
+  };
   while (remaining.length > 0) {
     const ready = remaining.filter((lesson) => lesson.prerequisites.every((prerequisite) => done.has(prerequisite)));
     const pool = ready.length > 0 ? ready : remaining;
     const next = pool.reduce((best, lesson) =>
       lesson.module < best.module || (lesson.module === best.module && lesson.order < best.order) ? lesson : best,
     );
-    remaining.splice(remaining.indexOf(next), 1);
-    done.add(next.id);
-    result.push(next);
+    take(next);
+    const twin = remaining.find((lesson) => lesson.id === twinOf.get(next.id));
+    if (twin && twin.prerequisites.every((prerequisite) => done.has(prerequisite))) take(twin);
   }
   return result;
 }

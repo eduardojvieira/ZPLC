@@ -50,6 +50,13 @@ describe('courseOrder with siblings', () => {
     expect(ids.indexOf(LADDER)).toBe(ids.indexOf(ST) + 1);
   });
 
+  it('puts the two alternatives next to each other when the twin has a far integer order, as a real manifest must', () => {
+    const index = withTwin();
+    const far = { ...index, lessons: index.lessons.map((lesson) => (lesson.id === LADDER ? { ...lesson, order: 9999 } : lesson)) };
+    const ids = courseOrder(far).map((lesson) => lesson.id);
+    expect(ids.indexOf(LADDER)).toBe(ids.indexOf(ST) + 1);
+  });
+
   it('keeps the order of the 2.0 lessons when a pair is added', () => {
     const ids = courseOrder(INDEX_2_0).map((lesson) => lesson.id);
     expect(
