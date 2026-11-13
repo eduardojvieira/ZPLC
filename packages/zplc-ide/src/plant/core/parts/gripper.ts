@@ -85,7 +85,7 @@ export function createGripper(world: PhysicsWorld, spec: GripperSpec): Gripper {
       const wx = Math.max(CLAMP_REACH_M, pad.half[0]);
       const wz = Math.max(CLAMP_REACH_M, pad.half[1]);
       const tracked = trackedItems(world);
-      const found: { id: string; d: number }[] = [];
+      const found: { id: string; d: number; top: number }[] = [];
       for (const id of world.bodiesInBox([cx - 2, py - 1, cz - 2], [cx + 2, py + VACUUM_ABOVE_M, cz + 2])) {
         const info = tracked.get(id);
         const b = poses.get(id);
@@ -98,9 +98,10 @@ export function createGripper(world: PhysicsWorld, spec: GripperSpec): Gripper {
           spec.kind === 'vacuum'
             ? dx <= info.size[0] / 2 && dz <= info.size[2] / 2 && below >= -VACUUM_ABOVE_M && below <= VACUUM_BELOW_M
             : dx <= wx && dz <= wz && below >= 0 && below <= CLAMP_DEPTH_M;
-        if (fits) found.push({ id, d: Math.sqrt(dx * dx + dz * dz) });
+        if (fits) found.push({ id, d: Math.sqrt(dx * dx + dz * dz), top: b.p[1] + info.size[1] / 2 });
       }
-      found.sort((a, b) => a.d - b.d || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+      // nearest horizontally (ties within 1 mm), then the highest top face (the item of a stack nearest the pad), then id
+      found.sort((a, b) => (Math.abs(a.d - b.d) > 1e-3 ? a.d - b.d : 0) || b.top - a.top || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
       for (const { id } of found.slice(0, spec.maxItems - held.length)) {
         world.attach(pad.id, id);
         held.push(id);

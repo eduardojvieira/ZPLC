@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { createHash } from 'node:crypto';
 import { createWorld, type PhysicsWorld, type WorldBodySpec } from '../world';
 import { loadJolt } from '../jolt';
-import { boxSize, PALLET_SIZE, removeTrackedItem, spawnItem } from './items';
+import { BASE_SIZE, boxSize, LID_SIZE, PALLET_SIZE, removeTrackedItem, spawnItem } from './items';
 import { createGripper, type Gripper, type GripperSpec, type Pad } from './gripper';
 
 const floor: WorldBodySpec = {
@@ -131,6 +131,23 @@ describe('gripper', () => {
     expect(r.g.counts().picked).toBe(1);
     r.tick(false);
     expect(r.g.closeFraction()).toBe(0);
+  });
+
+  it('PLT-007 a clamp over a lid on a base takes the lid, the item nearest the pad', async () => {
+    const r = await rig(clamp, (w) => {
+      spawnItem(w, 'base', 'item', BASE_SIZE, 1, [0, 0, 0], 0, 'base');
+      spawnItem(w, 'lid', 'item', LID_SIZE, 1, [0, BASE_SIZE[1], 0], 0, 'lid');
+    });
+    r.p = [0, 0.9, 0];
+    settleWorld(r, 200);
+    const baseAt = at(r.w, 'base').p;
+    r.move([0, 0.2, 0], 100, false);
+    for (let i = 0; i < 70; i += 1) r.tick(true);
+    expect(r.g.held()).toEqual(['lid']);
+    expect(r.w.attachedTo('base')).toBeNull();
+    r.move([0, 0.9, 0], 100, true);
+    expect(at(r.w, 'base').p[1]).toBeCloseTo(baseAt[1], 2); // the base stays resting
+    expect(at(r.w, 'lid').p[1]).toBeGreaterThan(0.7);
   });
 
   it('PRT-003 an item above maxLoadKg is never captured and the pad reports it holds nothing', async () => {
