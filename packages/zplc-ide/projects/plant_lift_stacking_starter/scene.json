@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "name": "Lift with stacking",
+  "shortestPulseMs": 400,
+  "parts": [
+    {
+      "id": "floor-in",
+      "part": "belt",
+      "name": "FloorIn",
+      "position": [-1.7, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": { "length": 2, "speedMps": 0.5 }
+    },
+    {
+      "id": "crate-source",
+      "part": "emitter",
+      "name": "CrateSource",
+      "position": [-2.1, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": { "kind": "crate", "maxItems": 1 }
+    },
+    {
+      "id": "lift",
+      "part": "lift",
+      "name": "Lift1",
+      "position": [0, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": { "levels": 2, "levelPitchM": 0.6, "lengthM": 1.4, "widthM": 0.7, "travelSpeedMps": 0.5 }
+    },
+    {
+      "id": "feeder",
+      "part": "belt",
+      "name": "Feeder",
+      "position": [0, 1.5, 1.2],
+      "rotationYDeg": 90,
+      "config": { "length": 2, "speedMps": 0.5 }
+    },
+    {
+      "id": "part-source",
+      "part": "emitter",
+      "name": "PartSource",
+      "position": [0, 1.5, 2],
+      "rotationYDeg": 0,
+      "config": { "kind": "workpiece", "maxItems": 5 }
+    },
+    {
+      "id": "floor-out",
+      "part": "belt",
+      "name": "FloorOut",
+      "position": [1.7, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": { "length": 2, "speedMps": 0.5 }
+    },
+    {
+      "id": "crate-bin",
+      "part": "remover",
+      "name": "CrateBin",
+      "position": [2.95, 0.65, 0],
+      "rotationYDeg": 0,
+      "config": { "width": 0.4, "height": 0.6, "depth": 0.8 }
+    },
+    {
+      "id": "crate-eye",
+      "part": "sensor-diffuse",
+      "name": "CrateEye",
+      "position": [0.1, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": { "rangeM": 1 }
+    },
+    {
+      "id": "count-eye",
+      "part": "sensor-diffuse",
+      "name": "CountEye",
+      "position": [-0.5, 1.5, 0.4],
+      "rotationYDeg": 0,
+      "config": { "rangeM": 1, "heightM": 0.05 }
+    },
+    {
+      "id": "out-eye",
+      "part": "sensor-diffuse",
+      "name": "OutEye",
+      "position": [2.4, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": { "rangeM": 1 }
+    },
+    { "id": "start", "part": "push-button", "name": "StartButton", "position": [-2.6, 0.5, -0.7], "rotationYDeg": 0, "config": {} },
+    { "id": "light", "part": "stack-light", "name": "StackLight1", "position": [2.6, 0.35, -0.7], "rotationYDeg": 0, "config": {} }
+  ],
+  "cameras": [
+    { "name": "Overview", "position": [0, 3, 4.5], "target": [0, 0.9, 0.6] },
+    { "name": "Lift", "position": [1.8, 1.8, 2.6], "target": [0, 1, 0.3] }
+  ]
+}

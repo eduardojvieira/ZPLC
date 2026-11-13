@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-warehouse",
+  "version": 1,
+  "order": 173,
+  "module": 17,
+  "level": "advanced",
+  "prerequisites": ["plant-three-level-lifts"],
+  "languages": ["SFC"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The chart moves a stacker crane along a rack of shelves; a learner board has no crane and no rack, and the scene supplies both.",
+        "es": "El diagrama mueve un transelevador a lo largo de una estantería; una placa del estudiante no tiene transelevador ni estantería, y la escena aporta ambos."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus cajas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "stacker-crane-warehouse",
+  "estimatedMinutes": 60,
+  "starter": {
+    "project": "plant_warehouse_starter",
+    "program": "src/Warehouse.sfc.json"
+  },
+  "solution": {
+    "project": "plant_warehouse",
+    "program": "src/Warehouse.sfc.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "stacker-crane-warehouse",
+    "path": "tests/stacker-crane-warehouse.scenario.json",
+    "sha256": "a906cc59cfe48dc4470623f51b06dfa099a89029df76e1c8ce57e98c7a5b4c98"
+  },
+  "regressionScenarios": []
+}

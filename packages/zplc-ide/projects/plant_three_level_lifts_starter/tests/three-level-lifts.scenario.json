@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "id": "three-level-lifts",
+  "tickMs": 10,
+  "durationMs": 80000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      {
+        "atMs": 200,
+        "operate": {
+          "signal": "StartButton.pressed",
+          "value": true
+        }
+      },
+      {
+        "atMs": 400,
+        "operate": {
+          "signal": "StartButton.pressed",
+          "value": false
+        }
+      }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    {
+      "kind": "ALWAYS",
+      "condition": {
+        "fact:itemsDropped": false
+      }
+    },
+    {
+      "kind": "EVENTUALLY",
+      "fromMs": 0,
+      "withinMs": 80000,
+      "condition": {
+        "fact:delivered:TopBin": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 80000,
+      "condition": {
+        "ThreeLevelLifts.Green": true
+      }
+    }
+  ]
+}

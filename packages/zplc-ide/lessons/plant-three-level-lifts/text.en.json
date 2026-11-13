@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Move boxes between three levels",
+  "summary": "Sequence two lifts as two chains that run side by side and meet only at the shared transfer belt.",
+  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Describe each lift as its own chain of steps that loops back to its first step.",
+    "Start both chains with one transition and let them meet only at the belt between the lifts."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/ThreeLevelLifts.sfc.json, add the chain of lift B: B_LOAD, B_SETTLE, B_RISE, B_UNLOAD and B_LOWER, the same five steps as lift A one level higher.",
+      "checkpoint": "Each step sets every output of its lift, so reading the active steps tells you what each lift does."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, follow one box: it rides the infeed onto lift A, A rises with its surface stopped, runs the box onto the transfer belt at level 2 and lowers; B does the same one level higher and hands the box to the outfeed.",
+      "checkpoint": "A lift moves only while its surface is stopped, a belt runs towards a lift only while that lift waits at its loading level, and Green lights once five boxes have passed EyeTop."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter runs only lift A, so boxes pile up on the transfer belt; add the chain of lift B and start it from the same transition as lift A.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the three-level-lifts scenario; watch the 3D view while it runs.",
+      "checkpoint": "The required scenario is named three-level-lifts and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Watch both lifts in the 3D view: they can move at the same time, and the transfer belt at level 2 is the only place where their chains meet.",
+      "checkpoint": "Neither lift moves while its surface runs, and no box is dropped."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The EVENTUALLY assertion proves a box reached the top bin, the AT assertion proves Green is lit at the end and the ALWAYS assertion proves no box fell.",
+      "checkpoint": "The grade cannot see the order of the steps of each lift, nor whether a lift moved while its surface ran; it sees only what arrived and what fell. It does not establish physical lift speed, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Copy the five steps of lift A and rename them B_LOAD to B_LOWER; lift B reads BAtLow, BAtHigh and BoxOnB, and sets BLoading instead of RunInfeed."
+    },
+    {
+      "level": 2,
+      "text": "Start both chains with one transition: give the start transition a second target in toSteps, and keep the two chains apart from then on."
+    }
+  ],
+  "faultCases": [
+    "The starter runs only lift A, so boxes pile up on the transfer belt; add the chain of lift B and start it from the same transition as lift A."
+  ]
+}

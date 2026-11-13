@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "id": "lift-stacking",
+  "tickMs": 10,
+  "durationMs": 60000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      {
+        "atMs": 200,
+        "operate": {
+          "signal": "StartButton.pressed",
+          "value": true
+        }
+      },
+      {
+        "atMs": 400,
+        "operate": {
+          "signal": "StartButton.pressed",
+          "value": false
+        }
+      }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    {
+      "kind": "ALWAYS",
+      "condition": {
+        "fact:itemsDropped": false
+      }
+    },
+    {
+      "kind": "EVENTUALLY",
+      "fromMs": 0,
+      "withinMs": 60000,
+      "condition": {
+        "fact:loaded:crate:0": true
+      }
+    },
+    {
+      "kind": "EVENTUALLY",
+      "fromMs": 0,
+      "withinMs": 60000,
+      "condition": {
+        "fact:delivered:CrateBin": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 60000,
+      "condition": {
+        "LiftStacking.Green": true
+      }
+    }
+  ]
+}

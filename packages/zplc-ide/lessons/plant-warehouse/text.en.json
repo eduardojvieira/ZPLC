@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Store and retrieve",
+  "summary": "Run a stacker crane from a chart: store each box in the first free cell and bring a box back when its request button is pressed.",
+  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Write the store and the retrieve sequences of a crane as chains of steps.",
+    "Keep a table of occupied cells and the requests that wait, and choose the next job from them."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/Warehouse.sfc.json, add the retrieve chain R_PICK to R_FINISH: take the box out of the requested cell, bring it to the dock and put it on the outfeed.",
+      "checkpoint": "The IDLE step is the only place where the next job is chosen: a box at the infeed stores, a waiting request for a cell that holds a box retrieves."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, follow the crane: it takes the box onto the fork, retracts, moves to the cell, extends, lowers the fork and retracts again; to retrieve, it reverses the sequence and delivers the box at the dock.",
+      "checkpoint": "The crane moves only with the fork retracted, every move waits 0.3 s before it trusts InPos, and Green lights after two boxes have left on the outfeed."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter stores boxes but has no retrieve steps, so a request is never served; add the chain that takes the box out of its cell, brings it to the dock and puts it on the outfeed, and let IDLE start it when a request waits for a cell that holds a box.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the stacker-crane-warehouse scenario; watch the 3D view while it runs.",
+      "checkpoint": "The required scenario is named stacker-crane-warehouse and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Watch the fork in the 3D view and read stored: and blocked: in the facts text; blocked stays at zero.",
+      "checkpoint": "stored counts the boxes at rest in the rack, and blocked stays at zero because the crane never moves with the fork out."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The EVENTUALLY assertions prove that cells 1 and 2 held a box and that a box reached the outfeed bin; the ALWAYS assertion proves no move was refused and nothing fell.",
+      "checkpoint": "The grade cannot see which cell a box left from, nor the order of the jobs; it sees the cells, the bin and Green. It does not establish physical crane speed, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Choose the cell in a P1 action, which runs once when the step is entered; Bay and Level can be set in the same action and they keep their value."
+    },
+    {
+      "level": 2,
+      "text": "Wait for the step time of 0.3 s and for InPos before extending the fork, and change Bay or Level only in a step where the fork is retracted."
+    }
+  ],
+  "faultCases": [
+    "The starter stores boxes but has no retrieve steps, so a request is never served; add the chain that takes the box out of its cell, brings it to the dock and puts it on the outfeed, and let IDLE start it when a request waits for a cell that holds a box."
+  ]
+}

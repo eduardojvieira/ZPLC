@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "id": "balanced-production-line",
+  "tickMs": 10,
+  "durationMs": 80000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      {
+        "atMs": 200,
+        "operate": {
+          "signal": "StartButton.pressed",
+          "value": true
+        }
+      },
+      {
+        "atMs": 400,
+        "operate": {
+          "signal": "StartButton.pressed",
+          "value": false
+        }
+      }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    {
+      "kind": "ALWAYS",
+      "condition": {
+        "fact:itemsDropped": false,
+        "fact:misfires:MachineA": false,
+        "fact:misfires:MachineB": false
+      }
+    },
+    {
+      "kind": "EVENTUALLY",
+      "fromMs": 0,
+      "withinMs": 80000,
+      "condition": {
+        "fact:produced:MachineA": true,
+        "fact:produced:MachineB": true,
+        "fact:delivered:LidBin": true,
+        "fact:delivered:BaseBin": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 80000,
+      "condition": {
+        "ProductionLine.Green": true
+      }
+    }
+  ]
+}

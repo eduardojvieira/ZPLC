@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-three-level-lifts",
+  "version": 1,
+  "order": 171,
+  "module": 17,
+  "level": "advanced",
+  "prerequisites": ["plant-buffer-release"],
+  "languages": ["SFC"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The chart drives two lifts and a transfer belt between them; a learner board has no lifts, and the scene supplies them.",
+        "es": "El diagrama maneja dos elevadores y una banda de transferencia entre ellos; una placa del estudiante no tiene elevadores, y la escena los aporta."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus cajas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "three-level-lifts",
+  "estimatedMinutes": 50,
+  "starter": {
+    "project": "plant_three_level_lifts_starter",
+    "program": "src/ThreeLevelLifts.sfc.json"
+  },
+  "solution": {
+    "project": "plant_three_level_lifts",
+    "program": "src/ThreeLevelLifts.sfc.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "three-level-lifts",
+    "path": "tests/three-level-lifts.scenario.json",
+    "sha256": "297551e51c60a94d09cf633ea7e09a56745856c58d064b8325afbd6681a83d20"
+  },
+  "regressionScenarios": []
+}

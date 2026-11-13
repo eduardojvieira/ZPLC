@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "id": "estop-interlocks",
+  "tickMs": 10,
+  "durationMs": 95000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      {
+        "atMs": 200,
+        "operate": {
+          "signal": "StartButton.pressed",
+          "value": true
+        }
+      },
+      {
+        "atMs": 400,
+        "operate": {
+          "signal": "StartButton.pressed",
+          "value": false
+        }
+      },
+      {
+        "atMs": 15500,
+        "operate": {
+          "signal": "EStop1.pressed",
+          "value": true
+        }
+      },
+      {
+        "atMs": 17000,
+        "operate": {
+          "signal": "EStop1.pressed",
+          "value": false
+        }
+      },
+      {
+        "atMs": 17500,
+        "operate": {
+          "signal": "StartButton.pressed",
+          "value": true
+        }
+      },
+      {
+        "atMs": 17700,
+        "operate": {
+          "signal": "StartButton.pressed",
+          "value": false
+        }
+      }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    {
+      "kind": "ALWAYS",
+      "condition": {
+        "fact:itemsDropped": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 16000,
+      "condition": {
+        "ThreeLevelLifts.Red": true,
+        "ThreeLevelLifts.RunInfeed": false,
+        "ThreeLevelLifts.RunTransfer": false,
+        "ThreeLevelLifts.RunOutfeed": false,
+        "ThreeLevelLifts.ARun": false,
+        "ThreeLevelLifts.AUp": false,
+        "ThreeLevelLifts.ADown": false,
+        "ThreeLevelLifts.BRun": false,
+        "ThreeLevelLifts.BUp": false,
+        "ThreeLevelLifts.BDown": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 17300,
+      "condition": {
+        "ThreeLevelLifts.Red": true,
+        "ThreeLevelLifts.RunOutfeed": false
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 18000,
+      "condition": {
+        "ThreeLevelLifts.Red": false
+      }
+    },
+    {
+      "kind": "EVENTUALLY",
+      "fromMs": 0,
+      "withinMs": 95000,
+      "condition": {
+        "fact:delivered:TopBin": true
+      }
+    },
+    {
+      "kind": "AT",
+      "atMs": 95000,
+      "condition": {
+        "ThreeLevelLifts.Green": true
+      }
+    }
+  ]
+}

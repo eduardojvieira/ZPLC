@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-production-line",
+  "version": 1,
+  "order": 174,
+  "module": 17,
+  "level": "advanced",
+  "prerequisites": ["function-block-pump-pair", "plant-lift-stacking"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The line needs two machining centres of different speeds and a diverter arm; a learner board has none of them, and the scene supplies them.",
+        "es": "La línea necesita dos centros de mecanizado de distinta velocidad y un brazo desviador; una placa del estudiante no tiene ninguno, y la escena los aporta."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus cajas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "balanced-production-line",
+  "estimatedMinutes": 50,
+  "starter": {
+    "project": "plant_production_line_starter",
+    "program": "src/ProductionLine.st"
+  },
+  "solution": {
+    "project": "plant_production_line",
+    "program": "src/ProductionLine.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "balanced-production-line",
+    "path": "tests/balanced-production-line.scenario.json",
+    "sha256": "9e749979a1dac38e4021c00b27bcac3cfef43db793d3e98127a8d7f0f8480c59"
+  },
+  "regressionScenarios": []
+}

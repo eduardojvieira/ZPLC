@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Almacenar y recuperar",
+  "summary": "Maneje un transelevador desde un diagrama: almacene cada caja en la primera celda libre y traiga una caja de vuelta cuando se pulse su botón de petición.",
+  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "objectives": [
+    "Escribir las secuencias de almacenar y de recuperar de un transelevador como cadenas de pasos.",
+    "Llevar una tabla de celdas ocupadas y las peticiones que esperan, y elegir el trabajo siguiente a partir de ellas."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/Warehouse.sfc.json, añada la cadena de recuperar de R_PICK a R_FINISH: saque la caja de la celda pedida, llévela al muelle y póngala en la banda de salida.",
+      "checkpoint": "El paso IDLE es el único lugar donde se elige el trabajo siguiente: una caja en la entrada se almacena, una petición que espera por una celda con caja se recupera."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "Antes de ejecutar, siga el transelevador: toma la caja con la horquilla, la retrae, se mueve a la celda, extiende, baja la horquilla y la retrae otra vez; para recuperar, invierte la secuencia y entrega la caja en el muelle.",
+      "checkpoint": "El transelevador se mueve solo con la horquilla retraída, cada movimiento espera 0,3 s antes de fiarse de InPos, y Green se enciende cuando dos cajas han salido por la banda de salida."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial almacena cajas pero no tiene pasos de recuperar, así que una petición nunca se atiende; añada la cadena que saca la caja de su celda, la lleva al muelle y la pone en la banda de salida, y deje que IDLE la inicie cuando una petición espere por una celda con caja.",
+      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario stacker-crane-warehouse; observe la vista 3D mientras se ejecuta.",
+      "checkpoint": "El escenario requerido se llama stacker-crane-warehouse y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Observe la horquilla en la vista 3D y lea stored: y blocked: en el texto de hechos; blocked se mantiene en cero.",
+      "checkpoint": "stored cuenta las cajas en reposo en la estantería, y blocked se mantiene en cero porque el transelevador nunca se mueve con la horquilla extendida."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "Las aserciones EVENTUALLY prueban que las celdas 1 y 2 tuvieron una caja y que una caja llegó al depósito de salida; la aserción ALWAYS prueba que ningún movimiento fue rechazado y que nada cayó.",
+      "checkpoint": "La calificación no puede ver de qué celda salió una caja ni el orden de los trabajos; ve las celdas, el depósito y Green. No establece la velocidad física del transelevador, la temporización de hardware, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Elija la celda en una acción P1, que corre una vez al entrar al paso; Bay y Level pueden fijarse en la misma acción y conservan su valor."
+    },
+    {
+      "level": 2,
+      "text": "Espere el tiempo de paso de 0,3 s y InPos antes de extender la horquilla, y cambie Bay o Level solo en un paso donde la horquilla esté retraída."
+    }
+  ],
+  "faultCases": [
+    "El inicial almacena cajas pero no tiene pasos de recuperar, así que una petición nunca se atiende; añada la cadena que saca la caja de su celda, la lleva al muelle y la pone en la banda de salida, y deje que IDLE la inicie cuando una petición espere por una celda con caja."
+  ]
+}
