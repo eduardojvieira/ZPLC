@@ -64,4 +64,22 @@ describe('PRT-002 parts reference generated from the part definitions', () => {
       for (const other of body.matchAll(/^## (.+)$/gm)) if (other[1] !== titles[lang]) expect(other.index!).toBeLessThan(at);
     }
   });
+
+  it('PRT-002 the reference lists the equations, the signal ranges and the variants of every process part', () => {
+    const tank = PARTS.find((p) => p.id === 'tank')!;
+    expect(tank).toBeDefined();
+    for (const lang of LANGS) {
+      const body = partsBody(PARTS, lang);
+      expect(body).toContain(tank.equations![lang].split('\n')[0]!.slice(0, 20));
+      expect(body).toContain('| `level` | sensor | REAL | m |');
+      expect(body).toContain(lang === 'es' ? '0 a 1' : '0 to 1');
+      const display = PARTS.find((p) => p.id === 'numeric-display')!;
+      expect(display.names[lang]).toBeTruthy();
+      expect(body).toContain('| `type` | `INT` |');
+      expect(body).toContain('| `output` | `integer` |');
+    }
+    for (const id of ['selector-switch', 'emergency-stop', 'potentiometer', 'stack-light', 'numeric-display']) {
+      expect(PARTS.map((p) => p.id)).toContain(id);
+    }
+  });
 });
