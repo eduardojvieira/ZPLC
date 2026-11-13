@@ -1,0 +1,13 @@
+FUNCTION Keep : SINT
+VAR_INPUT
+  a : SINT;
+END_VAR
+  Keep := a;
+END_FUNCTION
+
+PROGRAM Overflow
+VAR
+  x : SINT;
+END_VAR
+  x := Keep(300);
+END_PROGRAM

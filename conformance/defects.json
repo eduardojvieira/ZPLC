@@ -27,7 +27,7 @@
       "severity": "Blocker",
       "defect": "Unknown type names get size 0.",
       "fixedBy": ["CMP-003"],
-      "cases": ["cmp/cmp-003-unknown-type-name", "cmp/cmp-003-char-is-rejected"]
+      "cases": ["cmp/cmp-003-unknown-type-name", "cmp/cmp-003-char-is-rejected", "cmp/cmp-003-unknown-type-in-a-function-parameter"]
     },
     {
       "id": "CMP-D01e",
@@ -38,7 +38,8 @@
         "cmp/cmp-004-identifier-case-insensitive",
         "cmp/cmp-004-type-name-case-insensitive",
         "cmp/cmp-004-lowercase-direct-address",
-        "cmp/cmp-004-user-names-case-insensitive"
+        "cmp/cmp-004-user-names-case-insensitive",
+        "cmp/cmp-004-lowercase-output-member"
       ]
     },
     {

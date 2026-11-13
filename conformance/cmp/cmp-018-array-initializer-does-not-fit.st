@@ -1,0 +1,5 @@
+PROGRAM Overflow
+VAR
+  items : ARRAY[0..1] OF SINT := [1, 300];
+END_VAR
+END_PROGRAM

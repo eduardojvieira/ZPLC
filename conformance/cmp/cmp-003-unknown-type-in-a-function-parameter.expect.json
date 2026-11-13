@@ -1,0 +1,8 @@
+{
+  "requirement": "CMP-003",
+  "title": "an unknown type name in a function parameter is rejected",
+  "build": "fails",
+  "lines": [3],
+  "codes": ["UNKNOWN_TYPE"],
+  "messageIncludes": ["Widget"]
+}

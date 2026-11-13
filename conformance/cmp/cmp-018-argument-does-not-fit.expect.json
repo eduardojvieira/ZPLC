@@ -1,0 +1,9 @@
+{
+  "requirement": "CMP-018",
+  "title": "a constant argument that does not fit its parameter type is rejected",
+  "matrix": ["data-types.sint-int"],
+  "build": "fails",
+  "lines": [12],
+  "codes": ["CONSTANT_OUT_OF_RANGE"],
+  "messageIncludes": ["300", "SINT"]
+}
