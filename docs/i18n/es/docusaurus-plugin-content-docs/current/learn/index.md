@@ -31,6 +31,10 @@ Cada lección de la ruta abre con una **página de lectura**. La página cubre e
 
 Cuando esté listo, elija **Practicar**: la página se cierra y el panel de la lección se abre junto al editor. **Volver a leer** devuelve la página. La ruta también está en el inicio de Aprender, con cuántas de sus lecciones ha aprobado y un botón para continuar donde se quedó.
 
+## Las rutas de planta
+
+Otras dos rutas siguen las lecciones de planta de los módulos 12 a 19: _Texto estructurado con plantas simuladas_ y _Diagrama de escalera con plantas simuladas_. Cada ruta lleva cada lección solo en su propio lenguaje: una lección que viene en dos lenguajes aparece una vez en cada ruta, en el lenguaje de esa ruta, y las lecciones que son solo FBD, SFC o IL quedan en sus módulos. En una ruta, una lección se abre cuando se aprueba la anterior. En el curso completo, aprobar cualquiera de las dos versiones de una lección en dos lenguajes abre lo que sigue.
+
 ## Tome el curso
 
 1. En la pantalla de bienvenida elija **Aprender**. Se abre el inicio de Aprender, sin proyecto y sin red, y enumera los módulos en orden con su nivel, lo que requiere cada uno y cuánto dura.

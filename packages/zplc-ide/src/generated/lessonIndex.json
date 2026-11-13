@@ -21032,7 +21032,7 @@
           ]
         },
         "es": {
-          "title": "Mover una caja hasta un sensor en Ladder",
+          "title": "Mover una caja hasta un sensor en diagrama de escalera",
           "summary": "Arranque una banda con un botón mediante una bobina de activación y deténgala con una bobina de borrado cuando una caja llegue al sensor del extremo.",
           "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
           "objectives": [
@@ -21227,7 +21227,7 @@
           ]
         },
         "es": {
-          "title": "Del sensor A al sensor B en Ladder",
+          "title": "Del sensor A al sensor B en diagrama de escalera",
           "summary": "Secuencie un movimiento con una bobina de activación y una de borrado: haga correr la banda desde el sensor A hasta que la caja llegue al sensor B.",
           "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
           "objectives": [
@@ -21438,7 +21438,7 @@
           ]
         },
         "es": {
-          "title": "Cargar y descargar tres cajas en Ladder",
+          "title": "Cargar y descargar tres cajas en diagrama de escalera",
           "summary": "Cuente cajas con dos bloques CTU para ejecutar un lote fijo: cargue tres, descargue tres y encienda Done.",
           "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
           "objectives": [
@@ -21663,7 +21663,7 @@
           ]
         },
         "es": {
-          "title": "Llenar y vaciar con temporizadores en Ladder",
+          "title": "Llenar y vaciar con temporizadores en diagrama de escalera",
           "summary": "Ejecute un ciclo de llenado, retención y vaciado de un tanque con bloques TON en peldaños, un arranque de panel y una parada de emergencia.",
           "scope": "La calificación es una ejecución sin interfaz del tanque simulado en el entorno de ejecución POSIX nativo. No establece el comportamiento de un tanque, una válvula o un sensor reales, la temporización en hardware, HIL ni la certificación.",
           "objectives": [
@@ -21921,7 +21921,7 @@
           ]
         },
         "es": {
-          "title": "Leer el nivel en Ladder",
+          "title": "Leer el nivel en diagrama de escalera",
           "summary": "Escale con cuadros de función el nivel crudo de un tanque, un número entero de 0 a 27648, a metros, y úselo para mantener el nivel cerca de un valor de consigna con una entrada proporcional.",
           "scope": "La calificación es una ejecución sin interfaz del tanque simulado en el entorno de ejecución POSIX nativo, con un nivel analógico que sigue las reglas de escala del mapa de la planta. No establece la exactitud, el ruido ni la calibración de un transmisor de nivel real, la temporización en hardware, HIL ni la certificación.",
           "objectives": [
@@ -22162,7 +22162,7 @@
           ]
         },
         "es": {
-          "title": "Fusionar dos líneas en Ladder",
+          "title": "Fusionar dos líneas en diagrama de escalera",
           "summary": "Arbitre con peldaños de enclavamiento dos alimentadores que comparten una salida: dé prioridad a la línea A, deje pasar una caja a la vez y bloquee entre sí las dos cuchillas.",
           "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
           "objectives": [
@@ -23793,7 +23793,7 @@
             {
               "key": "objective",
               "title": "Objetivo",
-              "body": "En src/ManualAuto.ld.json, el ciclo automático ya está escrito. En el editor Ladder, añada el modo como peldaños: una memoria Auto que cambia con ModeBtn, salidas de avance que siguen a JogXPlus, JogXMinus, JogYPlus y JogYMinus en manual, y un Start que cuenta solo en automático.",
+              "body": "En src/ManualAuto.ld.json, el ciclo automático ya está escrito. En el editor de diagrama de escalera, añada el modo como peldaños: una memoria Auto que cambia con ModeBtn, salidas de avance que siguen a JogXPlus, JogXMinus, JogYPlus y JogYMinus en manual, y un Start que cuenta solo en automático.",
               "checkpoint": "Auto empieza en FALSE (manual); cada salida del brazo es el ciclo en automático y el avance en manual, nunca los dos."
             },
             {
@@ -24707,6 +24707,79 @@
           "ld-diagnosis-debugger",
           "ld-final-project",
           "one-logic-five-languages"
+        ]
+      },
+      {
+        "id": "plant-st",
+        "language": "ST",
+        "title": {
+          "en": "Structured Text on simulated plants",
+          "es": "Texto estructurado con plantas simuladas"
+        },
+        "summary": {
+          "en": "The plant lessons of modules 12 to 19 in Structured Text: from a box and a sensor on a belt to a production line, an operator panel and a scene you build yourself.",
+          "es": "Las lecciones de planta de los módulos 12 a 19 en texto estructurado: desde una caja y un sensor en una banda hasta una línea de producción, un panel de operador y una escena que usted mismo construye."
+        },
+        "rationale": {
+          "en": "Each lesson runs your program against a 3D machine in simulation and grades what the machine did, not only the outputs. The path follows the modules in order, so each machine adds one idea to the one before: sensors, timers, analog values, sequences, sorting, coordination, interlocks, manual and automatic modes and, at the end, building the scene. The lessons in FBD, SFC or IL stay in their modules of the full course.",
+          "es": "Cada lección ejecuta su programa contra una máquina 3D en simulación y califica lo que hizo la máquina, no solo las salidas. El camino sigue los módulos en orden, así que cada máquina suma una idea a la anterior: sensores, temporizadores, valores analógicos, secuencias, clasificación, coordinación, enclavamientos, modos manual y automático y, al final, la construcción de la escena. Las lecciones en FBD, SFC o IL quedan en sus módulos del curso completo."
+        },
+        "lessons": [
+          "plant-belt-to-sensor",
+          "plant-latch-two-sensors",
+          "plant-counted-queue",
+          "plant-timed-tank",
+          "plant-tank-level-scaling",
+          "plant-tank-pid",
+          "plant-merge-lines",
+          "plant-belt-transfer",
+          "plant-assembler-numeric",
+          "plant-layer-palletizer",
+          "plant-xyz-palletizing",
+          "plant-colour-separation",
+          "plant-weight-sorting",
+          "plant-height-chain",
+          "plant-height-turntable",
+          "plant-vision-sorting",
+          "plant-lift-stacking",
+          "plant-production-line",
+          "plant-estop-interlocks",
+          "plant-manual-auto",
+          "plant-fault-actions",
+          "plant-build-belt-scene",
+          "plant-change-scene"
+        ]
+      },
+      {
+        "id": "plant-ld",
+        "language": "LD",
+        "title": {
+          "en": "Ladder diagram on simulated plants",
+          "es": "Diagrama de escalera con plantas simuladas"
+        },
+        "summary": {
+          "en": "The Ladder versions of the plant lessons: the same machines and the same graded scenarios as the Structured Text lessons, written as rungs.",
+          "es": "Las versiones en escalera de las lecciones de planta: las mismas máquinas y los mismos escenarios calificados que las lecciones en texto estructurado, escritos como peldaños."
+        },
+        "rationale": {
+          "en": "The plant lessons that come in two languages are here in their Ladder version, in course order, for someone who finished the Ladder path or works in Ladder at the plant. Passing a Ladder lesson also opens what follows it in the full course, as its Structured Text twin would.",
+          "es": "Las lecciones de planta que vienen en dos lenguajes están aquí en su versión en escalera, en el orden del curso, para quien terminó el camino de escalera o trabaja en escalera en la planta. Aprobar una lección en escalera también abre lo que sigue en el curso completo, como lo haría su gemela en texto estructurado."
+        },
+        "lessons": [
+          "plant-belt-to-sensor-ladder",
+          "plant-latch-two-sensors-ladder",
+          "plant-counted-queue-ladder",
+          "plant-timed-tank-ladder",
+          "plant-tank-level-scaling-ladder",
+          "plant-merge-lines-ladder",
+          "plant-belt-transfer-ladder",
+          "plant-colour-separation-ladder",
+          "plant-weight-sorting-ladder",
+          "plant-height-chain-ladder",
+          "plant-estop-interlocks-ladder",
+          "plant-manual-auto-ladder",
+          "plant-build-belt-scene-ladder",
+          "plant-change-scene-ladder"
         ]
       }
     ]
