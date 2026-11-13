@@ -5,6 +5,9 @@ const TOTALS = ['itemsEmitted', 'itemsRemoved', 'itemsDropped', 'itemsCollided']
 // Continuous measurements of a tank or an axis: whole numbers only by chance, so they are never a change of situation. The tank is told
 // by its level band and `spilling` below.
 const CONTINUOUS = ['level:', 'volume:', 'spilledL:', 'axis:'];
+// The support facts (K5) are told in words and stay silent at 0, so a scene that assembles or stacks nothing reads as it did before them.
+const SUPPORT = /^(itemsAssembled|stacked:pallet:\d+|layers:pallet:\d+)$/;
+const kindOf = (k: string) => (k.startsWith('layers:pallet:') ? 'layers' : '');
 const m = (n: number) => String(Math.round(n * 10) / 10);
 
 /**
@@ -16,12 +19,26 @@ export function describePlant(snapshot: PlantSnapshot, scene: PlantSceneFile, lo
   const parts = [t('plant.text.summary', { scene: scene.name, count: snapshot.items.length })];
   // position:<kind>:<index> facts are positions, never part of a change of situation.
   const facts = Object.entries(snapshot.facts).filter(
-    ([k, v]) => !k.startsWith('position:') && !CONTINUOUS.some((c) => k.startsWith(c)) && (typeof v !== 'number' || Number.isInteger(v)),
+    ([k, v]) =>
+      !k.startsWith('position:') &&
+      !CONTINUOUS.some((c) => k.startsWith(c)) &&
+      (typeof v !== 'number' || Number.isInteger(v)) &&
+      !(SUPPORT.test(k) && v === 0),
   );
   for (const n of TOTALS)
     if (typeof snapshot.facts[n] === 'number') parts.push(t(`plant.text.${n}`, { count: snapshot.facts[n] as number }));
   for (const [k, v] of facts) {
-    if ((TOTALS as readonly string[]).includes(k)) continue;
+    if ((TOTALS as readonly string[]).includes(k) || kindOf(k) === 'layers') continue;
+    const pallet = /^stacked:pallet:(\d+)$/.exec(k);
+    if (k === 'itemsAssembled') {
+      parts.push(t('plant.text.itemsAssembled', { count: String(v) }));
+      continue;
+    }
+    if (pallet) {
+      const layers = snapshot.facts[`layers:pallet:${pallet[1]}`] ?? 0;
+      parts.push(t('plant.text.pallet', { number: String(Number(pallet[1]) + 1), boxes: String(v), layers: String(layers) }));
+      continue;
+    }
     const [kind, name] = [k.slice(0, k.indexOf(':')), k.slice(k.indexOf(':') + 1)];
     if (kind === 'delivered' && k.includes(':')) parts.push(t('plant.text.delivered', { name, count: String(v) }));
     else if (kind === 'count' && k.includes(':')) parts.push(t('plant.text.count', { name, count: String(v) }));

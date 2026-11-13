@@ -133,3 +133,31 @@ describe('describePlant over the real tank', () => {
     expect(changes(slow.map((x) => x.key))).toBe(0);
   });
 });
+
+describe('describePlant support facts', () => {
+  const withFacts = (extra: Record<string, number>): PlantSnapshot => {
+    const base = snap(1, 2);
+    return { ...base, facts: { ...base.facts, ...extra } };
+  };
+  const zero = { itemsAssembled: 0, 'stacked:pallet:0': 0, 'layers:pallet:0': 0 };
+
+  it('VIS-008 support facts at zero leave the text and the announcement key exactly as without them', () => {
+    for (const locale of ['en', 'es'] as const) {
+      expect(describePlant(withFacts(zero), scene, locale)).toEqual(describePlant(snap(1, 2), scene, locale));
+    }
+    expect(describePlant(withFacts(zero), scene, 'en').text).not.toContain('itemsAssembled');
+  });
+
+  it('VIS-011 a stacked pallet reads as a sentence in English and Spanish, numbered from 1, never as its raw key', () => {
+    const facts = withFacts({ 'stacked:pallet:0': 8, 'layers:pallet:0': 2 });
+    expect(describePlant(facts, scene, 'en').text).toContain('Pallet 1: 8 boxes in 2 layers.');
+    expect(describePlant(facts, scene, 'es').text).toContain('Tarima 1: 8 cajas en 2 capas.');
+    for (const locale of ['en', 'es'] as const) expect(describePlant(facts, scene, locale).text).not.toMatch(/pallet:|layers:/);
+    expect(describePlant(facts, scene, 'en').key).not.toBe(describePlant(withFacts(zero), scene, 'en').key);
+  });
+
+  it('VIS-011 items assembled reads as a sentence when above 0', () => {
+    expect(describePlant(withFacts({ itemsAssembled: 2 }), scene, 'en').text).toContain('Items assembled: 2.');
+    expect(describePlant(withFacts({ itemsAssembled: 2 }), scene, 'es').text).toContain('Piezas ensambladas: 2.');
+  });
+});
