@@ -8,12 +8,16 @@ import {
   type PlantSignal,
   type SignalRange,
 } from '../../plants/plantMap';
+import { validateScaling } from '../scaling';
 import type { ProblemAt } from './validate';
 
 export interface MapEditor {
   map(): PlantMapV2;
-  /** `range` is the scaling of an INT or REAL signal; it is never invented. Returns a problem when the point is not `Program.Name`. */
-  bind(signal: string, point: string, range?: SignalRange): ProblemAt | null;
+  /**
+   * `range` is the scaling of an INT or REAL signal; it is never invented. `type` is the type of the program variable (default:
+   * the part signal's; BOOL signals ignore it). Returns a problem when the point is not `Program.Name`.
+   */
+  bind(signal: string, point: string, range?: SignalRange, type?: 'INT' | 'REAL'): ProblemAt | null;
   unbind(signal: string): void;
   /** Unbound signals, unknown points, type mismatches and missing scalings, each located at its signal. */
   check(ioMap: IoMap): ProblemAt[];
@@ -29,6 +33,7 @@ const at = (signal: string, message: string): ProblemAt => ({ partId: null, path
 interface Binding {
   point: string;
   range?: SignalRange;
+  type?: 'INT' | 'REAL';
 }
 
 /** Binds the signals a scene declares to program points, only ever by an explicit call (LNK-002). */
@@ -43,19 +48,18 @@ export function createMapEditor(signals: readonly PlantSignalDef[], scene: strin
       signals.flatMap((s) => {
         const b = bindings.get(s.name);
         if (!b) return [];
-        return [
-          [s.name, { direction: s.direction, type: s.type, point: b.point, ...(s.type !== 'BOOL' && b.range ? { range: b.range } : {}) }],
-        ];
+        const type = s.type === 'BOOL' ? 'BOOL' : (b.type ?? s.type);
+        return [[s.name, { direction: s.direction, type, point: b.point, ...(s.type !== 'BOOL' && b.range ? { range: b.range } : {}) }]];
       }),
     ),
   });
 
   return {
     map,
-    bind(signal, point, range) {
+    bind(signal, point, range, type) {
       if (!def(signal)) return at(signal, `${signal} is not a signal of this scene`);
       if (!POINT.test(point)) return at(signal, `${signal}: the point must be "Program.Name", not "${point}"`);
-      bindings.set(signal, { point, ...(range ? { range } : {}) });
+      bindings.set(signal, { point, ...(range ? { range } : {}), ...(type ? { type } : {}) });
       return null;
     },
     unbind: (signal) => void bindings.delete(signal),
@@ -69,19 +73,24 @@ export function createMapEditor(signals: readonly PlantSignalDef[], scene: strin
           problems.push(at(s.name, `${s.name}: the ${s.direction} signal is not bound to a program point`));
           continue;
         }
-        const found = (s.direction === 'command' ? ioMap.outputs : ioMap.inputs).find((p) => p.path === b.point);
+        // resolvePlantMap compares the program variable with the map's type (exact INT or REAL), the part's type is validateScaling's.
         const own = resolved.find((m) => m.startsWith(`${s.name}: `));
         if (own) problems.push(at(s.name, own));
-        else if (found && found.type !== s.type)
-          problems.push(at(s.name, `${s.name}: ${b.point} is ${found.type}, the signal is ${s.type}`));
+        const entry = map().signals[s.name];
         if (s.type !== 'BOOL' && !b.range) problems.push(at(s.name, `${s.name}: an ${s.type} signal needs its scaling range`));
+        // ponytail: a part signal with no range is not reported (M1 test fixtures have none); the shipped parts all declare one.
+        else if (entry && s.range) for (const m of validateScaling(s, { name: s.name, ...entry })) problems.push(at(s.name, m));
       }
       return problems;
     },
     load(loaded) {
       bindings.clear();
       for (const s of normalizePlantMap(loaded).signals as PlantSignal[])
-        bindings.set(s.name, { point: s.point, ...(s.range ? { range: s.range } : {}) });
+        bindings.set(s.name, {
+          point: s.point,
+          ...(s.range ? { range: s.range } : {}),
+          ...(s.type !== 'BOOL' ? { type: s.type } : {}),
+        });
     },
   };
 }

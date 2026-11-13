@@ -136,9 +136,9 @@ export function EditorPanel({ editor, mapEditor, stopped, catalogue = shipped, o
         bindings={bindings}
         problems={notes}
         disabled={!stopped}
-        onBind={(signal, point, range?: SignalRange) =>
+        onBind={(signal, point, range?: SignalRange, type?: 'INT' | 'REAL') =>
           act(() => {
-            const problem = current.bind(signal, point, range);
+            const problem = current.bind(signal, point, range, type);
             return problem ? [problem] : [];
           })
         }
