@@ -34,6 +34,22 @@ export interface PhysicsWorld {
   step(ms: number): void;
   /** Id of the nearest moving body crossing the segment, or null. */
   rayHit(from: Vec3, to: Vec3): string | null;
+  has(id: string): boolean;
+  /** Ids of dynamic and kinematic bodies whose centre lies inside the box, in CREATION order (never the broad-phase order). */
+  bodiesInBox(min: Vec3, max: Vec3): readonly string[];
+  /**
+   * Vertical distance from the lowest face of body `id` to the highest surface under its centre (any layer, itself excluded), in m;
+   * Infinity if none.
+   */
+  gapBelow(id: string): number;
+  /**
+   * Fixes `itemId` to `anchorId` at their current relative pose (Jolt FixedConstraint) and activates the item. Throws a located Error for
+   * an unknown id or an item already attached.
+   */
+  attach(anchorId: string, itemId: string): void;
+  /** Releases the item; it keeps its velocity and is activated. A no-op when it is not attached. */
+  detach(itemId: string): void;
+  attachedTo(itemId: string): string | null;
   /** Dynamic and kinematic bodies, in creation order. */
   bodies(): readonly { id: string; p: Vec3; q: Quat; v: Vec3; asleep: boolean }[];
   /** Exact Jolt state (PLT-012). `restore` needs the same set of bodies, created in the same order. */
@@ -46,6 +62,8 @@ const NON_MOVING = 0;
 const MOVING = 1;
 // Open Industry Project uses the same margin for the cargo wake box.
 const WAKE_MARGIN = 0.05;
+// Longest downward cast of `gapBelow`; a body higher than this above any surface reports Infinity.
+const GAP_RANGE_M = 100;
 
 export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): PhysicsWorld {
   const settings = new Jolt.JoltSettings();
@@ -79,6 +97,11 @@ export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): P
     speed: number;
     wake: InstanceType<typeof Jolt.AABox>;
   }
+  interface Attachment {
+    anchorId: string;
+    constraint: InstanceType<typeof Jolt.Constraint>;
+  }
+  const attachments = new Map<string, Attachment>(); // item id -> attachment, in attach order
   const entries = new Map<string, Entry>(); // Map keeps insertion order: creation order
   const idByKey = new Map<number, string>();
   const belts = new Map<string, Belt>();
@@ -92,6 +115,9 @@ export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): P
 
   const movingBp = new Jolt.SpecifiedBroadPhaseLayerFilter(bpMoving);
   const movingObj = new Jolt.SpecifiedObjectLayerFilter(MOVING);
+  // The base filter classes accept every layer: queries that must see the static layer too (`gapBelow`, `bodiesInBox`).
+  const anyBp = new Jolt.BroadPhaseLayerFilter();
+  const anyObj = new Jolt.ObjectLayerFilter();
   const bodyFilter = new Jolt.BodyFilter();
   const shapeFilter = new Jolt.ShapeFilter();
 
@@ -121,6 +147,16 @@ export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): P
 
   let timeMs = 0;
   let disposed = false;
+
+  const detach = (itemId: string) => {
+    const a = attachments.get(itemId);
+    if (!a) return;
+    attachments.delete(itemId);
+    // The system holds the only reference: removing the constraint frees it. Never destroy it again.
+    physics.RemoveConstraint(a.constraint);
+    const e = entries.get(itemId);
+    if (e) bodyInterface.ActivateBody(e.body.GetID());
+  };
 
   const world: PhysicsWorld = {
     get timeMs() {
@@ -154,6 +190,8 @@ export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): P
     },
     removeBody(id) {
       const e = entry(id);
+      detach(id);
+      for (const [itemId, a] of [...attachments]) if (a.anchorId === id) detach(itemId);
       bodyInterface.RemoveBody(e.body.GetID());
       bodyInterface.DestroyBody(e.body.GetID());
       entries.delete(id);
@@ -210,6 +248,62 @@ export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): P
       for (const o of [collector, rayCastSettings, ray, origin, dir]) Jolt.destroy(o);
       return hit;
     },
+    has: (id) => entries.has(id),
+    attachedTo: (itemId) => attachments.get(itemId)?.anchorId ?? null,
+    attach(anchorId, itemId) {
+      const anchor = entries.get(anchorId);
+      const item = entries.get(itemId);
+      if (!anchor) throw new Error(`attach: unknown anchor body ${anchorId}`);
+      if (!item) throw new Error(`attach: unknown item body ${itemId}`);
+      if (anchorId === itemId) throw new Error(`attach: ${itemId} cannot be attached to itself`);
+      if (attachments.has(itemId)) throw new Error(`attach: ${itemId} is already attached to ${attachments.get(itemId)!.anchorId}`);
+      const cs = new Jolt.FixedConstraintSettings();
+      cs.mAutoDetectPoint = true;
+      const constraint = cs.Create(anchor.body, item.body);
+      Jolt.destroy(cs);
+      physics.AddConstraint(constraint);
+      attachments.set(itemId, { anchorId, constraint });
+      bodyInterface.ActivateBody(item.body.GetID());
+    },
+    detach,
+    bodiesInBox(min, max) {
+      const lo = new Jolt.Vec3(min[0], min[1], min[2]);
+      const hi = new Jolt.Vec3(max[0], max[1], max[2]);
+      const box = new Jolt.AABox(lo, hi);
+      const hits = new Set<number>();
+      const collector = new Jolt.CollideShapeBodyCollectorJS();
+      collector.Reset = () => {};
+      collector.AddHit = (b: number) => {
+        hits.add(keyOf(Jolt.wrapPointer(b, Jolt.BodyID)));
+      };
+      physics.GetBroadPhaseQuery().CollideAABox(box, collector, anyBp, anyObj);
+      for (const o of [collector, box, lo, hi]) Jolt.destroy(o);
+      const out: string[] = [];
+      for (const [id, e] of entries) {
+        if (e.spec.motion === 'static' || !hits.has(e.key)) continue;
+        const c = e.body.GetPosition();
+        const x = c.GetX();
+        const y = c.GetY();
+        const z = c.GetZ();
+        if (x >= min[0] && x <= max[0] && y >= min[1] && y <= max[1] && z >= min[2] && z <= max[2]) out.push(id);
+      }
+      return out;
+    },
+    gapBelow(id) {
+      const e = entry(id);
+      const bottom = e.body.GetWorldSpaceBounds().mMin.GetY();
+      const c = e.body.GetPosition();
+      const dir = new Jolt.Vec3(0, -GAP_RANGE_M, 0);
+      const origin = new Jolt.RVec3(c.GetX(), bottom, c.GetZ());
+      const ray = new Jolt.RRayCast(origin, dir);
+      const rayCastSettings = new Jolt.RayCastSettings();
+      const collector = new Jolt.CastRayClosestHitCollisionCollector();
+      const self = new Jolt.IgnoreSingleBodyFilter(e.body.GetID());
+      physics.GetNarrowPhaseQuery().CastRay(ray, rayCastSettings, collector, anyBp, anyObj, self, shapeFilter);
+      const gap = collector.HadHit() ? collector.mHit.mFraction * GAP_RANGE_M : Infinity;
+      for (const o of [self, collector, rayCastSettings, ray, origin, dir]) Jolt.destroy(o);
+      return gap;
+    },
     bodies() {
       const out: { id: string; p: Vec3; q: Quat; v: Vec3; asleep: boolean }[] = [];
       for (const [id, { spec, body }] of entries) {
@@ -238,7 +332,12 @@ export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): P
       physics.SaveState(recorder, Jolt.EStateRecorderState_All);
       Jolt.destroy(recorder);
       const head = new TextEncoder().encode(
-        JSON.stringify({ timeMs, ids: [...entries.keys()], belts: [...belts].map(([id, b]) => [id, b.speed, b.target]) }),
+        JSON.stringify({
+          timeMs,
+          ids: [...entries.keys()],
+          attachments: [...attachments].map(([item, a]) => [item, a.anchorId]),
+          belts: [...belts].map(([id, b]) => [id, b.speed, b.target]),
+        }),
       );
       const total = chunks.reduce((n, c) => n + c.length, 0);
       const out = new Uint8Array(4 + head.length + total);
@@ -256,9 +355,14 @@ export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): P
       const head = JSON.parse(new TextDecoder().decode(bytes.subarray(4, 4 + headLen))) as {
         timeMs: number;
         ids: string[];
+        attachments?: [string, string][];
         belts: [string, number, number][];
       };
       if (head.ids.join('\u0000') !== [...entries.keys()].join('\u0000')) throw new Error('capture belongs to a different set of bodies');
+      const held = [...attachments].map(([item, a]) => `${item}>${a.anchorId}`).join('\u0000');
+      if ((head.attachments ?? []).map(([item, anchor]) => `${item}>${anchor}`).join('\u0000') !== held) {
+        throw new Error('capture belongs to a different set of attachments');
+      }
       const data = bytes.subarray(4 + headLen);
       let pos = 0;
       let failed = false;
@@ -288,12 +392,13 @@ export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): P
     dispose() {
       if (disposed) return;
       disposed = true;
+      for (const itemId of [...attachments.keys()]) detach(itemId);
       for (const { body } of entries.values()) {
         bodyInterface.RemoveBody(body.GetID());
         bodyInterface.DestroyBody(body.GetID());
       }
       for (const belt of belts.values()) Jolt.destroy(belt.wake);
-      for (const o of [movingBp, movingObj, bodyFilter, shapeFilter, listener]) Jolt.destroy(o);
+      for (const o of [movingBp, movingObj, anyBp, anyObj, bodyFilter, shapeFilter, listener]) Jolt.destroy(o);
       // Destroying the interface also frees the layer pair filter and the broad-phase interface:
       // destroying those again corrupts the module. Only the BroadPhaseLayer objects are ours.
       Jolt.destroy(jolt);
