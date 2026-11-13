@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-counted-queue-ladder",
+  "version": 1,
+  "order": 1123,
+  "module": 12,
+  "level": "advanced",
+  "prerequisites": ["plant-latch-two-sensors", "edge-counter-pulses"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The two CTU blocks of this lesson count boxes that a simulated emitter and belt supply; a learner board has no boxes to pass the sensor contacts, so the counts could never reach their presets.",
+        "es": "Los dos bloques CTU de esta lección cuentan cajas que aportan un emisor y una banda simulados; una placa del estudiante no tiene cajas que pasen frente a los contactos de los sensores, así que las cuentas nunca llegarían a sus valores preestablecidos."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus cajas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "counted-queue",
+  "estimatedMinutes": 30,
+  "starter": {
+    "project": "plant_counted_queue_ladder_starter",
+    "program": "src/CountedQueue.ld.json"
+  },
+  "solution": {
+    "project": "plant_counted_queue_ladder",
+    "program": "src/CountedQueue.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "counted-queue",
+    "path": "tests/counted-queue.scenario.json",
+    "sha256": "681b439b42a4844d35c84c8f1aed454f59eaaae194982add56de7c36bb91c092"
+  },
+  "regressionScenarios": []
+}

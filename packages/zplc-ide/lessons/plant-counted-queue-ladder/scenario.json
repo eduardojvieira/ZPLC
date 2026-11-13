@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "counted-queue",
+  "tickMs": 10,
+  "durationMs": 20000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      { "atMs": 200, "operate": { "signal": "StartButton.pressed", "value": true } },
+      { "atMs": 400, "operate": { "signal": "StartButton.pressed", "value": false } }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    { "kind": "AT", "atMs": 100, "condition": { "CountedQueue.Run": false, "CountedQueue.Done": false } },
+    { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 20000, "condition": { "fact:delivered:Remover1": true, "fact:itemsEmitted": true } },
+    { "kind": "AT", "atMs": 20000, "condition": { "CountedQueue.Done": true, "CountedQueue.Run": false } },
+    { "kind": "ALWAYS", "condition": { "fact:itemsDropped": false, "fact:itemsCollided": false } }
+  ]
+}

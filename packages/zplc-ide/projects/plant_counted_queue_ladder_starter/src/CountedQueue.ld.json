@@ -1,0 +1,81 @@
+{
+  "name": "CountedQueue",
+  "description": "Load three boxes, unload three boxes, then light Done.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Active",
+        "type": "BOOL",
+        "comment": "Memory: the batch has been started"
+      },
+      {
+        "name": "Loaded",
+        "type": "CTU",
+        "comment": "Counts the boxes loaded at EyeIn"
+      },
+      {
+        "name": "Unloaded",
+        "type": "CTU",
+        "comment": "Counts the boxes unloaded at EyeOut"
+      },
+      {
+        "name": "LoadedQ",
+        "type": "BOOL",
+        "comment": "Loaded.Q: three boxes have been loaded"
+      },
+      {
+        "name": "UnloadedQ",
+        "type": "BOOL",
+        "comment": "Unloaded.Q: three boxes have been unloaded"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "StartButton.pressed: start the batch"
+      },
+      {
+        "name": "EyeIn",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "EyeIn.detect: sees each box that has been loaded"
+      },
+      {
+        "name": "EyeOut",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "EyeOut.detect: sees each box about to be unloaded"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Run",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Belt1.run: run the belt"
+      },
+      {
+        "name": "Emit",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Emitter1.emit: put one box on the belt"
+      },
+      {
+        "name": "Done",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "DoneLight.lit: lit when the batch is finished"
+      }
+    ]
+  },
+  "rungs": [],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
