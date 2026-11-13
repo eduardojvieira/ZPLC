@@ -9,15 +9,20 @@ tags: [plant, scenes]
 
 ZPLC incluye estas escenas, en orden de dificultad. Cada una tiene un archivo de escena, un mapa de la planta, un programa inicial, un escenario y un programa de referencia que pasa el escenario. El escenario corre en el entorno de ejecución nativo con un ciclo de 10 ms y comprueba salidas del programa y hechos de la planta. El nombre de un hecho empieza con `fact:`, como `fact:count:EyeFar`. Una comprobación sobre un hecho es un sí o un no. Los nombres de las escenas son los de sus archivos, en inglés.
 
-| Escena                      | Duración del escenario | Piezas                                                                                                        |
-| --------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `Belt to sensor`            | 8 s                    | cinta, emisor, sensor difuso, pulsador                                                                        |
-| `Latch between two sensors` | 8 s                    | cinta, caja, dos sensores difusos                                                                             |
-| `Timed tank`                | 25 s                   | tanque, pulsador, paro de emergencia, torre de luces                                                          |
-| `Counted queue`             | 20 s                   | cinta, emisor, dos sensores difusos, retirador, pulsador, piloto luminoso                                     |
-| `Buffer and release`        | 36 s                   | dos cintas, emisor, tope retráctil, tres sensores difusos, retirador, dos pulsadores, dos pilotos luminosos   |
-| `Merge two lines`           | 25 s                   | tres cintas, dos emisores, dos topes retráctiles, tres sensores difusos, retirador, pulsador, piloto luminoso |
-| `Tank level control`        | 90 s                   | tanque, dos potenciómetros, indicador numérico, torre de luces                                                |
+| Escena                       | Duración del escenario | Piezas                                                                                                                               |
+| ---------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `Belt to sensor`             | 8 s                    | cinta, emisor, sensor difuso, pulsador                                                                                               |
+| `Latch between two sensors`  | 8 s                    | cinta, caja, dos sensores difusos                                                                                                    |
+| `Timed tank`                 | 25 s                   | tanque, pulsador, paro de emergencia, torre de luces                                                                                 |
+| `Counted queue`              | 20 s                   | cinta, emisor, dos sensores difusos, retirador, pulsador, piloto luminoso                                                            |
+| `Two-axis assembly`          | 40 s                   | tres cintas, dos emisores, dos topes retráctiles, dos sensores difusos, manipulador de dos ejes, retirador, pulsador, torre de luces |
+| `Two-axis assembly, numeric` | 40 s                   | las mismas piezas; el manipulador recibe posiciones numéricas                                                                        |
+| `Buffer and release`         | 36 s                   | dos cintas, emisor, tope retráctil, tres sensores difusos, retirador, dos pulsadores, dos pilotos luminosos                          |
+| `Merge two lines`            | 25 s                   | tres cintas, dos emisores, dos topes retráctiles, tres sensores difusos, retirador, pulsador, piloto luminoso                        |
+| `Tank level control`         | 90 s                   | tanque, dos potenciómetros, indicador numérico, torre de luces                                                                       |
+| `Layer palletizer`           | 60 s                   | cinta, dos emisores, sensor difuso, paletizador de capas, tarima, pulsador, torre de luces                                           |
+| `Transfer between belts`     | 45 s                   | dos cintas, emisor, tope retráctil, dos sensores difusos, manipulador de dos ejes, retirador, pulsador, torre de luces               |
+| `Three-axis palletizing`     | 50 s                   | cinta, emisor, tope retráctil, sensor difuso, pórtico de tres ejes, tarima, pulsador, torre de luces                                 |
 
 ## Belt to sensor
 
@@ -43,6 +48,18 @@ Envíe tres cajas una tras otra y deténgase cuando las tres hayan salido de la 
 
 El escenario comprueba que la cinta y el piloto de fin están apagados antes del inicio, que el retirador recibe una caja y el emisor emite una, que a los 20 s el piloto de fin está encendido y la cinta apagada, y que ninguna caja cae ni choca.
 
+## Two-axis assembly
+
+Ponga una tapa sobre cada base con un manipulador de dos ejes. Las tapas y las bases llegan por dos cintas y esperan en topes retráctiles; la ventosa toma una tapa y la deja centrada sobre una base, y la base armada sale por la cinta de salida.
+
+El escenario pulsa el inicio y comprueba que nada se mueve antes del inicio, que se arma una tapa sobre una base y se entrega un conjunto, que no cae nada y que la luz verde está encendida y todas las órdenes de movimiento apagadas a los 40 s.
+
+## Two-axis assembly, numeric
+
+La misma tarea con la variante numérica: el programa fija las posiciones X e Y del manipulador en metros y lee su posición, en lugar de moverlo hasta los finales de carrera. Consulte [señales numéricas](./numeric-signals.md) y [manipuladores y agarre](./manipulators.md).
+
+El escenario comprueba los mismos resultados que el armado de dos ejes: un conjunto entregado, nada caído y la luz verde encendida a los 40 s.
+
 ## Buffer and release
 
 Cargue cinco cajas en una cinta de almacén, retenga las cajas en un tope retráctil y libere una caja por cada pulsación del botón de liberación. La caja siguiente no debe seguir a la liberada.
@@ -60,6 +77,24 @@ El escenario comprueba que a 1 s ambos topes retienen sin que se retire ninguna 
 Mantenga el nivel de un tanque en un valor de consigna con un lazo PID. La consigna viene de un potenciómetro en metros, un segundo potenciómetro abre la válvula de descarga como perturbación y un indicador numérico muestra el nivel. El nivel y la consigna llegan como valores crudos `INT` y las válvulas reciben porcentajes `REAL`: consulte [señales numéricas](./numeric-signals.md).
 
 El escenario fija la consigna en 0.5 m, abre la descarga al 40 % a los 40 s y baja la consigna a 0.3 m a los 70 s. Comprueba que el nivel se mantiene en la banda de 0.45 m a 0.55 m durante 8 s desde los 30 s y durante 8 s desde los 60 s, que vuelve a la banda en menos de 20 s tras la perturbación, que está fuera de la banda durante 5 s desde los 85 s y que el tanque nunca rebosa.
+
+## Layer palletizer
+
+Forme capas de cuatro cajas con un paletizador de capas y apile tres capas sobre una tarima. El empujador escuadra cada capa contra los topes fijos antes de que la pinza la levante. El cabezal arranca en su posición más baja, así que el programa lo sube antes de que lleguen las cajas.
+
+El escenario pulsa el inicio y comprueba que las cajas se colocan y se apilan en capas sobre la tarima, que no cae nada y que la luz verde está encendida y todas las órdenes apagadas a los 60 s.
+
+## Transfer between belts
+
+Tome cajas de una cinta con un manipulador de dos ejes y déjelas en otra cinta. La cinta que recibe se detiene mientras se deja una caja, porque una caja cuenta como colocada solo cuando queda en reposo.
+
+El escenario pulsa el inicio y comprueba que las cajas se toman, se colocan y se entregan, que no cae nada y que la luz de fin está encendida y todas las órdenes de movimiento apagadas a los 45 s.
+
+## Three-axis palletizing
+
+Coloque cajas sobre una tarima en dos capas con un pórtico de tres ejes que recibe posiciones numéricas. El pórtico sube primero su ventosa, toma cada caja en el tope retráctil y la deja en un lugar de la tarima.
+
+El escenario pulsa el inicio y comprueba que las cajas se colocan y se apilan en capas, que no cae nada y que la luz verde está encendida a los 50 s.
 
 ## Lo que no se afirma
 
