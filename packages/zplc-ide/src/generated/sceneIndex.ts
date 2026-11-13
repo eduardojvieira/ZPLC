@@ -65,5 +65,13 @@ export const SCENE_INDEX: readonly { id: string; dir: string; names: { en: strin
       "en": "Timed tank",
       "es": "Timed tank"
     }
+  },
+  {
+    "id": "two-axis-assembly",
+    "dir": "plant-scenes/two-axis-assembly",
+    "names": {
+      "en": "Two-axis assembly",
+      "es": "Two-axis assembly"
+    }
   }
 ];
