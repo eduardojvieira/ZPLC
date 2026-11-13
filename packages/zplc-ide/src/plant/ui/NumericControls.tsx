@@ -95,6 +95,9 @@ const LAMPS = [
   ['green', 'plant.panel.lampGreen'],
 ] as const;
 
+// A diverter at rest reads one of these; any other text (extended, diverted, raised, left, right) is the active marker.
+const HOME_TEXTS = ['retracted', 'home', 'lowered', 'centre'];
+
 const isManipulator = (id: string) => ['manipulators', 'stations'].includes(catalogue.get(id)?.family ?? '');
 
 /** A readout: a numeric display, a stack light or a tank, as text. */
@@ -105,6 +108,18 @@ export function Readout({ part, view }: Pick<ControlProps, 'part' | 'view'>) {
     return (
       <span data-plant-display={part.name} className="text-sm">
         {t('plant.panel.display', { name: part.name, text: str(view, 'text') })}
+      </span>
+    );
+  if (['light-array', 'scale', 'vision-sensor'].includes(part.part))
+    return (
+      <span data-plant-reading={part.name} className="text-sm">
+        {t('plant.panel.reading', { name: part.name, text: str(view, 'text') })}
+      </span>
+    );
+  if (['pusher', 'diverter-arm', 'chain-transfer', 'turntable'].includes(part.part))
+    return (
+      <span data-plant-diverter={part.name} className="text-sm">
+        {HOME_TEXTS.includes(str(view, 'text')) ? '○' : '▲'} {t('plant.panel.diverter', { name: part.name, text: str(view, 'text') })}
       </span>
     );
   if (isManipulator(part.part))

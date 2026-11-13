@@ -79,6 +79,9 @@ function FaultControl({ part, run, act }: { part: ScenePart; run: (action: () =>
   );
 }
 
+/** The numeric sensors and the diverters of the sorting parts, listed by id: each gets a text readout. */
+const READOUT_IDS = ['light-array', 'scale', 'vision-sensor', 'pusher', 'diverter-arm', 'chain-transfer', 'turntable'];
+
 export function OperatePanel(props: { scene: PlantSceneFile; core: PlantCore; snapshot: PlantSnapshot | undefined; onChange: () => void }) {
   const { scene, core, snapshot, onChange } = props;
   const { t } = useT();
@@ -90,8 +93,9 @@ export function OperatePanel(props: { scene: PlantSceneFile; core: PlantCore; sn
   const viewOf = (part: ScenePart) => snapshot?.parts.find((candidate) => candidate.id === part.id);
   const numeric = scene.parts.filter(
     (part) =>
-      ['potentiometer', 'selector-switch', 'emergency-stop', 'numeric-display', 'stack-light', 'tank'].includes(part.part) ||
-      ['manipulators', 'stations'].includes(catalogue.get(part.part)?.family ?? ''),
+      ['potentiometer', 'selector-switch', 'emergency-stop', 'numeric-display', 'stack-light', 'tank', ...READOUT_IDS].includes(
+        part.part,
+      ) || ['manipulators', 'stations'].includes(catalogue.get(part.part)?.family ?? ''),
   );
   const faulty = scene.parts.filter((part) => (catalogue.get(part.part)?.actions.length ?? 0) > 0);
   const emitter = scene.parts.find((part) => part.part === 'emitter');
