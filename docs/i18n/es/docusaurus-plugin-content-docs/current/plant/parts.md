@@ -76,6 +76,24 @@ Ninguna.
 
 Ninguna.
 
+### Cajón
+
+`crate`
+
+Un cajón abierto y apilable de 0,8 por 0,6 m y 0,25 m de alto, de 4 kg: un piso y cuatro paredes de 0,02 m en un solo cuerpo rígido. Los objetos que caen dentro se quedan, y un segundo cajón se apoya en sus bordes. Un emisor de cajones ignora su opción vary. Su posición es el centro de su cara inferior.
+
+#### Ajustes
+
+Ninguna.
+
+#### Señales
+
+Ninguna.
+
+#### Acciones de falla
+
+Ninguna.
+
 ### Tapa
 
 `lid`
@@ -128,7 +146,7 @@ Emite una pieza en cada flanco de subida de su señal, y por sí solo cada inter
 
 | Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
 | --- | --- | --- | --- | --- |
-| `kind` | enum | `box`, `pallet`, `lid`, `base`, `workpiece` | `box` |   |
+| `kind` | enum | `box`, `pallet`, `lid`, `base`, `workpiece`, `crate` | `box` |   |
 | `vary` | enum | `none`, `colour`, `weight`, `code` | `none` |   |
 | `codes` | number | 1 a 9 | `3` |   |
 | `colour` | enum | `red`, `blue` | `red` |   |
@@ -319,6 +337,39 @@ Una plataforma cuadrada cuya posición es el centro de su superficie superior. G
 
 `stall`, `turnStuck`, `jam`
 
+### Elevador
+
+`lift`
+
+Una plataforma con superficie de cinta que se mueve en vertical entre niveles. Su posición es el centro de la superficie superior en el nivel 1, el más bajo; el nivel K está (K - 1) veces levelPitchM por encima, con 2 a 4 niveles. up en TRUE la sube y down en TRUE la baja a travelSpeedMps con accelMps2; con ambas o ninguna se mantiene, y se detiene en los extremos. La superficie lleva las piezas a lo largo de su propio +x (la derecha es +z): run, y runReverse si se permite el sentido inverso, a speedMps. atLevelK es TRUE a menos de 0,01 m del nivel K cuando la plataforma se mueve a 0,02 m/s o menos. Tiene entrada y salida en cada nivel (in1 a inN, out1 a outN). Los ajustes lengthM y widthM dan el tamaño. No confundir con la transferencia de cadenas, cuya señal lift sube un módulo corto; aquí las órdenes son up y down. La planta no inhibe nada: una plataforma que se mueve con la superficie en marcha puede perder su carga. Hechos: axis\:Nombre\:y, la altura sobre el nivel 1 en metros. Fallas: stuck, stall, levelStuckOff.
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `levels` | number | 2 a 4 | `2` |   |
+| `levelPitchM` | number | 0.3 a 1.5 | `0.6` | m |
+| `lengthM` | number | 0.8 a 1.6 | `1` | m |
+| `widthM` | number | 0.5 a 1 | `0.7` | m |
+| `speedMps` | number | 0.1 a 1 | `0.5` | m/s |
+| `travelSpeedMps` | number | 0.1 a 1 | `0.4` | m/s |
+| `accelMps2` | number | 0.1 a 3 | `0.8` | m/s2 |
+| `allowReverse` | boolean |   | `false` |   |
+
+#### Señales
+
+| Señal | Dirección | Tipo | Unidad | Rango |
+| --- | --- | --- | --- | --- |
+| `up` | command | BOOL |   |   |
+| `down` | command | BOOL |   |   |
+| `run` | command | BOOL |   |   |
+| `atLevel1` | sensor | BOOL |   |   |
+| `atLevel2` | sensor | BOOL |   |   |
+
+#### Acciones de falla
+
+`stuck`, `stall`, `levelStuckOff`
+
 ## Flujo
 
 ### Empujador
@@ -400,6 +451,54 @@ Una placa a través de una cinta en la posición de la pieza (el centro de la su
 #### Acciones de falla
 
 `stuck`
+
+### Alineador
+
+`aligner`
+
+Dos guías a los lados de una cinta, en la posición de la pieza (el centro de la superficie de la cinta), de lengthM de largo. Abiertas, quedan separadas widthM; align en TRUE las cierra a gapM en 0,4 s y al soltarlo se abren de nuevo. Una caja torcida entre las guías queda alineada con el eje de la cinta cuando gapM es cercano a su ancho. Un gapM mayor que widthM cierra a widthM. aligned y open indican los dos límites. Señales: align, aligned, open. Falla: stuck (las guías se quedan donde están).
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `widthM` | number | 0.4 a 1 | `0.7` | m |
+| `gapM` | number | 0.2 a 0.6 | `0.35` | m |
+| `lengthM` | number | 0.2 a 0.8 | `0.4` | m |
+
+#### Señales
+
+| Señal | Dirección | Tipo | Unidad | Rango |
+| --- | --- | --- | --- | --- |
+| `align` | command | BOOL |   |   |
+| `aligned` | sensor | BOOL |   |   |
+| `open` | sensor | BOOL |   |   |
+
+#### Acciones de falla
+
+`stuck`
+
+### Rampa de deslizamiento
+
+`chute`
+
+Una placa fija de lengthM por widthM, inclinada tiltDeg (5 a 35) para que las piezas se deslicen a lo largo de +x, desde la entrada in en el extremo alto hasta la salida out en el extremo bajo. Su posición es el centro de la superficie superior. El rozamiento es bajo (0,2), de modo que la pieza se acelera por gravedad; la placa no tiene bordes y nada frena la pieza. No tiene señales ni fallas.
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `lengthM` | number | 0.4 a 2 | `1` | m |
+| `widthM` | number | 0.4 a 1 | `0.6` | m |
+| `tiltDeg` | number | 5 a 35 | `20` | deg |
+
+#### Señales
+
+Ninguna.
+
+#### Acciones de falla
+
+Ninguna.
 
 ## Sensores
 
@@ -595,6 +694,29 @@ Lee la identidad de la pieza a la vista como un código, no como una imagen. El 
 #### Acciones de falla
 
 `blind`, `misread`
+
+### Final de carrera
+
+`limit-switch`
+
+Una palanca mecánica delante de la pieza. La palanca es una caja de reachM de largo a lo largo de +x, 0,1 m de ancho y heightM de alto, que parte de la posición de la pieza. contact es TRUE mientras el centro de una pieza o paleta está dentro, y el hecho count\:Nombre cuenta cada vez que pasa a TRUE. La palanca no detiene la pieza. Señal: contact. Fallas: stuckOn, stuckOff.
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `reachM` | number | 0.02 a 0.2 | `0.05` | m |
+| `heightM` | number | 0 a 2 | `0.1` | m |
+
+#### Señales
+
+| Señal | Dirección | Tipo | Unidad | Rango |
+| --- | --- | --- | --- | --- |
+| `contact` | sensor | BOOL |   |   |
+
+#### Acciones de falla
+
+`stuckOn`, `stuckOff`
 
 ## Panel
 
@@ -972,6 +1094,81 @@ Una estación que escuadra cajas en una capa, levanta la capa completa con una c
 #### Ecuaciones
 
 Ley del eje por paso de 5 ms con a = accelMps2, v_max = speedMps: v se acerca a la velocidad objetivo en a * dt como máximo; p = p + v * dt, limitado a 0..carrera. Un valor de consigna frena cuando \|d - v * dt\| &lt;= v * v / (2 * a), d = objetivo - p. Empujador: el recorrido t va de 0 a 400 ms; squared cuando t = 400 ms.
+
+### Transelevador
+
+`stacker-crane`
+
+Una grúa que guarda cajas en un estante y las saca de nuevo. Los ejes siguen al mundo: X recorre el pasillo (+x local), Y es el mástil, la horquilla se mueve a lo ancho (z local) y un pequeño eje de elevación la sube 0,06 m. La posición de la pieza es el punto del piso bajo la grúa en la bahía 0. La consigna INT bay (0 a columns) lleva X a bay x bayPitchM y la consigna INT level (0 a levels) lleva Y a level x levelPitchM; inPosition es TRUE cuando ambos están a menos de 5 mm y en reposo. El nivel 0 es el muelle: los niveles 1 en adelante son los estantes. La parte superior de la horquilla está 0,03 m bajo la parte superior del estante del nivel indicado, y 0,03 m sobre ella mientras raise es TRUE (raised). Ponga las cintas del muelle con su superficie a 0,13 m sobre la posición de la pieza, terminando en la punta de la horquilla (puntos de unión dockIn en -z y dockOut en +z). forkLeft extiende la horquilla hacia -z y forkRight hacia +z (mantener para extender, soltar para centrar, ambas la mantienen); forkCentre, forkAtLeft y forkAtRight informan su posición. La superficie de la horquilla es una cinta: beltRight la mueve hacia +z, beltLeft hacia -z (ambas no hacen nada). El estante está del lado +z: la columna c (1 a columns) y el nivel l (1 a levels) son un par de rieles, separados 0,24 m, cuyas partes superiores están a l x levelPitchM + 0,1 m sobre la posición de la pieza; una caja de 0,3 m de ancho (x) y 0,4 m de largo (z) descansa sobre ambos rieles y la horquilla de 0,16 m de ancho pasa entre ellos. Guardar: suba la horquilla cargada, extiéndala a la derecha, bájela y recójala. Retirar: extiéndala baja, súbala y recójala. X e Y se detienen mientras la horquilla está afuera (o la carga supera maxLoadKg), y blocked cuenta cada petición rechazada una vez. La horquilla no choca con el estante: la planta rechaza el movimiento. loaded es TRUE mientras una caja descansa en el centro de la horquilla. Hechos: stored:&lt;Name> cuenta las celdas con una caja en reposo, cell:&lt;Name>:&lt;c>:&lt;l> es TRUE en cada celda ocupada, blocked:&lt;Name> cuenta las peticiones rechazadas y axis:&lt;Name>\:x, \:y y \:z son posiciones en metros (z con signo, 0 en el centro). Fallas: stuckX, stuckY, forkStuck, loadedStuckOff, beltStall. Límites conocidos: un estante, de un solo lado, una caja de fondo; la grúa inicia en la bahía 0, nivel 0, con la horquilla abajo.
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `columns` | number | 1 a 8 | `4` |   |
+| `levels` | number | 1 a 4 | `3` |   |
+| `bayPitchM` | number | 0.7 a 1.5 | `1` | m |
+| `levelPitchM` | number | 0.4 a 1 | `0.6` | m |
+| `forkStrokeM` | number | 0.6 a 1 | `0.8` | m |
+| `speedXMps` | number | 0.2 a 1.5 | `1` | m/s |
+| `speedYMps` | number | 0.2 a 1 | `0.5` | m/s |
+| `forkSpeedMps` | number | 0.1 a 0.8 | `0.4` | m/s |
+| `beltSpeedMps` | number | 0.1 a 0.8 | `0.4` | m/s |
+| `accelMps2` | number | 0.5 a 3 | `1.5` | m/s2 |
+| `maxLoadKg` | number | 5 a 30 | `10` | kg |
+
+#### Señales
+
+| Señal | Dirección | Tipo | Unidad | Rango |
+| --- | --- | --- | --- | --- |
+| `bay` | command | INT | bay | 0 a 4 |
+| `level` | command | INT | level | 0 a 3 |
+| `inPosition` | sensor | BOOL |   |   |
+| `raise` | command | BOOL |   |   |
+| `raised` | sensor | BOOL |   |   |
+| `forkLeft` | command | BOOL |   |   |
+| `forkRight` | command | BOOL |   |   |
+| `forkCentre` | sensor | BOOL |   |   |
+| `forkAtLeft` | sensor | BOOL |   |   |
+| `forkAtRight` | sensor | BOOL |   |   |
+| `beltLeft` | command | BOOL |   |   |
+| `beltRight` | command | BOOL |   |   |
+| `loaded` | sensor | BOOL |   |   |
+
+#### Acciones de falla
+
+`stuckX`, `stuckY`, `forkStuck`, `loadedStuckOff`, `beltStall`
+
+### Centro de mecanizado
+
+`machining-centre`
+
+Una estación que convierte una pieza en una tapa o en una base. Su posición es el centro de la superficie superior de su cinta integrada, que corre a lo largo de +x mientras feed es TRUE; la cámara mide lengthM por widthM, con una puerta en cada extremo que sube en 0,4 s. Una pieza en bruto es una pieza (un elemento con color y sin etiqueta; las cajas, las tapas y las bases no lo son). ready es TRUE cuando exactamente una pieza en bruto está en reposo en la cámara y nada más lo está, así que detenga primero la cinta. Un flanco ascendente de start con ready cierra las puertas e inicia un ciclo de cycleMs: la cinta se detiene y busy es TRUE. Al final del ciclo la pieza en bruto se retira y un producto (una tapa o una base, según product, 1 kg) aparece en su lugar en el centro de la cámara en el mismo paso, las puertas bajan y done es TRUE hasta que el producto sale de la cámara o hasta el siguiente start. Este cambio es un evento del modelo, no física: cambia lo que es el elemento, no dónde está, como el nivel de un tanque es un modelo; todo lo demás lo llevan, lo bloquean y lo empujan la física. Un start sin ready solo suma uno a misfires. Límites: una pieza en bruto a la vez. Señales: feed, start, ready, busy, done, doorClosed. Hechos: produced cuenta los ciclos terminados; misfires cuenta los flancos de start rechazados. Fallas: doorStuck, cycleSlow, readyStuckOff, stall.
+
+#### Ajustes
+
+| Ajuste | Tipo | Rango o valores | Valor por defecto | Unidad |
+| --- | --- | --- | --- | --- |
+| `product` | enum | `lid`, `base` | `lid` |   |
+| `cycleMs` | number | 1000 a 30000 | `4000` | ms |
+| `lengthM` | number | 0.8 a 1.4 | `1` | m |
+| `widthM` | number | 0.5 a 0.8 | `0.6` | m |
+| `speedMps` | number | 0.2 a 1 | `0.5` | m/s |
+
+#### Señales
+
+| Señal | Dirección | Tipo | Unidad | Rango |
+| --- | --- | --- | --- | --- |
+| `feed` | command | BOOL |   |   |
+| `start` | command | BOOL |   |   |
+| `ready` | sensor | BOOL |   |   |
+| `busy` | sensor | BOOL |   |   |
+| `done` | sensor | BOOL |   |   |
+| `doorClosed` | sensor | BOOL |   |   |
+
+#### Acciones de falla
+
+`doorStuck`, `cycleSlow`, `readyStuckOff`, `stall`
 
 {/* <<< END GENERATED: plant/parts <<< */}
 

@@ -77,6 +77,17 @@ Tres sensores de las escenas de clasificación publican un número, con los rang
 
 Una báscula vacía que no es estable y tiene la falla `readingOffset` lee 2 kg, no 0.
 
+## Transelevador
+
+El `stacker-crane` tiene dos señales de orden `INT`. Son consignas, así que el transelevador conserva el último valor; un valor fuera del rango se satura, como en la sección [Saturación](#saturación). La [página de estaciones](./stations.md) explica cómo las usa el transelevador.
+
+| Señal   | Pieza         | Tipo  | Unidad | Rango         | Ordena                                                               |
+| ------- | ------------- | ----- | ------ | ------------- | -------------------------------------------------------------------- |
+| `bay`   | transelevador | `INT` | bay    | 0 a `columns` | La columna a la que va el transelevador (0 es el extremo del muelle) |
+| `level` | transelevador | `INT` | level  | 0 a `levels`  | El nivel al que va el mástil (0 es el muelle)                        |
+
+Se aplica el mismo tramo de intercambio de 64 bytes. El transelevador tiene dos órdenes `INT` (2 bytes cada una) y once señales `BOOL`.
+
 ## Sin medir todavía
 
 Nada en esta página afirma un tiempo, una tasa ni un resultado de hardware. El costo del intercambio numérico por ciclo todavía no se mide en las máquinas de referencia.

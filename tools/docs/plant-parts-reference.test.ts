@@ -167,4 +167,26 @@ describe('PRT-002 parts reference generated from the part definitions', () => {
       expect(body).toContain('| `acceptsCode` | number |');
     }
   });
+
+  it('PRT-002 the reference lists the M5 parts with their ranges, variants and fault actions', () => {
+    const wanted: Record<string, string[]> = {
+      lift: ['stuck', 'stall', 'levelStuckOff'],
+      'stacker-crane': ['stuckX', 'stuckY', 'forkStuck', 'loadedStuckOff', 'beltStall'],
+      'machining-centre': ['doorStuck', 'cycleSlow', 'readyStuckOff', 'stall'],
+      'limit-switch': ['stuckOn', 'stuckOff'],
+      aligner: ['stuck'],
+      chute: [],
+    };
+    for (const lang of LANGS) {
+      const body = partsBody(PARTS, lang);
+      for (const [id, actions] of Object.entries(wanted)) {
+        expect(PARTS.map((p) => p.id)).toContain(id);
+        expect(body).toContain(`\`${id}\``);
+        for (const a of actions) expect(body).toContain(`\`${a}\``);
+      }
+      expect(body).toContain('| `bay` | command | INT | bay |');
+      expect(body).toContain('| `level` | command | INT | level |');
+      expect(body).toContain('| `tiltDeg` | number |');
+    }
+  });
 });
