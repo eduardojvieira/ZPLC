@@ -1,0 +1,211 @@
+{
+  "name": "Assembler",
+  "description": "A two-axis assembler: take a lid from one belt, set it on a base on another, three times.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "StartButton.pressed: start the assembly"
+      },
+      {
+        "name": "LidReady",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "LidEye.detect: a lid waits at the lid blade"
+      },
+      {
+        "name": "BaseReady",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "BaseEye.detect: a base waits at the base blade"
+      },
+      {
+        "name": "XAtMin",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "Pick1.xAtMin: the pad is over the lid belt"
+      },
+      {
+        "name": "XAtMax",
+        "type": "BOOL",
+        "address": "%I0.4",
+        "comment": "Pick1.xAtMax: the pad is over the base belt"
+      },
+      {
+        "name": "YAtMin",
+        "type": "BOOL",
+        "address": "%I0.5",
+        "comment": "Pick1.yAtMin: the pad is down"
+      },
+      {
+        "name": "YAtMax",
+        "type": "BOOL",
+        "address": "%I0.6",
+        "comment": "Pick1.yAtMax: the pad is up"
+      },
+      {
+        "name": "Gripped",
+        "type": "BOOL",
+        "address": "%I0.7",
+        "comment": "Pick1.gripped: the pad holds a part"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "XPlus",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Pick1.xPlus: move the pad toward the base belt while true"
+      },
+      {
+        "name": "XMinus",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Pick1.xMinus: move the pad toward the lid belt while true"
+      },
+      {
+        "name": "YPlus",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "Pick1.yPlus: raise the pad while true"
+      },
+      {
+        "name": "YMinus",
+        "type": "BOOL",
+        "address": "%Q0.3",
+        "comment": "Pick1.yMinus: lower the pad while true"
+      },
+      {
+        "name": "Grip",
+        "type": "BOOL",
+        "address": "%Q0.4",
+        "comment": "Pick1.grip: vacuum on"
+      },
+      {
+        "name": "RunLid",
+        "type": "BOOL",
+        "address": "%Q0.5",
+        "comment": "LidBelt.run: run the lid belt"
+      },
+      {
+        "name": "RunBase",
+        "type": "BOOL",
+        "address": "%Q0.6",
+        "comment": "BaseBelt.run: run the base belt"
+      },
+      {
+        "name": "RunExit",
+        "type": "BOOL",
+        "address": "%Q0.7",
+        "comment": "ExitBelt.run: run the exit belt"
+      },
+      {
+        "name": "HoldLid",
+        "type": "BOOL",
+        "address": "%Q1.0",
+        "comment": "LidBlade.extend: the blade holds the lid while true"
+      },
+      {
+        "name": "HoldBase",
+        "type": "BOOL",
+        "address": "%Q1.1",
+        "comment": "BaseBlade.extend: the blade holds the base while true"
+      },
+      {
+        "name": "EmitLid",
+        "type": "BOOL",
+        "address": "%Q1.2",
+        "comment": "LidEmitter.emit: put one lid on the lid belt"
+      },
+      {
+        "name": "EmitBase",
+        "type": "BOOL",
+        "address": "%Q1.3",
+        "comment": "BaseEmitter.emit: put one base on the base belt"
+      },
+      {
+        "name": "Green",
+        "type": "BOOL",
+        "address": "%Q1.4",
+        "comment": "StackLight1.green: three assemblies are done"
+      },
+      {
+        "name": "Amber",
+        "type": "BOOL",
+        "address": "%Q1.5",
+        "comment": "StackLight1.amber: the assembly is running"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "step_idle",
+      "name": "IDLE",
+      "isInitial": true,
+      "position": {
+        "x": 200,
+        "y": 50
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_IDLE",
+          "comment": "Everything off"
+        }
+      ]
+    },
+    {
+      "id": "step_homing",
+      "name": "HOMING",
+      "isInitial": false,
+      "position": {
+        "x": 200,
+        "y": 250
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "A_HOMING",
+          "comment": "Raise the pad and bring it over the lid belt"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t_1_idle_homing",
+      "fromStep": "step_idle",
+      "toStep": "step_homing",
+      "condition": "Start",
+      "comment": "",
+      "position": {
+        "x": 200,
+        "y": 150
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "A_IDLE",
+      "name": "A_IDLE",
+      "type": "ST",
+      "body": "XPlus := FALSE; XMinus := FALSE; YPlus := FALSE; YMinus := FALSE; Grip := FALSE; RunLid := FALSE; RunBase := FALSE; RunExit := FALSE; HoldLid := FALSE; HoldBase := FALSE; EmitLid := FALSE; EmitBase := FALSE; Green := FALSE; Amber := FALSE;"
+    },
+    {
+      "id": "A_HOMING",
+      "name": "A_HOMING",
+      "type": "ST",
+      "body": "XPlus := FALSE; XMinus := NOT XAtMin; YPlus := NOT YAtMax; YMinus := FALSE; Grip := FALSE; RunLid := TRUE; RunBase := TRUE; RunExit := TRUE; HoldLid := TRUE; HoldBase := TRUE; EmitLid := FALSE; EmitBase := FALSE; Green := FALSE; Amber := TRUE;"
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

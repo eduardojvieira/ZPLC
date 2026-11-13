@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Assemble lids and bases",
+  "summary": "Model a two-axis assembler as a chart: take a lid from one belt, set it on a base on another belt, and repeat three times.",
+  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Coordinate two axes and a vacuum pad in one sequence, with one step for each move.",
+    "Choose between two next steps with transition conditions that exclude each other."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/Assembler.sfc.json, build the chart: FEEDPAIR and HOMING to start, WAITING and SETTLING to wait for the parts, LOWERING, GRABBING, LIFTING, CARRYING, PLACING and RELEASING to move one lid, RAISING, RETURNING, CLEARING, CLEARED and FEEDBASE to prepare the next pair, and FINISHED.",
+      "checkpoint": "Each step sets every output, so reading the active step tells you what the assembler does."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, walk the chart for one lid: the pad waits at the lid belt, lowers, takes the lid with the vacuum, lifts, crosses to the base belt, lowers, lets go and returns while the assembled base runs out.",
+      "checkpoint": "The pad never crosses the belts while it is down; the base blade opens only after the lid is released; Green turns on after the third assembly."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter only homes the pad: add the steps and transitions that feed a lid and a base, take the lid, set it on the base, let the assembly leave, repeat three times and finish with Green.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the two-axis-assembly scenario; watch the 3D view while it runs.",
+      "checkpoint": "The required scenario is named two-axis-assembly and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Watch the active step change in the chart view while the pad moves, and the 3D view for the lid resting on the base.",
+      "checkpoint": "One lid lands on one base each cycle, nothing is dropped, and Green stays off until the third."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The chart shows the whole sequence; the transition conditions are the only way to move between steps, so a missing limit switch stops the assembler. The scenario proves that at least one assembly was made and delivered, that nothing was dropped and that Green is on at the end. It does not count that exactly three were made.",
+      "checkpoint": "It does not establish physical gripper timing, axis speed, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Make the move steps wait for a limit sensor (YAtMin, YAtMax, XAtMax, XAtMin) and let the vacuum steps wait a step time as well as Gripped; count the finished assemblies in a local variable with a P1 action."
+    },
+    {
+      "level": 2,
+      "text": "After RETURNING give two transitions: one to FINISHED when the count reached 3 and one to CLEARING otherwise. Keep the base blade closed until the lid has let go, open it in RAISING, and close it again in FEEDBASE after the assembled base has left."
+    }
+  ],
+  "faultCases": [
+    "The starter only homes the pad: add the steps and transitions that feed a lid and a base, take the lid, set it on the base, let the assembly leave, repeat three times and finish with Green."
+  ]
+}
