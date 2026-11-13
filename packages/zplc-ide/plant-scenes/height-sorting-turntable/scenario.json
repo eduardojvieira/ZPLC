@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "height-sorting-turntable",
+  "tickMs": 10,
+  "durationMs": 77000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      { "atMs": 200, "operate": { "signal": "StartButton.pressed", "value": true } },
+      { "atMs": 400, "operate": { "signal": "StartButton.pressed", "value": false } }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    { "kind": "AT", "atMs": 100, "condition": { "HeightSort.Hold": false, "HeightSort.Busy": false, "HeightSort.Done": false } },
+    {
+      "kind": "ALWAYS",
+      "condition": {
+        "fact:misrouted:BinShort": false,
+        "fact:misrouted:BinMedium": false,
+        "fact:misrouted:BinTall": false,
+        "fact:itemsDropped": false
+      }
+    },
+    {
+      "kind": "EVENTUALLY",
+      "fromMs": 0,
+      "withinMs": 77000,
+      "condition": { "fact:sorted:BinShort": true, "fact:sorted:BinMedium": true, "fact:sorted:BinTall": true }
+    },
+    { "kind": "AT", "atMs": 77000, "condition": { "HeightSort.Done": true, "HeightSort.Busy": false } }
+  ]
+}
