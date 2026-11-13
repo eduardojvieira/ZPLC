@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 2,
+  "target": {
+    "scene": "two-axis-assembly-numeric"
+  },
+  "signals": {
+    "StartButton.pressed": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "Assembler.Start"
+    },
+    "LidEye.detect": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "Assembler.LidReady"
+    },
+    "BaseEye.detect": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "Assembler.BaseReady"
+    },
+    "Pick1.gripped": {
+      "direction": "sensor",
+      "type": "BOOL",
+      "point": "Assembler.Gripped"
+    },
+    "Pick1.xPos": {
+      "direction": "sensor",
+      "type": "REAL",
+      "point": "Assembler.XPos",
+      "range": {
+        "raw_min": 0,
+        "raw_max": 100,
+        "eng_min": 0,
+        "eng_max": 1,
+        "unit": "m"
+      }
+    },
+    "Pick1.yPos": {
+      "direction": "sensor",
+      "type": "REAL",
+      "point": "Assembler.YPos",
+      "range": {
+        "raw_min": 0,
+        "raw_max": 30,
+        "eng_min": 0,
+        "eng_max": 0.3,
+        "unit": "m"
+      }
+    },
+    "Pick1.grip": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "Assembler.Grip"
+    },
+    "LidBelt.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "Assembler.RunLid"
+    },
+    "BaseBelt.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "Assembler.RunBase"
+    },
+    "ExitBelt.run": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "Assembler.RunExit"
+    },
+    "LidBlade.extend": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "Assembler.HoldLid"
+    },
+    "BaseBlade.extend": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "Assembler.HoldBase"
+    },
+    "LidEmitter.emit": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "Assembler.EmitLid"
+    },
+    "BaseEmitter.emit": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "Assembler.EmitBase"
+    },
+    "StackLight1.green": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "Assembler.Green"
+    },
+    "StackLight1.amber": {
+      "direction": "command",
+      "type": "BOOL",
+      "point": "Assembler.Amber"
+    },
+    "Pick1.xSet": {
+      "direction": "command",
+      "type": "REAL",
+      "point": "Assembler.XSet",
+      "range": {
+        "raw_min": 0,
+        "raw_max": 100,
+        "eng_min": 0,
+        "eng_max": 1,
+        "unit": "m"
+      }
+    },
+    "Pick1.ySet": {
+      "direction": "command",
+      "type": "REAL",
+      "point": "Assembler.YSet",
+      "range": {
+        "raw_min": 0,
+        "raw_max": 30,
+        "eng_min": 0,
+        "eng_max": 0.3,
+        "unit": "m"
+      }
+    }
+  }
+}
