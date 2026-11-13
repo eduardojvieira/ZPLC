@@ -30,7 +30,7 @@ const FIXED_FACTS = ['itemsEmitted', 'itemsRemoved', 'itemsDropped', 'itemsColli
 const FACT_GRAMMAR =
   'itemsEmitted, itemsRemoved, itemsDropped, itemsCollided, emitted:<Name>, delivered:<Name>, count:<Name>, position:<kind>:<index>, ' +
   'level:<Name>, volume:<Name>, spilledL:<Name>, highs:<Name>, inBand:<Name>, picked:<Name>, placed:<Name>, drops:<Name>, ' +
-  'axis:<Name>:<x|y|z>, itemsAssembled, stacked:pallet:<index>, layers:pallet:<index>';
+  'axis:<Name>:<x|y|z>, itemsAssembled, stacked:pallet:<index>, layers:pallet:<index>, sorted:<Name>, misrouted:<Name>';
 
 /** Why a fact name is wrong, or undefined when it matches the fact grammar and names a part the scene has. */
 function factFault(fact: string, parts: readonly string[]): string | undefined {
@@ -41,7 +41,21 @@ function factFault(fact: string, parts: readonly string[]): string | undefined {
   if (head === 'stacked' || head === 'layers')
     return rest.length === 2 && rest[0] === 'pallet' && /^\d+$/.test(rest[1]!) ? undefined : grammar;
   const axisFact = head === 'axis' && rest.length === 2 && ['x', 'y', 'z'].includes(rest[1]!);
-  const named = ['emitted', 'delivered', 'count', 'level', 'volume', 'spilledL', 'highs', 'inBand', 'picked', 'placed', 'drops'];
+  const named = [
+    'emitted',
+    'delivered',
+    'count',
+    'level',
+    'volume',
+    'spilledL',
+    'highs',
+    'inBand',
+    'picked',
+    'placed',
+    'drops',
+    'sorted',
+    'misrouted',
+  ];
   if (!axisFact && (!named.includes(head!) || rest.length !== 1)) return grammar;
   return parts.includes(rest[0]!)
     ? undefined
