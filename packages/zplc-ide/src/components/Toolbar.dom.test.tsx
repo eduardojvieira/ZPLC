@@ -417,6 +417,45 @@ describe('Run in one action (FLW-001, FLW-006) in a DOM', () => {
   });
 });
 
+describe('Run with a plant document open (PLS-003, FLW-014) in a DOM', () => {
+  const fakeSession = (calls: string[], name: string) => ({
+    state: 'stopped',
+    slowdown: 1,
+    onChange: () => () => undefined,
+    start: async () => void calls.push(`${name}:start`),
+    resume: () => undefined,
+    pause: () => undefined,
+    step: async () => undefined,
+    stop: async () => undefined,
+    reset: async () => undefined,
+  });
+
+  it('PLS-003 Run starts the simulator first and waits for the panel to bind, and re-bind, its plant transport', async () => {
+    const { usePlantDocument } = await import('../store/usePlantDocument');
+    openProject(BUILD_OK);
+    const { controller, calls } = simulatorController();
+    const plantCalls: string[] = [];
+    const unregisters: Array<() => void> = [];
+    // the panel binds when the program is loaded, and binds again when the I/O map of the new program arrives
+    const load = (controller as unknown as { loadProgram: () => Promise<void> }).loadProgram;
+    (controller as unknown as { loadProgram: () => Promise<void> }).loadProgram = async () => {
+      await load();
+      setTimeout(() => unregisters.push(registerPlantTransport(plantTransport(fakeSession(plantCalls, 'first') as never))), 20);
+      setTimeout(() => unregisters.push(registerPlantTransport(plantTransport(fakeSession(plantCalls, 'second') as never))), 80);
+    };
+    usePlantDocument.getState().show();
+    try {
+      const { user } = dom.render(<Toolbar debugController={controller} />);
+      await user.click(runButton());
+      await dom.waitFor(() => expect(plantCalls).toEqual(['second:start']));
+      expect(calls).toEqual(['startSimulation', 'loadProgram']);
+    } finally {
+      usePlantDocument.getState().close();
+      unregisters.forEach((off) => off());
+    }
+  });
+});
+
 describe('Save all (FLW-005) in a DOM', () => {
   it('FLW-005 Save all is offered when any document is modified, and saves the configuration too', async () => {
     const { saved } = openProject(BUILD_OK);

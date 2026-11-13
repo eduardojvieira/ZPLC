@@ -58,6 +58,7 @@ import { saveAllDocuments } from '../store/saveAll';
 import { useAppSettings } from '../store/useAppSettings';
 import { confirmAction } from '../store/actionConfirm';
 import { reveal } from '../shell/reveal';
+import { usePlantDocument } from '../store/usePlantDocument';
 
 // =============================================================================
 // Types
@@ -774,6 +775,24 @@ export function Toolbar({ debugController }: ToolbarProps) {
     return controllerRef.current;
   };
 
+  /**
+   * With the plant document open, the panel binds its session once the simulator has a session and the program is loaded, and binds
+   * it again when either changes. Run waits for that transport to be registered and to stay the same for four ticks (100 ms) (at most 3 s), so
+   * that it does not drive the program alone and then race the re-bind (PLS-003).
+   */
+  const settlePlantTransport = async () => {
+    if (!usePlantDocument.getState().open) return;
+    let last: unknown;
+    let stable = 0;
+    for (let waited = 0; waited < 3000 && stable < 4; waited += 25) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+      const now = activeTransport(controllerRef.current);
+      const same = now.kind === 'plant' && now === last;
+      stable = same ? stable + 1 : 0;
+      last = now;
+    }
+  };
+
   const runActions: RunActions = {
     save: async () => {
       await saveModified();
@@ -812,6 +831,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
       setProgramLoadState(PROGRAM_LOAD_STATE.LOADED);
     },
     run: async () => {
+      await settlePlantTransport();
       await activeTransport(controllerRef.current).run();
       addConsoleEntry({ type: 'info', message: t('toolbarMsg.executionStarted'), source: 'runtime' });
     },
