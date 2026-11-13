@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-belt-transfer-ladder",
+  "version": 1,
+  "order": 1151,
+  "module": 15,
+  "level": "advanced",
+  "prerequisites": ["plant-counted-queue"],
+  "languages": ["LD"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "This ladder drives a two-axis carriage with a clamp, a stop blade and two belts that exist only in the scene; a learner board has none of that hardware, so the Ladder version runs in Simulation only.",
+        "es": "Esta escalera gobierna un carro de dos ejes con una pinza, una cuchilla de tope y dos bandas que solo existen en la escena; una placa del estudiante no tiene ese hardware, así que la versión en escalera se ejecuta solo en Simulación."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus cajas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "belt-to-belt-transfer",
+  "estimatedMinutes": 40,
+  "starter": {
+    "project": "plant_belt_transfer_ladder_starter",
+    "program": "src/BeltTransfer.ld.json"
+  },
+  "solution": {
+    "project": "plant_belt_transfer_ladder",
+    "program": "src/BeltTransfer.ld.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "belt-to-belt-transfer",
+    "path": "tests/belt-to-belt-transfer.scenario.json",
+    "sha256": "f8f23c1507bc870d86231920f7c3aec025d473d11b285cf1070beb7547bf2b3d"
+  },
+  "regressionScenarios": []
+}

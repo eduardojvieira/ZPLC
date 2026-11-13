@@ -1,0 +1,171 @@
+{
+  "name": "BeltTransfer",
+  "description": "Pick from one belt and place on another: one state per move of the clamp carriage, four boxes.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Active",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "The transfer was started"
+      },
+      {
+        "name": "State",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "One state per move: 0 idle, 2 wait for a box, 3 lower, 4 close, 5 lift, 6 carry, 7 lower, 8 open and settle, 9 lift, 10 return, 11 finished"
+      },
+      {
+        "name": "Settle",
+        "type": "TON",
+        "comment": "A box must stand still at the blade before the clamp comes down"
+      },
+      {
+        "name": "Rest",
+        "type": "TON",
+        "comment": "A put-down box must lie still before the outfeed runs again"
+      },
+      {
+        "name": "Lifts",
+        "type": "CTU",
+        "comment": "Counts the lifts at the blade: the first three bring the next box"
+      },
+      {
+        "name": "Placed",
+        "type": "CTU",
+        "comment": "Counts the boxes put down"
+      },
+      {
+        "name": "Delivered",
+        "type": "CTU",
+        "comment": "Counts the boxes that passed EyeOut"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "StartButton.pressed: start the transfer"
+      },
+      {
+        "name": "Waiting",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "EyePick.detect: a box waits at the stop blade of the infeed"
+      },
+      {
+        "name": "OutEye",
+        "type": "BOOL",
+        "address": "%I0.2",
+        "comment": "EyeOut.detect: a box passes on the outfeed belt"
+      },
+      {
+        "name": "XMin",
+        "type": "BOOL",
+        "address": "%I0.3",
+        "comment": "Pick1.xAtMin: the carriage is over the infeed"
+      },
+      {
+        "name": "XMax",
+        "type": "BOOL",
+        "address": "%I0.4",
+        "comment": "Pick1.xAtMax: the carriage is over the outfeed"
+      },
+      {
+        "name": "YMin",
+        "type": "BOOL",
+        "address": "%I0.5",
+        "comment": "Pick1.yAtMin: the clamp is down"
+      },
+      {
+        "name": "YMax",
+        "type": "BOOL",
+        "address": "%I0.6",
+        "comment": "Pick1.yAtMax: the clamp is up"
+      },
+      {
+        "name": "Gripped",
+        "type": "BOOL",
+        "address": "%I0.7",
+        "comment": "Pick1.gripped: the clamp holds a box"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "RunIn",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Infeed.run: run the infeed belt"
+      },
+      {
+        "name": "RunOut",
+        "type": "BOOL",
+        "address": "%Q0.1",
+        "comment": "Outfeed.run: run the outfeed belt"
+      },
+      {
+        "name": "Emit",
+        "type": "BOOL",
+        "address": "%Q0.2",
+        "comment": "Source1.emit: put one box on the infeed belt"
+      },
+      {
+        "name": "Hold",
+        "type": "BOOL",
+        "address": "%Q0.3",
+        "comment": "Stop1.extend: the blade holds the box while true"
+      },
+      {
+        "name": "XPlus",
+        "type": "BOOL",
+        "address": "%Q0.4",
+        "comment": "Pick1.xPlus: move toward the outfeed while true"
+      },
+      {
+        "name": "XMinus",
+        "type": "BOOL",
+        "address": "%Q0.5",
+        "comment": "Pick1.xMinus: move toward the infeed while true"
+      },
+      {
+        "name": "YPlus",
+        "type": "BOOL",
+        "address": "%Q0.6",
+        "comment": "Pick1.yPlus: lift the clamp while true"
+      },
+      {
+        "name": "YMinus",
+        "type": "BOOL",
+        "address": "%Q0.7",
+        "comment": "Pick1.yMinus: lower the clamp while true"
+      },
+      {
+        "name": "Grip",
+        "type": "BOOL",
+        "address": "%Q1.0",
+        "comment": "Pick1.grip: close the clamp while true"
+      },
+      {
+        "name": "Busy",
+        "type": "BOOL",
+        "address": "%Q1.1",
+        "comment": "Beacon.amber: the transfer is running"
+      },
+      {
+        "name": "Done",
+        "type": "BOOL",
+        "address": "%Q1.2",
+        "comment": "Beacon.green: lit when four boxes have crossed the outfeed"
+      }
+    ]
+  },
+  "rungs": [],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
