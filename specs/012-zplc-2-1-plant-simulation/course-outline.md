@@ -1,6 +1,6 @@
 # Course outline: ZPLC 2.1 industrial automation course
 
-**Status:** Approved by the owner on 2026-11-13 (CRS-001). Assumption A2 (one package with both starters) is open: the 2.0 package format holds one starter (see plan-m7.md, open question 2).
+**Status:** Approved by the owner on 2026-11-13 (CRS-001), with A2 decided the same day (sibling packages).
 
 ## How to review this
 
@@ -12,7 +12,7 @@ Scene numbers and names are those of the SCN table of `spec.md` (working names).
 
 | Column | Meaning |
 |---|---|
-| Language | Languages the lesson offers (CRS-008). `ST/LD` means one package that offers both starters (assumption A2). |
+| Language | Languages the lesson offers (CRS-008). `ST/LD` means two sibling packages, the Structured Text one and its `-ladder` sibling, with the same scene, scenario and hash (A2, decided). |
 | Tracks | `Sim` = simulation. `Sim + HW*` = hardware track through plant I/O mode, offered only if the scene meets LNK-014 on a learner board (CRS-009); if not, the page shows the hardware track as closed with its reason (LRN-011). Learner boards only (D-17): ESP32-S3-DevKitC-1 and Raspberry Pi Pico. |
 | Milestone | The milestone that delivers the scene (6.2). The hardware track of a scene lands in M6; the complete course in M7. |
 
@@ -131,7 +131,7 @@ The spec does not fix these. Each is a choice to accept or change.
 | # | Assumption | If you change it |
 |---|---|---|
 | A1 | The hardware track is offered by eight lessons (12.1, 12.2, 13.1 to 13.4, 14.1, 18.1) because their scenes have slow signals. The real set depends on the latency measured for LNK-014 against each scene's pulse (SCN-007); the spec does not say which scenes qualify. | The marked lessons change; M6 evidence decides in the end. |
-| A2 | A lesson marked `ST/LD` is one package with a starter and solution in each language, and appears in both paths. The alternative is sibling packages as 2.0 does (`-ladder` suffix), which raises the lesson count. | Lesson count and content effort. |
+| A2 | **Decided by the owner on 2026-11-13:** a lesson marked `ST/LD` is two sibling packages, as 2.0 does: the Structured Text package and its `-ladder` sibling share scene, scenario and scenario hash and have the same text structure, which a CI test checks. Public counts say "97 lessons, 14 in two languages" (the index holds 111 packages). Each path carries only the sibling of its language; in the full course, passing either sibling unlocks what follows. The one-package form was set aside because the lesson format holds one starter. | Lesson count and content effort. |
 | A3 | Paths are `plant-st` and `plant-ld` only. Lessons that are only FBD, SFC or IL sit in modules, not in a path. | Add paths per language. |
 | A4 | The `course.json` rules require module levels never to go back, and module 11 is advanced, so modules 12 to 19 are all `advanced`; difficulty is carried by module order. A new lower level would change 2.0 data. | Add a level or accept this. |
 | A5 | Lessons name 2.0 lessons as prerequisites: 12.x need `seal-in-ladder` or `motor-start-stop-safe`, 13.x need `analog-scaling-integer`, 14.1 and 15.2 need `sfc-fill-mix-sequence`, 15.4 needs `structures-arrays-call-panel`, 16.2 needs `instruction-list-door-alarm`, 17.4 needs `function-block-pump-pair`. | Exact ids are settled when lessons are written. |
