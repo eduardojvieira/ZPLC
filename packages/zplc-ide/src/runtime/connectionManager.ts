@@ -12,6 +12,7 @@
 
 import type { SerialAdapter } from './serialAdapter';
 import { FramedSerialAdapter } from './framedSerialAdapter';
+import type { PlantBoardPort } from '../plant/board/portTypes';
 import type { FirmwareReport } from './link/firmwareProtocol';
 import type { RouterStatus } from './link/eventRouter';
 import type { CommunicationMapEntry, MqttRuntimeStatus, SystemInfo, StatusInfo } from './serialAdapter';
@@ -152,6 +153,11 @@ export class ConnectionManager {
    */
   get serialAdapter(): SerialAdapter | null {
     return this.adapter;
+  }
+
+  /** The plant I/O link port of the framed adapter, or null for any other adapter (LNK-012). Only a person's command uses it. */
+  plantBoardPort(): PlantBoardPort | null {
+    return this.framedOf(this.adapter)?.plantBoardPort() ?? null;
   }
 
   private isCurrent(generation: number, adapter: SerialAdapter): boolean {
