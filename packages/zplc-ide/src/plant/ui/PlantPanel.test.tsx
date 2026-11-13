@@ -142,6 +142,7 @@ function rig(mode: 'ok' | 'unavailable' = 'ok', initialState: PlantSession['stat
     context: undefined as ((event: 'lost' | 'restored' | 'unavailable') => void) | undefined,
     p5: 60,
     disposed: 0,
+    camera: { target: [0, 0, 0] as [number, number, number], azimuthDeg: 0, polarDeg: 1, distance: 10 },
   };
   const fake: PlantRenderer = {
     webgl2: true,
@@ -151,6 +152,7 @@ function rig(mode: 'ok' | 'unavailable' = 'ok', initialState: PlantSession['stat
     },
     setQuality: (level) => void renderer.qualities.push(level),
     setCameraPreset: (name) => void renderer.presets.push(name),
+    cameraState: () => renderer.camera,
     orbit: () => void renderer.keys.push('orbit'),
     pan: () => void renderer.keys.push('pan'),
     zoom: () => void renderer.keys.push('zoom'),
@@ -404,6 +406,33 @@ describe('the plant panel (VIS-001, VIS-006, VIS-010, PLS-003, PLS-004, PLS-010)
     expect(r.scenes[1]!.parts.length).toBe(before + 1);
     expect(document.querySelector('[data-plant-editor]')).toBeNull();
   });
+
+  it(
+    'SCN-008 SCN-014 edit mode keeps the 3D canvas next to the editor; dragging a part there moves it, and Done keeps the ' + 'move',
+    async () => {
+      const r = rig();
+      dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+      await ready();
+      await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-edit-scene]')!));
+      expect(document.querySelector('[data-plant-editor]')).toBeTruthy(); // the pointer-free path is still there
+      const canvas = document.querySelector<HTMLCanvasElement>('[data-plant-canvas]')!;
+      expect(canvas).toBeTruthy();
+      const first = r.scenes[0]!.parts[0] as { position: [number, number, number] };
+      r.renderer.camera.target = [first.position[0], 0, first.position[2]]; // the part is under the centre of the view
+      canvas.getBoundingClientRect = () => ({ left: 0, top: 0, width: 100, height: 100 }) as DOMRect;
+      const at = (x: number) => ({ clientX: x, clientY: 50, pointerId: 1 });
+      await dom.act(async () => {
+        dom.fireEvent.pointerDown(canvas, at(50));
+        dom.fireEvent.pointerMove(canvas, at(75));
+        dom.fireEvent.pointerUp(canvas, at(75));
+      });
+      expect(r.renderer.keys).not.toContain('orbit');
+      await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-edit-done]')!));
+      await dom.waitFor(() => expect(r.scenes.length).toBe(2));
+      const moved = (r.scenes[1]!.parts[0] as { position: [number, number, number] }).position;
+      expect(moved[0]).not.toBe(first.position[0]);
+    },
+  );
 
   it('SCN-010 Undo and Redo of the editor toolbar reach the editor', async () => {
     const r = rig();

@@ -267,8 +267,13 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
           {t('plant.panel.sceneFailed', { scene: refKey, detail: load.detail })}
         </p>
       )}
-      {ready && !editing && (
+      {ready && (
         <>
+          {editing && view === '3d' && (
+            <p data-plant-drag-hint className="px-2 text-sm text-[var(--text-secondary)]">
+              {t('plant.panel.dragHint')}
+            </p>
+          )}
           <div className="min-h-64 flex-1">
             {view === '3d' ? (
               <PlantCanvas
@@ -280,6 +285,7 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
                 display={display}
                 label={t('plant.panel.canvas', { scene: ready.scene.name })}
                 {...(deps.timing ? { timing: deps.timing } : {})}
+                {...(editing ? { edit: { editor: editing.editor, catalogue, onEdited: () => setVersion((n) => n + 1) } } : {})}
                 onRenderer={setRenderer}
                 onFailure={setFailure}
               />
@@ -287,15 +293,17 @@ export function PlantPanel({ controller, visible, deps = NO_DEPS }: PlantPanelPr
               <Schematic scene={ready.scene} />
             )}
           </div>
-          <OperatePanel scene={ready.scene} core={ready.core} snapshot={snapshot} onChange={binding.publish} />
-          {!binding.bound && (
+          {!editing && <OperatePanel scene={ready.scene} core={ready.core} snapshot={snapshot} onChange={binding.publish} />}
+          {!editing && !binding.bound && (
             <p data-plant-unbound className="px-2 text-sm text-[var(--text-secondary)]">
               {ready.map ? t('plant.panel.waitingRun') : t('plant.panel.noRuntime')}
             </p>
           )}
-          <section aria-label={t('plant.panel.facts')} className="p-2 text-sm">
-            <p data-plant-text>{facts?.text}</p>
-          </section>
+          {!editing && (
+            <section aria-label={t('plant.panel.facts')} className="p-2 text-sm">
+              <p data-plant-text>{facts?.text}</p>
+            </section>
+          )}
         </>
       )}
     </div>

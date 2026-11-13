@@ -23,6 +23,7 @@ export const plantViewEn = {
   'plant.panel.camera': 'Camera',
   'plant.panel.resetPlant': 'Reset plant',
   'plant.panel.editScene': 'Edit scene',
+  'plant.panel.dragHint': 'Drag a part on the floor to move it; Escape cancels. The fields of the editor do the same without a pointer.',
   'plant.panel.facts': 'Plant facts',
   'plant.panel.schematic': 'Schematic of the plant {scene}',
   'plant.panel.loading': 'Loading the plant.',
@@ -75,6 +76,8 @@ export const plantViewEs: Record<keyof typeof plantViewEn, string> = {
   'plant.panel.camera': 'Cámara',
   'plant.panel.resetPlant': 'Reiniciar planta',
   'plant.panel.editScene': 'Editar escena',
+  'plant.panel.dragHint':
+    'Arrastra una pieza sobre el suelo para moverla; Escape cancela. Los campos del editor hacen lo mismo sin puntero.',
   'plant.panel.facts': 'Hechos de la planta',
   'plant.panel.schematic': 'Esquema de la planta {scene}',
   'plant.panel.loading': 'Cargando la planta.',

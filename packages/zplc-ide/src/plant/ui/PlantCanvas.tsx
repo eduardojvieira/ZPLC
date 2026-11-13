@@ -4,8 +4,11 @@
  * document is visible (spec 013 PLS-010): a hidden canvas gets no snapshot and no resize, and the renderer draws only when it
  * has something new, so no frame is made. The plant core and the session never depend on it (P14).
  */
-import { useEffect, useRef, type KeyboardEvent } from 'react';
-import type { PlantSceneFile } from '../contracts';
+import { useEffect, useRef, type KeyboardEvent, type PointerEvent } from 'react';
+import type { PlantSceneFile, Vec3 } from '../contracts';
+import type { Catalogue } from '../core/catalogue';
+import { dragPlan, pointerToGround, type DragPlan } from '../editor/pointer';
+import type { SceneEditor } from '../editor/model';
 import { cameraKeyAction } from '../view/camera';
 import { applyDisplayPrefs, type DisplayPrefs, type DisplayTarget } from '../view/displayModes';
 import type { QualityLevel } from '../view/quality';
@@ -23,6 +26,8 @@ export interface PlantCanvasProps {
   display: DisplayPrefs;
   label: string;
   timing?: CanvasTiming;
+  /** While a scene is edited (SCN-008): a drag that starts on a part moves it, as one undo step, and the pointer does not orbit. */
+  edit?: { editor: SceneEditor; catalogue: Catalogue; onEdited(): void };
   /** The renderer once it exists, for the camera presets; undefined again when it is gone. */
   onRenderer(renderer: PlantRenderer | undefined): void;
   onFailure(failure: CanvasFailure | undefined): void;
@@ -30,6 +35,10 @@ export interface PlantCanvasProps {
 
 // V1's renderer has no palette or camera animation yet; `applyDisplayPrefs` calls them only where they exist.
 const show = (renderer: PlantRenderer, prefs: DisplayPrefs): void => applyDisplayPrefs(renderer as PlantRenderer & DisplayTarget, prefs);
+
+// ponytail: nearest part origin within 1.5 m of the pointer's ground point; the renderer has no picking API. Footprint hit tests if parts
+// overlap.
+const PICK_M = 1.5;
 
 export function PlantCanvas(props: PlantCanvasProps) {
   const { engine, scene, feed, quality, timing = DEFAULT_TIMING } = props;
@@ -140,8 +149,48 @@ export function PlantCanvas(props: PlantCanvasProps) {
     else if (action.kind === 'zoom') renderer.zoom(action.factor);
     else renderer.pan(action.dx, action.dz);
   };
-  // Pointer: drag orbits, wheel zooms (VIS-002); the keyboard path above is the equivalent.
+  // Pointer: drag orbits, wheel zooms (VIS-002); the keyboard path above is the equivalent. While editing, a drag that starts
+  // within PICK_M of a part moves that part instead (SCN-008); the numeric fields of the editor remain the pointer-free path.
   const drag = useRef<{ x: number; y: number } | null>(null);
+  const part = useRef<DragPlan | null>(null);
+  const ground = (event: PointerEvent<HTMLCanvasElement>): Vec3 | null => {
+    const renderer = live.current;
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (!renderer || rect.width <= 0 || rect.height <= 0) return null;
+    const ndc: [number, number] = [
+      ((event.clientX - rect.left) / rect.width) * 2 - 1,
+      -(((event.clientY - rect.top) / rect.height) * 2 - 1),
+    ];
+    return pointerToGround(ndc, renderer.cameraState(), rect.width / rect.height);
+  };
+  const endPart = (commit: boolean) => {
+    const plan = part.current;
+    if (!plan) return;
+    part.current = null;
+    live.current?.setGhost?.(null);
+    if (!commit) return plan.cancel();
+    try {
+      plan.commit();
+      callbacks.current.edit?.onEdited();
+    } catch {
+      // The plant started while the part was held: the editor refused the move, so the scene is unchanged.
+    }
+  };
+  const startPart = (event: PointerEvent<HTMLCanvasElement>): boolean => {
+    const edit = callbacks.current.edit;
+    if (!edit || edit.editor.state().running) return false;
+    const hit = ground(event);
+    if (!hit) return false;
+    let best: { id: string; d: number } | undefined;
+    for (const p of edit.editor.state().scene.parts) {
+      const d = Math.hypot(p.position[0] - hit[0], p.position[2] - hit[2]);
+      if (d <= PICK_M && (!best || d < best.d)) best = { id: p.id, d };
+    }
+    if (!best) return false;
+    part.current = dragPlan(edit.editor, best.id, edit.catalogue);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    return true;
+  };
   return (
     <canvas
       ref={canvas}
@@ -150,16 +199,38 @@ export function PlantCanvas(props: PlantCanvasProps) {
       role="img"
       aria-label={props.label}
       className="h-full min-h-64 w-full touch-none bg-[var(--color-surface-800)]"
-      onKeyDown={onKeyDown}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && part.current) {
+          event.preventDefault();
+          endPart(false);
+        } else onKeyDown(event);
+      }}
       onPointerDown={(event) => {
+        if (startPart(event)) return;
         drag.current = { x: event.clientX, y: event.clientY };
       }}
       onPointerMove={(event) => {
+        if (part.current) {
+          const hit = ground(event);
+          if (!hit) return;
+          try {
+            part.current.move(hit);
+            live.current?.setGhost?.(part.current.preview()?.position ?? hit);
+          } catch {
+            endPart(false);
+          }
+          return;
+        }
         if (!drag.current) return;
         live.current?.orbit((event.clientX - drag.current.x) * 0.4, (event.clientY - drag.current.y) * 0.4);
         drag.current = { x: event.clientX, y: event.clientY };
       }}
       onPointerUp={() => {
+        endPart(true);
+        drag.current = null;
+      }}
+      onPointerCancel={() => {
+        endPart(false);
         drag.current = null;
       }}
       onWheel={(event) => live.current?.zoom(event.deltaY < 0 ? 1.1 : 1 / 1.1)}
