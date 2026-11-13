@@ -7496,7 +7496,7 @@ export const JOURNEYS: Journey[] = [
           );
         assert(!new RegExp(RAW_KEY).test(body), `The ${tab} panel shows a raw catalog key: ${body.match(new RegExp(RAW_KEY))?.[0]}`);
       };
-      await walk('tests', ['zplc.json'], ['Choose zplc.json', 'Run host scenarios', 'Select the saved']);
+      await walk('tests', ['Ejecutar escenarios en el host'], ['Choose zplc.json', 'Run host scenarios', 'Select the saved']);
       await walk('interlocks', ['Cobertura de enclavamientos declarados'], ['Declared interlock coverage', 'Check declared interlocks']);
       await walk('changes', ['cambio'], ['Review active ST change', 'requires the desktop app']);
       await walk('agent', ['Actualizar el estado'], ['Provider settings', 'Refresh status']);

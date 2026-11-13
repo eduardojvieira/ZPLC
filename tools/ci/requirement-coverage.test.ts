@@ -586,10 +586,10 @@ describe('requirement coverage of spec 013', () => {
   it('a requirement of U2 or U3 is pending, not uncovered', () => {
     const result = run('--spec', '013', '--list');
     expect(result.exitCode).toBe(0);
-    expect(text(result)).toContain('TST-001 pending');
+    expect(text(result)).toContain('TST-003 pending');
     // every requirement the plan does not deliver is listed as pending, never as uncovered
     for (const entry of index013().filter((e) => !e.mapped)) expect(text(result)).not.toContain(`${entry.id} uncovered`);
-    expect(text(result)).not.toContain('TST-001 uncovered');
+    expect(text(result)).not.toContain('TST-003 uncovered');
     const mapped = index013().filter((entry) => entry.mapped);
     expect(mapped.length).toBe(31);
     expect(index013().filter((entry) => entry.mapped === undefined)).toEqual([]);
