@@ -230,7 +230,8 @@ describe('createPlantCore', () => {
   const slow = process.env.CI_SLOW;
   if (slow) console.log(`PLT-014 stress scene skipped: CI_SLOW=${slow}`);
   (slow ? it.skip : it)(
-    'PLT-014 the stress scene of 200 dynamic items on 20 conveyors keeps its step',
+    'PLT-014 the stress scene of 200 dynamic items on 20 conveyors runs 3000 scans and keeps its 200 items (timing: ' +
+      'scripts/plant/bench.ts capacity)',
     async () => {
       const parts: ScenePart[] = [];
       for (let row = 0; row < 20; row += 1) {
@@ -240,20 +241,11 @@ describe('createPlantCore', () => {
       }
       const core = await make(sceneOf(parts, 'stress'));
       expect(core.snapshot().items).toHaveLength(200);
-      const times: number[] = [];
-      const started = performance.now();
       for (let scan = 0; scan < 3000; scan += 1) {
         if (scan === 0) core.apply(Object.fromEntries(Array.from({ length: 20 }, (_, r) => [`belt${r}.run`, true])));
         if (scan === 300) core.apply(Object.fromEntries(Array.from({ length: 20 }, (_, r) => [`belt${r}.run`, false])));
-        const t0 = performance.now();
         core.advance(10);
-        times.push((performance.now() - t0) / 2);
       }
-      const wallMs = performance.now() - started;
-      const p95 = [...times].sort((a, b) => a - b)[Math.floor(times.length * 0.95)]!;
-      console.log(`PLT-014 stress: step p95 ${p95.toFixed(2)} ms, real-time factor ${(30000 / wallMs).toFixed(1)}`);
-      expect(p95).toBeLessThan(8);
-      expect(30000 / wallMs).toBeGreaterThan(1);
       expect(core.snapshot().items).toHaveLength(200);
     },
     120000,
