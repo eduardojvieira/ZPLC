@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { VOSEO_MARKERS } from '../../../../tools/ci/i18n-guard';
+import { starterMayBeUngraded } from '../../../../tools/ci/scene-lessons';
 import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
 import { lessonCheck } from './lessonCheck';
 import { citedFiles, canonicalJson, expandText, textShape, type LessonProgramCheck } from './lessonPackage';
@@ -174,7 +175,22 @@ for (const lesson of packages) {
     itNative(
       'starter is RED because an assertion fails, not because it does not build',
       async () => {
-        expect(await grade(scratchStarter(lesson), lesson)).toMatchObject({ built: true, result: 'failed' });
+        const root = scratchStarter(lesson);
+        const first = await lessonCheck(root, lesson.id, { clock });
+        // A scene-building starter lacks parts the scenario names: the Check says which and grades nothing (the guard's rule).
+        if (!first.ok && manifest.scene) {
+          const sceneOf = (project: string) => readFileSync(join(PROJECTS_DIRECTORY, project, 'scene.json'), 'utf8');
+          const codes = (first.evidence?.diagnostics ?? []).map(({ code }) => code);
+          expect({
+            codes,
+            allowed: starterMayBeUngraded(sceneOf(manifest.starter.project), sceneOf(manifest.solution.project), codes),
+          }).toEqual({
+            codes,
+            allowed: true,
+          });
+          return;
+        }
+        expect(await grade(root, lesson)).toMatchObject({ built: true, result: 'failed' });
         const check = await lessonCheck(scratchStarter(lesson), lesson.id, { clock });
         if (!check.ok) throw new Error('the starter must build and run');
         // LRN-026: every failed assertion names what was expected and where in the trace it failed.

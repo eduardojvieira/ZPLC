@@ -51,7 +51,7 @@ afterAll(() => {
 });
 
 /** A project the learner opens: a program and, at the project root, the two files of the scene. */
-function project(name: string, program: string, files: readonly string[] = ['scene.json', 'plant-map.json']): void {
+function project(name: string, program: string, files: readonly string[] = ['scene.json', 'plant-map.json'], scene?: string): void {
   const dir = join(projects, name);
   mkdirSync(join(dir, 'src'), { recursive: true });
   writeFileSync(
@@ -65,13 +65,18 @@ function project(name: string, program: string, files: readonly string[] = ['sce
     }),
   );
   writeFileSync(join(dir, 'src', 'BeltToSensor.st'), program);
-  for (const file of files) writeFileSync(join(dir, file), read(file));
+  for (const file of files) writeFileSync(join(dir, file), file === 'scene.json' && scene !== undefined ? scene : read(file));
 }
 /** Fresh project names per case so the guard cannot see another case's files. */
-function fixture(starter: string, solution: string, files?: readonly string[]): LessonIndexEntry {
+function fixture(
+  starter: string,
+  solution: string,
+  files?: readonly string[],
+  scenes: { starter?: string; solution?: string } = {},
+): LessonIndexEntry {
   const id = counter++;
-  project(`starter-${id}`, starter, files);
-  project(`solution-${id}`, solution, files);
+  project(`starter-${id}`, starter, files, scenes.starter);
+  project(`solution-${id}`, solution, files, scenes.solution);
   return {
     ...lesson,
     starter: { ...lesson.starter, project: `starter-${id}` },
@@ -135,5 +140,45 @@ describe('the scene-lesson guard on real programs (CRS-005, CRS-006, CRS-010)', 
       expect(result.problems.join('\n')).toContain('lacks plant-map.json');
     },
     60_000,
+  );
+
+  /** The reference scene with a part taken away, as a learner who has not placed it yet saves it. */
+  const sceneWithout = (name: string): string => {
+    const value = JSON.parse(read('scene.json')) as { parts: { name: string }[] };
+    return JSON.stringify({ ...value, parts: value.parts.filter((part) => part.name !== name) });
+  };
+
+  itNative(
+    'a scene-building starter may fail to grade for a missing part: its scene differs from the solution scene, and the report says so',
+    async () => {
+      const result = await guard(fixture(read('starter.st'), read('reference.st'), undefined, { starter: sceneWithout('EyeFar') }));
+      expect(result.problems).toEqual([]);
+      expect(result.report).toEqual([expect.stringContaining('starter not graded: missing part (SCENE_FACT_UNKNOWN)')]);
+    },
+    120_000,
+  );
+
+  itNative(
+    'an ordinary scene lesson whose starter scene equals the solution scene is still refused when the starter does not grade',
+    async () => {
+      const same = sceneWithout('EyeFar');
+      const result = await guard(fixture(read('starter.st'), read('reference.st'), undefined, { starter: same, solution: same }));
+      expect(result.problems.join('\n')).toContain('did not grade');
+      expect(result.problems.join('\n')).toContain('SCENE_FACT_UNKNOWN');
+    },
+    120_000,
+  );
+
+  itNative(
+    'a starter with another scene that does not grade for another reason (it does not compile) is still refused',
+    async () => {
+      const moved = JSON.stringify({ ...JSON.parse(read('scene.json')), name: 'Another name' });
+      const result = await guard(
+        fixture('PROGRAM BeltToSensor\nthis is not a program\nEND_PROGRAM\n', read('reference.st'), undefined, { starter: moved }),
+      );
+      expect(result.problems.join('\n')).toContain('did not grade');
+      expect(result.problems.join('\n')).toContain('COMPILE_FAILED');
+    },
+    120_000,
   );
 });

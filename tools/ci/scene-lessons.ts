@@ -18,7 +18,7 @@ import { join, resolve } from 'node:path';
 import { LESSON_INDEX } from '../../packages/zplc-ide/src/generated/lessonIndex';
 import { courseCounts, courseOrder } from '../../packages/zplc-ide/src/learn/course';
 import { lessonCheck } from '../../packages/zplc-ide/src/learn/lessonCheck';
-import type { LessonIndex, LessonIndexEntry } from '../../packages/zplc-ide/src/learn/lessonPackage';
+import { canonicalJson, type LessonIndex, type LessonIndexEntry } from '../../packages/zplc-ide/src/learn/lessonPackage';
 import { alternativePairs } from '../../packages/zplc-ide/src/learn/lessonSiblings';
 import { scenarioHash } from '../../packages/zplc-ide/src/learn/lessonPackageFiles';
 import { emptyProgress } from '../../packages/zplc-ide/shared/learnProgressModel';
@@ -140,12 +140,37 @@ export interface GuardOptions {
   grade?: boolean;
 }
 
+/** The codes of a not-graded run that a missing part of the learner's scene explains (the located message names the part). */
+const MISSING_PART_CODES = ['SCENE_FACT_UNKNOWN', 'SCENE_BINDING_INVALID'];
+
+/**
+ * A scene-building lesson (19.1, 19.2) ships a starter scene that lacks parts the scenario names, so its Check cannot grade it
+ * and says which part is missing. That is allowed only when the starter scene differs from the solution scene and every
+ * diagnostic is a missing-part code; any other starter that does not grade is a fault (CRS-005: an ungraded starter cannot pass).
+ */
+export function starterMayBeUngraded(starterScene: string, solutionScene: string, codes: readonly string[]): boolean {
+  const canonical = (text: string): string | undefined => {
+    try {
+      return canonicalJson(JSON.parse(text));
+    } catch {
+      return undefined;
+    }
+  };
+  const starter = canonical(starterScene);
+  return (
+    starter !== undefined &&
+    starter !== canonical(solutionScene) &&
+    codes.length > 0 &&
+    codes.every((code) => MISSING_PART_CODES.includes(code))
+  );
+}
+
 /** Grades one program of a scene lesson through the application's Check, in a copy of the project. */
 async function gradeProgram(
   lesson: LessonIndexEntry,
   project: string,
   options: GuardOptions,
-): Promise<{ faults: string[]; ms: number; passed: boolean }> {
+): Promise<{ faults: string[]; ms: number; passed: boolean; codes?: string[] }> {
   const now = options.now ?? (() => performance.now());
   const source = join(options.projectsDir ?? PROJECTS_DIRECTORY, project);
   if (!existsSync(source)) return { faults: [`${lesson.id}: project ${project} does not exist`], ms: 0, passed: false };
@@ -159,8 +184,14 @@ async function gradeProgram(
     const result = await lessonCheck(root, lesson.id, { lessons: [lesson] });
     const ms = now() - startedAt;
     if (!result.ok) {
-      const why = (result.evidence?.diagnostics ?? []).map((d) => `${d.path} ${d.message}`).join('; ');
-      return { faults: [`${lesson.id}: Check on ${project} did not grade (${result.reason}${why ? `: ${why}` : ''})`], ms, passed: false };
+      const diagnostics = result.evidence?.diagnostics ?? [];
+      const why = diagnostics.map((d) => `${d.code} ${d.path} ${d.message}`).join('; ');
+      return {
+        faults: [`${lesson.id}: Check on ${project} did not grade (${result.reason}${why ? `: ${why}` : ''})`],
+        ms,
+        passed: false,
+        codes: diagnostics.map((d) => d.code),
+      };
     }
     return { faults: [], ms, passed: result.record.result === 'passed' };
   } finally {
@@ -179,8 +210,16 @@ export async function checkSceneLessons(options: GuardOptions = {}): Promise<{ p
     const staticFaults = sceneLessonStaticFaults(lesson, options.scenesDir);
     problems.push(...staticFaults);
     if (staticFaults.length > 0 || options.grade === false) continue;
-    const starter = await gradeProgram(lesson, lesson.starter.project, options);
+    let starter = await gradeProgram(lesson, lesson.starter.project, options);
     const solution = await gradeProgram(lesson, lesson.solution.project, options);
+    let ungraded = '';
+    if (starter.faults.length > 0 && solution.faults.length === 0) {
+      const sceneOf = (project: string) => readFileSync(join(options.projectsDir ?? PROJECTS_DIRECTORY, project, 'scene.json'), 'utf8');
+      if (starterMayBeUngraded(sceneOf(lesson.starter.project), sceneOf(lesson.solution.project), starter.codes ?? [])) {
+        starter = { ...starter, faults: [] };
+        ungraded = `; starter not graded: missing part (${[...new Set(starter.codes)].join(', ')})`;
+      }
+    }
     problems.push(...starter.faults, ...solution.faults);
     if (starter.faults.length === 0 && starter.passed) problems.push(`${lesson.id}: the starter passes; it must fail (CRS-005)`);
     if (solution.faults.length === 0 && !solution.passed) problems.push(`${lesson.id}: the reference solution does not pass (CRS-005)`);
@@ -189,7 +228,7 @@ export async function checkSceneLessons(options: GuardOptions = {}): Promise<{ p
       ['solution', solution],
     ] as const)
       if (grade.ms > limit) problems.push(`${lesson.id}: the ${name} grade took ${Math.round(grade.ms)} ms, over ${limit} ms (CRS-006)`);
-    report.push(`${lesson.id}: starter ${Math.round(starter.ms)} ms, solution ${Math.round(solution.ms)} ms`);
+    report.push(`${lesson.id}: starter ${Math.round(starter.ms)} ms, solution ${Math.round(solution.ms)} ms${ungraded}`);
   }
   for (const sibling of sceneLessons.filter((lesson) => lesson.id.endsWith('-ladder'))) {
     const baseId = sibling.id.slice(0, -'-ladder'.length);
