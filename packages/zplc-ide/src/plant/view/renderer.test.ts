@@ -504,6 +504,59 @@ describe('display preferences reach the renderer', () => {
     }
   });
 
+  it.each([
+    ['right', 0],
+    ['left', 0],
+    ['right', 30],
+    ['left', 200],
+  ] as const)(
+    'PRT-003 the %s-hand curved conveyor turned %i degrees is drawn over the belt segments the physics builds',
+    async (hand, rot) => {
+      const { createPlantCore } = await import('../core/plantCore');
+      const { conveyorParts } = await import('../core/parts/conveyors');
+      const sp = {
+        id: 'arc',
+        part: 'curved',
+        name: 'arc',
+        position: [1, 0.5, -2] as [number, number, number],
+        rotationYDeg: rot,
+        config: { radius: 1.2, width: 0.5, hand },
+      };
+      const core = await createPlantCore({ ...scene, parts: [sp] });
+      let view: PartView;
+      try {
+        view = core.snapshot().parts[0]!;
+      } finally {
+        core.dispose();
+      }
+      // The segments the conveyor really builds: record them through a world that only keeps the bodies.
+      const segments: { position: [number, number, number] }[] = [];
+      const recorder = { addBody: (b: { position: [number, number, number] }) => segments.push(b), addBelt: () => undefined };
+      conveyorParts
+        .find((d) => d.id === 'curved')!
+        .runtime(sp, () => 0)
+        .build(recorder as never, sp);
+      expect(segments.length).toBe(12);
+      const spec = partShape(view);
+      if (spec.shape !== 'curve') throw new Error('not a curve');
+      const yaw = (2 * Math.atan2(view.pose.q[1], view.pose.q[3]) * 180) / Math.PI;
+      const a = (-yaw * Math.PI) / 180; // the inverse of the part-to-world rotation about +y
+      for (const s of segments) {
+        const dx = s.position[0] - view.pose.p[0];
+        const dz = s.position[2] - view.pose.p[2];
+        const x = dx * Math.cos(a) + dz * Math.sin(a); // into the mesh frame, where the arc sweeps theta from 0 to 90 about +y
+        const z = -dx * Math.sin(a) + dz * Math.cos(a);
+        const radius = Math.hypot(x, z);
+        const theta = (Math.atan2(-z, x) * 180) / Math.PI;
+        expect(radius).toBeGreaterThan(spec.innerRadius);
+        expect(radius).toBeLessThan(spec.outerRadius);
+        expect(radius).toBeCloseTo(1.2, 6);
+        expect(theta).toBeGreaterThanOrEqual(-1e-6);
+        expect(theta).toBeLessThanOrEqual(spec.angleDeg + 1e-6);
+      }
+    },
+  );
+
   it('VIS-009 the light and dark palettes draw no outlines, and switching back removes them', () => {
     const { r, scenes } = build();
     r.setSnapshot(withBlade);
