@@ -257,6 +257,8 @@ Nivel de evidencia: host. `packages/zplc-ide/src/components/InterlockCoverage.te
 
 Una prueba de escenario da el mismo resultado se ejecute donde se ejecute. La pestaña **Pruebas**, `zplc-cli test`, `zplc-cli scenario-run` y las herramientas MCP `tests_run` y `scenario_run` llaman todas a la misma API de herramientas sobre el mismo runtime nativo con el mismo reloj virtual, de modo que una aserción temporal (`AT`, `WITHIN`, `FOR`, `EVENTUALLY`, `ALWAYS`, `NEVER`, `UNTIL`, `RISING`, `FALLING`) se juzga sobre las mismas muestras. El veredicto, el hash del programa compilado y el hash y la longitud de la traza registrada de cada escenario son iguales, y una aserción que falla falla igual desde cada una, con la CLI saliendo con el código 1.
 
+Un escenario con un bloque `scene` se ejecuta del mismo modo, sin vista: el núcleo de la planta lee el `scene.json` y el `plant-map.json` del proyecto, como lo hace el Check de una lección, y nunca inicia el modo de E/S de planta ni toca una placa. Una escena sobre la que el escenario no puede ejecutarse (falta una pieza que nombra, o una señal no está conectada en el mapa) da un diagnóstico en `scene.json` o `plant-map.json` en lugar de un veredicto.
+
 Nivel de evidencia: host. `packages/zplc-ide/src/cli/scenarioParity.test.ts` ejecuta cada proyecto incluido por la API de herramientas, la CLI, el despachador MCP y el presentador, y compara los resultados. No cubre una placa.
 
 ## Notificaciones, mensajes y fallas

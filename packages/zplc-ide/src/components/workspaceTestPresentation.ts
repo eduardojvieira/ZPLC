@@ -250,6 +250,10 @@ const DIAGNOSTIC_CODES = new Set([
   'SIMULATOR_UNAVAILABLE',
   'RUNTIME_FAILED',
   'SCENARIO_ASSERTION_FAILED',
+  'SCENE_INVALID',
+  'SCENE_MAP_INVALID',
+  'SCENE_FACT_UNKNOWN',
+  'SCENE_BINDING_INVALID',
 ]);
 const diagnosticMessage = (code: string): string | undefined =>
   DIAGNOSTIC_CODES.has(code) ? t(`testDiag.${code}` as MessageKey) : undefined;

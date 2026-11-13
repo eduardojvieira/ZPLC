@@ -257,6 +257,8 @@ Evidence level: host. `packages/zplc-ide/src/components/InterlockCoverage.test.t
 
 A scenario test gives the same result wherever you run it. The **Tests** tab, `zplc-cli test`, `zplc-cli scenario-run` and the MCP tools `tests_run` and `scenario_run` all call the same Tool API on the same native runtime with the same virtual clock, so a temporal assertion (`AT`, `WITHIN`, `FOR`, `EVENTUALLY`, `ALWAYS`, `NEVER`, `UNTIL`, `RISING`, `FALLING`) is judged on the same samples. The verdict, the hash of the compiled program and the hash and length of the recorded trace of each scenario are equal, and a failing assertion fails the same way from each, with the CLI exiting with code 1.
 
+A scenario with a `scene` block runs the same way, headless: the plant core reads the project's `scene.json` and `plant-map.json`, as a lesson Check does, and never starts plant I/O mode or touches a board. A scene the scenario cannot run on (a part it names is missing, or a signal is not bound in the map) gives a diagnostic at `scene.json` or `plant-map.json` instead of a verdict.
+
 Evidence level: host. `packages/zplc-ide/src/cli/scenarioParity.test.ts` runs every bundled project through the Tool API, the CLI, the MCP dispatcher and the presenter, and compares the results. It does not cover a board.
 
 ## Notifications, messages and failures

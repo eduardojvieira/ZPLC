@@ -108,7 +108,10 @@ describe('a project run through the Tool API, the CLI, the MCP tools and Studio 
 
         // Studio: what the main process hands the renderer is the Tool API value, and the renderer presents it.
         const studio = presentWorkspaceTestResult(direct);
-        expect(studio.kind).toBe(direct.ok ? 'passed' : 'assertion-failed');
+        // A scene-building starter (lesson 19.x) lacks a part or a binding: it does not run, and Studio says which (M7-L7).
+        const sceneOnly = !direct.ok && direct.evidence.diagnostics.every((diagnostic) => diagnostic.code.startsWith('SCENE_'));
+        expect(studio.kind).toBe(direct.ok ? 'passed' : sceneOnly ? 'invalid' : 'assertion-failed');
+        if (sceneOnly) expect(studio.diagnostics.map(({ code }) => code)).toEqual(direct.evidence.diagnostics.map(({ code }) => code));
         expect(studio.artifacts.map(({ kind, sha256, byteLength }) => ({ kind, sha256, byteLength })) as unknown).toEqual(
           essence(direct).artifacts,
         );
