@@ -165,6 +165,8 @@ const sidebars = {
             'plant/clock',
             'plant/scene-format',
             'plant/scenes',
+            'plant/scene-editor',
+            'plant/io-mode',
             'plant/parts',
             'plant/manipulators',
             'plant/sorting',
