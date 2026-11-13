@@ -87,7 +87,8 @@ describe('the fact names a scenario reads', () => {
       'scenario.json expectations[0].condition: "fact:itemsRemovd" is not a plant fact; the facts are itemsEmitted, itemsRemoved, ' +
         'itemsDropped, ' +
         'itemsCollided, emitted:<Name>, delivered:<Name>, count:<Name>, position:<kind>:<index>, level:<Name>, volume:<Name>, ' +
-        'spilledL:<Name>, highs:<Name>, inBand:<Name>',
+        'spilledL:<Name>, highs:<Name>, inBand:<Name>, picked:<Name>, placed:<Name>, drops:<Name>, axis:<Name>:<x|y|z>, itemsAssembled, ' +
+        'stacked:pallet:<index>, layers:pallet:<index>',
     ]);
     expect(checkSceneFacts(withFacts('position:crate:x'), fixtureScene)).toHaveLength(1);
     expect(checkSceneFacts(withFacts('itemsRemoved:extra'), fixtureScene)).toHaveLength(1);
@@ -108,6 +109,34 @@ describe('the fact names a scenario reads', () => {
     expect(checkSceneFacts(withFacts('level:Tank1:x'), tankScene)).toHaveLength(1);
     expect(checkSceneFacts(withFacts('levels:Tank1'), tankScene)).toHaveLength(1);
     expect(checkSceneFacts(withFacts('level:Tank1'), tankScene)[0]).toBeUndefined();
+  });
+
+  it('SCN-004 the fact grammar accepts the M3 facts and names the unknown ones', () => {
+    const gantryScene: PlantSceneFile = {
+      ...fixtureScene,
+      parts: [{ id: 'gantry1', part: 'gantry', name: 'Gantry1', position: [0, 0, 0], rotationYDeg: 0, config: {} }],
+    };
+    const good = withFacts(
+      'picked:Gantry1',
+      'placed:Gantry1',
+      'drops:Gantry1',
+      'axis:Gantry1:x',
+      'axis:Gantry1:y',
+      'axis:Gantry1:z',
+      'itemsAssembled',
+      'stacked:pallet:0',
+      'layers:pallet:1',
+    );
+    expect(checkSceneFacts(good, gantryScene)).toEqual([]);
+    for (const bad of ['placed', 'axis:Gantry1', 'axis:Gantry1:w', 'stacked:box:0', 'layers:pallet:x', 'itemsAssembled:1'])
+      expect(checkSceneFacts(withFacts(bad), gantryScene)).toHaveLength(1);
+    expect(checkSceneFacts(withFacts('placed:Nope'), gantryScene)).toEqual([
+      'scenario.json expectations[0].condition: "fact:placed:Nope" names "Nope", which is not a part of the scene; it has: Gantry1',
+    ]);
+    expect(checkSceneFacts(withFacts('axis:Nope:x'), gantryScene)[0]).toContain('names "Nope"');
+    expect(checkSceneFacts(withFacts('placed'), gantryScene)[0]).toContain(
+      'picked:<Name>, placed:<Name>, drops:<Name>, axis:<Name>:<x|y|z>',
+    );
   });
 
   it('SCN-004 refuses a fact that names a part the scene does not have', () => {

@@ -15,6 +15,9 @@ import { loadJolt } from './jolt';
 import { conveyorParts } from './parts/conveyors';
 import { flowParts } from './parts/flow';
 import { indicatorParts } from './parts/indicators';
+import { stationParts } from './parts/layerPalletizer';
+import { manipulatorParts } from './parts/manipulators';
+import { createSupportTracker, type SupportItem } from './support';
 import { itemParts, boxSize, PALLET_SIZE, removeTrackedItem, spawnItem, trackedItems, type RuntimePartDefinition } from './parts/items';
 import { operableParts } from './parts/operable';
 import { isOperable, panelParts } from './parts/panel';
@@ -35,6 +38,8 @@ const SHIPPED: readonly RuntimePartDefinition[] = [
   ...processParts,
   ...operableParts,
   ...indicatorParts,
+  ...manipulatorParts,
+  ...stationParts,
 ];
 const RUNTIMES = new Map(SHIPPED.map((d) => [d.id, d]));
 registerParts(SHIPPED.filter((d) => !catalogue.get(d.id)));
@@ -124,6 +129,7 @@ export async function createPlantCore(scene: PlantSceneFile, options: { seed?: n
       latched: {} as Record<string, boolean | number>,
       trace: createTrace(),
       contacts: createContactTracker(),
+      support: createSupportTracker(),
       dropped: 0,
       collided: 0,
       scans: 0,
@@ -154,6 +160,14 @@ export async function createPlantCore(scene: PlantSceneFile, options: { seed?: n
       bodies.filter((b) => items.has(b.id)),
       items,
     );
+    // K5: the support facts read the same poses, in creation order (the order of `items`), once per plant step
+    const byId = new Map(bodies.map((b) => [b.id, b]));
+    const support: SupportItem[] = [];
+    for (const [id, info] of items) {
+      const b = byId.get(id);
+      if (b) support.push({ id, kind: info.kind, tag: info.tag, size: info.size, p: b.p, v: b.v });
+    }
+    m.support.update(support);
   }
 
   function advance(ms: number): void {
@@ -237,6 +251,7 @@ export async function createPlantCore(scene: PlantSceneFile, options: { seed?: n
       dropped: m.dropped,
       collided: m.collided,
       items,
+      support: m.support.facts(),
       poses: new Map(
         m.world
           .bodies()
@@ -276,7 +291,17 @@ export async function createPlantCore(scene: PlantSceneFile, options: { seed?: n
       const poses: BodyPose[] = m.world.bodies().flatMap((b) => {
         const info = items.get(b.id);
         return info
-          ? [{ id: b.id, part: info.kind === 'pallet' ? 'pallet' : 'box', kind: info.kind, size: info.size, p: b.p, q: b.q }]
+          ? [
+              {
+                id: b.id,
+                part: info.kind === 'pallet' ? 'pallet' : 'box',
+                kind: info.kind,
+                size: info.size,
+                p: b.p,
+                q: b.q,
+                ...(info.tag ? { tag: info.tag } : {}),
+              },
+            ]
           : [];
       });
       const parts: PartView[] = m.runtimes.flatMap((r) => r.rt.views());

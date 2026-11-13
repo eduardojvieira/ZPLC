@@ -65,6 +65,11 @@ export interface FactInputs {
   collided: number;
   items: ReadonlyMap<string, ItemInfo>;
   poses: ReadonlyMap<string, Vec3>;
+  /**
+   * The support tracker's facts (K5): itemsAssembled, stacked:pallet:<i>, layers:pallet:<i>. They come last, so older keys keep their
+   * order.
+   */
+  support: Readonly<Record<string, number>>;
 }
 
 /** The plant facts (PLT-010). Names are API: scenarios and the text equivalent read them. */
@@ -87,5 +92,5 @@ export function buildFacts(input: FactInputs): Record<string, FactValue> {
     const index = (seen[kind] = (seen[kind] ?? -1) + 1);
     out[`position:${kind}:${index}`] = Math.round(p[0] * 1000) / 1000; // x along the line, metres
   }
-  return out;
+  return Object.assign(out, input.support);
 }
