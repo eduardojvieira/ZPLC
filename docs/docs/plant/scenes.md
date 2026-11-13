@@ -9,20 +9,24 @@ tags: [plant, scenes]
 
 These scenes ship with ZPLC, in order of difficulty. Each has a scene file, a plant map, a starter program, a scenario and a reference program that passes the scenario. The scenario runs on the native runtime with a 10 ms scan and checks program outputs and facts of the plant. A fact name starts with `fact:`, such as `fact:count:EyeFar`. A check on a fact is a yes or no.
 
-| Scene                      | Length of the scenario | Parts                                                                                                                       |
-| -------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Belt to sensor             | 8 s                    | belt, emitter, diffuse sensor, push button                                                                                  |
-| Latch between two sensors  | 8 s                    | belt, box, two diffuse sensors                                                                                              |
-| Timed tank                 | 25 s                   | tank, push button, emergency stop, stack light                                                                              |
-| Counted queue              | 20 s                   | belt, emitter, two diffuse sensors, remover, push button, indicator light                                                   |
-| Two-axis assembly          | 40 s                   | three belts, two emitters, two stop blades, two diffuse sensors, two-axis pick and place, remover, push button, stack light |
-| Two-axis assembly, numeric | 40 s                   | the same parts; the pick and place takes numeric positions                                                                  |
-| Buffer and release         | 36 s                   | two belts, emitter, stop blade, three diffuse sensors, remover, two push buttons, two indicator lights                      |
-| Merge two lines            | 25 s                   | three belts, two emitters, two stop blades, three diffuse sensors, remover, push button, indicator light                    |
-| Tank level control         | 90 s                   | tank, two potentiometers, numeric display, stack light                                                                      |
-| Layer palletizer           | 60 s                   | belt, two emitters, diffuse sensor, layer palletizer, pallet, push button, stack light                                      |
-| Transfer between belts     | 45 s                   | two belts, emitter, stop blade, two diffuse sensors, two-axis pick and place, remover, push button, stack light             |
-| Three-axis palletizing     | 50 s                   | belt, emitter, stop blade, diffuse sensor, three-axis gantry, pallet, push button, stack light                              |
+| Scene                                | Length of the scenario | Parts                                                                                                                       |
+| ------------------------------------ | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Belt to sensor                       | 8 s                    | belt, emitter, diffuse sensor, push button                                                                                  |
+| Latch between two sensors            | 8 s                    | belt, box, two diffuse sensors                                                                                              |
+| Timed tank                           | 25 s                   | tank, push button, emergency stop, stack light                                                                              |
+| Counted queue                        | 20 s                   | belt, emitter, two diffuse sensors, remover, push button, indicator light                                                   |
+| Two-axis assembly                    | 40 s                   | three belts, two emitters, two stop blades, two diffuse sensors, two-axis pick and place, remover, push button, stack light |
+| Two-axis assembly, numeric           | 40 s                   | the same parts; the pick and place takes numeric positions                                                                  |
+| Buffer and release                   | 36 s                   | two belts, emitter, stop blade, three diffuse sensors, remover, two push buttons, two indicator lights                      |
+| Merge two lines                      | 25 s                   | three belts, two emitters, two stop blades, three diffuse sensors, remover, push button, indicator light                    |
+| Tank level control                   | 90 s                   | tank, two potentiometers, numeric display, stack light                                                                      |
+| Layer palletizer                     | 60 s                   | belt, two emitters, diffuse sensor, layer palletizer, pallet, push button, stack light                                      |
+| Transfer between belts               | 45 s                   | two belts, emitter, stop blade, two diffuse sensors, two-axis pick and place, remover, push button, stack light             |
+| Three-axis palletizing               | 50 s                   | belt, emitter, stop blade, diffuse sensor, three-axis gantry, pallet, push button, stack light                              |
+| Colour separation                    | 50 s                   | three belts, emitter, stop blade, diffuse sensor, colour sensor, pusher, two removers, push button, stack light             |
+| Height sorting with turntable        | 77 s                   | four belts, emitter, light array, stop blade, two diffuse sensors, turntable, three removers, push button, stack light      |
+| Height sorting with a chain transfer | 62 s                   | four belts, emitter, stop blade, three diffuse sensors, chain transfer, three removers, push button, stack light            |
+| Weight sorting                       | 85 s                   | three belts, emitter, stop blade, scale, pusher, two removers, push button, stack light                                     |
 
 ## Belt to sensor
 
@@ -95,6 +99,30 @@ The scenario presses start and checks that boxes are picked, placed and delivere
 Place boxes on a pallet in two layers with a three-axis gantry that takes numeric positions. The gantry raises its pad first, takes each box at the stop blade and puts it on a pallet slot.
 
 The scenario presses start and checks that boxes are placed and stacked in layers, that nothing is dropped, and that the green lamp is on at 50 s.
+
+## Colour separation
+
+Sort red and blue workpieces with a colour sensor. Each workpiece waits at a stop blade while the colour sensor reads it; a pusher sends red ones to a side belt and blue ones go straight on. See [sorting](./sorting.md).
+
+The scenario presses start and checks that the red bin and the blue bin each receive their colour, that no workpiece reaches the wrong bin, that nothing is dropped, and that the done lamp is on and the pusher is off at 50 s.
+
+## Height sorting with turntable
+
+Sort boxes by height into three bins with a light array and a turntable. The light array reads each box's height as it passes; the box stops on the turntable, which turns to send short boxes straight on, medium boxes to the right and tall boxes to the left. The height arrives as a `REAL` value: see [numeric signals](./numeric-signals.md).
+
+The scenario presses start and checks that each bin receives its height class, that no box reaches the wrong bin, that nothing is dropped, and that the done lamp is on at 77 s.
+
+## Height sorting with a chain transfer
+
+Sort boxes by height into three bins with two beam sensors at different heights and a chain transfer. The two beams tell short, medium and tall boxes apart; short boxes go straight on, and the chain transfer lifts medium and tall boxes and moves them sideways to one side or the other.
+
+The scenario presses start and checks that each bin receives its height class, that no box reaches the wrong bin, that nothing is dropped, and that the done lamp is on and the transfer is still at 62 s.
+
+## Weight sorting
+
+Sort boxes by weight with a scale and a pusher. Each box waits on the scale at a stop blade until the reading is stable; a pusher sends boxes heavier than 3.5 kg to a side belt and lighter boxes go straight on. The weight arrives as a `REAL` value in kilograms.
+
+The scenario presses start and checks that the heavy bin and the light bin each receive their class, that no box reaches the wrong bin, that nothing is dropped, and that the green lamp is on at 85 s.
 
 ## What is not claimed
 

@@ -9,20 +9,24 @@ tags: [plant, scenes]
 
 ZPLC incluye estas escenas, en orden de dificultad. Cada una tiene un archivo de escena, un mapa de la planta, un programa inicial, un escenario y un programa de referencia que pasa el escenario. El escenario corre en el entorno de ejecución nativo con un ciclo de 10 ms y comprueba salidas del programa y hechos de la planta. El nombre de un hecho empieza con `fact:`, como `fact:count:EyeFar`. Una comprobación sobre un hecho es un sí o un no. Los nombres de las escenas son los de sus archivos, en inglés.
 
-| Escena                       | Duración del escenario | Piezas                                                                                                                               |
-| ---------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `Belt to sensor`             | 8 s                    | cinta, emisor, sensor difuso, pulsador                                                                                               |
-| `Latch between two sensors`  | 8 s                    | cinta, caja, dos sensores difusos                                                                                                    |
-| `Timed tank`                 | 25 s                   | tanque, pulsador, paro de emergencia, torre de luces                                                                                 |
-| `Counted queue`              | 20 s                   | cinta, emisor, dos sensores difusos, retirador, pulsador, piloto luminoso                                                            |
-| `Two-axis assembly`          | 40 s                   | tres cintas, dos emisores, dos topes retráctiles, dos sensores difusos, manipulador de dos ejes, retirador, pulsador, torre de luces |
-| `Two-axis assembly, numeric` | 40 s                   | las mismas piezas; el manipulador recibe posiciones numéricas                                                                        |
-| `Buffer and release`         | 36 s                   | dos cintas, emisor, tope retráctil, tres sensores difusos, retirador, dos pulsadores, dos pilotos luminosos                          |
-| `Merge two lines`            | 25 s                   | tres cintas, dos emisores, dos topes retráctiles, tres sensores difusos, retirador, pulsador, piloto luminoso                        |
-| `Tank level control`         | 90 s                   | tanque, dos potenciómetros, indicador numérico, torre de luces                                                                       |
-| `Layer palletizer`           | 60 s                   | cinta, dos emisores, sensor difuso, paletizador de capas, tarima, pulsador, torre de luces                                           |
-| `Transfer between belts`     | 45 s                   | dos cintas, emisor, tope retráctil, dos sensores difusos, manipulador de dos ejes, retirador, pulsador, torre de luces               |
-| `Three-axis palletizing`     | 50 s                   | cinta, emisor, tope retráctil, sensor difuso, pórtico de tres ejes, tarima, pulsador, torre de luces                                 |
+| Escena                                 | Duración del escenario | Piezas                                                                                                                                  |
+| -------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `Belt to sensor`                       | 8 s                    | cinta, emisor, sensor difuso, pulsador                                                                                                  |
+| `Latch between two sensors`            | 8 s                    | cinta, caja, dos sensores difusos                                                                                                       |
+| `Timed tank`                           | 25 s                   | tanque, pulsador, paro de emergencia, torre de luces                                                                                    |
+| `Counted queue`                        | 20 s                   | cinta, emisor, dos sensores difusos, retirador, pulsador, piloto luminoso                                                               |
+| `Two-axis assembly`                    | 40 s                   | tres cintas, dos emisores, dos topes retráctiles, dos sensores difusos, manipulador de dos ejes, retirador, pulsador, torre de luces    |
+| `Two-axis assembly, numeric`           | 40 s                   | las mismas piezas; el manipulador recibe posiciones numéricas                                                                           |
+| `Buffer and release`                   | 36 s                   | dos cintas, emisor, tope retráctil, tres sensores difusos, retirador, dos pulsadores, dos pilotos luminosos                             |
+| `Merge two lines`                      | 25 s                   | tres cintas, dos emisores, dos topes retráctiles, tres sensores difusos, retirador, pulsador, piloto luminoso                           |
+| `Tank level control`                   | 90 s                   | tanque, dos potenciómetros, indicador numérico, torre de luces                                                                          |
+| `Layer palletizer`                     | 60 s                   | cinta, dos emisores, sensor difuso, paletizador de capas, tarima, pulsador, torre de luces                                              |
+| `Transfer between belts`               | 45 s                   | dos cintas, emisor, tope retráctil, dos sensores difusos, manipulador de dos ejes, retirador, pulsador, torre de luces                  |
+| `Three-axis palletizing`               | 50 s                   | cinta, emisor, tope retráctil, sensor difuso, pórtico de tres ejes, tarima, pulsador, torre de luces                                    |
+| `Colour separation`                    | 50 s                   | tres cintas, emisor, tope retráctil, sensor difuso, sensor de color, empujador, dos retiradores, pulsador, torre de luces               |
+| `Height sorting with turntable`        | 77 s                   | cuatro cintas, emisor, cortina de luz, tope retráctil, dos sensores difusos, mesa giratoria, tres retiradores, pulsador, torre de luces |
+| `Height sorting with a chain transfer` | 62 s                   | cuatro cintas, emisor, tope retráctil, tres sensores difusos, transferencia de cadenas, tres retiradores, pulsador, torre de luces      |
+| `Weight sorting`                       | 85 s                   | tres cintas, emisor, tope retráctil, báscula, empujador, dos retiradores, pulsador, torre de luces                                      |
 
 ## Belt to sensor
 
@@ -95,6 +99,30 @@ El escenario pulsa el inicio y comprueba que las cajas se toman, se colocan y se
 Coloque cajas sobre una tarima en dos capas con un pórtico de tres ejes que recibe posiciones numéricas. El pórtico sube primero su ventosa, toma cada caja en el tope retráctil y la deja en un lugar de la tarima.
 
 El escenario pulsa el inicio y comprueba que las cajas se colocan y se apilan en capas, que no cae nada y que la luz verde está encendida a los 50 s.
+
+## Colour separation
+
+Clasifique piezas rojas y azules con un sensor de color. Cada pieza espera en un tope retráctil mientras el sensor de color la lee; un empujador envía las rojas a una cinta lateral y las azules siguen de largo. Consulte [clasificación](./sorting.md).
+
+El escenario pulsa el inicio y comprueba que el retirador rojo y el azul reciben cada uno su color, que ninguna pieza llega al retirador equivocado, que no cae nada y que la luz de fin está encendida y el empujador apagado a los 50 s.
+
+## Height sorting with turntable
+
+Clasifique cajas por altura en tres retiradores con una cortina de luz y una mesa giratoria. La cortina de luz lee la altura de cada caja al pasar; la caja se detiene sobre la mesa, que gira para enviar las bajas de frente, las medianas a la derecha y las altas a la izquierda. La altura llega como un valor `REAL`: consulte [señales numéricas](./numeric-signals.md).
+
+El escenario pulsa el inicio y comprueba que cada retirador recibe su clase de altura, que ninguna caja llega al retirador equivocado, que no cae nada y que la luz de fin está encendida a los 77 s.
+
+## Height sorting with a chain transfer
+
+Clasifique cajas por altura en tres retiradores con dos sensores de barrera a distinta altura y una transferencia de cadenas. Las dos barreras distinguen cajas bajas, medianas y altas; las bajas siguen de largo, y la transferencia levanta las medianas y las altas y las mueve de lado hacia uno u otro costado.
+
+El escenario pulsa el inicio y comprueba que cada retirador recibe su clase de altura, que ninguna caja llega al retirador equivocado, que no cae nada y que la luz de fin está encendida y la transferencia quieta a los 62 s.
+
+## Weight sorting
+
+Clasifique cajas por peso con una báscula y un empujador. Cada caja espera sobre la báscula en un tope retráctil hasta que la lectura es estable; un empujador envía las cajas de más de 3.5 kg a una cinta lateral y las más livianas siguen de largo. El peso llega como un valor `REAL` en kilogramos.
+
+El escenario pulsa el inicio y comprueba que el retirador de pesadas y el de livianas reciben cada uno su clase, que ninguna caja llega al retirador equivocado, que no cae nada y que la luz verde está encendida a los 85 s.
 
 ## Lo que no se afirma
 
