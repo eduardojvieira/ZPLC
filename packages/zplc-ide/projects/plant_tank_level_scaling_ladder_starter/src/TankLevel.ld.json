@@ -1,0 +1,107 @@
+{
+  "name": "TankLevel",
+  "description": "Scale the raw level of a tank to metres and hold it near a set point.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "LevelF",
+        "type": "REAL",
+        "comment": "The raw level as a REAL"
+      },
+      {
+        "name": "SetF",
+        "type": "REAL",
+        "comment": "The raw set point as a REAL"
+      },
+      {
+        "name": "DrainF",
+        "type": "REAL",
+        "comment": "The raw drain value as a REAL"
+      },
+      {
+        "name": "LevelM",
+        "type": "REAL",
+        "comment": "The level in m"
+      },
+      {
+        "name": "SetM",
+        "type": "REAL",
+        "comment": "The set point in m"
+      },
+      {
+        "name": "Err",
+        "type": "REAL",
+        "comment": "Set point minus level, in m"
+      },
+      {
+        "name": "Band",
+        "type": "REAL",
+        "comment": "5 percent of the set point, in m"
+      },
+      {
+        "name": "Lo",
+        "type": "REAL",
+        "comment": "Lower edge of the green band, in m"
+      },
+      {
+        "name": "Hi",
+        "type": "REAL",
+        "comment": "Upper edge of the green band, in m"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "LevelRaw",
+        "type": "INT",
+        "address": "%IW0",
+        "comment": "Tank1.level: 0 to 27648 is 0 to 1 m"
+      },
+      {
+        "name": "SetPointRaw",
+        "type": "INT",
+        "address": "%IW1",
+        "comment": "SetPoint.value: 0 to 1000 is 0 to 1 m"
+      },
+      {
+        "name": "DrainRaw",
+        "type": "INT",
+        "address": "%IW2",
+        "comment": "DrainPot.value: 0 to 1000 is 0 to 100 percent"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "FillCmd",
+        "type": "REAL",
+        "address": "%QD0",
+        "comment": "Tank1.fill: 0 to 100 percent of the inlet valve"
+      },
+      {
+        "name": "DrainCmd",
+        "type": "REAL",
+        "address": "%QD1",
+        "comment": "Tank1.drain: 0 to 100 percent of the discharge valve"
+      },
+      {
+        "name": "LevelShown",
+        "type": "REAL",
+        "address": "%QD2",
+        "comment": "LevelDisplay.value: the level in m"
+      },
+      {
+        "name": "Green",
+        "type": "BOOL",
+        "address": "%QX12.0",
+        "comment": "StackLight1.green: the level is within 5 percent of the set point"
+      }
+    ]
+  },
+  "rungs": [],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
