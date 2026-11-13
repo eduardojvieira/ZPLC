@@ -13,6 +13,14 @@ export interface WorldBodySpec {
   friction: number;
   motion: 'static' | 'dynamic' | 'kinematic';
   layer: 'moving' | 'static';
+  /**
+   * Compound body: the listed boxes, each with its own half extents and an offset from the body origin in the body frame, replace the
+   * single box of `half` (which then only bounds the body for wake boxes and `gapBelow`). A dynamic compound keeps the mass `massKg`.
+   * Absent: a single box of `half`, exactly as before.
+   */
+  shapes?: readonly { half: Vec3; offset: Vec3 }[];
+  /** Static bodies only: a tilt in degrees about the body's local z axis, applied after the yaw (a ramp). Absent or 0: as before. */
+  tiltDeg?: number;
 }
 /** A belt is a static body plus a surface velocity along `axis` (world space), ramped at `accelMps2`. */
 export interface WorldBeltSpec {
@@ -187,17 +195,37 @@ export function createWorld(Jolt: JoltModule, stepMs: number = PLANT_STEP_MS): P
     if (e) bodyInterface.ActivateBody(e.body.GetID());
   };
 
+  // One rigid body from several boxes (a static compound: the sub-shapes never move against each other).
+  const compoundOf = (shapes: NonNullable<WorldBodySpec['shapes']>) => {
+    const settings = new Jolt.StaticCompoundShapeSettings();
+    for (const s of shapes) {
+      const h = new Jolt.Vec3(s.half[0], s.half[1], s.half[2]);
+      const at = new Jolt.Vec3(s.offset[0], s.offset[1], s.offset[2]);
+      const none = new Jolt.Quat(0, 0, 0, 1);
+      settings.AddShapeShape(at, none, new Jolt.BoxShape(h, 0.05, undefined), 0);
+      for (const o of [h, at, none]) Jolt.destroy(o);
+    }
+    const result = settings.Create();
+    if (result.HasError()) throw new Error(`addBody: compound shape failed: ${result.GetError().c_str()}`);
+    return result.Get();
+  };
+
   const world: PhysicsWorld = {
     get timeMs() {
       return timeMs;
     },
     addBody(spec) {
       if (entries.has(spec.id)) throw new Error(`duplicate body ${spec.id}`);
+      if (spec.tiltDeg && spec.motion !== 'static') throw new Error(`addBody ${spec.id}: tiltDeg applies to static bodies only`);
       const half = new Jolt.Vec3(spec.half[0], spec.half[1], spec.half[2]);
-      const shape = new Jolt.BoxShape(half, 0.05, undefined);
+      const shape = spec.shapes ? compoundOf(spec.shapes) : new Jolt.BoxShape(half, 0.05, undefined);
       const pos = new Jolt.RVec3(spec.position[0], spec.position[1], spec.position[2]);
       const a = (spec.rotationYDeg * Math.PI) / 360;
-      const rot = new Jolt.Quat(0, Math.sin(a), 0, Math.cos(a));
+      // The yaw, then (ramps only) the tilt about local z: q = yaw * tilt.
+      const t = spec.tiltDeg ? (spec.tiltDeg * Math.PI) / 360 : 0;
+      const rot = t
+        ? new Jolt.Quat(Math.sin(a) * Math.sin(t), Math.sin(a) * Math.cos(t), Math.cos(a) * Math.sin(t), Math.cos(a) * Math.cos(t))
+        : new Jolt.Quat(0, Math.sin(a), 0, Math.cos(a));
       const motion =
         spec.motion === 'dynamic'
           ? Jolt.EMotionType_Dynamic
