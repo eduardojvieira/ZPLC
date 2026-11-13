@@ -37,9 +37,10 @@ describe('VF-017 line-length guard: the scanner', () => {
 });
 
 describe('VF-017 line-length guard: the repository', () => {
+  // The scan reads every tracked source file; on a loaded machine it takes longer than bun's 5 s default.
   it('has no hand-written source line over the limit', async () => {
     expect((await offenders()).map(({ file, line, length }) => `${file}:${line}: ${length} columns`)).toEqual([]);
-  });
+  }, 60_000);
 
   it('keeps the guard limit equal to the Prettier and clang-format limits', () => {
     expect((JSON.parse(read('.prettierrc.json')) as { printWidth: number }).printWidth).toBe(LIMIT);
