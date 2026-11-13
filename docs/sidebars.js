@@ -168,6 +168,7 @@ const sidebars = {
             'plant/parts',
             'plant/manipulators',
             'plant/sorting',
+            'plant/stations',
             'plant/numeric-signals',
             'reference/cli',
             'reference/mcp',

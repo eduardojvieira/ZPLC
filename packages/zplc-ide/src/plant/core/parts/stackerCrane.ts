@@ -374,8 +374,8 @@ export const stackerParts: readonly RuntimePartDefinition[] = [
         'level l (1 to levels) is a pair of rails, 0.24 m apart, whose tops are l x levelPitchM + 0.1 m over the part position; a box ' +
         '0.3 m wide (x) and 0.4 m long (z) rests on both rails and the 0.16 m wide fork passes between them. Store: raise the fork ' +
         'loaded, extend it to the right, lower it, retract it. Retrieve: extend it lowered, raise it, retract it. X and Y stop while the ' +
-        'fork is out (or the load is above maxLoadKg), and blocked counts each refused request once. The fork does not collide with ' +
-        'the rack: the plant refuses the move. loaded is TRUE while a box rests on the centre of the fork. Facts: stored:<Name> counts ' +
+        'fork is out (or the load is above maxLoadKg), and blocked counts each refused request once. The fork passes through the ' +
+        'rails: extend it only at inPosition. loaded is TRUE while a box rests on the centre of the fork. Facts: stored:<Name> counts ' +
         'the cells with a box at rest, cell:<Name>:<c>:<l> is TRUE for each occupied cell, blocked:<Name> counts refused requests and ' +
         'axis:<Name>:x, :y and :z are positions in metres (z is signed, 0 at the centre). Faults: stuckX, stuckY, forkStuck, ' +
         'loadedStuckOff, beltStall. Known limits: one rack, on one side, one box deep; the crane starts at bay 0, level 0, fork down.',
@@ -394,8 +394,8 @@ export const stackerParts: readonly RuntimePartDefinition[] = [
         'levelPitchM + 0,1 m sobre la posición de la pieza; una caja de 0,3 m de ancho (x) y 0,4 m de largo (z) descansa sobre ambos ' +
         'rieles y la horquilla de 0,16 m de ancho pasa entre ellos. Guardar: suba la horquilla cargada, extiéndala a la derecha, ' +
         'bájela y recójala. Retirar: extiéndala baja, súbala y recójala. X e Y se detienen mientras la horquilla está afuera (o la ' +
-        'carga supera maxLoadKg), y blocked cuenta cada petición rechazada una vez. La horquilla no choca con el estante: la planta ' +
-        'rechaza el movimiento. loaded es TRUE mientras una caja descansa en el centro de la horquilla. Hechos: stored:<Name> cuenta ' +
+        'carga supera maxLoadKg), y blocked cuenta cada petición rechazada una vez. La horquilla atraviesa los rieles: extiéndala ' +
+        'solo con inPosition. loaded es TRUE mientras una caja descansa en el centro de la horquilla. Hechos: stored:<Name> cuenta ' +
         'las celdas con una caja en reposo, cell:<Name>:<c>:<l> es TRUE en cada celda ocupada, blocked:<Name> cuenta las peticiones ' +
         'rechazadas y axis:<Name>:x, :y y :z son posiciones en metros (z con signo, 0 en el centro). Fallas: stuckX, stuckY, ' +
         'forkStuck, loadedStuckOff, beltStall. Límites conocidos: un estante, de un solo lado, una caja de fondo; la grúa inicia en ' +

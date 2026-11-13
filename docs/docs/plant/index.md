@@ -35,3 +35,4 @@ Frame rate, link latency and supported boards are claims that need recorded evid
 - [Numeric signals](./numeric-signals.md): how an INT or REAL value travels between a part and the program.
 - [Manipulators and gripping](./manipulators.md): the axes, the grip rules and the layer palletizer.
 - [Sorting and diverting](./sorting.md): item properties, the sorting sensors, the diverting parts and how a remover grades.
+- [Stations](./stations.md): the crate, the lift, the stacker crane with its rack, the machining centre and the completion parts.

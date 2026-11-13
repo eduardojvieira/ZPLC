@@ -35,3 +35,4 @@ La tasa de cuadros, la latencia del enlace y las placas compatibles son afirmaci
 - [Señales numéricas](./numeric-signals.md): cómo viaja un valor INT o REAL entre una pieza y el programa.
 - [Manipuladores y agarre](./manipulators.md): los ejes, las reglas de agarre y el paletizador por capas.
 - [Clasificar y desviar](./sorting.md): propiedades de la pieza, los sensores de clasificación, las piezas desviadoras y cómo califica un retirador.
+- [Estaciones](./stations.md): el cajón, el elevador, el transelevador con su estante, el centro de mecanizado y las piezas de completado.
