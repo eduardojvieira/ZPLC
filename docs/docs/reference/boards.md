@@ -67,7 +67,7 @@ Flash and RAM of `firmware/app` per board, from the linker memory table of the C
 
 | Board ID | Flash (KiB) | Flash budget (KiB) | RAM (KiB) | RAM budget (KiB) | Work (KiB) | RETAIN (KiB) | Code (KiB) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `rpi-pico-rp2040` | 173.7 | 182.5 | 169.4 | 178.0 | 8.0 | 4.0 | 24.0 |
+| `rpi-pico-rp2040` | 184.1 | 193.5 | 178.4 | 187.5 | 8.0 | 4.0 | 24.0 |
 | `arduino-giga-r1-m7` | 212.8 | 223.5 | 229.9 | 241.5 | 8.0 | 4.0 | 44.0 |
 | `esp32-s3-devkitc` | 987.0 | 1031.0 | 2381.1 | 2493.0 | 2.0 | 1.0 | 8.0 |
 | `stm32f746g-disco` | 297.7 | 312.8 | 209.7 | 220.2 | 8.0 | 4.0 | 16.0 |

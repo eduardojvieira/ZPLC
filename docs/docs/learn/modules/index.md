@@ -24,6 +24,14 @@ unlisted: true
 | [9: Instruction List, and one logic in five languages](./module-9.md) | Advanced | 2 |
 | [10: Communications: Modbus and MQTT basics](./module-10.md) | Advanced | 3 |
 | [11: Capstone: a small machine from description to tested program](./module-11.md) | Advanced | 3 |
+| [12: First plants: move a box with a sensor, a latch and a counter](./module-12.md) | Advanced | 0 |
+| [13: Timers and process control: delays, level scaling and a PID loop](./module-13.md) | Advanced | 0 |
+| [14: Flow control: state machines and merging two lines](./module-14.md) | Advanced | 0 |
+| [15: Manipulators and assembly: pick, place and sequence](./module-15.md) | Advanced | 0 |
+| [16: Sorting: decide a route from what the sensors report](./module-16.md) | Advanced | 0 |
+| [17: Stations: several machines working as one](./module-17.md) | Advanced | 0 |
+| [18: Safe and diagnosable machines: interlocks, manual and automatic, and faults](./module-18.md) | Advanced | 0 |
+| [19: Build your own scenes: place parts, bind signals and run](./module-19.md) | Advanced | 0 |
 
 {/* <<< END GENERATED: learn/modules/index <<< */}
 
