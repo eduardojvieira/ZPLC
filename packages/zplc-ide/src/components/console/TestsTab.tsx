@@ -1,7 +1,12 @@
-import { AlertCircle, CheckCircle, FolderOpen, Info, LoaderCircle, Play } from 'lucide-react';
-import type { RefObject } from 'react';
+/**
+ * The Tests tab of the results panel, until Task T3 replaces it with the Test results tab: the latest result of the project's tests
+ * and the action to run them again. The tests are listed and chosen in the Tests activity; there is no file to choose (TST-002).
+ */
+import { CheckCircle, Info, LoaderCircle, Play } from 'lucide-react';
 import { Button } from '../../ui';
 import { useT } from '../../i18n';
+import { useProjectTests } from '../../projectTests/useProjectTests';
+import { useWorkspaceTestResult } from '../../shell/workspaceTestResult';
 import { CommandEmptyState } from '../panelStates';
 import { WorkspaceTestResult } from '../WorkspaceTestResult';
 import { classifyWorkspaceTestBuildLink } from '../workspaceTestPresentation';
@@ -11,16 +16,7 @@ import type { useConsoleState } from '../../store/regionSubscriptions';
 type ConsoleState = ReturnType<typeof useConsoleState>;
 
 export interface TestsTabProps {
-  runner: Pick<
-    WorkspaceTestRunner,
-    | 'workspaceTestBusy'
-    | 'hasCurrentWorkspaceLink'
-    | 'workspaceTestAvailabilityState'
-    | 'workspaceTestStateForLink'
-    | 'saveWorkspaceProject'
-    | 'runWorkspaceTests'
-    | 'cancelWorkspaceTests'
-  > & { workspaceManifestInputRef: RefObject<HTMLInputElement | null> };
+  runner: Pick<WorkspaceTestRunner, 'workspaceTestAvailabilityState'>;
   projectSession: number;
   compilerRunId: number;
   workspaceScenarioLink: ConsoleState['workspaceScenarioLink'];
@@ -29,116 +25,75 @@ export interface TestsTabProps {
 
 export function TestsTab({ runner, projectSession, compilerRunId, workspaceScenarioLink, canonicalWorkspaceBuildEvidence }: TestsTabProps) {
   const { t } = useT();
-  const {
-    workspaceTestBusy,
-    hasCurrentWorkspaceLink,
-    workspaceTestAvailabilityState,
-    workspaceTestStateForLink,
-    workspaceManifestInputRef,
-    saveWorkspaceProject,
-    runWorkspaceTests,
-    cancelWorkspaceTests,
-  } = runner;
+  const presentation = useWorkspaceTestResult((state) => state.presentation);
+  const running = useProjectTests((state) => state.running);
+  const cancelling = useProjectTests((state) => state.cancelling);
+  const run = useProjectTests((state) => state.run);
+  const runScenario = useProjectTests((state) => state.runScenario);
+  const cancel = useProjectTests((state) => state.cancel);
+  const availability = runner.workspaceTestAvailabilityState;
+  const busy = running !== null;
   return (
     <div className="p-3 space-y-3 font-sans text-sm text-[var(--color-surface-200)]">
-      {workspaceTestAvailabilityState === 'desktop-unavailable' ? (
+      {availability === 'desktop-unavailable' ? (
         <p role="status" aria-live="polite" className="flex items-center gap-2 text-[var(--color-surface-400)]">
           <Info size={15} aria-hidden="true" />
           {t('console.workspaceTestsRequireThe')}
         </p>
-      ) : workspaceTestAvailabilityState === 'project-required' ? (
+      ) : availability === 'project-required' ? (
         <CommandEmptyState title={t('panel.tests.empty.title')} description={t('panel.tests.empty.description')} actions={['file.open']} />
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={() => workspaceManifestInputRef.current?.click()} disabled={workspaceTestBusy}>
-              <FolderOpen size={14} aria-hidden="true" />
-              {hasCurrentWorkspaceLink ? t('console.chooseZplcJsonAgain') : t('console.chooseZplcJson')}
-            </Button>
-            {workspaceTestAvailabilityState === 'unsaved' && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  void saveWorkspaceProject();
-                }}
-                disabled={workspaceTestBusy}
-              >
-                {t('console.saveProject')}
-              </Button>
-            )}
             <Button
               variant="primary"
               size="sm"
               onClick={() => {
-                void runWorkspaceTests();
+                void run();
               }}
-              disabled={workspaceTestBusy || workspaceTestAvailabilityState !== 'ready'}
+              disabled={busy}
             >
               <Play size={14} aria-hidden="true" />
               {t('console.runHostScenarios')}
             </Button>
-            {workspaceTestStateForLink === 'running' || workspaceTestStateForLink === 'cancelling' ? (
+            {busy ? (
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => {
-                  void cancelWorkspaceTests();
+                  void cancel();
                 }}
-                disabled={workspaceTestStateForLink === 'cancelling'}
+                disabled={cancelling}
               >
-                {workspaceTestStateForLink === 'cancelling' ? t('console.cancelling') : t('console.cancelScenarios')}
+                {cancelling ? t('console.cancelling') : t('console.cancelScenarios')}
               </Button>
             ) : null}
           </div>
-
-          {workspaceTestAvailabilityState === 'link-required' && (
-            <p role="status" aria-live="polite" className="flex items-center gap-2 text-[var(--color-surface-400)]">
-              <Info size={15} aria-hidden="true" />
-              {t('console.selectTheSavedWorkspace')}
+          {!busy && !presentation && (availability === 'ready' || availability === 'unsaved') && (
+            <p role="status" aria-live="polite" className="flex items-center gap-2 text-[var(--color-surface-200)]">
+              <CheckCircle size={15} aria-hidden="true" />
+              {t('console.linkedSavedWorkspaceReady')}
             </p>
           )}
-          {workspaceTestAvailabilityState === 'unsaved' && (
-            <p role="status" aria-live="polite" className="flex items-center gap-2 text-[var(--color-accent-yellow)]">
-              <AlertCircle size={15} aria-hidden="true" />
-              {t('console.testsUseSavedWorkspace')}
-            </p>
-          )}
-          {workspaceTestAvailabilityState === 'ready' &&
-            (workspaceTestStateForLink === 'selected' || workspaceTestStateForLink === 'idle') && (
-              <p role="status" aria-live="polite" className="flex items-center gap-2 text-[var(--color-surface-200)]">
-                <CheckCircle size={15} aria-hidden="true" />
-                {t('console.linkedSavedWorkspaceReady')}
-              </p>
-            )}
-          {workspaceTestStateForLink === 'running' && (
+          {busy && (
             <p role="status" aria-live="polite" className="flex items-center gap-2 text-[var(--color-surface-200)]">
               <LoaderCircle size={15} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
-              {t('console.runningHostPosixScenarios')}
+              {cancelling ? t('console.cancellingHostPosixScenarios') : t('console.runningHostPosixScenarios')}
             </p>
           )}
-          {workspaceTestStateForLink === 'cancelling' && (
-            <p role="status" aria-live="polite" className="flex items-center gap-2 text-[var(--color-surface-200)]">
-              <LoaderCircle size={15} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
-              {t('console.cancellingHostPosixScenarios')}
-            </p>
-          )}
-          {workspaceTestStateForLink === 'desktop-unavailable' && (
-            <p role="status" aria-live="polite" className="text-[var(--color-accent-yellow)]">
-              {t('console.hostPosixSimulationIs')}
-            </p>
-          )}
-          {typeof workspaceTestStateForLink === 'object' && (
+          {presentation && (
             <WorkspaceTestResult
-              presentation={workspaceTestStateForLink.presentation}
+              presentation={presentation}
               onRunScenario={(scenarioId) => {
-                void runWorkspaceTests(scenarioId);
+                void runScenario(scenarioId);
               }}
-              scenarioRunDisabled={workspaceTestBusy || workspaceTestAvailabilityState !== 'ready'}
+              scenarioRunDisabled={busy}
               buildLink={classifyWorkspaceTestBuildLink(
                 { projectSession, compilerRunId, workspaceScenarioLink },
                 canonicalWorkspaceBuildEvidence,
-                workspaceTestStateForLink,
+                workspaceScenarioLink
+                  ? { presentation, projectSession, compilerRunId, workspaceId: workspaceScenarioLink.workspaceId }
+                  : null,
               )}
             />
           )}

@@ -1860,7 +1860,9 @@ async function main(): Promise<void> {
     // missing saved-workspace link, so the source is saved before this Build, as it is for the second one below.
     await setFile(validProgram, true);
     await click('Compile');
-    await waitFor('saved-workspace link fence', async () => ((await text()).includes('Choose zplc.json') ? true : undefined));
+    await waitFor('saved-workspace link fence', async () =>
+      (await page().evaluate(`document.getElementById('console-panel-tests') ? true : undefined`)) === true ? true : undefined,
+    );
     assert(
       (await page().evaluate(
         `window.__zplcSmoke.compileCalls === 0 && window.__zplcSmoke.registerCalls === 0 && ` +
@@ -1892,12 +1894,7 @@ async function main(): Promise<void> {
     );
     await setFile(validProgram, true);
     await waitFor('saved workspace representation', async () =>
-      (await page().evaluate(
-        `window.__zplcSmoke.fileState?.modified === false && document.body.innerText.includes('Linked saved workspace ready for host ` +
-          `scenarios.') ? true : undefined`,
-      )) === true
-        ? true
-        : undefined,
+      (await page().evaluate(`window.__zplcSmoke.fileState?.modified === false ? true : undefined`)) === true ? true : undefined,
     );
     await click('Build');
     await waitFor('second Compile menu', async () =>
@@ -2252,20 +2249,15 @@ async function main(): Promise<void> {
 
     await setFile(invalidProgram, false);
     await click('Tests');
-    await waitFor('unsaved test fence', async () =>
-      (await text()).includes('do not include changes that are not saved') ? true : undefined,
-    );
+    // A modified document does not block the run (FLW-006): the run saves it first. What the edit does is withdraw the old evidence.
     assert(
       (await page().evaluate(
         `(() => { const run = [...document.querySelectorAll('button')].find((item) => item.textContent?.includes('Run host scenarios')); ` +
-          `return Boolean(run?.disabled) && !document.body.innerText.includes('Host POSIX scenarios passed.'); })()`,
+          `return Boolean(run) && !run.disabled && !document.body.innerText.includes('Host POSIX scenarios passed.'); })()`,
       )) === true,
-      'Edit must hide evidence and disable tests',
+      'Edit must hide evidence and leave the run available',
     );
     await setFile(validProgram, true);
-    await waitFor('selected workspace after save', async () =>
-      (await text()).includes('Linked saved workspace ready for host scenarios.') ? true : undefined,
-    );
     assert(!(await text()).includes('Host POSIX scenarios passed.'), 'Saving must not revive stale evidence');
 
     await page().evaluate(`window.__zplcSmoke.mode = 'malformed'`);
