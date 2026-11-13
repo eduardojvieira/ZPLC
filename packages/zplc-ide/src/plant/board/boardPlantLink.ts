@@ -15,6 +15,8 @@ import { planExchange } from '../session/exchange';
 import { descriptorsOf, packValues, unpackValues, valueBytes, type SlotValue } from './frameCodec';
 import { createLatencyStats, pulseWarningOf, type PulseWarning } from './latency';
 import type { PlantBoardPort, PlantExitReasonName } from './portTypes';
+import type { FirmwareProtocol } from '../../runtime/link/firmwareProtocol';
+import { plantIoSupport } from './support';
 
 export type PlantIoPhase = 'unsupported' | 'idle' | 'entering' | 'active' | 'leaving' | 'left';
 
@@ -54,14 +56,11 @@ export interface PlantIoPorts {
   timeoutMs: number;
   /** The scene's shortest sensor pulse (SCN-007), for the LNK-014 warning. */
   shortestPulseMs?: number;
+  /** What the firmware said about itself, for the located reason when it cannot be fed; none reads as the text shell only. */
+  firmware?: () => FirmwareProtocol | null;
   now?: () => number;
   pace?: (ms: number) => Promise<void>;
 }
-
-const NO_CAPABILITY = {
-  en: 'This firmware cannot be fed from the plant. Update the firmware, or run the scene in simulation.',
-  es: 'Este firmware no puede recibir datos de la planta. Actualiza el firmware o ejecuta la escena en simulación.',
-};
 
 class ResponseTimeout extends Error {}
 
@@ -86,13 +85,18 @@ export function createPlantIoController(ports: PlantIoPorts): PlantIoController 
   let session: { over: boolean; done: Promise<void> } | null = null;
   let unlisten: (() => void) | null = null;
 
+  const unsupportedReason = (): { en: string; es: string } => {
+    const support = plantIoSupport(ports.firmware?.() ?? null);
+    return support.supported ? { en: '', es: '' } : support.reason;
+  };
+
   const build = (): PlantIoSnapshot => {
     const latency = stats.snapshot();
     const warning = pulseWarningOf(ports.shortestPulseMs, latency.gapMs.worst, ports.scanMs);
     return {
       phase: live.phase,
       ...(live.reason === undefined ? {} : { reason: live.reason }),
-      ...(live.phase === 'unsupported' ? { unsupported: NO_CAPABILITY } : {}),
+      ...(live.phase === 'unsupported' ? { unsupported: unsupportedReason() } : {}),
       ...counters,
       ...latency,
       ...(warning ? { pulseWarning: warning } : {}),
