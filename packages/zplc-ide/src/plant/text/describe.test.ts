@@ -93,3 +93,43 @@ describe('describePlant tank level', () => {
     expect(describePlant(at(0.41), tankScene, 'es').key).toBe(a.key);
   });
 });
+
+describe('describePlant over the real tank', () => {
+  const tankScene = (config: Record<string, number | string>): PlantSceneFile => ({
+    schemaVersion: 1,
+    name: 't',
+    cameras: [],
+    parts: [{ id: 'tank', part: 'tank', name: 'Tank1', position: [0, 0, 0], rotationYDeg: 0, config }],
+  });
+  const fill = async (config: Record<string, number | string>, scans: number) => {
+    const { createPlantCore } = await import('../core/plantCore');
+    const s = tankScene(config);
+    const core = await createPlantCore(s);
+    try {
+      core.apply({ 'Tank1.fill': 100 });
+      const seen: { key: string; band: string }[] = [];
+      for (let i = 0; i < scans; i++) {
+        core.advance(10);
+        const snapshot = core.snapshot();
+        const tank = snapshot.parts.find((p) => p.name === 'Tank1')!;
+        const band = `${Math.floor((tank.state.fraction as number) * 10 + 1e-9)}:${String(tank.state.spilling)}`;
+        seen.push({ key: describePlant(snapshot, s, 'en').key, band });
+      }
+      return seen;
+    } finally {
+      core.dispose();
+    }
+  };
+  const changes = (xs: readonly string[]) => xs.filter((x, i) => i > 0 && x !== xs[i - 1]).length;
+
+  it('VIS-008 a filling tank changes the announcement key only when its level crosses a tenth or it starts or stops spilling', async () => {
+    const fast = await fill({ variant: 'numeric' }, 400);
+    const bandChanges = changes(fast.map((x) => x.band));
+    expect(bandChanges).toBeGreaterThan(3);
+    expect(changes(fast.map((x) => x.key))).toBe(bandChanges);
+    // A slow fill that stays inside the first tenth never changes the key.
+    const slow = await fill({ variant: 'numeric', inletMaxLps: 1 }, 300);
+    expect(new Set(slow.map((x) => x.band)).size).toBe(1);
+    expect(changes(slow.map((x) => x.key))).toBe(0);
+  });
+});

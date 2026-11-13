@@ -2,6 +2,9 @@ import { translatorFor } from '../../i18n';
 import type { PlantSceneFile, PlantSnapshot } from '../contracts';
 
 const TOTALS = ['itemsEmitted', 'itemsRemoved', 'itemsDropped', 'itemsCollided'] as const;
+// Continuous measurements of a tank: whole numbers only by chance, so they are never a change of situation. The tank is told
+// by its level band and `spilling` below.
+const CONTINUOUS = ['level:', 'volume:', 'spilledL:'];
 const m = (n: number) => String(Math.round(n * 10) / 10);
 
 /**
@@ -13,7 +16,7 @@ export function describePlant(snapshot: PlantSnapshot, scene: PlantSceneFile, lo
   const parts = [t('plant.text.summary', { scene: scene.name, count: snapshot.items.length })];
   // position:<kind>:<index> facts are positions, never part of a change of situation.
   const facts = Object.entries(snapshot.facts).filter(
-    ([k, v]) => !k.startsWith('position:') && (typeof v !== 'number' || Number.isInteger(v)),
+    ([k, v]) => !k.startsWith('position:') && !CONTINUOUS.some((c) => k.startsWith(c)) && (typeof v !== 'number' || Number.isInteger(v)),
   );
   for (const n of TOTALS)
     if (typeof snapshot.facts[n] === 'number') parts.push(t(`plant.text.${n}`, { count: snapshot.facts[n] as number }));
