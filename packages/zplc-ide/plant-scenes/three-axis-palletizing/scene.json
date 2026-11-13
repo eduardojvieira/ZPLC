@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "name": "Three-axis palletizing",
+  "shortestPulseMs": 1300,
+  "parts": [
+    {
+      "id": "belt",
+      "part": "belt",
+      "name": "Belt1",
+      "position": [-0.5, 0.3, 0],
+      "rotationYDeg": 0,
+      "config": { "length": 1.5, "speedMps": 0.8 }
+    },
+    {
+      "id": "emitter",
+      "part": "emitter",
+      "name": "Emitter1",
+      "position": [-0.9, 0.3, 0],
+      "rotationYDeg": 0,
+      "config": { "kind": "box", "height": "0.3", "mass": "2", "maxItems": 8 }
+    },
+    { "id": "blade", "part": "stop-blade", "name": "Blade1", "position": [0.225, 0.3, 0], "rotationYDeg": 0, "config": { "heightM": 0.2 } },
+    {
+      "id": "eye-pick",
+      "part": "sensor-diffuse",
+      "name": "EyePick",
+      "position": [0, 0.3, -0.5],
+      "rotationYDeg": 270,
+      "config": { "rangeM": 1 }
+    },
+    {
+      "id": "gantry",
+      "part": "gantry",
+      "name": "Gantry1",
+      "position": [0, 0, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "variant": "numeric",
+        "gripper": "vacuum",
+        "strokeXM": 1.6,
+        "strokeYM": 1.2,
+        "strokeZM": 1.2,
+        "speedMps": 1.5,
+        "accelMps2": 6,
+        "maxLoadKg": 5
+      }
+    },
+    { "id": "pallet", "part": "pallet", "name": "Pallet1", "position": [1.1, 0, 0.7], "rotationYDeg": 0, "config": {} },
+    { "id": "start", "part": "push-button", "name": "StartButton", "position": [-1.1, 0.3, -0.7], "rotationYDeg": 0, "config": {} },
+    { "id": "light", "part": "stack-light", "name": "StackLight1", "position": [1.7, 0, -0.5], "rotationYDeg": 0, "config": {} }
+  ],
+  "cameras": [{ "name": "Overview", "position": [0.6, 2.8, 3.4], "target": [0.5, 0.4, 0.3] }]
+}
