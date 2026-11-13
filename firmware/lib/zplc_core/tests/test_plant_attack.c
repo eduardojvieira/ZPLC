@@ -1441,6 +1441,43 @@ static void attack_engine_exit_orphaned_when_the_stop_is_refused(void) {
   model_stop_busy = 0;
 }
 
+/* ---- recheck of B1: the one window left, and the copy across entries ---- */
+static void attack_latch_miss_snapshot_windows(void) {
+  zplc_sched_scan_report_t report;
+
+  printf("\n=== attack_latch_miss_snapshot_windows (R-M6-3, LNK-007) ===\n");
+  /* the very first latch after the first accepted frame misses the lock: no copy exists yet */
+  setup(0, 1);
+  CHECK(enter_a(500U) == 0, "entry");
+  pin_in[0] = 0U;
+  CHECK(send_a(1U) == 0, "the first accepted frame says DI0 is on");
+  lock_fail = 1;
+  (void)scan(&report);
+  lock_fail = 0;
+  ADVISORY((ipi()[0] & 1U) == 1U, "a miss on the first latch after the first frame keeps the plant value (one scan of pin level remains)");
+  (void)scan(&report);
+  CHECK((ipi()[0] & 1U) == 1U, "the next scan has it again");
+
+  /* a copy of an earlier frame is re-applied on a miss, and a copy of an earlier entry never is */
+  setup(0, 1);
+  CHECK(enter_a(500U) == 0, "entry 1");
+  CHECK(send_a(1U) == 0, "DI0 on");
+  (void)scan(&report);
+  lock_fail = 1;
+  (void)scan(&report);
+  lock_fail = 0;
+  CHECK((ipi()[0] & 1U) == 1U, "a miss re-applies the last applied values");
+  stop_path();
+  zplc_sched_core_set_running(&core);
+  pin_in[0] = 0U;
+  CHECK(enter_a(500U) == 0, "entry 2 (new plant id)");
+  CHECK(send_a(0U) == 0, "its first frame says DI0 is off");
+  lock_fail = 1;
+  (void)scan(&report);
+  lock_fail = 0;
+  CHECK((ipi()[0] & 1U) == 0U, "a miss on entry 2 never applies the copy of entry 1");
+}
+
 int main(void) {
   const char *strict = getenv("ZPLC_ATTACK_STRICT");
 
@@ -1456,6 +1493,7 @@ int main(void) {
   attack_latch_lock_miss_does_not_hand_the_input_back_to_the_pin();
   attack_reentry_owns_nothing_of_the_previous_entry();
   attack_mirror_rules();
+  attack_latch_miss_snapshot_windows();
   attack_latch_race_never_tears_an_image();
   attack_engine_takeover_then_enter();
   attack_engine_two_links_alternating();
