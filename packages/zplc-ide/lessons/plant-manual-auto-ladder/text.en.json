@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Manual and automatic modes",
+  "summary": "Add a mode to the two-axis assembly: jog the pad by hand in manual, run the assembly cycle in automatic, and never let one leak into the other.",
+  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Keep the mode in a memory that one press of ModeBtn switches, and let the machine power up in manual.",
+    "Move the pad with the jog buttons only in manual, never past a limit switch, and start the cycle with Start only in automatic."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/ManualAuto.ld.json, the automatic cycle is already written. In the Ladder editor, add the mode as rungs: an Auto memory switched by ModeBtn, jog outputs that follow JogXPlus, JogXMinus, JogYPlus and JogYMinus in manual, and a Start that counts only in automatic.",
+      "checkpoint": "Auto starts FALSE (manual); every pad output is the cycle in automatic and the jog in manual, never both."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, follow the panel: the scenario jogs the pad to the base belt and back, presses Start in manual, then switches to automatic, starts the cycle and holds a jog button down in the middle of it.",
+      "checkpoint": "In manual the pad moves only while a jog button is held and stops at its limit switch; Start does nothing; in automatic the cycle runs and the held jog button changes nothing."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter has no mode: a press of Start in manual starts the cycle and the jog buttons do nothing; switch with ModeBtn, allow Start only in automatic, and move the pad with the jog buttons only in manual.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the plant-manual-auto scenario; watch the 3D view while it runs.",
+      "checkpoint": "The required scenario is named plant-manual-auto and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Watch the pad follow the jog buttons in the first seconds, ignore Start, then assemble three lids on three bases in automatic while a jog button is held.",
+      "checkpoint": "The amber light is off in manual and on in automatic; the green light shows when three assemblies are done, and the return to manual leaves every output off."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The AT assertions pin the idle machine, the pad at each limit, the quiet Start in manual and the running cycle; the facts prove that the assembly finished without a dropped part.",
+      "checkpoint": "It does not establish an operator-safe machine: a real manual mode also needs a guarded jog speed and a safety function, and the grade gives no hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Switch Auto with an edge of ModeBtn, not with its level, so that holding the button flips the mode once. Clear the cycle (Active, Step and the counters) whenever Auto is FALSE."
+    },
+    {
+      "level": 2,
+      "text": "Make a jog output TRUE only when Auto is FALSE, its button is held, the opposite button is not and its limit switch is not reached; make Begin the Start press AND Auto, and use Begin where the cycle used Start."
+    }
+  ],
+  "faultCases": [
+    "The starter has no mode: a press of Start in manual starts the cycle and the jog buttons do nothing; switch with ModeBtn, allow Start only in automatic, and move the pad with the jog buttons only in manual."
+  ]
+}

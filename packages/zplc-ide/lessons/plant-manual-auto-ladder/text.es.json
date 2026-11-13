@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Modos manual y automático",
+  "summary": "Añada un modo al ensamblaje de dos ejes: avance el brazo a mano en manual, ejecute el ciclo en automático y no deje que uno se filtre en el otro.",
+  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "objectives": [
+    "Guardar el modo en una memoria que cambie con una pulsación de ModeBtn, y dejar que la máquina arranque en manual.",
+    "Mover el brazo con los botones de avance solo en manual, sin pasar de un final de carrera, y arrancar el ciclo con Start solo en automático."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/ManualAuto.ld.json, el ciclo automático ya está escrito. En el editor Ladder, añada el modo como peldaños: una memoria Auto que cambia con ModeBtn, salidas de avance que siguen a JogXPlus, JogXMinus, JogYPlus y JogYMinus en manual, y un Start que cuenta solo en automático.",
+      "checkpoint": "Auto empieza en FALSE (manual); cada salida del brazo es el ciclo en automático y el avance en manual, nunca los dos."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "Antes de ejecutar, siga el panel: el escenario lleva el brazo a la banda de las bases y lo devuelve, pulsa Start en manual, pasa a automático, arranca el ciclo y mantiene un botón de avance pulsado en mitad del ciclo.",
+      "checkpoint": "En manual el brazo se mueve solo mientras se mantiene un botón y se detiene en su final de carrera; Start no hace nada; en automático el ciclo corre y el botón mantenido no cambia nada."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "Corrija esta omisión del programa inicial, guarde y ejecute: El programa inicial no tiene modo: una pulsación de Start en manual arranca el ciclo y los botones de avance no hacen nada; cambie con ModeBtn, admita Start solo en automático y mueva el brazo con los botones de avance solo en manual.",
+      "checkpoint": "El escenario visible debe pasar con evidencia guardada del host."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario plant-manual-auto; observe la vista 3D mientras corre.",
+      "checkpoint": "El escenario requerido se llama plant-manual-auto y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Observe cómo el brazo sigue los botones de avance en los primeros segundos, ignora Start, y luego ensambla tres tapas sobre tres bases en automático mientras se mantiene un botón de avance.",
+      "checkpoint": "La luz ámbar está apagada en manual y encendida en automático; la luz verde aparece al terminar los tres ensamblajes, y la vuelta a manual deja todas las salidas apagadas."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "Las aserciones AT fijan la máquina en reposo, el brazo en cada final de carrera, el Start silencioso en manual y el ciclo en marcha; los hechos prueban que el ensamblaje terminó sin una pieza caída.",
+      "checkpoint": "No establece una máquina segura para el operario: un modo manual real exige además una velocidad de avance protegida y una función de seguridad, y la calificación no da tiempos de hardware, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Cambie Auto con un flanco de ModeBtn, no con su nivel, para que mantener el botón pulsado cambie el modo una sola vez. Limpie el ciclo (Active, Step y los contadores) siempre que Auto sea FALSE."
+    },
+    {
+      "level": 2,
+      "text": "Haga una salida de avance TRUE solo cuando Auto sea FALSE, su botón esté pulsado, el botón opuesto no lo esté y su final de carrera no se haya alcanzado; haga que Begin sea la pulsación de Start Y Auto, y use Begin donde el ciclo usaba Start."
+    }
+  ],
+  "faultCases": [
+    "El programa inicial no tiene modo: una pulsación de Start en manual arranca el ciclo y los botones de avance no hacen nada; cambie con ModeBtn, admita Start solo en automático y mueva el brazo con los botones de avance solo en manual."
+  ]
+}
