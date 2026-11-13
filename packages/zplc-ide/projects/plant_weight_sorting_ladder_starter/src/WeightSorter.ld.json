@@ -1,0 +1,108 @@
+{
+  "name": "WeightSorter",
+  "description": "Weight sorting: a box heavier than 3.5 kg is pushed to the heavy bin, a lighter one is let go, twelve boxes.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Active",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "The line was started"
+      },
+      {
+        "name": "Step",
+        "type": "INT",
+        "initialValue": 0,
+        "comment": "One step per move: 0 wait for a stable box, 1 push it out, 2 pull the pusher back, 3 release it to the light bin"
+      },
+      {
+        "name": "Releasing",
+        "type": "TON",
+        "comment": "The blade stays down long enough for a light box to leave the scale"
+      },
+      {
+        "name": "Boxes",
+        "type": "CTU",
+        "comment": "Counts the boxes dealt with"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%IX0.0",
+        "comment": "StartButton.pressed: start the line"
+      },
+      {
+        "name": "Stable",
+        "type": "BOOL",
+        "address": "%IX0.1",
+        "comment": "Scale1.stable: a box has rested on the scale long enough to be weighed"
+      },
+      {
+        "name": "Extended",
+        "type": "BOOL",
+        "address": "%IX0.2",
+        "comment": "Pusher1.extended: the pusher is at the end of its stroke"
+      },
+      {
+        "name": "Retracted",
+        "type": "BOOL",
+        "address": "%IX0.3",
+        "comment": "Pusher1.retracted: the pusher is back at rest"
+      },
+      {
+        "name": "Weight",
+        "type": "REAL",
+        "address": "%ID1",
+        "comment": "Scale1.weight: the weight in kg, 0 while a box moves"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "RunInfeed",
+        "type": "BOOL",
+        "address": "%QX0.0",
+        "comment": "Infeed.run: run the infeed belt"
+      },
+      {
+        "name": "RunOutfeed",
+        "type": "BOOL",
+        "address": "%QX0.1",
+        "comment": "Outfeed.run: run the belt to the light bin"
+      },
+      {
+        "name": "RunSide",
+        "type": "BOOL",
+        "address": "%QX0.2",
+        "comment": "SideBelt.run: run the belt to the heavy bin"
+      },
+      {
+        "name": "Hold",
+        "type": "BOOL",
+        "address": "%QX0.3",
+        "comment": "Blade1.extend: the blade holds the box on the scale while true"
+      },
+      {
+        "name": "Push",
+        "type": "BOOL",
+        "address": "%QX0.4",
+        "comment": "Pusher1.extend: push the box off the infeed onto the side belt"
+      },
+      {
+        "name": "Green",
+        "type": "BOOL",
+        "address": "%QX0.5",
+        "comment": "StackLight1.green: all twelve boxes are sorted"
+      }
+    ]
+  },
+  "rungs": [],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}

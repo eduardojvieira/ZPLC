@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "weight-sorting",
+  "tickMs": 10,
+  "durationMs": 85000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      { "atMs": 200, "operate": { "signal": "StartButton.pressed", "value": true } },
+      { "atMs": 400, "operate": { "signal": "StartButton.pressed", "value": false } }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    {
+      "kind": "ALWAYS",
+      "condition": {
+        "fact:misrouted:HeavyBin": false,
+        "fact:misrouted:LightBin": false,
+        "fact:itemsDropped": false
+      }
+    },
+    { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 85000, "condition": { "fact:sorted:HeavyBin": true } },
+    { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 85000, "condition": { "fact:sorted:LightBin": true } },
+    { "kind": "AT", "atMs": 85000, "condition": { "WeightSorter.Green": true } }
+  ]
+}
