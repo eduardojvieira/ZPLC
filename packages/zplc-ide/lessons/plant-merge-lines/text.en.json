@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Merge two lines",
+  "summary": "Arbitrate two feeders that share one outfeed: give line A priority, let one box through at a time and interlock the two blades.",
+  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Arbitrate two requests with a priority: line A wins when both lines wait.",
+    "Interlock two outputs so they are never active together, and release the grant only when the box has cleared the merge."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/MergeLines.st, keep two grant memories, GrantA and GrantB: grant line A first when both wait, grant a line only when no grant is active and the merge zone is empty, and end the grant when its box has left the zone.",
+      "checkpoint": "HoldA and HoldB are true unless that line has the grant, so the two blades are never open together."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, think about the merge point: both feeders carry boxes, but the outfeed fits one box at a time.",
+      "checkpoint": "Both blades hold the lines at first; then one blade opens at a time, line A first, and the next opens only after the box has left the zone; all six boxes leave and Done turns on."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter drives no output, so nothing is loaded and no blade moves; load three boxes on each feeder, open one blade at a time, with line A first, never both together, and open the next only when the previous box has left the merge zone.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the merge-lines scenario; watch the 3D view while it runs.",
+      "checkpoint": "The required scenario is named merge-lines and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Watch which blade opens first and how the second line waits; no two boxes meet in the merge.",
+      "checkpoint": "All six boxes are delivered in turn, no box collides or drops, and Done is on at the end."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The ALWAYS assertion on collisions is the interlock check: a design that opened both blades could pass the delivery check and still fail it.",
+      "checkpoint": "It does not establish physical belt speed, sensor response, hardware timing, HIL, safety function, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "A grant is a latch: set GrantA when WaitA is TRUE and nothing is granted and the zone is empty, otherwise set GrantB when WaitB is TRUE (the order of the IF and ELSIF is the priority)."
+    },
+    {
+      "level": 2,
+      "text": "Remember that the zone sensor saw the box (a Seen memory) and clear both grants when the zone goes from TRUE to FALSE (an F_TRIG); then HoldA := Active AND NOT GrantA and HoldB := Active AND NOT GrantB."
+    }
+  ],
+  "faultCases": [
+    "The starter drives no output, so nothing is loaded and no blade moves; load three boxes on each feeder, open one blade at a time, with line A first, never both together, and open the next only when the previous box has left the merge zone."
+  ]
+}

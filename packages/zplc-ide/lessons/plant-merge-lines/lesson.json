@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-merge-lines",
+  "version": 1,
+  "order": 142,
+  "module": 14,
+  "level": "advanced",
+  "prerequisites": ["plant-counted-queue", "interlock-guard-permissive"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "Two feeders, two blades and a merge zone exist only in the simulated scene, and a learner board cannot provide the boxes that must be arbitrated.",
+        "es": "Dos alimentadores, dos cuchillas y una zona de fusión existen solo en la escena simulada, y una placa del estudiante no puede aportar las cajas que hay que arbitrar."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus cajas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "merge-lines",
+  "estimatedMinutes": 45,
+  "starter": {
+    "project": "plant_merge_lines_starter",
+    "program": "src/MergeLines.st"
+  },
+  "solution": {
+    "project": "plant_merge_lines",
+    "program": "src/MergeLines.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "merge-lines",
+    "path": "tests/merge-lines.scenario.json",
+    "sha256": "0f72f715a529629c82856a3a13eadd6a4dad664c4b4064da02e7e8e05522c2f6"
+  },
+  "regressionScenarios": []
+}
