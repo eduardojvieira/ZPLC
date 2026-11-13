@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "name": "Height sorting with a chain transfer",
+  "shortestPulseMs": 800,
+  "parts": [
+    {
+      "id": "infeed",
+      "part": "belt",
+      "name": "Infeed",
+      "position": [-1.4, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "length": 2.4,
+        "speedMps": 0.5
+      }
+    },
+    {
+      "id": "source",
+      "part": "emitter",
+      "name": "Source1",
+      "position": [-2.4, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "intervalMs": 5000,
+        "maxItems": 9
+      }
+    },
+    {
+      "id": "chain",
+      "part": "chain-transfer",
+      "name": "Chain1",
+      "position": [0.2, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {}
+    },
+    {
+      "id": "straight",
+      "part": "belt",
+      "name": "Straight",
+      "position": [1.6, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "length": 2,
+        "speedMps": 0.5
+      }
+    },
+    {
+      "id": "side-right",
+      "part": "belt",
+      "name": "SideRight",
+      "position": [0.2, 0.5, 1.3],
+      "rotationYDeg": 270,
+      "config": {
+        "length": 2,
+        "speedMps": 0.5
+      }
+    },
+    {
+      "id": "side-left",
+      "part": "belt",
+      "name": "SideLeft",
+      "position": [0.2, 0.5, -1.3],
+      "rotationYDeg": 90,
+      "config": {
+        "length": 2,
+        "speedMps": 0.5
+      }
+    },
+    {
+      "id": "stop",
+      "part": "stop-blade",
+      "name": "Stop1",
+      "position": [0.45, 0.5, 0],
+      "rotationYDeg": 0,
+      "config": {}
+    },
+    {
+      "id": "beam-low",
+      "part": "sensor-diffuse",
+      "name": "BeamLow",
+      "position": [-0.9, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": {
+        "rangeM": 1,
+        "heightM": 0.25
+      }
+    },
+    {
+      "id": "beam-high",
+      "part": "sensor-diffuse",
+      "name": "BeamHigh",
+      "position": [-0.9, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": {
+        "rangeM": 1,
+        "heightM": 0.35
+      }
+    },
+    {
+      "id": "eye-chain",
+      "part": "sensor-diffuse",
+      "name": "EyeChain",
+      "position": [0.225, 0.5, -0.5],
+      "rotationYDeg": 270,
+      "config": {
+        "rangeM": 1,
+        "heightM": 0.15
+      }
+    },
+    {
+      "id": "bin-short",
+      "part": "remover",
+      "name": "BinShort",
+      "position": [2.4, 0.65, 0],
+      "rotationYDeg": 0,
+      "config": {
+        "width": 0.4,
+        "height": 0.6,
+        "depth": 0.6,
+        "accepts": "short"
+      }
+    },
+    {
+      "id": "bin-medium",
+      "part": "remover",
+      "name": "BinMedium",
+      "position": [0.2, 0.65, 2.1],
+      "rotationYDeg": 0,
+      "config": {
+        "width": 0.6,
+        "height": 0.6,
+        "depth": 0.4,
+        "accepts": "medium"
+      }
+    },
+    {
+      "id": "bin-tall",
+      "part": "remover",
+      "name": "BinTall",
+      "position": [0.2, 0.65, -2.1],
+      "rotationYDeg": 0,
+      "config": {
+        "width": 0.6,
+        "height": 0.6,
+        "depth": 0.4,
+        "accepts": "tall"
+      }
+    },
+    {
+      "id": "start",
+      "part": "push-button",
+      "name": "StartButton",
+      "position": [-2.4, 0.5, -0.7],
+      "rotationYDeg": 0,
+      "config": {}
+    },
+    {
+      "id": "beacon",
+      "part": "stack-light",
+      "name": "Beacon",
+      "position": [2.4, 0.5, -0.7],
+      "rotationYDeg": 0,
+      "config": {}
+    }
+  ],
+  "cameras": [
+    {
+      "name": "Overview",
+      "position": [0, 3.2, 4.2],
+      "target": [0.3, 0.6, 0]
+    }
+  ]
+}

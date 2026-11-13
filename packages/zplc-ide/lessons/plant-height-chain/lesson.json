@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-height-chain",
+  "version": 1,
+  "order": 164,
+  "module": 16,
+  "level": "advanced",
+  "prerequisites": ["plant-colour-separation"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The lesson needs two height beams, a chain transfer that lifts and slides boxes, and three bins; a learner board has no such transfer, and the scene supplies it.",
+        "es": "La lección necesita dos haces de altura, una transferencia de cadenas que eleva y desliza cajas, y tres contenedores; una placa del estudiante no tiene esa transferencia, y la escena la aporta."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its items are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus piezas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "height-sorting-chain",
+  "estimatedMinutes": 60,
+  "starter": {
+    "project": "plant_height_chain_starter",
+    "program": "src/HeightSortChain.st"
+  },
+  "solution": {
+    "project": "plant_height_chain",
+    "program": "src/HeightSortChain.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "height-sorting-chain",
+    "path": "tests/height-sorting-chain.scenario.json",
+    "sha256": "ad1c1e7d8a7383a9bda78276cab8bb25109b0a879efa2a42c9dbcb04eff4f125"
+  },
+  "regressionScenarios": []
+}
