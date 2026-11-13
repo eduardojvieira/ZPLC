@@ -10,10 +10,7 @@ export function useTestCommands(): void {
   useEffect(
     () =>
       bindCommands({
-        'view.tests': () => {
-          showActivity('tests');
-          showPanel('tests')();
-        },
+        'view.tests': () => showActivity('tests'),
         'view.interlocks': showPanel('interlocks'),
       }),
     [],

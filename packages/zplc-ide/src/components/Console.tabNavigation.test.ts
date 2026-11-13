@@ -172,61 +172,38 @@ describe('Console tab boundary', () => {
 
   it('keeps workspace tests bound to the current local project session', () => {
     const source = withEnglishMessages(consoleSources());
+    // the run, its save and its cancel moved to the project tests store (U2 T2); the manifest link of the Changes tab stayed
+    const store = compactSource(readFileSync(join(import.meta.dir, '../projectTests/useProjectTests.ts'), 'utf8'));
 
     expect(source).toContain('registerProjectFile(file)');
     expect(source).toContain('isWorkspaceManifestRegistrationCurrent(useIDEStore.getState().projectSession, expectedProjectSession)');
-    expect(source).toContain('current.hasUnsavedChanges()');
-    expect(source).toContain(
-      'isWorkspaceTestRunCurrent(latest, { projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId })',
-    );
-    expect(source).toContain('Choose zplc.json');
-    expect(source).toContain('Choose zplc.json again');
-    expect(source).toContain('Linked saved workspace ready for host scenarios.');
-    expect(source).toContain('Select the saved workspace zplc.json whose scenarios you want to run.');
-    // The chooser is the kit's FileInput: a hidden input (ui/Field.tsx) that the visible buttons open.
+    expect(store).toContain('isWorkspaceTestRunCurrent(useIDEStore.getState(), expected)');
+    expect(store).toContain('bridge.run({ workspaceId, ...(target ? { scenarioId: target.id } : {}) })');
+    expect(store).toContain('workspaceTests?.cancel()');
+    // The chooser is the kit's FileInput: a hidden input (ui/Field.tsx) that the visible button of the Changes tab opens.
     expect(source).toContain('<FileInput');
     expect(source).toContain('data-workspace-manifest-input');
     expect(source).not.toContain('<input');
-    expect(source).not.toContain('aria-label="Choose saved workspace zplc.json"');
     expect(source).toContain("input.value = '';");
-    expect(source).toContain('Tests use saved workspace files and do not include changes that are not saved.');
     expect(source).toContain('Cancel scenarios');
     expect(source).toContain('Cancelling…');
-    expect(source).toContain('workspaceTests.cancel()');
-    expect(source).toContain('const runWorkspaceTests = async (scenarioId?: string) => {');
-    expect(source).toContain('const request = { workspaceId, ...(scenarioId === undefined ? {} : { scenarioId }) };');
-    expect(source).toContain('workspaceTests.run(request)');
-    expect(source).toContain('onClick={() => { void runWorkspaceTests(); }}');
+    expect(source).toContain('onClick={() => { void run(); }}');
     expect(source).toContain('Run this scenario again');
     expect(source).toContain('aria-label="Run {id} again on native POSIX"');
-    expect(source).toContain('onRunScenario={(scenarioId) => { void runWorkspaceTests(scenarioId); }}');
-    expect(source).toContain("workspaceTestState !== 'running'");
     expect(source).not.toContain('It may differ from the project open in the editor.');
   });
 
-  it('offers a session-fenced save only while Tests is blocked by unsaved work', () => {
-    const source = withEnglishMessages(consoleSources());
-    const start = source.indexOf('const saveWorkspaceProject = async () => {');
-    const end = source.indexOf('const runWorkspaceTests = async (scenarioId?: string) => {');
-    const handler = source.slice(start, end);
+  it('TST-002 the Tests tab offers no chooser for the manifest and no run is blocked by unsaved work', () => {
+    const tab = withEnglishMessages(compactSource(readFileSync(join(import.meta.dir, 'console/TestsTab.tsx'), 'utf8')));
+    const runner = compactSource(readFileSync(join(import.meta.dir, 'console/useWorkspaceTestRunner.ts'), 'utf8'));
 
-    expect(source).toContain('saveAllFiles,');
-    expect(source).toContain('saveProjectConfig,');
-    expect(start).toBeGreaterThan(-1);
-    expect(end).toBeGreaterThan(start);
-    expect(handler).toContain('workspaceTestBusy || !current.isProjectOpen');
-    expect(handler).toContain('latest.projectSession !== expectedProjectSession');
-    expect(handler).toContain('latest.loadedFiles.values()).some((file) => file.isModified)');
-    expect(handler).toContain('latest.hasUnsavedChanges()');
-    expect(handler.indexOf('await saveAllFiles();')).toBeLessThan(handler.indexOf('await saveProjectConfig();'));
-    expect(handler).not.toContain('workspaceTests.');
-    expect(handler).not.toContain('linkWorkspaceScenarios');
-    expect(handler).not.toContain('setWorkspaceTestState');
-    expect(source).toContain("workspaceTestAvailabilityState === 'unsaved' && (");
-    expect(source).toContain('Save project');
-    expect(source).toContain('disabled={workspaceTestBusy}');
-    expect(source).toContain('Tests use saved workspace files and do not include changes that are not saved.');
-    expect(source).not.toContain('window.electronAPI?.saveProject');
+    expect(tab).not.toContain('Choose zplc.json');
+    expect(tab).not.toContain('workspaceManifestInputRef');
+    expect(tab).not.toContain('Save project');
+    expect(tab).not.toContain('Tests use saved workspace files');
+    expect(runner).not.toContain('saveWorkspaceProject');
+    expect(runner).not.toContain('runWorkspaceTests');
+    expect(runner).toContain('hasUnsavedChanges: hasUnsavedChanges()');
   });
 
   it('keeps recorded scenario evidence in Tests, separate from the live Trace panel', () => {
@@ -236,7 +213,7 @@ describe('Console tab boundary', () => {
     expect(source).toContain('Recorded during this host test run. It does not update with the live trace panel.');
     expect(source).toContain('Recorded assertions for');
     expect(source).toContain('Recorded sampled timeline for');
-    expect(source).toContain('workspaceTestStateForLink.presentation');
+    expect(source).toContain('useWorkspaceTestResult((state) => state.presentation)');
     expect(source).toContain('compilerRunId');
     expect(source).toContain('presentation.hasEvidence && presentation.artifacts.length > 0');
     expect(source).toContain(') : presentation.hasEvidence ? (');
