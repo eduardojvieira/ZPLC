@@ -216,8 +216,8 @@ describe('OperatePanel fault actions', () => {
     const actions = catalogue.list().flatMap((d) => d.actions);
     expect(actions.length).toBeGreaterThan(10);
     for (const action of actions) {
-      expect(Object.keys(plantViewEn)).toContain(`plant.action.${action}`);
-      expect(Object.keys(plantViewEs)).toContain(`plant.action.${action}`);
+      expect(Object.keys(plantViewEn)).toContain(`plant.fault.${action}`);
+      expect(Object.keys(plantViewEs)).toContain(`plant.fault.${action}`);
     }
   });
 });

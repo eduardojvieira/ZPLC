@@ -61,7 +61,7 @@ function FaultControl({ part, run, act }: { part: ScenePart; run: (action: () =>
         <option value="">{t('plant.panel.faultChoose')}</option>
         {catalogue.get(part.part)?.actions.map((action) => (
           <option key={action} value={action}>
-            {t(`plant.action.${action}` as MessageKey)}
+            {t(`plant.fault.${action}` as MessageKey)}
           </option>
         ))}
       </Select>
