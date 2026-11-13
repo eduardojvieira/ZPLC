@@ -11,6 +11,11 @@ const CONSOLE_MODULES = [
   'ConsoleReviewPanels.tsx',
   'LiveNativeMotorControls.tsx',
   'WorkspaceTestResult.tsx',
+  'console/TestsTab.tsx',
+  'console/InterlocksTab.tsx',
+  'console/ChangesTab.tsx',
+  'console/AgentTab.tsx',
+  'console/useWorkspaceTestRunner.ts',
 ];
 const consoleSources = (): string =>
   CONSOLE_MODULES.map((file) => compactSource(readFileSync(join(import.meta.dir, file), 'utf8'))).join('\n');
@@ -147,7 +152,8 @@ describe('Console tab boundary', () => {
   it('runs the declared interlock check from its own tab, with saved-session fences and no physical claim', () => {
     const source = withEnglishMessages(consoleSources());
     expect(source).toContain("id: 'interlocks'");
-    expect(source).toMatch(/activeConsoleTab === 'interlocks' && \(?<InterlockCoverage/); // a formatter adds the parenthesis
+    expect(source).toMatch(/activeConsoleTab === 'interlocks' && \(?<InterlocksTab/); // a formatter adds the parenthesis
+    expect(source).toContain('<InterlockCoverage');
     expect(source).toContain('workspaceTests.safetyCheck({ workspaceId })');
     expect(source).toContain('presentWorkspaceSafetyCheck(result)');
     expect(source).toContain(

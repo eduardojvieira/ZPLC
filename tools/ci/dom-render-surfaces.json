@@ -92,7 +92,7 @@
     },
     {
       "surface": "Tests (scenario runs)",
-      "where": "components/Console.tsx",
+      "where": "components/console/TestsTab.tsx",
       "state": "tested",
       "tests": ["packages/zplc-ide/src/components/Console.dom.test.tsx"],
       "reason": ""
@@ -113,7 +113,7 @@
     },
     {
       "surface": "Changes (candidate review)",
-      "where": "components/Console.tsx",
+      "where": "components/console/ChangesTab.tsx",
       "state": "tested",
       "tests": [
         "packages/zplc-ide/src/components/Console.dom.test.tsx",
@@ -123,7 +123,7 @@
     },
     {
       "surface": "Agent (optional AI provider)",
-      "where": "components/Console.tsx",
+      "where": "components/console/AgentTab.tsx",
       "state": "tested",
       "tests": ["packages/zplc-ide/src/components/Console.dom.test.tsx"],
       "reason": ""
