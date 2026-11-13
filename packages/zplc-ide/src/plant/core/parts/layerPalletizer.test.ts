@@ -392,6 +392,30 @@ describe('layer palletizer', () => {
     expect([beam!.id, beam!.part, beam!.signals]).toEqual(['pal-beam', 'manipulator-beam', {}]);
   });
 
+  it(
+    'PLT-010 the pusher and both plates are published as views with the poses of their bodies, and the pusher follows its ' + 'travel',
+    async () => {
+      const r = await rig();
+      raise(r);
+      const view = (id: string) => r.rt.views().find((v) => v.id === id)!;
+      for (const [id, kind] of [
+        ['pal-pusher', 'layer-pusher'],
+        ['pal-plate-far', 'layer-plate'],
+        ['pal-plate-side', 'layer-plate'],
+      ] as const) {
+        const v = view(id);
+        expect([v.part, v.name, v.signals]).toEqual([kind, 'Pal1', {}]);
+        if (id === 'pal-pusher') expect(v.pose.p[2]).toBeCloseTo(r.body(id).p[2], 6);
+        else expect(v.pose.p.map((n) => Math.round(n * 1000) / 1000)).toEqual(id.endsWith('far') ? [0.425, 0.25, 0] : [0, 0.25, -0.325]);
+      }
+      const retracted = view('pal-pusher').pose.p[2];
+      r.cmd['Pal1.square'] = true;
+      r.run(500);
+      expect(retracted - view('pal-pusher').pose.p[2]).toBeCloseTo(0.15, 6);
+      expect(view('pal-pusher').pose.p[2]).toBeCloseTo(r.body('pal-pusher').p[2], 6);
+    },
+  );
+
   it('PLT-006 two identical runs give the same world state and facts', async () => {
     const run = async () => {
       const r = await rig();
