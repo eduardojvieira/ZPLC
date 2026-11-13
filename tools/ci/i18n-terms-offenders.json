@@ -1,0 +1,324 @@
+[
+  {
+    "key": "toolbar.simulation.title",
+    "language": "en",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "testsView.description",
+    "language": "en",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "console.testsUseSavedWorkspace",
+    "language": "en",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "toolbarMsg.savedWorkspaceCompilerIs",
+    "language": "en",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "toolbarMsg.saveChangesBeforeBuilding",
+    "language": "en",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "toolbarMsg.savedWorkspaceCouldNot",
+    "language": "en",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "toolbarMsg.buildingSavedWorkspaceLocally",
+    "language": "en",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "toolbarMsg.canonicalWorkspaceBuildFailed",
+    "language": "en",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "toolbarMsg.builtSavedWorkspaceLocally",
+    "language": "en",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "toolbarMsg.noArtifactWasKept",
+    "language": "en",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "toolbarMsg.noCurrentCompiledBytecode",
+    "language": "en",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "toolbarMsg.noCompiledBytecodeCompile",
+    "language": "en",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "notices.tests.passed",
+    "language": "en",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "notices.tests.assertion",
+    "language": "en",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "notices.tests.cancelled",
+    "language": "en",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "notices.tests.timeout",
+    "language": "en",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "notices.tests.failed",
+    "language": "en",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "notices.tests.running",
+    "language": "en",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "notices.tests.unavailable",
+    "language": "en",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "statusText.runtime.native",
+    "language": "en",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "statusText.target.local",
+    "language": "en",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "toolbar.simulation.title",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "testsView.linked",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "testsView.notLinked",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "console.testsUseSavedWorkspace",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "toolbarMsg.savedWorkspaceCompilerIs",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "toolbarMsg.saveChangesBeforeBuilding",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "toolbarMsg.savedWorkspaceCouldNot",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "toolbarMsg.buildingSavedWorkspaceLocally",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "toolbarMsg.canonicalWorkspaceBuildFailed",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "toolbarMsg.builtSavedWorkspaceLocally",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "toolbarMsg.noArtifactWasKept",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "toolbarMsg.noCurrentCompiledBytecode",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "toolbarMsg.noCompiledBytecodeCompile",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "notices.tests.passed",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "notices.tests.assertion",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "notices.tests.cancelled",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "notices.tests.timeout",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "notices.tests.failed",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "notices.tests.running",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "notices.tests.unavailable",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "statusText.runtime.native",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "statusText.target.local",
+    "language": "es",
+    "requirement": "MSG-002",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "console.hostEvidenceBadge",
+    "language": "source",
+    "requirement": "MSG-003",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "console.recordedDuringThisHost",
+    "language": "source",
+    "requirement": "MSG-003",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  },
+  {
+    "key": "console.nativePosixHostEvidence",
+    "language": "source",
+    "requirement": "MSG-003",
+    "added": "2026-11-13",
+    "reason": "Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it."
+  }
+]

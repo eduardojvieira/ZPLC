@@ -35,12 +35,69 @@ export const VOCABULARY: Record<ConceptId, VocabularyRow> = {
   resultBoard: { en: 'Board result', es: 'Resultado en placa', replaces: [] },
 };
 
-/** MSG-002's list, as word-boundary patterns in both languages. Filled by task V1. */
-export const IMPLEMENTATION_TERMS: readonly string[] = [];
-/** The catalog key prefixes of the main-path surfaces. Filled by task V1. */
-export const MAIN_PATH_PREFIXES: readonly string[] = [];
+/**
+ * MSG-002's list, as word patterns in both languages (case-insensitive; the guard adds the word boundaries, which a plain
+ * `\b` cannot do next to an accented letter). These terms stay allowed on a Details, Inspector, Terminal or detailed-Output key.
+ */
+export const IMPLEMENTATION_TERMS: readonly string[] = [
+  'posix',
+  'native|nativo|nativa',
+  'host|anfitrión',
+  'canonical|canónic[oa]',
+  'workspace|espacio de trabajo',
+  'link|vincul\\p{L}*|enlace',
+  'adapter|adaptador',
+  'artifact|artefacto',
+  'bytecode|código de bytes',
+  'sha-256',
+  'vm|máquina virtual',
+];
+/** The catalog key prefixes of the main-path surfaces: the command bar, the status rail, notices, the verdict of a test or check. */
+export const MAIN_PATH_PREFIXES: readonly string[] = [
+  'toolbar.',
+  'toolbarMsg.',
+  'status.',
+  'statusText.',
+  'studio.status',
+  'studio.flow',
+  'studio.notice',
+  'notice.',
+  'notices.',
+  'console.tests',
+  'u2Tests.',
+  'learn.grade.',
+  'learn.check',
+  'learn.failedAssertions',
+  'learn.lessonEvidence',
+  'testsView.',
+];
+/** A key with one of these segments is a Details, Inspector or Terminal surface and may hold an implementation term. */
+export const DETAIL_SEGMENTS: readonly string[] = ['.details.', '.inspector.', '.terminal.', '.detail.'];
 
-/** MSG-006 formatters; task V1 implements them with these signatures. */
+/** MSG-006 formatters. */
 export type FormatHash = (sha256: string) => string;
 export type FormatSize = (bytes: number, locale: string) => string;
 export type FormatTime = (value: number | Date, locale: string) => string;
+
+/** The first 8 hexadecimal digits and an ellipsis; the full value belongs to a copy action. */
+export const formatHash: FormatHash = (sha256) => `${sha256.slice(0, 8)}…`;
+
+/** A size with its unit: "302 bytes", "1.2 KB" (1024-based, one decimal, the number in the locale). */
+export const formatSize: FormatSize = (bytes, locale) => {
+  if (bytes < 1024) return `${new Intl.NumberFormat(locale).format(bytes)} ${bytes === 1 ? 'byte' : 'bytes'}`;
+  const units = ['KB', 'MB', 'GB'];
+  let value = bytes / 1024;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(value)} ${units[unit]}`;
+};
+
+/** A date is shown in the locale; a number is a duration in ms: "250 ms", "1.5 s". */
+export const formatTime: FormatTime = (value, locale) => {
+  if (value instanceof Date) return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(value);
+  if (Math.abs(value) < 1000) return `${new Intl.NumberFormat(locale).format(value)} ms`;
+  return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(value / 1000)} s`;
+};

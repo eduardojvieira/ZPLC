@@ -3,7 +3,9 @@ import { describe, expect, it } from 'bun:test';
 import {
   checkCatalogs,
   checkRepository,
+  checkBoundary,
   checkSources,
+  type TermOffender,
   isGuarded,
   isGuardedModule,
   midSentenceCapitals,
@@ -248,5 +250,62 @@ describe('UX-029 i18n guard: a hard-coded message in a plain module', () => {
         ],
       }),
     ).toEqual([]);
+  });
+});
+
+describe('MSG-002 and MSG-003 i18n guard: implementation terms per surface and the boundary', () => {
+  const offender = (key: string, language: TermOffender['language']): TermOffender => ({
+    key,
+    language,
+    requirement: 'MSG-002',
+    added: '2026-11-13',
+    reason: 'fixture',
+  });
+  const run = (en: Record<string, string>, es: Record<string, string>, listed: TermOffender[] = []): string =>
+    checkCatalogs(en, es, listed).join('\n');
+
+  it('MSG-002 a main-path English key with "POSIX" is a problem', () => {
+    const out = run({ 'toolbar.run': 'Run on POSIX' }, { 'toolbar.run': 'Ejecutar' });
+    expect(out).toContain(
+      'MSG-002: English "toolbar.run" uses the implementation term "POSIX" on a main-path surface (implementation-term)',
+    );
+  });
+
+  it('MSG-002 the same term in the Spanish text of a main-path key is a problem', () => {
+    const out = run({ 'statusText.ready': 'Ready' }, { 'statusText.ready': 'Listo en el espacio de trabajo' });
+    expect(out).toContain('Spanish "statusText.ready" uses the implementation term "espacio de trabajo"');
+    expect(run({ 'statusText.ready': 'Ready' }, { 'statusText.ready': 'Se vinculó el archivo' })).toContain('"vinculó"');
+  });
+
+  it('MSG-002 a key under a details segment may hold the term', () => {
+    expect(run({ 'toolbar.details.run': 'Native POSIX run' }, { 'toolbar.details.run': 'Ejecución nativa' })).toBe('');
+    expect(run({ 'other.run': 'Native POSIX run' }, { 'other.run': 'Ejecución nativa' })).toBe('');
+    expect(run({ 'toolbar.linked': 'Linked' }, { 'toolbar.linked': 'Vinculado' })).toContain('Spanish "toolbar.linked"');
+  });
+
+  it('MSG-002 a listed offender is tolerated and an unlisted one is not', () => {
+    const en = { 'notices.a': 'A host run', 'notices.b': 'A host run' };
+    const es = { 'notices.a': 'Una ejecución', 'notices.b': 'Una ejecución' };
+    const out = run(en, es, [offender('notices.a', 'en')]);
+    expect(out).not.toContain('"notices.a"');
+    expect(out).toContain('"notices.b"');
+    // an entry whose text no longer uses a term must be removed: the list only shrinks
+    expect(run({ 'notices.a': 'A run' }, { 'notices.a': 'Una ejecución' }, [offender('notices.a', 'en')])).toContain(
+      'no longer uses an implementation term',
+    );
+  });
+
+  it('MSG-003 a source file other than BoundaryBadge that references a boundary key is a problem', () => {
+    const file = (name: string) => ({ path: `packages/zplc-ide/src/components/${name}.tsx`, text: "t('u2Tests.boundary.simulation')" });
+    expect(checkBoundary([file('BoundaryBadge')], [])).toEqual([]);
+    expect(checkBoundary([file('Other')], []).join('\n')).toContain('MSG-003');
+    expect(checkBoundary([file('Other')], []).join('\n')).toContain('Other.tsx');
+  });
+
+  it('MSG-003 a source that references a 2.0 boundary key is a listed removable offender', () => {
+    const file = { path: 'packages/zplc-ide/src/components/W.tsx', text: "t('console.hostEvidenceBadge')" };
+    expect(checkBoundary([file], []).join('\n')).toContain('console.hostEvidenceBadge');
+    expect(checkBoundary([file], [offender('console.hostEvidenceBadge', 'source')])).toEqual([]);
+    expect(checkBoundary([], [offender('console.hostEvidenceBadge', 'source')]).join('\n')).toContain('remove the entry');
   });
 });

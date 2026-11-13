@@ -22,16 +22,25 @@
 //   exclamation                                    an exclamation mark, `!` or `¡` (UX-031)
 //   internal-term                                  a term of the engineering team: "candidate", "link zplc.json", "stopgap" (UX-031)
 //   voseo                                          Rioplatense voseo in the Spanish text (UX-030, decision D-10)
-// The catalogs have no list of offenders: they start clean and stay clean.
+//   implementation-term                            MSG-002: POSIX, native, host... on a main-path key (vocabulary.ts); a key
+//                                                  under a Details, Inspector or Terminal segment may hold them. The pairs
+//                                                  that held one when the rule was added are on i18n-terms-offenders.json,
+//                                                  a ratchet like the one above (--seed-terms writes it once, --write shrinks it)
+// MSG-003: the boundary keys (BOUNDARY_KEYS) may be read only by BoundaryBadge.tsx, and the three 2.0 keys that stated the
+// boundary (LEGACY_BOUNDARY_KEYS) by nothing; the sources that still read them are on the same list until V3 deletes them.
+// --list-vocabulary prints, per surface, the texts that use a word a vocabulary row replaces (advisory, fails nothing).
+// The other catalog rules have no list of offenders: they start clean and stay clean.
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, posix, relative, resolve } from 'node:path';
 import ts from 'typescript';
 
 import { en } from '../../packages/zplc-ide/src/i18n/en';
 import { es } from '../../packages/zplc-ide/src/i18n/es';
+import { DETAIL_SEGMENTS, IMPLEMENTATION_TERMS, MAIN_PATH_PREFIXES, VOCABULARY } from '../../packages/zplc-ide/src/i18n/vocabulary';
 
 export const IDE_SRC = 'packages/zplc-ide/src';
 const LIST_PATH = new URL('./i18n-offenders.json', import.meta.url);
+const TERMS_LIST_PATH = new URL('./i18n-terms-offenders.json', import.meta.url);
 
 export const RULES = ['hard-coded-text', 'hard-coded-attribute', 'hard-coded-message'] as const;
 export type Rule = (typeof RULES)[number];
@@ -541,8 +550,105 @@ export function midSentenceCapitals(text: string): string[] {
 
 const placeholdersOf = (text: string): string[] => [...text.matchAll(/\{(\w+)\}/g)].map((match) => match[1]!).sort();
 
-export function checkCatalogs(english: Readonly<Record<string, string>> = en, spanish: Readonly<Record<string, string>> = es): string[] {
+/** A (key, language) pair that holds an implementation term, or (language "source") a source that reads a retired boundary key. */
+export interface TermOffender {
+  key: string;
+  language: 'en' | 'es' | 'source';
+  requirement: string;
+  added: string;
+  reason: string;
+}
+
+const TERM_PATTERN = new RegExp(`(?<![\\p{L}\\p{N}])(?:${IMPLEMENTATION_TERMS.join('|')})(?![\\p{L}\\p{N}])`, 'iu');
+export const isMainPathKey = (id: string): boolean =>
+  MAIN_PATH_PREFIXES.some((prefix) => id.startsWith(prefix)) && !DETAIL_SEGMENTS.some((segment) => id.includes(segment));
+
+/** The (key, language) pairs of the catalogs that use an implementation term on a main-path key, with the matched text. */
+export function termHits(
+  english: Readonly<Record<string, string>>,
+  spanish: Readonly<Record<string, string>>,
+): { key: string; language: 'en' | 'es'; term: string }[] {
+  const hits: { key: string; language: 'en' | 'es'; term: string }[] = [];
+  for (const [language, catalog] of [
+    ['en', english],
+    ['es', spanish],
+  ] as const)
+    for (const [key, text] of Object.entries(catalog)) {
+      const term = isMainPathKey(key) ? TERM_PATTERN.exec(text)?.[0] : undefined;
+      if (term) hits.push({ key, language, term });
+    }
+  return hits;
+}
+
+/** The boundary texts (two badges and their tooltips); T3 adds them to the catalogs. Only BoundaryBadge.tsx may read them. */
+export const BOUNDARY_KEYS: readonly string[] = [
+  'u2Tests.boundary.simulation',
+  'u2Tests.boundary.simulationTooltip',
+  'u2Tests.boundary.board',
+  'u2Tests.boundary.boardTooltip',
+];
+/** The 2.0 keys that stated the boundary; nothing may read them once T3 merges and V3 deletes them. */
+export const LEGACY_BOUNDARY_KEYS: readonly string[] = [
+  'console.hostEvidenceBadge',
+  'console.recordedDuringThisHost',
+  'console.nativePosixHostEvidence',
+];
+const BOUNDARY_HOME = `${IDE_SRC}/components/BoundaryBadge.tsx`;
+
+export function checkBoundary(files: readonly SourceFile[], listed: readonly TermOffender[] = []): string[] {
   const problems: string[] = [];
+  const tolerated = new Set(listed.filter((entry) => entry.language === 'source').map((entry) => entry.key));
+  const used = new Set<string>();
+  for (const file of files) {
+    if (file.path.startsWith(`${IDE_SRC}/i18n/`) || /\.(?:test|spec)\.tsx?$/.test(file.path)) continue;
+    for (const id of BOUNDARY_KEYS)
+      if (file.path !== BOUNDARY_HOME && file.text.includes(id))
+        problems.push(`MSG-003: ${file.path} reads the boundary key "${id}"; only BoundaryBadge.tsx states the boundary (boundary-twice)`);
+    for (const id of LEGACY_BOUNDARY_KEYS)
+      if (file.text.includes(id)) {
+        used.add(id);
+        if (!tolerated.has(id))
+          problems.push(`MSG-003: ${file.path} reads "${id}", a 2.0 statement of the boundary; the badge states it once (boundary-twice)`);
+      }
+  }
+  for (const id of tolerated)
+    if (!used.has(id)) problems.push(`MSG-003: no source reads "${id}" any more; remove the entry (bun tools/ci/i18n-guard.ts --write)`);
+  return problems;
+}
+
+/** MSG-002 against the list: a hit that is not listed is a problem, and so is a listed pair that no longer hits. */
+function checkTerms(
+  english: Readonly<Record<string, string>>,
+  spanish: Readonly<Record<string, string>>,
+  listed: readonly TermOffender[],
+): string[] {
+  const problems: string[] = [];
+  const hits = termHits(english, spanish);
+  const pair = (key: string, language: string): string => `${key}\u0000${language}`;
+  const tolerated = new Set(listed.filter((entry) => entry.language !== 'source').map((entry) => pair(entry.key, entry.language)));
+  const seen = new Set(hits.map((hit) => pair(hit.key, hit.language)));
+  for (const hit of hits)
+    if (!tolerated.has(pair(hit.key, hit.language)))
+      problems.push(
+        `MSG-002: ${
+          hit.language === 'en' ? 'English' : 'Spanish'
+        } "${hit.key}" uses the implementation term "${hit.term}" on a main-path surface ` + `(implementation-term)`,
+      );
+  for (const entry of listed)
+    if (entry.language !== 'source' && !seen.has(pair(entry.key, entry.language)))
+      problems.push(
+        `MSG-002: ${entry.language} "${entry.key}" no longer uses an implementation term; remove the entry (bun tools/ci/i18n-guard.ts ` +
+          `--write)`,
+      );
+  return problems;
+}
+
+export function checkCatalogs(
+  english: Readonly<Record<string, string>> = en,
+  spanish: Readonly<Record<string, string>> = es,
+  termOffenders: readonly TermOffender[] = [],
+): string[] {
+  const problems: string[] = checkTerms(english, spanish, termOffenders);
   for (const id of Object.keys(english)) {
     if (!(id in spanish)) problems.push(`UX-029: "${id}" is in the English catalog and not in the Spanish one (missing-key)`);
     else if (placeholdersOf(english[id]!).join() !== placeholdersOf(spanish[id]!).join())
@@ -586,8 +692,36 @@ export function readOffenders(): Offender[] {
   return existsSync(LIST_PATH) ? (JSON.parse(readFileSync(LIST_PATH, 'utf8')) as Offender[]) : [];
 }
 
+export function readTermOffenders(): TermOffender[] {
+  return existsSync(TERMS_LIST_PATH) ? (JSON.parse(readFileSync(TERMS_LIST_PATH, 'utf8')) as TermOffender[]) : [];
+}
+
+const TERMS_REASON = 'Held a main-path implementation term (or a 2.0 boundary key) when MSG-002 was added; V2 and V3 move it.';
+
+/** The list as it is seeded from the repository: every pair that hits now, and every source that reads a retired key. */
+export function seedTermOffenders(files: readonly SourceFile[]): TermOffender[] {
+  const added = new Date().toISOString().slice(0, 10);
+  const entry = (key: string, language: TermOffender['language']): TermOffender => ({
+    key,
+    language,
+    requirement: language === 'source' ? 'MSG-003' : 'MSG-002',
+    added,
+    reason: TERMS_REASON,
+  });
+  const retired = LEGACY_BOUNDARY_KEYS.filter((id) => checkBoundary(files, []).some((problem) => problem.includes(`"${id}"`)));
+  return [...termHits(en, es).map((hit) => entry(hit.key, hit.language)), ...retired.map((id) => entry(id, 'source'))];
+}
+
+/** The list after work on the catalogs and sources: the entries that no longer hit are dropped (never added). */
+export function ratchetTermOffenders(files: readonly SourceFile[], listed: readonly TermOffender[]): TermOffender[] {
+  const live = new Set(seedTermOffenders(files).map((entry) => `${entry.key}\u0000${entry.language}`));
+  return listed.filter((entry) => live.has(`${entry.key}\u0000${entry.language}`));
+}
+
 export function checkRepository(root = resolve(dirname(new URL(import.meta.url).pathname), '../..')): string[] {
-  return [...checkSources(readSources(root), { offenders: readOffenders() }), ...checkCatalogs()];
+  const files = readSources(root);
+  const listed = readTermOffenders();
+  return [...checkSources(files, { offenders: readOffenders() }), ...checkBoundary(files, listed), ...checkCatalogs(en, es, listed)];
 }
 
 if (import.meta.main) {
@@ -597,7 +731,24 @@ if (import.meta.main) {
     for (const file of files.filter((item) => isGuarded(item.path) || isGuardedModule(item.path)))
       for (const violation of violationsOf(file)) console.log(`${violation.file}:${violation.line} ${violation.rule} ${violation.snippet}`);
   }
-  if (process.argv.includes('--seed')) {
+  if (process.argv.includes('--list-vocabulary')) {
+    for (const [concept, row] of Object.entries(VOCABULARY))
+      for (const word of row.replaces)
+        for (const [language, catalog] of [
+          ['en', en],
+          ['es', es],
+        ] as const)
+          for (const [id, text] of Object.entries(catalog))
+            if (isMainPathKey(id) && new RegExp(`(?<![\\p{L}\\p{N}])${word}(?![\\p{L}\\p{N}])`, 'iu').test(text))
+              console.log(`${id} (${language}) says "${word}"; the vocabulary word of ${concept} is "${row[language]}"`);
+  }
+  if (process.argv.includes('--seed-terms')) {
+    if (readTermOffenders().length > 0) {
+      console.error('i18n-guard: the terms list exists; it only shrinks (--write)');
+      process.exit(1);
+    }
+    writeFileSync(TERMS_LIST_PATH, `${JSON.stringify(seedTermOffenders(files), null, 2)}\n`);
+  } else if (process.argv.includes('--seed')) {
     if (readOffenders().length > 0) {
       console.error('i18n-guard: the list exists; it only shrinks (--write)');
       process.exit(1);
@@ -618,6 +769,7 @@ if (import.meta.main) {
     writeFileSync(LIST_PATH, `${JSON.stringify(seeded, null, 2)}\n`);
   } else if (process.argv.includes('--write')) {
     writeFileSync(LIST_PATH, `${JSON.stringify(ratchetOffenders(files, readOffenders()), null, 2)}\n`);
+    writeFileSync(TERMS_LIST_PATH, `${JSON.stringify(ratchetTermOffenders(files, readTermOffenders()), null, 2)}\n`);
   }
   const problems = checkRepository(root);
   if (problems.length > 0) {
@@ -626,6 +778,9 @@ if (import.meta.main) {
   }
   const keys = Object.keys(en).length;
   console.log(
-    `i18n-guard: ok (${keys} keys in both catalogs, ${readOffenders().length} entries are listed, ${relative(root, LIST_PATH.pathname)})`,
+    `i18n-guard: ok (${keys} keys in both catalogs, ${readOffenders().length} entries are listed, ${relative(
+      root,
+      LIST_PATH.pathname,
+    )}; ${readTermOffenders().length} term entries)`,
   );
 }
