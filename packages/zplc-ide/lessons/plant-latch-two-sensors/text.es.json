@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "title": "Del sensor A al sensor B",
+  "summary": "Secuencie un movimiento con un set y un reset: haga correr la banda desde el sensor A hasta que la caja llegue al sensor B.",
+  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "objectives": [
+    "Usar un set y un reset para mantener una salida entre dos eventos.",
+    "Explicar por qué un sensor que se apaga no puede mantener la salida por sí solo."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/LatchTwoSensors.st, haga de Run una retención: actívela cuando EyeA vea la caja y bórrela cuando EyeB vea la caja.",
+      "checkpoint": "Run se mantiene entre los dos sensores, y el reset gana sobre el set."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "Antes de ejecutar, siga la caja: el sensor A la ve un instante, luego la caja avanza y A se apaga.",
+      "checkpoint": "Run se enciende cuando A ve la caja, sigue encendida mientras la caja viaja y se apaga cuando B la ve, y así se queda."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial nunca hace correr la banda; active Run cuando EyeA vea la caja y bórrela cuando EyeB vea la caja.",
+      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario latch-two-sensors; observe la vista 3D mientras se ejecuta.",
+      "checkpoint": "El escenario requerido se llama latch-two-sensors y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Compare el instante en que A se apaga con el instante en que B se enciende: la banda sigue corriendo entre ambos porque Run conserva su valor.",
+      "checkpoint": "Ambos sensores cuentan la caja, Run está apagada al final y ninguna caja cae."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "Las aserciones comprueban la cuenta en ambos sensores y el estado final; no dicen nada sobre cuánto dura el movimiento en la vida real.",
+      "checkpoint": "No establece la velocidad física de la banda, la respuesta del sensor, la temporización de hardware, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "La propia salida puede ser la memoria: un IF que escribe TRUE en Run cuando EyeA es TRUE conserva el valor en los ciclos siguientes."
+    },
+    {
+      "level": 2,
+      "text": "Añada después un segundo IF que escriba FALSE cuando EyeB sea TRUE, para que el reset gane cuando ambos sensores sean TRUE."
+    }
+  ],
+  "faultCases": ["El inicial nunca hace correr la banda; active Run cuando EyeA vea la caja y bórrela cuando EyeB vea la caja."]
+}

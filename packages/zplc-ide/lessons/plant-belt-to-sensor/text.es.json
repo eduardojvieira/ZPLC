@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Mover una caja hasta un sensor",
+  "summary": "Arranque una banda con un botón y deténgala cuando una caja llegue al sensor del extremo.",
+  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "objectives": [
+    "Arrancar un actuador con la pulsación de un botón y recordar que está en marcha.",
+    "Detener el actuador cuando un sensor ve la caja."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/BeltToSensor.st, mantenga una memoria Running: actívela con Start, bórrela con EyeFar y conecte Run y Emit.",
+      "checkpoint": "Run sigue a la memoria; Emit pone una caja en la banda cuando se pulsa Start."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "Antes de ejecutar, siga la caja: el botón de inicio es solo una pulsación corta, pero la banda debe seguir en marcha hasta que llegue la caja.",
+      "checkpoint": "Banda apagada antes de la pulsación; encendida después, con una caja encima; apagada otra vez en cuanto EyeFar ve la caja, y así se queda."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que la banda nunca se mueve; arranque la banda y ponga una caja con Start, y detenga la banda cuando EyeFar vea la caja.",
+      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario belt-to-sensor; observe la vista 3D mientras se ejecuta.",
+      "checkpoint": "El escenario requerido se llama belt-to-sensor y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Observe la caja avanzar por la banda en la vista 3D y detenerse bajo el sensor; compárelo con la salida Run en la traza.",
+      "checkpoint": "Run baja cuando el sensor se activa, no antes, y la caja nunca cae."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "La aserción EVENTUALLY prueba que el sensor vio la caja en ocho segundos; las aserciones AT fijan el estado al inicio y al final.",
+      "checkpoint": "No establece la velocidad física de la banda, la respuesta del sensor, la temporización de hardware, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Start es un pulso, así que la banda necesita una memoria: active Running cuando Start sea TRUE y bórrela cuando EyeFar sea TRUE."
+    },
+    {
+      "level": 2,
+      "text": "Escriba el borrado después de la activación para que EyeFar gane cuando ambos sean TRUE; luego Run := Running y Emit := Start."
+    }
+  ],
+  "faultCases": [
+    "El inicial no gobierna ninguna salida, así que la banda nunca se mueve; arranque la banda y ponga una caja con Start, y detenga la banda cuando EyeFar vea la caja."
+  ]
+}

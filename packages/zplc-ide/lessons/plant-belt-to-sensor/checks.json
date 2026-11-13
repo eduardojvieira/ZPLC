@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [],
+  "wrong": [
+    {
+      "intent": "starts the belt but never stops it at the sensor",
+      "files": {
+        "src/BeltToSensor.st": "PROGRAM BeltToSensor\nVAR_INPUT\n    Start  AT %I0.0 : BOOL;\n    EyeFar AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Run  AT %Q0.0 : BOOL;\n    Emit AT %Q0.1 : BOOL;\nEND_VAR\nVAR\n    Running : BOOL;\nEND_VAR\n\nIF Start THEN\n    Running := TRUE;\nEND_IF;\n\nRun := Running;\nEmit := Start;\n\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "runs the belt only while the start button is held",
+      "files": {
+        "src/BeltToSensor.st": "PROGRAM BeltToSensor\nVAR_INPUT\n    Start  AT %I0.0 : BOOL;\n    EyeFar AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Run  AT %Q0.0 : BOOL;\n    Emit AT %Q0.1 : BOOL;\nEND_VAR\nVAR\n    Running : BOOL;\nEND_VAR\n\nIF Start THEN\n    Running := TRUE;\nEND_IF;\nIF EyeFar THEN\n    Running := FALSE;\nEND_IF;\n\nRun := Start;\nEmit := Start;\n\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

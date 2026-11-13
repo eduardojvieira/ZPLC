@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [],
+  "wrong": [
+    {
+      "intent": "follows sensor A directly and loses the box when A goes dark",
+      "files": {
+        "src/LatchTwoSensors.st": "PROGRAM LatchTwoSensors\nVAR_INPUT\n    EyeA AT %I0.0 : BOOL;\n    EyeB AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Run AT %Q0.0 : BOOL;\nEND_VAR\n\nRun := EyeA AND NOT EyeB;\n\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "never resets at sensor B so the belt keeps running",
+      "files": {
+        "src/LatchTwoSensors.st": "PROGRAM LatchTwoSensors\nVAR_INPUT\n    EyeA AT %I0.0 : BOOL;\n    EyeB AT %I0.1 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Run AT %Q0.0 : BOOL;\nEND_VAR\n\nIF EyeA THEN\n    Run := TRUE;\nEND_IF;\n\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

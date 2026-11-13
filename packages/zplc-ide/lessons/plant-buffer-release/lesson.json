@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-buffer-release",
+  "version": 1,
+  "order": 141,
+  "module": 14,
+  "level": "advanced",
+  "prerequisites": ["sfc-fill-mix-sequence", "plant-counted-queue"],
+  "languages": ["SFC"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The chart reads five inputs where the learner boards have four, and the queue and its blade exist only in the simulated scene.",
+        "es": "El diagrama lee cinco entradas cuando las placas del estudiante tienen cuatro, y la cola y su cuchilla existen solo en la escena simulada."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus cajas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "buffer-release",
+  "estimatedMinutes": 45,
+  "starter": {
+    "project": "plant_buffer_release_starter",
+    "program": "src/BufferRelease.sfc.json"
+  },
+  "solution": {
+    "project": "plant_buffer_release",
+    "program": "src/BufferRelease.sfc.json"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "buffer-release",
+    "path": "tests/buffer-release.scenario.json",
+    "sha256": "d5807325a9ec8f74329e4aac1c015000608d0be58feb6a0566ba59f3164a1164"
+  },
+  "regressionScenarios": []
+}

@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "title": "Move a box to a sensor",
+  "summary": "Start a belt from a button and stop it when a box reaches the sensor at the far end.",
+  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "objectives": ["Start an actuator from a button press and remember that it is running.", "Stop the actuator when a sensor sees the box."],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/BeltToSensor.st, keep a Running memory: set it with Start, clear it with EyeFar, and wire Run and Emit.",
+      "checkpoint": "Run follows the memory; Emit puts one box on the belt when Start is pressed."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, follow the box: the start button is only a short press, but the belt has to keep running until the box arrives.",
+      "checkpoint": "Belt off before the press; on after it, with one box on it; off again as soon as EyeFar sees the box, and it stays off."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter drives no output, so the belt never moves; start the belt and put a box on it with Start, and stop the belt when EyeFar sees the box.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the belt-to-sensor scenario; watch the 3D view while it runs.",
+      "checkpoint": "The required scenario is named belt-to-sensor and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Watch the box ride the belt in the 3D view and stop under the sensor; compare it with the Run output in the trace.",
+      "checkpoint": "Run falls when the sensor turns on, not before, and the box is never dropped."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The EVENTUALLY assertion proves the sensor saw the box within eight seconds; the AT assertions pin the state at the start and at the end.",
+      "checkpoint": "It does not establish physical belt speed, sensor response, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Start is a pulse, so the belt needs a memory: set Running when Start is TRUE and clear it when EyeFar is TRUE."
+    },
+    {
+      "level": 2,
+      "text": "Write the clear after the set so EyeFar wins when both are TRUE, then Run := Running and Emit := Start."
+    }
+  ],
+  "faultCases": [
+    "The starter drives no output, so the belt never moves; start the belt and put a box on it with Start, and stop the belt when EyeFar sees the box."
+  ]
+}

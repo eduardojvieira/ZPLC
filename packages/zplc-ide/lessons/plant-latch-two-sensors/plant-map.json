@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 2,
+  "target": { "scene": "latch-two-sensors" },
+  "signals": {
+    "EyeA.detect": { "direction": "sensor", "type": "BOOL", "point": "LatchTwoSensors.EyeA" },
+    "EyeB.detect": { "direction": "sensor", "type": "BOOL", "point": "LatchTwoSensors.EyeB" },
+    "Belt1.run": { "direction": "command", "type": "BOOL", "point": "LatchTwoSensors.Run" }
+  }
+}

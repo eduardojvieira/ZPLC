@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [],
+  "wrong": [
+    {
+      "intent": "moves all three boxes but never lights Done",
+      "files": {
+        "src/CountedQueue.st": "PROGRAM CountedQueue\nVAR_INPUT\n    Start  AT %I0.0 : BOOL;\n    EyeIn  AT %I0.1 : BOOL;\n    EyeOut AT %I0.2 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Run  AT %Q0.0 : BOOL;\n    Emit AT %Q0.1 : BOOL;\n    Done AT %Q0.2 : BOOL;\nEND_VAR\nVAR\n    Active   : BOOL;\n    Loaded   : CTU;\n    Unloaded : CTU;\n    InGone   : F_TRIG;\nEND_VAR\n\nIF Start THEN\n    Active := TRUE;\nEND_IF;\n\nLoaded(CU := EyeIn, R := FALSE, PV := 3);\nUnloaded(CU := EyeOut, R := FALSE, PV := 3);\nInGone(CLK := EyeIn);\n\n(* the first box on Start, each next box once the previous one has left the emitter *)\nEmit := (Start OR InGone.Q) AND Active AND NOT Loaded.Q;\nDone := FALSE;\nRun := Active AND NOT Unloaded.Q;\n\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "never stops the belt after the third box",
+      "files": {
+        "src/CountedQueue.st": "PROGRAM CountedQueue\nVAR_INPUT\n    Start  AT %I0.0 : BOOL;\n    EyeIn  AT %I0.1 : BOOL;\n    EyeOut AT %I0.2 : BOOL;\nEND_VAR\nVAR_OUTPUT\n    Run  AT %Q0.0 : BOOL;\n    Emit AT %Q0.1 : BOOL;\n    Done AT %Q0.2 : BOOL;\nEND_VAR\nVAR\n    Active   : BOOL;\n    Loaded   : CTU;\n    Unloaded : CTU;\n    InGone   : F_TRIG;\nEND_VAR\n\nIF Start THEN\n    Active := TRUE;\nEND_IF;\n\nLoaded(CU := EyeIn, R := FALSE, PV := 3);\nUnloaded(CU := EyeOut, R := FALSE, PV := 3);\nInGone(CLK := EyeIn);\n\n(* the first box on Start, each next box once the previous one has left the emitter *)\nEmit := (Start OR InGone.Q) AND Active AND NOT Loaded.Q;\nDone := Unloaded.Q;\nRun := Active;\n\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

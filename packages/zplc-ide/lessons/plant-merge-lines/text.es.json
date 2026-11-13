@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Fusionar dos líneas",
+  "summary": "Arbitre dos alimentadores que comparten una salida: dé prioridad a la línea A, deje pasar una caja a la vez y enclave las dos cuchillas.",
+  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "objectives": [
+    "Arbitrar dos peticiones con una prioridad: la línea A gana cuando ambas esperan.",
+    "Enclavar dos salidas para que nunca estén activas juntas y liberar la concesión solo cuando la caja haya despejado la fusión."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/MergeLines.st, mantenga dos memorias de concesión, GrantA y GrantB: conceda primero a la línea A cuando ambas esperen, conceda a una línea solo cuando no haya concesión activa y la zona de fusión esté libre, y termine la concesión cuando su caja haya salido de la zona.",
+      "checkpoint": "HoldA y HoldB son verdaderas salvo que esa línea tenga la concesión, así que las dos cuchillas nunca están abiertas a la vez."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "Antes de ejecutar, piense en el punto de fusión: ambos alimentadores llevan cajas, pero la salida admite una caja a la vez.",
+      "checkpoint": "Al principio ambas cuchillas retienen las líneas; luego se abre una cuchilla a la vez, primero la línea A, y la siguiente solo después de que la caja salió de la zona; las seis cajas salen y Done se enciende."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que no se carga nada y ninguna cuchilla se mueve; cargue tres cajas en cada alimentador, abra una cuchilla a la vez, con la línea A primero, nunca ambas juntas, y abra la siguiente solo cuando la caja anterior haya salido de la zona de fusión.",
+      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario merge-lines; observe la vista 3D mientras se ejecuta.",
+      "checkpoint": "El escenario requerido se llama merge-lines y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Observe qué cuchilla se abre primero y cómo espera la segunda línea; ninguna pareja de cajas se encuentra en la fusión.",
+      "checkpoint": "Las seis cajas se entregan por turnos, ninguna choca ni cae, y Done está encendida al final."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "La aserción ALWAYS sobre colisiones es la comprobación del enclavamiento: un diseño que abriera ambas cuchillas podría pasar la entrega y aun así fallar esa aserción.",
+      "checkpoint": "No establece la velocidad física de la banda, la respuesta del sensor, la temporización de hardware, HIL, función de seguridad ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Una concesión es una retención: active GrantA cuando WaitA sea TRUE, no haya nada concedido y la zona esté libre; si no, active GrantB cuando WaitB sea TRUE (el orden de IF y ELSIF es la prioridad)."
+    },
+    {
+      "level": 2,
+      "text": "Recuerde que el sensor de zona vio la caja (una memoria Seen) y borre ambas concesiones cuando la zona pase de TRUE a FALSE (un F_TRIG); luego HoldA := Active AND NOT GrantA y HoldB := Active AND NOT GrantB."
+    }
+  ],
+  "faultCases": [
+    "El inicial no gobierna ninguna salida, así que no se carga nada y ninguna cuchilla se mueve; cargue tres cajas en cada alimentador, abra una cuchilla a la vez, con la línea A primero, nunca ambas juntas, y abra la siguiente solo cuando la caja anterior haya salido de la zona de fusión."
+  ]
+}

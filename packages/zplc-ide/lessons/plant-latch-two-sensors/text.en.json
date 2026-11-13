@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "title": "From sensor A to sensor B",
+  "summary": "Sequence a move with a set and a reset: run the belt from sensor A until the box reaches sensor B.",
+  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Use a set and a reset to hold an output between two events.",
+    "Explain why a sensor that goes dark cannot hold the output by itself."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/LatchTwoSensors.st, make Run a latch: set it when EyeA sees the box and reset it when EyeB sees the box.",
+      "checkpoint": "Run stays on between the two sensors, and the reset wins over the set."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, follow the box: sensor A sees it for a moment, then the box moves on and A goes dark.",
+      "checkpoint": "Run turns on when A sees the box, stays on while the box travels, and turns off when B sees it and stays off."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter never runs the belt; set Run when EyeA sees the box and reset it when EyeB sees the box.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the latch-two-sensors scenario; watch the 3D view while it runs.",
+      "checkpoint": "The required scenario is named latch-two-sensors and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare the moment A goes dark with the moment B turns on: the belt keeps running in between because Run holds its value.",
+      "checkpoint": "Both sensors count the box, Run is off at the end, and no box is dropped."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The assertions check the count at both sensors and the final state; they say nothing about how long the move takes in real life.",
+      "checkpoint": "It does not establish physical belt speed, sensor response, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "The output itself can be the memory: an IF that writes TRUE to Run when EyeA is TRUE keeps the value on later scans."
+    },
+    {
+      "level": 2,
+      "text": "Add a second IF after it that writes FALSE when EyeB is TRUE, so the reset wins when both sensors are TRUE."
+    }
+  ],
+  "faultCases": ["The starter never runs the belt; set Run when EyeA sees the box and reset it when EyeB sees the box."]
+}

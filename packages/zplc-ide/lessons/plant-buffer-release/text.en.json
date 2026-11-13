@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Accumulate and release",
+  "summary": "Model a buffer station as a state machine: load five boxes, hold them at a blade, and release one per button press.",
+  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Model a station as steps and transitions, one step for each thing the station does.",
+    "Choose between two next steps with transition conditions that exclude each other."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/BufferRelease.sfc.json, build the chart: IDLE, LOADING and WAIT to load five boxes, QUEUED to hold them, RELEASING, PASSING and COUNT to let one go, and FINISHED.",
+      "checkpoint": "Each step sets every output, so reading the active step tells you what the station does."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, walk the chart: the start press moves it from IDLE into the loading steps, which turn on the buffer and emit a box every two seconds.",
+      "checkpoint": "The blade holds the queue after the fifth box; each press of the release button lets exactly one box pass EyeRelease; after the fifth release Done turns on and Fault stays off."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter loads boxes but never holds them or releases them one at a time; add the steps and transitions that count five boxes in, hold the blade, release one per press, and finish with Done.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the buffer-release scenario; watch the 3D view while it runs.",
+      "checkpoint": "The required scenario is named buffer-release and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Watch the active step change in the chart view while the boxes queue at the blade and leave one at a time.",
+      "checkpoint": "The blade is down only while a box is released, one box passes per press, and Fault stays off."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The chart shows the whole sequence; the transition conditions are the only way to move between steps, so a missing condition stops the station.",
+      "checkpoint": "It does not establish physical belt speed, sensor response, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Count in a local variable with a P1 action, so it adds one each time the step is entered, and give the choice after the count two transitions: one when the count reached 5 and one when it did not."
+    },
+    {
+      "level": 2,
+      "text": "Add a COUNT step after PASSING for the released boxes, and let its transitions wait a short step time so the new count is visible; leave the blade up (Hold TRUE) in every step except RELEASING and PASSING."
+    }
+  ],
+  "faultCases": [
+    "The starter loads boxes but never holds them or releases them one at a time; add the steps and transitions that count five boxes in, hold the blade, release one per press, and finish with Done."
+  ]
+}
