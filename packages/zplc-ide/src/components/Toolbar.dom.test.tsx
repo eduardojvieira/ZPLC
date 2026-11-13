@@ -316,6 +316,38 @@ describe('Run in one action (FLW-001, FLW-006) in a DOM', () => {
     ).toEqual([dom.t('studio.flow.done.run')]);
   });
 
+  it('FLW-001 Run by the keyboard leaves the focus on Pause once the sequence ends, not on a disabled button', async () => {
+    openProject(BUILD_OK, { modified: true });
+    const { controller } = simulatorController();
+    // The program is running, and the bar repaints, while the last step of Run is still in flight: Pause shows but is disabled.
+    const started = (controller as unknown as { start: () => Promise<void> }).start;
+    (controller as unknown as { start: () => Promise<void> }).start = async () => {
+      await started();
+      useIDEStore.setState({ projectConfig: { name: 'Blinky', target: { board: 'repaint' } } as never });
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    };
+    const focusedWhileDisabled: string[] = [];
+    const focus = HTMLButtonElement.prototype.focus;
+    HTMLButtonElement.prototype.focus = function (this: HTMLButtonElement, ...args) {
+      if (this.disabled) focusedWhileDisabled.push(this.getAttribute('aria-label') ?? '');
+      return focus.apply(this, args);
+    };
+    const { user } = dom.render(<Toolbar debugController={controller} />);
+    runButton().focus();
+    try {
+      await user.keyboard('{Enter}');
+    } finally {
+      await dom.settle();
+    }
+    const pause = await dom.screen.findByRole('button', { name: new RegExp(dom.t('toolbar.pause.label')) });
+    await dom.waitFor(() => expect((pause as HTMLButtonElement).disabled).toBe(false));
+    await dom.settle();
+    // A browser ignores focus() on a disabled button: every focus that reached Pause must have found it enabled.
+    HTMLButtonElement.prototype.focus = focus;
+    expect(focusedWhileDisabled).toEqual([]);
+    expect(document.activeElement).toBe(dom.screen.getByRole('button', { name: new RegExp(dom.t('toolbar.pause.label')) }));
+  });
+
   it('FLW-001 a build error stops Run: no simulator is started and the notice says which step stopped', async () => {
     openProject({ ok: false });
     const { controller, calls } = simulatorController();

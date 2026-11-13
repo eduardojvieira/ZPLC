@@ -205,9 +205,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
   useEffect(() => {
     const pendingTarget = pendingExecutionFocusRef.current;
     if (!pendingTarget || (pendingTarget === 'running' ? !isRunning : !isPaused)) return;
+    // The button is disabled while Run's sequence or a connection is in flight: keep the request until the controls are free.
+    if (controlsBusy) return;
     pendingExecutionFocusRef.current = null;
     requestAnimationFrame(() => executionButtonRef.current?.focus());
-  }, [isPaused, isRunning]);
+  }, [isPaused, isRunning, controlsBusy]);
 
   // The folder is the main process's: link the project to its workspace as it opens, so that Tests finds it ready (IDE-001).
   useEffect(() => {
