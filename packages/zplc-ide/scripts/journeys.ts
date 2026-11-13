@@ -180,6 +180,18 @@ async function clickEditorLine(app: App, line: number, where: 'text' | 'gutter' 
  * The project navigator in its Files mode (the file tree), which is where the journeys click files: the Project activity of the rail, then
  * the Files toggle.
  */
+/** Close the project with the File command, through the palette (SHL-013: the Explorer no longer has a close cross). */
+async function closeProject(app: App): Promise<void> {
+  await app.press('Ctrl+Shift+P');
+  await app.type('close the project');
+  await app.until(
+    'the palette to list Close the project',
+    async () =>
+      (await app.eval<boolean>(`Boolean(document.querySelector('[role="option"][data-command="file.closeProject"]'))`)) || undefined,
+  );
+  await app.press('Enter');
+}
+
 async function showExplorer(app: App): Promise<void> {
   await app.click(css('[data-activity="project"]'), 'the Project activity of the rail');
   await app.click(
@@ -1055,7 +1067,7 @@ async function languageChain(app: App, { root, project, runtime }: JourneyContex
   const first = await compile(app);
   assert(first.kind === 'built', `The program just created in ${spec.language} does not build: ${first.message}`);
   await showExplorer(app);
-  await app.click(button('Close project'));
+  await closeProject(app);
   await app.until('the Welcome screen', async () => (await app.visible(button('Open project', 'contains'))) || undefined);
 
   // 2. edit, save, reopen, build: the example is aimed at a board the emulated device can be, so that the deploy preflight can match
@@ -1066,7 +1078,7 @@ async function languageChain(app: App, { root, project, runtime }: JourneyContex
   // the notice of the build above is over the top right of the editor until it goes: a click there would land on it, not on the editor
   await app.until('the notices to go', async () => !(await app.visible(css('[data-notification]'))) || undefined, 30_000);
   const persisted = await spec.edit(app, project);
-  await app.click(button('Close project'));
+  await closeProject(app);
   await app.until('the Welcome screen', async () => (await app.visible(button('Open project', 'contains'))) || undefined);
   await openFolder(app, project);
   if (spec.file.endsWith('.json'))
@@ -1267,7 +1279,7 @@ export const JOURNEYS: Journey[] = [
       assert(disk(file) === original, 'Typing alone must not write the file.');
       await app.click(saveButton, 'the Save button');
       await app.until('the edited file on disk', () => disk(file) === edited || undefined);
-      await app.click(button('Close project'));
+      await closeProject(app);
       await app.until('the Welcome screen', async () => (await app.visible(button('Open project', 'contains'))) || undefined);
       await openFolder(app, project);
       await openFile(app, 'src/Motor.st');
@@ -2333,7 +2345,7 @@ export const JOURNEYS: Journey[] = [
     run: async (app, { project, root, relaunch }) => {
       await openFolder(app, project);
       await showExplorer(app);
-      await app.click(button('Close project'));
+      await closeProject(app);
       await app.until('the Welcome screen with the project under Recent', async () => (await app.visible(recentRow)) || undefined);
 
       // The folder disappears while the Welcome screen still lists it as available.
@@ -2426,7 +2438,7 @@ export const JOURNEYS: Journey[] = [
 
       // Close the project and open it again: the Explorer lists the file and a click opens it in the Ladder editor, with its rung.
       await showExplorer(app);
-      await app.click(button('Close project'));
+      await closeProject(app);
       await app.until('the Welcome screen', async () => (await app.visible(button('Open project', 'contains'))) || undefined);
       await openFolder(app, project);
       await showExplorer(app);
@@ -2999,7 +3011,7 @@ export const JOURNEYS: Journey[] = [
         `=== ${JSON.stringify(label)})`;
       const askToClose = async () => {
         await showExplorer(app);
-        await app.click(button('Close project'));
+        await closeProject(app);
         await app.until(
           'the question before the project closes',
           async () => (await questionTitle()) === 'Discard unsaved changes?' || undefined,
@@ -4524,7 +4536,7 @@ export const JOURNEYS: Journey[] = [
       await app.until('the edited file on disk', () => disk(file) === edited || undefined);
       const result = await compile(app);
       assert(result.kind === 'built', `The edited Instruction List program does not build: ${result.message}`);
-      await app.click(button('Close project'));
+      await closeProject(app);
       await app.until('the Welcome screen', async () => (await app.visible(button('Open project', 'contains'))) || undefined);
       await openFolder(app, project);
       await openFile(app, 'src/main.il');
@@ -4678,7 +4690,7 @@ export const JOURNEYS: Journey[] = [
 
       // Import from the Welcome screen: choosing the archive writes nothing, the dialog says what is in it.
       await showExplorer(app);
-      await app.click(button('Close project'));
+      await closeProject(app);
       await app.until('the Welcome screen', async () => (await app.visible(button('Import a project archive', 'contains'))) || undefined);
       app.answer(archive);
       await app.click(button('Import a project archive', 'contains'), 'the Import a project archive button');
@@ -8220,7 +8232,7 @@ export const JOURNEYS: Journey[] = [
         async () => /Exported motor\.zplc\.zip: \d+ files/.test(await outputText(app)) || undefined,
       );
       await showExplorer(app);
-      await app.click(button('Close project'));
+      await closeProject(app);
       await app.until('the Welcome screen', async () => (await app.visible(button('Import a project archive', 'contains'))) || undefined);
       app.answer(archive);
       await app.click(button('Import a project archive', 'contains'), 'the Import a project archive button');

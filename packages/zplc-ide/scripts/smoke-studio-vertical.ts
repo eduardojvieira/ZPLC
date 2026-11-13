@@ -2634,17 +2634,14 @@ async function main(): Promise<void> {
         : undefined,
     );
     assert(
-      (await page().evaluate(`Boolean(document.querySelector('button[aria-label="Close project"]'))`)) === true,
-      'Close Project control is unavailable',
+      (await page().evaluate(`Boolean(document.querySelector('button[aria-label="Close project"]'))`)) === false,
+      'Close project is a File command (SHL-013): the Explorer has no control for it',
     );
-    await page().evaluate(
-      `document.querySelector('button[aria-label="Close project"]')?.focus(); document.querySelector('button[aria-label="Close ` +
-        `project"]')?.click()`,
-    );
+    await page().evaluate(`import('/src/commands/bus.ts').then(({ runCommand }) => runCommand('file.closeProject'))`);
     await Bun.sleep(100);
     const closeDialog = (await page().evaluate(
       `(() => { const dialog = document.querySelector('[role="alertdialog"]'); return { dialog: dialog?.textContent ?? null, project: ` +
-        `document.querySelector('button[aria-label="Close project"]') !== null }; })()`,
+        `false }; })()`,
     )) as { dialog: string | null; project: boolean };
     assert(
       closeDialog.dialog?.includes('Discard unsaved changes?'),
@@ -2686,21 +2683,19 @@ async function main(): Promise<void> {
     await press('Escape');
     await waitFor('unsaved close cancellation focus recovery', async () =>
       (await page().evaluate(
-        `!document.querySelector('[role="alertdialog"]') && document.activeElement?.getAttribute('aria-label') === 'Close project' && ` +
-          `window.__zplcSmoke.getState?.().activeFileId === 'aux-st' ? true : undefined`,
+        `!document.querySelector('[role="alertdialog"]') && window.__zplcSmoke.getState?.().activeFileId === 'aux-st' ? true : undefined`,
       )) === true
         ? true
         : undefined,
     );
-    await page().evaluate(`document.querySelector('button[aria-label="Close project"]')?.click()`);
+    await page().evaluate(`import('/src/commands/bus.ts').then(({ runCommand }) => runCommand('file.closeProject'))`);
     await waitFor('unsaved close confirmation reopened', async () =>
       (await page().evaluate(`document.querySelector('[role="alertdialog"]') ? true : undefined`)) === true ? true : undefined,
     );
     await click('Discard changes and close');
     await waitFor('explicit unsaved project discard', async () =>
       (await page().evaluate(
-        `!document.querySelector('[role="alertdialog"]') && !document.querySelector('button[aria-label="Close project"]') ? true : ` +
-          `undefined`,
+        `!document.querySelector('[role="alertdialog"]') && window.__zplcSmoke.getState?.().isProjectOpen === false ? true : undefined`,
       )) === true
         ? true
         : undefined,

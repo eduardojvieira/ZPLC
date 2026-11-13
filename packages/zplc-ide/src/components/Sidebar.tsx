@@ -6,7 +6,6 @@
  * - File icons based on language
  * - Context menu for delete
  * - New File dialog
- * - Close project button
  */
 
 import {
@@ -18,7 +17,6 @@ import {
   ChevronRight,
   ChevronDown,
   Plus,
-  X,
   RefreshCw,
   Database,
   TriangleAlert,
@@ -38,10 +36,9 @@ import { TreeMarksContext, type TreeMark } from './treeMarksContext';
 import { configuredLibraries } from '../project/libraries';
 import { useProjectSources } from '../store/projectSources';
 import { FileNameTakenError } from '../utils/fileSystem';
-import { unsavedOutcome } from '../utils/unsavedChanges';
 import { collectFolders, parentPath } from '../project/treeOperations';
 import { DeleteFolderDialog, EntryNameDialog, MoveDialog } from './ExplorerDialogs';
-import { CloseProjectModal, ContextMenu, DeleteModal } from './SidebarDialogs';
+import { ContextMenu, DeleteModal } from './SidebarDialogs';
 import { flattenVisibleTree, resolveTreeFocus, treeNavigation } from './sidebarTreeNavigation';
 
 // =============================================================================
@@ -387,8 +384,6 @@ export function Sidebar() {
   const [deleteConfirm, setDeleteConfirm] = useState<{ fileId: string; fileName: string; projectSession: number } | null>(null);
   const [isDeletingFile, setIsDeletingFile] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [isCloseProjectModalOpen, setIsCloseProjectModalOpen] = useState(false);
-  const [isSavingBeforeClose, setIsSavingBeforeClose] = useState(false);
   const [focusedTree, setFocusedTree] = useState<{ id: string | null; ancestorIds: string[] }>({ id: null, ancestorIds: [] });
   const treeItemRefs = useRef(new Map<string, HTMLDivElement>());
   const visibleTree = useMemo(() => flattenVisibleTree(fileTree?.children ?? []), [fileTree]);
@@ -414,46 +409,6 @@ export function Sidebar() {
     setTreeFocus(id);
     treeItemRefs.current.get(id)?.focus();
   };
-
-  const handleCloseProject = useCallback(() => {
-    const state = useIDEStore.getState();
-    const { forcedValues, forcesUnconfirmed } = state.debug;
-    const closeBlockedByForces = forcedValues.size > 0 || forcesUnconfirmed;
-
-    if (closeBlockedByForces) {
-      state.closeProject();
-      requestAnimationFrame(() => document.getElementById('console-tab-watch')?.focus());
-      return;
-    }
-    if (state.hasUnsavedChanges()) {
-      setIsCloseProjectModalOpen(true);
-      return;
-    }
-    state.closeProject();
-  }, []);
-
-  // Save, discard or cancel (IDE-005): saving closes the project only when nothing is left modified.
-  const handleSaveAndCloseProject = useCallback(async () => {
-    setIsSavingBeforeClose(true);
-    try {
-      await useIDEStore.getState().saveAllFiles();
-      if (useIDEStore.getState().projectConfigDirty) await useIDEStore.getState().saveProjectConfig();
-    } catch {
-      // The project stays open with what could not be written still modified.
-    } finally {
-      setIsSavingBeforeClose(false);
-    }
-    if (unsavedOutcome('save', useIDEStore.getState().hasUnsavedChanges()) !== 'proceed') return;
-    const closed = useIDEStore.getState().closeProject();
-    setIsCloseProjectModalOpen(false);
-    if (!closed) requestAnimationFrame(() => document.getElementById('console-tab-watch')?.focus());
-  }, []);
-
-  const handleDiscardAndCloseProject = useCallback(() => {
-    const closed = useIDEStore.getState().closeProject({ discardUnsaved: true });
-    setIsCloseProjectModalOpen(false);
-    if (!closed) requestAnimationFrame(() => document.getElementById('console-tab-watch')?.focus());
-  }, []);
 
   // Context menu handlers
   const handleContextMenu = (e: React.MouseEvent, node: FileTreeNode) => {
@@ -573,7 +528,6 @@ export function Sidebar() {
               void refreshFileTree();
             }}
           />
-          <IconButton size="sm" label={t('explorer.closeProject')} icon={<X size={ICON_SIZES.sm} />} onClick={handleCloseProject} />
         </div>
       </div>
 
@@ -649,16 +603,6 @@ export function Sidebar() {
         language={newFileLanguage}
         onFileNameChange={setNewFileName}
         onLanguageChange={setNewFileLanguage}
-      />
-
-      <CloseProjectModal
-        isOpen={isCloseProjectModalOpen}
-        busy={isSavingBeforeClose}
-        onSave={() => {
-          void handleSaveAndCloseProject();
-        }}
-        onConfirm={handleDiscardAndCloseProject}
-        onCancel={() => setIsCloseProjectModalOpen(false)}
       />
 
       {/* Context Menu */}
