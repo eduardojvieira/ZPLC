@@ -32,3 +32,5 @@ Frame rate, link latency and supported boards are claims that need recorded evid
 - [Scene file format](./scene-format.md): the fields, the limits and `schemaVersion`.
 - [The shipped scenes](./scenes.md): what each scene teaches and what its scenario checks.
 - [Plant parts reference](./parts.md): every part, its settings and its signals.
+- [Numeric signals](./numeric-signals.md): how an INT or REAL value travels between a part and the program.
+- [Manipulators and gripping](./manipulators.md): the axes, the grip rules and the layer palletizer.

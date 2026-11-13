@@ -32,3 +32,5 @@ La tasa de cuadros, la latencia del enlace y las placas compatibles son afirmaci
 - [Formato del archivo de escena](./scene-format.md): los campos, los límites y `schemaVersion`.
 - [Las escenas incluidas](./scenes.md): qué enseña cada escena y qué comprueba su escenario.
 - [Referencia de piezas de la planta](./parts.md): cada pieza, sus ajustes y sus señales.
+- [Señales numéricas](./numeric-signals.md): cómo viaja un valor INT o REAL entre una pieza y el programa.
+- [Manipuladores y agarre](./manipulators.md): los ejes, las reglas de agarre y el paletizador por capas.
