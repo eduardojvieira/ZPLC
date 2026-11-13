@@ -1,0 +1,37 @@
+{
+  "name": "LatchTwoSensors",
+  "description": "Run a belt from sensor A until the box reaches sensor B.",
+  "version": "1.0.0",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "EyeA",
+        "type": "BOOL",
+        "address": "%I0.0",
+        "comment": "EyeA.detect: sensor A, where the box starts"
+      },
+      {
+        "name": "EyeB",
+        "type": "BOOL",
+        "address": "%I0.1",
+        "comment": "EyeB.detect: sensor B, where the box must stop"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Run",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Belt1.run: run the belt"
+      }
+    ]
+  },
+  "rungs": [],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2026-11-13",
+    "iecStandard": "IEC 61131-3",
+    "notes": []
+  }
+}
