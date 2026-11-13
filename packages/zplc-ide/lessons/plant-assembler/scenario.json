@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "two-axis-assembly",
+  "tickMs": 10,
+  "durationMs": 40000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      { "atMs": 200, "operate": { "signal": "StartButton.pressed", "value": true } },
+      { "atMs": 400, "operate": { "signal": "StartButton.pressed", "value": false } }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 100,
+      "condition": { "Assembler.XPlus": false, "Assembler.YMinus": false, "Assembler.Grip": false, "Assembler.Green": false }
+    },
+    { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 40000, "condition": { "fact:itemsAssembled": true } },
+    { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 40000, "condition": { "fact:delivered:Remover1": true } },
+    { "kind": "ALWAYS", "condition": { "fact:itemsDropped": false, "fact:drops:Pick1": false } },
+    {
+      "kind": "AT",
+      "atMs": 40000,
+      "condition": {
+        "Assembler.Green": true,
+        "Assembler.XPlus": false,
+        "Assembler.XMinus": false,
+        "Assembler.YPlus": false,
+        "Assembler.YMinus": false,
+        "Assembler.Grip": false
+      }
+    }
+  ]
+}

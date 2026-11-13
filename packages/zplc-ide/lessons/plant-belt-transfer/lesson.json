@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-belt-transfer",
+  "version": 1,
+  "order": 151,
+  "module": 15,
+  "level": "advanced",
+  "prerequisites": ["plant-counted-queue"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The sequence needs a two-axis carriage with a clamp, a stop blade and two belts; a learner board has no manipulator, and the scene supplies all of it.",
+        "es": "La secuencia necesita un carro de dos ejes con una pinza, una cuchilla de tope y dos bandas; una placa del estudiante no tiene manipulador, y la escena aporta todo ello."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus cajas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "belt-to-belt-transfer",
+  "estimatedMinutes": 40,
+  "starter": {
+    "project": "plant_belt_transfer_starter",
+    "program": "src/BeltTransfer.st"
+  },
+  "solution": {
+    "project": "plant_belt_transfer",
+    "program": "src/BeltTransfer.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "belt-to-belt-transfer",
+    "path": "tests/belt-to-belt-transfer.scenario.json",
+    "sha256": "f8f23c1507bc870d86231920f7c3aec025d473d11b285cf1070beb7547bf2b3d"
+  },
+  "regressionScenarios": []
+}

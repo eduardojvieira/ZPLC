@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Paletizar por capas",
+  "summary": "Cargue cuatro cajas en una capa, escuádrela, llévela con un cabezal de pinza y apile tres capas sobre un palé.",
+  "scope": "Las pruebas dan evidencia determinista del host POSIX nativo sobre una escena de planta simulada; no son evidencia física, de hardware, HIL ni de certificación.",
+  "objectives": [
+    "Formar una capa contando pares de cajas y escuadrarla antes de que la pinza la tome.",
+    "Colocar cada capa a su propia altura, una altura de caja más arriba que la inferior."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/LayerPalletizer.st, repita tres veces: cargue dos pares de cajas (Emit1 y Emit2 juntos forman un par, EyeIn los cuenta), espere LayerReady, escuadre, retraiga, tome la capa con la pinza, llévela a XMax, bájela una altura que dependa de Layer, suelte y regrese.",
+      "checkpoint": "Layer cuenta las capas terminadas y elige el descenso de cada una; los mismos estados se ejecutan para cada capa."
+    },
+    {
+      "key": "predict",
+      "title": "Predecir",
+      "body": "Antes de ejecutar, siga el cabezal: parte de su posición más baja y sube primero, la primera capa baja hasta YMin y cada capa posterior se detiene una altura de caja más arriba que la anterior.",
+      "checkpoint": "El empujador se retrae antes de que el cabezal se mueva; la pinza se abre solo sobre el palé; Green se enciende tras la tercera capa."
+    },
+    {
+      "key": "edit",
+      "title": "Editar",
+      "body": "Corrija esta omisión del inicial, guarde y ejecute: El inicial no gobierna ninguna salida, así que el cabezal nunca sube y no llega ninguna caja; cargue, escuadre, lleve y coloque tres capas de cuatro cajas sobre el palé y encienda Green al final.",
+      "checkpoint": "El escenario visible debe pasar con evidencia del host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutar",
+      "body": "En Pruebas, elija el zplc.json guardado y ejecute solo el escenario layer-palletizer; observe la vista 3D mientras se ejecuta.",
+      "checkpoint": "El escenario requerido se llama layer-palletizer y contiene {{assertions}} aserciones."
+    },
+    {
+      "key": "observe",
+      "title": "Observar",
+      "body": "Observe la capa: cuatro cajas en bloque en la zona, llevadas juntas y colocadas sobre el palé o sobre la capa inferior sin caer.",
+      "checkpoint": "Ninguna caja se cae, y Amber está encendido desde el inicio hasta que la tercera capa está abajo."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexionar",
+      "body": "Un solo ciclo de estados atiende todas las capas porque Layer cambia lo único que difiere: el descenso. El escenario prueba que la pinza colocó elementos, que hay cajas en reposo sobre el palé 0, que ninguna caja se cayó y que Green está encendido al final. Los hechos no cuentan exactamente tres capas de cuatro, y los tiempos de descenso son temporizados, no medidos.",
+      "checkpoint": "No establece la temporización física de la pinza, la velocidad de los ejes, la temporización de hardware, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Mantenga un contador de pares enviados y otro de pares vistos en EyeIn, para que la banda lleve solo dos pares; Layer dice qué capa sigue y gobierna el descenso."
+    },
+    {
+      "level": 2,
+      "text": "Baje la primera capa hasta YMin; para las demás use un descenso temporizado desde YMax elegido por Layer, que se encuentra por prueba en la traza (la segunda capa necesita un descenso más largo que la tercera), de modo que cada capa se detenga una altura de caja más arriba que la anterior."
+    }
+  ],
+  "faultCases": [
+    "El inicial no gobierna ninguna salida, así que el cabezal nunca sube y no llega ninguna caja; cargue, escuadre, lleve y coloque tres capas de cuatro cajas sobre el palé y encienda Green al final."
+  ]
+}

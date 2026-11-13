@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Palletize with a gantry",
+  "summary": "Drive a three-axis gantry through a computed 2 by 2 pattern to stack eight boxes in two layers on a pallet.",
+  "scope": "Tests give deterministic native POSIX host evidence on a simulated plant scene; they are not physical, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Command three axes with integer counts and compare each position with its command within one count.",
+    "Choose the place of each box from its number: the slot in the layer and the height of the layer."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/Palletizing.st, send one box, lower the pad onto it, grip, lift, travel in X and Z to the slot that Cycle MOD 4 gives, lower to the pallet or to the first layer, release, lift and return. Do it for eight boxes and light Green after the eighth.",
+      "checkpoint": "Arrived compares the three axes with their commands, and each state waits for it."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, follow the counts: Y goes up to 917 before anything crosses the belt, down to 500 on the box, up again, over to the slot in X and Z, and down to 372 for the first layer or 622 for the second.",
+      "checkpoint": "The slot follows Cycle MOD 4 and the height follows Cycle: four boxes on the pallet, then four on top of them."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter commands no position, so the gantry stays on the floor; send each box, grip it, place it on the pallet in a 2 by 2 pattern of two layers, and light Green after the eighth.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the three-axis-palletizing scenario; watch the 3D view while it runs.",
+      "checkpoint": "The required scenario is named three-axis-palletizing and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Watch the three axes in the trace come to their commands one after the other, and the boxes fill the 2 by 2 pattern in the 3D view.",
+      "checkpoint": "No box drops, the second layer rests on the first, and Green is on at the end."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "A pattern is arithmetic: the slot and the layer come from one counter, so eight boxes need one sequence and not eight. The scenario proves that boxes were placed and rest on pallet 0, that some were sent, that nothing was dropped and that Green is on at the end. It cannot read a position, so it does not check your counts or that the pattern is exactly eight boxes.",
+      "checkpoint": "It does not establish physical gripper timing, axis speed, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Write Arrived as the comparison of the three positions with their commands within one count, and let every state that moves wait for it."
+    },
+    {
+      "level": 2,
+      "text": "Use Cycle MOD 4 for the slot and Cycle < 4 for the layer, and send the next box only when the pad is clear of the belt."
+    }
+  ],
+  "faultCases": [
+    "The starter commands no position, so the gantry stays on the floor; send each box, grip it, place it on the pallet in a 2 by 2 pattern of two layers, and light Green after the eighth."
+  ]
+}

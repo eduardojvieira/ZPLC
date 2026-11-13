@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "plant-assembler-numeric",
+  "version": 1,
+  "order": 153,
+  "module": 15,
+  "level": "advanced",
+  "prerequisites": ["plant-assembler"],
+  "languages": ["ST"],
+  "tracks": ["simulation"],
+  "unsupported": {
+    "hardware": {
+      "reason": {
+        "en": "The program commands a carriage with real-valued positions in centimetres and reads them back; a learner board has no axis to command, and the scene supplies one.",
+        "es": "El programa ordena a un carro posiciones con valores reales en centímetros y las lee de vuelta; una placa del estudiante no tiene ningún eje que ordenar, y la escena aporta uno."
+      },
+      "instead": {
+        "en": "Complete it in Simulation, where the scene and its boxes are part of the scenario.",
+        "es": "Complétela en Simulación, donde la escena y sus cajas forman parte del escenario."
+      }
+    }
+  },
+  "plant": null,
+  "scene": "two-axis-assembly-numeric",
+  "estimatedMinutes": 40,
+  "starter": {
+    "project": "plant_assembler_numeric_starter",
+    "program": "src/Assembler.st"
+  },
+  "solution": {
+    "project": "plant_assembler_numeric",
+    "program": "src/Assembler.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "two-axis-assembly-numeric",
+    "path": "tests/two-axis-assembly-numeric.scenario.json",
+    "sha256": "ce6df01870552197bb1cc88498910a774be9fd8feefa6b02e1b427a9f65dffed"
+  },
+  "regressionScenarios": []
+}

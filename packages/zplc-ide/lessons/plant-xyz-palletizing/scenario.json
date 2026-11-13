@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "three-axis-palletizing",
+  "tickMs": 10,
+  "durationMs": 50000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      { "atMs": 200, "operate": { "signal": "StartButton.pressed", "value": true } },
+      { "atMs": 400, "operate": { "signal": "StartButton.pressed", "value": false } }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    {
+      "kind": "AT",
+      "atMs": 100,
+      "condition": { "Palletizing.Grip": false, "Palletizing.RunBelt": false, "Palletizing.Emit": false, "Palletizing.Green": false }
+    },
+    { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 50000, "condition": { "fact:placed:Gantry1": true, "fact:layers:pallet:0": true } },
+    { "kind": "AT", "atMs": 50000, "condition": { "Palletizing.Green": true, "Palletizing.Grip": false, "Palletizing.Amber": false } },
+    { "kind": "AT", "atMs": 50000, "condition": { "fact:stacked:pallet:0": true, "fact:itemsEmitted": true } },
+    { "kind": "ALWAYS", "condition": { "fact:itemsDropped": false, "fact:drops:Gantry1": false } }
+  ]
+}
