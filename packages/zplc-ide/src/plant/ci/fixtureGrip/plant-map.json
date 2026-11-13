@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 2,
+  "target": { "scene": "gripping-fixture" },
+  "signals": {
+    "Start1.pressed": { "direction": "sensor", "type": "BOOL", "point": "GripCycle.Start" },
+    "Pick1.gripped": { "direction": "sensor", "type": "BOOL", "point": "GripCycle.Held" },
+    "Pick1.xPos": {
+      "direction": "sensor",
+      "type": "REAL",
+      "point": "GripCycle.XPos",
+      "range": { "raw_min": 0, "raw_max": 120, "eng_min": 0, "eng_max": 1.2, "unit": "m" }
+    },
+    "Pick1.yPos": {
+      "direction": "sensor",
+      "type": "REAL",
+      "point": "GripCycle.YPos",
+      "range": { "raw_min": 0, "raw_max": 100, "eng_min": 0, "eng_max": 1, "unit": "m" }
+    },
+    "Pick1.grip": { "direction": "command", "type": "BOOL", "point": "GripCycle.Grip" },
+    "Pick1.xSet": {
+      "direction": "command",
+      "type": "REAL",
+      "point": "GripCycle.XSet",
+      "range": { "raw_min": 0, "raw_max": 120, "eng_min": 0, "eng_max": 1.2, "unit": "m" }
+    },
+    "Pick1.ySet": {
+      "direction": "command",
+      "type": "REAL",
+      "point": "GripCycle.YSet",
+      "range": { "raw_min": 0, "raw_max": 100, "eng_min": 0, "eng_max": 1, "unit": "m" }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "name": "Gripping fixture",
+  "parts": [
+    {
+      "id": "pick",
+      "part": "pick-place",
+      "name": "Pick1",
+      "position": [0, 0, 0],
+      "rotationYDeg": 0,
+      "config": { "variant": "numeric", "gripper": "vacuum", "strokeYM": 1 }
+    },
+    { "id": "start", "part": "push-button", "name": "Start1", "position": [-0.6, 0.5, 0.5], "rotationYDeg": 0, "config": {} }
+  ],
+  "cameras": [{ "name": "Overview", "position": [0.5, 1.6, 2.6], "target": [0.5, 0.4, 0] }]
+}
