@@ -485,6 +485,25 @@ describe('display preferences reach the renderer', () => {
     expect(outlinesOf(scenes[0]).filter((o) => o.kind === 'line').length).toBe(1); // the blade (the fake three has no Shape for the arc)
   });
 
+  it('PRT-003 a real curved conveyor of radius 1.2 is drawn as an arc whose radii and angle follow its config', async () => {
+    const { createPlantCore } = await import('../core/plantCore');
+    const config = { radius: 1.2, width: 0.5 };
+    const core = await createPlantCore({
+      ...scene,
+      parts: [{ id: 'arc', part: 'curved', name: 'arc', position: [0, 0.5, 0], rotationYDeg: 0, config }],
+    });
+    try {
+      const arc = core.snapshot().parts[0]!;
+      const spec = partShape(arc);
+      if (spec.shape !== 'curve') throw new Error('not a curve');
+      expect(spec.innerRadius).toBeCloseTo(0.95, 6); // the belt's centreline is the radius: 1.2 - 0.5 / 2
+      expect(spec.outerRadius).toBeCloseTo(1.45, 6);
+      expect(spec.angleDeg).toBe(90);
+    } finally {
+      core.dispose();
+    }
+  });
+
   it('VIS-009 the light and dark palettes draw no outlines, and switching back removes them', () => {
     const { r, scenes } = build();
     r.setSnapshot(withBlade);
