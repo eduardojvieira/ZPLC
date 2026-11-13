@@ -37,6 +37,7 @@ beforeEach(() => {
 
 afterEach(() => {
   unmount?.();
+  useNotifications.getState().clear();
   unmount = null;
   useAppSettings.setState({ settings: { ...useAppSettings.getState().settings, saveBeforeRun: 'always' } });
   useIDEStore.setState({ isProjectOpen: false, workspaceScenarioLink: null, loadedFiles: new Map() });

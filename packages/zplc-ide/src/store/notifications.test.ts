@@ -118,6 +118,8 @@ describe('the notification model (IDE-021)', () => {
 });
 
 describe('the notification store (IDE-021)', () => {
+  // The precondition is set here, not inherited: another test file can leave a notice in the shared store.
+  beforeEach(() => useNotifications.getState().clear());
   afterEach(() => useNotifications.getState().clear());
 
   it('begins an operation, finishes it in place, and dismisses it', () => {

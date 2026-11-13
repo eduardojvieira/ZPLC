@@ -56,10 +56,10 @@ describe('the classroom setting of the Learn home (LRN-033)', () => {
 });
 
 describe('the Learn home', () => {
-  it('lists the tracks and the twelve modules in order with level, required module and time, the empty ones without lessons', () => {
+  it('lists the tracks and the twenty modules in order with level, required module and time, the empty ones without lessons', () => {
     const out = render(emptyProgress());
     const headings = [...out.matchAll(/data-learn-module="(\d+)"/g)].map((match) => Number(match[1]));
-    expect(headings).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+    expect(headings).toEqual(Array.from({ length: 20 }, (_, index) => index));
     expect(out).toContain('Simulation');
     expect(out).toContain('Foundation. Requires module 0. About 75 min.');
     expect(out).toContain('Intermediate. Requires module 3.');
