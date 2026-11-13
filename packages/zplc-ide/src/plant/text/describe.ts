@@ -27,6 +27,13 @@ export function describePlant(snapshot: PlantSnapshot, scene: PlantSceneFile, lo
   const active = snapshot.parts.flatMap((p) => (Object.values(p.signals).some((v) => v === true) ? [p.name] : []));
   if (active.length > 0) parts.push(t('plant.text.active', { names: active.join(', ') }));
   for (const it of snapshot.items.slice(0, 5)) parts.push(t('plant.text.item', { id: it.id, x: m(it.p[0]), z: m(it.p[2]) }));
-  const key = JSON.stringify([snapshot.items.length, facts.sort(([a], [b]) => (a < b ? -1 : 1)), active]);
+  // A tank's level is told by its tenth of the height (and whether it spills), so a screen reader hears 40 percent, not every scan.
+  const tanks = snapshot.parts.flatMap((p) => {
+    const fraction = p.part === 'tank' && typeof p.state.fraction === 'number' ? p.state.fraction : undefined;
+    return fraction === undefined ? [] : [{ name: p.name, fraction, spilling: p.state.spilling === true }];
+  });
+  for (const tk of tanks) parts.push(t('plant.text.level', { name: tk.name, percent: Math.round(tk.fraction * 100) }));
+  const bands = tanks.map((tk) => [tk.name, Math.min(10, Math.max(0, Math.floor(tk.fraction * 10 + 1e-9))), tk.spilling]);
+  const key = JSON.stringify([snapshot.items.length, facts.sort(([a], [b]) => (a < b ? -1 : 1)), active, bands]);
   return { text: parts.join(' '), key };
 }

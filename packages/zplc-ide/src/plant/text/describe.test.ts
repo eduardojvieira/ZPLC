@@ -63,3 +63,33 @@ describe('describePlant', () => {
     expect(on.text).toContain('S1');
   });
 });
+
+describe('describePlant tank level', () => {
+  const tankScene: PlantSceneFile = { ...scene, parts: [{ ...scene.parts[0]!, id: 't', part: 'tank', name: 'Tank1' }] };
+  const at = (fraction: number, spilling = false): PlantSnapshot => ({
+    timeMs: 0,
+    scans: 0,
+    parts: [
+      {
+        id: 't',
+        part: 'tank',
+        name: 'Tank1',
+        pose: item('t', 0),
+        state: { level: fraction, heightM: 1, fraction, spilling },
+        signals: { level: fraction },
+      },
+    ],
+    items: [],
+    facts: { 'level:Tank1': fraction },
+  });
+
+  it('VIS-008 the level is announced on a change of tenth, not on every scan', () => {
+    const a = describePlant(at(0.41), tankScene, 'en');
+    expect(a.text).toContain('Tank1 level 41 percent');
+    expect(describePlant(at(0.42), tankScene, 'en').key).toBe(a.key);
+    expect(describePlant(at(0.53), tankScene, 'en').key).not.toBe(a.key);
+    expect(describePlant(at(0.41, true), tankScene, 'en').key).not.toBe(a.key);
+    expect(describePlant(at(0.41), tankScene, 'es').text).toContain('Nivel de Tank1: 41 por ciento');
+    expect(describePlant(at(0.41), tankScene, 'es').key).toBe(a.key);
+  });
+});
