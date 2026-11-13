@@ -30,6 +30,14 @@ describe('what an assistant may propose besides a change set (S6, S7)', () => {
       if (proposable.includes(command.id)) expect(command.physical ?? false, command.id).toBe(false);
   });
 
+  test('no AI proposal can name the plant I/O command, whatever it is called (LNK-009)', () => {
+    const plant = COMMANDS.find((command) => command.id === 'online.feedBoardFromPlant') as { physical?: boolean } | undefined;
+    expect(plant?.physical).toBe(true);
+    expect(Object.values(AI_COMMAND_PROPOSALS)).not.toContain('online.feedBoardFromPlant');
+    expect(Object.keys(AI_COMMAND_PROPOSALS).filter((type) => /plant|feed|board/i.test(type))).toEqual([]);
+    for (const type of ['online.feedBoardFromPlant', 'feedBoardFromPlant', 'feed']) expect(parseProposals([{ type }])).toBeNull();
+  });
+
   test('its lists of setting values are the ones of the application, and the sensitive settings are not among the settings', () => {
     expect([...AI_LANGUAGE_CHOICES]).toEqual([...LANGUAGE_SETTINGS]);
     expect([...AI_DENSITY_CHOICES]).toEqual([...DENSITY_CHOICES]);

@@ -122,6 +122,7 @@ describe('command registry (UX-015)', () => {
       'online.connect',
       'online.deploy',
       'online.disconnect',
+      'online.feedBoardFromPlant',
     ]);
   });
 
@@ -387,10 +388,10 @@ describe('lane W command contract (FND-002)', () => {
     expect(runCommand('view.plant', { respectEnabled: true })).toBe('unavailable');
   });
 
-  it('FND-002 keeps the 38 commands of 2.0, in their order, ahead of the new ones', () => {
+  it('FND-002 keeps the 38 commands of 2.0 and the plant I/O one, in their order, ahead of the new ones', () => {
     const ids = COMMAND_LIST.map((command) => command.id);
     const old = ids.filter((id) => !(id in LANE_W_COMMANDS) && !(id in U2_COMMANDS));
-    expect(old.length).toBe(38);
+    expect(old.length).toBe(39);
     expect(old.slice(0, 5)).toEqual(['file.save', 'file.open', 'file.new', 'file.export', 'view.commandPalette']);
     expect(old.at(-1)).toBe('help.learn');
     expect(runCommand('file.save')).toBe('unavailable');
@@ -443,7 +444,7 @@ describe('milestone U2 command contract (FND-002)', () => {
   it('UX-015 keeps the commands of 2.0 and of lane W, in their order, ahead of the U2 ones', () => {
     const ids = COMMAND_LIST.map((command) => command.id as string);
     const firstU2 = ids.findIndex((id) => id in U2_COMMANDS);
-    expect(ids.slice(0, firstU2).length).toBe(38 + Object.keys(LANE_W_COMMANDS).length);
+    expect(ids.slice(0, firstU2).length).toBe(39 + Object.keys(LANE_W_COMMANDS).length);
     expect(ids.slice(firstU2)).toEqual(Object.keys(U2_COMMANDS));
     expect(ids[firstU2 - 1]).toBe('help.learn');
     expect(ids.slice(0, 5)).toEqual(['file.save', 'file.open', 'file.new', 'file.export', 'view.commandPalette']);

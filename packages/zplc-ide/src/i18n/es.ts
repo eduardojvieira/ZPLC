@@ -14,6 +14,7 @@ import { plantEditorEs } from './catalog/plantEditor';
 import { plantEditorLearnerEs } from './catalog/plantEditorLearner';
 import { plantCourseEs } from './catalog/plantCourse';
 import { plantViewEs } from './catalog/plantView';
+import { plantBoardEs } from './catalog/plantBoard';
 import { studioCommandsEs } from './catalog/studioCommands';
 import { studioSurfacesEs } from './catalog/studioSurfaces';
 import { studioDocumentsEs } from './catalog/studioDocuments';
@@ -653,6 +654,7 @@ export const es: Record<MessageKey, string> = {
   ...projectEs,
   ...labEs,
   ...plantViewEs,
+  ...plantBoardEs,
   ...studioCommandsEs,
   ...studioSurfacesEs,
   ...studioDocumentsEs,

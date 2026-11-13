@@ -115,6 +115,14 @@ export const COMMANDS = [
     enabled: (s) => s.mode === 'hardware' && idle(s) && !s.connected,
   },
   {
+    id: 'online.feedBoardFromPlant',
+    titleKey: 'command.online.feedBoardFromPlant',
+    category: 'online',
+    physical: true,
+    // Disabled until U3 mounts the indicator that shows the mode is on; U3 enables it in that same commit (LNK-008).
+    enabled: () => false,
+  },
+  {
     id: 'online.disconnect',
     titleKey: 'command.online.disconnect',
     category: 'online',

@@ -112,7 +112,9 @@ describe('IDE-030: the tools an assistant can call are a closed list that names 
       'firmware_build',
     ]);
     for (const name of MCP_TOOL_NAMES)
-      expect(name, name).not.toMatch(/flash|deploy|force|upload|connect|serial|shell|poke|write|stop|erase|provision|reset|debug/);
+      expect(name, name).not.toMatch(
+        /flash|deploy|force|upload|connect|serial|shell|poke|write|stop|erase|provision|reset|debug|plant|feed|mirror/,
+      );
   });
 
   test('the resources are read-only documents and snapshots: none of them is a command', () => {

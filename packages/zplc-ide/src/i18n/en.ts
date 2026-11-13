@@ -13,6 +13,7 @@ import { plantEditorEn } from './catalog/plantEditor';
 import { plantEditorLearnerEn } from './catalog/plantEditorLearner';
 import { plantCourseEn } from './catalog/plantCourse';
 import { plantViewEn } from './catalog/plantView';
+import { plantBoardEn } from './catalog/plantBoard';
 import { studioCommandsEn } from './catalog/studioCommands';
 import { studioSurfacesEn } from './catalog/studioSurfaces';
 import { studioDocumentsEn } from './catalog/studioDocuments';
@@ -649,6 +650,7 @@ export const en = {
   ...projectEn,
   ...labEn,
   ...plantViewEn,
+  ...plantBoardEn,
   ...studioCommandsEn,
   ...studioSurfacesEn,
   ...studioDocumentsEn,

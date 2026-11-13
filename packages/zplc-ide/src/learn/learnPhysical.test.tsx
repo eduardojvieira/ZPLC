@@ -4,6 +4,7 @@
 // outside the ones Learn owns. A journey drives the same controls in the real window; tools/ci/learn-physical-guard.ts keeps
 // a later edit from adding a call this test does not drive.
 import { afterAll, beforeAll, describe, expect, it, mock, spyOn } from 'bun:test';
+import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import type { GradeRecord } from '../../shared/learnProgressModel';
@@ -308,5 +309,18 @@ describe('Learn starts no physical operation by itself (LRN-015)', () => {
     expect(Object.fromEntries(PHYSICAL.map((name, index) => [name, spies[index]!.mock.calls.length]))).toEqual(
       Object.fromEntries(PHYSICAL.map((name) => [name, 0])),
     );
+  });
+});
+
+describe('Learn cannot start plant I/O mode (LRN-015, LNK-009)', () => {
+  it('the Learn modules cannot import the controller, the board plant link or the command', () => {
+    const sources = [
+      ...new Bun.Glob('learn/**/*.{ts,tsx}').scanSync({ cwd: import.meta.dir + '/..' }),
+      ...new Bun.Glob('components/[Ll]earn*.{ts,tsx}').scanSync({ cwd: import.meta.dir + '/..' }),
+    ].filter((path) => !/\.test\.tsx?$/.test(path));
+    expect(sources.length).toBeGreaterThan(10);
+    const reaches = /plant\/board\/|plantBoardPort|PlantIoController|feedBoardFromPlant|PLANT_ENTER/;
+    const offenders = sources.filter((path) => reaches.test(readFileSync(`${import.meta.dir}/../${path}`, 'utf8')));
+    expect(offenders).toEqual([]);
   });
 });
