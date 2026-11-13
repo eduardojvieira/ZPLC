@@ -1,7 +1,7 @@
 // A scene is saved with its project, as <project>/scenes/<name>.scene.json (SCN-006).
 import { describe, expect, it } from 'bun:test';
 import type { PlantSceneFile } from '../contracts';
-import { MAX_SCENE_BYTES, listScenes, openScene, readSceneTexts, sceneFilePath, saveScene } from './sceneFiles';
+import { MAX_SCENE_BYTES, listScenes, openScene, readSceneTexts, sceneFilePath, saveScene, saveProjectScene } from './sceneFiles';
 
 class FakeFile {
   constructor(public text = '') {}
@@ -119,5 +119,22 @@ describe('scene files', () => {
       map: '{"schemaVersion":2}',
     });
     expect((await readSceneTexts(asHandle(root), 'bare')).map).toBe('');
+  });
+});
+
+describe('the scene of the project itself', () => {
+  it('is written as scene.json and plant-map.json at the root, and creates no scenes folder', async () => {
+    const root = new FakeDirectory();
+    await saveProjectScene(asHandle(root), scene(), '{"schemaVersion":2}');
+    expect(JSON.parse(root.files.get('scene.json')!.text).name).toBe('line');
+    expect(root.files.get('plant-map.json')!.text).toBe('{"schemaVersion":2}');
+    expect(root.directories.size).toBe(0);
+  });
+
+  it('refuses a scene larger than the cap and writes nothing', async () => {
+    const root = new FakeDirectory();
+    const big = scene({ name: 'x'.repeat(MAX_SCENE_BYTES) });
+    await expect(saveProjectScene(asHandle(root), big)).rejects.toThrow('larger than');
+    expect(root.files.size).toBe(0);
   });
 });

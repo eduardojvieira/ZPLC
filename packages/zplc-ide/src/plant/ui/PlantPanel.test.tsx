@@ -630,3 +630,54 @@ describe('opening and saving scenes (SCN-001, SCN-006, SCN-016)', () => {
     expect([...project.files.keys()]).toEqual(['line.scene.json']);
   });
 });
+
+describe('the scene of the project itself (CRS-012)', () => {
+  it('Save to project writes the root scene.json and plant-map.json, and creates no scenes folder', async () => {
+    const written = new Map<string, string>();
+    const asked: string[] = []; // folders created
+    const handle = {
+      getDirectoryHandle: async (name: string, options?: { create?: boolean }) => {
+        if (options?.create) asked.push(name);
+        throw new Error('not found');
+      },
+      getFileHandle: async (name: string) => ({
+        createWritable: async () => ({ write: async (value: string) => void written.set(name, value), close: async () => undefined }),
+      }),
+    } as unknown as FileSystemDirectoryHandle;
+    dom.patchStore(useIDEStore, {
+      directoryHandle: handle,
+      loadedFiles: new Map([
+        ['scene', { id: 'scene', name: 'scene.json', path: 'scene.json', content: sceneFiles('belt-to-sensor').scene }],
+        ['map', { id: 'map', name: 'plant-map.json', path: 'plant-map.json', content: sceneFiles('belt-to-sensor').map }],
+      ]) as never,
+    });
+    const r = rig();
+    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    await ready();
+    expect((dom.screen.getByLabelText(dom.t('plant.panel.scene')) as HTMLSelectElement).value).toBe('project');
+    await dom.act(async () => dom.fireEvent.click(document.querySelector('[data-plant-save-scene]')!));
+    await dom.waitFor(() => expect(written.has('scene.json')).toBe(true));
+    expect(JSON.parse(written.get('scene.json')!).name).toBe('Belt to sensor');
+    expect(written.has('plant-map.json')).toBe(true);
+    expect(asked).not.toContain('scenes');
+  });
+
+  it('a project whose root holds scene.json opens it as its scene although no file of it is open', async () => {
+    const files = new Map([['scene.json', sceneFiles('belt-to-sensor').scene]]);
+    const handle = {
+      getDirectoryHandle: async () => {
+        throw new Error('not found');
+      },
+      getFileHandle: async (name: string) => {
+        const text = files.get(name);
+        if (text === undefined) throw new Error('not found');
+        return { getFile: async () => ({ size: text.length, text: async () => text }) };
+      },
+    } as unknown as FileSystemDirectoryHandle;
+    dom.patchStore(useIDEStore, { directoryHandle: handle, loadedFiles: new Map() as never });
+    const r = rig();
+    dom.render(<PlantPanel controller={r.controller} visible deps={r.deps} />);
+    await dom.waitFor(() => expect((dom.screen.getByLabelText(dom.t('plant.panel.scene')) as HTMLSelectElement).value).toBe('project'));
+    await dom.waitFor(() => expect((r.scenes.at(-1) as { name?: string }).name).toBe('Belt to sensor'));
+  });
+});

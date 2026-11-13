@@ -11,7 +11,8 @@ export interface WorkspaceTestToken {
 interface WorkspaceIdentity {
   dev: string;
   ino: string;
-  ctimeNs: string;
+  /** Creation time of the directory: constant while entries come and go, new for a replacement directory. */
+  birthNs: string;
 }
 
 interface RegisteredWorkspace extends WorkspaceTestToken {
@@ -42,12 +43,14 @@ function validOwner(ownerWebContentsId: unknown): ownerWebContentsId is number {
   return typeof ownerWebContentsId === 'number' && Number.isSafeInteger(ownerWebContentsId) && ownerWebContentsId > 0;
 }
 
-function identityOf(status: { dev: bigint; ino: bigint; ctimeNs: bigint }): WorkspaceIdentity {
-  return { dev: String(status.dev), ino: String(status.ino), ctimeNs: String(status.ctimeNs) };
+// ctime moves whenever an entry is added or removed in the root, so it cannot tell a replacement from the app's own writes.
+// ponytail: a filesystem without birth time reports 0 and then only (dev, ino) binds the root.
+function identityOf(status: { dev: bigint; ino: bigint; birthtimeNs: bigint }): WorkspaceIdentity {
+  return { dev: String(status.dev), ino: String(status.ino), birthNs: String(status.birthtimeNs) };
 }
 
 function sameIdentity(left: WorkspaceIdentity, right: WorkspaceIdentity): boolean {
-  return left.dev === right.dev && left.ino === right.ino && left.ctimeNs === right.ctimeNs;
+  return left.dev === right.dev && left.ino === right.ino && left.birthNs === right.birthNs;
 }
 
 async function inspectRoot(candidateRoot: unknown): Promise<Pick<RegisteredWorkspace, 'canonicalRoot' | 'identity'>> {

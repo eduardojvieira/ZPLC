@@ -148,6 +148,35 @@ describe('Workspace test gateway', () => {
     expect(called).toBe(false);
   });
 
+  it('rejects a root replaced by another directory at the same path, even right after a removal', async () => {
+    const root = await workspace();
+    const gateway = shown(root);
+    const token = await gateway.register(7, root);
+    await rm(root, { recursive: true, force: true });
+    await mkdir(root);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    await rm(root, { recursive: true, force: true });
+    await mkdir(root);
+    let called = false;
+    await expect(
+      gateway.run(7, token, async () => {
+        called = true;
+      }),
+    ).rejects.toThrow('Workspace is unavailable');
+    expect(called).toBe(false);
+  });
+
+  it('still runs after the registered root gains, loses or edits entries', async () => {
+    const root = await workspace();
+    const gateway = shown(root);
+    const token = await gateway.register(7, root);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    await mkdir(join(root, 'scenes'));
+    await writeFile(join(root, 'scene.json'), '{}');
+    await rm(join(root, 'scenes'), { recursive: true });
+    await expect(gateway.run(7, token, async () => 'ran')).resolves.toBe('ran');
+  });
+
   it('permits only one in-flight operation and recovers after runner rejection', async () => {
     const root = await workspace();
     const gateway = shown(root);

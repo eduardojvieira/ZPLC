@@ -14,7 +14,7 @@ import { registerPlantTransport } from '../../store/useTransport';
 import { announce } from '../../utils/announce';
 import type { PlantCore, PlantSceneFile, PlantSnapshot } from '../contracts';
 import { parseScene } from '../core/scene';
-import { listScenes, readSceneTexts } from '../persistence/sceneFiles';
+import { listScenes, readProjectSceneTexts, readSceneTexts } from '../persistence/sceneFiles';
 import { createPlantSession, type PlantSessionHandle, type PlantSessionPorts } from '../session/plantSession';
 import { loadPlantEngine, type PlantEngine } from './loadPlantEngine';
 
@@ -48,6 +48,27 @@ const EMPTY_FLOOR: SceneOverride = {
   }),
   map: '',
 };
+
+/**
+ * The project's own scene (`scene.json` and `plant-map.json` at its root): the open files when they hold them, else the root of
+ * the project directory, which the Files tree does not list.
+ */
+export function useProjectSceneTexts(): { scene: string | undefined; map: string | undefined } {
+  const handle = useIDEStore((state) => state.directoryHandle);
+  const openScene = useIDEStore((state) => fileText(state.loadedFiles, 'scene.json'));
+  const openMap = useIDEStore((state) => fileText(state.loadedFiles, 'plant-map.json'));
+  const [read, setRead] = useState<{ handle: FileSystemDirectoryHandle; texts: { scene: string; map: string } | undefined } | undefined>();
+  useEffect(() => {
+    if (!handle) return;
+    let cancelled = false;
+    void readProjectSceneTexts(handle).then((texts) => !cancelled && setRead({ handle, texts }));
+    return () => {
+      cancelled = true;
+    };
+  }, [handle]);
+  const rootTexts = read?.handle === handle ? read?.texts : undefined;
+  return { scene: openScene ?? rootTexts?.scene, map: openMap ?? (rootTexts ? rootTexts.map || undefined : undefined) };
+}
 
 /** The scenes saved in the open project (`scenes/*.scene.json`), listed from its directory and not from the open files. */
 export function useProjectScenes(): { names: string[]; refresh: () => void } {
@@ -154,8 +175,7 @@ export function usePlantSession(
   deps: PlantPanelDeps,
   override?: SceneOverride,
 ): PlantBinding {
-  const projectScene = useIDEStore((state) => fileText(state.loadedFiles, 'scene.json'));
-  const projectMap = useIDEStore((state) => fileText(state.loadedFiles, 'plant-map.json'));
+  const { scene: projectScene, map: projectMap } = useProjectSceneTexts();
   const debugMap = useIDEStore((state) => state.debug.debugMap);
   const ioMap = useMemo(() => listIoMap(debugMap), [debugMap]);
   const adapter = controller?.adapter ?? null;
