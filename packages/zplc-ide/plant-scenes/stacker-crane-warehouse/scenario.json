@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "stacker-crane-warehouse",
+  "tickMs": 10,
+  "durationMs": 90000,
+  "scene": {
+    "file": "scene.json",
+    "map": "plant-map.json",
+    "script": [
+      { "atMs": 200, "operate": { "signal": "StartButton.pressed", "value": true } },
+      { "atMs": 400, "operate": { "signal": "StartButton.pressed", "value": false } },
+      { "atMs": 50000, "operate": { "signal": "Req1.pressed", "value": true } },
+      { "atMs": 50300, "operate": { "signal": "Req1.pressed", "value": false } },
+      { "atMs": 50500, "operate": { "signal": "Req3.pressed", "value": true } },
+      { "atMs": 50800, "operate": { "signal": "Req3.pressed", "value": false } }
+    ]
+  },
+  "events": [],
+  "expectations": [
+    { "kind": "ALWAYS", "condition": { "fact:blocked:Crane1": false, "fact:itemsDropped": false } },
+    { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 90000, "condition": { "fact:stored:Crane1": true } },
+    { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 90000, "condition": { "fact:cell:Crane1:1:1": true } },
+    { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 90000, "condition": { "fact:cell:Crane1:2:1": true } },
+    { "kind": "EVENTUALLY", "fromMs": 0, "withinMs": 90000, "condition": { "fact:delivered:OutBin": true } },
+    { "kind": "AT", "atMs": 90000, "condition": { "Warehouse.Green": true } }
+  ]
+}
