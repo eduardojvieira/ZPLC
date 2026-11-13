@@ -1,0 +1,34 @@
+---
+title: 'La planta'
+sidebar_label: 'La planta'
+description: 'Qué es y qué no es la planta: un modelo de una máquina contra el que corre el programa, con un solo reloj compartido con el programa.'
+tags: [plant, simulation]
+---
+
+# La planta
+
+Una planta es un modelo de una máquina pequeña: cintas, cajas, sensores, pulsadores y pilotos. Su programa lee los sensores y los pulsadores como entradas y escribe las cintas y los pilotos como salidas. Una planta permite comprobar un programa antes de que exista la máquina.
+
+## Qué es la planta
+
+- **Un documento del área del editor.** El comando Planta lo abre junto al programa, de modo que usted ve ambos a la vez. La interfaz la llama "Planta".
+- **Un modelo con una sola verdad.** El núcleo de la planta es un modelo sin interfaz. La ejecución en vivo, la ejecución calificada y las pruebas de escenario usan ese mismo núcleo y el mismo mapa de señales. Nada se califica a partir de píxeles.
+- **Un modelo con reloj compartido.** La planta y el programa avanzan juntos. Consulte [El reloj de la planta](./clock.md).
+- **Hecha de piezas.** Una escena lista piezas de un catálogo fijo. Consulte la [referencia de piezas](./parts.md), el [formato del archivo de escena](./scene-format.md) y las [cinco primeras escenas](./scenes.md).
+
+## Qué no es la planta
+
+- **La vista 3D es solo una vista.** Dibuja lo que calculó el núcleo de la planta. No decide nada, y una lección se puede completar y calificar sin ella.
+- **No es un controlador.** La planta no tiene Ejecutar, Pausar, Paso ni Reiniciar propios. La barra de comandos es el único transporte y maneja la planta y el programa juntos.
+- **No es evidencia de hardware.** La planta es un modelo. Un resultado en la planta no dice cómo se comporta una máquina, una placa o un enlace reales.
+
+## Qué está medido
+
+La tasa de cuadros, la latencia del enlace y las placas compatibles son afirmaciones que necesitan evidencia registrada. Aún no se han medido en las máquinas de referencia, así que esta documentación no da ninguna cifra para ellas.
+
+## Páginas de esta sección
+
+- [El reloj de la planta](./clock.md): un solo reloj, y qué hace un punto de interrupción con la planta.
+- [Formato del archivo de escena](./scene-format.md): los campos, los límites y `schemaVersion`.
+- [Las cinco primeras escenas](./scenes.md): qué enseña cada escena y qué comprueba su escenario.
+- [Referencia de piezas de la planta](./parts.md): cada pieza, sus ajustes y sus señales.
