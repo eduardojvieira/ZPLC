@@ -377,7 +377,11 @@ async function watch(app: App, variable: string): Promise<void> {
   await app.click(path);
   await app.type(variable);
   await app.press('Enter');
-  await app.until(`${variable} in the Watch table`, async () => (await watchValue(app, variable)) !== null || undefined);
+  // A new row shows "..." until its first poll lands; only then is its value cell focusable and editable.
+  await app.until(`${variable} in the Watch table`, async () => {
+    const value = await watchValue(app, variable);
+    return (value !== null && value !== '...') || undefined;
+  });
 }
 const watchRow = (name: string) =>
   `[...document.querySelectorAll('tbody tr')].find((row) => row.firstElementChild?.textContent === ${JSON.stringify(name)})`;
