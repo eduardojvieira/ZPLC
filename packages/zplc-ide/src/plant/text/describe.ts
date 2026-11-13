@@ -7,7 +7,10 @@ const TOTALS = ['itemsEmitted', 'itemsRemoved', 'itemsDropped', 'itemsCollided']
 const CONTINUOUS = ['level:', 'volume:', 'spilledL:', 'axis:'];
 // The support facts (K5) and a tank's high-mark count are told in words and stay silent at 0, so a scene that assembles or stacks nothing
 // reads as it did before them.
-const SUPPORT = /^(itemsAssembled|stacked:pallet:\d+|layers:pallet:\d+|highs:.+|emitted:.+|sorted:.+|misrouted:.+)$/;
+const SUPPORT = new RegExp(
+  '^(itemsAssembled|stacked:pallet:\\d+|layers:pallet:\\d+|highs:.+|emitted:.+|sorted:.+|misrouted:.+|' +
+    'stored:.+|produced:.+|misfires:.+|blocked:.+|loaded:crate:\\d+)$',
+);
 const kindOf = (k: string) => (k.startsWith('layers:pallet:') ? 'layers' : '');
 const m = (n: number) => String(Math.round(n * 10) / 10);
 
@@ -18,10 +21,11 @@ const m = (n: number) => String(Math.round(n * 10) / 10);
 export function describePlant(snapshot: PlantSnapshot, scene: PlantSceneFile, locale: 'en' | 'es'): { text: string; key: string } {
   const { t, tn } = translatorFor(locale);
   const parts = [t('plant.text.summary', { scene: scene.name, count: snapshot.items.length })];
-  // position:<kind>:<index> facts are positions, never part of a change of situation.
+  // position:<kind>:<index> facts are positions and cell:<Name>:<c>:<l> a boolean per rack cell (the count is `stored`): never told.
   const facts = Object.entries(snapshot.facts).filter(
     ([k, v]) =>
       !k.startsWith('position:') &&
+      !k.startsWith('cell:') &&
       !CONTINUOUS.some((c) => k.startsWith(c)) &&
       (typeof v !== 'number' || Number.isInteger(v)) &&
       !(SUPPORT.test(k) && v === 0),
@@ -46,6 +50,11 @@ export function describePlant(snapshot: PlantSnapshot, scene: PlantSceneFile, lo
       );
       continue;
     }
+    const crate = /^loaded:crate:(\d+)$/.exec(k);
+    if (crate) {
+      parts.push(tn('plant.text.crateLoaded', Number(v), { number: String(Number(crate[1]) + 1) }));
+      continue;
+    }
     const [kind, name] = [k.slice(0, k.indexOf(':')), k.slice(k.indexOf(':') + 1)];
     if (kind === 'delivered' && k.includes(':')) parts.push(t('plant.text.delivered', { name, count: String(v) }));
     else if (kind === 'count' && k.includes(':')) parts.push(t('plant.text.count', { name, count: String(v) }));
@@ -54,6 +63,8 @@ export function describePlant(snapshot: PlantSnapshot, scene: PlantSceneFile, lo
     else if (kind === 'highs' && k.includes(':')) parts.push(tn('plant.text.highs', Number(v), { name }));
     else if (kind === 'emitted' && k.includes(':')) parts.push(tn('plant.text.emitted', Number(v), { name }));
     else if (kind === 'sorted' && k.includes(':')) parts.push(tn('plant.text.sorted', Number(v), { name }));
+    else if (['stored', 'produced', 'misfires', 'blocked'].includes(kind) && k.includes(':'))
+      parts.push(tn(`plant.text.${kind}` as 'plant.text.stored', Number(v), { name }));
     else if (kind === 'misrouted' && k.includes(':')) parts.push(tn('plant.text.misrouted', Number(v), { name }));
     else if (kind === 'inBand' && k.includes(':')) parts.push(t(v ? 'plant.text.inBand' : 'plant.text.outOfBand', { name }));
     else parts.push(t('plant.text.fact', { name: k, value: String(v) }));
