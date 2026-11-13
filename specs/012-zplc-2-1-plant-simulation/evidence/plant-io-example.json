@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "level": "native-sim",
+  "board": "example-board",
+  "transport": "usb-serial",
+  "date": "2026-01-01T00:00:00.000Z",
+  "repository": {
+    "commit": "0000000000000000000000000000000000000000",
+    "dirty": false
+  },
+  "tools": {
+    "harness": "1",
+    "platform": "Linux example x86_64",
+    "python": "3.x",
+    "bun": null,
+    "compiler_draft_counter": null,
+    "bench": "1"
+  },
+  "run": {
+    "frames": 20,
+    "frame_ms": 20,
+    "timeout_ms": 500,
+    "phase_s": 5.0,
+    "negotiated_payload": 512,
+    "plant_id": 1,
+    "in_bytes": 7,
+    "out_bytes": 1,
+    "max_slots": 32,
+    "timeout_ms_granted": 500
+  },
+  "device": {
+    "kind": "fake"
+  },
+  "firmware": {
+    "commit": null,
+    "version": null,
+    "dirty": null,
+    "board_target": null,
+    "version_output": "ZPLC example"
+  },
+  "program": {
+    "size": 18,
+    "crc32": "00000000"
+  },
+  "events": [],
+  "closed": {
+    "reason": "CLOSED",
+    "frames": 22,
+    "late": 0,
+    "rejected": 0
+  },
+  "measurements": {
+    "rtt_ms": {
+      "count": 20,
+      "p50": 1.0,
+      "p95": 2.0,
+      "p99": 2.0,
+      "max": 2.0
+    },
+    "gap_ms": {
+      "count": 19,
+      "p50": 20.0,
+      "p95": 21.0,
+      "p99": 21.0,
+      "max": 21.0
+    },
+    "frames_sent": 20,
+    "frames_ok": 20,
+    "late": 0,
+    "rejected": 0,
+    "timeouts": 0,
+    "refused": 0,
+    "applied_seq": {
+      "regressions": 0,
+      "max_lag": 0
+    },
+    "echo_mismatches": 0
+  },
+  "limits": {
+    "max_gap_ms": 250
+  },
+  "physical": [],
+  "comment": "An illustration of the format, made on a Python fake of the board; it is not a measurement of anything. Real files are written by tools/hil/plant_io_bench.py, and only a file with level hil, made at the bench, is hardware evidence."
+}

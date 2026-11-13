@@ -1,0 +1,374 @@
+{
+  "$comment": "Evidence of one plant I/O mode run (LNK-011, LNK-014, LNK-016; principle P6). Written by tools/hil/plant_io_bench.py, judged by tools/hil/validate_plant_io_evidence.py, which also holds the rules a schema cannot say (the level decides what must be present). The validator of tools/hil/hil_record.py reads this file, so it uses only the keywords that one covers.",
+  "type": "object",
+  "required": [
+    "schema",
+    "level",
+    "board",
+    "transport",
+    "date",
+    "repository",
+    "tools",
+    "run",
+    "measurements",
+    "limits",
+    "physical"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": 1
+    },
+    "level": {
+      "enum": [
+        "host",
+        "native-sim",
+        "qemu",
+        "target-build",
+        "hil"
+      ]
+    },
+    "board": {
+      "type": "string",
+      "minLength": 1
+    },
+    "transport": {
+      "enum": [
+        "usb-serial"
+      ]
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$"
+    },
+    "repository": {
+      "type": "object",
+      "required": [
+        "commit",
+        "dirty"
+      ],
+      "properties": {
+        "commit": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "dirty": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "device": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string"
+        }
+      }
+    },
+    "firmware": {
+      "type": "object",
+      "properties": {
+        "commit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "dirty": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "board_target": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "version_output": {
+          "type": "string"
+        }
+      }
+    },
+    "tools": {
+      "type": "object",
+      "required": [
+        "python",
+        "platform"
+      ]
+    },
+    "program": {
+      "type": "object",
+      "required": [
+        "size",
+        "crc32"
+      ],
+      "properties": {
+        "size": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "crc32": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}$"
+        }
+      }
+    },
+    "run": {
+      "type": "object",
+      "required": [
+        "frames",
+        "frame_ms",
+        "timeout_ms"
+      ],
+      "properties": {
+        "frames": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "frame_ms": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 50
+        },
+        "phase_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "negotiated_payload": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "plant_id": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "in_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "out_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_slots": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "timeout_ms_granted": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "stopped_by": {
+          "type": "string"
+        }
+      }
+    },
+    "measurements": {
+      "type": "object",
+      "required": [
+        "rtt_ms",
+        "gap_ms",
+        "frames_sent",
+        "frames_ok",
+        "late",
+        "rejected",
+        "timeouts",
+        "refused",
+        "applied_seq",
+        "echo_mismatches"
+      ],
+      "properties": {
+        "rtt_ms": {
+          "type": "object",
+          "required": [
+            "count",
+            "p50",
+            "p95",
+            "p99",
+            "max"
+          ],
+          "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "p50": {
+              "type": "number",
+              "minimum": 0
+            },
+            "p95": {
+              "type": "number",
+              "minimum": 0
+            },
+            "p99": {
+              "type": "number",
+              "minimum": 0
+            },
+            "max": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "gap_ms": {
+          "type": "object",
+          "required": [
+            "count",
+            "p50",
+            "p95",
+            "p99",
+            "max"
+          ],
+          "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "p50": {
+              "type": "number",
+              "minimum": 0
+            },
+            "p95": {
+              "type": "number",
+              "minimum": 0
+            },
+            "p99": {
+              "type": "number",
+              "minimum": 0
+            },
+            "max": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "frames_sent": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "frames_ok": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "late": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rejected": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "timeouts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "refused": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "applied_seq": {
+          "type": "object",
+          "required": [
+            "regressions",
+            "max_lag"
+          ],
+          "properties": {
+            "regressions": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "max_lag": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "echo_mismatches": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "required": [
+        "max_gap_ms"
+      ],
+      "properties": {
+        "max_gap_ms": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "reason",
+          "frames"
+        ]
+      }
+    },
+    "closed": {
+      "type": "object",
+      "required": [
+        "reason",
+        "frames",
+        "late",
+        "rejected"
+      ]
+    },
+    "physical": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "step",
+          "device_check",
+          "confirmed",
+          "confirmed_by"
+        ],
+        "properties": {
+          "step": {
+            "enum": [
+              "mirror-off",
+              "mirror-on",
+              "link-loss"
+            ]
+          },
+          "device_check": {
+            "type": "object"
+          },
+          "confirmed": {
+            "type": "boolean"
+          },
+          "confirmed_by": {
+            "const": "person"
+          }
+        }
+      }
+    },
+    "comment": {
+      "type": "string"
+    }
+  }
+}
