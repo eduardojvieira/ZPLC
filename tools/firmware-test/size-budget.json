@@ -14,12 +14,12 @@
         "ram": ["RAM"]
       },
       "measured": {
-        "flash": 177848,
-        "ram": 173424
+        "flash": 188524,
+        "ram": 182720
       },
       "budget": {
-        "flash": 186880,
-        "ram": 182272
+        "flash": 198144,
+        "ram": 192000
       }
     },
     "arduino-giga-r1-m7": {

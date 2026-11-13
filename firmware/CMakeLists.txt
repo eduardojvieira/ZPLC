@@ -136,6 +136,10 @@ if(CONFIG_ZPLC)
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_proto_dev.c
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_sha256.c
   )
+  # Plant I/O mode (LNK-012): the module the scheduler adapter and the device link port both reach
+  zephyr_library_sources_ifdef(CONFIG_ZPLC_PLANT_IO
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_plant.c
+  )
   zephyr_library_sources_ifdef(CONFIG_ZPLC_PROTO_SIGNATURE
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_sha512.c
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_ed25519.c

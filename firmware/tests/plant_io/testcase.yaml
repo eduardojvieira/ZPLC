@@ -1,0 +1,16 @@
+tests:
+  # LNK-006, LNK-007, LNK-010, LNK-011, LNK-015: plant I/O mode on the real Zephyr scheduler. The pin cases run on
+  # the GPIO emulator of native_sim (emulation, not hardware); qemu_cortex_m3 runs the image-level cases.
+  zplc.plant_io:
+    tags:
+      - zplc
+      - scheduler
+      - plant
+    platform_allow:
+      - native_sim/native/64
+      - native_sim/native
+      - qemu_cortex_m3
+    integration_platforms:
+      - native_sim/native/64
+    harness: ztest
+    timeout: 60
