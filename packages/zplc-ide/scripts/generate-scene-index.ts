@@ -27,6 +27,11 @@ const SCENE_ORDER: Record<string, number> = {
   'layer-palletizer': 13,
   'belt-to-belt-transfer': 14,
   'three-axis-palletizing': 15,
+  'colour-separation': 17,
+  'height-sorting-turntable': 18,
+  'height-sorting-chain': 19,
+  'weight-sorting': 20,
+  'vision-sorting': 21,
 };
 
 function generate(): { problems: string[]; source: string } {
