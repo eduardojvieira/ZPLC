@@ -892,7 +892,11 @@ async function runWorkspaceScenarios(
     const selected =
       scenarioId === undefined ? scenarios : scenarios.filter((scenario) => scenario.id.toLowerCase() === scenarioId.toLowerCase());
     if (selected.length === 0) return testFailed(operation, [testDiagnostic('TEST_SCENARIO_NOT_FOUND', 'tests')]);
-    if (selected.reduce((total, scenario) => total + runtimeOperationCost(scenario.compiled), 0) > MAX_SCENARIO_RUNTIME_OPERATIONS) {
+    // A scene scenario is bounded by the run deadline, as in the Learn Check, not by the operation budget of the fixed plants.
+    if (
+      selected.reduce((total, scenario) => total + (scenario.compiled.scene ? 0 : runtimeOperationCost(scenario.compiled)), 0) >
+      MAX_SCENARIO_RUNTIME_OPERATIONS
+    ) {
       return testFailed(operation, [testDiagnostic('TEST_BUDGET_EXCEEDED', 'tests')]);
     }
 

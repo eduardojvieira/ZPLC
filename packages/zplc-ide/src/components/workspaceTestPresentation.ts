@@ -552,6 +552,8 @@ const safeId = (value: unknown): value is string =>
   value.length <= 128 &&
   ![...value].some((character) => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
 const safeSignal = (value: string): boolean => {
+  // A scene scenario samples the facts of the plant next to the program outputs: `fact:count:EyeFar`.
+  if (value.startsWith('fact:')) return value.length <= 128 && /^fact:[A-Za-z0-9_:.-]+$/.test(value);
   const parts = value.split('.');
   return parts.length === 2 && parts.every((part) => part.length > 0 && part.length <= 128 && /^[A-Za-z_][A-Za-z0-9_]*$/.test(part));
 };
